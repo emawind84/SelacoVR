@@ -324,9 +324,9 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 		LSVec3 openvr_dpos = openvr_HmdPos - openvr_origin;
 		{
 			// Suddenly recenter if deviation gets too large
-			const double max_shift = 0.70; // meters
+			const double max_shift = 0.50; // meters
 			if (std::abs(openvr_dpos[0]) + std::abs(openvr_dpos[2]) > max_shift) {
-				openvr_origin += 0.75 * openvr_dpos; // recenter MOST of the way to the new position
+				openvr_origin += 1.0 * openvr_dpos; // recenter MOST of the way to the new position
 				openvr_dpos = openvr_HmdPos - openvr_origin;
 			}
 		}
@@ -646,18 +646,18 @@ void OpenVRMode::updateHmdPose(
 	double hmdpitch = hmdPitchRadians;
 	double hmdroll = hmdRollRadians;
 
-	double dYaw = 0;
+	double hmdYawDelta = 0;
 	if (doTrackHmdYaw) {
 		// Set HMD angle game state parameters for NEXT frame
-		static double previousYaw = 0;
+		static double previousHmdYaw = 0;
 		static bool havePreviousYaw = false;
 		if (!havePreviousYaw) {
-			previousYaw = hmdYaw;
+			previousHmdYaw = hmdYaw;
 			havePreviousYaw = true;
 		}
-		dYaw = hmdYaw - previousYaw;
-		G_AddViewAngle(mAngleFromRadians(-dYaw));
-		previousYaw = hmdYaw;
+		hmdYawDelta = hmdYaw - previousHmdYaw;
+		G_AddViewAngle(mAngleFromRadians(-hmdYawDelta));
+		previousHmdYaw = hmdYaw;
 	}
 
 	/* */
@@ -680,6 +680,7 @@ void OpenVRMode::updateHmdPose(
 		if (doTrackHmdYaw) {
 			static double yawOffset = 0;
 
+
 			// Late scheduled update of yaw angle reduces motion sickness
 			//  * by lowering latency of view update after head motion
 			//  * by ignoring lag and interpolation of the game view angle
@@ -688,12 +689,26 @@ void OpenVRMode::updateHmdPose(
 			// which are from the controllers. So here I'm assuming every discrepancy larger
 			// than some cutoff comes from elsewhere. This is how we acheive rock solid
 			// head tracking, at the expense of jerky controller turning.
-			double hmdViewAngle = RAD2DEG(hmdYaw);
-			double doomViewAngle = r_viewpoint.Angles.Yaw.Degrees;
-			double currentOffset = doomViewAngle - hmdViewAngle;
+			double hmdYawDegrees = RAD2DEG(hmdYaw);
+			double gameYawDegrees = r_viewpoint.Angles.Yaw.Degrees;
+			double currentOffset = gameYawDegrees - hmdYawDegrees;
 			if ((gamestate == GS_LEVEL)
 				&& (menuactive == MENU_Off))
 			{
+				// Predict current game view direction using hmd yaw change from previous time step
+				static double previousGameYawDegrees = 0;
+				static double previousHmdYawDelta = 0;
+				double predictedGameYawDegrees = previousGameYawDegrees + RAD2DEG(previousHmdYawDelta);
+				double predictionError = predictedGameYawDegrees - gameYawDegrees;
+				while (predictionError > 180.0) predictionError -= 360.0;
+				while (predictionError < -180.0) predictionError += 360.0;
+				predictionError = std::abs(predictionError);
+				if (predictionError > 0.1) {
+					// looks like someone is turning using the controller, not just the HMD, so reset offset now
+					yawOffset = currentOffset;
+				}
+
+				// 
 				double discrepancy = yawOffset - currentOffset;
 				while (discrepancy > 180.0) discrepancy -= 360.0;
 				while (discrepancy < -180.0) discrepancy += 360.0;
@@ -702,8 +717,11 @@ void OpenVRMode::updateHmdPose(
 				{
 					yawOffset = currentOffset;
 				}
+
+				previousGameYawDegrees = gameYawDegrees;
+				previousHmdYawDelta = hmdYawDelta;
 			}
-			double viewYaw = hmdViewAngle + yawOffset;
+			double viewYaw = hmdYawDegrees + yawOffset;
 			while (viewYaw <= -180.0) 
 				viewYaw += 360.0;
 			while (viewYaw > 180.0) 
