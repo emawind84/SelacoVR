@@ -1282,7 +1282,7 @@ else()
 endif()
 install(TARGETS zdoom
 		DESTINATION ${INSTALL_PATH}
-		COMPONENT "Game executable")
+		COMPONENT "Game_Executable")
 
 source_group("Audio Files" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/.+")
 source_group("Audio Files\\OPL Synth" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/oplsynth/.+")

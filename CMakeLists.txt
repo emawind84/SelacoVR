@@ -102,7 +102,7 @@ function( add_pk3 PK3_NAME PK3_DIR )
 	endif()
 	install(FILES "${PROJECT_BINARY_DIR}/${PK3_NAME}"
 			DESTINATION ${INSTALL_PK3_PATH}
-			COMPONENT "Game resources")
+			COMPONENT "Game_Resources")
 endfunction()
 
 # Macro for building libraries without debugging information
@@ -328,3 +328,10 @@ add_subdirectory( src )
 if( NOT CMAKE_CROSSCOMPILING )
 	export(TARGETS ${CROSS_EXPORTS} FILE "${CMAKE_BINARY_DIR}/ImportExecutables.cmake" )
 endif()
+
+set(CPACK_PACKAGE_VERSION vivedoom0.1.0 CACHE STRING "Version name for gzdoom installer wizard")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/docs/licenses/README.TXT")
+set(CPACK_GENERATOR NSIS)
+
+# "include(CPack)" must appear only after all the build and install rules have been defined
+include(CPack)
