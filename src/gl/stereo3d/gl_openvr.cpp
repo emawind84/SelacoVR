@@ -432,7 +432,7 @@ void OpenVREyePose::Adjust2DMatrices() const
 			-VERTICAL_DOOM_UNITS_PER_METER,
 			VERTICAL_DOOM_UNITS_PER_METER,
 			-VERTICAL_DOOM_UNITS_PER_METER);
-		if (level.info != nullptr)
+		if (level.info != nullptr) // avoid segfault in title screen GS_DEMOSCREEN
 			new_projection.scale(level.info->pixelstretch, level.info->pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
 
 		// eye coordinates from hmd coordinates
@@ -451,7 +451,7 @@ void OpenVREyePose::Adjust2DMatrices() const
 		}
 
 		// Tilt the HUD downward, so its not so high up
-		new_projection.rotate(15, 1, 0, 0);
+		new_projection.rotate(8, 1, 0, 0);
 
 		// hmd coordinates (meters) from ndc coordinates
 		const float menu_distance_meters = 1.0f;
@@ -665,7 +665,10 @@ void OpenVRMode::updateHmdPose(
 	/* */
 	// Pitch
 	if (doTrackHmdPitch) {
-		double hmdPitchInDoom = -atan(tan(hmdpitch) / level.info->pixelstretch);
+		double pixelstretch = 1.0;
+		if (level.info)
+			pixelstretch = level.info->pixelstretch;
+		double hmdPitchInDoom = -atan(tan(hmdpitch) / pixelstretch);
 		double viewPitchInDoom = GLRenderer->mAngles.Pitch.Radians();
 		double dPitch = hmdPitchInDoom - viewPitchInDoom;
 		G_AddViewPitch(mAngleFromRadians(-dPitch));
@@ -738,8 +741,18 @@ void OpenVRMode::SetUp() const
 {
 	super::SetUp();
 
-	cachedScreenBlocks = screenblocks;
-	screenblocks = 12; // always be full-screen during 3D scene render
+	if (gamestate == GS_LEVEL) {
+		cachedScreenBlocks = screenblocks;
+		screenblocks = 12; // always be full-screen during 3D scene render
+	}
+	else {
+		// TODO: Draw a more interesting background behind the 2D screen
+		for (int i = 0; i < 2; ++i) {
+			GLRenderer->mBuffers->BindEyeFB(i);
+			glClearColor(0.3f, 0.1f, 0.1f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+		}
+	}
 
 	if (vrCompositor == nullptr)
 		return;
@@ -766,7 +779,9 @@ void OpenVRMode::SetUp() const
 /* virtual */
 void OpenVRMode::TearDown() const
 {
-	screenblocks = cachedScreenBlocks;
+	if (gamestate == GS_LEVEL) {
+		screenblocks = cachedScreenBlocks;
+	}
 	super::TearDown();
 }
 

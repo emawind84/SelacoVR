@@ -704,6 +704,8 @@ void FGLRenderer::Flush()
 	}
 	else
 	{
+		const bool is2D = (gamestate != GS_LEVEL);
+		if (is2D) stereo3dMode.SetUp();
 		// Render 2D to eye textures
 		for (int eye_ix = 0; eye_ix < stereo3dMode.eye_count(); ++eye_ix)
 		{
@@ -721,6 +723,7 @@ void FGLRenderer::Flush()
 		FGLDebug::PushGroup("PresentEyes");
 		stereo3dMode.Present();
 		FGLDebug::PopGroup();
+		if (is2D) stereo3dMode.TearDown();
 	}
 }
 
