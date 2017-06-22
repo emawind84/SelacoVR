@@ -575,8 +575,10 @@ void OpenVRMode::AdjustPlayerSprites() const
 		new_projection.multMatrix(e2h.transpose());
 
 		// Follow HMD orientation, EXCEPT for roll angle (keep weapon upright)
-		float openVrRollDegrees = RAD2DEG(-eulerAnglesFromMatrix(activeEye->currentPose->mDeviceToAbsoluteTracking).v[2]);
-		new_projection.rotate(-openVrRollDegrees, 0, 0, 1);
+		if (activeEye->currentPose) {
+			float openVrRollDegrees = RAD2DEG(-eulerAnglesFromMatrix(activeEye->currentPose->mDeviceToAbsoluteTracking).v[2]);
+			new_projection.rotate(-openVrRollDegrees, 0, 0, 1);
+		}
 
 		// hmd coordinates (meters) from ndc coordinates
 		const float weapon_distance_meters = 0.55f;
