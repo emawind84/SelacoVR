@@ -1350,7 +1350,7 @@ else()
 endif()
 install(TARGETS zdoom
 		DESTINATION ${INSTALL_PATH}
-		COMPONENT "Game executable")
+		COMPONENT "Game_Executable")
 if(OPENVR_SHARED_LIBRARY)
 	install(PROGRAMS ${OPENVR_SHARED_LIBRARY} 
 		DESTINATION ${INSTALL_PATH}
