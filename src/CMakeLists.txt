@@ -1354,7 +1354,7 @@ install(TARGETS zdoom
 if(OPENVR_SHARED_LIBRARY)
 	install(PROGRAMS ${OPENVR_SHARED_LIBRARY} 
 		DESTINATION ${INSTALL_PATH}
-		COMPONENT "Shared libraries")
+		COMPONENT "Shared_Libraries")
 endif()
 
 source_group("Audio Files" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/.+")
