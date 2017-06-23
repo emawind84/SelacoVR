@@ -97,6 +97,14 @@ S_API uint32_t VR_GetInitToken();
 
 #endif
 
+// For conversion between real-world and doom units
+#define VERTICAL_DOOM_UNITS_PER_METER 27.0f
+
+EXTERN_CVAR(Int, screenblocks);
+EXTERN_CVAR(Float, movebob);
+EXTERN_CVAR(Bool, gl_billboard_faces_camera);
+EXTERN_CVAR(Int, gl_multisample);
+
 bool IsOpenVRPresent()
 {
 #ifndef USE_OPENVR
@@ -115,11 +123,6 @@ bool IsOpenVRPresent()
 	return cached_result;
 #endif
 }
-
-// For conversion between real-world and doom units
-#define VERTICAL_DOOM_UNITS_PER_METER 27.0f
-
-EXTERN_CVAR(Int, screenblocks);
 
 // feature toggles, for testing and debugging
 static const bool doTrackHmdYaw = true;
@@ -769,6 +772,18 @@ void OpenVRMode::SetUp() const
 {
 	super::SetUp();
 
+	if (vrCompositor == nullptr)
+		return;
+
+	// Set VR-appropriate settings
+	const bool doAdjustVrSettings = true;
+	if (doAdjustVrSettings) {
+		movebob = 0;
+		gl_billboard_faces_camera = true;
+		if (gl_multisample < 2)
+			gl_multisample = 4;
+	}
+
 	if (gamestate == GS_LEVEL) {
 		cachedScreenBlocks = screenblocks;
 		screenblocks = 12; // always be full-screen during 3D scene render
@@ -777,13 +792,10 @@ void OpenVRMode::SetUp() const
 		// TODO: Draw a more interesting background behind the 2D screen
 		for (int i = 0; i < 2; ++i) {
 			GLRenderer->mBuffers->BindEyeFB(i);
-			glClearColor(0.3f, 0.1f, 0.1f, 1.0f);
+			glClearColor(0.3f, 0.1f, 0.1f, 1.0f); // draw a dark red universe
 			glClear(GL_COLOR_BUFFER_BIT);
 		}
 	}
-
-	if (vrCompositor == nullptr)
-		return;
 
 	static TrackedDevicePose_t poses[k_unMaxTrackedDeviceCount];
 	vrCompositor->WaitGetPoses(
