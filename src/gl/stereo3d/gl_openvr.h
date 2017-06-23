@@ -77,6 +77,7 @@ public:
 	virtual void Present() const override;
 	virtual void AdjustViewports() const override;
 	virtual void AdjustPlayerSprites() const override;
+	virtual void UnAdjustPlayerSprites() const override;
 
 protected:
 	OpenVRMode();
@@ -92,6 +93,7 @@ protected:
 
 	mutable int cachedScreenBlocks;
 	mutable double hmdYaw; // cached latest value in radians
+	mutable int cachedViewwidth, cachedViewheight, cachedViewwindowx, cachedViewwindowy;
 
 private:
 	typedef Stereo3DMode super;

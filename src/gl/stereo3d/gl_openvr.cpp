@@ -553,6 +553,12 @@ void OpenVRMode::AdjustPlayerSprites() const
 {
 	Stereo3DMode::AdjustPlayerSprites();
 
+	// Prepare to temporarily modify view size
+	cachedViewwidth = viewwidth;
+	cachedViewheight = viewheight;
+	cachedViewwindowx = viewwindowx;
+	cachedViewwindowy = viewwindowy;
+
 	// TODO: put weapon onto a 3D quad
 	const bool doProjectWeaponSprite = true; // Don't use default 2D projection
 	const bool doRecomputeDefault2D = false; // For debugging, recapitulate default 2D projection
@@ -607,10 +613,23 @@ void OpenVRMode::AdjustPlayerSprites() const
 		VSMatrix proj(activeEye->projectionMatrix);
 		proj.multMatrix(new_projection);
 		new_projection = proj;
+
+		// Avoid rescaling weapon when status bar shown (screenblocks <= 10)
+		viewwidth = SCREENWIDTH;
+		viewheight = SCREENHEIGHT;
+		viewwindowx = 0;
+		viewwindowy = 0;
 	}
 
 	gl_RenderState.mProjectionMatrix = new_projection;
 	gl_RenderState.ApplyMatrices();
+}
+
+void OpenVRMode::UnAdjustPlayerSprites() const {
+	viewwidth = cachedViewwidth;
+	viewheight = cachedViewheight;
+	viewwindowx = cachedViewwindowx;
+	viewwindowy = cachedViewwindowy;
 }
 
 /* virtual */

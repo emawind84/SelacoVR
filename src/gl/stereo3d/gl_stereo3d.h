@@ -87,6 +87,7 @@ public:
 	virtual bool IsMono() const { return false; }
 	virtual void AdjustViewports() const {};
 	virtual void AdjustPlayerSprites() const {};
+	virtual void UnAdjustPlayerSprites() const {};
 	virtual void Present() const = 0;
 
 protected:

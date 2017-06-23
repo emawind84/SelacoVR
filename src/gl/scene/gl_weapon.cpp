@@ -455,6 +455,7 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 	gl_RenderState.SetDynLight(0, 0, 0);
 	gl_RenderState.EnableBrightmap(false);
 	glset.lightmode = oldlightmode;
+	s3d::Stereo3DMode::getCurrentMode().UnAdjustPlayerSprites();
 }
 
 //==========================================================================
