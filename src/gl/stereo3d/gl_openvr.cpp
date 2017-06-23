@@ -40,6 +40,7 @@
 #include "gl/renderer/gl_renderbuffers.h"
 #include "gl/renderer/gl_2ddrawer.h" // crosshair
 #include "g_levellocals.h" // pixelstretch
+#include "g_statusbar/sbar.h"
 #include "math/cmath.h"
 #include "c_cvars.h"
 #include "cmdlib.h"
@@ -475,8 +476,15 @@ void OpenVREyePose::AdjustHud() const
 {
 	// Draw crosshair on a separate quad, before updating HUD matrix
 	const Stereo3DMode * mode3d = &Stereo3DMode::getCurrentMode();
+	if (mode3d->IsMono())
+		return;
 	const OpenVRMode * openVrMode = static_cast<const OpenVRMode *>(mode3d);
-	if (openVrMode && openVrMode->crossHairDrawer) 
+	if (openVrMode 
+		&& openVrMode->crossHairDrawer
+		// Don't draw the crosshair if there is none
+		&& CrosshairImage != NULL 
+		&& gamestate != GS_TITLELEVEL 
+		&& r_viewpoint.camera->health > 0)
 	{
 		const float crosshair_distance_meters = 10.0f; // meters
 		const float crosshair_width_meters = 0.2f * crosshair_distance_meters;
@@ -518,7 +526,8 @@ OpenVRMode::OpenVRMode()
 	, sceneWidth(0), sceneHeight(0)
 	, vrCompositor(nullptr)
 	, vrToken(0)
-	, crossHairDrawer(nullptr)
+	, crossHairDrawer(new F2DDrawer)
+	, cached2DDrawer(nullptr)
 {
 	eye_ptrs.Push(&leftEyeView); // initially default behavior to Mono non-stereo rendering
 
@@ -558,6 +567,8 @@ OpenVRMode::OpenVRMode()
 
 	eye_ptrs.Push(&rightEyeView); // NOW we render to two eyes
 	hmdWasFound = true;
+
+	crossHairDrawer->Clear();
 }
 
 /* virtual */
@@ -622,9 +633,6 @@ void OpenVRMode::AdjustCrossHair() const
 	viewheight = SCREENHEIGHT;
 	viewwindowy = 0;
 
-	if (crossHairDrawer == nullptr) {
-		crossHairDrawer = new F2DDrawer;
-	}
 	if (crossHairDrawer != nullptr) {
 		// Hijack 2D drawing to our local crosshair drawer
 		crossHairDrawer->Clear();
@@ -636,7 +644,9 @@ void OpenVRMode::UnAdjustCrossHair() const
 {
 	viewheight = cachedViewheight;
 	viewwindowy = cachedViewwindowy;
-	GLRenderer->m2DDrawer = cached2DDrawer;
+	if (cached2DDrawer)
+		GLRenderer->m2DDrawer = cached2DDrawer;
+	cached2DDrawer = nullptr;
 }
 
 /* virtual */
@@ -842,8 +852,10 @@ OpenVRMode::~OpenVRMode()
 		leftEyeView.dispose();
 		rightEyeView.dispose();
 	}
-	if (crossHairDrawer != nullptr) 
+	if (crossHairDrawer != nullptr) {
 		delete crossHairDrawer;
+		crossHairDrawer = nullptr;
+	}
 }
 
 } /* namespace s3d */

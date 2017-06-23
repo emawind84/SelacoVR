@@ -854,8 +854,6 @@ void DBaseStatusBar::DrawCrosshair ()
 	if (players[consoleplayer].cheats & CF_CHASECAM)
 		return;
 
-	s3d::Stereo3DMode::getCurrentMode().AdjustCrossHair();
-
 	ST_LoadCrosshair();
 
 	// Don't draw the crosshair if there is none
@@ -863,6 +861,8 @@ void DBaseStatusBar::DrawCrosshair ()
 	{
 		return;
 	}
+
+	s3d::Stereo3DMode::getCurrentMode().AdjustCrossHair();
 
 	if (crosshairscale > 0.0f)
 	{
