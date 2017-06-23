@@ -48,7 +48,8 @@ public:
 	virtual ~OpenVREyePose() override;
 	virtual VSMatrix GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatio) const override;
 	void GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const override;
-	virtual void Adjust2DMatrices() const override;
+	virtual void Adjust2DMatrix() const override;
+	virtual void AdjustBlendMatrix() const override;
 
 	void initialize(VR_IVRSystem_FnTable * vrsystem);
 	void dispose();

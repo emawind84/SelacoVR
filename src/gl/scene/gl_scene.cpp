@@ -852,6 +852,7 @@ sector_t * GLSceneDrawer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, f
 				gl_RenderState.ApplyMatrices();
 			}
 
+			eye->AdjustBlendMatrix();
 			DrawBlend(lviewsector);
 		}
 		GLRenderer->mDrawingScene2D = false;

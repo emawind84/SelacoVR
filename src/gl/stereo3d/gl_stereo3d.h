@@ -58,7 +58,8 @@ public:
 	virtual void GetViewShift(float yaw, float outViewShift[3]) const;
 	virtual void SetUp() const {m_isActive = true;}
 	virtual void TearDown() const {m_isActive = false;}
-	virtual void Adjust2DMatrices() const {}
+	virtual void Adjust2DMatrix() const {}
+	virtual void AdjustBlendMatrix() const {}
 	bool isActive() const {return m_isActive;}
 
 private:

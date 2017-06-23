@@ -411,7 +411,7 @@ bool OpenVREyePose::submitFrame(VR_IVRCompositor_FnTable * vrCompositor) const
 	return true;
 }
 
-void OpenVREyePose::Adjust2DMatrices() const
+void OpenVREyePose::Adjust2DMatrix() const
 {
 	const bool doAdjust2D = true; // Don't use default 2D projection
 	const bool doRecomputeDefault2D = false; // For debugging, recapitulate default 2D projection
@@ -474,6 +474,15 @@ void OpenVREyePose::Adjust2DMatrices() const
 	}
 
 	gl_RenderState.mProjectionMatrix = new_projection;
+	gl_RenderState.ApplyMatrices();
+}
+
+void OpenVREyePose::AdjustBlendMatrix() const
+{
+	VSMatrix& proj = gl_RenderState.mProjectionMatrix;
+	proj.loadIdentity();
+	proj.translate(-1, 1, 0);
+	proj.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
 	gl_RenderState.ApplyMatrices();
 }
 
