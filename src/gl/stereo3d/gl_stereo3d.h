@@ -58,8 +58,8 @@ public:
 	virtual void GetViewShift(float yaw, float outViewShift[3]) const;
 	virtual void SetUp() const {m_isActive = true;}
 	virtual void TearDown() const {m_isActive = false;}
-	virtual void Adjust2DMatrix() const {}
-	virtual void AdjustBlendMatrix() const {}
+	virtual void AdjustHud() const {}
+	virtual void AdjustBlend() const {}
 	bool isActive() const {return m_isActive;}
 
 private:
@@ -88,6 +88,8 @@ public:
 	virtual void AdjustViewports() const {};
 	virtual void AdjustPlayerSprites() const {};
 	virtual void UnAdjustPlayerSprites() const {};
+	virtual void AdjustCrossHair() const {}
+	virtual void UnAdjustCrossHair() const {}
 	virtual void Present() const = 0;
 
 protected:

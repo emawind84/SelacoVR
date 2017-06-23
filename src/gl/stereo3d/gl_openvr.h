@@ -48,8 +48,8 @@ public:
 	virtual ~OpenVREyePose() override;
 	virtual VSMatrix GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatio) const override;
 	void GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const override;
-	virtual void Adjust2DMatrix() const override;
-	virtual void AdjustBlendMatrix() const override;
+	virtual void AdjustHud() const override;
+	virtual void AdjustBlend() const override;
 
 	void initialize(VR_IVRSystem_FnTable * vrsystem);
 	void dispose();
@@ -64,11 +64,19 @@ protected:
 	int eye;
 
 	mutable const TrackedDevicePose_t * currentPose;
+
+	VSMatrix getQuadInWorld(
+		float distance, 
+		float width, 
+		bool doFixPitch,
+		float pitchOffset
+	) const;
 };
 
 class OpenVRMode : public Stereo3DMode
 {
 public:
+	friend class OpenVREyePose;
 	static const Stereo3DMode& getInstance(); // Might return Mono mode, if no HMD available
 
 	virtual ~OpenVRMode() override;
@@ -78,6 +86,8 @@ public:
 	virtual void AdjustViewports() const override;
 	virtual void AdjustPlayerSprites() const override;
 	virtual void UnAdjustPlayerSprites() const override;
+	virtual void AdjustCrossHair() const override;
+	virtual void UnAdjustCrossHair() const override;
 
 protected:
 	OpenVRMode();
@@ -94,6 +104,8 @@ protected:
 	mutable int cachedScreenBlocks;
 	mutable double hmdYaw; // cached latest value in radians
 	mutable int cachedViewwidth, cachedViewheight, cachedViewwindowx, cachedViewwindowy;
+	mutable F2DDrawer * cached2DDrawer;
+	mutable F2DDrawer * crossHairDrawer;
 
 private:
 	typedef Stereo3DMode super;

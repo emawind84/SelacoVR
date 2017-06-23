@@ -38,6 +38,7 @@
 #include "r_utility.h" // viewpitch
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderbuffers.h"
+#include "gl/renderer/gl_2ddrawer.h" // crosshair
 #include "g_levellocals.h" // pixelstretch
 #include "math/cmath.h"
 #include "c_cvars.h"
@@ -327,7 +328,7 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 		LSVec3 openvr_dpos = openvr_HmdPos - openvr_origin;
 		{
 			// Suddenly recenter if deviation gets too large
-			const double max_shift = 0.50; // meters
+			const double max_shift = 0.30; // meters
 			if (std::abs(openvr_dpos[0]) + std::abs(openvr_dpos[2]) > max_shift) {
 				openvr_origin += 1.0 * openvr_dpos; // recenter MOST of the way to the new position
 				openvr_dpos = openvr_HmdPos - openvr_origin;
@@ -414,73 +415,93 @@ bool OpenVREyePose::submitFrame(VR_IVRCompositor_FnTable * vrCompositor) const
 	return true;
 }
 
-void OpenVREyePose::Adjust2DMatrix() const
+VSMatrix OpenVREyePose::getQuadInWorld(
+	float distance, // meters
+	float width, // meters 
+	bool doFixPitch,
+	float pitchOffset) const 
 {
-	const bool doAdjust2D = true; // Don't use default 2D projection
-	const bool doRecomputeDefault2D = false; // For debugging, recapitulate default 2D projection
-
-	if (!doAdjust2D) // for debugging
-		return;
-
 	VSMatrix new_projection;
 	new_projection.loadIdentity();
-	if (doRecomputeDefault2D) { // for debugging
-								// quad coordinates from pixel coordinates [xy range -1,1]
-		new_projection.translate(-1, 1, 0);
-		new_projection.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
-	}
-	else {
-		// doom_units from meters
-		new_projection.scale(
-			-VERTICAL_DOOM_UNITS_PER_METER,
-			VERTICAL_DOOM_UNITS_PER_METER,
-			-VERTICAL_DOOM_UNITS_PER_METER);
-		if (level.info != nullptr) // avoid segfault in title screen GS_DEMOSCREEN
-			new_projection.scale(level.info->pixelstretch, level.info->pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
 
-		// eye coordinates from hmd coordinates
-		LSMatrix44 e2h(eyeToHeadTransform);
-		new_projection.multMatrix(e2h.transpose());
+	// doom_units from meters
+	new_projection.scale(
+		-VERTICAL_DOOM_UNITS_PER_METER,
+		VERTICAL_DOOM_UNITS_PER_METER,
+		-VERTICAL_DOOM_UNITS_PER_METER);
+	new_projection.scale(level.info->pixelstretch, level.info->pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
 
-		if (currentPose != nullptr) {
-			// Un-apply HMD yaw angle, to keep the menu in front of the player
-			float openVrYawDegrees = RAD2DEG(-eulerAnglesFromMatrix(currentPose->mDeviceToAbsoluteTracking).v[0]);
-			new_projection.rotate(openVrYawDegrees, 0, 1, 0);
+	const OpenVREyePose * activeEye = this;
 
-			// apply inverse of hmd rotation, to keep the menu fixed in the world
-			LSMatrix44 hmdPose(currentPose->mDeviceToAbsoluteTracking);
-			hmdPose = hmdPose.getWithoutTranslation();
-			new_projection.multMatrix(hmdPose.transpose());
+	// eye coordinates from hmd coordinates
+	LSMatrix44 e2h(activeEye->eyeToHeadTransform);
+	new_projection.multMatrix(e2h.transpose());
+
+	// Follow HMD orientation, EXCEPT for roll angle (keep weapon upright)
+	if (activeEye->currentPose) {
+		float openVrRollDegrees = RAD2DEG(-eulerAnglesFromMatrix(activeEye->currentPose->mDeviceToAbsoluteTracking).v[2]);
+		new_projection.rotate(-openVrRollDegrees, 0, 0, 1);
+
+		if (doFixPitch) {
+			float openVrPitchDegrees = RAD2DEG(-eulerAnglesFromMatrix(activeEye->currentPose->mDeviceToAbsoluteTracking).v[1]);
+			new_projection.rotate(-openVrPitchDegrees, 1, 0, 0);
 		}
-
-		// Tilt the HUD downward, so its not so high up
-		new_projection.rotate(8, 1, 0, 0);
-
-		// hmd coordinates (meters) from ndc coordinates
-		const float menu_distance_meters = 1.0f;
-		const float menu_width_meters = 0.4f * menu_distance_meters;
-		const float aspect = SCREENWIDTH / float(SCREENHEIGHT);
-		new_projection.translate(0.0, 0.0, menu_distance_meters);
-		new_projection.scale(
-			-menu_width_meters,
-			menu_width_meters / aspect,
-			-menu_width_meters);
-
-		// ndc coordinates from pixel coordinates
-		new_projection.translate(-1.0, 1.0, 0);
-		new_projection.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
-
-		// projection matrix - clip coordinates from eye coordinates
-		VSMatrix proj(projectionMatrix);
-		proj.multMatrix(new_projection);
-		new_projection = proj;
+		if (pitchOffset != 0)
+			new_projection.rotate(-pitchOffset, 1, 0, 0);
 	}
 
-	gl_RenderState.mProjectionMatrix = new_projection;
+	// hmd coordinates (meters) from ndc coordinates
+	// const float weapon_distance_meters = 0.55f;
+	// const float weapon_width_meters = 0.3f;
+	const float aspect = SCREENWIDTH / float(SCREENHEIGHT);
+	new_projection.translate(0.0, 0.0, distance);
+	new_projection.scale(
+		-width,
+		width / aspect,
+		-width);
+
+	// ndc coordinates from pixel coordinates
+	new_projection.translate(-1.0, 1.0, 0);
+	new_projection.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
+
+	VSMatrix proj(activeEye->projectionMatrix);
+	proj.multMatrix(new_projection);
+	new_projection = proj;
+
+	return new_projection;
+}
+
+void OpenVREyePose::AdjustHud() const
+{
+	// Draw crosshair on a separate quad, before updating HUD matrix
+	const Stereo3DMode * mode3d = &Stereo3DMode::getCurrentMode();
+	const OpenVRMode * openVrMode = static_cast<const OpenVRMode *>(mode3d);
+	if (openVrMode && openVrMode->crossHairDrawer) 
+	{
+		const float crosshair_distance_meters = 10.0f; // meters
+		const float crosshair_width_meters = 0.2f * crosshair_distance_meters;
+		gl_RenderState.mProjectionMatrix = getQuadInWorld(
+			crosshair_distance_meters,
+			crosshair_width_meters,
+			false,
+			0.0);
+		gl_RenderState.ApplyMatrices();
+		openVrMode->crossHairDrawer->Draw();
+	}
+
+	// Update HUD matrix to render on a separate quad
+	const float menu_distance_meters = 1.0f;
+	const float menu_width_meters = 0.4f * menu_distance_meters;
+	const float pitch_offset = -8.0;
+	gl_RenderState.mProjectionMatrix = getQuadInWorld(
+		menu_distance_meters, 
+		menu_width_meters, 
+		true,
+		pitch_offset);
 	gl_RenderState.ApplyMatrices();
 }
 
-void OpenVREyePose::AdjustBlendMatrix() const
+void OpenVREyePose::AdjustBlend() const
 {
 	VSMatrix& proj = gl_RenderState.mProjectionMatrix;
 	proj.loadIdentity();
@@ -497,6 +518,7 @@ OpenVRMode::OpenVRMode()
 	, sceneWidth(0), sceneHeight(0)
 	, vrCompositor(nullptr)
 	, vrToken(0)
+	, crossHairDrawer(nullptr)
 {
 	eye_ptrs.Push(&leftEyeView); // initially default behavior to Mono non-stereo rendering
 
@@ -562,70 +584,26 @@ void OpenVRMode::AdjustPlayerSprites() const
 	cachedViewwindowx = viewwindowx;
 	cachedViewwindowy = viewwindowy;
 
-	// TODO: put weapon onto a 3D quad
-	const bool doProjectWeaponSprite = true; // Don't use default 2D projection
-	const bool doRecomputeDefault2D = false; // For debugging, recapitulate default 2D projection
+	// Avoid rescaling weapon when status bar shown (screenblocks <= 10)
+	viewwidth = SCREENWIDTH;
+	viewheight = SCREENHEIGHT;
+	viewwindowx = 0;
+	viewwindowy = 0;
 
-	if (!doProjectWeaponSprite) // for debugging
-		return;
-
-	VSMatrix new_projection;
-	new_projection.loadIdentity();
-	if (doRecomputeDefault2D) { // for debugging
-								// quad coordinates from pixel coordinates [xy range -1,1]
-		new_projection.translate(-1, 1, 0);
-		new_projection.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
-	}
-	else {
-		// doom_units from meters
-		new_projection.scale(
-			-VERTICAL_DOOM_UNITS_PER_METER,
-			 VERTICAL_DOOM_UNITS_PER_METER,
-			-VERTICAL_DOOM_UNITS_PER_METER);
-		new_projection.scale(level.info->pixelstretch, level.info->pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
-
-		const OpenVREyePose * activeEye = &rightEyeView;
-		if (! activeEye->isActive())
-			activeEye = &leftEyeView;
-
-		// eye coordinates from hmd coordinates
-		LSMatrix44 e2h(activeEye->eyeToHeadTransform);
-		new_projection.multMatrix(e2h.transpose());
-
-		// Follow HMD orientation, EXCEPT for roll angle (keep weapon upright)
-		if (activeEye->currentPose) {
-			float openVrRollDegrees = RAD2DEG(-eulerAnglesFromMatrix(activeEye->currentPose->mDeviceToAbsoluteTracking).v[2]);
-			new_projection.rotate(-openVrRollDegrees, 0, 0, 1);
-		}
-
-		// hmd coordinates (meters) from ndc coordinates
-		const float weapon_distance_meters = 0.55f;
-		const float weapon_width_meters = 0.3f;
-		const float aspect = SCREENWIDTH / float(SCREENHEIGHT);
-		new_projection.translate(0.0, 0.0, weapon_distance_meters);
-		new_projection.scale(
-			-weapon_width_meters,
-			 weapon_width_meters / aspect,
-			-weapon_width_meters);
-
-		// ndc coordinates from pixel coordinates
-		new_projection.translate(-1.0, 1.0, 0);
-		new_projection.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
-
-		// projection matrix - clip coordinates from eye coordinates
-		VSMatrix proj(activeEye->projectionMatrix);
-		proj.multMatrix(new_projection);
-		new_projection = proj;
-
-		// Avoid rescaling weapon when status bar shown (screenblocks <= 10)
-		viewwidth = SCREENWIDTH;
-		viewheight = SCREENHEIGHT;
-		viewwindowx = 0;
-		viewwindowy = 0;
-	}
-
-	gl_RenderState.mProjectionMatrix = new_projection;
+	const OpenVREyePose * activeEye = &rightEyeView;
+	if (!activeEye->isActive())
+		activeEye = &leftEyeView;
+	const float weapon_distance_meters = 0.55f; // meters
+	const float weapon_width_meters = 0.3f; // meters
+	const float pitch_offset = 0.0; // degrees
+	gl_RenderState.mProjectionMatrix = activeEye->getQuadInWorld(
+		weapon_distance_meters, 
+		weapon_width_meters, 
+		false,
+		pitch_offset);
 	gl_RenderState.ApplyMatrices();
+
+
 }
 
 void OpenVRMode::UnAdjustPlayerSprites() const {
@@ -633,6 +611,32 @@ void OpenVRMode::UnAdjustPlayerSprites() const {
 	viewheight = cachedViewheight;
 	viewwindowx = cachedViewwindowx;
 	viewwindowy = cachedViewwindowy;
+}
+
+void OpenVRMode::AdjustCrossHair() const
+{
+	cached2DDrawer = GLRenderer->m2DDrawer;
+	// Remove effect of screenblocks setting on crosshair position
+	cachedViewheight = viewheight;
+	cachedViewwindowy = viewwindowy;
+	viewheight = SCREENHEIGHT;
+	viewwindowy = 0;
+
+	if (crossHairDrawer == nullptr) {
+		crossHairDrawer = new F2DDrawer;
+	}
+	if (crossHairDrawer != nullptr) {
+		// Hijack 2D drawing to our local crosshair drawer
+		crossHairDrawer->Clear();
+		GLRenderer->m2DDrawer = crossHairDrawer;
+	}
+}
+
+void OpenVRMode::UnAdjustCrossHair() const
+{
+	viewheight = cachedViewheight;
+	viewwindowy = cachedViewwindowy;
+	GLRenderer->m2DDrawer = cached2DDrawer;
 }
 
 /* virtual */
@@ -701,7 +705,10 @@ void OpenVRMode::updateHmdPose(
 			pixelstretch = level.info->pixelstretch;
 		double hmdPitchInDoom = -atan(tan(hmdpitch) / pixelstretch);
 		double viewPitchInDoom = GLRenderer->mAngles.Pitch.Radians();
-		double dPitch = hmdPitchInDoom - viewPitchInDoom;
+		double dPitch = 
+			// hmdPitchInDoom
+			-hmdpitch
+			- viewPitchInDoom;
 		G_AddViewPitch(mAngleFromRadians(-dPitch));
 	}
 
@@ -835,6 +842,8 @@ OpenVRMode::~OpenVRMode()
 		leftEyeView.dispose();
 		rightEyeView.dispose();
 	}
+	if (crossHairDrawer != nullptr) 
+		delete crossHairDrawer;
 }
 
 } /* namespace s3d */

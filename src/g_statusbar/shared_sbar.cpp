@@ -62,6 +62,7 @@
 #include "r_data/r_translate.h"
 #include "sbarinfo.h"
 #include "events.h"
+#include "gl/stereo3d/gl_stereo3d.h"
 
 #include "../version.h"
 
@@ -853,6 +854,8 @@ void DBaseStatusBar::DrawCrosshair ()
 	if (players[consoleplayer].cheats & CF_CHASECAM)
 		return;
 
+	s3d::Stereo3DMode::getCurrentMode().AdjustCrossHair();
+
 	ST_LoadCrosshair();
 
 	// Don't draw the crosshair if there is none
@@ -919,6 +922,8 @@ void DBaseStatusBar::DrawCrosshair ()
 		DTA_AlphaChannel, true,
 		DTA_FillColor, color & 0xFFFFFF,
 		TAG_DONE);
+
+	s3d::Stereo3DMode::getCurrentMode().UnAdjustCrossHair();
 }
 
 //---------------------------------------------------------------------------
