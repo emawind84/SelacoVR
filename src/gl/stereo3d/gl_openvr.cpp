@@ -839,7 +839,7 @@ void OpenVRMode::SetUp() const
 		leftEyeView.setCurrentHmdPose(&hmdPose0);
 		rightEyeView.setCurrentHmdPose(&hmdPose0);
 
-		// TODO: Check for existence of VR motion controllers...
+		// Check for existence of VR motion controllers...
 		for (int i = 0; i < vr::k_unMaxTrackedDeviceCount; ++i) {
 			if (i == k_unTrackedDeviceIndex_Hmd)
 				continue; // skip the headset position
@@ -861,6 +861,8 @@ void OpenVRMode::SetUp() const
 				controllerMeshes[model_name] = TrackedDeviceMesh(model_name);
 				assert(controllerMeshes.count(model_name) == 1);
 			}
+			TrackedDeviceMesh& deviceMesh = controllerMeshes[model_name];
+			// TODO: Prepare to display this controller
 		}
 	}
 }
