@@ -30,6 +30,7 @@
 #include "gl_openvr.h"
 #include "openvr_capi.h"
 #include <string>
+#include <map>
 #include "gl/system/gl_system.h"
 #include "doomtype.h" // Printf
 #include "d_player.h"
@@ -784,6 +785,15 @@ void OpenVRMode::updateHmdPose(
 	}
 }
 
+class TrackedDeviceMesh
+{
+public:
+	TrackedDeviceMesh(const std::string& model_name) {}
+	TrackedDeviceMesh() {}
+};
+
+static std::map<std::string, TrackedDeviceMesh> controllerMeshes;
+
 /* virtual */
 void OpenVRMode::SetUp() const
 {
@@ -825,11 +835,33 @@ void OpenVRMode::SetUp() const
 	if (hmdPose0.bPoseIsValid) {
 		const HmdMatrix34_t& hmdPose = hmdPose0.mDeviceToAbsoluteTracking;
 		HmdVector3d_t eulerAngles = eulerAnglesFromMatrix(hmdPose);
-		// Printf("%.1f %.1f %.1f\n", eulerAngles.v[0], eulerAngles.v[1], eulerAngles.v[2]);
 		updateHmdPose(eulerAngles.v[0], eulerAngles.v[1], eulerAngles.v[2]);
 		leftEyeView.setCurrentHmdPose(&hmdPose0);
 		rightEyeView.setCurrentHmdPose(&hmdPose0);
-		// TODO: position tracking
+
+		// TODO: Check for existence of VR motion controllers...
+		for (int i = 0; i < vr::k_unMaxTrackedDeviceCount; ++i) {
+			if (i == k_unTrackedDeviceIndex_Hmd)
+				continue; // skip the headset position
+			TrackedDevicePose_t & pose = poses[i];
+			if (! pose.bDeviceIsConnected)
+				continue;
+			if (! pose.bPoseIsValid)
+				continue;
+			ETrackedDeviceClass device_class = vrSystem->GetTrackedDeviceClass(i);
+			if (device_class != ETrackedDeviceClass_TrackedDeviceClass_Controller)
+				continue; // controllers only, please
+			char model_chars[101];
+			ETrackedPropertyError propertyError;
+			vrSystem->GetStringTrackedDeviceProperty(i, ETrackedDeviceProperty_Prop_RenderModelName_String, model_chars, 100, &propertyError);
+			if (propertyError != ETrackedPropertyError_TrackedProp_Success)
+				continue; // something went wrong...
+			std::string model_name(model_chars);
+			if (controllerMeshes.count(model_name) == 0) {
+				controllerMeshes[model_name] = TrackedDeviceMesh(model_name);
+				assert(controllerMeshes.count(model_name) == 1);
+			}
+		}
 	}
 }
 
