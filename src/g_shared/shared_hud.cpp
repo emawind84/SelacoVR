@@ -1135,7 +1135,7 @@ void DrawHUD()
 	players[consoleplayer].inventorytics = 0;
 	int scale = GetUIScale(hud_althudscale);
 	hudwidth = SCREENWIDTH / scale;
-	hudheight = hud_aspectscale ? int(SCREENHEIGHT / (scale*1.2)) : SCREENHEIGHT / scale;
+	hudheight = hud_aspectscale ? int(SCREENHEIGHT / (scale*level.info->pixelstretch)) : SCREENHEIGHT / scale;
 
 	if (!automapactive)
 	{
