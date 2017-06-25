@@ -464,7 +464,8 @@ void DBaseStatusBar::SetScale ()
 		// the resulting scaling factor needs to be reduced accordingly.
 		int realscale = clamp((320 * GetUIScale(st_scale)) / HorizontalResolution, 1, w / HorizontalResolution);
 
-		double realscaley = realscale * (hud_aspectscale ? level.info->pixelstretch : 1.0);
+		double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+		double realscaley = realscale * (hud_aspectscale ? pixelstretch : 1.0);
 
 		ST_X = (w - HorizontalResolution * realscale) / 2;
 		SBarTop = int(h - RelTop * realscaley);
@@ -501,7 +502,8 @@ DVector2 DBaseStatusBar::GetHUDScale() const
 	// The global scaling factors are for resources at 320x200, so if the actual ones are higher resolution
 	// the resulting scaling factor needs to be reduced accordingly.
 	int realscale = MAX<int>(1, (320 * scale) / HorizontalResolution);
-	return{ double(realscale), double(realscale * (hud_aspectscale ? level.info->pixelstretch : 1.)) };
+	double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+	return{ double(realscale), double(realscale * (hud_aspectscale ? pixelstretch : 1.)) };
 }
 
 DEFINE_ACTION_FUNCTION(DBaseStatusBar, GetHUDScale)
