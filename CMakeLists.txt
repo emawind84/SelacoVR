@@ -327,6 +327,12 @@ if (DEV_SHARED_LIBRARIES)
 		DESTINATION "."
 		COMPONENT "Shared_Libraries")
 endif()
+if(WIN32)
+	install(PROGRAMS 
+		${CMAKE_SOURCE_DIR}/src/win32/GZDoomVR.bat
+		DESTINATION .
+		COMPONENT "Launch_Shortcuts")
+endif()
 
 add_subdirectory( lzma )
 add_subdirectory( tools )
@@ -343,7 +349,15 @@ endif()
 
 set(CPACK_PACKAGE_VERSION vivedoom0.5.1 CACHE STRING "Version name for gzdoom installer wizard")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/docs/licenses/README.TXT")
-set(CPACK_GENERATOR NSIS)
+if(WIN32)
+	set(CPACK_GENERATOR NSIS)
+	set(CPACK_NSIS_EXECUTABLES_DIRECTORY .)
+	set(CPACK_NSIS_MUI_FINISHPAGE_RUN ${ZDOOM_EXE_NAME})
+	set(CPACK_NSIS_MENU_LINKS ${ZDOOM_EXE_NAME} GZDoom)
+	if(ENABLE_OPENVR)
+		list(APPEND CPACK_NSIS_MENU_LINKS GZDoomVR.bat "GZDoom VR")
+	endif()
+endif()
 
 # "include(CPack)" must appear only after all the build and install rules have been defined
 include(CPack)
