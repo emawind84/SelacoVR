@@ -245,7 +245,7 @@ set( CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} ${REL_C_FLAGS}" )
 set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${REL_C_FLAGS}" )
 set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${DEB_C_FLAGS} -D_DEBUG" )
 
-option(FORCE_INTERNAL_ZLIB "Use internal zlib")
+option(FORCE_INTERNAL_ZLIB "Use internal zlib" ON)
 option(FORCE_INTERNAL_JPEG "Use internal jpeg")
 option(FORCE_INTERNAL_BZIP2 "Use internal bzip2")
 option(FORCE_INTERNAL_GME "Use internal gme")
@@ -315,6 +315,24 @@ endif()
 install(DIRECTORY docs/ 
 		DESTINATION ${INSTALL_DOCS_PATH} 
 		COMPONENT "Documentation")
+# install all shared libraries dev has placed in the executable output folder(s)
+file(GLOB DEV_SHARED_LIBRARIES 
+	"${CMAKE_BINARY_DIR}/Release/*.dll"
+	"${CMAKE_BINARY_DIR}/Debug/*.dll"
+	"${CMAKE_BINARY_DIR}/*.so"
+	"${CMAKE_BINARY_DIR}/*.dylib"
+)
+if (DEV_SHARED_LIBRARIES)
+	install(PROGRAMS ${DEV_SHARED_LIBRARIES} 
+		DESTINATION "."
+		COMPONENT "Shared_Libraries")
+endif()
+if(WIN32)
+	install(PROGRAMS 
+		${CMAKE_SOURCE_DIR}/src/win32/GZDoomVR.bat
+		DESTINATION .
+		COMPONENT "Launch_Shortcuts")
+endif()
 
 add_subdirectory( lzma )
 add_subdirectory( tools )
@@ -329,9 +347,17 @@ if( NOT CMAKE_CROSSCOMPILING )
 	export(TARGETS ${CROSS_EXPORTS} FILE "${CMAKE_BINARY_DIR}/ImportExecutables.cmake" )
 endif()
 
-set(CPACK_PACKAGE_VERSION vivedoom0.1.0 CACHE STRING "Version name for gzdoom installer wizard")
+set(CPACK_PACKAGE_VERSION vivedoom0.5.1 CACHE STRING "Version name for gzdoom installer wizard")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/docs/licenses/README.TXT")
-set(CPACK_GENERATOR NSIS)
+if(WIN32)
+	set(CPACK_GENERATOR NSIS)
+	set(CPACK_NSIS_EXECUTABLES_DIRECTORY .)
+	# set(CPACK_NSIS_MUI_FINISHPAGE_RUN ${ZDOOM_EXE_NAME})
+	set(CPACK_NSIS_MENU_LINKS ${ZDOOM_EXE_NAME} GZDoom)
+	if(ENABLE_OPENVR)
+		list(APPEND CPACK_NSIS_MENU_LINKS GZDoomVR.bat "GZDoom VR")
+	endif()
+endif()
 
 # "include(CPack)" must appear only after all the build and install rules have been defined
 include(CPack)

@@ -301,7 +301,8 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 			0,  0,  0,  1};
 	doomInOpenVR.multMatrix(permute);
 	doomInOpenVR.scale(VERTICAL_DOOM_UNITS_PER_METER, VERTICAL_DOOM_UNITS_PER_METER, VERTICAL_DOOM_UNITS_PER_METER); // Doom units are not meters
-	doomInOpenVR.scale(level.info->pixelstretch, level.info->pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
+	double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+	doomInOpenVR.scale(pixelstretch, pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
 	doomInOpenVR.rotate(deltaYawDegrees, 0, 0, 1);
 
 	LSVec3 doom_EyeOffset = LSMatrix44(doomInOpenVR) * openvr_EyeOffset;
@@ -431,7 +432,8 @@ VSMatrix OpenVREyePose::getQuadInWorld(
 		-VERTICAL_DOOM_UNITS_PER_METER,
 		VERTICAL_DOOM_UNITS_PER_METER,
 		-VERTICAL_DOOM_UNITS_PER_METER);
-	new_projection.scale(level.info->pixelstretch, level.info->pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
+	double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+	new_projection.scale(pixelstretch, pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
 
 	const OpenVREyePose * activeEye = this;
 
@@ -711,9 +713,7 @@ void OpenVRMode::updateHmdPose(
 	/* */
 	// Pitch
 	if (doTrackHmdPitch) {
-		double pixelstretch = 1.0;
-		if (level.info)
-			pixelstretch = level.info->pixelstretch;
+		double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 		double hmdPitchInDoom = -atan(tan(hmdpitch) / pixelstretch);
 		double viewPitchInDoom = GLRenderer->mAngles.Pitch.Radians();
 		double dPitch = 
