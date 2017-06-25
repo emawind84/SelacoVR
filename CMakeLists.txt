@@ -315,6 +315,18 @@ endif()
 install(DIRECTORY docs/ 
 		DESTINATION ${INSTALL_DOCS_PATH} 
 		COMPONENT "Documentation")
+# install all shared libraries dev has placed in the executable output folder(s)
+file(GLOB DEV_SHARED_LIBRARIES 
+	"${CMAKE_BINARY_DIR}/Release/*.dll"
+	"${CMAKE_BINARY_DIR}/Debug/*.dll"
+	"${CMAKE_BINARY_DIR}/*.so"
+	"${CMAKE_BINARY_DIR}/*.dylib"
+)
+if (DEV_SHARED_LIBRARIES)
+	install(PROGRAMS ${DEV_SHARED_LIBRARIES} 
+		DESTINATION "."
+		COMPONENT "Shared_Libraries")
+endif()
 
 add_subdirectory( lzma )
 add_subdirectory( tools )
@@ -329,7 +341,7 @@ if( NOT CMAKE_CROSSCOMPILING )
 	export(TARGETS ${CROSS_EXPORTS} FILE "${CMAKE_BINARY_DIR}/ImportExecutables.cmake" )
 endif()
 
-set(CPACK_PACKAGE_VERSION vivedoom0.1.0 CACHE STRING "Version name for gzdoom installer wizard")
+set(CPACK_PACKAGE_VERSION vivedoom0.5.1 CACHE STRING "Version name for gzdoom installer wizard")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/docs/licenses/README.TXT")
 set(CPACK_GENERATOR NSIS)
 
