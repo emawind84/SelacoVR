@@ -120,7 +120,7 @@ CUSTOM_CVAR (Int, st_scale, 0, CVAR_ARCHIVE)
 		setsizeneeded = true;
 	}
 }
-CUSTOM_CVAR(Bool, hud_aspectscale, false, CVAR_ARCHIVE)
+CUSTOM_CVAR(Bool, hud_aspectscale, true, CVAR_ARCHIVE)
 {
 	if (StatusBar)
 	{
@@ -464,7 +464,7 @@ void DBaseStatusBar::SetScale ()
 		// the resulting scaling factor needs to be reduced accordingly.
 		int realscale = clamp((320 * GetUIScale(st_scale)) / HorizontalResolution, 1, w / HorizontalResolution);
 
-		double realscaley = realscale * (hud_aspectscale ? 1.2 : 1.);
+		double realscaley = realscale * (hud_aspectscale ? level.info->pixelstretch : 1.0);
 
 		ST_X = (w - HorizontalResolution * realscale) / 2;
 		SBarTop = int(h - RelTop * realscaley);
@@ -501,7 +501,7 @@ DVector2 DBaseStatusBar::GetHUDScale() const
 	// The global scaling factors are for resources at 320x200, so if the actual ones are higher resolution
 	// the resulting scaling factor needs to be reduced accordingly.
 	int realscale = MAX<int>(1, (320 * scale) / HorizontalResolution);
-	return{ double(realscale), double(realscale * (hud_aspectscale ? 1.2 : 1.)) };
+	return{ double(realscale), double(realscale * (hud_aspectscale ? level.info->pixelstretch : 1.)) };
 }
 
 DEFINE_ACTION_FUNCTION(DBaseStatusBar, GetHUDScale)
