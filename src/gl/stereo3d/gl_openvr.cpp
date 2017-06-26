@@ -397,9 +397,12 @@ bool OpenVREyePose::submitFrame(VR_IVRCompositor_FnTable * vrCompositor) const
 		return false;
 	if (vrCompositor == nullptr)
 		return false;
-	// Copy HDR framebuffer into 24-bit RGB texture
-	GLRenderer->mBuffers->BindEyeFB(eye, true);
+ 
+	// Copy HDR game texture to local vr LDR framebuffer, so gamma correction could work
 	if (eyeTexture->handle == nullptr) {
+		glGenFramebuffers(1, &framebuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
 		GLuint handle;
 		glGenTextures(1, &handle);
 		eyeTexture->handle = (void *)(std::ptrdiff_t)handle;
@@ -408,11 +411,19 @@ bool OpenVREyePose::submitFrame(VR_IVRCompositor_FnTable * vrCompositor) const
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, GLRenderer->mSceneViewport.width,
 			GLRenderer->mSceneViewport.height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, handle, 0);
+		GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+		glDrawBuffers(1, drawBuffers);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			// TODO: react to error if it ever happens
+		}
 	}
-	glBindTexture(GL_TEXTURE_2D, (GLuint)(std::ptrdiff_t)eyeTexture->handle);
-	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 0, 0,
-		GLRenderer->mSceneViewport.width,
-		GLRenderer->mSceneViewport.height, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	GLRenderer->mBuffers->BindEyeTexture(eye, 0);
+	GL_IRECT box = {0, 0, GLRenderer->mSceneViewport.width, GLRenderer->mSceneViewport.height};
+	GLRenderer->DrawPresentTexture(box, true);
+
 	vrCompositor->Submit(EVREye(eye), eyeTexture, nullptr, EVRSubmitFlags_Submit_Default);
 	return true;
 }
