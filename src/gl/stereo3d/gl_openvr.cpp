@@ -40,6 +40,7 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderbuffers.h"
 #include "gl/renderer/gl_2ddrawer.h" // crosshair
+#include "gl/models/gl_models.h"
 #include "g_levellocals.h" // pixelstretch
 #include "g_statusbar/sbar.h"
 #include "math/cmath.h"
@@ -528,6 +529,7 @@ OpenVRMode::OpenVRMode()
 	, hmdWasFound(false)
 	, sceneWidth(0), sceneHeight(0)
 	, vrCompositor(nullptr)
+	, vrRenderModels(nullptr)
 	, vrToken(0)
 	, crossHairDrawer(new F2DDrawer)
 	, cached2DDrawer(nullptr)
@@ -567,6 +569,9 @@ OpenVRMode::OpenVRMode()
 	vrCompositor = (VR_IVRCompositor_FnTable*)VR_GetGenericInterface(comp_key.c_str(), &eError);
 	if (vrCompositor == nullptr)
 		return;
+
+	const std::string model_key = std::string("FnTable:") + std::string(IVRRenderModels_Version);
+	vrRenderModels = (VR_IVRRenderModels_FnTable*)VR_GetGenericInterface(model_key.c_str(), &eError);
 
 	eye_ptrs.Push(&rightEyeView); // NOW we render to two eyes
 	hmdWasFound = true;
@@ -785,14 +790,135 @@ void OpenVRMode::updateHmdPose(
 	}
 }
 
-class TrackedDeviceMesh
+class VRControllerModel : public FModel
 {
 public:
-	TrackedDeviceMesh(const std::string& model_name) {}
-	TrackedDeviceMesh() {}
+	enum LoadState {
+		LOADSTATE_INITIAL,
+		LOADSTATE_LOADING_VERTICES,
+		LOADSTATE_LOADING_TEXTURE,
+		LOADSTATE_LOADED,
+		LOADSTATE_ERROR
+	};
+
+	VRControllerModel(const std::string& model_name, VR_IVRRenderModels_FnTable * vrRenderModels)
+		: loadState(LOADSTATE_INITIAL)
+		, modelName(model_name)
+		, vrRenderModels(vrRenderModels)
+	{
+		if (! vrRenderModels) {
+			loadState = LOADSTATE_ERROR;
+			return;
+		}
+		isLoaded();
+	}
+	VRControllerModel() {}
+
+	// FModel methods
+
+	virtual bool Load(const char * fn, int lumpnum, const char * buffer, int length) override {
+		return false;
+	}
+
+	// Controller models don't have frames so always return 0
+	virtual int FindFrame(const char * name) override {
+		return 0;
+	}
+
+	virtual void RenderFrame(FTexture * skin, int frame, int frame2, double inter, int translation = 0)  override 
+	{
+		if (! isLoaded())
+			return;
+		FMaterial * tex = FMaterial::ValidateTexture(skin, false);
+		gl_RenderState.SetMaterial(tex, CLAMP_NONE, translation, -1, false);
+
+		gl_RenderState.Apply();
+		mVBuf->SetupFrame(0, 0, 0);
+		glDrawElements(GL_TRIANGLES, pModel->unTriangleCount * 3, GL_UNSIGNED_INT, (void*)(intptr_t)0);
+	}
+
+	virtual void BuildVertexBuffer() override 
+	{
+		if (loadState != LOADSTATE_LOADED)
+			return;
+		if (mVBuf != NULL)
+			return;
+
+		mVBuf = new FModelVertexBuffer(true, true);
+		FModelVertex *vertptr = mVBuf->LockVertexBuffer(pModel->unVertexCount);
+		unsigned int *indxptr = mVBuf->LockIndexBuffer(pModel->unTriangleCount * 3);
+
+		for (int v = 0; v < pModel->unVertexCount; ++v) 
+		{
+			const RenderModel_Vertex_t & vd = pModel->rVertexData[v];
+			vertptr[v].x = vd.vPosition.v[0];
+			vertptr[v].y = vd.vPosition.v[1];
+			vertptr[v].z = vd.vPosition.v[2];
+			vertptr[v].u = vd.rfTextureCoord[0];
+			vertptr[v].v = vd.rfTextureCoord[1];
+			vertptr[v].SetNormal(
+				vd.vNormal.v[0],
+				vd.vNormal.v[1],
+				vd.vNormal.v[2]);
+		}
+		for (int i = 0; i < pModel->unTriangleCount * 3; ++i) 
+		{
+			indxptr[i] = pModel->rIndexData[i];
+		}
+
+		mVBuf->UnlockVertexBuffer();
+		mVBuf->UnlockIndexBuffer();
+	}
+
+	virtual void AddSkins(uint8_t *hitlist) override {}
+
+	bool isLoaded()
+	{
+		if (loadState == LOADSTATE_ERROR)
+			return false;
+		if (loadState == LOADSTATE_LOADED)
+			return true;
+		if ((loadState == LOADSTATE_INITIAL) || (loadState == LOADSTATE_LOADING_VERTICES))
+		{
+			// Load vertex data first
+			EVRRenderModelError eError = vrRenderModels->LoadRenderModel_Async(const_cast<char *>(modelName.c_str()), &pModel);
+			if (eError == EVRRenderModelError_VRRenderModelError_Loading) {
+				loadState = LOADSTATE_LOADING_VERTICES;
+				return false;
+			}
+			else if (eError == EVRRenderModelError_VRRenderModelError_None) {
+				loadState = LOADSTATE_LOADING_TEXTURE;
+				vrRenderModels->LoadTexture_Async(pModel->diffuseTextureId, &pTexture);
+				BuildVertexBuffer();
+			}
+			else {
+				loadState = LOADSTATE_ERROR;
+				return false;
+			}
+		}
+		// Load texture data second
+		EVRRenderModelError eError = vrRenderModels->LoadTexture_Async(pModel->diffuseTextureId, &pTexture);
+		if (eError == EVRRenderModelError_VRRenderModelError_Loading) {
+			return false; // No change, and not done, still loading texture
+		}
+		if (eError == EVRRenderModelError_VRRenderModelError_None) {
+			loadState = LOADSTATE_LOADED;
+			return true;
+		}
+		loadState = LOADSTATE_ERROR;
+		return false;
+	}
+
+private:
+	RenderModel_t * pModel;
+	RenderModel_TextureMap_t * pTexture;
+	LoadState loadState;
+	std::string modelName;
+	VR_IVRRenderModels_FnTable * vrRenderModels;
+
 };
 
-static std::map<std::string, TrackedDeviceMesh> controllerMeshes;
+static std::map<std::string, VRControllerModel> controllerMeshes;
 
 /* virtual */
 void OpenVRMode::SetUp() const
@@ -858,10 +984,12 @@ void OpenVRMode::SetUp() const
 				continue; // something went wrong...
 			std::string model_name(model_chars);
 			if (controllerMeshes.count(model_name) == 0) {
-				controllerMeshes[model_name] = TrackedDeviceMesh(model_name);
+				controllerMeshes[model_name] = VRControllerModel(model_name, vrRenderModels);
 				assert(controllerMeshes.count(model_name) == 1);
 			}
-			TrackedDeviceMesh& deviceMesh = controllerMeshes[model_name];
+			VRControllerModel& deviceMesh = controllerMeshes[model_name];
+			if (! deviceMesh.isLoaded())
+				continue;
 			// TODO: Prepare to display this controller
 		}
 	}
@@ -883,6 +1011,7 @@ OpenVRMode::~OpenVRMode()
 		VR_ShutdownInternal();
 		vrSystem = nullptr;
 		vrCompositor = nullptr;
+		vrRenderModels = nullptr;
 		leftEyeView.dispose();
 		rightEyeView.dispose();
 	}

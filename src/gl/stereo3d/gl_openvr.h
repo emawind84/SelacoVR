@@ -35,6 +35,7 @@ struct TrackedDevicePose_t;
 struct Texture_t;
 struct VR_IVRSystem_FnTable;
 struct VR_IVRCompositor_FnTable;
+struct VR_IVRRenderModels_FnTable;
 
 /* stereoscopic 3D API */
 namespace s3d {
@@ -99,6 +100,7 @@ protected:
 
 	VR_IVRSystem_FnTable * vrSystem;
 	VR_IVRCompositor_FnTable * vrCompositor;
+	VR_IVRRenderModels_FnTable * vrRenderModels;
 	uint32_t vrToken;
 
 	mutable int cachedScreenBlocks;
