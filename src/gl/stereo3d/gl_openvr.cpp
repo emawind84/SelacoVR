@@ -424,6 +424,10 @@ bool OpenVREyePose::submitFrame(VR_IVRCompositor_FnTable * vrCompositor) const
 	GL_IRECT box = {0, 0, GLRenderer->mSceneViewport.width, GLRenderer->mSceneViewport.height};
 	GLRenderer->DrawPresentTexture(box, true);
 
+	// Maybe this would help with AMD boards?
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTexture(GL_TEXTURE_2D, (GLuint)eyeTexture->handle);
+
 	vrCompositor->Submit(EVREye(eye), eyeTexture, nullptr, EVRSubmitFlags_Submit_Default);
 	return true;
 }
