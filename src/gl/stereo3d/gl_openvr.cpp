@@ -760,7 +760,8 @@ void OpenVRMode::updateHmdPose(
 			double gameYawDegrees = r_viewpoint.Angles.Yaw.Degrees;
 			double currentOffset = gameYawDegrees - hmdYawDegrees;
 			if ((gamestate == GS_LEVEL)
-				&& (menuactive == MENU_Off))
+				&& (menuactive == MENU_Off)
+				&& (! paused))
 			{
 				// Predict current game view direction using hmd yaw change from previous time step
 				static double previousGameYawDegrees = 0;
