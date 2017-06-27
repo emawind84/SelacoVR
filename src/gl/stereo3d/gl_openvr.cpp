@@ -99,13 +99,12 @@ S_API uint32_t VR_GetInitToken();
 
 #endif
 
-// For conversion between real-world and doom units
-#define VERTICAL_DOOM_UNITS_PER_METER 27.0f
-
 EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Float, movebob);
 EXTERN_CVAR(Bool, gl_billboard_faces_camera);
 EXTERN_CVAR(Int, gl_multisample);
+EXTERN_CVAR(Float, vr_vunits_per_meter)
+EXTERN_CVAR(Float, vr_floor_offset)
 
 bool IsOpenVRPresent()
 {
@@ -299,7 +298,7 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 			0,  1,  0,  0, // Y-up in OpenVR -> Z-up in Doom
 			0,  0,  0,  1};
 	doomInOpenVR.multMatrix(permute);
-	doomInOpenVR.scale(VERTICAL_DOOM_UNITS_PER_METER, VERTICAL_DOOM_UNITS_PER_METER, VERTICAL_DOOM_UNITS_PER_METER); // Doom units are not meters
+	doomInOpenVR.scale(vr_vunits_per_meter, vr_vunits_per_meter, vr_vunits_per_meter); // Doom units are not meters
 	double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 	doomInOpenVR.scale(pixelstretch, pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
 	doomInOpenVR.rotate(deltaYawDegrees, 0, 0, 1);
@@ -312,7 +311,7 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 		// We want to align those two heights here
 		const player_t & player = players[consoleplayer];
 		double vh = player.viewheight; // Doom thinks this is where you are
-		double hh = openvr_X_hmd[1][3] * VERTICAL_DOOM_UNITS_PER_METER; // HMD is actually here
+		double hh = (openvr_X_hmd[1][3] - vr_floor_offset) * vr_vunits_per_meter; // HMD is actually here
 		doom_EyeOffset[2] += hh - vh;
 		// TODO: optionally allow player to jump and crouch by actually jumping and crouching
 	}
@@ -443,9 +442,9 @@ VSMatrix OpenVREyePose::getQuadInWorld(
 
 	// doom_units from meters
 	new_projection.scale(
-		-VERTICAL_DOOM_UNITS_PER_METER,
-		VERTICAL_DOOM_UNITS_PER_METER,
-		-VERTICAL_DOOM_UNITS_PER_METER);
+		-vr_vunits_per_meter,
+		vr_vunits_per_meter,
+		-vr_vunits_per_meter);
 	double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 	new_projection.scale(pixelstretch, pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
 
