@@ -398,7 +398,7 @@ extern id appCtrl;
 namespace
 {
 
-cycle_t BlitCycles;
+extern cycle_t BlitCycles;
 cycle_t FlipCycles;
 
 
