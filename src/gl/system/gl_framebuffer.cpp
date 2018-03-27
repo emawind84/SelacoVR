@@ -172,7 +172,6 @@ void OpenGLFrameBuffer::Update()
 	GLRenderer->Flush();
 
 	Swap();
-	Unlock();
 	CheckBench();
 
 	int initialWidth = IsFullscreen() ? VideoWidth : GetClientWidth();
