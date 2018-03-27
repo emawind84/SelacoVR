@@ -721,7 +721,7 @@ void DrawPolyTrianglesCommand::Execute(DrawerThread *thread)
 void DrawRectCommand::Execute(DrawerThread *thread)
 {
 	auto renderTarget = PolyRenderer::Instance()->RenderTarget;
-	const void *destOrg = renderTarget->GetBuffer();
+	const void *destOrg = renderTarget->GetPixels();
 	int destWidth = renderTarget->GetWidth();
 	int destHeight = renderTarget->GetHeight();
 	int destPitch = renderTarget->GetPitch();
