@@ -1195,29 +1195,6 @@ bool Win32GLFrameBuffer::IsFullscreen()
 	return m_Fullscreen;
 }
 
-HRESULT Win32GLFrameBuffer::GetHR() 
-{ 
-	return 0; 
-}
-
-void Win32GLFrameBuffer::Blank () 
-{
-}
-
-bool Win32GLFrameBuffer::PaintToWindow () 
-{ 
-	return false; 
-}
-
-bool Win32GLFrameBuffer::CreateResources () 
-{ 
-	return false; 
-}
-
-void Win32GLFrameBuffer::ReleaseResources () 
-{
-}
-
 //==========================================================================
 //
 // 

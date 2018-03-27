@@ -87,6 +87,24 @@
 #include "i_time.h"
 #include "version.h"
 
+EXTERN_CVAR(Bool, cl_capfps)
+
+CUSTOM_CVAR(Int, vid_maxfps, 200, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+{
+	if (vid_maxfps < TICRATE && vid_maxfps != 0)
+	{
+		vid_maxfps = TICRATE;
+	}
+	else if (vid_maxfps > 1000)
+	{
+		vid_maxfps = 1000;
+	}
+	else if (cl_capfps == 0)
+	{
+		I_SetFPSLimit(vid_maxfps);
+	}
+}
+
 EXTERN_CVAR(Bool, r_blendmethod)
 
 int active_con_scale();
