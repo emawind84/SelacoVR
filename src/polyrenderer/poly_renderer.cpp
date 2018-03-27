@@ -100,8 +100,6 @@ void PolyRenderer::RenderViewToCanvas(AActor *actor, DCanvas *canvas, int x, int
 	viewwindowy = y;
 	viewactive = true;
 	
-	canvas->Lock(true);
-	
 	RenderActorView(actor, dontmaplines);
 	Threads.MainThread()->FlushDrawQueue();
 	DrawerThreads::WaitForWorkers();
