@@ -100,7 +100,6 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int 
 	mDebug->Update();
 	gl_GenerateGlobalBrightmapFromColormap();
 	DoSetGamma();
-	Accel2D = true;
 }
 
 OpenGLFrameBuffer::~OpenGLFrameBuffer()

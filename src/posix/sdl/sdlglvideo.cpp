@@ -309,7 +309,6 @@ SDLGLFB::SDLGLFB (void *, int width, int height, int, int, bool fullscreen, bool
 	int glveridx = 0;
 	int i;
 
-	m_Lock=0;
 	UpdatePending = false;
 
 	const char *version = Args->CheckValue("-glversion");
@@ -395,30 +394,6 @@ void SDLGLFB::ResetGammaTable()
 	if (m_supportsGamma)
 	{
 		SDL_SetWindowGammaRamp(Screen, m_origGamma[0], m_origGamma[1], m_origGamma[2]);
-	}
-}
-
-bool SDLGLFB::Lock(bool buffered)
-{
-	m_Lock++;
-	Buffer = MemBuffer;
-	return true;
-}
-
-bool SDLGLFB::Lock () 
-{ 	
-	return Lock(false); 
-}
-
-void SDLGLFB::Unlock () 	
-{ 
-	if (UpdatePending && m_Lock == 1)
-	{
-		Update ();
-	}
-	else if (--m_Lock <= 0)
-	{
-		m_Lock = 0;
 	}
 }
 

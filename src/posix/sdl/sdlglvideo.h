@@ -90,7 +90,6 @@ protected:
 
 	void UpdateColors ();
 
-	int m_Lock;
 	Uint16 m_origGamma[3][256];
 	bool m_supportsGamma;
 };

@@ -138,11 +138,6 @@ bool D3DFB::WipeStartScreen(int type)
 	IDirect3DSurface9 *tsurf;
 	D3DSURFACE_DESC desc;
 
-	if (!Accel2D)
-	{
-		return Super::WipeStartScreen(type);
-	}
-
 	switch (type)
 	{
 	case wipe_Melt:
@@ -202,12 +197,6 @@ bool D3DFB::WipeStartScreen(int type)
 
 void D3DFB::WipeEndScreen()
 {
-	if (!Accel2D)
-	{
-		Super::WipeEndScreen();
-		return;
-	}
-
 	// Don't do anything if there is no starting point.
 	if (InitialWipeScreen == NULL)
 	{
@@ -256,11 +245,6 @@ void D3DFB::WipeEndScreen()
 
 bool D3DFB::WipeDo(int ticks)
 {
-	if (!Accel2D)
-	{
-		return Super::WipeDo(ticks);
-	}
-
 	// Sanity checks.
 	if (InitialWipeScreen == NULL || FinalWipeScreen == NULL)
 	{
@@ -323,11 +307,6 @@ void D3DFB::WipeCleanup()
 	SAFE_RELEASE( InitialWipeScreen );
 	SAFE_RELEASE( FinalWipeScreen );
 	GatheringWipeScreen = false;
-	if (!Accel2D)
-	{
-		Super::WipeCleanup();
-		return;
-	}
 }
 
 //==========================================================================
