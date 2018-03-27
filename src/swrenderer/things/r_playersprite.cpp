@@ -289,11 +289,12 @@ namespace swrenderer
 
 		vis.texturemid = (BASEYCENTER - sy) * tex->Scale.Y + tex->TopOffset;
 
-		if (Thread->Viewport->viewpoint.camera->player && (viewport->RenderTarget != screen ||
+		auto screencanvas = screen->GetCanvas();
+		if (Thread->Viewport->viewpoint.camera->player && (viewport->RenderTarget != screencanvas ||
 			viewheight == viewport->RenderTarget->GetHeight() ||
 			(viewport->RenderTarget->GetWidth() > (BASEXCENTER * 2))))
 		{	// Adjust PSprite for fullscreen views
-			vis.texturemid -= pspr->GetYAdjust(viewport->RenderTarget != screen || viewheight == viewport->RenderTarget->GetHeight());
+			vis.texturemid -= pspr->GetYAdjust(viewport->RenderTarget != screencanvas || viewheight == viewport->RenderTarget->GetHeight());
 		}
 		if (pspr->GetID() < PSP_TARGETCENTER)
 		{ // Move the weapon down for 1280x1024.
@@ -412,7 +413,7 @@ namespace swrenderer
 
 		// Check for hardware-assisted 2D. If it's available, and this sprite is not
 		// fuzzy, don't draw it until after the switch to 2D mode.
-		if (!noaccel && viewport->RenderTarget == screen && (DFrameBuffer *)screen->Accel2D)
+		if (!noaccel && viewport->RenderTarget == screencanvas && (DFrameBuffer *)screen->Accel2D)
 		{
 			FRenderStyle style = vis.RenderStyle;
 			style.CheckFuzz();

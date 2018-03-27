@@ -798,7 +798,6 @@ static int	f_y;
 // size of window on screen
 static int	f_w;
 static int	f_h;
-static int	f_p;				// [RH] # of bytes from start of a line to start of next
 
 static int	amclock;
 
@@ -3296,7 +3295,6 @@ void AM_Drawer (int bottom)
 		f_x = f_y = 0;
 		f_w = screen->GetWidth ();
 		f_h = bottom;
-		f_p = screen->GetPitch ();
 
 		AM_clearFB(AMColors[AMColors.Background]);
 	}
@@ -3306,7 +3304,6 @@ void AM_Drawer (int bottom)
 		f_y = viewwindowy;
 		f_w = viewwidth;
 		f_h = viewheight;
-		f_p = screen->GetPitch ();
 	}
 	AM_activateNewScale();
 
