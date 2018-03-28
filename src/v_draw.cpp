@@ -59,19 +59,6 @@
 #include "textures.h"
 #include "vm.h"
 
-CUSTOM_CVAR(Float, dimamount, -1.f, CVAR_ARCHIVE)
-{
-	if (self < 0.f && self != -1.f)
-	{
-		self = -1.f;
-	}
-	else if (self > 1.f)
-	{
-		self = 1.f;
-	}
-}
-CVAR(Color, dimcolor, 0xffd700, CVAR_ARCHIVE)
-
 CUSTOM_CVAR(Int, uiscale, 0, CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
 	if (self < 0)
@@ -1293,6 +1280,7 @@ void DFrameBuffer::FillBorder (FTexture *img)
 
 void DFrameBuffer::DrawLine(int x0, int y0, int x1, int y1, int palColor, uint32_t realcolor, uint8_t alpha)
 {
+	m2DDrawer.AddLine(x0, y0, x1, y1, palColor, realcolor);
 }
 
 DEFINE_ACTION_FUNCTION(_Screen, DrawLine)
@@ -1336,6 +1324,7 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawThickLine)
 
 void DFrameBuffer::DrawPixel(int x, int y, int palColor, uint32_t realcolor)
 {
+	m2DDrawer.AddPixel(x, y, palColor, realcolor);
 }
 
 //==========================================================================
@@ -1345,10 +1334,6 @@ void DFrameBuffer::DrawPixel(int x, int y, int palColor, uint32_t realcolor)
 // Set an area to a specified color.
 //
 //==========================================================================
-
-void DFrameBuffer::DoClear (int left, int top, int right, int bottom, int palcolor, uint32_t color)
-{
-}
 
 void DFrameBuffer::Clear(int left, int top, int right, int bottom, int palcolor, uint32_t color)
 {
@@ -1374,7 +1359,12 @@ void DFrameBuffer::Clear(int left, int top, int right, int bottom, int palcolor,
 		right = left + w;
 		bottom = top + h;
 	}
-	DoClear(left, top, right, bottom, palcolor, color);
+
+	if (palcolor >= 0 && color == 0)
+	{
+		color = GPalette.BaseColors[palcolor] | 0xff000000;
+	}
+	m2DDrawer.AddColorOnlyQuad(left, top, right - left, bottom - top, color | 0xFF000000);
 }
 
 DEFINE_ACTION_FUNCTION(_Screen, Clear)
@@ -1399,8 +1389,17 @@ DEFINE_ACTION_FUNCTION(_Screen, Clear)
 //
 //==========================================================================
 
-void DFrameBuffer::DoDim(PalEntry color, float damount, int x1, int y1, int w, int h)
+void DFrameBuffer::DoDim(PalEntry color, float amount, int x1, int y1, int w, int h)
 {
+	if (amount <= 0)
+	{
+		return;
+	}
+	if (amount > 1)
+	{
+		amount = 1;
+	}
+	m2DDrawer.AddColorOnlyQuad(x1, y1, w, h, color | (int(amount * 255) << 24));
 }
 
 void DFrameBuffer::Dim(PalEntry color, float damount, int x1, int y1, int w, int h)
@@ -1459,6 +1458,7 @@ void DFrameBuffer::FillSimplePoly(FTexture *tex, FVector2 *points, int npoints,
 	double originx, double originy, double scalex, double scaley, DAngle rotation,
 	const FColormap &colormap, PalEntry flatcolor, int lightlevel, int bottomclip)
 {
+	m2DDrawer.AddPoly(tex, points, npoints, originx, originy, scalex, scaley, rotation, colormap, flatcolor, lightlevel);
 }
 
 //==========================================================================
@@ -1472,67 +1472,8 @@ void DFrameBuffer::FillSimplePoly(FTexture *tex, FVector2 *points, int npoints,
 
 void DFrameBuffer::FlatFill(int left, int top, int right, int bottom, FTexture *src, bool local_origin)
 {
-	int w = src->GetWidth();
-	int h = src->GetHeight();
-
-	// Repeatedly draw the texture, left-to-right, top-to-bottom.
-	for (int y = local_origin ? top : (top / h * h); y < bottom; y += h)
-	{
-		for (int x = local_origin ? left : (left / w * w); x < right; x += w)
-		{
-			DrawTexture(src, x, y,
-				DTA_ClipLeft, left,
-				DTA_ClipRight, right,
-				DTA_ClipTop, top,
-				DTA_ClipBottom, bottom,
-				DTA_TopOffset, 0,
-				DTA_LeftOffset, 0,
-				TAG_DONE);
-		}
-	}
+	m2DDrawer.AddFlatFill(left, top, right, bottom, src, local_origin);
 }
-
-//==========================================================================
-//
-// DCanvas :: Dim
-//
-// Applies a colored overlay to the entire screen, with the opacity
-// determined by the dimamount cvar.
-//
-//==========================================================================
-
-void DFrameBuffer::Dim(PalEntry color)
-{
-	PalEntry dimmer;
-	float amount;
-
-	if (dimamount >= 0)
-	{
-		dimmer = PalEntry(dimcolor);
-		amount = dimamount;
-	}
-	else
-	{
-		dimmer = gameinfo.dimcolor;
-		amount = gameinfo.dimamount;
-	}
-
-	if (gameinfo.gametype == GAME_Hexen && gamestate == GS_DEMOSCREEN)
-	{ // On the Hexen title screen, the default dimming is not
-	  // enough to make the menus readable.
-		amount = MIN<float>(1.f, amount*2.f);
-	}
-	// Add the cvar's dimming on top of the color passed to the function
-	if (color.a != 0)
-	{
-		float dim[4] = { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f };
-		V_AddBlend(dimmer.r / 255.f, dimmer.g / 255.f, dimmer.b / 255.f, amount, dim);
-		dimmer = PalEntry(uint8_t(dim[0] * 255), uint8_t(dim[1] * 255), uint8_t(dim[2] * 255));
-		amount = dim[3];
-	}
-	Dim(dimmer, amount, 0, 0, Width, Height);
-}
-
 
 //==========================================================================
 //
