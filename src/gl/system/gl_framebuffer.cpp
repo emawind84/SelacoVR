@@ -483,6 +483,5 @@ void OpenGLFrameBuffer::ScaleCoordsFromWindow(int16_t &x, int16_t &y)
 
 void OpenGLFrameBuffer::Draw2D()
 {
-	//if (gl.legacyMode) Draw2DLegacy();
 	if (GLRenderer != nullptr) GLRenderer->Draw2D(&m2DDrawer);
 }
