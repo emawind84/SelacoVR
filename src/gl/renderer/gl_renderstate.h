@@ -120,6 +120,7 @@ class FRenderState
 	PalEntry mObjectColor;
 	PalEntry mObjectColor2;
 	PalEntry mSceneColor;
+	PalEntry m2DColors[2];	// in the shader these will reuse the colormap ramp uniforms.
 	FStateVec4 mDynColor;
 	FStateVec4 mDetailParms;
 	float mClipSplit[2];
@@ -435,6 +436,13 @@ public:
 	{
 		mAddColor = pe;
 	}
+
+	void Set2DColors(PalEntry pe, PalEntry pe2)
+	{
+		m2DColors[0] = pe;
+		m2DColors[1] = pe2;
+	}
+
 
 	void SetSpecular(float glossiness, float specularLevel)
 	{

@@ -666,7 +666,6 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 	parms->masked = true;
 	parms->bilinear = false;
 	parms->specialcolormap = NULL;
-	parms->colormapstyle = NULL;
 	parms->desaturate = 0;
 	parms->cleanmode = DTA_Base;
 	parms->scalex = parms->scaley = 1;
@@ -1048,10 +1047,6 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 
 		case DTA_SpecialColormap:
 			parms->specialcolormap = ListGetSpecialColormap(tags);
-			break;
-
-		case DTA_ColormapStyle:
-			parms->colormapstyle = ListGetColormapStyle(tags);
 			break;
 
 		case DTA_Desaturate:
