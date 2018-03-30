@@ -48,7 +48,7 @@ const int TEXF_Glowmap = 0x40000;
 
 float grayscale(vec4 color)
 {
-	return dot(color.rgb, vec3(0.4, 0.56, 0.14);
+	return dot(color.rgb, vec3(0.4, 0.56, 0.14));
 }
 
 //===========================================================================
