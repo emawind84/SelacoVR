@@ -336,18 +336,6 @@ public:
 	void Resize(int width, int height);
 };
 
-// This class represents a native texture, as opposed to an FTexture.
-class FNativeTexture
-{
-protected:
-	FTexture * mGameTex;
-	FTextureFormat mFormat;
-public:
-	FNativeTexture(FTexture *tex, FTextureFormat fmt) : mGameTex(tex), mFormat(fmt) {}
-	virtual ~FNativeTexture();
-	virtual bool Update() = 0;
-	virtual bool CheckWrapping(bool wrapping);
-};
 
 // This class represents a texture lookup palette.
 class FNativePalette
@@ -460,9 +448,6 @@ public:
 
 	virtual int GetClientWidth();
 	virtual int GetClientHeight();
-
-	// Create a native texture from a game texture.
-	virtual FNativeTexture *CreateTexture(FTexture *gametex, FTextureFormat fmt, bool wrapping);
 
 	// Create a palette texture from a remap/palette table.
 	virtual FNativePalette *CreatePalette(FRemapTable *remap);

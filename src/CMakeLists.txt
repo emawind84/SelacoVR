@@ -442,8 +442,6 @@ endif()
 
 # Start defining source files for ZDoom
 set( PLAT_WIN32_SOURCES
-	win32/fb_d3d9.cpp
-	win32/fb_d3d9_wipe.cpp
 	win32/hardware.cpp
 	win32/i_crash.cpp
 	win32/i_input.cpp
@@ -743,7 +741,6 @@ set( FASTMATH_SOURCES
 	sound/music/music_midi_base.cpp
 	sound/backend/oalsound.cpp
 	gl/utility/gl_clock.cpp
-	gl/renderer/gl_2ddrawer.cpp
 	gl/hqnx/init.cpp
 	gl/hqnx/hq2x.cpp
 	gl/hqnx/hq3x.cpp
@@ -984,8 +981,6 @@ set (PCH_SOURCES
 	gl/stereo3d/gl_interleaved3d.cpp
 	gl/system/gl_interface.cpp
 	gl/system/gl_framebuffer.cpp
-	gl/system/gl_swframebuffer.cpp
-	gl/system/gl_swwipe.cpp
 	gl/system/gl_debug.cpp
 	gl/system/gl_menu.cpp
 	gl/system/gl_wipe.cpp
