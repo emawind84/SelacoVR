@@ -44,7 +44,7 @@
 #include "d_event.h"
 #include "d_gui.h"
 #include "doomstat.h"
-#include "win32iface.h"
+#include "hardware.h"
 #include "menu/menu.h"
 #include "events.h"
 

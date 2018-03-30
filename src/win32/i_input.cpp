@@ -85,7 +85,7 @@
 #include "c_console.h"
 #include "s_sound.h"
 #include "gameconfigfile.h"
-#include "win32iface.h"
+#include "hardware.h"
 #include "d_event.h"
 #include "v_text.h"
 #include "version.h"
