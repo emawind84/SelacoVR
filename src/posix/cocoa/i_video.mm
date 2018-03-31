@@ -750,6 +750,11 @@ void SDLGLFB::InitializeState()
 {
 }
 
+bool SDLGLFB::CanUpdate()
+{
+	return true;
+}
+
 void SDLGLFB::SwapBuffers()
 {
 	[[NSOpenGLContext currentContext] flushBuffer];

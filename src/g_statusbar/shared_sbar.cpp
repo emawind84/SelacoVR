@@ -1484,14 +1484,14 @@ void DBaseStatusBar::DrawGraphic(FTextureID texture, double x, double y, int fla
 	{
 	case DI_ITEM_HCENTER:	x -= boxwidth / 2; break;
 	case DI_ITEM_RIGHT:		x -= boxwidth; break;
-	case DI_ITEM_HOFFSET:	x -= tex->GetScaledLeftOffsetDouble() * boxwidth / texwidth; break;
+	case DI_ITEM_HOFFSET:	x -= tex->GetScaledLeftOffsetDouble(0) * boxwidth / texwidth; break;
 	}
 
 	switch (flags & DI_ITEM_VMASK)
 	{
 	case DI_ITEM_VCENTER: y -= boxheight / 2; break;
 	case DI_ITEM_BOTTOM:  y -= boxheight; break;
-	case DI_ITEM_VOFFSET: y -= tex->GetScaledTopOffsetDouble() * boxheight / texheight; break;
+	case DI_ITEM_VOFFSET: y -= tex->GetScaledTopOffsetDouble(0) * boxheight / texheight; break;
 	}
 
 	if (!fullscreenOffsets)
@@ -1628,7 +1628,7 @@ void DBaseStatusBar::DrawString(FFont *font, const FString &cstring, double x, d
 		}
 
 		if (!monospaced) //If we are monospaced lets use the offset
-			x += c->LeftOffset * scaleX + 1; //ignore x offsets since we adapt to character size
+			x += c->GetLeftOffset(0) * scaleX + 1; //ignore x offsets since we adapt to character size
 
 		double rx, ry, rw, rh;
 		rx = x + drawOffset.X;
@@ -1681,7 +1681,7 @@ void DBaseStatusBar::DrawString(FFont *font, const FString &cstring, double x, d
 		// Take text scale into account
 		dx = monospaced
 			? spacing * scaleX
-			: (double(width) + spacing - c->LeftOffset) * scaleX - 1;
+			: (double(width) + spacing - c->GetLeftOffset(0)) * scaleX - 1;
 
 		x += dx;
 	}

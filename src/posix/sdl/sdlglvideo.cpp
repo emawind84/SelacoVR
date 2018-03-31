@@ -374,6 +374,11 @@ void SDLGLFB::InitializeState()
 {
 }
 
+bool SDLGLFB::CanUpdate ()
+{
+	return true;
+}
+
 void SDLGLFB::SetGammaTable(uint16_t *tbl)
 {
 	if (m_supportsGamma)

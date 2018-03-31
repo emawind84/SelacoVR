@@ -214,14 +214,14 @@ void HU_GetPlayerWidths(int &maxnamewidth, int &maxscorewidth, int &maxiconheigh
 			if (icon.isValid())
 			{
 				FTexture *pic = TexMan[icon];
-				width = pic->GetScaledWidth() - pic->GetScaledLeftOffset() + 2;
+				width = pic->GetScaledWidth() - pic->GetScaledLeftOffset(0) + 2;
 				if (width > maxscorewidth)
 				{
 					maxscorewidth = width;
 				}
 				// The icon's top offset does not count toward its height, because
 				// zdoom.pk3's standard Hexen class icons are designed that way.
-				int height = pic->GetScaledHeight() - pic->GetScaledTopOffset();
+				int height = pic->GetScaledHeight() - pic->GetScaledTopOffset(0);
 				if (height > maxiconheight)
 				{
 					maxiconheight = height;
