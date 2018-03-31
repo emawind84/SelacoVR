@@ -233,6 +233,14 @@ public:
 	FTextureID id;
 
 	FTexture *CustomShaderTextures[MAX_CUSTOM_HW_SHADER_TEXTURES] = { nullptr }; // Custom texture maps for custom hardware shaders
+	FTexture *Brightmap = nullptr;
+	FTexture* Detailmap = nullptr;
+	FTexture* Glowmap = nullptr;
+	FTexture *Normal = nullptr;							// Normal map texture
+	FTexture *Specular = nullptr;						// Specular light texture for the diffuse+normal+specular light model
+	FTexture *Metallic = nullptr;						// Metalness texture for the physically based rendering (PBR) light model
+	FTexture *Roughness = nullptr;						// Roughness texture for PBR
+	FTexture *AmbientOcclusion = nullptr;				// Ambient occlusion texture for PBR
 
 	FString Name;
 	ETextureType UseType;	// This texture's primary purpose
@@ -424,12 +432,12 @@ protected:
 		bNoDecals = other->bNoDecals;
 		Rotations = other->Rotations;
 		gl_info = other->gl_info;
-		gl_info.Brightmap = NULL;
-		gl_info.Normal = NULL;
-		gl_info.Specular = NULL;
-		gl_info.Metallic = NULL;
-		gl_info.Roughness = NULL;
-		gl_info.AmbientOcclusion = NULL;
+		Brightmap = NULL;
+		Normal = NULL;
+		Specular = NULL;
+		Metallic = NULL;
+		Roughness = NULL;
+		AmbientOcclusion = NULL;
 		gl_info.areas = NULL;
 	}
 
@@ -460,14 +468,6 @@ public:
 	{
 		FMaterial *Material[2];
 		FGLTexture *SystemTexture[2];
-		FTexture *Brightmap;
-		FTexture* Detailmap = nullptr;
-		FTexture* Glowmap = nullptr;
-		FTexture *Normal;						// Normal map texture
-		FTexture *Specular;						// Specular light texture for the diffuse+normal+specular light model
-		FTexture *Metallic;						// Metalness texture for the physically based rendering (PBR) light model
-		FTexture *Roughness;					// Roughness texture for PBR
-		FTexture *AmbientOcclusion;				// Ambient occlusion texture for PBR
 		float Glossiness;
 		float SpecularLevel;
 		PalEntry GlowColor;

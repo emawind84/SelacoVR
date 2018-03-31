@@ -830,9 +830,9 @@ again:
 					tex->gl_info.bNoExpand = true;
 					goto again;
 				}
-				if (tex->gl_info.Brightmap != NULL &&
-					(tex->GetWidth() != tex->gl_info.Brightmap->GetWidth() ||
-					tex->GetHeight() != tex->gl_info.Brightmap->GetHeight())
+				if (tex->Brightmap != NULL &&
+					(tex->GetWidth() != tex->Brightmap->GetWidth() ||
+					tex->GetHeight() != tex->Brightmap->GetHeight())
 					)
 				{
 					// do not expand if the brightmap's size differs.

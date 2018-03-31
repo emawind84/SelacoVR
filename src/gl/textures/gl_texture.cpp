@@ -195,12 +195,6 @@ FTexture::MiscGLInfo::MiscGLInfo() throw()
 
 	Material[1] = Material[0] = NULL;
 	SystemTexture[1] = SystemTexture[0] = NULL;
-	Brightmap = NULL;
-	Normal = NULL;
-	Specular = NULL;
-	Metallic = NULL;
-	Roughness = NULL;
-	AmbientOcclusion = NULL;
 }
 
 FTexture::MiscGLInfo::~MiscGLInfo()
@@ -213,9 +207,6 @@ FTexture::MiscGLInfo::~MiscGLInfo()
 		if (SystemTexture[i] != NULL) delete SystemTexture[i];
 		SystemTexture[i] = NULL;
 	}
-
-	// this is just a reference to another texture in the texture manager.
-	Brightmap = NULL;
 
 	if (areas != NULL) delete [] areas;
 	areas = NULL;
@@ -233,7 +224,7 @@ void FTexture::CreateDefaultBrightmap()
 		// Check for brightmaps
 		if (UseBasePalette() && HasGlobalBrightmap &&
 			UseType != ETextureType::Decal && UseType != ETextureType::MiscPatch && UseType != ETextureType::FontChar &&
-			gl_info.Brightmap == NULL) 
+			Brightmap == NULL) 
 		{
 			// May have one - let's check when we use this texture
 			const uint8_t *texbuf = GetPixels(DefaultRenderStyle());
@@ -246,9 +237,9 @@ void FTexture::CreateDefaultBrightmap()
 				{
 					// Create a brightmap
 					DPrintf(DMSG_NOTIFY, "brightmap created for texture '%s'\n", Name.GetChars());
-					gl_info.Brightmap = new FBrightmapTexture(this);
+					Brightmap = new FBrightmapTexture(this);
 					gl_info.bBrightmapChecked = 1;
-					TexMan.AddTexture(gl_info.Brightmap);
+					TexMan.AddTexture(Brightmap);
 					return;
 				}
 			}
@@ -563,27 +554,23 @@ int FBrightmapTexture::CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotat
 struct AutoTextureSearchPath
 {
 	const char *path;
-	ptrdiff_t offset;
-
-	void SetTexture(FTexture *material, FTexture *texture) const
-	{
-		*reinterpret_cast<FTexture**>(reinterpret_cast<uint8_t*>(&material->gl_info) + offset) = texture;
-	}
+	FTexture *FTexture::*pointer;
 };
 
 static AutoTextureSearchPath autosearchpaths[] =
 {
-	{ "brightmaps/auto/", offsetof(FTexture::MiscGLInfo, Brightmap) }, // For backwards compatibility
-	{ "materials/brightmaps/auto/", offsetof(FTexture::MiscGLInfo, Brightmap) },
-	{ "materials/normalmaps/auto/", offsetof(FTexture::MiscGLInfo, Normal) },
-	{ "materials/specular/auto/", offsetof(FTexture::MiscGLInfo, Specular) },
-	{ "materials/metallic/auto/", offsetof(FTexture::MiscGLInfo, Metallic) },
-	{ "materials/roughness/auto/", offsetof(FTexture::MiscGLInfo, Roughness) },
-	{ "materials/ao/auto/", offsetof(FTexture::MiscGLInfo, AmbientOcclusion) }
+	{ "brightmaps/auto/", &FTexture::Brightmap }, // For backwards compatibility
+	{ "materials/brightmaps/auto/", &FTexture::Brightmap },
+	{ "materials/normalmaps/auto/", &FTexture::Normal },
+	{ "materials/specular/auto/", &FTexture::Specular },
+	{ "materials/metallic/auto/", &FTexture::Metallic },
+	{ "materials/roughness/auto/", &FTexture::Roughness },
+	{ "materials/ao/auto/", &FTexture::AmbientOcclusion }
 };
 
 void AddAutoMaterials()
 {
+	// Fixme: let this be driven by the texture manager, not the renderer.
 	int num = Wads.GetNumLumps();
 	for (int i = 0; i < num; i++)
 	{
@@ -595,11 +582,12 @@ void AddAutoMaterials()
 				TArray<FTextureID> list;
 				FString texname = ExtractFileBase(name, false);
 				TexMan.ListTextures(texname, list);
-				auto bmtex = TexMan.FindTexture(name, ETextureType::Any, FTextureManager::TEXMAN_TryAny);
+				auto bmtex = TexMan.FindTexture(name, ETextureType::Any, FTextureManager::TEXMAN_TryAny || FTextureManager::TEXMAN_DontCreate || FTextureManager::TEXMAN_ShortNameOnly );
 				for (auto texid : list)
 				{
 					bmtex->bMasked = false;
-					searchpath.SetTexture(TexMan[texid], bmtex);
+					auto tex = TexMan[texid];
+					if (tex != nullptr) tex->*(searchpath.pointer) = bmtex;
 				}
 			}
 		}
