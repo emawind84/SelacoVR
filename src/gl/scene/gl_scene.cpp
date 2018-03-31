@@ -1030,7 +1030,6 @@ struct FGLInterface : public FRenderer
 
 	int GetMaxViewPitch(bool down) override;
 	void SetClearColor(int color) override;
-	void Init() override;
 	uint32_t GetCaps() override;
 };
 
@@ -1113,17 +1112,6 @@ void FGLInterface::WriteSavePic (player_t *player, FileWriter *file, int width, 
 void FGLInterface::RenderView(player_t *player)
 {
 	GLRenderer->RenderView(player);
-}
-
-//===========================================================================
-//
-// 
-//
-//===========================================================================
-
-void FGLInterface::Init()
-{
-	gl_InitData();
 }
 
 //===========================================================================

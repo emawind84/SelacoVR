@@ -411,13 +411,8 @@ subsector_t *R_PointInSubsector (fixed_t x, fixed_t y)
 void R_Init ()
 {
 	StartScreen->Progress();
-	// Colormap init moved back to InitPalette()
-	//R_InitColormaps ();
-	//StartScreen->Progress();
-
 	R_InitTranslationTables ();
 	R_SetViewSize (screenblocks);
-	Renderer->Init();
 }
 
 //==========================================================================

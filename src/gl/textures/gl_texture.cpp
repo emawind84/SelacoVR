@@ -116,57 +116,6 @@ int TexFormat[]={
 
 
 
-bool HasGlobalBrightmap;
-FRemapTable GlobalBrightmap;
-
-//===========================================================================
-// 
-// Examines the colormap to see if some of the colors have to be
-// considered fullbright all the time.
-//
-//===========================================================================
-
-void gl_GenerateGlobalBrightmapFromColormap()
-{
-	HasGlobalBrightmap = false;
-	int lump = Wads.CheckNumForName("COLORMAP");
-	if (lump == -1) lump = Wads.CheckNumForName("COLORMAP", ns_colormaps);
-	if (lump == -1) return;
-	FMemLump cmap = Wads.ReadLump(lump);
-	uint8_t palbuffer[768];
-	ReadPalette(Wads.CheckNumForName("PLAYPAL"), palbuffer);
-
-	const unsigned char *cmapdata = (const unsigned char *)cmap.GetMem();
-	const uint8_t *paldata = palbuffer;
-
-	const int black = 0;
-	const int white = ColorMatcher.Pick(255,255,255);
-
-
-	GlobalBrightmap.MakeIdentity();
-	memset(GlobalBrightmap.Remap, white, 256);
-	for(int i=0;i<256;i++) GlobalBrightmap.Palette[i]=PalEntry(255,255,255,255);
-	for(int j=0;j<32;j++)
-	{
-		for(int i=0;i<256;i++)
-		{
-			// the palette comparison should be for ==0 but that gives false positives with Heretic
-			// and Hexen.
-			if (cmapdata[i+j*256]!=i || (paldata[3*i]<10 && paldata[3*i+1]<10 && paldata[3*i+2]<10))
-			{
-				GlobalBrightmap.Remap[i]=black;
-				GlobalBrightmap.Palette[i] = PalEntry(255, 0, 0, 0);
-			}
-		}
-	}
-	for(int i=0;i<256;i++)
-	{
-		HasGlobalBrightmap |= GlobalBrightmap.Remap[i] == white;
-		if (GlobalBrightmap.Remap[i] == white) DPrintf(DMSG_NOTIFY, "Marked color %d as fullbright\n",i);
-	}
-}
-
-
 //==========================================================================
 //
 // GL status data for a texture
@@ -175,19 +124,13 @@ void gl_GenerateGlobalBrightmapFromColormap()
 
 FTexture::MiscGLInfo::MiscGLInfo() throw()
 {
-	bGlowing = false;
-	GlowColor = 0;
 	GlowHeight = 128;
 	bSkybox = false;
 	bFullbright = false;
-	bBrightmapChecked = false;
 	bDisableFullbright = false;
 	bNoFilter = false;
 	bNoCompress = false;
 	bNoExpand = false;
-	areas = NULL;
-	areacount = 0;
-	mIsTransparent = -1;
 	shaderspeed = 1.f;
 	shaderindex = 0;
 	Glossiness = 10.0f;
@@ -207,291 +150,6 @@ FTexture::MiscGLInfo::~MiscGLInfo()
 		if (SystemTexture[i] != NULL) delete SystemTexture[i];
 		SystemTexture[i] = NULL;
 	}
-
-	if (areas != NULL) delete [] areas;
-	areas = NULL;
-}
-
-//===========================================================================
-// 
-// Checks if the texture has a default brightmap and creates it if so
-//
-//===========================================================================
-void FTexture::CreateDefaultBrightmap()
-{
-	if (!gl_info.bBrightmapChecked)
-	{
-		// Check for brightmaps
-		if (UseBasePalette() && HasGlobalBrightmap &&
-			UseType != ETextureType::Decal && UseType != ETextureType::MiscPatch && UseType != ETextureType::FontChar &&
-			Brightmap == NULL) 
-		{
-			// May have one - let's check when we use this texture
-			const uint8_t *texbuf = GetPixels(DefaultRenderStyle());
-			const int white = ColorMatcher.Pick(255,255,255);
-
-			int size = GetWidth() * GetHeight();
-			for(int i=0;i<size;i++)
-			{
-				if (GlobalBrightmap.Remap[texbuf[i]] == white)
-				{
-					// Create a brightmap
-					DPrintf(DMSG_NOTIFY, "brightmap created for texture '%s'\n", Name.GetChars());
-					Brightmap = new FBrightmapTexture(this);
-					gl_info.bBrightmapChecked = 1;
-					TexMan.AddTexture(Brightmap);
-					return;
-				}
-			}
-			// No bright pixels found
-			DPrintf(DMSG_SPAMMY, "No bright pixels found in texture '%s'\n", Name.GetChars());
-			gl_info.bBrightmapChecked = 1;
-		}
-		else
-		{
-			// does not have one so set the flag to 'done'
-			gl_info.bBrightmapChecked = 1;
-		}
-	}
-}
-
-
-//==========================================================================
-//
-// Calculates glow color for a texture
-//
-//==========================================================================
-
-void FTexture::GetGlowColor(float *data)
-{
-	if (gl_info.bGlowing && gl_info.GlowColor == 0)
-	{
-		int w, h;
-		unsigned char *buffer = GLRenderer->GetTextureBuffer(this, w, h);
-
-		if (buffer)
-		{
-			gl_info.GlowColor = averageColor((uint32_t *) buffer, w*h, 153);
-			delete[] buffer;
-		}
-
-		// Black glow equals nothing so switch glowing off
-		if (gl_info.GlowColor == 0) gl_info.bGlowing = false;
-	}
-	data[0]=gl_info.GlowColor.r/255.0f;
-	data[1]=gl_info.GlowColor.g/255.0f;
-	data[2]=gl_info.GlowColor.b/255.0f;
-}
-
-//===========================================================================
-// 
-//	Finds gaps in the texture which can be skipped by the renderer
-//  This was mainly added to speed up one area in E4M6 of 007LTSD
-//
-//===========================================================================
-
-bool FTexture::FindHoles(const unsigned char * buffer, int w, int h)
-{
-	const unsigned char * li;
-	int y,x;
-	int startdraw,lendraw;
-	int gaps[5][2];
-	int gapc=0;
-
-
-	// already done!
-	if (gl_info.areacount) return false;
-	if (UseType == ETextureType::Flat) return false;	// flats don't have transparent parts
-	gl_info.areacount=-1;	//whatever happens next, it shouldn't be done twice!
-
-	// large textures are excluded for performance reasons
-	if (h>512) return false;	
-
-	startdraw=-1;
-	lendraw=0;
-	for(y=0;y<h;y++)
-	{
-		li=buffer+w*y*4+3;
-
-		for(x=0;x<w;x++,li+=4)
-		{
-			if (*li!=0) break;
-		}
-
-		if (x!=w)
-		{
-			// non - transparent
-			if (startdraw==-1) 
-			{
-				startdraw=y;
-				// merge transparent gaps of less than 16 pixels into the last drawing block
-				if (gapc && y<=gaps[gapc-1][0]+gaps[gapc-1][1]+16)
-				{
-					gapc--;
-					startdraw=gaps[gapc][0];
-					lendraw=y-startdraw;
-				}
-				if (gapc==4) return false;	// too many splits - this isn't worth it
-			}
-			lendraw++;
-		}
-		else if (startdraw!=-1)
-		{
-			if (lendraw==1) lendraw=2;
-			gaps[gapc][0]=startdraw;
-			gaps[gapc][1]=lendraw;
-			gapc++;
-
-			startdraw=-1;
-			lendraw=0;
-		}
-	}
-	if (startdraw!=-1)
-	{
-		gaps[gapc][0]=startdraw;
-		gaps[gapc][1]=lendraw;
-		gapc++;
-	}
-	if (startdraw==0 && lendraw==h) return false;	// nothing saved so don't create a split list
-
-	if (gapc > 0)
-	{
-		FloatRect * rcs = new FloatRect[gapc];
-
-		for (x = 0; x < gapc; x++)
-		{
-			// gaps are stored as texture (u/v) coordinates
-			rcs[x].width = rcs[x].left = -1.0f;
-			rcs[x].top = (float)gaps[x][0] / (float)h;
-			rcs[x].height = (float)gaps[x][1] / (float)h;
-		}
-		gl_info.areas = rcs;
-	}
-	else gl_info.areas = nullptr;
-	gl_info.areacount=gapc;
-
-	return true;
-}
-
-//----------------------------------------------------------------------------
-//
-//
-//
-//----------------------------------------------------------------------------
-
-void FTexture::CheckTrans(unsigned char * buffer, int size, int trans)
-{
-	if (gl_info.mIsTransparent == -1) 
-	{
-		gl_info.mIsTransparent = trans;
-		if (trans == -1)
-		{
-			uint32_t * dwbuf = (uint32_t*)buffer;
-			for(int i=0;i<size;i++)
-			{
-				uint32_t alpha = dwbuf[i]>>24;
-
-				if (alpha != 0xff && alpha != 0)
-				{
-					gl_info.mIsTransparent = 1;
-					return;
-				}
-			}
-			gl_info.mIsTransparent = 0;
-		}
-	}
-}
-
-
-//===========================================================================
-// 
-// smooth the edges of transparent fields in the texture
-//
-//===========================================================================
-
-#ifdef WORDS_BIGENDIAN
-#define MSB 0
-#define SOME_MASK 0xffffff00
-#else
-#define MSB 3
-#define SOME_MASK 0x00ffffff
-#endif
-
-#define CHKPIX(ofs) (l1[(ofs)*4+MSB]==255 ? (( ((uint32_t*)l1)[0] = ((uint32_t*)l1)[ofs]&SOME_MASK), trans=true ) : false)
-
-bool FTexture::SmoothEdges(unsigned char * buffer,int w, int h)
-{
-	int x,y;
-	bool trans=buffer[MSB]==0; // If I set this to false here the code won't detect textures 
-	// that only contain transparent pixels.
-	bool semitrans = false;
-	unsigned char * l1;
-
-	if (h<=1 || w<=1) return false;  // makes (a) no sense and (b) doesn't work with this code!
-
-	l1=buffer;
-
-
-	if (l1[MSB]==0 && !CHKPIX(1)) CHKPIX(w);
-	else if (l1[MSB]<255) semitrans=true;
-	l1+=4;
-	for(x=1;x<w-1;x++, l1+=4)
-	{
-		if (l1[MSB]==0 &&  !CHKPIX(-1) && !CHKPIX(1)) CHKPIX(w);
-		else if (l1[MSB]<255) semitrans=true;
-	}
-	if (l1[MSB]==0 && !CHKPIX(-1)) CHKPIX(w);
-	else if (l1[MSB]<255) semitrans=true;
-	l1+=4;
-
-	for(y=1;y<h-1;y++)
-	{
-		if (l1[MSB]==0 && !CHKPIX(-w) && !CHKPIX(1)) CHKPIX(w);
-		else if (l1[MSB]<255) semitrans=true;
-		l1+=4;
-		for(x=1;x<w-1;x++, l1+=4)
-		{
-			if (l1[MSB]==0 &&  !CHKPIX(-w) && !CHKPIX(-1) && !CHKPIX(1) && !CHKPIX(-w-1) && !CHKPIX(-w+1) && !CHKPIX(w-1) && !CHKPIX(w+1)) CHKPIX(w);
-			else if (l1[MSB]<255) semitrans=true;
-		}
-		if (l1[MSB]==0 && !CHKPIX(-w) && !CHKPIX(-1)) CHKPIX(w);
-		else if (l1[MSB]<255) semitrans=true;
-		l1+=4;
-	}
-
-	if (l1[MSB]==0 && !CHKPIX(-w)) CHKPIX(1);
-	else if (l1[MSB]<255) semitrans=true;
-	l1+=4;
-	for(x=1;x<w-1;x++, l1+=4)
-	{
-		if (l1[MSB]==0 &&  !CHKPIX(-w) && !CHKPIX(-1)) CHKPIX(1);
-		else if (l1[MSB]<255) semitrans=true;
-	}
-	if (l1[MSB]==0 && !CHKPIX(-w)) CHKPIX(-1);
-	else if (l1[MSB]<255) semitrans=true;
-
-	return trans || semitrans;
-}
-
-//===========================================================================
-// 
-// Post-process the texture data after the buffer has been created
-//
-//===========================================================================
-
-bool FTexture::ProcessData(unsigned char * buffer, int w, int h, bool ispatch)
-{
-	if (bMasked) 
-	{
-		bMasked = SmoothEdges(buffer, w, h);
-		if (!bMasked)
-		{
-			auto stex = GetRedirect(false);
-			stex->bMasked = false;	// also clear in the base texture if there is a redirection.
-		}
-		if (bMasked && !ispatch) FindHoles(buffer, w, h);
-	}
-	return true;
 }
 
 //===========================================================================
@@ -509,86 +167,268 @@ void FTexture::SetSpriteAdjust()
 	}
 }
 
-//===========================================================================
-//
-// fake brightness maps
-// These are generated for textures affected by a colormap with
-// fullbright entries.
-// These textures are only used internally by the GL renderer so
-// all code for software rendering support is missing
-//
-//===========================================================================
-
-FBrightmapTexture::FBrightmapTexture (FTexture *source)
-{
-	Name = "";
-	SourcePic = source;
-	CopySize(source);
-	bNoDecals = source->bNoDecals;
-	Rotations = source->Rotations;
-	UseType = source->UseType;
-	bMasked = false;
-	id.SetInvalid();
-	SourceLump = -1;
-}
-
-uint8_t *FBrightmapTexture::MakeTexture(FRenderStyle style)
-{
-	// This function is only necessary to satisfy the parent class's interface.
-	// This will never be called.
-	return nullptr;
-}
-
-int FBrightmapTexture::CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf)
-{
-	SourcePic->CopyTrueColorTranslated(bmp, x, y, rotate, GlobalBrightmap.Palette);
-	return 0;
-}
-
 //==========================================================================
 //
-// Search auto paths for extra material textures
+// Parses a material definition
 //
 //==========================================================================
 
-struct AutoTextureSearchPath
+void gl_ParseMaterial(FScanner &sc, int deflump)
 {
-	const char *path;
-	FTexture *FTexture::*pointer;
-};
+	ETextureType type = ETextureType::Any;
+	bool disable_fullbright = false;
+	bool disable_fullbright_specified = false;
+	bool thiswad = false;
+	bool iwad = false;
 
-static AutoTextureSearchPath autosearchpaths[] =
-{
-	{ "brightmaps/auto/", &FTexture::Brightmap }, // For backwards compatibility
-	{ "materials/brightmaps/auto/", &FTexture::Brightmap },
-	{ "materials/normalmaps/auto/", &FTexture::Normal },
-	{ "materials/specular/auto/", &FTexture::Specular },
-	{ "materials/metallic/auto/", &FTexture::Metallic },
-	{ "materials/roughness/auto/", &FTexture::Roughness },
-	{ "materials/ao/auto/", &FTexture::AmbientOcclusion }
-};
+	FTexture *textures[6];
+	const char *keywords[7] = { "brightmap", "normal", "specular", "metallic", "roughness", "ao", nullptr };
+	const char *notFound[6] = { "Brightmap", "Normalmap", "Specular texture", "Metallic texture", "Roughness texture", "Ambient occlusion texture" };
+	memset(textures, 0, sizeof(textures));
 
-void AddAutoMaterials()
-{
-	// Fixme: let this be driven by the texture manager, not the renderer.
-	int num = Wads.GetNumLumps();
-	for (int i = 0; i < num; i++)
+	sc.MustGetString();
+	if (sc.Compare("texture")) type = ETextureType::Wall;
+	else if (sc.Compare("flat")) type = ETextureType::Flat;
+	else if (sc.Compare("sprite")) type = ETextureType::Sprite;
+	else sc.UnGet();
+
+	sc.MustGetString();
+	FTextureID no = TexMan.CheckForTexture(sc.String, type, FTextureManager::TEXMAN_TryAny | FTextureManager::TEXMAN_Overridable);
+	FTexture *tex = TexMan[no];
+
+	sc.MustGetToken('{');
+	while (!sc.CheckToken('}'))
 	{
-		const char *name = Wads.GetLumpFullName(i);
-		for (const AutoTextureSearchPath &searchpath : autosearchpaths)
+		sc.MustGetString();
+		if (sc.Compare("disablefullbright"))
 		{
-			if (strstr(name, searchpath.path) == name)
+			// This can also be used without a brightness map to disable
+			// fullbright in rotations that only use brightness maps on
+			// other angles.
+			disable_fullbright = true;
+			disable_fullbright_specified = true;
+		}
+		else if (sc.Compare("thiswad"))
+		{
+			// only affects textures defined in the WAD containing the definition file.
+			thiswad = true;
+		}
+		else if (sc.Compare ("iwad"))
+		{
+			// only affects textures defined in the IWAD.
+			iwad = true;
+		}
+		else if (sc.Compare("glossiness"))
+		{
+			sc.MustGetFloat();
+			if (tex)
+				tex->gl_info.Glossiness = sc.Float;
+		}
+		else if (sc.Compare("specularlevel"))
+		{
+			sc.MustGetFloat();
+			if (tex)
+				tex->gl_info.SpecularLevel = sc.Float;
+		}
+		else
+		{
+			for (int i = 0; keywords[i] != nullptr; i++)
 			{
-				TArray<FTextureID> list;
-				FString texname = ExtractFileBase(name, false);
-				TexMan.ListTextures(texname, list);
-				auto bmtex = TexMan.FindTexture(name, ETextureType::Any, FTextureManager::TEXMAN_TryAny || FTextureManager::TEXMAN_DontCreate || FTextureManager::TEXMAN_ShortNameOnly );
-				for (auto texid : list)
+				if (sc.Compare (keywords[i]))
 				{
-					bmtex->bMasked = false;
-					auto tex = TexMan[texid];
-					if (tex != nullptr) tex->*(searchpath.pointer) = bmtex;
+					sc.MustGetString();
+					if (textures[i])
+						Printf("Multiple %s definitions in texture %s\n", keywords[i], tex? tex->Name.GetChars() : "(null)");
+					textures[i] = TexMan.FindTexture(sc.String, ETextureType::Any, FTextureManager::TEXMAN_TryAny);
+					if (!textures[i])
+						Printf("%s '%s' not found in texture '%s'\n", notFound[i], sc.String, tex? tex->Name.GetChars() : "(null)");
+					break;
 				}
+			}
+		}
+	}
+	if (!tex)
+	{
+		return;
+	}
+	if (thiswad || iwad)
+	{
+		bool useme = false;
+		int lumpnum = tex->GetSourceLump();
+
+		if (lumpnum != -1)
+		{
+			if (iwad && Wads.GetLumpFile(lumpnum) <= Wads.GetIwadNum()) useme = true;
+			if (thiswad && Wads.GetLumpFile(lumpnum) == deflump) useme = true;
+		}
+		if (!useme) return;
+	}
+
+	FTexture **bindings[6] =
+	{
+		&tex->Brightmap,
+		&tex->Normal,
+		&tex->Specular,
+		&tex->Metallic,
+		&tex->Roughness,
+		&tex->AmbientOcclusion
+	};
+	for (int i = 0; keywords[i] != nullptr; i++)
+	{
+		if (textures[i])
+		{
+			textures[i]->bMasked = false;
+			*bindings[i] = textures[i];
+		}
+	}
+
+	if (disable_fullbright_specified)
+		tex->gl_info.bDisableFullbright = disable_fullbright;
+}
+
+//==========================================================================
+//
+// Parses a brightmap definition
+//
+//==========================================================================
+
+void gl_ParseBrightmap(FScanner &sc, int deflump)
+{
+	ETextureType type = ETextureType::Any;
+	bool disable_fullbright=false;
+	bool thiswad = false;
+	bool iwad = false;
+	FTexture *bmtex = NULL;
+
+	sc.MustGetString();
+	if (sc.Compare("texture")) type = ETextureType::Wall;
+	else if (sc.Compare("flat")) type = ETextureType::Flat;
+	else if (sc.Compare("sprite")) type = ETextureType::Sprite;
+	else sc.UnGet();
+
+	sc.MustGetString();
+	FTextureID no = TexMan.CheckForTexture(sc.String, type, FTextureManager::TEXMAN_TryAny | FTextureManager::TEXMAN_Overridable);
+	FTexture *tex = TexMan[no];
+
+	sc.MustGetToken('{');
+	while (!sc.CheckToken('}'))
+	{
+		sc.MustGetString();
+		if (sc.Compare("disablefullbright"))
+		{
+			// This can also be used without a brightness map to disable
+			// fullbright in rotations that only use brightness maps on
+			// other angles.
+			disable_fullbright = true;
+		}
+		else if (sc.Compare("thiswad"))
+		{
+			// only affects textures defined in the WAD containing the definition file.
+			thiswad = true;
+		}
+		else if (sc.Compare ("iwad"))
+		{
+			// only affects textures defined in the IWAD.
+			iwad = true;
+		}
+		else if (sc.Compare ("map"))
+		{
+			sc.MustGetString();
+
+			if (bmtex != NULL)
+			{
+				Printf("Multiple brightmap definitions in texture %s\n", tex? tex->Name.GetChars() : "(null)");
+			}
+
+			bmtex = TexMan.FindTexture(sc.String, ETextureType::Any, FTextureManager::TEXMAN_TryAny);
+
+			if (bmtex == NULL) 
+				Printf("Brightmap '%s' not found in texture '%s'\n", sc.String, tex? tex->Name.GetChars() : "(null)");
+		}
+	}
+	if (!tex)
+	{
+		return;
+	}
+	if (thiswad || iwad)
+	{
+		bool useme = false;
+		int lumpnum = tex->GetSourceLump();
+
+		if (lumpnum != -1)
+		{
+			if (iwad && Wads.GetLumpFile(lumpnum) <= Wads.GetIwadNum()) useme = true;
+			if (thiswad && Wads.GetLumpFile(lumpnum) == deflump) useme = true;
+		}
+		if (!useme) return;
+	}
+
+	if (bmtex != NULL)
+	{
+		/* I do not think this is needed any longer
+		if (tex->bWarped != 0)
+		{
+			Printf("Cannot combine warping with brightmap on texture '%s'\n", tex->Name.GetChars());
+			return;
+		}
+		*/
+
+		bmtex->bMasked = false;
+		tex->Brightmap = bmtex;
+	}	
+	tex->gl_info.bDisableFullbright = disable_fullbright;
+}
+
+//==========================================================================
+//
+// Parses a GLBoom+ detail texture definition
+//
+// Syntax is this:
+//	detail
+//	{
+//		(walls | flats) [default_detail_name [width [height [offset_x [offset_y]]]]]
+//		{
+//			texture_name [detail_name [width [height [offset_x [offset_y]]]]]
+//		}
+//	}
+// This merely parses the block and returns no error if valid. The feature
+// is not actually implemented, so nothing else happens.
+//==========================================================================
+
+void gl_ParseDetailTexture(FScanner &sc)
+{
+	while (!sc.CheckToken('}'))
+	{
+		sc.MustGetString();
+		if (sc.Compare("walls") || sc.Compare("flats"))
+		{
+			if (!sc.CheckToken('{'))
+			{
+				sc.MustGetString();  // Default detail texture
+				if (sc.CheckFloat()) // Width
+				if (sc.CheckFloat()) // Height
+				if (sc.CheckFloat()) // OffsX
+				if (sc.CheckFloat()) // OffsY
+				{
+					// Nothing
+				}
+			}
+			else sc.UnGet();
+			sc.MustGetToken('{');
+			while (!sc.CheckToken('}'))
+			{
+				sc.MustGetString();  // Texture
+				if (sc.GetString())	 // Detail texture
+				{
+					if (sc.CheckFloat()) // Width
+					if (sc.CheckFloat()) // Height
+					if (sc.CheckFloat()) // OffsX
+					if (sc.CheckFloat()) // OffsY
+					{
+						// Nothing
+					}
+				}
+				else sc.UnGet();
 			}
 		}
 	}
