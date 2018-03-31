@@ -58,8 +58,6 @@ public:
 	// Releases the screenshot buffer.
 	virtual void ReleaseScreenshotBuffer();
 
-	FNativePalette *CreatePalette(FRemapTable *remap);
-
 	bool WipeStartScreen(int type);
 	void WipeEndScreen();
 	bool WipeDo(int ticks);

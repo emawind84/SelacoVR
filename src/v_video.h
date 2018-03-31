@@ -337,13 +337,7 @@ public:
 };
 
 
-// This class represents a texture lookup palette.
-class FNativePalette
-{
-public:
-	virtual ~FNativePalette();
-	virtual bool Update() = 0;
-};
+class FUniquePalette;
 
 // A canvas that represents the actual display. The video code is responsible
 // for actually implementing this. Built on top of SimpleCanvas, because it
@@ -448,9 +442,6 @@ public:
 
 	virtual int GetClientWidth();
 	virtual int GetClientHeight();
-
-	// Create a palette texture from a remap/palette table.
-	virtual FNativePalette *CreatePalette(FRemapTable *remap);
 
 	// Precaches or unloads a texture
 	
