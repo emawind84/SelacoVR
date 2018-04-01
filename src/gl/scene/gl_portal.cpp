@@ -55,7 +55,6 @@
 #include "gl/shaders/gl_shader.h"
 #include "gl/stereo3d/scoped_color_mask.h"
 #include "gl/textures/gl_material.h"
-#include "gl/utility/gl_templates.h"
 #include "gl/stereo3d/gl_stereo3d.h"
 
 //-----------------------------------------------------------------------------
