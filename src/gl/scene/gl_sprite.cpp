@@ -749,7 +749,7 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal, bool is
 
 	// [RH] Interpolate the sprite's position to make it look smooth
 	DVector3 thingpos = thing->InterpolatedPosition(r_viewpoint.TicFrac);
-	if (thruportal == 1) thingpos += Displacements.getOffset(thing->Sector->PortalGroup, sector->PortalGroup);
+	if (thruportal == 1) thingpos += level.Displacements.getOffset(thing->Sector->PortalGroup, sector->PortalGroup);
 
 	AActor *viewmaster = thing;
 	if ((thing->flags8 & MF8_MASTERNOSEE) && thing->master != nullptr)
@@ -772,14 +772,14 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal, bool is
 	if (viewmaster == camera && !vp.showviewer)
 	{
 		DVector3 vieworigin = viewmaster->Pos();
-		if (thruportal == 1) vieworigin += Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
+		if (thruportal == 1) vieworigin += level.Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
 		if (fabs(vieworigin.X - vp.ActorPos.X) < 2 && fabs(vieworigin.Y - vp.ActorPos.Y) < 2) return;
 	}
 	// Thing is invisible if close to the camera.
 	if (viewmaster->renderflags & RF_MAYBEINVISIBLE)
 	{
 		DVector3 viewpos = viewmaster->InterpolatedPosition(vp.TicFrac);
-		if (thruportal == 1) viewpos += Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
+		if (thruportal == 1) viewpos += level.Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
 		if (fabs(viewpos.X - vp.Pos.X) < 32 && fabs(viewpos.Y - vp.Pos.Y) < 32) return;
 	}
 
