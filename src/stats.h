@@ -52,7 +52,7 @@ public:
 		Counter -= time;
 	}
 	
-	void Unclock()
+	void Unclock(bool checkvar = true)
 	{
 		int64_t time = I_nsTime();
 		Counter += time;
@@ -75,6 +75,21 @@ public:
 
 private:
 	int64_t Counter;
+};
+
+class glcycle_t : public cycle_t
+{
+public:
+	static bool active;
+	void Clock()
+	{
+		if (active) cycle_t::Clock();		
+	}
+
+	void Unclock()
+	{
+		if (active) cycle_t::Unclock();
+	}
 };
 
 class FStat
