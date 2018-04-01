@@ -41,7 +41,6 @@
 #include "actorinlines.h"
 #include "g_levellocals.h"
 #include "gl/dynlights/gl_dynlight.h"
-#include "gl/utility/gl_geometric.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_lightdata.h"
 #include "gl/system/gl_interface.h"
@@ -646,7 +645,7 @@ void GLFlat::DrawSubsectorLights(subsector_t * sub, int pass)
 			continue;
 		}
 
-		p.Set(plane.plane);
+		p.Set(plane.plane.Normal(), plane.plane.fD());
 		if (!gl_SetupLight(sub->sector->PortalGroup, p, light, nearPt, up, right, scale, false, pass != GLPASS_LIGHTTEX))
 		{
 			node = node->nextLight;
@@ -720,7 +719,8 @@ bool GLWall::PrepareLight(FDynamicLight * light, int pass)
 	FVector3 nearPt, up, right;
 	float scale;
 
-	p.Set(&glseg);
+	auto normal = glseg.Normal();
+	p.Set(normal, -normal.X * glseg.x1 - normal.Y * glseg.y1);
 
 	if (!p.ValidNormal())
 	{
