@@ -218,11 +218,13 @@ enum FTextureFormat : uint32_t
 // Base texture class
 class FTexture
 {
+
 public:
 	static FTexture *CreateTexture(const char *name, int lumpnum, ETextureType usetype);
 	static FTexture *CreateTexture(int lumpnum, ETextureType usetype);
 	virtual ~FTexture ();
 	void AddAutoMaterials();
+	unsigned char *CreateUpsampledTextureBuffer(unsigned char *inputBuffer, const int inWidth, const int inHeight, int &outWidth, int &outHeight, bool hasAlpha);
 
 	//int16_t LeftOffset, TopOffset;
 
@@ -238,6 +240,8 @@ public:
 
 	// Paletted variant
 	FTexture *PalVersion = nullptr;
+	// External hires texture
+	FTexture *HiresTexture = nullptr;
 	// Material layers
 	FTexture *Brightmap = nullptr;
 	FTexture* Detailmap = nullptr;
@@ -267,12 +271,14 @@ public:
 	uint8_t bBrightmapChecked : 1;				// Set to 1 if brightmap has been checked
 	uint8_t bGlowing : 1;						// Texture glow color
 	int8_t bTranslucent : 2;
+	bool bHiresHasColorKey = false;				// Support for old color-keyed Doomsday textures
 
 	uint16_t Rotations;
 	int16_t SkyOffset;
 	FloatRect *areas = nullptr;
 	int areacount = 0;
 	PalEntry GlowColor = 0;
+	int HiresLump = -1;							// For external hires textures.
 
 
 	struct Span
@@ -455,7 +461,13 @@ protected:
 	void GenerateBgraMipmapsFast();
 	int MipmapLevels() const;
 
+
+public:
+	unsigned char *LoadHiresTexture(int *width, int *height);
 private:
+	int CheckDDPK3();
+	int CheckExternalFile(bool & hascolorkey);
+
 	bool bSWSkyColorDone = false;
 	PalEntry FloorSkyColor;
 	PalEntry CeilingSkyColor;
@@ -479,7 +491,6 @@ public:
 		int GlowHeight;
 		int shaderindex;
 		float shaderspeed;
-		int mIsTransparent:2;
 		bool bAutoGlowing : 1;					// Glow info is determined from texture image.
 		bool bFullbright:1;						// always draw fullbright
 		bool bSkybox:1;							// This is a skybox
