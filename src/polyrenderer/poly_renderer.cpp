@@ -46,7 +46,6 @@ EXTERN_CVAR(Bool, r_models)
 
 extern bool r_modelscene;
 
-void InitGLRMapinfoData();
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -211,7 +210,6 @@ PolyPortalViewpoint PolyRenderer::SetupPerspectiveMatrix(bool mirror)
 
 	if (!bDidSetup)
 	{
-		InitGLRMapinfoData();
 		bDidSetup = true;
 	}
 

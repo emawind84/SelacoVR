@@ -122,6 +122,32 @@ CVAR(Int, sv_alwaystally, 0, CVAR_ARCHIVE | CVAR_SERVERINFO)
 
 void G_VerifySkill();
 
+CUSTOM_CVAR(Bool, gl_brightfog, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
+{
+	if (level.info->brightfog == -1) level.brightfog = self;
+}
+
+CUSTOM_CVAR(Bool, gl_lightadditivesurfaces, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
+{
+	if (level.info->lightadditivesurfaces == -1) level.lightadditivesurfaces = self;
+}
+
+CUSTOM_CVAR(Bool, gl_notexturefill, false, CVAR_NOINITCALL)
+{
+	if (level.info->notexturefill == -1) level.notexturefill = self;
+}
+
+CUSTOM_CVAR(Int, gl_lightmode, 3, CVAR_ARCHIVE | CVAR_NOINITCALL)
+{
+	int newself = self;
+	if (newself > 8) newself = 16;	// use 8 and 16 for software lighting to avoid conflicts with the bit mask
+	else if (newself > 4) newself = 8;
+	else if (newself < 0) newself = 0;
+	if (self != newself) self = newself;
+	else if (level.info->lightmode == -1) level.lightmode = self;
+}
+
+
 
 static FRandom pr_classchoice ("RandomPlayerClassChoice", false);
 
@@ -1605,6 +1631,12 @@ void G_InitLevelLocals ()
 	compatflags2.Callback();
 
 	level.DefaultEnvironment = info->DefaultEnvironment;
+
+	level.lightmode = info->lightmode < 0? gl_lightmode : info->lightmode;
+	level.brightfog = info->brightfog < 0? gl_brightfog : !!info->brightfog;
+	level.lightadditivesurfaces = info->lightadditivesurfaces < 0 ? gl_lightadditivesurfaces : !!info->lightadditivesurfaces;
+	level.notexturefill = info->notexturefill < 0 ? gl_notexturefill : !!info->notexturefill;
+
 	FLightDefaults::SetAttenuationForLevel();
 }
 

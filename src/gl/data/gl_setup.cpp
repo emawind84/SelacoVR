@@ -50,8 +50,6 @@
 #include "gl/utility/gl_clock.h"
 #include "gl/gl_functions.h"
 
-void InitGLRMapinfoData();
-
 //==========================================================================
 //
 // Map section generation
@@ -589,7 +587,6 @@ void gl_PreprocessLevel()
 		GLRenderer->SetupLevel();
 	}
 
-	InitGLRMapinfoData();
 }
 
 

@@ -194,6 +194,12 @@ struct FLevelLocals : public FLevelData
 	float		pixelstretch;
 	float		MusicVolume;
 
+	// Hardware render stuff that can either be set via CVAR or MAPINFO
+	int			lightmode;
+	bool		brightfog;
+	bool		lightadditivesurfaces;
+	bool		notexturefill;
+
 	FDynamicLight *lights;
 
 	// links to global game objects
