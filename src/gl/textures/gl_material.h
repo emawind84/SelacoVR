@@ -33,13 +33,6 @@ enum
 //===========================================================================
 class FMaterial;
 
-enum ESpecialTranslations : uint32_t
-{
-	STRange_Min = 0x10000000,
-	STRange_Desaturate = 0x10000000,
-	STRange_Specialcolormap = 0x20000000,
-};
-
 class FGLTexture
 {
 	friend class FMaterial;
@@ -60,8 +53,6 @@ private:
 public:
 	FGLTexture(FTexture * tx, bool expandpatches);
 	~FGLTexture();
-
-	unsigned char * CreateTexBuffer(int translation, int & w, int & h, FTexture *hirescheck, bool createexpanded = true, bool alphatrans = false);
 
 	void Clean(bool all);
 	void CleanUnused(SpriteHits &usedtranslations);
@@ -133,11 +124,6 @@ public:
 
 	void Bind(int clamp, int translation);
 
-	unsigned char * CreateTexBuffer(int translation, int & w, int & h, bool allowhires=true, bool createexpanded = true) const
-	{
-		return mBaseLayer->CreateTexBuffer(translation, w, h, allowhires? tex : NULL, createexpanded);
-	}
-
 	void Clean(bool f)
 	{
 		mBaseLayer->Clean(f);
@@ -200,25 +186,6 @@ public:
 	float GetSpriteUR() const { return mSpriteU[1]; }
 	float GetSpriteVB() const { return mSpriteV[1]; }
 
-
-
-	bool GetTransparent() const
-	{
-		if (tex->bTranslucent == -1) 
-		{
-			if (!mBaseLayer->tex->bHasCanvas)
-			{
-				int w, h;
-				unsigned char *buffer = CreateTexBuffer(0, w, h);
-				delete [] buffer;
-			}
-			else
-			{
-				tex->bTranslucent = 0;
-			}
-		}
-		return !!tex->bTranslucent;
-	}
 
 	static void DeleteAll();
 	static void FlushAll();

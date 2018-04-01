@@ -284,7 +284,7 @@ void GLSprite::Draw(int pass)
 		gl_SetRenderStyle(RenderStyle, false, 
 			// The rest of the needed checks are done inside gl_SetRenderStyle
 			trans > 1.f - FLT_EPSILON && gl_usecolorblending && mDrawer->FixedColormap == CM_DEFAULT && actor && 
-			fullbright && gltexture && !gltexture->GetTransparent());
+			fullbright && gltexture && !gltexture->tex->GetTranslucency());
 
 		if (hw_styleflags == STYLEHW_NoAlphaTest)
 		{
@@ -1128,7 +1128,7 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal, bool is
 			RenderStyle.DestAlpha = STYLEALPHA_InvSrc;
 		}
 	}
-	if ((gltexture && gltexture->GetTransparent()) || (RenderStyle.Flags & STYLEF_RedIsAlpha) || (modelframe && thing->RenderStyle != DefaultRenderStyle()))
+	if ((gltexture && gltexture->tex->GetTranslucency()) || (RenderStyle.Flags & STYLEF_RedIsAlpha))
 	{
 		if (hw_styleflags == STYLEHW_Solid)
 		{
