@@ -69,6 +69,8 @@ struct FLevelData
 	FDisplacementTable Displacements;
 	FPortalBlockmap PortalBlockmap;
 	TArray<FLinePortal*> linkedPortals;	// only the linked portals, this is used to speed up looking for them in P_CollectConnectedGroups.
+	TArray<FSectorPortalGroup *> portalGroups;	
+	TArray<FLinePortalSpan> linePortalSpans;
 
 
 	// [ZZ] Destructible geometry information

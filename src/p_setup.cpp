@@ -111,6 +111,7 @@
 #include "p_saveg.h"
 #include "g_levellocals.h"
 #include "c_dispatch.h"
+#include "a_dynlight.h"
 #ifndef NO_EDATA
 #include "edata.h"
 #endif
@@ -3142,14 +3143,16 @@ static void P_PrecacheLevel()
 
 extern polyblock_t **PolyBlockMap;
 
-//===========================================================================
+
+//==========================================================================
 //
 //
 //
-//===========================================================================
+//==========================================================================
 
 void P_FreeLevelData ()
 {
+
 	// [ZZ] delete per-map event handlers
 	E_Shutdown(true);
 	MapThingsConverted.Clear();
@@ -3177,14 +3180,27 @@ void P_FreeLevelData ()
 
 	level.max_velocity = level.avg_velocity = 0;
 
+		
+	// delete allocated data in the level arrays.
 	if (level.sectors.Size() > 0)
 	{
 		delete[] level.sectors[0].e;
+		if (level.sectors[0].subsectors)
+		{
+			delete[] level.sectors[0].subsectors;
+			level.sectors[0].subsectors = nullptr;
+		}
 	}
 	for (auto &sub : level.subsectors)
 	{
 		if (sub.BSP != nullptr) delete sub.BSP;
 	}
+	if (level.sides.Size() > 0 && level.sides[0].segs)
+	{
+		delete[] level.sides[0].segs;
+		level.sides[0].segs = nullptr;
+	}
+
 
 	FBehavior::StaticUnloadModules ();
 	level.CorpseQueue.Clear();
