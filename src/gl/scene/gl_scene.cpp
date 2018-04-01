@@ -42,6 +42,7 @@
 #include "po_man.h"
 #include "r_utility.h"
 #include "p_local.h"
+#include "gl/gl_functions.h"
 #include "serializer.h"
 #include "g_levellocals.h"
 #include "events.h"
@@ -1055,10 +1056,6 @@ void FGLInterface::StartSerialize(FSerializer &arc)
 
 void FGLInterface::EndSerialize(FSerializer &arc)
 {
-	if (arc.isReading())
-	{
-		// The portal data needs to be recreated after reading a savegame.
-	}
 }
 
 //===========================================================================
@@ -1169,7 +1166,6 @@ void FGLInterface::RenderTextureView (FCanvasTexture *tex, AActor *Viewpoint, do
 // 
 //
 //===========================================================================
-void gl_PreprocessLevel();
 
 void FGLInterface::PreprocessLevel() 
 {
