@@ -71,6 +71,7 @@ struct FLevelData
 	TArray<FLinePortal*> linkedPortals;	// only the linked portals, this is used to speed up looking for them in P_CollectConnectedGroups.
 	TArray<FSectorPortalGroup *> portalGroups;	
 	TArray<FLinePortalSpan> linePortalSpans;
+	int NumMapSections;
 
 
 	// [ZZ] Destructible geometry information

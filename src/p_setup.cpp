@@ -131,6 +131,7 @@ void P_SetSlopes ();
 void P_CopySlopes();
 void BloodCrypt (void *data, int key, int len);
 void P_ClearUDMFKeys();
+void InitRenderInfo();
 
 extern AActor *P_SpawnMapThing (FMapThing *mthing, int position);
 
@@ -3740,6 +3741,7 @@ void P_SetupLevel(const char *lumpname, int position, bool newGame)
 	P_ClearDynamic3DFloorData();
 
 	// This must be done BEFORE the PolyObj Spawn!!!
+	InitRenderInfo();
 	Renderer->PreprocessLevel();
 	InitPortalGroups();
 

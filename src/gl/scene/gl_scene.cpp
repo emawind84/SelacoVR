@@ -90,7 +90,6 @@ EXTERN_CVAR (Bool, r_drawvoxels)
 extern bool NoInterpolateView;
 
 area_t			in_area;
-TArray<uint8_t> currentmapsection;
 int camtexcount;
 
 //-----------------------------------------------------------------------------
@@ -743,8 +742,9 @@ void GLSceneDrawer::ProcessScene(bool toscreen)
 	GLPortal::BeginScene();
 
 	int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
-	memset(&currentmapsection[0], 0, currentmapsection.Size());
-	currentmapsection[mapsection>>3] |= 1 << (mapsection & 7);
+	CurrentMapSections.Resize(level.NumMapSections);
+	CurrentMapSections.Zero();
+	CurrentMapSections.Set(mapsection);
 	DrawScene(toscreen ? DM_MAINVIEW : DM_OFFSCREEN);
 	FDrawInfo::EndDrawInfo();
 
@@ -1148,10 +1148,12 @@ void FGLInterface::RenderTextureView (FCanvasTexture *tex, AActor *Viewpoint, do
 // 
 //
 //===========================================================================
-void gl_PreprocessLevel();
 void FGLInterface::PreprocessLevel() 
 {
-	gl_PreprocessLevel();
+	if (GLRenderer != NULL) 
+	{
+		GLRenderer->SetupLevel();
+	}
 }
 
 uint32_t FGLInterface::GetCaps()
