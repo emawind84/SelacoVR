@@ -44,8 +44,16 @@
 // profiling data
 static int totalupper, totallower;
 static int lowershcount, uppershcount;
-static glcycle_t totalms, showtotalms;
-static glcycle_t totalssms;
+static glcycle_t totalms, showtotalms, totalssms;
+
+
+static sector_t fakesec;	// this is static because it gets used in recursively called functions.
+
+// Having this static doesn't really matter here because the hack code is not multithreading-capable anyway.
+static bool inview;
+static subsector_t * viewsubsector;
+static TArray<seg_t *> lowersegs;
+
 
 void FDrawInfo::ClearBuffers()
 {
@@ -758,9 +766,6 @@ bool FDrawInfo::CheckAnchorFloor(subsector_t * sub)
 // Collect connected subsectors that have to be rendered with the same plane
 //
 //==========================================================================
-static bool inview;
-static subsector_t * viewsubsector;
-static TArray<seg_t *> lowersegs;
 
 bool FDrawInfo::CollectSubsectorsFloor(subsector_t * sub, sector_t * anchor)
 {
@@ -1144,7 +1149,7 @@ void FDrawInfo::ProcessSectorStacks()
 
 					if (sub->portalcoverage[sector_t::ceiling].subsectors == NULL)
 					{
-						BuildPortalCoverage(&sub->portalcoverage[sector_t::ceiling],	sub, portal->mDisplacement);
+						BuildPortalCoverage(&sub->portalcoverage[sector_t::ceiling], sub, portal->mDisplacement);
 					}
 
 					portal->GetRenderState()->AddSubsector(sub);
