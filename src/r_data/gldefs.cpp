@@ -1035,7 +1035,7 @@ class GLDefsParser
 					sc.MustGetString();
 					FTextureID flump=TexMan.CheckForTexture(sc.String, ETextureType::Flat,FTextureManager::TEXMAN_TryAny);
 					FTexture *tex = TexMan[flump];
-					if (tex) tex->gl_info.bAutoGlowing = tex->bGlowing = tex->gl_info.bFullbright = true;
+					if (tex) tex->bAutoGlowing = tex->bGlowing = tex->bFullbright = true;
 				}
 			}
 			else if (sc.Compare("WALLS"))
@@ -1046,7 +1046,7 @@ class GLDefsParser
 					sc.MustGetString();
 					FTextureID flump=TexMan.CheckForTexture(sc.String, ETextureType::Wall,FTextureManager::TEXMAN_TryAny);
 					FTexture *tex = TexMan[flump];
-					if (tex) tex->gl_info.bAutoGlowing = tex->bGlowing = tex->gl_info.bFullbright = true;
+					if (tex) tex->bAutoGlowing = tex->bGlowing = tex->bFullbright = true;
 				}
 			}
 			else if (sc.Compare("TEXTURE"))
@@ -1064,19 +1064,19 @@ class GLDefsParser
 				{
 					if (sc.CheckNumber())
 					{
-						if (tex) tex->gl_info.GlowHeight = sc.Number;
+						if (tex) tex->GlowHeight = sc.Number;
 						if (!sc.CheckString(",")) goto skip_fb;
 					}
 
 					sc.MustGetStringName("fullbright");
-					if (tex) tex->gl_info.bFullbright = true;
+					if (tex) tex->bFullbright = true;
 				}
 			skip_fb:
 				sc.SetCMode(false);
 
 				if (tex && color != 0)
 				{
-					tex->gl_info.bAutoGlowing = false;
+					tex->bAutoGlowing = false;
 					tex->bGlowing = true;
 					tex->GlowColor = color;
 				}
@@ -1175,7 +1175,7 @@ class GLDefsParser
 			bmtex->bMasked = false;
 			tex->Brightmap = bmtex;
 		}	
-		tex->gl_info.bDisableFullbright = disable_fullbright;
+		tex->bDisableFullbright = disable_fullbright;
 	}
 
 	void SetShaderIndex(FTexture *tex, unsigned index)
@@ -1253,13 +1253,13 @@ class GLDefsParser
 			{
 				sc.MustGetFloat();
 				if (tex)
-					tex->gl_info.Glossiness = (float)sc.Float;
+					tex->Glossiness = (float)sc.Float;
 			}
 			else if (sc.Compare("specularlevel"))
 			{
 				sc.MustGetFloat();
 				if (tex)
-					tex->gl_info.SpecularLevel = (float)sc.Float;
+					tex->SpecularLevel = (float)sc.Float;
 			}
 			else if (sc.Compare("speed"))
 			{
@@ -1373,7 +1373,7 @@ class GLDefsParser
 		}
 
 		if (disable_fullbright_specified)
-			tex->gl_info.bDisableFullbright = disable_fullbright;
+			tex->bDisableFullbright = disable_fullbright;
 
 		if (usershader.shader.IsNotEmpty())
 		{
@@ -1404,7 +1404,7 @@ class GLDefsParser
 				Printf("Cannot combine warping with hardware shader on texture '%s'\n", tex->Name.GetChars());
 				return;
 			}
-			tex->gl_info.shaderspeed = speed;
+			tex->shaderspeed = speed;
 			for (unsigned i = 0; i < usershaders.Size(); i++)
 			{
 				if (!usershaders[i].shader.CompareNoCase(usershader.shader) &&
@@ -1644,7 +1644,7 @@ class GLDefsParser
 					Printf("Cannot combine warping with hardware shader on texture '%s'\n", tex->Name.GetChars());
 					return;
 				}
-				tex->gl_info.shaderspeed = speed;
+				tex->shaderspeed = speed;
 				for (unsigned i = 0; i < usershaders.Size(); i++)
 				{
 					if (!usershaders[i].shader.CompareNoCase(desc.shader) &&

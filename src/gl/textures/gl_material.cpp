@@ -132,7 +132,7 @@ FHardwareTexture *FGLTexture::CreateHwTexture()
 	if (tex->UseType==ETextureType::Null) return NULL;		// Cannot register a NULL texture
 	if (mHwTexture == NULL)
 	{
-		mHwTexture = new FHardwareTexture(tex->gl_info.bNoCompress);
+		mHwTexture = new FHardwareTexture(tex->bNoCompress);
 	}
 	return mHwTexture; 
 }
@@ -245,9 +245,9 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 
 	if (tx->bHasCanvas)
 	{
-		if (tx->gl_info.shaderindex >= FIRST_USER_SHADER)
+		if (tx->shaderindex >= FIRST_USER_SHADER)
 		{
-			mShaderIndex = tx->gl_info.shaderindex;
+			mShaderIndex = tx->shaderindex;
 		}
 		// no brightmap for cameratexture
 	}
@@ -256,7 +256,7 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 		if (tx->bWarped)
 		{
 			mShaderIndex = tx->bWarped; // This picks SHADER_Warp1 or SHADER_Warp2
-			tx->gl_info.shaderspeed = static_cast<FWarpTexture*>(tx)->GetSpeed();
+			tx->shaderspeed = static_cast<FWarpTexture*>(tx)->GetSpeed();
 		}
 		else if (tx->Normal && tx->Specular)
 		{
@@ -678,7 +678,7 @@ again:
 		{
 			if (expand)
 			{
-				if (tex->bWarped || tex->bHasCanvas || tex->gl_info.shaderindex >= FIRST_USER_SHADER || tex->gl_info.shaderindex == SHADER_Specular || tex->gl_info.shaderindex == SHADER_PBR)
+				if (tex->bWarped || tex->bHasCanvas || tex->shaderindex >= FIRST_USER_SHADER || tex->shaderindex == SHADER_Specular || tex->shaderindex == SHADER_PBR)
 				{
 					tex->gl_info.bNoExpand = true;
 					goto again;

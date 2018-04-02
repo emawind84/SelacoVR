@@ -249,7 +249,7 @@ static bool isBright(DPSprite *psp)
 		{
 			FMaterial * tex = FMaterial::ValidateTexture(lump, false, false);
 			if (tex)
-				disablefullbright = tex->tex->gl_info.bDisableFullbright;
+				disablefullbright = tex->tex->bDisableFullbright;
 		}
 		return psp->GetState()->GetFullbright() && !disablefullbright;
 	}
