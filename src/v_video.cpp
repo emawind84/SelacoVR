@@ -1254,7 +1254,6 @@ void V_Init2()
 		Printf ("Resolution: %d x %d\n", SCREENWIDTH, SCREENHEIGHT);
 
 	screen->SetGamma (gamma);
-	Renderer->RemapVoxels();
 	FBaseCVar::ResetColors ();
 	C_NewModeAdjust();
 	M_InitVideoModesMenu();

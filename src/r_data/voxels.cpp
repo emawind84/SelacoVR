@@ -389,12 +389,26 @@ FVoxelMipLevel::~FVoxelMipLevel()
 
 //==========================================================================
 //
+// FVoxelMipLevel :: GetSlabData
+//
+//==========================================================================
+
+uint8_t *FVoxelMipLevel::GetSlabData(bool wantremapped) const
+{
+	if (wantremapped && SlabDataRemapped.Size() > 0) return &SlabDataRemapped[0];
+	return SlabData;
+}
+
+//==========================================================================
+//
 // Create true color version of the slab data
 //
 //==========================================================================
 
 void FVoxel::CreateBgraSlabData()
 {
+	if (Bgramade) return;
+	Bgramade = true;
 	for (int i = 0; i < NumMips; ++i)
 	{
 		int size = Mips[i].OffsetX[Mips[i].SizeX];
@@ -449,14 +463,20 @@ void FVoxel::CreateBgraSlabData()
 
 void FVoxel::Remap()
 {
+	if (Remapped) return;
+	Remapped = true;
 	if (Palette.Size())
 	{
 		uint8_t *remap = GetVoxelRemap(Palette.Data());
 		for (int i = 0; i < NumMips; ++i)
 		{
-			RemapVoxelSlabs((kvxslab_t *)Mips[i].SlabData, Mips[i].OffsetX[Mips[i].SizeX], remap);
+			int size = Mips[i].OffsetX[Mips[i].SizeX];
+			if (size <= 0) continue;
+
+			Mips[i].SlabDataRemapped.Resize(size);
+			memcpy(&Mips[i].SlabDataRemapped [0], Mips[i].SlabData, size);
+			RemapVoxelSlabs((kvxslab_t *)&Mips[i].SlabDataRemapped[0], Mips[i].OffsetX[Mips[i].SizeX], remap);
 		}
-		RemovePalette();
 	}
 }
 
