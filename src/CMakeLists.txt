@@ -955,7 +955,6 @@ set (PCH_SOURCES
 	gl/renderer/gl_postprocess.cpp
 	gl/renderer/gl_postprocessstate.cpp
 	gl/shaders/gl_shader.cpp
-	gl/shaders/gl_texshader.cpp
 	gl/shaders/gl_shaderprogram.cpp
 	gl/shaders/gl_postprocessshader.cpp
 	gl/shaders/gl_shadowmapshader.cpp
