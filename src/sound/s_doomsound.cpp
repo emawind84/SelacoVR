@@ -1246,7 +1246,6 @@ void DoomSoundEngine::NoiseDebug()
 		}
 		chan = (FSoundChan*)((size_t)chan->PrevChan - myoffsetof(FSoundChan, NextChan));
 	}
-	V_SetBorderNeedRefresh();
 }
 
 void S_NoiseDebug(void)

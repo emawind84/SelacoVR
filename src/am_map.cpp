@@ -1415,7 +1415,6 @@ void AM_Stop ()
 {
 	automapactive = false;
 	stopped = true;
-	V_SetBorderNeedRefresh();
 	viewactive = true;
 }
 

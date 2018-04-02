@@ -402,7 +402,6 @@ void FSavegameManager::LoadSavegame(int Selected)
 {
 	G_LoadGame(SaveGames[Selected]->Filename.GetChars(), true);
 	M_ClearMenus();
-	V_SetBorderNeedRefresh();
 	LastAccessed = Selected;
 }
 
@@ -448,7 +447,6 @@ void FSavegameManager::DoSave(int Selected, const char *savegamestring)
 		G_SaveGame(filename, savegamestring);
 	}
 	M_ClearMenus();
-	V_SetBorderNeedRefresh();
 }
 
 DEFINE_ACTION_FUNCTION(FSavegameManager, DoSave)

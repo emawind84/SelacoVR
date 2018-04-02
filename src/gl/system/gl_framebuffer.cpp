@@ -325,12 +325,6 @@ void OpenGLFrameBuffer::GetFlash(PalEntry &rgb, int &amount)
 	amount = Flash.a;
 }
 
-int OpenGLFrameBuffer::GetPageCount()
-{
-	return 1;
-}
-
-
 //==========================================================================
 //
 //
