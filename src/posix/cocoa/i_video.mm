@@ -838,27 +838,6 @@ void I_InitGraphics()
 }
 
 
-void I_DeleteRenderer()
-{
-	delete Renderer;
-	Renderer = NULL;
-}
-
-void I_CreateRenderer()
-{
-	currentrenderer = vid_renderer;
-
-	if (NULL == Renderer)
-	{
-		extern FRenderer* gl_CreateInterface();
-
-		Renderer = 1 == currentrenderer
-			? gl_CreateInterface()
-			: new FSoftwareRenderer;
-	}
-}
-
-
 DFrameBuffer* I_SetMode(int &width, int &height, DFrameBuffer* old)
 {
 	return Video->CreateFrameBuffer(width, height, swtruecolor, fullscreen, old);

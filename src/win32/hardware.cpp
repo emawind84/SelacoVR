@@ -178,26 +178,6 @@ void I_InitGraphics ()
 	Video->SetWindowedScale (vid_winscale);
 }
 
-void I_DeleteRenderer()
-{
-	if (Renderer != NULL) delete Renderer;
-}
-
-void I_CreateRenderer()
-{
-	currentrenderer = vid_renderer;
-	if (currentrenderer == 1)
-		Printf("Renderer: OpenGL\n");
-	else
-		Printf("Renderer: Software on OpenGL\n");
-
-	if (Renderer == NULL)
-	{
-		if (currentrenderer==1) Renderer = gl_CreateInterface();
-		else Renderer = new FSoftwareRenderer;
-	}
-}
-
 /** Remaining code is common to Win32 and Linux **/
 
 // VIDEO WRAPPERS ---------------------------------------------------------
