@@ -1119,6 +1119,8 @@ void P_LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 		ss->ZoneNumber = 0xFFFF;
 		ss->terrainnum[sector_t::ceiling] = ss->terrainnum[sector_t::floor] = -1;
 
+
+
 		// [RH] Sectors default to white light with the default fade.
 		//		If they are outside (have a sky ceiling), they use the outside fog.
 		ss->Colormap.LightColor = PalEntry(255, 255, 255);
@@ -1126,10 +1128,15 @@ void P_LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 		{
 			ss->Colormap.FadeColor.SetRGB(level.outsidefog);
 		}
+		else  if (level.flags & LEVEL_HASFADETABLE)
+		{
+			ss->Colormap.FadeColor= 0x939393;	// The true color software renderer needs this. (The hardware renderer will ignore this value if LEVEL_HASFADETABLE is set.)
+		}
 		else
 		{
 			ss->Colormap.FadeColor.SetRGB(level.fadeto);
 		}
+
 
 		// killough 8/28/98: initialize all sectors to normal friction
 		ss->friction = ORIG_FRICTION;
@@ -3743,6 +3750,7 @@ void P_SetupLevel(const char *lumpname, int position, bool newGame)
 	// This must be done BEFORE the PolyObj Spawn!!!
 	InitRenderInfo();
 	Renderer->PreprocessLevel();
+	SWRenderer->PreprocessLevel();
 	InitPortalGroups();
 
 	for (auto &sec : level.sectors)
