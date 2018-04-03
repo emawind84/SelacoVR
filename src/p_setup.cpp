@@ -3013,6 +3013,8 @@ void P_GetPolySpots (MapData * map, TArray<FNodeBuilder::FPolyStart> &spots, TAr
 // Preloads all relevant graphics for the level.
 //
 //===========================================================================
+extern int currentrenderer;
+void gl_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitlist);
 
 static void AddToList(uint8_t *hitlist, FTextureID texid, int bitmask)
 {
@@ -3144,7 +3146,11 @@ static void P_PrecacheLevel()
 		if (tex.Exists()) AddToList(hitlist, tex, FTextureManager::HIT_Wall);
 	}
 
-	Renderer->Precache(hitlist, actorhitlist);
+	// This is just a temporary solution, until the hardware renderer's texture manager is in a better state.
+	if (currentrenderer == 0)
+		SWRenderer->Precache(hitlist, actorhitlist);
+	else
+		gl_PrecacheTexture(hitlist, actorhitlist);
 
 	delete[] hitlist;
 }

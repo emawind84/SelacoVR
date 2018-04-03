@@ -109,7 +109,6 @@ EXTERN_CVAR(Bool, r_blendmethod)
 
 int active_con_scale();
 
-FRenderer *Renderer;
 FRenderer *SWRenderer;
 
 EXTERN_CVAR (Bool, swtruecolor)
@@ -975,6 +974,10 @@ uint32_t DFrameBuffer::GetCaps()
 	return (uint32_t)FlagSet;
 }
 
+void DFrameBuffer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV)
+{
+	SWRenderer->RenderTextureView(tex, Viewpoint, FOV);
+}
 
 CCMD(clean)
 {

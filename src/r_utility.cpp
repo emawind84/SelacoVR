@@ -403,6 +403,17 @@ subsector_t *R_PointInSubsector (fixed_t x, fixed_t y)
 
 //==========================================================================
 //
+//
+//
+//==========================================================================
+
+extern int currentrenderer;
+EXTERN_CVAR(Int, vid_renderer)
+FRenderer *CreateSWRenderer();
+
+
+//==========================================================================
+//
 // R_Init
 //
 //==========================================================================
@@ -412,6 +423,19 @@ void R_Init ()
 	StartScreen->Progress();
 	R_InitTranslationTables ();
 	R_SetViewSize (screenblocks);
+
+	currentrenderer = vid_renderer;
+	if (currentrenderer == 1)
+		Printf("Renderer: OpenGL\n");
+	else
+		Printf("Renderer: Software on OpenGL\n");
+
+	if (SWRenderer == NULL)
+	{
+		SWRenderer = CreateSWRenderer();
+	}
+
+	SWRenderer->Init();
 }
 
 //==========================================================================
@@ -422,6 +446,8 @@ void R_Init ()
 
 void R_Shutdown ()
 {
+	if (SWRenderer != nullptr) delete SWRenderer;
+	SWRenderer = nullptr;
 	FCanvasTextureInfo::EmptyList();
 }
 
@@ -1118,7 +1144,7 @@ void FCanvasTextureInfo::UpdateAll ()
 	{
 		if (probe->Viewpoint != NULL && probe->Texture->bNeedsUpdate)
 		{
-			Renderer->RenderTextureView(probe->Texture, probe->Viewpoint, probe->FOV);
+			screen->RenderTextureView(probe->Texture, probe->Viewpoint, probe->FOV);
 		}
 	}
 }
