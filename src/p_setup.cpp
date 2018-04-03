@@ -3748,9 +3748,9 @@ void P_SetupLevel(const char *lumpname, int position, bool newGame)
 	P_ClearDynamic3DFloorData();
 
 	// This must be done BEFORE the PolyObj Spawn!!!
-	InitRenderInfo();
-	Renderer->PreprocessLevel();
-	SWRenderer->PreprocessLevel();
+	InitRenderInfo();			// create hardware independent renderer resources for the level.
+	screen->InitForLevel();		// create hardware dependent level resources (e.g. the vertex buffer)
+	SWRenderer->SetColormap();	//The SW renderer needs to do some special setup for the level's default colormap.
 	InitPortalGroups();
 
 	for (auto &sec : level.sectors)

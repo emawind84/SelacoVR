@@ -872,20 +872,6 @@ bool DFrameBuffer::Begin2D (bool copy3d)
 	return false;
 }
 
-//==========================================================================
-//
-// DFrameBuffer :: DrawBlendingRect
-//
-// In hardware 2D modes, the blending rect needs to be drawn separately
-// from transferring the 3D scene to video memory, because the weapon
-// sprite is drawn on top of that.
-//
-//==========================================================================
-
-void DFrameBuffer::DrawBlendingRect()
-{
-}
-
 int DFrameBuffer::GetClientWidth()
 {
 	return 320;
@@ -959,6 +945,37 @@ void DFrameBuffer::GameRestart()
 {
 }
 
+//==========================================================================
+//
+// DFrameBuffer :: GetCaps
+//
+//==========================================================================
+
+EXTERN_CVAR(Bool, r_polyrenderer)
+EXTERN_CVAR(Bool, r_drawvoxels)
+
+uint32_t DFrameBuffer::GetCaps()
+{
+	ActorRenderFeatureFlags FlagSet = 0;
+
+	if (r_polyrenderer)
+		FlagSet |= RFF_POLYGONAL | RFF_TILTPITCH | RFF_SLOPE3DFLOORS;
+	else
+	{
+		FlagSet |= RFF_UNCLIPPEDTEX;
+		if (r_drawvoxels)
+			FlagSet |= RFF_VOXELS;
+	}
+
+	if (swtruecolor)
+		FlagSet |= RFF_TRUECOLOR;
+	else
+		FlagSet |= RFF_COLORMAP;
+
+	return (uint32_t)FlagSet;
+}
+
+
 CCMD(clean)
 {
 	Printf ("CleanXfac: %d\nCleanYfac: %d\n", CleanXfac, CleanYfac);
@@ -1031,7 +1048,9 @@ void V_UpdateModeSize (int width, int height)
 	DisplayHeight = height;
 
 	R_OldBlend = ~0;
-	Renderer->OnModeSet();
+
+	// the software renderer also needs to be notified
+	SWRenderer->OnModeSet();
 }
 
 void V_OutputResized (int width, int height)

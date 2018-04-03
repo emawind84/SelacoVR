@@ -1021,7 +1021,8 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 		{
 			color = pr_hom();
 		}
-		Renderer->SetClearColor(color);
+		screen->SetClearColor(color);
+		SWRenderer->SetClearColor(color);
 	}
 }
 

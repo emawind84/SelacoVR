@@ -367,7 +367,6 @@ public:
 
 	inline int GetWidth() const { return Width; }
 	inline int GetHeight() const { return Height; }
-	inline bool IsBgra() const { return Bgra; }
 	virtual DCanvas *GetCanvas() { return nullptr; }
 
 
@@ -420,10 +419,7 @@ public:
 	virtual bool LockCanvas() { return true; }
 	virtual void UnlockCanvas() {}
 
-	// Begin 2D drawing operations. This is like Update, but it doesn't end
-	// the scene, and it doesn't present the image yet. If you are going to
-	// be covering the entire screen with 2D elements, then pass false to
-	// avoid copying the software buffer to the screen.
+	// Begin 2D drawing operations.
 	// Returns true if hardware-accelerated 2D has been entered, false if not.
 	virtual bool Begin2D(bool copy3d);
 	void End2D() { isIn2D = false; }
@@ -433,17 +429,14 @@ public:
 
 	// DrawTexture calls after Begin2D use native textures.
 
-	// Draws the blending rectangle over the viewwindow if in hardware-
-	// accelerated 2D mode.
-	virtual void DrawBlendingRect();
-
 	virtual int GetClientWidth();
 	virtual int GetClientHeight();
-
-	// Precaches or unloads a texture
 	
 	// Report a game restart
 	virtual void GameRestart();
+	virtual void InitForLevel() {}
+	virtual void SetClearColor(int color) {}
+	virtual uint32_t GetCaps();
 
 	// Screen wiping
 	virtual bool WipeStartScreen(int type);
