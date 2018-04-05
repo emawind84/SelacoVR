@@ -427,7 +427,6 @@ public:
 	void AttachToPlayer(player_t *player);
 	DVector2 GetHUDScale() const;
 	virtual void FlashCrosshair ();
-	virtual void BlendView (float blend[4]);
 	void NewGame ();
 	virtual void ScreenSizeChanged ();
 	void CallScreenSizeChanged();

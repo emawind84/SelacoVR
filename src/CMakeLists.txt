@@ -760,6 +760,7 @@ set( FASTMATH_SOURCES
 	gl/scene/gl_renderhacks.cpp
 	gl/scene/gl_weapon.cpp
 	gl/scene/gl_scene.cpp
+	gl/scene/gl_swscene.cpp
 	gl/scene/gl_sky.cpp
 	gl/scene/gl_portal.cpp
 	gl/scene/gl_walls_draw.cpp
