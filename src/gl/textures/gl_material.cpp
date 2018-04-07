@@ -259,7 +259,11 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 	mShaderIndex = SHADER_Default;
 	tex = tx;
 
-	if (tx->bHasCanvas)
+	if (tx->UseType == ETextureType::SWCanvas && tx->WidthBits == 0)
+	{
+		mShaderIndex = SHADER_Paletted;
+	}
+	else if (tx->bHasCanvas)
 	{
 		if (tx->shaderindex >= FIRST_USER_SHADER)
 		{
@@ -570,6 +574,7 @@ void FMaterial::InitGlobalState()
 
 void FMaterial::Bind(int clampmode, int translation)
 {
+	if (tex->UseType == ETextureType::SWCanvas) clampmode = CLAMP_NOFILTER;
 	if (tex->bHasCanvas) clampmode = CLAMP_CAMTEX;
 	else if ((tex->bWarped || tex->shaderindex >= FIRST_USER_SHADER) && clampmode <= CLAMP_XY) clampmode = CLAMP_NONE;
 	

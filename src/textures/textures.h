@@ -54,6 +54,7 @@ enum MaterialShaderIndex
 	SHADER_Warp2,
 	SHADER_Specular,
 	SHADER_PBR,
+	SHADER_Paletted,
 	SHADER_NoTexture,
 	SHADER_BasicFuzz,
 	SHADER_SmoothFuzz,
