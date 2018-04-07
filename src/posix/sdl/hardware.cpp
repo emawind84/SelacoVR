@@ -52,7 +52,6 @@
 
 EXTERN_CVAR (Bool, ticker)
 EXTERN_CVAR (Bool, fullscreen)
-EXTERN_CVAR (Bool, swtruecolor)
 EXTERN_CVAR (Float, vid_winscale)
 
 IVideo *Video;
@@ -95,7 +94,6 @@ void I_InitGraphics ()
 	val.Bool = !!Args->CheckParm ("-devparm");
 	ticker.SetGenericRepDefault (val, CVAR_Bool);
 	
-	//currentrenderer = vid_renderer;
 	Video = new SDLGLVideo(0);
 	
 	if (Video == NULL)
@@ -123,7 +121,7 @@ DFrameBuffer *I_SetMode (int &width, int &height, DFrameBuffer *old)
 		fs = fullscreen;
 		break;
 	}
-	DFrameBuffer *res = Video->CreateFrameBuffer (width, height, swtruecolor, fs, old);
+	DFrameBuffer *res = Video->CreateFrameBuffer (width, height, false, fs, old);
 
 	/* Right now, CreateFrameBuffer cannot return NULL
 	if (res == NULL)
@@ -260,19 +258,6 @@ void I_SetFPSLimit(int limit)
 #endif
 
 extern int NewWidth, NewHeight, NewBits, DisplayBits;
-
-CUSTOM_CVAR(Bool, swtruecolor, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
-{
-	// Strictly speaking this doesn't require a mode switch, but it is the easiest
-	// way to force a CreateFramebuffer call without a lot of refactoring.
-	if (currentrenderer == 0)
-	{
-		NewWidth = screen->VideoWidth;
-		NewHeight = screen->VideoHeight;
-		NewBits = DisplayBits;
-		setmodeneeded = true;
-	}
-}
 
 CUSTOM_CVAR (Bool, fullscreen, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 {

@@ -699,9 +699,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(APlayerPawn, GetPainFlashForType, GetPainFlash)
 //===========================================================================
 
 EXTERN_CVAR(Float, maxviewpitch)
-EXTERN_CVAR(Bool, r_polyrenderer)
 EXTERN_CVAR(Bool, cl_oldfreelooklimit);
-extern int currentrenderer;
 
 
 static int GetSoftPitch(bool down)
@@ -717,7 +715,7 @@ void player_t::SendPitchLimits() const
 	{
 		int uppitch, downpitch;
 
-		if (currentrenderer == 0 && !r_polyrenderer)
+		if (V_IsSoftwareRenderer())
 		{
 			uppitch = GetSoftPitch(false);
 			downpitch = GetSoftPitch(true);
