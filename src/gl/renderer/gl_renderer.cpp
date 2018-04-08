@@ -160,6 +160,11 @@ void FGLRenderer::Initialize(int width, int height)
 	mShadowMapShader = new FShadowMapShader();
 	mCustomPostProcessShaders = new FCustomPostProcessShaders();
 
+	if (gl.legacyMode)
+	{
+		legacyShaders = new LegacyShaderContainer;
+	}
+
 	GetSpecialTextures();
 
 	// needed for the core profile, because someone decided it was a good idea to remove the default VAO.
@@ -193,6 +198,7 @@ FGLRenderer::~FGLRenderer()
 	FlushModels();
 	AActor::DeleteAllAttachedLights();
 	FMaterial::FlushAll();
+	if (legacyShaders) delete legacyShaders;
 	if (mShaderManager != NULL) delete mShaderManager;
 	if (mSamplerManager != NULL) delete mSamplerManager;
 	if (mVBO != NULL) delete mVBO;
@@ -830,6 +836,12 @@ void FGLRenderer::Draw2D(F2DDrawer *drawer)
 		{
 			auto mat = FMaterial::ValidateTexture(cmd.mTexture, false);
 			if (mat == nullptr) continue;
+
+			// This requires very special handling
+			if (gl.legacyMode && cmd.mTexture->UseType == ETextureType::SWCanvas)
+			{
+				gl_RenderState.SetTextureMode(TM_SWCANVAS);
+			}
 
 			if (gltrans == -1 && cmd.mTranslation != nullptr) gltrans = cmd.mTranslation->GetUniqueIndex();
 			gl_RenderState.SetMaterial(mat, cmd.mFlags & F2DDrawer::DTF_Wrap ? CLAMP_NONE : CLAMP_XY_NOMIP, -gltrans, -1, cmd.mDrawMode == F2DDrawer::DTM_AlphaTexture);
