@@ -63,6 +63,7 @@ public:
 	
 	PolyRenderThreads Threads;
 	DCanvas *RenderTarget = nullptr;
+	bool RenderToCanvas = false;
 	FViewWindow Viewwindow;
 	FRenderViewpoint Viewpoint;
 	PolyLightVisibility Light;
