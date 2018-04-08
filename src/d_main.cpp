@@ -3009,6 +3009,7 @@ void D_Cleanup()
 	M_SaveDefaults(NULL);			// save config before the restart
 
 	// delete all data that cannot be left until reinitialization
+	screen->CleanForRestart();
 	V_ClearFonts();					// must clear global font pointers
 	ColorSets.Clear();
 	PainFlashes.Clear();

@@ -381,6 +381,12 @@ bool OpenGLFrameBuffer::SetContrast(float contrast)
 //
 //===========================================================================
 
+void OpenGLFrameBuffer::CleanForRestart()
+{
+	if (GLRenderer)
+		GLRenderer->ResetSWScene();
+}
+
 void OpenGLFrameBuffer::UpdatePalette()
 {
 	if (GLRenderer)
