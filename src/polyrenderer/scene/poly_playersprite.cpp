@@ -219,6 +219,11 @@ void RenderPolyPlayerSprites::RenderSprite(PolyRenderThread *thread, DPSprite *p
 	const auto &viewwindow = PolyRenderer::Instance()->Viewwindow;
 	DCanvas *renderTarget = PolyRenderer::Instance()->RenderTarget;
 
+	// Force it to use software rendering.
+	// To do: Fix that Draw2D() is never called by SWSceneDrawer::RenderView. Make sure to adjust the similar comment in r_playersprite.cpp
+	bool renderToCanvas = true;
+	//bool renderToCanvas = PolyRenderer::Instance()->RenderToCanvas;
+
 	sprframe = &SpriteFrames[sprdef->spriteframes + pspr->GetFrame()];
 
 	picnum = sprframe->Texture[0];
@@ -289,13 +294,11 @@ void RenderPolyPlayerSprites::RenderSprite(PolyRenderThread *thread, DPSprite *p
 
 	vis.texturemid = (BASEYCENTER - sy) * tex->Scale.Y + tex->GetTopOffsetPo();
 
-	auto screencanvas = screen->GetCanvas();
-
-	if (viewpoint.camera->player && (renderTarget != screencanvas ||
+	if (viewpoint.camera->player && (renderToCanvas ||
 		viewheight == renderTarget->GetHeight() ||
 		(renderTarget->GetWidth() > (BASEXCENTER * 2))))
 	{	// Adjust PSprite for fullscreen views
-		vis.texturemid -= pspr->GetYAdjust(renderTarget != screencanvas || viewheight == renderTarget->GetHeight());
+		vis.texturemid -= pspr->GetYAdjust(renderToCanvas || viewheight == renderTarget->GetHeight());
 	}
 	if (pspr->GetID() < PSP_TARGETCENTER)
 	{ // Move the weapon down for 1280x1024.
@@ -402,7 +405,7 @@ void RenderPolyPlayerSprites::RenderSprite(PolyRenderThread *thread, DPSprite *p
 
 	// Check for hardware-assisted 2D. If it's available, and this sprite is not
 	// fuzzy, don't draw it until after the switch to 2D mode.
-	if (!noaccel && renderTarget == screencanvas)
+	if (!noaccel && !renderToCanvas)
 	{
 		FRenderStyle style = vis.RenderStyle;
 		style.CheckFuzz();
@@ -490,7 +493,7 @@ void PolyNoAccelPlayerSprite::Render(PolyRenderThread *thread)
 		y1 = centerY - texturemid * yscale;
 		y2 = y1 + pic->GetHeight() * yscale;
 	}
-	args.Draw(thread, x1, x2, y1, y2, 0.0f, 1.0f, 0.0f, 1.0f);
+	args.Draw(thread, viewwindowx + x1, viewwindowx + x2, viewwindowy + y1, viewwindowy + y2, 0.0f, 1.0f, 0.0f, 1.0f);
 }
 
 /////////////////////////////////////////////////////////////////////////////
