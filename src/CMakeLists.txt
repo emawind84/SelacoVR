@@ -983,6 +983,7 @@ set (PCH_SOURCES
 	gl/textures/gl_texture.cpp
 	gl/textures/gl_material.cpp
 	gl/textures/gl_samplers.cpp
+	hwrenderer/data/flatvertices.cpp
 	hwrenderer/dynlights/hw_aabbtree.cpp
 	
 	menu/joystickmenu.cpp
