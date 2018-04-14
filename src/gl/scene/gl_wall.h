@@ -106,10 +106,13 @@ struct GLSectorPlane
 	}
 };
 
+class FDrawInfo;
 
 class GLWall
 {
+	friend class FDrawInfo;
 public:
+	static const char passflag[];
 
 	enum
 	{
@@ -144,19 +147,20 @@ public:
 	friend class GLPortal;
 
 	GLSceneDrawer *mDrawer;
-	GLSeg glseg;
 	vertex_t * vertexes[2];				// required for polygon splitting
+	FMaterial *gltexture;
+	TArray<lightlist_t> *lightlist;
+
+	GLSeg glseg;
 	float ztop[2],zbottom[2];
 	texcoord tcs[4];
 	float alpha;
-	FMaterial *gltexture;
 
 	FColormap Colormap;
 	ERenderStyle RenderStyle;
 	
 	float ViewDistance;
 
-	TArray<lightlist_t> *lightlist;
 	short lightlevel;
 	uint16_t flags;
 	uint8_t type;
