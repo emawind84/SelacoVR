@@ -88,7 +88,6 @@ class FRenderState
 	bool mBrightmapEnabled;
 	bool mColorMask[4];
 	bool currentColorMask[4];
-	int mLightIndex;
 	int mSpecialEffect;
 	int mTextureMode;
 	int mTextureModeFlags;
@@ -344,11 +343,6 @@ public:
 				glDisable(GL_CLIP_DISTANCE0);
 			}
 		}
-	}
-
-	void SetLightIndex(int n)
-	{
-		mLightIndex = n;
 	}
 
 	void EnableBrightmap(bool on)
