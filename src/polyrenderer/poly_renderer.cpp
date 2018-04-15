@@ -65,11 +65,6 @@ void PolyRenderer::RenderView(player_t *player, DCanvas *target)
 	
 	RenderTarget = target;
 	RenderToCanvas = false;
-	int width = SCREENWIDTH;
-	int height = SCREENHEIGHT;
-	float trueratio;
-	ActiveRatio(width, height, &trueratio);
-	//viewport->SetViewport(&Thread, width, height, trueratio);
 
 	RenderActorView(player->mo, false);
 
@@ -79,28 +74,40 @@ void PolyRenderer::RenderView(player_t *player, DCanvas *target)
 
 void PolyRenderer::RenderViewToCanvas(AActor *actor, DCanvas *canvas, int x, int y, int width, int height, bool dontmaplines)
 {
-	const bool savedviewactive = viewactive;
+	// Save a bunch of silly globals:
+	auto savedViewpoint = Viewpoint;
+	auto savedViewwindow = Viewwindow;
+	auto savedviewwindowx = viewwindowx;
+	auto savedviewwindowy = viewwindowy;
+	auto savedviewwidth = viewwidth;
+	auto savedviewheight = viewheight;
+	auto savedviewactive = viewactive;
+	auto savedRenderTarget = RenderTarget;
 
-	viewwidth = width;
+	// Setup the view:
 	RenderTarget = canvas;
 	RenderToCanvas = true;
 	R_SetWindow(Viewpoint, Viewwindow, 12, width, height, height, true);
-	//viewport->SetViewport(&Thread, width, height, Viewwindow.WidescreenRatio);
 	viewwindowx = x;
 	viewwindowy = y;
 	viewactive = true;
 	
+	// Render:
 	RenderActorView(actor, dontmaplines);
 	Threads.MainThread()->FlushDrawQueue();
 	DrawerThreads::WaitForWorkers();
 
-	RenderTarget = nullptr;
 	RenderToCanvas = false;
-	R_ExecuteSetViewSize(Viewpoint, Viewwindow);
-	float trueratio;
-	ActiveRatio(width, height, &trueratio);
-	//viewport->SetViewport(&Thread, width, height, viewport->viewwindow.WidescreenRatio);
+
+	// Restore silly globals:
+	Viewpoint = savedViewpoint;
+	Viewwindow = savedViewwindow;
+	viewwindowx = savedviewwindowx;
+	viewwindowy = savedviewwindowy;
+	viewwidth = savedviewwidth;
+	viewheight = savedviewheight;
 	viewactive = savedviewactive;
+	RenderTarget = savedRenderTarget;
 }
 
 void PolyRenderer::RenderActorView(AActor *actor, bool dontmaplines)
