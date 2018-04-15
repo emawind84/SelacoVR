@@ -511,7 +511,8 @@ inline void GLFlat::PutFlat(bool fog)
 		list = masked ? GLDL_MASKEDFLATS : GLDL_PLAINFLATS;
 	}
 	dynlightindex = -1;	// make sure this is always initialized to something proper.
-	gl_drawinfo->drawlists[list].AddFlat (this);
+	auto newflat = gl_drawinfo->drawlists[list].NewFlat();
+	*newflat = *this;
 }
 
 //==========================================================================
