@@ -526,8 +526,8 @@ inline void GLSprite::PutSprite(bool translucent)
 	{
 		list = GLDL_MODELS;
 	}
-
-	gl_drawinfo->drawlists[list].AddSprite(this);
+	auto newsprt = gl_drawinfo->drawlists[list].NewSprite();
+	*newsprt = *this;
 }
 
 //==========================================================================
