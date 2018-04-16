@@ -1,7 +1,7 @@
 // 
 //---------------------------------------------------------------------------
 //
-// Copyright(C) 2002-2016 Christoph Oelckers
+// Copyright(C) 2002-2018 Christoph Oelckers
 // All rights reserved.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -32,10 +32,8 @@
 #include "g_level.h"
 #include "actorinlines.h"
 #include "a_dynlight.h"
-
 #include "gl/system/gl_cvars.h"
-
-#include "gl_dynlight.h"
+#include "hw_dynlightdata.h"
 
 
 //==========================================================================
