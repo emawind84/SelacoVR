@@ -1074,8 +1074,6 @@ set (PCH_SOURCES
 	sound/backend/i_sound.cpp
 	sound/music/music_config.cpp
 	events.cpp
-	GuillotineBinPack.cpp
-	SkylineBinPack.cpp
 )
 
 if( ${HAVE_VM_JIT} )
