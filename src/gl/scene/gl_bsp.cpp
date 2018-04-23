@@ -172,7 +172,7 @@ void GLSceneDrawer::AddLine (seg_t *seg, bool portalclip)
  		else
 		{
 			// clipping checks are only needed when the backsector is not the same as the front sector
-			if (in_area == area_default) in_area = CheckViewArea(seg->v1, seg->v2, seg->frontsector, seg->backsector);
+			if (in_area == area_default) in_area = gl_CheckViewArea(seg->v1, seg->v2, seg->frontsector, seg->backsector);
 
 			backsector = gl_FakeFlat(seg->backsector, in_area, true);
 

@@ -257,6 +257,7 @@ enum area_t
 bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsector);
 void gl_ClearFakeFlat();
 sector_t * gl_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *localcopy = nullptr);
+area_t gl_CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *frontsector, sector_t *backsector);
 
 struct TexFilter_s
 {
