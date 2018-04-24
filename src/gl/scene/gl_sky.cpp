@@ -32,7 +32,7 @@
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/scene/gl_portal.h"
-#include "gl/textures/gl_material.h"
+#include "hwrenderer/textures/hw_material.h"
 
 CVAR(Bool,gl_noskyboxes, false, 0)
 CUSTOM_CVAR(Bool, gl_skydome, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)

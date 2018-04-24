@@ -28,7 +28,7 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_colormap.h"
 #include "r_data/matrix.h"
-#include "gl/textures/gl_material.h"
+#include "hwrenderer/textures/hw_material.h"
 #include "c_cvars.h"
 #include "r_defs.h"
 #include "r_data/r_translate.h"
