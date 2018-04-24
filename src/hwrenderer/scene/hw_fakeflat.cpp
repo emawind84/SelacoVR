@@ -173,8 +173,6 @@ area_t hw_CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *frontsector, secto
 		// allow some tolerance in case slopes are involved
 		if (cz1 <= fz1 + 1. / 100 && cz2 <= fz2 + 1. / 100)
 			return area_below;
-		else
-			return area_normal;
 	}
 	return area_default;
 }
