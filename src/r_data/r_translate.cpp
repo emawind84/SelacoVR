@@ -38,14 +38,10 @@
 #include "r_data/r_translate.h"
 #include "v_video.h"
 #include "g_game.h"
-#include "colormatcher.h"
 #include "d_netinf.h"
-#include "v_palette.h"
 #include "sc_man.h"
 #include "doomerrors.h"
-#include "i_system.h"
 #include "w_wad.h"
-#include "r_data/colormaps.h"
 #include "serializer.h"
 #include "d_player.h"
 #include "r_data/sprites.h"
@@ -56,7 +52,6 @@
 #include "g_levellocals.h"
 
 #include "gi.h"
-#include "stats.h"
 
 TAutoGrowArray<FRemapTablePtr, FRemapTable *> translationtables[NUM_TRANSLATION_TABLES];
 

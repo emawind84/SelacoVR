@@ -33,18 +33,12 @@
 */
 
 #include <stdlib.h>
-#include <string.h>
 
 #include "cmdlib.h"
 #include "actor.h"
-#include "dobject.h"
 #include "doomstat.h"		// Ideally, DObjects can be used independant of Doom.
 #include "d_player.h"		// See p_user.cpp to find out why this doesn't work.
 #include "c_dispatch.h"
-#include "i_system.h"
-#include "r_state.h"
-#include "stats.h"
-#include "a_sharedglobal.h"
 #include "dsectoreffect.h"
 #include "serializer.h"
 #include "vm.h"

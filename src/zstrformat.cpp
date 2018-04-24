@@ -85,15 +85,11 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <math.h>
-#include <stdlib.h>
 #include <locale.h>
 
 #include "zstring.h"
 #include "gdtoa.h"
 #include "utf8.h"
-
-#include <stdint.h>
 
 
 /*

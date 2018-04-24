@@ -42,7 +42,6 @@
 #include "sc_man.h"
 #include "w_wad.h"
 #include "cmdlib.h"
-#include "m_misc.h"
 #include "templates.h"
 #include "doomstat.h"
 #include "v_text.h"

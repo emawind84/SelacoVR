@@ -45,15 +45,8 @@
 #include <malloc.h>
 
 #include "i_input.h"
-#include "i_system.h"
 #include "d_event.h"
-#include "d_gui.h"
-#include "c_cvars.h"
-#include "c_dispatch.h"
-#include "doomdef.h"
-#include "doomstat.h"
 #include "version.h"
-#include "hardware.h"
 #include "templates.h"
 #include "gameconfigfile.h"
 #include "cmdlib.h"

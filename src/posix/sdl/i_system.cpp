@@ -26,7 +26,6 @@
 #include <SDL.h>
 
 #include "d_main.h"
-#include "i_system.h"
 #include "version.h"
 #include "x86.h"
 

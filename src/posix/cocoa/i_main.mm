@@ -35,16 +35,13 @@
 #include "s_sound.h"
 
 #include <sys/sysctl.h>
-#include <unistd.h>
 
 #include "c_console.h"
 #include "c_cvars.h"
 #include "cmdlib.h"
 #include "d_main.h"
-#include "doomerrors.h"
 #include "i_system.h"
 #include "m_argv.h"
-#include "s_sound.h"
 #include "st_console.h"
 #include "version.h"
 #include "doomerrors.h"
