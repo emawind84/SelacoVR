@@ -39,9 +39,8 @@ static sector_t **fakesectorbuffer;
 // Check whether the player can look beyond this line
 //
 //==========================================================================
-CVAR(Bool, gltest_slopeopt, false, 0)
 
-bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsector)
+bool hw_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsector)
 {
 	line_t *linedef = sidedef->linedef;
 	double bs_floorheight1;
@@ -160,7 +159,7 @@ bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsecto
 //
 //==========================================================================
 
-area_t gl_CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *frontsector, sector_t *backsector)
+area_t hw_CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *frontsector, sector_t *backsector)
 {
 	if (backsector->GetHeightSec() && !frontsector->GetHeightSec())
 	{
@@ -206,7 +205,7 @@ static sector_t *allocateSector(sector_t *sec)
 //
 //==========================================================================
 
-sector_t * gl_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *localcopy)
+sector_t * hw_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *localcopy)
 {
 	if (!sec->GetHeightSec() || sec->heightsec==sec) 
 	{
@@ -409,7 +408,7 @@ sector_t * gl_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *loca
 }
 
 
-void gl_ClearFakeFlat()
+void hw_ClearFakeFlat()
 {
 	FakeSectorAllocator.FreeAll();
 	fakesectorbuffer = nullptr;

@@ -428,7 +428,7 @@ void FGLRenderer::EndOffscreen()
 
 void FGLRenderer::RenderView(player_t* player)
 {
-	gl_ClearFakeFlat();
+	hw_ClearFakeFlat();
 
 	CheckBenchActive();
 

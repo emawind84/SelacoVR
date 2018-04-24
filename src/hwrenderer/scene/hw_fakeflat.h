@@ -1,6 +1,6 @@
 #pragma once
 
-enum area_t
+enum area_t : int
 {
 	area_normal,
 	area_below,
@@ -10,8 +10,8 @@ enum area_t
 
 
 // Global functions. Make them members of GLRenderer later?
-bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsector);
-void gl_ClearFakeFlat();
-sector_t * gl_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *localcopy = nullptr);
-area_t gl_CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *frontsector, sector_t *backsector);
+bool hw_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsector);
+void hw_ClearFakeFlat();
+sector_t * hw_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *localcopy = nullptr);
+area_t hw_CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *frontsector, sector_t *backsector);
 

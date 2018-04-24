@@ -822,7 +822,7 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal, bool is
 	{
 		// This cannot create a copy in the fake sector cache because it'd interfere with the main thread, so provide a local buffer for the copy.
 		// Adding synchronization for this one case would cost more than it might save if the result here could be cached.
-		rendersector = gl_FakeFlat(thing->Sector, mDrawer->in_area, false, &rs);
+		rendersector = hw_FakeFlat(thing->Sector, mDrawer->in_area, false, &rs);
 	}
 	else
 	{
@@ -1424,10 +1424,10 @@ void GLSceneDrawer::RenderActorsInPortal(FLinePortalSpan *glport)
 					// [Nash] draw sprite shadow
 					if (R_ShouldDrawSpriteShadow(th))
 					{
-						spr.Process(th, gl_FakeFlat(th->Sector, in_area, false, &fakesector), 2, true);
+						spr.Process(th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), 2, true);
 					}
 
-					spr.Process(th, gl_FakeFlat(th->Sector, in_area, false, &fakesector), 2);
+					spr.Process(th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), 2);
 					th->Angles.Yaw = savedangle;
 					th->SetXYZ(savedpos);
 					th->Prev -= newpos - savedpos;
