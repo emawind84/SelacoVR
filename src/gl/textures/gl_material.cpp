@@ -20,37 +20,91 @@
 //--------------------------------------------------------------------------
 //
 
-#include "gl/system/gl_system.h"
 #include "w_wad.h"
 #include "m_png.h"
 #include "sbar.h"
 #include "stats.h"
 #include "r_utility.h"
+#include "hwrenderer/textures/hw_ihwtexture.h"
 
-#include "gl/system/gl_interface.h"
-#include "gl/system/gl_framebuffer.h"
-#include "gl/renderer/gl_renderer.h"
-#include "gl/textures/gl_hwtexture.h"
-#include "gl/textures/gl_material.h"
-#include "gl/shaders/gl_shader.h"
+#include "gl_material.h"
 
-EXTERN_CVAR(Bool, gl_render_precise)
-EXTERN_CVAR(Int, gl_lightmode)
-EXTERN_CVAR(Bool, gl_precache)
 EXTERN_CVAR(Bool, gl_texture_usehires)
 
-extern TArray<UserShaderDesc> usershaders;
+//===========================================================================
+//
+//
+//
+//===========================================================================
+
+float FTexCoordInfo::RowOffset(float rowoffset) const
+{
+	float tscale = fabs(mTempScale.Y);
+	float scale = fabs(mScale.Y);
+
+	if (tscale == 1.f)
+	{
+		if (scale == 1.f || mWorldPanning) return rowoffset;
+		else return rowoffset / scale;
+	}
+	else
+	{
+		if (mWorldPanning) return rowoffset / tscale;
+		else return rowoffset / scale;
+	}
+}
 
 //===========================================================================
 //
 //
 //
 //===========================================================================
-FHardwareTexture * FMaterial::ValidateSysTexture(FTexture * tex, bool expand)
+
+float FTexCoordInfo::TextureOffset(float textureoffset) const
+{
+	float tscale = fabs(mTempScale.X);
+	float scale = fabs(mScale.X);
+	if (tscale == 1.f)
+	{
+		if (scale == 1.f || mWorldPanning) return textureoffset;
+		else return textureoffset / scale;
+	}
+	else
+	{
+		if (mWorldPanning) return textureoffset / tscale;
+		else return textureoffset / scale;
+	}
+}
+
+//===========================================================================
+//
+// Returns the size for which texture offset coordinates are used.
+//
+//===========================================================================
+
+float FTexCoordInfo::TextureAdjustWidth() const
+{
+	if (mWorldPanning) 
+	{
+		float tscale = fabs(mTempScale.X);
+		if (tscale == 1.f) return (float)mRenderWidth;
+		else return mWidth / fabs(tscale);
+	}
+	else return (float)mWidth;
+}
+
+
+
+//===========================================================================
+//
+//
+//
+//===========================================================================
+IHardwareTexture * FMaterial::ValidateSysTexture(FTexture * tex, bool expand)
 {
 	if (tex	&& tex->UseType!=ETextureType::Null)
 	{
-		FHardwareTexture *gltex = tex->gl_info.SystemTexture[expand];
+		IHardwareTexture *gltex = tex->gl_info.SystemTexture[expand];
 		if (gltex == nullptr) 
 		{
 			gltex = tex->gl_info.SystemTexture[expand] = screen->CreateHardwareTexture(tex);
@@ -232,8 +286,8 @@ void FMaterial::SetSpriteRect()
 	auto leftOffset = tex->GetLeftOffsetHW();
 	auto topOffset = tex->GetTopOffsetHW();
 
-	float fxScale = tex->Scale.X;
-	float fyScale = tex->Scale.Y;
+	float fxScale = (float)tex->Scale.X;
+	float fyScale = (float)tex->Scale.Y;
 
 	// mSpriteRect is for positioning the sprite in the scene.
 	mSpriteRect.left = -leftOffset / fxScale;
@@ -427,7 +481,7 @@ void FMaterial::Bind(int clampmode, int translation)
 	// unbind everything from the last texture that's still active
 	for(int i=maxbound+1; i<=mMaxBound;i++)
 	{
-		FHardwareTexture::Unbind(i);
+		screen->UnbindTexUnit(i);
 		mMaxBound = maxbound;
 	}
 }
@@ -487,7 +541,7 @@ void FMaterial::BindToFrameBuffer()
 	{
 		// must create the hardware texture first
 		mBaseLayer->BindOrCreate(sourcetex, 0, 0, 0, 0);
-		FHardwareTexture::Unbind(0);
+		screen->UnbindTexUnit(0);
 		ClearLastTexture();
 	}
 	mBaseLayer->BindToFrameBuffer(mWidth, mHeight);

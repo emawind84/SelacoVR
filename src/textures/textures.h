@@ -145,7 +145,7 @@ class FScanner;
 // Texture IDs
 class FTextureManager;
 class FTerrainTypeArray;
-class FHardwareTexture;
+class IHardwareTexture;
 class FMaterial;
 extern int r_spriteadjustSW, r_spriteadjustHW;
 
@@ -520,7 +520,7 @@ public:
 	struct GLTexInfo
 	{
 		FMaterial *Material[2] = { nullptr, nullptr };
-		FHardwareTexture *SystemTexture[2] = { nullptr, nullptr };
+		IHardwareTexture *SystemTexture[2] = { nullptr, nullptr };
 		bool bNoExpand = false;
 
 		~GLTexInfo();

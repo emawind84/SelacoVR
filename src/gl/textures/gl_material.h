@@ -11,6 +11,7 @@ EXTERN_CVAR(Bool, gl_precache)
 
 struct FRemapTable;
 class FTextureShader;
+class IHardwareTexture;
 
 enum
 {
@@ -46,7 +47,7 @@ class FMaterial
 	static TArray<FMaterial *> mMaterials;
 	static int mMaxBound;
 
-	FHardwareTexture *mBaseLayer;	
+	IHardwareTexture *mBaseLayer;	
 	TArray<FTextureLayer> mTextureLayers;
 	int mShaderIndex;
 	int mLayerFlags = 0;
@@ -64,7 +65,7 @@ class FMaterial
 	float mSpriteU[2], mSpriteV[2];
 	FloatRect mSpriteRect;
 
-	FHardwareTexture * ValidateSysTexture(FTexture * tex, bool expand);
+	IHardwareTexture * ValidateSysTexture(FTexture * tex, bool expand);
 	bool TrimBorders(uint16_t *rect);
 
 public:
