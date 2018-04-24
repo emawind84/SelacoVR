@@ -47,6 +47,8 @@
 // 15 because 0th texture is our texture
 #define MAX_CUSTOM_HW_SHADER_TEXTURES 15
 
+typedef TMap<int, bool> SpriteHits;
+
 enum MaterialShaderIndex
 {
 	SHADER_Default,
