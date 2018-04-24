@@ -891,7 +891,7 @@ bool FTexture::UseBasePalette()
 	return true; 
 }
 
-FTexture *FTexture::GetRedirect(bool wantwarped)
+FTexture *FTexture::GetRedirect()
 {
 	return this;
 }

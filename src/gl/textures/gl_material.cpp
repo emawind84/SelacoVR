@@ -70,7 +70,7 @@ int FMaterial::mMaxBound;
 FMaterial::FMaterial(FTexture * tx, bool expanded)
 {
 	mShaderIndex = SHADER_Default;
-	tex = tx;
+	sourcetex = tex = tx;
 
 	if (tx->UseType == ETextureType::SWCanvas && tx->WidthBits == 0)
 	{
@@ -171,10 +171,11 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 	mSpriteU[0] = mSpriteV[0] = 0.f;
 	mSpriteU[1] = mSpriteV[1] = 1.f;
 
-	FTexture *basetex = (tx->bWarped && gl.legacyMode)? tx : tx->GetRedirect(false);
+	FTexture *basetex = tx->GetRedirect();
 	// allow the redirect only if the texture is not expanded or the scale matches.
 	if (!expanded || (tx->Scale.X == basetex->Scale.X && tx->Scale.Y == basetex->Scale.Y))
 	{
+		sourcetex = basetex;
 		mBaseLayer = ValidateSysTexture(basetex, expanded);
 	}
 
@@ -285,7 +286,7 @@ bool FMaterial::TrimBorders(uint16_t *rect)
 	int w;
 	int h;
 
-	unsigned char *buffer = tex->CreateTexBuffer(0, w, h);
+	unsigned char *buffer = sourcetex->CreateTexBuffer(0, w, h);
 
 	if (buffer == NULL) 
 	{
@@ -464,8 +465,8 @@ int FMaterial::GetAreas(FloatRect **pAreas) const
 {
 	if (mShaderIndex == SHADER_Default)	// texture splitting can only be done if there's no attached effects
 	{
-		*pAreas = tex->areas;
-		return tex->areacount;
+		*pAreas = sourcetex->areas;
+		return sourcetex->areacount;
 	}
 	else
 	{
@@ -484,7 +485,7 @@ void FMaterial::BindToFrameBuffer()
 	if (mBaseLayer == nullptr)
 	{
 		// must create the hardware texture first
-		mBaseLayer->BindOrCreate(tex, 0, 0, 0, 0);
+		mBaseLayer->BindOrCreate(sourcetex, 0, 0, 0, 0);
 		FHardwareTexture::Unbind(0);
 		ClearLastTexture();
 	}

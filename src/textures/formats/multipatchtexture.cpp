@@ -159,7 +159,7 @@ public:
 
 	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL) override;
 	int GetSourceLump() override { return DefinitionLump; }
-	FTexture *GetRedirect(bool wantwarped) override;
+	FTexture *GetRedirect() override;
 	FTexture *GetRawTexture() override;
 	void ResolvePatches();
 
@@ -693,7 +693,7 @@ void FMultiPatchTexture::CheckForHacks ()
 //
 //==========================================================================
 
-FTexture *FMultiPatchTexture::GetRedirect(bool wantwarped)
+FTexture *FMultiPatchTexture::GetRedirect()
 {
 	return bRedirect ? Parts->Texture : this;
 }
