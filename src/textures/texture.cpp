@@ -48,6 +48,7 @@
 #include "g_levellocals.h"
 #include "textures/warpbuffer.h"
 #include "hwrenderer/textures/hw_material.h"
+#include "hwrenderer/textures/hw_ihwtexture.h"
 
 FTexture *CreateBrightmapTexture(FTexture*);
 
