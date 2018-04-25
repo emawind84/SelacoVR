@@ -30,7 +30,7 @@
 #include "gl/system/gl_system.h"
 #include "gl/shaders/gl_shader.h"
 #include "gl/dynlights/gl_lightbuffer.h"
-#include "gl/utility//gl_clock.h"
+#include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
 
 CVAR(Int, gl_max_lights, 40000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);

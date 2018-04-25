@@ -726,7 +726,6 @@ set( FASTMATH_SOURCES
 	polyrenderer/poly_all.cpp
 	sound/music/music_midi_base.cpp
 	sound/backend/oalsound.cpp
-	gl/utility/gl_clock.cpp
 	textures/hires/hqnx/init.cpp
 	textures/hires/hqnx/hq2x.cpp
 	textures/hires/hqnx/hq3x.cpp
@@ -971,6 +970,7 @@ set (PCH_SOURCES
 	hwrenderer/dynlights/hw_aabbtree.cpp
 	hwrenderer/textures/hw_material.cpp
 	hwrenderer/textures/hw_precache.cpp
+	hwrenderer/utility/hw_clock.cpp
 	
 	menu/joystickmenu.cpp
 	menu/loadsavemenu.cpp

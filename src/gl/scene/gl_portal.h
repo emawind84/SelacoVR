@@ -40,7 +40,7 @@
 #include "actor.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/scene/gl_drawinfo.h"
-#include "gl/utility/gl_clock.h"
+#include "hwrenderer/utility/hw_clock.h"
 
 struct GLHorizonInfo
 {

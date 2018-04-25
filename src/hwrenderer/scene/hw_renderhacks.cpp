@@ -31,7 +31,7 @@
 #include "g_levellocals.h"
 
 #include "hwrenderer/scene/hw_drawinfo.h"
-#include "gl/utility/gl_clock.h"
+#include "hwrenderer/utility/hw_clock.h"
 #include "hw_fakeflat.h"
 
 void HWDrawInfo::ClearBuffers()
