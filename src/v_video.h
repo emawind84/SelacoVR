@@ -434,6 +434,8 @@ public:
 	virtual IHardwareTexture *CreateHardwareTexture(FTexture *tex) { return nullptr; }
 	virtual FModelRenderer *CreateModelRenderer(int mli) { return nullptr; }
 	virtual void UnbindTexUnit(int no) {}
+	virtual void FlushTextures() {}
+	virtual void TextureFilterChanged() {}
 
 	// Begin 2D drawing operations.
 	// Returns true if hardware-accelerated 2D has been entered, false if not.

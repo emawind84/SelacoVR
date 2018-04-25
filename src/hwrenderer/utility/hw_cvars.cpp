@@ -22,6 +22,7 @@
 
 
 #include "c_cvars.h"
+#include "c_dispatch.h"
 #include "v_video.h"
 #include "hw_cvars.h"
 #include "menu/menu.h"
@@ -78,3 +79,32 @@ CUSTOM_CVAR (Float, vid_saturation, 1.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 }
 
 CVAR(Int, gl_satformula, 1, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
+
+//==========================================================================
+//
+// Texture CVARs
+//
+//==========================================================================
+CUSTOM_CVAR(Float,gl_texture_filter_anisotropic,8.0f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+{
+	screen->TextureFilterChanged();
+}
+
+CCMD(gl_flush)
+{
+	screen->FlushTextures();
+}
+
+CUSTOM_CVAR(Int, gl_texture_filter, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+{
+	if (self < 0 || self > 6) self=4;
+	screen->TextureFilterChanged();
+}
+
+CUSTOM_CVAR(Bool, gl_texture_usehires, true, CVAR_ARCHIVE|CVAR_NOINITCALL)
+{
+	screen->FlushTextures();
+}
+
+CVAR(Bool, gl_precache, false, CVAR_ARCHIVE)
+
