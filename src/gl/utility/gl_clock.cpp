@@ -154,9 +154,6 @@ ADD_STAT(bufferstats)
 	return out;
 }
 
-void AppendMissingTextureStats(FString &out);
-
-
 static int printstats;
 static bool switchfps;
 static uint64_t waitstart;
@@ -178,7 +175,7 @@ void CheckBench()
 		AppendRenderStats(compose);
 		AppendRenderTimes(compose);
 		AppendLightStats(compose);
-		AppendMissingTextureStats(compose);
+		//AppendMissingTextureStats(compose);
 		compose.AppendFormat("%llu fps\n\n", screen->GetLastFPS());
 
 		FILE *f = fopen("benchmarks.txt", "at");
