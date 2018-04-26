@@ -717,7 +717,7 @@ set( VM_JIT_SOURCES
 )
 
 # This is disabled for now because I cannot find a way to give the .pch file a different name.
-# Visual C++ 2015 seems hell-bent of only allowing one .pch file with the same name as the executable.
+# Visual C++ 2015 seems hell-bent on only allowing one .pch file with the same name as the executable.
 #enable_precompiled_headers( g_pch2.h FASTMATH_PCH_SOURCES )
 
 # Enable fast math for some sources
@@ -736,7 +736,6 @@ set( FASTMATH_SOURCES
 	gl/scene/gl_decal.cpp
 	gl/scene/gl_drawinfo.cpp
 	gl/scene/gl_flats.cpp
-	gl/scene/gl_walls.cpp
 	gl/scene/gl_sprite.cpp
 	gl/scene/gl_skydome.cpp
 	gl/scene/gl_weapon.cpp
@@ -745,14 +744,14 @@ set( FASTMATH_SOURCES
 	gl/scene/gl_sky.cpp
 	gl/scene/gl_portal.cpp
 	gl/scene/gl_walls_draw.cpp
-	gl/scene/gl_vertex.cpp
 	gl/scene/gl_spritelight.cpp
 	gl_load/gl_load.c
-	gl/models/gl_models.cpp
 	hwrenderer/dynlights/hw_dynlightdata.cpp
 	hwrenderer/scene/hw_fakeflat.cpp
 	hwrenderer/scene/hw_clipper.cpp
 	hwrenderer/scene/hw_renderhacks.cpp
+	hwrenderer/scene/hw_walls.cpp
+	hwrenderer/scene/hw_walls_vertex.cpp
 	r_data/models/models.cpp
 	r_data/matrix.cpp
 )
@@ -930,6 +929,7 @@ set (PCH_SOURCES
 	gl/data/gl_vertexbuffer.cpp
 	gl/dynlights/gl_lightbuffer.cpp
 	gl/dynlights/gl_shadowmap.cpp
+	gl/models/gl_models.cpp
 	gl/renderer/gl_quaddrawer.cpp
 	gl/renderer/gl_renderer.cpp
 	gl/renderer/gl_renderstate.cpp
