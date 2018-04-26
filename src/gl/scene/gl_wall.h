@@ -267,6 +267,8 @@ private:
 	void SplitUpperEdge(FFlatVertex *&ptr);
 	void SplitLowerEdge(FFlatVertex *&ptr);
 
+	int CountVertices();
+
 public:
 
 	GLWall(GLSceneDrawer *drawer)

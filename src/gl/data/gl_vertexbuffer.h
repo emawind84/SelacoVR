@@ -23,6 +23,9 @@
 #ifndef __VERTEXBUFFER_H
 #define __VERTEXBUFFER_H
 
+#include <atomic>
+#include <thread>
+#include <mutex>
 #include "tarray.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "gl/system/gl_interface.h"
@@ -95,12 +98,10 @@ class FFlatVertexBuffer : public FVertexBuffer, public FFlatVertexGenerator
 {
 	FFlatVertex *map;
 	unsigned int mIndex;
-	unsigned int mCurIndex;
+	std::atomic<unsigned int> mCurIndex;
+	std::mutex mBufferMutex;
 	unsigned int mNumReserved;
 
-
-	static const unsigned int BUFFER_SIZE = 2000000;
-	static const unsigned int BUFFER_SIZE_TO_USE = 1999500;
 
 public:
 	enum
@@ -127,17 +128,25 @@ public:
 	{
 		return &map[mCurIndex];
 	}
-	FFlatVertex *Alloc(int num, int *poffset)
+
+	template<class T>
+	FFlatVertex *Alloc(int num, T *poffset)
 	{
+	again:
 		FFlatVertex *p = GetBuffer();
-		*poffset = mCurIndex;
-		mCurIndex += num;
-		if (mCurIndex >= (gl_buffer_size - 500))
+		auto index = mCurIndex.fetch_add(num);
+		*poffset = static_cast<T>(index);
+		if (index + num >= (gl_buffer_size - 500))
 		{
-			DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
-			mCurIndex = mIndex;
+			std::lock_guard<std::mutex> lock(mBufferMutex);
+			if (mCurIndex >= (gl_buffer_size - 500))	// retest condition, in case another thread got here first
+			{
+				DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
+				mCurIndex = mIndex;
+			}
+
+			if (index >= (gl_buffer_size - 500)) goto again;
 		}
-		vertexbuffer_curindex = mCurIndex;
 		return p;
 	}
 
