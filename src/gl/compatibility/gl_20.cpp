@@ -494,7 +494,7 @@ bool gl_SetupLightTexture()
 //
 //==========================================================================
 
-static bool gl_CheckFog(FColormap *cm, int lightlevel)
+static bool CheckFog(FColormap *cm, int lightlevel)
 {
 	bool frontfog;
 
@@ -548,7 +548,7 @@ bool FDrawInfo::PutWallCompat(GLWall *wall, int passflag)
 		if (wall->sub->lighthead == nullptr) return false;
 	}
 
-	bool foggy = gl_CheckFog(&wall->Colormap, wall->lightlevel) || (level.flags&LEVEL_HASFADETABLE) || gl_lights_additive;
+	bool foggy = CheckFog(&wall->Colormap, wall->lightlevel) || (level.flags&LEVEL_HASFADETABLE) || gl_lights_additive;
 	bool masked = passflag == 2 && wall->gltexture->isMasked();
 
 	int list = list_indices[masked][foggy];
@@ -573,7 +573,7 @@ bool GLFlat::PutFlatCompat(bool fog)
 	{ { GLLDL_FLATS_PLAIN, GLLDL_FLATS_FOG },{ GLLDL_FLATS_MASKED, GLLDL_FLATS_FOGMASKED } };
 
 	bool masked = gltexture->isMasked() && ((renderflags&SSRF_RENDER3DPLANES) || stack);
-	bool foggy = gl_CheckFog(&Colormap, lightlevel) || (level.flags&LEVEL_HASFADETABLE) || gl_lights_additive;
+	bool foggy = CheckFog(&Colormap, lightlevel) || (level.flags&LEVEL_HASFADETABLE) || gl_lights_additive;
 
 	
 	int list = list_indices[masked][foggy];
@@ -599,7 +599,7 @@ void FDrawInfo::RenderFogBoundaryCompat(GLWall *wall)
 	auto ztop = wall->ztop;
 	auto zbottom = wall->zbottom;
 
-	float fogdensity = gl_GetFogDensity(wall->lightlevel, Colormap.FadeColor, Colormap.FogDensity, Colormap.BlendFactor);
+	float fogdensity = hw_GetFogDensity(wall->lightlevel, Colormap.FadeColor, Colormap.FogDensity, Colormap.BlendFactor);
 
 	float dist1 = Dist2(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, glseg.x1, glseg.y1);
 	float dist2 = Dist2(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, glseg.x2, glseg.y2);
@@ -831,7 +831,7 @@ void FDrawInfo::RenderLightsCompat(GLWall *wall, int pass)
 		if (PrepareLight(wall, light, pass))
 		{
 			wall->vertcount = 0;
-			wall->RenderWall(GLWall::RWF_TEXTURED);
+			RenderWall(wall, GLWall::RWF_TEXTURED);
 		}
 		node = node->nextLight;
 	}

@@ -348,7 +348,7 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 		fakesec = hw_FakeFlat(viewsector, in_area, false);
 
 		// calculate light level for weapon sprites
-		lightlevel = gl_ClampLight(fakesec->lightlevel);
+		lightlevel = hw_ClampLight(fakesec->lightlevel);
 
 		// calculate colormap for weapon sprites
 		if (viewsector->e->XFloor.ffloors.Size() && !(level.flags3 & LEVEL3_NOCOLOREDSPRITELIGHTING))
@@ -370,7 +370,7 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 				if (lightbottom<player->viewz) 
 				{
 					cm = lightlist[i].extra_colormap;
-					lightlevel = gl_ClampLight(*lightlist[i].p_lightlevel);
+					lightlevel = hw_ClampLight(*lightlist[i].p_lightlevel);
 					break;
 				}
 			}
@@ -381,7 +381,7 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 			if (level.flags3 & LEVEL3_NOCOLOREDSPRITELIGHTING) cm.ClearColor();
 		}
 
-		lightlevel = gl_CalcLightLevel(lightlevel, getExtraLight(), true, 0);
+		lightlevel = hw_CalcLightLevel(lightlevel, getExtraLight(), true, 0);
 
 		if (level.lightmode == 8 || lightlevel < 92)
 		{
