@@ -554,6 +554,7 @@ bool FDrawInfo::PutWallCompat(GLWall *wall, int passflag)
 	int list = list_indices[masked][foggy];
 	auto newwall = dldrawlists[list].NewWall();
 	*newwall = *wall;
+	if (!masked) newwall->ProcessDecals(this);
 	return true;
 
 }
