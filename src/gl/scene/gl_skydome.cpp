@@ -39,6 +39,7 @@
 #include "gl/shaders/gl_shader.h"
 
 
+EXTERN_CVAR(Float, skyoffset)
 //-----------------------------------------------------------------------------
 //
 //
