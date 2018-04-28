@@ -1079,7 +1079,7 @@ void GLLineToLinePortal::DrawContents()
 
 void GLLineToLinePortal::RenderAttached()
 {
-	gl_drawinfo->ProcessActorsInPortal(glport);
+	gl_drawinfo->ProcessActorsInPortal(glport, gl_drawinfo->mDrawer->in_area);
 }
 
 //-----------------------------------------------------------------------------
