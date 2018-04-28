@@ -51,26 +51,6 @@ class FCustomPostProcessShaders;
 class GLSceneDrawer;
 class SWSceneDrawer;
 
-inline float DEG2RAD(float deg)
-{
-	return deg * float(M_PI / 180.0);
-}
-
-inline double DEG2RAD(double deg)
-{
-	return deg * (M_PI / 180.0);
-}
-
-inline float RAD2DEG(float deg)
-{
-	return deg * float(180. / M_PI);
-}
-
-inline double RAD2DEG(double deg)
-{
-	return deg * (180. / M_PI);
-}
-
 struct GL_IRECT
 {
 	int left,top;
@@ -129,7 +109,6 @@ public:
 	AActor *mViewActor;
 	FShaderManager *mShaderManager;
 	FSamplerManager *mSamplerManager;
-	int gl_spriteindex;
 	unsigned int mFBID;
 	unsigned int mVAOID;
 	int mOldFBID;
@@ -160,11 +139,6 @@ public:
 
 	FShadowMap mShadowMap;
 
-	FTextureID glLight;
-	FTextureID glPart2;
-	FTextureID glPart;
-	FTextureID mirrorTexture;
-	
 	FRotator mAngles;
 	FVector2 mViewVector;
 
@@ -214,7 +188,6 @@ public:
 	void CopyToBackbuffer(const GL_IRECT *bounds, bool applyGamma);
 	void DrawPresentTexture(const GL_IRECT &box, bool applyGamma);
 	void Flush();
-	void GetSpecialTextures();
 	void Draw2D(F2DDrawer *data);
 	void RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV);
 	void WriteSavePic(player_t *player, FileWriter *file, int width, int height);

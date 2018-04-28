@@ -69,6 +69,7 @@ void HWDrawInfo::ClearBuffers()
 	CeilingStacks.Clear();
 	FloorStacks.Clear();
 	HandledSubsectors.Clear();
+	spriteindex = 0;
 
 }
 //==========================================================================

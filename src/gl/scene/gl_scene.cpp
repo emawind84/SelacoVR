@@ -249,13 +249,18 @@ void GLSceneDrawer::CreateScene()
 
 	// clip the scene and fill the drawlists
 	for(auto p : level.portalGroups) p->glportal = nullptr;
-	GLRenderer->gl_spriteindex=0;
 	Bsp.Clock();
 	GLRenderer->mVBO->Map();
 	GLRenderer->mLights->Begin();
 
 	SetView();
 	validcount++;	// used for processing sidedefs only once by the renderer.
+
+	gl_drawinfo->clipPortal = !!GLRenderer->mClipPortal;
+	gl_drawinfo->mAngles = GLRenderer->mAngles;
+	gl_drawinfo->mViewVector = GLRenderer->mViewVector;
+	gl_drawinfo->mViewActor = GLRenderer->mViewActor;
+
 	RenderBSPNode (level.HeadNode());
 	// Process all the sprites on the current portal's back side which touch the portal.
 	if (GLRenderer->mCurrentPortal != NULL) GLRenderer->mCurrentPortal->RenderAttached();

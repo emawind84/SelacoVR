@@ -115,13 +115,6 @@ protected:
 
 public:
 
-	enum
-	{
-		PClip_InFront,
-		PClip_Inside,
-		PClip_Behind,
-	};
-
 	void RenderPortal(bool usestencil, bool doquery)
 	{
 		// Start may perform an occlusion query. If that returns 0 there

@@ -285,6 +285,27 @@ enum ESSType
 
 const double M_PI = 3.14159265358979323846;	// matches value in gcc v2 math.h
 
+inline float DEG2RAD(float deg)
+{
+	return deg * float(M_PI / 180.0);
+}
+
+inline double DEG2RAD(double deg)
+{
+	return deg * (M_PI / 180.0);
+}
+
+inline float RAD2DEG(float deg)
+{
+	return deg * float(180. / M_PI);
+}
+
+inline double RAD2DEG(double deg)
+{
+	return deg * (180. / M_PI);
+}
+
+
 // Auto-registration sections for GCC.
 // Apparently, you cannot do string concatenation inside section attributes.
 #ifdef __MACH__
