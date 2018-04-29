@@ -745,7 +745,6 @@ set( FASTMATH_SOURCES
 	gl/scene/gl_swscene.cpp
 	gl/scene/gl_portal.cpp
 	gl/scene/gl_walls_draw.cpp
-	gl/scene/gl_spritelight.cpp
 	gl_load/gl_load.c
 	hwrenderer/dynlights/hw_dynlightdata.cpp
 	hwrenderer/scene/hw_fakeflat.cpp
@@ -755,6 +754,7 @@ set( FASTMATH_SOURCES
 	hwrenderer/scene/hw_renderhacks.cpp
 	hwrenderer/scene/hw_sky.cpp
 	hwrenderer/scene/hw_sprites.cpp
+	hwrenderer/scene/hw_spritelight.cpp
 	hwrenderer/scene/hw_walls.cpp
 	hwrenderer/scene/hw_walls_vertex.cpp
 	r_data/models/models.cpp
@@ -971,6 +971,7 @@ set (PCH_SOURCES
 	gl/textures/gl_samplers.cpp
 	hwrenderer/data/flatvertices.cpp
 	hwrenderer/dynlights/hw_aabbtree.cpp
+	hwrenderer/dynlights/hw_shadowmap.cpp
 	hwrenderer/scene/hw_skydome.cpp
 	hwrenderer/textures/hw_material.cpp
 	hwrenderer/textures/hw_precache.cpp

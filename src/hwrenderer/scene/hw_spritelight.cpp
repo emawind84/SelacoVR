@@ -34,13 +34,8 @@
 #include "actorinlines.h"
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
 #include "r_data/models/models.h"
-
-#include "gl/renderer/gl_renderer.h"
-#include "gl/renderer/gl_lightdata.h"
-#include "gl/scene/gl_drawinfo.h"
-#include "gl/shaders/gl_shader.h"
-#include "gl/dynlights/gl_lightbuffer.h"
-
+#include "hwrenderer/dynlights/hw_shadowmap.h"
+#include "hwrenderer/scene/hw_drawinfo.h"
 
 template<class T>
 T smoothstep(const T edge0, const T edge1, const T x)
@@ -55,7 +50,7 @@ T smoothstep(const T edge0, const T edge1, const T x)
 //
 //==========================================================================
 
-void hw_GetDynSpriteLight(AActor *self, float x, float y, float z, subsector_t * subsec, float *out)
+void HWDrawInfo::GetDynSpriteLight(AActor *self, float x, float y, float z, subsector_t * subsec, float *out)
 {
 	FDynamicLight *light;
 	float frac, lr, lg, lb;
@@ -111,7 +106,7 @@ void hw_GetDynSpriteLight(AActor *self, float x, float y, float z, subsector_t *
 					frac *= (float)smoothstep(light->pSpotOuterAngle->Cos(), light->pSpotInnerAngle->Cos(), cosDir);
 				}
 
-				if (frac > 0 && GLRenderer->mShadowMap.ShadowTest(light, { x, y, z }))
+				if (frac > 0 && (!light->shadowmapped || mShadowMap->ShadowTest(light, { x, y, z })))
 				{
 					lr = light->GetRed() / 255.0f;
 					lg = light->GetGreen() / 255.0f;
@@ -135,15 +130,15 @@ void hw_GetDynSpriteLight(AActor *self, float x, float y, float z, subsector_t *
 	}
 }
 
-void hw_GetDynSpriteLight(AActor *thing, particle_t *particle, float *out)
+void HWDrawInfo::GetDynSpriteLight(AActor *thing, particle_t *particle, float *out)
 {
 	if (thing != NULL)
 	{
-		hw_GetDynSpriteLight(thing, (float)thing->X(), (float)thing->Y(), (float)thing->Center(), thing->subsector, out);
+		GetDynSpriteLight(thing, thing->X(), thing->Y(), thing->Center(), thing->subsector, out);
 	}
 	else if (particle != NULL)
 	{
-		hw_GetDynSpriteLight(NULL, (float)particle->Pos.X, (float)particle->Pos.Y, (float)particle->Pos.Z, particle->subsector, out);
+		GetDynSpriteLight(NULL, particle->Pos.X, particle->Pos.Y, particle->Pos.Z, particle->subsector, out);
 	}
 }
 
