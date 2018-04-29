@@ -3,7 +3,7 @@
 
 #include "tarray.h"
 #include <atomic>
-struct FDynLightData;
+#include "hwrenderer/dynlights/hw_dynlightdata.h"
 
 class FLightBuffer
 {
@@ -36,6 +36,10 @@ public:
 	void StoreIndex(int index) { mIndices.Push(index); }
 	int GetIndex(int i) const { return mIndices[i];	}
 };
+
+int gl_SetDynModelLight(AActor *self, int dynlightindex);
+
+extern thread_local FDynLightData lightdata;
 
 #endif
 

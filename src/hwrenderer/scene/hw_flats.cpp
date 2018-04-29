@@ -55,7 +55,7 @@ CVAR(Int, gl_breaksec, -1, 0)
 //
 //==========================================================================
 
-bool gl_SetPlaneTextureRotation(const GLSectorPlane * secplane, FMaterial * gltexture, VSMatrix &dest)
+bool hw_SetPlaneTextureRotation(const GLSectorPlane * secplane, FMaterial * gltexture, VSMatrix &dest)
 {
 	// only manipulate the texture matrix if needed.
 	if (!secplane->Offs.isZero() ||
@@ -93,9 +93,8 @@ bool gl_SetPlaneTextureRotation(const GLSectorPlane * secplane, FMaterial * glte
 // Flats 
 //
 //==========================================================================
-extern FDynLightData lightdata;
 
-bool GLFlat::SetupSubsectorLights(int pass, subsector_t * sub)
+bool GLFlat::SetupSubsectorLights(int pass, subsector_t * sub, FDynLightData &lightdata)
 {
 	Plane p;
 

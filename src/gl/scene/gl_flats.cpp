@@ -56,7 +56,6 @@ CVAR(Int, gl_max_vertices, 0, CVAR_ARCHIVE)
 // Flats 
 //
 //==========================================================================
-extern FDynLightData lightdata;
 
 void FDrawInfo::SetupSubsectorLights(GLFlat *flat, int pass, subsector_t * sub, int *dli)
 {
@@ -66,7 +65,7 @@ void FDrawInfo::SetupSubsectorLights(GLFlat *flat, int pass, subsector_t * sub, 
 		(*dli)++;
 		return;
 	}
-	if (flat->SetupSubsectorLights(pass, sub))
+	if (flat->SetupSubsectorLights(pass, sub, lightdata))
 	{
 		int d = GLRenderer->mLights->UploadLights(lightdata);
 		if (pass == GLPASS_LIGHTSONLY)
