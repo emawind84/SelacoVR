@@ -754,11 +754,6 @@ bool PrepareLight(GLWall *wall, FDynamicLight * light, int pass)
 	auto normal = glseg.Normal();
 	p.Set(normal, -normal.X * glseg.x1 - normal.Z * glseg.y1);
 
-	if (!p.ValidNormal())
-	{
-		return false;
-	}
-
 	if (!gl_SetupLight(wall->seg->frontsector->PortalGroup, p, light, nearPt, up, right, scale, true, pass != GLPASS_LIGHTTEX))
 	{
 		return false;
@@ -816,6 +811,9 @@ void FDrawInfo::RenderLightsCompat(GLWall *wall, int pass)
 		return;
 	}
 
+	auto vertcountsave = wall->vertcount;
+	auto vertindexsave = wall->vertindex;
+
 	texcoord save[4];
 	memcpy(save, wall->tcs, sizeof(wall->tcs));
 	while (node)
@@ -832,12 +830,14 @@ void FDrawInfo::RenderLightsCompat(GLWall *wall, int pass)
 		if (PrepareLight(wall, light, pass))
 		{
 			wall->vertcount = 0;
+			wall->MakeVertices(this, false);
 			RenderWall(wall, GLWall::RWF_TEXTURED);
 		}
 		node = node->nextLight;
 	}
 	memcpy(wall->tcs, save, sizeof(wall->tcs));
-	wall->vertcount = 0;
+	wall->vertcount = vertcountsave;
+	wall->vertindex = vertindexsave;
 }
 
 //==========================================================================
