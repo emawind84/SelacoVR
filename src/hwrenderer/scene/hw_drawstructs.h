@@ -145,7 +145,7 @@ public:
 		LORGT,
 	};
 
-	friend struct GLDrawList;
+	friend struct HWDrawList;
 	friend class GLPortal;
 
 	vertex_t * vertexes[2];				// required for polygon splitting
