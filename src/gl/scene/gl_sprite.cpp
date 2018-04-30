@@ -64,36 +64,6 @@ void gl_SetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblend
 	gl_RenderState.SetTextureMode(tm);
 }
 
-int gl_SetDynModelLight(AActor *self, int dynlightindex)
-{
-	if (gl.legacyMode)
-	{
-		float out[3];
-		gl_drawinfo->GetDynSpriteLight(self, nullptr, out);
-		gl_RenderState.SetDynLight(out[0], out[1], out[2]);
-		return -1;
-	}
-	else
-	{
-		// For deferred light mode this function gets called twice. First time for list upload, and second for draw.
-		if (gl.lightmethod == LM_DEFERRED && dynlightindex != -1)
-		{
-			gl_RenderState.SetDynLight(0, 0, 0);
-			return dynlightindex;
-		}
-		hw_GetDynModelLight(self, lightdata);
-
-		dynlightindex = GLRenderer->mLights->UploadLights(lightdata);
-
-		if (gl.lightmethod != LM_DEFERRED)
-		{
-			gl_RenderState.SetDynLight(0, 0, 0);
-		}
-		return dynlightindex;
-
-	}
-}
-
 //==========================================================================
 //
 // 
@@ -174,7 +144,7 @@ void FDrawInfo::DrawSprite(GLSprite *sprite, int pass)
 	{
 		if (gl_lights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !sprite->fullbright)
 		{
-			if (sprite->dynlightindex == -1)	// only set if we got no light buffer index. This covers all cases where sprite lighting is used.
+			if ( sprite->dynlightindex == -1)	// only set if we got no light buffer index. This covers all cases where sprite lighting is used.
 			{
 				float out[3];
 				GetDynSpriteLight(gl_light_sprites ? sprite->actor : nullptr, gl_light_particles ? sprite->particle : nullptr, out);
