@@ -73,7 +73,7 @@ void GLSceneDrawer::DrawPSprite (player_t * player,DPSprite *psp, float sx, floa
 	qd.Set(2, rc.x2, rc.y1, 0, rc.u2, rc.v1);
 	qd.Set(3, rc.x2, rc.y2, 0, rc.u2, rc.v2);
 	qd.Render(GL_TRIANGLE_STRIP);
-	gl_RenderState.AlphaFunc(GL_GEQUAL, 0.5f);
+	gl_RenderState.AlphaFunc(GL_GEQUAL, gl_mask_sprite_threshold);
 }
 
 //==========================================================================
@@ -151,6 +151,7 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 
 	for(DPSprite *psp = player->psprites; psp != nullptr && psp->GetID() < PSP_TARGETCENTER; psp = psp->GetNext())
 	{
+		if (!psp->GetState()) continue;
 		WeaponRenderStyle rs = GetWeaponRenderStyle(psp, camera);
 		if (rs.RenderStyle.BlendOp == STYLEOP_None) continue;
 
@@ -164,69 +165,55 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 		gl_RenderState.EnableBrightmap(!(rs.RenderStyle.Flags & STYLEF_ColorIsFixed));
 
 		const bool bright = isBright(psp);
-		const PalEntry finalcol = bright
-			? ThingColor
-			: ThingColor.Modulate(viewsector->SpecialColors[sector_t::sprites]);
+		const PalEntry finalcol = bright? ThingColor : ThingColor.Modulate(viewsector->SpecialColors[sector_t::sprites]);
 		gl_RenderState.SetObjectColor(finalcol);
 
-		if (psp->GetState() != nullptr) 
+		auto ll = light;
+		if (bright) ll.SetBright();
+
+		// set the lighting parameters
+		if (rs.RenderStyle.BlendOp == STYLEOP_Shadow)
 		{
-			FColormap cmc = light.cm;
-			int ll = light.lightlevel;
-			if (bright)
+			gl_RenderState.SetColor(0.2f, 0.2f, 0.2f, 0.33f, ll.cm.Desaturation);
+		}
+		else
+		{
+			if (gl_lights && GLRenderer->mLightCount && FixedColormap == CM_DEFAULT && gl_light_sprites)
 			{
-				if (light.isbelow)	
+				FSpriteModelFrame *smf = psp->Caller != nullptr ? FindModelFrame(psp->Caller->GetClass(), psp->GetSprite(), psp->GetState()->GetFrame(), false) : nullptr;
+				if (smf && !gl.legacyMode)
 				{
-					cmc.MakeWhite();
+					gl_SetDynModelLight(playermo, weapondynlightindex[psp]);
 				}
 				else
 				{
-					// under water areas keep most of their color for fullbright objects
-					cmc.LightColor.r = (3 * cmc.LightColor.r + 0xff) / 4;
-					cmc.LightColor.g = (3*cmc.LightColor.g + 0xff)/4;
-					cmc.LightColor.b = (3*cmc.LightColor.b + 0xff)/4;
+					float out[3];
+					gl_drawinfo->GetDynSpriteLight(playermo, nullptr, out);
+					gl_RenderState.SetDynLight(out[0], out[1], out[2]);
 				}
-				ll = 255;
 			}
-			// set the lighting parameters
-			if (rs.RenderStyle.BlendOp == STYLEOP_Shadow)
-			{
-				gl_RenderState.SetColor(0.2f, 0.2f, 0.2f, 0.33f, cmc.Desaturation);
-			}
-			else
-			{
-				if (gl_lights && GLRenderer->mLightCount && FixedColormap == CM_DEFAULT && gl_light_sprites)
-				{
-					FSpriteModelFrame *smf = psp->Caller != nullptr ? FindModelFrame(psp->Caller->GetClass(), psp->GetSprite(), psp->GetState()->GetFrame(), false) : nullptr;
-					if (!smf || gl.legacyMode)	// For models with per-pixel lighting this was done in a previous pass.
-					{
-						float out[3];
-						gl_drawinfo->GetDynSpriteLight(playermo, nullptr, out);
-						gl_RenderState.SetDynLight(out[0], out[1], out[2]);
-					}
-				}
-				SetColor(ll, 0, cmc, rs.alpha, true);
-			}
-			if (playermo->Sector)
-			{
-				gl_RenderState.SetAddColor(playermo->Sector->AdditiveColors[sector_t::sprites] | 0xff000000);
-			}
-			else
-			{
-				gl_RenderState.SetAddColor(0);
-			}
+			SetColor(ll.lightlevel, 0, ll.cm, rs.alpha, true);
+		}
+		if (playermo->Sector)
+		{
+			gl_RenderState.SetAddColor(playermo->Sector->AdditiveColors[sector_t::sprites] | 0xff000000);
+		}
+		else
+		{
+			gl_RenderState.SetAddColor(0);
+		}
 
-			FVector2 spos = BobWeapon(weap, psp);
+		FVector2 spos = BobWeapon(weap, psp);
 
-			// [BB] In the HUD model step we just render the model and break out. 
-			if (hudModelStep)
-			{
-				gl_RenderHUDModel(psp, spos.X, spos.Y, weapondynlightindex[psp]);
-			}
-			else
-			{
-				DrawPSprite(player, psp, spos.X, spos.Y, rs.OverrideShader, !!(rs.RenderStyle.Flags & STYLEF_RedIsAlpha), r_viewpoint.TicFrac);
-			}
+		// [BB] In the HUD model step we just render the model and break out. 
+		if (hudModelStep)
+		{
+			gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
+			gl_RenderHUDModel(psp, spos.X, spos.Y, weapondynlightindex[psp]);
+		}
+		else
+		{
+			DrawPSprite(player, psp, spos.X, spos.Y, rs.OverrideShader, !!(rs.RenderStyle.Flags & STYLEF_RedIsAlpha), r_viewpoint.TicFrac);
 		}
 	}
 	gl_RenderState.SetObjectColor(0xffffffff);
