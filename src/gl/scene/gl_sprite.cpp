@@ -263,25 +263,7 @@ void GLSprite::CalculateVertices(FVector3 *v)
 
 void GLSprite::Draw(int pass)
 {
-	if (pass == GLPASS_DECALS) return;
-
-	if (pass == GLPASS_LIGHTSONLY)
-	{
-		if (modelframe && !modelframe->isVoxel && !(modelframe->flags & MDL_NOPERPIXELLIGHTING))
-		{
-			if (RenderStyle.BlendOp != STYLEOP_Shadow)
-			{
-				if (gl_lights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
-				{
-					if (!particle)
-					{
-						dynlightindex = gl_SetDynModelLight(gl_light_sprites ? actor : nullptr, -1);
-					}
-				}
-			}
-		}
-		return;
-	}
+	if (pass == GLPASS_DECALS || pass == GLPASS_LIGHTSONLY) return;
 
 	bool additivefog = false;
 	bool foglayer = false;
@@ -351,10 +333,10 @@ void GLSprite::Draw(int pass)
 	{
 		if (gl_lights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
 		{
-			if (modelframe && !particle)
-				dynlightindex = gl_SetDynModelLight(gl_light_sprites ? actor : NULL, dynlightindex);
-			else
+			if (dynlightindex == -1)	// only set if we got no light buffer index. This covers all cases where sprite lighting is used.
+			{
 				gl_SetDynSpriteLight(gl_light_sprites ? actor : NULL, gl_light_particles ? particle : NULL);
+			}
 		}
 		sector_t *cursec = actor ? actor->Sector : particle ? particle->subsector->sector : nullptr;
 		if (cursec != nullptr)
@@ -516,6 +498,26 @@ void GLSprite::Draw(int pass)
 //==========================================================================
 inline void GLSprite::PutSprite(bool translucent)
 {
+	if (modelframe && !modelframe->isVoxel && !(modelframe->flags & MDL_NOPERPIXELLIGHTING) && !gl.legacyMode)
+	{
+		if (RenderStyle.BlendOp != STYLEOP_Shadow)
+		{
+			if (gl_lights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
+			{
+				if (!particle)
+				{
+					dynlightindex = gl_SetDynModelLight(gl_light_sprites ? actor : nullptr, -1);
+				}
+				else
+				{
+					DPrintf(DMSG_SPAMMY, "BHUAAAAAAAAAAAAAAAA!!!!");
+				}
+			}
+		}
+	}
+	else
+		dynlightindex = -1;
+
 	int list;
 	// [BB] Allow models to be drawn in the GLDL_TRANSLUCENT pass.
 	if (translucent || actor == nullptr || (!modelframe && (actor->renderflags & RF_SPRITETYPEMASK) != RF_WALLSPRITE))
@@ -526,7 +528,7 @@ inline void GLSprite::PutSprite(bool translucent)
 	{
 		list = GLDL_MODELS;
 	}
-	dynlightindex = -1;
+
 	gl_drawinfo->drawlists[list].AddSprite(this);
 }
 
