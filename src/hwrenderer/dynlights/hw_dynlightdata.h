@@ -71,4 +71,7 @@ inline bool gl_IsDistanceCulled(FDynamicLight *light)
 	return false;
 }
 
+extern thread_local FDynLightData lightdata;
+
+
 #endif
