@@ -42,6 +42,7 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/stereo3d/scoped_color_mask.h"
 #include "gl/renderer/gl_quaddrawer.h"
+#include "gl/dynlights/gl_lightbuffer.h"
 
 FDrawInfo * gl_drawinfo;
 FDrawInfoList di_list;
@@ -520,4 +521,11 @@ GLDecal *FDrawInfo::AddDecal(bool onmirror)
 	decals[onmirror ? 1 : 0].Push(decal);
 	return decal;
 }
+
+int FDrawInfo::UploadLights(FDynLightData &data)
+{
+	return GLRenderer->mLights->UploadLights(data);
+}
+
+
 

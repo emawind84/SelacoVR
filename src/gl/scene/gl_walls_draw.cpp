@@ -319,7 +319,6 @@ void FDrawInfo::DrawWall(GLWall *wall, int pass)
 	switch (pass)
 	{
 	case GLPASS_ALL:
-	case GLPASS_PLAIN:
 		RenderTexturedWall(wall, GLWall::RWF_TEXTURED);
 		break;
 
