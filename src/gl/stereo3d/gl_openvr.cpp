@@ -207,11 +207,12 @@ public:
 		if (!isLoaded())
 			return;
 		FMaterial * tex = FMaterial::ValidateTexture(pFTex, false);
+		mVBuf->SetupFrame(0, 0, 0);
+		gl_RenderState.SetVertexBuffer(mVBuf);
 		gl_RenderState.SetMaterial(tex, CLAMP_NONE, translation, -1, false);
 		gl_RenderState.Apply();
-		mVBuf->BindVBO();
-		mVBuf->SetupFrame(0, 0, 0);
 		glDrawElements(GL_TRIANGLES, pModel->unTriangleCount * 3, GL_UNSIGNED_INT, (void*)(intptr_t)0);
+		gl_RenderState.SetVertexBuffer(GLRenderer->mVBO); //this needs to be set back to avoid the level rendering black even though the next draw will be the UI for this eye(???)
 	}
 
 	virtual void BuildVertexBuffer() override
@@ -837,11 +838,14 @@ void OpenVRMode::DrawControllerModels() const
 
 			APlayerPawn* playermo = r_viewpoint.camera->player->mo;
 			DVector3 pos = playermo->Pos();
+
 			gl_RenderState.mModelMatrix.translate(pos.X, pos.Z, pos.Y);
 			gl_RenderState.mModelMatrix.rotate(-90, 0, 1, 0);
 
 			gl_RenderState.mModelMatrix.scale(VERTICAL_DOOM_UNITS_PER_METER, VERTICAL_DOOM_UNITS_PER_METER, -VERTICAL_DOOM_UNITS_PER_METER);
-			
+			double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+			gl_RenderState.mModelMatrix.scale(pixelstretch, 1.0, pixelstretch); // Doom universe is scaled by 1990s pixel aspect ratio
+
 			gl_RenderState.mModelMatrix.translate(-openvr_origin.x, 0.0f, -openvr_origin.z);
 
 			LSMatrix44 handToAbs;
