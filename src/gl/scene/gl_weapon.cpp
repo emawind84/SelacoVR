@@ -199,8 +199,6 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 	AActor * playermo=players[consoleplayer].camera;
 	player_t * player=playermo->player;
 	
-	s3d::Stereo3DMode::getCurrentMode().AdjustPlayerSprites();
-
 	AActor *camera = r_viewpoint.camera;
 
 	// this is the same as the software renderer
@@ -210,6 +208,11 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 		(player->cheats & CF_CHASECAM) || 
 		(r_deathcamera && camera->health <= 0))
 		return;
+
+	if (!hudModelStep)
+	{
+		s3d::Stereo3DMode::getCurrentMode().AdjustPlayerSprites();
+	}
 
 	float bobx, boby, wx, wy;
 	DPSprite *weapon;
@@ -451,11 +454,18 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 			DrawPSprite(player, psp, sx, sy, hudModelStep, OverrideShader, !!(RenderStyle.Flags & STYLEF_RedIsAlpha));
 		}
 	}
+
+	s3d::Stereo3DMode::getCurrentMode().DrawControllerModels();
+
 	gl_RenderState.SetObjectColor(0xffffffff);
 	gl_RenderState.SetDynLight(0, 0, 0);
 	gl_RenderState.EnableBrightmap(false);
 	glset.lightmode = oldlightmode;
-	s3d::Stereo3DMode::getCurrentMode().UnAdjustPlayerSprites();
+	if (!hudModelStep)
+	{
+		s3d::Stereo3DMode::getCurrentMode().UnAdjustPlayerSprites();
+	}
+	
 }
 
 //==========================================================================

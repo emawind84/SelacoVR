@@ -90,6 +90,8 @@ public:
 	virtual void AdjustCrossHair() const override;
 	virtual void UnAdjustCrossHair() const override;
 
+	virtual void DrawControllerModels() const override;
+
 protected:
 	OpenVRMode();
 	// void updateDoomViewDirection() const;

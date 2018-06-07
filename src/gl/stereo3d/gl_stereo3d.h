@@ -33,6 +33,7 @@
 #include "gl/data/gl_matrix.h"
 #include "gl/renderer/gl_renderer.h"
 
+class LSVec3;
 
 /* stereoscopic 3D API */
 namespace s3d {
@@ -90,6 +91,8 @@ public:
 	virtual void UnAdjustPlayerSprites() const {};
 	virtual void AdjustCrossHair() const {}
 	virtual void UnAdjustCrossHair() const {}
+	virtual void DrawControllerModels() const {}
+	
 	virtual void Present() const = 0;
 
 protected:

@@ -461,7 +461,7 @@ if( NOT DYN_FLUIDSYNTH )
 	endif()
 endif()
 
-option( ENABLE_OPENVR "Enable OpenVR virtual reality mode" OFF )
+option( ENABLE_OPENVR "Enable OpenVR virtual reality mode" ON )
 if (ENABLE_OPENVR)
 	add_definitions("-DUSE_OPENVR")
 	find_path(OPENVR_SDK_PATH

@@ -465,7 +465,7 @@ void GLSceneDrawer::RenderTranslucent()
 //
 //-----------------------------------------------------------------------------
 
-void GLSceneDrawer::DrawScene(int drawmode)
+void GLSceneDrawer::DrawScene(int drawmode, sector_t * viewsector)
 {
 	static int recursion=0;
 	static int ssao_portals_available = 0;
@@ -499,6 +499,12 @@ void GLSceneDrawer::DrawScene(int drawmode)
 	GLRenderer->mClipPortal = NULL;	// this must be reset before any portal recursion takes place.
 
 	RenderScene(recursion);
+
+	const bool renderHUDModel = gl_IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
+	if ( renderHUDModel )
+	{
+		DrawPlayerSprites (viewsector, true);
+	}
 
 	if (applySSAO && gl_RenderState.GetPassType() == GBUFFER_PASS)
 	{
@@ -665,12 +671,12 @@ void GLSceneDrawer::EndDrawScene(sector_t * viewsector)
 	// DrawPlayerSprites is only called once. Either to draw
 	// HUD models or to draw the weapon sprites.
 	const bool renderHUDModel = gl_IsHUDModelForPlayerAvailable( players[consoleplayer].camera->player );
-	if ( renderHUDModel )
-	{
-		// [BB] The HUD model should be drawn over everything else already drawn.
-		glClear(GL_DEPTH_BUFFER_BIT);
-		DrawPlayerSprites (viewsector, true);
-	}
+	//if ( renderHUDModel )
+	//{
+	//	// [BB] The HUD model should be drawn over everything else already drawn.
+	//	glClear(GL_DEPTH_BUFFER_BIT);
+	//	DrawPlayerSprites (viewsector, true);
+	//}
 
 	glDisable(GL_STENCIL_TEST);
 
@@ -710,7 +716,7 @@ void GLSceneDrawer::EndDrawScene(sector_t * viewsector)
 //
 //-----------------------------------------------------------------------------
 
-void GLSceneDrawer::ProcessScene(bool toscreen)
+void GLSceneDrawer::ProcessScene(bool toscreen, sector_t * viewsector)
 {
 	FDrawInfo::StartDrawInfo(this);
 	iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
@@ -719,7 +725,7 @@ void GLSceneDrawer::ProcessScene(bool toscreen)
 	int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
 	memset(&currentmapsection[0], 0, currentmapsection.Size());
 	currentmapsection[mapsection>>3] |= 1 << (mapsection & 7);
-	DrawScene(toscreen ? DM_MAINVIEW : DM_OFFSCREEN);
+	DrawScene(toscreen ? DM_MAINVIEW : DM_OFFSCREEN, viewsector);
 	FDrawInfo::EndDrawInfo();
 
 }
@@ -835,7 +841,7 @@ sector_t * GLSceneDrawer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, f
 		SetViewMatrix(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, false, false);
 		gl_RenderState.ApplyMatrices();
 
-		ProcessScene(toscreen);
+		ProcessScene(toscreen, lviewsector);
 		if (mainview && toscreen) EndDrawScene(lviewsector); // do not call this for camera textures.
 		if (mainview && FGLRenderBuffers::IsEnabled())
 		{
