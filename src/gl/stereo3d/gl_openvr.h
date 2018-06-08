@@ -91,6 +91,8 @@ public:
 	virtual void UnAdjustCrossHair() const override;
 
 	virtual void DrawControllerModels() const override;
+	
+	virtual bool GetHandTransform(int hand, VSMatrix* out) const;
 
 protected:
 	OpenVRMode();

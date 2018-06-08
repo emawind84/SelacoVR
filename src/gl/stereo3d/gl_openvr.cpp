@@ -827,32 +827,14 @@ void OpenVRMode::UnAdjustCrossHair() const
 	cached2DDrawer = nullptr;
 }
 
-
 void OpenVRMode::DrawControllerModels() const
 {
+	return; //debug only
+	
 	for (int i = 0; i < MAX_ROLES; ++i) 
 	{
-		if (controllers[i].model)
+		if (GetHandTransform(i, &gl_RenderState.mModelMatrix))
 		{
-			gl_RenderState.mModelMatrix.loadIdentity();
-
-			APlayerPawn* playermo = r_viewpoint.camera->player->mo;
-			DVector3 pos = playermo->Pos();
-
-			gl_RenderState.mModelMatrix.translate(pos.X, pos.Z, pos.Y);
-			gl_RenderState.mModelMatrix.rotate(-90, 0, 1, 0);
-
-			gl_RenderState.mModelMatrix.scale(VERTICAL_DOOM_UNITS_PER_METER, VERTICAL_DOOM_UNITS_PER_METER, -VERTICAL_DOOM_UNITS_PER_METER);
-			double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
-			gl_RenderState.mModelMatrix.scale(pixelstretch, 1.0, pixelstretch); // Doom universe is scaled by 1990s pixel aspect ratio
-
-			gl_RenderState.mModelMatrix.translate(-openvr_origin.x, 0.0f, -openvr_origin.z);
-
-			LSMatrix44 handToAbs;
-			vSMatrixFromHmdMatrix34(handToAbs, controllers[i].pose.mDeviceToAbsoluteTracking);
-			
-			gl_RenderState.mModelMatrix.multMatrix(handToAbs.transpose());
-
 			gl_RenderState.EnableModelMatrix(true);
 
 			controllers[i].model->RenderFrame(0, 0, 0, 0);
@@ -861,6 +843,37 @@ void OpenVRMode::DrawControllerModels() const
 		}
 	}
 }
+
+
+bool OpenVRMode::GetHandTransform(int hand, VSMatrix* mat) const
+{
+	if (controllers[hand].model)
+	{
+		mat->loadIdentity();
+
+		APlayerPawn* playermo = r_viewpoint.camera->player->mo;
+		DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
+
+		mat->translate(pos.X, pos.Z, pos.Y);
+		mat->rotate(-90, 0, 1, 0);
+
+		mat->scale(VERTICAL_DOOM_UNITS_PER_METER, VERTICAL_DOOM_UNITS_PER_METER, -VERTICAL_DOOM_UNITS_PER_METER);
+		double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+		mat->scale(pixelstretch, 1.0, pixelstretch); // Doom universe is scaled by 1990s pixel aspect ratio
+
+		mat->translate(-openvr_origin.x, 0.0f, -openvr_origin.z);
+
+		LSMatrix44 handToAbs;
+		vSMatrixFromHmdMatrix34(handToAbs, controllers[hand].pose.mDeviceToAbsoluteTracking);
+
+		mat->multMatrix(handToAbs.transpose());
+
+		return true;
+	}
+	return false;
+}
+
+
 
 /* virtual */
 void OpenVRMode::Present() const {

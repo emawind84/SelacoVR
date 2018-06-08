@@ -95,6 +95,8 @@ public:
 	
 	virtual void Present() const = 0;
 
+	virtual bool GetHandTransform(int hand, VSMatrix* out) const { return false; }
+
 protected:
 	TArray<const EyePose *> eye_ptrs;
 
