@@ -92,7 +92,8 @@ public:
 
 	virtual void DrawControllerModels() const override;
 	
-	virtual bool GetHandTransform(int hand, VSMatrix* out) const;
+	virtual bool GetHandTransform(int hand, VSMatrix* out) const override;
+	virtual bool GetWeaponTransform(VSMatrix* out) const override;
 
 protected:
 	OpenVRMode();

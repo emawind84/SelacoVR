@@ -163,6 +163,10 @@ public:
 	uint8_t ColorRangeStart;	// Skin color range
 	uint8_t ColorRangeEnd;
 
+	//For VR, override firing position
+	bool OverrideAttackPosDir;
+	DVector3 AttackPos;
+	DVector3 AttackDir;
 };
 
 //

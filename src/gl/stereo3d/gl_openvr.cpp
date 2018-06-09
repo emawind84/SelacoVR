@@ -48,6 +48,9 @@
 #include "cmdlib.h"
 #include "LSMatrix.h"
 #include "w_wad.h"
+#include "m_joy.h"
+#include "d_gui.h"
+#include "d_event.h"
 
 #ifdef DYN_OPENVR
 // Dynamically load OpenVR
@@ -103,12 +106,16 @@ S_API uint32_t VR_GetInitToken();
 #endif
 
 // For conversion between real-world and doom units
-#define VERTICAL_DOOM_UNITS_PER_METER 27.0f
+#define VERTICAL_DOOM_UNITS_PER_METER openvr_scale
 
 EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Float, movebob);
 EXTERN_CVAR(Bool, gl_billboard_faces_camera);
 EXTERN_CVAR(Int, gl_multisample);
+
+CVAR(Bool, openvr_rightHanded, true, CVAR_ARCHIVE)
+CVAR(Float, openvr_weaponRotate, -30, CVAR_ARCHIVE)
+CVAR(Float, openvr_scale, 30.0f, CVAR_ARCHIVE)
 
 bool IsOpenVRPresent()
 {
@@ -144,6 +151,7 @@ static const bool doTrackVrControllerPosition = false; // todo:
 namespace s3d 
 {
 	static LSVec3 openvr_origin(0, 0, 0);
+	static float deltaYawDegrees;
 	
 	class FControllerTexture : public FTexture
 	{
@@ -307,6 +315,7 @@ static std::map<std::string, VRControllerModel> controllerMeshes;
 struct Controller
 {
 	TrackedDevicePose_t pose;
+	VRControllerState_t lastState;
 	VRControllerModel* model = nullptr;
 };
 
@@ -436,7 +445,7 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 	// But yaw can differ, depending on starting state, and controller movement.
 	float doomYawDegrees = yaw;
 	float openVrYawDegrees = RAD2DEG(-eulerAnglesFromMatrix(hmdPose).v[0]);
-	float deltaYawDegrees = doomYawDegrees - openVrYawDegrees;
+	deltaYawDegrees = doomYawDegrees - openVrYawDegrees;
 	while (deltaYawDegrees > 180)
 		deltaYawDegrees -= 360;
 	while (deltaYawDegrees < -180)
@@ -855,11 +864,10 @@ bool OpenVRMode::GetHandTransform(int hand, VSMatrix* mat) const
 		DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
 
 		mat->translate(pos.X, pos.Z, pos.Y);
-		mat->rotate(-90, 0, 1, 0);
 
 		mat->scale(VERTICAL_DOOM_UNITS_PER_METER, VERTICAL_DOOM_UNITS_PER_METER, -VERTICAL_DOOM_UNITS_PER_METER);
-		double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
-		mat->scale(pixelstretch, 1.0, pixelstretch); // Doom universe is scaled by 1990s pixel aspect ratio
+
+		mat->rotate(-deltaYawDegrees - 180, 0, 1, 0);
 
 		mat->translate(-openvr_origin.x, 0.0f, -openvr_origin.z);
 
@@ -873,6 +881,17 @@ bool OpenVRMode::GetHandTransform(int hand, VSMatrix* mat) const
 	return false;
 }
 
+bool OpenVRMode::GetWeaponTransform(VSMatrix* out) const
+{
+	if (GetHandTransform(openvr_rightHanded ? 1 : 0, out))
+	{
+		out->rotate(openvr_weaponRotate, 1, 0, 0);
+		return true;
+	}
+	return false;
+}
+
+		
 
 
 /* virtual */
@@ -1008,6 +1027,76 @@ void OpenVRMode::updateHmdPose(
 	}
 }
 
+static int GetVRAxisState(VRControllerState_t& state, int vrAxis, int axis)
+{
+	const float DEAD_ZONE = 0.25f;
+	float pos = axis == 0 ? state.rAxis[vrAxis].x : state.rAxis[vrAxis].y;
+	return pos < -DEAD_ZONE ? 1 : pos > DEAD_ZONE ? 2 : 0;
+}
+
+void Joy_GenerateUIButtonEvents(int oldbuttons, int newbuttons, int numbuttons, const int *keys)
+{
+	int changed = oldbuttons ^ newbuttons;
+	if (changed != 0)
+	{
+		event_t ev = { 0, 0, 0, 0, 0, 0, 0 };
+		int mask = 1;
+		for (int j = 0; j < numbuttons; mask <<= 1, ++j)
+		{
+			if (changed & mask)
+			{
+				ev.data1 = keys[j];
+				ev.type = EV_GUI_Event;
+				ev.subtype = (newbuttons & mask) ? EV_GUI_KeyDown : EV_GUI_KeyUp;
+				D_PostEvent(&ev);
+			}
+		}
+	}
+}
+
+static void HandleVRAxis(VRControllerState_t& lastState, VRControllerState_t& newState, int vrAxis, int axis, int negativedoomkey, int positivedoomkey, int base)
+{
+	int keys[] = { negativedoomkey + base, positivedoomkey + base };
+	Joy_GenerateButtonEvents(GetVRAxisState(lastState, vrAxis, axis), GetVRAxisState(newState, vrAxis, axis), 2, keys);
+}
+
+static void HandleUIVRAxis(VRControllerState_t& lastState, VRControllerState_t& newState, int vrAxis, int axis, ESpecialGUIKeys negativedoomkey, ESpecialGUIKeys positivedoomkey)
+{
+	int keys[] = { (int)negativedoomkey, (int)positivedoomkey };
+	Joy_GenerateUIButtonEvents(GetVRAxisState(lastState, vrAxis, axis), GetVRAxisState(newState, vrAxis, axis), 2, keys);
+}
+
+static void HandleVRButton(VRControllerState_t& lastState, VRControllerState_t& newState, long long vrindex, int doomkey, int base)
+{
+	Joy_GenerateButtonEvents((lastState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, (newState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, 1, doomkey + base);
+}
+
+static void HandleControllerState(int device, int role, VRControllerState_t& newState)
+{
+	VRControllerState_t& lastState = controllers[role].lastState;
+	//trigger
+	HandleVRAxis(lastState, newState, 1, 0, KEY_PAD_LTRIGGER, KEY_PAD_LTRIGGER, role * (KEY_PAD_RTRIGGER - KEY_PAD_LTRIGGER));
+	HandleUIVRAxis(lastState, newState, 1, 0, GK_RETURN, GK_RETURN);
+
+	//touchpad
+	HandleVRAxis(lastState, newState, 0, 0, KEY_PAD_LTHUMB_LEFT, KEY_PAD_LTHUMB_RIGHT, role * (KEY_PAD_RTHUMB_LEFT - KEY_PAD_LTHUMB_LEFT));
+	HandleVRAxis(lastState, newState, 0, 1, KEY_PAD_LTHUMB_DOWN, KEY_PAD_LTHUMB_UP, role * (KEY_PAD_RTHUMB_DOWN - KEY_PAD_LTHUMB_UP));
+	HandleUIVRAxis(lastState, newState, 0, 0, GK_LEFT, GK_RIGHT);
+	HandleUIVRAxis(lastState, newState, 0, 1, GK_DOWN, GK_UP);
+
+	//WMR joysticks
+	HandleVRAxis(lastState, newState, 2, 0, KEY_JOYAXIS1MINUS, KEY_JOYAXIS1PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
+	HandleVRAxis(lastState, newState, 2, 1, KEY_JOYAXIS2MINUS, KEY_JOYAXIS2PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
+	HandleUIVRAxis(lastState, newState, 2, 0, GK_LEFT, GK_RIGHT);
+	HandleUIVRAxis(lastState, newState, 2, 1, GK_DOWN, GK_UP);
+
+	HandleVRButton(lastState, newState, vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
+	HandleVRButton(lastState, newState, vr::k_EButton_ApplicationMenu, KEY_PAD_START, role * (KEY_PAD_BACK - KEY_PAD_START));
+
+	lastState = newState;
+}
+
+
 /* virtual */
 void OpenVRMode::SetUp() const
 {
@@ -1084,7 +1173,26 @@ void OpenVRMode::SetUp() const
 					controllers[role].pose = pose;
 					controllers[role].model = &controllerMeshes[model_name];
 				}
+				VRControllerState_t newState;
+				vrSystem->GetControllerState(i, &newState, sizeof(newState));
+				HandleControllerState(i, role, newState);
 			}
+		}
+
+		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+		LSMatrix44 mat; 
+		if (player && GetWeaponTransform(&mat))
+		{
+			player->mo->OverrideAttackPosDir = true;
+
+			player->mo->AttackPos.X = mat[3][0];
+			player->mo->AttackPos.Y = mat[3][2];
+			player->mo->AttackPos.Z = mat[3][1];
+
+			player->mo->AttackDir.X = -mat[2][0];
+			player->mo->AttackDir.Y = -mat[2][2];
+			player->mo->AttackDir.Z = -mat[2][1];
+			player->mo->AttackDir.MakeUnit();
 		}
 	}
 }

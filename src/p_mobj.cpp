@@ -7279,6 +7279,13 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 		}
 	}
 	DVector3 pos = source->Vec2OffsetZ(x, y, z);
+	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
+	{
+		pos = source->player->mo->AttackPos;
+		DVector3 dir = source->player->mo->AttackDir;
+		an = dir.Angle();
+		pitch = -dir.Pitch();
+	}
 	AActor *MissileActor = Spawn (type, pos, ALLOW_REPLACE);
 	if (pMissileActor) *pMissileActor = MissileActor;
 	P_PlaySpawnSound(MissileActor, source);

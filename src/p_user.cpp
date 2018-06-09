@@ -2788,6 +2788,9 @@ DEFINE_FIELD(APlayerPawn, Slot)
 DEFINE_FIELD(APlayerPawn, HexenArmor)
 DEFINE_FIELD(APlayerPawn, ColorRangeStart)
 DEFINE_FIELD(APlayerPawn, ColorRangeEnd)
+DEFINE_FIELD(APlayerPawn, OverrideAttackPosDir);
+DEFINE_FIELD(APlayerPawn, AttackPos);
+DEFINE_FIELD(APlayerPawn, AttackDir);
 
 DEFINE_FIELD_X(PlayerInfo, player_t, mo)
 DEFINE_FIELD_X(PlayerInfo, player_t, playerstate)

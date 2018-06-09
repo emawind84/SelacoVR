@@ -1103,11 +1103,10 @@ void gl_RenderHUDModel(DPSprite *psp, float ofsX, float ofsY)
 	// [BB] Render the weapon in worldspace to confirm transforms are all correct
 	gl_RenderState.mModelMatrix.loadIdentity();
 
-	if (s3d::Stereo3DMode::getCurrentMode().GetHandTransform(1, &gl_RenderState.mModelMatrix))
+	if (s3d::Stereo3DMode::getCurrentMode().GetWeaponTransform(&gl_RenderState.mModelMatrix))
 	{
 		float scale = 0.01f;
 		gl_RenderState.mModelMatrix.scale(scale, scale, scale);
-		gl_RenderState.mModelMatrix.rotate(-30, 1, 0, 0);
 		gl_RenderState.mModelMatrix.translate(0, 5, 30);
 	}
 	else

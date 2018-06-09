@@ -4393,6 +4393,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	DAngle pitch, int damage, FName damageType, PClassActor *pufftype, int flags, FTranslatedLineTarget*victim, int *actualdamage, double sz)
 {
 	bool nointeract = !!(flags & LAF_NOINTERACT);
+	DVector3 fromPos;
 	DVector3 direction;
 	double shootz;
 	FTraceResults trace;
@@ -4423,6 +4424,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	if (t1->player != NULL)
 	{
 		shootz += t1->player->mo->AttackZOffset * t1->player->crouchfactor;
+		
 		if (damageType == NAME_Melee || damageType == NAME_Hitscan)
 		{
 			// this is coming from a weapon attack function which needs to transfer information to the obituary code,
@@ -4441,6 +4443,16 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 		shootz = t1->Z();
 	shootz += sz;
 
+	if (t1->player != NULL && t1->player->mo->OverrideAttackPosDir)
+	{
+		fromPos = t1->player->mo->AttackPos;
+		direction = t1->player->mo->AttackDir;
+	}
+	else
+	{
+		fromPos = t1->PosAtZ(shootz);
+	}
+	
 	// We need to check the defaults of the replacement here
 	AActor *puffDefaults = GetDefaultByType(pufftype->GetReplacement());
 	
@@ -4491,7 +4503,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	if (nointeract || (puffDefaults && puffDefaults->flags6 & MF6_NOTRIGGER)) tflags = TRACE_NoSky;
 	else tflags = TRACE_NoSky | TRACE_Impact;
 
-	if (!Trace(t1->PosAtZ(shootz), t1->Sector, direction, distance, MF_SHOOTABLE, 
+	if (!Trace(fromPos, t1->Sector, direction, distance, MF_SHOOTABLE, 
 		ML_BLOCKEVERYTHING | ML_BLOCKHITSCAN, t1, trace, tflags, CheckForActor, &TData))
 	{ // hit nothing
 		if (!nointeract && puffDefaults && puffDefaults->ActiveSound)
