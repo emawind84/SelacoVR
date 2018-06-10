@@ -7,9 +7,7 @@ This build exposes OpenVR controller input for definition (you will need to defi
 
 One hand (right by default) is tracked for the weapon. *You will need 3D weapons* I have included a 3d weapon pack in the release, which I have rescaled/moved to work correctly. I've only tested the original doom weapons.
 
-You will also need a doom wad file. You need to start with the commandline:
-
-gzdoom.exe +vr_mode 10 -file WeaponsForVR.pk3
+You will also need a doom wad file copied to the directory you unzipped to. Run the included batch file to start up (OpenVRDoom.bat).
 
 I made the 3D weapons from a file called "st-models-complete.pk3" which I found somewhere on the internet. It wasn't completely compatible with this version of gzdoom, so I cut it down to just the weapons (which are). Hopefully the original authors won't mind me redistributing this!
 
