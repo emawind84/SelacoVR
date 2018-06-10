@@ -36,7 +36,7 @@
 #include "gl/system/gl_cvars.h"
 
 // Set up 3D-specific console variables:
-CVAR(Int, vr_mode, 0, CVAR_GLOBALCONFIG)
+CVAR(Int, vr_mode, 10, CVAR_GLOBALCONFIG)
 
 // switch left and right eye views
 CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG)
