@@ -888,6 +888,8 @@ bool OpenVRMode::GetWeaponTransform(VSMatrix* out) const
 	if (GetHandTransform(openvr_rightHanded ? 1 : 0, out))
 	{
 		out->rotate(openvr_weaponRotate, 1, 0, 0);
+		if (!openvr_rightHanded)
+			out->scale(-1.0f, 1.0f, 1.0f);
 		return true;
 	}
 	return false;
