@@ -13,6 +13,10 @@ gzdoom.exe +vr_mode 10 -file WeaponsForVR.pk3
 
 I made the 3D weapons from a file called "st-models-complete.pk3" which I found somewhere on the internet. It wasn't completely compatible with this version of gzdoom, so I cut it down to just the weapons (which are). Hopefully the original authors won't mind me redistributing this!
 
+# Not done
+
+No comfort options/teleporting etc. I've never suffered a moment of VR nausea, so I'm not the guy to implement these!
+
 # New console variables
 
 openvr_rightHanded - set to 0 for left hand
