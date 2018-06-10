@@ -111,10 +111,10 @@ Skin 0 "dcbarrel.tga"
 Model 1 "CGBase.md3"
 Skin 1 "dchain.jpg"
 
-Scale -1.0 1.0 1.0
+Scale -4.0 4.0 4.0
+   Offset 0.0 -25.0 20.0
 
 NOINTERPOLATION
-ZOffset 0
 
 FrameIndex CHGG A 0 0
 }
@@ -127,10 +127,10 @@ Skin 0 "dcbarrel.tga"
 Model 1 "CGBase.md3"
 Skin 1 "dchain.jpg"
 
-Scale -1.0 1.0 1.0
+Scale -4.0 4.0 4.0
+   Offset 0.0 -25.0 20.0
 
 NOINTERPOLATION
-ZOffset 0
 
 FrameIndex CHGG B 0 0
 }
@@ -169,7 +169,8 @@ Model BFG9000
    Model 3 "BFGPlasma.md3"
    Skin 3 "Glass.png"
 
-   Scale 1.0 1.0 1.0
+   Scale 4.0 4.0 4.0
+   Offset 0.0 -15.0 30.0
 
 
    FrameIndex BFGG A 0 0
@@ -187,7 +188,8 @@ Model BFG9000
    Model 3 "BFGPlasma.md3"
    Skin 3 "Glass.png"
 
-   Scale 1.0 1.0 1.0
+   Scale 4.0 4.0 4.0
+   Offset 0.0 -15.0 30.0
 
 
    FrameIndex BFGG B 0 0
@@ -205,7 +207,7 @@ Model Chainsaw
    Skin 1 "doomchainsaw_muffler.png"
    Skin 2 "doomchainsawc.png"
    Skin 3 "Hands.png"
-   Scale -1.0 1.0 1.0
+   Scale -4.0 4.0 4.0
 
 ZOffset -1
 
@@ -224,7 +226,7 @@ Model Chainsaw
    Skin 1 "doomchainsaw_muffler.png"
    Skin 2 "doomchainsawc.png"
    Skin 3 "Hands.png"
-   Scale -1.0 1.0 1.0
+   Scale -4.0 4.0 4.0
 	NOINTERPOLATION
 ZOffset -1
 
@@ -242,7 +244,7 @@ Model Chainsaw
    Skin 1 "doomchainsaw_muffler.png"
    Skin 2 "doomchainsawc2.png"
    Skin 3 "Hands.png"
-   Scale -1.0 1.0 1.0
+   Scale -4.0 4.0 4.0
 	NOINTERPOLATION
 ZOffset -1
 
@@ -257,7 +259,7 @@ Model Fist
    Model 0 "Hud_Punch.md3"
    Skin 0 "Hands.Png"
    ZOffset 0
-   Scale -1.0 0.75 1.0
+   Scale -2.0 1.5 2.0
 	ZOffset -2
    FrameIndex PUNG A 0 16
    FrameIndex PUNG B 0 12
@@ -274,7 +276,8 @@ Model SHOTGUN
    Model 1 "ShotgunHands.md3"
    Skin 1 "Hands.png"
    Scale -1.0 1.0 1.0
-
+   Offset 0.0 -25.0 10.0
+   
    FrameIndex SHTG A 0 0   FrameIndex SHTG A 1 0
    FrameIndex SHTG B 0 1   FrameIndex SHTG B 1 1
    FrameIndex SHTG C 0 3   FrameIndex SHTG C 1 3
@@ -288,7 +291,7 @@ Model ROCKETLAUNCHER
    Model 0 "HUDRocketLauncher.md2"
    Skin 0 "RocketLauncher.png"
    Scale -1.05 1.0 1.0
-zoffset -2
+   Offset 0.0 0.0 10.0
    FrameIndex MISG A 0 0
    FrameIndex MISG B 0 1
 }
@@ -388,8 +391,6 @@ Model PISTOL
    Skin 1 "Hands.png"
    Scale 1.0 1.0 1.0
 
-zoffset -1
-
    FrameIndex PISG A 0 0   FrameIndex PISG A 1 0
    FrameIndex PISG B 0 1   FrameIndex PISG B 1 1
    FrameIndex PISG C 0 2   FrameIndex PISG C 1 2
@@ -405,7 +406,7 @@ Model PISTOL
    Skin 0 "MF2.png"
    Scale 1.0 1.0 1.0
 
-zoffset -3
+zoffset -2
 
    FrameIndex PISF A 0 2
 
@@ -420,7 +421,8 @@ Model 0 "CG_MF1.md3"
 Skin 0 "MF0.png"
 Model 1 "CG_MF2.md3"
 Skin 1 "MF2.png"
-Scale -1.0 1.0 1.0
+Scale -4.0 4.0 4.0
+   Offset 0.0 -25.0 20.0
 
 NOINTERPOLATION
 
@@ -434,7 +436,8 @@ Model 0 "CG_MF1.md3"
 Skin 0 "MF1.png"
 Model 1 "CG_MF2.md3"
 Skin 1 "MF3.png"
-Scale -1.0 1.0 1.0
+Scale -4.0 4.0 4.0
+   Offset 0.0 -25.0 20.0
 
 NOINTERPOLATION
 
@@ -469,9 +472,8 @@ Model BFG9000
    Model 0 "bfgexpo.md2"
    Skin 0 "energy_flash0.png"
 
-ZOffset -4
-
-   Scale -1.0 1.0 1.0
+   Scale -4.0 4.0 4.0
+   Offset 0.0 -20.0 40.0
 
    FrameIndex BFGF A 0 0
 }
@@ -481,10 +483,8 @@ Model BFG9000
    Path "Models/Weapons/Hud/BFG9000"
    Model 0 "bfgexpo.md2"
    Skin 0 "energy_flash1.png"
-
-ZOffset -4
-
-   Scale -1.0 1.0 1.0
+   Offset 0.0 -20.0 40.0
+   Scale -4.0 4.0 4.0
 
    FrameIndex BFGF B 0 0
 }
@@ -497,6 +497,7 @@ Model SHOTGUN
    MODEL 1 "Shotgun_MF2.md3"
    SKIN 1 "MF2.png"
    Scale 1.0 1.0 1.0
+   Offset 0.0 -25.0 10.0
 	NOINTERPOLATION
    FrameIndex SHTF A 0 0   FrameIndex SHTF A 1 0
 
@@ -508,6 +509,7 @@ Model SHOTGUN
    MODEL 0 "Shotgun_MF1.md3"
    MODEL 1 "Shotgun_MF2.md3"
    Scale 1.0 1.0 1.0
+   Offset 0.0 -25.0 10.0
 	NOINTERPOLATION
 
    FrameIndex SHTF B 0 0   FrameIndex SHTF B 1 0
@@ -521,8 +523,8 @@ Model ROCKETLAUNCHER
    Skin 0 "Hud_RL_MF0.PNG"
    Skin 1 "RocketLauncher2FL.png"
    Scale -1.05 1.0 1.0
-NoInterpolation
-zoffset -2
+   Offset 0.0 0.0 10.0
+   NoInterpolation
    FrameIndex MISF A 0 0	   FrameIndex MISF A 1 1
 }
 Model ROCKETLAUNCHER
@@ -533,8 +535,8 @@ Model ROCKETLAUNCHER
    Skin 0 "Hud_RL_MF1.PNG"
    Skin 1 "RocketLauncher2FL.png"
    Scale -1.05 1.0 1.0
+   Offset 0.0 0.0 10.0
 NoInterpolation
-zoffset -2
    FrameIndex MISF B 0 0	   FrameIndex MISF B 1 1
 }
 Model ROCKETLAUNCHER
@@ -545,8 +547,8 @@ Model ROCKETLAUNCHER
    Skin 0 "Hud_RL_MF2.PNG"
    Skin 1 "RocketLauncher2FL2.png"
    Scale -1.05 1.0 1.0
+   Offset 0.0 0.0 10.0
 NoInterpolation
-zoffset -2
    FrameIndex MISF C 0 0	   FrameIndex MISF C 1 1
 }
 Model ROCKETLAUNCHER
@@ -555,7 +557,7 @@ Model ROCKETLAUNCHER
    Model 0 "RocketLauncher-MF.MD2"
    Skin 0 "Hud_RL_MF3.PNG"
    Scale -1.05 1.0 1.0
-NoInterpolation
-zoffset -2
+   Offset 0.0 0.0 10.0
+   NoInterpolation
    FrameIndex MISF D 0 0
 }

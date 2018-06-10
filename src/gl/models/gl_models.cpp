@@ -61,6 +61,8 @@ static inline float GetTimeFloat()
 
 CVAR(Bool, gl_interpolate_model_frames, true, CVAR_ARCHIVE)
 CVAR(Bool, gl_light_models, true, CVAR_ARCHIVE)
+CVAR(Float, gl_weaponOfsY, 0.0f, CVAR_ARCHIVE)
+CVAR(Float, gl_weaponOfsZ, 0.0f, CVAR_ARCHIVE)
 EXTERN_CVAR(Int, gl_fogmode)
 
 extern TDeletingArray<FVoxel *> Voxels;
@@ -1107,11 +1109,11 @@ void gl_RenderHUDModel(DPSprite *psp, float ofsX, float ofsY)
 	{
 		float scale = 0.01f;
 		gl_RenderState.mModelMatrix.scale(scale, scale, scale);
-		gl_RenderState.mModelMatrix.translate(0, 5, 30);
+		gl_RenderState.mModelMatrix.translate(0, 5 + gl_weaponOfsZ, 30 + gl_weaponOfsY);
 	}
 	else
 	{
-		DVector3 pos = playermo->Pos();
+		DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
 		gl_RenderState.mModelMatrix.translate(pos.X, pos.Z + 40, pos.Y);
 		gl_RenderState.mModelMatrix.rotate(-playermo->Angles.Yaw.Degrees - 90, 0, 1, 0);
 	}
