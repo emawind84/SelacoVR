@@ -16,8 +16,11 @@ I made the 3D weapons from a file called "st-models-complete.pk3" which I found 
 # New console variables
 
 openvr_rightHanded - set to 0 for left hand
+
 openvr_drawControllers - mostly for debug, note textures aren't correct.
+
 openvr_weaponRotate - A pitch to change how weapons sit in the hand.
+
 openvr_scale - Number of doom units in a metre. gz3doom has this set to 27, but I found 30 more comfortable.
 
 
