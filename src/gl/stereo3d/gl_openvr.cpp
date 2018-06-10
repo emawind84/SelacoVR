@@ -114,6 +114,7 @@ EXTERN_CVAR(Bool, gl_billboard_faces_camera);
 EXTERN_CVAR(Int, gl_multisample);
 
 CVAR(Bool, openvr_rightHanded, true, CVAR_ARCHIVE)
+CVAR(Bool, openvr_drawControllers, false, CVAR_ARCHIVE)
 CVAR(Float, openvr_weaponRotate, -30, CVAR_ARCHIVE)
 CVAR(Float, openvr_scale, 30.0f, CVAR_ARCHIVE)
 
@@ -838,7 +839,8 @@ void OpenVRMode::UnAdjustCrossHair() const
 
 void OpenVRMode::DrawControllerModels() const
 {
-	return; //debug only
+	if(!openvr_drawControllers)
+		return; 
 	
 	for (int i = 0; i < MAX_ROLES; ++i) 
 	{
@@ -1071,6 +1073,11 @@ static void HandleVRButton(VRControllerState_t& lastState, VRControllerState_t& 
 	Joy_GenerateButtonEvents((lastState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, (newState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, 1, doomkey + base);
 }
 
+static void HandleUIVRButton(VRControllerState_t& lastState, VRControllerState_t& newState, long long vrindex, int doomkey)
+{
+	Joy_GenerateUIButtonEvents((lastState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, (newState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, 1, &doomkey);
+}
+
 static void HandleControllerState(int device, int role, VRControllerState_t& newState)
 {
 	VRControllerState_t& lastState = controllers[role].lastState;
@@ -1091,6 +1098,7 @@ static void HandleControllerState(int device, int role, VRControllerState_t& new
 	HandleUIVRAxis(lastState, newState, 2, 1, GK_DOWN, GK_UP);
 
 	HandleVRButton(lastState, newState, vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
+	HandleUIVRButton(lastState, newState, vr::k_EButton_Grip, GK_BACK);
 	HandleVRButton(lastState, newState, vr::k_EButton_ApplicationMenu, KEY_PAD_START, role * (KEY_PAD_BACK - KEY_PAD_START));
 
 	lastState = newState;
