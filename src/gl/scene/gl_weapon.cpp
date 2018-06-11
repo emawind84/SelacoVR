@@ -146,7 +146,7 @@ void GLSceneDrawer::DrawPSprite (player_t * player,DPSprite *psp, float sx, floa
 		
 	}
 
-	if (tex->GetTransparent() || OverrideShader != -1)
+	if ((tex->GetTransparent() || OverrideShader != -1) && !s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesCrossed())
 	{
 		gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
 	}
@@ -157,7 +157,60 @@ void GLSceneDrawer::DrawPSprite (player_t * player,DPSprite *psp, float sx, floa
 	qd.Set(2, x2, y1, 0, fU2, fV1);
 	qd.Set(3, x2, y2, 0, fU2, fV2);
 	qd.Render(GL_TRIANGLE_STRIP);
+	
+	if (psp->GetID() == PSP_WEAPON && s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesCrossed())
+	{
+		FState* spawn = wi->FindState(NAME_Spawn);
+
+		lump = sprites[spawn->sprite].GetSpriteFrame(0, 0, 0., &mirror);
+		if (!lump.isValid()) return;
+
+		tex = FMaterial::ValidateTexture(lump, true, false);
+		if (!tex) return;
+
+		gl_RenderState.SetMaterial(tex, CLAMP_XY_NOMIP, 0, OverrideShader, alphatexture);
+
+		float z1 = 0.0f;
+		float z2 = (y2 - y1) * MIN(3, tex->GetWidth() / tex->GetHeight());
+
+		if (!(mirror) != !(psp->Flags & PSPF_FLIP))
+		{
+			fU2 = tex->GetSpriteUL();
+			fV1 = tex->GetSpriteVT();
+			fU1 = tex->GetSpriteUR();
+			fV2 = tex->GetSpriteVB();
+		}
+		else
+		{
+			fU1 = tex->GetSpriteUL();
+			fV1 = tex->GetSpriteVT();
+			fU2 = tex->GetSpriteUR();
+			fV2 = tex->GetSpriteVB();
+		}
+
+		sy = y2 - y1;
+		float crossAt = sy * 0.25f;
+
+		y1 -= crossAt;
+		y2 -= crossAt;
+
+		FQuadDrawer qd2;
+		qd2.Set(0, vw / 2 - crossAt, y1, -z1, fU1, fV1);
+		qd2.Set(1, vw / 2 + sy / 2, y2, -z1, fU1, fV2);
+		qd2.Set(2, vw / 2 - crossAt, y1, -z2, fU2, fV1);
+		qd2.Set(3, vw / 2 + sy / 2, y2, -z2, fU2, fV2);
+		qd2.Render(GL_TRIANGLE_STRIP);
+
+		FQuadDrawer qd3;
+		qd3.Set(0, vw / 2 + crossAt, y1, -z1, fU1, fV1);
+		qd3.Set(1, vw / 2 - sy / 2, y2, -z1, fU1, fV2);
+		qd3.Set(2, vw / 2 + crossAt, y1, -z2, fU2, fV1);
+		qd3.Set(3, vw / 2 - sy / 2, y2, -z2, fU2, fV2);
+		qd3.Render(GL_TRIANGLE_STRIP);
+	}
+
 	gl_RenderState.AlphaFunc(GL_GEQUAL, 0.5f);
+
 }
 
 //==========================================================================

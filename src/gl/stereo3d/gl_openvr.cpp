@@ -775,41 +775,18 @@ void OpenVRMode::AdjustViewports() const
 
 void OpenVRMode::AdjustPlayerSprites() const
 {
-	Stereo3DMode::AdjustPlayerSprites();
+	GetWeaponTransform(&gl_RenderState.mModelMatrix);
 
-	// Prepare to temporarily modify view size
-	cachedViewwidth = viewwidth;
-	cachedViewheight = viewheight;
-	cachedViewwindowx = viewwindowx;
-	cachedViewwindowy = viewwindowy;
+	float scale = 0.00125f;
+	gl_RenderState.mModelMatrix.scale(scale, -scale, scale);
+	gl_RenderState.mModelMatrix.translate(-viewwidth / 2, -viewheight * 3 / 4, 0.0f);
 
-	// Avoid rescaling weapon when status bar shown (screenblocks <= 10)
-	viewwidth = SCREENWIDTH;
-	viewheight = SCREENHEIGHT;
-	viewwindowx = 0;
-	viewwindowy = 0;
-
-	const OpenVREyePose * activeEye = &rightEyeView;
-	if (!activeEye->isActive())
-		activeEye = &leftEyeView;
-	const float weapon_distance_meters = 0.55f; // meters
-	const float weapon_width_meters = 0.3f; // meters
-	const float pitch_offset = 0.0; // degrees
-	gl_RenderState.mProjectionMatrix = activeEye->getQuadInWorld(
-		weapon_distance_meters, 
-		weapon_width_meters, 
-		false,
-		pitch_offset);
-	gl_RenderState.ApplyMatrices();
-
-
+	gl_RenderState.EnableModelMatrix(true);
 }
 
 void OpenVRMode::UnAdjustPlayerSprites() const {
-	viewwidth = cachedViewwidth;
-	viewheight = cachedViewheight;
-	viewwindowx = cachedViewwindowx;
-	viewwindowy = cachedViewwindowy;
+
+	gl_RenderState.EnableModelMatrix(false);
 }
 
 void OpenVRMode::AdjustCrossHair() const

@@ -500,10 +500,9 @@ void GLSceneDrawer::DrawScene(int drawmode, sector_t * viewsector)
 
 	RenderScene(recursion);
 
-	const bool renderHUDModel = gl_IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
-	if ( renderHUDModel )
+	if (s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
 	{
-		DrawPlayerSprites (viewsector, true);
+		DrawPlayerSprites(viewsector, gl_IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player));
 	}
 
 	if (applySSAO && gl_RenderState.GetPassType() == GBUFFER_PASS)
@@ -667,16 +666,19 @@ void GLSceneDrawer::EndDrawScene(sector_t * viewsector)
 {
 	gl_RenderState.EnableFog(false);
 
-	// [BB] HUD models need to be rendered here. Make sure that
-	// DrawPlayerSprites is only called once. Either to draw
-	// HUD models or to draw the weapon sprites.
-	const bool renderHUDModel = gl_IsHUDModelForPlayerAvailable( players[consoleplayer].camera->player );
-	//if ( renderHUDModel )
-	//{
-	//	// [BB] The HUD model should be drawn over everything else already drawn.
-	//	glClear(GL_DEPTH_BUFFER_BIT);
-	//	DrawPlayerSprites (viewsector, true);
-	//}
+	const bool renderHUDModel = gl_IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
+	if (!s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
+	{
+		// [BB] HUD models need to be rendered here. Make sure that
+		// DrawPlayerSprites is only called once. Either to draw
+		// HUD models or to draw the weapon sprites.
+		if (renderHUDModel)
+		{
+			// [BB] The HUD model should be drawn over everything else already drawn.
+			glClear(GL_DEPTH_BUFFER_BIT);
+			DrawPlayerSprites(viewsector, true);
+		}
+	}
 
 	glDisable(GL_STENCIL_TEST);
 
@@ -684,10 +686,13 @@ void GLSceneDrawer::EndDrawScene(sector_t * viewsector)
 
 	Reset3DViewport();
 
-	// [BB] Only draw the sprites if we didn't render a HUD model before.
-	if ( renderHUDModel == false )
+	if (!s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
 	{
-		DrawPlayerSprites (viewsector, false);
+		// [BB] Only draw the sprites if we didn't render a HUD model before.
+		if ( renderHUDModel == false )
+		{
+			DrawPlayerSprites (viewsector, false);
+		}
 	}
 	if (gl.legacyMode)
 	{
