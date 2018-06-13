@@ -341,6 +341,7 @@ OptionMenu "OptionsMenu" protected
 	Submenu "$OPTMNU_CONTROLS",			"CustomizeControls"
 	Submenu "$OPTMNU_MOUSE",			"MouseOptions"
 	Submenu "$OPTMNU_JOYSTICK",			"JoystickOptions"
+	Submenu "VR Options",    			"OpenVROptions"
 	StaticText " "
 	Submenu "$OPTMNU_PLAYER",			"PlayerMenu"
 	Submenu "$OPTMNU_GAMEPLAY",			"GameplayOptions"
@@ -2174,4 +2175,24 @@ OptionMenu "OpenGLOptions" protected
 	StaticText " "
 	Slider "$GLPREFMNU_PALTONEMAPPOWER",		gl_paltonemap_powtable,			0.2, 3.0, 0.1, 1
 	Option "$GLPREFMNU_PALTONEMAPORDER",		gl_paltonemap_reverselookup,	"LookupOrder"
+}
+
+/*=======================================
+ *
+ * OpenVR options menu
+ *
+ *=======================================*/
+
+OptionValue "LeftRight"
+{
+	0, "$VRPREFMNU_LEFT"
+	1, "$VRPREFMNU_RIGHT"
+}
+
+OptionMenu "OpenVROptions" protected
+{
+	Title "$VRPREFMNU" 
+	Option "$VRPREFMNU_HANDED", 			openvr_rightHanded,					"LeftRight"
+	Slider "$VRPREFMNU_WEAPONANGLE", 			openvr_weaponRotate,					-180, 180, 1, -30
+	Slider "$VRPREFMNU_WORLDSCALE",			openvr_scale,						1, 600, 1, 30
 }

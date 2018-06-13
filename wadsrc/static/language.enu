@@ -2721,6 +2721,14 @@ GLPREFMNU_PALTONEMAPORDER		= "Tonemap Palette Order";
 GLPREFMNU_PALTONEMAPPOWER		= "Tonemap Palette Exponent";
 GLPREFMNU_SWLMBANDED			= "Banded SW Lightmode";
 
+//VR Options
+VRPREFMNU						= "VR Options";
+VRPREFMNU_HANDED				= "Handedness";
+VRPREFMNU_WEAPONANGLE			= "Weapon Angle";
+VRPREFMNU_WORLDSCALE			= "World Scale";
+VRPREFMNU_LEFT					= "Left";
+VRPREFMNU_RIGHT					= "Right";
+
 // Option Values
 OPTVAL_SMART 				= "Smart";
 OPTVAL_SMARTER 				= "Smarter";
