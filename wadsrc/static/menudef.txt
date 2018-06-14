@@ -2194,5 +2194,6 @@ OptionMenu "OpenVROptions" protected
 	Title "$VRPREFMNU" 
 	Option "$VRPREFMNU_HANDED", 			openvr_rightHanded,					"LeftRight"
 	Slider "$VRPREFMNU_WEAPONANGLE", 			openvr_weaponRotate,					-180, 180, 1, -30
-	Slider "$VRPREFMNU_WORLDSCALE",			openvr_scale,						1, 600, 1, 30
+	Slider "$VRPREFMNU_WORLDSCALE",			vr_vunits_per_meter,						1, 60, 1, 30
+	Slider "$VRPREFMNU_FLOOROFFSET",			vr_floor_offset,						-10, 10, 0.1, 0
 }

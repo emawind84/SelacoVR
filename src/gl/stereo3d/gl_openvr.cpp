@@ -105,18 +105,16 @@ S_API uint32_t VR_GetInitToken();
 
 #endif
 
-// For conversion between real-world and doom units
-#define VERTICAL_DOOM_UNITS_PER_METER openvr_scale
-
 EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Float, movebob);
 EXTERN_CVAR(Bool, gl_billboard_faces_camera);
 EXTERN_CVAR(Int, gl_multisample);
+EXTERN_CVAR(Float, vr_vunits_per_meter)
+EXTERN_CVAR(Float, vr_floor_offset)
 
-CVAR(Bool, openvr_rightHanded, true, CVAR_ARCHIVE)
-CVAR(Bool, openvr_drawControllers, false, CVAR_ARCHIVE)
-CVAR(Float, openvr_weaponRotate, -30, CVAR_ARCHIVE)
-CVAR(Float, openvr_scale, 30.0f, CVAR_ARCHIVE)
+EXTERN_CVAR(Bool, openvr_rightHanded)
+EXTERN_CVAR(Bool, openvr_drawControllers)
+EXTERN_CVAR(Float, openvr_weaponRotate)
 
 bool IsOpenVRPresent()
 {
@@ -482,7 +480,7 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 			0,  1,  0,  0, // Y-up in OpenVR -> Z-up in Doom
 			0,  0,  0,  1};
 	doomInOpenVR.multMatrix(permute);
-	doomInOpenVR.scale(VERTICAL_DOOM_UNITS_PER_METER, VERTICAL_DOOM_UNITS_PER_METER, VERTICAL_DOOM_UNITS_PER_METER); // Doom units are not meters
+	doomInOpenVR.scale(vr_vunits_per_meter, vr_vunits_per_meter, vr_vunits_per_meter); // Doom units are not meters
 	double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 	doomInOpenVR.scale(pixelstretch, pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
 	doomInOpenVR.rotate(deltaYawDegrees, 0, 0, 1);
@@ -495,7 +493,7 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 		// We want to align those two heights here
 		const player_t & player = players[consoleplayer];
 		double vh = player.viewheight; // Doom thinks this is where you are
-		double hh = openvr_X_hmd[1][3] * VERTICAL_DOOM_UNITS_PER_METER; // HMD is actually here
+		double hh = (openvr_X_hmd[1][3] - vr_floor_offset) * vr_vunits_per_meter; // HMD is actually here
 		doom_EyeOffset[2] += hh - vh;
 		// TODO: optionally allow player to jump and crouch by actually jumping and crouching
 	}
@@ -579,23 +577,38 @@ bool OpenVREyePose::submitFrame(VR_IVRCompositor_FnTable * vrCompositor) const
 		return false;
 	if (vrCompositor == nullptr)
 		return false;
-	// Copy HDR framebuffer into 24-bit RGB texture
-	GLRenderer->mBuffers->BindEyeFB(eye, true);
+ 
+	// Copy HDR game texture to local vr LDR framebuffer, so gamma correction could work
 	if (eyeTexture->handle == nullptr) {
-		GLuint handle;
-		glGenTextures(1, &handle);
-		eyeTexture->handle = (void *)(std::ptrdiff_t)handle;
-		glBindTexture(GL_TEXTURE_2D, handle);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+		glGenFramebuffers(1, &framebuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+		GLuint texture;
+		glGenTextures(1, &texture);
+		eyeTexture->handle = (void *)(std::ptrdiff_t)texture;
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, GLRenderer->mSceneViewport.width,
-			GLRenderer->mSceneViewport.height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, GLRenderer->mSceneViewport.width,
+			GLRenderer->mSceneViewport.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+		GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+		glDrawBuffers(1, drawBuffers);
 	}
-	glBindTexture(GL_TEXTURE_2D, (GLuint)(std::ptrdiff_t)eyeTexture->handle);
-	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 0, 0,
-		GLRenderer->mSceneViewport.width,
-		GLRenderer->mSceneViewport.height, 0);
-	vrCompositor->Submit(EVREye(eye), eyeTexture, nullptr, EVRSubmitFlags_Submit_Default);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		return false;
+	GLRenderer->mBuffers->BindEyeTexture(eye, 0);
+	GL_IRECT box = {0, 0, GLRenderer->mSceneViewport.width, GLRenderer->mSceneViewport.height};
+	GLRenderer->DrawPresentTexture(box, true);
+
+	// Maybe this would help with AMD boards?
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	static VRTextureBounds_t tBounds = {0, 0, 1, 1};
+	vrCompositor->Submit(EVREye(eye), eyeTexture, &tBounds, EVRSubmitFlags_Submit_Default);
 	return true;
 }
 
@@ -610,9 +623,9 @@ VSMatrix OpenVREyePose::getQuadInWorld(
 
 	// doom_units from meters
 	new_projection.scale(
-		-VERTICAL_DOOM_UNITS_PER_METER,
-		VERTICAL_DOOM_UNITS_PER_METER,
-		-VERTICAL_DOOM_UNITS_PER_METER);
+		-vr_vunits_per_meter,
+		vr_vunits_per_meter,
+		-vr_vunits_per_meter);
 	double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 	new_projection.scale(pixelstretch, pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
 
@@ -844,11 +857,11 @@ bool OpenVRMode::GetHandTransform(int hand, VSMatrix* mat) const
 
 		mat->translate(pos.X, pos.Z, pos.Y);
 
-		mat->scale(VERTICAL_DOOM_UNITS_PER_METER, VERTICAL_DOOM_UNITS_PER_METER, -VERTICAL_DOOM_UNITS_PER_METER);
+		mat->scale(vr_vunits_per_meter, vr_vunits_per_meter, -vr_vunits_per_meter);
 
 		mat->rotate(-deltaYawDegrees - 180, 0, 1, 0);
 
-		mat->translate(-openvr_origin.x, 0.0f, -openvr_origin.z);
+		mat->translate(-openvr_origin.x, -vr_floor_offset, -openvr_origin.z);
 
 		LSMatrix44 handToAbs;
 		vSMatrixFromHmdMatrix34(handToAbs, controllers[hand].pose.mDeviceToAbsoluteTracking);
@@ -970,7 +983,8 @@ void OpenVRMode::updateHmdPose(
 			double gameYawDegrees = r_viewpoint.Angles.Yaw.Degrees;
 			double currentOffset = gameYawDegrees - hmdYawDegrees;
 			if ((gamestate == GS_LEVEL)
-				&& (menuactive == MENU_Off))
+				&& (menuactive == MENU_Off)
+				&& (! paused))
 			{
 				// Predict current game view direction using hmd yaw change from previous time step
 				static double previousGameYawDegrees = 0;

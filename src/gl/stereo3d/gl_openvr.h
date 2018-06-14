@@ -62,6 +62,7 @@ protected:
 	VSMatrix eyeToHeadTransform;
 	VSMatrix otherEyeToHeadTransform;
 	Texture_t* eyeTexture;
+	mutable uint32_t framebuffer;
 	int eye;
 
 	mutable const TrackedDevicePose_t * currentPose;

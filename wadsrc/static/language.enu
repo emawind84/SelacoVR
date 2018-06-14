@@ -2726,6 +2726,7 @@ VRPREFMNU						= "VR Options";
 VRPREFMNU_HANDED				= "Handedness";
 VRPREFMNU_WEAPONANGLE			= "Weapon Angle";
 VRPREFMNU_WORLDSCALE			= "World Scale";
+VRPREFMNU_FLOOROFFSET			= "Floor Offset";
 VRPREFMNU_LEFT					= "Left";
 VRPREFMNU_RIGHT					= "Right";
 

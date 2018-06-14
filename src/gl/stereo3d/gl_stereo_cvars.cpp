@@ -53,7 +53,15 @@ CVAR(Float, vr_ipd, 0.062f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG) // METERS
 CVAR(Float, vr_screendist, 0.80f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
 
 // default conversion between (vertical) DOOM units and meters
-CVAR(Float, vr_hunits_per_meter, 41.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
+CVAR(Float, vr_vunits_per_meter, 30.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
+
+CVAR(Float, vr_floor_offset, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
+
+CVAR(Bool, openvr_rightHanded, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+CVAR(Bool, openvr_drawControllers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+CVAR(Float, openvr_weaponRotate, -30, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 // Manage changing of 3D modes:
 namespace s3d {
