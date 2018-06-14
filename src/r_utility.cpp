@@ -97,10 +97,11 @@ static TArray<DVector3a> InterpolationPath;
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
-CVAR (Bool, r_deathcamera, false, CVAR_ARCHIVE)
-CVAR (Int, r_clearbuffer, 0, 0)
-CVAR (Bool, r_drawvoxels, true, 0)
-CVAR (Bool, r_drawplayersprites, true, 0)	// [RH] Draw player sprites?
+CVAR(Bool, r_deathcamera, false, CVAR_ARCHIVE)
+CVAR(Int, r_clearbuffer, 0, 0)
+CVAR(Bool, r_drawvoxels, true, 0)
+CVAR(Bool, r_drawplayersprites, true, 0)	// [RH] Draw player sprites?
+CVAR(Int, r_PlayerSprites3DMode, 0, CVAR_ARCHIVE);
 CUSTOM_CVAR(Float, r_quakeintensity, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
 	if (self < 0.f) self = 0.f;

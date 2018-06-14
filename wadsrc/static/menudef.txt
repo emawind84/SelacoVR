@@ -2189,6 +2189,14 @@ OptionValue "LeftRight"
 	1, "$VRPREFMNU_RIGHT"
 }
 
+OptionValue "Sprites3DMode"
+{
+	0, "$VRPREFMNU_CROSSED"
+	1, "$VRPREFMNU_BACK_ONLY"	
+	2, "$VRPREFMNU_ITEM_ONLY"	
+	3, "$VRPREFMNU_FAT_ITEM"
+}
+
 OptionMenu "OpenVROptions" protected
 {
 	Title "$VRPREFMNU" 
@@ -2196,4 +2204,5 @@ OptionMenu "OpenVROptions" protected
 	Slider "$VRPREFMNU_WEAPONANGLE", 			openvr_weaponRotate,					-180, 180, 1, -30
 	Slider "$VRPREFMNU_WORLDSCALE",			vr_vunits_per_meter,						1, 60, 1, 30
 	Slider "$VRPREFMNU_FLOOROFFSET",			vr_floor_offset,						-10, 10, 0.1, 0
+	Option "$VRPREFMNU_SPRITEWEAPON3D",			r_PlayerSprites3DMode,				"Sprites3DMode"
 }
