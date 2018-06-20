@@ -115,6 +115,7 @@ EXTERN_CVAR(Float, vr_floor_offset)
 EXTERN_CVAR(Bool, openvr_rightHanded)
 EXTERN_CVAR(Bool, openvr_drawControllers)
 EXTERN_CVAR(Float, openvr_weaponRotate)
+EXTERN_CVAR(Float, openvr_max_shift);
 
 bool IsOpenVRPresent()
 {
@@ -510,8 +511,7 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 		LSVec3 openvr_dpos = openvr_HmdPos - openvr_origin;
 		{
 			// Suddenly recenter if deviation gets too large
-			const double max_shift = 0.30; // meters
-			if (std::abs(openvr_dpos[0]) + std::abs(openvr_dpos[2]) > max_shift) {
+			if (std::abs(openvr_dpos[0]) + std::abs(openvr_dpos[2]) > openvr_max_shift) {
 				openvr_origin += 1.0 * openvr_dpos; // recenter MOST of the way to the new position
 				openvr_dpos = openvr_HmdPos - openvr_origin;
 			}

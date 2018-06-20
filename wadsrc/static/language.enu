@@ -2725,9 +2725,11 @@ GLPREFMNU_SWLMBANDED			= "Banded SW Lightmode";
 VRPREFMNU						= "VR Options";
 VRPREFMNU_HANDED				= "Handedness";
 VRPREFMNU_WEAPONANGLE			= "Weapon Angle";
+VRPREFMNU_LOOKFREEDOM			= "Look Freedom";
 VRPREFMNU_WORLDSCALE			= "World Scale";
 VRPREFMNU_FLOOROFFSET			= "Floor Offset";
 VRPREFMNU_SPRITEWEAPON3D		= "Sprite Weapon Mode";
+VRPREFMNU_FATITEMWIDTH			= "Fat Item Width";
 VRPREFMNU_LEFT					= "Left";
 VRPREFMNU_RIGHT					= "Right";
 

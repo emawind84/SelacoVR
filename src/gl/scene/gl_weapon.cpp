@@ -50,11 +50,12 @@
 #include "gl/renderer/gl_quaddrawer.h"
 #include "gl/stereo3d/gl_stereo3d.h"
 
-EXTERN_CVAR (Bool, r_drawplayersprites)
+EXTERN_CVAR(Bool, r_drawplayersprites)
 EXTERN_CVAR(Float, transsouls)
 EXTERN_CVAR(Int, gl_fuzztype)
-EXTERN_CVAR (Bool, r_deathcamera)
+EXTERN_CVAR(Bool, r_deathcamera)
 EXTERN_CVAR(Int, r_PlayerSprites3DMode)
+EXTERN_CVAR(Float, gl_fatItemWidth)
 
 enum PlayerSprites3DMode
 {
@@ -206,8 +207,8 @@ void GLSceneDrawer::DrawPSprite (player_t * player,DPSprite *psp, float sx, floa
 
 		if (r_PlayerSprites3DMode == FAT_ITEM)
 		{
-			x1 = vw / 2 + (x1 - vw / 2) / 2;
-			x2 = vw / 2 + (x2 - vw / 2) / 2;
+			x1 = vw / 2 + (x1 - vw / 2) * gl_fatItemWidth;
+			x2 = vw / 2 + (x2 - vw / 2) * gl_fatItemWidth;
 
 			for (float x = x1; x < x2; x += 1)
 			{
