@@ -885,7 +885,38 @@ bool OpenVRMode::GetWeaponTransform(VSMatrix* out) const
 	return false;
 }
 
-		
+static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
+{
+	LSMatrix44 mat;
+	if (!s3d::Stereo3DMode::getCurrentMode().GetWeaponTransform(&mat))
+	{
+		double pc = pitch.Cos();
+
+		DVector3 direction = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
+		return direction;
+	}
+	double pc = pitch.Cos();
+
+	DVector3 refdirection = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
+
+	yaw -= actor->Angles.Yaw;
+	pitch -= actor->Angles.Pitch;
+
+	pc = pitch.Cos();
+
+	LSVec3 local = { (float)(pc * yaw.Cos()), (float)(pc * yaw.Sin()), (float)(-pitch.Sin()), 0.0f };
+	
+	DVector3 dir;
+	dir.X = local.x * -mat[2][0] + local.y * -mat[0][0] + local.z * -mat[1][0];
+	dir.Y = local.x * -mat[2][2] + local.y * -mat[0][2] + local.z * -mat[1][2];
+	dir.Z = local.x * -mat[2][1] + local.y * -mat[0][1] + local.z * -mat[1][1];
+	dir.MakeUnit();
+
+	dir.MakeUnit();
+
+	return dir;
+}
+
 
 
 /* virtual */
@@ -1093,6 +1124,10 @@ static void HandleControllerState(int device, int role, VRControllerState_t& new
 	HandleVRButton(lastState, newState, vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
 	HandleUIVRButton(lastState, newState, vr::k_EButton_Grip, GK_BACK);
 	HandleVRButton(lastState, newState, vr::k_EButton_ApplicationMenu, KEY_PAD_START, role * (KEY_PAD_BACK - KEY_PAD_START));
+	
+	//Extra controls for rift
+	HandleVRButton(lastState, newState, vr::k_EButton_A, KEY_PAD_A, role * (KEY_PAD_B - KEY_PAD_A));
+	HandleVRButton(lastState, newState, vr::k_EButton_SteamVR_Touchpad, KEY_PAD_X, role * (KEY_PAD_Y - KEY_PAD_X));
 
 	lastState = newState;
 }
@@ -1190,10 +1225,7 @@ void OpenVRMode::SetUp() const
 			player->mo->AttackPos.Y = mat[3][2];
 			player->mo->AttackPos.Z = mat[3][1];
 
-			player->mo->AttackDir.X = -mat[2][0];
-			player->mo->AttackDir.Y = -mat[2][2];
-			player->mo->AttackDir.Z = -mat[2][1];
-			player->mo->AttackDir.MakeUnit();
+			player->mo->AttackDir = MapAttackDir;
 		}
 	}
 }

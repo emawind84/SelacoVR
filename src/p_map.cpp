@@ -4446,7 +4446,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	if (t1->player != NULL && t1->player->mo->OverrideAttackPosDir)
 	{
 		fromPos = t1->player->mo->AttackPos;
-		direction = t1->player->mo->AttackDir;
+		direction = t1->player->mo->AttackDir(t1, angle, pitch);
 	}
 	else
 	{
