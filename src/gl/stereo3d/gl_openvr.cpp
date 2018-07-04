@@ -113,6 +113,7 @@ EXTERN_CVAR(Float, vr_vunits_per_meter)
 EXTERN_CVAR(Float, vr_floor_offset)
 
 EXTERN_CVAR(Bool, openvr_rightHanded)
+EXTERN_CVAR(Bool, openvr_moveFollowsOffHand)
 EXTERN_CVAR(Bool, openvr_drawControllers)
 EXTERN_CVAR(Float, openvr_weaponRotate)
 EXTERN_CVAR(Float, openvr_max_shift);
@@ -912,8 +913,6 @@ static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
 	dir.Z = local.x * -mat[2][1] + local.y * -mat[0][1] + local.z * -mat[1][1];
 	dir.MakeUnit();
 
-	dir.MakeUnit();
-
 	return dir;
 }
 
@@ -1217,15 +1216,26 @@ void OpenVRMode::SetUp() const
 
 		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 		LSMatrix44 mat; 
-		if (player && GetWeaponTransform(&mat))
+		if (player)
 		{
-			player->mo->OverrideAttackPosDir = true;
+			if (GetWeaponTransform(&mat))
+			{
+				player->mo->OverrideAttackPosDir = true;
 
-			player->mo->AttackPos.X = mat[3][0];
-			player->mo->AttackPos.Y = mat[3][2];
-			player->mo->AttackPos.Z = mat[3][1];
+				player->mo->AttackPos.X = mat[3][0];
+				player->mo->AttackPos.Y = mat[3][2];
+				player->mo->AttackPos.Z = mat[3][1];
 
-			player->mo->AttackDir = MapAttackDir;
+				player->mo->AttackDir = MapAttackDir;
+			}
+			if (GetHandTransform(openvr_rightHanded ? 0 : 1, &mat) && openvr_moveFollowsOffHand)
+			{
+				player->mo->ThrustAngleOffset = DAngle(RAD2DEG(atan2f(-mat[2][2], -mat[2][0]))) - player->mo->Angles.Yaw;
+			}
+			else
+			{
+				player->mo->ThrustAngleOffset = 0.0f;
+			}
 		}
 	}
 }

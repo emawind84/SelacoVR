@@ -1147,6 +1147,8 @@ public:
 	AActor			*BlockingMobj;	// Actor that blocked the last move
 	line_t			*BlockingLine;	// Line that blocked the last move
 
+	DAngle			ThrustAngleOffset; //For VR: offset thrust angles by this amount
+
 	int PoisonDamage; // Damage received per tic from poison.
 	FNameNoInit PoisonDamageType; // Damage type dealt by poison.
 	int PoisonDuration; // Duration left for receiving poison damage.
@@ -1436,18 +1438,18 @@ public:
 
 	void Thrust()
 	{
-		Vel.X += Speed * Angles.Yaw.Cos();
-		Vel.Y += Speed * Angles.Yaw.Sin();
+		Thrust(Angles.Yaw, Speed);
 	}
 
 	void Thrust(double speed)
 	{
-		Vel.X += speed * Angles.Yaw.Cos();
-		Vel.Y += speed * Angles.Yaw.Sin();
+		Thrust(Angles.Yaw, speed);
 	}
 
 	void Thrust(DAngle angle, double speed)
 	{
+		angle += ThrustAngleOffset;
+		
 		Vel.X += speed * angle.Cos();
 		Vel.Y += speed * angle.Sin();
 	}
