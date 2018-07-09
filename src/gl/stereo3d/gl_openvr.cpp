@@ -901,7 +901,10 @@ static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
 	DVector3 refdirection = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
 
 	yaw -= actor->Angles.Yaw;
-	pitch -= actor->Angles.Pitch;
+	
+	//ignore specified pitch (would need to compensate for auto aim and no (vanilla) Doom weapon varies this)
+	//pitch -= actor->Angles.Pitch;
+	pitch.Degrees = 0;
 
 	pc = pitch.Cos();
 
