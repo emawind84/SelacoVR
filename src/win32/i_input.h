@@ -47,6 +47,7 @@ enum
 	INPUT_DIJoy,
 	INPUT_XInput,
 	INPUT_RawPS2,
+	INPUT_OpenVR,
 	NUM_JOYDEVICES
 };
 
@@ -133,6 +134,7 @@ void I_StartupKeyboard();
 void I_StartupXInput();
 void I_StartupDirectInputJoystick();
 void I_StartupRawPS2();
+void I_StartupOpenVR();
 bool I_IsPS2Adapter(DWORD vidpid);
 
 // USB HID usage page numbers

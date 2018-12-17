@@ -52,6 +52,8 @@
 #include "d_gui.h"
 #include "d_event.h"
 
+void I_StartupOpenVR();
+
 #ifdef DYN_OPENVR
 // Dynamically load OpenVR
 
@@ -1107,8 +1109,10 @@ static void HandleUIVRButton(VRControllerState_t& lastState, VRControllerState_t
 static void HandleControllerState(int device, int role, VRControllerState_t& newState)
 {
 	VRControllerState_t& lastState = controllers[role].lastState;
-	//trigger
-	HandleVRAxis(lastState, newState, 1, 0, KEY_PAD_LTRIGGER, KEY_PAD_LTRIGGER, role * (KEY_PAD_RTRIGGER - KEY_PAD_LTRIGGER));
+
+	//trigger (swaps with handedness)
+	int controller = openvr_rightHanded ? role : 1 - role;
+	HandleVRAxis(lastState, newState, 1, 0, KEY_JOY4, KEY_JOY4, controller * (KEY_PAD_RTRIGGER - KEY_JOY4));
 	HandleUIVRAxis(lastState, newState, 1, 0, GK_RETURN, GK_RETURN);
 
 	//touchpad
@@ -1132,6 +1136,18 @@ static void HandleControllerState(int device, int role, VRControllerState_t& new
 	HandleVRButton(lastState, newState, vr::k_EButton_SteamVR_Touchpad, KEY_PAD_X, role * (KEY_PAD_Y - KEY_PAD_X));
 
 	lastState = newState;
+}
+
+VRControllerState_t& OpenVR_GetState(int hand)
+{
+	int controller = openvr_rightHanded ? hand : 1 - hand;
+	return controllers[controller].lastState;
+}
+
+
+bool OpenVR_OnHandIsRight()
+{
+	return openvr_rightHanded;
 }
 
 
@@ -1241,6 +1257,8 @@ void OpenVRMode::SetUp() const
 			}
 		}
 	}
+
+	I_StartupOpenVR();
 }
 
 /* virtual */

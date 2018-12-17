@@ -544,6 +544,7 @@ set( PLAT_WIN32_SOURCES
 	win32/i_mouse.cpp
 	win32/i_dijoy.cpp
 	win32/i_rawps2.cpp
+	win32/i_openVR.cpp
 	win32/i_xinput.cpp
 	win32/i_main.cpp
 	win32/i_system.cpp
