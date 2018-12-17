@@ -53,6 +53,7 @@
 #include "d_event.h"
 
 void I_StartupOpenVR();
+double P_XYMovement(AActor *mo, DVector2 scroll);
 
 #ifdef DYN_OPENVR
 // Dynamically load OpenVR
@@ -118,7 +119,6 @@ EXTERN_CVAR(Bool, openvr_rightHanded)
 EXTERN_CVAR(Bool, openvr_moveFollowsOffHand)
 EXTERN_CVAR(Bool, openvr_drawControllers)
 EXTERN_CVAR(Float, openvr_weaponRotate)
-EXTERN_CVAR(Float, openvr_max_shift);
 
 bool IsOpenVRPresent()
 {
@@ -150,6 +150,9 @@ static const bool doRenderToHmd = true;
 static const bool doTrackHmdVerticalPosition = true;
 static const bool doTrackHmdHorizontalPosition = true;
 static const bool doTrackVrControllerPosition = false; // todo:
+
+LSVec3 openvr_dpos(0,0,0);
+DAngle openvr_to_doom_angle;
 
 namespace s3d 
 {
@@ -454,6 +457,8 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 	while (deltaYawDegrees < -180)
 		deltaYawDegrees += 360;
 
+	openvr_to_doom_angle = DAngle(-deltaYawDegrees);
+
 	// extract rotation component from hmd transform
 	LSMatrix44 openvr_X_hmd(hmdPose);
 	LSMatrix44 hmdRot = openvr_X_hmd.getWithoutTranslation(); // .transpose();
@@ -511,14 +516,8 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 			openvr_origin = openvr_HmdPos;
 			is_initial_origin_set = true;
 		}
-		LSVec3 openvr_dpos = openvr_HmdPos - openvr_origin;
-		{
-			// Suddenly recenter if deviation gets too large
-			if (std::abs(openvr_dpos[0]) + std::abs(openvr_dpos[2]) > openvr_max_shift) {
-				openvr_origin += 1.0 * openvr_dpos; // recenter MOST of the way to the new position
-				openvr_dpos = openvr_HmdPos - openvr_origin;
-			}
-		}
+		openvr_dpos = openvr_HmdPos - openvr_origin;
+
 		LSVec3 doom_dpos = LSMatrix44(doomInOpenVR) * openvr_dpos;
 		doom_EyeOffset[0] += doom_dpos[0];
 		doom_EyeOffset[1] += doom_dpos[1];
@@ -1255,6 +1254,11 @@ void OpenVRMode::SetUp() const
 			{
 				player->mo->ThrustAngleOffset = 0.0f;
 			}
+			auto vel = player->mo->Vel;
+			player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) * vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
+			P_XYMovement(player->mo, DVector2(0, 0));
+			player->mo->Vel = vel;
+			openvr_origin += openvr_dpos;
 		}
 	}
 

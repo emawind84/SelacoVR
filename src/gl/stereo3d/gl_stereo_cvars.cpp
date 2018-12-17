@@ -65,8 +65,6 @@ CVAR(Bool, openvr_drawControllers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 CVAR(Float, openvr_weaponRotate, -30, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
-CVAR(Float, openvr_max_shift, 0.30, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-
 // Manage changing of 3D modes:
 namespace s3d {
 
