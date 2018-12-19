@@ -1002,51 +1002,7 @@ void OpenVRMode::updateHmdPose(
 		if (doTrackHmdPitch)
 			GLRenderer->mAngles.Pitch = RAD2DEG(-hmdpitch);
 		if (doTrackHmdYaw) {
-			static double yawOffset = 0;
-
-
-			// Late scheduled update of yaw angle reduces motion sickness
-			//  * by lowering latency of view update after head motion
-			//  * by ignoring lag and interpolation of the game view angle
-			// Mostly rely on HMD to provide yaw angle, unless the discrepency gets large.
-			// I'm not sure how to reason about which angle changes are from the HMD and
-			// which are from the controllers. So here I'm assuming every discrepancy larger
-			// than some cutoff comes from elsewhere. This is how we acheive rock solid
-			// head tracking, at the expense of jerky controller turning.
-			double hmdYawDegrees = RAD2DEG(hmdYaw);
-			double gameYawDegrees = r_viewpoint.Angles.Yaw.Degrees;
-			double currentOffset = gameYawDegrees - hmdYawDegrees;
-			if ((gamestate == GS_LEVEL)
-				&& (menuactive == MENU_Off)
-				&& (! paused))
-			{
-				// Predict current game view direction using hmd yaw change from previous time step
-				static double previousGameYawDegrees = 0;
-				static double previousHmdYawDelta = 0;
-				double predictedGameYawDegrees = previousGameYawDegrees + RAD2DEG(previousHmdYawDelta);
-				double predictionError = predictedGameYawDegrees - gameYawDegrees;
-				while (predictionError > 180.0) predictionError -= 360.0;
-				while (predictionError < -180.0) predictionError += 360.0;
-				predictionError = std::abs(predictionError);
-				if (predictionError > 0.1) {
-					// looks like someone is turning using the controller, not just the HMD, so reset offset now
-					yawOffset = currentOffset;
-				}
-
-				// 
-				double discrepancy = yawOffset - currentOffset;
-				while (discrepancy > 180.0) discrepancy -= 360.0;
-				while (discrepancy < -180.0) discrepancy += 360.0;
-				discrepancy = std::abs(discrepancy);
-				if (discrepancy > 5.0) 
-				{
-					yawOffset = currentOffset;
-				}
-
-				previousGameYawDegrees = gameYawDegrees;
-				previousHmdYawDelta = hmdYawDelta;
-			}
-			double viewYaw = hmdYawDegrees + yawOffset;
+			double viewYaw = r_viewpoint.Angles.Yaw.Degrees + RAD2DEG(hmdYawDelta);
 			while (viewYaw <= -180.0) 
 				viewYaw += 360.0;
 			while (viewYaw > 180.0) 

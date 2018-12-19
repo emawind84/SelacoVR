@@ -701,12 +701,12 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (joyaxes[JOYAXIS_Pitch] != 0)
 	{
 		G_AddViewPitch(joyint(joyaxes[JOYAXIS_Pitch] * 2048));
-		LocalKeyboardTurner = true;
+		//LocalKeyboardTurner = true;
 	}
 	if (joyaxes[JOYAXIS_Yaw] != 0)
 	{
 		G_AddViewAngle(joyint(-1280 * joyaxes[JOYAXIS_Yaw]));
-		LocalKeyboardTurner = true;
+		//LocalKeyboardTurner = true;
 	}
 
 	side -= joyint(sidemove[speed] * joyaxes[JOYAXIS_Side]);
