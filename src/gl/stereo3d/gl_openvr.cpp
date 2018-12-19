@@ -54,6 +54,7 @@
 
 void I_StartupOpenVR();
 double P_XYMovement(AActor *mo, DVector2 scroll);
+float I_OpenVRGetYaw();
 
 #ifdef DYN_OPENVR
 // Dynamically load OpenVR
@@ -1106,6 +1107,18 @@ bool OpenVR_OnHandIsRight()
 }
 
 
+static inline int joyint(double val)
+{
+	if (val >= 0)
+	{
+		return int(ceil(val));
+	}
+	else
+	{
+		return int(floor(val));
+	}
+}
+
 /* virtual */
 void OpenVRMode::SetUp() const
 {
@@ -1219,6 +1232,15 @@ void OpenVRMode::SetUp() const
 	}
 
 	I_StartupOpenVR();
+
+	//To feel smooth, yaw changes need to accumulate over the (sub) tic (i.e. render frame, not per tic)
+	unsigned int time = I_FPSTime();
+	static unsigned int lastTime = time;
+
+	unsigned int delta = time - lastTime;
+	lastTime = time;
+
+	G_AddViewAngle(joyint(-1280 * I_OpenVRGetYaw() * delta * 30 / 1000));
 }
 
 /* virtual */

@@ -73,6 +73,18 @@ public:
 
 	}
 
+	float GetAxisValue(int i, VRControllerState_t& offState, VRControllerState_t& onState)
+	{
+		VRControllerState_t& state = Hands[i] == ON ? onState : offState;
+		int axis = Sources[i] == PAD ? 0 : 2;
+		float value = AxisSources[i] == X ? -state.rAxis[axis].x : state.rAxis[axis].y;
+		if (fabsf(value) > Axes[i].DeadZone)
+		{
+			return value * Axes[i].Multiplier * Multiplier;
+		}
+		return 0.0f;
+	}
+
 	void AddAxes(float axes[NUM_JOYAXIS])
 	{
 		VRControllerState_t& onState = s3d::OpenVR_GetState(1);
@@ -80,20 +92,34 @@ public:
 
 		for (int i = 0; i < NUM_AXES; i++)
 		{
-			if (Axes[i].GameAxis == JOYAXIS_None)
+			//JOYAXIS_Yaw needs special handling - must accumulate per render frame, not logical frame
+			if (Axes[i].GameAxis == JOYAXIS_None || Axes[i].GameAxis == JOYAXIS_Yaw)
 			{
 				continue;
 			}
-			VRControllerState_t& state = Hands[i] == ON ? onState : offState;
-			int axis = Sources[i] == PAD ? 0 : 2;
-			float value = AxisSources[i] == X ? -state.rAxis[axis].x : state.rAxis[axis].y;
-			if (fabsf(value) > Axes[i].DeadZone)
-			{
-				axes[Axes[i].GameAxis] += value * Axes[i].Multiplier * Multiplier;
-			}
+			axes[Axes[i].GameAxis] += GetAxisValue(i, offState, onState);
 		}
 	}
 	
+	float GetYaw()
+	{
+		VRControllerState_t& onState = s3d::OpenVR_GetState(1);
+		VRControllerState_t& offState = s3d::OpenVR_GetState(0);
+
+		float yaw = 0.0f;
+
+		for (int i = 0; i < NUM_AXES; i++)
+		{
+			//JOYAXIS_Yaw needs special handling - must accumulate per render frame, not logical frame
+			if (Axes[i].GameAxis == JOYAXIS_Yaw)
+			{
+				yaw += GetAxisValue(i, offState, onState);
+			}
+		}
+
+		return yaw;
+	}
+
 	FString GetName()
 	{
 		return "OpenVR";
@@ -213,6 +239,7 @@ public:
 
 class FOpenVRJoystickManager : public FJoystickCollection
 {
+public:
 	bool GetDevice()
 	{
 		return true;
@@ -224,6 +251,10 @@ class FOpenVRJoystickManager : public FJoystickCollection
 	void AddAxes(float axes[NUM_JOYAXIS])
 	{
 		m_device.AddAxes(axes);
+	}
+	float GetYaw()
+	{
+		return m_device.GetYaw();
 	}
 	void GetDevices(TArray<IJoystickConfig *> &sticks)
 	{
@@ -251,3 +282,11 @@ void I_StartupOpenVR()
 	}
 }
 
+float I_OpenVRGetYaw()
+{
+	if (JoyDevices[INPUT_OpenVR] != NULL)
+	{
+		return ((FOpenVRJoystickManager*)JoyDevices[INPUT_OpenVR])->GetYaw();
+	}
+	return 0;
+}
