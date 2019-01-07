@@ -152,6 +152,11 @@ static const bool doTrackHmdVerticalPosition = true;
 static const bool doTrackHmdHorizontalPosition = true;
 static const bool doTrackVrControllerPosition = false; // todo:
 
+static int axisTrackpad = -1;
+static int axisJoystick = -1;
+static int axisTrigger = -1;
+static bool identifiedAxes = false;
+
 LSVec3 openvr_dpos(0,0,0);
 DAngle openvr_to_doom_angle;
 
@@ -522,8 +527,6 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 		LSVec3 doom_dpos = LSMatrix44(doomInOpenVR) * openvr_dpos;
 		doom_EyeOffset[0] += doom_dpos[0];
 		doom_EyeOffset[1] += doom_dpos[1];
-
-		// TODO: update player playsim position based on HMD position changes
 	}
 
 	outViewShift[0] = doom_EyeOffset[0];
@@ -1101,6 +1104,16 @@ VRControllerState_t& OpenVR_GetState(int hand)
 }
 
 
+int OpenVR_GetTouchPadAxis()
+{
+	return axisTrackpad;
+}
+
+int OpenVR_GetJoystickAxis()
+{
+	return axisJoystick;
+}
+
 bool OpenVR_OnHandIsRight()
 {
 	return openvr_rightHanded;
@@ -1197,6 +1210,27 @@ void OpenVRMode::SetUp() const
 				}
 				VRControllerState_t newState;
 				vrSystem->GetControllerState(i, &newState, sizeof(newState));
+
+				if (!identifiedAxes)
+				{
+					identifiedAxes = true;
+					for (int a = 0; a < k_unControllerStateAxisCount; a++)
+					{
+						switch (vrSystem->GetInt32TrackedDeviceProperty(i, (ETrackedDeviceProperty)(vr::Prop_Axis0Type_Int32 + a), 0))
+						{
+						case vr::k_eControllerAxis_TrackPad:
+							if (axisTrackpad == -1) axisTrackpad = a;
+							break;
+						case vr::k_eControllerAxis_Joystick:
+							if (axisJoystick == -1) axisJoystick = a;
+							break;
+						case vr::k_eControllerAxis_Trigger:
+							if (axisTrigger == -1) axisTrigger = a;
+							break;
+						}
+					}
+				}
+
 				HandleControllerState(i, role, newState);
 			}
 		}

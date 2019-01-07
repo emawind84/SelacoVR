@@ -7,6 +7,8 @@ namespace s3d
 {
 	bool OpenVR_OnHandIsRight();
 	VRControllerState_t& OpenVR_GetState(int hand);
+	int OpenVR_GetTouchPadAxis();
+	int OpenVR_GetJoystickAxis();
 }
 
 const float DEFAULT_DEADZONE = 0.25f;
@@ -76,7 +78,7 @@ public:
 	float GetAxisValue(int i, VRControllerState_t& offState, VRControllerState_t& onState)
 	{
 		VRControllerState_t& state = Hands[i] == ON ? onState : offState;
-		int axis = Sources[i] == PAD ? 0 : 2;
+		int axis = Sources[i] == PAD ? s3d::OpenVR_GetTouchPadAxis() : s3d::OpenVR_GetJoystickAxis();
 		float value = AxisSources[i] == X ? -state.rAxis[axis].x : state.rAxis[axis].y;
 		if (fabsf(value) > Axes[i].DeadZone)
 		{
@@ -235,6 +237,11 @@ public:
 	
 	float Multiplier;
 	AxisInfo Axes[NUM_AXES];
+
+
+	int axisTrackpad = -1;
+	int axisJoystick = -1;
+	int axisTrigger = -1;
 };
 
 class FOpenVRJoystickManager : public FJoystickCollection
