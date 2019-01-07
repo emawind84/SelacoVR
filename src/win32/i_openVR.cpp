@@ -79,10 +79,13 @@ public:
 	{
 		VRControllerState_t& state = Hands[i] == ON ? onState : offState;
 		int axis = Sources[i] == PAD ? s3d::OpenVR_GetTouchPadAxis() : s3d::OpenVR_GetJoystickAxis();
-		float value = AxisSources[i] == X ? -state.rAxis[axis].x : state.rAxis[axis].y;
-		if (fabsf(value) > Axes[i].DeadZone)
+		if (axis != -1)
 		{
-			return value * Axes[i].Multiplier * Multiplier;
+			float value = AxisSources[i] == X ? -state.rAxis[axis].x : state.rAxis[axis].y;
+			if (fabsf(value) > Axes[i].DeadZone)
+			{
+				return value * Axes[i].Multiplier * Multiplier;
+			}
 		}
 		return 0.0f;
 	}
