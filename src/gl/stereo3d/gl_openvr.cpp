@@ -1261,12 +1261,17 @@ void OpenVRMode::SetUp() const
 			auto vel = player->mo->Vel;
 			player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) * vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
 			bool wasOnGround = player->mo->Z() <= player->mo->floorz;
+			float oldZ = player->mo->Z();
 			P_XYMovement(player->mo, DVector2(0, 0));
 			
 			//if we were on the ground before offsetting, make sure we still are (this fixes not being able to move on lifts)
-			if (wasOnGround)
+			if (player->mo->Z() >= oldZ && wasOnGround)
 			{
 				player->mo->SetZ(player->mo->floorz);
+			}
+			else
+			{
+				player->mo->SetZ(oldZ);
 			}
 			player->mo->Vel = vel;
 			openvr_origin += openvr_dpos;
