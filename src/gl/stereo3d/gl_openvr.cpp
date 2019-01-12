@@ -119,7 +119,8 @@ EXTERN_CVAR(Float, vr_floor_offset)
 EXTERN_CVAR(Bool, openvr_rightHanded)
 EXTERN_CVAR(Bool, openvr_moveFollowsOffHand)
 EXTERN_CVAR(Bool, openvr_drawControllers)
-EXTERN_CVAR(Float, openvr_weaponRotate)
+EXTERN_CVAR(Float, openvr_weaponRotate);
+EXTERN_CVAR(Float, openvr_weaponScale);
 
 bool IsOpenVRPresent()
 {
@@ -796,7 +797,7 @@ void OpenVRMode::AdjustPlayerSprites() const
 {
 	GetWeaponTransform(&gl_RenderState.mModelMatrix);
 
-	float scale = 0.00125f;
+	float scale = 0.00125f * openvr_weaponScale;
 	gl_RenderState.mModelMatrix.scale(scale, -scale, scale);
 	gl_RenderState.mModelMatrix.translate(-viewwidth / 2, -viewheight * 3 / 4, 0.0f);
 
