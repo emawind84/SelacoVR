@@ -68,8 +68,15 @@ public:
 	{
 		SetDefaultConfig();
 		Multiplier = 1;
+		M_LoadJoystickConfig(this);
 	}
 	
+	~FOpenVRJoystick()
+	{
+		M_SaveJoystickConfig(this);
+	}
+
+
 	void ProcessInput()
 	{
 
