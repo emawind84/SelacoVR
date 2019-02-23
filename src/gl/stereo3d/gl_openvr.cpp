@@ -56,6 +56,8 @@ void I_StartupOpenVR();
 double P_XYMovement(AActor *mo, DVector2 scroll);
 float I_OpenVRGetYaw();
 
+extern class DMenu *CurrentMenu;
+
 #ifdef DYN_OPENVR
 // Dynamically load OpenVR
 
@@ -327,6 +329,7 @@ private:
 static std::map<std::string, VRControllerModel> controllerMeshes;
 struct Controller
 {
+	bool active = false;
 	TrackedDevicePose_t pose;
 	VRControllerState_t lastState;
 	VRControllerModel* model = nullptr;
@@ -841,7 +844,7 @@ void OpenVRMode::DrawControllerModels() const
 	
 	for (int i = 0; i < MAX_ROLES; ++i) 
 	{
-		if (GetHandTransform(i, &gl_RenderState.mModelMatrix))
+		if (GetHandTransform(i, &gl_RenderState.mModelMatrix) && controllers[i].model)
 		{
 			gl_RenderState.EnableModelMatrix(true);
 
@@ -855,7 +858,7 @@ void OpenVRMode::DrawControllerModels() const
 
 bool OpenVRMode::GetHandTransform(int hand, VSMatrix* mat) const
 {
-	if (controllers[hand].model)
+	if (controllers[hand].active)
 	{
 		mat->loadIdentity();
 
@@ -1072,7 +1075,11 @@ static void HandleControllerState(int device, int role, VRControllerState_t& new
 
 	//trigger (swaps with handedness)
 	int controller = openvr_rightHanded ? role : 1 - role;
-	HandleVRAxis(lastState, newState, 1, 0, KEY_JOY4, KEY_JOY4, controller * (KEY_PAD_RTRIGGER - KEY_JOY4));
+	
+	if (CurrentMenu == nullptr) //the quit menu is cancelled by any normal keypress, so don't generate the fire while in menus 
+	{
+		HandleVRAxis(lastState, newState, 1, 0, KEY_JOY4, KEY_JOY4, controller * (KEY_PAD_RTRIGGER - KEY_JOY4));
+	}
 	HandleUIVRAxis(lastState, newState, 1, 0, GK_RETURN, GK_RETURN);
 
 	//touchpad
@@ -1204,6 +1211,7 @@ void OpenVRMode::SetUp() const
 					controllerMeshes[model_name] = VRControllerModel(model_name, vrRenderModels);
 					assert(controllerMeshes.count(model_name) == 1);
 				}
+				controllers[role].active = true;
 				controllers[role].pose = pose;
 				if (controllerMeshes[model_name].isLoaded())
 				{
