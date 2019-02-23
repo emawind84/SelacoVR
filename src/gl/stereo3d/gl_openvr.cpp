@@ -1204,9 +1204,9 @@ void OpenVRMode::SetUp() const
 					controllerMeshes[model_name] = VRControllerModel(model_name, vrRenderModels);
 					assert(controllerMeshes.count(model_name) == 1);
 				}
+				controllers[role].pose = pose;
 				if (controllerMeshes[model_name].isLoaded())
 				{
-					controllers[role].pose = pose;
 					controllers[role].model = &controllerMeshes[model_name];
 				}
 				VRControllerState_t newState;
