@@ -1059,6 +1059,21 @@ static void HandleUIVRAxis(VRControllerState_t& lastState, VRControllerState_t& 
 	Joy_GenerateUIButtonEvents(GetVRAxisState(lastState, vrAxis, axis), GetVRAxisState(newState, vrAxis, axis), 2, keys);
 }
 
+static void HandleUIVRAxes(VRControllerState_t& lastState, VRControllerState_t& newState, int vrAxis, 
+	ESpecialGUIKeys xnegativedoomkey, ESpecialGUIKeys xpositivedoomkey, ESpecialGUIKeys ynegativedoomkey, ESpecialGUIKeys ypositivedoomkey)
+{
+	int oldButtons = abs(lastState.rAxis[vrAxis].x) > abs(lastState.rAxis[vrAxis].y)
+		? GetVRAxisState(lastState, vrAxis, 0)
+		: GetVRAxisState(lastState, vrAxis, 1) << 2;
+	int newButtons = abs(newState.rAxis[vrAxis].x) > abs(newState.rAxis[vrAxis].y)
+		? GetVRAxisState(newState, vrAxis, 0)
+		: GetVRAxisState(newState, vrAxis, 1) << 2;
+
+	int keys[] = { xnegativedoomkey, xpositivedoomkey, ynegativedoomkey, ypositivedoomkey };
+
+	Joy_GenerateUIButtonEvents(oldButtons, newButtons, 4, keys);
+}
+
 static void HandleVRButton(VRControllerState_t& lastState, VRControllerState_t& newState, long long vrindex, int doomkey, int base)
 {
 	Joy_GenerateButtonEvents((lastState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, (newState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, 1, doomkey + base);
@@ -1083,16 +1098,20 @@ static void HandleControllerState(int device, int role, VRControllerState_t& new
 	HandleUIVRAxis(lastState, newState, 1, 0, GK_RETURN, GK_RETURN);
 
 	//touchpad
-	HandleVRAxis(lastState, newState, 0, 0, KEY_PAD_LTHUMB_LEFT, KEY_PAD_LTHUMB_RIGHT, role * (KEY_PAD_RTHUMB_LEFT - KEY_PAD_LTHUMB_LEFT));
-	HandleVRAxis(lastState, newState, 0, 1, KEY_PAD_LTHUMB_DOWN, KEY_PAD_LTHUMB_UP, role * (KEY_PAD_RTHUMB_DOWN - KEY_PAD_LTHUMB_UP));
-	HandleUIVRAxis(lastState, newState, 0, 0, GK_LEFT, GK_RIGHT);
-	HandleUIVRAxis(lastState, newState, 0, 1, GK_DOWN, GK_UP);
+	if (axisTrackpad != -1)
+	{
+		HandleVRAxis(lastState, newState, axisTrackpad, 0, KEY_PAD_LTHUMB_LEFT, KEY_PAD_LTHUMB_RIGHT, role * (KEY_PAD_RTHUMB_LEFT - KEY_PAD_LTHUMB_LEFT));
+		HandleVRAxis(lastState, newState, axisTrackpad, 1, KEY_PAD_LTHUMB_DOWN, KEY_PAD_LTHUMB_UP, role * (KEY_PAD_RTHUMB_DOWN - KEY_PAD_LTHUMB_UP));
+		HandleUIVRAxes(lastState, newState, axisTrackpad, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
+	}
 
 	//WMR joysticks
-	HandleVRAxis(lastState, newState, 2, 0, KEY_JOYAXIS1MINUS, KEY_JOYAXIS1PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
-	HandleVRAxis(lastState, newState, 2, 1, KEY_JOYAXIS2MINUS, KEY_JOYAXIS2PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
-	HandleUIVRAxis(lastState, newState, 2, 0, GK_LEFT, GK_RIGHT);
-	HandleUIVRAxis(lastState, newState, 2, 1, GK_DOWN, GK_UP);
+	if (axisJoystick != -1)
+	{
+		HandleVRAxis(lastState, newState, axisJoystick, 0, KEY_JOYAXIS1MINUS, KEY_JOYAXIS1PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
+		HandleVRAxis(lastState, newState, axisJoystick, 1, KEY_JOYAXIS2MINUS, KEY_JOYAXIS2PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
+		HandleUIVRAxes(lastState, newState, axisJoystick, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
+	}
 
 	HandleVRButton(lastState, newState, vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
 	HandleUIVRButton(lastState, newState, vr::k_EButton_Grip, GK_BACK);
