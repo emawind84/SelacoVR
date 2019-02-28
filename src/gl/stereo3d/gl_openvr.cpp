@@ -124,6 +124,10 @@ EXTERN_CVAR(Bool, openvr_drawControllers)
 EXTERN_CVAR(Float, openvr_weaponRotate);
 EXTERN_CVAR(Float, openvr_weaponScale);
 
+CVAR(Float, openvr_kill_momentum, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+const float DEAD_ZONE = 0.25f;
+
+
 bool IsOpenVRPresent()
 {
 #ifndef USE_OPENVR
@@ -1022,7 +1026,6 @@ void OpenVRMode::updateHmdPose(
 
 static int GetVRAxisState(VRControllerState_t& state, int vrAxis, int axis)
 {
-	const float DEAD_ZONE = 0.25f;
 	float pos = axis == 0 ? state.rAxis[vrAxis].x : state.rAxis[vrAxis].y;
 	return pos < -DEAD_ZONE ? 1 : pos > DEAD_ZONE ? 2 : 0;
 }
@@ -1159,6 +1162,17 @@ static inline int joyint(double val)
 	}
 }
 
+bool JustStoppedMoving(VRControllerState_t& lastState, VRControllerState_t& newState, int axis)
+{
+	if (axis != -1)
+	{
+		bool wasMoving = (abs(lastState.rAxis[axis].x) > DEAD_ZONE || abs(lastState.rAxis[axis].y) > DEAD_ZONE);
+		bool isMoving = (abs(newState.rAxis[axis].x) > DEAD_ZONE || abs(newState.rAxis[axis].y) > DEAD_ZONE);
+		return !isMoving && wasMoving;
+	}
+	return false;
+}
+
 /* virtual */
 void OpenVRMode::SetUp() const
 {
@@ -1203,6 +1217,8 @@ void OpenVRMode::SetUp() const
 		updateHmdPose(eulerAngles.v[0], eulerAngles.v[1], eulerAngles.v[2]);
 		leftEyeView.setCurrentHmdPose(&hmdPose0);
 		rightEyeView.setCurrentHmdPose(&hmdPose0);
+
+		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 
 		// Check for existence of VR motion controllers...
 		for (int i = 0; i < vr::k_unMaxTrackedDeviceCount; ++i) {
@@ -1259,11 +1275,25 @@ void OpenVRMode::SetUp() const
 					}
 				}
 
+				if (player && openvr_kill_momentum)
+				{
+					if (role == (openvr_rightHanded ? 0 : 1))
+					{
+						if (JustStoppedMoving(controllers[role].lastState, newState, axisTrackpad) 
+							|| JustStoppedMoving(controllers[role].lastState, newState, axisJoystick))
+						{
+							player->mo->Vel[0] = 0;
+							player->mo->Vel[1] = 0;
+						}
+					}
+				}
+
 				HandleControllerState(i, role, newState);
+
+				
 			}
 		}
 
-		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 		LSMatrix44 mat; 
 		if (player)
 		{
