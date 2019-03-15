@@ -57,7 +57,6 @@ void FStringTable::LoadStrings ()
 	{
 		LoadLanguage (lump);
 	}
-	SetLanguageIDs();
 	UpdateLanguage();
 }
 
