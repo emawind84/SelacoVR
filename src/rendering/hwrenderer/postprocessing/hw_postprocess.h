@@ -723,7 +723,7 @@ struct PresentUniforms
 	FVector2 Scale;
 	FVector2 Offset;
 	float ColorScale;
-	float Padding;
+	int HdrMode;
 
 	static std::vector<UniformFieldDesc> Desc()
 	{
@@ -738,6 +738,7 @@ struct PresentUniforms
 			{ "UVScale", UniformType::Vec2, offsetof(PresentUniforms, Scale) },
 			{ "UVOffset", UniformType::Vec2, offsetof(PresentUniforms, Offset) },
 			{ "ColorScale", UniformType::Float, offsetof(PresentUniforms, ColorScale) },
+			{ "HdrMode", UniformType::Int, offsetof(PresentUniforms, HdrMode) }
 		};
 	}
 };
