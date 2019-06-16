@@ -777,12 +777,17 @@ void FLevelLocals::ExitLevel (int position, bool keepFacing)
 	ChangeLevel(NextMap, position, keepFacing ? CHANGELEVEL_KEEPFACING : 0);
 }
 
-DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, ExitLevel, G_ExitLevel)
+static void LevelLocals_ExitLevel(FLevelLocals *self, int position, bool keepFacing)
 {
-	PARAM_PROLOGUE;
+	self->ExitLevel(position, keepFacing);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, ExitLevel, LevelLocals_ExitLevel)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
 	PARAM_INT(position);
 	PARAM_INT(keepFacing);
-	G_ExitLevel(position, keepFacing);
+	self->ExitLevel(position, keepFacing);
 	return 0;
 }
 
@@ -792,11 +797,16 @@ void FLevelLocals::SecretExitLevel (int position)
 	ChangeLevel(GetSecretExitMap(), position, 0);
 }
 
-DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, SecretExitLevel, G_SecretExitLevel)
+static void LevelLocals_SecretExitLevel(FLevelLocals *self, int position)
 {
-	PARAM_PROLOGUE;
+	self->SecretExitLevel(position);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, SecretExitLevel, LevelLocals_SecretExitLevel)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
 	PARAM_INT(position);
-	G_SecretExitLevel(position);
+	self->SecretExitLevel(position);
 	return 0;
 }
 

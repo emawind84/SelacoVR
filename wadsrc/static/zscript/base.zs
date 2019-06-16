@@ -856,8 +856,8 @@ struct LevelLocals native
 	native play bool CreateCeiling(sector sec, int type, line ln, double speed, double speed2, double height = 0, int crush = -1, int silent = 0, int change = 0, int crushmode = 0 /*Floor.crushDoom*/);
 	native play bool CreateFloor(sector sec, int floortype, line ln, double speed, double height = 0, int crush = -1, int change = 0, bool crushmode = false, bool hereticlower = false);
 
-	native static void ExitLevel(int position, bool keepFacing);
-	native static void SecretExitLevel(int position);
+	native void ExitLevel(int position, bool keepFacing);
+	native void SecretExitLevel(int position);
 	native static void ChangeLevel(string levelname, int position = 0, int flags = 0, int skill = -1);
 }
 
