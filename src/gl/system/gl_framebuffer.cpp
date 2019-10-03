@@ -143,9 +143,13 @@ void OpenGLFrameBuffer::InitializeState()
 	glEnable(GL_DITHER);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_POLYGON_OFFSET_FILL);
+#ifndef __MOBILE__
 	glEnable(GL_POLYGON_OFFSET_LINE);
+#endif
 	glEnable(GL_BLEND);
+#ifndef __MOBILE__
 	glEnable(GL_DEPTH_CLAMP);
+#endif
 	glDisable(GL_DEPTH_TEST);
 	if (gl.legacyMode) glEnable(GL_TEXTURE_2D);
 	glDisable(GL_LINE_SMOOTH);
@@ -208,9 +212,13 @@ void OpenGLFrameBuffer::Swap()
 	bool swapbefore = gl_finishbeforeswap && camtexcount == 0;
 	Finish.Reset();
 	Finish.Clock();
+#ifndef __MOBILE__
 	if (swapbefore) glFinish();
+#endif
 	SwapBuffers();
+#ifndef __MOBILE__
 	if (!swapbefore) glFinish();
+#endif
 	Finish.Unclock();
 	camtexcount = 0;
 	FHardwareTexture::UnbindAll();

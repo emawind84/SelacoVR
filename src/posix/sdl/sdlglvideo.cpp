@@ -278,6 +278,9 @@ bool SDLGLVideo::SetResolution (int width, int height, int bits)
 // 
 //
 //==========================================================================
+#ifdef __MOBILE__
+extern "C" extern int glesLoad;
+#endif
 
 void SDLGLVideo::SetupPixelFormat(bool allowsoftware, int multisample, const int *glver)
 {
@@ -285,7 +288,11 @@ void SDLGLVideo::SetupPixelFormat(bool allowsoftware, int multisample, const int
 	SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE,  8 );
 	SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE,  8 );
 	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE,  8 );
+#ifdef __MOBILE__
+	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE,  16 );
+#else
 	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE,  24 );
+#endif
 	SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE,  8 );
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER,  1 );
 	if (multisample > 0) {
@@ -295,6 +302,34 @@ void SDLGLVideo::SetupPixelFormat(bool allowsoftware, int multisample, const int
 	if (gl_debug)
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 		
+#ifdef __MOBILE__
+
+	const char *version = Args->CheckValue("-glversion");
+	int major,min;
+	if( !strcmp(version, "gles1") )
+	{
+		glesLoad = 1;
+		major = 1;
+		min = 0;
+	}
+	else if ( !strcmp(version, "gles2") )
+	{
+		glesLoad = 2;
+        major = 2;
+        min = 0;
+	}
+    else if ( !strcmp(version, "gles3") )
+	{
+		glesLoad = 3;
+		major = 3;
+		min = 1;
+	}
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, major);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, min);
+	return;
+#endif
+
 	if (gl_es)
 	{
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);

@@ -68,6 +68,14 @@ enum
 	BOXRIGHT
 };		// bbox coordinates
 
+#ifdef __ANDROID__
+#ifndef LOGI
+#ifdef __ANDROID__
+#include <android/log.h>
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO,"JNITouchControlsUtils", __VA_ARGS__))
+#endif
+#endif
+#endif
 
 // [RH] This gets used all over; define it here:
 int Printf (int printlevel, const char *, ...) GCCPRINTF(2,3);

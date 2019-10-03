@@ -49,6 +49,10 @@ EXTERN_CVAR(Int, vid_renderer);
 EXTERN_CVAR(Bool, vid_glswfb);
 CVAR(Bool, gl_riskymodernpath, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
+#ifdef __MOBILE__
+    CVAR(Bool, force_uint_idx, false, 0)
+#endif
+
 //==========================================================================
 //
 // 
@@ -60,7 +64,12 @@ static void CollectExtensions()
 	const char *extension;
 
 	int max = 0;
-	glGetIntegerv(GL_NUM_EXTENSIONS, &max);
+#ifdef __MOBILE__
+	max = 0;
+#else
+    glGetIntegerv(GL_NUM_EXTENSIONS, &max);
+#endif
+
 
 	if (max == 0)
 	{
@@ -131,11 +140,75 @@ static void InitContext()
 
 #define FUDGE_FUNC(name, ext) 	if (_ptrc_##name == NULL) _ptrc_##name = _ptrc_##name##ext;
 
-
+#ifdef __MOBILE__
+extern "C" extern int glesLoad;
+#endif
 void gl_LoadExtensions()
 {
 	InitContext();
 	CollectExtensions();
+
+#ifdef __MOBILE__
+
+	
+    if(CheckExtension("GL_OES_texture_npot") || CheckExtension("GL_APPLE_texture_2D_limited_npot"))
+    {
+        Printf("NPOT allowed");
+        gl.flags |= RFL_NPOT;
+    }
+
+    if(CheckExtension("GL_EXT_texture_format_BGRA8888") || CheckExtension("GL_EXT_bgra"))
+    {
+        Printf("BGRA allowed");
+        gl.flags |= RFL_BGRA;
+    }
+
+    if(CheckExtension("GL_OES_element_index_uint"))
+    {
+        Printf("UINT element index allowed");
+        gl.flags |= RFL_UINT_IDX;
+    }
+
+    if(force_uint_idx == true)
+    {
+        Printf("FORCING UINT element index allowed");
+        gl.flags |= RFL_UINT_IDX;
+    }
+	
+	gl.vendorstring = "ANDROID";
+
+    const char *version = Args->CheckValue("-glversion");
+    if( glesLoad == 1 )
+    {
+        gl.legacyMode = true;
+        gl.lightmethod = LM_LEGACY;
+        gl.buffermethod = BM_LEGACY;
+        gl.glslversion = 0;
+        gl.flags |= RFL_NO_CLIP_PLANES;
+
+        //This is needed to the fix the brutal doom white lines?!
+        glDisable(GL_CLIP_PLANE0);
+        glEnable(GL_CLIP_PLANE0);
+    }
+    else if( glesLoad == 2 ) // GLES 2 with GL4ES
+    {
+
+        gl.legacyMode = true;
+        gl.lightmethod = LM_LEGACY;
+        gl.buffermethod = BM_LEGACY;
+        gl.glslversion = 0;
+        gl.flags |= RFL_NO_CLIP_PLANES;
+    }
+    else if( glesLoad == 3 ) // GLES 3
+    {
+        gl.es = true;
+        gl.legacyMode = false;
+        gl.lightmethod = LM_DEFERRED;
+        gl.buffermethod = BM_DEFERRED;
+        gl.glslversion = 4.5;
+        gl.flags |= RFL_NO_CLIP_PLANES;
+    }
+#else
 
 	const char *glversion = (const char*)glGetString(GL_VERSION);
 	gl.es = false;
@@ -288,7 +361,7 @@ void gl_LoadExtensions()
 			}
 		}
 	}
-
+#endif
 	int v;
 	
 	if (!gl.legacyMode)

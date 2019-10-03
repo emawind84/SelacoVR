@@ -134,6 +134,9 @@ void gl_SetTextureMode(int type)
 {
 	if (type == TM_MASK)
 	{
+#ifdef __MOBILE__
+        return; //Causes textures to screw up for some reason...
+#endif
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
 		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);

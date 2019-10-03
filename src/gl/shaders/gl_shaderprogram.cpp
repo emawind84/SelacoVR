@@ -141,7 +141,9 @@ void FShaderProgram::CompileShader(ShaderType type)
 
 void FShaderProgram::SetFragDataLocation(int index, const char *name)
 {
+#ifndef __MOBILE__
 	glBindFragDataLocation(mProgram, index, name);
+#endif
 }
 
 //==========================================================================
@@ -257,12 +259,15 @@ FString FShaderProgram::PatchShader(ShaderType type, const FString &code, const 
 {
 	FString patchedCode;
 
+#ifdef __MOBILE__
+    patchedCode.AppendFormat("#version 310 es\n");
+#else
 	int shaderVersion = MIN((int)round(gl.glslversion * 10) * 10, maxGlslVersion);
 	if (gl.es)
 		patchedCode.AppendFormat("#version %d es\n", shaderVersion);
 	else
 		patchedCode.AppendFormat("#version %d\n", shaderVersion);
-
+#endif
 	// TODO: Find some way to add extension requirements to the patching
 	//
 	// #extension GL_ARB_uniform_buffer_object : require

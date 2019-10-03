@@ -196,6 +196,10 @@ bool I_CheckResolution (int width, int height, int bits)
 
 void I_ClosestResolution (int *width, int *height, int bits)
 {
+#ifdef __MOBILE__ // We want to always use the resolution of the device!
+    return;
+#endif
+
 	int twidth, theight;
 	int cwidth = 0, cheight = 0;
 	int iteration;

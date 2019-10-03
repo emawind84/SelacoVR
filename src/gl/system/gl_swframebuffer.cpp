@@ -363,7 +363,11 @@ std::unique_ptr<OpenGLSWFrameBuffer::HWPixelShader> OpenGLSWFrameBuffer::CreateP
 	int shaderVersion = MIN((int)round(gl.glslversion * 10) * 10, maxGlslVersion);
 	
 	FString prefix;
+#ifdef __MOBILE__
+    prefix.AppendFormat("#version 310 es\n%s\n#line 0\n", shaderVersion, defines.GetChars());
+#else
 	prefix.AppendFormat("#version %d\n%s\n#line 0\n", shaderVersion, defines.GetChars());
+#endif
 	//Printf("Shader prefix: %s", prefix.GetChars());
 	
 	vertexsrc = prefix + vertexsrc;

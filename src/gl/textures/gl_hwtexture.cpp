@@ -207,8 +207,13 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 			}
 		}
 	}
-	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer);
 
+#ifdef __MOBILE__
+    texformat = GL_BGRA;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, rw, rh, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer);
+#else
+	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer);
+#endif
 	if (deletebuffer) free(buffer);
 
 	if (mipmap && TexFilter[gl_texture_filter].mipmapping)

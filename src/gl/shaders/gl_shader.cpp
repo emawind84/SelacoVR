@@ -432,6 +432,9 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	// On the shader side there is no difference between LM_DEFERRED and LM_DIRECT, it only decides how the buffer is initialized.
 	unsigned int lightbuffertype = GLRenderer->mLights->GetBufferType();
 	unsigned int lightbuffersize = GLRenderer->mLights->GetBlockSize();
+#ifdef __MOBILE__
+    vp_comb.Format("#version 310 es\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
+#else
 	if (lightbuffertype == GL_UNIFORM_BUFFER)
 	{
 		if (gl.es)
@@ -455,6 +458,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		else
 			vp_comb = "#version 430 core\n#define SHADER_STORAGE_LIGHTS\n";
 	}
+#endif
 
 	if (gl.buffermethod == BM_DEFERRED)
 	{
@@ -589,11 +593,11 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		glBindAttribLocation(hShader, VATTR_COLOR, "aColor");
 		glBindAttribLocation(hShader, VATTR_VERTEX2, "aVertex2");
 		glBindAttribLocation(hShader, VATTR_NORMAL, "aNormal");
-
+#ifndef __MOBILE__
 		glBindFragDataLocation(hShader, 0, "FragColor");
 		glBindFragDataLocation(hShader, 1, "FragFog");
 		glBindFragDataLocation(hShader, 2, "FragNormal");
-
+#endif
 		glLinkProgram(hShader);
 
 		glGetShaderInfoLog(hVertProg, 10000, NULL, buffer);

@@ -24,7 +24,13 @@ enum RenderFlags
 	RFL_NO_CLIP_PLANES = 32,
 
 	RFL_INVALIDATE_BUFFER = 64,
-	RFL_DEBUG = 128
+	RFL_DEBUG = 128,
+
+#ifdef __MOBILE__
+    RFL_NPOT = 256,
+    RFL_BGRA = 512,
+    RFL_UINT_IDX = 1024,
+#endif
 };
 
 enum TexMode
