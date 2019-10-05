@@ -205,7 +205,7 @@ void gl_LoadExtensions()
         gl.legacyMode = false;
         gl.lightmethod = LM_DEFERRED;
         gl.buffermethod = BM_DEFERRED;
-        gl.glslversion = 4.5;
+        gl.glslversion = 3.3;
         gl.flags |= RFL_NO_CLIP_PLANES;
     }
 #else

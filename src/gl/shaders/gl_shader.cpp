@@ -303,7 +303,11 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	// these settings are actually pointless but there seem to be some old ATI drivers that fail to compile the shader without setting the precision here.
 	i_data += "precision highp int;\n";
 	i_data += "precision highp float;\n";
-
+#ifdef __MOBILE__
+    i_data += "precision highp sampler2D;\n";
+    i_data += "precision highp samplerCube;\n";
+    i_data += "precision highp sampler2DMS;\n";
+#endif
 	i_data += "uniform vec4 uCameraPos;\n";
 	i_data += "uniform int uTextureMode;\n";
 	i_data += "uniform float uClipHeight;\n";
@@ -433,7 +437,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	unsigned int lightbuffertype = GLRenderer->mLights->GetBufferType();
 	unsigned int lightbuffersize = GLRenderer->mLights->GetBlockSize();
 #ifdef __MOBILE__
-    vp_comb.Format("#version 310 es\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
+    vp_comb.Format(ES_VERSION_STR"\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
 #else
 	if (lightbuffertype == GL_UNIFORM_BUFFER)
 	{

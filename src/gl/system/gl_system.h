@@ -39,7 +39,9 @@
 	#include <OpenGL/OpenGL.h>
 #endif
 
-
+#ifdef __MOBILE__
+#define ES_VERSION_STR "#version 310 es"
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4244)     // MIPS

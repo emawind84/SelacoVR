@@ -219,6 +219,10 @@ void OpenGLFrameBuffer::Swap()
 #ifndef __MOBILE__
 	if (!swapbefore) glFinish();
 #endif
+
+#ifdef __MOBILE__
+    gl_RenderState.SetVertexBuffer(NULL);
+#endif
 	Finish.Unclock();
 	camtexcount = 0;
 	FHardwareTexture::UnbindAll();
