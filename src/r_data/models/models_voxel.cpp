@@ -40,6 +40,10 @@
 #include "models.h"
 #include "v_palette.h"
 
+#ifdef __MOBILE__
+#include "gl/system/gl_interface.h"
+#endif
+
 #ifdef _MSC_VER
 #pragma warning(disable:4244) // warning C4244: conversion from 'double' to 'float', possible loss of data
 #endif
@@ -237,6 +241,12 @@ void FVoxelModel::AddFace(int x1, int y1, int z1, int x2, int y2, int z2, int x3
 	vert.y = -z3 + PivotZ;
 	indx[3] = AddVertex(vert, check);
 
+#ifdef __MOBILE__
+    // Do not allow more indexes than can fit in a short...pretty sure voxels shouldn't be this big anyway?..
+    if (!(gl.flags & RFL_UINT_IDX))
+        if((indx[0] > UINT16_MAX) || (indx[1] > UINT16_MAX) || (indx[2] > UINT16_MAX) || (indx[3] > UINT16_MAX))
+            return;
+#endif
 
 	mIndices.Push(indx[0]);
 	mIndices.Push(indx[1]);
@@ -336,12 +346,30 @@ void FVoxelModel::BuildVertexBuffer(FModelRenderer *renderer)
 		auto vbuf = renderer->CreateVertexBuffer(true, true);
 		SetVertexBuffer(renderer, vbuf);
 
+#ifdef __MOBILE__
+	    FModelVertex *vertptr = vbuf->LockVertexBuffer(mVertices.Size());
+		memcpy(vertptr, &mVertices[0], sizeof(FModelVertex)* mVertices.Size());
+
+        if (!(gl.flags & RFL_UINT_IDX))
+        {
+            unsigned short *indxptr = (unsigned short *)vbuf->LockIndexBuffer(mIndices.Size()/2+2);
+            for( int n = 0; n < mIndices.Size(); n++ )
+            {
+                indxptr[n] = mIndices[n];
+            }
+        }
+        else
+        {
+            unsigned int *indxptr = vbuf->LockIndexBuffer(mIndices.Size());
+            memcpy(indxptr, &mIndices[0], sizeof(unsigned int)* mIndices.Size());
+        }
+#else
 		FModelVertex *vertptr = vbuf->LockVertexBuffer(mVertices.Size());
 		unsigned int *indxptr = vbuf->LockIndexBuffer(mIndices.Size());
 
 		memcpy(vertptr, &mVertices[0], sizeof(FModelVertex)* mVertices.Size());
 		memcpy(indxptr, &mIndices[0], sizeof(unsigned int)* mIndices.Size());
-
+#endif
 		vbuf->UnlockVertexBuffer();
 		vbuf->UnlockIndexBuffer();
 		mNumIndices = mIndices.Size();

@@ -180,6 +180,7 @@ void gl_LoadExtensions()
     const char *version = Args->CheckValue("-glversion");
     if( glesLoad == 1 )
     {
+        gl.glesVer = 1;
         gl.legacyMode = true;
         gl.lightmethod = LM_LEGACY;
         gl.buffermethod = BM_LEGACY;
@@ -192,6 +193,7 @@ void gl_LoadExtensions()
     }
     else if( glesLoad == 2 ) // GLES 2 with GL4ES
     {
+        gl.glesVer = 2;
         gl.legacyMode = true;
         gl.novbo = true;
         gl.lightmethod = LM_LEGACY;
@@ -201,6 +203,7 @@ void gl_LoadExtensions()
     }
     else if( glesLoad == 3 ) // GLES 3
     {
+        gl.glesVer = 3;
         gl.es = true;
         gl.novbo = false;
         gl.legacyMode = false;
@@ -208,6 +211,7 @@ void gl_LoadExtensions()
         gl.buffermethod = BM_DEFERRED;
         gl.glslversion = 3.3;
         gl.flags |= RFL_NO_CLIP_PLANES;
+        gl.flags |= RFL_UINT_IDX;
     }
 #else
 

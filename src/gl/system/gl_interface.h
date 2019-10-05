@@ -74,6 +74,9 @@ struct RenderContext
 	bool legacyMode;
 	bool es;
 
+#ifdef __MOBILE__
+    int glesVer;
+#endif
 #ifdef NO_VBO
     bool novbo;
 #endif
