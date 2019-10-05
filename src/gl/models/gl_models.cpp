@@ -170,7 +170,7 @@ void FGLModelRenderer::DrawElements(int numIndices, size_t offset)
 
 FModelVertexBuffer::FModelVertexBuffer(bool needindex, bool singleframe)
 #ifdef __MOBILE__
-	: FVertexBuffer((gl.glesVer < 3) && (singleframe || !gl.legacyMode))
+	: FVertexBuffer((gl.glesVer >= 3) && (singleframe || !gl.legacyMode))
 #else
 	: FVertexBuffer(singleframe || !gl.legacyMode)
 #endif
