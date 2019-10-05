@@ -464,4 +464,8 @@ enum
 #define MAKE_ID(a,b,c,d)	((uint32_t)((d)|((c)<<8)|((b)<<16)|((a)<<24)))
 #endif
 
+#ifdef USE_GL_HW_BUFFERS
+#define MAX_HW_BUFFERS 4
+#endif
+
 #endif	// __DOOMDEF_H__

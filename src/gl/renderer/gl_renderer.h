@@ -47,10 +47,7 @@ class FCustomPostProcessShaders;
 class GLSceneDrawer;
 
 
-#ifdef USE_GL_HW_BUFFERS
-#define MAX_HW_BUFFERS 4
-#define NBR_HW_BUFFERS 4
-#endif
+
 inline float DEG2RAD(float deg)
 {
 	return deg * float(M_PI / 180.0);
