@@ -74,6 +74,9 @@ struct RenderContext
 	bool legacyMode;
 	bool es;
 
+#ifdef NO_VBO
+    bool novbo;
+#endif
 	int MaxLights() const
 	{
 		return maxuniforms>=2048? 128:64;

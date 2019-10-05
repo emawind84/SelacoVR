@@ -192,8 +192,8 @@ void gl_LoadExtensions()
     }
     else if( glesLoad == 2 ) // GLES 2 with GL4ES
     {
-
         gl.legacyMode = true;
+        gl.novbo = true;
         gl.lightmethod = LM_LEGACY;
         gl.buffermethod = BM_LEGACY;
         gl.glslversion = 0;
@@ -202,6 +202,7 @@ void gl_LoadExtensions()
     else if( glesLoad == 3 ) // GLES 3
     {
         gl.es = true;
+        gl.novbo = false;
         gl.legacyMode = false;
         gl.lightmethod = LM_DEFERRED;
         gl.buffermethod = BM_DEFERRED;
