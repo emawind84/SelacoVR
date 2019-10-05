@@ -222,7 +222,13 @@ void OpenGLFrameBuffer::Swap()
 #ifndef __MOBILE__
 	if (swapbefore) glFinish();
 #endif
+
+#ifdef USE_GL_HW_BUFFERS
+    GLRenderer->GPUDropSync();
+#endif
+
 	SwapBuffers();
+
 #ifndef __MOBILE__
 	if (!swapbefore) glFinish();
 #endif

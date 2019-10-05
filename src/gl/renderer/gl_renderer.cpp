@@ -131,6 +131,13 @@ FGLRenderer::FGLRenderer(OpenGLFrameBuffer *fb)
 	mFXAALumaShader = nullptr;
 	mShadowMapShader = nullptr;
 	mCustomPostProcessShaders = nullptr;
+
+#ifdef USE_GL_HW_BUFFERS
+    for(int n = 0; n < MAX_HW_BUFFERS; n++)
+    {
+        syncBuff[n] = 0;
+    }
+#endif
 }
 
 void FGLRenderer::Initialize(int width, int height)
@@ -175,17 +182,16 @@ void FGLRenderer::Initialize(int width, int height)
     {
     	mVBOBuff[n] = new FFlatVertexBuffer(width, height);
     	mSkyVBOBuff[n] = new FSkyVertexBuffer;
-    	if (!gl.legacyMode) mLightsBuff[n] = new FLightBuffer();
     }
     NextVtxBuffer();
     NextSkyBuffer();
-    NextLightBuffer();
 #else
 	mVBO = new FFlatVertexBuffer(width, height);
 	mSkyVBO = new FSkyVertexBuffer;
+#endif
 	if (!gl.legacyMode) mLights = new FLightBuffer();
 	else mLights = NULL;
-#endif
+
 	gl_RenderState.SetVertexBuffer(mVBO);
 	mFBID = 0;
 	mOldFBID = 0;
@@ -451,3 +457,28 @@ unsigned char *FGLRenderer::GetTextureBuffer(FTexture *tex, int &w, int &h)
 	}
 	return NULL;
 }
+
+#ifdef USE_GL_HW_BUFFERS
+void FGLRenderer::GPUDropSync()
+{
+    //if(nbrHwBuffers > 1)
+	    syncBuff[VtxBuff] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
+}
+
+void FGLRenderer::GPUWaitSync()
+{
+    //if(nbrHwBuffers > 1 && )
+    {
+        if( syncBuff[VtxBuff] )
+        {
+            GLenum status = glClientWaitSync(syncBuff[VtxBuff], GL_SYNC_FLUSH_COMMANDS_BIT, 1000 * 1000 * 50); // Wait for a max of 50ms...
+            if (status != GL_ALREADY_SIGNALED && status != GL_CONDITION_SATISFIED)
+            {
+                Printf("Error on glClientWaitSync: %d\n", status);
+            }
+            glDeleteSync(syncBuff[VtxBuff]);
+            syncBuff[VtxBuff] = NULL;
+        }
+	}
+}
+#endif

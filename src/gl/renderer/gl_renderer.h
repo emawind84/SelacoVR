@@ -9,6 +9,10 @@
 #include "gl/dynlights/gl_shadowmap.h"
 #include <functional>
 
+#ifdef USE_GL_HW_BUFFERS
+#include "gl/system/gl_system.h"
+#endif
+
 struct particle_t;
 class FCanvasTexture;
 class FFlatVertexBuffer;
@@ -159,20 +163,18 @@ public:
 
     FFlatVertexBuffer *mVBOBuff[MAX_HW_BUFFERS];
 	FSkyVertexBuffer *mSkyVBOBuff[MAX_HW_BUFFERS];
-    FLightBuffer *mLightsBuff[MAX_HW_BUFFERS];
+
+    // Used instead of GLsync
+    GLsync syncBuff[MAX_HW_BUFFERS];
+
+    void GPUDropSync();
+    void GPUWaitSync();
 
     void NextVtxBuffer()
     {
         mVBO = mVBOBuff[VtxBuff];
         VtxBuff++;
         VtxBuff %= nbrHwBuffers;
-    }
-
-    void NextLightBuffer()
-    {
-        mLights = mLightsBuff[LightBuff];
-        LightBuff++;
-        LightBuff %= nbrHwBuffers;
     }
 
     void NextSkyBuffer()
