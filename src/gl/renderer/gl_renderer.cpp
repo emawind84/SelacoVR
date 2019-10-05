@@ -170,11 +170,22 @@ void FGLRenderer::Initialize(int width, int height)
 		FGLDebug::LabelObject(GL_VERTEX_ARRAY, mVAOID, "FGLRenderer.mVAOID");
 	}
 	else mVAOID = 0;
-
+#ifdef USE_GL_HW_BUFFERS
+    for(int n = 0; n < nbrHwBuffers; n++)
+    {
+    	mVBOBuff[n] = new FFlatVertexBuffer(width, height);
+    	mSkyVBOBuff[n] = new FSkyVertexBuffer;
+    	if (!gl.legacyMode) mLightsBuff[n] = new FLightBuffer();
+    }
+    NextVtxBuffer();
+    NextSkyBuffer();
+    NextLightBuffer();
+#else
 	mVBO = new FFlatVertexBuffer(width, height);
 	mSkyVBO = new FSkyVertexBuffer;
 	if (!gl.legacyMode) mLights = new FLightBuffer();
 	else mLights = NULL;
+#endif
 	gl_RenderState.SetVertexBuffer(mVBO);
 	mFBID = 0;
 	mOldFBID = 0;
@@ -360,7 +371,14 @@ int FGLRenderer::ScreenToWindowY(int y)
 
 void FGLRenderer::SetupLevel()
 {
+#ifdef USE_GL_HW_BUFFERS
+	for (int n = 0; n < nbrHwBuffers; n++)
+	{
+	    mVBOBuff[n]->CreateVBO();
+	}
+#else
 	mVBO->CreateVBO();
+#endif
 }
 
 void FGLRenderer::Begin2D()

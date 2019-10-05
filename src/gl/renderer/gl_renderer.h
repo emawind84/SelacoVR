@@ -46,6 +46,11 @@ class FShadowMapShader;
 class FCustomPostProcessShaders;
 class GLSceneDrawer;
 
+
+#ifdef USE_GL_HW_BUFFERS
+#define MAX_HW_BUFFERS 4
+#define NBR_HW_BUFFERS 4
+#endif
 inline float DEG2RAD(float deg)
 {
 	return deg * float(M_PI / 180.0);
@@ -148,6 +153,38 @@ public:
 	FRotator mAngles;
 	FVector2 mViewVector;
 
+#ifdef USE_GL_HW_BUFFERS
+    int nbrHwBuffers = 4;
+
+	int LightBuff = 0;
+	int SkyBuff = 0;
+	int VtxBuff = 0;
+
+    FFlatVertexBuffer *mVBOBuff[MAX_HW_BUFFERS];
+	FSkyVertexBuffer *mSkyVBOBuff[MAX_HW_BUFFERS];
+    FLightBuffer *mLightsBuff[MAX_HW_BUFFERS];
+
+    void NextVtxBuffer()
+    {
+        mVBO = mVBOBuff[VtxBuff];
+        VtxBuff++;
+        VtxBuff %= nbrHwBuffers;
+    }
+
+    void NextLightBuffer()
+    {
+        mLights = mLightsBuff[LightBuff];
+        LightBuff++;
+        LightBuff %= nbrHwBuffers;
+    }
+
+    void NextSkyBuffer()
+    {
+        mSkyVBO = mSkyVBOBuff[SkyBuff];
+        SkyBuff++;
+        SkyBuff %= nbrHwBuffers;
+    }
+#endif
 	FFlatVertexBuffer *mVBO;
 	FSkyVertexBuffer *mSkyVBO;
 	FLightBuffer *mLights;

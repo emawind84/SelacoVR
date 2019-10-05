@@ -104,7 +104,7 @@ angle_t GLSceneDrawer::FrustumAngle()
 {
 	float tilt = fabs(GLRenderer->mAngles.Pitch.Degrees);
 
-	// If the pitch is larger than this you can look all around at a FOV of 90°
+	// If the pitch is larger than this you can look all around at a FOV of 90Â°
 	if (tilt > 46.0f) return 0xffffffff;
 
 	// ok, this is a gross hack that barely works...
@@ -917,6 +917,12 @@ void FGLRenderer::RenderView (player_t* player)
 	gl_ClearFakeFlat();
 
 	checkBenchActive();
+
+#ifdef USE_GL_HW_BUFFERS
+	GLRenderer->NextVtxBuffer();
+	GLRenderer->NextLightBuffer();
+	GLRenderer->NextSkyBuffer();
+#endif
 
 	gl_RenderState.SetVertexBuffer(mVBO);
 	mVBO->Reset();

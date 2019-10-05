@@ -191,7 +191,14 @@ void OpenGLFrameBuffer::Update()
 		Pitch = Width = clientWidth;
 		Height = clientHeight;
 		V_OutputResized(Width, Height);
+#ifdef USE_GL_HW_BUFFERS
+        for (int n = 0; n < GLRenderer->nbrHwBuffers; n++)
+        {
+            GLRenderer->mVBOBuff[n]->OutputResized(Width, Height);
+        }
+#else
 		GLRenderer->mVBO->OutputResized(Width, Height);
+#endif
 	}
 
 	GLRenderer->SetOutputViewport(nullptr);
