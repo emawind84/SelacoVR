@@ -181,7 +181,18 @@ DFrameBuffer *SDLGLVideo::CreateFrameBuffer (int width, int height, bool bgra, b
 	SDLBaseFB *fb;
 	if (vid_renderer == 1)
 	{
+#ifdef USE_GL_HW_BUFFERS
+        const char *hwBuffers = Args->CheckValue("-hwbuffers");
+        int buffers = 1;
+        if (hwBuffers)
+        {
+            buffers = atoi(hwBuffers);
+        }
+        Printf("HW buffers = %d\n", buffers);
+        fb = new OpenGLFrameBuffer(0, width, height, 32, 60, fullscreen, buffers);
+#else
 		fb = new OpenGLFrameBuffer(0, width, height, 32, 60, fullscreen);
+#endif
 	}
 	else if (vid_glswfb == 0)
 	{

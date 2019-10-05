@@ -28,7 +28,11 @@ class OpenGLFrameBuffer : public SDLGLFB
 public:
 
 	explicit OpenGLFrameBuffer() {}
+#ifdef USE_GL_HW_BUFFERS
+	OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen, int nbrHwBuffers) ;
+#else
 	OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen) ;
+#endif
 	~OpenGLFrameBuffer();
 
 	void InitializeState();

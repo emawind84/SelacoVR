@@ -77,8 +77,11 @@ CUSTOM_CVAR(Int, vid_hwgamma, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITC
 //
 //
 //==========================================================================
-
-OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen) : 
+#ifdef USE_GL_HW_BUFFERS
+OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen, int nbrHwBuffers) :
+#else
+OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen) :
+#endif
 	Super(hMonitor, width, height, bits, refreshHz, fullscreen, false) 
 {
 	// SetVSync needs to be at the very top to workaround a bug in Nvidia's OpenGL driver.
@@ -91,6 +94,9 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int 
 	gl_RenderState.Reset();
 
 	GLRenderer = new FGLRenderer(this);
+#ifdef USE_GL_HW_BUFFERS
+    GLRenderer->nbrHwBuffers = nbrHwBuffers;
+#endif
 	memcpy (SourcePalette, GPalette.BaseColors, sizeof(PalEntry)*256);
 	UpdatePalette ();
 	ScreenshotBuffer = NULL;
