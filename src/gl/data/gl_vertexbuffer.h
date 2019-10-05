@@ -165,6 +165,10 @@ public:
 #ifdef __GL_PCH_H	// we need the system includes for this but we cannot include them ourselves without creating #define clashes. The affected files wouldn't try to draw anyway.
 	void RenderArray(unsigned int primtype, unsigned int offset, unsigned int count)
 	{
+#ifdef NO_VBO // OK there are still things using the VBO, we may have unbound it so always try to bind it again
+        if(gl.novbo)
+            BindVBO();
+#endif
 		drawcalls.Clock();
 		glDrawArrays(primtype, offset, count);
 		drawcalls.Unclock();

@@ -373,6 +373,11 @@ void F2DDrawer::Draw()
 {
 	F2DDrawer::EDrawType lasttype = DrawTypeTexture;
 
+#ifdef NO_VBO
+    if(gl.novbo)
+	    GLRenderer->mVBO->BindVBO();
+#endif
+
 	if (mData.Size() == 0) return;
 	int8_t savedlightmode = glset.lightmode;
 	// lightmode is only relevant for automap subsectors,

@@ -168,6 +168,22 @@ void GLFlat::DrawSubsector(subsector_t * sub)
 {
 	if (gl.buffermethod != BM_DEFERRED)
 	{
+#ifdef NO_VBO
+        if(gl.novbo)
+        {
+            glBegin(GL_TRIANGLE_FAN);
+            for(unsigned int k=0; k<sub->numlines; k++)
+            {
+                vertex_t *vt = sub->firstline[k].v1;
+                glTexCoord2f(vt->fX()/64.f, -vt->fY()/64.f);
+                float zc = plane.plane.ZatPoint(vt) + dz;
+                glVertex3f(vt->fX(), zc, vt->fY());
+            }
+            glEnd();
+    	}
+    	else
+    	{
+#endif
 		FFlatVertex *ptr = GLRenderer->mVBO->GetBuffer();
 		for (unsigned int k = 0; k < sub->numlines; k++)
 		{
@@ -180,6 +196,9 @@ void GLFlat::DrawSubsector(subsector_t * sub)
 			ptr++;
 		}
 		GLRenderer->mVBO->RenderCurrent(ptr, GL_TRIANGLE_FAN);
+#ifdef NO_VBO
+        }
+#endif
 	}
 	else
 	{
@@ -256,6 +275,10 @@ void GLFlat::DrawSubsectors(int pass, bool processlights, bool istrans)
 	int dli = dynlightindex;
 
 	gl_RenderState.Apply();
+#ifdef NO_VBO
+    if(gl.novbo)
+        vboindex = -1;
+#endif
 	if (vboindex >= 0)
 	{
 		int index = vboindex;
@@ -304,6 +327,10 @@ void GLFlat::DrawSubsectors(int pass, bool processlights, bool istrans)
 			node = node->next;
 		}
 	}
+#ifdef NO_VBO
+    if(gl.novbo)
+        GLRenderer->mVBO->BindVBO();
+#endif
 }
 
 

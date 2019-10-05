@@ -199,6 +199,47 @@ void GLWall::RenderWall(int textured)
 {
 	gl_RenderState.Apply();
 	gl_RenderState.ApplyLightIndex(dynlightindex);
+#ifdef NO_VBO
+    if(gl.novbo)
+    {
+        bool nosplit = !!(textured&RWF_NOSPLIT);
+        bool split = (gl_seamless && !nosplit && seg->sidedef != NULL && !(seg->sidedef->Flags & WALLF_POLYOBJ) && !(flags & GLWF_NOSPLIT));
+        glBegin(GL_TRIANGLE_FAN);
+
+        // lower left corner
+        if (textured&1) glTexCoord2f(tcs[0].u,tcs[0].v);
+        glVertex3f(glseg.x1,zbottom[0],glseg.y1);
+
+        //if (split && glseg.fracleft==0) SplitLeftEdge(tcs);
+
+        // upper left corner
+        if (textured&1) glTexCoord2f(tcs[1].u,tcs[1].v);
+        glVertex3f(glseg.x1,ztop[0],glseg.y1);
+
+        //if (split && !(flags & GLWF_NOSPLITUPPER)) SplitUpperEdge(tcs);
+
+        // color for right side
+        //if (color2) glColor4fv(color2);
+
+        // upper right corner
+        if (textured&1) glTexCoord2f(tcs[2].u,tcs[2].v);
+        glVertex3f(glseg.x2,ztop[1],glseg.y2);
+
+        //if (split && glseg.fracright==1) SplitRightEdge(tcs);
+
+        // lower right corner
+        if (textured&1) glTexCoord2f(tcs[3].u,tcs[3].v);
+        glVertex3f(glseg.x2,zbottom[1],glseg.y2);
+
+        //if (split && !(flags & GLWF_NOSPLITLOWER)) SplitLowerEdge(tcs);
+
+        glEnd();
+
+        vertexcount+=4;
+	}
+	else
+	{
+#endif
 	if (gl.buffermethod != BM_DEFERRED)
 	{
 		MakeVertices(!!(textured&RWF_NOSPLIT));
@@ -218,6 +259,9 @@ void GLWall::RenderWall(int textured)
 	}
 	GLRenderer->mVBO->RenderArray(GL_TRIANGLE_FAN, vertindex, vertcount);
 	vertexcount += vertcount;
+#ifdef NO_VBO
+    }
+#endif
 }
 
 //==========================================================================
