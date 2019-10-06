@@ -1041,6 +1041,7 @@ set (PCH_SOURCES
 	s_playlist.cpp
 	s_sndseq.cpp
 	s_sound.cpp
+	sound/s_music.cpp
 	serializer.cpp
 	sc_man.cpp
 	scriptutil.cpp
@@ -1246,6 +1247,7 @@ set (PCH_SOURCES
 	sound/musicformats/music_midistream.cpp
 	sound/musicformats/music_opl.cpp
 	sound/musicformats/music_stream.cpp
+	sound/musicformats/music_xa.cpp
 	sound/oplsynth/fmopl.cpp
 	sound/oplsynth/musicblock.cpp
 	sound/oplsynth/oplio.cpp

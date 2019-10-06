@@ -64,6 +64,7 @@
 #include "stats.h"
 #include "timidity/timidity.h"
 #include "vm.h"
+#include "s_music.h"
 
 
 
@@ -466,6 +467,10 @@ MusInfo *I_RegisterSong (FileReader &reader, MidiDeviceSetting *device)
 		(id[0] == MAKE_ID('A','D','L','I') && *((uint8_t *)id + 4) == 'B'))		// Martin Fernandez's modified IMF
 	{
 		info = new OPLMUSSong (reader, device != nullptr? device->args.GetChars() : "");
+	}
+	else if ((id[0] == MAKE_ID('R', 'I', 'F', 'F') && id[2] == MAKE_ID('C', 'D', 'X', 'A')))
+	{
+		info = XA_OpenSong(reader);
 	}
 	// Check for game music
 	else if ((fmt = GME_CheckFormat(id[0])) != nullptr && fmt[0] != '\0')
