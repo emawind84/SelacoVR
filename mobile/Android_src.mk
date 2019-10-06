@@ -511,6 +511,7 @@ PCH_SOURCES = \
 	sound/i_music.cpp \
 	sound/i_sound.cpp \
 	sound/i_soundfont.cpp \
+	sound/s_music.cpp \
 	sound/mididevices/music_adlmidi_mididevice.cpp \
 	sound/mididevices/music_opldumper_mididevice.cpp \
 	sound/mididevices/music_opl_mididevice.cpp \
@@ -526,6 +527,7 @@ PCH_SOURCES = \
 	sound/midisources/midisource_smf.cpp \
 	sound/midisources/midisource_hmi.cpp \
 	sound/midisources/midisource_xmi.cpp \
+	sound/musicformats/music_xa.cpp \
 	sound/musicformats/music_cd.cpp \
 	sound/musicformats/music_dumb.cpp \
 	sound/musicformats/music_gme.cpp \

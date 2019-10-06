@@ -43,6 +43,11 @@
 
 FGLPostProcessState::FGLPostProcessState()
 {
+#ifdef __MOBILE__
+    if( gl.glesVer < 3 )
+        return;
+#endif
+
 	glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTex);
 	glActiveTexture(GL_TEXTURE0);
 	SaveTextureBindings(1);
@@ -96,6 +101,10 @@ void FGLPostProcessState::SaveTextureBindings(unsigned int numUnits)
 
 FGLPostProcessState::~FGLPostProcessState()
 {
+#ifdef __MOBILE__
+    if( gl.glesVer < 3 )
+        return;
+#endif
 	if (blendEnabled)
 		glEnable(GL_BLEND);
 	else

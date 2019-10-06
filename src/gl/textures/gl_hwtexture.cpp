@@ -192,6 +192,13 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	}
 	else
 	{
+#ifdef __MOBILE__
+        if( gl.glesVer == 1 )
+        {
+    	    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, (mipmap && TexFilter[gl_texture_filter].mipmapping) );
+    	    glTex->mipmapped = true;
+    	}
+#endif
 		rw = GetTexDimension (w);
 		rh = GetTexDimension (h);
 
@@ -210,12 +217,15 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 
 #ifdef __MOBILE__
     texformat = GL_BGRA;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, rw, rh, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, texformat, GL_UNSIGNED_BYTE, buffer);
 #else
 	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer);
 #endif
 	if (deletebuffer) free(buffer);
 
+#ifdef __MOBILE__
+    if( gl.glesVer > 1 )
+#endif
 	if (mipmap && TexFilter[gl_texture_filter].mipmapping)
 	{
 		glGenerateMipmap(GL_TEXTURE_2D);
