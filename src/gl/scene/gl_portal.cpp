@@ -1076,7 +1076,7 @@ void GLLineToLinePortal::RenderAttached()
 // are 2 problems with it:
 //
 // 1. Setting this up completely negates any performance gains.
-// 2. It doesn't work with a 360° field of view (as when you are looking up.)
+// 2. It doesn't work with a 360ï¿½ field of view (as when you are looking up.)
 //
 //
 // So the brute force mechanism is just as good.
@@ -1272,7 +1272,10 @@ void GLEEHorizonPortal::DrawContents()
 void GLPortal::Initialize()
 {
 	assert(0 == QueryObject);
+#ifndef __MOBILE__
+    if(gl.glesVer => 3 )
 	glGenQueries(1, &QueryObject);
+#endif
 }
 
 void GLPortal::Shutdown()
