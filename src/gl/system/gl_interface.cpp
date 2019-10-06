@@ -181,6 +181,7 @@ void gl_LoadExtensions()
     if( glesLoad == 1 )
     {
         gl.glesVer = 1;
+        gl.es = true;
         gl.legacyMode = true;
         gl.lightmethod = LM_LEGACY;
         gl.buffermethod = BM_LEGACY;

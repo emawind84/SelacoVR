@@ -139,6 +139,10 @@ SDLFB::SDLFB (int width, int height, bool bgra, bool fullscreen, SDL_Window *old
 		FString caption;
 		caption.Format(GAMESIG " %s (%s)", GetVersionString(), GetGitTime());
 
+#ifdef __ANDROID__
+    SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 ); // Defaults to 24 which is not needed and fails on old Tegras
+#endif
+
 		Screen = SDL_CreateWindow (caption,
 			SDL_WINDOWPOS_UNDEFINED_DISPLAY(vid_adapter), SDL_WINDOWPOS_UNDEFINED_DISPLAY(vid_adapter),
 			width, height, (fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0)|SDL_WINDOW_RESIZABLE);
@@ -434,8 +438,14 @@ void SDLFB::ResetSDLRenderer ()
 	UsingRenderer = !vid_forcesurface;
 	if (UsingRenderer)
 	{
+#ifdef __MOBILE__
+        Renderer = SDL_CreateRenderer (Screen, -1,SDL_RENDERER_ACCELERATED);
+#else
 		Renderer = SDL_CreateRenderer (Screen, -1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_TARGETTEXTURE|
 										(vid_vsync ? SDL_RENDERER_PRESENTVSYNC : 0));
+#endif
+
+
 		if (!Renderer)
 			return;
 
@@ -491,7 +501,9 @@ void SDLFB::ResetSDLRenderer ()
 		int w, h;
 		SDL_GetWindowSize (Screen, &w, &h);
 		ScaleWithAspect (w, h, Width, Height);
+#ifndef __MOBILE__
 		SDL_RenderSetLogicalSize (Renderer, w, h);
+#endif
 	}
 }
 
