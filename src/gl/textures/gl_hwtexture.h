@@ -53,6 +53,18 @@ public:
 	static int GetTexDimension(int value)
 	{
 		if (value > gl.max_texturesize) return gl.max_texturesize;
+#ifdef __MOBILE__
+        if(gl.flags & RFL_NPOT )
+        {
+            return value;
+        }
+        else
+        {
+            int i=1;
+            while (i<value) i+=i;
+            return i;
+         }
+#endif
 		return value;
 	}
 
@@ -82,7 +94,11 @@ public:
 	void BindToFrameBuffer();
 
 	unsigned int Bind(int texunit, int translation, bool needmipmap);
+#ifdef __MOBILE__
+	unsigned int CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, int translation, const FString &name, bool material = false);
+#else
 	unsigned int CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, int translation, const FString &name);
+#endif
 	unsigned int GetTextureHandle(int translation);
 
 	void Clean(bool all);
