@@ -3494,6 +3494,10 @@ static int ProcExtsFromExtList(void)
 
 	if (_ptrc_glGetStringi == NULL) return 0;
 
+#ifdef __MOBILE__
+    if(glesLoad < 3)
+        return 0;
+#endif
 	_ptrc_glGetIntegerv(GL_NUM_EXTENSIONS, &iNumExtensions);
 
 	for(iLoop = 0; iLoop < iNumExtensions; iLoop++)

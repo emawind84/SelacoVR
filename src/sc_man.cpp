@@ -618,9 +618,14 @@ bool FScanner::GetToken ()
 		if (TokenType == TK_IntConst)
 		{
 			char *stopper;
+#ifdef __MOBILE__ // THIS IS A BUG, we are trying to read off the back of the buffer when StringLen is < 2!
+            if (String[StringLen - 1] == 'u' || String[StringLen - 1] == 'U' ||
+               ( (StringLen > 1)  && (String[StringLen - 2] == 'u' || String[StringLen - 2] == 'U')))
+#else
 			// Check for unsigned
 			if (String[StringLen - 1] == 'u' || String[StringLen - 1] == 'U' ||
 				String[StringLen - 2] == 'u' || String[StringLen - 2] == 'U')
+#endif
 			{
 				TokenType = TK_UIntConst;
 				Number = (int)strtoull(String, &stopper, 0);
