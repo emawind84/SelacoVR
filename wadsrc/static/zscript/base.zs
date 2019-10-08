@@ -52,7 +52,8 @@ struct _ native	// These are the global variables, the struct is only here to av
 	deprecated("3.8") native readonly bool globalfreeze;
 	native readonly @MusPlayingInfo musplaying;
 	native readonly bool generic_ui;
-
+	// __MOBILE__
+	native bool g_bindingbutton;
 }
 
 struct MusPlayingInfo native
