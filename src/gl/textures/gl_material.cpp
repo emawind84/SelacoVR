@@ -54,6 +54,10 @@ EXTERN_CVAR(Int, gl_lightmode)
 EXTERN_CVAR(Bool, gl_precache)
 EXTERN_CVAR(Bool, gl_texture_usehires)
 
+#ifdef __MOBILE__
+EXTERN_CVAR(Bool, gl_customshader)
+#endif
+
 extern TArray<UserShaderDesc> usershaders;
 
 //===========================================================================
@@ -431,7 +435,9 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 			else
 				mShaderIndex = SHADER_Brightmap;
 		}
-
+#ifdef __MOBILE__
+        if( gl_customshader )
+#endif
 		if (tx->gl_info.shaderindex >= FIRST_USER_SHADER)
 		{
 			const UserShaderDesc &usershader = usershaders[tx->gl_info.shaderindex - FIRST_USER_SHADER];

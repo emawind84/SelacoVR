@@ -56,6 +56,11 @@
 #include <map>
 #include <memory>
 
+
+#ifdef __MOBILE__
+CVAR(Bool, gl_customshader, true, 0)
+#endif
+
 static bool IsGlslWhitespace(char c)
 {
 	switch (c)
@@ -973,6 +978,9 @@ void FShaderCollection::CompileShaders(EPassType passType)
 		}
 	}
 
+#ifdef __MOBILE__
+    if( gl_customshader )
+#endif
 	for(unsigned i = 0; i < usershaders.Size(); i++)
 	{
 		FString name = ExtractFileBase(usershaders[i].shader);
