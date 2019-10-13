@@ -152,11 +152,10 @@ void gl_GetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblend
 
 	if (allowcolorblending && srcblend == GL_SRC_ALPHA && dstblend == GL_ONE && blendequation == GL_FUNC_ADD)
 	{
-#ifndef __MOBILE__ // Not avaliable for gles1 :(
-		if( gl.glexVer > 1 )
+#ifdef __MOBILE__ // Not avaliable for gles1 :(
+		if( gl.glesVer > 1 )
 #endif
 		srcblend = GL_SRC_COLOR;
-
 	}
 
 	*tm = texturemode;
