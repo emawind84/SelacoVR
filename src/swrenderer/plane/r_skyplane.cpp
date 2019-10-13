@@ -54,6 +54,8 @@
 #include "swrenderer/r_renderthread.h"
 #include "g_levellocals.h"
 
+extern int sskyoffset;
+
 CVAR(Bool, r_linearsky, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 EXTERN_CVAR(Int, r_skymode)
 
@@ -152,7 +154,7 @@ namespace swrenderer
 				frontcyl = MAX(frontskytex->GetWidth(), frontxscale);
 				if (skystretch)
 				{
-					skymid = skymid * frontskytex->GetScaledHeightDouble() / SKYSTRETCH_HEIGHT;
+					skymid = skymid * frontskytex->GetScaledHeightDouble() / (SKYSTRETCH_HEIGHT + sskyoffset);
 				}
 			}
 		}
@@ -231,7 +233,7 @@ namespace swrenderer
 
 	void RenderSkyPlane::DrawSkyColumn(int start_x, int y1, int y2)
 	{
-		if (1 << frontskytex->HeightBits == frontskytex->GetHeight())
+		if (1 << frontskytex->HeightBits >= frontskytex->GetHeight())
 		{
 			double texturemid = skymid * frontskytex->Scale.Y + frontskytex->GetHeight();
 			DrawSkyColumnStripe(start_x, y1, y2, frontskytex->Scale.Y, texturemid, frontskytex->Scale.Y);
