@@ -257,7 +257,6 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
         if( gl.glesVer == 1 )
         {
     	    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, (mipmap && TexFilter[gl_texture_filter].mipmapping) );
-    	    glTex->mipmapped = true;
     	}
 #endif
 		rw = GetTexDimension (w);
@@ -338,6 +337,22 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glTex->mipmapped = true;
 	}
+#ifdef __MOBILE__
+    if( gl.glesVer == 1 )
+    {
+    	bool use_mipmapping = TexFilter[gl_texture_filter].mipmapping;
+	
+	    if (mipmap && use_mipmapping)
+	    {
+	        glTex->mipmapped = true;
+	    }
+	    else
+	    {
+	        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, TexFilter[gl_texture_filter].magfilter);
+	    }
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, TexFilter[gl_texture_filter].magfilter);
+	}
+#endif
 
 	if (texunit != 0) glActiveTexture(GL_TEXTURE0);
 	return glTex->glTexID;
