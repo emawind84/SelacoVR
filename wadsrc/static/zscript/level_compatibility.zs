@@ -1373,6 +1373,12 @@ class LevelCompatibility native play
 				break;
 			}
 
+			case '63BDD083A98A48C04B8CD58AA857F77D': // Scythe MAP22
+			{
+				// Wall behind start creates HOM in software renderer due to weird sector
+				OffsetSectorPlane(236, Sector.Floor, -40);
+			}
+
 			case '1C795660D2BA9FC93DA584C593FD1DA3': // Scythe 2 MAP17
 			{
 				// Texture displays incorrectly in hardware renderer
@@ -1416,6 +1422,21 @@ class LevelCompatibility native play
 				OffsetSectorPlane(990,	Sector.ceiling, val);
 				OffsetSectorPlane(245,	Sector.ceiling, val);
 				OffsetSectorPlane(3044,	Sector.ceiling, val);
+				break;
+			}
+
+			case '66B931B03618EDE5C022A1EC87189158': // Restoring Deimos MAP03
+			{
+				// Missing teleport destination on easy skill
+				SetThingSkills(62, 31);
+				break;
+			}
+
+			case '17314071AB76F4789763428FA2E8DA4C': // Skulldash Expanded Edition MAP04
+			{
+				// Missing teleport destination on easy skill
+				SetThingSkills(164, 31);
+				break;
 			}
 		}
 	}

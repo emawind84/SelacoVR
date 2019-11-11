@@ -3904,7 +3904,7 @@ void AActor::Tick ()
 		// (for backwards compatibility this must check for lack of damage function, not for zero damage!)
 		if ((flags & MF_MISSILE) && Vel.X == 0 && Vel.Y == 0 && !IsZeroDamage())
 		{
-			Vel.X = MinVel;
+			VelFromAngle(MinVel);
 		}
 
 		// Handle X and Y velocities
@@ -5016,6 +5016,7 @@ AActor *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 
 	mobj = Spawn (p->cls, spawn, NO_REPLACE);
 
+	if (mobj == nullptr) return nullptr;
 	if (level.flags & LEVEL_USEPLAYERSTARTZ)
 	{
 		if (spawn.Z == ONFLOORZ)
@@ -5710,6 +5711,8 @@ void P_SpawnBlood (const DVector3 &pos1, DAngle dir, int damage, AActor *origina
 	if (bloodcls != NULL)
 	{
 		th = Spawn(bloodcls, pos, NO_REPLACE); // GetBloodType already performed the replacement
+
+		if (th == nullptr) return;
 		th->Vel.Z = 2;
 		th->Angles.Yaw = dir;
 		// [NG] Applying PUFFGETSOWNER to the blood will make it target the owner
@@ -5817,6 +5820,8 @@ void P_BloodSplatter (const DVector3 &pos, AActor *originator, DAngle hitangle)
 		AActor *mo;
 
 		mo = Spawn(bloodcls, pos, NO_REPLACE); // GetBloodType already performed the replacement
+
+		if (mo == nullptr) return;
 		mo->target = originator;
 		mo->Vel.X = pr_splatter.Random2 () / 64.;
 		mo->Vel.Y = pr_splatter.Random2() / 64.;
@@ -5861,6 +5866,8 @@ void P_BloodSplatter2 (const DVector3 &pos, AActor *originator, DAngle hitangle)
 
 
 		mo = Spawn (bloodcls, pos + add, NO_REPLACE); // GetBloodType already performed the replacement
+
+		if (mo == nullptr) return;
 		mo->target = originator;
 
 		// colorize the blood!
@@ -5915,6 +5922,8 @@ void P_RipperBlood (AActor *mo, AActor *bleeder)
 	{
 		AActor *th;
 		th = Spawn (bloodcls, pos, NO_REPLACE); // GetBloodType already performed the replacement
+
+		if (th == nullptr) return;
 		// [NG] Applying PUFFGETSOWNER to the blood will make it target the owner
 		if (th->flags5 & MF5_PUFFGETSOWNER) th->target = bleeder;
 		if (gameinfo.gametype == GAME_Heretic)
@@ -6065,6 +6074,8 @@ foundone:
 			if (splash->SplashChunk)
 			{
 				mo = Spawn(splash->SplashChunk, pos, ALLOW_REPLACE);
+
+				if (!mo) return false;
 				mo->target = thing;
 				if (splash->ChunkXVelShift != 255)
 				{
@@ -6364,7 +6375,7 @@ AActor *P_SpawnMissileXYZ (DVector3 pos, AActor *source, AActor *dest, PClassAct
 	P_PlaySpawnSound(th, source);
 
 	// record missile's originator
-	if (owner == NULL) owner = source;
+	if (owner == nullptr) owner = source;
 	th->target = owner;
 
 	double speed = th->Speed;
@@ -6621,7 +6632,7 @@ AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target)
 {
 	AActor *other = Spawn(type, source->Pos(), ALLOW_REPLACE);
 
-	if (source == nullptr || type == nullptr)
+	if (other == nullptr || source == nullptr || type == nullptr)
 	{
 		return nullptr;
 	}
@@ -6735,6 +6746,8 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 	}
 	DVector3 pos = source->Vec2OffsetZ(x, y, z);
 	AActor *MissileActor = Spawn (type, pos, ALLOW_REPLACE);
+
+	if (MissileActor == nullptr) return nullptr;
 	if (pMissileActor) *pMissileActor = MissileActor;
 	P_PlaySpawnSound(MissileActor, source);
 	MissileActor->target = source;
