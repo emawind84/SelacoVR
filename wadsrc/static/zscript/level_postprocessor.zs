@@ -48,7 +48,7 @@ class LevelPostProcessor native play
 
 	protected native void SetVertex(uint vertex, double x, double y);
 	protected native void SetLineVertexes(uint Line, uint v1, uint v2);
-	protected native void FlipLineSideRefs(uint Line);
+	protected native void SetLineSideRefs(uint Line, uint s1, uint s2);
 	protected native void SetLineSectorRef(uint line, uint side, uint sector);
 	protected native Actor GetDefaultActor(Name actorclass);
 
@@ -59,10 +59,11 @@ class LevelPostProcessor native play
 		SetLineVertexes(Line, v2, v1);
 	}
 
-	protected void FlipLineCompletely(uint Line)
+	protected void FlipLineSideRefs(uint Line)
 	{
-		FlipLineVertexes(Line);
-		FlipLineSideRefs(Line);
+		uint s1 = level.lines[Line].sidedef[0].Index();
+		uint s2 = level.lines[Line].sidedef[1].Index();
+		SetLineSideRefs(Line, s2, s1);
 	}
 
 	protected void SetWallTexture(int line, int side, int texpart, String texture)
