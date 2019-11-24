@@ -59,6 +59,12 @@ class LevelPostProcessor native play
 		SetLineVertexes(Line, v2, v1);
 	}
 
+	protected void FlipLineCompletely(uint Line)
+	{
+		FlipLineVertexes(Line);
+		FlipLineSideRefs(Line);
+	}
+
 	protected void SetWallTexture(int line, int side, int texpart, String texture)
 	{
 		SetWallTextureID(line, side, texpart, TexMan.CheckForTexture(texture, TexMan.Type_Wall));
