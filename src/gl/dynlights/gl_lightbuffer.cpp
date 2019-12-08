@@ -58,7 +58,9 @@ FLightBuffer::FLightBuffer()
 	}
 
 	glGenBuffers(1, &mBufferId);
+#ifndef __ANDROID__	// This makes Ardeno 530 crash for some reason..
 	glBindBufferBase(mBufferType, LIGHTBUF_BINDINGPOINT, mBufferId);
+#endif
 	glBindBuffer(mBufferType, mBufferId);	// Note: Some older AMD drivers don't do that in glBindBufferBase, as they should.
 	if (gl.lightmethod == LM_DIRECT)
 	{
