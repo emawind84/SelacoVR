@@ -240,7 +240,7 @@ namespace swrenderer
 
 		if (pspr->Flags & PSPF_ADDBOB)
 		{
-			sx += bobx;
+			sx += (pspr->Flags & PSPF_MIRROR) ? -bobx : bobx;
 			sy += boby;
 		}
 
@@ -253,20 +253,21 @@ namespace swrenderer
 		auto viewport = Thread->Viewport.get();
 
 		double pspritexscale = viewport->viewwindow.centerxwide / 160.0;
-		double pspriteyscale = pspritexscale * viewport->YaspectMul;
+		double pspriteyscale = pspritexscale * viewport->BaseYaspectMul * ((double)SCREENHEIGHT / SCREENWIDTH) * r_viewwindow.WidescreenRatio;
 		double pspritexiscale = 1 / pspritexscale;
 
-		// calculate edges of the shape
-		tx = sx - BASEXCENTER;
+		int tleft = tex->GetScaledLeftOffset();
+		int twidth = tex->GetScaledWidth();
 
-		tx -= tex->GetScaledLeftOffset();
+		// calculate edges of the shape
+		tx = (pspr->Flags & PSPF_MIRROR) ? ((BASEXCENTER - twidth) - (sx - tleft)) : ((sx - BASEXCENTER) - tleft);
 		x1 = xs_RoundToInt(viewport->CenterX + tx * pspritexscale);
 
 		// off the right side
 		if (x1 > viewwidth)
 			return;
 
-		tx += tex->GetScaledWidth();
+		tx += twidth;
 		x2 = xs_RoundToInt(viewport->CenterX + tx * pspritexscale);
 
 		// off the left side
@@ -538,7 +539,7 @@ namespace swrenderer
 		thread->PrepareTexture(pic);
 		for (int x = x1; x < x2; x++)
 		{
-			drawerargs.DrawMaskedColumn(thread, x, iscale, pic, frac, spryscale, sprtopscreen, sprflipvert, mfloorclip, mceilingclip, false);
+			drawerargs.DrawMaskedColumn(thread, x, iscale, pic, frac + xiscale / 2, spryscale, sprtopscreen, sprflipvert, mfloorclip, mceilingclip, false);
 			frac += xiscale;
 		}
 

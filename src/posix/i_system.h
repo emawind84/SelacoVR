@@ -30,6 +30,8 @@
 #include <dirent.h>
 #include <ctype.h>
 
+#define __solaris__ (defined(__sun) || defined(__sun__) || defined(__SRV4) || defined(__srv4__))
+
 #include "doomtype.h"
 
 struct ticcmd_t;
@@ -67,6 +69,7 @@ extern int (*I_WaitForTic) (int);
 extern void (*I_FreezeTime) (bool frozen);
 
 double I_GetTimeFrac (uint32_t *ms);
+void I_SetFrameTime();
 
 // Return a seed value for the RNG.
 unsigned int I_MakeRNGSeed();
@@ -146,9 +149,16 @@ bool I_SetCursor(FTexture *);
 
 struct findstate_t
 {
+private:
     int count;
     struct dirent **namelist;
     int current;
+
+	friend void *I_FindFirst(const char *filespec, findstate_t *fileinfo);
+	friend int I_FindNext(void *handle, findstate_t *fileinfo);
+	friend const char *I_FindName(findstate_t *fileinfo);
+	friend int I_FindAttr(findstate_t *fileinfo);
+	friend int I_FindClose(void *handle);
 };
 
 void *I_FindFirst (const char *filespec, findstate_t *fileinfo);
@@ -156,7 +166,10 @@ int I_FindNext (void *handle, findstate_t *fileinfo);
 int I_FindClose (void *handle);
 int I_FindAttr (findstate_t *fileinfo); 
 
-#define I_FindName(a)	((a)->namelist[(a)->current]->d_name)
+inline const char *I_FindName(findstate_t *fileinfo)
+{
+	return (fileinfo->namelist[fileinfo->current]->d_name);
+}
 
 #define FA_RDONLY	1
 #define FA_HIDDEN	2

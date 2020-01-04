@@ -46,6 +46,8 @@
 
 CVAR(String, r_viewsize, "", CVAR_NOSET)
 
+EXTERN_CVAR(Float, r_visibility);
+
 namespace swrenderer
 {
 	RenderViewport::RenderViewport()
@@ -96,12 +98,14 @@ namespace swrenderer
 			virtwidth = virtwidth * AspectMultiplier(viewwindow.WidescreenRatio) / 48;
 		}
 
+		double ypixelstretch = (level.info) ? level.info->pixelstretch : 1.2;
+
 		BaseYaspectMul = 320.0 * virtheight2 / (r_Yaspect * virtwidth2);
-		YaspectMul = 320.0 * virtheight / (r_Yaspect * virtwidth);
+		YaspectMul = 320.0 * virtheight / (r_Yaspect * virtwidth) * ypixelstretch / 1.2;
 		IYaspectMul = (double)virtwidth * r_Yaspect / 320.0 / virtheight;
 		InvZtoScale = YaspectMul * CenterX;
 
-		WallTMapScale2 = IYaspectMul / CenterX;
+		WallTMapScale2 = IYaspectMul / CenterX * 1.2 / ypixelstretch;
 
 		// thing clipping
 		fillshort(screenheightarray, viewwidth, (short)viewheight);
@@ -109,7 +113,7 @@ namespace swrenderer
 		InitTextureMapping();
 
 		// Reset r_*Visibility vars
-		thread->Light->SetVisibility(this, thread->Light->GetVisibility());
+		thread->Light->SetVisibility(this, r_visibility);
 
 		SetupBuffer();
 	}

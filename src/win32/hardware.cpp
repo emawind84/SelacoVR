@@ -56,6 +56,7 @@ EXTERN_CVAR (Bool, vid_forceddraw)
 
 CVAR(Int, win_x, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Int, win_y, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, win_maximized, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 extern HWND Window;
 
@@ -382,6 +383,8 @@ void I_SaveWindowedPos ()
 			win_x = wrect.left;
 			win_y = wrect.top;
 		}
+
+		win_maximized = IsZoomed(Window) == TRUE;
 	}
 }
 
@@ -409,6 +412,9 @@ void I_RestoreWindowedPos ()
 		KeepWindowOnScreen (winx, winy, winw, winh, scrwidth, scrheight);
 	}
 	MoveWindow (Window, winx, winy, winw, winh, TRUE);
+
+	if (win_maximized && !Args->CheckParm("-0"))
+		ShowWindow(Window, SW_MAXIMIZE);
 }
 
 extern int NewWidth, NewHeight, NewBits, DisplayBits;
@@ -419,8 +425,8 @@ CUSTOM_CVAR(Bool, swtruecolor, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITC
 	// way to force a CreateFramebuffer call without a lot of refactoring.
 	if (currentrenderer == 0)
 	{
-		NewWidth = screen->GetWidth();
-		NewHeight = screen->GetHeight();
+		NewWidth = screen->VideoWidth;
+		NewHeight = screen->VideoHeight;
 		NewBits = DisplayBits;
 		setmodeneeded = true;
 	}
@@ -428,8 +434,8 @@ CUSTOM_CVAR(Bool, swtruecolor, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITC
 
 CUSTOM_CVAR (Bool, fullscreen, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 {
-	NewWidth = screen->GetWidth();
-	NewHeight = screen->GetHeight();
+	NewWidth = screen->VideoWidth;
+	NewHeight = screen->VideoHeight;
 	NewBits = DisplayBits;
 	setmodeneeded = true;
 }
@@ -443,8 +449,8 @@ CUSTOM_CVAR (Float, vid_winscale, 1.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 	else if (Video)
 	{
 		Video->SetWindowedScale (self);
-		NewWidth = screen->GetWidth();
-		NewHeight = screen->GetHeight();
+		NewWidth = screen->VideoWidth;
+		NewHeight = screen->VideoHeight;
 		NewBits = DisplayBits;
 		//setmodeneeded = true;	// This CVAR doesn't do anything and only causes problems!
 	}

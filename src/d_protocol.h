@@ -116,8 +116,8 @@ enum EDemoCommand
 	DEM_UNDONE5,		// 24
 	DEM_UNDONE6,		// 25
 	DEM_SUMMON,			// 26 String: Thing to fabricate
-	DEM_FOV,			// 27 Byte: New FOV for all players
-	DEM_MYFOV,			// 28 Byte: New FOV for this player
+	DEM_FOV,			// 27 Float: New FOV for all players
+	DEM_MYFOV,			// 28 Float: New FOV for this player
 	DEM_CHANGEMAP2,		// 29 Byte: Position in new map, String: name of new map
 	DEM_UNDONE7,		// 30
 	DEM_UNDONE8,		// 31
@@ -219,7 +219,8 @@ enum ECheatCommand
 	CHT_BUDDHA,
 	CHT_NOCLIP2,
 	CHT_BUDDHA2,
-	CHT_GOD2
+	CHT_GOD2,
+	CHT_MASSACRE2
 };
 
 void StartChunk (int id, uint8_t **stream);

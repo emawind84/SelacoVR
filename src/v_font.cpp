@@ -381,6 +381,7 @@ FFont::FFont (const char *name, const char *nametemplate, int first, int count, 
 	Next = FirstFont;
 	FirstFont = this;
 	Cursor = '_';
+	ActiveColors = 0;
 
 	maxyoffs = 0;
 
@@ -765,6 +766,7 @@ FRemapTable *FFont::GetColorTranslation (EColorRange range, PalEntry *color) con
 		if (range >= 0 && range < NumTextColors && range != CR_UNTRANSLATED)
 		{
 			retcolor = TranslationColors[range];
+			retcolor.a = 255;
 		}
 		if (color != nullptr) *color = retcolor;
 	}
@@ -2273,7 +2275,7 @@ void V_InitCustomFonts()
 					{
 						*p = TexMan[texid];
 					}
-					else if (Wads.GetLumpFile(sc.LumpNum) >= Wads.IWAD_FILENUM)
+					else if (Wads.GetLumpFile(sc.LumpNum) >= Wads.GetIwadNum())
 					{
 						// Print a message only if this isn't in zdoom.pk3
 						sc.ScriptMessage("%s: Unable to find texture in font definition for %s", sc.String, namebuffer.GetChars());
@@ -2664,7 +2666,7 @@ EColorRange V_ParseFontColor (const uint8_t *&color_value, int normalcolor, int 
 	}
 	else							// Incomplete!
 	{
-		color_value = ch - (*ch == '\0');
+		color_value = ch - (newcolor == '\0');
 		return CR_UNDEFINED;
 	}
 	color_value = ch;

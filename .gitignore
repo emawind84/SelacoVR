@@ -46,6 +46,7 @@
 /build_vc2015
 /build_vc2015-32
 /build_vc2015-64
+/build_vc2017-64
 /build
 /llvm
 /src/r_drawersasm.obj
@@ -73,3 +74,4 @@ arch.c
 CMakeCache.txt
 g_pch.cpp
 config.h
+.vs

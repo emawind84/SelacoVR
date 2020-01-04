@@ -83,7 +83,9 @@ CVAR(Bool, gl_sort_textures, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 EXTERN_CVAR (Bool, cl_capfps)
 EXTERN_CVAR (Bool, r_deathcamera)
 EXTERN_CVAR (Float, underwater_fade_scalar)
-
+EXTERN_CVAR (Float, r_visibility)
+EXTERN_CVAR (Bool, gl_legacy_mode)
+EXTERN_CVAR (Bool, r_drawvoxels)
 
 extern bool NoInterpolateView;
 
@@ -796,6 +798,8 @@ sector_t * GLSceneDrawer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, f
 	R_SetupFrame (r_viewpoint, r_viewwindow, camera);
 	SetViewArea();
 
+	GLRenderer->mGlobVis = R_GetGlobVis(r_viewwindow, r_visibility);
+
 	// We have to scale the pitch to account for the pixel stretching, because the playsim doesn't know about this and treats it as 1:1.
 	double radPitch = r_viewpoint.Angles.Pitch.Normalized180().Radians();
 	double angx = cos(radPitch);
@@ -995,7 +999,7 @@ struct FGLInterface : public FRenderer
 	void WriteSavePic (player_t *player, FileWriter *file, int width, int height) override;
 	void StartSerialize(FSerializer &arc) override;
 	void EndSerialize(FSerializer &arc) override;
-	void RenderTextureView (FCanvasTexture *self, AActor *viewpoint, int fov) override;
+	void RenderTextureView (FCanvasTexture *self, AActor *viewpoint, double fov) override;
 	void PreprocessLevel() override;
 	void CleanLevelData() override;
 	bool RequireGLNodes() override;
@@ -1003,6 +1007,7 @@ struct FGLInterface : public FRenderer
 	int GetMaxViewPitch(bool down) override;
 	void SetClearColor(int color) override;
 	void Init() override;
+	uint32_t GetCaps() override;
 };
 
 //==========================================================================
@@ -1105,7 +1110,7 @@ void FGLInterface::Init()
 CVAR(Bool, gl_usefb, false , CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 extern TexFilter_s TexFilter[];
 
-void FGLInterface::RenderTextureView (FCanvasTexture *tex, AActor *Viewpoint, int FOV)
+void FGLInterface::RenderTextureView (FCanvasTexture *tex, AActor *Viewpoint, double FOV)
 {
 	FMaterial * gltex = FMaterial::ValidateTexture(tex, false);
 
@@ -1170,6 +1175,31 @@ bool FGLInterface::RequireGLNodes()
 	return true; 
 }
 
+uint32_t FGLInterface::GetCaps()
+{
+	// describe our basic feature set
+	ActorRenderFeatureFlags FlagSet = RFF_FLATSPRITES | RFF_MODELS | RFF_SLOPE3DFLOORS |
+		RFF_TILTPITCH | RFF_ROLLSPRITES | RFF_POLYGONAL;
+	if (r_drawvoxels)
+		FlagSet |= RFF_VOXELS;
+	if (gl_legacy_mode)
+	{
+		// legacy mode always has truecolor because palette tonemap is not available
+		FlagSet |= RFF_TRUECOLOR;
+	}
+	else if (!(FGLRenderBuffers::IsEnabled()))
+	{
+		// truecolor is always available when renderbuffers are unavailable because palette tonemap is not possible
+		FlagSet |= RFF_TRUECOLOR | RFF_MATSHADER | RFF_BRIGHTMAP;
+	}
+	else
+	{
+		if (gl_tonemap != 5) // not running palette tonemap shader
+			FlagSet |= RFF_TRUECOLOR;
+		FlagSet |= RFF_MATSHADER | RFF_POSTSHADER | RFF_BRIGHTMAP;
+	}
+	return (uint32_t)FlagSet;
+}
 //===========================================================================
 //
 // 

@@ -114,6 +114,7 @@ struct gameinfo_t
 	bool nightmarefast;
 	bool swapmenu;
 	bool dontcrunchcorpses;
+	bool correctprintbold;
 	TArray<FName> creditPages;
 	TArray<FName> finalePages;
 	TArray<FName> infoPages;
@@ -159,6 +160,7 @@ struct gameinfo_t
 	FString CursorPic;
 	uint32_t dimcolor;
 	float dimamount;
+	float bluramount;
 	int definventorymaxamount;
 	int defaultrespawntime;
 	int defaultdropstyle;

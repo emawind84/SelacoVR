@@ -319,16 +319,22 @@ namespace swrenderer
 		side_t *sidedef = mLineSegment->sidedef;
 
 		RenderPortal *renderportal = Thread->Portal.get();
+		Clip3DFloors *clip3d = Thread->Clip3D.get();
 
 		DrawSegment *draw_segment = Thread->FrameMemory->NewObject<DrawSegment>();
-		Thread->DrawSegments->Push(draw_segment);
+
+		// 3D floors code abuses the line render code to update plane clipping
+		// lists but doesn't actually draw anything.
+		bool onlyUpdatePlaneClip = (clip3d->fake3D & FAKE3D_FAKEMASK) ? true : false;
+		if (!onlyUpdatePlaneClip)
+			Thread->DrawSegments->Push(draw_segment);
 
 		draw_segment->CurrentPortalUniq = renderportal->CurrentPortalUniq;
 		draw_segment->sx1 = WallC.sx1;
 		draw_segment->sx2 = WallC.sx2;
 		draw_segment->sz1 = WallC.sz1;
 		draw_segment->sz2 = WallC.sz2;
-		draw_segment->cx = WallC.tleft.X;;
+		draw_segment->cx = WallC.tleft.X;
 		draw_segment->cy = WallC.tleft.Y;
 		draw_segment->cdx = WallC.tright.X - WallC.tleft.X;
 		draw_segment->cdy = WallC.tright.Y - WallC.tleft.Y;
@@ -338,19 +344,7 @@ namespace swrenderer
 		draw_segment->x1 = start;
 		draw_segment->x2 = stop;
 		draw_segment->curline = mLineSegment;
-		draw_segment->bFogBoundary = false;
-		draw_segment->bFakeBoundary = false;
 		draw_segment->foggy = foggy;
-
-		Clip3DFloors *clip3d = Thread->Clip3D.get();
-		if (clip3d->fake3D & FAKE3D_FAKEMASK) draw_segment->fake = 1;
-		else draw_segment->fake = 0;
-
-		draw_segment->sprtopclip = nullptr;
-		draw_segment->sprbottomclip = nullptr;
-		draw_segment->maskedtexturecol = nullptr;
-		draw_segment->bkup = nullptr;
-		draw_segment->swall = nullptr;
 
 		bool markportal = ShouldMarkPortal();
 
@@ -369,8 +363,6 @@ namespace swrenderer
 		else
 		{
 			// two sided line
-			draw_segment->silhouette = 0;
-
 			if (mFrontFloorZ1 > mBackFloorZ1 || mFrontFloorZ2 > mBackFloorZ2 ||
 				mBackSector->floorplane.PointOnSide(Thread->Viewport->viewpoint.Pos) < 0)
 			{
@@ -406,29 +398,32 @@ namespace swrenderer
 				}
 			}
 
-			if (!draw_segment->fake && r_3dfloors && mBackSector->e && mBackSector->e->XFloor.ffloors.Size()) {
-				for (i = 0; i < (int)mBackSector->e->XFloor.ffloors.Size(); i++) {
-					F3DFloor *rover = mBackSector->e->XFloor.ffloors[i];
-					if (rover->flags & FF_RENDERSIDES && (!(rover->flags & FF_INVERTSIDES) || rover->flags & FF_ALLSIDES)) {
-						draw_segment->bFakeBoundary |= 1;
-						break;
+			if (!onlyUpdatePlaneClip && r_3dfloors)
+			{
+				if (mBackSector->e && mBackSector->e->XFloor.ffloors.Size()) {
+					for (i = 0; i < (int)mBackSector->e->XFloor.ffloors.Size(); i++) {
+						F3DFloor *rover = mBackSector->e->XFloor.ffloors[i];
+						if (rover->flags & FF_RENDERSIDES && (!(rover->flags & FF_INVERTSIDES) || rover->flags & FF_ALLSIDES)) {
+							draw_segment->SetHas3DFloorBackSectorWalls();
+							break;
+						}
+					}
+				}
+				if (mFrontSector->e && mFrontSector->e->XFloor.ffloors.Size()) {
+					for (i = 0; i < (int)mFrontSector->e->XFloor.ffloors.Size(); i++) {
+						F3DFloor *rover = mFrontSector->e->XFloor.ffloors[i];
+						if (rover->flags & FF_RENDERSIDES && (rover->flags & FF_ALLSIDES || rover->flags & FF_INVERTSIDES)) {
+							draw_segment->SetHas3DFloorFrontSectorWalls();
+							break;
+						}
 					}
 				}
 			}
-			if (!draw_segment->fake && r_3dfloors && mFrontSector->e && mFrontSector->e->XFloor.ffloors.Size()) {
-				for (i = 0; i < (int)mFrontSector->e->XFloor.ffloors.Size(); i++) {
-					F3DFloor *rover = mFrontSector->e->XFloor.ffloors[i];
-					if (rover->flags & FF_RENDERSIDES && (rover->flags & FF_ALLSIDES || rover->flags & FF_INVERTSIDES)) {
-						draw_segment->bFakeBoundary |= 2;
-						break;
-					}
-				}
-			}
-			// kg3D - no for fakes
-			if (!draw_segment->fake)
+
+			if (!onlyUpdatePlaneClip)
 				// allocate space for masked texture tables, if needed
 				// [RH] Don't just allocate the space; fill it in too.
-				if ((TexMan(sidedef->GetTexture(side_t::mid), true)->UseType != FTexture::TEX_Null || draw_segment->bFakeBoundary || IsFogBoundary(mFrontSector, mBackSector)) &&
+				if ((TexMan(sidedef->GetTexture(side_t::mid), true)->UseType != FTexture::TEX_Null || draw_segment->Has3DFloorWalls() || IsFogBoundary(mFrontSector, mBackSector)) &&
 					(mCeilingClipped != ProjectedWallCull::OutsideBelow || !sidedef->GetTexture(side_t::top).isValid()) &&
 					(mFloorClipped != ProjectedWallCull::OutsideAbove || !sidedef->GetTexture(side_t::bottom).isValid()) &&
 					(WallC.sz1 >= TOO_CLOSE_Z && WallC.sz2 >= TOO_CLOSE_Z))
@@ -444,10 +439,10 @@ namespace swrenderer
 					memcpy(draw_segment->bkup, &Thread->OpaquePass->ceilingclip[start], sizeof(short)*(stop - start));
 
 					draw_segment->bFogBoundary = IsFogBoundary(mFrontSector, mBackSector);
-					if (sidedef->GetTexture(side_t::mid).isValid() || draw_segment->bFakeBoundary)
+					if (sidedef->GetTexture(side_t::mid).isValid() || draw_segment->Has3DFloorWalls())
 					{
 						if (sidedef->GetTexture(side_t::mid).isValid())
-							draw_segment->bFakeBoundary |= 4; // it is also mid texture
+							draw_segment->SetHas3DFloorMidTexture();
 
 						draw_segment->maskedtexturecol = Thread->FrameMemory->AllocMemory<fixed_t>(stop - start);
 						draw_segment->swall = Thread->FrameMemory->AllocMemory<float>(stop - start);
@@ -483,9 +478,9 @@ namespace swrenderer
 						iend = 1 / iend;
 						draw_segment->yscale = (float)yscale;
 						draw_segment->iscale = (float)istart;
-						if (stop - start > 0)
+						if (stop - start > 1)
 						{
-							draw_segment->iscalestep = float((iend - istart) / (stop - start));
+							draw_segment->iscalestep = float((iend - istart) / (stop - start - 1));
 						}
 						else
 						{
@@ -510,7 +505,7 @@ namespace swrenderer
 
 					if (draw_segment->bFogBoundary || draw_segment->maskedtexturecol != nullptr)
 					{
-						Thread->DrawSegments->PushInteresting(draw_segment);
+						Thread->DrawSegments->PushTranslucent(draw_segment);
 					}
 				}
 		}
@@ -1297,45 +1292,58 @@ namespace swrenderer
 			swapvalues(tleft.Y, tright.Y);
 		}
 
+		float fsx1, fsz1, fsx2, fsz2;
+
 		if (tleft.X >= -tleft.Y)
 		{
 			if (tleft.X > tleft.Y) return true;	// left edge is off the right side
 			if (tleft.Y == 0) return true;
-			sx1 = xs_RoundToInt(viewport->CenterX + tleft.X * viewport->CenterX / tleft.Y);
-			sz1 = tleft.Y;
+			fsx1 = viewport->CenterX + tleft.X * viewport->CenterX / tleft.Y;
+			fsz1 = tleft.Y;
 		}
 		else
 		{
 			if (tright.X < -tright.Y) return true;	// wall is off the left side
 			float den = tleft.X - tright.X - tright.Y + tleft.Y;
 			if (den == 0) return true;
-			sx1 = 0;
-			sz1 = tleft.Y + (tright.Y - tleft.Y) * (tleft.X + tleft.Y) / den;
+			fsx1 = 0;
+			fsz1 = tleft.Y + (tright.Y - tleft.Y) * (tleft.X + tleft.Y) / den;
 		}
 
-		if (sz1 < too_close)
+		if (fsz1 < too_close)
 			return true;
 
 		if (tright.X <= tright.Y)
 		{
 			if (tright.X < -tright.Y) return true;	// right edge is off the left side
 			if (tright.Y == 0) return true;
-			sx2 = xs_RoundToInt(viewport->CenterX + tright.X * viewport->CenterX / tright.Y);
-			sz2 = tright.Y;
+			fsx2 = viewport->CenterX + tright.X * viewport->CenterX / tright.Y;
+			fsz2 = tright.Y;
 		}
 		else
 		{
 			if (tleft.X > tleft.Y) return true;	// wall is off the right side
 			float den = tright.Y - tleft.Y - tright.X + tleft.X;
 			if (den == 0) return true;
-			sx2 = viewwidth;
-			sz2 = tleft.Y + (tright.Y - tleft.Y) * (tleft.X - tleft.Y) / den;
+			fsx2 = viewwidth;
+			fsz2 = tleft.Y + (tright.Y - tleft.Y) * (tleft.X - tleft.Y) / den;
 		}
 
-		if (sz2 < too_close || sx2 <= sx1)
+		if (fsz2 < too_close)
 			return true;
 
-		return false;
+		sx1 = xs_RoundToInt(fsx1);
+		sx2 = xs_RoundToInt(fsx2);
+
+		float delta = fsx2 - fsx1;
+		float t1 = (sx1 + 0.5f - fsx1) / delta;
+		float t2 = (sx2 + 0.5f - fsx1) / delta;
+		float invZ1 = 1.0f / fsz1;
+		float invZ2 = 1.0f / fsz2;
+		sz1 = 1.0f / (invZ1 * (1.0f - t1) + invZ2 * t1);
+		sz2 = 1.0f / (invZ1 * (1.0f - t2) + invZ2 * t2);
+
+		return sx2 <= sx1;
 	}
 
 	/////////////////////////////////////////////////////////////////////////
@@ -1351,9 +1359,9 @@ namespace swrenderer
 		{
 			swapvalues(left, right);
 		}
-		UoverZorg = left->X * thread->Viewport->viewwindow.centerx;
+		UoverZorg = left->X * thread->Viewport->CenterX;
 		UoverZstep = -left->Y;
-		InvZorg = (left->X - right->X) * thread->Viewport->viewwindow.centerx;
+		InvZorg = (left->X - right->X) * thread->Viewport->CenterX;
 		InvZstep = right->Y - left->Y;
 	}
 
@@ -1376,9 +1384,9 @@ namespace swrenderer
 			fullx2 = -fullx2;
 		}
 
-		UoverZorg = float(fullx1 * viewport->viewwindow.centerx);
+		UoverZorg = float(fullx1 * viewport->CenterX);
 		UoverZstep = float(-fully1);
-		InvZorg = float((fullx1 - fullx2) * viewport->viewwindow.centerx);
+		InvZorg = float((fullx1 - fullx2) * viewport->CenterX);
 		InvZstep = float(fully2 - fully1);
 	}
 }

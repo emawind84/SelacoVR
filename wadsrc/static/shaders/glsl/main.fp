@@ -103,12 +103,6 @@ vec4 getTexel(vec2 st)
 //===========================================================================
 float R_DoomLightingEquation(float light)
 {
-	// globVis = WallVisibility / r_viewwindow.FocalTangent / 32.0
-	//
-	// WallVisibility is calculated in LightVisibility::SetVisibility
-	// 1706 is the default value for WallVisibility on 1080p 16:9 displays.
-	float globVis = 1706.0 / 1.3333333333333333 / 32.0;
-
 	// L is the integer light level used in the game
 	float L = light * 255.0;
 
@@ -124,11 +118,11 @@ float R_DoomLightingEquation(float light)
 	}
 
 	// The zdoom light equation
-	float vis = min(globVis / z, 24.0 / 32.0);
+	float vis = min(uGlobVis / z, 24.0 / 32.0);
 	float shade = 2.0 - (L + 12.0) / 128.0;
 	float lightscale;
 	if ((uPalLightLevels & 0xff) != 0)
-		lightscale = float(-int(-(shade - vis) * 32.0)) / 32.0;
+		lightscale = float(-floor(-(shade - vis) * 31.0) - 0.5) / 31.0;
 	else
 		lightscale = shade - vis;
 
@@ -144,25 +138,55 @@ float R_DoomLightingEquation(float light)
 
 #ifdef SUPPORTS_SHADOWMAPS
 
-float sampleShadowmap(vec2 dir, float v)
+float shadowDirToU(vec2 dir)
 {
-	float u;
 	if (abs(dir.x) > abs(dir.y))
 	{
 		if (dir.x >= 0.0)
-			u = dir.y / dir.x * 0.125 + (0.25 + 0.125);
+			return dir.y / dir.x * 0.125 + (0.25 + 0.125);
 		else
-			u = dir.y / dir.x * 0.125 + (0.75 + 0.125);
+			return dir.y / dir.x * 0.125 + (0.75 + 0.125);
 	}
 	else
 	{
 		if (dir.y >= 0.0)
-			u = dir.x / dir.y * 0.125 + 0.125;
+			return dir.x / dir.y * 0.125 + 0.125;
 		else
-			u = dir.x / dir.y * 0.125 + (0.50 + 0.125);
+			return dir.x / dir.y * 0.125 + (0.50 + 0.125);
 	}
+}
+
+float sampleShadowmap(vec2 dir, float v)
+{
+	float u = shadowDirToU(dir);
 	float dist2 = dot(dir, dir);
 	return texture(ShadowMap, vec2(u, v)).x > dist2 ? 1.0 : 0.0;
+}
+
+float sampleShadowmapLinear(vec2 dir, float v)
+{
+	float u = shadowDirToU(dir);
+	float dist2 = dot(dir, dir);
+
+	vec2 isize = textureSize(ShadowMap, 0);
+	vec2 size = vec2(isize);
+
+	vec2 fetchPos = vec2(u, v) * size - vec2(0.5, 0.0);
+	if (fetchPos.x < 0.0)
+		fetchPos.x += size.x;
+
+	ivec2 ifetchPos = ivec2(fetchPos);
+	int y = ifetchPos.y;
+
+	float t = fract(fetchPos.x);
+	int x0 = ifetchPos.x;
+	int x1 = ifetchPos.x + 1;
+	if (x1 == isize.x)
+		x1 = 0;
+
+	float depth0 = texelFetch(ShadowMap, ivec2(x0, y), 0).x;
+	float depth1 = texelFetch(ShadowMap, ivec2(x1, y), 0).x;
+	return mix(step(dist2, depth0), step(dist2, depth1), t);
 }
 
 //===========================================================================
@@ -173,6 +197,9 @@ float sampleShadowmap(vec2 dir, float v)
 
 #define PCF_FILTER_STEP_COUNT 3
 #define PCF_COUNT (PCF_FILTER_STEP_COUNT * 2 + 1)
+
+// #define USE_LINEAR_SHADOW_FILTER
+#define USE_PCF_SHADOW_FILTER 1
 
 float shadowmapAttenuation(vec4 lightpos, float shadowIndex)
 {
@@ -188,7 +215,11 @@ float shadowmapAttenuation(vec4 lightpos, float shadowIndex)
 
 	vec2 dir = ray / length;
 
-	ray -= dir * 2.0; // margin
+#if defined(USE_LINEAR_SHADOW_FILTER)
+	ray -= dir * 6.0; // Shadow acne margin
+	return sampleShadowmapLinear(ray, v);
+#elif defined(USE_PCF_SHADOW_FILTER)
+	ray -= dir * 2.0; // Shadow acne margin
 	dir = dir * min(length / 50.0, 1.0); // avoid sampling behind light
 
 	vec2 normal = vec2(-dir.y, dir.x);
@@ -200,6 +231,10 @@ float shadowmapAttenuation(vec4 lightpos, float shadowIndex)
 		sum += sampleShadowmap(ray + normal * x - bias * abs(x), v);
 	}
 	return sum / PCF_COUNT;
+#else // nearest shadow filter
+	ray -= dir * 6.0; // Shadow acne margin
+	return sampleShadowmap(ray, v);
+#endif
 }
 
 #endif
@@ -226,6 +261,7 @@ float diffuseContribution(vec3 lightDirection, vec3 normal)
 float pointLightAttenuation(vec4 lightpos, float lightcolorA)
 {
 	float attenuation = max(lightpos.w - distance(pixelpos.xyz, lightpos.xyz),0.0) / lightpos.w;
+	if (attenuation == 0.0) return 0.0;
 #ifdef SUPPORTS_SHADOWMAPS
 	float shadowIndex = abs(lightcolorA) - 1.0;
 	attenuation *= shadowmapAttenuation(lightpos, shadowIndex);

@@ -122,6 +122,8 @@ void R_ExecuteSetViewSize (FRenderViewpoint &viewpoint, FViewWindow &viewwindow)
 void R_SetViewSize (int blocks);
 void R_SetWindow (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, int windowSize, int fullWidth, int fullHeight, int stHeight, bool renderingToCanvas = false);
 
+double R_GetGlobVis(const FViewWindow &viewwindow, double vis);
+double R_ClampVisibility(double vis);
 
 extern void R_FreePastViewers ();
 extern void R_ClearPastViewer (AActor *actor);
@@ -134,9 +136,9 @@ struct FCanvasTextureInfo
 	TObjPtr<AActor*> Viewpoint;
 	FCanvasTexture *Texture;
 	FTextureID PicNum;
-	int FOV;
+	double FOV;
 
-	static void Add (AActor *viewpoint, FTextureID picnum, int fov);
+	static void Add (AActor *viewpoint, FTextureID picnum, double fov);
 	static void UpdateAll ();
 	static void EmptyList ();
 	static void Serialize(FSerializer &arc);

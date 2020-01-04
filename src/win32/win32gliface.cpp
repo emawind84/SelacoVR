@@ -877,7 +877,7 @@ bool Win32GLVideo::InitHardware (HWND Window, int multisample)
 	int prof = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
 	const char *version = Args->CheckValue("-glversion");
 
-	if (version != nullptr && strcmp(version, "3.0") < 0) prof = WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB;
+	if (version != nullptr && strtod(version, nullptr) < 3.0) prof = WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB;
 
 	for (; prof <= WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB; prof++)
 	{
@@ -1260,8 +1260,8 @@ void Win32GLFrameBuffer::NewRefreshRate ()
 	if (m_Fullscreen)
 	{
 		setmodeneeded = true;
-		NewWidth = screen->GetWidth();
-		NewHeight = screen->GetHeight();
+		NewWidth = screen->VideoWidth;
+		NewHeight = screen->VideoHeight;
 		NewBits = DisplayBits;
 	}
 }

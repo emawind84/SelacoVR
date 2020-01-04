@@ -376,10 +376,12 @@ void FMapInfoParser::ParseGameInfo()
 		GAMEINFOKEY_BOOL(drawreadthis, "drawreadthis")
 		GAMEINFOKEY_BOOL(swapmenu, "swapmenu")
 		GAMEINFOKEY_BOOL(dontcrunchcorpses, "dontcrunchcorpses")
+		GAMEINFOKEY_BOOL(correctprintbold, "correctprintbold")
 		GAMEINFOKEY_BOOL(intermissioncounter, "intermissioncounter")
 		GAMEINFOKEY_BOOL(nightmarefast, "nightmarefast")
 		GAMEINFOKEY_COLOR(dimcolor, "dimcolor")
 		GAMEINFOKEY_FLOAT(dimamount, "dimamount")
+		GAMEINFOKEY_FLOAT(bluramount, "bluramount")
 		GAMEINFOKEY_INT(definventorymaxamount, "definventorymaxamount")
 		GAMEINFOKEY_INT(defaultrespawntime, "defaultrespawntime")
 		GAMEINFOKEY_INT(defaultrespawntime, "defaultrespawntime")
@@ -413,6 +415,8 @@ void FMapInfoParser::ParseGameInfo()
 
 		else
 		{
+			DPrintf(DMSG_ERROR, "Unknown GAMEINFO key \"%s\" found in %s:%i\n", nextKey.GetChars(), sc.ScriptName.GetChars(), sc.Line);
+
 			// ignore unkown keys.
 			sc.UnGet();
 			SkipToNext();

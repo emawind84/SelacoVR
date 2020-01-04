@@ -218,6 +218,7 @@ CUSTOM_CVAR (String, vid_cursor, "None", CVAR_ARCHIVE | CVAR_NOINITCALL)
 CVAR (Bool, disableautoload, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 CVAR (Bool, autoloadbrightmaps, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 CVAR (Bool, autoloadlights, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
+CVAR (Bool, r_debug_disable_vis_filter, false, 0)
 
 bool wantToRestart;
 bool DrawFSHUD;				// [RH] Draw fullscreen HUD?
@@ -246,6 +247,9 @@ int restart = 0;
 bool batchrun;	// just run the startup and collect all error messages in a logfile, then quit without any interaction
 
 cycle_t FrameCycles;
+
+// [SP] Store the capabilities of the renderer in a global variable, to prevent excessive per-frame processing
+uint32_t r_renderercaps = 0;
 
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
@@ -395,19 +399,19 @@ CUSTOM_CVAR (Int, dmflags, 0, CVAR_SERVERINFO)
 	// If nofov is set, force everybody to the arbitrator's FOV.
 	if ((self & DF_NO_FOV) && consoleplayer == Net_Arbitrator)
 	{
-		uint8_t fov;
+		float fov;
 
 		Net_WriteByte (DEM_FOV);
 
 		// If the game is started with DF_NO_FOV set, the arbitrator's
 		// DesiredFOV will not be set when this callback is run, so
 		// be sure not to transmit a 0 FOV.
-		fov = (uint8_t)players[consoleplayer].DesiredFOV;
+		fov = players[consoleplayer].DesiredFOV;
 		if (fov == 0)
 		{
 			fov = 90;
 		}
-		Net_WriteByte (fov);
+		Net_WriteFloat (fov);
 	}
 }
 
@@ -671,6 +675,7 @@ void D_Display ()
 	cycles.Clock();
 
 	r_UseVanillaTransparency = UseVanillaTransparency(); // [SP] Cache UseVanillaTransparency() call
+	r_renderercaps = Renderer->GetCaps(); // [SP] Get the current capabilities of the renderer
 
 	if (players[consoleplayer].camera == NULL)
 	{
@@ -679,8 +684,15 @@ void D_Display ()
 
 	if (viewactive)
 	{
-		R_SetFOV (r_viewpoint, players[consoleplayer].camera && players[consoleplayer].camera->player ?
-			players[consoleplayer].camera->player->FOV : 90.f);
+		DAngle fov = 90.f;
+		AActor *cam = players[consoleplayer].camera;
+		if (cam)
+		{
+			if (cam->player)
+				fov = cam->player->FOV;
+			else fov = cam->CameraFOV;
+		}
+		R_SetFOV(r_viewpoint, fov);
 	}
 
 	// [RH] change the screen mode if needed
@@ -976,6 +988,7 @@ void D_ErrorCleanup ()
 		G_CheckDemoStatus ();
 	Net_ClearBuffers ();
 	G_NewInit ();
+	M_ClearMenus ();
 	singletics = false;
 	playeringame[0] = 1;
 	players[0].playerstate = PST_LIVE;
@@ -1017,7 +1030,8 @@ void D_DoomLoop ()
 				lasttic = gametic;
 				I_StartFrame ();
 			}
-			
+			I_SetFrameTime();
+
 			// process one or more tics
 			if (singletics)
 			{
@@ -1978,9 +1992,9 @@ static FString CheckGameInfo(TArray<FString> & pwads)
 
 static void SetMapxxFlag()
 {
-	int lump_name = Wads.CheckNumForName("MAP01", ns_global, FWadCollection::IWAD_FILENUM);
-	int lump_wad = Wads.CheckNumForFullName("maps/map01.wad", FWadCollection::IWAD_FILENUM);
-	int lump_map = Wads.CheckNumForFullName("maps/map01.map", FWadCollection::IWAD_FILENUM);
+	int lump_name = Wads.CheckNumForName("MAP01", ns_global, Wads.GetIwadNum());
+	int lump_wad = Wads.CheckNumForFullName("maps/map01.wad", Wads.GetIwadNum());
+	int lump_map = Wads.CheckNumForFullName("maps/map01.map", Wads.GetIwadNum());
 
 	if (lump_name >= 0 || lump_wad >= 0 || lump_map >= 0) gameinfo.flags |= GI_MAPxx;
 }
@@ -2055,6 +2069,7 @@ static void D_DoomInit()
 		rngseed = I_MakeRNGSeed();
 		use_staticrng = false;
 	}
+	srand(rngseed);
 		
 	FRandom::StaticClearRandom ();
 
@@ -2324,6 +2339,8 @@ void D_DoomMain (void)
 		}
 	}
 
+	if (!batchrun) Printf(PRINT_LOG, "%s version %s\n", GAMENAME, GetVersionString());
+
 	D_DoomInit();
 
 	// [RH] Make sure zdoom.pk3 is always loaded,
@@ -2335,8 +2352,9 @@ void D_DoomMain (void)
 	}
 	FString basewad = wad;
 
-	iwad_man = new FIWadManager;
-	iwad_man->ParseIWadInfos(basewad);
+	FString optionalwad = BaseFileSearch(OPTIONALWAD, NULL, true);
+
+	iwad_man = new FIWadManager(basewad);
 
 	// Now that we have the IWADINFO, initialize the autoload ini sections.
 	GameConfig->DoAutoloadSetup(iwad_man);
@@ -2366,10 +2384,9 @@ void D_DoomMain (void)
 
 		if (iwad_man == NULL)
 		{
-			iwad_man = new FIWadManager;
-			iwad_man->ParseIWadInfos(basewad);
+			iwad_man = new FIWadManager(basewad);
 		}
-		const FIWADInfo *iwad_info = iwad_man->FindIWAD(allwads, iwad, basewad);
+		const FIWADInfo *iwad_info = iwad_man->FindIWAD(allwads, iwad, basewad, optionalwad);
 		gameinfo.gametype = iwad_info->gametype;
 		gameinfo.flags = iwad_info->flags;
 		gameinfo.ConfigName = iwad_info->Configname;

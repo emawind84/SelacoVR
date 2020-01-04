@@ -60,7 +60,8 @@ CUSTOM_CVAR (Bool, cl_oldfreelooklimit, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG 
 }
 
 EXTERN_CVAR(Bool, r_shadercolormaps)
-EXTERN_CVAR(Float, maxviewpitch)	// [SP] CVAR from GZDoom
+EXTERN_CVAR(Float, maxviewpitch)	// [SP] CVAR from OpenGL Renderer
+EXTERN_CVAR(Bool, r_drawvoxels)
 
 CUSTOM_CVAR(Bool, r_polyrenderer, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
@@ -251,8 +252,8 @@ void FSoftwareRenderer::DrawRemainingPlayerSprites()
 
 int FSoftwareRenderer::GetMaxViewPitch(bool down)
 {
-	const int MAX_DN_ANGLE = 56; // Max looking down angle
-	const int MAX_UP_ANGLE = 32; // Max looking up angle
+	int MAX_DN_ANGLE = MIN(56, (int)maxviewpitch); // Max looking down angle
+	int MAX_UP_ANGLE = MIN(32, (int)maxviewpitch); // Max looking up angle
 	return (r_polyrenderer) ? int(maxviewpitch) : (down ? MAX_DN_ANGLE : ((cl_oldfreelooklimit) ? MAX_UP_ANGLE : MAX_DN_ANGLE));
 }
 
@@ -271,7 +272,7 @@ void FSoftwareRenderer::SetClearColor(int color)
 	mScene.SetClearColor(color);
 }
 
-void FSoftwareRenderer::RenderTextureView (FCanvasTexture *tex, AActor *viewpoint, int fov)
+void FSoftwareRenderer::RenderTextureView (FCanvasTexture *tex, AActor *viewpoint, double fov)
 {
 	auto renderTarget = r_polyrenderer ? PolyRenderer::Instance()->RenderTarget : mScene.MainThread()->Viewport->RenderTarget;
 	auto &cameraViewpoint = r_polyrenderer ? PolyRenderer::Instance()->Viewpoint : mScene.MainThread()->Viewport->viewpoint;
@@ -289,7 +290,7 @@ void FSoftwareRenderer::RenderTextureView (FCanvasTexture *tex, AActor *viewpoin
 	CameraLight savedCameraLight = *CameraLight::Instance();
 
 	DAngle savedfov = cameraViewpoint.FieldOfView;
-	R_SetFOV (cameraViewpoint, (double)fov);
+	R_SetFOV (cameraViewpoint, fov);
 
 	if (r_polyrenderer)
 		PolyRenderer::Instance()->RenderViewToCanvas(viewpoint, Canvas, 0, 0, tex->GetWidth(), tex->GetHeight(), tex->bFirstUpdate);
@@ -379,13 +380,23 @@ void FSoftwareRenderer::CleanLevelData()
 {
 }
 
-double FSoftwareRenderer::GetVisibility()
+uint32_t FSoftwareRenderer::GetCaps()
 {
-	return mScene.MainThread()->Light->GetVisibility();
-}
+	ActorRenderFeatureFlags FlagSet = 0;
 
-void FSoftwareRenderer::SetVisibility(double vis)
-{
-	mScene.MainThread()->Light->SetVisibility(mScene.MainThread()->Viewport.get(), vis);
-}
+	if (r_polyrenderer)
+		FlagSet |= RFF_POLYGONAL | RFF_TILTPITCH | RFF_SLOPE3DFLOORS;
+	else
+	{
+		FlagSet |= RFF_UNCLIPPEDTEX;
+		if (r_drawvoxels)
+			FlagSet |= RFF_VOXELS;
+	}
 
+	if (screen && screen->IsBgra())
+		FlagSet |= RFF_TRUECOLOR;
+	else
+		FlagSet |= RFF_COLORMAP;
+
+	return (uint32_t)FlagSet;
+}

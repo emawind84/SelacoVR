@@ -1,5 +1,5 @@
 /*
-**  Handling drawing a sprite
+**  Polygon Doom software renderer
 **  Copyright (c) 2016 Magnus Norddahl
 **
 **  This software is provided 'as-is', without any express or implied
@@ -28,10 +28,17 @@
 #include "poly_sprite.h"
 #include "polyrenderer/poly_renderer.h"
 #include "polyrenderer/scene/poly_light.h"
+#include "polyrenderer/poly_renderthread.h"
 #include "r_data/r_vanillatrans.h"
+#include "actorinlines.h"
 
 EXTERN_CVAR(Float, transsouls)
 EXTERN_CVAR(Int, r_drawfuzz)
+EXTERN_CVAR (Bool, r_debug_disable_vis_filter)
+EXTERN_CVAR(Int, gl_spriteclip)
+EXTERN_CVAR(Float, gl_sclipthreshold)
+EXTERN_CVAR(Float, gl_sclipfactor)
+extern uint32_t r_renderercaps;
 
 bool RenderPolySprite::GetLine(AActor *thing, DVector2 &left, DVector2 &right)
 {
@@ -65,15 +72,24 @@ bool RenderPolySprite::GetLine(AActor *thing, DVector2 &left, DVector2 &right)
 	return true;
 }
 
-void RenderPolySprite::Render(const TriMatrix &worldToClip, const PolyClipPlane &clipPlane, AActor *thing, subsector_t *sub, uint32_t subsectorDepth, uint32_t stencilValue, float t1, float t2)
+void RenderPolySprite::Render(PolyRenderThread *thread, const TriMatrix &worldToClip, const PolyClipPlane &clipPlane, AActor *thing, subsector_t *sub, uint32_t stencilValue, float t1, float t2)
 {
 	DVector2 line[2];
 	if (!GetLine(thing, line[0], line[1]))
 		return;
 	
 	const auto &viewpoint = PolyRenderer::Instance()->Viewpoint;
-	DVector3 pos = thing->InterpolatedPosition(viewpoint.TicFrac);
-	pos.Z += thing->GetBobOffset(viewpoint.TicFrac);
+	DVector3 thingpos = thing->InterpolatedPosition(viewpoint.TicFrac);
+
+	DVector3 pos = thingpos;
+
+	uint32_t spritetype = (thing->renderflags & RF_SPRITETYPEMASK);
+
+	if (spritetype == RF_FACESPRITE)
+		pos.Z -= thing->Floorclip;
+
+	if (thing->flags2 & MF2_FLOATBOB)
+		pos.Z += thing->GetBobOffset(viewpoint.TicFrac);
 
 	bool flipTextureX = false;
 	FTexture *tex = GetSpriteTexture(thing, flipTextureX);
@@ -83,26 +99,25 @@ void RenderPolySprite::Render(const TriMatrix &worldToClip, const PolyClipPlane 
 	DVector2 spriteScale = thing->Scale;
 	double thingxscalemul = spriteScale.X / tex->Scale.X;
 	double thingyscalemul = spriteScale.Y / tex->Scale.Y;
+	double spriteHalfWidth = thingxscalemul * tex->GetWidth() * 0.5;
+	double spriteHeight = thingyscalemul * tex->GetHeight();
 
 	if (flipTextureX)
 		pos.X -= (tex->GetWidth() - tex->LeftOffset) * thingxscalemul;
 	else
 		pos.X -= tex->LeftOffset * thingxscalemul;
 
-	//pos.Z -= tex->TopOffset * thingyscalemul;
-	pos.Z -= (tex->GetHeight() - tex->TopOffset) * thingyscalemul + thing->Floorclip;
-
-	double spriteHalfWidth = thingxscalemul * tex->GetWidth() * 0.5;
-	double spriteHeight = thingyscalemul * tex->GetHeight();
-
 	pos.X += spriteHalfWidth;
+
+	pos.Z -= (tex->GetHeight() - tex->TopOffset) * thingyscalemul;
+	pos.Z = PerformSpriteClipAdjustment(thing, thingpos, spriteHeight, pos.Z);
 
 	//double depth = 1.0;
 	//visstyle_t visstyle = GetSpriteVisStyle(thing, depth);
 	// Rumor has it that AlterWeaponSprite needs to be called with visstyle passed in somewhere around here..
 	//R_SetColorMapLight(visstyle.BaseColormap, 0, visstyle.ColormapNum << FRACBITS);
 
-	TriVertex *vertices = PolyRenderer::Instance()->FrameMemory.AllocMemory<TriVertex>(4);
+	TriVertex *vertices = thread->FrameMemory->AllocMemory<TriVertex>(4);
 
 	bool foggy = false;
 	int actualextralight = foggy ? 0 : viewpoint.extralight << 4;
@@ -139,21 +154,124 @@ void RenderPolySprite::Render(const TriMatrix &worldToClip, const PolyClipPlane 
 	int lightlevel = fullbrightSprite ? 255 : thing->Sector->lightlevel + actualextralight;
 
 	PolyDrawArgs args;
+	SetDynlight(thing, args);
 	args.SetLight(GetColorTable(sub->sector->Colormap, sub->sector->SpecialColors[sector_t::sprites], true), lightlevel, PolyRenderer::Instance()->Light.SpriteGlobVis(foggy), fullbrightSprite);
-	args.SetSubsectorDepth(subsectorDepth);
 	args.SetTransform(&worldToClip);
 	args.SetFaceCullCCW(true);
 	args.SetStencilTestValue(stencilValue);
 	args.SetWriteStencil(true, stencilValue);
-	args.SetClipPlane(clipPlane);
+	args.SetClipPlane(0, clipPlane);
 	if ((thing->renderflags & RF_ZDOOMTRANS) && r_UseVanillaTransparency)
 		args.SetStyle(LegacyRenderStyles[STYLE_Normal], 1.0f, thing->fillcolor, thing->Translation, tex, fullbrightSprite);
 	else
 		args.SetStyle(thing->RenderStyle, thing->Alpha, thing->fillcolor, thing->Translation, tex, fullbrightSprite);
-	args.SetSubsectorDepthTest(true);
-	args.SetWriteSubsectorDepth(false);
+	args.SetDepthTest(true);
+	args.SetWriteDepth(false);
 	args.SetWriteStencil(false);
-	args.DrawArray(vertices, 4, PolyDrawMode::TriangleFan);
+	args.DrawArray(thread, vertices, 4, PolyDrawMode::TriangleFan);
+}
+
+double RenderPolySprite::GetSpriteFloorZ(AActor *thing, const DVector2 &thingpos)
+{
+	extsector_t::xfloor &x = thing->Sector->e->XFloor;
+	for (unsigned int i = 0; i < x.ffloors.Size(); i++)
+	{
+		F3DFloor *ff = x.ffloors[i];
+		double floorh = ff->top.plane->ZatPoint(thingpos);
+		if (floorh == thing->floorz)
+			return floorh;
+	}
+
+	if (thing->Sector->heightsec && !(thing->Sector->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
+	{
+		if (thing->flags2&MF2_ONMOBJ && thing->floorz == thing->Sector->heightsec->floorplane.ZatPoint(thingpos))
+		{
+			return thing->floorz;
+		}
+	}
+
+	return thing->Sector->floorplane.ZatPoint(thing) - thing->Floorclip;
+}
+
+double RenderPolySprite::GetSpriteCeilingZ(AActor *thing, const DVector2 &thingpos)
+{
+	extsector_t::xfloor &x = thing->Sector->e->XFloor;
+	for (unsigned int i = 0; i < x.ffloors.Size(); i++)
+	{
+		F3DFloor *ff = x.ffloors[i];
+		double ceilingh = ff->bottom.plane->ZatPoint(thingpos);
+		if (ceilingh == thing->ceilingz)
+			return ceilingh;
+	}
+
+	if (thing->Sector->heightsec && !(thing->Sector->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
+	{
+		if (thing->flags2&MF2_ONMOBJ && thing->ceilingz == thing->Sector->heightsec->ceilingplane.ZatPoint(thingpos))
+		{
+			return thing->ceilingz;
+		}
+	}
+
+	return thing->Sector->ceilingplane.ZatPoint(thingpos);
+}
+
+double RenderPolySprite::PerformSpriteClipAdjustment(AActor *thing, const DVector2 &thingpos, double spriteheight, double z2)
+{
+	int spriteclip = 2; // gl_spriteclip, but use 'always' mode for now
+
+	double z1 = z2 + spriteheight;
+
+	// Tests show that this doesn't look good for many decorations and corpses
+	uint32_t spritetype = (thing->renderflags & RF_SPRITETYPEMASK);
+	if (!(spriteheight > 0 && spriteclip > 0 && spritetype == RF_FACESPRITE))
+		return z2;
+
+	bool clipthing = (thing->player || thing->flags3&MF3_ISMONSTER || thing->IsKindOf(RUNTIME_CLASS(AInventory))) && (thing->flags&MF_ICECORPSE || !(thing->flags&MF_CORPSE));
+	bool smarterclip = !clipthing && spriteclip == 3;
+	if (clipthing || spriteclip > 1)
+	{
+		double diffb = MIN(z2 - GetSpriteFloorZ(thing, thingpos), 0.0);
+
+		// Adjust sprites clipping into ceiling and adjust clipping adjustment for tall graphics
+		if (smarterclip)
+		{
+			// Reduce slightly clipping adjustment of corpses
+			if (thing->flags & MF_CORPSE || spriteheight > fabs(diffb))
+			{
+				double ratio = clamp<double>((fabs(diffb) * (double)gl_sclipfactor / (spriteheight + 1)), 0.5, 1.0);
+				diffb *= ratio;
+			}
+			if (!diffb)
+			{
+				double difft = MAX(z1 - GetSpriteCeilingZ(thing, thingpos), 0.0);
+				if (difft >= (double)gl_sclipthreshold)
+				{
+					// dumb copy of the above.
+					if (!(thing->flags3&MF3_ISMONSTER) || (thing->flags&MF_NOGRAVITY) || (thing->flags&MF_CORPSE) || difft > (double)gl_sclipthreshold)
+					{
+						difft = 0;
+					}
+				}
+				if (spriteheight > fabs(difft))
+				{
+					double ratio = clamp<double>((fabs(difft) * (double)gl_sclipfactor / (spriteheight + 1)), 0.5, 1.0);
+					difft *= ratio;
+				}
+				z2 -= difft;
+			}
+		}
+		if (diffb <= (0 - (double)gl_sclipthreshold))	// such a large displacement can't be correct! 
+		{
+			// for living monsters standing on the floor allow a little more.
+			if (!(thing->flags3&MF3_ISMONSTER) || (thing->flags&MF_NOGRAVITY) || (thing->flags&MF_CORPSE) || diffb < (-1.8*(double)gl_sclipthreshold))
+			{
+				diffb = 0;
+			}
+		}
+
+		z2 -= diffb;
+	}
+	return z2;
 }
 
 bool RenderPolySprite::IsThingCulled(AActor *thing)
@@ -175,6 +293,12 @@ bool RenderPolySprite::IsThingCulled(AActor *thing)
 	{
 		return true;
 	}
+
+	// check renderrequired vs ~r_rendercaps, if anything matches we don't support that feature,
+	// check renderhidden vs r_rendercaps, if anything matches we do support that feature and should hide it.
+	if ((!r_debug_disable_vis_filter && !!(thing->RenderRequired & ~r_renderercaps)) ||
+		(!!(thing->RenderHidden & r_renderercaps)))
+		return true;
 
 	return false;
 }
@@ -244,4 +368,59 @@ FTexture *RenderPolySprite::GetSpriteTexture(AActor *thing, /*out*/ bool &flipX)
 			return TexMan[tex];
 		}
 	}
+}
+
+void RenderPolySprite::SetDynlight(AActor *thing, PolyDrawArgs &args)
+{
+	bool fullbrightSprite = ((thing->renderflags & RF_FULLBRIGHT) || (thing->flags5 & MF5_BRIGHT));
+	if (fullbrightSprite)
+	{
+		args.SetDynLightColor(0);
+		return;
+	}
+
+	float lit_red = 0;
+	float lit_green = 0;
+	float lit_blue = 0;
+	auto node = thing->Sector->lighthead;
+	while (node != nullptr)
+	{
+		ADynamicLight *light = node->lightsource;
+		if (light->visibletoplayer && !(light->flags2&MF2_DORMANT) && (!(light->lightflags&LF_DONTLIGHTSELF) || light->target != thing) && !(light->lightflags&LF_DONTLIGHTACTORS))
+		{
+			float lx = (float)(light->X() - thing->X());
+			float ly = (float)(light->Y() - thing->Y());
+			float lz = (float)(light->Z() - thing->Center());
+			float LdotL = lx * lx + ly * ly + lz * lz;
+			float radius = node->lightsource->GetRadius();
+			if (radius * radius >= LdotL)
+			{
+				float distance = sqrt(LdotL);
+				float attenuation = 1.0f - distance / radius;
+				if (attenuation > 0.0f)
+				{						
+					float red = light->GetRed() * (1.0f / 255.0f);
+					float green = light->GetGreen() * (1.0f / 255.0f);
+					float blue = light->GetBlue() * (1.0f / 255.0f);
+					/*if (light->IsSubtractive())
+					{
+						float bright = FVector3(lr, lg, lb).Length();
+						FVector3 lightColor(lr, lg, lb);
+						red = (bright - lr) * -1;
+						green = (bright - lg) * -1;
+						blue = (bright - lb) * -1;
+					}*/
+						
+					lit_red += red * attenuation;
+					lit_green += green * attenuation;
+					lit_blue += blue * attenuation;
+				}
+			}
+		}
+		node = node->nextLight;
+	}
+	lit_red = clamp(lit_red * 255.0f, 0.0f, 255.0f);
+	lit_green = clamp(lit_green * 255.0f, 0.0f, 255.0f);
+	lit_blue = clamp(lit_blue * 255.0f, 0.0f, 255.0f);
+	args.SetDynLightColor((((uint32_t)lit_red) << 16) | (((uint32_t)lit_green) << 8) | ((uint32_t)lit_blue));
 }

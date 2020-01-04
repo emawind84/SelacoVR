@@ -48,14 +48,14 @@ const char *GetVersionString();
 #ifdef GIT_DESCRIPTION
 #define VERSIONSTR GIT_DESCRIPTION
 #else
-#define VERSIONSTR "3.2pre"
+#define VERSIONSTR "3.2.0"
 #endif
 
 // The version as seen in the Windows resource
-#define RC_FILEVERSION 3,1,9999,0
-#define RC_PRODUCTVERSION 3,1,9999,0
+#define RC_FILEVERSION 3,2,0,0
+#define RC_PRODUCTVERSION 3,2,0,0
 #define RC_PRODUCTVERSION2 VERSIONSTR
-// These are for content versioning. The current state is '2.4'.
+// These are for content versioning. The current state is '3.2'.
 #define VER_MAJOR 3
 #define VER_MINOR 2
 #define VER_REVISION 0
@@ -73,11 +73,11 @@ const char *GetVersionString();
 // Protocol version used in demos.
 // Bump it if you change existing DEM_ commands or add new ones.
 // Otherwise, it should be safe to leave it alone.
-#define DEMOGAMEVERSION 0x220
+#define DEMOGAMEVERSION 0x221
 
 // Minimum demo version we can play.
 // Bump it whenever you change or remove existing DEM_ commands.
-#define MINDEMOVERSION 0x21E
+#define MINDEMOVERSION 0x21F
 
 // SAVEVER is the version of the information stored in level snapshots.
 // Note that SAVEVER is not directly comparable to VERSION.
@@ -96,13 +96,14 @@ const char *GetVersionString();
 // This is so that derivates can use the same savegame versions without worrying about engine compatibility
 #define GAMESIG "GZDOOM"
 #define BASEWAD "gzdoom.pk3"
+#define OPTIONALWAD "zd_extra.pk3"
 #define BASESF "gzdoom.sf2"
 
 // More stuff that needs to be different for derivatives.
 #define GAMENAME "GZDoom"
 #define GAMENAMELOWERCASE "gzdoom"
-#define FORUM_URL "http://forum.drdteam.org"
-#define BUGS_FORUM_URL	"http://forum.drdteam.org/viewforum.php?f=24"
+#define FORUM_URL "http://forum.zdoom.org/"
+#define BUGS_FORUM_URL	"http://forum.zdoom.org/viewforum.php?f=2"
 
 #if defined(__APPLE__) || defined(_WIN32)
 #define GAME_DIR GAMENAME

@@ -2098,7 +2098,7 @@ CMPTMNU_SHORTTEX			= "Find shortest textures like Doom";
 CMPTMNU_STAIRS				= "Use buggier stair building";
 CMPTMNU_FLOORMOVE			= "Use Doom's floor motion behavior";
 CMPTMNU_POINTONLINE			= "Use Doom's point-on-line algorithm";
-CMPTMNU_MULTIEXIT			= "Level exit can be triggered more than once.";
+CMPTMNU_MULTIEXIT			= "Level exit can be triggered more than once";
 CMPTMNU_PHYSICSBEHAVIOR		= "Physics Behavior";
 CMPTMNU_NOPASSOVER			= "Actors are infinitely tall";
 CMPTMNU_BOOMSCROLL			= "Boom scrollers are additive";
@@ -2163,6 +2163,7 @@ ADVSNDMNU_REVERB			= "Reverb";
 ADVSNDMNU_FLUIDVOICES		= "MIDI voices";
 ADVSNDMNU_TIMIDITY			= "Timidity++";
 ADVSNDMNU_TIMIDITYEXE		= "Path for executable";
+ADVSNDMNU_TIMIDITYCONFIG	= "Timidity config file";
 ADVSNDMNU_TIMIDITYCHORUS	= "Chorus";
 ADVSNDMNU_TIMIDITYVOLUME	= "Relative volume";
 ADVSNDMNU_WILDMIDI			= "WildMidi";
@@ -2191,6 +2192,8 @@ VIDMNU_HIDPI			= "Retina/HiDPI support";
 VIDMNU_ASPECTRATIO		= "Aspect ratio";
 VIDMNU_FORCEASPECT		= "Force aspect ratio";
 VIDMNU_5X4ASPECTRATIO	= "Enable 5:4 aspect ratio";
+VIDMNU_SCALEMODE		= "Resolution scale";
+VIDMNU_SCALEFACTOR		= "Scale Factor";
 VIDMNU_ENTERTEXT		= "Press ENTER to set mode";
 VIDMNU_TESTTEXT1		= "T to test mode for 5 seconds";
 VIDMNU_TESTTEXT2		= "Please wait 5 seconds...";
@@ -2376,6 +2379,8 @@ OPTVAL_VTFZDOOM				= "ZDoom (Forced)";
 OPTVAL_VTFVANILLA			= "Vanilla (Forced)";
 OPTVAL_VTAZDOOM				= "Auto (ZDoom Preferred)";
 OPTVAL_VTAVANILLA			= "Auto (Vanilla Preferred)";
+OPTVAL_SCALENEAREST			= "Scaled (Nearest)";
+OPTVAL_SCALELINEAR			= "Scaled (Linear)";
 
 // Colors
 C_BRICK					= "\cabrick";
@@ -2400,6 +2405,10 @@ C_DARKBROWN				= "\csdark brown";
 C_PURPLE				= "\ctpurple";
 C_DARKGRAY				= "\cudark gray";
 C_CYAN					= "\cvcyan";
+C_ICE					= "\cwice";
+C_FIRE					= "\cxfire";
+C_SAPPHIRE				= "\cysapphire";
+C_TEAL					= "\czteal";
 // Option Strings
 OPTSTR_SIMPLEARROW			= "Simple arrow";
 OPTSTR_HERETIC				= "Heretic";
@@ -2657,7 +2666,8 @@ MUSIC_DM2INT = "dm2int";
 DSPLYMNU_GLOPT		= "OpenGL Renderer";
 DSPLYMNU_SWOPT		= "Software Renderer";
 DSPLYMNU_GAMMA		= "Gamma correction";
-DSPLYMNU_CONTRAST 	="Contrast";
+DSPLYMNU_CONTRAST 	= "Contrast";
+DSPLYMNU_SATURATION = "Saturation";
 DSPLYMNU_HWGAMMA	= "Hardware Gamma";
 
 // OpenGL Options
@@ -2682,13 +2692,14 @@ GLTEXMNU_TRIMSPREDGE	= "Trim sprite edges";
 GLTEXMNU_SORTDRAWLIST 	= "Sort draw lists by texture";
 
 // Dynamic Light Options
-GLLIGHTMNU_TITLE 			= "DYNAMIC LIGHTS";
-GLLIGHTMNU_LIGHTSENABLED 	= "Dynamic Lights (OpenGL)";
-GLLIGHTMNU_LIGHTDEFS		= "Enable light definitions";
-GLLIGHTMNU_CLIPLIGHTS 		= "Clip lights";
-GLLIGHTMNU_LIGHTSPRITES 	= "Lights affect sprites";
-GLLIGHTMNU_LIGHTPARTICLES 	= "Lights affect particles";
-GLLIGHTMNU_LIGHTSHADOWMAP 	= "Light shadowmaps";
+GLLIGHTMNU_TITLE					= "DYNAMIC LIGHTS";
+GLLIGHTMNU_LIGHTSENABLED			= "Dynamic Lights (OpenGL)";
+GLLIGHTMNU_LIGHTDEFS				= "Enable light definitions";
+GLLIGHTMNU_CLIPLIGHTS				= "Clip lights";
+GLLIGHTMNU_LIGHTSPRITES				= "Lights affect sprites";
+GLLIGHTMNU_LIGHTPARTICLES			= "Lights affect particles";
+GLLIGHTMNU_LIGHTSHADOWMAP			= "Light shadowmaps";
+GLLIGHTMNU_LIGHTSHADOWMAPQUALITY	= "Shadowmap quality";
 
 // OpenGL Preferences
 GLPREFMNU_TITLE 				= "OPENGL PREFERENCES";
@@ -2708,6 +2719,7 @@ GLPREFMNU_SPRBILLFACECAMERA 	= "Sprites face camera";
 GLPREFMNU_PARTICLESTYLE 		= "Particle style";
 GLPREFMNU_AMBLIGHT 				= "Ambient light level";
 GLPREFMNU_RENDERQUALITY 		= "Rendering quality";
+GLPREFMNU_MENUBLUR				= "Menu Blur";
 GLPREFMNU_VRMODE 				= "Stereo 3D VR";
 GLPREFMNU_VRQUADSTEREO 			= "Enable Quad Stereo";
 GLPREFMNU_MULTISAMPLE			= "Multisample";

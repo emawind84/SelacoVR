@@ -1948,6 +1948,7 @@ void TryRunTics (void)
 			C_Ticker ();
 			M_Ticker ();
 			I_GetTime (true);
+			I_SetFrameTime();
 			G_Ticker();
 			gametic++;
 
@@ -2048,7 +2049,7 @@ FDynamicBuffer::~FDynamicBuffer ()
 {
 	if (m_Data)
 	{
-		free (m_Data);
+		M_Free (m_Data);
 		m_Data = NULL;
 	}
 	m_Len = m_BufferLen = 0;
@@ -2464,7 +2465,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 
 	case DEM_FOV:
 		{
-			float newfov = (float)ReadByte (stream);
+			float newfov = ReadFloat (stream);
 
 			if (newfov != players[consoleplayer].DesiredFOV)
 			{
@@ -2484,7 +2485,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 		break;
 
 	case DEM_MYFOV:
-		players[player].DesiredFOV = (float)ReadByte (stream);
+		players[player].DesiredFOV = ReadFloat (stream);
 		break;
 
 	case DEM_RUNSCRIPT:
@@ -2774,6 +2775,8 @@ void Net_SkipCommand (int type, uint8_t **stream)
 			break;
 
 		case DEM_INVUSE:
+		case DEM_FOV:
+		case DEM_MYFOV:
 			skip = 4;
 			break;
 
@@ -2783,8 +2786,6 @@ void Net_SkipCommand (int type, uint8_t **stream)
 
 		case DEM_GENERICCHEAT:
 		case DEM_DROPPLAYER:
-		case DEM_FOV:
-		case DEM_MYFOV:
 		case DEM_ADDCONTROLLER:
 		case DEM_DELCONTROLLER:
 			skip = 1;

@@ -735,16 +735,17 @@ OptionMenu "VideoOptions" protected
 	
 	Submenu "$DSPLYMNU_GLOPT", 			"OpenGLOptions"
 	Submenu "$DSPLYMNU_SWOPT", 			"SWROptions"
-	Submenu "$GLMNU_DYNLIGHT",	"GLLightOptions"
+	Submenu "$GLMNU_DYNLIGHT",			"GLLightOptions"
 	Submenu "$DSPLYMNU_SCOREBOARD", 			"ScoreboardOptions"
 	StaticText " "
-	Slider "$DSPLYMNU_SCREENSIZE",				"screenblocks", 3.0, 12.0, 1.0, 0
+	Slider "$DSPLYMNU_SCREENSIZE",				"screenblocks", 				3.0, 12.0, 1.0, 0
 
-	Slider "$DSPLYMNU_GAMMA",			"Gamma",						0.75, 3.0, 0.05, 2
+	Slider "$DSPLYMNU_GAMMA",					"Gamma",						0.75, 3.0, 0.05, 2
 	Slider "$DSPLYMNU_BRIGHTNESS",				"vid_brightness",				-0.8,0.8, 0.05,2
-	Slider "$DSPLYMNU_CONTRAST",					"vid_contrast",	   				0.1, 3.0, 0.1
+	Slider "$DSPLYMNU_CONTRAST",				"vid_contrast",	   				0.1, 3.0, 0.1
+	Slider "$DSPLYMNU_SATURATION",				"vid_saturation",  				-3.0, 3.0, 0.25, 2
 	Option "$DSPLYMNU_HWGAMMA",					"vid_hwgamma", "HWGammaModes"
-
+	StaticText " "
 	Option "$DSPLYMNU_VSYNC",					"vid_vsync", "OnOff"
 	Option "$DSPLYMNU_CAPFPS",					"cl_capfps", "OffOn"
 	Slider "$DSPLYMNU_BLOODFADE",				"blood_fade_scalar", 0.0, 1.0, 0.05, 2
@@ -823,6 +824,10 @@ OptionValue TextColors
 	19.0, "$C_PURPLE"
 	20.0, "$C_DARKGRAY"
 	21.0, "$C_CYAN"
+	22.0, "$C_ICE"
+	23.0, "$C_FIRE"
+	24.0, "$C_SAPPHIRE"
+	25.0, "$C_TEAL"
 }
 
 OptionValue Crosshairs
@@ -1680,6 +1685,8 @@ OptionMenu AdvSoundOptions protected
 	{
 		SubMenu "$ADVSNDMNU_SELCONFIG",		"TimidityExeMenu"
 	}
+	TextField "$ADVSNDMNU_TIMIDITYCONFIG", 	"timidity_config"
+	SubMenu "$ADVSNDMNU_SELCONFIG",		"TimidityConfigMenu"
 	Option "$ADVSNDMNU_REVERB", 			"timidity_reverb", "OnOff"
 	Option "$ADVSNDMNU_TIMIDITYCHORUS", 	"timidity_chorus", "OnOff"
 	Slider "$ADVSNDMNU_TIMIDITYVOLUME",		"timidity_mastervolume", 0, 4, 0.2, 1
@@ -1701,6 +1708,11 @@ OptionMenu WildMidiConfigMenu protected
 }
 
 OptionMenu TimidityExeMenu protected
+{
+	Title "$ADVSNDMNU_SELCONFIG"
+}
+
+OptionMenu TimidityConfigMenu protected
 {
 	Title "$ADVSNDMNU_SELCONFIG"
 }
@@ -1849,6 +1861,14 @@ OptionValue RatiosTFT
 	6.0, "21:9"
 	 -1, "$OPTVAL_ALL"
 }
+OptionValue ScaleModes
+{
+	0, "$OPTVAL_SCALENEAREST"
+	1, "$OPTVAL_SCALELINEAR"
+	2, "320x200"
+	3, "640x400"
+	4, "1280x800"
+}
 
 OptionMenu VideoModeMenu protected
 {
@@ -1862,6 +1882,8 @@ OptionMenu VideoModeMenu protected
 	Option "$VIDMNU_ASPECTRATIO",		"menu_screenratios", "Ratios"
 	Option "$VIDMNU_FORCEASPECT",		"vid_aspect", "ForceRatios"
 	Option "$VIDMNU_5X4ASPECTRATIO",	"vid_tft", "YesNo"
+	Option "$VIDMNU_SCALEMODE",			"vid_scalemode", "ScaleModes"
+	Slider "$VIDMNU_SCALEFACTOR",		"vid_scalefactor", 0.25, 2.0, 0.25, 2
 	StaticText " "
 	ScreenResolution "res_0"
 	ScreenResolution "res_1"
@@ -2111,6 +2133,14 @@ OptionValue VRMode
 	10, "$OPTVAL_OPENVR"
 }
 
+OptionValue ShadowMapQuality
+{
+	128, "128"
+	256, "256"
+	512, "512"
+	1024, "1024"
+}
+
 OptionMenu "GLTextureGLOptions" protected
 {
 	Title "$GLTEXMNU_TITLE"
@@ -2131,13 +2161,14 @@ OptionMenu "GLTextureGLOptions" protected
 OptionMenu "GLLightOptions" protected
 {
 	Title "$GLLIGHTMNU_TITLE"
-	Option "$TCMNU_DYNLIGHTS",				"r_dynlights", "OnOff"
-	Option "$GLLIGHTMNU_LIGHTSENABLED",		gl_lights,						"OnOff"
-	Option "$GLLIGHTMNU_LIGHTDEFS",			gl_attachedlights,				"YesNo"
-	Option "$GLLIGHTMNU_CLIPLIGHTS",		gl_lights_checkside,			"YesNo"
-	Option "$GLLIGHTMNU_LIGHTSPRITES",		gl_light_sprites,				"YesNo"
-	Option "$GLLIGHTMNU_LIGHTPARTICLES",	gl_light_particles,				"YesNo"
-	Option "$GLLIGHTMNU_LIGHTSHADOWMAP",	gl_light_shadowmap,				"YesNo"
+	Option "$TCMNU_DYNLIGHTS",					"r_dynlights", "OnOff"
+	Option "$GLLIGHTMNU_LIGHTSENABLED",			gl_lights,				"OnOff"
+	Option "$GLLIGHTMNU_LIGHTDEFS",				gl_attachedlights,		"YesNo"
+	Option "$GLLIGHTMNU_CLIPLIGHTS",			gl_lights_checkside,	"YesNo"
+	Option "$GLLIGHTMNU_LIGHTSPRITES",			gl_light_sprites,		"YesNo"
+	Option "$GLLIGHTMNU_LIGHTPARTICLES",		gl_light_particles,		"YesNo"
+	Option "$GLLIGHTMNU_LIGHTSHADOWMAP",		gl_light_shadowmap,		"YesNo"
+	Option "$GLLIGHTMNU_LIGHTSHADOWMAPQUALITY", gl_shadowmap_quality,	"ShadowMapQuality"
 }
 
 OptionMenu "OpenGLOptions" protected
@@ -2161,6 +2192,8 @@ OptionMenu "OpenGLOptions" protected
 	Option "$GLPREFMNU_SPRBILLFACECAMERA",		gl_billboard_faces_camera,		"OnOff"
 	Option "$GLPREFMNU_PARTICLESTYLE",			gl_particles_style,				"Particles"
 	Option "$GLPREFMNU_RENDERQUALITY",			gl_render_precise,				"Precision"
+	StaticText " "
+	Slider "$GLPREFMNU_MENUBLUR",				gl_menu_blur, 0, 5.0, 0.5, 2
 	StaticText " "
 	Option "$GLPREFMNU_VRMODE",					vr_mode, 						"VRMode"
 	Option "$GLPREFMNU_VRQUADSTEREO",			vr_enable_quadbuffered,			"OnOff"

@@ -1,5 +1,5 @@
 /*
-**  Handling drawing a player sprite
+**  Polygon Doom software renderer
 **  Copyright (c) 2016 Magnus Norddahl
 **
 **  This software is provided 'as-is', without any express or implied
@@ -35,7 +35,7 @@ EXTERN_CVAR(Bool, r_deathcamera)
 EXTERN_CVAR(Bool, r_fullbrightignoresectorcolor)
 EXTERN_CVAR(Bool, r_shadercolormaps)
 
-void RenderPolyPlayerSprites::Render()
+void RenderPolyPlayerSprites::Render(PolyRenderThread *thread)
 {
 	// This code cannot be moved directly to RenderRemainingSprites because the engine
 	// draws the canvas textures between this call and the final call to RenderRemainingSprites..
@@ -56,6 +56,8 @@ void RenderPolyPlayerSprites::Render()
 		(players[consoleplayer].cheats & CF_CHASECAM) ||
 		(r_deathcamera && viewpoint.camera->health <= 0))
 		return;
+
+	PolyTransferHeights fakeflat(viewpoint.camera->subsector);
 
 	FDynamicColormap *basecolormap;
 	PolyCameraLight *cameraLight = PolyCameraLight::Instance();
@@ -89,10 +91,10 @@ void RenderPolyPlayerSprites::Render()
 	else
 	{	// This used to use camera->Sector but due to interpolation that can be incorrect
 		// when the interpolated viewpoint is in a different sector than the camera.
-		//sec = FakeFlat(viewpoint.sector, &tempsec, &floorlight, &ceilinglight, nullptr, 0, 0, 0, 0);
-		// Softpoly has no FakeFlat (its FAKE! Everything is FAKE in Doom. Sigh. Might as well call it FooFlat!)
-		sec = viewpoint.camera->Sector;
-		floorlight = ceilinglight = sec->lightlevel;
+
+		sec = fakeflat.FrontSector;
+		floorlight = fakeflat.FloorLightLevel;
+		ceilinglight = fakeflat.CeilingLightLevel;
 
 		// [RH] set basecolormap
 		basecolormap = GetColorTable(sec->Colormap, sec->SpecialColors[sector_t::sprites], true);
@@ -143,7 +145,7 @@ void RenderPolyPlayerSprites::Render()
 
 			if ((psp->GetID() != PSP_TARGETCENTER || CrosshairImage == nullptr) && psp->GetCaller() != nullptr)
 			{
-				RenderSprite(psp, viewpoint.camera, bobx, boby, wx, wy, viewpoint.TicFrac, spriteshade, basecolormap, foggy);
+				RenderSprite(thread, psp, viewpoint.camera, bobx, boby, wx, wy, viewpoint.TicFrac, spriteshade, basecolormap, foggy);
 			}
 
 			psp = psp->GetNext();
@@ -180,7 +182,7 @@ void RenderPolyPlayerSprites::RenderRemainingSprites()
 	AcceleratedSprites.Clear();
 }
 
-void RenderPolyPlayerSprites::RenderSprite(DPSprite *pspr, AActor *owner, float bobx, float boby, double wx, double wy, double ticfrac, int spriteshade, FDynamicColormap *basecolormap, bool foggy)
+void RenderPolyPlayerSprites::RenderSprite(PolyRenderThread *thread, DPSprite *pspr, AActor *owner, float bobx, float boby, double wx, double wy, double ticfrac, int spriteshade, FDynamicColormap *basecolormap, bool foggy)
 {
 	double 				tx;
 	int 				x1;
@@ -232,7 +234,7 @@ void RenderPolyPlayerSprites::RenderSprite(DPSprite *pspr, AActor *owner, float 
 
 	if (pspr->Flags & PSPF_ADDBOB)
 	{
-		sx += bobx;
+		sx += (pspr->Flags & PSPF_MIRROR) ? -bobx : bobx;
 		sy += boby;
 	}
 
@@ -242,23 +244,26 @@ void RenderPolyPlayerSprites::RenderSprite(DPSprite *pspr, AActor *owner, float 
 		sy += wy;
 	}
 
-	double yaspectMul = 1.2;// 320.0 * SCREENHEIGHT / (r_Yaspect * SCREENWIDTH);
+	double yaspectMul = 1.2 * ((double)SCREENHEIGHT / SCREENWIDTH) * r_viewwindow.WidescreenRatio;
 
 	double pspritexscale = viewwindow.centerxwide / 160.0;
 	double pspriteyscale = pspritexscale * yaspectMul;
 	double pspritexiscale = 1 / pspritexscale;
 
-	// calculate edges of the shape
-	tx = sx - BASEXCENTER;
+	int tleft = tex->GetScaledLeftOffset();
+	int twidth = tex->GetScaledWidth();
 
-	tx -= tex->GetScaledLeftOffset();
+	// calculate edges of the shape
+	//tx = sx - BASEXCENTER;
+	tx = (pspr->Flags & PSPF_MIRROR) ? ((BASEXCENTER - twidth) - (sx - tleft)) : ((sx - BASEXCENTER) - tleft);
+
 	x1 = xs_RoundToInt(viewwindow.centerx + tx * pspritexscale);
 
 	// off the right side
 	if (x1 > viewwidth)
 		return;
 
-	tx += tex->GetScaledWidth();
+	tx += twidth;
 	x2 = xs_RoundToInt(viewwindow.centerx + tx * pspritexscale);
 
 	// off the left side
@@ -451,7 +456,7 @@ void RenderPolyPlayerSprites::RenderSprite(DPSprite *pspr, AActor *owner, float 
 		}
 	}
 
-	vis.Render();
+	vis.Render(thread);
 }
 
 fixed_t RenderPolyPlayerSprites::LightLevelToShade(int lightlevel, bool foggy)
@@ -472,7 +477,7 @@ fixed_t RenderPolyPlayerSprites::LightLevelToShade(int lightlevel, bool foggy)
 
 /////////////////////////////////////////////////////////////////////////
 
-void PolyNoAccelPlayerSprite::Render()
+void PolyNoAccelPlayerSprite::Render(PolyRenderThread *thread)
 {
 	if (xscale == 0 || fabs(yscale) < (1.0f / 32000.0f))
 	{ // scaled to 0; can't see
@@ -495,7 +500,7 @@ void PolyNoAccelPlayerSprite::Render()
 		y1 = centerY - texturemid * yscale;
 		y2 = y1 + pic->GetHeight() * yscale;
 	}
-	args.Draw(x1, x2, y1, y2, 0.0f, 1.0f, 0.0f, 1.0f);
+	args.Draw(thread, x1, x2, y1, y2, 0.0f, 1.0f, 0.0f, 1.0f);
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -1,5 +1,5 @@
 /*
-**  Triangle drawers
+**  Polygon Doom software renderer
 **  Copyright (c) 2016 Magnus Norddahl
 **
 **  This software is provided 'as-is', without any express or implied
@@ -29,11 +29,6 @@
 #include "polyrenderer/drawers/poly_buffer.h"
 #include "polyrenderer/drawers/poly_draw_args.h"
 
-struct ShadedTriVertex : public TriVertex
-{
-	float clipDistance0;
-};
-
 typedef void(*PolyDrawFuncPtr)(const TriDrawTriangleArgs *, WorkerThreadData *);
 
 class PolyTriangleDrawer
@@ -44,12 +39,12 @@ public:
 	static bool is_mirror();
 
 private:
-	static ShadedTriVertex shade_vertex(const TriMatrix &objectToClip, const float *clipPlane, const TriVertex &v);
+	static ShadedTriVertex shade_vertex(const PolyDrawArgs &drawargs, const TriVertex &v);
 	static void draw_arrays(const PolyDrawArgs &args, WorkerThreadData *thread);
 	static void draw_shaded_triangle(const ShadedTriVertex *vertices, bool ccw, TriDrawTriangleArgs *args, WorkerThreadData *thread);
 	static bool is_degenerate(const ShadedTriVertex *vertices);
 
-	static int clipedge(const ShadedTriVertex *verts, TriVertex *clippedvert);
+	static int clipedge(const ShadedTriVertex *verts, ShadedTriVertex *clippedvert);
 
 	static int viewport_x, viewport_y, viewport_width, viewport_height, dest_pitch, dest_width, dest_height;
 	static bool dest_bgra;

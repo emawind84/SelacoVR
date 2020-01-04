@@ -47,6 +47,7 @@
 #include "swrenderer/things/r_particle.h"
 #include "swrenderer/segments/r_clipsegment.h"
 #include "swrenderer/line/r_wallsetup.h"
+#include "swrenderer/line/r_farclip_line.h"
 #include "swrenderer/scene/r_scene.h"
 #include "swrenderer/scene/r_light.h"
 #include "swrenderer/viewport/r_viewport.h"
@@ -71,6 +72,38 @@
 
 EXTERN_CVAR(Bool, r_fullbrightignoresectorcolor);
 EXTERN_CVAR(Bool, r_drawvoxels);
+EXTERN_CVAR(Bool, r_debug_disable_vis_filter);
+extern uint32_t r_renderercaps;
+
+namespace
+{
+	double sprite_distance_cull = 1e16;
+	double line_distance_cull = 1e16;
+}
+
+CUSTOM_CVAR(Float, r_sprite_distance_cull, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+{
+	if (r_sprite_distance_cull > 0.0)
+	{
+		sprite_distance_cull = r_sprite_distance_cull * r_sprite_distance_cull;
+	}
+	else
+	{
+		sprite_distance_cull = 1e16;
+	}
+}
+
+CUSTOM_CVAR(Float, r_line_distance_cull, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+{
+	if (r_line_distance_cull > 0.0)
+	{
+		line_distance_cull = r_line_distance_cull * r_line_distance_cull;
+	}
+	else
+	{
+		line_distance_cull = 1e16;
+	}
+}
 
 namespace swrenderer
 {
@@ -390,10 +423,8 @@ namespace swrenderer
 
 	void RenderOpaquePass::AddPolyobjs(subsector_t *sub)
 	{
-		if (sub->BSP == nullptr || sub->BSP->bDirty)
-		{
-			sub->BuildPolyBSP();
-		}
+		Thread->PreparePolyObject(sub);
+
 		if (sub->BSP->Nodes.Size() == 0)
 		{
 			RenderSubsector(&sub->BSP->Subsectors[0]);
@@ -732,10 +763,19 @@ namespace swrenderer
 		count = sub->numlines;
 		line = sub->firstline;
 
+		DVector2 viewpointPos = Thread->Viewport->viewpoint.Pos.XY();
+
 		basecolormap = GetColorTable(frontsector->Colormap, frontsector->SpecialColors[sector_t::walltop]);
 		while (count--)
 		{
-			if (!outersubsector || line->sidedef == nullptr || !(line->sidedef->Flags & WALLF_POLYOBJ))
+			double dist1 = (line->v1->fPos() - viewpointPos).LengthSquared();
+			double dist2 = (line->v2->fPos() - viewpointPos).LengthSquared();
+			if (dist1 > line_distance_cull && dist2 > line_distance_cull)
+			{
+				FarClipLine farclip(Thread);
+				farclip.Render(line, InSubsector, floorplane, ceilingplane);
+			}
+			else if (!outersubsector || line->sidedef == nullptr || !(line->sidedef->Flags & WALLF_POLYOBJ))
 			{
 				// kg3D - fake planes bounding calculation
 				if (r_3dfloors && line->backsector && frontsector->e && line->backsector->e->XFloor.ffloors.Size())
@@ -779,11 +819,17 @@ namespace swrenderer
 
 	void RenderOpaquePass::RenderScene()
 	{
+		if (Thread->MainThread)
+			WallCycles.Clock();
+
 		SeenSpriteSectors.clear();
 		SeenActors.clear();
 
 		InSubsector = nullptr;
 		RenderBSPNode(level.HeadNode());	// The head node is the last node output.
+
+		if (Thread->MainThread)
+			WallCycles.Unclock();
 	}
 
 	//
@@ -924,10 +970,20 @@ namespace swrenderer
 			return false;
 		}
 
+		// check renderrequired vs ~r_rendercaps, if anything matches we don't support that feature,
+		// check renderhidden vs r_rendercaps, if anything matches we do support that feature and should hide it.
+		if ((!r_debug_disable_vis_filter && !!(thing->RenderRequired & ~r_renderercaps)) ||
+			(!!(thing->RenderHidden & r_renderercaps)))
+			return false;
+
 		// [ZZ] Or less definitely not visible (hue)
 		// [ZZ] 10.01.2016: don't try to clip stuff inside a skybox against the current portal.
 		RenderPortal *renderportal = Thread->Portal.get();
 		if (!renderportal->CurrentPortalInSkybox && renderportal->CurrentPortal && !!P_PointOnLineSidePrecise(thing->Pos(), renderportal->CurrentPortal->dst))
+			return false;
+
+		double distanceSquared = (thing->Pos() - Thread->Viewport->viewpoint.Pos).LengthSquared();
+		if (distanceSquared > sprite_distance_cull)
 			return false;
 
 		return true;
