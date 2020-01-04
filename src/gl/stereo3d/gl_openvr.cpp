@@ -988,7 +988,7 @@ void OpenVRMode::updateHmdPose(
 			havePreviousYaw = true;
 		}
 		hmdYawDelta = hmdYaw - previousHmdYaw;
-		G_AddViewAngle(mAngleFromRadians(-hmdYawDelta));
+		G_AddViewAngle(mAngleFromRadians(-hmdYawDelta), true);
 		previousHmdYaw = hmdYaw;
 	}
 
@@ -1002,7 +1002,7 @@ void OpenVRMode::updateHmdPose(
 			// hmdPitchInDoom
 			-hmdpitch
 			- viewPitchInDoom;
-		G_AddViewPitch(mAngleFromRadians(-dPitch));
+		G_AddViewPitch(mAngleFromRadians(-dPitch), true);
 	}
 
 	// Roll can be local, because it doesn't affect gameplay.
@@ -1344,7 +1344,7 @@ void OpenVRMode::SetUp() const
 	unsigned int delta = time - lastTime;
 	lastTime = time;
 
-	G_AddViewAngle(joyint(-1280 * I_OpenVRGetYaw() * delta * 30 / 1000));
+	G_AddViewAngle(joyint(-1280 * I_OpenVRGetYaw() * delta * 30 / 1000), true);
 }
 
 /* virtual */
