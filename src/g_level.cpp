@@ -94,6 +94,7 @@
 #include "g_levellocals.h"
 #include "actorinlines.h"
 #include "vm.h"
+#include "i_time.h"
 
 #include <string.h>
 
@@ -128,7 +129,7 @@ int starttime;
 extern FString BackupSaveName;
 
 bool savegamerestore;
-int finishstate;
+int finishstate = FINISH_NoHub;
 
 extern int mousex, mousey;
 extern bool sendpause, sendsave, sendturn180, SendLand;
@@ -851,6 +852,8 @@ void G_DoCompleted (void)
 		level.maptime = 0;
 	}
 
+	finishstate = mode;
+
 	if (!deathmatch &&
 		((level.flags & LEVEL_NOINTERMISSION) ||
 		((nextcluster == thiscluster) && (thiscluster->flags & CLUSTER_HUB) && !(thiscluster->flags & CLUSTER_ALLOWINTERMISSION))))
@@ -860,7 +863,6 @@ void G_DoCompleted (void)
 	}
 
 	gamestate = GS_INTERMISSION;
-	finishstate = mode;
 	viewactive = false;
 	automapactive = false;
 
@@ -1020,7 +1022,7 @@ void G_DoLoadLevel (int position, bool autosave)
 
 		if (firstTime)
 		{
-			starttime = I_GetTime (false);
+			starttime = I_GetTime ();
 			firstTime = false;
 		}
 	}
@@ -1038,12 +1040,20 @@ void G_DoLoadLevel (int position, bool autosave)
 			{
 				players[ii].camera = players[ii].mo;
 			}
-			if (!savegamerestore)
+
+			if (savegamerestore)
 			{
-				E_PlayerEntered(ii, finishstate == FINISH_SameHub);
+				continue;
 			}
-			// ENTER scripts are being handled when the player gets spawned, this cannot be changed due to its effect on voodoo dolls.
-			if (level.FromSnapshot && !savegamerestore) FBehavior::StaticStartTypedScripts(SCRIPT_Return, players[ii].mo, true);
+
+			const bool fromSnapshot = level.FromSnapshot;
+			E_PlayerEntered(ii, fromSnapshot && finishstate == FINISH_SameHub);
+
+			if (fromSnapshot)
+			{
+				// ENTER scripts are being handled when the player gets spawned, this cannot be changed due to its effect on voodoo dolls.
+				FBehavior::StaticStartTypedScripts(SCRIPT_Return, players[ii].mo, true);
+			}
 		}
 	}
 

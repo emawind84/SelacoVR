@@ -66,6 +66,7 @@
 #include "sbar.h"
 #include "math/cmath.h"
 #include "vm.h"
+#include "i_time.h"
 
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
@@ -137,8 +138,6 @@ FRenderViewpoint::FRenderViewpoint()
 
 FRenderViewpoint r_viewpoint;
 FViewWindow		r_viewwindow;
-
-int				otic;
 
 bool			r_NoInterpolate;
 
@@ -786,7 +785,7 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 
 	iview = FindPastViewer (viewpoint.camera);
 
-	int nowtic = I_GetTime (false);
+	int nowtic = I_GetTime ();
 	if (iview->otic != -1 && nowtic > iview->otic)
 	{
 		iview->otic = nowtic;
@@ -834,7 +833,7 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 		iview->otic = nowtic;
 	}
 
-	viewpoint.TicFrac = I_GetTimeFrac (&viewpoint.FrameTime);
+	viewpoint.TicFrac = I_GetTimeFrac ();
 	if (cl_capfps || r_NoInterpolate)
 	{
 		viewpoint.TicFrac = 1.;
@@ -985,7 +984,7 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 
 		if (hom == 3)
 		{
-			hom = ((I_FPSTime() / 128) & 1) + 1;
+			hom = ((screen->FrameTime / 128) & 1) + 1;
 		}
 		if (hom == 1)
 		{
@@ -997,7 +996,7 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 		}
 		else if (hom == 4)
 		{
-			color = (I_FPSTime() / 32) & 255;
+			color = (screen->FrameTime / 32) & 255;
 		}
 		else
 		{

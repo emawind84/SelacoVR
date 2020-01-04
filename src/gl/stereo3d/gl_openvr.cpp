@@ -51,6 +51,7 @@
 #include "m_joy.h"
 #include "d_gui.h"
 #include "d_event.h"
+#include "i_time.h"
 
 void I_StartupOpenVR();
 double P_XYMovement(AActor *mo, DVector2 scroll);
@@ -1338,7 +1339,7 @@ void OpenVRMode::SetUp() const
 	I_StartupOpenVR();
 
 	//To feel smooth, yaw changes need to accumulate over the (sub) tic (i.e. render frame, not per tic)
-	unsigned int time = I_FPSTime();
+	unsigned int time = I_msTime();
 	static unsigned int lastTime = time;
 
 	unsigned int delta = time - lastTime;

@@ -57,7 +57,6 @@
 #include "i_module.h"
 #include "i_music.h"
 #include "i_musicinterns.h"
-#include "tempfiles.h"
 #include "cmdlib.h"
 
 FModule OpenALModule{"OpenAL"};
@@ -72,6 +71,8 @@ CVAR (String, snd_alresampler, "Default", CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 #define OPENALLIB "openal32.dll"
 #elif defined(__APPLE__)
 #define OPENALLIB "OpenAL.framework/OpenAL"
+#elif defined(__OpenBSD__)
+#define OPENALLIB "libopenal.so"
 #else
 #define OPENALLIB "libopenal.so.1"
 #endif
