@@ -43,7 +43,7 @@
 #include "gl/models/gl_models.h"
 #include "g_levellocals.h" // pixelstretch
 #include "g_statusbar/sbar.h"
-#include "math/cmath.h"
+#include <cmath>
 #include "c_cvars.h"
 #include "cmdlib.h"
 #include "LSMatrix.h"
