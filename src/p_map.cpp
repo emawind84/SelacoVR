@@ -101,6 +101,8 @@
 #include "g_levellocals.h"
 #include "actorinlines.h"
 
+#include "gl/stereo3d/gl_stereo3d.h"
+
 CVAR(Bool, cl_bloodsplats, true, CVAR_ARCHIVE)
 CVAR(Int, sv_smartaim, 0, CVAR_ARCHIVE | CVAR_SERVERINFO)
 CVAR(Bool, cl_doautoaim, false, CVAR_ARCHIVE)
@@ -4509,30 +4511,37 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	if (nointeract || (puffDefaults && puffDefaults->flags6 & MF6_NOTRIGGER)) tflags = TRACE_NoSky;
 	else tflags = TRACE_NoSky | TRACE_Impact;
 
-	// [MC] Check the flags and set the position according to what is desired.
-	// LAF_ABSPOSITION: Treat the offset parameters as direct coordinates.
-	// LAF_ABSOFFSET: Ignore the angle.
 
 	DVector3 tempos;
+	if (s3d::Stereo3DMode::getCurrentMode().IsMono())
+	{
+		// [MC] Check the flags and set the position according to what is desired.
+		// LAF_ABSPOSITION: Treat the offset parameters as direct coordinates.
+		// LAF_ABSOFFSET: Ignore the angle.
 
-	if (flags & LAF_ABSPOSITION)
-	{
-		tempos = DVector3(offsetforward, offsetside, sz);
-	}
-	else if (flags & LAF_ABSOFFSET)
-	{
-		tempos = t1->Vec2OffsetZ(offsetforward, offsetside, shootz);
-	}
-	else if (0.0 == offsetforward && 0.0 == offsetside)
-	{
-		// Default case so exact comparison is enough
-		tempos = t1->PosAtZ(shootz);
+		if (flags & LAF_ABSPOSITION)
+		{
+			tempos = DVector3(offsetforward, offsetside, sz);
+		}
+		else if (flags & LAF_ABSOFFSET)
+		{
+			tempos = t1->Vec2OffsetZ(offsetforward, offsetside, shootz);
+		}
+		else if (0.0 == offsetforward && 0.0 == offsetside)
+		{
+			// Default case so exact comparison is enough
+			tempos = t1->PosAtZ(shootz);
+		}
+		else
+		{
+			const double s = angle.Sin();
+			const double c = angle.Cos();
+			tempos = t1->Vec2OffsetZ(offsetforward * c + offsetside * s, offsetforward * s - offsetside * c, shootz);
+		}
 	}
 	else
 	{
-		const double s = angle.Sin();
-		const double c = angle.Cos();
-		tempos = t1->Vec2OffsetZ(offsetforward * c + offsetside * s, offsetforward * s - offsetside * c, shootz);
+		tempos = fromPos;
 	}
 
 	// Perform the trace.
