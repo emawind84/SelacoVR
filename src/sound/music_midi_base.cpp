@@ -50,31 +50,25 @@
 static uint32_t	nummididevices;
 static bool		nummididevicesset;
 
-#ifdef HAVE_FLUIDSYNTH
-#define NUM_DEF_DEVICES 5
-#else
-#define NUM_DEF_DEVICES 4
-#endif
+#define NUM_DEF_DEVICES 7
 
 static void AddDefaultMidiDevices(FOptionValues *opt)
 {
-	int p;
 	FOptionValues::Pair *pair = &opt->mValues[opt->mValues.Reserve(NUM_DEF_DEVICES)];
-#ifdef HAVE_FLUIDSYNTH
 	pair[0].Text = "FluidSynth";
 	pair[0].Value = -5.0;
-	p = 1;
-#else
-	p = 0;
-#endif
-	pair[p].Text = "GUS";
-	pair[p].Value = -4.0;
-	pair[p+1].Text = "OPL Synth Emulation";
-	pair[p+1].Value = -3.0;
-	pair[p+2].Text = "TiMidity++";
-	pair[p+2].Value = -2.0;
-	pair[p+3].Text = "WildMidi";
-	pair[p+3].Value = -6.0;
+	pair[1].Text = "TiMidity++";
+	pair[1].Value = -2.0;
+	pair[2].Text = "WildMidi";
+	pair[2].Value = -6.0;
+	pair[3].Text = "GUS";
+	pair[3].Value = -4.0;
+	pair[4].Text = "OPL Synth Emulation";
+	pair[4].Value = -3.0;
+	pair[5].Text = "libADL";
+	pair[5].Value = -7.0;
+	pair[6].Text = "libOPN";
+	pair[6].Value = -8.0;
 
 }
 
@@ -115,11 +109,7 @@ void MIDIDeviceChanged(int newdev, bool force)
 	if (!force) oldmididev = newdev;
 }
 
-#ifdef HAVE_FLUIDSYNTH 
 #define DEF_MIDIDEV -5
-#else
-#define DEF_MIDIDEV -3
-#endif
 
 #ifdef _WIN32
 unsigned mididevice;
@@ -129,7 +119,7 @@ CUSTOM_CVAR (Int, snd_mididevice, DEF_MIDIDEV, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 	if (!nummididevicesset)
 		return;
 
-	if ((self >= (signed)nummididevices) || (self < -6))
+	if ((self >= (signed)nummididevices) || (self < -8))
 	{
 		// Don't do repeated message spam if there is no valid device.
 		if (self != 0)
@@ -140,7 +130,7 @@ CUSTOM_CVAR (Int, snd_mididevice, DEF_MIDIDEV, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 		return;
 	}
 	else if (self == -1) self = DEF_MIDIDEV;
-	mididevice = MAX<UINT>(0, self);
+	mididevice = MAX<int>(0, self);
 	MIDIDeviceChanged(self);
 }
 
@@ -213,10 +203,10 @@ CCMD (snd_listmididevices)
 	MIDIOUTCAPS caps;
 	MMRESULT res;
 
+	PrintMidiDevice(-8, "libOPN", MIDIDEV_FMSYNTH, 0);
+	PrintMidiDevice(-7, "libADL", MIDIDEV_FMSYNTH, 0);
 	PrintMidiDevice (-6, "WildMidi", MIDIDEV_SWSYNTH, 0);
-#ifdef HAVE_FLUIDSYNTH
 	PrintMidiDevice (-5, "FluidSynth", MIDIDEV_SWSYNTH, 0);
-#endif
 	PrintMidiDevice (-4, "Gravis Ultrasound Emulation", MIDIDEV_SWSYNTH, 0);
 	PrintMidiDevice (-3, "Emulated OPL FM Synth", MIDIDEV_FMSYNTH, 0);
 	PrintMidiDevice (-2, "TiMidity++", MIDIDEV_SWSYNTH, 0);
@@ -243,8 +233,8 @@ CCMD (snd_listmididevices)
 
 CUSTOM_CVAR(Int, snd_mididevice, DEF_MIDIDEV, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 {
-	if (self < -6)
-		self = -6;
+	if (self < -8)
+		self = -8;
 	else if (self > -2)
 		self = -2;
 	else
@@ -258,10 +248,10 @@ void I_BuildMIDIMenuList (FOptionValues *opt)
 
 CCMD (snd_listmididevices)
 {
+	Printf("%s-8. libOPN\n", -7 == snd_mididevice ? TEXTCOLOR_BOLD : "");
+	Printf("%s-7. libADL\n", -6 == snd_mididevice ? TEXTCOLOR_BOLD : "");
 	Printf("%s-6. WildMidi\n", -6 == snd_mididevice ? TEXTCOLOR_BOLD : "");
-#ifdef HAVE_FLUIDSYNTH
 	Printf("%s-5. FluidSynth\n", -5 == snd_mididevice ? TEXTCOLOR_BOLD : "");
-#endif
 	Printf("%s-4. Gravis Ultrasound Emulation\n", -4 == snd_mididevice ? TEXTCOLOR_BOLD : "");
 	Printf("%s-3. Emulated OPL FM Synth\n", -3 == snd_mididevice ? TEXTCOLOR_BOLD : "");
 	Printf("%s-2. TiMidity++\n", -2 == snd_mididevice ? TEXTCOLOR_BOLD : "");

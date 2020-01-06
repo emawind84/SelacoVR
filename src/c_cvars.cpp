@@ -53,12 +53,14 @@
 #include "colormatcher.h"
 #include "menu/menu.h"
 #include "vm.h"
+#include "v_text.h"
 
 struct FLatchedValue
 {
 	FBaseCVar *Variable;
 	UCVarValue Value;
 	ECVarType Type;
+	bool UnsafeContext;
 };
 
 static TArray<FLatchedValue> LatchedValues;
@@ -69,11 +71,6 @@ bool FBaseCVar::m_UseCallback = false;
 FBaseCVar *CVars = NULL;
 
 int cvar_defflags;
-
-FBaseCVar::FBaseCVar (const FBaseCVar &var)
-{
-	I_FatalError ("Use of cvar copy constructor");
-}
 
 FBaseCVar::FBaseCVar (const char *var_name, uint32_t flags, void (*callback)(FBaseCVar &))
 {
@@ -147,7 +144,12 @@ void FBaseCVar::ForceSet (UCVarValue value, ECVarType type, bool nouserinfosend)
 	if (m_UseCallback)
 		Callback ();
 
-	Flags &= ~CVAR_ISDEFAULT;
+	if ((Flags & CVAR_ARCHIVE) && !(Flags & CVAR_UNSAFECONTEXT))
+	{
+		SafeValue = GetGenericRep(CVAR_String).String;
+	}
+
+	Flags &= ~(CVAR_ISDEFAULT | CVAR_UNSAFECONTEXT);
 }
 
 void FBaseCVar::SetGenericRep (UCVarValue value, ECVarType type)
@@ -166,13 +168,17 @@ void FBaseCVar::SetGenericRep (UCVarValue value, ECVarType type)
 			latch.Value = value;
 		else
 			latch.Value.String = copystring(value.String);
+		latch.UnsafeContext = !!(Flags & CVAR_UNSAFECONTEXT);
 		LatchedValues.Push (latch);
+
+		Flags &= ~CVAR_UNSAFECONTEXT;
 	}
 	else if ((Flags & CVAR_SERVERINFO) && gamestate != GS_STARTUP && !demoplayback)
 	{
 		if (netgame && !players[consoleplayer].settings_controller)
 		{
 			Printf ("Only setting controllers can change %s\n", Name);
+			Flags &= ~CVAR_UNSAFECONTEXT;
 			return;
 		}
 		D_SendServerInfoChange (this, value, type);
@@ -1133,6 +1139,14 @@ DEFINE_ACTION_FUNCTION(_CVar, ResetToDefault)
 	return 0;
 }
 
+void FBaseCVar::MarkUnsafe()
+{
+	if (!(Flags & CVAR_MOD) && UnsafeExecutionContext)
+	{
+		Flags |= CVAR_UNSAFECONTEXT;
+	}
+}
+
 //
 // Flag cvar implementation
 //
@@ -1639,17 +1653,19 @@ FBaseCVar *C_CreateCVar(const char *var_name, ECVarType var_type, uint32_t flags
 
 void UnlatchCVars (void)
 {
-	FLatchedValue var;
-
-	while (LatchedValues.Pop (var))
+	for (const FLatchedValue& var : LatchedValues)
 	{
 		uint32_t oldflags = var.Variable->Flags;
 		var.Variable->Flags &= ~(CVAR_LATCH | CVAR_SERVERINFO);
+		if (var.UnsafeContext)
+			var.Variable->Flags |= CVAR_UNSAFECONTEXT;
 		var.Variable->SetGenericRep (var.Value, var.Type);
 		if (var.Type == CVAR_String)
 			delete[] var.Value.String;
 		var.Variable->Flags = oldflags;
 	}
+
+	LatchedValues.Clear();
 }
 
 void DestroyCVarsFlagged (uint32_t flags)
@@ -1696,9 +1712,10 @@ void C_ArchiveCVars (FConfigFile *f, uint32_t filter)
 			(CVAR_GLOBALCONFIG|CVAR_ARCHIVE|CVAR_MOD|CVAR_AUTO|CVAR_USERINFO|CVAR_SERVERINFO|CVAR_NOSAVE))
 			== filter)
 		{
-			UCVarValue val;
-			val = cvar->GetGenericRep (CVAR_String);
-			f->SetValueForKey (cvar->GetName (), val.String);
+			const char *const value = (cvar->Flags & CVAR_ISDEFAULT)
+				? cvar->GetGenericRep(CVAR_String).String
+				: cvar->SafeValue.GetChars();
+			f->SetValueForKey(cvar->GetName(), value);
 		}
 		cvar = cvar->m_Next;
 	}
@@ -1713,6 +1730,8 @@ void FBaseCVar::CmdSet (const char *newval)
 		Printf("sv_cheats must be true to set this console variable.\n");
 		return;
 	}
+
+	MarkUnsafe();
 
 	UCVarValue val;
 
@@ -1799,6 +1818,8 @@ CCMD (toggle)
 	{
 		if ( (var = FindCVar (argv[1], &prev)) )
 		{
+			var->MarkUnsafe();
+
 			val = var->GetGenericRep (CVAR_Bool);
 			val.Bool = !val.Bool;
 			var->SetGenericRep (val, CVAR_Bool);

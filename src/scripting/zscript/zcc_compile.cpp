@@ -1627,7 +1627,7 @@ PType *ZCCCompiler::DetermineType(PType *outertype, ZCC_TreeNode *field, FName n
 			}
 			else
 			{
-				Error(field, "%s: Base type  for dynamic array types nust be integral, but got %s", name.GetChars(), ftype->DescriptiveName());
+				Error(field, "%s: Base type for dynamic array types must be integral, but got %s", name.GetChars(), ftype->DescriptiveName());
 			}
 		}
 		else
@@ -2494,6 +2494,7 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 		bool hasoptionals = false;
 		if (p != nullptr)
 		{
+            bool overridemsg = false;
 			do
 			{
 				int elementcount = 1;
@@ -2528,6 +2529,22 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 					{
 						flags |= VARF_Optional;
 						hasoptionals = true;
+						
+						if ((varflags & VARF_Override) && !overridemsg)
+						{
+							// This is illegal, but in older compilers wasn't checked, so there it has to be demoted to a warning.
+							// Virtual calls always need to get their defaults from the base virtual method.
+							if (mVersion >= MakeVersion(3, 3))
+							{
+								Error(p, "Default values for parameter of virtual override not allowed");
+							}
+							else
+							{
+								Warn(p, "Default values for parameter of virtual override will be ignored!");
+							}
+							overridemsg = true;
+						}
+
 
 						FxExpression *x = new FxTypeCast(ConvertNode(p->Default), type, false);
 						FCompileContext ctx(OutNamespace, c->Type(), false);
@@ -2721,6 +2738,13 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 						clstype->Virtuals[vindex] = sym->Variants[0].Implementation;
 						sym->Variants[0].Implementation->VirtualIndex = vindex;
 						sym->Variants[0].Implementation->VarFlags = sym->Variants[0].Flags;
+						
+						// Defaults must be identical to parent class
+						if (parentfunc->Variants[0].Implementation->DefaultArgs.Size() > 0)
+						{
+							sym->Variants[0].Implementation->DefaultArgs = parentfunc->Variants[0].Implementation->DefaultArgs;
+							sym->Variants[0].ArgFlags = parentfunc->Variants[0].ArgFlags;
+						}
 					}
 				}
 				else
@@ -2872,7 +2896,18 @@ void ZCCCompiler::CompileStates()
 
 		FString statename;	// The state builder wants the label as one complete string, not separated into tokens.
 		FStateDefinitions statedef;
-		statedef.MakeStateDefines(ValidateActor(c->ClassType()->ParentClass));
+
+		if (static_cast<PClassActor*>(c->ClassType())->ActorInfo()->SkipSuperSet)
+		{
+			// SKIP_SUPER'ed actors only get the base states from AActor.
+			statedef.MakeStateDefines(RUNTIME_CLASS(AActor));
+		}
+		else
+		{
+			statedef.MakeStateDefines(ValidateActor(c->ClassType()->ParentClass));
+		}
+
+
 		int numframes = 0;
 
 		for (auto s : c->States)

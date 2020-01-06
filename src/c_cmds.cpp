@@ -467,7 +467,7 @@ CCMD (print)
 	}
 }
 
-CCMD (exec)
+UNSAFE_CCMD (exec)
 {
 	if (argv.argc() < 2)
 		return;
@@ -495,7 +495,7 @@ void execLogfile(const char *fn, bool append)
 	}
 }
 
-CCMD (logfile)
+UNSAFE_CCMD (logfile)
 {
 
 	if (Logfile)
@@ -651,7 +651,7 @@ CCMD (error)
 	}
 }
 
-CCMD (error_fatal)
+UNSAFE_CCMD (error_fatal)
 {
 	if (argv.argc() > 1)
 	{
@@ -674,14 +674,14 @@ CCMD (error_fatal)
 //==========================================================================
 
 #if !defined(_WIN32) || !defined(_DEBUG)
-CCMD (crashout)
+UNSAFE_CCMD (crashout)
 {
 	*(volatile int *)0 = 0;
 }
 #endif
 
 
-CCMD (dir)
+UNSAFE_CCMD (dir)
 {
 	FString dir, path;
 	char curdir[256];
@@ -794,7 +794,7 @@ CCMD (warp)
 //
 //==========================================================================
 
-CCMD (load)
+UNSAFE_CCMD (load)
 {
     if (argv.argc() != 2)
 	{
@@ -819,7 +819,7 @@ CCMD (load)
 //
 //==========================================================================
 
-CCMD (save)
+UNSAFE_CCMD (save)
 {
     if (argv.argc() < 2 || argv.argc() > 3)
 	{
@@ -1224,7 +1224,7 @@ CCMD(secret)
 	int lumpno=Wads.CheckNumForName("SECRETS");
 	if (lumpno < 0) return;
 
-	FWadLump lump = Wads.OpenLumpNum(lumpno);
+	auto lump = Wads.OpenLumpReader(lumpno);
 	FString maphdr;
 	maphdr.Format("[%s]", mapname);
 

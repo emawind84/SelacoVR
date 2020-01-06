@@ -60,13 +60,32 @@ struct InitIntToZero
 };
 typedef TMap<int32_t, int32_t, THashTraits<int32_t>, InitIntToZero> FWorldGlobalArray;
 
-// ACS variables with world scope
-extern int32_t ACS_WorldVars[NUM_WORLDVARS];
-extern FWorldGlobalArray ACS_WorldArrays[NUM_WORLDVARS];
+// Type of elements count is unsigned int instead of size_t to match ACSStringPool interface
+template <typename T, unsigned int N>
+struct BoundsCheckingArray
+{
+	T &operator[](const unsigned int index)
+	{
+		if (index >= N)
+		{
+			I_Error("Out of bounds memory access in ACS VM");
+		}
+
+		return buffer[index];
+	}
+
+	T *Pointer() { return buffer; }
+	unsigned int Size() const { return N; }
+
+	void Fill(const T &value) { std::fill(std::begin(buffer), std::end(buffer), value); }
+
+private:
+	T buffer[N];
+};
 
 // ACS variables with global scope
-extern int32_t ACS_GlobalVars[NUM_GLOBALVARS];
-extern FWorldGlobalArray ACS_GlobalArrays[NUM_GLOBALVARS];
+extern BoundsCheckingArray<int32_t, NUM_GLOBALVARS> ACS_GlobalVars;
+extern BoundsCheckingArray<FWorldGlobalArray, NUM_GLOBALVARS> ACS_GlobalArrays;
 
 #define LIBRARYID_MASK			0xFFF00000
 #define LIBRARYID_SHIFT			20
@@ -147,6 +166,44 @@ struct ProfileCollector
 	int Index;
 };
 
+class ACSLocalVariables
+{
+public:
+	ACSLocalVariables(TArray<int32_t> &variables)
+	: memory(&variables[0])
+	, count(variables.Size())
+	{
+	}
+
+	void Reset(int32_t *const memory, const size_t count)
+	{
+		// TODO: pointer sanity check?
+		// TODO: constraints on count?
+
+		this->memory = memory;
+		this->count = count;
+	}
+
+	int32_t& operator[](const size_t index)
+	{
+		if (index >= count)
+		{
+			I_Error("Out of bounds access to local variables in ACS VM");
+		}
+
+		return memory[index];
+	}
+
+	const int32_t *GetPointer() const
+	{
+		return memory;
+	}
+
+private:
+	int32_t *memory;
+	size_t count;
+};
+
 struct ACSLocalArrayInfo
 {
 	unsigned int Size;
@@ -173,7 +230,7 @@ struct ACSLocalArrays
 	}
 
 	// Bounds-checking Set and Get for local arrays
-	void Set(int *locals, int arraynum, int arrayentry, int value)
+	void Set(ACSLocalVariables &locals, int arraynum, int arrayentry, int value)
 	{
 		if ((unsigned int)arraynum < Count &&
 			(unsigned int)arrayentry < Info[arraynum].Size)
@@ -181,7 +238,7 @@ struct ACSLocalArrays
 			locals[Info[arraynum].Offset + arrayentry] = value;
 		}
 	}
-	int Get(int *locals, int arraynum, int arrayentry)
+	int Get(ACSLocalVariables &locals, int arraynum, int arrayentry)
 	{
 		if ((unsigned int)arraynum < Count &&
 			(unsigned int)arrayentry < Info[arraynum].Size)
@@ -321,9 +378,9 @@ public:
 	ACSProfileInfo *GetFunctionProfileData(ScriptFunction *func) { return GetFunctionProfileData((int)(func - (ScriptFunction *)Functions)); }
 	const char *LookupString (uint32_t index) const;
 
-	int32_t *MapVars[NUM_MAPVARS];
+	BoundsCheckingArray<int32_t *, NUM_MAPVARS> MapVars;
 
-	static FBehavior *StaticLoadModule (int lumpnum, FileReader * fr=NULL, int len=0);
+	static FBehavior *StaticLoadModule (int lumpnum, FileReader *fr = nullptr, int len=0);
 	static void StaticLoadDefaultModules ();
 	static void StaticUnloadModules ();
 	static bool StaticCheckAllGood ();

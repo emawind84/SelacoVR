@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <memory>
 
 #include "doomdef.h"
 #include "m_swap.h"
@@ -8,13 +9,15 @@
 #include "timidity.h"
 #include "sf2.h"
 #include "files.h"
+#include "i_soundfont.h"
 
 namespace Timidity
 {
 
 FontFile *Fonts;
+extern std::unique_ptr<FSoundFontReader> gus_sfreader;
 
-FontFile *ReadDLS(const char *filename, FileReader *f)
+FontFile *ReadDLS(const char *filename, FileReader &f)
 {
 	return NULL;
 }
@@ -54,15 +57,14 @@ void font_add(const char *filename, int load_order)
 	}
 	else
 	{
-		FileReader *fp = pathExpander.openFileReader(filename, NULL);
+		FileReader fp = gus_sfreader->LookupFile(filename).first;
 
-		if (fp != NULL)
+		if (fp.isOpen())
 		{
 			if ((font = ReadSF2(filename, fp)) || (font = ReadDLS(filename, fp)))
 			{
 				font->SetAllOrders(load_order);
 			}
-			delete fp;
 		}
 	}
 }

@@ -209,9 +209,10 @@ static bool currentModelMatrixState;
 
 void FRenderState::ApplyFixedFunction()
 {
-	if (mTextureMode != ffTextureMode)
+	int thistm = mTextureMode == TM_MODULATE && mTempTM == TM_OPAQUE ? TM_OPAQUE : mTextureMode;
+	if (thistm != ffTextureMode)
 	{
-		ffTextureMode = mTextureMode;
+		ffTextureMode = thistm;
 		if (ffTextureMode == TM_CLAMPY) ffTextureMode = TM_MODULATE;	// this cannot be replicated. Too bad if it creates visual artifacts
 		gl_SetTextureMode(ffTextureMode);
 	}
@@ -459,8 +460,8 @@ bool gl_SetupLight(int group, Plane & p, ADynamicLight * light, FVector3 & nearP
 
 bool gl_SetupLightTexture()
 {
-	if (GLRenderer->gllight == nullptr) return false;
-	FMaterial * pat = FMaterial::ValidateTexture(GLRenderer->gllight, false);
+	if (!GLRenderer->glLight.isValid()) return false;
+	FMaterial * pat = FMaterial::ValidateTexture(GLRenderer->glLight, false, false);
 	gl_RenderState.SetMaterial(pat, CLAMP_XY_NOMIP, 0, -1, false);
 	return true;
 }

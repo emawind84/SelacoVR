@@ -87,6 +87,7 @@
 #include "vm.h"
 #include "events.h"
 #include "dobjgc.h"
+#include "i_music.h"
 
 #include "gi.h"
 
@@ -224,7 +225,7 @@ CCMD (map)
 //
 //==========================================================================
 
-CCMD(recordmap)
+UNSAFE_CCMD(recordmap)
 {
 	if (netgame)
 	{
@@ -277,7 +278,7 @@ CCMD(recordmap)
 //
 //==========================================================================
 
-CCMD (open)
+UNSAFE_CCMD (open)
 {
 	if (netgame)
 	{
@@ -600,6 +601,7 @@ void G_ChangeLevel(const char *levelname, int position, int flags, int nextSkill
 
 	startpos = position;
 	gameaction = ga_completed;
+	level.SetMusicVolume(1.0);
 		
 	if (nextinfo != NULL) 
 	{
@@ -648,7 +650,8 @@ void G_ChangeLevel(const char *levelname, int position, int flags, int nextSkill
 
 			// If this is co-op, respawn any dead players now so they can
 			// keep their inventory on the next map.
-			if ((multiplayer || level.flags2 & LEVEL2_ALLOWRESPAWN || sv_singleplayerrespawn) && !deathmatch && player->playerstate == PST_DEAD)
+			if ((multiplayer || level.flags2 & LEVEL2_ALLOWRESPAWN || sv_singleplayerrespawn || !!G_SkillProperty(SKILLP_PlayerRespawn))
+				&& !deathmatch && player->playerstate == PST_DEAD)
 			{
 				// Copied from the end of P_DeathThink [[
 				player->cls = NULL;		// Force a new class if the player is using a random class
@@ -1468,6 +1471,7 @@ void G_InitLevelLocals ()
 	level.levelnum = info->levelnum;
 	level.Music = info->Music;
 	level.musicorder = info->musicorder;
+	level.MusicVolume = 1.f;
 
 	level.LevelName = level.info->LookupLevelName();
 	level.NextMap = info->NextMap;
@@ -1959,6 +1963,17 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, SetInterMusic)
 //
 //==========================================================================
 
+void FLevelLocals::SetMusicVolume(float f)
+{
+	MusicVolume = f;
+	I_SetMusicVolume(f);
+}
+
+//==========================================================================
+//
+//
+//==========================================================================
+
 template <typename T>
 inline T VecDiff(const T& v1, const T& v2)
 {
@@ -2028,6 +2043,10 @@ DEFINE_FIELD(FLevelLocals, F1Pic)
 DEFINE_FIELD(FLevelLocals, maptype)
 DEFINE_FIELD(FLevelLocals, Music)
 DEFINE_FIELD(FLevelLocals, musicorder)
+DEFINE_FIELD(FLevelLocals, skytexture1)
+DEFINE_FIELD(FLevelLocals, skytexture2)
+DEFINE_FIELD(FLevelLocals, skyspeed1)
+DEFINE_FIELD(FLevelLocals, skyspeed2)
 DEFINE_FIELD(FLevelLocals, total_secrets)
 DEFINE_FIELD(FLevelLocals, found_secrets)
 DEFINE_FIELD(FLevelLocals, total_items)
@@ -2093,3 +2112,19 @@ CCMD(skyfog)
 	}
 }
 
+
+//==========================================================================
+//
+// ZScript counterpart to ACS ChangeSky, uses TextureIDs
+//
+//==========================================================================
+DEFINE_ACTION_FUNCTION(FLevelLocals, ChangeSky)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	PARAM_INT(sky1);
+	PARAM_INT(sky2);
+	sky1texture = self->skytexture1 = FSetTextureID(sky1);
+	sky2texture = self->skytexture2 = FSetTextureID(sky2);
+	R_InitSkyMap();
+	return 0;
+}

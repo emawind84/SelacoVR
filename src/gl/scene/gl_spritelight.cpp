@@ -49,6 +49,13 @@
 FDynLightData modellightdata;
 int modellightindex = -1;
 
+template<class T>
+T smoothstep(const T edge0, const T edge1, const T x)
+{
+	auto t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+	return t * t * (3.0 - 2.0 * t);
+}
+
 //==========================================================================
 //
 // Sets a single light value from all dynamic lights affecting the specified location
@@ -67,9 +74,10 @@ void gl_SetDynSpriteLight(AActor *self, float x, float y, float z, subsector_t *
 	while (node)
 	{
 		light=node->lightsource;
-		if (light->visibletoplayer && !(light->flags2&MF2_DORMANT) && (!(light->lightflags&LF_DONTLIGHTSELF) || light->target != self) && !(light->lightflags&LF_DONTLIGHTACTORS))
+		if (light->visibletoplayer && !(light->flags2&MF2_DORMANT) && (!(light->lightflags&LF_DONTLIGHTSELF) || light->target != self || !self) && !(light->lightflags&LF_DONTLIGHTACTORS))
 		{
 			float dist;
+			FVector3 L;
 
 			// This is a performance critical section of code where we cannot afford to let the compiler decide whether to inline the function or not.
 			// This will do the calculations explicitly rather than calling one of AActor's utility functions.
@@ -80,14 +88,15 @@ void gl_SetDynSpriteLight(AActor *self, float x, float y, float z, subsector_t *
 				if (fromgroup == togroup || fromgroup == 0 || togroup == 0) goto direct;
 
 				DVector2 offset = Displacements.getOffset(fromgroup, togroup);
-				dist = FVector3(x - light->X() - offset.X, y - light->Y() - offset.Y, z - light->Z()).LengthSquared();
+				L = FVector3(x - light->X() - offset.X, y - light->Y() - offset.Y, z - light->Z());
 			}
 			else
 			{
 			direct:
-				dist = FVector3(x - light->X(), y - light->Y(), z - light->Z()).LengthSquared();
+				L = FVector3(x - light->X(), y - light->Y(), z - light->Z());
 			}
 
+			dist = L.LengthSquared();
 			radius = light->GetRadius();
 
 			if (dist < radius * radius)
@@ -95,6 +104,18 @@ void gl_SetDynSpriteLight(AActor *self, float x, float y, float z, subsector_t *
 				dist = sqrtf(dist);	// only calculate the square root if we really need it.
 
 				frac = 1.0f - (dist / radius);
+
+				if (light->IsSpot())
+				{
+					L *= -1.0f / dist;
+					DAngle negPitch = -light->Angles.Pitch;
+					double xyLen = negPitch.Cos();
+					double spotDirX = -light->Angles.Yaw.Cos() * xyLen;
+					double spotDirY = -light->Angles.Yaw.Sin() * xyLen;
+					double spotDirZ = -negPitch.Sin();
+					double cosDir = L.X * spotDirX + L.Y * spotDirY + L.Z * spotDirZ;
+					frac *= (float)smoothstep(light->SpotOuterAngle.Cos(), light->SpotInnerAngle.Cos(), cosDir);
+				}
 
 				if (frac > 0 && GLRenderer->mShadowMap.ShadowTest(light, { x, y, z }))
 				{
@@ -177,13 +198,21 @@ void BSPWalkCircle(float x, float y, float radiusSquared, const Callback &callba
 		BSPNodeWalkCircle(level.HeadNode(), x, y, radiusSquared, callback);
 }
 
-void gl_SetDynModelLight(AActor *self)
+int gl_SetDynModelLight(AActor *self, int dynlightindex)
 {
-	// Legacy and deferred render paths gets the old flat model light
-	if (gl.lightmethod != LM_DIRECT)
+	// For deferred light mode this function gets called twice. First time for list upload, and second for draw.
+	if (gl.lightmethod == LM_DEFERRED && dynlightindex != -1)
+	{
+		gl_RenderState.SetDynLight(0, 0, 0);
+		modellightindex = dynlightindex;
+		return dynlightindex;
+	}
+
+	// Legacy render path gets the old flat model light
+	if (gl.lightmethod == LM_LEGACY)
 	{
 		gl_SetDynSpriteLight(self, nullptr);
-		return;
+		return -1;
 	}
 
 	modellightdata.Clear();
@@ -228,6 +257,12 @@ void gl_SetDynModelLight(AActor *self)
 		});
 	}
 
-	gl_RenderState.SetDynLight(0, 0, 0);
-	modellightindex = GLRenderer->mLights->UploadLights(modellightdata);
+	dynlightindex = GLRenderer->mLights->UploadLights(modellightdata);
+
+	if (gl.lightmethod != LM_DEFERRED)
+	{
+		gl_RenderState.SetDynLight(0, 0, 0);
+		modellightindex = dynlightindex;
+	}
+	return dynlightindex;
 }

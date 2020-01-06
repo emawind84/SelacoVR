@@ -91,7 +91,9 @@ void F2DDrawer::AddTexture(FTexture *img, DrawParms &parms)
 
 	if (!img->bHasCanvas)
 	{
-		if (!parms.alphaChannel)
+		dg.mAlphaTexture = !!(parms.style.Flags & STYLEF_RedIsAlpha);
+
+		if (!dg.mAlphaTexture)
 		{
 			if (parms.remap != NULL && !parms.remap->Inactive)
 			{
@@ -99,7 +101,6 @@ void F2DDrawer::AddTexture(FTexture *img, DrawParms &parms)
 				if (pal) dg.mTranslation = -pal->GetIndex();
 			}
 		}
-		dg.mAlphaTexture = !!(parms.style.Flags & STYLEF_RedIsAlpha);
 		u1 = gltex->GetUL();
 		v1 = gltex->GetVT();
 		u2 = gltex->GetUR();
@@ -405,7 +406,6 @@ void F2DDrawer::Draw()
 
 			gl_SetRenderStyle(dt->mRenderStyle, !dt->mMasked, false);
 			gl_RenderState.SetMaterial(dt->mTexture, CLAMP_XY_NOMIP, dt->mTranslation, -1, dt->mAlphaTexture);
-			if (dt->mTexture->tex->bHasCanvas) gl_RenderState.SetTextureMode(TM_OPAQUE);
 
 			glEnable(GL_SCISSOR_TEST);
 			glScissor(dt->mScissor[0], dt->mScissor[1], dt->mScissor[2], dt->mScissor[3]);

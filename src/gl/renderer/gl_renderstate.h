@@ -94,6 +94,7 @@ class FRenderState
 	bool mLastDepthClamp;
 	float mInterpolationFactor;
 	float mClipHeight, mClipHeightDirection;
+	float mGlossiness, mSpecularLevel;
 	float mShaderTimer;
 
 	FVertexBuffer *mVertexBuffer, *mCurrentVertexBuffer;
@@ -112,6 +113,7 @@ class FRenderState
 
 	int mEffectState;
 	int mColormapState;
+	int mTempTM = TM_MODULATE;
 
 	float stAlphaThreshold;
 	int stSrcBlend, stDstBlend;
@@ -142,16 +144,20 @@ public:
 
 	void SetMaterial(FMaterial *mat, int clampmode, int translation, int overrideshader, bool alphatexture)
 	{
-		// textures without their own palette are a special case for use as an alpha texture:
-		// They use the color index directly as an alpha value instead of using the palette's red.
-		// To handle this case, we need to set a special translation for such textures.
-		// Without shaders this translation must be applied to any texture.
-		if (alphatexture)
+		// alpha textures need special treatment in the legacy renderer because withouz shaders they need a different texture.
+		if (alphatexture &&  gl.legacyMode) translation = INT_MAX;
+		
+		if (mat->tex->bHasCanvas)
 		{
-			if (mat->tex->UseBasePalette() || gl.legacyMode) translation = TRANSLATION(TRANSLATION_Standard, 8);
+			mTempTM = TM_OPAQUE;
+		}
+		else
+		{
+			mTempTM = TM_MODULATE;
 		}
 		mEffectState = overrideshader >= 0? overrideshader : mat->mShaderIndex;
 		mShaderTimer = mat->tex->gl_info.shaderspeed;
+		SetSpecular(mat->tex->gl_info.Glossiness, mat->tex->gl_info.SpecularLevel);
 		mat->Bind(clampmode, translation);
 	}
 
@@ -384,6 +390,12 @@ public:
 	void SetObjectColor2(PalEntry pe)
 	{
 		mObjectColor2 = pe;
+	}
+
+	void SetSpecular(float glossiness, float specularLevel)
+	{
+		mGlossiness = glossiness;
+		mSpecularLevel = specularLevel;
 	}
 
 	void SetFog(PalEntry c, float d)

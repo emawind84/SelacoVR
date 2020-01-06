@@ -148,24 +148,21 @@ struct FPatchLookup
 //
 //==========================================================================
 
-class FMultiPatchTexture : public FTexture
+class FMultiPatchTexture : public FWorldTexture
 {
 public:
 	FMultiPatchTexture (const void *texdef, FPatchLookup *patchlookup, int maxpatchnum, bool strife, int deflump);
 	FMultiPatchTexture (FScanner &sc, int usetype);
 	~FMultiPatchTexture ();
 
-	const uint8_t *GetColumn (unsigned int column, const Span **spans_out);
-	const uint8_t *GetPixels ();
-	FTextureFormat GetFormat();
-	bool UseBasePalette() ;
-	void Unload ();
-	virtual void SetFrontSkyLayer ();
+	FTextureFormat GetFormat() override;
+	bool UseBasePalette() override;
+	virtual void SetFrontSkyLayer () override;
 
-	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL);
-	int GetSourceLump() { return DefinitionLump; }
-	FTexture *GetRedirect(bool wantwarped);
-	FTexture *GetRawTexture();
+	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL) override;
+	int GetSourceLump() override { return DefinitionLump; }
+	FTexture *GetRedirect(bool wantwarped) override;
+	FTexture *GetRawTexture() override;
 	void ResolvePatches();
 
 protected:
@@ -175,15 +172,14 @@ protected:
 
 	struct TexPart
 	{
-		int16_t OriginX, OriginY;
-		uint8_t Rotate;
-		uint8_t op;
-		FRemapTable *Translation;
-		PalEntry Blend;
-		FTexture *Texture;
-		blend_t Alpha;
-
-		TexPart();
+		FRemapTable *Translation = nullptr;
+		FTexture *Texture = nullptr;
+		PalEntry Blend = 0;
+		blend_t Alpha = FRACUNIT;
+		int16_t OriginX = 0;
+		int16_t OriginY = 0;
+		uint8_t Rotate = 0;
+		uint8_t op = OP_COPY;
 	};
 
 	struct TexInit
@@ -199,10 +195,16 @@ protected:
 	int NumParts;
 	TexPart *Parts;
 	TexInit *Inits;
-	bool bRedirect:1;
-	bool bTranslucentPatches:1;
+	bool bRedirect;
+	bool bTranslucentPatches;
 
-	void MakeTexture ();
+	uint8_t *MakeTexture (FRenderStyle style);
+
+	// The getters must optionally redirect if it's a simple one-patch texture.
+	const uint8_t *GetPixels(FRenderStyle style) override { return bRedirect ? Parts->Texture->GetPixels(style) : FWorldTexture::GetPixels(style); }
+	const uint8_t *GetColumn(FRenderStyle style, unsigned int col, const Span **out) override
+		{ return bRedirect ? Parts->Texture->GetColumn(style, col, out) : FWorldTexture::GetColumn(style, col, out); }
+
 
 private:
 	void CheckForHacks ();
@@ -324,11 +326,6 @@ FMultiPatchTexture::~FMultiPatchTexture ()
 		delete[] Inits;
 		Inits = nullptr;
 	}
-	if (Spans != NULL)
-	{
-		FreeSpans (Spans);
-		Spans = NULL;
-	}
 }
 
 //==========================================================================
@@ -348,87 +345,12 @@ void FMultiPatchTexture::SetFrontSkyLayer ()
 
 //==========================================================================
 //
-// FMultiPatchTexture :: Unload
-//
-//==========================================================================
-
-void FMultiPatchTexture::Unload ()
-{
-	if (Pixels != NULL)
-	{
-		delete[] Pixels;
-		Pixels = NULL;
-	}
-	FTexture::Unload();
-}
-
-//==========================================================================
-//
-// FMultiPatchTexture :: GetPixels
-//
-//==========================================================================
-
-const uint8_t *FMultiPatchTexture::GetPixels ()
-{
-	if (bRedirect)
-	{
-		return Parts->Texture->GetPixels ();
-	}
-	if (Pixels == NULL)
-	{
-		MakeTexture ();
-	}
-	return Pixels;
-}
-
-//==========================================================================
-//
-// FMultiPatchTexture :: GetColumn
-//
-//==========================================================================
-
-const uint8_t *FMultiPatchTexture::GetColumn (unsigned int column, const Span **spans_out)
-{
-	if (bRedirect)
-	{
-		return Parts->Texture->GetColumn (column, spans_out);
-	}
-	if (Pixels == NULL)
-	{
-		MakeTexture ();
-	}
-	if ((unsigned)column >= (unsigned)Width)
-	{
-		if (WidthMask + 1 == Width)
-		{
-			column &= WidthMask;
-		}
-		else
-		{
-			column %= Width;
-		}
-	}
-	if (spans_out != NULL)
-	{
-		if (Spans == NULL)
-		{
-			Spans = CreateSpans (Pixels);
-		}
-		*spans_out = Spans[column];
-	}
-	return Pixels + column*Height;
-}
-
-
-//==========================================================================
-//
 // GetBlendMap
 //
 //==========================================================================
 
 uint8_t *GetBlendMap(PalEntry blend, uint8_t *blendwork)
 {
-
 	switch (blend.a==0 ? int(blend) : -1)
 	{
 	case BLEND_ICEMAP:
@@ -481,39 +403,46 @@ uint8_t *GetBlendMap(PalEntry blend, uint8_t *blendwork)
 //
 //==========================================================================
 
-void FMultiPatchTexture::MakeTexture ()
+uint8_t *FMultiPatchTexture::MakeTexture (FRenderStyle style)
 {
 	// Add a little extra space at the end if the texture's height is not
 	// a power of 2, in case somebody accidentally makes it repeat vertically.
 	int numpix = Width * Height + (1 << HeightBits) - Height;
 	uint8_t blendwork[256];
-	bool hasTranslucent = false;
+	bool buildrgb = bComplex;
 
-	Pixels = new uint8_t[numpix];
+	auto Pixels = new uint8_t[numpix];
 	memset (Pixels, 0, numpix);
 
-	for (int i = 0; i < NumParts; ++i)
+	if (style.Flags & STYLEF_RedIsAlpha)
 	{
-		if (Parts[i].op != OP_COPY)
+		buildrgb = !UseBasePalette();
+	}
+	else
+	{
+		// For regular textures we can use paletted compositing if all patches are just being copied because they all can create a paletted buffer.
+		if (!buildrgb) for (int i = 0; i < NumParts; ++i)
 		{
-			hasTranslucent = true;
+			if (Parts[i].op != OP_COPY)
+			{
+				buildrgb = true;
+			}
 		}
 	}
 
-	if (!hasTranslucent)
-	{
+	if (!buildrgb)
+	{	
 		for (int i = 0; i < NumParts; ++i)
 		{
 			if (Parts[i].Texture->bHasCanvas) continue;	// cannot use camera textures as patch.
 		
-			uint8_t *trans = Parts[i].Translation ? Parts[i].Translation->Remap : NULL;
+			uint8_t *trans = Parts[i].Translation? Parts[i].Translation->Remap : nullptr;
 			{
 				if (Parts[i].Blend != 0)
 				{
 					trans = GetBlendMap(Parts[i].Blend, blendwork);
 				}
-				Parts[i].Texture->CopyToBlock (Pixels, Width, Height,
-					Parts[i].OriginX, Parts[i].OriginY, Parts[i].Rotate, trans);
+				Parts[i].Texture->CopyToBlock (Pixels, Width, Height, Parts[i].OriginX, Parts[i].OriginY, Parts[i].Rotate, trans, style);
 			}
 		}
 	}
@@ -532,7 +461,7 @@ void FMultiPatchTexture::MakeTexture ()
 			{
 				if (*out == 0 && in[3] != 0)
 				{
-					*out = RGB256k.RGB[in[2]>>2][in[1]>>2][in[0]>>2];
+					*out = RGBToPalette(style, in[2], in[1], in[0]);
 				}
 				out += Height;
 				in += 4;
@@ -540,6 +469,7 @@ void FMultiPatchTexture::MakeTexture ()
 		}
 		delete [] buffer;
 	}
+	return Pixels;
 }
 
 //===========================================================================
@@ -756,14 +686,6 @@ void FMultiPatchTexture::CheckForHacks ()
 				break;
 			}
 		}
-
-		if (i == NumParts)
-		{
-			for (i = 0; i < NumParts; ++i)
-			{
-				Parts[i].Texture->HackHack(256);
-			}
-		}
 	}
 }
 
@@ -799,23 +721,6 @@ FTexture *FMultiPatchTexture::GetRawTexture()
 
 //==========================================================================
 //
-// FMultiPatchTexture :: TexPart :: TexPart
-//
-//==========================================================================
-
-FMultiPatchTexture::TexPart::TexPart()
-{
-	OriginX = OriginY = 0;
-	Rotate = 0;
-	Texture = NULL;
-	Translation = NULL;
-	Blend = 0;
-	Alpha = FRACUNIT;
-	op = OP_COPY;
-}
-
-//==========================================================================
-//
 // FTextureManager :: AddTexturesLump
 //
 //==========================================================================
@@ -832,9 +737,8 @@ void FTextureManager::AddTexturesLump (const void *lumpdata, int lumpsize, int d
 	}
 
 	{
-		FWadLump pnames = Wads.OpenLumpNum (patcheslump);
-
-		pnames >> numpatches;
+		auto pnames = Wads.OpenLumpReader(patcheslump);
+		numpatches = pnames.ReadUInt32();
 
 		// Check whether the amount of names reported is correct.
 		if ((signed)numpatches < 0)
@@ -1369,7 +1273,7 @@ void FMultiPatchTexture::ResolvePatches()
 		{
 			if (Parts[i].Texture == nullptr)
 			{
-				memcpy(&Parts[i], &Parts[i + 1], NumParts - i - 1);
+				memcpy(&Parts[i], &Parts[i + 1], (NumParts - i - 1) * sizeof(TexPart));
 				i--;
 				NumParts--;
 			}

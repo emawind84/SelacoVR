@@ -48,12 +48,12 @@ const char *GetVersionString();
 #ifdef GIT_DESCRIPTION
 #define VERSIONSTR GIT_DESCRIPTION
 #else
-#define VERSIONSTR "3.2.5"
+#define VERSIONSTR "3.3.0"
 #endif
 
 // The version as seen in the Windows resource
-#define RC_FILEVERSION 3,2,5,0
-#define RC_PRODUCTVERSION 3,2,5,0
+#define RC_FILEVERSION 3,3,0,0
+#define RC_PRODUCTVERSION 3,3,0,0
 #define RC_PRODUCTVERSION2 VERSIONSTR
 // These are for content versioning. The current state is '3.2.5'.
 #define VER_MAJOR 3
@@ -97,7 +97,6 @@ const char *GetVersionString();
 #define GAMESIG "GZDOOM"
 #define BASEWAD "gzdoom.pk3"
 #define OPTIONALWAD "zd_extra.pk3"
-#define BASESF "gzdoom.sf2"
 
 // More stuff that needs to be different for derivatives.
 #define GAMENAME "GZDoom"

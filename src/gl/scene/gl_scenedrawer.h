@@ -14,6 +14,10 @@ class GLSceneDrawer
 	subsector_t *currentsubsector;	// used by the line processing code.
 	sector_t *currentsector;
 
+	TMap<DPSprite*, int> weapondynlightindex;
+
+	void SetupWeaponLight();
+
 	void RenderMultipassStuff();
 	
 	void UnclipSubsector(subsector_t *sub);
@@ -55,6 +59,7 @@ public:
 	void ProcessScene(bool toscreen = false, sector_t* sector = nullptr);
 	void DrawBlend(sector_t * viewsector);
 	void EndDrawScene(sector_t * viewsector);
+	void DrawEndScene2D(sector_t * viewsector);
 	void RenderActorsInPortal(FGLLinePortal *glport);
 
 	void CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *frontsector, sector_t *backsector);

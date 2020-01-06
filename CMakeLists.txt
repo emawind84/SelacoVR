@@ -14,15 +14,18 @@ list( APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 include( CreateLaunchers )
 include( FindPackageHandleStandardArgs )
 
-# Produce a warning if XP support will be missing.
+# Produce a warning if XP support will be missing when building a 32 bit target for MSVC.
 if( MSVC )
-	list( APPEND WINXP_TOOLSETS v140_xp v141_xp)
-	list( FIND WINXP_TOOLSETS "${CMAKE_GENERATOR_TOOLSET}" HAVE_WINXP_SUPPORT)
+	if(NOT "${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
 
-	if( HAVE_WINXP_SUPPORT EQUAL -1 )
-		string( REPLACE ";" " or " WINXP_TOOLSETS_STR "${WINXP_TOOLSETS}" )
-		message( WARNING "This project supports Windows XP but you must set the optional toolset to ${WINXP_TOOLSETS_STR} manually to have it in your build!\n"
-			"Assign toolset's name to CMAKE_GENERATOR_TOOLSET variable or use -T <toolset> from the command prompt." )
+		list( APPEND WINXP_TOOLSETS v140_xp v141_xp)
+		list( FIND WINXP_TOOLSETS "${CMAKE_GENERATOR_TOOLSET}" HAVE_WINXP_SUPPORT)
+
+		if( HAVE_WINXP_SUPPORT EQUAL -1 )
+			string( REPLACE ";" " or " WINXP_TOOLSETS_STR "${WINXP_TOOLSETS}" )
+			message( WARNING "This project supports Windows XP but you must set the optional toolset to ${WINXP_TOOLSETS_STR} manually to have it in your build!\n"
+				"Assign toolset's name to CMAKE_GENERATOR_TOOLSET variable or use -T <toolset> from the command prompt." )
+		endif()
 	endif()
 endif()
 
@@ -55,23 +58,24 @@ function( assort_pk3_source_folder FOLDER_NAME PK3_DIR )
 	endforeach()
 endfunction()
 
+option( PK3_QUIET_ZIPDIR "Do not list files processed by zipdir" NO )
+if( PK3_QUIET_ZIPDIR )
+	set( PK3_ZIPDIR_OPTIONS "-q" )
+endif()
+
 # Simplify pk3 building, add_pk3(filename srcdirectory)
 function( add_pk3 PK3_NAME PK3_DIR )
-	# message(STATUS "Creating build rule for PK3 ${PK3_NAME} ${PK3_DIR}")
 	# Generate target name. Just use "pk3" for main pk3 target.
 	string( REPLACE "." "_" PK3_TARGET ${PK3_NAME} )
-	if( ${PK3_TARGET} STREQUAL "zdoom_pk3" )
-		set( PK3_TARGET "pk3" )
-	endif()
 
 	if( NOT ZDOOM_OUTPUT_OLDSTYLE )
 		add_custom_command( OUTPUT ${ZDOOM_OUTPUT_DIR}/${PK3_NAME}
-			COMMAND zipdir -udf ${ZDOOM_OUTPUT_DIR}/${PK3_NAME} ${PK3_DIR}
+			COMMAND zipdir -udf ${PK3_ZIPDIR_OPTIONS} ${ZDOOM_OUTPUT_DIR}/${PK3_NAME} ${PK3_DIR}
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${ZDOOM_OUTPUT_DIR}/${PK3_NAME} $<TARGET_FILE_DIR:zdoom>/${PK3_NAME}
 			DEPENDS zipdir )
 	else()
 		add_custom_command( OUTPUT ${ZDOOM_OUTPUT_DIR}/${PK3_NAME}
-			COMMAND zipdir -udf ${ZDOOM_OUTPUT_DIR}/${PK3_NAME} ${PK3_DIR}
+			COMMAND zipdir -udf ${PK3_ZIPDIR_OPTIONS} ${ZDOOM_OUTPUT_DIR}/${PK3_NAME} ${PK3_DIR}
 			DEPENDS zipdir )
 	endif()
 	# Create a list of source files for this PK3, for use in the IDE

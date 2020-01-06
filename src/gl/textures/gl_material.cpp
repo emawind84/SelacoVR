@@ -31,6 +31,7 @@
 #include "r_utility.h"
 #include "templates.h"
 #include "sc_man.h"
+#include "r_data/renderstyle.h"
 #include "colormatcher.h"
 #include "textures/warpbuffer.h"
 #include "textures/bitmap.h"
@@ -212,30 +213,26 @@ unsigned char * FGLTexture::CreateTexBuffer(int translation, int & w, int & h, F
 
 	FBitmap bmp(buffer, W*4, W, H);
 
-	if (translation <= 0)
+	if (translation <= 0 || alphatrans)
 	{
-		// Q: Is this special treatment still needed? Needs to be checked.
-		if (tex->bComplex)
+		int trans = tex->CopyTrueColorPixels(&bmp, exx, exx);
+		tex->CheckTrans(buffer, W*H, trans);
+		isTransparent = tex->gl_info.mIsTransparent;
+		if (bIsTransparent == -1) bIsTransparent = isTransparent;
+		// alpha texture for legacy mode
+		if (alphatrans)
 		{
-			FBitmap imgCreate;
-
-			// The texture contains special processing so it must be fully composited before being converted as a whole.
-			if (imgCreate.Create(W, H))
+			for (int i = 0; i < W*H; i++)
 			{
-				memset(imgCreate.GetPixels(), 0, W * H * 4);
-				int trans = tex->CopyTrueColorPixels(&imgCreate, exx, exx);
-				bmp.CopyPixelDataRGB(0, 0, imgCreate.GetPixels(), W, H, 4, W * 4, 0, CF_BGRA);
-				tex->CheckTrans(buffer, W*H, trans);
-				isTransparent = tex->gl_info.mIsTransparent;
-				if (bIsTransparent == -1) bIsTransparent = isTransparent;
+				int b = buffer[4 * i];
+				int g = buffer[4 * i + 1];
+				int r = buffer[4 * i + 2];
+				int gray = Luminance(r, g, b);
+				buffer[4 * i] = 255;
+				buffer[4 * i + 1] = 255;
+				buffer[4 * i + 2] = 255;
+				buffer[4 * i + 3] = (buffer[4 * i + 3] * gray) >> 8;
 			}
-		}
-		else
-		{
-			int trans = tex->CopyTrueColorPixels(&bmp, exx, exx);
-			tex->CheckTrans(buffer, W*H, trans);
-			isTransparent = tex->gl_info.mIsTransparent;
-			if (bIsTransparent == -1) bIsTransparent = isTransparent;
 		}
 	}
 	else
@@ -281,13 +278,18 @@ FHardwareTexture *FGLTexture::CreateHwTexture()
 const FHardwareTexture *FGLTexture::Bind(int texunit, int clampmode, int translation, FTexture *hirescheck)
 {
 	int usebright = false;
-	bool alphatrans = false;
+	bool alphatrans = translation == INT_MAX;	// This is only needed for legacy mode because no texture combine setting allows using the color as alpha.
 
-	if (translation <= 0) translation = -translation;
-	else
+	if (!alphatrans)
 	{
-		alphatrans = (gl.legacyMode && uint32_t(translation) == TRANSLATION(TRANSLATION_Standard, 8));
-		translation = GLTranslationPalette::GetInternalTranslation(translation);
+		if (translation <= 0)
+		{
+			translation = -translation;
+		}
+		else
+		{
+			translation = GLTranslationPalette::GetInternalTranslation(translation);
+		}
 	}
 
 	bool needmipmap = (clampmode <= CLAMP_XY);
@@ -297,7 +299,7 @@ const FHardwareTexture *FGLTexture::Bind(int texunit, int clampmode, int transla
 	if (hwtex)
 	{
 		// Texture has become invalid
-		if ((!tex->bHasCanvas && (!tex->bWarped || gl.legacyMode)) && tex->CheckModified())
+		if ((!tex->bHasCanvas && (!tex->bWarped || gl.legacyMode)) && tex->CheckModified(DefaultRenderStyle()))
 		{
 			Clean(true);
 			hwtex = CreateHwTexture();
@@ -323,7 +325,7 @@ const FHardwareTexture *FGLTexture::Bind(int texunit, int clampmode, int transla
 					WarpBuffer((uint32_t*)warpbuffer, (const uint32_t*)buffer, w, h, wt->WidthOffsetMultiplier, wt->HeightOffsetMultiplier, screen->FrameTime, wt->Speed, tex->bWarped);
 					delete[] buffer;
 					buffer = warpbuffer;
-					wt->GenTime = screen->FrameTime;
+					wt->GenTime[0] = screen->FrameTime;
 				}
 				tex->ProcessData(buffer, w, h, false);
 			}
@@ -438,7 +440,7 @@ int FMaterial::mMaxBound;
 
 FMaterial::FMaterial(FTexture * tx, bool expanded)
 {
-	mShaderIndex = 0;
+	mShaderIndex = SHADER_Default;
 	tex = tx;
 
 	// TODO: apply custom shader object here
@@ -449,7 +451,7 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 	*/
 	if (tx->bWarped)
 	{
-		mShaderIndex = tx->bWarped;
+		mShaderIndex = tx->bWarped; // This picks SHADER_Warp1 or SHADER_Warp2
 		tx->gl_info.shaderspeed = static_cast<FWarpTexture*>(tx)->GetSpeed();
 	}
 	else if (tx->bHasCanvas)
@@ -468,13 +470,37 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 		}
 		else
 		{
+			if (tx->gl_info.Normal && tx->gl_info.Specular)
+			{
+				for (auto &texture : { tx->gl_info.Normal, tx->gl_info.Specular })
+				{
+					ValidateSysTexture(texture, expanded);
+					mTextureLayers.Push({ texture, false });
+				}
+				mShaderIndex = SHADER_Specular;
+			}
+			else if (tx->gl_info.Normal && tx->gl_info.Metallic && tx->gl_info.Roughness && tx->gl_info.AmbientOcclusion)
+			{
+				for (auto &texture : { tx->gl_info.Normal, tx->gl_info.Metallic, tx->gl_info.Roughness, tx->gl_info.AmbientOcclusion })
+				{
+					ValidateSysTexture(texture, expanded);
+					mTextureLayers.Push({ texture, false });
+				}
+				mShaderIndex = SHADER_PBR;
+			}
+
 			tx->CreateDefaultBrightmap();
 			if (tx->gl_info.Brightmap != NULL)
 			{
 				ValidateSysTexture(tx->gl_info.Brightmap, expanded);
 				FTextureLayer layer = {tx->gl_info.Brightmap, false};
 				mTextureLayers.Push(layer);
-				mShaderIndex = 3;
+				if (mShaderIndex == SHADER_Specular)
+					mShaderIndex = SHADER_SpecularBrightmap;
+				else if (mShaderIndex == SHADER_PBR)
+					mShaderIndex = SHADER_PBRBrightmap;
+				else
+					mShaderIndex = SHADER_Brightmap;
 			}
 		}
 	}
@@ -804,7 +830,7 @@ void FMaterial::GetTexCoordInfo(FTexCoordInfo *tci, float x, float y) const
 
 int FMaterial::GetAreas(FloatRect **pAreas) const
 {
-	if (mShaderIndex == 0)	// texture splitting can only be done if there's no attached effects
+	if (mShaderIndex == SHADER_Default)	// texture splitting can only be done if there's no attached effects
 	{
 		FTexture *tex = mBaseLayer->tex;
 		*pAreas = tex->gl_info.areas;

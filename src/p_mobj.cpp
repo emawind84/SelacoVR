@@ -108,6 +108,7 @@
 #include "a_morph.h"
 #include "events.h"
 #include "actorinlines.h"
+#include "a_dynlight.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -355,6 +356,7 @@ DEFINE_FIELD(AActor, BloodColor)
 DEFINE_FIELD(AActor, BloodTranslation)
 DEFINE_FIELD(AActor, RenderHidden)
 DEFINE_FIELD(AActor, RenderRequired)
+DEFINE_FIELD(AActor, friendlyseeblocks)
 
 //==========================================================================
 //
@@ -533,6 +535,7 @@ void AActor::Serialize(FSerializer &arc)
 		A("stealthalpha", StealthAlpha)
 		A("renderhidden", RenderHidden)
 		A("renderrequired", RenderRequired);
+		A("friendlyseeblocks", friendlyseeblocks);
 }
 
 #undef A
@@ -6001,6 +6004,8 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 		}
 	}
 
+
+
 	// spawn it
 	double sz;
 
@@ -6027,6 +6032,8 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 	mobj->SpawnPoint = mthing->pos;
 	mobj->SpawnAngle = mthing->angle;
 	mobj->SpawnFlags = mthing->flags;
+	if (mthing->friendlyseeblocks > 0)
+		mobj->friendlyseeblocks = mthing->friendlyseeblocks;
 	if (mthing->FloatbobPhase >= 0 && mthing->FloatbobPhase < 64) mobj->FloatBobPhase = mthing->FloatbobPhase;
 	if (mthing->Gravity < 0) mobj->Gravity = -mthing->Gravity;
 	else if (mthing->Gravity > 0) mobj->Gravity *= mthing->Gravity;
@@ -6086,6 +6093,31 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 	if (mthing->fillcolor)
 		mobj->fillcolor = (mthing->fillcolor & 0xffffff) | (ColorMatcher.Pick((mthing->fillcolor & 0xff0000) >> 16,
 			(mthing->fillcolor & 0xff00) >> 8, (mthing->fillcolor & 0xff)) << 24);
+
+	// allow color strings for lights and reshuffle the args for spot lights
+	if (i->IsDescendantOf(RUNTIME_CLASS(ADynamicLight)))
+	{
+		auto light = static_cast<ADynamicLight*>(mobj);
+		if (mthing->arg0str != NAME_None)
+		{
+			PalEntry color = V_GetColor(nullptr, mthing->arg0str);
+			light->args[0] = color.r;
+			light->args[1] = color.g;
+			light->args[2] = color.b;
+		}
+		else if (light->lightflags & LF_SPOT)
+		{
+			light->args[0] = RPART(mthing->args[0]);
+			light->args[1] = GPART(mthing->args[0]);
+			light->args[2] = BPART(mthing->args[0]);
+		}
+
+		if (light->lightflags & LF_SPOT)
+		{
+			light->SpotInnerAngle = double(mthing->args[1]);
+			light->SpotOuterAngle = double(mthing->args[2]);
+		}
+	}
 
 	mobj->CallBeginPlay ();
 	if (!(mobj->ObjectFlags & OF_EuthanizeMe))
@@ -7744,7 +7776,13 @@ FState *AActor::GetRaiseState()
 void AActor::Revive()
 {
 	AActor *info = GetDefault();
+	FLinkContext ctx;
+
+	bool flagchange = (flags & (MF_NOBLOCKMAP | MF_NOSECTOR)) != (info->flags & (MF_NOBLOCKMAP | MF_NOSECTOR));
+
+	if (flagchange) UnlinkFromWorld(&ctx);
 	flags = info->flags;
+	if (flagchange) LinkToWorld(&ctx);
 	flags2 = info->flags2;
 	flags3 = info->flags3;
 	flags4 = info->flags4;
@@ -8094,6 +8132,20 @@ DEFINE_ACTION_FUNCTION(AActor, absangle)	// should this be global?
 	PARAM_FLOAT(a1);
 	PARAM_FLOAT(a2);
 	ACTION_RETURN_FLOAT(absangle(DAngle(a1), DAngle(a2)).Degrees);
+}
+
+DEFINE_ACTION_FUNCTION(AActor, Distance2DSquared)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT_NOT_NULL(other, AActor);
+	ACTION_RETURN_FLOAT(self->Distance2DSquared(other));
+}
+
+DEFINE_ACTION_FUNCTION(AActor, Distance3DSquared)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT_NOT_NULL(other, AActor);
+	ACTION_RETURN_FLOAT(self->Distance3DSquared(other));
 }
 
 DEFINE_ACTION_FUNCTION(AActor, Distance2D)
@@ -8470,5 +8522,8 @@ void PrintMiscActorInfo(AActor *query)
 		Printf("\nSpeed= %f, velocity= x:%f, y:%f, z:%f, combined:%f.\n",
 			query->Speed, query->Vel.X, query->Vel.Y, query->Vel.Z, query->Vel.Length());
 		Printf("Scale: x:%f, y:%f\n", query->Scale.X, query->Scale.Y);
+		Printf("FriendlySeeBlocks: %d\n", query->friendlyseeblocks);
+		Printf("Target: %s\n", query->target ? query->target->GetClass()->TypeName.GetChars() : "-");
+		Printf("Last enemy: %s\n", query->lastenemy ? query->lastenemy->GetClass()->TypeName.GetChars() : "-");
 	}
 }

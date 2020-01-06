@@ -120,6 +120,34 @@ class OptionMenuItemSubmenu : OptionMenuItem
 
 //=============================================================================
 //
+// opens a submenu, command is a submenu name
+//
+//=============================================================================
+
+class OptionMenuItemLabeledSubmenu : OptionMenuItemSubmenu
+{
+	CVar mLabelCVar;
+	OptionMenuItemSubmenu Init(String label, CVar labelcvar, Name command, int param = 0)
+	{
+		Super.init(label, command, false);
+		mLabelCVar = labelcvar;
+		return self;
+	}
+
+	override int Draw(OptionMenuDescriptor desc, int y, int indent, bool selected)
+	{
+		drawLabel(indent, y, selected? OptionMenuSettings.mFontColorSelection : OptionMenuSettings.mFontColor);
+		
+		String text = mLabelCVar.GetString();
+		if (text.Length() == 0) text = Stringtable.Localize("$notset");
+		screen.DrawText (SmallFont, OptionMenuSettings.mFontColorValue, indent + CursorSpace(), y, text, DTA_CleanNoMove_1, true);
+		
+		return indent;
+	}
+}
+
+//=============================================================================
+//
 // Executes a CCMD, command is a CCMD name
 //
 //=============================================================================
@@ -127,15 +155,19 @@ class OptionMenuItemSubmenu : OptionMenuItem
 class OptionMenuItemCommand : OptionMenuItemSubmenu
 {
 	private String ccmd;	// do not allow access to this from the outside.
+	bool mCloseOnSelect;
+	private bool mUnsafe;
 	
-	OptionMenuItemCommand Init(String label, Name command, bool centered = false)
+	OptionMenuItemCommand Init(String label, Name command, bool centered = false, bool closeonselect = false)
 	{
 		Super.Init(label, command, 0, centered);
 		ccmd = command;
+		mCloseOnSelect = closeonselect;
+		mUnsafe = true;
 		return self;
 	}
 
-	private native static void DoCommand(String cmd);	// This is very intentionally limited to this menu item to prevent abuse.
+	private native static void DoCommand(String cmd, bool unsafe);	// This is very intentionally limited to this menu item to prevent abuse.
 
 	override bool Activate()
 	{
@@ -149,7 +181,12 @@ class OptionMenuItemCommand : OptionMenuItemSubmenu
 			if (m.GetItem(mAction) != self) return false;
 		}
 		Menu.MenuSound("menu/choose");
-		DoCommand(ccmd);
+		DoCommand(ccmd, mUnsafe);
+		if (mCloseOnSelect)
+		{
+			let curmenu = Menu.GetCurrentMenu();
+			if (curmenu != null) curmenu.Close();
+		}
 		return true;
 	}
 
@@ -245,11 +282,11 @@ class OptionMenuItemOptionBase : OptionMenuItem
 	virtual void SetSelection(int Selection)
 	{
 	}
-
+	
 	//=============================================================================
 	override int Draw(OptionMenuDescriptor desc, int y, int indent, bool selected)
 	{
-		bool grayed = mGrayCheck != null && !(mGrayCheck.GetInt());
+		bool grayed = isGrayed();
 
 		if (mCenter)
 		{
@@ -294,10 +331,15 @@ class OptionMenuItemOptionBase : OptionMenuItem
 		}
 		return true;
 	}
+	
+	virtual bool isGrayed()
+	{
+		return mGrayCheck != null && !mGrayCheck.GetInt();
+	}
 
 	override bool Selectable()
 	{
-		return mGrayCheck == null || mGrayCheck.GetInt();
+		return !isGrayed();
 	}
 }
 

@@ -886,6 +886,12 @@ public:
 
 
 	// a full 3D version of the above
+	double Distance3DSquared(AActor *other, bool absolute = false)
+	{
+		DVector3 otherpos = absolute ? other->Pos() : other->PosRelative(this);
+		return (Pos() - otherpos).LengthSquared();
+	}
+
 	double Distance3D(AActor *other, bool absolute = false)
 	{
 		DVector3 otherpos = absolute ? other->Pos() : other->PosRelative(this);
@@ -1169,6 +1175,7 @@ public:
 	int				Score;			// manipulated by score items, ACS or DECORATE. The engine doesn't use this itself for anything.
 	FString *		Tag;			// Strife's tag name.
 	int				DesignatedTeam;	// Allow for friendly fire cacluations to be done on non-players.
+	int				friendlyseeblocks;	// allow to override friendly search distance calculation
 
 	AActor			*BlockingMobj;	// Actor that blocked the last move
 	line_t			*BlockingLine;	// Line that blocked the last move

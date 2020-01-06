@@ -564,6 +564,8 @@ static void stripwhite (char *str)
 
 static char *igets (void)
 {
+	assert(PatchPt != nullptr);
+
 	char *line;
 
 	if (*PatchPt == '\0' || PatchPt >= PatchFile + PatchSize )
@@ -1195,6 +1197,10 @@ static int PatchThing (int thingy)
 						// some projectile actors (those new to Doom II) were not excluded from 
 						// triggering line effects and can teleport when the missile flag is removed.
 						info->flags2 &= ~MF2_NOTELEPORT;
+					}
+					if (thingy == 1) // [SP] special handling for players - always be friendly!
+					{
+						value[0] |= MF_FRIENDLY;
 					}
 					info->flags = ActorFlags::FromInt (value[0]);
 				}
@@ -2490,9 +2496,9 @@ bool D_LoadDehFile(const char *patchfile)
 {
 	FileReader fr;
 
-	if (fr.Open(patchfile))
+	if (fr.OpenFile(patchfile))
 	{
-		PatchSize = fr.GetLength();
+		PatchSize = (int)fr.GetLength();
 
 		PatchName = copystring(patchfile);
 		PatchFile = new char[PatchSize + 1];
@@ -2532,7 +2538,7 @@ static bool DoDehPatch()
 	cont = 0;
 	if (0 == strncmp (PatchFile, "Patch File for DeHackEd v", 25))
 	{
-		if (PatchFile[25] < '3' && PatchFile[25] != '2' && PatchFile[27] != '3')
+		if (PatchFile[25] < '3' && (PatchFile[25] < '2' || PatchFile[27] < '3'))
 		{
 			Printf (PRINT_BOLD, "\"%s\" is an old and unsupported DeHackEd patch\n", PatchName);
 			delete[] PatchName;
@@ -2546,16 +2552,16 @@ static bool DoDehPatch()
 		}
 
 		PatchPt = strchr (PatchFile, '\n');
-		while ((cont = GetLine()) == 1)
+		while (PatchPt != nullptr && (cont = GetLine()) == 1)
 		{
 				 CHECKKEY ("Doom version", dversion)
 			else CHECKKEY ("Patch format", pversion)
 		}
 		if (!cont || dversion == -1 || pversion == -1)
 		{
+			Printf (PRINT_BOLD, "\"%s\" is not a DeHackEd patch file\n", PatchName);
 			delete[] PatchName;
 			delete[] PatchFile;
-			Printf (PRINT_BOLD, "\"%s\" is not a DeHackEd patch file\n", PatchFile);
 			return false;
 		}
 	}
@@ -2836,14 +2842,14 @@ static bool LoadDehSupp ()
 					sc.MustGetString();
 					PClassActor *actortype = static_cast<PClassActor *>(type);
 					s.State = actortype->FindState(sc.String);
-					if (s.State == NULL)
+					if (s.State == NULL && addit)
 					{
 						sc.ScriptError("Invalid state '%s' in '%s'", sc.String, type->TypeName.GetChars());
 					}
 
 					sc.MustGetStringName(",");
 					sc.MustGetNumber();
-					if (s.State == NULL || sc.Number < 1 || !actortype->OwnsState(s.State + sc.Number - 1))
+					if (addit && (s.State == NULL || sc.Number < 1 || !actortype->OwnsState(s.State + sc.Number - 1)))
 					{
 						sc.ScriptError("Invalid state range in '%s'", type->TypeName.GetChars());
 					}

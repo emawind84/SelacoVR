@@ -381,10 +381,6 @@ static NSString* GetArchitectureString()
 	return @"i386";
 #elif defined __x86_64__
 	return @"x86_64";
-#elif defined __ppc__
-	return @"ppc";
-#elif defined __ppc64__
-	return @"ppc64";
 #endif
 }
 
@@ -418,7 +414,6 @@ static void RestartWithParameters(const WadStuff& wad, NSString* parameters)
 			executablePath = @"/usr/bin/arch";
 		}
 
-		[arguments addObject:@"-wad_picker_restart"];
 		[arguments addObject:@"-iwad"];
 		[arguments addObject:[NSString stringWithUTF8String:wad.Path]];
 

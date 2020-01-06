@@ -34,60 +34,51 @@
 */
 
 #include <errno.h>
+#include <memory>
 
 #include "files.h"
 #include "wm_error.h"
 #include "file_io.h"
-#include "pathexpander.h"
 #include "cmdlib.h"
+#include "i_soundfont.h"
 
-static PathExpander wmPathExpander;
+std::unique_ptr<FSoundFontReader> wm_sfreader;
+static FString config_name;
 
-unsigned char *_WM_BufferFile(const char *filename, unsigned long int *size, bool ismain) 
+bool _WM_InitReader(const char *config_file)
 {
-	FileReader *fp;
-	int lumpnum;
-
-	if (ismain)
+	auto reader = sfmanager.OpenSoundFont(config_file, SF_GUS);
+	if (reader == nullptr)
 	{
-		wmPathExpander.openmode = PathExpander::OM_FILEORLUMP;
-		wmPathExpander.clearPathlist();
-#ifdef _WIN32
-		wmPathExpander.addToPathlist("C:\\TIMIDITY");
-		wmPathExpander.addToPathlist("\\TIMIDITY");
-		wmPathExpander.addToPathlist(progdir);
-#else
-		wmPathExpander.addToPathlist("/usr/local/lib/timidity");
-		wmPathExpander.addToPathlist("/etc/timidity");
-		wmPathExpander.addToPathlist("/etc");
-#endif
+		_WM_ERROR(__FUNCTION__, __LINE__, WM_ERR_LOAD, config_file, errno);
+		return false;	// No sound font could be opened.
+	}
+	wm_sfreader.reset(reader);
+	config_name = config_file;
+	return true;
+}
+
+unsigned char *_WM_BufferFile(const char *filename, unsigned long int *size) 
+{
+	FileReader fp;
+
+	if (filename == nullptr)
+	{
+		fp = wm_sfreader->OpenMainConfigFile();
+		filename = config_name;
+	}
+	else
+	{
+		fp = wm_sfreader->OpenFile(filename);
 	}
 
-	if (!(fp = wmPathExpander.openFileReader(filename, &lumpnum)))
-		return NULL;
-
-	if (ismain)
-	{
-		if (lumpnum > 0)
-		{
-			wmPathExpander.openmode = PathExpander::OM_LUMP;
-			wmPathExpander.clearPathlist();	// when reading from a PK3 we don't want to use any external path
-		}
-		else
-		{
-			wmPathExpander.openmode = PathExpander::OM_FILE;
-		}
-	}
-
-
-
-	if (fp == NULL)
+	if (!fp.isOpen())
 	{
 		_WM_ERROR(__FUNCTION__, __LINE__, WM_ERR_LOAD, filename, errno);
 		return NULL;
 	}
 
-	long fsize = fp->GetLength();
+	auto fsize = fp.GetLength();
 
 	if (fsize > WM_MAXFILESIZE) 
 	{
@@ -104,9 +95,8 @@ unsigned char *_WM_BufferFile(const char *filename, unsigned long int *size, boo
 		return NULL;
 	}
 
-	fp->Read(data, fsize);
-	delete fp;
+	fp.Read(data, fsize);
 	data[fsize] = 0;
-	*size = fsize;
+	*size = (long)fsize;
 	return data;
 }

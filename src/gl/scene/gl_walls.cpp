@@ -1060,8 +1060,8 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 				// Draw the stuff
 				//
 				//
-				if (realfront->e->XFloor.lightlist.Size()==0 || mDrawer->FixedColormap) split.PutWall(translucent);
-				else split.SplitWall(realfront, translucent);
+				if (front->e->XFloor.lightlist.Size()==0 || mDrawer->FixedColormap) split.PutWall(translucent);
+				else split.SplitWall(front, translucent);
 
 				t=1;
 			}
@@ -1074,8 +1074,8 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 			// Draw the stuff without splitting
 			//
 			//
-			if (realfront->e->XFloor.lightlist.Size()==0 || mDrawer->FixedColormap) PutWall(translucent);
-			else SplitWall(realfront, translucent);
+			if (front->e->XFloor.lightlist.Size()==0 || mDrawer->FixedColormap) PutWall(translucent);
+			else SplitWall(front, translucent);
 		}
 		alpha=1.0f;
 	}
@@ -1392,6 +1392,12 @@ void GLWall::DoFFloorBlocks(seg_t * seg, sector_t * frontsector, sector_t * back
 			ff_topleft = topleft;
 			ff_topright = topright;
 		}
+		if (ff_bottomleft < bottomleft && ff_bottomright < bottomright)
+		{
+			// the new section extends into the floor.
+			ff_bottomleft = bottomleft;
+			ff_bottomright = bottomright;
+		}
 
 		// do all inverse floors above the current one it there is a gap between the
 		// last 3D floor and this one.
@@ -1437,7 +1443,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 	sector_t * segback;
 
 #ifdef _DEBUG
-	if (seg->linedef->Index() == 1)
+	if (seg->linedef->Index() == 10)
 	{
 		int a = 0;
 	}

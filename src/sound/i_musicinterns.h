@@ -7,12 +7,12 @@
 #include "s_sound.h"
 #include "files.h"
 #include "wildmidi/wildmidi_lib.h"
+#include "midisources/midisource.h"
 
 void I_InitMusicWin32 ();
 
 extern float relative_volume;
-
-EXTERN_CVAR (Float, timidity_mastervolume)
+class MIDISource;
 
 
 // A device that provides a WinMM-like MIDI streaming interface -------------
@@ -75,7 +75,6 @@ public:
 	virtual void InitPlayback();
 	virtual bool Update();
 	virtual void PrecacheInstruments(const uint16_t *instruments, int count);
-	virtual void TimidityVolumeChanged();
 	virtual void FluidSettingInt(const char *setting, int value);
 	virtual void FluidSettingNum(const char *setting, double value);
 	virtual void FluidSettingStr(const char *setting, const char *value);
@@ -88,52 +87,17 @@ public:
 
 #ifdef _WIN32
 MIDIDevice *CreateWinMIDIDevice(int mididevice);
-#elif defined __APPLE__
-MIDIDevice *CreateAudioToolboxMIDIDevice();
 #endif
-MIDIDevice *CreateTimidityPPMIDIDevice(const char *args);
-
-// Base class for pseudo-MIDI devices ---------------------------------------
-
-class PseudoMIDIDevice : public MIDIDevice
-{
-public:
-	PseudoMIDIDevice();
-	~PseudoMIDIDevice();
-
-	void Close();
-	bool IsOpen() const;
-	int GetTechnology() const;
-	bool Pause(bool paused);
-	int Resume();
-	void Stop();
-	int StreamOut(MidiHeader *data);
-	int StreamOutSync(MidiHeader *data);
-	int SetTempo(int tempo);
-	int SetTimeDiv(int timediv);
-	FString GetStats();
-
-protected:
-	SoundStream *Stream;
-	bool Started;
-	bool bLooping;
-};
-
-// Sound System pseudo-MIDI device ------------------------------------------
-
-class SndSysMIDIDevice : public PseudoMIDIDevice
-{
-public:
-	int Open(MidiCallback, void *userdata);
-	bool Preprocess(MIDIStreamer *song, bool looping);
-};
+MIDIDevice *CreateTimidityPPMIDIDevice(const char *args, int samplerate);
+void TimidityPP_Shutdown();
 
 // Base class for software synthesizer MIDI output devices ------------------
 
 class SoftSynthMIDIDevice : public MIDIDevice
 {
+	friend class MIDIWaveWriter;
 public:
-	SoftSynthMIDIDevice();
+	SoftSynthMIDIDevice(int samplerate, int minrate = 1, int maxrate = 1000000 /* something higher than any valid value */);
 	~SoftSynthMIDIDevice();
 
 	void Close();
@@ -167,6 +131,7 @@ protected:
 	int OpenStream(int chunks, int flags, MidiCallback, void *userdata);
 	static bool FillStream(SoundStream *stream, void *buff, int len, void *userdata);
 	virtual bool ServiceStream (void *buff, int numbytes);
+	int GetSampleRate() const { return SampleRate; }
 
 	virtual void HandleEvent(int status, int parm1, int parm2) = 0;
 	virtual void HandleLongEvent(const uint8_t *data, int len) = 0;
@@ -212,7 +177,7 @@ namespace Timidity { struct Renderer; }
 class TimidityMIDIDevice : public SoftSynthMIDIDevice
 {
 public:
-	TimidityMIDIDevice(const char *args);
+	TimidityMIDIDevice(const char *args, int samplerate);
 	~TimidityMIDIDevice();
 
 	int Open(MidiCallback, void *userdata);
@@ -228,18 +193,35 @@ protected:
 	void ComputeOutput(float *buffer, int len);
 };
 
-// Internal TiMidity disk writing version of a MIDI device ------------------
+// Internal disk writing version of a MIDI device ------------------
 
-class TimidityWaveWriterMIDIDevice : public TimidityMIDIDevice
+class MIDIWaveWriter : public SoftSynthMIDIDevice
 {
 public:
-	TimidityWaveWriterMIDIDevice(const char *filename, int rate);
-	~TimidityWaveWriterMIDIDevice();
+	MIDIWaveWriter(const char *filename, SoftSynthMIDIDevice *devtouse);
+	~MIDIWaveWriter();
 	int Resume();
+	int Open(MidiCallback cb, void *userdata)
+	{
+		return playDevice->Open(cb, userdata);
+	}
 	void Stop();
+	void HandleEvent(int status, int parm1, int parm2) { playDevice->HandleEvent(status, parm1, parm2);  }
+	void HandleLongEvent(const uint8_t *data, int len) { playDevice->HandleLongEvent(data, len);  }
+	void ComputeOutput(float *buffer, int len) { playDevice->ComputeOutput(buffer, len);  }
+	int StreamOutSync(MidiHeader *data) { return playDevice->StreamOutSync(data); }
+	int StreamOut(MidiHeader *data) { return playDevice->StreamOut(data); }
+	int GetDeviceType() const override { return playDevice->GetDeviceType(); }
+	bool ServiceStream (void *buff, int numbytes) { return playDevice->ServiceStream(buff, numbytes); }
+	int GetTechnology() const { return playDevice->GetTechnology(); }
+	int SetTempo(int tempo) { return playDevice->SetTempo(tempo); }
+	int SetTimeDiv(int timediv) { return playDevice->SetTimeDiv(timediv); }
+	bool IsOpen() const { return playDevice->IsOpen(); }
+	void CalcTickRate() { playDevice->CalcTickRate(); }
 
 protected:
 	FileWriter *File;
+	SoftSynthMIDIDevice *playDevice;
 };
 
 // WildMidi implementation of a MIDI device ---------------------------------
@@ -247,7 +229,7 @@ protected:
 class WildMIDIDevice : public SoftSynthMIDIDevice
 {
 public:
-	WildMIDIDevice(const char *args);
+	WildMIDIDevice(const char *args, int samplerate);
 	~WildMIDIDevice();
 
 	int Open(MidiCallback, void *userdata);
@@ -266,7 +248,6 @@ protected:
 
 // FluidSynth implementation of a MIDI device -------------------------------
 
-#ifdef HAVE_FLUIDSYNTH
 #ifndef DYN_FLUIDSYNTH
 #include <fluidsynth.h>
 #else
@@ -280,7 +261,7 @@ struct fluid_synth_t;
 class FluidSynthMIDIDevice : public SoftSynthMIDIDevice
 {
 public:
-	FluidSynthMIDIDevice(const char *args);
+	FluidSynthMIDIDevice(const char *args, int samplerate);
 	~FluidSynthMIDIDevice();
 
 	int Open(MidiCallback, void *userdata);
@@ -308,7 +289,6 @@ protected:
 	static TReqProc<FluidSynthModule, int (*)(fluid_settings_t *, const char *, double)> fluid_settings_setnum;
 	static TReqProc<FluidSynthModule, int (*)(fluid_settings_t *, const char *, const char *)> fluid_settings_setstr;
 	static TReqProc<FluidSynthModule, int (*)(fluid_settings_t *, const char *, int)> fluid_settings_setint;
-	static TReqProc<FluidSynthModule, int (*)(fluid_settings_t *, const char *, char **)> fluid_settings_getstr;
 	static TReqProc<FluidSynthModule, int (*)(fluid_settings_t *, const char *, int *)> fluid_settings_getint;
 	static TReqProc<FluidSynthModule, void (*)(fluid_synth_t *, int)> fluid_synth_set_reverb_on;
 	static TReqProc<FluidSynthModule, void (*)(fluid_synth_t *, int)> fluid_synth_set_chorus_on;
@@ -334,9 +314,52 @@ protected:
 	void UnloadFluidSynth();
 #endif
 };
-#endif
+
+
+class ADLMIDIDevice : public SoftSynthMIDIDevice
+{
+	struct ADL_MIDIPlayer *Renderer;
+	TArray<int16_t> shortbuffer;
+public:
+	ADLMIDIDevice(const char *args);
+	~ADLMIDIDevice();
+
+	int Open(MidiCallback, void *userdata);
+	int GetDeviceType() const override { return MDEV_ADL; }
+
+protected:
+
+	void HandleEvent(int status, int parm1, int parm2);
+	void HandleLongEvent(const uint8_t *data, int len);
+	void ComputeOutput(float *buffer, int len);
+};
+
+
+class OPNMIDIDevice : public SoftSynthMIDIDevice
+{
+	struct OPN2_MIDIPlayer *Renderer;
+	TArray<int16_t> shortbuffer;
+public:
+	OPNMIDIDevice(const char *args);
+	~OPNMIDIDevice();
+
+	int Open(MidiCallback, void *userdata);
+	int GetDeviceType() const override { return MDEV_OPN; }
+
+protected:
+
+	void HandleEvent(int status, int parm1, int parm2);
+	void HandleLongEvent(const uint8_t *data, int len);
+	void ComputeOutput(float *buffer, int len);
+};
+
 
 // Base class for streaming MUS and MIDI files ------------------------------
+
+enum
+{
+	MAX_MIDI_EVENTS = 128
+};
 
 class MIDIStreamer : public MusInfo
 {
@@ -344,30 +367,34 @@ public:
 	MIDIStreamer(EMidiDevice type, const char *args);
 	~MIDIStreamer();
 
-	void MusicVolumeChanged();
-	void TimidityVolumeChanged();
-	void Play(bool looping, int subsong);
-	void Pause();
-	void Resume();
-	void Stop();
-	bool IsPlaying();
-	bool IsMIDI() const;
-	bool IsValid() const;
-	bool SetSubsong(int subsong);
-	void Update();
-	FString GetStats();
-	void FluidSettingInt(const char *setting, int value);
-	void FluidSettingNum(const char *setting, double value);
-	void FluidSettingStr(const char *setting, const char *value);
-	void WildMidiSetOption(int opt, int set);
-	void CreateSMF(TArray<uint8_t> &file, int looplimit=0);
+	void MusicVolumeChanged() override;
+	void Play(bool looping, int subsong) override;
+	void Pause() override;
+	void Resume() override;
+	void Stop() override;
+	bool IsPlaying() override;
+	bool IsMIDI() const override;
+	bool IsValid() const override;
+	bool SetSubsong(int subsong) override;
+	void Update() override;
+	FString GetStats() override;
+	void FluidSettingInt(const char *setting, int value) override;
+	void FluidSettingNum(const char *setting, double value) override;
+	void FluidSettingStr(const char *setting, const char *value) override;
+	void WildMidiSetOption(int opt, int set) override;
 	int ServiceEvent();
+	void SetMIDISource(MIDISource *_source);
+
 	int GetDeviceType() const override
 	{
 		return nullptr == MIDI
 			? MusInfo::GetDeviceType()
 			: MIDI->GetDeviceType();
 	}
+
+	bool DumpWave(const char *filename, int subsong, int samplerate);
+	bool DumpOPL(const char *filename, int subsong);
+
 
 protected:
 	MIDIStreamer(const char *dumpname, EMidiDevice type);
@@ -377,27 +404,18 @@ protected:
 	int FillStopBuffer(int buffer_num);
 	uint32_t *WriteStopNotes(uint32_t *events);
 	int VolumeControllerChange(int channel, int volume);
-	int ClampLoopCount(int loopcount);
 	void SetTempo(int new_tempo);
+	void Precache();
+	void StartPlayback();
+	bool InitPlayback();
+
+	//void SetMidiSynth(MIDIDevice *synth);
+	
+	
 	static EMidiDevice SelectMIDIDevice(EMidiDevice devtype);
-	MIDIDevice *CreateMIDIDevice(EMidiDevice devtype);
+	MIDIDevice *CreateMIDIDevice(EMidiDevice devtype, int samplerate);
 
 	static void Callback(void *userdata);
-
-	// Virtuals for subclasses to override
-	virtual void StartPlayback();
-	virtual void CheckCaps(int tech);
-	virtual void DoInitialSetup() = 0;
-	virtual void DoRestart() = 0;
-	virtual bool CheckDone() = 0;
-	virtual void Precache();
-	virtual bool SetMIDISubsong(int subsong);
-	virtual uint32_t *MakeEvents(uint32_t *events, uint32_t *max_event_p, uint32_t max_time) = 0;
-
-	enum
-	{
-		MAX_EVENTS = 128
-	};
 
 	enum
 	{
@@ -407,7 +425,7 @@ protected:
 	};
 
 	MIDIDevice *MIDI;
-	uint32_t Events[2][MAX_EVENTS*3];
+	uint32_t Events[2][MAX_MIDI_EVENTS*3];
 	MidiHeader Buffer[2];
 	int BufferNum;
 	int EndQueued;
@@ -415,181 +433,13 @@ protected:
 	bool Restarting;
 	bool InitialPlayback;
 	uint32_t NewVolume;
-	int Division;
-	int Tempo;
-	int InitialTempo;
-	uint8_t ChannelVolumes[16];
 	uint32_t Volume;
 	EMidiDevice DeviceType;
 	bool CallbackIsThreaded;
 	int LoopLimit;
-	FString DumpFilename;
 	FString Args;
-};
+	MIDISource *source;
 
-// MUS file played with a MIDI stream ---------------------------------------
-
-class MUSSong2 : public MIDIStreamer
-{
-public:
-	MUSSong2(FileReader &reader, EMidiDevice type, const char *args);
-	~MUSSong2();
-
-	MusInfo *GetOPLDumper(const char *filename);
-	MusInfo *GetWaveDumper(const char *filename, int rate);
-
-protected:
-	MUSSong2(const MUSSong2 *original, const char *filename, EMidiDevice type);	// file dump constructor
-
-	void DoInitialSetup();
-	void DoRestart();
-	bool CheckDone();
-	void Precache();
-	uint32_t *MakeEvents(uint32_t *events, uint32_t *max_events_p, uint32_t max_time);
-
-	MUSHeader *MusHeader;
-	uint8_t *MusBuffer;
-	uint8_t LastVelocity[16];
-	size_t MusP, MaxMusP;
-};
-
-// MIDI file played with a MIDI stream --------------------------------------
-
-class MIDISong2 : public MIDIStreamer
-{
-public:
-	MIDISong2(FileReader &reader, EMidiDevice type, const char *args);
-	~MIDISong2();
-
-	MusInfo *GetOPLDumper(const char *filename);
-	MusInfo *GetWaveDumper(const char *filename, int rate);
-
-protected:
-	MIDISong2(const MIDISong2 *original, const char *filename, EMidiDevice type);	// file dump constructor
-
-	void CheckCaps(int tech);
-	void DoInitialSetup();
-	void DoRestart();
-	bool CheckDone();
-	uint32_t *MakeEvents(uint32_t *events, uint32_t *max_events_p, uint32_t max_time);
-	void AdvanceTracks(uint32_t time);
-
-	struct TrackInfo;
-
-	void ProcessInitialMetaEvents ();
-	uint32_t *SendCommand (uint32_t *event, TrackInfo *track, uint32_t delay, ptrdiff_t room, bool &sysex_noroom);
-	TrackInfo *FindNextDue ();
-
-	uint8_t *MusHeader;
-	int SongLen;
-	TrackInfo *Tracks;
-	TrackInfo *TrackDue;
-	int NumTracks;
-	int Format;
-	uint16_t DesignationMask;
-};
-
-// HMI file played with a MIDI stream ---------------------------------------
-
-struct AutoNoteOff
-{
-	uint32_t Delay;
-	uint8_t Channel, Key;
-};
-// Sorry, std::priority_queue, but I want to be able to modify the contents of the heap.
-class NoteOffQueue : public TArray<AutoNoteOff>
-{
-public:
-	void AddNoteOff(uint32_t delay, uint8_t channel, uint8_t key);
-	void AdvanceTime(uint32_t time);
-	bool Pop(AutoNoteOff &item);
-
-protected:
-	void Heapify();
-
-	unsigned int Parent(unsigned int i) const { return (i + 1u) / 2u - 1u; }
-	unsigned int Left(unsigned int i) const { return (i + 1u) * 2u - 1u; }
-	unsigned int Right(unsigned int i) const { return (i + 1u) * 2u; }
-};
-
-class HMISong : public MIDIStreamer
-{
-public:
-	HMISong(FileReader &reader, EMidiDevice type, const char *args);
-	~HMISong();
-
-	MusInfo *GetOPLDumper(const char *filename);
-	MusInfo *GetWaveDumper(const char *filename, int rate);
-
-protected:
-	HMISong(const HMISong *original, const char *filename, EMidiDevice type);	// file dump constructor
-
-	void SetupForHMI(int len);
-	void SetupForHMP(int len);
-	void CheckCaps(int tech);
-
-	void DoInitialSetup();
-	void DoRestart();
-	bool CheckDone();
-	uint32_t *MakeEvents(uint32_t *events, uint32_t *max_events_p, uint32_t max_time);
-	void AdvanceTracks(uint32_t time);
-
-	struct TrackInfo;
-
-	void ProcessInitialMetaEvents ();
-	uint32_t *SendCommand (uint32_t *event, TrackInfo *track, uint32_t delay, ptrdiff_t room, bool &sysex_noroom);
-	TrackInfo *FindNextDue ();
-
-	static uint32_t ReadVarLenHMI(TrackInfo *);
-	static uint32_t ReadVarLenHMP(TrackInfo *);
-
-	uint8_t *MusHeader;
-	int SongLen;
-	int NumTracks;
-	TrackInfo *Tracks;
-	TrackInfo *TrackDue;
-	TrackInfo *FakeTrack;
-	uint32_t (*ReadVarLen)(TrackInfo *);
-	NoteOffQueue NoteOffs;
-};
-
-// XMI file played with a MIDI stream ---------------------------------------
-
-class XMISong : public MIDIStreamer
-{
-public:
-	XMISong(FileReader &reader, EMidiDevice type, const char *args);
-	~XMISong();
-
-	MusInfo *GetOPLDumper(const char *filename);
-	MusInfo *GetWaveDumper(const char *filename, int rate);
-
-protected:
-	struct TrackInfo;
-	enum EventSource { EVENT_None, EVENT_Real, EVENT_Fake };
-
-	XMISong(const XMISong *original, const char *filename, EMidiDevice type);	// file dump constructor
-
-	int FindXMIDforms(const uint8_t *chunk, int len, TrackInfo *songs) const;
-	void FoundXMID(const uint8_t *chunk, int len, TrackInfo *song) const;
-	bool SetMIDISubsong(int subsong);
-	void DoInitialSetup();
-	void DoRestart();
-	bool CheckDone();
-	uint32_t *MakeEvents(uint32_t *events, uint32_t *max_events_p, uint32_t max_time);
-	void AdvanceSong(uint32_t time);
-
-	void ProcessInitialMetaEvents();
-	uint32_t *SendCommand (uint32_t *event, EventSource track, uint32_t delay, ptrdiff_t room, bool &sysex_noroom);
-	EventSource FindNextDue();
-
-	uint8_t *MusHeader;
-	int SongLen;		// length of the entire file
-	int NumSongs;
-	TrackInfo *Songs;
-	TrackInfo *CurrSong;
-	NoteOffQueue NoteOffs;
-	EventSource EventDue;
 };
 
 // Anything supported by the sound system out of the box --------------------
@@ -597,7 +447,7 @@ protected:
 class StreamSong : public MusInfo
 {
 public:
-    StreamSong (FileReader *reader);
+    StreamSong (FileReader &reader);
 	~StreamSong ();
 	void Play (bool looping, int subsong);
 	void Pause ();

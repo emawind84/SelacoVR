@@ -21,9 +21,7 @@
 #define TIMIDITY_H
 
 #include "doomtype.h"
-#include "pathexpander.h"
-
-class FileReader;
+#include "files.h"
 
 namespace Timidity
 {
@@ -363,7 +361,7 @@ void font_order(int order, int bank, int preset, int keynote);
 Instrument *load_instrument_font(struct Renderer *song, const char *font, int drum, int bank, int instrument);
 Instrument *load_instrument_font_order(struct Renderer *song, int order, int drum, int bank, int instrument);
 
-FontFile *ReadDLS(const char *filename, FileReader *f);
+FontFile *ReadDLS(const char *filename, FileReader &f);
 
 /*
 mix.h
@@ -608,7 +606,6 @@ int LoadConfig(const char *filename);
 int LoadDMXGUS();
 extern int LoadConfig();
 extern void FreeAll();
-extern PathExpander pathExpander;
 
 extern ToneBank *tonebank[MAXBANK];
 extern ToneBank *drumset[MAXBANK];

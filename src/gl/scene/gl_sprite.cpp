@@ -73,7 +73,7 @@ CVAR(Bool, gl_billboard_particles, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Int, gl_enhanced_nv_stealth, 3, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CUSTOM_CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
 {
-	if (self < 0 || self > 7) self = 0;
+	if (self < 0 || self > 8) self = 0;
 }
 
 EXTERN_CVAR (Float, transsouls)
@@ -82,6 +82,7 @@ EXTERN_CVAR (Bool, r_debug_disable_vis_filter)
 extern TArray<spritedef_t> sprites;
 extern TArray<spriteframe_t> SpriteFrames;
 extern uint32_t r_renderercaps;
+extern int modellightindex;
 
 enum HWRenderStyle
 {
@@ -263,7 +264,25 @@ void GLSprite::CalculateVertices(FVector3 *v)
 
 void GLSprite::Draw(int pass)
 {
-	if (pass == GLPASS_DECALS || pass == GLPASS_LIGHTSONLY) return;
+	if (pass == GLPASS_DECALS) return;
+
+	if (pass == GLPASS_LIGHTSONLY)
+	{
+		if (modelframe)
+		{
+			if (RenderStyle.BlendOp != STYLEOP_Shadow)
+			{
+				if (gl_lights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
+				{
+					if (!particle)
+					{
+						dynlightindex = gl_SetDynModelLight(gl_light_sprites ? actor : nullptr, -1);
+					}
+				}
+			}
+		}
+		return;
+	}
 
 	bool additivefog = false;
 	bool foglayer = false;
@@ -336,7 +355,7 @@ void GLSprite::Draw(int pass)
 		if (gl_lights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
 		{
 			if (modelframe && !particle)
-				gl_SetDynModelLight(gl_light_sprites ? actor : NULL);
+				gl_SetDynModelLight(gl_light_sprites ? actor : NULL, dynlightindex);
 			else
 				gl_SetDynSpriteLight(gl_light_sprites ? actor : NULL, gl_light_particles ? particle : NULL);
 		}
@@ -987,11 +1006,10 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
 		RenderStyle.CheckFuzz();
 		if (RenderStyle.BlendOp == STYLEOP_Fuzz)
 		{
-			if (gl_fuzztype != 0 && !gl.legacyMode)
+			if (gl_fuzztype != 0 && !gl.legacyMode && !(RenderStyle.Flags & STYLEF_InvertSource))
 			{
-				// Todo: implement shader selection here
 				RenderStyle = LegacyRenderStyles[STYLE_Translucent];
-				OverrideShader = gl_fuzztype + 4;
+				OverrideShader = SHADER_NoTexture + gl_fuzztype;
 				trans = 0.99f;	// trans may not be 1 here
 				hw_styleflags = STYLEHW_NoAlphaTest;
 			}
@@ -1186,19 +1204,20 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 	// [BB] Load the texture for round or smooth particles
 	if (gl_particles_style)
 	{
-		FTexture *lump = NULL;
+		FTextureID lump;
 		if (gl_particles_style == 1)
 		{
-			lump = GLRenderer->glpart2;
+			lump = GLRenderer->glPart2;
 		}
 		else if (gl_particles_style == 2)
 		{
-			lump = GLRenderer->glpart;
+			lump = GLRenderer->glPart;
 		}
+		else lump.SetNull();
 
-		if (lump != NULL)
+		if (lump.isValid())
 		{
-			gltexture = FMaterial::ValidateTexture(lump, true);
+			gltexture = FMaterial::ValidateTexture(lump, true, false);
 			translation = 0;
 
 			ul = gltexture->GetUL();
@@ -1211,7 +1230,7 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 	}
 
 	double timefrac = r_viewpoint.TicFrac;
-	if (paused || bglobal.freeze)
+	if (paused || bglobal.freeze || (level.flags2 & LEVEL2_FROZEN))
 		timefrac = 0.;
 	float xvf = (particle->Vel.X) * timefrac;
 	float yvf = (particle->Vel.Y) * timefrac;

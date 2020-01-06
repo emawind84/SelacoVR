@@ -411,10 +411,10 @@ void DBaseStatusBar::OnDestroy ()
 {
 	for (size_t i = 0; i < countof(Messages); ++i)
 	{
-		DHUDMessage *msg = Messages[i];
+		DHUDMessageBase *msg = Messages[i];
 		while (msg)
 		{
-			DHUDMessage *next = msg->Next;
+			DHUDMessageBase *next = msg->Next;
 			msg->Destroy();
 			msg = next;
 		}
@@ -597,14 +597,14 @@ void DBaseStatusBar::Tick ()
 {
 	for (size_t i = 0; i < countof(Messages); ++i)
 	{
-		DHUDMessage *msg = Messages[i];
-		DHUDMessage **prev = &Messages[i];
+		DHUDMessageBase *msg = Messages[i];
+		DHUDMessageBase **prev = &Messages[i];
 
 		while (msg)
 		{
-			DHUDMessage *next = msg->Next;
+			DHUDMessageBase *next = msg->Next;
 
-			if (msg->Tick ())
+			if (msg->CallTick ())
 			{
 				*prev = next;
 				msg->Destroy();
@@ -665,10 +665,10 @@ void DBaseStatusBar::CallTick()
 //
 //---------------------------------------------------------------------------
 
-void DBaseStatusBar::AttachMessage (DHUDMessage *msg, uint32_t id, int layer)
+void DBaseStatusBar::AttachMessage (DHUDMessageBase *msg, uint32_t id, int layer)
 {
-	DHUDMessage *old = NULL;
-	DHUDMessage **prev;
+	DHUDMessageBase *old = NULL;
+	DHUDMessageBase **prev;
 	DObject *container = this;
 
 	old = (id == 0 || id == 0xFFFFFFFF) ? NULL : DetachMessage (id);
@@ -700,18 +700,28 @@ void DBaseStatusBar::AttachMessage (DHUDMessage *msg, uint32_t id, int layer)
 	GC::WriteBarrier(container, msg);
 }
 
+DEFINE_ACTION_FUNCTION(DBaseStatusBar, AttachMessage)
+{
+	PARAM_SELF_PROLOGUE(DBaseStatusBar);
+	PARAM_OBJECT(msg, DHUDMessageBase);
+	PARAM_UINT_DEF(id);
+	PARAM_INT_DEF(layer);
+	self->AttachMessage(msg, id, layer);
+	return 0;
+}
+
 //---------------------------------------------------------------------------
 //
 // PROC DetachMessage
 //
 //---------------------------------------------------------------------------
 
-DHUDMessage *DBaseStatusBar::DetachMessage (DHUDMessage *msg)
+DHUDMessageBase *DBaseStatusBar::DetachMessage (DHUDMessageBase *msg)
 {
 	for (size_t i = 0; i < countof(Messages); ++i)
 	{
-		DHUDMessage *probe = Messages[i];
-		DHUDMessage **prev = &Messages[i];
+		DHUDMessageBase *probe = Messages[i];
+		DHUDMessageBase **prev = &Messages[i];
 
 		while (probe && probe != msg)
 		{
@@ -728,12 +738,20 @@ DHUDMessage *DBaseStatusBar::DetachMessage (DHUDMessage *msg)
 	return NULL;
 }
 
-DHUDMessage *DBaseStatusBar::DetachMessage (uint32_t id)
+DEFINE_ACTION_FUNCTION(DBaseStatusBar, DetachMessage)
+{
+	PARAM_SELF_PROLOGUE(DBaseStatusBar);
+	PARAM_OBJECT(msg, DHUDMessageBase);
+	ACTION_RETURN_OBJECT(self->DetachMessage(msg));
+}
+
+
+DHUDMessageBase *DBaseStatusBar::DetachMessage (uint32_t id)
 {
 	for (size_t i = 0; i < countof(Messages); ++i)
 	{
-		DHUDMessage *probe = Messages[i];
-		DHUDMessage **prev = &Messages[i];
+		DHUDMessageBase *probe = Messages[i];
+		DHUDMessageBase **prev = &Messages[i];
 
 		while (probe && probe->SBarID != id)
 		{
@@ -750,6 +768,13 @@ DHUDMessage *DBaseStatusBar::DetachMessage (uint32_t id)
 	return NULL;
 }
 
+DEFINE_ACTION_FUNCTION(DBaseStatusBar, DetachMessageID)
+{
+	PARAM_SELF_PROLOGUE(DBaseStatusBar);
+	PARAM_INT(id);
+	ACTION_RETURN_OBJECT(self->DetachMessage(id));
+}
+
 //---------------------------------------------------------------------------
 //
 // PROC DetachAllMessages
@@ -760,17 +785,25 @@ void DBaseStatusBar::DetachAllMessages ()
 {
 	for (size_t i = 0; i < countof(Messages); ++i)
 	{
-		DHUDMessage *probe = Messages[i];
+		DHUDMessageBase *probe = Messages[i];
 
 		Messages[i] = NULL;
 		while (probe != NULL)
 		{
-			DHUDMessage *next = probe->Next;
+			DHUDMessageBase *next = probe->Next;
 			probe->Destroy();
 			probe = next;
 		}
 	}
 }
+
+DEFINE_ACTION_FUNCTION(DBaseStatusBar, DetachAllMessages)
+{
+	PARAM_SELF_PROLOGUE(DBaseStatusBar);
+	self->DetachAllMessages();
+	return 0;
+}
+
 
 //---------------------------------------------------------------------------
 //
@@ -947,7 +980,7 @@ void DBaseStatusBar::FlashCrosshair ()
 
 void DBaseStatusBar::DrawMessages (int layer, int bottom)
 {
-	DHUDMessage *msg = Messages[layer];
+	DHUDMessageBase *msg = Messages[layer];
 	int visibility = 0;
 
 	if (viewactive)
@@ -960,8 +993,8 @@ void DBaseStatusBar::DrawMessages (int layer, int bottom)
 	}
 	while (msg)
 	{
-		DHUDMessage *next = msg->Next;
-		msg->Draw (bottom, visibility);
+		DHUDMessageBase *next = msg->Next;
+		msg->CallDraw (bottom, visibility);
 		msg = next;
 	}
 }
@@ -1314,10 +1347,10 @@ void DBaseStatusBar::ScreenSizeChanged ()
 
 	for (size_t i = 0; i < countof(Messages); ++i)
 	{
-		DHUDMessage *message = Messages[i];
+		DHUDMessageBase *message = Messages[i];
 		while (message != NULL)
 		{
-			message->ScreenSizeChanged ();
+			message->CallScreenSizeChanged ();
 			message = message->Next;
 		}
 	}
@@ -1609,6 +1642,7 @@ void DBaseStatusBar::DrawGraphic(FTextureID texture, double x, double y, int fla
 		DTA_Alpha, Alpha,
 		DTA_AlphaChannel, !!(flags & DI_ALPHAMAPPED),
 		DTA_FillColor, (flags & DI_ALPHAMAPPED) ? 0 : -1,
+		DTA_FlipX, !!(flags & DI_MIRROR),
 		TAG_DONE);
 }
 
@@ -2081,8 +2115,8 @@ DEFINE_ACTION_FUNCTION(DBaseStatusBar, GetGlobalACSArrayValue)
 
 enum ENumFlags
 {
-	FNF_FILLZEROS,
-	FNF_WHENNOTZERO,
+	FNF_WHENNOTZERO = 0x1,
+	FNF_FILLZEROS = 0x2,
 };
 
 DEFINE_ACTION_FUNCTION(DBaseStatusBar, FormatNumber)

@@ -122,14 +122,14 @@ void M_FindResponseFile (void)
 			{
 				// READ THE RESPONSE FILE INTO MEMORY
 				FileReader fr;
-				if (!fr.Open(Args->GetArg(i) + 1))
+				if (!fr.OpenFile(Args->GetArg(i) + 1))
 				{ // [RH] Make this a warning, not an error.
 					Printf ("No such response file (%s)!\n", Args->GetArg(i) + 1);
 				}
 				else
 				{
 					Printf ("Found response file %s!\n", Args->GetArg(i) + 1);
-					size = fr.GetLength();
+					size = (int)fr.GetLength();
 					file = new char[size+1];
 					fr.Read (file, size);
 					file[size] = 0;
@@ -315,7 +315,7 @@ void M_SaveDefaultsFinal ()
 	GameConfig = NULL;
 }
 
-CCMD (writeini)
+UNSAFE_CCMD (writeini)
 {
 	const char *filename = (argv.argc() == 1) ? NULL : argv[1];
 	if (!M_SaveDefaults (filename))
@@ -673,7 +673,7 @@ void M_ScreenShot (const char *filename)
 	}
 }
 
-CCMD (screenshot)
+UNSAFE_CCMD (screenshot)
 {
 	if (argv.argc() == 1)
 		G_ScreenShot (NULL);

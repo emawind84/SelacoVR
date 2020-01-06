@@ -55,7 +55,7 @@ void I_SetMusicVolume (float volume);
 // Registers a song handle to song data.
 class MusInfo;
 struct MidiDeviceSetting;
-MusInfo *I_RegisterSong (FileReader *reader, MidiDeviceSetting *device);
+MusInfo *I_RegisterSong (FileReader &reader, MidiDeviceSetting *device);
 MusInfo *I_RegisterCDSong (int track, int cdid = 0);
 
 // The base music class. Everything is derived from this --------------------
@@ -66,7 +66,6 @@ public:
 	MusInfo ();
 	virtual ~MusInfo ();
 	virtual void MusicVolumeChanged();		// snd_musicvolume changed
-	virtual void TimidityVolumeChanged();	// timidity_mastervolume changed
 	virtual void Play (bool looping, int subsong) = 0;
 	virtual void Pause () = 0;
 	virtual void Resume () = 0;
