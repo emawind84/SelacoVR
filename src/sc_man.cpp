@@ -244,18 +244,25 @@ void FScanner::Open (const char *name)
 //
 //==========================================================================
 
-void FScanner::OpenFile (const char *name)
+bool FScanner::OpenFile (const char *name)
 {
-	uint8_t *filebuf;
-	int filesize;
-
 	Close ();
-	filesize = M_ReadFile (name, &filebuf);
+
+	FileReader fr(name);
+	if (!fr.Open(name)) return false;
+	auto filesize = fr.GetLength();
+	auto filebuf = new uint8_t[filesize];
+	if (fr.Read(filebuf, filesize) != filesize)
+	{
+		delete[] filebuf;
+		return false;
+	}
 	ScriptBuffer = FString((const char *)filebuf, filesize);
 	delete[] filebuf;
 	ScriptName = name;	// This is used for error messages so the full file name is preferable
 	LumpNum = -1;
 	PrepareScript ();
+	return true;
 }
 
 //==========================================================================
@@ -947,6 +954,76 @@ int FScanner::MustMatchString (const char * const *strings, size_t stride)
 bool FScanner::Compare (const char *text)
 {
 	return (stricmp (text, String) == 0);
+}
+
+
+//==========================================================================
+//
+// Convenience helpers that parse an entire number including a leading minus or plus sign
+//
+//==========================================================================
+
+bool FScanner::ScanValue(bool allowfloat)
+{
+	bool neg = false;
+	if (!GetToken()) 
+	{
+		return false;
+	}
+	if (TokenType == '-' || TokenType == '+')
+	{
+		neg = TokenType == '-';
+		if (!GetToken())
+		{
+			return false;
+		}
+	}
+	if (TokenType != TK_IntConst && (TokenType != TK_FloatConst || !allowfloat)) 
+	{
+		return false;
+	}
+	if (neg)
+	{
+		Number = -Number;
+		Float = -Float;
+	}
+	return true;
+}
+
+bool FScanner::CheckValue(bool allowfloat) 
+{ 
+	auto savedstate = SavePos();
+	bool res = ScanValue(allowfloat);
+	if (!res) RestorePos(savedstate);
+	return res;
+}
+
+void FScanner::MustGetValue(bool allowfloat)
+{
+	if (!ScanValue(allowfloat)) ScriptError(allowfloat ? "Numeric constant expected" : "Integer constant expected");
+}
+
+bool FScanner::CheckBoolToken()
+{
+	if (CheckToken(TK_True))
+	{
+		Number = 1;
+		Float = 1;
+		return true;
+	}
+	if (CheckToken(TK_False))
+	{
+		Number = 0;
+		Float = 0;
+		return true;
+	}
+	return false;
+}
+
+void FScanner::MustGetBoolToken()
+{
+	if (!CheckBoolToken())
+		ScriptError("Expected true or false");
 }
 
 //==========================================================================

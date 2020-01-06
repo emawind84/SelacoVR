@@ -27,7 +27,6 @@
 #ifndef VR_LS_MATRIX_H_
 #define VR_LS_MATRIX_H_
 
-#include "gl/data/gl_matrix.h"
 #include "openvr.h"
 
 struct HmdMatrix34_t;

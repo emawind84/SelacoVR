@@ -40,9 +40,11 @@ public:
 
 private:
 	static ShadedTriVertex shade_vertex(const PolyDrawArgs &drawargs, const TriVertex &v);
+	static void draw_elements(const PolyDrawArgs &args, WorkerThreadData *thread);
 	static void draw_arrays(const PolyDrawArgs &args, WorkerThreadData *thread);
 	static void draw_shaded_triangle(const ShadedTriVertex *vertices, bool ccw, TriDrawTriangleArgs *args, WorkerThreadData *thread);
 	static bool is_degenerate(const ShadedTriVertex *vertices);
+	static bool is_frontfacing(TriDrawTriangleArgs *args);
 
 	static int clipedge(const ShadedTriVertex *verts, ShadedTriVertex *clippedvert);
 

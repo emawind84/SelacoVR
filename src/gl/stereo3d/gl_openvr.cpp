@@ -230,20 +230,19 @@ public:
 		return 0;
 	}
 
-	virtual void RenderFrame(FTexture * skin, int frame, int frame2, double inter, int translation = 0)  override
+	virtual void RenderFrame(FModelRenderer* renderer, FTexture * skin, int frame, int frame2, double inter, int translation = 0)  override
 	{
 		if (!isLoaded())
 			return;
 		FMaterial * tex = FMaterial::ValidateTexture(pFTex, false);
-		mVBuf->SetupFrame(0, 0, 0);
-		gl_RenderState.SetVertexBuffer(mVBuf);
-		gl_RenderState.SetMaterial(tex, CLAMP_NONE, translation, -1, false);
-		gl_RenderState.Apply();
-		glDrawElements(GL_TRIANGLES, pModel->unTriangleCount * 3, GL_UNSIGNED_INT, (void*)(intptr_t)0);
+		mVBuf->SetupFrame(renderer, 0, 0, 0);
+		renderer->SetVertexBuffer(mVBuf);
+		renderer->SetMaterial(pFTex, CLAMP_NONE, translation);
+		renderer->DrawElements(pModel->unTriangleCount * 3, 0);
 		gl_RenderState.SetVertexBuffer(GLRenderer->mVBO); //this needs to be set back to avoid the level rendering black even though the next draw will be the UI for this eye(???)
 	}
 
-	virtual void BuildVertexBuffer() override
+	virtual void BuildVertexBuffer(FModelRenderer* renderer) override
 	{
 		if (loadState != LOADSTATE_LOADED)
 			return;
@@ -313,7 +312,9 @@ public:
 			loadState = LOADSTATE_LOADED;
 
 			pFTex = new FControllerTexture(pTexture);
-			BuildVertexBuffer();
+
+			FGLModelRenderer renderer;
+			BuildVertexBuffer(&renderer);
 
 			return true;
 		}
@@ -846,14 +847,14 @@ void OpenVRMode::DrawControllerModels() const
 {
 	if(!openvr_drawControllers)
 		return; 
-	
+	FGLModelRenderer renderer;
 	for (int i = 0; i < MAX_ROLES; ++i) 
 	{
 		if (GetHandTransform(i, &gl_RenderState.mModelMatrix) && controllers[i].model)
 		{
 			gl_RenderState.EnableModelMatrix(true);
 
-			controllers[i].model->RenderFrame(0, 0, 0, 0);
+			controllers[i].model->RenderFrame(&renderer, 0, 0, 0, 0);
 
 			gl_RenderState.EnableModelMatrix(false);
 		}

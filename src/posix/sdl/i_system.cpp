@@ -119,9 +119,6 @@ void SetLanguageIDs ()
 	LanguageIDs[3] = LanguageIDs[2] = LanguageIDs[1] = LanguageIDs[0] = lang;
 }
 
-void I_InitTimer ();
-void I_ShutdownTimer ();
-
 //
 // I_Init
 //
@@ -132,7 +129,6 @@ void I_Init (void)
 
 	atterm (I_ShutdownSound);
     I_InitSound ();
-	I_InitTimer ();
 }
 
 //
@@ -148,8 +144,6 @@ void I_Quit (void)
 		G_CheckDemoStatus();
 
 	C_DeinitConsole();
-
-	I_ShutdownTimer();
 }
 
 
@@ -403,15 +397,16 @@ int I_FindClose (void *handle)
 	return 0;
 }
 
-int I_FindAttr (findstate_t *fileinfo)
+int I_FindAttr(findstate_t* const fileinfo)
 {
-	dirent *ent = fileinfo->namelist[fileinfo->current];
-	struct stat buf;
+	dirent* const ent = fileinfo->namelist[fileinfo->current];
+	bool isdir;
 
-	if (stat(ent->d_name, &buf) == 0)
+	if (DirEntryExists(ent->d_name, &isdir))
 	{
-		return S_ISDIR(buf.st_mode) ? FA_DIREC : 0;
+		return isdir ? FA_DIREC : 0;
 	}
+
 	return 0;
 }
 

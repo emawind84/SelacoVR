@@ -49,6 +49,7 @@
 #include "st_console.h"
 #include "v_text.h"
 #include "x86.h"
+#include "cmdlib.h"
 
 
 EXTERN_CVAR(String, language)
@@ -84,9 +85,6 @@ void SetLanguageIDs()
 }
 
 
-void I_InitTimer();
-void I_ShutdownTimer();
-
 double PerfToSec, PerfToMillisec;
 
 static void CalculateCPUSpeed()
@@ -114,7 +112,6 @@ void I_Init(void)
 
 	atterm(I_ShutdownSound);
     I_InitSound();
-	I_InitTimer();
 }
 
 static int has_exited;
@@ -129,8 +126,6 @@ void I_Quit()
 	}
 
 	C_DeinitConsole();
-
-	I_ShutdownTimer();
 }
 
 
@@ -342,11 +337,11 @@ int I_FindClose(void* const handle)
 int I_FindAttr(findstate_t* const fileinfo)
 {
 	dirent* const ent = fileinfo->namelist[fileinfo->current];
-	struct stat buf;
+	bool isdir;
 
-	if (stat(ent->d_name, &buf) == 0)
+	if (DirEntryExists(ent->d_name, &isdir))
 	{
-		return S_ISDIR(buf.st_mode) ? FA_DIREC : 0;
+		return isdir ? FA_DIREC : 0;
 	}
 
 	return 0;

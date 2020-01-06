@@ -38,6 +38,8 @@
 #include <stdint.h>
 #include "i_time.h"
 #include "doomdef.h"
+#include "c_cvars.h"
+#include "doomstat.h"
 
 //==========================================================================
 //
@@ -49,10 +51,31 @@ static uint64_t FirstFrameStartTime;
 static uint64_t CurrentFrameStartTime;
 static uint64_t FreezeTime;
 
+static double TimeScale = 1.0;
+
+CUSTOM_CVAR(Float, i_timescale, 1.0f, CVAR_NOINITCALL)
+{
+	if (netgame)
+	{
+		Printf("Time scale cannot be changed in net games.\n");
+		self = 1.0f;
+	}
+	else if (self >= 0.05f)
+	{
+		I_FreezeTime(true);
+		TimeScale = self;
+		I_FreezeTime(false);
+	}
+	else
+	{
+		Printf("Time scale must be at least 0.05!\n");
+	}
+}
+
 static uint64_t GetClockTimeNS()
 {
 	using namespace std::chrono;
-	return (uint64_t)duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
+	return (uint64_t)((duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count()) * (uint64_t)(TimeScale * 1000));
 }
 
 static uint64_t MSToNS(unsigned int ms)
@@ -108,11 +131,22 @@ int I_WaitForTic(int prevtic)
 	int time;
 	while ((time = I_GetTime()) <= prevtic)
 	{
+		// Windows-specific note:
 		// The minimum amount of time a thread can sleep is controlled by timeBeginPeriod.
 		// We set this to 1 ms in DoMain.
-		uint64_t sleepTime = NSToMS(FirstFrameStartTime + TicToNS(prevtic + 1) - I_nsTime());
-		if (sleepTime > 2)
-			std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime - 2));
+
+		const uint64_t next = FirstFrameStartTime + TicToNS(prevtic + 1);
+		const uint64_t now = I_nsTime();
+
+		if (next > now)
+		{
+			const uint64_t sleepTime = NSToMS(next - now);
+
+			if (sleepTime > 2)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime - 2));
+			}
+		}
 
 		I_SetFrameTime();
 	}

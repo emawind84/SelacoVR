@@ -75,3 +75,5 @@ CMakeCache.txt
 g_pch.cpp
 config.h
 .vs
+/src/gl/unused
+/mapfiles_release/*.map
