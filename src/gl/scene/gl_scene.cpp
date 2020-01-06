@@ -691,14 +691,6 @@ void GLSceneDrawer::EndDrawScene(sector_t * viewsector)
 
 	Reset3DViewport();
 
-	if (!s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
-	{
-		// [BB] Only draw the sprites if we didn't render a HUD model before.
-		if ( renderHUDModel == false )
-		{
-			DrawPlayerSprites (viewsector, false);
-		}
-	}
 	// Delay drawing psprites until after bloom has been applied, if enabled.
 	if (!FGLRenderBuffers::IsEnabled() || !gl_bloom || FixedColormap != CM_DEFAULT)
 	{
@@ -718,11 +710,15 @@ void GLSceneDrawer::DrawEndScene2D(sector_t * viewsector)
 {
 	const bool renderHUDModel = gl_IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
 
-	// [BB] Only draw the sprites if we didn't render a HUD model before.
-	if (renderHUDModel == false)
+	if (!s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
 	{
-		DrawPlayerSprites(viewsector, false);
+		// [BB] Only draw the sprites if we didn't render a HUD model before.
+		if ( renderHUDModel == false )
+		{
+			DrawPlayerSprites (viewsector, false);
+		}
 	}
+	
 	if (gl.legacyMode)
 	{
 		gl_RenderState.DrawColormapOverlay();
