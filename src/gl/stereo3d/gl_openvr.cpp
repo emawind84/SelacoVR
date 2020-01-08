@@ -27,8 +27,6 @@
 
 #ifdef USE_OPENVR
 
-#include "gl_openvr.h"
-#include "openvr_capi.h"
 #include <string>
 #include <map>
 #include "gl/system/gl_system.h"
@@ -52,6 +50,14 @@
 #include "d_gui.h"
 #include "d_event.h"
 #include "i_time.h"
+
+#include "gl_openvr.h"
+#include "openvr_include.h"
+using namespace openvr;
+
+namespace openvr {
+#include "openvr.h"
+}
 
 void I_StartupOpenVR();
 double P_XYMovement(AActor *mo, DVector2 scroll);
@@ -1118,13 +1124,13 @@ static void HandleControllerState(int device, int role, VRControllerState_t& new
 		HandleUIVRAxes(lastState, newState, axisJoystick, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
 	}
 
-	HandleVRButton(lastState, newState, vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
-	HandleUIVRButton(lastState, newState, vr::k_EButton_Grip, GK_BACK);
-	HandleVRButton(lastState, newState, vr::k_EButton_ApplicationMenu, KEY_PAD_START, role * (KEY_PAD_BACK - KEY_PAD_START));
+	HandleVRButton(lastState, newState, openvr::vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
+	HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_Grip, GK_BACK);
+	HandleVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, KEY_PAD_START, role * (KEY_PAD_BACK - KEY_PAD_START));
 	
 	//Extra controls for rift
-	HandleVRButton(lastState, newState, vr::k_EButton_A, KEY_PAD_A, role * (KEY_PAD_B - KEY_PAD_A));
-	HandleVRButton(lastState, newState, vr::k_EButton_SteamVR_Touchpad, KEY_PAD_X, role * (KEY_PAD_Y - KEY_PAD_X));
+	HandleVRButton(lastState, newState, openvr::vr::k_EButton_A, KEY_PAD_A, role * (KEY_PAD_B - KEY_PAD_A));
+	HandleVRButton(lastState, newState, openvr::vr::k_EButton_SteamVR_Touchpad, KEY_PAD_X, role * (KEY_PAD_Y - KEY_PAD_X));
 
 	lastState = newState;
 }

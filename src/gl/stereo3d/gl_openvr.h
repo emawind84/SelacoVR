@@ -30,12 +30,14 @@
 #include "gl_stereo3d.h"
 #include "gl_stereo_leftright.h"
 
-// forward declarations
-struct TrackedDevicePose_t;
-struct Texture_t;
-struct VR_IVRSystem_FnTable;
-struct VR_IVRCompositor_FnTable;
-struct VR_IVRRenderModels_FnTable;
+namespace openvr {
+	// forward declarations
+	struct TrackedDevicePose_t;
+	struct Texture_t;
+	struct VR_IVRSystem_FnTable;
+	struct VR_IVRCompositor_FnTable;
+	struct VR_IVRRenderModels_FnTable;
+}
 
 /* stereoscopic 3D API */
 namespace s3d {
@@ -52,20 +54,20 @@ public:
 	virtual void AdjustHud() const override;
 	virtual void AdjustBlend() const override;
 
-	void initialize(VR_IVRSystem_FnTable * vrsystem);
+	void initialize(openvr::VR_IVRSystem_FnTable * vrsystem);
 	void dispose();
-	void setCurrentHmdPose(const TrackedDevicePose_t * pose) const {currentPose = pose;}
-	bool submitFrame(VR_IVRCompositor_FnTable * vrCompositor) const;
+	void setCurrentHmdPose(const openvr::TrackedDevicePose_t * pose) const {currentPose = pose;}
+	bool submitFrame(openvr::VR_IVRCompositor_FnTable * vrCompositor) const;
 
 protected:
 	VSMatrix projectionMatrix;
 	VSMatrix eyeToHeadTransform;
 	VSMatrix otherEyeToHeadTransform;
-	Texture_t* eyeTexture;
+	openvr::Texture_t* eyeTexture;
 	mutable uint32_t framebuffer;
 	int eye;
 
-	mutable const TrackedDevicePose_t * currentPose;
+	mutable const openvr::TrackedDevicePose_t * currentPose;
 
 	VSMatrix getQuadInWorld(
 		float distance, 
@@ -106,9 +108,9 @@ protected:
 	OpenVREyePose leftEyeView;
 	OpenVREyePose rightEyeView;
 
-	VR_IVRSystem_FnTable * vrSystem;
-	VR_IVRCompositor_FnTable * vrCompositor;
-	VR_IVRRenderModels_FnTable * vrRenderModels;
+	openvr::VR_IVRSystem_FnTable * vrSystem;
+	openvr::VR_IVRCompositor_FnTable * vrCompositor;
+	openvr::VR_IVRRenderModels_FnTable * vrRenderModels;
 	uint32_t vrToken;
 
 	mutable int cachedScreenBlocks;

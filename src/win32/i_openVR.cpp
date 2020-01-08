@@ -1,7 +1,9 @@
 #include <Windows.h>
 #include "d_event.h"
 #include "i_input.h"
-#include "openvr_capi.h"
+#include "openvr_include.h"
+
+using namespace openvr;
 
 namespace s3d
 {
