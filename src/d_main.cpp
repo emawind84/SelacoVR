@@ -122,6 +122,7 @@
 #include "s_music.h"
 
 EXTERN_CVAR(Bool, hud_althud)
+EXTERN_CVAR(Bool, cl_customizeinvulmap)
 void DrawHUD();
 void D_DoAnonStats();
 
@@ -2441,6 +2442,7 @@ void D_DoomMain (void)
 		const FIWADInfo *iwad_info = iwad_man->FindIWAD(allwads, iwad, basewad, optionalwad);
 		gameinfo.gametype = iwad_info->gametype;
 		gameinfo.flags = iwad_info->flags;
+		gameinfo.nokeyboardcheats = iwad_info->nokeyboardcheats;
 		gameinfo.ConfigName = iwad_info->Configname;
 		lastIWAD = iwad;
 
@@ -2693,6 +2695,10 @@ void D_DoomMain (void)
 		Net_NewMakeTic ();
 		C_RunDelayedCommands();
 		gamestate = GS_STARTUP;
+
+		// enable custom invulnerability map here
+		if (cl_customizeinvulmap)
+			R_InitColormaps(true);
 
 		if (!restart)
 		{

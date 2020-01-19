@@ -155,6 +155,7 @@ static void InitTokenMap()
 	TOKENDEF (TK_Struct,		ZCC_STRUCT);
 	TOKENDEF (TK_Property,		ZCC_PROPERTY);
 	TOKENDEF (TK_FlagDef,		ZCC_FLAGDEF);
+	TOKENDEF (TK_Mixin,			ZCC_MIXIN);
 	TOKENDEF (TK_Transient,		ZCC_TRANSIENT);
 	TOKENDEF (TK_Enum,			ZCC_ENUM);
 	TOKENDEF2(TK_SByte,			ZCC_SBYTE,		NAME_sByte);
@@ -403,10 +404,14 @@ static void DoParse(int lumpnum)
 			{
 				sc.ScriptError("Bad version directive");
 			}
-			if (state.ParseVersion > MakeVersion(VER_MAJOR, VER_MINOR, VER_REVISION) && !Args->CheckParm("-zsvoverride"))
+			if (state.ParseVersion > MakeVersion(VER_MAJOR, VER_MINOR, VER_REVISION))
 			{
 				Printf(TEXTCOLOR_RED "Warning: ZScript version mismatch. %d.%d.%d required but only %d.%d.%d supported.\n",
 				state.ParseVersion.major, state.ParseVersion.minor, state.ParseVersion.revision, VER_MAJOR, VER_MINOR, VER_REVISION);
+			}
+			else if (state.ParseVersion > MakeVersion(3, 9, 0))
+			{
+				Printf(TEXTCOLOR_RED "Warning: ZScript version %d.%d.%d only partially supported.\n", VER_MAJOR, VER_MINOR, VER_REVISION);
 			}
 		}
 		else

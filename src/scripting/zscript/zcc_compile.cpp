@@ -140,6 +140,8 @@ void ZCCCompiler::ProcessClass(ZCC_Class *cnode, PSymbolTreeNode *treenode)
 	}
 
 	auto node = cnode->Body;
+	auto origNextNode = cnode->Body;
+	ZCC_MixinDef *mixinDef = nullptr;
 	PSymbolTreeNode *childnode;
 	ZCC_Enum *enumType = nullptr;
 
@@ -148,6 +150,39 @@ void ZCCCompiler::ProcessClass(ZCC_Class *cnode, PSymbolTreeNode *treenode)
 	{
 		switch (node->NodeType)
 		{
+		case AST_MixinStmt:
+		{
+			auto mixinStmt = static_cast<ZCC_MixinStmt *>(node);
+			for (auto mx : Mixins)
+			{
+				if (mx->mixin->NodeName == mixinStmt->MixinName)
+				{
+					if (mx->mixin->MixinType != ZCC_Mixin_Class)
+					{
+						Error(node, "Mixin %s is not a class mixin.", FName(mixinStmt->MixinName).GetChars());
+					}
+
+					mixinDef = mx->mixin;
+					break;
+				}
+			}
+
+			if (mixinDef == nullptr)
+			{
+				Error(node, "Mixin %s does not exist.", FName(mixinStmt->MixinName).GetChars());
+				break;
+			}
+
+			if (mixinDef->Body != nullptr)
+			{
+				origNextNode = node->SiblingNext;
+				node = mixinDef->Body;
+
+				continue;
+			}
+		}
+		break;
+
 		case AST_Struct:
 		case AST_ConstantDef:
 		case AST_Enum:
@@ -219,9 +254,60 @@ void ZCCCompiler::ProcessClass(ZCC_Class *cnode, PSymbolTreeNode *treenode)
 			assert(0 && "Unhandled AST node type");
 			break;
 		}
+
 		node = node->SiblingNext;
+
+		if (mixinDef != nullptr && node == mixinDef->Body)
+		{
+			node = origNextNode;
+			mixinDef = nullptr;
+		}
 	}
 	while (node != cnode->Body);
+}
+
+//==========================================================================
+//
+// ZCCCompiler :: ProcessMixin
+//
+//==========================================================================
+
+void ZCCCompiler::ProcessMixin(ZCC_MixinDef *cnode, PSymbolTreeNode *treenode)
+{
+	ZCC_MixinWork *cls = new ZCC_MixinWork(cnode, treenode);
+
+	Mixins.Push(cls);
+
+	auto node = cnode->Body;
+
+	// Need to check if the class actually has a body.
+	if (node != nullptr) do
+	{
+		if (cnode->MixinType == ZCC_Mixin_Class)
+		{
+			switch (node->NodeType)
+			{
+			case AST_Struct:
+			case AST_ConstantDef:
+			case AST_Enum:
+			case AST_Property:
+			case AST_FlagDef:
+			case AST_VarDeclarator:
+			case AST_EnumTerminator:
+			case AST_States:
+			case AST_FuncDeclarator:
+			case AST_Default:
+			case AST_StaticArrayStatement:
+				break;
+
+			default:
+				assert(0 && "Unhandled AST node type");
+				break;
+			}
+		}
+
+		node = node->SiblingNext;
+	} while (node != cnode->Body);
 }
 
 //==========================================================================
@@ -309,6 +395,28 @@ ZCCCompiler::ZCCCompiler(ZCC_AST &ast, DObject *_outer, PSymbolTable &_symbols, 
 	{
 		ZCC_TreeNode *node = ast.TopNode;
 		PSymbolTreeNode *tnode;
+
+		// [pbeta] Mixins must be processed before everything else.
+		do
+		{
+			switch (node->NodeType)
+			{
+			case AST_MixinDef:
+				if ((tnode = AddTreeNode(static_cast<ZCC_NamedNode *>(node)->NodeName, node, GlobalTreeNodes)))
+				{
+					switch (node->NodeType)
+					{
+					case AST_MixinDef:
+						ProcessMixin(static_cast<ZCC_MixinDef *>(node), tnode);
+						break;
+					}
+				}
+				break;
+			}
+			node = node->SiblingNext;
+		} while (node != ast.TopNode);
+
+		node = ast.TopNode;
 		PType *enumType = nullptr;
 		ZCC_Enum *zenumType = nullptr;
 
@@ -316,6 +424,10 @@ ZCCCompiler::ZCCCompiler(ZCC_AST &ast, DObject *_outer, PSymbolTable &_symbols, 
 		{
 			switch (node->NodeType)
 			{
+			case AST_MixinDef:
+				// [pbeta] We already processed mixins, ignore them here.
+				break;
+
 			case AST_Class:
 				// a class extension should not check the tree node symbols.
 				if (static_cast<ZCC_Class *>(node)->Flags == ZCC_Extension)
@@ -1509,7 +1621,7 @@ bool ZCCCompiler::CompileFlagDefs(PClass *type, TArray<ZCC_FlagDef *> &Propertie
 				{
 					Error(p, "Variable %s not found in %s", referenced.GetChars(), type->TypeName.GetChars());
 				}
-				if (!field->Type->isInt() || field->Type->Size != 4)
+				else if (!field->Type->isInt() || field->Type->Size != 4)
 				{
 					Error(p, "Variable %s in %s must have a size of 4 bytes for use as flag storage", referenced.GetChars(), type->TypeName.GetChars());
 				}

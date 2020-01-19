@@ -6046,6 +6046,13 @@ foundone:
 	if (splashnum == -1)
 		return Terrains[terrainnum].IsLiquid;
 
+	const bool dealDamageOnLand = thing->player
+		&& Terrains[terrainnum].DamageOnLand
+		&& Terrains[terrainnum].DamageAmount
+		&& (level.time & Terrains[terrainnum].DamageTimeMask);
+	if (dealDamageOnLand)
+		P_DamageMobj(thing, nullptr, nullptr, Terrains[terrainnum].DamageAmount, Terrains[terrainnum].DamageMOD);
+
 	// don't splash when touching an underwater floor
 	if (thing->waterlevel >= 1 && pos.Z <= thing->floorz) return Terrains[terrainnum].IsLiquid;
 
@@ -7164,6 +7171,7 @@ void AActor::Revive()
 	flags5 = info->flags5;
 	flags6 = info->flags6;
 	flags7 = info->flags7;
+	flags8 = info->flags8; 
 	if (SpawnFlags & MTF_FRIENDLY) flags |= MF_FRIENDLY;
 	DamageType = info->DamageType;
 	health = SpawnHealth();
