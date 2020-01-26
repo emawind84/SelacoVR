@@ -117,6 +117,11 @@ inline unsigned __int64 rdtsc()
 {
 	return __rdtsc();
 }
+#elif defined __APPLE__ && (defined __i386__ || defined __x86_64__)
+inline uint64_t rdtsc()
+{
+	return __builtin_ia32_rdtsc();
+}
 #else
 inline uint64_t rdtsc()
 {
@@ -165,7 +170,7 @@ public:
 		Counter -= time;
 	}
 	
-	void Unclock()
+	void Unclock(bool checkvar = true)
 	{
 		int64_t time = rdtsc();
 		Counter += time;
@@ -191,6 +196,45 @@ private:
 };
 
 #endif
+
+class glcycle_t : public cycle_t
+{
+public:
+	static bool active;
+	void Clock()
+	{
+		if (active) cycle_t::Clock();		
+	}
+
+	void Unclock()
+	{
+		if (active) cycle_t::Unclock();
+	}
+};
+
+// Helper for code that uses a timer and has multiple exit points.
+class Clocker
+{
+public:
+
+	explicit Clocker(glcycle_t& clck)
+		: clock(clck)
+	{
+		clock.Clock();
+	}
+
+	~Clocker()
+	{	// unlock
+		clock.Unclock();
+	}
+
+	Clocker(const Clocker&) = delete;
+	Clocker& operator=(const Clocker&) = delete;
+private:
+	glcycle_t & clock;
+};
+
+
 
 class FStat
 {

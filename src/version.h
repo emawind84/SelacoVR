@@ -48,17 +48,17 @@ const char *GetVersionString();
 #ifdef GIT_DESCRIPTION
 #define VERSIONSTR GIT_DESCRIPTION
 #else
-#define VERSIONSTR "g3.3.2"
+#define VERSIONSTR "g3.4.1"
 #endif
 
 // The version as seen in the Windows resource
-#define RC_FILEVERSION 3,3,2,0
-#define RC_PRODUCTVERSION 3,3,2,0
+#define RC_FILEVERSION 3,4,1,0
+#define RC_PRODUCTVERSION 3,4,1,0
 #define RC_PRODUCTVERSION2 VERSIONSTR
-// These are for content versioning. The current state is '3.2.5'.
+// These are for content versioning. The current state is '3.4'.
 #define VER_MAJOR 3
-#define VER_MINOR 3
-#define VER_REVISION 2
+#define VER_MINOR 4
+#define VER_REVISION 1
 
 // Version identifier for network games.
 // Bump it every time you do a release unless you're certain you

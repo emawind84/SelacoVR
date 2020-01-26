@@ -46,15 +46,9 @@
 #define INITGUID
 #endif
 #include <windows.h>
-#include <mmsystem.h>
 #include <dbt.h>
 #include <dinput.h>
 #include <malloc.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244)
@@ -78,7 +72,6 @@
 
 
 #include "c_dispatch.h"
-#include "doomtype.h"
 #include "doomdef.h"
 #include "doomstat.h"
 #include "m_argv.h"
@@ -89,14 +82,9 @@
 #include "d_main.h"
 #include "d_gui.h"
 #include "c_console.h"
-#include "c_cvars.h"
-#include "i_system.h"
 #include "s_sound.h"
-#include "m_misc.h"
 #include "gameconfigfile.h"
-#include "win32iface.h"
-#include "templates.h"
-#include "cmdlib.h"
+#include "hardware.h"
 #include "d_event.h"
 #include "v_text.h"
 #include "version.h"
@@ -156,7 +144,7 @@ LPDIRECTINPUT8			g_pdi;
 LPDIRECTINPUT			g_pdi3;
 
 
-BOOL AppActive = TRUE;
+extern bool AppActive;
 int SessionState = 0;
 int BlockMouseMove; 
 
@@ -456,10 +444,6 @@ LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_PAINT:
-		if (screen != NULL && 0)
-		{
-			static_cast<BaseWinFB *> (screen)->PaintToWindow ();
-		}
 		return DefWindowProc (hWnd, message, wParam, lParam);
 
 	case WM_SETTINGCHANGE:
@@ -543,7 +527,7 @@ LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_ACTIVATEAPP:
-		AppActive = wParam;
+		AppActive = wParam == TRUE;
 		if (wParam)
 		{
 			SetPriorityClass (GetCurrentProcess (), INGAME_PRIORITY_CLASS);
@@ -616,22 +600,6 @@ LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 
-	case WM_PALETTECHANGED:
-		if ((HWND)wParam == Window)
-			break;
-		if (screen != NULL)
-		{
-			screen->PaletteChanged ();
-		}
-		return DefWindowProc (hWnd, message, wParam, lParam);
-
-	case WM_QUERYNEWPALETTE:
-		if (screen != NULL)
-		{
-			return screen->QueryNewPalette ();
-		}
-		return DefWindowProc (hWnd, message, wParam, lParam);
-
 	case WM_ERASEBKGND:
 		return true;
 
@@ -676,7 +644,7 @@ bool I_InitInput (void *hwnd)
 			hr = di8c(g_hInst, DIRECTINPUT_VERSION, IID_IDirectInput8A, (void **)&g_pdi, NULL);
 			if (FAILED(hr))
 			{
-				Printf(TEXTCOLOR_ORANGE "DirectInput8Create failed: %08lx", hr);
+				Printf(TEXTCOLOR_ORANGE "DirectInput8Create failed: %08lx\n", hr);
 				g_pdi = NULL;	// Just to be sure DirectInput8Create didn't change it
 			}
 		}

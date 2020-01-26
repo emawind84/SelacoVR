@@ -41,25 +41,19 @@
 #include "c_dispatch.h"
 #include "c_console.h"
 #include "v_video.h"
-#include "m_swap.h"
 #include "w_wad.h"
-#include "v_text.h"
 #include "s_sound.h"
 #include "gi.h"
 #include "doomstat.h"
 #include "g_level.h"
 #include "d_net.h"
-#include "colormatcher.h"
-#include "v_palette.h"
 #include "d_player.h"
 #include "serializer.h"
-#include "gstrings.h"
 #include "r_utility.h"
 #include "cmdlib.h"
 #include "g_levellocals.h"
 #include "vm.h"
 #include "p_acs.h"
-#include "r_data/r_translate.h"
 #include "sbarinfo.h"
 #include "events.h"
 #include "gl/stereo3d/gl_stereo3d.h"
@@ -95,10 +89,6 @@ extern int setblocks;
 
 FTexture *CrosshairImage;
 static int CrosshairNum;
-
-// [RH] Base blending values (for e.g. underwater)
-int BaseBlendR, BaseBlendG, BaseBlendB;
-float BaseBlendA;
 
 CVAR (Int, paletteflash, 0, CVAR_ARCHIVE)
 CVAR (Flag, pf_hexenweaps,	paletteflash, PF_HEXENWEAPONS)
@@ -141,7 +131,6 @@ CUSTOM_CVAR(Int, am_showmaplabel, 2, CVAR_ARCHIVE)
 }
 
 CVAR (Bool, idmypos, false, 0);
-CVAR(Float, underwater_fade_scalar, 1.0f, CVAR_ARCHIVE) // [Nash] user-settable underwater blend intensity
 
 //---------------------------------------------------------------------------
 //
@@ -198,10 +187,6 @@ void ST_LoadCrosshair(bool alwaysload)
 		return;
 	}
 
-	if (CrosshairImage != NULL)
-	{
-		CrosshairImage->Unload ();
-	}
 	if (num == 0)
 	{
 		CrosshairNum = 0;
@@ -669,7 +654,6 @@ void DBaseStatusBar::AttachMessage (DHUDMessageBase *msg, uint32_t id, int layer
 {
 	DHUDMessageBase *old = NULL;
 	DHUDMessageBase **prev;
-	DObject *container = this;
 
 	old = (id == 0 || id == 0xFFFFFFFF) ? NULL : DetachMessage (id);
 	if (old != NULL)
@@ -690,14 +674,13 @@ void DBaseStatusBar::AttachMessage (DHUDMessageBase *msg, uint32_t id, int layer
 	// it gets drawn back to front.)
 	while (*prev != NULL && (*prev)->SBarID > id)
 	{
-		container = *prev;
 		prev = &(*prev)->Next;
 	}
 
 	msg->Next = *prev;
 	msg->SBarID = id;
 	*prev = msg;
-	GC::WriteBarrier(container, msg);
+	GC::WriteBarrier(msg);
 }
 
 DEFINE_ACTION_FUNCTION(DBaseStatusBar, AttachMessage)
@@ -838,8 +821,8 @@ void DBaseStatusBar::RefreshBackground () const
 	{
 		if(y < SCREENHEIGHT)
 		{
-			V_DrawBorder (x+1, y, SCREENWIDTH, y+1);
-			V_DrawBorder (x+1, SCREENHEIGHT-1, SCREENWIDTH, SCREENHEIGHT);
+			screen->DrawBorder (x+1, y, SCREENWIDTH, y+1);
+			screen->DrawBorder (x+1, SCREENHEIGHT-1, SCREENWIDTH, SCREENHEIGHT);
 		}
 	}
 	else
@@ -858,8 +841,8 @@ void DBaseStatusBar::RefreshBackground () const
 			x2 = SCREENWIDTH;
 		}
 
-		V_DrawBorder (0, y, x+1, SCREENHEIGHT);
-		V_DrawBorder (x2-1, y, SCREENWIDTH, SCREENHEIGHT);
+		screen->DrawBorder (0, y, x+1, SCREENHEIGHT);
+		screen->DrawBorder (x2-1, y, SCREENWIDTH, SCREENHEIGHT);
 
 		if (setblocks >= 10)
 		{
@@ -1024,7 +1007,6 @@ void DBaseStatusBar::Draw (EHudState state)
 			VMValue params[] = { (DObject*)this };
 			VMCall(func, params, countof(params), nullptr, 0);
 		}
-		V_SetBorderNeedRefresh();
 	}
 
 	if (viewactive)
@@ -1204,29 +1186,6 @@ void DBaseStatusBar::DrawTopStuff (EHudState state)
 	}
 }
 
-//---------------------------------------------------------------------------
-//
-// BlendView
-//
-//---------------------------------------------------------------------------
-
-void DBaseStatusBar::BlendView (float blend[4])
-{
-	// [Nash] Allow user to set blend intensity
-	float cnt = (BaseBlendA * underwater_fade_scalar);
-
-	V_AddBlend (BaseBlendR / 255.f, BaseBlendG / 255.f, BaseBlendB / 255.f, cnt, blend);
-	V_AddPlayerBlend(CPlayer, blend, 1.0f, 228);
-
-	if (screen->Accel2D || (CPlayer->camera != NULL && menuactive == MENU_Off && ConsoleState == c_up))
-	{
-		player_t *player = (CPlayer->camera != NULL && CPlayer->camera->player != NULL) ? CPlayer->camera->player : CPlayer;
-		V_AddBlend (player->BlendR, player->BlendG, player->BlendB, player->BlendA, blend);
-	}
-
-	V_SetBlend ((int)(blend[0] * 255.0f), (int)(blend[1] * 255.0f),
-				(int)(blend[2] * 255.0f), (int)(blend[3] * 256.0f));
-}
 
 void DBaseStatusBar::DrawConsistancy () const
 {
@@ -1268,7 +1227,6 @@ void DBaseStatusBar::DrawConsistancy () const
 		screen->DrawText (SmallFont, CR_GREEN, 
 			(screen->GetWidth() - SmallFont->StringWidth (conbuff)*CleanXfac) / 2,
 			0, conbuff, DTA_CleanNoMove, true, TAG_DONE);
-		BorderTopRefresh = screen->GetPageCount ();
 	}
 }
 
@@ -1301,7 +1259,6 @@ void DBaseStatusBar::DrawWaiting () const
 		screen->DrawText (SmallFont, CR_ORANGE, 
 			(screen->GetWidth() - SmallFont->StringWidth (conbuff)*CleanXfac) / 2,
 			SmallFont->GetHeight()*CleanYfac, conbuff, DTA_CleanNoMove, true, TAG_DONE);
-		BorderTopRefresh = screen->GetPageCount ();
 	}
 }
 
@@ -1588,14 +1545,14 @@ void DBaseStatusBar::DrawGraphic(FTextureID texture, double x, double y, int fla
 	{
 	case DI_ITEM_HCENTER:	x -= boxwidth / 2; break;
 	case DI_ITEM_RIGHT:		x -= boxwidth; break;
-	case DI_ITEM_HOFFSET:	x -= tex->GetScaledLeftOffsetDouble() * boxwidth / texwidth; break;
+	case DI_ITEM_HOFFSET:	x -= tex->GetScaledLeftOffsetDouble(0) * boxwidth / texwidth; break;
 	}
 
 	switch (flags & DI_ITEM_VMASK)
 	{
 	case DI_ITEM_VCENTER: y -= boxheight / 2; break;
 	case DI_ITEM_BOTTOM:  y -= boxheight; break;
-	case DI_ITEM_VOFFSET: y -= tex->GetScaledTopOffsetDouble() * boxheight / texheight; break;
+	case DI_ITEM_VOFFSET: y -= tex->GetScaledTopOffsetDouble(0) * boxheight / texheight; break;
 	}
 
 	if (!fullscreenOffsets)
@@ -1802,7 +1759,7 @@ void DBaseStatusBar::DrawString(FFont *font, const FString &cstring, double x, d
 		}
 
 		if (!monospaced) //If we are monospaced lets use the offset
-			x += (c->LeftOffset + 1); //ignore x offsets since we adapt to character size
+			x += (c->GetLeftOffset(0) + 1); //ignore x offsets since we adapt to character size
 
 		double rx, ry, rw, rh;
 		rx = x + drawOffset.X;
@@ -1842,7 +1799,7 @@ void DBaseStatusBar::DrawString(FFont *font, const FString &cstring, double x, d
 			TAG_DONE);
 
 		if (!monospaced)
-			x += width + spacing - (c->LeftOffset + 1);
+			x += width + spacing - (c->GetLeftOffset(0) + 1);
 		else
 			x += spacing;
 	}

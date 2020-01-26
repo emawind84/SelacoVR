@@ -353,7 +353,6 @@ OptionMenu "OptionsMenu" protected
 	Submenu "$OPTMNU_SOUND",			"SoundOptions"
 	Submenu "$OPTMNU_DISPLAY",			"VideoOptions"
 	Submenu "$OPTMNU_VIDEO",			"VideoModeMenu"
-	Submenu "$OPTMNU_CHANGERENDER",		"RendererMenu"
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS",	"reset2defaults"
 	SafeCommand	"$OPTMNU_RESETTOSAVED",	"reset2saved"
@@ -711,7 +710,6 @@ OptionMenu "TrueColorOptions" protected
 {
 	Title "$TCMNU_TITLE"
 	StaticText " "
-	//Option "$TCMNU_TRUECOLOR",				"swtruecolor", "OnOff"
 	Option "$TCMNU_MINFILTER",				"r_minfilter", "OnOff"
 	Option "$TCMNU_MAGFILTER",				"r_magfilter", "OnOff"
 	Option "$TCMNU_MIPMAP",					"r_mipmap", "OnOff"
@@ -1845,54 +1843,13 @@ OptionMenu ModReplayerOptions protected
  *
  *=======================================*/
 
-OptionValue "PolyDoom"
+OptionValue "RenderMode"
 {
 	0, "$OPTVAL_SWDOOM"
-	1, "$OPTVAL_HWPOLY"
-}
-
-OptionValue "D3DGL"
-{
-	0, "$OPTVAL_GL"
-	1, "$OPTVAL_D3D"
-}
-
-OptionValue "GLD3D"
-{
-	0, "$OPTVAL_D3D"
-	1, "$OPTVAL_GL"
-}
-
-OptionValue "GLSDL"
-{
-	0, "$OPTVAL_SDL"
-	1, "$OPTVAL_GL"
-}
-
-OptionValue "GLCOCOA"
-{
-	0, "$OPTVAL_COCOA"
-	1, "$OPTVAL_GL"
-}
-
-OptionMenu RendererMenu protected
-{
-	Title "$RNDMNU_TITLE"
-	Option "$RNDMNU_RENDERER",	"vid_renderer", "PolyDoom"
-	Option "$RNDMNU_TRUECOLOR",	"swtruecolor", "OnOff"
-	Option "$RNDMNU_POLY",		"r_polyrenderer", "OnOff"
-	IfOption(Windows)
-	{
-		Option "$RNDMNU_CANVAS",	"vid_glswfb", "GLD3D"
-	}
-	IfOption(unix)
-	{
-		Option "$RNDMNU_CANVAS",	"vid_glswfb", "GLSDL"
-	}
-	IfOption(Mac)
-	{
-		Option "$RNDMNU_CANVAS",	"vid_glswfb", "GLCOCOA"
-	}
+	1, "$OPTVAL_SWDOOMTC"
+	2, "$OPTVAL_SWPOLY"
+	3, "$OPTVAL_SWPOLYTC"
+	4,  "$OPTVAL_HWPOLY"
 }
 
 /*=======================================
@@ -1939,6 +1896,7 @@ OptionMenu VideoModeMenu protected
 {
 	Title "$VIDMNU_TITLE"
 
+	Option "$VIDMNU_RENDERMODE",		"vid_rendermode", "RenderMode"
 	Option "$VIDMNU_FULLSCREEN",		"fullscreen", "YesNo"
 
 	IfOption(Mac)
@@ -2068,19 +2026,6 @@ OptionValue "FXAAQuality"
 	4, "$OPTVAL_EXTREME"
 }
 
-OptionValue "TextureFormats"
-{
-	0, "$OPTVAL_RGBA8"
-	1, "$OPTVAL_RGB5A1"
-	2, "$OPTVAL_RGBA4"
-	3, "$OPTVAL_RGBA2"
-	// [BB] Added modes for texture compression.
-	4, "$OPTVAL_COMPRRGBA"
-	5, "$OPTVAL_S3TCDXT1"
-	6, "$OPTVAL_S3TCDXT3"
-	7, "$OPTVAL_S3TCDXT5"
-}
-
 OptionValue "Anisotropy"
 {
 	1, "$OPTVAL_OFF"
@@ -2168,6 +2113,23 @@ OptionValue "HqResizeModes"
    15, "xBRZ_old 4x"
 }
 
+OptionValue "HqResizeModesNoMMX"
+{
+   0, "$OPTVAL_OFF"
+   1, "$OPTVAL_SCALE2X"
+   2, "$OPTVAL_SCALE3X"
+   3, "$OPTVAL_SCALE4X"
+   4, "$OPTVAL_HQ2X"
+   5, "$OPTVAL_HQ3X"
+   6, "$OPTVAL_HQ4X"
+   10, "xBRZ 2x"
+   11, "xBRZ 3x"
+   12, "xBRZ 4x"
+   13, "xBRZ_old 2x"
+   14, "xBRZ_old 3x"
+   15, "xBRZ_old 4x"
+}
+
 OptionValue "FogMode"
 {
 	0, "$OPTVAL_OFF"
@@ -2220,9 +2182,16 @@ OptionMenu "GLTextureGLOptions" protected
 	Option "$GLTEXMNU_TEXENABLED",		gl_texture,						"YesNo"
 	Option "$GLTEXMNU_TEXFILTER",		gl_texture_filter,				"FilterModes"
 	Option "$GLTEXMNU_ANISOTROPIC",		gl_texture_filter_anisotropic,	"Anisotropy"
-	Option "$GLTEXMNU_TEXFORMAT",		gl_texture_format,				"TextureFormats"
 	Option "$GLTEXMNU_ENABLEHIRES",		gl_texture_usehires,			"YesNo"
-	Option "$GLTEXMNU_HQRESIZE",		gl_texture_hqresize,			"HqResizeModes"
+	
+	ifOption(MMX)
+	{
+		Option "$GLTEXMNU_HQRESIZE",		gl_texture_hqresize,			"HqResizeModes"
+	}
+	else
+	{
+		Option "$GLTEXMNU_HQRESIZE",		gl_texture_hqresize,			"HqResizeModesNoMMX"
+	}
 	Option "$GLTEXMNU_RESIZETEX",		gl_texture_hqresize_textures,	"OnOff"
 	Option "$GLTEXMNU_RESIZESPR",		gl_texture_hqresize_sprites,	"OnOff"
 	Option "$GLTEXMNU_RESIZEFNT",		gl_texture_hqresize_fonts,		"OnOff"
@@ -2237,7 +2206,6 @@ OptionMenu "GLLightOptions" protected
 	Option "$TCMNU_DYNLIGHTS",					"r_dynlights", "OnOff"
 	Option "$GLLIGHTMNU_LIGHTSENABLED",			gl_lights,				"OnOff"
 	Option "$GLLIGHTMNU_LIGHTDEFS",				gl_attachedlights,		"YesNo"
-	Option "$GLLIGHTMNU_CLIPLIGHTS",			gl_lights_checkside,	"YesNo"
 	Option "$GLLIGHTMNU_LIGHTSPRITES",			gl_light_sprites,		"YesNo"
 	Option "$GLLIGHTMNU_LIGHTPARTICLES",		gl_light_particles,		"YesNo"
 	Option "$GLLIGHTMNU_LIGHTSHADOWMAP",		gl_light_shadowmap,		"YesNo"
@@ -2269,7 +2237,10 @@ OptionMenu "OpenGLOptions" protected
 	Slider "$GLPREFMNU_MENUBLUR",				gl_menu_blur, 0, 5.0, 0.5, 2
 	StaticText " "
 	Option "$GLPREFMNU_VRMODE",					vr_mode, 						"VRMode"
-	Option "$GLPREFMNU_VRQUADSTEREO",			vr_enable_quadbuffered,			"OnOff"
+	IfOption(Windows)
+	{
+		Option "$GLPREFMNU_VRQUADSTEREO",			vr_enable_quadbuffered,			"OnOff"
+	}
 	StaticText " "
 	Option "$GLPREFMNU_MULTISAMPLE", 			gl_multisample,					"Multisample"
 	Option "$GLPREFMNU_TONEMAP", 				gl_tonemap,						"TonemapModes"

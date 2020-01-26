@@ -58,7 +58,6 @@
 #ifdef _WIN32
 #include <io.h>
 #endif
-#include <fcntl.h>
 
 #include "i_system.h"
 #include "i_sound.h"
@@ -70,7 +69,6 @@
 #include "c_dispatch.h"
 #include "m_random.h"
 #include "w_wad.h"
-#include "doomdef.h"
 #include "p_local.h"
 #include "doomstat.h"
 #include "cmdlib.h"
@@ -79,13 +77,9 @@
 #include "a_sharedglobal.h"
 #include "gstrings.h"
 #include "gi.h"
-#include "templates.h"
-#include "timidity/timidity.h"
-#include "g_level.h"
 #include "po_man.h"
 #include "serializer.h"
 #include "d_player.h"
-#include "r_state.h"
 #include "g_levellocals.h"
 #include "vm.h"
 
@@ -297,7 +291,6 @@ void S_NoiseDebug (void)
 		}
 		chan = (FSoundChan *)((size_t)chan->PrevChan - myoffsetof(FSoundChan, NextChan));
 	}
-	V_SetBorderNeedRefresh();
 }
 
 static FString LastLocalSndInfo;
@@ -732,7 +725,7 @@ static void CalcPosVel(int type, const AActor *actor, const sector_t *sector,
 		if(type == SOURCE_Unattached)
 		{		
 			sector_t *sec = P_PointInSector(pt[0], pt[2]);
-			DVector2 disp = Displacements.getOffset(pgroup, sec->PortalGroup);
+			DVector2 disp = level.Displacements.getOffset(pgroup, sec->PortalGroup);
 			pos->X = pt[0] - (float)disp.X;
 			pos->Y = !(chanflags & CHAN_LISTENERZ) ? pt[1] : (float)listenpos.Z;
 			pos->Z = pt[2] - (float)disp.Y;
@@ -749,7 +742,7 @@ static void CalcPosVel(int type, const AActor *actor, const sector_t *sector,
 				//assert(actor != NULL);
 				if (actor != NULL)
 				{
-					DVector2 disp = Displacements.getOffset(pgroup, actor->Sector->PortalGroup);
+					DVector2 disp = level.Displacements.getOffset(pgroup, actor->Sector->PortalGroup);
 					DVector3 posi = actor->Pos() - disp;
 					*pos = { (float)posi.X, (float)posi.Z, (float)posi.Y };
 				}
@@ -759,13 +752,13 @@ static void CalcPosVel(int type, const AActor *actor, const sector_t *sector,
 				assert(sector != NULL);
 				if (sector != NULL)
 				{
-					DVector2 disp = Displacements.getOffset(pgroup, sector->PortalGroup);
+					DVector2 disp = level.Displacements.getOffset(pgroup, sector->PortalGroup);
 					if (chanflags & CHAN_AREA)
 					{
 						// listener must be reversely offset to calculate the proper sound origin.
 						CalcSectorSoundOrg(listenpos + disp, sector, channum, *pos);
-						pos->X += (float)disp.X;
-						pos->Z += (float)disp.Y;
+						pos->X -= (float)disp.X;
+						pos->Z -= (float)disp.Y;
 					}
 					else
 					{
@@ -781,7 +774,7 @@ static void CalcPosVel(int type, const AActor *actor, const sector_t *sector,
 				assert(poly != NULL);
 				if (poly != NULL)
 				{
-					DVector2 disp = Displacements.getOffset(pgroup, poly->CenterSubsector->sector->PortalGroup);
+					DVector2 disp = level.Displacements.getOffset(pgroup, poly->CenterSubsector->sector->PortalGroup);
 					CalcPolyobjSoundOrg(listenpos + disp, poly, *pos);
 					pos->X += (float)disp.X;
 					pos->Z += (float)disp.Y;
@@ -831,7 +824,8 @@ static bool Validate(const FVector3 &value, const float limit, const char *const
 
 	if (!valid)
 	{
-		Printf(TEXTCOLOR_RED "Invalid sound %s " TEXTCOLOR_WHITE "(%f, %f, %f)", name, value.X, value.Y, value.Z);
+		// Sound position and velocity have Y and Z axes swapped comparing to map coordinate system
+		Printf(TEXTCOLOR_RED "Invalid sound %s " TEXTCOLOR_WHITE "(%f, %f, %f)", name, value.X, value.Z, value.Y);
 
 		if (actor == nullptr)
 		{

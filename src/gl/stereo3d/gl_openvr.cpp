@@ -29,7 +29,7 @@
 
 #include <string>
 #include <map>
-#include "gl/system/gl_system.h"
+#include "gl_load/gl_system.h"
 #include "doomtype.h" // Printf
 #include "d_player.h"
 #include "g_game.h" // G_Add...
@@ -37,7 +37,7 @@
 #include "r_utility.h" // viewpitch
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderbuffers.h"
-#include "gl/renderer/gl_2ddrawer.h" // crosshair
+#include "v_2ddrawer.h" // crosshair
 #include "gl/models/gl_models.h"
 #include "g_levellocals.h" // pixelstretch
 #include "g_statusbar/sbar.h"
@@ -241,8 +241,9 @@ public:
 		if (!isLoaded())
 			return;
 		FMaterial * tex = FMaterial::ValidateTexture(pFTex, false);
-		mVBuf->SetupFrame(renderer, 0, 0, 0);
-		renderer->SetVertexBuffer(mVBuf);
+		auto vbuf = GetVertexBuffer(renderer);
+		vbuf->SetupFrame(renderer, 0, 0, 0);
+		renderer->SetVertexBuffer(vbuf);
 		renderer->SetMaterial(pFTex, CLAMP_NONE, translation);
 		renderer->DrawElements(pModel->unTriangleCount * 3, 0);
 		gl_RenderState.SetVertexBuffer(GLRenderer->mVBO); //this needs to be set back to avoid the level rendering black even though the next draw will be the UI for this eye(???)
@@ -252,12 +253,14 @@ public:
 	{
 		if (loadState != LOADSTATE_LOADED)
 			return;
-		if (mVBuf != NULL)
+
+		auto vbuf = GetVertexBuffer(renderer);
+		if (vbuf != NULL)
 			return;
 
-		mVBuf = new FModelVertexBuffer(true, true);
-		FModelVertex *vertptr = mVBuf->LockVertexBuffer(pModel->unVertexCount);
-		unsigned int *indxptr = mVBuf->LockIndexBuffer(pModel->unTriangleCount * 3);
+		vbuf = new FModelVertexBuffer(true, true);
+		FModelVertex *vertptr = vbuf->LockVertexBuffer(pModel->unVertexCount);
+		unsigned int *indxptr = vbuf->LockIndexBuffer(pModel->unTriangleCount * 3);
 
 		for (int v = 0; v < pModel->unVertexCount; ++v)
 		{
@@ -277,8 +280,8 @@ public:
 			indxptr[i] = pModel->rIndexData[i];
 		}
 
-		mVBuf->UnlockVertexBuffer();
-		mVBuf->UnlockIndexBuffer();
+		vbuf->UnlockVertexBuffer();
+		vbuf->UnlockIndexBuffer();
 	}
 
 	virtual void AddSkins(uint8_t *hitlist) override 
@@ -319,7 +322,7 @@ public:
 
 			pFTex = new FControllerTexture(pTexture);
 
-			FGLModelRenderer renderer;
+			FGLModelRenderer renderer(-1);
 			BuildVertexBuffer(&renderer);
 
 			return true;
@@ -611,8 +614,8 @@ bool OpenVREyePose::submitFrame(VR_IVRCompositor_FnTable * vrCompositor) const
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, GLRenderer->mSceneViewport.width,
-			GLRenderer->mSceneViewport.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, screen->mSceneViewport.width,
+			screen->mSceneViewport.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 		GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
@@ -622,7 +625,7 @@ bool OpenVREyePose::submitFrame(VR_IVRCompositor_FnTable * vrCompositor) const
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		return false;
 	GLRenderer->mBuffers->BindEyeTexture(eye, 0);
-	GL_IRECT box = {0, 0, GLRenderer->mSceneViewport.width, GLRenderer->mSceneViewport.height};
+	IntRect box = {0, 0, screen->mSceneViewport.width, screen->mSceneViewport.height};
 	GLRenderer->DrawPresentTexture(box, true);
 
 	// Maybe this would help with AMD boards?
@@ -697,6 +700,7 @@ void OpenVREyePose::AdjustHud() const
 	const Stereo3DMode * mode3d = &Stereo3DMode::getCurrentMode();
 	if (mode3d->IsMono())
 		return;
+	gl_RenderState.mViewMatrix.loadIdentity();
 	const OpenVRMode * openVrMode = static_cast<const OpenVRMode *>(mode3d);
 	if (openVrMode 
 		&& openVrMode->crossHairDrawer
@@ -713,7 +717,7 @@ void OpenVREyePose::AdjustHud() const
 			false,
 			0.0);
 		gl_RenderState.ApplyMatrices();
-		openVrMode->crossHairDrawer->Draw();
+		GLRenderer->Draw2D(openVrMode->crossHairDrawer);
 	}
 
 	// Update HUD matrix to render on a separate quad
@@ -747,7 +751,6 @@ OpenVRMode::OpenVRMode()
 	, vrRenderModels(nullptr)
 	, vrToken(0)
 	, crossHairDrawer(new F2DDrawer)
-	, cached2DDrawer(nullptr)
 {
 	eye_ptrs.Push(&leftEyeView); // initially default behavior to Mono non-stereo rendering
 
@@ -798,14 +801,16 @@ OpenVRMode::OpenVRMode()
 // AdjustViewports() is called from within FLGRenderer::SetOutputViewport(...)
 void OpenVRMode::AdjustViewports() const
 {
+	if (screen == nullptr)
+		return;
 	// Draw the 3D scene into the entire framebuffer
-	GLRenderer->mSceneViewport.width = sceneWidth;
-	GLRenderer->mSceneViewport.height = sceneHeight;
-	GLRenderer->mSceneViewport.left = 0;
-	GLRenderer->mSceneViewport.top = 0;
+	screen->mSceneViewport.width = sceneWidth;
+	screen->mSceneViewport.height = sceneHeight;
+	screen->mSceneViewport.left = 0;
+	screen->mSceneViewport.top = 0;
 
-	GLRenderer->mScreenViewport.width = sceneWidth;
-	GLRenderer->mScreenViewport.height = sceneHeight;
+	screen->mScreenViewport.width = sceneWidth;
+	screen->mScreenViewport.height = sceneHeight;
 }
 
 void OpenVRMode::AdjustPlayerSprites() const
@@ -826,34 +831,24 @@ void OpenVRMode::UnAdjustPlayerSprites() const {
 
 void OpenVRMode::AdjustCrossHair() const
 {
-	cached2DDrawer = GLRenderer->m2DDrawer;
 	// Remove effect of screenblocks setting on crosshair position
 	cachedViewheight = viewheight;
 	cachedViewwindowy = viewwindowy;
 	viewheight = SCREENHEIGHT;
 	viewwindowy = 0;
-
-	if (crossHairDrawer != nullptr) {
-		// Hijack 2D drawing to our local crosshair drawer
-		crossHairDrawer->Clear();
-		GLRenderer->m2DDrawer = crossHairDrawer;
-	}
 }
 
 void OpenVRMode::UnAdjustCrossHair() const
 {
 	viewheight = cachedViewheight;
 	viewwindowy = cachedViewwindowy;
-	if (cached2DDrawer)
-		GLRenderer->m2DDrawer = cached2DDrawer;
-	cached2DDrawer = nullptr;
 }
 
 void OpenVRMode::DrawControllerModels() const
 {
 	if(!openvr_drawControllers)
 		return; 
-	FGLModelRenderer renderer;
+	FGLModelRenderer renderer(-1);
 	for (int i = 0; i < MAX_ROLES; ++i) 
 	{
 		if (GetHandTransform(i, &gl_RenderState.mModelMatrix) && controllers[i].model)
@@ -873,6 +868,10 @@ bool OpenVRMode::GetHandTransform(int hand, VSMatrix* mat) const
 	if (controllers[hand].active)
 	{
 		mat->loadIdentity();
+		if (r_viewpoint.camera->player == nullptr)
+		{
+			return false;
+		}
 
 		APlayerPawn* playermo = r_viewpoint.camera->player->mo;
 		DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
@@ -950,11 +949,11 @@ void OpenVRMode::Present() const {
 		GLRenderer->ClearBorders();
 
 		// Compute screen regions to use for left and right eye views
-		int leftWidth = GLRenderer->mOutputLetterbox.width / 2;
-		int rightWidth = GLRenderer->mOutputLetterbox.width - leftWidth;
-		GL_IRECT leftHalfScreen = GLRenderer->mOutputLetterbox;
+		int leftWidth = screen->mOutputLetterbox.width / 2;
+		int rightWidth = screen->mOutputLetterbox.width - leftWidth;
+		IntRect leftHalfScreen = screen->mOutputLetterbox;
 		leftHalfScreen.width = leftWidth;
-		GL_IRECT rightHalfScreen = GLRenderer->mOutputLetterbox;
+		IntRect rightHalfScreen = screen->mOutputLetterbox;
 		rightHalfScreen.width = rightWidth;
 		rightHalfScreen.left += leftWidth;
 

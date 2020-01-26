@@ -37,7 +37,6 @@
 #include "intermission/intermission.h"
 #include "g_level.h"
 #include "w_wad.h"
-#include "gi.h"
 
 
 static void ReplaceIntermission(FName intname,FIntermissionDescriptor *desc)
@@ -135,7 +134,7 @@ bool FIntermissionAction::ParseKey(FScanner &sc)
 			if (sc.CheckToken(','))
 			{
 				sc.MustGetToken(TK_StringConst);
-				mPalette = sc.String;
+				sc.ScriptMessage("Palette override will be ignored");
 			}
 		}
 		return true;

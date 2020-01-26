@@ -38,22 +38,16 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <string.h>
 
 #include "doomtype.h"
 #include "m_argv.h"
-#include "i_system.h"
 #include "cmdlib.h"
 #include "c_dispatch.h"
 #include "w_wad.h"
-#include "w_zip.h"
 #include "m_crc32.h"
 #include "v_text.h"
-#include "templates.h"
 #include "gi.h"
-#include "doomerrors.h"
 #include "resourcefiles/resourcefile.h"
 #include "md5.h"
 #include "doomstat.h"
@@ -109,6 +103,7 @@ void uppercopy (char *to, const char *from)
 FWadCollection::FWadCollection ()
 : FirstLumpIndex(NULL), NextLumpIndex(NULL),
   FirstLumpIndex_FullName(NULL), NextLumpIndex_FullName(NULL), 
+  FirstLumpIndex_NoExt(NULL), NextLumpIndex_NoExt(NULL), 
   NumLumps(0)
 {
 }
@@ -140,11 +135,21 @@ void FWadCollection::DeleteAll ()
 		delete[] NextLumpIndex_FullName;
 		NextLumpIndex_FullName = NULL;
 	}
+	if (FirstLumpIndex_NoExt != NULL)
+	{
+		delete[] FirstLumpIndex_NoExt;
+		FirstLumpIndex_NoExt = NULL;
+	}
+	if (NextLumpIndex_NoExt != NULL)
+	{
+		delete[] NextLumpIndex_NoExt;
+		NextLumpIndex_NoExt = NULL;
+	}
 
 	LumpInfo.Clear();
 	NumLumps = 0;
 
-	// we must count backward to enssure that embedded WADs are deleted before
+	// we must count backward to ensure that embedded WADs are deleted before
 	// the ones that contain their data.
 	for (int i = Files.Size() - 1; i >= 0; --i)
 	{
@@ -192,6 +197,8 @@ void FWadCollection::InitMultipleFiles (TArray<FString> &filenames)
 	NextLumpIndex = new uint32_t[NumLumps];
 	FirstLumpIndex_FullName = new uint32_t[NumLumps];
 	NextLumpIndex_FullName = new uint32_t[NumLumps];
+	FirstLumpIndex_NoExt = new uint32_t[NumLumps];
+	NextLumpIndex_NoExt = new uint32_t[NumLumps];
 	InitHashChains ();
 	LumpInfo.ShrinkToFit();
 	Files.ShrinkToFit();
@@ -533,7 +540,7 @@ int FWadCollection::GetNumForName (const char *name, int space)
 //
 //==========================================================================
 
-int FWadCollection::CheckNumForFullName (const char *name, bool trynormal, int namespc)
+int FWadCollection::CheckNumForFullName (const char *name, bool trynormal, int namespc, bool ignoreext)
 {
 	uint32_t i;
 
@@ -541,12 +548,19 @@ int FWadCollection::CheckNumForFullName (const char *name, bool trynormal, int n
 	{
 		return -1;
 	}
+	uint32_t *fli = ignoreext ? FirstLumpIndex_NoExt : FirstLumpIndex_FullName;
+	uint32_t *nli = ignoreext ? NextLumpIndex_NoExt : NextLumpIndex_FullName;
+	auto len = strlen(name);
 
-	i = FirstLumpIndex_FullName[MakeKey(name) % NumLumps];
-
-	while (i != NULL_INDEX && stricmp(name, LumpInfo[i].lump->FullName))
+	for (i = fli[MakeKey(name) % NumLumps]; i != NULL_INDEX; i = nli[i])
 	{
-		i = NextLumpIndex_FullName[i];
+		if (strnicmp(name, LumpInfo[i].lump->FullName, len)) continue;
+		if (LumpInfo[i].lump->FullName[len] == 0) break;	// this is a full match
+		if (ignoreext && LumpInfo[i].lump->FullName[len] == '.') 
+		{
+			// is this the last '.' in the last path element, indicating that the remaining part of the name is only an extension?
+			if (strpbrk(LumpInfo[i].lump->FullName.GetChars() + len + 1, "./") == nullptr) break;	
+		}
 	}
 
 	if (i != NULL_INDEX) return i;
@@ -733,6 +747,8 @@ void FWadCollection::InitHashChains (void)
 	memset (NextLumpIndex, 255, NumLumps*sizeof(NextLumpIndex[0]));
 	memset (FirstLumpIndex_FullName, 255, NumLumps*sizeof(FirstLumpIndex_FullName[0]));
 	memset (NextLumpIndex_FullName, 255, NumLumps*sizeof(NextLumpIndex_FullName[0]));
+	memset(FirstLumpIndex_NoExt, 255, NumLumps * sizeof(FirstLumpIndex_NoExt[0]));
+	memset(NextLumpIndex_NoExt, 255, NumLumps * sizeof(NextLumpIndex_NoExt[0]));
 
 	// Now set up the chains
 	for (i = 0; i < (unsigned)NumLumps; i++)
@@ -748,6 +764,16 @@ void FWadCollection::InitHashChains (void)
 			j = MakeKey(LumpInfo[i].lump->FullName) % NumLumps;
 			NextLumpIndex_FullName[i] = FirstLumpIndex_FullName[j];
 			FirstLumpIndex_FullName[j] = i;
+
+			FString nameNoExt = LumpInfo[i].lump->FullName;
+			auto dot = nameNoExt.LastIndexOf('.');
+			auto slash = nameNoExt.LastIndexOf('/');
+			if (dot > slash) nameNoExt.Truncate(dot);
+
+			j = MakeKey(nameNoExt) % NumLumps;
+			NextLumpIndex_NoExt[i] = FirstLumpIndex_NoExt[j];
+			FirstLumpIndex_NoExt[j] = i;
+
 		}
 	}
 }

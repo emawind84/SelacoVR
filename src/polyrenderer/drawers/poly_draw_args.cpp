@@ -40,6 +40,7 @@
 
 void PolyDrawArgs::SetTexture(const uint8_t *texels, int width, int height)
 {
+	mTexture = nullptr;
 	mTexturePixels = texels;
 	mTextureWidth = width;
 	mTextureHeight = height;
@@ -48,9 +49,10 @@ void PolyDrawArgs::SetTexture(const uint8_t *texels, int width, int height)
 
 void PolyDrawArgs::SetTexture(FTexture *texture, FRenderStyle style)
 {
+	mTexture = texture;
 	mTextureWidth = texture->GetWidth();
 	mTextureHeight = texture->GetHeight();
-	if (PolyRenderer::Instance()->RenderTarget->IsBgra())
+	if (PolyTriangleDrawer::IsBgra())
 		mTexturePixels = (const uint8_t *)texture->GetPixelsBgra();
 	else
 		mTexturePixels = texture->GetPixels(style);
@@ -65,11 +67,12 @@ void PolyDrawArgs::SetTexture(FTexture *texture, uint32_t translationID, FRender
 		FRemapTable *table = TranslationToTable(translationID);
 		if (table != nullptr && !table->Inactive)
 		{
-			if (PolyRenderer::Instance()->RenderTarget->IsBgra())
+			if (PolyTriangleDrawer::IsBgra())
 				mTranslation = (uint8_t*)table->Palette;
 			else
 				mTranslation = table->Remap;
 
+			mTexture = texture;
 			mTextureWidth = texture->GetWidth();
 			mTextureHeight = texture->GetHeight();
 			mTexturePixels = texture->GetPixels(style);
@@ -79,6 +82,7 @@ void PolyDrawArgs::SetTexture(FTexture *texture, uint32_t translationID, FRender
 	
 	if (style.Flags & STYLEF_RedIsAlpha)
 	{
+		mTexture = texture;
 		mTextureWidth = texture->GetWidth();
 		mTextureHeight = texture->GetHeight();
 		mTexturePixels = texture->GetPixels(style);
@@ -102,22 +106,31 @@ void PolyDrawArgs::SetLight(FSWColormap *base_colormap, uint32_t lightlevel, dou
 
 	mLight = clamp<uint32_t>(lightlevel, 0, 255);
 	mFixedLight = fixed;
-	mLightRed = base_colormap->Color.r * 256 / 255;
-	mLightGreen = base_colormap->Color.g * 256 / 255;
-	mLightBlue = base_colormap->Color.b * 256 / 255;
-	mLightAlpha = base_colormap->Color.a * 256 / 255;
+	mLightRed = base_colormap->Color.r;
+	mLightRed += mLightRed >> 7;
+	mLightGreen = base_colormap->Color.g;
+	mLightGreen += mLightGreen >> 7;
+	mLightBlue = base_colormap->Color.b;
+	mLightBlue += mLightBlue >> 7;
+	mLightAlpha = base_colormap->Color.a;
+	mLightAlpha += mLightAlpha >> 7;
 	mFadeRed = base_colormap->Fade.r;
+	mFadeRed += mFadeRed >> 7;
 	mFadeGreen = base_colormap->Fade.g;
+	mFadeGreen += mFadeGreen >> 7;
 	mFadeBlue = base_colormap->Fade.b;
+	mFadeBlue += mFadeBlue >> 7;
 	mFadeAlpha = base_colormap->Fade.a;
-	mDesaturate = MIN(abs(base_colormap->Desaturate), 255) * 255 / 256;
+	mFadeAlpha += mFadeAlpha >> 7;
+	mDesaturate = MIN(abs(base_colormap->Desaturate), 255);
+	mDesaturate += mDesaturate >> 7;
 	mSimpleShade = (base_colormap->Color.d == 0x00ffffff && base_colormap->Fade.d == 0x00000000 && base_colormap->Desaturate == 0);
 	mColormaps = base_colormap->Maps;
 }
 
 void PolyDrawArgs::SetColor(uint32_t bgra, uint8_t palindex)
 {
-	if (PolyRenderer::Instance()->RenderTarget->IsBgra())
+	if (PolyTriangleDrawer::IsBgra())
 	{
 		mColor = bgra;
 	}
@@ -133,7 +146,7 @@ void PolyDrawArgs::DrawArray(const DrawerCommandQueuePtr &queue, const TriVertex
 	mVertexCount = vcount;
 	mElements = nullptr;
 	mDrawMode = mode;
-	queue->Push<DrawPolyTrianglesCommand>(*this, PolyTriangleDrawer::is_mirror());
+	queue->Push<DrawPolyTrianglesCommand>(*this);
 }
 
 void PolyDrawArgs::DrawElements(const DrawerCommandQueuePtr &queue, const TriVertex *vertices, const unsigned int *elements, int count, PolyDrawMode mode)
@@ -142,101 +155,78 @@ void PolyDrawArgs::DrawElements(const DrawerCommandQueuePtr &queue, const TriVer
 	mElements = elements;
 	mVertexCount = count;
 	mDrawMode = mode;
-	queue->Push<DrawPolyTrianglesCommand>(*this, PolyTriangleDrawer::is_mirror());
-}
-
-void PolyDrawArgs::DrawArray(PolyRenderThread *thread, const TriVertex *vertices, int vcount, PolyDrawMode mode)
-{
-	mVertices = vertices;
-	mVertexCount = vcount;
-	mElements = nullptr;
-	mDrawMode = mode;
-	thread->DrawQueue->Push<DrawPolyTrianglesCommand>(*this, PolyTriangleDrawer::is_mirror());
-}
-
-void PolyDrawArgs::DrawElements(PolyRenderThread *thread, const TriVertex *vertices, const unsigned int *elements, int count, PolyDrawMode mode)
-{
-	mVertices = vertices;
-	mElements = elements;
-	mVertexCount = count;
-	mDrawMode = mode;
-	thread->DrawQueue->Push<DrawPolyTrianglesCommand>(*this, PolyTriangleDrawer::is_mirror());
+	queue->Push<DrawPolyTrianglesCommand>(*this);
 }
 
 void PolyDrawArgs::SetStyle(const FRenderStyle &renderstyle, double alpha, uint32_t fillcolor, uint32_t translationID, FTexture *tex, bool fullbright)
 {
 	SetTexture(tex, translationID, renderstyle);
-
+	SetColor(0xff000000 | fillcolor, fillcolor >> 24);
+	
 	if (renderstyle == LegacyRenderStyles[STYLE_Normal] || (r_drawfuzz == 0 && renderstyle == LegacyRenderStyles[STYLE_OptFuzzy]))
 	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedAdd : TriBlendMode::TextureAdd, 1.0, 0.0);
+		SetStyle(Translation() ? TriBlendMode::NormalTranslated : TriBlendMode::Normal, alpha);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_Add] && fullbright && alpha == 1.0 && !Translation())
 	{
-		SetStyle(TriBlendMode::TextureAddSrcColor, 1.0, 1.0);
-	}
-	else if (renderstyle == LegacyRenderStyles[STYLE_Add])
-	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedAdd : TriBlendMode::TextureAdd, alpha, 1.0);
-	}
-	else if (renderstyle == LegacyRenderStyles[STYLE_Subtract])
-	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedRevSub : TriBlendMode::TextureRevSub, alpha, 1.0);
+		SetStyle(TriBlendMode::SrcColor, alpha);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_SoulTrans])
 	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedAdd : TriBlendMode::TextureAdd, transsouls, 1.0 - transsouls);
+		SetStyle(Translation() ? TriBlendMode::AddTranslated : TriBlendMode::Add, transsouls);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_Fuzzy] || (r_drawfuzz == 1 && renderstyle == LegacyRenderStyles[STYLE_OptFuzzy]))
 	{
 		SetColor(0xff000000, 0);
-		SetStyle(TriBlendMode::Fuzz);
+		SetStyle(TriBlendMode::Fuzzy);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_Shadow] || (r_drawfuzz == 2 && renderstyle == LegacyRenderStyles[STYLE_OptFuzzy]))
 	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedAdd : TriBlendMode::TextureAdd, 0.0, 160 / 255.0);
+		SetColor(0xff000000, 0);
+		SetStyle(Translation() ? TriBlendMode::TranslucentStencilTranslated : TriBlendMode::TranslucentStencil, 1.0 - 160 / 255.0);
 	}
-	else if (renderstyle == LegacyRenderStyles[STYLE_TranslucentStencil])
+	else if (renderstyle == LegacyRenderStyles[STYLE_Stencil])
 	{
-		SetColor(0xff000000 | fillcolor, fillcolor >> 24);
-		SetStyle(TriBlendMode::Stencil, alpha, 1.0 - alpha);
+		SetStyle(Translation() ? TriBlendMode::StencilTranslated : TriBlendMode::Stencil, alpha);
 	}
-	else if (renderstyle == LegacyRenderStyles[STYLE_AddStencil])
+	else if (renderstyle == LegacyRenderStyles[STYLE_Translucent])
 	{
-		SetColor(0xff000000 | fillcolor, fillcolor >> 24);
-		SetStyle(TriBlendMode::AddStencil, alpha, 1.0);
+		SetStyle(Translation() ? TriBlendMode::TranslucentTranslated : TriBlendMode::Translucent, alpha);
+	}
+	else if (renderstyle == LegacyRenderStyles[STYLE_Add])
+	{
+		SetStyle(Translation() ? TriBlendMode::AddTranslated : TriBlendMode::Add, alpha);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_Shaded])
 	{
-		SetColor(0xff000000 | fillcolor, fillcolor >> 24);
-		SetStyle(TriBlendMode::Shaded, alpha, 1.0 - alpha);
+		SetStyle(Translation() ? TriBlendMode::ShadedTranslated : TriBlendMode::Shaded, alpha);
+	}
+	else if (renderstyle == LegacyRenderStyles[STYLE_TranslucentStencil])
+	{
+		SetStyle(Translation() ? TriBlendMode::TranslucentStencilTranslated : TriBlendMode::TranslucentStencil, alpha);
+	}
+	else if (renderstyle == LegacyRenderStyles[STYLE_Subtract])
+	{
+		SetStyle(Translation() ? TriBlendMode::SubtractTranslated : TriBlendMode::Subtract, alpha);
+	}
+	else if (renderstyle == LegacyRenderStyles[STYLE_AddStencil])
+	{
+		SetStyle(Translation() ? TriBlendMode::AddStencilTranslated : TriBlendMode::AddStencil, alpha);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_AddShaded])
 	{
-		SetColor(0xff000000 | fillcolor, fillcolor >> 24);
-		SetStyle(TriBlendMode::AddShaded, alpha, 1.0);
-	}
-	else
-	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedAdd : TriBlendMode::TextureAdd, alpha, 1.0 - alpha);
+		SetStyle(Translation() ? TriBlendMode::AddShadedTranslated : TriBlendMode::AddShaded, alpha);
 	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-void RectDrawArgs::SetTexture(const uint8_t *texels, int width, int height)
-{
-	mTexturePixels = texels;
-	mTextureWidth = width;
-	mTextureHeight = height;
-	mTranslation = nullptr;
-}
-
 void RectDrawArgs::SetTexture(FTexture *texture, FRenderStyle style)
 {
+	mTexture = texture;
 	mTextureWidth = texture->GetWidth();
 	mTextureHeight = texture->GetHeight();
-	if (PolyRenderer::Instance()->RenderTarget->IsBgra())
+	if (PolyTriangleDrawer::IsBgra())
 		mTexturePixels = (const uint8_t *)texture->GetPixelsBgra();
 	else
 		mTexturePixels = texture->GetPixels(style);
@@ -245,16 +235,18 @@ void RectDrawArgs::SetTexture(FTexture *texture, FRenderStyle style)
 
 void RectDrawArgs::SetTexture(FTexture *texture, uint32_t translationID, FRenderStyle style)
 {
+	// Alphatexture overrides translations.
 	if (translationID != 0xffffffff && translationID != 0 && !(style.Flags & STYLEF_RedIsAlpha))
 	{
 		FRemapTable *table = TranslationToTable(translationID);
 		if (table != nullptr && !table->Inactive)
 		{
-			if (PolyRenderer::Instance()->RenderTarget->IsBgra())
+			if (PolyTriangleDrawer::IsBgra())
 				mTranslation = (uint8_t*)table->Palette;
 			else
 				mTranslation = table->Remap;
 
+			mTexture = texture;
 			mTextureWidth = texture->GetWidth();
 			mTextureHeight = texture->GetHeight();
 			mTexturePixels = texture->GetPixels(style);
@@ -264,6 +256,7 @@ void RectDrawArgs::SetTexture(FTexture *texture, uint32_t translationID, FRender
 
 	if (style.Flags & STYLEF_RedIsAlpha)
 	{
+		mTexture = texture;
 		mTextureWidth = texture->GetWidth();
 		mTextureHeight = texture->GetHeight();
 		mTexturePixels = texture->GetPixels(style);
@@ -292,7 +285,7 @@ void RectDrawArgs::SetLight(FSWColormap *base_colormap, uint32_t lightlevel)
 
 void RectDrawArgs::SetColor(uint32_t bgra, uint8_t palindex)
 {
-	if (PolyRenderer::Instance()->RenderTarget->IsBgra())
+	if (PolyTriangleDrawer::IsBgra())
 	{
 		mColor = bgra;
 	}
@@ -312,64 +305,67 @@ void RectDrawArgs::Draw(PolyRenderThread *thread, double x0, double x1, double y
 	mU1 = (float)u1;
 	mV0 = (float)v0;
 	mV1 = (float)v1;
+
 	thread->DrawQueue->Push<DrawRectCommand>(*this);
 }
 
-void RectDrawArgs::SetStyle(FRenderStyle renderstyle, double alpha, uint32_t fillcolor, uint32_t translationID, FTexture *tex, bool fullbright)
+void RectDrawArgs::SetStyle(const FRenderStyle &renderstyle, double alpha, uint32_t fillcolor, uint32_t translationID, FTexture *tex, bool fullbright)
 {
 	SetTexture(tex, translationID, renderstyle);
+	SetColor(0xff000000 | fillcolor, fillcolor >> 24);
 
 	if (renderstyle == LegacyRenderStyles[STYLE_Normal] || (r_drawfuzz == 0 && renderstyle == LegacyRenderStyles[STYLE_OptFuzzy]))
 	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedAdd : TriBlendMode::TextureAdd, 1.0, 0.0);
+		SetStyle(Translation() ? TriBlendMode::NormalTranslated : TriBlendMode::Normal, alpha);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_Add] && fullbright && alpha == 1.0 && !Translation())
 	{
-		SetStyle(TriBlendMode::TextureAddSrcColor, 1.0, 1.0);
-	}
-	else if (renderstyle == LegacyRenderStyles[STYLE_Add])
-	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedAdd : TriBlendMode::TextureAdd, alpha, 1.0);
-	}
-	else if (renderstyle == LegacyRenderStyles[STYLE_Subtract])
-	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedRevSub : TriBlendMode::TextureRevSub, alpha, 1.0);
+		SetStyle(TriBlendMode::SrcColor, alpha);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_SoulTrans])
 	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedAdd : TriBlendMode::TextureAdd, transsouls, 1.0 - transsouls);
+		SetStyle(Translation() ? TriBlendMode::AddTranslated : TriBlendMode::Add, transsouls);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_Fuzzy] || (r_drawfuzz == 1 && renderstyle == LegacyRenderStyles[STYLE_OptFuzzy]))
 	{
 		SetColor(0xff000000, 0);
-		SetStyle(TriBlendMode::Fuzz);
+		SetStyle(TriBlendMode::Fuzzy);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_Shadow] || (r_drawfuzz == 2 && renderstyle == LegacyRenderStyles[STYLE_OptFuzzy]))
 	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedAdd : TriBlendMode::TextureAdd, 0.0, 160 / 255.0);
+		SetColor(0xff000000, 0);
+		SetStyle(Translation() ? TriBlendMode::TranslucentStencilTranslated : TriBlendMode::TranslucentStencil, 1.0 - 160 / 255.0);
 	}
-	else if (renderstyle == LegacyRenderStyles[STYLE_TranslucentStencil])
+	else if (renderstyle == LegacyRenderStyles[STYLE_Stencil])
 	{
-		SetColor(0xff000000 | fillcolor, fillcolor >> 24);
-		SetStyle(TriBlendMode::Stencil, alpha, 1.0 - alpha);
+		SetStyle(Translation() ? TriBlendMode::StencilTranslated : TriBlendMode::Stencil, alpha);
 	}
-	else if (renderstyle == LegacyRenderStyles[STYLE_AddStencil])
+	else if (renderstyle == LegacyRenderStyles[STYLE_Translucent])
 	{
-		SetColor(0xff000000 | fillcolor, fillcolor >> 24);
-		SetStyle(TriBlendMode::AddStencil, alpha, 1.0);
+		SetStyle(Translation() ? TriBlendMode::TranslucentTranslated : TriBlendMode::Translucent, alpha);
+	}
+	else if (renderstyle == LegacyRenderStyles[STYLE_Add])
+	{
+		SetStyle(Translation() ? TriBlendMode::AddTranslated : TriBlendMode::Add, alpha);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_Shaded])
 	{
-		SetColor(0xff000000 | fillcolor, fillcolor >> 24);
-		SetStyle(TriBlendMode::Shaded, alpha, 1.0 - alpha);
+		SetStyle(Translation() ? TriBlendMode::ShadedTranslated : TriBlendMode::Shaded, alpha);
+	}
+	else if (renderstyle == LegacyRenderStyles[STYLE_TranslucentStencil])
+	{
+		SetStyle(Translation() ? TriBlendMode::TranslucentStencilTranslated : TriBlendMode::TranslucentStencil, alpha);
+	}
+	else if (renderstyle == LegacyRenderStyles[STYLE_Subtract])
+	{
+		SetStyle(Translation() ? TriBlendMode::SubtractTranslated : TriBlendMode::Subtract, alpha);
+	}
+	else if (renderstyle == LegacyRenderStyles[STYLE_AddStencil])
+	{
+		SetStyle(Translation() ? TriBlendMode::AddStencilTranslated : TriBlendMode::AddStencil, alpha);
 	}
 	else if (renderstyle == LegacyRenderStyles[STYLE_AddShaded])
 	{
-		SetColor(0xff000000 | fillcolor, fillcolor >> 24);
-		SetStyle(TriBlendMode::AddShaded, alpha, 1.0);
-	}
-	else
-	{
-		SetStyle(Translation() ? TriBlendMode::TranslatedAdd : TriBlendMode::TextureAdd, alpha, 1.0 - alpha);
+		SetStyle(Translation() ? TriBlendMode::AddShadedTranslated : TriBlendMode::AddShaded, alpha);
 	}
 }

@@ -28,10 +28,8 @@
 
 #include "stringtable.h"
 #include "doomstat.h"
-#include "c_cvars.h"
 #include "i_system.h"
 #include "g_level.h"
-#include "p_local.h"
 #include "g_levellocals.h"
 
 int SaveVersion;
@@ -70,6 +68,5 @@ int NextSkill = -1;
 int SinglePlayerClass[MAXPLAYERS];
 
 bool ToggleFullscreen;
-int BorderTopRefresh;
 
 FString LumpFilterIWAD;

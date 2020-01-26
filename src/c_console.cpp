@@ -34,10 +34,6 @@
 
 #include "templates.h"
 #include "p_setup.h"
-#include <stdarg.h>
-#include <string.h>
-#include <math.h>
-#include <stdlib.h>
 
 #include "version.h"
 #include "g_game.h"
@@ -49,27 +45,22 @@
 #include "i_system.h"
 #include "i_video.h"
 #include "g_input.h"
-#include "m_swap.h"
 #include "v_palette.h"
 #include "v_video.h"
 #include "v_text.h"
 #include "w_wad.h"
 #include "sbar.h"
 #include "s_sound.h"
-#include "s_sndseq.h"
 #include "doomstat.h"
 #include "d_gui.h"
-#include "v_video.h"
 #include "cmdlib.h"
 #include "d_net.h"
-#include "g_level.h"
 #include "d_event.h"
 #include "d_player.h"
 #include "gstrings.h"
 #include "c_consolebuffer.h"
 #include "g_levellocals.h"
 #include "vm.h"
-#include "i_time.h"
 
 FString FStringFormat(VM_ARGS); // extern from thingdef_data.cpp
 
@@ -516,31 +507,6 @@ CUSTOM_CVAR (Int, msgmidcolor2, 4, CVAR_ARCHIVE)
 	setmsgcolor (PRINTLEVELS+1, self);
 }
 
-static void maybedrawnow (bool tick, bool force)
-{
-	// FIXME: Does not work right with hw2d
-	if (ConsoleDrawing || screen == NULL || screen->IsLocked () || screen->Accel2D || ConFont == NULL)
-	{
-		return;
-	}
-
-	if (vidactive &&
-		(((tick || gameaction != ga_nothing) && ConsoleState == c_down)
-		|| gamestate == GS_STARTUP))
-	{
-		static size_t lastprinttime = 0;
-		size_t nowtime = I_GetTime();
-
-		if (nowtime - lastprinttime > 1 || force)
-		{
-			screen->Lock (false);
-			C_DrawConsole (false);
-			screen->Update ();
-			lastprinttime = nowtime;
-		}
-	}
-}
-
 struct TextQueue
 {
 	TextQueue (bool notify, int printlevel, const char *text)
@@ -857,7 +823,6 @@ int PrintString (int printlevel, const char *outline)
 		if (vidactive && screen && SmallFont)
 		{
 			NotifyStrings.AddString(printlevel, outline);
-			maybedrawnow (false, false);
 		}
 	}
 	else if (Logfile != NULL)
@@ -1026,8 +991,6 @@ void FNotifyBuffer::Draw()
 
 	lineadv = SmallFont->GetHeight ();
 
-	BorderTopRefresh = screen->GetPageCount ();
-
 	for (unsigned i = 0; i < Text.Size(); ++ i)
 	{
 		FNotifyText &notify = Text[i];
@@ -1088,16 +1051,14 @@ void C_InitTicker (const char *label, unsigned int max, bool showpercent)
 	TickerMax = max;
 	TickerLabel = label;
 	TickerAt = 0;
-	maybedrawnow (true, false);
 }
 
 void C_SetTicker (unsigned int at, bool forceUpdate)
 {
 	TickerAt = at > TickerMax ? TickerMax : at;
-	maybedrawnow (true, TickerVisible ? forceUpdate : false);
 }
 
-void C_DrawConsole (bool hw2d)
+void C_DrawConsole ()
 {
 	static int oldbottom = 0;
 	int lines, left, offset;
@@ -1114,14 +1075,6 @@ void C_DrawConsole (bool hw2d)
 	else
 	{
 		offset = -ConFont->GetHeight();
-	}
-
-	if ((ConBottom < oldbottom) &&
-		(gamestate == GS_LEVEL || gamestate == GS_TITLELEVEL) &&
-		(viewwindowx || viewwindowy) &&
-		viewactive)
-	{
-		V_SetBorderNeedRefresh();
 	}
 
 	oldbottom = ConBottom;
@@ -1142,7 +1095,7 @@ void C_DrawConsole (bool hw2d)
 			DTA_DestWidth, screen->GetWidth(),
 			DTA_DestHeight, screen->GetHeight(),
 			DTA_ColorOverlay, conshade,
-			DTA_Alpha, (hw2d && gamestate != GS_FULLCONSOLE) ? (double)con_alpha : 1.,
+			DTA_Alpha, (gamestate != GS_FULLCONSOLE) ? (double)con_alpha : 1.,
 			DTA_Masked, false,
 			TAG_DONE);
 		if (conline && visheight < screen->GetHeight())
@@ -1220,21 +1173,6 @@ void C_DrawConsole (bool hw2d)
 			}
 		}
 
-		// Apply palette blend effects
-		if (StatusBar != NULL && !hw2d)
-		{
-			player_t *player = StatusBar->CPlayer;
-			if (player->camera != NULL && player->camera->player != NULL)
-			{
-				player = player->camera->player;
-			}
-			if (player->BlendA != 0 && (gamestate == GS_LEVEL || gamestate == GS_TITLELEVEL))
-			{
-				screen->Dim (PalEntry ((unsigned char)(player->BlendR*255), (unsigned char)(player->BlendG*255), (unsigned char)(player->BlendB*255)),
-					player->BlendA, 0, ConBottom, screen->GetWidth(), screen->GetHeight() - ConBottom);
-				V_SetBorderNeedRefresh();
-			}
-		}
 	}
 
 	if (menuactive != MENU_Off)

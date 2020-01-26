@@ -34,20 +34,13 @@
 */
 
 #include "menu/menu.h"
-#include "i_system.h"
 #include "version.h"
 #include "g_game.h"
 #include "m_png.h"
 #include "w_wad.h"
 #include "v_text.h"
-#include "d_event.h"
 #include "gstrings.h"
-#include "v_palette.h"
-#include "doomstat.h"
-#include "gi.h"
-#include "d_gui.h"
 #include "serializer.h"
-#include "resourcefiles/resourcefile.h"
 #include "vm.h"
 
 // Save name length limit for old binary formats.
@@ -386,7 +379,6 @@ void FSavegameManager::LoadSavegame(int Selected)
 		quickSaveSlot = SaveGames[Selected];
 	}
 	M_ClearMenus();
-	V_SetBorderNeedRefresh();
 	LastAccessed = Selected;
 }
 
@@ -428,7 +420,6 @@ void FSavegameManager::DoSave(int Selected, const char *savegamestring)
 		G_SaveGame(filename, savegamestring);
 	}
 	M_ClearMenus();
-	V_SetBorderNeedRefresh();
 }
 
 DEFINE_ACTION_FUNCTION(FSavegameManager, DoSave)

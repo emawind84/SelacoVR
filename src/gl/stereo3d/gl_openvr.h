@@ -116,7 +116,6 @@ protected:
 	mutable int cachedScreenBlocks;
 	mutable double hmdYaw; // cached latest value in radians
 	mutable int cachedViewwidth, cachedViewheight, cachedViewwindowx, cachedViewwindowy;
-	mutable F2DDrawer * cached2DDrawer;
 	mutable F2DDrawer * crossHairDrawer;
 
 private:

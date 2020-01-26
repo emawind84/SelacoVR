@@ -36,30 +36,14 @@
 #include <stdlib.h>
 #include <algorithm>
 
-#include "templates.h"
-#include "doomdef.h"
 #include "m_swap.h"
 #include "m_argv.h"
-#include "i_system.h"
 #include "w_wad.h"
-#include "c_console.h"
-#include "c_cvars.h"
-#include "c_dispatch.h"
-#include "doomstat.h"
 #include "v_video.h"
 #include "sc_man.h"
 #include "s_sound.h"
 #include "sbar.h"
-#include "gi.h"
-#include "r_sky.h"
-#include "cmdlib.h"
 #include "g_level.h"
-#include "d_net.h"
-#include "colormatcher.h"
-#include "d_netinf.h"
-#include "v_palette.h"
-#include "r_data/r_translate.h"
-#include "r_data/colormaps.h"
 #include "r_data/sprites.h"
 #include "voxels.h"
 #include "info.h"
@@ -388,6 +372,18 @@ FVoxelMipLevel::~FVoxelMipLevel()
 
 //==========================================================================
 //
+// FVoxelMipLevel :: GetSlabData
+//
+//==========================================================================
+
+uint8_t *FVoxelMipLevel::GetSlabData(bool wantremapped) const
+{
+	if (wantremapped && SlabDataRemapped.Size() > 0) return &SlabDataRemapped[0];
+	return SlabData;
+}
+
+//==========================================================================
+//
 // FVoxel Constructor
 //
 //==========================================================================
@@ -410,6 +406,8 @@ FVoxel::~FVoxel()
 
 void FVoxel::CreateBgraSlabData()
 {
+	if (Bgramade) return;
+	Bgramade = true;
 	for (int i = 0; i < NumMips; ++i)
 	{
 		int size = Mips[i].OffsetX[Mips[i].SizeX];
@@ -464,14 +462,20 @@ void FVoxel::CreateBgraSlabData()
 
 void FVoxel::Remap()
 {
+	if (Remapped) return;
+	Remapped = true;
 	if (Palette != NULL)
 	{
 		uint8_t *remap = GetVoxelRemap(Palette);
 		for (int i = 0; i < NumMips; ++i)
 		{
-			RemapVoxelSlabs((kvxslab_t *)Mips[i].SlabData, Mips[i].OffsetX[Mips[i].SizeX], remap);
+			int size = Mips[i].OffsetX[Mips[i].SizeX];
+			if (size <= 0) continue;
+
+			Mips[i].SlabDataRemapped.Resize(size);
+			memcpy(&Mips[i].SlabDataRemapped [0], Mips[i].SlabData, size);
+			RemapVoxelSlabs((kvxslab_t *)&Mips[i].SlabDataRemapped[0], Mips[i].OffsetX[Mips[i].SizeX], remap);
 		}
-		RemovePalette();
 	}
 }
 

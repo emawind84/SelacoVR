@@ -36,7 +36,6 @@
 // HEADER FILES ------------------------------------------------------------
 
 #include "c_console.h"
-#include "st_stuff.h"
 #include "teaminfo.h"
 #include "templates.h"
 #include "v_video.h"
@@ -44,7 +43,6 @@
 #include "g_level.h"
 #include "d_netinf.h"
 #include "v_font.h"
-#include "v_palette.h"
 #include "d_player.h"
 #include "hu_stuff.h"
 #include "gstrings.h"
@@ -184,7 +182,6 @@ void HU_DrawScores (player_t *player)
 
 	HU_DoDrawScores (player, sortedplayers);
 
-	V_SetBorderNeedRefresh();
 }
 
 //==========================================================================
@@ -213,14 +210,14 @@ void HU_GetPlayerWidths(int &maxnamewidth, int &maxscorewidth, int &maxiconheigh
 			if (players[i].mo->ScoreIcon.isValid())
 			{
 				FTexture *pic = TexMan[players[i].mo->ScoreIcon];
-				width = pic->GetScaledWidth() - pic->GetScaledLeftOffset() + 2;
+				width = pic->GetScaledWidth() - pic->GetScaledLeftOffset(0) + 2;
 				if (width > maxscorewidth)
 				{
 					maxscorewidth = width;
 				}
 				// The icon's top offset does not count toward its height, because
 				// zdoom.pk3's standard Hexen class icons are designed that way.
-				int height = pic->GetScaledHeight() - pic->GetScaledTopOffset();
+				int height = pic->GetScaledHeight() - pic->GetScaledTopOffset(0);
 				if (height > maxiconheight)
 				{
 					maxiconheight = height;

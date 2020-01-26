@@ -40,13 +40,10 @@
 #include <dinput.h>
 
 #include "i_input.h"
-#include "i_system.h"
 #include "d_event.h"
 #include "d_gui.h"
-#include "c_cvars.h"
-#include "doomdef.h"
 #include "doomstat.h"
-#include "win32iface.h"
+#include "hardware.h"
 #include "rawinput.h"
 #include "menu/menu.h"
 #include "events.h"

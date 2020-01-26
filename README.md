@@ -25,6 +25,9 @@ openvr_weaponRotate - A pitch to change how weapons sit in the hand.
 
 openvr_scale - Number of doom units in a metre. gz3doom has this set to 27, but I found 30 more comfortable.
 
+### Licensed under the GPL v3
+##### https://www.gnu.org/licenses/quick-guide-gplv3.en.html
+---
 
 
 

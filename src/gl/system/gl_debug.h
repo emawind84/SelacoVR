@@ -2,17 +2,18 @@
 #define __GL_DEBUG_H
 
 #include <string.h>
-#include "gl/system/gl_interface.h"
+#include "gl_load/gl_interface.h"
 #include "c_cvars.h"
 #include "r_defs.h"
+#include "v_video.h"
 
 class FGLDebug
 {
 public:
 	void Update();
 
-	static void LabelObject(GLenum type, GLuint handle, const FString &name);
-	static void LabelObjectPtr(void *ptr, const FString &name);
+	static void LabelObject(GLenum type, GLuint handle, const char *name);
+	static void LabelObjectPtr(void *ptr, const char *name);
 
 	static void PushGroup(const FString &name);
 	static void PopGroup();

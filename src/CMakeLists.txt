@@ -62,21 +62,6 @@ if( WIN32 )
 		set( DX_dinput8_LIBRARY dinput8 )
 	else()
 
-		find_path( D3D_INCLUDE_DIR d3d9.h
-			PATHS ENV DXSDK_DIR
-			PATH_SUFFIXES Include )
-		if( NOT D3D_INCLUDE_DIR )
-			# Modern versions of the Windows SDK include d3d9.h. Unfortunately,
-			# CMake cannot find this file via find_path, so we check for it using
-			# CHECK_INCLUDE_FILE.
-			CHECK_INCLUDE_FILE( d3d9.h D3D9_H_FOUND )
-			if ( NOT D3D9_H_FOUND )
-				message( SEND_ERROR "Could not find DirectX 9 header files" )
-			endif()
-		else()
-			include_directories( ${D3D_INCLUDE_DIR} )
-		endif()
-
 		find_path( XINPUT_INCLUDE_DIR xinput.h
 			PATHS ENV DXSDK_DIR
 			PATH_SUFFIXES Include )
@@ -325,6 +310,7 @@ if( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 
 	set( CMAKE_CXX_FLAGS "${SANITIZER_FLAG} ${CMAKE_CXX_FLAGS}" )
 	set( CMAKE_C_FLAGS "${SANITIZER_FLAG} ${CMAKE_C_FLAGS}" )
+	set( CMAKE_EXE_LINKER_FLAGS "${SANITIZER_FLAG} ${CMAKE_EXE_LINKER_FLAGS}" )
 
 	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.5")
 		set( CMAKE_C_FLAGS "-Wno-unused-result ${CMAKE_C_FLAGS}" )
@@ -377,13 +363,6 @@ if( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 		endif ()
 	endif ()
 
-	# With standard Apple tools -stdlib=libc++ needs to be specified in order to get
-	# C++11 support using SDKs 10.7 and 10.8.
-	if ( APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
-		set( CMAKE_CXX_FLAGS "-stdlib=libc++ ${CMAKE_CXX_FLAGS}" )
-		set( CMAKE_EXE_LINKER_FLAGS "-stdlib=libc++ ${CMAKE_EXE_LINKER_FLAGS}" )
-	endif ()
-
 	# Remove extra warnings when using the official DirectX headers.
 	# Also, TDM-GCC 4.4.0 no longer accepts glibc-style printf formats as valid,
 	# which is a royal pain. The previous version I had been using was fine with them.
@@ -409,8 +388,7 @@ CHECK_CXX_SOURCE_COMPILES("thread_local int i; int main() { i = 0; }"
 	HAVE_THREAD_LOCAL)
 
 if( NOT HAVE_THREAD_LOCAL )
-	message( WARNING "C++ compiler doesn't support thread_local storage duration specifier" )
-	add_definitions( -Dthread_local= )
+	message( SEND_ERROR "C++ compiler doesn't support thread_local storage duration specifier" )
 endif()
 
 # Check for functions that may or may not exist.
@@ -437,11 +415,6 @@ endif()
 
 if( NOT MSVC )
 	add_definitions( -D__forceinline=inline )
-endif()
-
-# Fix stat in v140_xp (broken in RTM and Update 1 so far)
-if( MSVC AND MSVC_VERSION EQUAL 1900 AND CMAKE_GENERATOR_TOOLSET STREQUAL "v140_xp" )
-	add_definitions( -D_stat64i32=VS14Stat )
 endif()
 
 if( UNIX )
@@ -557,9 +530,6 @@ endif()
 set( PLAT_WIN32_SOURCES
 	sound/mididevices/music_win_mididevice.cpp
 	win32/critsec.cpp
-	win32/fb_d3d9.cpp
-	win32/fb_d3d9_wipe.cpp
-	win32/fb_ddraw.cpp
 	win32/hardware.cpp
 	win32/helperthread.cpp
 	win32/i_cd.cpp
@@ -589,7 +559,6 @@ set( PLAT_SDL_SOURCES
 	posix/sdl/i_joystick.cpp
 	posix/sdl/i_main.cpp
 	posix/sdl/i_system.cpp
-	posix/sdl/sdlvideo.cpp
 	posix/sdl/sdlglvideo.cpp
 	posix/sdl/st_start.cpp )
 set( PLAT_UNIX_SOURCES
@@ -642,17 +611,17 @@ if( HAVE_MMX )
 	add_definitions( -DHAVE_MMX=1 )
 
 	set( SYSTEM_SOURCES ${SYSTEM_SOURCES}
-		gl/hqnx_asm/hq2x_asm.cpp
-		gl/hqnx_asm/hq3x_asm.cpp
-		gl/hqnx_asm/hq4x_asm.cpp
-		gl/hqnx_asm/hqnx_asm_Image.cpp)
+		textures/hires/hqnx_asm/hq2x_asm.cpp
+		textures/hires/hqnx_asm/hq3x_asm.cpp
+		textures/hires/hqnx_asm/hq4x_asm.cpp
+		textures/hires/hqnx_asm/hqnx_asm_Image.cpp)
 
 	if( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 		set_source_files_properties(
-			gl/hqnx_asm/hq2x_asm.cpp
-			gl/hqnx_asm/hq3x_asm.cpp
-			gl/hqnx_asm/hq4x_asm.cpp
-			gl/textures/gl_hqresize.cpp
+			textures/hires/hqnx_asm/hq2x_asm.cpp
+			textures/hires/hqnx_asm/hq3x_asm.cpp
+			textures/hires/hqnx_asm/hq4x_asm.cpp
+			textures/hires/gl_hqresize.cpp
 			PROPERTIES COMPILE_FLAGS "-mmmx" )
 	endif( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 endif( HAVE_MMX )
@@ -724,19 +693,7 @@ add_definitions(-DADLMIDI_DISABLE_MUS_SUPPORT -DADLMIDI_DISABLE_XMI_SUPPORT -DAD
 
 # Project files should be aware of the header files. We can GLOB these since
 # there's generally a new cpp for every header so this file will get changed
-if( WIN32 )
-	set( EXTRA_HEADER_DIRS win32/*.h )
-elseif( APPLE )
-	if( OSX_COCOA_BACKEND )
-		set( EXTRA_HEADER_DIRS posix/*.h posix/cocoa/*.h )
-	else()
-		set( EXTRA_HEADER_DIRS posix/*.h posix/sdl/*.h )
-	endif()
-else()
-	set( EXTRA_HEADER_DIRS posix/*.h posix/sdl/*.h )
-endif()
 file( GLOB HEADER_FILES
-	${EXTRA_HEADER_DIRS}
 	fragglescript/*.h
 	g_shared/*.h
 	g_statusbar/*.h
@@ -750,6 +707,7 @@ file( GLOB HEADER_FILES
 	posix/*.h
 	posix/cocoa/*.h
 	posix/sdl/*.h
+	win32/*.h
 	r_data/*.h
 	r_data/models/*.h
 	rapidjson/*.h
@@ -757,6 +715,9 @@ file( GLOB HEADER_FILES
 	sfmt/*.h
 	sound/*.h
 	textures/*.h
+	textures/hires/hqnx/*.h
+	textures/hires/hqnx_asm/*.h
+	textures/hires/xbr/*.h
 	scripting/*.h
 	scripting/backend/*.h
 	scripting/decorate/*.h
@@ -782,13 +743,14 @@ file( GLOB HEADER_FILES
 	polyrenderer/math/*.h
 	polyrenderer/drawers/*.h
 	polyrenderer/scene/*.h
+	hwrenderer/data/*.h
+	hwrenderer/dynlights/*.h
+	hwrenderer/scene/*.h
+	hwrenderer/textures/*.h
+	hwrenderer/utilities/*.h
 	gl/*.h
-	gl/api/*.h
 	gl/data/*.h
 	gl/dynlights/*.h
-	gl/hqnx/*.h
-	gl/hqnx_asm/*.h
-	gl/xbr/*.h
 	gl/models/*.h
 	gl/renderer/*.h
 	gl/scene/*.h
@@ -797,11 +759,11 @@ file( GLOB HEADER_FILES
 	gl/system/*.h
 	gl/textures/*.h
 	gl/utility/*.h
+	gl_load/*.h
 	*.h
 )
 
 set ( SWRENDER_SOURCES
-	swrenderer/r_swcanvas.cpp
 	swrenderer/r_swcolormaps.cpp
 	swrenderer/r_swrenderer.cpp
 	swrenderer/r_memory.cpp
@@ -868,7 +830,7 @@ set( POLYRENDER_SOURCES
 	polyrenderer/drawers/poly_triangle.cpp
 	polyrenderer/drawers/poly_draw_args.cpp
 	polyrenderer/drawers/screen_triangle.cpp
-	polyrenderer/math/tri_matrix.cpp
+	polyrenderer/math/gpu_types.cpp
 )
 
 # These files will be flagged as "headers" so that they appear in project files
@@ -889,12 +851,13 @@ set( NOT_COMPILED_SOURCE_FILES
 )
 
 # This is disabled for now because I cannot find a way to give the .pch file a different name.
-# Visual C++ 2015 seems hell-bent of only allowing one .pch file with the same name as the executable.
+# Visual C++ 2015 seems hell-bent on only allowing one .pch file with the same name as the executable.
 #enable_precompiled_headers( g_pch2.h FASTMATH_PCH_SOURCES )
 
 # Enable fast math for some sources
 set( FASTMATH_SOURCES
 	swrenderer/r_all.cpp
+	swrenderer/r_swscene.cpp
 	polyrenderer/poly_all.cpp
 	sound/oplsynth/opl_mus_player.cpp
 	sound/mpg123_decoder.cpp
@@ -903,34 +866,37 @@ set( FASTMATH_SOURCES
 	sound/sndfile_decoder.cpp
 	sound/timiditypp/fft4g.cpp
 	sound/timiditypp/reverb.cpp
-	gl/utility/gl_clock.cpp
-	gl/renderer/gl_2ddrawer.cpp
-	gl/hqnx/init.cpp
-	gl/hqnx/hq2x.cpp
-	gl/hqnx/hq3x.cpp
-	gl/hqnx/hq4x.cpp
-	gl/xbr/xbrz.cpp
-	gl/xbr/xbrz_old.cpp
-	gl/scene/gl_bsp.cpp
-	gl/scene/gl_fakeflat.cpp
-	gl/scene/gl_clipper.cpp
-	gl/scene/gl_decal.cpp
+	textures/hires/hqnx/init.cpp
+	textures/hires/hqnx/hq2x.cpp
+	textures/hires/hqnx/hq3x.cpp
+	textures/hires/hqnx/hq4x.cpp
+	textures/hires/xbr/xbrz.cpp
+	textures/hires/xbr/xbrz_old.cpp
 	gl/scene/gl_drawinfo.cpp
 	gl/scene/gl_flats.cpp
-	gl/scene/gl_walls.cpp
 	gl/scene/gl_sprite.cpp
 	gl/scene/gl_skydome.cpp
-	gl/scene/gl_renderhacks.cpp
 	gl/scene/gl_weapon.cpp
 	gl/scene/gl_scene.cpp
-	gl/scene/gl_sky.cpp
 	gl/scene/gl_portal.cpp
 	gl/scene/gl_walls_draw.cpp
-	gl/scene/gl_vertex.cpp
-	gl/scene/gl_spritelight.cpp
-	gl/dynlights/gl_dynlight1.cpp
-	gl/system/gl_load.c
-	gl/models/gl_models.cpp
+	gl_load/gl_load.c
+	hwrenderer/postprocessing/hw_postprocess_cvars.cpp
+	hwrenderer/postprocessing/hw_postprocessshader.cpp
+	hwrenderer/dynlights/hw_dynlightdata.cpp
+	hwrenderer/scene/hw_bsp.cpp
+	hwrenderer/scene/hw_fakeflat.cpp
+	hwrenderer/scene/hw_decal.cpp
+	hwrenderer/scene/hw_drawlist.cpp
+	hwrenderer/scene/hw_clipper.cpp
+	hwrenderer/scene/hw_flats.cpp
+	hwrenderer/scene/hw_renderhacks.cpp
+	hwrenderer/scene/hw_sky.cpp
+	hwrenderer/scene/hw_sprites.cpp
+	hwrenderer/scene/hw_spritelight.cpp
+	hwrenderer/scene/hw_walls.cpp
+	hwrenderer/scene/hw_walls_vertex.cpp
+	hwrenderer/scene/hw_weapon.cpp
 	r_data/models/models.cpp
 	r_data/matrix.cpp
 	sound/adlmidi/adldata.cpp
@@ -1005,7 +971,6 @@ set (PCH_SOURCES
 	i_time.cpp
 	info.cpp
 	keysections.cpp
-	lumpconfigfile.cpp
 	m_alloc.cpp
 	m_argv.cpp
 	m_bbox.cpp
@@ -1084,6 +1049,7 @@ set (PCH_SOURCES
 	stringtable.cpp
 	teaminfo.cpp
 	umapinfo.cpp
+	v_2ddrawer.cpp
 	v_blend.cpp
 	v_collection.cpp
 	v_draw.cpp
@@ -1101,7 +1067,6 @@ set (PCH_SOURCES
 	g_shared/a_action.cpp
 	g_shared/a_decals.cpp
 	g_shared/a_dynlight.cpp
-	g_shared/a_dynlightdata.cpp
 	g_shared/a_flashfader.cpp
 	g_shared/a_lightning.cpp
 	g_shared/a_morph.cpp
@@ -1113,14 +1078,11 @@ set (PCH_SOURCES
 	g_statusbar/sbar_mugshot.cpp
 	g_statusbar/shared_sbar.cpp
 	gl/compatibility/gl_20.cpp
-	gl/data/gl_data.cpp
-	gl/data/gl_portaldata.cpp
-	gl/data/gl_setup.cpp
+	gl/compatibility/gl_swshader20.cpp
 	gl/data/gl_vertexbuffer.cpp
-	gl/dynlights/gl_glow.cpp
 	gl/dynlights/gl_lightbuffer.cpp
-	gl/dynlights/gl_aabbtree.cpp
 	gl/dynlights/gl_shadowmap.cpp
+	gl/models/gl_models.cpp
 	gl/renderer/gl_quaddrawer.cpp
 	gl/renderer/gl_renderer.cpp
 	gl/renderer/gl_renderstate.cpp
@@ -1129,7 +1091,6 @@ set (PCH_SOURCES
 	gl/renderer/gl_postprocess.cpp
 	gl/renderer/gl_postprocessstate.cpp
 	gl/shaders/gl_shader.cpp
-	gl/shaders/gl_texshader.cpp
 	gl/shaders/gl_shaderprogram.cpp
 	gl/shaders/gl_postprocessshader.cpp
 	gl/shaders/gl_shadowmapshader.cpp
@@ -1151,20 +1112,24 @@ set (PCH_SOURCES
 	gl/stereo3d/gl_quadstereo.cpp
 	gl/stereo3d/gl_sidebyside3d.cpp
 	gl/stereo3d/gl_interleaved3d.cpp
-	gl/system/gl_interface.cpp
+	gl_load/gl_interface.cpp
 	gl/system/gl_framebuffer.cpp
-	gl/system/gl_swframebuffer.cpp
-	gl/system/gl_swwipe.cpp
 	gl/system/gl_debug.cpp
-	gl/system/gl_menu.cpp
 	gl/system/gl_wipe.cpp
 	gl/textures/gl_hwtexture.cpp
-	gl/textures/gl_texture.cpp
-	gl/textures/gl_material.cpp
-	gl/textures/gl_hirestex.cpp
 	gl/textures/gl_samplers.cpp
-	gl/textures/gl_translate.cpp
-	gl/textures/gl_hqresize.cpp
+	hwrenderer/data/flatvertices.cpp
+	hwrenderer/dynlights/hw_aabbtree.cpp
+	hwrenderer/dynlights/hw_shadowmap.cpp
+	hwrenderer/scene/hw_skydome.cpp
+	hwrenderer/postprocessing/hw_postprocess_cvars.cpp
+	hwrenderer/postprocessing/hw_postprocessshader.cpp
+	hwrenderer/textures/hw_material.cpp
+	hwrenderer/textures/hw_precache.cpp
+	hwrenderer/utility/hw_clock.cpp
+	hwrenderer/utility/hw_cvars.cpp
+	hwrenderer/utility/hw_lighting.cpp
+	
 	menu/joystickmenu.cpp
 	menu/loadsavemenu.cpp
 	menu/menu.cpp
@@ -1185,29 +1150,32 @@ set (PCH_SOURCES
 	resourcefiles/resourcefile.cpp
 	textures/animations.cpp
 	textures/anim_switches.cpp
-	textures/automaptexture.cpp
 	textures/bitmap.cpp
-	textures/buildtexture.cpp
-	textures/canvastexture.cpp
-	textures/ddstexture.cpp
-	textures/flattexture.cpp
-	textures/imgztexture.cpp
-	textures/jpegtexture.cpp
-	textures/md5check.cpp
-	textures/multipatchtexture.cpp
-	textures/patchtexture.cpp
-	textures/pcxtexture.cpp
-	textures/pngtexture.cpp
-	textures/rawpagetexture.cpp
-	textures/emptytexture.cpp
-	textures/backdroptexture.cpp
-	textures/shadertexture.cpp
 	textures/texture.cpp
 	textures/texturemanager.cpp
-	textures/tgatexture.cpp
-	textures/warptexture.cpp
 	textures/skyboxtexture.cpp
-	textures/worldtexture.cpp
+	textures/formats/automaptexture.cpp
+	textures/formats/brightmaptexture.cpp
+	textures/formats/buildtexture.cpp
+	textures/formats/canvastexture.cpp
+	textures/formats/ddstexture.cpp
+	textures/formats/flattexture.cpp
+	textures/formats/imgztexture.cpp
+	textures/formats/jpegtexture.cpp
+	textures/formats/md5check.cpp
+	textures/formats/multipatchtexture.cpp
+	textures/formats/patchtexture.cpp
+	textures/formats/pcxtexture.cpp
+	textures/formats/pngtexture.cpp
+	textures/formats/rawpagetexture.cpp
+	textures/formats/emptytexture.cpp
+	textures/formats/backdroptexture.cpp
+	textures/formats/shadertexture.cpp
+	textures/formats/tgatexture.cpp
+	textures/formats/worldtexture.cpp
+	textures/formats/warptexture.cpp
+	textures/hires/hqresize.cpp
+	textures/hires/hirestex.cpp
 	xlat/parse_xlat.cpp
 	fragglescript/t_func.cpp
 	fragglescript/t_load.cpp
@@ -1221,15 +1189,20 @@ set (PCH_SOURCES
 	intermission/intermission.cpp
 	intermission/intermission_parse.cpp
 	r_data/colormaps.cpp
+	r_data/gldefs.cpp
+	r_data/a_dynlightdata.cpp
 	r_data/r_translate.cpp
 	r_data/sprites.cpp
+	r_data/portalgroups.cpp
 	r_data/voxels.cpp
+	r_data/renderinfo.cpp
 	r_data/renderstyle.cpp
 	r_data/r_interpolate.cpp
 	r_data/r_vanillatrans.cpp
 	r_data/models/models_md3.cpp
 	r_data/models/models_md2.cpp
 	r_data/models/models_voxel.cpp
+	r_data/models/models_ue1.cpp
 	scripting/symbols.cpp
 	scripting/types.cpp
 	scripting/thingdef.cpp
@@ -1315,8 +1288,6 @@ set (PCH_SOURCES
 	sound/wildmidi/wildmidi_lib.cpp
 	sound/wildmidi/wm_error.cpp
 	events.cpp
-	GuillotineBinPack.cpp
-	SkylineBinPack.cpp
 )
 
 enable_precompiled_headers( g_pch.h PCH_SOURCES )
@@ -1358,9 +1329,6 @@ set_source_files_properties( ${FASTMATH_SOURCES} PROPERTIES COMPILE_FLAGS ${ZD_F
 set_source_files_properties( xlat/parse_xlat.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/xlat_parser.c" )
 set_source_files_properties( sc_man.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/sc_man_scanner.h" )
 set_source_files_properties( ${NOT_COMPILED_SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE )
-if ( WIN32 )
-	set_source_files_properties( win32/fb_d3d9.cpp win32/fb_d3d9_wipe.cpp PROPERTIES COMPILE_FLAGS ${ZD_FASTMATH_FLAG} )
-endif()
 
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "SunOS")
@@ -1491,12 +1459,21 @@ source_group("FraggleScript" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/fr
 source_group("Intermission" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/intermission/.+")
 source_group("Inventory" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/g_inventory/.+")
 source_group("Menu" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/menu/.+")
+source_group("Hardware Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/.+")
+source_group("Hardware Renderer\\Data" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/data/.+")
+source_group("Hardware Renderer\\Dynamic Lights" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/dynlights/.+")
+source_group("Hardware Renderer\\Models" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/models/.+")
+source_group("Hardware Renderer\\Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/renderer/.+")
+source_group("Hardware Renderer\\Scene" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/scene/.+")
+source_group("Hardware Renderer\\Stereo3D" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/stereo3d/.+")
+source_group("Hardware Renderer\\Shaders" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/shaders/.+")
+source_group("Hardware Renderer\\System" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/system/.+")
+source_group("Hardware Renderer\\Textures" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/textures/.+")
+source_group("Hardware Renderer\\Utilities" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/utility/.+")
+source_group("OpenGL Loader" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl_load/.+")
 source_group("OpenGL Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/.+")
 source_group("OpenGL Renderer\\Data" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/data/.+")
 source_group("OpenGL Renderer\\Dynamic Lights" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/dynlights/.+")
-source_group("OpenGL Renderer\\HQ Resize" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/hqnx/.+")
-source_group("OpenGL Renderer\\HQ Resize MMX version" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/hqnx_asm/.+")
-source_group("OpenGL Renderer\\XBRZ" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/hqnx_asm/.+")
 source_group("OpenGL Renderer\\Models" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/models/.+")
 source_group("OpenGL Renderer\\Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/renderer/.+")
 source_group("OpenGL Renderer\\Scene" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/scene/.+")
@@ -1519,6 +1496,11 @@ source_group("Poly Renderer\\Drawers" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURC
 source_group("Poly Renderer\\Scene" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/polyrenderer/scene/.+")
 source_group("Render Data" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/r_data/.+")
 source_group("Render Data\\Textures" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/textures/.+")
+source_group("Render Data\\Textures\\Hires" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/textures/hires/.+")
+source_group("Render Data\\Textures\\Hires\\HQ Resize" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/textures/hires/hqnx/.+")
+source_group("Render Data\\Textures\\Hires\\HQ Resize MMX version" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/textures/hires/hqnx_asm/.+")
+source_group("Render Data\\Textures\\Hires\\XBRZ" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/textures/hires/xbr/.+")
+source_group("Render Data\\Textures\\Formats" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/textures/formats/.+")
 source_group("Render Data\\Models" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/r_data/models/.+")
 source_group("Render Interface" FILES r_defs.h r_renderer.h r_sky.cpp r_sky.h r_state.h r_utility.cpp r_utility.h)
 source_group("Resource Files" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/resourcefiles/.+")

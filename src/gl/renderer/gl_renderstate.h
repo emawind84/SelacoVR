@@ -24,16 +24,18 @@
 #define __GL_RENDERSTATE_H
 
 #include <string.h>
-#include "gl/system/gl_interface.h"
-#include "gl/data/gl_data.h"
+#include "gl_load/gl_interface.h"
 #include "r_data/matrix.h"
-#include "gl/textures/gl_material.h"
+#include "hwrenderer/scene//hw_drawstructs.h"
+#include "hwrenderer/textures/hw_material.h"
 #include "c_cvars.h"
 #include "r_defs.h"
 #include "r_data/r_translate.h"
+#include "g_levellocals.h"
 
 class FVertexBuffer;
 class FShader;
+struct GLSectorPlane;
 extern TArray<VSMatrix> gl_MatrixStack;
 
 EXTERN_CVAR(Bool, gl_direct_state_change)
@@ -59,6 +61,7 @@ enum EEffect
 	EFF_SPHEREMAP,
 	EFF_BURN,
 	EFF_STENCIL,
+	EFF_SWQUAD,
 
 	MAX_EFFECTS
 };
@@ -72,15 +75,16 @@ enum EPassType
 
 class FRenderState
 {
+	friend void gl_SetTextureMode(int type);
 	bool mTextureEnabled;
 	bool mFogEnabled;
 	bool mGlowEnabled;
 	bool mSplitEnabled;
 	bool mClipLineEnabled;
+	bool mClipLineShouldBeActive;
 	bool mBrightmapEnabled;
 	bool mColorMask[4];
 	bool currentColorMask[4];
-	int mLightIndex;
 	int mSpecialEffect;
 	int mTextureMode;
 	int mDesaturation;
@@ -108,6 +112,7 @@ class FRenderState
 	PalEntry mFogColor;
 	PalEntry mObjectColor;
 	PalEntry mObjectColor2;
+	PalEntry m2DColors[2];	// in the shader these will reuse the colormap ramp uniforms.
 	FStateVec4 mDynColor;
 	float mClipSplit[2];
 
@@ -144,8 +149,8 @@ public:
 
 	void SetMaterial(FMaterial *mat, int clampmode, int translation, int overrideshader, bool alphatexture)
 	{
-		// alpha textures need special treatment in the legacy renderer because withouz shaders they need a different texture.
-		if (alphatexture &&  gl.legacyMode) translation = INT_MAX;
+		// alpha textures need special treatment in the legacy renderer because without shaders they need a different texture. This will also override all other translations.
+		if (alphatexture &&  gl.legacyMode) translation = -STRange_AlphaTexture;
 		
 		if (mat->tex->bHasCanvas)
 		{
@@ -156,8 +161,8 @@ public:
 			mTempTM = TM_MODULATE;
 		}
 		mEffectState = overrideshader >= 0? overrideshader : mat->mShaderIndex;
-		mShaderTimer = mat->tex->gl_info.shaderspeed;
-		SetSpecular(mat->tex->gl_info.Glossiness, mat->tex->gl_info.SpecularLevel);
+		mShaderTimer = mat->tex->shaderspeed;
+		SetSpecular(mat->tex->Glossiness, mat->tex->SpecularLevel);
 		mat->Bind(clampmode, translation);
 	}
 
@@ -195,6 +200,11 @@ public:
 	bool GetClipLineState()
 	{
 		return mClipLineEnabled;
+	}
+
+	bool GetClipLineShouldBeActive()
+	{
+		return mClipLineShouldBeActive;
 	}
 
 	void SetClipHeight(float height, float direction);
@@ -322,11 +332,11 @@ public:
 				glDisable(GL_CLIP_DISTANCE0);
 			}
 		}
-	}
-
-	void SetLightIndex(int n)
-	{
-		mLightIndex = n;
+		else
+		{
+			// this needs to be flagged because in this case per-sector plane rendering needs to be disabled if a clip plane is active.
+			mClipLineShouldBeActive = on;
+		}
 	}
 
 	void EnableBrightmap(bool on)
@@ -355,9 +365,9 @@ public:
 		mGlowBottom.Set(b[0], b[1], b[2], b[3]);
 	}
 
-	void SetSoftLightLevel(int level)
+	void SetSoftLightLevel(int llevel)
 	{
-		if (glset.lightmode == 8) mLightParms[3] = level / 255.f;
+		if (level.lightmode == 8) mLightParms[3] = llevel / 255.f;
 		else mLightParms[3] = -1.f;
 	}
 
@@ -390,6 +400,11 @@ public:
 	void SetObjectColor2(PalEntry pe)
 	{
 		mObjectColor2 = pe;
+	}
+
+	void Set2DOverlayColor(PalEntry pe)
+	{
+		m2DColors[0] = pe;
 	}
 
 	void SetSpecular(float glossiness, float specularLevel)
@@ -528,6 +543,15 @@ public:
 	// Backwards compatibility crap follows
 	void ApplyFixedFunction();
 	void DrawColormapOverlay();
+
+	void SetPlaneTextureRotation(GLSectorPlane *plane, FMaterial *texture)
+	{
+		if (hw_SetPlaneTextureRotation(plane, texture, mTextureMatrix))
+		{
+			EnableTextureMatrix(true);
+		}
+	}
+
 };
 
 extern FRenderState gl_RenderState;

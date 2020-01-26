@@ -23,10 +23,15 @@
 #ifndef __VERTEXBUFFER_H
 #define __VERTEXBUFFER_H
 
+#include <atomic>
+#include <thread>
+#include <mutex>
 #include "tarray.h"
-#include "gl/utility/gl_clock.h"
-#include "gl/system/gl_interface.h"
+#include "hwrenderer/utility/hw_clock.h"
+#include "gl_load/gl_interface.h"
 #include "r_data/models/models.h"
+#include "hwrenderer/data/flatvertices.h"
+#include "hwrenderer/scene/hw_skydome.h"
 
 struct vertex_t;
 struct secplane_t;
@@ -54,22 +59,6 @@ public:
 	virtual ~FVertexBuffer();
 	virtual void BindVBO() = 0;
 	void EnableBufferArrays(int enable, int disable);
-};
-
-struct FFlatVertex
-{
-	float x,z,y;	// world position
-	float u,v;		// texture coordinates
-
-	void SetFlatVertex(vertex_t *vt, const secplane_t &plane);
-	void Set(float xx, float zz, float yy, float uu, float vv)
-	{
-		x = xx;
-		z = zz;
-		y = yy;
-		u = uu;
-		v = vv;
-	}
 };
 
 struct FSimpleVertex
@@ -104,14 +93,15 @@ public:
 	void EnableColorArray(bool on);
 };
 
-class FFlatVertexBuffer : public FVertexBuffer
+class FFlatVertexBuffer : public FVertexBuffer, public FFlatVertexGenerator
 {
+	unsigned int ibo_id;
 	FFlatVertex *map;
 	unsigned int mIndex;
-	unsigned int mCurIndex;
+	std::atomic<unsigned int> mCurIndex;
+	std::mutex mBufferMutex;
 	unsigned int mNumReserved;
 
-	void CheckPlanes(sector_t *sector);
 
 	static const unsigned int BUFFER_SIZE = 2000000;
 	static const unsigned int BUFFER_SIZE_TO_USE = 1999500;
@@ -128,8 +118,6 @@ public:
 		NUM_RESERVED = 20
 	};
 
-	TArray<FFlatVertex> vbo_shadowdata;	// this is kept around for updating the actual (non-readable) buffer and as stand-in for pre GL 4.x
-
 	FFlatVertexBuffer(int width, int height);
 	~FFlatVertexBuffer();
 
@@ -138,18 +126,27 @@ public:
 	void BindVBO();
 
 	void CreateVBO();
-	void CheckUpdate(sector_t *sector);
 
 	FFlatVertex *GetBuffer()
 	{
 		return &map[mCurIndex];
 	}
-	FFlatVertex *Alloc(int num, int *poffset)
+
+	template<class T>
+	FFlatVertex *Alloc(int num, T *poffset)
 	{
+	again:
 		FFlatVertex *p = GetBuffer();
-		*poffset = mCurIndex;
-		mCurIndex += num;
-		if (mCurIndex >= BUFFER_SIZE_TO_USE) mCurIndex = mIndex;
+		auto index = mCurIndex.fetch_add(num);
+		*poffset = static_cast<T>(index);
+		if (index + num >= BUFFER_SIZE_TO_USE)
+		{
+			std::lock_guard<std::mutex> lock(mBufferMutex);
+			if (mCurIndex >= BUFFER_SIZE_TO_USE)	// retest condition, in case another thread got here first
+				mCurIndex = mIndex;
+
+			if (index >= BUFFER_SIZE_TO_USE) goto again;
+		}
 		return p;
 	}
 
@@ -180,6 +177,12 @@ public:
 	}
 
 #endif
+
+	uint32_t *GetIndexPointer() const
+	{
+		return ibo_id == 0 ? &ibo_data[0] : nullptr;
+	}
+
 	void Reset()
 	{
 		mCurIndex = mIndex;
@@ -187,84 +190,18 @@ public:
 
 	void Map();
 	void Unmap();
-
-private:
-	int CreateSubsectorVertices(subsector_t *sub, const secplane_t &plane, int floor);
-	int CreateSectorVertices(sector_t *sec, const secplane_t &plane, int floor);
-	int CreateVertices(int h, sector_t *sec, const secplane_t &plane, int floor);
-	void CreateFlatVBO();
-	void UpdatePlaneVertices(sector_t *sec, int plane);
-
 };
 
 
-struct FSkyVertex
+class FSkyVertexBuffer : public FVertexBuffer, public FSkyDomeCreator
 {
-	float x, y, z, u, v;
-	PalEntry color;
-
-	void Set(float xx, float zz, float yy, float uu=0, float vv=0, PalEntry col=0xffffffff)
-	{
-		x = xx;
-		z = zz;
-		y = yy;
-		u = uu;
-		v = vv;
-		color = col;
-	}
-
-	void SetXYZ(float xx, float yy, float zz, float uu = 0, float vv = 0, PalEntry col = 0xffffffff)
-	{
-		x = xx;
-		y = yy;
-		z = zz;
-		u = uu;
-		v = vv;
-		color = col;
-	}
-
-};
-
-class FSkyVertexBuffer : public FVertexBuffer
-{
-public:
-	static const int SKYHEMI_UPPER = 1;
-	static const int SKYHEMI_LOWER = 2;
-
-	enum
-	{
-		SKYMODE_MAINLAYER = 0,
-		SKYMODE_SECONDLAYER = 1,
-		SKYMODE_FOGLAYER = 2
-	};
-
-private:
-	TArray<FSkyVertex> mVertices;
-	TArray<unsigned int> mPrimStart;
-
-	int mRows, mColumns;
-
-	// indices for sky cubemap faces
-	int mFaceStart[7];
-	int mSideStart;
-
-	void SkyVertex(int r, int c, bool yflip);
-	void CreateSkyHemisphere(int hemi);
-	void CreateDome();
 	void RenderRow(int prim, int row);
 
 public:
 
 	FSkyVertexBuffer();
-	virtual ~FSkyVertexBuffer();
 	void RenderDome(FMaterial *tex, int mode);
 	void BindVBO();
-	int FaceStart(int i)
-	{
-		if (i >= 0 && i < 7) return mFaceStart[i];
-		else return mSideStart;
-	}
-
 };
 
 class FModelVertexBuffer : public FVertexBuffer, public IModelVertexBuffer

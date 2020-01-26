@@ -41,12 +41,8 @@
 
 #include "i_system.h"
 #include "v_video.h"
-#include "hu_stuff.h"
 #include "w_wad.h"
-#include "m_swap.h"
 
-#include "doomstat.h"
-#include "templates.h"
 #include "gstrings.h"
 #include "vm.h"
 
@@ -132,7 +128,7 @@ int GetCharFromString(const uint8_t *&string)
 //
 //==========================================================================
 
-void DCanvas::DrawChar (FFont *font, int normalcolor, double x, double y, int character, int tag_first, ...)
+void DFrameBuffer::DrawChar (FFont *font, int normalcolor, double x, double y, int character, int tag_first, ...)
 {
 	if (font == NULL)
 		return;
@@ -161,7 +157,7 @@ void DCanvas::DrawChar (FFont *font, int normalcolor, double x, double y, int ch
 	}
 }
 
-void DCanvas::DrawChar(FFont *font, int normalcolor, double x, double y, int character, VMVa_List &args)
+void DFrameBuffer::DrawChar(FFont *font, int normalcolor, double x, double y, int character, VMVa_List &args)
 {
 	if (font == NULL)
 		return;
@@ -208,7 +204,7 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawChar)
 //
 //==========================================================================
 
-void DCanvas::DrawTextCommon(FFont *font, int normalcolor, double x, double y, const char *string, DrawParms &parms)
+void DFrameBuffer::DrawTextCommon(FFont *font, int normalcolor, double x, double y, const char *string, DrawParms &parms)
 {
 	int 		w;
 	const uint8_t *ch;
@@ -281,7 +277,7 @@ void DCanvas::DrawTextCommon(FFont *font, int normalcolor, double x, double y, c
 	}
 }
 
-void DCanvas::DrawText(FFont *font, int normalcolor, double x, double y, const char *string, int tag_first, ...)
+void DFrameBuffer::DrawText(FFont *font, int normalcolor, double x, double y, const char *string, int tag_first, ...)
 {
 	Va_List tags;
 	DrawParms parms;
@@ -299,7 +295,7 @@ void DCanvas::DrawText(FFont *font, int normalcolor, double x, double y, const c
 	DrawTextCommon(font, normalcolor, x, y, string, parms);
 }
 
-void DCanvas::DrawText(FFont *font, int normalcolor, double x, double y, const char *string, VMVa_List &args)
+void DFrameBuffer::DrawText(FFont *font, int normalcolor, double x, double y, const char *string, VMVa_List &args)
 {
 	DrawParms parms;
 

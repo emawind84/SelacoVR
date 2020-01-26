@@ -3,7 +3,7 @@
 // Copyright 1993-1996 id Software
 // Copyright 1998-1998 Chi Hoang, Lee Killough, Jim Flynn, Rand Phares, Ty Halderman
 // Copyright 1999-2016 Randy Heit
-// Copyright 2002-2017 Christoph Oelckers
+// Copyright 2002-2018 Christoph Oelckers
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -68,7 +68,6 @@
 #include "a_sharedglobal.h"
 #include "p_local.h"
 #include "r_sky.h"
-#include "r_data/colormaps.h"
 #include "g_levellocals.h"
 #include "vm.h"
 
@@ -1069,30 +1068,6 @@ FSectorPortal *sector_t::ValidatePortal(int which)
 //
 //=====================================================================================
 
-sector_t *sector_t::GetHeightSec() const
-{
-	if (heightsec == NULL)
-	{
-		return NULL;
-	}
-	if (heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC)
-	{
-		return NULL;
-	}
-	if (e && e->XFloor.ffloors.Size())
-	{
-		// If any of these fake floors render their planes, ignore heightsec.
-		for (unsigned i = e->XFloor.ffloors.Size(); i-- > 0; )
-		{
-			if ((e->XFloor.ffloors[i]->flags & (FF_EXISTS | FF_RENDERPLANES)) == (FF_EXISTS | FF_RENDERPLANES))
-			{
-				return NULL;
-			}
-		}
-	}
-	return heightsec;
-}
-
 DEFINE_ACTION_FUNCTION(_Sector, GetHeightSec)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(sector_t);
@@ -1527,6 +1502,112 @@ DEFINE_ACTION_FUNCTION(_Sector, NextLowestFloorAt)
  }
 
 
+ //==========================================================================
+ //
+ // Checks whether a sprite should be affected by a glow
+ //
+ //==========================================================================
+
+ int sector_t::CheckSpriteGlow(int lightlevel, const DVector3 &pos)
+ {
+	 float bottomglowcolor[4];
+	 bottomglowcolor[3] = 0;
+	 auto c = planes[sector_t::floor].GlowColor;
+	 if (c == 0)
+	 {
+		 FTexture *tex = TexMan[GetTexture(sector_t::floor)];
+		 if (tex != NULL && tex->isGlowing())
+		 {
+			 if (!tex->bAutoGlowing) tex = TexMan(GetTexture(sector_t::floor));
+			 if (tex->isGlowing())	// recheck the current animation frame.
+			 {
+				 tex->GetGlowColor(bottomglowcolor);
+				 bottomglowcolor[3] = (float)tex->GlowHeight;
+			 }
+		 }
+	 }
+	 else if (c != ~0u)
+	 {
+		 bottomglowcolor[0] = c.r / 255.f;
+		 bottomglowcolor[1] = c.g / 255.f;
+		 bottomglowcolor[2] = c.b / 255.f;
+		 bottomglowcolor[3] = planes[sector_t::floor].GlowHeight;
+	 }
+
+	 if (bottomglowcolor[3]> 0)
+	 {
+		 double floordiff = pos.Z - floorplane.ZatPoint(pos);
+		 if (floordiff < bottomglowcolor[3])
+		 {
+			 int maxlight = (255 + lightlevel) >> 1;
+			 double lightfrac = floordiff / bottomglowcolor[3];
+			 if (lightfrac < 0) lightfrac = 0;
+			 lightlevel = int(lightfrac*lightlevel + maxlight * (1 - lightfrac));
+		 }
+	 }
+	 return lightlevel;
+ }
+
+ //==========================================================================
+ //
+ // Checks whether a wall should glow
+ //
+ //==========================================================================
+ bool sector_t::GetWallGlow(float *topglowcolor, float *bottomglowcolor)
+ {
+	 bool ret = false;
+	 bottomglowcolor[3] = topglowcolor[3] = 0;
+	 auto c = planes[sector_t::ceiling].GlowColor;
+	 if (c == 0)
+	 {
+		 FTexture *tex = TexMan[GetTexture(sector_t::ceiling)];
+		 if (tex != NULL && tex->isGlowing())
+		 {
+			 if (!tex->bAutoGlowing) tex = TexMan(GetTexture(sector_t::ceiling));
+			 if (tex->isGlowing())	// recheck the current animation frame.
+			 {
+				 ret = true;
+				 tex->GetGlowColor(topglowcolor);
+				 topglowcolor[3] = (float)tex->GlowHeight;
+			 }
+		 }
+	 }
+	 else if (c != ~0u)
+	 {
+		 topglowcolor[0] = c.r / 255.f;
+		 topglowcolor[1] = c.g / 255.f;
+		 topglowcolor[2] = c.b / 255.f;
+		 topglowcolor[3] = planes[sector_t::ceiling].GlowHeight;
+		 ret = topglowcolor[3] > 0;
+	 }
+
+	 c = planes[sector_t::floor].GlowColor;
+	 if (c == 0)
+	 {
+		 FTexture *tex = TexMan[GetTexture(sector_t::floor)];
+		 if (tex != NULL && tex->isGlowing())
+		 {
+			 if (!tex->bAutoGlowing) tex = TexMan(GetTexture(sector_t::floor));
+			 if (tex->isGlowing())	// recheck the current animation frame.
+			 {
+				 ret = true;
+				 tex->GetGlowColor(bottomglowcolor);
+				 bottomglowcolor[3] = (float)tex->GlowHeight;
+			 }
+		 }
+	 }
+	 else if (c != ~0u)
+	 {
+		 bottomglowcolor[0] = c.r / 255.f;
+		 bottomglowcolor[1] = c.g / 255.f;
+		 bottomglowcolor[2] = c.b / 255.f;
+		 bottomglowcolor[3] = planes[sector_t::floor].GlowHeight;
+		 ret = bottomglowcolor[3] > 0;
+	 }
+	 return ret;
+ }
+
+
  //===========================================================================
  //
  //
@@ -1570,6 +1651,26 @@ DEFINE_ACTION_FUNCTION(_Sector, NextLowestFloorAt)
 	 PARAM_OBJECT(thing, AActor);
 	 PARAM_INT(activation);
 	 ACTION_RETURN_BOOL(self->TriggerSectorActions(thing, activation));
+ }
+
+ //===========================================================================
+ //
+ // checks if the floor is higher than the ceiling and sets a flag
+ // This condition needs to be tested by the hardware renderer,
+ // so always having its state available in a flag allows for easier optimization.
+ //
+ //===========================================================================
+
+ void sector_t::CheckOverlap()
+ {
+	 if (planes[sector_t::floor].TexZ > planes[sector_t::ceiling].TexZ && !floorplane.isSlope() && !ceilingplane.isSlope())
+	 {
+		 MoreFlags |= SECMF_OVERLAPPING;
+	 }
+	 else
+	 {
+		 MoreFlags &= ~SECMF_OVERLAPPING;
+	 }
  }
 
  //===========================================================================
@@ -1776,7 +1877,7 @@ DEFINE_ACTION_FUNCTION(_Sector, NextLowestFloorAt)
 	 PARAM_INT(pos);
 	 PARAM_FLOAT(o);
 	 PARAM_BOOL_DEF(dirty);
-	 self->SetPlaneTexZ(pos, o, dirty);
+	 self->SetPlaneTexZ(pos, o, true);	// not setting 'dirty' here is a guaranteed cause for problems.
 	 return 0;
  }
 
@@ -2394,6 +2495,46 @@ int side_t::GetLightLevel (bool foggy, int baselight, bool is3dlight, int *pfake
 	}
 	return baselight;
 }
+
+//==========================================================================
+//
+// Recalculate all heights affecting this vertex.
+//
+//==========================================================================
+
+void vertex_t::RecalcVertexHeights()
+{
+	int i, j, k;
+	float height;
+
+	numheights = 0;
+	for (i = 0; i < numsectors; i++)
+	{
+		for (j = 0; j<2; j++)
+		{
+			if (j == 0) height = (float)sectors[i]->ceilingplane.ZatPoint(this);
+			else height = (float)sectors[i]->floorplane.ZatPoint(this);
+
+			for (k = 0; k < numheights; k++)
+			{
+				if (height == heightlist[k]) break;
+				if (height < heightlist[k])
+				{
+					memmove(&heightlist[k + 1], &heightlist[k], sizeof(float) * (numheights - k));
+					heightlist[k] = height;
+					numheights++;
+					break;
+				}
+			}
+			if (k == numheights) heightlist[numheights++] = height;
+		}
+	}
+	if (numheights <= 2) numheights = 0;	// is not in need of any special attention
+	dirty = false;
+}
+
+
+
 
 DEFINE_ACTION_FUNCTION(_Secplane, isSlope)
 {

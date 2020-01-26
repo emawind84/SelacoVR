@@ -37,27 +37,20 @@
 #include "c_dispatch.h"
 #include "d_gui.h"
 #include "d_player.h"
-#include "g_level.h"
 #include "c_console.h"
 #include "c_bind.h"
-#include "s_sound.h"
 #include "p_tick.h"
 #include "g_game.h"
-#include "c_cvars.h"
 #include "d_event.h"
-#include "v_video.h"
 #include "hu_stuff.h"
 #include "gi.h"
-#include "v_palette.h"
 #include "g_input.h"
 #include "gameconfigfile.h"
 #include "gstrings.h"
 #include "r_utility.h"
 #include "menu/menu.h"
-#include "textures/textures.h"
 #include "vm.h"
 #include "events.h"
-#include "gl/renderer/gl_renderer.h" // for menu blur
 #include "scripting/types.h"
 
 //
@@ -73,6 +66,20 @@ CVAR(Bool, m_blockcontrollers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR (Float, snd_menuvolume, 0.6f, CVAR_ARCHIVE)
 CVAR(Int, m_use_mouse, 2, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Int, m_show_backbutton, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+
+CUSTOM_CVAR(Float, dimamount, -1.f, CVAR_ARCHIVE)
+{
+	if (self < 0.f && self != -1.f)
+	{
+		self = -1.f;
+	}
+	else if (self > 1.f)
+	{
+		self = 1.f;
+	}
+}
+CVAR(Color, dimcolor, 0xffd700, CVAR_ARCHIVE)
+
 
 
 DEFINE_ACTION_FUNCTION(DMenu, GetCurrentMenu)
@@ -766,6 +773,41 @@ void M_Ticker (void)
 	}
 }
 
+//==========================================================================
+//
+// M_Dim
+//
+// Applies a colored overlay to the entire screen, with the opacity
+// determined by the dimamount cvar.
+//
+//==========================================================================
+
+static void M_Dim()
+{
+	PalEntry dimmer;
+	float amount;
+
+	if (dimamount >= 0)
+	{
+		dimmer = PalEntry(dimcolor);
+		amount = dimamount;
+	}
+	else
+	{
+		dimmer = gameinfo.dimcolor;
+		amount = gameinfo.dimamount;
+	}
+
+	if (gameinfo.gametype == GAME_Hexen && gamestate == GS_DEMOSCREEN)
+	{ // On the Hexen title screen, the default dimming is not
+	  // enough to make the menus readable.
+		amount = MIN<float>(1.f, amount*2.f);
+	}
+
+	screen->Dim(dimmer, amount, 0, 0, screen->GetWidth(), screen->GetHeight());
+}
+
+
 //=============================================================================
 //
 //
@@ -778,24 +820,12 @@ void M_Drawer (void)
 	AActor *camera = player->camera;
 	PalEntry fade = 0;
 
-	if (!screen->Accel2D && camera != nullptr && (gamestate == GS_LEVEL || gamestate == GS_TITLELEVEL))
-	{
-		if (camera->player != nullptr)
-		{
-			player = camera->player;
-		}
-		fade = PalEntry (uint8_t(player->BlendA*255), uint8_t(player->BlendR*255), uint8_t(player->BlendG*255), uint8_t(player->BlendB*255));
-	}
-
-
 	if (CurrentMenu != nullptr && menuactive != MENU_Off) 
 	{
-		if (GLRenderer)
-			GLRenderer->BlurScene(gameinfo.bluramount);
+		screen->BlurScene(gameinfo.bluramount);
 		if (!CurrentMenu->DontDim)
 		{
-			screen->Dim(fade);
-			V_SetBorderNeedRefresh();
+			M_Dim();
 		}
 		CurrentMenu->CallDrawer();
 	}
@@ -816,7 +846,6 @@ void M_ClearMenus()
 		CurrentMenu->Destroy();
 		CurrentMenu = parent;
 	}
-	V_SetBorderNeedRefresh();
 	menuactive = MENU_Off;
 }
 
@@ -993,7 +1022,7 @@ CCMD (openmenu)
 {
 	if (argv.argc() < 2)
 	{
-		Printf("Usage: openmenu \"menu_name\"");
+		Printf("Usage: openmenu \"menu_name\"\n");
 		return;
 	}
 	M_StartControlPanel (true);

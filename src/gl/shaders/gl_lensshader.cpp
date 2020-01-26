@@ -25,14 +25,8 @@
 **
 */
 
-#include "gl/system/gl_system.h"
-#include "m_swap.h"
+#include "gl_load/gl_system.h"
 #include "v_video.h"
-#include "gl/gl_functions.h"
-#include "vectors.h"
-#include "gl/system/gl_interface.h"
-#include "gl/system/gl_framebuffer.h"
-#include "gl/system/gl_cvars.h"
 #include "gl/shaders/gl_lensshader.h"
 
 void FLensShader::Bind()

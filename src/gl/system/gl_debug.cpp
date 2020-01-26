@@ -26,17 +26,12 @@
 */
 
 #include "templates.h"
-#include "gl/system/gl_system.h"
-#include "gl/system/gl_interface.h"
+#include "gl_load/gl_system.h"
 #include "gl/system/gl_debug.h"
 #include "stats.h"
 #include <set>
 #include <string>
 #include <vector>
-
-#ifndef _MSC_VER
-#include <signal.h>
-#endif
 
 CUSTOM_CVAR(Int, gl_debug_level, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
@@ -101,19 +96,19 @@ void FGLDebug::Update()
 //
 //-----------------------------------------------------------------------------
 
-void FGLDebug::LabelObject(GLenum type, GLuint handle, const FString &name)
+void FGLDebug::LabelObject(GLenum type, GLuint handle, const char *name)
 {
 	if (HasDebugApi() && gl_debug_level != 0)
 	{
-		glObjectLabel(type, handle, (GLsizei)name.Len(), name.GetChars());
+		glObjectLabel(type, handle, -1, name);
 	}
 }
 
-void FGLDebug::LabelObjectPtr(void *ptr, const FString &name)
+void FGLDebug::LabelObjectPtr(void *ptr, const char *name)
 {
 	if (HasDebugApi() && gl_debug_level != 0)
 	{
-		glObjectPtrLabel(ptr, (GLsizei)name.Len(), name.GetChars());
+		glObjectPtrLabel(ptr, -1, name);
 	}
 }
 

@@ -74,10 +74,8 @@ The FON2 header is followed by variable length data:
 // HEADER FILES ------------------------------------------------------------
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <ctype.h>
 
 #include "templates.h"
 #include "doomtype.h"
@@ -85,15 +83,10 @@ The FON2 header is followed by variable length data:
 #include "v_font.h"
 #include "v_video.h"
 #include "w_wad.h"
-#include "i_system.h"
 #include "gi.h"
 #include "cmdlib.h"
 #include "sc_man.h"
 #include "hu_stuff.h"
-#include "textures/textures.h"
-#include "r_data/r_translate.h"
-#include "colormatcher.h"
-#include "v_palette.h"
 #include "v_text.h"
 #include "vm.h"
 
@@ -417,7 +410,7 @@ FFont::FFont (const char *name, const char *nametemplate, int first, int count, 
 					charlumps[i] = pic;
 
 				int height = pic->GetScaledHeight();
-				int yoffs = pic->GetScaledTopOffset();
+				int yoffs = pic->GetScaledTopOffset(0);
 
 				if (yoffs > maxyoffs)
 				{
@@ -963,54 +956,6 @@ void FFont::LoadTranslations()
 	BuildTranslations (luminosity, identity, &TranslationParms[0][0], ActiveColors, NULL);
 
 	delete[] luminosity;
-}
-
-//==========================================================================
-//
-// FFont :: Preload
-//
-// Loads most of the 7-bit ASCII characters. In the case of D3DFB, this
-// means all the characters of a font have a better chance of being packed
-// into the same hardware texture.
-//
-// (Note that this is a rather dumb implementation. The atlasing should
-// occur at a higher level, independently of the renderer being used.)
-//
-//==========================================================================
-
-void FFont::Preload() const
-{
-	// First and last char are the same? Wait until it's actually needed
-	// since nothing is gained by preloading now.
-	if (FirstChar == LastChar)
-	{
-		return;
-	}
-	for (int i = MAX(FirstChar, 0x21); i < MIN(LastChar, 0x7e); ++i)
-	{
-		int foo;
-		FTexture *pic = GetChar(i, &foo);
-		if (pic != NULL)
-		{
-			pic->GetNative(pic->GetFormat(), false);
-		}
-	}
-}
-
-//==========================================================================
-//
-// FFont :: StaticPreloadFonts
-//
-// Preloads all the defined fonts.
-//
-//==========================================================================
-
-void FFont::StaticPreloadFonts()
-{
-	for (FFont *font = FirstFont; font != NULL; font = font->Next)
-	{
-		font->Preload();
-	}
 }
 
 //==========================================================================
@@ -1761,8 +1706,8 @@ FFontChar2::FFontChar2 (int sourcelump, int sourcepos, int width, int height, in
 	UseType = ETextureType::FontChar;
 	Width = width;
 	Height = height;
-	LeftOffset = leftofs;
-	TopOffset = topofs;
+	_LeftOffset[1] = _LeftOffset[0] = leftofs;
+	_TopOffset[1] = _TopOffset[0] = topofs;
 	CalcBitSize ();
 }
 
@@ -2012,7 +1957,7 @@ FSpecialFont::FSpecialFont (const char *name, int first, int count, FTexture **l
 		if (pic != NULL)
 		{
 			int height = pic->GetScaledHeight();
-			int yoffs = pic->GetScaledTopOffset();
+			int yoffs = pic->GetScaledTopOffset(0);
 
 			if (yoffs > maxyoffs)
 			{

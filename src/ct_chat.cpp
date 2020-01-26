@@ -26,20 +26,15 @@
 #include "doomdef.h"
 #include "m_swap.h"
 #include "hu_stuff.h"
-#include "w_wad.h"
 #include "s_sound.h"
 #include "doomstat.h"
 #include "st_stuff.h"
 #include "c_console.h"
 #include "c_dispatch.h"
-#include "c_cvars.h"
 #include "d_player.h"
 #include "v_text.h"
-#include "v_video.h"
-#include "gi.h"
 #include "d_gui.h"
 #include "g_input.h"
-#include "templates.h"
 #include "d_net.h"
 #include "d_event.h"
 #include "sbar.h"
@@ -274,8 +269,6 @@ void CT_Drawer (void)
 		screen->DrawText (SmallFont, CR_GREY, promptwidth, y, (char *)(ChatQueue + i), 
 			DTA_VirtualWidth, screen_width, DTA_VirtualHeight, screen_height, DTA_KeepRatio, true, TAG_DONE);
 		ChatQueue[len] = '\0';
-
-		BorderTopRefresh = screen->GetPageCount ();
 	}
 
 	if (players[consoleplayer].camera != NULL &&

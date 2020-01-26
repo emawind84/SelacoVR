@@ -40,17 +40,12 @@
 #include "p_lnspec.h"
 #include "p_maputl.h"
 #include "w_wad.h"
-#include "sc_man.h"
 #include "g_level.h"
 #include "p_terrain.h"
 #include "d_player.h"
-#include "r_utility.h"
 #include "p_spec.h"
-#include "r_data/colormaps.h"
 #include "g_levellocals.h"
 #include "actorinlines.h"
-
-extern int currentrenderer;
 
 //==========================================================================
 //
@@ -125,6 +120,7 @@ static void P_Add3DFloor(sector_t* sec, sector_t* sec2, line_t* master, int flag
 	ffloor->top.copied = ffloor->bottom.copied = false;
 	ffloor->top.model = ffloor->bottom.model = ffloor->model = sec2;
 	ffloor->target = sec;
+	ffloor->top.vindex = ffloor->bottom.vindex = -1;
 
 	if (!(flags&FF_THINFLOOR))
 	{
@@ -197,7 +193,7 @@ static void P_Add3DFloor(sector_t* sec, sector_t* sec2, line_t* master, int flag
 
 	// kg3D - software renderer only hack
 	// this is really required because of ceilingclip and floorclip
-	if((currentrenderer == 0) && (flags & FF_BOTHPLANES))
+	if(flags & FF_BOTHPLANES)
 	{
 		P_Add3DFloor(sec, sec2, master, FF_EXISTS | FF_THISINSIDE | FF_RENDERPLANES | FF_NOSHADE | FF_SEETHROUGH | FF_SHOOTTHROUGH |
 			(flags & (FF_INVERTSECTOR | FF_TRANSLUCENT | FF_ADDITIVETRANS)), alpha);
