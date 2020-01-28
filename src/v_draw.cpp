@@ -1321,9 +1321,8 @@ void DFrameBuffer::RefreshViewBorder ()
 // Draws a blend over the entire view
 //
 //==========================================================================
-float* DFrameBuffer::GetBlend(sector_t * viewsector)
+void DFrameBuffer::FillBlend(sector_t * viewsector, float* blend)
 {
-	float blend[4] = { 0,0,0,0 };
 	PalEntry blendv = 0;
 	float extra_red;
 	float extra_green;
@@ -1416,14 +1415,12 @@ float* DFrameBuffer::GetBlend(sector_t * viewsector)
 		player_t *player = (players[consoleplayer].camera->player != NULL) ? players[consoleplayer].camera->player : &players[consoleplayer];
 		V_AddBlend(player->BlendR, player->BlendG, player->BlendB, player->BlendA, blend);
 	}
-
-	return blend;
-	screen->Dim(PalEntry(255, uint8_t(blend[0] * 255), uint8_t(blend[1] * 255), uint8_t(blend[2] * 255)), blend[3], 0, 0, screen->GetWidth(), screen->GetHeight());
 }
 
 void DFrameBuffer::DrawBlend(sector_t* viewsector)
 {
-	float* blend = GetBlend(viewsector);
+	float blend[4] = { 0,0,0,0 };
+	FillBlend(viewsector, blend);
 	screen->Dim(PalEntry(255, uint8_t(blend[0] * 255), uint8_t(blend[1] * 255), uint8_t(blend[2] * 255)), blend[3], 0, 0, screen->GetWidth(), screen->GetHeight());
 }
 
