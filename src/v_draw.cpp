@@ -1321,14 +1321,15 @@ void DFrameBuffer::RefreshViewBorder ()
 // Draws a blend over the entire view
 //
 //==========================================================================
-void DFrameBuffer::FillBlend(sector_t * viewsector, float* blend)
+void DFrameBuffer::FillBlend(sector_t * viewsector, BlendInfo &blendinfo)
 {
 	PalEntry blendv = 0;
-	float extra_red;
-	float extra_green;
-	float extra_blue;
+	float& extra_red = blendinfo.extra_red;
+	float& extra_green = blendinfo.extra_green;
+	float& extra_blue = blendinfo.extra_blue;
 	player_t *player = nullptr;
 	bool fullbright = false;
+	float* blend = blendinfo.blend;
 
 	if (players[consoleplayer].camera != nullptr)
 	{
@@ -1391,6 +1392,7 @@ void DFrameBuffer::FillBlend(sector_t * viewsector, float* blend)
 			if (extra_red || extra_green || extra_blue)
 			{
 				screen->Dim(blendv, 1, 0, 0, screen->GetWidth(), screen->GetHeight(), &LegacyRenderStyles[STYLE_Multiply]);
+				blendinfo.multiplicativeBlend = true;
 			}
 			blendv = 0;
 		}
@@ -1419,8 +1421,9 @@ void DFrameBuffer::FillBlend(sector_t * viewsector, float* blend)
 
 void DFrameBuffer::DrawBlend(sector_t* viewsector)
 {
-	float blend[4] = { 0,0,0,0 };
-	FillBlend(viewsector, blend);
+	BlendInfo blendinfo;
+	FillBlend(viewsector, blendinfo);
+	float* blend = blendinfo.blend;
 	screen->Dim(PalEntry(255, uint8_t(blend[0] * 255), uint8_t(blend[1] * 255), uint8_t(blend[2] * 255)), blend[3], 0, 0, screen->GetWidth(), screen->GetHeight());
 }
 

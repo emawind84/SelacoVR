@@ -266,6 +266,15 @@ struct VMVa_List
 	int curindex;
 	int numargs;
 };
+
+struct BlendInfo
+{
+	float blend[4] = { 0, 0, 0, 0 };
+	float extra_red;
+	float extra_green;
+	float extra_blue;
+	bool multiplicativeBlend;
+};
 //
 // VIDEO
 //
@@ -454,7 +463,7 @@ public:
 	// Dim part of the canvas
 	void Dim(PalEntry color, float amount, int x1, int y1, int w, int h, FRenderStyle *style = nullptr);
 	void DoDim(PalEntry color, float amount, int x1, int y1, int w, int h, FRenderStyle *style = nullptr);
-	void FillBlend(sector_t* viewsector, float* blend);
+	void FillBlend(sector_t* viewsector, BlendInfo &blendinfo);
 	void DrawBlend(sector_t * viewsector);
 
 	// Fill an area with a texture
