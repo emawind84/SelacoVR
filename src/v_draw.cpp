@@ -1529,15 +1529,15 @@ void DFrameBuffer::RefreshViewBorder ()
 // Draws a blend over the entire view
 //
 //==========================================================================
-float* DFrameBuffer::GetBlend(sector_t * viewsector)
+void DFrameBuffer::FillBlend(sector_t * viewsector, BlendInfo &blendinfo)
 {
-	float blend[4] = { 0,0,0,0 };
 	PalEntry blendv = 0;
-	float extra_red;
-	float extra_green;
-	float extra_blue;
+	float& extra_red = blendinfo.extra_red;
+	float& extra_green = blendinfo.extra_green;
+	float& extra_blue = blendinfo.extra_blue;
 	player_t *player = nullptr;
 	bool fullbright = false;
+	float* blend = blendinfo.blend;
 
 	if (players[consoleplayer].camera != nullptr)
 	{
@@ -1601,6 +1601,7 @@ float* DFrameBuffer::GetBlend(sector_t * viewsector)
 			if (extra_red || extra_green || extra_blue)
 			{
 				screen->Dim(blendv, 1, 0, 0, screen->GetWidth(), screen->GetHeight(), &LegacyRenderStyles[STYLE_Multiply]);
+				blendinfo.multiplicativeBlend = true;
 			}
 			blendv = 0;
 		}
@@ -1657,14 +1658,13 @@ float* DFrameBuffer::GetBlend(sector_t * viewsector)
 		player_t *player = (players[consoleplayer].camera->player != NULL) ? players[consoleplayer].camera->player : &players[consoleplayer];
 		V_AddBlend(player->BlendR, player->BlendG, player->BlendB, player->BlendA, blend);
 	}
-
-	return blend;
-	//screen->Dim(bcolor, blend[3], 0, 0, screen->GetWidth(), screen->GetHeight());
 }
 
 void DFrameBuffer::DrawBlend(sector_t* viewsector)
 {
-	float* blend = GetBlend(viewsector);
+	BlendInfo blendinfo;
+	FillBlend(viewsector, blendinfo);
+	float* blend = blendinfo.blend;
 	const float br = clamp(blend[0] * 255.f, 0.f, 255.f);
 	const float bg = clamp(blend[1] * 255.f, 0.f, 255.f);
 	const float bb = clamp(blend[2] * 255.f, 0.f, 255.f);

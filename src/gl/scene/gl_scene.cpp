@@ -537,8 +537,9 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 			PostProcessScene(cm, [&]() { di->DrawEndScene2D(mainvp.sector); });
 
 			eye->AdjustBlend(di);
-			float* blend = screen->GetBlend(mainvp.sector);
-			GLRenderer->DrawBlend(blend);
+			BlendInfo blendinfo;
+			screen->FillBlend(mainvp.sector, blendinfo);
+			GLRenderer->DrawBlend(blendinfo);
 		}
 		di->EndDrawInfo();
 		if (vrmode->mEyeCount > 1)
