@@ -270,10 +270,10 @@ struct VMVa_List
 struct BlendInfo
 {
 	float blend[4] = { 0, 0, 0, 0 };
-	float extra_red;
-	float extra_green;
-	float extra_blue;
-	bool multiplicativeBlend;
+	float extra_red = 0;
+	float extra_green = 0;
+	float extra_blue = 0;
+	bool multiplicativeBlend = false;
 };
 //
 // VIDEO
