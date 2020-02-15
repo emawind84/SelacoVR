@@ -1,8 +1,8 @@
-# GZDoom-VR 
+# GZDoom VR 
 Based on gz3doom (http://rotatingpenguin.com/gz3doom/) and OpenVr Doom https://github.com/Fishbiter/gz3doom.
 The aim of this fork is to update base GZDoom version.
 
-Built/tested on Oculus Quest, but other VR setups should work.
+Built/tested on Oculus Quest and ALVR but other VR setups should work.
 
 This build exposes OpenVR controller input for definition (you will need to define the controls).
 
