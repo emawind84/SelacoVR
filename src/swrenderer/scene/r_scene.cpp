@@ -66,8 +66,10 @@ void PeekThreadedErrorPane();
 EXTERN_CVAR(Int, r_clearbuffer)
 EXTERN_CVAR(Int, r_debug_draw)
 
-CVAR(Bool, r_scene_multithreaded, false, 0);
-CVAR(Bool, r_models, false, 0);
+CVAR(Int, r_scene_multithreaded, 0, 0);
+CVAR(Bool, r_models, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+
+bool r_modelscene = false;
 
 namespace swrenderer
 {
@@ -88,7 +90,7 @@ namespace swrenderer
 		clearcolor = color;
 	}
 
-	void RenderScene::RenderView(player_t *player, DCanvas *target)
+	void RenderScene::RenderView(player_t *player, DCanvas *target, void *videobuffer)
 	{
 		auto viewport = MainThread()->Viewport.get();
 		viewport->RenderTarget = target;
@@ -101,8 +103,13 @@ namespace swrenderer
 		float trueratio;
 		ActiveRatio(width, height, &trueratio);
 		viewport->SetViewport(MainThread(), width, height, trueratio);
-		if (r_models)
-			PolyTriangleDrawer::ClearBuffers(viewport->RenderTarget);
+
+		r_modelscene = r_models && Models.Size() > 0;
+		if (r_modelscene)
+		{
+			PolyTriangleDrawer::ResizeBuffers(viewport->RenderTarget);
+			PolyTriangleDrawer::ClearStencil(MainThread()->DrawQueue, 0);
+		}
 
 		if (r_clearbuffer != 0 || r_debug_draw != 0)
 		{
@@ -123,6 +130,10 @@ namespace swrenderer
 		}
 
 		RenderActorView(player->mo);
+
+		auto copyqueue = std::make_shared<DrawerCommandQueue>(MainThread()->FrameMemory.get());
+		copyqueue->Push<MemcpyCommand>(videobuffer, target->GetPixels(), target->GetWidth(), target->GetHeight(), target->GetPitch(), target->IsBgra() ? 4 : 1);
+		DrawerThreads::Execute(copyqueue);
 
 		DrawerWaitCycles.Clock();
 		DrawerThreads::WaitForWorkers();
@@ -156,7 +167,7 @@ namespace swrenderer
 
 		R_UpdateFuzzPosFrameStart();
 
-		if (r_models)
+		if (r_modelscene)
 			MainThread()->Viewport->SetupPolyViewport(MainThread());
 
 		FRenderViewpoint origviewpoint = MainThread()->Viewport->viewpoint;
@@ -172,7 +183,7 @@ namespace swrenderer
 
 		// Mirrors fail to restore the original viewpoint -- we need it for the HUD weapon to draw correctly.
 		MainThread()->Viewport->viewpoint = origviewpoint;
-		if (r_models)
+		if (r_modelscene)
 			MainThread()->Viewport->SetupPolyViewport(MainThread());
 
 		RenderPSprites();
@@ -199,8 +210,10 @@ namespace swrenderer
 		if (numThreads == 0)
 			numThreads = 4;
 
-		if (!r_scene_multithreaded || !r_multithreaded)
+		if (r_scene_multithreaded == 0 || r_multithreaded == 0)
 			numThreads = 1;
+		else if (r_scene_multithreaded != 1)
+			numThreads = r_scene_multithreaded;
 
 		if (numThreads != (int)Threads.size())
 		{
@@ -266,6 +279,9 @@ namespace swrenderer
 		thread->OpaquePass->ClearClip();
 		thread->OpaquePass->ResetFakingUnderwater(); // [RH] Hack to make windows into underwater areas possible
 		thread->Portal->SetMainPortal();
+
+		if (r_modelscene && thread->MainThread)
+			PolyTriangleDrawer::ClearStencil(MainThread()->DrawQueue, 0);
 
 		PolyTriangleDrawer::SetViewport(thread->DrawQueue, viewwindowx, viewwindowy, viewwidth, viewheight, thread->Viewport->RenderTarget);
 
@@ -371,8 +387,8 @@ namespace swrenderer
 		viewwindowy = y;
 		viewactive = true;
 		viewport->SetViewport(MainThread(), width, height, MainThread()->Viewport->viewwindow.WidescreenRatio);
-		if (r_models)
-			PolyTriangleDrawer::ClearBuffers(viewport->RenderTarget);
+		if (r_modelscene)
+			PolyTriangleDrawer::ResizeBuffers(viewport->RenderTarget);
 
 		// Render:
 		RenderActorView(actor, dontmaplines);

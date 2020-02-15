@@ -34,7 +34,6 @@
 #include "d_player.h"
 #include "g_game.h" // G_Add...
 #include "p_local.h" // P_TryMove
-#include "r_utility.h" // viewpitch
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderbuffers.h"
 #include "v_2ddrawer.h" // crosshair
@@ -50,6 +49,7 @@
 #include "d_gui.h"
 #include "d_event.h"
 #include "i_time.h"
+#include "gl/scene/gl_drawinfo.h"
 
 #include "gl_openvr.h"
 #include "openvr_include.h"
@@ -322,7 +322,8 @@ public:
 
 			pFTex = new FControllerTexture(pTexture);
 
-			FGLModelRenderer renderer(-1);
+			auto* di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
+			FGLModelRenderer renderer(di, -1);
 			BuildVertexBuffer(&renderer);
 
 			return true;
@@ -355,13 +356,13 @@ Controller controllers[MAX_ROLES];
 
 
 /* static */
-const Stereo3DMode& OpenVRMode::getInstance()
-{
-		static OpenVRMode instance;
-		if (! instance.hmdWasFound)
-			return  MonoView::getInstance();
-		return instance;
-}
+//const VRMode& OpenVRMode::getInstance()
+//{
+//		static OpenVRMode instance;
+//		if (!instance.hmdWasFound)
+//			return  *instance.GetVRMode(false);
+//		return instance;
+//}
 
 static HmdVector3d_t eulerAnglesFromQuat(HmdQuaternion_t quat) {
 	double q0 = quat.w;
@@ -422,8 +423,8 @@ static HmdVector3d_t eulerAnglesFromMatrix(HmdMatrix34_t mat) {
 	return eulerAnglesFromQuat(quatFromMatrix(mat));
 }
 
-OpenVREyePose::OpenVREyePose(int eye)
-	: ShiftedEyePose( 0.0f )
+OpenVREyePose::OpenVREyePose(int eye, float shiftFactor, float scaleFactor)
+	: VREyeInfo(0.0f, 1.f)
 	, eye(eye)
 	, eyeTexture(nullptr)
 	, currentPose(nullptr)
@@ -455,20 +456,19 @@ static void vSMatrixFromHmdMatrix34(VSMatrix& m1, const HmdMatrix34_t& m2)
 
 
 /* virtual */
-void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
+DVector3 OpenVREyePose::GetViewShift(FLOATTYPE yaw) const
 {
-	outViewShift[0] = outViewShift[1] = outViewShift[2] = 0;
 
 	if (currentPose == nullptr)
-		return;
+		return { 0, 0, 0 };
 	const TrackedDevicePose_t& hmd = *currentPose;
 	if (! hmd.bDeviceIsConnected)
-		return;
+		return { 0, 0, 0 };
 	if (! hmd.bPoseIsValid)
-		return;
+		return { 0, 0, 0 };
 
 	if (! doStereoscopicViewpointOffset)
-		return;
+		return { 0, 0, 0 };
 
 	const HmdMatrix34_t& hmdPose = hmd.mDeviceToAbsoluteTracking;
 
@@ -548,9 +548,7 @@ void OpenVREyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
 		doom_EyeOffset[1] += doom_dpos[1];
 	}
 
-	outViewShift[0] = doom_EyeOffset[0];
-	outViewShift[1] = doom_EyeOffset[1];
-	outViewShift[2] = doom_EyeOffset[2];
+	return { doom_EyeOffset[0], doom_EyeOffset[1], doom_EyeOffset[2] };
 }
 
 /* virtual */
@@ -697,11 +695,15 @@ VSMatrix OpenVREyePose::getQuadInWorld(
 void OpenVREyePose::AdjustHud() const
 {
 	// Draw crosshair on a separate quad, before updating HUD matrix
-	const Stereo3DMode * mode3d = &Stereo3DMode::getCurrentMode();
-	if (mode3d->IsMono())
+	const auto vrmode = VRMode::GetVRMode(true);
+	if (vrmode->mEyeCount == 1)
+	{
 		return;
-	gl_RenderState.mViewMatrix.loadIdentity();
-	const OpenVRMode * openVrMode = static_cast<const OpenVRMode *>(mode3d);
+	}
+	auto *di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
+
+	di->VPUniforms.mViewMatrix.loadIdentity();
+	const OpenVRMode * openVrMode = static_cast<const OpenVRMode *>(vrmode);
 	if (openVrMode 
 		&& openVrMode->crossHairDrawer
 		// Don't draw the crosshair if there is none
@@ -711,12 +713,12 @@ void OpenVREyePose::AdjustHud() const
 	{
 		const float crosshair_distance_meters = 10.0f; // meters
 		const float crosshair_width_meters = 0.2f * crosshair_distance_meters;
-		gl_RenderState.mProjectionMatrix = getQuadInWorld(
+		di->VPUniforms.mProjectionMatrix = getQuadInWorld(
 			crosshair_distance_meters,
 			crosshair_width_meters,
 			false,
 			0.0);
-		gl_RenderState.ApplyMatrices();
+		di->ApplyVPUniforms();
 		GLRenderer->Draw2D(openVrMode->crossHairDrawer);
 	}
 
@@ -724,27 +726,26 @@ void OpenVREyePose::AdjustHud() const
 	const float menu_distance_meters = 1.0f;
 	const float menu_width_meters = 0.4f * menu_distance_meters;
 	const float pitch_offset = -8.0;
-	gl_RenderState.mProjectionMatrix = getQuadInWorld(
+	di->VPUniforms.mProjectionMatrix = getQuadInWorld(
 		menu_distance_meters, 
 		menu_width_meters, 
 		true,
 		pitch_offset);
-	gl_RenderState.ApplyMatrices();
+	di->ApplyVPUniforms();
 }
 
-void OpenVREyePose::AdjustBlend() const
+void OpenVREyePose::AdjustBlend(FDrawInfo *di) const
 {
-	VSMatrix& proj = gl_RenderState.mProjectionMatrix;
+	VSMatrix& proj = di->VPUniforms.mProjectionMatrix;
 	proj.loadIdentity();
 	proj.translate(-1, 1, 0);
 	proj.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
-	gl_RenderState.ApplyMatrices();
+	di->ApplyVPUniforms();
 }
 
-OpenVRMode::OpenVRMode() 
-	: vrSystem(nullptr)
-	, leftEyeView(EVREye_Eye_Left)
-	, rightEyeView(EVREye_Eye_Right)
+OpenVRMode::OpenVRMode(OpenVREyePose eyes[2])
+	: VRMode(2, 1.f, 1.f, 1.f, eyes)
+	, vrSystem(nullptr)
 	, hmdWasFound(false)
 	, sceneWidth(0), sceneHeight(0)
 	, vrCompositor(nullptr)
@@ -752,7 +753,12 @@ OpenVRMode::OpenVRMode()
 	, vrToken(0)
 	, crossHairDrawer(new F2DDrawer)
 {
-	eye_ptrs.Push(&leftEyeView); // initially default behavior to Mono non-stereo rendering
+	//eye_ptrs.Push(&leftEyeView); // initially default behavior to Mono non-stereo rendering
+
+	leftEyeView = &eyes[0];
+	rightEyeView = &eyes[1];
+	mEyes[0] = &eyes[0];
+	mEyes[1] = &eyes[1];
 
 	if ( ! IsOpenVRPresent() ) return; // failed to load openvr API dynamically
 
@@ -780,8 +786,9 @@ OpenVRMode::OpenVRMode()
 
 	vrSystem->GetRecommendedRenderTargetSize(&sceneWidth, &sceneHeight);
 
-	leftEyeView.initialize(vrSystem);
-	rightEyeView.initialize(vrSystem);
+	leftEyeView->initialize(vrSystem);
+	rightEyeView->initialize(vrSystem);
+
 
 	const std::string comp_key = std::string("FnTable:") + std::string(IVRCompositor_Version);
 	vrCompositor = (VR_IVRCompositor_FnTable*)VR_GetGenericInterface(comp_key.c_str(), &eError);
@@ -791,7 +798,7 @@ OpenVRMode::OpenVRMode()
 	const std::string model_key = std::string("FnTable:") + std::string(IVRRenderModels_Version);
 	vrRenderModels = (VR_IVRRenderModels_FnTable*)VR_GetGenericInterface(model_key.c_str(), &eError);
 
-	eye_ptrs.Push(&rightEyeView); // NOW we render to two eyes
+	//eye_ptrs.Push(&rightEyeView); // NOW we render to two eyes
 	hmdWasFound = true;
 
 	crossHairDrawer->Clear();
@@ -799,7 +806,7 @@ OpenVRMode::OpenVRMode()
 
 /* virtual */
 // AdjustViewports() is called from within FLGRenderer::SetOutputViewport(...)
-void OpenVRMode::AdjustViewports() const
+void OpenVRMode::AdjustViewport(DFrameBuffer* screen) const
 {
 	if (screen == nullptr)
 		return;
@@ -813,7 +820,7 @@ void OpenVRMode::AdjustViewports() const
 	screen->mScreenViewport.height = sceneHeight;
 }
 
-void OpenVRMode::AdjustPlayerSprites() const
+void OpenVRMode::AdjustPlayerSprites(FDrawInfo* di) const
 {
 	GetWeaponTransform(&gl_RenderState.mModelMatrix);
 
@@ -844,11 +851,11 @@ void OpenVRMode::UnAdjustCrossHair() const
 	viewwindowy = cachedViewwindowy;
 }
 
-void OpenVRMode::DrawControllerModels() const
+void OpenVRMode::DrawControllerModels(FDrawInfo *di) const
 {
 	if(!openvr_drawControllers)
 		return; 
-	FGLModelRenderer renderer(-1);
+	FGLModelRenderer renderer(di, -1);
 	for (int i = 0; i < MAX_ROLES; ++i) 
 	{
 		if (GetHandTransform(i, &gl_RenderState.mModelMatrix) && controllers[i].model)
@@ -909,7 +916,8 @@ bool OpenVRMode::GetWeaponTransform(VSMatrix* out) const
 static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
 {
 	LSMatrix44 mat;
-	if (!s3d::Stereo3DMode::getCurrentMode().GetWeaponTransform(&mat))
+	auto vrmode = VRMode::GetVRMode(true);
+	if (!vrmode->GetWeaponTransform(&mat))
 	{
 		double pc = pitch.Cos();
 
@@ -965,8 +973,8 @@ void OpenVRMode::Present() const {
 
 	if (doRenderToHmd) 
 	{
-		leftEyeView.submitFrame(vrCompositor);
-		rightEyeView.submitFrame(vrCompositor);
+		leftEyeView->submitFrame(vrCompositor);
+		rightEyeView->submitFrame(vrCompositor);
 	}
 }
 
@@ -977,6 +985,8 @@ static int mAngleFromRadians(double radians)
 }
 
 void OpenVRMode::updateHmdPose(
+
+	FRenderViewpoint& vp,
 	double hmdYawRadians, 
 	double hmdPitchRadians, 
 	double hmdRollRadians) const 
@@ -1004,7 +1014,7 @@ void OpenVRMode::updateHmdPose(
 	if (doTrackHmdPitch) {
 		double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 		double hmdPitchInDoom = -atan(tan(hmdpitch) / pixelstretch);
-		double viewPitchInDoom = GLRenderer->mAngles.Pitch.Radians();
+		double viewPitchInDoom = vp.HWAngles.Pitch.Radians();
 		double dPitch = 
 			// hmdPitchInDoom
 			-hmdpitch
@@ -1014,12 +1024,12 @@ void OpenVRMode::updateHmdPose(
 
 	// Roll can be local, because it doesn't affect gameplay.
 	if (doTrackHmdRoll)
-		GLRenderer->mAngles.Roll = RAD2DEG(-hmdroll);
+		vp.HWAngles.Roll = RAD2DEG(-hmdroll);
 
 	// Late-schedule update to renderer angles directly, too
 	if (doLateScheduledRotationTracking) {
 		if (doTrackHmdPitch)
-			GLRenderer->mAngles.Pitch = RAD2DEG(-hmdpitch);
+			vp.HWAngles.Pitch = RAD2DEG(-hmdpitch);
 		if (doTrackHmdYaw) {
 			double viewYaw = r_viewpoint.Angles.Yaw.Degrees + RAD2DEG(hmdYawDelta);
 			while (viewYaw <= -180.0) 
@@ -1221,9 +1231,9 @@ void OpenVRMode::SetUp() const
 	if (hmdPose0.bPoseIsValid) {
 		const HmdMatrix34_t& hmdPose = hmdPose0.mDeviceToAbsoluteTracking;
 		HmdVector3d_t eulerAngles = eulerAnglesFromMatrix(hmdPose);
-		updateHmdPose(eulerAngles.v[0], eulerAngles.v[1], eulerAngles.v[2]);
-		leftEyeView.setCurrentHmdPose(&hmdPose0);
-		rightEyeView.setCurrentHmdPose(&hmdPose0);
+		updateHmdPose(r_viewpoint, eulerAngles.v[0], eulerAngles.v[1], eulerAngles.v[2]);
+		leftEyeView->setCurrentHmdPose(&hmdPose0);
+		rightEyeView->setCurrentHmdPose(&hmdPose0);
 
 		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 
@@ -1371,8 +1381,8 @@ OpenVRMode::~OpenVRMode()
 		vrSystem = nullptr;
 		vrCompositor = nullptr;
 		vrRenderModels = nullptr;
-		leftEyeView.dispose();
-		rightEyeView.dispose();
+		leftEyeView->dispose();
+		rightEyeView->dispose();
 	}
 	if (crossHairDrawer != nullptr) {
 		delete crossHairDrawer;

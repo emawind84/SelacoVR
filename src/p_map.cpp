@@ -92,8 +92,8 @@
 #include "r_sky.h"
 #include "g_levellocals.h"
 #include "actorinlines.h"
+#include <hwrenderer\utility\hw_vrmodes.h>
 
-#include "gl/stereo3d/gl_stereo3d.h"
 
 CVAR(Bool, cl_bloodsplats, true, CVAR_ARCHIVE)
 CVAR(Int, sv_smartaim, 0, CVAR_ARCHIVE | CVAR_SERVERINFO)
@@ -4644,7 +4644,8 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 
 
 	DVector3 tempos;
-	if (s3d::Stereo3DMode::getCurrentMode().IsMono())
+	auto vrmode = VRMode::GetVRMode(true);
+	if (vrmode->mEyeCount == 1)
 	{
 		// [MC] Check the flags and set the position according to what is desired.
 		// LAF_ABSPOSITION: Treat the offset parameters as direct coordinates.

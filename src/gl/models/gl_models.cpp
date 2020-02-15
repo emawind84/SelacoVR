@@ -45,13 +45,73 @@
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/shaders/gl_shader.h"
 
+#include "hwrenderer/utility/hw_cvars.h"
+#include <hwrenderer\utility\hw_vrmodes.h>
+
 CVAR(Bool, gl_light_models, true, CVAR_ARCHIVE)
+EXTERN_CVAR(Float, gl_weaponOfsY)
+EXTERN_CVAR(Float, gl_weaponOfsZ)
 
 VSMatrix FGLModelRenderer::GetViewToWorldMatrix()
 {
 	VSMatrix objectToWorldMatrix;
-	gl_RenderState.mViewMatrix.inverseMatrix(objectToWorldMatrix);
+	di->VPUniforms.mViewMatrix.inverseMatrix(objectToWorldMatrix);
 	return objectToWorldMatrix;
+}
+
+
+
+void FGLModelRenderer::PrepareRenderHUDModel(AActor* playermo, FSpriteModelFrame* smf, float ofsX, float ofsY, VSMatrix &objectToWorldMatrix)
+{
+	auto vrmode = VRMode::GetVRMode(true);
+	if (vrmode->mEyeCount > 1)
+	{
+		//TODO Remove gl_RenderState
+		gl_RenderState.AlphaFunc(GL_GEQUAL, gl_mask_sprite_threshold);
+		// [BB] Render the weapon in worldspace to confirm transforms are all correct
+		gl_RenderState.mModelMatrix.loadIdentity();
+		// Need to reset the normal matrix too
+		di->VPUniforms.mNormalViewMatrix.loadIdentity();
+
+		if (vrmode->GetWeaponTransform(&gl_RenderState.mModelMatrix))
+		{
+			float scale = 0.01f;
+			gl_RenderState.mModelMatrix.scale(scale, scale, scale);
+			gl_RenderState.mModelMatrix.translate(0, 5 + gl_weaponOfsZ, 30 + gl_weaponOfsY);
+		}
+		else
+		{
+			DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
+			gl_RenderState.mModelMatrix.translate(pos.X, pos.Z + 40, pos.Y);
+			gl_RenderState.mModelMatrix.rotate(-playermo->Angles.Yaw.Degrees - 90, 0, 1, 0);
+		}
+
+
+		// Scaling model (y scale for a sprite means height, i.e. z in the world!).
+		gl_RenderState.mModelMatrix.scale(smf->xscale, smf->zscale, smf->yscale);
+
+		// Aplying model offsets (model offsets do not depend on model scalings).
+		gl_RenderState.mModelMatrix.translate(smf->xoffset / smf->xscale, smf->zoffset / smf->zscale, smf->yoffset / smf->yscale);
+
+		// [BB] Weapon bob, very similar to the normal Doom weapon bob.
+		gl_RenderState.mModelMatrix.rotate(ofsX / 4, 0, 1, 0);
+		gl_RenderState.mModelMatrix.rotate((ofsY - WEAPONTOP) / -4., 1, 0, 0);
+
+		// [BB] For some reason the jDoom models need to be rotated.
+		gl_RenderState.mModelMatrix.rotate(90.f, 0, 1, 0);
+
+		// Applying angleoffset, pitchoffset, rolloffset.
+		gl_RenderState.mModelMatrix.rotate(-smf->angleoffset, 0, 1, 0);
+		gl_RenderState.mModelMatrix.rotate(smf->pitchoffset, 0, 0, 1);
+		gl_RenderState.mModelMatrix.rotate(-smf->rolloffset, 1, 0, 0);
+		gl_RenderState.EnableModelMatrix(true);
+		gl_RenderState.EnableModelMatrix(false);
+		objectToWorldMatrix = gl_RenderState.mModelMatrix;
+	}
+	else
+	{
+		FModelRenderer::PrepareRenderHUDModel(playermo, smf, ofsX, ofsY, objectToWorldMatrix);
+	}
 }
 
 void FGLModelRenderer::BeginDrawModel(AActor *actor, FSpriteModelFrame *smf, const VSMatrix &objectToWorldMatrix, bool mirrored)
@@ -65,7 +125,7 @@ void FGLModelRenderer::BeginDrawModel(AActor *actor, FSpriteModelFrame *smf, con
 	if (!(actor->RenderStyle == LegacyRenderStyles[STYLE_Normal]) && !(smf->flags & MDL_DONTCULLBACKFACES))
 	{
 		glEnable(GL_CULL_FACE);
-		glFrontFace((mirrored ^ GLPortal::isMirrored()) ? GL_CCW : GL_CW);
+		glFrontFace((mirrored ^ GLRenderer->mPortalState.isMirrored()) ? GL_CCW : GL_CW);
 	}
 
 	gl_RenderState.mModelMatrix = objectToWorldMatrix;
@@ -91,7 +151,7 @@ void FGLModelRenderer::BeginDrawHUDModel(AActor *actor, const VSMatrix &objectTo
 	if (!(actor->RenderStyle == LegacyRenderStyles[STYLE_Normal]))
 	{
 		glEnable(GL_CULL_FACE);
-		glFrontFace((mirrored ^ GLPortal::isMirrored()) ? GL_CW : GL_CCW);
+		glFrontFace((mirrored ^ GLRenderer->mPortalState.isMirrored()) ? GL_CW : GL_CCW);
 	}
 
 	gl_RenderState.mModelMatrix = objectToWorldMatrix;
@@ -157,7 +217,7 @@ void FGLModelRenderer::DrawElements(int numIndices, size_t offset)
 //===========================================================================
 
 FModelVertexBuffer::FModelVertexBuffer(bool needindex, bool singleframe)
-	: FVertexBuffer(singleframe || !gl.legacyMode)
+	: FVertexBuffer(true)
 {
 	vbo_ptr = nullptr;
 	ibo_id = 0;
@@ -177,20 +237,11 @@ void FModelVertexBuffer::BindVBO()
 {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
-	if (!gl.legacyMode)
-	{
-		glEnableVertexAttribArray(VATTR_VERTEX);
-		glEnableVertexAttribArray(VATTR_TEXCOORD);
-		glEnableVertexAttribArray(VATTR_VERTEX2);
-		glEnableVertexAttribArray(VATTR_NORMAL);
-		glDisableVertexAttribArray(VATTR_COLOR);
-	}
-	else
-	{
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-		glDisableClientState(GL_COLOR_ARRAY);
-	}
+	glEnableVertexAttribArray(VATTR_VERTEX);
+	glEnableVertexAttribArray(VATTR_TEXCOORD);
+	glEnableVertexAttribArray(VATTR_VERTEX2);
+	glEnableVertexAttribArray(VATTR_NORMAL);
+	glDisableVertexAttribArray(VATTR_COLOR);
 }
 
 //===========================================================================
@@ -223,10 +274,7 @@ FModelVertex *FModelVertexBuffer::LockVertexBuffer(unsigned int size)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 		glBufferData(GL_ARRAY_BUFFER, size * sizeof(FModelVertex), nullptr, GL_STATIC_DRAW);
-		if (!gl.legacyMode)
-			return (FModelVertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, size * sizeof(FModelVertex), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-		else
-			return (FModelVertex*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		return (FModelVertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, size * sizeof(FModelVertex), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 	}
 	else
 	{
@@ -264,10 +312,7 @@ unsigned int *FModelVertexBuffer::LockIndexBuffer(unsigned int size)
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, size * sizeof(unsigned int), NULL, GL_STATIC_DRAW);
-		if (!gl.legacyMode)
-			return (unsigned int*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, size * sizeof(unsigned int), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-		else
-			return (unsigned int*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+		return (unsigned int*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, size * sizeof(unsigned int), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 	}
 	else
 	{
@@ -304,19 +349,10 @@ void FModelVertexBuffer::SetupFrame(FModelRenderer *renderer, unsigned int frame
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 	if (vbo_id > 0)
 	{
-		if (!gl.legacyMode)
-		{
-			glVertexAttribPointer(VATTR_VERTEX, 3, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame1].x);
-			glVertexAttribPointer(VATTR_TEXCOORD, 2, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame1].u);
-			glVertexAttribPointer(VATTR_VERTEX2, 3, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame2].x);
-			glVertexAttribPointer(VATTR_NORMAL, 4, GL_INT_2_10_10_10_REV, true, sizeof(FModelVertex), &VMO[frame2].packedNormal);
-		}
-		else
-		{
-			// only used for single frame models so there is no vertex2 here, which has no use without a shader.
-			glVertexPointer(3, GL_FLOAT, sizeof(FModelVertex), &VMO[frame1].x);
-			glTexCoordPointer(2, GL_FLOAT, sizeof(FModelVertex), &VMO[frame1].u);
-		}
+		glVertexAttribPointer(VATTR_VERTEX, 3, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame1].x);
+		glVertexAttribPointer(VATTR_TEXCOORD, 2, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame1].u);
+		glVertexAttribPointer(VATTR_VERTEX2, 3, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame2].x);
+		glVertexAttribPointer(VATTR_NORMAL, 4, GL_INT_2_10_10_10_REV, true, sizeof(FModelVertex), &VMO[frame2].packedNormal);
 	}
 	else if (frame1 == frame2 || size == 0 || gl_RenderState.GetInterpolationFactor() == 0.f)
 	{
@@ -337,28 +373,4 @@ void FModelVertexBuffer::SetupFrame(FModelRenderer *renderer, unsigned int frame
 			iBuffer[i].z = vbo_ptr[frame1 + i].z * (1.f - frac) + vbo_ptr[frame2 + i].z * frac;
 		}
 	}
-}
-
-//===========================================================================
-//
-// gl_RenderModel
-//
-//===========================================================================
-
-void gl_RenderModel(GLSprite * spr, int mli)
-{
-	FGLModelRenderer renderer(mli);
-	renderer.RenderModel(spr->x, spr->y, spr->z, spr->modelframe, spr->actor);
-}
-
-//===========================================================================
-//
-// gl_RenderHUDModel
-//
-//===========================================================================
-
-void gl_RenderHUDModel(DPSprite *psp, float ofsX, float ofsY, int mli)
-{
-	FGLModelRenderer renderer(mli);
-	renderer.RenderHUDModel(psp, ofsX, ofsY);
 }

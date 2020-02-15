@@ -42,15 +42,10 @@
 #include "r_data/models/models_ue1.h"
 #include "i_time.h"
 
-//TODO Remove gl_system.h
-#include "gl_load/gl_system.h"
-#include "gl/stereo3d/gl_stereo3d.h"
-#include "gl/renderer/gl_renderstate.h"
-#include "hwrenderer/utility/hw_cvars.h"
-
 #ifdef _MSC_VER
 #pragma warning(disable:4244) // warning C4244: conversion from 'double' to 'float', possible loss of data
 #endif
+#include <hwrenderer\scene\hw_drawinfo.h>
 
 CVAR(Bool, gl_interpolate_model_frames, true, CVAR_ARCHIVE)
 CVAR(Float, gl_weaponOfsY, 0.0f, CVAR_ARCHIVE)
@@ -62,7 +57,7 @@ extern TDeletingArray<FVoxelDef *> VoxelDefs;
 
 DeletingModelArray Models;
 
-void FModelRenderer::RenderModel(float x, float y, float z, FSpriteModelFrame *smf, AActor *actor)
+void FModelRenderer::RenderModel(float x, float y, float z, FSpriteModelFrame *smf, AActor *actor, double ticFrac)
 {
 	// Setup transformation.
 
@@ -136,7 +131,7 @@ void FModelRenderer::RenderModel(float x, float y, float z, FSpriteModelFrame *s
 	if (actor->renderflags & RF_INTERPOLATEANGLES)
 	{
 		// [Nash] use interpolated angles
-		DRotator Angles = actor->InterpolatedAngles(r_viewpoint.TicFrac);
+		DRotator Angles = actor->InterpolatedAngles(ticFrac);
 		angle = Angles.Yaw.Degrees;
 	}
 
@@ -196,82 +191,38 @@ void FModelRenderer::RenderHUDModel(DPSprite *psp, float ofsX, float ofsY)
 		return;
 
 	VSMatrix objectToWorldMatrix;
-	if (!s3d::Stereo3DMode::getCurrentMode().IsMono())
-	{
-		//TODO Remove gl_RenderState
-		gl_RenderState.AlphaFunc(GL_GEQUAL, gl_mask_sprite_threshold);
-		// [BB] Render the weapon in worldspace to confirm transforms are all correct
-		gl_RenderState.mModelMatrix.loadIdentity();
-		// Need to reset the normal matrix too
-		gl_RenderState.mNormalViewMatrix.loadIdentity();
-
-
-		if (s3d::Stereo3DMode::getCurrentMode().GetWeaponTransform(&gl_RenderState.mModelMatrix))
-		{
-			float scale = 0.01f;
-			gl_RenderState.mModelMatrix.scale(scale, scale, scale);
-			gl_RenderState.mModelMatrix.translate(0, 5 + gl_weaponOfsZ, 30 + gl_weaponOfsY);
-		}
-		else
-		{
-			DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
-			gl_RenderState.mModelMatrix.translate(pos.X, pos.Z + 40, pos.Y);
-			gl_RenderState.mModelMatrix.rotate(-playermo->Angles.Yaw.Degrees - 90, 0, 1, 0);
-		}
-
-
-		// Scaling model (y scale for a sprite means height, i.e. z in the world!).
-		gl_RenderState.mModelMatrix.scale(smf->xscale, smf->zscale, smf->yscale);
-
-		// Aplying model offsets (model offsets do not depend on model scalings).
-		gl_RenderState.mModelMatrix.translate(smf->xoffset / smf->xscale, smf->zoffset / smf->zscale, smf->yoffset / smf->yscale);
-
-		// [BB] Weapon bob, very similar to the normal Doom weapon bob.
-		gl_RenderState.mModelMatrix.rotate(ofsX / 4, 0, 1, 0);
-		gl_RenderState.mModelMatrix.rotate((ofsY - WEAPONTOP) / -4., 1, 0, 0);
-
-		// [BB] For some reason the jDoom models need to be rotated.
-		gl_RenderState.mModelMatrix.rotate(90.f, 0, 1, 0);
-
-		// Applying angleoffset, pitchoffset, rolloffset.
-		gl_RenderState.mModelMatrix.rotate(-smf->angleoffset, 0, 1, 0);
-		gl_RenderState.mModelMatrix.rotate(smf->pitchoffset, 0, 0, 1);
-		gl_RenderState.mModelMatrix.rotate(-smf->rolloffset, 1, 0, 0);
-		gl_RenderState.EnableModelMatrix(true);
-		this->RenderFrameModels(smf, psp->GetState(), psp->GetTics(), playermo->player->ReadyWeapon->GetClass(), 0);
-		gl_RenderState.EnableModelMatrix(false);
-		objectToWorldMatrix = gl_RenderState.mModelMatrix;
-	}
-	else
-	{
-		// The model position and orientation has to be drawn independently from the position of the player,
-		// but we need to position it correctly in the world for light to work properly.
-		objectToWorldMatrix = GetViewToWorldMatrix();
-
-		// Scaling model (y scale for a sprite means height, i.e. z in the world!).
-		objectToWorldMatrix.scale(smf->xscale, smf->zscale, smf->yscale);
-
-		// Aplying model offsets (model offsets do not depend on model scalings).
-		objectToWorldMatrix.translate(smf->xoffset / smf->xscale, smf->zoffset / smf->zscale, smf->yoffset / smf->yscale);
-
-		// [BB] Weapon bob, very similar to the normal Doom weapon bob.
-		objectToWorldMatrix.rotate(ofsX / 4, 0, 1, 0);
-		objectToWorldMatrix.rotate((ofsY - WEAPONTOP) / -4., 1, 0, 0);
-
-		// [BB] For some reason the jDoom models need to be rotated.
-		objectToWorldMatrix.rotate(90.f, 0, 1, 0);
-
-		// Applying angleoffset, pitchoffset, rolloffset.
-		objectToWorldMatrix.rotate(-smf->angleoffset, 0, 1, 0);
-		objectToWorldMatrix.rotate(smf->pitchoffset, 0, 0, 1);
-		objectToWorldMatrix.rotate(-smf->rolloffset, 1, 0, 0);
-	}
+	PrepareRenderHUDModel(playermo, smf, ofsX, ofsY, objectToWorldMatrix);
 
 	float orientation = smf->xscale * smf->yscale * smf->zscale;
 
 	BeginDrawHUDModel(playermo, objectToWorldMatrix, orientation < 0);
 	RenderFrameModels(smf, psp->GetState(), psp->GetTics(), playermo->player->ReadyWeapon->GetClass(), 0);
 	EndDrawHUDModel(playermo);
+}
+
+void FModelRenderer::PrepareRenderHUDModel(AActor* playermo, FSpriteModelFrame* smf, float ofsX, float ofsY, VSMatrix& objectToWorldMatrix)
+{
+	// The model position and orientation has to be drawn independently from the position of the player,
+		// but we need to position it correctly in the world for light to work properly.
+	objectToWorldMatrix = GetViewToWorldMatrix();
+
+	// Scaling model (y scale for a sprite means height, i.e. z in the world!).
+	objectToWorldMatrix.scale(smf->xscale, smf->zscale, smf->yscale);
+
+	// Aplying model offsets (model offsets do not depend on model scalings).
+	objectToWorldMatrix.translate(smf->xoffset / smf->xscale, smf->zoffset / smf->zscale, smf->yoffset / smf->yscale);
+
+	// [BB] Weapon bob, very similar to the normal Doom weapon bob.
+	objectToWorldMatrix.rotate(ofsX / 4, 0, 1, 0);
+	objectToWorldMatrix.rotate((ofsY - WEAPONTOP) / -4., 1, 0, 0);
+
+	// [BB] For some reason the jDoom models need to be rotated.
+	objectToWorldMatrix.rotate(90.f, 0, 1, 0);
+
+	// Applying angleoffset, pitchoffset, rolloffset.
+	objectToWorldMatrix.rotate(-smf->angleoffset, 0, 1, 0);
+	objectToWorldMatrix.rotate(smf->pitchoffset, 0, 0, 1);
+	objectToWorldMatrix.rotate(-smf->rolloffset, 1, 0, 0);
 }
 
 void FModelRenderer::RenderFrameModels(const FSpriteModelFrame *smf, const FState *curState, const int curTics, const PClass *ti, int translation)

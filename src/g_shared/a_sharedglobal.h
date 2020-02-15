@@ -145,10 +145,10 @@ public:
 	double m_RollIntensity, m_RollWave;
 
 	double GetModIntensity(double intensity, bool fake = false) const;
-	double GetModWave(double waveMultiplier) const;
+	double GetModWave(double ticFrac, double waveMultiplier) const;
 	double GetFalloff(double dist) const;
 
-	static int StaticGetQuakeIntensities(AActor *viewer, FQuakeJiggers &jiggers);
+	static int StaticGetQuakeIntensities(double ticFrac, AActor *viewer, FQuakeJiggers &jiggers);
 
 private:
 	DEarthquake ();
@@ -162,7 +162,7 @@ public:
 	void Tick ();
 	
 	void Serialize(FSerializer &arc);
-	void Die (AActor *source, AActor *inflictor, int dmgflags);
+	void Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOfDeath) override;
 	void OnDestroy() override;
 
 	TObjPtr<AActor*> UnmorphedMe;
