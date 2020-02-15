@@ -30,7 +30,7 @@
 #include <condition_variable>
 
 // Use multiple threads when drawing
-EXTERN_CVAR(Bool, r_multithreaded)
+EXTERN_CVAR(Int, r_multithreaded)
 
 class PolyTriangleThreadData;
 
@@ -95,10 +95,35 @@ public:
 	virtual ~DrawerCommand() { }
 
 	virtual void Execute(DrawerThread *thread) = 0;
-	virtual FString DebugInfo() = 0;
 };
 
-void VectoredTryCatch(void *data, void(*tryBlock)(void *data), void(*catchBlock)(void *data, const char *reason, bool fatal));
+// Wait for all worker threads before executing next command
+class GroupMemoryBarrierCommand : public DrawerCommand
+{
+public:
+	void Execute(DrawerThread *thread);
+
+private:
+	std::mutex mutex;
+	std::condition_variable condition;
+	size_t count = 0;
+};
+
+// Copy finished rows to video memory
+class MemcpyCommand : public DrawerCommand
+{
+public:
+	MemcpyCommand(void *dest, const void *src, int width, int height, int srcpitch, int pixelsize);
+	void Execute(DrawerThread *thread);
+
+private:
+	void *dest;
+	const void *src;
+	int width;
+	int height;
+	int srcpitch;
+	int pixelsize;
+};
 
 class DrawerCommandQueue;
 typedef std::shared_ptr<DrawerCommandQueue> DrawerCommandQueuePtr;
@@ -123,8 +148,8 @@ private:
 	void WorkerMain(DrawerThread *thread);
 
 	static DrawerThreads *Instance();
-	static void ReportDrawerError(DrawerCommand *command, bool worker_thread, const char *reason, bool fatal);
 	
+	std::mutex threads_mutex;
 	std::vector<DrawerThread> threads;
 
 	std::mutex start_mutex;
@@ -157,7 +182,7 @@ public:
 	void Push(Types &&... args)
 	{
 		DrawerThreads *threads = DrawerThreads::Instance();
-		if (ThreadedRender && r_multithreaded)
+		if (r_multithreaded != 0)
 		{
 			void *ptr = AllocMemory(sizeof(T));
 			T *command = new (ptr)T(std::forward<Types>(args)...);
@@ -169,8 +194,6 @@ public:
 			command.Execute(&threads->single_core_thread);
 		}
 	}
-	
-	bool ThreadedRender = true;
 	
 private:
 	// Allocate memory valid for the duration of a command execution

@@ -1180,7 +1180,7 @@ struct TAngle
 
 	TAngle &operator= (double other)
 	{
-		Degrees = (vec_t)other;
+		Degrees = (decltype(Degrees))other;
 		return *this;
 	}
 

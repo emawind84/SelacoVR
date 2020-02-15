@@ -214,6 +214,12 @@ public:
 	long LastIndexOfAny (const FString &charset, long endIndex) const;
 	long LastIndexOfAny (const char *charset, long endIndex) const;
 
+	long RIndexOf (const FString &substr) const;
+	long RIndexOf (const FString &substr, long endIndex) const;
+	long RIndexOf (const char *substr) const;
+	long RIndexOf (const char *substr, long endIndex) const;
+	long RIndexOf (const char *substr, long endIndex, size_t substrlen) const;
+
 	void ToUpper ();
 	void ToLower ();
 	void SwapCase ();
@@ -454,7 +460,6 @@ namespace StringFormat
 inline FName::FName(const FString &text) { Index = NameData.FindName (text.GetChars(), text.Len(), false); }
 inline FName::FName(const FString &text, bool noCreate) { Index = NameData.FindName (text.GetChars(), text.Len(), noCreate); }
 inline FName &FName::operator = (const FString &text) { Index = NameData.FindName (text.GetChars(), text.Len(), false); return *this; }
-inline FName &FNameNoInit::operator = (const FString &text) { Index = NameData.FindName (text.GetChars(), text.Len(), false); return *this; }
 
 // Hash FStrings on their contents. (used by TMap)
 extern unsigned int SuperFastHash (const char *data, size_t len);
@@ -464,4 +469,3 @@ template<> struct THashTraits<FString>
 	// Compares two keys, returning zero if they are the same.
 	int Compare(const FString &left, const FString &right) { return left.Compare(right); }
 };
-

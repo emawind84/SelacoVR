@@ -78,3 +78,4 @@ config.h
 /src/gl/unused
 /mapfiles_release/*.map
 .DS_Store
+/build_vc2017-32

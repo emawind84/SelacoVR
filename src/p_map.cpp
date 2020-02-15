@@ -92,8 +92,8 @@
 #include "r_sky.h"
 #include "g_levellocals.h"
 #include "actorinlines.h"
+#include <hwrenderer\utility\hw_vrmodes.h>
 
-#include "gl/stereo3d/gl_stereo3d.h"
 
 CVAR(Bool, cl_bloodsplats, true, CVAR_ARCHIVE)
 CVAR(Int, sv_smartaim, 0, CVAR_ARCHIVE | CVAR_SERVERINFO)
@@ -4486,7 +4486,7 @@ DEFINE_ACTION_FUNCTION(AActor, AimLineAttack)
 struct Origin
 {
 	AActor *Caller;
-	FNameNoInit PuffSpecies;
+	FName PuffSpecies;
 	bool hitGhosts;
 	bool MThruSpecies;
 	bool ThruSpecies;
@@ -4644,7 +4644,8 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 
 
 	DVector3 tempos;
-	if (s3d::Stereo3DMode::getCurrentMode().IsMono())
+	auto vrmode = VRMode::GetVRMode(true);
+	if (vrmode->mEyeCount == 1)
 	{
 		// [MC] Check the flags and set the position according to what is desired.
 		// LAF_ABSPOSITION: Treat the offset parameters as direct coordinates.
@@ -5101,6 +5102,7 @@ AActor *P_LinePickActor(AActor *t1, DAngle angle, double distance, DAngle pitch,
 	TData.MThruSpecies = false;
 	TData.ThruActors = false;
 	TData.ThruSpecies = false;
+	TData.PuffSpecies = NAME_None;
 	
 	if (Trace(t1->PosAtZ(shootz), t1->Sector, direction, distance,
 		actorMask, wallMask, t1, trace, TRACE_NoSky | TRACE_PortalRestrict, CheckForActor, &TData))
@@ -5318,7 +5320,7 @@ struct RailData
 	AActor *Caller;
 	TArray<SRailHit> RailHits;
 	TArray<SPortalHit> PortalHits;
-	FNameNoInit PuffSpecies;
+	FName PuffSpecies;
 	bool StopAtOne;
 	bool StopAtInvul;
 	bool ThruGhosts;

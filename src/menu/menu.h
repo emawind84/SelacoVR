@@ -121,7 +121,7 @@ class DMenuDescriptor : public DObject
 {
 	DECLARE_CLASS(DMenuDescriptor, DObject)
 public:
-	FName mMenuName;
+	FName mMenuName = NAME_None;
 	FString mNetgameMessage;
 	PClass *mClass = nullptr;
 	bool mProtected = false;
@@ -287,7 +287,7 @@ class DMenuItemBase : public DObject
 	DECLARE_CLASS(DMenuItemBase, DObject)
 public:
 	double mXpos, mYpos;
-	FNameNoInit mAction;
+	FName mAction;
 	bool mEnabled;
 
 	bool Activate();
@@ -336,14 +336,13 @@ void M_Init (void);
 void M_CreateMenus();
 void M_ActivateMenu(DMenu *menu);
 void M_ClearMenus ();
+void M_PreviousMenu ();
 void M_ParseMenuDefs();
 void M_StartupSkillMenu(FGameStartup *gs);
 void M_StartControlPanel (bool makeSound);
 void M_SetMenu(FName menu, int param = -1);
 void M_StartMessage(const char *message, int messagemode, FName action = NAME_None);
 DMenu *StartPickerMenu(DMenu *parent, const char *name, FColorCVar *cvar);
-void M_RefreshModesList ();
-void M_InitVideoModesMenu ();
 void M_MarkMenus();
 
 

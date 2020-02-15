@@ -154,14 +154,18 @@ bool FState::CallAction(AActor *self, AActor *stateowner, FStateParamInfo *info,
 		catch (CVMAbortException &err)
 		{
 			err.MaybePrintMessage();
-			const char *callinfo = "";
-			if (info != nullptr && info->mStateType == STATE_Psprite)
+
+			if (stateowner != nullptr)
 			{
-				if (stateowner->IsKindOf(NAME_Weapon) && stateowner != self) callinfo = "weapon ";
-				else callinfo = "overlay ";
+				const char *callinfo = "";
+				if (info != nullptr && info->mStateType == STATE_Psprite)
+				{
+					if (stateowner->IsKindOf(NAME_Weapon) && stateowner != self) callinfo = "weapon ";
+					else callinfo = "overlay ";
+				}
+				err.stacktrace.AppendFormat("Called from %sstate %s in %s\n", callinfo, FState::StaticGetStateName(this).GetChars(), stateowner->GetClass()->TypeName.GetChars());
 			}
-			err.stacktrace.AppendFormat("Called from %sstate %s in %s\n", callinfo, FState::StaticGetStateName(this).GetChars(), stateowner->GetClass()->TypeName.GetChars());
-			throw;
+
 			throw;
 		}
 
@@ -404,7 +408,7 @@ void PClassActor::RegisterIDs()
 
 PClassActor *PClassActor::GetReplacement(bool lookskill)
 {
-	FName skillrepname;
+	FName skillrepname = NAME_None;
 	
 	if (lookskill && AllSkills.Size() > (unsigned)gameskill)
 	{
@@ -460,7 +464,7 @@ DEFINE_ACTION_FUNCTION(AActor, GetReplacement)
 
 PClassActor *PClassActor::GetReplacee(bool lookskill)
 {
-	FName skillrepname;
+	FName skillrepname = NAME_None;
 	
 	if (lookskill && AllSkills.Size() > (unsigned)gameskill)
 	{

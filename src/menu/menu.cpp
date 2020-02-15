@@ -105,7 +105,6 @@ static bool		MenuEnabled = true;
 DMenu			*CurrentMenu;
 int				MenuTime;
 
-void M_InitVideoModes();
 extern PClass *DefaultListMenuClass;
 extern PClass *DefaultOptionMenuClass;
 
@@ -437,7 +436,6 @@ void M_SetMenu(FName menu, int param)
 		}
 
 	case NAME_VideoModeMenu:
-		M_InitVideoModes();
 		break;
 
 	case NAME_Quitmenu:
@@ -855,6 +853,22 @@ void M_ClearMenus()
 //
 //=============================================================================
 
+void M_PreviousMenu()
+{
+	if (CurrentMenu != nullptr)
+	{
+		DMenu* parent = CurrentMenu->mParentMenu;
+		CurrentMenu->Destroy();
+		CurrentMenu = parent;
+	}
+}
+
+//=============================================================================
+//
+//
+//
+//=============================================================================
+
 void M_Init (void) 
 {
 	try
@@ -1032,6 +1046,11 @@ CCMD (openmenu)
 CCMD (closemenu)
 {
 	M_ClearMenus();
+}
+
+CCMD (prevmenu)
+{
+	M_PreviousMenu();
 }
 
 //

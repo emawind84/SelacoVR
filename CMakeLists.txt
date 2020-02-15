@@ -203,9 +203,9 @@ if( MSVC )
 	# Avoid CRT DLL dependancies in release builds, optionally generate assembly output for checking crash locations.
 	option( ZDOOM_GENERATE_ASM "Generate assembly output." OFF )
 	if( ZDOOM_GENERATE_ASM )
-		set( REL_C_FLAGS "/MT /Oy /Oi /FAcs" )
+		set( REL_C_FLAGS "/MT /Oy /Oi /FAcs /GS-" )
 	else()
-		set( REL_C_FLAGS "/MT /Oy /Oi" )
+		set( REL_C_FLAGS "/MT /Oy /Oi /GS-" )
 	endif()
 
 	
@@ -244,7 +244,7 @@ else()
 			# If we're compiling with a custom GCC on the Mac (which we know since g++-4.2 doesn't support C++11) statically link libgcc.
 			set( ALL_C_FLAGS "-static-libgcc" )
 		endif()
-	else()
+	elseif( NOT MINGW )
 		# Generic GCC/Clang requires position independent executable to be enabled explicitly
 		set( ALL_C_FLAGS "${ALL_C_FLAGS} -fPIE" )
 		set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie" )

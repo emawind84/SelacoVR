@@ -402,6 +402,7 @@ enum ActorFlag8
 	MF8_FRIGHTENING		= 0x00000001,	// for those moments when halloween just won't do
 	MF8_INSCROLLSEC		= 0x00000002,	// actor is partially inside a scrolling sector
 	MF8_BLOCKASPLAYER	= 0x00000004,	// actor is blocked by player-blocking lines even if not a player
+	MF8_DONTFACETALKER	= 0x00000008,	// don't alter the angle to face the player in conversations
 };
 
 // --- mobj.renderflags ---
@@ -690,8 +691,8 @@ public:
 	void CallDeactivate(AActor *activator);
 
 	// Called when actor dies
-	virtual void Die (AActor *source, AActor *inflictor, int dmgflags = 0);
-	void CallDie(AActor *source, AActor *inflictor, int dmgflags = 0);
+	virtual void Die (AActor *source, AActor *inflictor, int dmgflags = 0, FName MeansOfDeath = NAME_None);
+	void CallDie(AActor *source, AActor *inflictor, int dmgflags = 0, FName MeansOfDeath = NAME_None);
 
 	// Perform some special damage action. Returns the amount of damage to do.
 	// Returning -1 signals the damage routine to exit immediately
@@ -807,7 +808,7 @@ public:
 	void ObtainInventory (AActor *other);
 
 	// Die. Now.
-	bool Massacre ();
+	virtual bool Massacre ();
 
 	// Transforms the actor into a finely-ground paste
 	virtual bool Grind(bool items);
@@ -1139,7 +1140,7 @@ public:
 	uint8_t			WeaveIndexZ;
 	int				skillrespawncount;
 	int				TIDtoHate;			// TID of things to hate (0 if none)
-	FNameNoInit		Species;		// For monster families
+	FName		Species;		// For monster families
 	TObjPtr<AActor*>	alternative;	// (Un)Morphed actors stored here. Those with the MF_UNMORPHED flag are the originals.
 	TObjPtr<AActor*>	tracer;			// Thing being chased/attacked for tracers
 	TObjPtr<AActor*>	master;			// Thing which spawned this one (prevents mutual attacks)
@@ -1184,12 +1185,12 @@ public:
 	DAngle			ThrustAngleOffset; //For VR: offset thrust angles by this amount
 
 	int PoisonDamage; // Damage received per tic from poison.
-	FNameNoInit PoisonDamageType; // Damage type dealt by poison.
+	FName PoisonDamageType; // Damage type dealt by poison.
 	int PoisonDuration; // Duration left for receiving poison damage.
 	int PoisonPeriod; // How often poison damage is applied. (Every X tics.)
 
 	int PoisonDamageReceived; // Damage received per tic from poison.
-	FNameNoInit PoisonDamageTypeReceived; // Damage type received by poison.
+	FName PoisonDamageTypeReceived; // Damage type received by poison.
 	int PoisonDurationReceived; // Duration left for receiving poison damage.
 	int PoisonPeriodReceived; // How often poison damage is applied. (Every X tics.)
 	TObjPtr<AActor*> Poisoner; // Last source of received poison damage.
@@ -1229,13 +1230,13 @@ public:
 	int32_t Mass;
 	int16_t PainChance;
 	int PainThreshold;
-	FNameNoInit DamageType;
-	FNameNoInit DamageTypeReceived;
+	FName DamageType;
+	FName DamageTypeReceived;
 	double DamageFactor;
 	double DamageMultiply;
 
-	FNameNoInit PainType;
-	FNameNoInit DeathType;
+	FName PainType;
+	FName DeathType;
 	PClassActor *TeleFogSourceType;
 	PClassActor *TeleFogDestType;
 	int RipperLevel;

@@ -259,10 +259,13 @@ void level_info_t::Reset()
 	compatflags = compatflags2 = 0;
 	compatmask = compatmask2 = 0;
 	Translator = "";
-	RedirectType = 0;
+	RedirectType = NAME_None;
 	RedirectMapName = "";
 	EnterPic = "";
 	ExitPic = "";
+	Intermission = NAME_None;
+	deathsequence = NAME_None;
+	slideshow = NAME_None;
 	InterMusic = "";
 	intermusicorder = 0;
 	SoundInfo = "";
@@ -557,7 +560,7 @@ void FMapInfoParser::SkipToNext()
 
 void FMapInfoParser::CheckEndOfFile(const char *block)
 {
-	if (format_type == FMT_New && !sc.Compare("}"))
+	if (format_type == FMT_New && sc.End)
 	{
 		sc.ScriptError("Unexpected end of file in %s definition", block);
 	}
