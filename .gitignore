@@ -66,6 +66,8 @@
 *.cmd
 */*/debug
 */*/*/debug
+*/*/release
+*/*/*/release
 .vs
 *.sln
 zcc*
