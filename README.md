@@ -1,4 +1,4 @@
-# GZDoom VR 
+# GZDoom-VR 
 Based on gz3doom (http://rotatingpenguin.com/gz3doom/) and OpenVr Doom https://github.com/Fishbiter/gz3doom.
 The aim of this fork is to update base GZDoom version.
 
@@ -19,7 +19,7 @@ openvr_rightHanded - set to 0 for left hand
 
 openvr_weaponRotate - A pitch to change how weapons sit in the hand.
 
-openvr_scale - Number of doom units in a metre. gz3doom has this set to 27, but I found 30 more comfortable.
+openvr_scale - Number of doom units in a metre. The default is 30.
 
 #
 Copyright (c) 1998-2019 ZDoom + GZDoom teams, and contributors
