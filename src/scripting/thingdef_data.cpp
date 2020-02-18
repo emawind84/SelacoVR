@@ -318,6 +318,7 @@ static FFlagDef ActorFlagDefs[]=
 	DEFINE_FLAG(MF8, FRIGHTENING, AActor, flags8),
 	DEFINE_FLAG(MF8, BLOCKASPLAYER, AActor, flags8),
 	DEFINE_FLAG(MF8, DONTFACETALKER, AActor, flags8),
+	DEFINE_FLAG(MF8, HITOWNER, AActor, flags8),
 
 	// Effect flags
 	DEFINE_FLAG(FX, VISIBILITYPULSE, AActor, effects),
@@ -1269,7 +1270,7 @@ DEFINE_ACTION_FUNCTION(FStringStruct, LastIndexOf)
 	PARAM_SELF_STRUCT_PROLOGUE(FString);
 	PARAM_STRING(substr);
 	PARAM_INT_DEF(endIndex);
-	ACTION_RETURN_INT(self->LastIndexOf(substr, endIndex));
+	ACTION_RETURN_INT(self->LastIndexOfBroken(substr, endIndex));
 }
 
 DEFINE_ACTION_FUNCTION(FStringStruct, RightIndexOf)
@@ -1277,7 +1278,7 @@ DEFINE_ACTION_FUNCTION(FStringStruct, RightIndexOf)
 	PARAM_SELF_STRUCT_PROLOGUE(FString);
 	PARAM_STRING(substr);
 	PARAM_INT_DEF(endIndex);
-	ACTION_RETURN_INT(self->RIndexOf(substr, endIndex));
+	ACTION_RETURN_INT(self->LastIndexOf(substr, endIndex));
 }
 
 DEFINE_ACTION_FUNCTION(FStringStruct, ToUpper)

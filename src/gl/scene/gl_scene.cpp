@@ -50,6 +50,7 @@
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/renderer/gl_renderbuffers.h"
 #include "gl/data/gl_vertexbuffer.h"
+#include "gl/data/gl_viewpointbuffer.h"
 #include "hwrenderer/scene/hw_clipper.h"
 #include "hwrenderer/scene/hw_portal.h"
 #include "gl/scene/gl_drawinfo.h"
@@ -76,19 +77,7 @@ EXTERN_CVAR (Bool, r_drawvoxels)
 void FDrawInfo::ApplyVPUniforms()
 {
 	VPUniforms.CalcDependencies();
-	GLRenderer->mShaderManager->ApplyMatrices(&VPUniforms, gl_RenderState.GetPassType());
-
-	if (!(gl.flags & RFL_NO_CLIP_PLANES))
-	{
-		if (VPUniforms.mClipHeightDirection != 0.f || VPUniforms.mClipLine.X > -10000000.0f)
-		{
-			glEnable(GL_CLIP_DISTANCE0);
-		}
-		else
-		{
-			glDisable(GL_CLIP_DISTANCE0);
-		}
-	}
+	vpIndex = GLRenderer->mViewpoints->SetViewpoint(&VPUniforms);
 }
 
 
@@ -343,7 +332,7 @@ void FDrawInfo::DrawScene(int drawmode, sector_t * viewsector)
 		GLRenderer->mBuffers->BindSceneFB(true);
 		gl_RenderState.EnableDrawBuffers(gl_RenderState.GetPassDrawBufferCount());
 		gl_RenderState.Apply();
-		ApplyVPUniforms();
+		GLRenderer->mViewpoints->Bind(vpIndex);
 	}
 
 	// Handle all portals after rendering the opaque objects but before
@@ -389,9 +378,10 @@ void FDrawInfo::DrawEndScene2D(sector_t * viewsector)
 	const bool renderHUDModel = IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
 	auto vrmode = VRMode::GetVRMode(true);
 
-	VPUniforms.mViewMatrix.loadIdentity();
-	VPUniforms.mProjectionMatrix = vrmode->GetHUDSpriteProjection();
-	ApplyVPUniforms();
+	HWViewpointUniforms vp = VPUniforms;
+	vp.mViewMatrix.loadIdentity();
+	vp.mProjectionMatrix = vrmode->GetHUDSpriteProjection();
+	GLRenderer->mViewpoints->SetViewpoint(&vp);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_MULTISAMPLE);
 
@@ -508,6 +498,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 
 		if (mainview)
 		{
+			PostProcess.Clock();
 			if (toscreen) di->EndDrawScene(mainvp.sector); // do not call this for camera textures.
 
 			if (gl_RenderState.GetPassType() == GBUFFER_PASS) // Turn off ssao draw buffers
@@ -526,6 +517,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 			BlendInfo blendinfo;
 			screen->FillBlend(mainvp.sector, blendinfo);
 			GLRenderer->DrawBlend(blendinfo);
+			PostProcess.Unclock();
 		}
 		di->EndDrawInfo();
 		if (vrmode->mEyeCount > 1)

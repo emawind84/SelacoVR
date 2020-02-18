@@ -1158,6 +1158,14 @@ AInventory *AActor::DropInventory (AInventory *item, int amt)
 	drop->Vel += Vel;
 	drop->flags &= ~MF_NOGRAVITY;	// Don't float
 	drop->ClearCounters();	// do not count for statistics again
+	{
+		// [MK] call OnDrop so item can change its drop behaviour
+		IFVIRTUALPTR(drop, AInventory, OnDrop)
+		{
+			VMValue params[] = { drop, this };
+			VMCall(func, params, 2, nullptr, 0);
+		}
+	}
 	return drop;
 }
 
@@ -2345,7 +2353,6 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 {
 	static int pushtime = 0;
 	bool bForceSlide = !scroll.isZero();
-	DAngle Angle;
 	DVector2 ptry;
 	player_t *player;
 	DVector2 move;
@@ -7783,6 +7790,13 @@ void AActor::Revive()
 
 	// [ZZ] resurrect hook
 	E_WorldThingRevived(this);
+}
+
+DEFINE_ACTION_FUNCTION(AActor, Revive)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	self->Revive();
+	return 0;
 }
 
 int AActor::GetGibHealth() const
