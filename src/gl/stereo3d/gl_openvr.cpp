@@ -282,6 +282,7 @@ public:
 
 		vbuf->UnlockVertexBuffer();
 		vbuf->UnlockIndexBuffer();
+		SetVertexBuffer(renderer, vbuf);
 	}
 
 	virtual void AddSkins(uint8_t *hitlist) override 

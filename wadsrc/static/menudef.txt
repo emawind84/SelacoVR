@@ -2383,14 +2383,15 @@ OptionValue "Sprites3DMode"
 OptionMenu "OpenVROptions" protected
 {
 	Title "$VRPREFMNU" 
-	Option "$VRPREFMNU_HANDED", 			openvr_rightHanded,					"LeftRight"
-	Option "$VRPREFMNU_MOVEFOLLOW", 			openvr_moveFollowsOffHand,					"HeadHand"
+	Option "$VRPREFMNU_HANDED", 				openvr_rightHanded,						"LeftRight"
+	Option "$VRPREFMNU_MOVEFOLLOW", 			openvr_moveFollowsOffHand,				"HeadHand"
 	Slider "$VRPREFMNU_WEAPONANGLE", 			openvr_weaponRotate,					-180, 180, 1, 0
-	Slider "$VRPREFMNU_WORLDSCALE",			vr_vunits_per_meter,						1, 60, 1, 0
+	Slider "$VRPREFMNU_WORLDSCALE",				vr_vunits_per_meter,					1, 60, 1, 0
 	Slider "$VRPREFMNU_FLOOROFFSET",			vr_floor_offset,						-10, 10, 0.1, 0
-	Option "$VRPREFMNU_SPRITEWEAPON3D",			r_PlayerSprites3DMode,				"Sprites3DMode"
+	Option "$VRPREFMNU_SPRITEWEAPON3D",			r_PlayerSprites3DMode,					"Sprites3DMode"
 	Slider "$VRPREFMNU_FATITEMWIDTH",			gl_fatItemWidth,						0, 1, 0.05, 0
 	Slider "$VRPREFMNU_WEAPONSCALE",			openvr_weaponScale,						0, 10, 0.2, 0
+	Option "$VRPREFMNU_DRAWCONTROLLERS",		openvr_drawControllers,					"OnOff"
 }
 OptionMenu "ReverbEdit" protected
 {
