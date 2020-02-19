@@ -2,6 +2,7 @@
 #include "d_event.h"
 #include "i_input.h"
 #include "openvr_include.h"
+#include <menu\menu.h>
 
 using namespace openvr;
 
@@ -86,14 +87,18 @@ public:
 
 	float GetAxisValue(int i, VRControllerState_t& offState, VRControllerState_t& onState)
 	{
-		VRControllerState_t& state = Hands[i] == ON ? onState : offState;
-		int axis = Sources[i] == PAD ? s3d::OpenVR_GetTouchPadAxis() : s3d::OpenVR_GetJoystickAxis();
-		if (axis != -1)
+		//joysticks should be disabled while menu is shown, otherwise player moves while scrolling menu
+		if (CurrentMenu == nullptr)
 		{
-			float value = AxisSources[i] == X ? -state.rAxis[axis].x : state.rAxis[axis].y;
-			if (fabsf(value) > Axes[i].DeadZone)
+			VRControllerState_t& state = Hands[i] == ON ? onState : offState;
+			int axis = Sources[i] == PAD ? s3d::OpenVR_GetTouchPadAxis() : s3d::OpenVR_GetJoystickAxis();
+			if (axis != -1)
 			{
-				return value * Axes[i].Multiplier * Multiplier;
+				float value = AxisSources[i] == X ? -state.rAxis[axis].x : state.rAxis[axis].y;
+				if (fabsf(value) > Axes[i].DeadZone)
+				{
+					return value * Axes[i].Multiplier * Multiplier;
+				}
 			}
 		}
 		return 0.0f;
