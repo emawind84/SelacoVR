@@ -68,7 +68,7 @@ struct VRMode
 	virtual void SetUp() const {};
 	virtual void TearDown() const {};
 
-	virtual bool IsMono() const { return false; }
+	virtual bool IsVR() const { return false; }
 	virtual void AdjustPlayerSprites(FDrawInfo *di) const {};
 	virtual void UnAdjustPlayerSprites() const {};
 	virtual void AdjustCrossHair() const {}

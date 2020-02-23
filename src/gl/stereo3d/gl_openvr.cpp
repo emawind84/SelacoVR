@@ -720,7 +720,7 @@ void OpenVREyePose::AdjustHud() const
 			false,
 			0.0);
 		di->ApplyVPUniforms();
-		GLRenderer->Draw2D(openVrMode->crossHairDrawer);
+		GLRenderer->Draw2D(openVrMode->crossHairDrawer, true);
 	}
 
 	// Update HUD matrix to render on a separate quad
@@ -737,6 +737,10 @@ void OpenVREyePose::AdjustHud() const
 
 void OpenVREyePose::AdjustBlend(FDrawInfo *di) const
 {
+	if (di == nullptr)
+	{
+		di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
+	}
 	VSMatrix& proj = di->VPUniforms.mProjectionMatrix;
 	proj.loadIdentity();
 	proj.translate(-1, 1, 0);

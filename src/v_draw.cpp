@@ -1194,7 +1194,7 @@ void DFrameBuffer::DoDim(PalEntry color, float amount, int x1, int y1, int w, in
 	{
 		amount = 1;
 	}
-	m2DDrawer.AddColorOnlyQuad(x1, y1, w, h, (color.d & 0xffffff) | (int(amount * 255) << 24), style);
+	m2DDrawer.AddColorOnlyQuad(x1, y1, w, h, (color.d & 0xffffff) | (int(amount * 255) << 24), style, true);
 }
 
 void DFrameBuffer::Dim(PalEntry color, float damount, int x1, int y1, int w, int h, FRenderStyle *style)
@@ -1508,6 +1508,10 @@ void DFrameBuffer::FillBlend(sector_t * viewsector, BlendInfo &blendinfo)
 		if (color != 0xffffffff)
 		{
 			screen->Dim(color, 1, 0, 0, screen->GetWidth(), screen->GetHeight(), &LegacyRenderStyles[STYLE_Multiply]);
+			//color = (color.d & 0xffffff) | (int(1 * 255) << 24);
+			int cnt = color.a;
+			cnt = (int)(cnt * underwater_fade_scalar);
+			//V_AddBlend(color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.0f / 2, blend);
 		}
 	}
 

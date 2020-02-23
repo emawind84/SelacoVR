@@ -141,6 +141,7 @@ void FGLRenderer::Flush()
 	}
 	else
 	{
+	
 		vrmode->AdjustViewport(screen);
 		const auto& mSceneViewport = screen->mSceneViewport;
 		const auto& mScreenViewport = screen->mScreenViewport;
@@ -156,8 +157,13 @@ void FGLRenderer::Flush()
 			mBuffers->BindEyeFB(eye_ix);
 			glViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
 			glScissor(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
+			if (vrmode->IsVR())
+			{
+				vrmode->mEyes[eye_ix]->AdjustBlend(nullptr);
+				screen->Draw2D(true);
+			}
 			vrmode->mEyes[eye_ix]->AdjustHud();
-			screen->Draw2D();
+			screen->Draw2D(false);
 			FGLDebug::PopGroup();
 		}
 		screen->Clear2D();
@@ -169,6 +175,7 @@ void FGLRenderer::Flush()
 		vrmode->Present();
 		FGLDebug::PopGroup();
 		if (is2D) vrmode->TearDown();
+		
 	}
 }
 
@@ -180,7 +187,7 @@ void FGLRenderer::Flush()
 
 void FGLRenderer::CopyToBackbuffer(const IntRect *bounds, bool applyGamma)
 {
-	screen->Draw2D();	// draw all pending 2D stuff before copying the buffer
+	screen->Draw2D(false);	// draw all pending 2D stuff before copying the buffer
 	screen->Clear2D();
 
 	mCustomPostProcessShaders->Run("screen");

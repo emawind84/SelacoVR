@@ -499,7 +499,7 @@ public:
 	void SetClipRect(int x, int y, int w, int h);
 	void GetClipRect(int *x, int *y, int *w, int *h);
 
-	virtual void Draw2D() {}
+	virtual void Draw2D(bool outside2D = false) {}
 	void Clear2D() { m2DDrawer.Clear(); }
 
 	// Dim part of the canvas

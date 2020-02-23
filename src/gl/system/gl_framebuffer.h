@@ -54,7 +54,7 @@ public:
 
 	void SetVSync(bool vsync);
 
-	void Draw2D() override;
+	void Draw2D(bool outside2D = false) override;
 	void PostProcessScene(int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D) override;
 
 	bool HWGammaActive = false;			// Are we using hardware or software gamma?

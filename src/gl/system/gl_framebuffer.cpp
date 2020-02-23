@@ -474,9 +474,9 @@ void OpenGLFrameBuffer::GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, 
 //
 //===========================================================================
 
-void OpenGLFrameBuffer::Draw2D()
+void OpenGLFrameBuffer::Draw2D(bool outside2D)
 {
-	if (GLRenderer != nullptr) GLRenderer->Draw2D(&m2DDrawer);
+	if (GLRenderer != nullptr) GLRenderer->Draw2D(&m2DDrawer, outside2D);
 }
 
 void OpenGLFrameBuffer::PostProcessScene(int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D)

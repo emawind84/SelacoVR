@@ -103,6 +103,8 @@ public:
 		PalEntry mColor1;	// Overlay color
 		ETextureDrawMode mDrawMode;
 		uint8_t mFlags;
+		//When a render command should run in VR on the whole screen, not just center qued used for 2D rendering. Used e.g. for nightvision
+		bool mOutside2D = false;
 
 		RenderCommand()
 		{
@@ -143,7 +145,7 @@ public:
 		DAngle rotation, const FColormap &colormap, PalEntry flatcolor, int lightlevel);
 	void AddFlatFill(int left, int top, int right, int bottom, FTexture *src, bool local_origin);
 
-	void AddColorOnlyQuad(int left, int top, int width, int height, PalEntry color, FRenderStyle *style);
+	void AddColorOnlyQuad(int left, int top, int width, int height, PalEntry color, FRenderStyle *style, bool outside2D = false);
 
 	void AddDim(PalEntry color, float damount, int x1, int y1, int w, int h);
 	void AddClear(int left, int top, int right, int bottom, int palcolor, uint32_t color);
