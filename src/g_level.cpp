@@ -830,6 +830,12 @@ void	G_DoCompleted (void)
 	// Close the conversation menu if open.
 	P_FreeStrifeConversations ();
 
+	S_StopAllChannels();
+	for (auto Level : AllLevels())
+	{
+		SN_StopAllSequences(Level);
+	}
+
 	if (level.DoCompleted(nextlevel, wminfo))
 	{
 		gamestate = GS_INTERMISSION;
