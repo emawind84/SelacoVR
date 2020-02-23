@@ -1508,10 +1508,6 @@ void DFrameBuffer::FillBlend(sector_t * viewsector, BlendInfo &blendinfo)
 		if (color != 0xffffffff)
 		{
 			screen->Dim(color, 1, 0, 0, screen->GetWidth(), screen->GetHeight(), &LegacyRenderStyles[STYLE_Multiply]);
-			//color = (color.d & 0xffffff) | (int(1 * 255) << 24);
-			int cnt = color.a;
-			cnt = (int)(cnt * underwater_fade_scalar);
-			//V_AddBlend(color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.0f / 2, blend);
 		}
 	}
 
