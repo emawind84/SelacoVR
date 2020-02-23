@@ -162,12 +162,13 @@ void FGLRenderer::Flush()
 
 			//Only adjust HUD if we are 3D and not showing menu (otherwise we are rendering to a cylinder compositor layer)
 			vrmode->mEyes[eye_ix]->AdjustBlend(nullptr);
+			screen->Draw2D(true);
 			if (!is2D && !getMenuState())
 			{
 				vrmode->mEyes[eye_ix]->AdjustHud();
 			}
 
-			screen->Draw2D();
+			screen->Draw2D(false);
 			FGLDebug::PopGroup();
 		}
 		screen->Clear2D();
@@ -190,7 +191,7 @@ void FGLRenderer::Flush()
 
 void FGLRenderer::CopyToBackbuffer(const IntRect *bounds, bool applyGamma)
 {
-	screen->Draw2D();	// draw all pending 2D stuff before copying the buffer
+	screen->Draw2D(false);	// draw all pending 2D stuff before copying the buffer
 	screen->Clear2D();
 
 	mCustomPostProcessShaders->Run("screen");

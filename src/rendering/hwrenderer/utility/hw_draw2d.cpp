@@ -91,7 +91,7 @@ public:
 
 CVAR(Bool, gl_aalines, false, CVAR_ARCHIVE) 
 
-void Draw2D(F2DDrawer *drawer, FRenderState &state)
+void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 {
 	twoD.Clock();
 
@@ -127,6 +127,14 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state)
 
 	for(auto &cmd : commands)
 	{
+		if (vrmode->IsVR())
+		{
+			if (cmd.mOutside2D && !outside2D)
+				continue;
+
+			if (!cmd.mOutside2D && outside2D)
+				continue;
+		}
 
 		int gltrans = -1;
 		state.SetRenderStyle(cmd.mRenderStyle);

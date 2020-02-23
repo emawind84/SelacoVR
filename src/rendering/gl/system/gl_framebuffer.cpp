@@ -56,7 +56,7 @@ EXTERN_CVAR(Bool, gl_texture_usehires)
 
 void gl_LoadExtensions();
 void gl_PrintStartupLog();
-void Draw2D(F2DDrawer *drawer, FRenderState &state);
+void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D = false);
 
 extern bool vid_hdr_active;
 
@@ -451,7 +451,7 @@ TArray<uint8_t> OpenGLFrameBuffer::GetScreenshotBuffer(int &pitch, ESSType &colo
 //
 //===========================================================================
 
-void OpenGLFrameBuffer::Draw2D()
+void OpenGLFrameBuffer::Draw2D(bool outside2D)
 {
 	if (GLRenderer != nullptr)
 	{
@@ -459,7 +459,7 @@ void OpenGLFrameBuffer::Draw2D()
 		if (VRMode::GetVRMode(true)->mEyeCount == 1)
 			GLRenderer->mBuffers->BindCurrentFB();
 
-		::Draw2D(&m2DDrawer, gl_RenderState);
+		::Draw2D(&m2DDrawer, gl_RenderState, outside2D);
 		FGLDebug::PopGroup();
 	}
 }
