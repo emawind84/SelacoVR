@@ -326,7 +326,7 @@ public:
 			auto* di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
 			FGLModelRenderer renderer(di, -1);
 			BuildVertexBuffer(&renderer);
-
+			di->EndDrawInfo();
 			return true;
 		}
 		loadState = LOADSTATE_ERROR;
@@ -733,19 +733,28 @@ void OpenVREyePose::AdjustHud() const
 		true,
 		pitch_offset);
 	di->ApplyVPUniforms();
+	di->EndDrawInfo();
 }
 
 void OpenVREyePose::AdjustBlend(FDrawInfo *di) const
 {
+	bool new_di = false;
 	if (di == nullptr)
 	{
 		di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
+		new_di = true;
 	}
+
 	VSMatrix& proj = di->VPUniforms.mProjectionMatrix;
 	proj.loadIdentity();
 	proj.translate(-1, 1, 0);
 	proj.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
 	di->ApplyVPUniforms();
+
+	if (new_di)
+	{
+		di->EndDrawInfo();
+	}		
 }
 
 OpenVRMode::OpenVRMode(OpenVREyePose eyes[2])
