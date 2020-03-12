@@ -1881,6 +1881,12 @@ FxExpression *FxMinusSign::Resolve(FCompileContext& ctx)
 			delete this;
 			return e;
 		}
+		else if (Operand->ValueType == TypeBool)
+		{
+			Operand = new FxIntCast(Operand, true);
+			Operand = Operand->Resolve(ctx);
+			assert(Operand != nullptr);
+		}
 		ValueType = Operand->ValueType;
 		return this;
 	}
@@ -8530,9 +8536,9 @@ FxExpression *FxActionSpecialCall::Resolve(FCompileContext& ctx)
 //
 //==========================================================================
 
-void BuiltinCallLineSpecial(int special, AActor *activator, int arg1, int arg2, int arg3, int arg4, int arg5)
+int BuiltinCallLineSpecial(int special, AActor *activator, int arg1, int arg2, int arg3, int arg4, int arg5)
 {
-	P_ExecuteSpecial(special, nullptr, activator, 0, arg1, arg2, arg3, arg4, arg5);
+	return P_ExecuteSpecial(special, nullptr, activator, 0, arg1, arg2, arg3, arg4, arg5);
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(DObject, BuiltinCallLineSpecial, BuiltinCallLineSpecial)
