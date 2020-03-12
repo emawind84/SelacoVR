@@ -86,6 +86,12 @@ public:
 	bool Update() override;
 	void PrecacheInstruments(const uint16_t *instruments, int count);
 	DWORD PlayerLoop();
+	bool CanHandleSysex() const override
+	{
+		// No Sysex for GS synth.
+		return VolumeWorks;
+	}
+
 
 //protected:
 	static void CALLBACK CallbackFunc(HMIDIOUT, UINT, DWORD_PTR, DWORD, DWORD);
@@ -191,6 +197,10 @@ int WinMIDIDevice::Open(MidiCallback callback, void *userdata)
 					VolumeWorks &= (MMSYSERR_NOERROR == midiOutSetVolume((HMIDIOUT)MidiOut, 0xffffffff));
 				}
 			}
+		}
+		else
+		{
+			return 1;
 		}
 	}
 	return 0;

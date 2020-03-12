@@ -3,8 +3,8 @@ extend class Actor
 
 	void A_Bang4Cloud()
 	{
-		double xo = (random[Bang4Cloud]() & 3) * (10. / 64);
-		double yo = (random[Bang4Cloud]() & 3) * (10. / 64);
+		double xo = random[Bang4Cloud](0, 3) * (10. / 64);
+		double yo = random[Bang4Cloud](0, 3) * (10. / 64);
 		Spawn("Bang4Cloud", Vec3Offset(xo, yo, 0.), ALLOW_REPLACE);
 	}
 	
@@ -38,7 +38,7 @@ extend class Actor
 	
 }
 
-// A Cloud used for varius explosions ---------------------------------------
+// A Cloud used for various explosions --------------------------------------
 // This actor has no direct equivalent in strife. To create this, Strife
 // spawned a spark and then changed its state to that of this explosion
 // cloud. Weird.
@@ -221,10 +221,11 @@ class PowerCrystal : Actor
 			Actor foo = Spawn("Rubble1", Pos, ALLOW_REPLACE);
 			if (foo != NULL)
 			{
-				int t = random[LightOut]() & 15;
-				foo.Vel.X = t - (random[LightOut]() & 7);
-				foo.Vel.Y = random2[LightOut]() & 7;
-				foo.Vel.Z = 7 + (random[LightOut]() & 3);
+				int t = random[LightOut](0, 7);
+				foo.Vel.X = t - random[LightOut](0, 15);
+				t = random[LightOut](0, 7);
+				foo.Vel.Y = t - random[LightOut](0, 15);
+				foo.Vel.Z = random[LightOut](7, 10);
 			}
 		}
 	}

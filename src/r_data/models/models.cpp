@@ -277,9 +277,8 @@ void FModelRenderer::RenderFrameModels(const FSpriteModelFrame *smf, const FStat
 		if (smf->modelIDs[i] != -1)
 		{
 			FModel * mdl = Models[smf->modelIDs[i]];
-			FTexture *tex = smf->skinIDs[i].isValid() ? TexMan(smf->skinIDs[i]) : nullptr;
+			FTexture *tex = smf->skinIDs[i].isValid() ? TexMan.GetTexture(smf->skinIDs[i], true) : nullptr;
 			mdl->BuildVertexBuffer(this);
-			SetVertexBuffer(mdl->GetVertexBuffer(this));
 
 			mdl->PushSpriteMDLFrame(smf, i);
 
@@ -287,8 +286,6 @@ void FModelRenderer::RenderFrameModels(const FSpriteModelFrame *smf, const FStat
 				mdl->RenderFrame(this, tex, smf->modelframes[i], smfNext->modelframes[i], inter, translation);
 			else
 				mdl->RenderFrame(this, tex, smf->modelframes[i], smf->modelframes[i], 0.f, translation);
-
-			ResetVertexBuffer();
 		}
 	}
 }
@@ -521,6 +518,7 @@ void InitModels()
 		FVoxelModel *md = (FVoxelModel*)Models[VoxelDefs[i]->Voxel->VoxelIndex];
 		FSpriteModelFrame smf;
 		memset(&smf, 0, sizeof(smf));
+		smf.isVoxel = true;
 		smf.modelIDs[1] = smf.modelIDs[2] = smf.modelIDs[3] = -1;
 		smf.modelIDs[0] = VoxelDefs[i]->Voxel->VoxelIndex;
 		smf.skinIDs[0] = md->GetPaletteTexture();

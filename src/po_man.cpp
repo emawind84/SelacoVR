@@ -124,7 +124,6 @@ public:
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
 void PO_Init (void);
-void P_AdjustLine(line_t *ld);
 
 // PRIVATE FUNCTION PROTOTYPES ---------------------------------------------
 
@@ -869,7 +868,7 @@ void FPolyObj::ThrustMobj (AActor *actor, side_t *side)
 			P_TraceBleed (newdam > 0 ? newdam : crush, actor);
 		}
 	}
-	if (level.flags2 & LEVEL2_POLYGRIND) actor->Grind(false); // crush corpses that get caught in a polyobject's way
+	if (level.flags2 & LEVEL2_POLYGRIND) actor->CallGrind(false); // crush corpses that get caught in a polyobject's way
 }
 
 //==========================================================================
@@ -912,7 +911,7 @@ void FPolyObj::UpdateBBox ()
 {
 	for(unsigned i=0;i<Linedefs.Size(); i++)
 	{
-		P_AdjustLine(Linedefs[i]);
+		Linedefs[i]->AdjustLine();
 	}
 	CalcCenter();
 }

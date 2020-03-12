@@ -115,7 +115,8 @@ if( WIN32 )
 		comdlg32
 		ws2_32
 		setupapi
-		oleaut32 )
+		oleaut32
+		dbghelp )
 
 	if( NOT ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 		set( ZDOOM_LIBS ${ZDOOM_LIBS} DelayImp )
@@ -459,8 +460,8 @@ add_custom_target( revision_check ALL
 # Libraries ZDoom needs
 
 message( STATUS "Fluid synth libs: ${FLUIDSYNTH_LIBRARIES}" )
-set( ZDOOM_LIBS ${ZDOOM_LIBS} "${ZLIB_LIBRARIES}" "${JPEG_LIBRARIES}" "${BZIP2_LIBRARIES}" "${GME_LIBRARIES}" "${CMAKE_DL_LIBS}" )
-include_directories( "${ZLIB_INCLUDE_DIR}" "${BZIP2_INCLUDE_DIR}" "${LZMA_INCLUDE_DIR}" "${JPEG_INCLUDE_DIR}" "${GME_INCLUDE_DIR}" )
+set( ZDOOM_LIBS ${ZDOOM_LIBS} "${ZLIB_LIBRARIES}" "${JPEG_LIBRARIES}" "${BZIP2_LIBRARIES}" "${GME_LIBRARIES}" "${ASMJIT_LIBRARIES}" "${CMAKE_DL_LIBS}" )
+include_directories( "${ZLIB_INCLUDE_DIR}" "${BZIP2_INCLUDE_DIR}" "${LZMA_INCLUDE_DIR}" "${JPEG_INCLUDE_DIR}" "${GME_INCLUDE_DIR}" "${ASMJIT_INCLUDE_DIR}" )
 
 if( SNDFILE_FOUND )
     set( ZDOOM_LIBS ${ZDOOM_LIBS} "${SNDFILE_LIBRARIES}" )
@@ -748,6 +749,7 @@ file( GLOB HEADER_FILES
 	sound/wildmidi/*.h
 	xlat/*.h
 	swrenderer/*.h
+	swrenderer/textures/*.h
 	swrenderer/drawers/*.h
 	swrenderer/scene/*.h
 	swrenderer/segments/*.h
@@ -761,13 +763,12 @@ file( GLOB HEADER_FILES
 	polyrenderer/scene/*.h
 	hwrenderer/data/*.h
 	hwrenderer/dynlights/*.h
+	hwrenderer/models/*.h
 	hwrenderer/postprocessing/*.h
 	hwrenderer/scene/*.h
 	hwrenderer/textures/*.h
 	hwrenderer/utility/*.h
 	gl/*.h
-	gl/data/*.h
-	gl/dynlights/*.h
 	gl/models/*.h
 	gl/renderer/*.h
 	gl/scene/*.h
@@ -887,14 +888,6 @@ set( FASTMATH_SOURCES
 	textures/hires/hqnx/hq4x.cpp
 	textures/hires/xbr/xbrz.cpp
 	textures/hires/xbr/xbrz_old.cpp
-	gl/scene/gl_drawinfo.cpp
-	gl/scene/gl_flats.cpp
-	gl/scene/gl_sprite.cpp
-	gl/scene/gl_skydome.cpp
-	gl/scene/gl_weapon.cpp
-	gl/scene/gl_scene.cpp
-	gl/scene/gl_portal.cpp
-	gl/scene/gl_walls_draw.cpp
 	gl_load/gl_load.c
 	hwrenderer/postprocessing/hw_postprocess_cvars.cpp
 	hwrenderer/postprocessing/hw_postprocessshader.cpp
@@ -909,6 +902,7 @@ set( FASTMATH_SOURCES
 	hwrenderer/scene/hw_portal.cpp
 	hwrenderer/scene/hw_renderhacks.cpp
 	hwrenderer/scene/hw_sky.cpp
+	hwrenderer/scene/hw_skyportal.cpp
 	hwrenderer/scene/hw_sprites.cpp
 	hwrenderer/scene/hw_spritelight.cpp
 	hwrenderer/scene/hw_walls.cpp
@@ -1023,6 +1017,7 @@ set (PCH_SOURCES
 	p_actionfunctions.cpp
 	p_ceiling.cpp
 	p_conversation.cpp
+	p_destructible.cpp
 	p_doors.cpp
 	p_effect.cpp
 	p_enemy.cpp
@@ -1035,6 +1030,7 @@ set (PCH_SOURCES
 	p_map.cpp
 	p_maputl.cpp
 	p_mobj.cpp
+	p_openmap.cpp
 	p_pillar.cpp
 	p_plats.cpp
 	p_pspr.cpp
@@ -1072,6 +1068,7 @@ set (PCH_SOURCES
 	s_sound.cpp
 	serializer.cpp
 	sc_man.cpp
+	scriptutil.cpp
 	st_stuff.cpp
 	statistics.cpp
 	stats.cpp
@@ -1107,19 +1104,13 @@ set (PCH_SOURCES
 	g_statusbar/sbarinfo.cpp
 	g_statusbar/sbar_mugshot.cpp
 	g_statusbar/shared_sbar.cpp
-	gl/data/gl_vertexbuffer.cpp
-	gl/data/gl_uniformbuffer.cpp
-	gl/data/gl_viewpointbuffer.cpp
-	gl/dynlights/gl_lightbuffer.cpp
-	gl/dynlights/gl_shadowmap.cpp
-	gl/models/gl_models.cpp
-	gl/renderer/gl_quaddrawer.cpp
 	gl/renderer/gl_renderer.cpp
 	gl/renderer/gl_renderstate.cpp
 	gl/renderer/gl_renderbuffers.cpp
-	gl/renderer/gl_lightdata.cpp
 	gl/renderer/gl_postprocess.cpp
 	gl/renderer/gl_postprocessstate.cpp
+	gl/renderer/gl_stereo3d.cpp
+	gl/renderer/gl_scene.cpp
 	gl/shaders/gl_shader.cpp
 	gl/shaders/gl_shaderprogram.cpp
 	gl/shaders/gl_postprocessshader.cpp
@@ -1128,12 +1119,19 @@ set (PCH_SOURCES
 	gl_load/gl_interface.cpp
 	gl/system/gl_framebuffer.cpp
 	gl/system/gl_debug.cpp
+	gl/system/gl_buffers.cpp
 	gl/textures/gl_hwtexture.cpp
 	gl/textures/gl_samplers.cpp
+	hwrenderer/data/hw_vertexbuilder.cpp
 	hwrenderer/data/flatvertices.cpp
+	hwrenderer/data/hw_viewpointbuffer.cpp
 	hwrenderer/dynlights/hw_aabbtree.cpp
 	hwrenderer/dynlights/hw_shadowmap.cpp
+	hwrenderer/dynlights/hw_lightbuffer.cpp
+	hwrenderer/models/hw_models.cpp
 	hwrenderer/scene/hw_skydome.cpp
+	hwrenderer/scene/hw_drawlistadd.cpp
+	hwrenderer/scene/hw_renderstate.cpp
 	hwrenderer/postprocessing/hw_postprocess.cpp
 	hwrenderer/postprocessing/hw_postprocess_cvars.cpp
 	hwrenderer/postprocessing/hw_postprocessshader.cpp
@@ -1144,6 +1142,7 @@ set (PCH_SOURCES
 	hwrenderer/textures/hw_precache.cpp
 	hwrenderer/utility/hw_clock.cpp
 	hwrenderer/utility/hw_cvars.cpp
+	hwrenderer/utility/hw_draw2d.cpp
 	hwrenderer/utility/hw_lighting.cpp
 	hwrenderer/utility/hw_shaderpatcher.cpp
 	hwrenderer/utility/hw_vrmodes.cpp
@@ -1170,7 +1169,10 @@ set (PCH_SOURCES
 	textures/anim_switches.cpp
 	textures/bitmap.cpp
 	textures/texture.cpp
+	textures/image.cpp
+	textures/imagetexture.cpp
 	textures/texturemanager.cpp
+	textures/multipatchtexturebuilder.cpp
 	textures/skyboxtexture.cpp
 	textures/formats/automaptexture.cpp
 	textures/formats/brightmaptexture.cpp
@@ -1178,6 +1180,7 @@ set (PCH_SOURCES
 	textures/formats/canvastexture.cpp
 	textures/formats/ddstexture.cpp
 	textures/formats/flattexture.cpp
+	textures/formats/fontchars.cpp
 	textures/formats/imgztexture.cpp
 	textures/formats/jpegtexture.cpp
 	textures/formats/md5check.cpp
@@ -1189,8 +1192,6 @@ set (PCH_SOURCES
 	textures/formats/emptytexture.cpp
 	textures/formats/shadertexture.cpp
 	textures/formats/tgatexture.cpp
-	textures/formats/worldtexture.cpp
-	textures/formats/warptexture.cpp
 	textures/hires/hqresize.cpp
 	textures/hires/hirestex.cpp
 	xlat/parse_xlat.cpp
@@ -1214,14 +1215,19 @@ set (PCH_SOURCES
 	r_data/voxels.cpp
 	r_data/renderinfo.cpp
 	r_data/renderstyle.cpp
+	r_data/r_canvastexture.cpp
 	r_data/r_interpolate.cpp
 	r_data/r_vanillatrans.cpp
+	r_data/r_sections.cpp
 	r_data/models/models_md3.cpp
 	r_data/models/models_md2.cpp
 	r_data/models/models_voxel.cpp
 	r_data/models/models_ue1.cpp
 	r_data/models/models_obj.cpp
 	scripting/symbols.cpp
+	scripting/vmiterators.cpp
+	scripting/vmthunks.cpp
+	scripting/vmthunks_actors.cpp
 	scripting/types.cpp
 	scripting/thingdef.cpp
 	scripting/thingdef_data.cpp
@@ -1237,6 +1243,14 @@ set (PCH_SOURCES
 	scripting/decorate/thingdef_states.cpp
 	scripting/vm/vmexec.cpp
 	scripting/vm/vmframe.cpp
+	scripting/vm/jit.cpp
+	scripting/vm/jit_runtime.cpp
+	scripting/vm/jit_call.cpp
+	scripting/vm/jit_flow.cpp
+	scripting/vm/jit_load.cpp
+	scripting/vm/jit_math.cpp
+	scripting/vm/jit_move.cpp
+	scripting/vm/jit_store.cpp
 	scripting/zscript/ast.cpp
 	scripting/zscript/zcc_compile.cpp
 	scripting/zscript/zcc_parser.cpp
@@ -1305,6 +1319,9 @@ set (PCH_SOURCES
 	sound/wildmidi/reverb.cpp
 	sound/wildmidi/wildmidi_lib.cpp
 	sound/wildmidi/wm_error.cpp
+	swrenderer/textures/r_swtexture.cpp
+	swrenderer/textures/warptexture.cpp
+	swrenderer/textures/swcanvastexture.cpp
 	events.cpp
 )
 
@@ -1497,7 +1514,6 @@ source_group("OpenGL Loader" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl
 source_group("OpenGL Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/.+")
 source_group("OpenGL Renderer\\Data" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/data/.+")
 source_group("OpenGL Renderer\\Dynamic Lights" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/dynlights/.+")
-source_group("OpenGL Renderer\\Models" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/models/.+")
 source_group("OpenGL Renderer\\Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/renderer/.+")
 source_group("OpenGL Renderer\\Scene" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/scene/.+")
 source_group("OpenGL Renderer\\Stereo3D" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/stereo3d/.+")

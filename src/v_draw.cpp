@@ -171,10 +171,12 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawTexture)
 	PARAM_FLOAT(x);
 	PARAM_FLOAT(y);
 
+	PARAM_VA_POINTER(va_reginfo)	// Get the hidden type information array
+
 	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
 
-	FTexture *tex = animate ? TexMan(FSetTextureID(texid)) : TexMan[FSetTextureID(texid)];
-	VMVa_List args = { param + 4, 0, numparam - 4 };
+	FTexture *tex = TexMan.ByIndex(texid, animate);
+	VMVa_List args = { param + 4, 0, numparam - 5, va_reginfo + 4 };
 	screen->DrawTexture(tex, x, y, args);
 	return 0;
 }
@@ -225,10 +227,12 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawShape)
 	PARAM_BOOL(animate);
 	PARAM_POINTER(shape, DShape2D);
 
+	PARAM_VA_POINTER(va_reginfo)	// Get the hidden type information array
+
 	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
 
-	FTexture *tex = animate ? TexMan(FSetTextureID(texid)) : TexMan[FSetTextureID(texid)];
-	VMVa_List args = { param + 3, 0, numparam - 3 };
+	FTexture *tex = TexMan.ByIndex(texid, animate);
+	VMVa_List args = { param + 3, 0, numparam - 4, va_reginfo + 3 };
 
 	screen->DrawShape(tex, shape, args);
 	return 0;
@@ -308,23 +312,23 @@ bool DFrameBuffer::SetTextureParms(DrawParms *parms, FTexture *img, double xx, d
 	{
 		parms->x = xx;
 		parms->y = yy;
-		parms->texwidth = img->GetScaledWidthDouble();
-		parms->texheight = img->GetScaledHeightDouble();
+		parms->texwidth = img->GetDisplayWidthDouble();
+		parms->texheight = img->GetDisplayHeightDouble();
 		if (parms->top == INT_MAX || parms->fortext)
 		{
-			parms->top = img->GetScaledTopOffset(0);
+			parms->top = img->GetDisplayTopOffset();
 		}
 		if (parms->left == INT_MAX || parms->fortext)
 		{
-			parms->left = img->GetScaledLeftOffset(0);
+			parms->left = img->GetDisplayLeftOffset();
 		}
 		if (parms->destwidth == INT_MAX || parms->fortext)
 		{
-			parms->destwidth = img->GetScaledWidthDouble();
+			parms->destwidth = img->GetDisplayWidthDouble();
 		}
 		if (parms->destheight == INT_MAX || parms->fortext)
 		{
-			parms->destheight = img->GetScaledHeightDouble();
+			parms->destheight = img->GetDisplayHeightDouble();
 		}
 
 		switch (parms->cleanmode)
@@ -418,7 +422,7 @@ int ListGetInt(VMVa_List &tags)
 {
 	if (tags.curindex < tags.numargs)
 	{
-		if (tags.args[tags.curindex].Type == REGT_INT)
+		if (tags.reginfo[tags.curindex] == REGT_INT)
 		{
 			return tags.args[tags.curindex++].i;
 		}
@@ -429,11 +433,18 @@ int ListGetInt(VMVa_List &tags)
 
 static inline double ListGetDouble(VMVa_List &tags)
 {
-	if (tags.curindex < tags.numargs && tags.args[tags.curindex].Type == REGT_FLOAT)
+	if (tags.curindex < tags.numargs)
 	{
-		return tags.args[tags.curindex++].f;
+		if (tags.reginfo[tags.curindex] == REGT_FLOAT)
+		{
+			return tags.args[tags.curindex++].f;
+		}
+		if (tags.reginfo[tags.curindex] == REGT_INT)
+		{
+			return tags.args[tags.curindex++].i;
+		}
+		ThrowAbortException(X_OTHER, "Invalid parameter in draw function, float expected");
 	}
-	ThrowAbortException(X_OTHER, "Invalid parameter in draw function, float expected");
 	return 0;
 }
 
@@ -459,7 +470,7 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 
 	if (!fortext)
 	{
-		if (img == NULL || img->UseType == ETextureType::Null)
+		if (img == NULL || !img->isValid())
 		{
 			ListEnd(tags);
 			return false;
@@ -639,8 +650,8 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 				assert(fortext == false);
 				if (img == NULL) return false;
 				parms->cleanmode = DTA_Fullscreen;
-				parms->virtWidth = img->GetScaledWidthDouble();
-				parms->virtHeight = img->GetScaledHeightDouble();
+				parms->virtWidth = img->GetDisplayWidthDouble();
+				parms->virtHeight = img->GetDisplayHeightDouble();
 			}
 			break;
 
@@ -686,19 +697,19 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 			break;
 
 		case DTA_SrcX:
-			parms->srcx = ListGetDouble(tags) / img->GetScaledWidthDouble();
+			parms->srcx = ListGetDouble(tags) / img->GetDisplayWidthDouble();
 			break;
 
 		case DTA_SrcY:
-			parms->srcy = ListGetDouble(tags) / img->GetScaledHeightDouble();
+			parms->srcy = ListGetDouble(tags) / img->GetDisplayHeightDouble();
 			break;
 
 		case DTA_SrcWidth:
-			parms->srcwidth = ListGetDouble(tags) / img->GetScaledWidthDouble();
+			parms->srcwidth = ListGetDouble(tags) / img->GetDisplayWidthDouble();
 			break;
 
 		case DTA_SrcHeight:
-			parms->srcheight = ListGetDouble(tags) / img->GetScaledHeightDouble();
+			parms->srcheight = ListGetDouble(tags) / img->GetDisplayHeightDouble();
 			break;
 
 		case DTA_TopOffset:
@@ -730,8 +741,8 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 			if (fortext) return false;
 			if (ListGetInt(tags))
 			{
-				parms->left = img->GetScaledWidthDouble() * 0.5;
-				parms->top = img->GetScaledHeightDouble() * 0.5;
+				parms->left = img->GetDisplayWidthDouble() * 0.5;
+				parms->top = img->GetDisplayHeightDouble() * 0.5;
 			}
 			break;
 
@@ -740,8 +751,8 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 			if (fortext) return false;
 			if (ListGetInt(tags))
 			{
-				parms->left = img->GetScaledWidthDouble() * 0.5;
-				parms->top = img->GetScaledHeightDouble();
+				parms->left = img->GetDisplayWidthDouble() * 0.5;
+				parms->top = img->GetDisplayHeightDouble();
 			}
 			break;
 
@@ -993,8 +1004,8 @@ DEFINE_ACTION_FUNCTION(_Screen, VirtualToRealCoords)
 	PARAM_FLOAT(h);
 	PARAM_FLOAT(vw);
 	PARAM_FLOAT(vh);
-	PARAM_BOOL_DEF(vbottom);
-	PARAM_BOOL_DEF(handleaspect);
+	PARAM_BOOL(vbottom);
+	PARAM_BOOL(handleaspect);
 	screen->VirtualToRealCoords(x, y, w, h, vw, vh, vbottom, handleaspect);
 	if (numret >= 1) ret[0].SetVector2(DVector2(x, y));
 	if (numret >= 2) ret[1].SetVector2(DVector2(w, h));
@@ -1075,9 +1086,9 @@ void DFrameBuffer::FillBorder (FTexture *img)
 //
 //==========================================================================
 
-void DFrameBuffer::DrawLine(int x0, int y0, int x1, int y1, int palColor, uint32_t realcolor)
+void DFrameBuffer::DrawLine(int x0, int y0, int x1, int y1, int palColor, uint32_t realcolor, uint8_t alpha)
 {
-	m2DDrawer.AddLine(x0, y0, x1, y1, palColor, realcolor);
+	m2DDrawer.AddLine(x0, y0, x1, y1, palColor, realcolor, alpha);
 }
 
 DEFINE_ACTION_FUNCTION(_Screen, DrawLine)
@@ -1088,13 +1099,14 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawLine)
 	PARAM_INT(x1);
 	PARAM_INT(y1);
 	PARAM_INT(color);
+	PARAM_INT(alpha);
 	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
-	screen->DrawLine(x0, y0, x1, y1, -1, color);
+	screen->DrawLine(x0, y0, x1, y1, -1, color, alpha);
 	return 0;
 }
 
-void DFrameBuffer::DrawThickLine(int x0, int y0, int x1, int y1, double thickness, uint32_t realcolor) {
-	m2DDrawer.AddThickLine(x0, y0, x1, y1, thickness, realcolor);
+void DFrameBuffer::DrawThickLine(int x0, int y0, int x1, int y1, double thickness, uint32_t realcolor, uint8_t alpha) {
+	m2DDrawer.AddThickLine(x0, y0, x1, y1, thickness, realcolor, alpha);
 }
 
 DEFINE_ACTION_FUNCTION(_Screen, DrawThickLine)
@@ -1106,8 +1118,9 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawThickLine)
 	PARAM_INT(y1);
 	PARAM_FLOAT(thickness);
 	PARAM_INT(color);
+	PARAM_INT(alpha);
 	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
-	screen->DrawThickLine(x0, y0, x1, y1, thickness, color);
+	screen->DrawThickLine(x0, y0, x1, y1, thickness, color, alpha);
 	return 0;
 }
 
@@ -1170,7 +1183,7 @@ DEFINE_ACTION_FUNCTION(_Screen, Clear)
 	PARAM_INT(x2);
 	PARAM_INT(y2);
 	PARAM_INT(color);
-	PARAM_INT_DEF(palcol);
+	PARAM_INT(palcol);
 	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
 	screen->Clear(x1, y1, x2, y2, palcol, color);
 	return 0;
@@ -1251,9 +1264,9 @@ DEFINE_ACTION_FUNCTION(_Screen, Dim)
 
 void DFrameBuffer::FillSimplePoly(FTexture *tex, FVector2 *points, int npoints,
 	double originx, double originy, double scalex, double scaley, DAngle rotation,
-	const FColormap &colormap, PalEntry flatcolor, int lightlevel, int bottomclip)
+	const FColormap &colormap, PalEntry flatcolor, int lightlevel, int bottomclip, uint32_t *indices, size_t indexcount)
 {
-	m2DDrawer.AddPoly(tex, points, npoints, originx, originy, scalex, scaley, rotation, colormap, flatcolor, lightlevel);
+	m2DDrawer.AddPoly(tex, points, npoints, originx, originy, scalex, scaley, rotation, colormap, flatcolor, lightlevel, indices, indexcount);
 }
 
 //==========================================================================
@@ -1291,22 +1304,22 @@ void DFrameBuffer::DrawFrame (int left, int top, int width, int height)
 	int bottom = top + height;
 
 	// Draw top and bottom sides.
-	p = TexMan[border->t];
-	FlatFill(left, top - p->GetHeight(), right, top, p, true);
-	p = TexMan[border->b];
-	FlatFill(left, bottom, right, bottom + p->GetHeight(), p, true);
+	p = TexMan.GetTextureByName(border->t);
+	FlatFill(left, top - p->GetDisplayHeight(), right, top, p, true);
+	p = TexMan.GetTextureByName(border->b);
+	FlatFill(left, bottom, right, bottom + p->GetDisplayHeight(), p, true);
 
 	// Draw left and right sides.
-	p = TexMan[border->l];
-	FlatFill(left - p->GetWidth(), top, left, bottom, p, true);
-	p = TexMan[border->r];
-	FlatFill(right, top, right + p->GetWidth(), bottom, p, true);
+	p = TexMan.GetTextureByName(border->l);
+	FlatFill(left - p->GetDisplayWidth(), top, left, bottom, p, true);
+	p = TexMan.GetTextureByName(border->r);
+	FlatFill(right, top, right + p->GetDisplayWidth(), bottom, p, true);
 
 	// Draw beveled corners.
-	DrawTexture (TexMan[border->tl], left-offset, top-offset, TAG_DONE);
-	DrawTexture (TexMan[border->tr], left+width, top-offset, TAG_DONE);
-	DrawTexture (TexMan[border->bl], left-offset, top+height, TAG_DONE);
-	DrawTexture (TexMan[border->br], left+width, top+height, TAG_DONE);
+	DrawTexture (TexMan.GetTextureByName(border->tl), left-offset, top-offset, TAG_DONE);
+	DrawTexture (TexMan.GetTextureByName(border->tr), left+width, top-offset, TAG_DONE);
+	DrawTexture (TexMan.GetTextureByName(border->bl), left-offset, top+height, TAG_DONE);
+	DrawTexture (TexMan.GetTextureByName(border->br), left+width, top+height, TAG_DONE);
 }
 
 DEFINE_ACTION_FUNCTION(_Screen, DrawFrame)
@@ -1341,7 +1354,7 @@ void DFrameBuffer::DrawBorder (int x1, int y1, int x2, int y2)
 
 	if (picnum.isValid())
 	{
-		FlatFill (x1, y1, x2, y2, TexMan(picnum));
+		FlatFill (x1, y1, x2, y2, TexMan.GetTexture(picnum, false));
 	}
 	else
 	{
@@ -1484,7 +1497,7 @@ void DFrameBuffer::FillBlend(sector_t * viewsector, BlendInfo &blendinfo)
 		auto torchtype = PClass::FindActor(NAME_PowerTorch);
 		auto litetype = PClass::FindActor(NAME_PowerLightAmp);
 		PalEntry color = 0xffffffff;
-		for (AInventory * in = player->mo->Inventory; in; in = in->Inventory)
+		for (AActor *in = player->mo->Inventory; in; in = in->Inventory)
 		{
 			// Need special handling for light amplifiers 
 			if (in->IsKindOf(torchtype))

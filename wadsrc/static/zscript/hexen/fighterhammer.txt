@@ -9,7 +9,7 @@ class FWeapHammer : FighterWeapon
 	{
 		+BLOODSPLATTER
 		Weapon.SelectionOrder 900;
-		+WEAPON.AMMO_OPTIONAL +WEAPON.MELEEWEAPON
+		+WEAPON.AMMO_OPTIONAL
 		Weapon.AmmoUse1 3;
 		Weapon.AmmoGive1 25;
 		Weapon.KickBack 150;
@@ -65,7 +65,7 @@ class FWeapHammer : FighterWeapon
 			return;
 		}
 
-		int damage = 60+(random[HammerAtk]() & 63);
+		int damage = random[HammerAtk](60, 123);
 		for (int i = 0; i < 16; i++)
 		{
 			for (int j = 1; j >= -1; j -= 2)

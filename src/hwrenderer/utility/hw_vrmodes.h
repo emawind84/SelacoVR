@@ -1,10 +1,10 @@
 #pragma once
 
 #include "r_data/matrix.h"
-#include <gl\scene\gl_drawinfo.h>
 #include <gl\renderer\gl_renderer.h>
 
 class DFrameBuffer;
+using namespace OpenGLRenderer;
 
 enum
 {
@@ -39,7 +39,7 @@ struct VREyeInfo
 	virtual void SetUp() const { m_isActive = true; }
 	virtual void TearDown() const { m_isActive = false; }
 	virtual void AdjustHud() const {}
-	virtual void AdjustBlend(FDrawInfo* di) const {}
+	virtual void AdjustBlend(HWDrawInfo* di) const {}
 	bool isActive() const { return m_isActive; }
 
 private:
@@ -69,11 +69,11 @@ struct VRMode
 	virtual void TearDown() const {};
 
 	virtual bool IsVR() const { return false; }
-	virtual void AdjustPlayerSprites(FDrawInfo *di) const {};
+	virtual void AdjustPlayerSprites(HWDrawInfo *di) const {};
 	virtual void UnAdjustPlayerSprites() const {};
 	virtual void AdjustCrossHair() const {}
 	virtual void UnAdjustCrossHair() const {}
-	virtual void DrawControllerModels(FDrawInfo* di) const {}
+	virtual void DrawControllerModels(HWDrawInfo* di) const {}
 	
 	virtual void Present() const { GLRenderer->PresentStereo(); };
 

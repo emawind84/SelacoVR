@@ -97,30 +97,29 @@
 #include "g_levellocals.h"
 #include "c_dispatch.h"
 #include "a_dynlight.h"
-#ifndef NO_EDATA
-#include "edata.h"
-#endif
 #include "events.h"
+#include "p_destructible.h"
 #include "types.h"
 #include "i_time.h"
 #include "scripting/vm/vm.h"
+#include "hwrenderer/data/flatvertices.h"
 
 #include "fragglescript/t_fs.h"
 
+sidei_t *sidetemp;
+TArray<FMapThing> MapThingsConverted;
+bool ForceNodeBuild;
+
+
 #define MISSING_TEXTURE_WARN_LIMIT		20
 
-void P_SpawnSlopeMakers (FMapThing *firstmt, FMapThing *lastmt, const int *oldvertextable);
-void P_SetSlopes ();
-void P_CopySlopes();
 void BloodCrypt (void *data, int key, int len);
 void P_ClearUDMFKeys();
 void InitRenderInfo();
 
-extern AActor *P_SpawnMapThing (FMapThing *mthing, int position);
+extern AActor *SpawnMapThing (int index, FMapThing *mthing, int position);
 
 extern void P_TranslateTeleportThings (void);
-
-void P_ParseTextMap(MapData *map, FMissingTextureTracker &);
 
 extern int numinterpolations;
 extern unsigned int R_OldBlend;
@@ -134,415 +133,9 @@ CVAR (Bool, showloadtimes, false, 0);
 
 static void P_Shutdown ();
 
-inline bool P_IsBuildMap(MapData *map)
-{
-	return false;
-}
-
 inline bool P_LoadBuildMap(uint8_t *mapdata, size_t len, FMapThing **things, int *numthings)
 {
 	return false;
-}
-
-
-//
-// MAP related Lookup tables.
-// Store VERTEXES, LINEDEFS, SIDEDEFS, etc.
-//
-TArray<vertexdata_t> vertexdatas;
-
-bool			hasglnodes;
-
-TArray<FMapThing> MapThingsConverted;
-TMap<unsigned,unsigned>  MapThingsUserDataIndex;	// from mapthing idx -> user data idx
-TArray<FUDMFKey> MapThingsUserData;
-
-int sidecount;
-sidei_t *sidetemp;
-
-TArray<int>		linemap;
-
-bool		ForceNodeBuild;
-
-static void P_AllocateSideDefs (MapData *map, int count);
-
-//===========================================================================
-//
-// GetMapIndex
-//
-// Gets the type of map lump or -1 if invalid or -2 if required and not found.
-//
-//===========================================================================
-
-struct checkstruct
-{
-	const char lumpname[9];
-	bool  required;
-};
-
-static int GetMapIndex(const char *mapname, int lastindex, const char *lumpname, bool needrequired)
-{
-	static const checkstruct check[] = 
-	{
-		{"",		 true},
-		{"THINGS",	 true},
-		{"LINEDEFS", true},
-		{"SIDEDEFS", true},
-		{"VERTEXES", true},
-		{"SEGS",	 false},
-		{"SSECTORS", false},
-		{"NODES",	 false},
-		{"SECTORS",	 true},
-		{"REJECT",	 false},
-		{"BLOCKMAP", false},
-		{"BEHAVIOR", false},
-		//{"SCRIPTS",	 false},
-	};
-
-	if (lumpname==NULL) lumpname="";
-
-	for(size_t i=lastindex+1;i<countof(check);i++)
-	{
-		if (!strnicmp(lumpname, check[i].lumpname, 8))
-			return (int)i;
-
-		if (check[i].required)
-		{
-			if (needrequired)
-			{
-				I_Error("'%s' not found in %s\n", check[i].lumpname, mapname);
-			}
-			return -2;
-		}
-	}
-
-	return -1;	// End of map reached
-}
-
-//===========================================================================
-//
-// Opens a map for reading
-//
-//===========================================================================
-
-MapData *P_OpenMapData(const char * mapname, bool justcheck)
-{
-	MapData * map = new MapData;
-	FileReader * wadReader = nullptr;
-	bool externalfile = !strnicmp(mapname, "file:", 5);
-	
-	if (externalfile)
-	{
-		mapname += 5;
-		if (!FileExists(mapname))
-		{
-			delete map;
-			return NULL;
-		}
-		map->resource = FResourceFile::OpenResourceFile(mapname, true);
-		wadReader = map->resource->GetReader();
-	}
-	else
-	{
-		FString fmt;
-		int lump_wad;
-		int lump_map;
-		int lump_name = -1;
-		
-		// Check for both *.wad and *.map in order to load Build maps
-		// as well. The higher one will take precedence.
-		// Names with more than 8 characters will only be checked as .wad and .map.
-		if (strlen(mapname) <= 8) lump_name = Wads.CheckNumForName(mapname);
-		fmt.Format("maps/%s.wad", mapname);
-		lump_wad = Wads.CheckNumForFullName(fmt);
-		fmt.Format("maps/%s.map", mapname);
-		lump_map = Wads.CheckNumForFullName(fmt);
-		
-		if (lump_name > lump_wad && lump_name > lump_map && lump_name != -1)
-		{
-			int lumpfile = Wads.GetLumpFile(lump_name);
-			int nextfile = Wads.GetLumpFile(lump_name+1);
-
-			map->lumpnum = lump_name;
-
-			if (lumpfile != nextfile)
-			{
-				// The following lump is from a different file so whatever this is,
-				// it is not a multi-lump Doom level so let's assume it is a Build map.
-				map->MapLumps[0].Reader = Wads.ReopenLumpReader(lump_name);
-				if (!P_IsBuildMap(map))
-				{
-					delete map;
-					return NULL;
-				}
-				return map;
-			}
-
-			// This case can only happen if the lump is inside a real WAD file.
-			// As such any special handling for other types of lumps is skipped.
-			map->MapLumps[0].Reader = Wads.ReopenLumpReader(lump_name);
-			strncpy(map->MapLumps[0].Name, Wads.GetLumpFullName(lump_name), 8);
-			map->Encrypted = Wads.IsEncryptedFile(lump_name);
-			map->InWad = true;
-
-			if (map->Encrypted)
-			{ // If it's encrypted, then it's a Blood file, presumably a map.
-				if (!P_IsBuildMap(map))
-				{
-					delete map;
-					return NULL;
-				}
-				return map;
-			}
-
-			int index = 0;
-
-			if (stricmp(Wads.GetLumpFullName(lump_name + 1), "TEXTMAP") != 0)
-			{
-				for(int i = 1;; i++)
-				{
-					// Since levels must be stored in WADs they can't really have full
-					// names and for any valid level lump this always returns the short name.
-					const char * lumpname = Wads.GetLumpFullName(lump_name + i);
-					try
-					{
-						index = GetMapIndex(mapname, index, lumpname, !justcheck);
-					}
-					catch(...)
-					{
-						delete map;
-						throw;
-					}
-					if (index == -2)
-					{
-						delete map;
-						return NULL;
-					}
-					if (index == ML_BEHAVIOR) map->HasBehavior = true;
-
-					// The next lump is not part of this map anymore
-					if (index < 0) break;
-
-					map->MapLumps[index].Reader = Wads.ReopenLumpReader(lump_name + i);
-					strncpy(map->MapLumps[index].Name, lumpname, 8);
-				}
-			}
-			else
-			{
-				map->isText = true;
-				map->MapLumps[1].Reader = Wads.ReopenLumpReader(lump_name + 1);
-				for(int i = 2;; i++)
-				{
-					const char * lumpname = Wads.GetLumpFullName(lump_name + i);
-
-					if (lumpname == NULL)
-					{
-						I_Error("Invalid map definition for %s", mapname);
-					}
-					else if (!stricmp(lumpname, "ZNODES"))
-					{
-						index = ML_GLZNODES;
-					}
-					else if (!stricmp(lumpname, "BLOCKMAP"))
-					{
-						// there is no real point in creating a blockmap but let's use it anyway
-						index = ML_BLOCKMAP;
-					}
-					else if (!stricmp(lumpname, "REJECT"))
-					{
-						index = ML_REJECT;
-					}
-					else if (!stricmp(lumpname, "DIALOGUE"))
-					{
-						index = ML_CONVERSATION;
-					}
-					else if (!stricmp(lumpname, "BEHAVIOR"))
-					{
-						index = ML_BEHAVIOR;
-						map->HasBehavior = true;
-					}
-					else if (!stricmp(lumpname, "ENDMAP"))
-					{
-						break;
-					}
-					else continue;
-					map->MapLumps[index].Reader = Wads.ReopenLumpReader(lump_name + i);
-					strncpy(map->MapLumps[index].Name, lumpname, 8);
-				}
-			}
-			return map;
-		}
-		else
-		{
-			if (lump_map > lump_wad)
-			{
-				lump_wad = lump_map;
-			}
-			if (lump_wad == -1)
-			{
-				delete map;
-				return NULL;
-			}
-			map->lumpnum = lump_wad;
-			auto reader = Wads.ReopenLumpReader(lump_wad);
-			map->resource = FResourceFile::OpenResourceFile(Wads.GetLumpFullName(lump_wad), reader, true);
-			wadReader = map->resource->GetReader();
-		}
-	}
-	uint32_t id;
-
-	// Although we're using the resource system, we still want to be sure we're
-	// reading from a wad file.
-	wadReader->Seek(0, FileReader::SeekSet);
-	wadReader->Read(&id, sizeof(id));
-	
-	if (id == IWAD_ID || id == PWAD_ID)
-	{
-		char maplabel[9]="";
-		int index=0;
-
-		map->MapLumps[0].Reader = map->resource->GetLump(0)->NewReader();
-		strncpy(map->MapLumps[0].Name, map->resource->GetLump(0)->Name, 8);
-
-		for(uint32_t i = 1; i < map->resource->LumpCount(); i++)
-		{
-			const char* lumpname = map->resource->GetLump(i)->Name;
-
-			if (i == 1 && !strnicmp(lumpname, "TEXTMAP", 8))
-			{
-				map->isText = true;
-				map->MapLumps[ML_TEXTMAP].Reader = map->resource->GetLump(i)->NewReader();
-				strncpy(map->MapLumps[ML_TEXTMAP].Name, lumpname, 8);
-				for(int i = 2;; i++)
-				{
-					lumpname = map->resource->GetLump(i)->Name;
-					if (!strnicmp(lumpname, "ZNODES",8))
-					{
-						index = ML_GLZNODES;
-					}
-					else if (!strnicmp(lumpname, "BLOCKMAP",8))
-					{
-						// there is no real point in creating a blockmap but let's use it anyway
-						index = ML_BLOCKMAP;
-					}
-					else if (!strnicmp(lumpname, "REJECT",8))
-					{
-						index = ML_REJECT;
-					}
-					else if (!strnicmp(lumpname, "DIALOGUE",8))
-					{
-						index = ML_CONVERSATION;
-					}
-					else if (!strnicmp(lumpname, "BEHAVIOR",8))
-					{
-						index = ML_BEHAVIOR;
-						map->HasBehavior = true;
-					}
-					else if (!strnicmp(lumpname, "ENDMAP",8))
-					{
-						return map;
-					}
-					else continue;
-					map->MapLumps[index].Reader = map->resource->GetLump(i)->NewReader();
-					strncpy(map->MapLumps[index].Name, lumpname, 8);
-				}
-			}
-
-			if (i>0)
-			{
-				try
-				{
-					index = GetMapIndex(maplabel, index, lumpname, !justcheck);
-				}
-				catch(...)
-				{
-					delete map;
-					throw;
-				}
-				if (index == -2)
-				{
-					delete map;
-					return NULL;
-				}
-				if (index == ML_BEHAVIOR) map->HasBehavior = true;
-
-				// The next lump is not part of this map anymore
-				if (index < 0) break;
-			}
-			else
-			{
-				strncpy(maplabel, lumpname, 8);
-				maplabel[8]=0;
-			}
-
-			map->MapLumps[index].Reader = map->resource->GetLump(i)->NewReader();
-			strncpy(map->MapLumps[index].Name, lumpname, 8);
-		}
-	}
-	else
-	{
-		// This is a Build map and not subject to WAD consistency checks.
-		//map->MapLumps[0].Size = wadReader->GetLength();
-		if (!P_IsBuildMap(map))
-		{
-			delete map;
-			return NULL;
-		}
-	}
-	return map;		
-}
-
-bool P_CheckMapData(const char *mapname)
-{
-	MapData *mapd = P_OpenMapData(mapname, true);
-	if (mapd == NULL) return false;
-	delete mapd;
-	return true;
-}
-
-//===========================================================================
-//
-// MapData :: GetChecksum
-//
-// Hashes a map based on its header, THINGS, LINEDEFS, SIDEDEFS, SECTORS,
-// and BEHAVIOR lumps. Node-builder generated lumps are not included.
-//
-//===========================================================================
-
-void MapData::GetChecksum(uint8_t cksum[16])
-{
-	MD5Context md5;
-
-	if (isText)
-	{
-		md5.Update(Reader(ML_TEXTMAP), Size(ML_TEXTMAP));
-	}
-	else
-	{
-		md5.Update(Reader(ML_LABEL), Size(ML_LABEL));
-		md5.Update(Reader(ML_THINGS), Size(ML_THINGS));
-		md5.Update(Reader(ML_LINEDEFS), Size(ML_LINEDEFS));
-		md5.Update(Reader(ML_SIDEDEFS), Size(ML_SIDEDEFS));
-		md5.Update(Reader(ML_SECTORS), Size(ML_SECTORS));
-	}
-	if (HasBehavior)
-	{
-		md5.Update(Reader(ML_BEHAVIOR), Size(ML_BEHAVIOR));
-	}
-	md5.Final(cksum);
-}
-
-DEFINE_ACTION_FUNCTION(FLevelLocals, GetChecksum)
-{
-	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
-	char md5string[33];
-
-	for(int j = 0; j < 16; ++j)
-	{
-        	sprintf(md5string + j * 2, "%02x", level.md5[j]);
-	}
-
-	ACTION_RETURN_STRING((const char*)md5string);
 }
 
 //===========================================================================
@@ -551,7 +144,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, GetChecksum)
 //
 //===========================================================================
 
-static void SetTexture (side_t *side, int position, const char *name, FMissingTextureTracker &track)
+void MapLoader::SetTexture (side_t *side, int position, const char *name, FMissingTextureTracker &track)
 {
 	static const char *positionnames[] = { "top", "middle", "bottom" };
 	static const char *sidenames[] = { "first", "second" };
@@ -565,11 +158,11 @@ static void SetTexture (side_t *side, int position, const char *name, FMissingTe
 		{
 			// Print an error that lists all references to this sidedef.
 			// We must scan the linedefs manually for all references to this sidedef.
-			for(unsigned i = 0; i < level.lines.Size(); i++)
+			for(unsigned i = 0; i < Level->lines.Size(); i++)
 			{
 				for(int j = 0; j < 2; j++)
 				{
-					if (level.lines[i].sidedef[j] == side)
+					if (Level->lines[i].sidedef[j] == side)
 					{
 						Printf(TEXTCOLOR_RED"Unknown %s texture '"
 							TEXTCOLOR_ORANGE "%s" TEXTCOLOR_RED
@@ -591,7 +184,7 @@ static void SetTexture (side_t *side, int position, const char *name, FMissingTe
 //
 //===========================================================================
 
-void SetTexture (sector_t *sector, int index, int position, const char *name, FMissingTextureTracker &track, bool truncate)
+void MapLoader::SetTexture (sector_t *sector, int index, int position, const char *name, FMissingTextureTracker &track, bool truncate)
 {
 	static const char *positionnames[] = { "floor", "ceiling" };
 	char name8[9];
@@ -628,7 +221,7 @@ void SetTexture (sector_t *sector, int index, int position, const char *name, FM
 //
 //===========================================================================
 
-static void SummarizeMissingTextures(const FMissingTextureTracker &missing)
+void MapLoader::SummarizeMissingTextures(const FMissingTextureTracker &missing)
 {
 	FMissingTextureTracker::ConstIterator it(missing);
 	FMissingTextureTracker::ConstPair *pair;
@@ -651,7 +244,7 @@ static void SummarizeMissingTextures(const FMissingTextureTracker &missing)
 //
 //===========================================================================
 
-static void SetTexture (side_t *side, int position, uint32_t *blend, const char *name)
+void MapLoader::SetTexture (side_t *side, int position, uint32_t *blend, const char *name)
 {
 	FTextureID texture;
 	if ((*blend = R_ColormapNumForName (name)) == 0)
@@ -685,7 +278,7 @@ static void SetTexture (side_t *side, int position, uint32_t *blend, const char 
 //
 //===========================================================================
 
-static void SetTextureNoErr (side_t *side, int position, uint32_t *color, const char *name, bool *validcolor, bool isFog)
+void MapLoader::SetTextureNoErr (side_t *side, int position, uint32_t *color, const char *name, bool *validcolor, bool isFog)
 {
 	FTextureID texture;
 	*validcolor = false;
@@ -715,9 +308,9 @@ static void SetTextureNoErr (side_t *side, int position, uint32_t *color, const 
 
 				int factor = l==7? 0 : clamp<int> ((name2[6]&223)-'A', 0, 25);
 
-				name2[6]=0; int blue=strtol(name2+4,NULL,16);
-				name2[4]=0; int green=strtol(name2+2,NULL,16);
-				name2[2]=0; int red=strtol(name2,NULL,16);
+				name2[6]=0; int blue=strtol(name2+4,nullptr,16);
+				name2[4]=0; int green=strtol(name2+2,nullptr,16);
+				name2[2]=0; int red=strtol(name2,nullptr,16);
 
 				if (!isFog) 
 				{
@@ -750,7 +343,7 @@ static void SetTextureNoErr (side_t *side, int position, uint32_t *color, const 
 //
 //===========================================================================
 
-void P_FloodZone (sector_t *sec, int zonenum)
+void MapLoader::FloodZone (sector_t *sec, int zonenum)
 {
 	if (sec->ZoneNumber == zonenum)
 		return;
@@ -761,47 +354,47 @@ void P_FloodZone (sector_t *sec, int zonenum)
 	{
 		sector_t *other;
 
-		if (check->sidedef[1] == NULL || (check->flags & ML_ZONEBOUNDARY))
+		if (check->sidedef[1] == nullptr || (check->flags & ML_ZONEBOUNDARY))
 			continue;
 
 		if (check->frontsector == sec)
 		{
-			assert(check->backsector != NULL);
+			assert(check->backsector != nullptr);
 			other = check->backsector;
 		}
 		else
 		{
-			assert(check->frontsector != NULL);
+			assert(check->frontsector != nullptr);
 			other = check->frontsector;
 		}
 
 		if (other->ZoneNumber != zonenum)
-			P_FloodZone (other, zonenum);
+			FloodZone (other, zonenum);
 	}
 }
 
-void P_FloodZones ()
+void MapLoader::FloodZones ()
 {
 	int z = 0, i;
 	ReverbContainer *reverb;
 
-	for (auto &sec : level.sectors)
+	for (auto &sec : Level->sectors)
 	{
 		if (sec.ZoneNumber == 0xFFFF)
 		{
-			P_FloodZone (&sec, z++);
+			FloodZone (&sec, z++);
 		}
 	}
-	level.Zones.Resize(z);
-	reverb = S_FindEnvironment(level.DefaultEnvironment);
-	if (reverb == NULL)
+	Level->Zones.Resize(z);
+	reverb = S_FindEnvironment(Level->DefaultEnvironment);
+	if (reverb == nullptr)
 	{
-		Printf("Sound environment %d, %d not found\n", level.DefaultEnvironment >> 8, level.DefaultEnvironment & 255);
+		Printf("Sound environment %d, %d not found\n", Level->DefaultEnvironment >> 8, Level->DefaultEnvironment & 255);
 		reverb = DefaultEnvironments[0];
 	}
 	for (i = 0; i < z; ++i)
 	{
-		level.Zones[i].Environment = reverb;
+		Level->Zones[i].Environment = reverb;
 	}
 }
 
@@ -811,7 +404,7 @@ void P_FloodZones ()
 //
 //===========================================================================
 
-void P_LoadVertexes (MapData * map)
+void MapLoader::LoadVertexes(MapData * map)
 {
 	// Determine number of vertices:
 	//	total lump length / vertex record length.
@@ -819,17 +412,16 @@ void P_LoadVertexes (MapData * map)
 
 	if (numvertexes == 0)
 	{
-		I_Error ("Map has no vertices.\n");
+		I_Error("Map has no vertices.\n");
 	}
 
 	// Allocate memory for buffer.
-	level.vertexes.Alloc(numvertexes);
-	vertexdatas.Clear();
+	Level->vertexes.Alloc(numvertexes);
 
 	auto &fr = map->Reader(ML_VERTEXES);
-		
+
 	// Copy and convert vertex coordinates, internal representation as fixed.
-	for (auto &v : level.vertexes)
+	for (auto &v : Level->vertexes)
 	{
 		int16_t x = fr.ReadInt16();
 		int16_t y = fr.ReadInt16();
@@ -844,9 +436,9 @@ void P_LoadVertexes (MapData * map)
 //
 //===========================================================================
 
-void P_LoadZSegs (FileReader &data)
+void MapLoader::LoadZSegs (FileReader &data)
 {
-	for (auto &seg : level.segs)
+	for (auto &seg : Level->segs)
 	{
 		line_t *ldef;
 		uint32_t v1 = data.ReadUInt32();
@@ -854,12 +446,12 @@ void P_LoadZSegs (FileReader &data)
 		uint16_t line = data.ReadUInt16();
 		uint8_t side = data.ReadUInt8();
 
-		seg.v1 = &level.vertexes[v1];
-		seg.v2 = &level.vertexes[v2];
-		seg.linedef = ldef = &level.lines[line];
+		seg.v1 = &Level->vertexes[v1];
+		seg.v2 = &Level->vertexes[v2];
+		seg.linedef = ldef = &Level->lines[line];
 		seg.sidedef = ldef->sidedef[side];
 		seg.frontsector = ldef->sidedef[side]->sector;
-		if (ldef->flags & ML_TWOSIDED && ldef->sidedef[side^1] != NULL)
+		if (ldef->flags & ML_TWOSIDED && ldef->sidedef[side^1] != nullptr)
 		{
 			seg.backsector = ldef->sidedef[side^1]->sector;
 		}
@@ -879,12 +471,12 @@ void P_LoadZSegs (FileReader &data)
 //
 //===========================================================================
 
-void P_LoadGLZSegs (FileReader &data, int type)
+void MapLoader::LoadGLZSegs (FileReader &data, int type)
 {
-	for (unsigned i = 0; i < level.subsectors.Size(); ++i)
+	for (unsigned i = 0; i < Level->subsectors.Size(); ++i)
 	{
 
-		for (size_t j = 0; j < level.subsectors[i].numlines; ++j)
+		for (size_t j = 0; j < Level->subsectors[i].numlines; ++j)
 		{
 			seg_t *seg;
 			uint32_t v1 = data.ReadUInt32();
@@ -902,26 +494,26 @@ void P_LoadGLZSegs (FileReader &data, int type)
 			}
 			uint8_t side = data.ReadUInt8();
 
-			seg = level.subsectors[i].firstline + j;
-			seg->v1 = &level.vertexes[v1];
+			seg = Level->subsectors[i].firstline + j;
+			seg->v1 = &Level->vertexes[v1];
 			if (j == 0)
 			{
-				seg[level.subsectors[i].numlines - 1].v2 = seg->v1;
+				seg[Level->subsectors[i].numlines - 1].v2 = seg->v1;
 			}
 			else
 			{
 				seg[-1].v2 = seg->v1;
 			}
 			
-			seg->PartnerSeg = partner == 0xffffffffu? nullptr : &level.segs[partner];
+			seg->PartnerSeg = partner == 0xffffffffu? nullptr : &Level->segs[partner];
 			if (line != 0xFFFFFFFF)
 			{
 				line_t *ldef;
 
-				seg->linedef = ldef = &level.lines[line];
+				seg->linedef = ldef = &Level->lines[line];
 				seg->sidedef = ldef->sidedef[side];
 				seg->frontsector = ldef->sidedef[side]->sector;
-				if (ldef->flags & ML_TWOSIDED && ldef->sidedef[side^1] != NULL)
+				if (ldef->flags & ML_TWOSIDED && ldef->sidedef[side^1] != nullptr)
 				{
 					seg->backsector = ldef->sidedef[side^1]->sector;
 				}
@@ -933,9 +525,9 @@ void P_LoadGLZSegs (FileReader &data, int type)
 			}
 			else
 			{
-				seg->linedef = NULL;
-				seg->sidedef = NULL;
-				seg->frontsector = seg->backsector = level.subsectors[i].firstline->frontsector;
+				seg->linedef = nullptr;
+				seg->sidedef = nullptr;
+				seg->frontsector = seg->backsector = Level->subsectors[i].firstline->frontsector;
 			}
 		}
 	}
@@ -947,49 +539,49 @@ void P_LoadGLZSegs (FileReader &data, int type)
 //
 //===========================================================================
 
-void LoadZNodes(FileReader &data, int glnodes)
+void MapLoader::LoadZNodes(FileReader &data, int glnodes)
 {
 	// Read extra vertices added during node building
 	unsigned int i;
 
 	uint32_t orgVerts = data.ReadUInt32();
 	uint32_t newVerts = data.ReadUInt32();
-	if (orgVerts > level.vertexes.Size())
+	if (orgVerts > Level->vertexes.Size())
 	{ // These nodes are based on a map with more vertex data than we have.
 	  // We can't use them.
 		throw CRecoverableError("Incorrect number of vertexes in nodes.\n");
 	}
-	auto oldvertexes = &level.vertexes[0];
-	if (orgVerts + newVerts != level.vertexes.Size())
+	auto oldvertexes = &Level->vertexes[0];
+	if (orgVerts + newVerts != Level->vertexes.Size())
 	{
-		level.vertexes.Reserve(newVerts);
+		Level->vertexes.Reserve(newVerts);
 	}
 	for (i = 0; i < newVerts; ++i)
 	{
 		fixed_t x = data.ReadInt32();
 		fixed_t y = data.ReadInt32();
-		level.vertexes[i + orgVerts].set(x, y);
+		Level->vertexes[i + orgVerts].set(x, y);
 	}
-	if (oldvertexes != &level.vertexes[0])
+	if (oldvertexes != &Level->vertexes[0])
 	{
-		for (auto &line : level.lines)
+		for (auto &line : Level->lines)
 		{
-			line.v1 = line.v1 - oldvertexes + &level.vertexes[0];
-			line.v2 = line.v2 - oldvertexes + &level.vertexes[0];
+			line.v1 = line.v1 - oldvertexes + &Level->vertexes[0];
+			line.v2 = line.v2 - oldvertexes + &Level->vertexes[0];
 		}
 	}
 
 	// Read the subsectors
 	uint32_t currSeg;
 	uint32_t numSubs = data.ReadUInt32();
-	level.subsectors.Alloc(numSubs);
-	memset (&level.subsectors[0], 0, level.subsectors.Size()*sizeof(subsector_t));
+	Level->subsectors.Alloc(numSubs);
+	memset (&Level->subsectors[0], 0, Level->subsectors.Size()*sizeof(subsector_t));
 
 	for (i = currSeg = 0; i < numSubs; ++i)
 	{
 		uint32_t numsegs = data.ReadUInt32();
-		level.subsectors[i].firstline = (seg_t *)(size_t)currSeg;		// Oh damn. I should have stored the seg count sooner.
-		level.subsectors[i].numlines = numsegs;
+		Level->subsectors[i].firstline = (seg_t *)(size_t)currSeg;		// Oh damn. I should have stored the seg count sooner.
+		Level->subsectors[i].numlines = numsegs;
 		currSeg += numsegs;
 	}
 
@@ -1003,27 +595,27 @@ void LoadZNodes(FileReader &data, int glnodes)
 		throw CRecoverableError("Incorrect number of segs in nodes.\n");
 	}
 
-	level.segs.Alloc(numSegs);
-	memset (&level.segs[0], 0, numSegs*sizeof(seg_t));
+	Level->segs.Alloc(numSegs);
+	memset (&Level->segs[0], 0, numSegs*sizeof(seg_t));
 
-	for (auto &sub : level.subsectors)
+	for (auto &sub : Level->subsectors)
 	{
-		sub.firstline = &level.segs[(size_t)sub.firstline];
+		sub.firstline = &Level->segs[(size_t)sub.firstline];
 	}
 
 	if (glnodes == 0)
 	{
-		P_LoadZSegs (data);
+		LoadZSegs (data);
 	}
 	else
 	{
-		P_LoadGLZSegs (data, glnodes);
+		LoadGLZSegs (data, glnodes);
 	}
 
 	// Read nodes
 	uint32_t numNodes = data.ReadUInt32();
 
-	auto &nodes = level.nodes;
+	auto &nodes = Level->nodes;
 	nodes.Alloc(numNodes);
 	memset (&nodes[0], 0, sizeof(node_t)*numNodes);
 
@@ -1055,7 +647,7 @@ void LoadZNodes(FileReader &data, int glnodes)
 			uint32_t child = data.ReadUInt32();
 			if (child & 0x80000000)
 			{
-				nodes[i].children[m] = (uint8_t *)&level.subsectors[child & 0x7FFFFFFF] + 1;
+				nodes[i].children[m] = (uint8_t *)&Level->subsectors[child & 0x7FFFFFFF] + 1;
 			}
 			else
 			{
@@ -1071,7 +663,7 @@ void LoadZNodes(FileReader &data, int glnodes)
 //
 //===========================================================================
 
-void P_LoadZNodes (FileReader &dalump, uint32_t id)
+void MapLoader::LoadExtendedNodes (FileReader &dalump, uint32_t id)
 {
 	int type;
 	bool compressed;
@@ -1171,15 +763,15 @@ struct badseg
 };
 
 template<class segtype>
-void P_LoadSegs (MapData * map)
+void MapLoader::LoadSegs (MapData * map)
 {
 	uint8_t *data;
-	int numvertexes = level.vertexes.Size();
+	uint32_t numvertexes = Level->vertexes.Size();
 	uint8_t *vertchanged = new uint8_t[numvertexes];	// phares 10/4/98
 	uint32_t segangle;
 	//int ptp_angle;		// phares 10/4/98
 	//int delta_angle;	// phares 10/4/98
-	int vnum1,vnum2;	// phares 10/4/98
+	uint32_t vnum1,vnum2;	// phares 10/4/98
 	int lumplen = map->Size(ML_SEGS);
 
 	memset (vertchanged,0,numvertexes); // phares 10/4/98
@@ -1189,21 +781,21 @@ void P_LoadSegs (MapData * map)
 	if (numsegs == 0)
 	{
 		Printf ("This map has no segs.\n");
-		level.subsectors.Clear();
-		level.nodes.Clear();
+		Level->subsectors.Clear();
+		Level->nodes.Clear();
 		delete[] vertchanged;
 		ForceNodeBuild = true;
 		return;
 	}
 
-	level.segs.Alloc(numsegs);
-	auto &segs = level.segs;
+	Level->segs.Alloc(numsegs);
+	auto &segs = Level->segs;
 	memset (&segs[0], 0, numsegs*sizeof(seg_t));
 
 	data = new uint8_t[lumplen];
 	map->Read(ML_SEGS, data);
 
-	for (auto &sub : level.subsectors)
+	for (auto &sub : Level->subsectors)
 	{
 		sub.firstline = &segs[(size_t)sub.firstline];
 	}
@@ -1212,7 +804,7 @@ void P_LoadSegs (MapData * map)
 	// Mark those used by linedefs. A marked vertex is one that is not a
 	// candidate for movement further down.
 
-	for (auto &line : level.lines)
+	for (auto &line : Level->lines)
 	{
 		vertchanged[line.v1->Index()] = vertchanged[line.v2->Index()] = 1;
 	}
@@ -1235,8 +827,8 @@ void P_LoadSegs (MapData * map)
 				throw badseg(0, i, MAX(vnum1, vnum2));
 			}
 
-			li->v1 = &level.vertexes[vnum1];
-			li->v2 = &level.vertexes[vnum2];
+			li->v1 = &Level->vertexes[vnum1];
+			li->v2 = &Level->vertexes[vnum2];
 
 			segangle = (uint16_t)LittleShort(ml->angle);
 
@@ -1291,14 +883,18 @@ void P_LoadSegs (MapData * map)
 			}
 
 			linedef = LittleShort(ml->linedef);
-			if ((unsigned)linedef >= level.lines.Size())
+			if ((unsigned)linedef >= Level->lines.Size())
 			{
 				throw badseg(1, i, linedef);
 			}
-			ldef = &level.lines[linedef];
+			ldef = &Level->lines[linedef];
 			li->linedef = ldef;
 			side = LittleShort(ml->side);
-			if ((unsigned)(ldef->sidedef[side]->Index()) >= level.sides.Size())
+			if (side != 0 && side != 1)
+			{
+				throw badseg(3, i, side);
+			}
+			if ((unsigned)(ldef->sidedef[side]->Index()) >= Level->sides.Size())
 			{
 				throw badseg(2, i, ldef->sidedef[side]->Index());
 			}
@@ -1306,7 +902,7 @@ void P_LoadSegs (MapData * map)
 			li->frontsector = ldef->sidedef[side]->sector;
 
 			// killough 5/3/98: ignore 2s flag if second sidedef missing:
-			if (ldef->flags & ML_TWOSIDED && ldef->sidedef[side^1] != NULL)
+			if (ldef->flags & ML_TWOSIDED && ldef->sidedef[side^1] != nullptr)
 			{
 				li->backsector = ldef->sidedef[side^1]->sector;
 			}
@@ -1326,17 +922,21 @@ void P_LoadSegs (MapData * map)
 			break;
 
 		case 1:
-			Printf ("Seg %d references a nonexistant linedef %d (max %u).\n", bad.badsegnum, bad.baddata, level.lines.Size());
+			Printf ("Seg %d references a nonexistant linedef %d (max %u).\n", bad.badsegnum, bad.baddata, Level->lines.Size());
 			break;
 
 		case 2:
-			Printf ("The linedef for seg %d references a nonexistant sidedef %d (max %d).\n", bad.badsegnum, bad.baddata, level.sides.Size());
+			Printf ("The linedef for seg %d references a nonexistant sidedef %d (max %d).\n", bad.badsegnum, bad.baddata, Level->sides.Size());
+			break;
+
+		case 3:
+			Printf("Sidedef reference in seg %d is %d (must be 0 or 1).\n", bad.badsegnum, bad.baddata);
 			break;
 		}
 		Printf ("The BSP will be rebuilt.\n");
-		level.segs.Clear();
-		level.subsectors.Clear();
-		level.nodes.Clear();
+		Level->segs.Clear();
+		Level->subsectors.Clear();
+		Level->nodes.Clear();
 		ForceNodeBuild = true;
 	}
 
@@ -1352,7 +952,7 @@ void P_LoadSegs (MapData * map)
 //===========================================================================
 
 template<class subsectortype, class segtype>
-void P_LoadSubsectors (MapData * map)
+void MapLoader::LoadSubsectors (MapData * map)
 {
 	uint32_t maxseg = map->Size(ML_SEGS) / sizeof(segtype);
 
@@ -1361,12 +961,12 @@ void P_LoadSubsectors (MapData * map)
 	if (numsubsectors == 0 || maxseg == 0 )
 	{
 		Printf ("This map has an incomplete BSP tree.\n");
-		level.nodes.Clear();
+		Level->nodes.Clear();
 		ForceNodeBuild = true;
 		return;
 	}
 
-	auto &subsectors = level.subsectors;
+	auto &subsectors = Level->subsectors;
 	subsectors.Alloc(numsubsectors);
 	auto &fr = map->Reader(ML_SSECTORS);
 		
@@ -1382,8 +982,8 @@ void P_LoadSubsectors (MapData * map)
 		if (subd.numsegs == 0)
 		{
 			Printf ("Subsector %i is empty.\n", i);
-			level.subsectors.Clear();
-			level.nodes.Clear();
+			Level->subsectors.Clear();
+			Level->nodes.Clear();
 			ForceNodeBuild = true;
 			return;
 		}
@@ -1397,8 +997,8 @@ void P_LoadSubsectors (MapData * map)
 				"The BSP will be rebuilt.\n", i, (unsigned)((size_t)subsectors[i].firstline),
 				(unsigned)((size_t)subsectors[i].firstline) + subsectors[i].numlines - 1);
 			ForceNodeBuild = true;
-			level.nodes.Clear();
-			level.subsectors.Clear();
+			Level->nodes.Clear();
+			Level->subsectors.Clear();
 			break;
 		}
 		else if ((size_t)subsectors[i].firstline + subsectors[i].numlines > maxseg)
@@ -1407,8 +1007,8 @@ void P_LoadSubsectors (MapData * map)
 				"The BSP will be rebuilt.\n", i, maxseg,
 				(unsigned)((size_t)subsectors[i].firstline) + subsectors[i].numlines - 1);
 			ForceNodeBuild = true;
-			level.nodes.Clear();
-			level.subsectors.Clear();
+			Level->nodes.Clear();
+			Level->subsectors.Clear();
 			break;
 		}
 	}
@@ -1421,7 +1021,7 @@ void P_LoadSubsectors (MapData * map)
 //
 //===========================================================================
 
-void P_LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
+void MapLoader::LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 {
 	char				*msp;
 	mapsector_t			*ms;
@@ -1430,11 +1030,11 @@ void P_LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 	int					lumplen = map->Size(ML_SECTORS);
 
 	unsigned numsectors = lumplen / sizeof(mapsector_t);
-	level.sectors.Alloc(numsectors);
-	auto sectors = &level.sectors[0];
+	Level->sectors.Alloc(numsectors);
+	auto sectors = &Level->sectors[0];
 	memset (sectors, 0, numsectors*sizeof(sector_t));
 
-	if (level.flags & LEVEL_SNDSEQTOTALCTRL)
+	if (Level->flags & LEVEL_SNDSEQTOTALCTRL)
 		defSeqType = 0;
 	else
 		defSeqType = -1;
@@ -1472,6 +1072,7 @@ void P_LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 		ss->nextsec = -1;	//jff 2/26/98 add fields to support locking out
 		ss->prevsec = -1;	// stair retriggering until build completes
 		memset(ss->SpecialColors, -1, sizeof(ss->SpecialColors));
+		memset(ss->AdditiveColors, 0, sizeof(ss->AdditiveColors));
 
 		ss->SetAlpha(sector_t::floor, 1.);
 		ss->SetAlpha(sector_t::ceiling, 1.);
@@ -1480,7 +1081,7 @@ void P_LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 		ss->SetXScale(sector_t::ceiling, 1.);
 		ss->SetYScale(sector_t::ceiling, 1.);
 
-		ss->heightsec = NULL;	// sector used to get floor and ceiling height
+		ss->heightsec = nullptr;	// sector used to get floor and ceiling height
 		// killough 3/7/98: end changes
 
 		ss->gravity = 1.f;	// [RH] Default sector gravity of 1.0
@@ -1492,17 +1093,17 @@ void P_LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 		// [RH] Sectors default to white light with the default fade.
 		//		If they are outside (have a sky ceiling), they use the outside fog.
 		ss->Colormap.LightColor = PalEntry(255, 255, 255);
-		if (level.outsidefog != 0xff000000 && (ss->GetTexture(sector_t::ceiling) == skyflatnum || (ss->special&0xff) == Sector_Outside))
+		if (Level->outsidefog != 0xff000000 && (ss->GetTexture(sector_t::ceiling) == skyflatnum || (ss->special&0xff) == Sector_Outside))
 		{
-			ss->Colormap.FadeColor.SetRGB(level.outsidefog);
+			ss->Colormap.FadeColor.SetRGB(Level->outsidefog);
 		}
-		else  if (level.flags & LEVEL_HASFADETABLE)
+		else  if (Level->flags & LEVEL_HASFADETABLE)
 		{
 			ss->Colormap.FadeColor= 0x939393;	// The true color software renderer needs this. (The hardware renderer will ignore this value if LEVEL_HASFADETABLE is set.)
 		}
 		else
 		{
-			ss->Colormap.FadeColor.SetRGB(level.fadeto);
+			ss->Colormap.FadeColor.SetRGB(Level->fadeto);
 		}
 
 
@@ -1523,7 +1124,7 @@ void P_LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 //===========================================================================
 
 template<class nodetype, class subsectortype>
-void P_LoadNodes (MapData * map)
+void MapLoader::LoadNodes (MapData * map)
 {
 	FMemLump	data;
 	int 		j;
@@ -1543,7 +1144,7 @@ void P_LoadNodes (MapData * map)
 		return;
 	}
 	
-	auto &nodes = level.nodes;
+	auto &nodes = Level->nodes;
 	nodes.Alloc(numnodes);		
 	used = (uint16_t *)alloca (sizeof(uint16_t)*numnodes);
 	memset (used, 0, sizeof(uint16_t)*numnodes);
@@ -1570,18 +1171,18 @@ void P_LoadNodes (MapData * map)
 					Printf ("BSP node %d references invalid subsector %d.\n"
 						"The BSP will be rebuilt.\n", i, child);
 					ForceNodeBuild = true;
-					level.nodes.Clear();
+					Level->nodes.Clear();
 					delete[] mnp;
 					return;
 				}
-				no->children[j] = (uint8_t *)&level.subsectors[child] + 1;
+				no->children[j] = (uint8_t *)&Level->subsectors[child] + 1;
 			}
 			else if ((unsigned)child >= numnodes)
 			{
 				Printf ("BSP node %d references invalid node %d.\n"
 					"The BSP will be rebuilt.\n", i, ((node_t *)no->children[j])->Index());
 				ForceNodeBuild = true;
-				level.nodes.Clear();
+				Level->nodes.Clear();
 				delete[] mnp;
 				return;
 			}
@@ -1591,7 +1192,7 @@ void P_LoadNodes (MapData * map)
 					"which is already used by node %d.\n"
 					"The BSP will be rebuilt.\n", i, child, used[child]-1);
 				ForceNodeBuild = true;
-				level.nodes.Clear();
+				Level->nodes.Clear();
 				delete[] mnp;
 				return;
 			}
@@ -1611,33 +1212,13 @@ void P_LoadNodes (MapData * map)
 
 //===========================================================================
 //
-// SpawnMapThing
-//
-//===========================================================================
-CVAR(Bool, dumpspawnedthings, false, 0)
-
-AActor *SpawnMapThing(int index, FMapThing *mt, int position)
-{
-	AActor *spawned = P_SpawnMapThing(mt, position);
-	if (dumpspawnedthings)
-	{
-		Printf("%5d: (%5f, %5f, %5f), doomednum = %5d, flags = %04x, type = %s\n",
-			index, mt->pos.X, mt->pos.Y, mt->pos.Z, mt->EdNum, mt->flags, 
-			spawned? spawned->GetClass()->TypeName.GetChars() : "(none)");
-	}
-	T_AddSpawnedThing(spawned);
-	return spawned;
-}
-
-//===========================================================================
-//
 // SetMapThingUserData
 //
 //===========================================================================
 
-static void SetMapThingUserData(AActor *actor, unsigned udi)
+void MapLoader::SetMapThingUserData(AActor *actor, unsigned udi)
 {
-	if (actor == NULL)
+	if (actor == nullptr)
 	{
 		return;
 	}
@@ -1646,7 +1227,7 @@ static void SetMapThingUserData(AActor *actor, unsigned udi)
 		FName varname = MapThingsUserData[udi].Key;
 		PField *var = dyn_cast<PField>(actor->GetClass()->FindSymbol(varname, true));
 
-		if (var == NULL || (var->Flags & (VARF_Native|VARF_Private|VARF_Protected|VARF_Static)) || !var->Type->isScalar())
+		if (var == nullptr || (var->Flags & (VARF_Native|VARF_Private|VARF_Protected|VARF_Static)) || !var->Type->isScalar())
 		{
 			DPrintf(DMSG_WARNING, "%s is not a writable user variable in class %s\n", varname.GetChars(),
 				actor->GetClass()->TypeName.GetChars());
@@ -1687,17 +1268,12 @@ uint16_t MakeSkill(int flags)
 	return res;
 }
 
-void P_LoadThings (MapData * map)
+void MapLoader::LoadThings (MapData * map)
 {
-	int	lumplen = map->Size(ML_THINGS);
-	int numthings = lumplen / sizeof(mapthing_t);
-
-	char *mtp;
 	mapthing_t *mt;
-
-	mtp = new char[lumplen];
-	map->Read(ML_THINGS, mtp);
-	mt = (mapthing_t*)mtp;
+	auto mtp = map->Read(ML_THINGS);
+	int numthings = mtp.Size() / sizeof(mapthing_t);
+	mt = (mapthing_t*)mtp.Data();
 
 	MapThingsConverted.Resize(numthings);
 	FMapThing *mti = &MapThingsConverted[0];
@@ -1734,7 +1310,7 @@ void P_LoadThings (MapData * map)
 
 
 #ifndef NO_EDATA
-		if (mti[i].info != NULL && mti[i].info->Special == SMT_EDThing)
+		if (mti[i].info != nullptr && mti[i].info->Special == SMT_EDThing)
 		{
 			ProcessEDMapthing(&mti[i], flags);
 		}
@@ -1765,7 +1341,6 @@ void P_LoadThings (MapData * map)
 			if (flags & BTF_NOTSINGLE)			mti[i].flags &= ~MTF_SINGLE;
 		}
 	}
-	delete [] mtp;
 }
 
 //===========================================================================
@@ -1780,7 +1355,7 @@ void P_LoadThings (MapData * map)
 //
 //===========================================================================
 
-void P_LoadThings2 (MapData * map)
+void MapLoader::LoadThings2 (MapData * map)
 {
 	int	lumplen = map->Size(ML_THINGS);
 	int numthings = lumplen / sizeof(mapthinghexen_t);
@@ -1811,7 +1386,7 @@ void P_LoadThings2 (MapData * map)
 		mti[i].SkillFilter = MakeSkill(mti[i].flags);
 		mti[i].ClassFilter = (mti[i].flags & MTF_CLASS_MASK) >> MTF_CLASS_SHIFT;
 		mti[i].flags &= ~(MTF_SKILLMASK|MTF_CLASS_MASK);
-		if (level.flags2 & LEVEL2_HEXENHACK)
+		if (Level->flags2 & LEVEL2_HEXENHACK)
 		{
 			mti[i].flags &= 0x7ff;	// mask out Strife flags if playing an original Hexen map.
 		}
@@ -1832,7 +1407,7 @@ void P_LoadThings2 (MapData * map)
 //
 //===========================================================================
 
-void P_SpawnThings (int position)
+void MapLoader::SpawnThings (int position)
 {
 	int numthings = MapThingsConverted.Size();
 
@@ -1840,7 +1415,7 @@ void P_SpawnThings (int position)
 	{
 		AActor *actor = SpawnMapThing (i, &MapThingsConverted[i], position);
 		unsigned *udi = MapThingsUserDataIndex.CheckKey((unsigned)i);
-		if (udi != NULL)
+		if (udi != nullptr)
 		{
 			SetMapThingUserData(actor, *udi);
 		}
@@ -1859,38 +1434,6 @@ void P_SpawnThings (int position)
 //
 //===========================================================================
 
-void P_AdjustLine (line_t *ld)
-{
-	vertex_t *v1, *v2;
-
-	v1 = ld->v1;
-	v2 = ld->v2;
-
-	ld->setDelta(v2->fX() - v1->fX(), v2->fY() - v1->fY());
-	
-	if (v1->fX() < v2->fX())
-	{
-		ld->bbox[BOXLEFT] = v1->fX();
-		ld->bbox[BOXRIGHT] = v2->fX();
-	}
-	else
-	{
-		ld->bbox[BOXLEFT] = v2->fX();
-		ld->bbox[BOXRIGHT] = v1->fX();
-	}
-
-	if (v1->fY() < v2->fY())
-	{
-		ld->bbox[BOXBOTTOM] = v1->fY();
-		ld->bbox[BOXTOP] = v2->fY();
-	}
-	else
-	{
-		ld->bbox[BOXBOTTOM] = v2->fY();
-		ld->bbox[BOXTOP] = v1->fY();
-	}
-}
-
 //===========================================================================
 //
 // [RH] Set line id (as appropriate) here
@@ -1899,15 +1442,15 @@ void P_AdjustLine (line_t *ld)
 //
 //===========================================================================
 
-void P_SetLineID (int i, line_t *ld)
+void MapLoader::SetLineID (int i, line_t *ld)
 {
-	if (level.maptype == MAPTYPE_HEXEN)	
+	if (Level->maptype == MAPTYPE_HEXEN)	
 	{
 		int setid = -1;
 		switch (ld->special)
 		{
 		case Line_SetIdentification:
-			if (!(level.flags2 & LEVEL2_HEXENHACK))
+			if (!(Level->flags2 & LEVEL2_HEXENHACK))
 			{
 				setid = ld->args[0] + 256 * ld->args[4];
 				ld->flags |= ld->args[1]<<16;
@@ -1962,9 +1505,9 @@ void P_SetLineID (int i, line_t *ld)
 //
 //===========================================================================
 
-void P_SaveLineSpecial (line_t *ld)
+void MapLoader::SaveLineSpecial (line_t *ld)
 {
-	if (ld->sidedef[0] == NULL)
+	if (ld->sidedef[0] == nullptr)
 		return;
 
 	uint32_t sidenum = ld->sidedef[0]->Index();
@@ -1987,17 +1530,17 @@ void P_SaveLineSpecial (line_t *ld)
 //
 //===========================================================================
 
-void P_FinishLoadingLineDef(line_t *ld, int alpha)
+void MapLoader::FinishLoadingLineDef(line_t *ld, int alpha)
 {
 	bool additive = false;
 
-	ld->frontsector = ld->sidedef[0] != NULL ? ld->sidedef[0]->sector : NULL;
-	ld->backsector  = ld->sidedef[1] != NULL ? ld->sidedef[1]->sector : NULL;
+	ld->frontsector = ld->sidedef[0] != nullptr ? ld->sidedef[0]->sector : nullptr;
+	ld->backsector  = ld->sidedef[1] != nullptr ? ld->sidedef[1]->sector : nullptr;
 	double dx = (ld->v2->fX() - ld->v1->fX());
 	double dy = (ld->v2->fY() - ld->v1->fY());
 	int linenum = ld->Index();
 
-	if (ld->frontsector == NULL)
+	if (ld->frontsector == nullptr)
 	{
 		Printf ("Line %d has no front sector\n", linemap[linenum]);
 	}
@@ -2005,13 +1548,13 @@ void P_FinishLoadingLineDef(line_t *ld, int alpha)
 	// [RH] Set some new sidedef properties
 	int len = (int)(g_sqrt (dx*dx + dy*dy) + 0.5f);
 
-	if (ld->sidedef[0] != NULL)
+	if (ld->sidedef[0] != nullptr)
 	{
 		ld->sidedef[0]->linedef = ld;
 		ld->sidedef[0]->TexelLength = len;
 
 	}
-	if (ld->sidedef[1] != NULL)
+	if (ld->sidedef[1] != nullptr)
 	{
 		ld->sidedef[1]->linedef = ld;
 		ld->sidedef[1]->TexelLength = len;
@@ -2043,14 +1586,14 @@ void P_FinishLoadingLineDef(line_t *ld, int alpha)
 		}
 		else
 		{
-			for (unsigned j = 0; j < level.lines.Size(); j++)
+			for (unsigned j = 0; j < Level->lines.Size(); j++)
 			{
 				if (tagManager.LineHasID(j, ld->args[0]))
 				{
-					level.lines[j].alpha = dalpha;
+					Level->lines[j].alpha = dalpha;
 					if (additive)
 					{
-						level.lines[j].flags |= ML_ADDTRANS;
+						Level->lines[j].flags |= ML_ADDTRANS;
 					}
 				}
 			}
@@ -2066,11 +1609,11 @@ void P_FinishLoadingLineDef(line_t *ld, int alpha)
 //
 //===========================================================================
 
-void P_FinishLoadingLineDefs ()
+void MapLoader::FinishLoadingLineDefs ()
 {
-	for (auto &line : level.lines)
+	for (auto &line : Level->lines)
 	{
-		P_FinishLoadingLineDef(&line, sidetemp[line.sidedef[0]->Index()].a.alpha);
+		FinishLoadingLineDef(&line, sidetemp[line.sidedef[0]->Index()].a.alpha);
 	}
 }
 
@@ -2080,16 +1623,16 @@ void P_FinishLoadingLineDefs ()
 //
 //===========================================================================
 
-static void P_SetSideNum (side_t **sidenum_p, uint16_t sidenum)
+ void MapLoader::SetSideNum (side_t **sidenum_p, uint16_t sidenum)
 {
 	if (sidenum == NO_INDEX)
 	{
-		*sidenum_p = NULL;
+		*sidenum_p = nullptr;
 	}
-	else if (sidecount < (int)level.sides.Size())
+	else if (sidecount < (int)Level->sides.Size())
 	{
 		sidetemp[sidecount].a.map = sidenum;
-		*sidenum_p = &level.sides[sidecount++];
+		*sidenum_p = &Level->sides[sidecount++];
 	}
 	else
 	{
@@ -2103,19 +1646,15 @@ static void P_SetSideNum (side_t **sidenum_p, uint16_t sidenum)
 //
 //===========================================================================
 
-void P_LoadLineDefs (MapData * map)
+void MapLoader::LoadLineDefs (MapData * map)
 {
 	int i, skipped;
 	line_t *ld;
-	int lumplen = map->Size(ML_LINEDEFS);
-	char * mldf;
 	maplinedef_t *mld;
 		
-	int numlines = lumplen / sizeof(maplinedef_t);
+	auto mldf = map->Read(ML_LINEDEFS);
+	int numlines = mldf.Size() / sizeof(maplinedef_t);
 	linemap.Resize(numlines);
-
-	mldf = new char[lumplen];
-	map->Read(ML_LINEDEFS, mldf);
 
 	// [RH] Count the number of sidedef references. This is the number of
 	// sidedefs we need. The actual number in the SIDEDEFS lump might be less.
@@ -2123,17 +1662,16 @@ void P_LoadLineDefs (MapData * map)
 
 	for (skipped = sidecount = i = 0; i < numlines; )
 	{
-		mld = ((maplinedef_t*)mldf) + i;
+		mld = ((maplinedef_t*)mldf.Data()) + i;
 		unsigned v1 = LittleShort(mld->v1);
 		unsigned v2 = LittleShort(mld->v2);
 
-		if (v1 >= level.vertexes.Size() || v2 >= level.vertexes.Size())
+		if (v1 >= Level->vertexes.Size() || v2 >= Level->vertexes.Size())
 		{
-			delete [] mldf;
-			I_Error ("Line %d has invalid vertices: %d and/or %d.\nThe map only contains %u vertices.", i+skipped, v1, v2, level.vertexes.Size());
+			I_Error ("Line %d has invalid vertices: %d and/or %d.\nThe map only contains %u vertices.", i+skipped, v1, v2, Level->vertexes.Size());
 		}
 		else if (v1 == v2 ||
-			(level.vertexes[v1].fX() == level.vertexes[v2].fX() && level.vertexes[v1].fY() == level.vertexes[v2].fY()))
+			(Level->vertexes[v1].fX() == Level->vertexes[v2].fX() && Level->vertexes[v1].fY() == Level->vertexes[v2].fY()))
 		{
 			Printf ("Removing 0-length line %d\n", i+skipped);
 			memmove (mld, mld+1, sizeof(*mld)*(numlines-i-1));
@@ -2157,13 +1695,13 @@ void P_LoadLineDefs (MapData * map)
 			i++;
 		}
 	}
-	level.lines.Alloc(numlines);
-	memset(&level.lines[0], 0, numlines * sizeof(line_t));
+	Level->lines.Alloc(numlines);
+	memset(&Level->lines[0], 0, numlines * sizeof(line_t));
 
-	P_AllocateSideDefs (map, sidecount);
+	AllocateSideDefs (map, sidecount);
 
-	mld = (maplinedef_t *)mldf;
-	ld = &level.lines[0];
+	mld = (maplinedef_t *)mldf.Data();
+	ld = &Level->lines[0];
 	for (i = 0; i < numlines; i++, mld++, ld++)
 	{
 		ld->alpha = 1.;	// [RH] Opaque by default
@@ -2189,19 +1727,18 @@ void P_LoadLineDefs (MapData * map)
 		}
 #endif
 
-		ld->v1 = &level.vertexes[LittleShort(mld->v1)];
-		ld->v2 = &level.vertexes[LittleShort(mld->v2)];
+		ld->v1 = &Level->vertexes[LittleShort(mld->v1)];
+		ld->v2 = &Level->vertexes[LittleShort(mld->v2)];
 
-		P_SetSideNum (&ld->sidedef[0], LittleShort(mld->sidenum[0]));
-		P_SetSideNum (&ld->sidedef[1], LittleShort(mld->sidenum[1]));
+		SetSideNum (&ld->sidedef[0], LittleShort(mld->sidenum[0]));
+		SetSideNum (&ld->sidedef[1], LittleShort(mld->sidenum[1]));
 
-		P_AdjustLine (ld);
-		P_SaveLineSpecial (ld);
-		if (level.flags2 & LEVEL2_CLIPMIDTEX) ld->flags |= ML_CLIP_MIDTEX;
-		if (level.flags2 & LEVEL2_WRAPMIDTEX) ld->flags |= ML_WRAP_MIDTEX;
-		if (level.flags2 & LEVEL2_CHECKSWITCHRANGE) ld->flags |= ML_CHECKSWITCHRANGE;
+		ld->AdjustLine ();
+		SaveLineSpecial (ld);
+		if (Level->flags2 & LEVEL2_CLIPMIDTEX) ld->flags |= ML_CLIP_MIDTEX;
+		if (Level->flags2 & LEVEL2_WRAPMIDTEX) ld->flags |= ML_WRAP_MIDTEX;
+		if (Level->flags2 & LEVEL2_CHECKSWITCHRANGE) ld->flags |= ML_CHECKSWITCHRANGE;
 	}
-	delete[] mldf;
 }
 
 //===========================================================================
@@ -2210,7 +1747,7 @@ void P_LoadLineDefs (MapData * map)
 //
 //===========================================================================
 
-void P_LoadLineDefs2 (MapData * map)
+void MapLoader::LoadLineDefs2 (MapData * map)
 {
 	int i, skipped;
 	line_t *ld;
@@ -2230,8 +1767,8 @@ void P_LoadLineDefs2 (MapData * map)
 		mld = ((maplinedef2_t*)mldf) + i;
 
 		if (mld->v1 == mld->v2 ||
-			(level.vertexes[LittleShort(mld->v1)].fX() == level.vertexes[LittleShort(mld->v2)].fX() &&
-			 level.vertexes[LittleShort(mld->v1)].fY() == level.vertexes[LittleShort(mld->v2)].fY()))
+			(Level->vertexes[LittleShort(mld->v1)].fX() == Level->vertexes[LittleShort(mld->v2)].fX() &&
+			 Level->vertexes[LittleShort(mld->v1)].fY() == Level->vertexes[LittleShort(mld->v2)].fY()))
 		{
 			Printf ("Removing 0-length line %d\n", i+skipped);
 			memmove (mld, mld+1, sizeof(*mld)*(numlines-i-1));
@@ -2258,13 +1795,13 @@ void P_LoadLineDefs2 (MapData * map)
 	{
 		ForceNodeBuild = true;
 	}
-	level.lines.Alloc(numlines);
-	memset(&level.lines[0], 0, numlines * sizeof(line_t));
+	Level->lines.Alloc(numlines);
+	memset(&Level->lines[0], 0, numlines * sizeof(line_t));
 
-	P_AllocateSideDefs (map, sidecount);
+	AllocateSideDefs (map, sidecount);
 
 	mld = (maplinedef2_t *)mldf;
-	ld = &level.lines[0];
+	ld = &Level->lines[0];
 	for (i = 0; i < numlines; i++, mld++, ld++)
 	{
 		int j;
@@ -2278,19 +1815,19 @@ void P_LoadLineDefs2 (MapData * map)
 		ld->flags = LittleShort(mld->flags);
 		ld->special = mld->special;
 
-		ld->v1 = &level.vertexes[LittleShort(mld->v1)];
-		ld->v2 = &level.vertexes[LittleShort(mld->v2)];
+		ld->v1 = &Level->vertexes[LittleShort(mld->v1)];
+		ld->v2 = &Level->vertexes[LittleShort(mld->v2)];
 		ld->alpha = 1.;	// [RH] Opaque by default
 
-		P_SetSideNum (&ld->sidedef[0], LittleShort(mld->sidenum[0]));
-		P_SetSideNum (&ld->sidedef[1], LittleShort(mld->sidenum[1]));
+		SetSideNum (&ld->sidedef[0], LittleShort(mld->sidenum[0]));
+		SetSideNum (&ld->sidedef[1], LittleShort(mld->sidenum[1]));
 
-		P_AdjustLine (ld);
-		P_SetLineID(i, ld);
-		P_SaveLineSpecial (ld);
-		if (level.flags2 & LEVEL2_CLIPMIDTEX) ld->flags |= ML_CLIP_MIDTEX;
-		if (level.flags2 & LEVEL2_WRAPMIDTEX) ld->flags |= ML_WRAP_MIDTEX;
-		if (level.flags2 & LEVEL2_CHECKSWITCHRANGE) ld->flags |= ML_CHECKSWITCHRANGE;
+		ld->AdjustLine ();
+		SetLineID(i, ld);
+		SaveLineSpecial (ld);
+		if (Level->flags2 & LEVEL2_CLIPMIDTEX) ld->flags |= ML_CLIP_MIDTEX;
+		if (Level->flags2 & LEVEL2_WRAPMIDTEX) ld->flags |= ML_WRAP_MIDTEX;
+		if (Level->flags2 & LEVEL2_CHECKSWITCHRANGE) ld->flags |= ML_CHECKSWITCHRANGE;
 
 		// convert the activation type
 		ld->activation = 1 << GET_SPAC(ld->flags);
@@ -2314,14 +1851,14 @@ void P_LoadLineDefs2 (MapData * map)
 //
 //===========================================================================
 
-static void P_AllocateSideDefs (MapData *map, int count)
+ void MapLoader::AllocateSideDefs (MapData *map, int count)
 {
 	int i;
 
-	level.sides.Alloc(count);
-	memset(&level.sides[0], 0, count * sizeof(side_t));
+	Level->sides.Alloc(count);
+	memset(&Level->sides[0], 0, count * sizeof(side_t));
 
-	sidetemp = new sidei_t[MAX<int>(count, level.vertexes.Size())];
+	sidetemp = new sidei_t[MAX<int>(count, Level->vertexes.Size())];
 	for (i = 0; i < count; i++)
 	{
 		sidetemp[i].a.special = sidetemp[i].a.tag = 0;
@@ -2344,18 +1881,18 @@ static void P_AllocateSideDefs (MapData *map, int count)
 //
 //===========================================================================
 
-static void P_LoopSidedefs (bool firstloop)
+void MapLoader::LoopSidedefs (bool firstloop)
 {
 	int i;
 
-	if (sidetemp != NULL)
+	if (sidetemp != nullptr)
 	{
 		delete[] sidetemp;
 	}
-	int numsides = level.sides.Size();
-	sidetemp = new sidei_t[MAX<int>(level.vertexes.Size(), numsides)];
+	int numsides = Level->sides.Size();
+	sidetemp = new sidei_t[MAX<int>(Level->vertexes.Size(), numsides)];
 
-	for (i = 0; i < (int)level.vertexes.Size(); ++i)
+	for (i = 0; i < (int)Level->vertexes.Size(); ++i)
 	{
 		sidetemp[i].b.first = NO_SIDE;
 		sidetemp[i].b.next = NO_SIDE;
@@ -2369,8 +1906,8 @@ static void P_LoopSidedefs (bool firstloop)
 	{
 		// For each vertex, build a list of sidedefs that use that vertex
 		// as their left edge.
-		line_t *line = level.sides[i].linedef;
-		int lineside = (line->sidedef[0] != &level.sides[i]);
+		line_t *line = Level->sides[i].linedef;
+		int lineside = (line->sidedef[0] != &Level->sides[i]);
 		int vert = lineside ? line->v2->Index() : line->v1->Index();
 		
 		sidetemp[i].b.lineside = lineside;
@@ -2378,8 +1915,8 @@ static void P_LoopSidedefs (bool firstloop)
 		sidetemp[vert].b.first = i;
 
 		// Set each side so that it is the only member of its loop
-		level.sides[i].LeftSide = NO_SIDE;
-		level.sides[i].RightSide = NO_SIDE;
+		Level->sides[i].LeftSide = NO_SIDE;
+		Level->sides[i].RightSide = NO_SIDE;
 	}
 
 	// For each side, find the side that is to its right and set the
@@ -2388,7 +1925,7 @@ static void P_LoopSidedefs (bool firstloop)
 	for (i = 0; i < numsides; ++i)
 	{
 		uint32_t right;
-		line_t *line = level.sides[i].linedef;
+		line_t *line = Level->sides[i].linedef;
 
 		// If the side's line only exists in a single sector,
 		// then consider that line to be a self-contained loop
@@ -2397,7 +1934,7 @@ static void P_LoopSidedefs (bool firstloop)
 		{
 			const side_t* const rightside = line->sidedef[!sidetemp[i].b.lineside];
 
-			if (NULL == rightside)
+			if (nullptr == rightside)
 			{
 				// There is no right side!
 				if (firstloop) Printf ("Line %d's right edge is unconnected\n", linemap[line->Index()]);
@@ -2433,7 +1970,7 @@ static void P_LoopSidedefs (bool firstloop)
 				line_t *leftline, *rightline;
 				DAngle ang1, ang2, ang;
 
-				leftline = level.sides[i].linedef;
+				leftline = Level->sides[i].linedef;
 				ang1 = leftline->Delta().Angle();
 				if (!sidetemp[i].b.lineside)
 				{
@@ -2442,9 +1979,9 @@ static void P_LoopSidedefs (bool firstloop)
 
 				while (right != NO_SIDE)
 				{
-					if (level.sides[right].LeftSide == NO_SIDE)
+					if (Level->sides[right].LeftSide == NO_SIDE)
 					{
-						rightline = level.sides[right].linedef;
+						rightline = Level->sides[right].linedef;
 						if (rightline->frontsector != rightline->backsector)
 						{
 							ang2 = rightline->Delta().Angle();
@@ -2469,8 +2006,8 @@ static void P_LoopSidedefs (bool firstloop)
 		}
 		assert((unsigned)i<(unsigned)numsides);
 		assert(right<(unsigned)numsides);
-		level.sides[i].RightSide = right;
-		level.sides[right].LeftSide = i;
+		Level->sides[i].RightSide = right;
+		Level->sides[right].LeftSide = i;
 	}
 
 	// We keep the sidedef init info around until after polyobjects are initialized,
@@ -2483,7 +2020,7 @@ static void P_LoopSidedefs (bool firstloop)
 //
 //===========================================================================
 
-int P_DetermineTranslucency (int lumpnum)
+int MapLoader::DetermineTranslucency (int lumpnum)
 {
 	auto tranmap = Wads.OpenLumpReader (lumpnum);
 	uint8_t index;
@@ -2529,7 +2066,7 @@ int P_DetermineTranslucency (int lumpnum)
 //
 //===========================================================================
 
-void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, intmapsidedef_t *msd, int special, int tag, short *alpha, FMissingTextureTracker &missingtex)
+void MapLoader::ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, intmapsidedef_t *msd, int special, int tag, short *alpha, FMissingTextureTracker &missingtex)
 {
 	switch (special)
 	{
@@ -2538,7 +2075,7 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, intmaps
 		  //	  but a packed ARGB word for blending, so we also allow
 		  //	  the blend to be specified directly by the texture names
 		  //	  instead of figuring something out from the colormap.
-		if (sec != NULL)
+		if (sec != nullptr)
 		{
 			SetTexture (sd, side_t::bottom, &sec->bottommap, msd->bottomtexture);
 			SetTexture (sd, side_t::mid, &sec->midmap, msd->midtexture);
@@ -2560,16 +2097,16 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, intmaps
 
 			if (colorgood | foggood)
 			{
-				for (unsigned s = 0; s < level.sectors.Size(); s++)
+				for (unsigned s = 0; s < Level->sectors.Size(); s++)
 				{
 					if (tagManager.SectorHasTag(s, tag))
 					{
 						if (colorgood)
 						{
-							level.sectors[s].Colormap.LightColor.SetRGB(color);
-							level.sectors[s].Colormap.BlendFactor = APART(color);
+							Level->sectors[s].Colormap.LightColor.SetRGB(color);
+							Level->sectors[s].Colormap.BlendFactor = APART(color);
 						}
-						if (foggood) level.sectors[s].Colormap.FadeColor.SetRGB(fog);
+						if (foggood) Level->sectors[s].Colormap.FadeColor.SetRGB(fog);
 					}
 				}
 			}
@@ -2579,7 +2116,7 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, intmaps
 	case Sector_Set3DFloor:
 		if (msd->toptexture[0]=='#')
 		{
-			sd->SetTexture(side_t::top, FNullTextureID() +(int)(-strtoll(&msd->toptexture[1], NULL, 10)));	// store the alpha as a negative texture index
+			sd->SetTexture(side_t::top, FNullTextureID() +(int)(-strtoll(&msd->toptexture[1], nullptr, 10)));	// store the alpha as a negative texture index
 														// This will be sorted out by the 3D-floor code later.
 		}
 		else
@@ -2604,7 +2141,7 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, intmaps
 			else if ((lumpnum = Wads.CheckNumForName (msd->midtexture)) > 0 &&
 				Wads.LumpLength (lumpnum) == 65536)
 			{
-				*alpha = (short)P_DetermineTranslucency (lumpnum);
+				*alpha = (short)DetermineTranslucency (lumpnum);
 				sd->SetTexture(side_t::mid, FNullTextureID());
 			}
 			else
@@ -2635,15 +2172,15 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, intmaps
 //
 //===========================================================================
 
-void P_LoadSideDefs2 (MapData *map, FMissingTextureTracker &missingtex)
+void MapLoader::LoadSideDefs2 (MapData *map, FMissingTextureTracker &missingtex)
 {
 	char * msdf = new char[map->Size(ML_SIDEDEFS)];
 	map->Read(ML_SIDEDEFS, msdf);
 
-	for (unsigned i = 0; i < level.sides.Size(); i++)
+	for (unsigned i = 0; i < Level->sides.Size(); i++)
 	{
 		mapsidedef_t *msd = ((mapsidedef_t*)msdf) + sidetemp[i].a.map;
-		side_t *sd = &level.sides[i];
+		side_t *sd = &Level->sides[i];
 		sector_t *sec;
 
 		// [RH] The Doom renderer ignored the patch y locations when
@@ -2658,7 +2195,7 @@ void P_LoadSideDefs2 (MapData *map, FMissingTextureTracker &missingtex)
 		sd->SetTextureYOffset(LittleShort(msd->rowoffset));
 		sd->SetTextureXScale(1.);
 		sd->SetTextureYScale(1.);
-		sd->linedef = NULL;
+		sd->linedef = nullptr;
 		sd->Flags = 0;
 		sd->UDMFIndex = i;
 
@@ -2666,14 +2203,14 @@ void P_LoadSideDefs2 (MapData *map, FMissingTextureTracker &missingtex)
 		// killough 4/11/98: refined to allow colormaps to work as wall
 		// textures if invalid as colormaps but valid as textures.
 
-		if ((unsigned)LittleShort(msd->sector)>=level.sectors.Size())
+		if ((unsigned)LittleShort(msd->sector)>=Level->sectors.Size())
 		{
 			Printf (PRINT_HIGH, "Sidedef %d has a bad sector\n", i);
-			sd->sector = sec = NULL;
+			sd->sector = sec = nullptr;
 		}
 		else
 		{
-			sd->sector = sec = &level.sectors[LittleShort(msd->sector)];
+			sd->sector = sec = &Level->sectors[LittleShort(msd->sector)];
 		}
 
 		intmapsidedef_t imsd;
@@ -2681,7 +2218,7 @@ void P_LoadSideDefs2 (MapData *map, FMissingTextureTracker &missingtex)
 		imsd.midtexture.CopyCStrPart(msd->midtexture, 8);
 		imsd.bottomtexture.CopyCStrPart(msd->bottomtexture, 8);
 
-		P_ProcessSideTextures(!map->HasBehavior, sd, sec, &imsd, 
+		ProcessSideTextures(!map->HasBehavior, sd, sec, &imsd, 
 							  sidetemp[i].a.special, sidetemp[i].a.tag, &sidetemp[i].a.alpha, missingtex);
 	}
 	delete[] msdf;
@@ -2794,11 +2331,15 @@ static void CreatePackedBlockmap (TArray<int> &BlockMap, TArray<int> *blocks, in
 //	printf ("%d blocks written, %d blocks saved\n", nothashed, hashed);
 }
 
-#define BLOCKBITS 7
-#define BLOCKSIZE 128
 
-static void P_CreateBlockMap ()
+void MapLoader::CreateBlockMap ()
 {
+	enum
+	{
+		BLOCKBITS = 7,
+		BLOCKSIZE = 128
+	};
+
 	TArray<int> *BlockLists, *block, *endblock;
 	int adder;
 	int bmapwidth, bmapheight;
@@ -2806,14 +2347,14 @@ static void P_CreateBlockMap ()
 	int minx, maxx, miny, maxy;
 	int line;
 
-	if (level.vertexes.Size() == 0)
+	if (Level->vertexes.Size() == 0)
 		return;
 
 	// Find map extents for the blockmap
-	dminx = dmaxx = level.vertexes[0].fX();
-	dminy = dmaxy = level.vertexes[0].fY();
+	dminx = dmaxx = Level->vertexes[0].fX();
+	dminy = dmaxy = Level->vertexes[0].fY();
 
-	for (auto &vert : level.vertexes)
+	for (auto &vert : Level->vertexes)
 	{
 			 if (vert.fX() < dminx) dminx = vert.fX();
 		else if (vert.fX() > dmaxx) dmaxx = vert.fX();
@@ -2838,12 +2379,12 @@ static void P_CreateBlockMap ()
 
 	BlockLists = new TArray<int>[bmapwidth * bmapheight];
 
-	for (line = 0; line < (int)level.lines.Size(); ++line)
+	for (line = 0; line < (int)Level->lines.Size(); ++line)
 	{
-		int x1 = int(level.lines[line].v1->fX());
-		int y1 = int(level.lines[line].v1->fY());
-		int x2 = int(level.lines[line].v2->fX());
-		int y2 = int(level.lines[line].v2->fY());
+		int x1 = int(Level->lines[line].v1->fX());
+		int y1 = int(Level->lines[line].v1->fY());
+		int x2 = int(Level->lines[line].v2->fX());
+		int y2 = int(Level->lines[line].v2->fY());
 		int dx = x2 - x1;
 		int dy = y2 - y1;
 		int bx = (x1 - minx) >> BLOCKBITS;
@@ -2958,10 +2499,10 @@ static void P_CreateBlockMap ()
 	CreatePackedBlockmap (BlockMap, BlockLists, bmapwidth, bmapheight);
 	delete[] BlockLists;
 
-	level.blockmap.blockmaplump = new int[BlockMap.Size()];
+	Level->blockmap.blockmaplump = new int[BlockMap.Size()];
 	for (unsigned int ii = 0; ii < BlockMap.Size(); ++ii)
 	{
-		level.blockmap.blockmaplump[ii] = BlockMap[ii];
+		Level->blockmap.blockmaplump[ii] = BlockMap[ii];
 	}
 }
 
@@ -2975,7 +2516,7 @@ static void P_CreateBlockMap ()
 //
 //===========================================================================
 
-bool FBlockmap::VerifyBlockMap(int count)
+bool FBlockmap::VerifyBlockMap(int count, unsigned numlines)
 {
 	int x, y;
 	int *maxoffs = blockmaplump + count;
@@ -3038,7 +2579,7 @@ bool FBlockmap::VerifyBlockMap(int count)
 			// scan the list for out-of-range linedef indicies in list
 			for(tmplist = list; *tmplist != -1; tmplist++)
 			{
-				if((unsigned)*tmplist >= level.lines.Size())
+				if((unsigned)*tmplist >= numlines)
 				{
 					Printf(PRINT_HIGH, "VerifyBlockMap: index >= numlines\n");
 					return false;
@@ -3061,7 +2602,7 @@ bool FBlockmap::VerifyBlockMap(int count)
 //
 //===========================================================================
 
-void P_LoadBlockMap (MapData * map)
+void MapLoader::LoadBlockMap (MapData * map)
 {
 	int count = map->Size(ML_BLOCKMAP);
 
@@ -3071,7 +2612,7 @@ void P_LoadBlockMap (MapData * map)
 		)
 	{
 		DPrintf (DMSG_SPAMMY, "Generating BLOCKMAP\n");
-		P_CreateBlockMap ();
+		CreateBlockMap ();
 	}
 	else
 	{
@@ -3081,43 +2622,43 @@ void P_LoadBlockMap (MapData * map)
 		int i;
 
 		count/=2;
-		level.blockmap.blockmaplump = new int[count];
+		Level->blockmap.blockmaplump = new int[count];
 
 		// killough 3/1/98: Expand wad blockmap into larger internal one,
 		// by treating all offsets except -1 as unsigned and zero-extending
 		// them. This potentially doubles the size of blockmaps allowed,
 		// because Doom originally considered the offsets as always signed.
 
-		level.blockmap.blockmaplump[0] = LittleShort(wadblockmaplump[0]);
-		level.blockmap.blockmaplump[1] = LittleShort(wadblockmaplump[1]);
-		level.blockmap.blockmaplump[2] = (uint32_t)(LittleShort(wadblockmaplump[2])) & 0xffff;
-		level.blockmap.blockmaplump[3] = (uint32_t)(LittleShort(wadblockmaplump[3])) & 0xffff;
+		Level->blockmap.blockmaplump[0] = LittleShort(wadblockmaplump[0]);
+		Level->blockmap.blockmaplump[1] = LittleShort(wadblockmaplump[1]);
+		Level->blockmap.blockmaplump[2] = (uint32_t)(LittleShort(wadblockmaplump[2])) & 0xffff;
+		Level->blockmap.blockmaplump[3] = (uint32_t)(LittleShort(wadblockmaplump[3])) & 0xffff;
 
 		for (i = 4; i < count; i++)
 		{
 			short t = LittleShort(wadblockmaplump[i]);          // killough 3/1/98
-			level.blockmap.blockmaplump[i] = t == -1 ? (uint32_t)0xffffffff : (uint32_t) t & 0xffff;
+			Level->blockmap.blockmaplump[i] = t == -1 ? (uint32_t)0xffffffff : (uint32_t) t & 0xffff;
 		}
 		delete[] data;
 
-		if (!level.blockmap.VerifyBlockMap(count))
+		if (!Level->blockmap.VerifyBlockMap(count, Level->lines.Size()))
 		{
 			DPrintf (DMSG_SPAMMY, "Generating BLOCKMAP\n");
-			P_CreateBlockMap();
+			CreateBlockMap();
 		}
 
 	}
 
-	level.blockmap.bmaporgx = level.blockmap.blockmaplump[0];
-	level.blockmap.bmaporgy = level.blockmap.blockmaplump[1];
-	level.blockmap.bmapwidth = level.blockmap.blockmaplump[2];
-	level.blockmap.bmapheight = level.blockmap.blockmaplump[3];
+	Level->blockmap.bmaporgx = Level->blockmap.blockmaplump[0];
+	Level->blockmap.bmaporgy = Level->blockmap.blockmaplump[1];
+	Level->blockmap.bmapwidth = Level->blockmap.blockmaplump[2];
+	Level->blockmap.bmapheight = Level->blockmap.blockmaplump[3];
 
 	// clear out mobj chains
-	count = level.blockmap.bmapwidth*level.blockmap.bmapheight;
-	level.blockmap.blocklinks = new FBlockNode *[count];
-	memset (level.blockmap.blocklinks, 0, count*sizeof(*level.blockmap.blocklinks));
-	level.blockmap.blockmap = level.blockmap.blockmaplump+4;
+	count = Level->blockmap.bmapwidth*Level->blockmap.bmapheight;
+	Level->blockmap.blocklinks = new FBlockNode *[count];
+	memset (Level->blockmap.blocklinks, 0, count*sizeof(*Level->blockmap.blocklinks));
+	Level->blockmap.blockmap = Level->blockmap.blockmaplump+4;
 }
 
 //===========================================================================
@@ -3128,7 +2669,7 @@ void P_LoadBlockMap (MapData * map)
 //
 //===========================================================================
 
-static void P_GroupLines (bool buildmap)
+void MapLoader::GroupLines (bool buildmap)
 {
 	cycle_t times[16];
 	unsigned int*		linesDoneInEachSector;
@@ -3145,11 +2686,11 @@ static void P_GroupLines (bool buildmap)
 
 	// look up sector number for each subsector
 	times[0].Clock();
-	for (auto &sub : level.subsectors)
+	for (auto &sub : Level->subsectors)
 	{
 		sub.sector = sub.firstline->sidedef->sector;
 	}
-	for (auto &sub : level.subsectors)
+	for (auto &sub : Level->subsectors)
 	{
 		for (jj = 0; jj < sub.numlines; ++jj)
 		{
@@ -3161,10 +2702,10 @@ static void P_GroupLines (bool buildmap)
 	// count number of lines in each sector
 	times[1].Clock();
 	total = 0;
-	for (unsigned i = 0; i < level.lines.Size(); i++)
+	for (unsigned i = 0; i < Level->lines.Size(); i++)
 	{
-		auto li = &level.lines[i];
-		if (li->frontsector == NULL)
+		auto li = &Level->lines[i];
+		if (li->frontsector == nullptr)
 		{
 			if (!flaggedNoFronts)
 			{
@@ -3193,13 +2734,13 @@ static void P_GroupLines (bool buildmap)
 
 	// build line tables for each sector
 	times[3].Clock();
-	level.linebuffer.Alloc(total);
-	line_t **lineb_p = &level.linebuffer[0];
-	auto numsectors = level.sectors.Size();
+	Level->linebuffer.Alloc(total);
+	line_t **lineb_p = &Level->linebuffer[0];
+	auto numsectors = Level->sectors.Size();
 	linesDoneInEachSector = new unsigned int[numsectors];
 	memset (linesDoneInEachSector, 0, sizeof(int)*numsectors);
 
-	sector = &level.sectors[0];
+	sector = &Level->sectors[0];
 	for (unsigned i = 0; i < numsectors; i++, sector++)
 	{
 		if (sector->Lines.Count == 0)
@@ -3215,20 +2756,20 @@ static void P_GroupLines (bool buildmap)
 		}
 	}
 
-	for (unsigned i = 0; i < level.lines.Size(); i++)
+	for (unsigned i = 0; i < Level->lines.Size(); i++)
 	{
-		auto li = &level.lines[i];
-		if (li->frontsector != NULL)
+		auto li = &Level->lines[i];
+		if (li->frontsector != nullptr)
 		{
 			li->frontsector->Lines[linesDoneInEachSector[li->frontsector->Index()]++] = li;
 		}
-		if (li->backsector != NULL && li->backsector != li->frontsector)
+		if (li->backsector != nullptr && li->backsector != li->frontsector)
 		{
 			li->backsector->Lines[linesDoneInEachSector[li->backsector->Index()]++] = li;
 		}
 	}
 	
-	sector = &level.sectors[0];
+	sector = &Level->sectors[0];
 	for (unsigned i = 0; i < numsectors; ++i, ++sector)
 	{
 		if (linesDoneInEachSector[i] != sector->Lines.Size())
@@ -3271,7 +2812,7 @@ static void P_GroupLines (bool buildmap)
 	times[5].Clock();
 	if (!buildmap)
 	{
-		P_SetSlopes ();
+		SetSlopes ();
 	}
 	times[5].Unclock();
 
@@ -3291,9 +2832,9 @@ static void P_GroupLines (bool buildmap)
 //
 //===========================================================================
 
-void P_LoadReject (MapData * map, bool junk)
+void MapLoader::LoadReject (MapData * map, bool junk)
 {
-	const int neededsize = (level.sectors.Size() * level.sectors.Size() + 7) >> 3;
+	const int neededsize = (Level->sectors.Size() * Level->sectors.Size() + 7) >> 3;
 	int rejectsize;
 
 	if (!map->CheckName(ML_REJECT, "REJECT"))
@@ -3312,22 +2853,22 @@ void P_LoadReject (MapData * map, bool junk)
 			Printf ("REJECT is %d byte%s too small.\n", neededsize - rejectsize,
 				neededsize-rejectsize==1?"":"s");
 		}
-		level.rejectmatrix.Reset();
+		Level->rejectmatrix.Reset();
 	}
 	else
 	{
 		// Check if the reject has some actual content. If not, free it.
 		rejectsize = MIN (rejectsize, neededsize);
-		level.rejectmatrix.Alloc(rejectsize);
+		Level->rejectmatrix.Alloc(rejectsize);
 
-		map->Read (ML_REJECT, &level.rejectmatrix[0], rejectsize);
+		map->Read (ML_REJECT, &Level->rejectmatrix[0], rejectsize);
 
 		int qwords = rejectsize / 8;
 		int i;
 
 		if (qwords > 0)
 		{
-			const uint64_t *qreject = (const uint64_t *)&level.rejectmatrix[0];
+			const uint64_t *qreject = (const uint64_t *)&Level->rejectmatrix[0];
 
 			i = 0;
 			do
@@ -3340,12 +2881,12 @@ void P_LoadReject (MapData * map, bool junk)
 		qwords *= 8;
 		for (i = 0; i < rejectsize; ++i)
 		{
-			if (level.rejectmatrix[qwords + i] != 0)
+			if (Level->rejectmatrix[qwords + i] != 0)
 				return;
 		}
 
 		// Reject has no data, so pretend it isn't there.
-		level.rejectmatrix.Reset();
+		Level->rejectmatrix.Reset();
 	}
 }
 
@@ -3355,7 +2896,7 @@ void P_LoadReject (MapData * map, bool junk)
 //
 //===========================================================================
 
-void P_LoadBehavior(MapData * map)
+void MapLoader::LoadBehavior(MapData * map)
 {
 	if (map->Size(ML_BEHAVIOR) > 0)
 	{
@@ -3374,14 +2915,14 @@ void P_LoadBehavior(MapData * map)
 //
 //===========================================================================
 
-void P_GetPolySpots (MapData * map, TArray<FNodeBuilder::FPolyStart> &spots, TArray<FNodeBuilder::FPolyStart> &anchors)
+void MapLoader::GetPolySpots (MapData * map, TArray<FNodeBuilder::FPolyStart> &spots, TArray<FNodeBuilder::FPolyStart> &anchors)
 {
 	//if (map->HasBehavior)
 	{
 		for (unsigned int i = 0; i < MapThingsConverted.Size(); ++i)
 		{
 			FDoomEdEntry *mentry = MapThingsConverted[i].info;
-			if (mentry != NULL && mentry->Type == NULL && mentry->Special >= SMT_PolyAnchor && mentry->Special <= SMT_PolySpawnHurt)
+			if (mentry != nullptr && mentry->Type == nullptr && mentry->Special >= SMT_PolyAnchor && mentry->Special <= SMT_PolySpawnHurt)
 			{
 				FNodeBuilder::FPolyStart newvert;
 				newvert.x = FLOAT2FIXED(MapThingsConverted[i].pos.X);
@@ -3405,23 +2946,61 @@ void P_GetPolySpots (MapData * map, TArray<FNodeBuilder::FPolyStart> &spots, TAr
 //
 // P_PrecacheLevel
 //
-// Preloads all relevant graphics for the level.
+// Preloads all relevant graphics for the Level->
 //
 //===========================================================================
 void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitlist);
 
-static void P_PrecacheLevel()
+void MapLoader::AddToList(uint8_t *hitlist, FTextureID texid, int bitmask)
 {
-	int i;
-	uint8_t *hitlist;
-	TMap<PClassActor *, bool> actorhitlist;
-	int cnt = TexMan.NumTextures();
+	if (hitlist[texid.GetIndex()] & bitmask) return;	// already done, no need to process everything again.
+	hitlist[texid.GetIndex()] |= (uint8_t)bitmask;
 
+	for (auto anim : TexMan.mAnimations)
+	{
+		if (texid == anim->BasePic || (!anim->bDiscrete && anim->BasePic < texid && texid < anim->BasePic + anim->NumFrames))
+		{
+			for (int i = anim->BasePic.GetIndex(); i < anim->BasePic.GetIndex() + anim->NumFrames; i++)
+			{
+				hitlist[i] |= (uint8_t)bitmask;
+			}
+		}
+	}
+
+	auto switchdef = TexMan.FindSwitch(texid);
+	if (switchdef)
+	{
+		for (int i = 0; i < switchdef->NumFrames; i++)
+		{
+			hitlist[switchdef->frames[i].Texture.GetIndex()] |= (uint8_t)bitmask;
+		}
+		for (int i = 0; i < switchdef->PairDef->NumFrames; i++)
+		{
+			hitlist[switchdef->frames[i].Texture.GetIndex()] |= (uint8_t)bitmask;
+		}
+	}
+
+	auto adoor = TexMan.FindAnimatedDoor(texid);
+	if (adoor)
+	{
+		for (int i = 0; i < adoor->NumTextureFrames; i++)
+		{
+			hitlist[adoor->TextureFrames[i].GetIndex()] |= (uint8_t)bitmask;
+		}
+	}
+}
+
+void MapLoader::PrecacheLevel()
+{
 	if (demoplayback)
 		return;
 
-	hitlist = new uint8_t[cnt];
-	memset(hitlist, 0, cnt);
+	int i;
+	TMap<PClassActor *, bool> actorhitlist;
+	int cnt = TexMan.NumTextures();
+	TArray<uint8_t> hitlist(cnt, true);
+
+	memset(hitlist.Data(), 0, cnt);
 
 	AActor *actor;
 	TThinkerIterator<AActor> iterator;
@@ -3434,26 +3013,26 @@ static void P_PrecacheLevel()
 	for (auto n : gameinfo.PrecachedClasses)
 	{
 		PClassActor *cls = PClass::FindActor(n);
-		if (cls != NULL) actorhitlist[cls] = true;
+		if (cls != nullptr) actorhitlist[cls] = true;
 	}
-	for (unsigned i = 0; i < level.info->PrecacheClasses.Size(); i++)
+	for (unsigned i = 0; i < Level->info->PrecacheClasses.Size(); i++)
 	{
-		// level.info can only store names, no class pointers.
-		PClassActor *cls = PClass::FindActor(level.info->PrecacheClasses[i]);
-		if (cls != NULL) actorhitlist[cls] = true;
-	}
-
-	for (i = level.sectors.Size() - 1; i >= 0; i--)
-	{
-		hitlist[level.sectors[i].GetTexture(sector_t::floor).GetIndex()] |= FTextureManager::HIT_Flat;
-		hitlist[level.sectors[i].GetTexture(sector_t::ceiling).GetIndex()] |= FTextureManager::HIT_Flat;
+		// Level->info can only store names, no class pointers.
+		PClassActor *cls = PClass::FindActor(Level->info->PrecacheClasses[i]);
+		if (cls != nullptr) actorhitlist[cls] = true;
 	}
 
-	for (i = level.sides.Size() - 1; i >= 0; i--)
+	for (i = Level->sectors.Size() - 1; i >= 0; i--)
 	{
-		hitlist[level.sides[i].GetTexture(side_t::top).GetIndex()] |= FTextureManager::HIT_Wall;
-		hitlist[level.sides[i].GetTexture(side_t::mid).GetIndex()] |= FTextureManager::HIT_Wall;
-		hitlist[level.sides[i].GetTexture(side_t::bottom).GetIndex()] |= FTextureManager::HIT_Wall;
+		AddToList(hitlist.Data(), Level->sectors[i].GetTexture(sector_t::floor), FTextureManager::HIT_Flat);
+		AddToList(hitlist.Data(), Level->sectors[i].GetTexture(sector_t::ceiling), FTextureManager::HIT_Flat);
+	}
+
+	for (i = Level->sides.Size() - 1; i >= 0; i--)
+	{
+		AddToList(hitlist.Data(), Level->sides[i].GetTexture(side_t::top), FTextureManager::HIT_Wall);
+		AddToList(hitlist.Data(), Level->sides[i].GetTexture(side_t::mid), FTextureManager::HIT_Wall);
+		AddToList(hitlist.Data(), Level->sides[i].GetTexture(side_t::bottom), FTextureManager::HIT_Wall);
 	}
 
 	// Sky texture is always present.
@@ -3465,31 +3044,30 @@ static void P_PrecacheLevel()
 
 	if (sky1texture.isValid())
 	{
-		hitlist[sky1texture.GetIndex()] |= FTextureManager::HIT_Sky;
+		AddToList(hitlist.Data(), sky1texture, FTextureManager::HIT_Sky);
 	}
 	if (sky2texture.isValid())
 	{
-		hitlist[sky2texture.GetIndex()] |= FTextureManager::HIT_Sky;
+		AddToList(hitlist.Data(), sky2texture, FTextureManager::HIT_Sky);
 	}
 
 	for (auto n : gameinfo.PrecachedTextures)
 	{
 		FTextureID tex = TexMan.CheckForTexture(n, ETextureType::Wall, FTextureManager::TEXMAN_Overridable | FTextureManager::TEXMAN_TryAny | FTextureManager::TEXMAN_ReturnFirst);
-		if (tex.Exists()) hitlist[tex.GetIndex()] |= FTextureManager::HIT_Wall;
+		if (tex.Exists()) AddToList(hitlist.Data(), tex, FTextureManager::HIT_Wall);
 	}
-	for (unsigned i = 0; i < level.info->PrecacheTextures.Size(); i++)
+	for (unsigned i = 0; i < Level->info->PrecacheTextures.Size(); i++)
 	{
-		FTextureID tex = TexMan.CheckForTexture(level.info->PrecacheTextures[i], ETextureType::Wall, FTextureManager::TEXMAN_Overridable | FTextureManager::TEXMAN_TryAny | FTextureManager::TEXMAN_ReturnFirst);
-		if (tex.Exists()) hitlist[tex.GetIndex()] |= FTextureManager::HIT_Wall;
+		FTextureID tex = TexMan.CheckForTexture(Level->info->PrecacheTextures[i], ETextureType::Wall, FTextureManager::TEXMAN_Overridable | FTextureManager::TEXMAN_TryAny | FTextureManager::TEXMAN_ReturnFirst);
+		if (tex.Exists()) AddToList(hitlist.Data(), tex, FTextureManager::HIT_Wall);
 	}
 
 	// This is just a temporary solution, until the hardware renderer's texture manager is in a better state.
 	if (!V_IsHardwareRenderer())
-		SWRenderer->Precache(hitlist, actorhitlist);
+		SWRenderer->Precache(hitlist.Data(), actorhitlist);
 	else
-		hw_PrecacheTexture(hitlist, actorhitlist);
+		hw_PrecacheTexture(hitlist.Data(), actorhitlist);
 
-	delete[] hitlist;
 }
 
 extern polyblock_t **PolyBlockMap;
@@ -3515,10 +3093,6 @@ void P_FreeLevelData ()
 	// [ZZ] delete per-map event handlers
 	E_Shutdown(true);
 	MapThingsConverted.Clear();
-	MapThingsUserDataIndex.Clear();
-	MapThingsUserData.Clear();
-	linemap.Clear();
-	FCanvasTextureInfo::EmptyList();
 	R_FreePastViewers();
 	P_ClearUDMFKeys();
 
@@ -3557,6 +3131,8 @@ void P_FreeLevelData ()
 
 
 	FBehavior::StaticUnloadModules ();
+	level.canvasTextureInfo.EmptyList();
+	level.sections.Clear();
 	level.segs.Clear();
 	level.sectors.Clear();
 	level.lines.Clear();
@@ -3573,12 +3149,12 @@ void P_FreeLevelData ()
 	level.Zones.Clear();
 	level.blockmap.Clear();
 
-	if (PolyBlockMap != NULL)
+	if (PolyBlockMap != nullptr)
 	{
 		for (int i = level.blockmap.bmapwidth*level.blockmap.bmapheight-1; i >= 0; --i)
 		{
 			polyblock_t *link = PolyBlockMap[i];
-			while (link != NULL)
+			while (link != nullptr)
 			{
 				polyblock_t *next = link->next;
 				delete link;
@@ -3586,12 +3162,12 @@ void P_FreeLevelData ()
 			}
 		}
 		delete[] PolyBlockMap;
-		PolyBlockMap = NULL;
+		PolyBlockMap = nullptr;
 	}
-	if (polyobjs != NULL)
+	if (polyobjs != nullptr)
 	{
 		delete[] polyobjs;
-		polyobjs = NULL;
+		polyobjs = nullptr;
 	}
 	po_NumPolyobjs = 0;
 
@@ -3620,13 +3196,13 @@ void P_FreeExtraLevelData()
 	// P_FreeLevelData() first, or they might not all be freed.
 	{
 		FBlockNode *node = FBlockNode::FreeBlocks;
-		while (node != NULL)
+		while (node != nullptr)
 		{
 			FBlockNode *next = node->NextBlock;
 			delete node;
 			node = next;
 		}
-		FBlockNode::FreeBlocks = NULL;
+		FBlockNode::FreeBlocks = nullptr;
 	}
 	secnodearena.FreeAllBlocks();
 	headsecnode = nullptr;
@@ -3641,7 +3217,7 @@ void P_FreeExtraLevelData()
 //
 //===========================================================================
 
-void P_SetupLevel (const char *lumpname, int position)
+void P_SetupLevel(const char *lumpname, int position, bool newGame)
 {
 	cycle_t times[20];
 #if 0
@@ -3650,7 +3226,7 @@ void P_SetupLevel (const char *lumpname, int position)
 #endif
 	int i;
 	bool buildmap;
-	const int *oldvertextable = NULL;
+	const int *oldvertextable = nullptr;
 
 	level.ShaderStartTime = I_msTimeFS(); // indicate to the shader system that the level just started
 
@@ -3671,40 +3247,40 @@ void P_SetupLevel (const char *lumpname, int position)
 		level.SetMusicVolume(level.MusicVolume);
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{
-			players[i].killcount = players[i].secretcount 
+			players[i].killcount = players[i].secretcount
 				= players[i].itemcount = 0;
 		}
 	}
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
-		players[i].mo = NULL;
+		players[i].mo = nullptr;
 	}
 	// [RH] Clear any scripted translation colors the previous level may have set.
 	for (i = 0; i < int(translationtables[TRANSLATION_LevelScripted].Size()); ++i)
 	{
 		FRemapTable *table = translationtables[TRANSLATION_LevelScripted][i];
-		if (table != NULL)
+		if (table != nullptr)
 		{
 			delete table;
-			translationtables[TRANSLATION_LevelScripted][i] = NULL;
+			translationtables[TRANSLATION_LevelScripted][i] = nullptr;
 		}
 	}
 	translationtables[TRANSLATION_LevelScripted].Clear();
 
 	// Initial height of PointOfView will be set by player think.
-	players[consoleplayer].viewz = NO_VALUE; 
+	players[consoleplayer].viewz = NO_VALUE;
 
 	// Make sure all sounds are stopped before Z_FreeTags.
-	S_Start ();
+	S_Start();
 
 	// [RH] clear out the mid-screen message
-	C_MidPrint (NULL, NULL);
+	C_MidPrint(nullptr, nullptr);
 
 	// Free all level data from the previous map
-	P_FreeLevelData ();
+	P_FreeLevelData();
 
 	MapData *map = P_OpenMapData(lumpname, true);
-	if (map == NULL)
+	if (map == nullptr)
 	{
 		I_Error("Unable to open map '%s'\n", lumpname);
 	}
@@ -3717,7 +3293,11 @@ void P_SetupLevel (const char *lumpname, int position)
 	map->GetChecksum(level.md5);
 	// find map num
 	level.lumpnum = map->lumpnum;
-	hasglnodes = false;
+
+	if (newGame)
+	{
+		E_NewGame(EventHandlerType::PerMap);
+	}
 
 	// [RH] Support loading Build maps (because I felt like it. :-)
 	buildmap = false;
@@ -3728,11 +3308,13 @@ void P_SetupLevel (const char *lumpname, int position)
 		uint8_t *mapdata = new uint8_t[map->Size(0)];
 		map->Read(0, mapdata);
 		times[0].Clock();
-		buildmap = P_LoadBuildMap (mapdata, map->Size(0), &buildthings, &numbuildthings);
+		buildmap = P_LoadBuildMap(mapdata, map->Size(0), &buildthings, &numbuildthings);
 		times[0].Unclock();
 		delete[] mapdata;
 	}
 #endif
+
+	MapLoader loader(&level);
 
 	if (!buildmap)
 	{
@@ -3740,10 +3322,10 @@ void P_SetupLevel (const char *lumpname, int position)
 		ForceNodeBuild = gennodes;
 
 		// [RH] Load in the BEHAVIOR lump
-		FBehavior::StaticUnloadModules ();
+		FBehavior::StaticUnloadModules();
 		if (map->HasBehavior)
 		{
-			P_LoadBehavior (map);
+			loader.LoadBehavior(map);
 			level.maptype = MAPTYPE_HEXEN;
 		}
 		else
@@ -3760,7 +3342,7 @@ void P_SetupLevel (const char *lumpname, int position)
 			{
 				// Has the user overridden the game's default translator with a commandline parameter?
 				translator = Args->CheckValue("-xlat");
-				if (translator == NULL) 
+				if (translator == nullptr)
 				{
 					// Use the game's default.
 					translator = gameinfo.translator.GetChars();
@@ -3800,25 +3382,23 @@ void P_SetupLevel (const char *lumpname, int position)
 			level.flags2 |= LEVEL2_DUMMYSWITCHES;
 		}
 
-		FBehavior::StaticLoadDefaultModules ();
-#ifndef NO_EDATA
-		LoadMapinfoACSLump();
-#endif
+		FBehavior::StaticLoadDefaultModules();
+		loader.LoadMapinfoACSLump();
 
 
-		P_LoadStrifeConversations (map, lumpname);
+		P_LoadStrifeConversations(map, lumpname);
 
 		FMissingTextureTracker missingtex;
 
 		if (!map->isText)
 		{
 			times[0].Clock();
-			P_LoadVertexes (map);
+			loader.LoadVertexes(map);
 			times[0].Unclock();
-			
+
 			// Check for maps without any BSP data at all (e.g. SLIGE)
 			times[1].Clock();
-			P_LoadSectors (map, missingtex);
+			loader.LoadSectors(map, missingtex);
 			times[1].Unclock();
 
 			times[2].Clock();
@@ -3826,41 +3406,38 @@ void P_SetupLevel (const char *lumpname, int position)
 
 			times[3].Clock();
 			if (!map->HasBehavior)
-				P_LoadLineDefs (map);
+				loader.LoadLineDefs(map);
 			else
-				P_LoadLineDefs2 (map);	// [RH] Load Hexen-style linedefs
+				loader.LoadLineDefs2(map);	// [RH] Load Hexen-style linedefs
 			times[3].Unclock();
 
 			times[4].Clock();
-			P_LoadSideDefs2 (map, missingtex);
+			loader.LoadSideDefs2(map, missingtex);
 			times[4].Unclock();
 
 			times[5].Clock();
-			P_FinishLoadingLineDefs ();
+			loader.FinishLoadingLineDefs();
 			times[5].Unclock();
 
 			if (!map->HasBehavior)
-				P_LoadThings (map);
+				loader.LoadThings(map);
 			else
-				P_LoadThings2 (map);	// [RH] Load Hexen-style things
+				loader.LoadThings2(map);	// [RH] Load Hexen-style things
 		}
 		else
 		{
 			times[0].Clock();
-			P_ParseTextMap(map, missingtex);
+			loader.ParseTextMap(map, missingtex);
 			times[0].Unclock();
 		}
 
 		SetCompatibilityParams(checksum);
 
 		times[6].Clock();
-		P_LoopSidedefs (true);
+		loader.LoopSidedefs(true);
 		times[6].Unclock();
 
-		linemap.Clear();
-		linemap.ShrinkToFit();
-
-		SummarizeMissingTextures(missingtex);
+		loader.SummarizeMissingTextures(missingtex);
 	}
 	else
 	{
@@ -3873,36 +3450,36 @@ void P_SetupLevel (const char *lumpname, int position)
 	{
 		// Check for compressed nodes first, then uncompressed nodes
 		FileReader *fr = nullptr;
-		uint32_t id = MAKE_ID('X','x','X','x'), idcheck = 0, idcheck2 = 0, idcheck3 = 0, idcheck4 = 0, idcheck5 = 0, idcheck6 = 0;
+		uint32_t id = MAKE_ID('X', 'x', 'X', 'x'), idcheck = 0, idcheck2 = 0, idcheck3 = 0, idcheck4 = 0, idcheck5 = 0, idcheck6 = 0;
 
 		if (map->Size(ML_ZNODES) != 0)
 		{
 			// Test normal nodes first
 			fr = &map->Reader(ML_ZNODES);
-			idcheck = MAKE_ID('Z','N','O','D');
-			idcheck2 = MAKE_ID('X','N','O','D');
+			idcheck = MAKE_ID('Z', 'N', 'O', 'D');
+			idcheck2 = MAKE_ID('X', 'N', 'O', 'D');
 		}
 		else if (map->Size(ML_GLZNODES) != 0)
 		{
 			fr = &map->Reader(ML_GLZNODES);
-			idcheck = MAKE_ID('Z','G','L','N');
-			idcheck2 = MAKE_ID('Z','G','L','2');
-			idcheck3 = MAKE_ID('Z','G','L','3');
-			idcheck4 = MAKE_ID('X','G','L','N');
-			idcheck5 = MAKE_ID('X','G','L','2');
-			idcheck6 = MAKE_ID('X','G','L','3');
+			idcheck = MAKE_ID('Z', 'G', 'L', 'N');
+			idcheck2 = MAKE_ID('Z', 'G', 'L', '2');
+			idcheck3 = MAKE_ID('Z', 'G', 'L', '3');
+			idcheck4 = MAKE_ID('X', 'G', 'L', 'N');
+			idcheck5 = MAKE_ID('X', 'G', 'L', '2');
+			idcheck6 = MAKE_ID('X', 'G', 'L', '3');
 		}
 
-		if (fr != nullptr && fr->isOpen()) fr->Read (&id, 4);
+		if (fr != nullptr && fr->isOpen()) fr->Read(&id, 4);
 		if (id != 0 && (id == idcheck || id == idcheck2 || id == idcheck3 || id == idcheck4 || id == idcheck5 || id == idcheck6))
 		{
 			try
 			{
-				P_LoadZNodes (*fr, id);
+				loader.LoadExtendedNodes(*fr, id);
 			}
 			catch (CRecoverableError &error)
 			{
-				Printf ("Error loading nodes: %s\n", error.GetMessage());
+				Printf("Error loading nodes: %s\n", error.GetMessage());
 
 				ForceNodeBuild = true;
 				level.subsectors.Clear();
@@ -3919,29 +3496,29 @@ void P_SetupLevel (const char *lumpname, int position)
 				if (!P_CheckV4Nodes(map))
 				{
 					times[7].Clock();
-					P_LoadSubsectors<mapsubsector_t, mapseg_t> (map);
+					loader.LoadSubsectors<mapsubsector_t, mapseg_t>(map);
 					times[7].Unclock();
 
 					times[8].Clock();
-					if (!ForceNodeBuild) P_LoadNodes<mapnode_t, mapsubsector_t> (map);
+					if (!ForceNodeBuild) loader.LoadNodes<mapnode_t, mapsubsector_t>(map);
 					times[8].Unclock();
 
 					times[9].Clock();
-					if (!ForceNodeBuild) P_LoadSegs<mapseg_t> (map);
+					if (!ForceNodeBuild) loader.LoadSegs<mapseg_t>(map);
 					times[9].Unclock();
 				}
 				else
 				{
 					times[7].Clock();
-					P_LoadSubsectors<mapsubsector4_t, mapseg4_t> (map);
+					loader.LoadSubsectors<mapsubsector4_t, mapseg4_t>(map);
 					times[7].Unclock();
 
 					times[8].Clock();
-					if (!ForceNodeBuild) P_LoadNodes<mapnode4_t, mapsubsector4_t> (map);
+					if (!ForceNodeBuild) loader.LoadNodes<mapnode4_t, mapsubsector4_t>(map);
 					times[8].Unclock();
 
 					times[9].Clock();
-					if (!ForceNodeBuild) P_LoadSegs<mapseg4_t> (map);
+					if (!ForceNodeBuild) loader.LoadSegs<mapseg4_t>(map);
 					times[9].Unclock();
 				}
 			}
@@ -3952,7 +3529,7 @@ void P_SetupLevel (const char *lumpname, int position)
 		// If loading the regular nodes failed try GL nodes before considering a rebuild
 		if (ForceNodeBuild)
 		{
-			if (P_LoadGLNodes(map)) 
+			if (loader.LoadGLNodes(map))
 			{
 				ForceNodeBuild = false;
 				reloop = true;
@@ -3961,16 +3538,16 @@ void P_SetupLevel (const char *lumpname, int position)
 	}
 	else reloop = true;
 
-	uint64_t startTime=0, endTime=0;
+	uint64_t startTime = 0, endTime = 0;
 
 	bool BuildGLNodes;
 	if (ForceNodeBuild)
 	{
 		BuildGLNodes = RequireGLNodes || multiplayer || demoplayback || demorecording || genglnodes;
 
-		startTime = I_msTime ();
+		startTime = I_msTime();
 		TArray<FNodeBuilder::FPolyStart> polyspots, anchors;
-		P_GetPolySpots (map, polyspots, anchors);
+		loader.GetPolySpots(map, polyspots, anchors);
 		FNodeBuilder::FLevel leveldata =
 		{
 			&level.vertexes[0], (int)level.vertexes.Size(),
@@ -3978,14 +3555,14 @@ void P_SetupLevel (const char *lumpname, int position)
 			&level.lines[0], (int)level.lines.Size(),
 			0, 0, 0, 0
 		};
-		leveldata.FindMapBounds ();
+		leveldata.FindMapBounds();
 		// We need GL nodes if am_textured is on.
 		// In case a sync critical game mode is started, also build GL nodes to avoid problems
 		// if the different machines' am_textured setting differs.
-		FNodeBuilder builder (leveldata, polyspots, anchors, BuildGLNodes);
-		builder.Extract (level);
-		endTime = I_msTime ();
-		DPrintf (DMSG_NOTIFY, "BSP generation took %.3f sec (%d segs)\n", (endTime - startTime) * 0.001, level.segs.Size());
+		FNodeBuilder builder(leveldata, polyspots, anchors, BuildGLNodes);
+		builder.Extract(level);
+		endTime = I_msTime();
+		DPrintf(DMSG_NOTIFY, "BSP generation took %.3f sec (%d segs)\n", (endTime - startTime) * 0.001, level.segs.Size());
 		oldvertextable = builder.GetOldVertexTable();
 		reloop = true;
 	}
@@ -3993,14 +3570,14 @@ void P_SetupLevel (const char *lumpname, int position)
 	{
 		BuildGLNodes = false;
 		// Older ZDBSPs had problems with compressed sidedefs and assigned wrong sides to the segs if both sides were the same sidedef.
-		for(auto &seg : level.segs)
+		for (auto &seg : level.segs)
 		{
 			if (seg.backsector == seg.frontsector && seg.linedef)
 			{
 				double d1 = (seg.v1->fPos() - seg.linedef->v1->fPos()).LengthSquared();
 				double d2 = (seg.v2->fPos() - seg.linedef->v1->fPos()).LengthSquared();
 
-				if (d2<d1)	// backside
+				if (d2 < d1)	// backside
 				{
 					seg.sidedef = seg.linedef->sidedef[1];
 				}
@@ -4018,67 +3595,67 @@ void P_SetupLevel (const char *lumpname, int position)
 		// If the original nodes being loaded are not GL nodes they will be kept around for
 		// use in P_PointInSubsector to avoid problems with maps that depend on the specific
 		// nodes they were built with (P:AR E1M3 is a good example for a map where this is the case.)
-		reloop |= P_CheckNodes(map, BuildGLNodes, (uint32_t)(endTime - startTime));
-		hasglnodes = true;
+		reloop |= loader.CheckNodes(map, BuildGLNodes, (uint32_t)(endTime - startTime));
 	}
 	else
 	{
-		hasglnodes = P_CheckForGLNodes();
+		loader.CheckForGLNodes();
 	}
 
 	// set the head node for gameplay purposes. If the separate gamenodes array is not empty, use that, otherwise use the render nodes.
-	level.headgamenode = level.gamenodes.Size() > 0 ? &level.gamenodes[level.gamenodes.Size() - 1] : level.nodes.Size()? &level.nodes[level.nodes.Size() - 1] : nullptr;
+	level.headgamenode = level.gamenodes.Size() > 0 ? &level.gamenodes[level.gamenodes.Size() - 1] : level.nodes.Size() ? &level.nodes[level.nodes.Size() - 1] : nullptr;
 
 	times[10].Clock();
-	P_LoadBlockMap (map);
+	loader.LoadBlockMap(map);
 	times[10].Unclock();
 
 	times[11].Clock();
-	P_LoadReject (map, buildmap);
+	loader.LoadReject(map, buildmap);
 	times[11].Unclock();
 
 	times[12].Clock();
-	P_GroupLines (buildmap);
+	loader.GroupLines(buildmap);
 	times[12].Unclock();
 
 	times[13].Clock();
-	P_FloodZones ();
+	loader.FloodZones();
 	times[13].Unclock();
 
-	if (hasglnodes)
-	{
-		P_SetRenderSector();
-	}
+	loader.SetRenderSector();
+	FixMinisegReferences();
+	FixHoles();
 
-	bodyqueslot = 0;
-// phares 8/10/98: Clear body queue so the corpses from previous games are
-// not assumed to be from this one.
+	level.bodyqueslot = 0;
+	// phares 8/10/98: Clear body queue so the corpses from previous games are
+	// not assumed to be from this one.
 
-	for (i = 0; i < BODYQUESIZE; i++)
-		bodyque[i] = NULL;
+	for(auto & p : level.bodyque)
+		p = nullptr;
+
+	CreateSections(level.sections);
 
 	if (!buildmap)
 	{
 		// [RH] Spawn slope creating things first.
-		P_SpawnSlopeMakers (&MapThingsConverted[0], &MapThingsConverted[MapThingsConverted.Size()], oldvertextable);
-		P_CopySlopes();
+		loader.SpawnSlopeMakers(&MapThingsConverted[0], &MapThingsConverted[MapThingsConverted.Size()], oldvertextable);
+		loader.CopySlopes();
 
 		// Spawn 3d floors - must be done before spawning things so it can't be done in P_SpawnSpecials
 		P_Spawn3DFloors();
 
 		times[14].Clock();
-		P_SpawnThings(position);
+		loader.SpawnThings(position);
 
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{
-			if (playeringame[i] && players[i].mo != NULL)
+			if (playeringame[i] && players[i].mo != nullptr)
 				players[i].health = players[i].mo->health;
 		}
 		times[14].Unclock();
 
 		times[15].Clock();
 		if (!map->HasBehavior && !map->isText)
-			P_TranslateTeleportThings ();	// [RH] Assign teleport destination TIDs
+			P_TranslateTeleportThings();	// [RH] Assign teleport destination TIDs
 		times[15].Unclock();
 	}
 #if 0	// There is no such thing as a build map.
@@ -4086,19 +3663,19 @@ void P_SetupLevel (const char *lumpname, int position)
 	{
 		for (i = 0; i < numbuildthings; ++i)
 		{
-			SpawnMapThing (i, &buildthings[i], 0);
+			SpawnMapThing(i, &buildthings[i], 0);
 		}
 		delete[] buildthings;
 	}
 #endif
 	delete map;
-	if (oldvertextable != NULL)
+	if (oldvertextable != nullptr)
 	{
 		delete[] oldvertextable;
 	}
 
 	// set up world state
-	P_SpawnSpecials ();
+	P_SpawnSpecials(&loader);
 
 	// disable reflective planes on sloped sectors.
 	for (auto &sec : level.sectors)
@@ -4113,32 +3690,42 @@ void P_SetupLevel (const char *lumpname, int position)
 		node.len = (float)g_sqrt(fdx * fdx + fdy * fdy);
 	}
 
+	// CreateVBO must be run on the plain 3D floor data.
+	P_ClearDynamic3DFloorData();
+
 	// This must be done BEFORE the PolyObj Spawn!!!
 	InitRenderInfo();			// create hardware independent renderer resources for the level.
-	screen->InitForLevel();		// create hardware dependent level resources (e.g. the vertex buffer)
+	screen->mVertexData->CreateVBO();
+
+	for (auto &sec : level.sectors)
+	{
+		P_Recalculate3DFloors(&sec);
+	}
+
 	SWRenderer->SetColormap();	//The SW renderer needs to do some special setup for the level's default colormap.
 	InitPortalGroups();
+	P_InitHealthGroups();
 
 	times[16].Clock();
-	if (reloop) P_LoopSidedefs (false);
-	PO_Init ();				// Initialize the polyobjs
+	if (reloop) loader.LoopSidedefs(false);
+	PO_Init();				// Initialize the polyobjs
 	if (!level.IsReentering())
 		P_FinalizePortals();	// finalize line portals after polyobjects have been initialized. This info is needed for properly flagging them.
 	times[16].Unclock();
 
-	assert(sidetemp != NULL);
+	assert(sidetemp != nullptr);
 	delete[] sidetemp;
-	sidetemp = NULL;
+	sidetemp = nullptr;
 
 	// if deathmatch, randomly spawn the active players
 	if (deathmatch)
 	{
-		for (i=0 ; i<MAXPLAYERS ; i++)
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i])
 			{
-				players[i].mo = NULL;
-				G_DeathMatchSpawnPlayer (i);
+				players[i].mo = nullptr;
+				G_DeathMatchSpawnPlayer(i);
 			}
 		}
 	}
@@ -4149,7 +3736,7 @@ void P_SetupLevel (const char *lumpname, int position)
 		{
 			if (playeringame[i])
 			{
-				players[i].mo = NULL;
+				players[i].mo = nullptr;
 				FPlayerStart *mthing = G_PickPlayerStart(i);
 				P_SpawnPlayer(mthing, i, (level.flags2 & LEVEL2_PRERAISEWEAPON) ? SPF_WEAPONFULLYUP : 0);
 			}
@@ -4158,16 +3745,16 @@ void P_SetupLevel (const char *lumpname, int position)
 
 	// [SP] move unfriendly players around
 	// horribly hacky - yes, this needs rewritten.
-	if (level.deathmatchstarts.Size () > 0)
+	if (level.deathmatchstarts.Size() > 0)
 	{
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{
-			if (playeringame[i] && players[i].mo != NULL)
+			if (playeringame[i] && players[i].mo != nullptr)
 			{
 				if (!(players[i].mo->flags & MF_FRIENDLY))
 				{
 					AActor * oldSpawn = players[i].mo;
-					G_DeathMatchSpawnPlayer (i);
+					G_DeathMatchSpawnPlayer(i);
 					oldSpawn->Destroy();
 				}
 			}
@@ -4181,11 +3768,11 @@ void P_SetupLevel (const char *lumpname, int position)
 		TThinkerIterator<AActor> it;
 		AActor * mo;
 
-		while ((mo=it.Next()))
+		while ((mo = it.Next()))
 		{
 			if (mo->flags & MF_COUNTKILL)
 			{
-				if (mo->Sector->damageamount > 0 && (mo->Sector->Flags & (SECF_ENDGODMODE|SECF_ENDLEVEL)) == (SECF_ENDGODMODE|SECF_ENDLEVEL))
+				if (mo->Sector->damageamount > 0 && (mo->Sector->Flags & (SECF_ENDGODMODE | SECF_ENDLEVEL)) == (SECF_ENDGODMODE | SECF_ENDLEVEL))
 				{
 					mo->ClearCounters();
 				}
@@ -4201,20 +3788,20 @@ void P_SetupLevel (const char *lumpname, int position)
 	R_OldBlend = 0xffffffff;
 
 	// [RH] Remove all particles
-	P_ClearParticles ();
+	P_ClearParticles();
 
 	times[17].Clock();
 	// preload graphics and sounds
 	if (precache)
 	{
-		P_PrecacheLevel ();
-		S_PrecacheLevel ();
+		loader.PrecacheLevel();
+		S_PrecacheLevel();
 	}
 	times[17].Unclock();
 
 	if (deathmatch)
 	{
-		AnnounceGameStart ();
+		AnnounceGameStart();
 	}
 
 	// This check was previously done at run time each time the heightsec was checked.
@@ -4234,12 +3821,12 @@ void P_SetupLevel (const char *lumpname, int position)
 		}
 	}
 
-	P_ResetSightCounters (true);
+	P_ResetSightCounters(true);
 	//Printf ("free memory: 0x%x\n", Z_FreeMemory());
 
 	if (showloadtimes)
 	{
-		Printf ("---Total load times---\n");
+		Printf("---Total load times---\n");
 		for (i = 0; i < 18; ++i)
 		{
 			static const char *timenames[] =
@@ -4263,12 +3850,10 @@ void P_SetupLevel (const char *lumpname, int position)
 				"init polys",
 				"precache"
 			};
-			Printf ("Time%3d:%9.4f ms (%s)\n", i, times[i].TimeMS(), timenames[i]);
+			Printf("Time%3d:%9.4f ms (%s)\n", i, times[i].TimeMS(), timenames[i]);
 		}
 	}
 	MapThingsConverted.Clear();
-	MapThingsUserDataIndex.Clear();
-	MapThingsUserData.Clear();
 
 	// Create a backup of the map data so the savegame code can toss out all fields that haven't changed in order to reduce processing time and file size.
 	// Note that we want binary identity here, so assignment is not sufficient because it won't initialize any padding bytes.
@@ -4280,8 +3865,6 @@ void P_SetupLevel (const char *lumpname, int position)
 	level.loadsides.Resize(level.sides.Size());
 	memcpy(&level.loadsides[0], &level.sides[0], level.sides.Size() * sizeof(level.sides[0]));
 }
-
-
 
 //
 // P_Init
@@ -4297,13 +3880,13 @@ void P_Init ()
 }
 
 static void P_Shutdown ()
-{
-	// [ZZ] delete global event handlers
-	DThinker::DestroyThinkersInList(STAT_STATIC);
-	E_Shutdown(false);
+{	
+	DThinker::DestroyThinkersInList(STAT_STATIC);	
 	P_DeinitKeyMessages ();
 	P_FreeLevelData ();
 	P_FreeExtraLevelData ();
+	// [ZZ] delete global event handlers
+	E_Shutdown(false);
 	ST_Clear();
 	FS_Close();
 	for (auto &p : players)

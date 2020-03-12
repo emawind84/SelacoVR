@@ -51,7 +51,7 @@ void AddLightDefaults(FLightDefaults *defaults, double attnFactor);
 void AddLightAssociation(const char *actor, const char *frame, const char *light);
 void InitializeActorLights(TArray<FLightAssociation> &LightAssociations);
 
-extern TArray<UserShaderDesc> usershaders;
+TArray<UserShaderDesc> usershaders;
 extern TDeletingArray<FLightDefaults *> LightDefaults;
 
 
@@ -73,9 +73,7 @@ static void ParseVavoomSkybox()
 		int facecount=0;
 		int maplump = -1;
 		bool error = false;
-		FSkyBox * sb = new FSkyBox;
-		sb->Name = sc.String;
-		sb->Name.ToUpper();
+		FSkyBox * sb = new FSkyBox(sc.String);
 		sb->fliptop = true;
 		sc.MustGetStringName("{");
 		while (!sc.CheckString("}"))
@@ -91,7 +89,7 @@ static void ParseVavoomSkybox()
 				FTexture *tex = TexMan.FindTexture(sc.String, ETextureType::Wall, FTextureManager::TEXMAN_TryAny);
 				if (tex == NULL)
 				{
-					sc.ScriptMessage("Texture '%s' not found in Vavoom skybox '%s'\n", sc.String, sb->Name.GetChars());
+					sc.ScriptMessage("Texture '%s' not found in Vavoom skybox '%s'\n", sc.String, sb->GetName().GetChars());
 					error = true;
 				}
 				sb->faces[facecount] = tex;
@@ -101,10 +99,13 @@ static void ParseVavoomSkybox()
 		}
 		if (facecount != 6)
 		{
-			sc.ScriptError("%s: Skybox definition requires 6 faces", sb->Name.GetChars());
+			sc.ScriptError("%s: Skybox definition requires 6 faces", sb->GetName().GetChars());
 		}
 		sb->SetSize();
-		if (!error) TexMan.AddTexture(sb);
+		if (!error)
+		{
+			TexMan.AddTexture(sb);
+		}
 	}
 }
 
@@ -870,6 +871,7 @@ class GLDefsParser
 			sc.ScriptError("Name longer than 8 characters: %s\n", sc.String);
 		}
 		frameName = sc.String;
+		frameName.ToUpper();
 
 		startDepth = ScriptDepth;
 
@@ -966,8 +968,7 @@ class GLDefsParser
 
 		sc.MustGetString();
 
-		FSkyBox * sb = new FSkyBox;
-		sb->Name = sc.String;
+		FSkyBox * sb = new FSkyBox(sc.String);
 		sb->Name.ToUpper();
 		if (sc.CheckString("fliptop"))
 		{
@@ -979,7 +980,7 @@ class GLDefsParser
 			sc.MustGetString();
 			if (facecount<6) 
 			{
-				sb->faces[facecount] = TexMan[TexMan.GetTexture(sc.String, ETextureType::Wall, FTextureManager::TEXMAN_TryAny|FTextureManager::TEXMAN_Overridable)];
+				sb->faces[facecount] = TexMan.GetTexture(TexMan.GetTextureID(sc.String, ETextureType::Wall, FTextureManager::TEXMAN_TryAny|FTextureManager::TEXMAN_Overridable));
 			}
 			facecount++;
 		}
@@ -1010,7 +1011,7 @@ class GLDefsParser
 				{
 					sc.MustGetString();
 					FTextureID flump=TexMan.CheckForTexture(sc.String, ETextureType::Flat,FTextureManager::TEXMAN_TryAny);
-					FTexture *tex = TexMan[flump];
+					FTexture *tex = TexMan.GetTexture(flump);
 					if (tex) tex->bAutoGlowing = tex->bGlowing = tex->bFullbright = true;
 				}
 			}
@@ -1021,7 +1022,7 @@ class GLDefsParser
 				{
 					sc.MustGetString();
 					FTextureID flump=TexMan.CheckForTexture(sc.String, ETextureType::Wall,FTextureManager::TEXMAN_TryAny);
-					FTexture *tex = TexMan[flump];
+					FTexture *tex = TexMan.GetTexture(flump);
 					if (tex) tex->bAutoGlowing = tex->bGlowing = tex->bFullbright = true;
 				}
 			}
@@ -1030,7 +1031,7 @@ class GLDefsParser
 				sc.SetCMode(true);
 				sc.MustGetString();
 				FTextureID flump=TexMan.CheckForTexture(sc.String, ETextureType::Flat,FTextureManager::TEXMAN_TryAny);
-				FTexture *tex = TexMan[flump];
+				FTexture *tex = TexMan.GetTexture(flump);
 				sc.MustGetStringName(",");
 				sc.MustGetString();
 				PalEntry color = V_GetColor(NULL, sc.String);
@@ -1083,7 +1084,7 @@ class GLDefsParser
 
 		sc.MustGetString();
 		FTextureID no = TexMan.CheckForTexture(sc.String, type, FTextureManager::TEXMAN_TryAny | FTextureManager::TEXMAN_Overridable);
-		FTexture *tex = TexMan[no];
+		FTexture *tex = TexMan.GetTexture(no);
 
 		sc.MustGetToken('{');
 		while (!sc.CheckToken('}'))
@@ -1140,20 +1141,21 @@ class GLDefsParser
 
 		if (bmtex != NULL)
 		{
-			/* I do not think this is needed any longer
-			if (tex->bWarped != 0)
-			{
-				Printf("Cannot combine warping with brightmap on texture '%s'\n", tex->Name.GetChars());
-				return;
-			}
-			*/
-
 			bmtex->bMasked = false;
 			tex->Brightmap = bmtex;
 		}	
 		tex->bDisableFullbright = disable_fullbright;
 	}
 
+	void SetShaderIndex(FTexture *tex, unsigned index)
+	{
+		auto desc = usershaders[index - FIRST_USER_SHADER];
+		if (desc.disablealphatest)
+		{
+			tex->bTranslucent = true;
+		}
+		tex->shaderindex = index;
+	}
 
 	//==========================================================================
 	//
@@ -1187,7 +1189,7 @@ class GLDefsParser
 
 		sc.MustGetString();
 		FTextureID no = TexMan.CheckForTexture(sc.String, type, FTextureManager::TEXMAN_TryAny | FTextureManager::TEXMAN_Overridable);
-		FTexture *tex = TexMan[no];
+		FTexture *tex = TexMan.GetTexture(no);
 
 		sc.MustGetToken('{');
 		while (!sc.CheckToken('}'))
@@ -1358,7 +1360,7 @@ class GLDefsParser
 				usershader.defines.AppendFormat("#define %s texture%d\n", texNameList[i].GetChars(), texNameIndex[i] + firstUserTexture);
 			}
 
-			if (tex->bWarped != 0)
+			if (tex->isWarped() != 0)
 			{
 				Printf("Cannot combine warping with hardware shader on texture '%s'\n", tex->Name.GetChars());
 				return;
@@ -1370,11 +1372,11 @@ class GLDefsParser
 					usershaders[i].shaderType == usershader.shaderType &&
 					!usershaders[i].defines.Compare(usershader.defines))
 				{
-					tex->shaderindex = i + FIRST_USER_SHADER;
+					SetShaderIndex(tex, i + FIRST_USER_SHADER);
 					return;
 				}
 			}
-			tex->shaderindex = usershaders.Push(usershader) + FIRST_USER_SHADER;
+			SetShaderIndex(tex, usershaders.Push(usershader) + FIRST_USER_SHADER);
 		}
 	}
 
@@ -1490,7 +1492,7 @@ class GLDefsParser
 
 			sc.MustGetString();
 			FTextureID no = TexMan.CheckForTexture(sc.String, type);
-			FTexture *tex = TexMan[no];
+			FTexture *tex = TexMan.GetTexture(no);
 
 			sc.MustGetToken('{');
 			while (!sc.CheckToken('}'))
@@ -1570,6 +1572,10 @@ class GLDefsParser
 					}
 					desc.defines.AppendFormat("#define %s %s\n", defineName.GetChars(), defineValue.GetChars());
 				}
+				else if (sc.Compare("disablealphatest"))
+				{
+					desc.disablealphatest = true;
+				}
 			}
 			if (!tex)
 			{
@@ -1595,7 +1601,7 @@ class GLDefsParser
 
 			if (desc.shader.IsNotEmpty())
 			{
-				if (tex->bWarped != 0)
+				if (tex->isWarped() != 0)
 				{
 					Printf("Cannot combine warping with hardware shader on texture '%s'\n", tex->Name.GetChars());
 					return;
@@ -1607,11 +1613,11 @@ class GLDefsParser
 						usershaders[i].shaderType == desc.shaderType &&
 						!usershaders[i].defines.Compare(desc.defines))
 					{
-						tex->shaderindex = i + FIRST_USER_SHADER;
+						SetShaderIndex(tex, i + FIRST_USER_SHADER);
 						return;
 					}
 				}
-				tex->shaderindex = usershaders.Push(desc) + FIRST_USER_SHADER;
+				SetShaderIndex(tex, usershaders.Push(desc) + FIRST_USER_SHADER);
 			}
 		}
 	}
@@ -1753,7 +1759,7 @@ void ParseGLDefs()
 {
 	const char *defsLump = NULL;
 
-	LightDefaults.Clear();
+	LightDefaults.DeleteAndClear();
 	//gl_DestroyUserShaders(); function says 'todo'
 	switch (gameinfo.gametype)
 	{

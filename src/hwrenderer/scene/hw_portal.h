@@ -1,9 +1,13 @@
 #pragma once
 
-#include "portal.h"
-#include "hw_drawinfo.h"
-#include "hw_drawstructs.h"
+#include "tarray.h"
+#include "r_utility.h"
+#include "actor.h"
+#include "hwrenderer/scene/hw_drawinfo.h"
+#include "hwrenderer/scene/hw_drawstructs.h"
+#include "hw_renderstate.h"
 #include "hwrenderer/textures/hw_material.h"
+
 
 struct GLSkyInfo
 {
@@ -37,50 +41,61 @@ struct GLHorizonInfo
 
 struct FPortalSceneState;
 
-class IPortal
+class HWPortal
 {
 	friend struct FPortalSceneState;
+
+	enum
+	{
+		STP_Stencil,
+		STP_DepthClear,
+		STP_DepthRestore,
+		STP_AllInOne
+	};
+
+	ActorRenderFlags savedvisibility;
+	TArray<unsigned int> mPrimIndices;
+	unsigned int mTopCap = ~0u, mBottomCap = ~0u;
+
+	void DrawPortalStencil(FRenderState &state, int pass);
+
 public:
 	FPortalSceneState * mState;
 	TArray<GLWall> lines;
+	BoundingRect boundingBox;
+	int planesused = 0;
 
-	IPortal(FPortalSceneState *s, bool local);
-	virtual ~IPortal() {}
+    HWPortal(FPortalSceneState *s, bool local = false) : mState(s), boundingBox(false)
+    {
+    }
+    virtual ~HWPortal() {}
+    virtual int ClipSeg(seg_t *seg, const DVector3 &viewpos) { return PClip_Inside; }
+    virtual int ClipSubsector(subsector_t *sub) { return PClip_Inside; }
+    virtual int ClipPoint(const DVector2 &pos) { return PClip_Inside; }
+    virtual line_t *ClipLine() { return nullptr; }
 	virtual void * GetSource() const = 0;	// GetSource MUST be implemented!
 	virtual const char *GetName() = 0;
 	virtual bool IsSky() { return false; }
 	virtual bool NeedCap() { return true; }
 	virtual bool NeedDepthBuffer() { return true; }
-	virtual void DrawContents(HWDrawInfo *di) = 0;
+	virtual void DrawContents(HWDrawInfo *di, FRenderState &state) = 0;
 	virtual void RenderAttached(HWDrawInfo *di) {}
-	virtual bool Start(bool usestencil, bool doquery, HWDrawInfo *outer_di, HWDrawInfo **pDi) = 0;
-	virtual void End(HWDrawInfo *di, bool usestencil) = 0;
+	void SetupStencil(HWDrawInfo *di, FRenderState &state, bool usestencil);
+	void RemoveStencil(HWDrawInfo *di, FRenderState &state, bool usestencil);
 
 	void AddLine(GLWall * l)
 	{
 		lines.Push(*l);
-	}
-
-	void RenderPortal(bool usestencil, bool doquery, HWDrawInfo *outer_di)
-	{
-		// Start may perform an occlusion query. If that returns 0 there
-		// is no need to draw the stencil's contents and there's also no
-		// need to restore the affected area becasue there is none!
-		HWDrawInfo *di;
-		if (Start(usestencil, doquery, outer_di, &di))
-		{
-			DrawContents(di);
-			End(di, usestencil);
-		}
+		boundingBox.addVertex(l->glseg.x1, l->glseg.y1);
+		boundingBox.addVertex(l->glseg.x2, l->glseg.y2);
 	}
 
 
 };
 
+
 struct FPortalSceneState
 {
-	int recursion = 0;
-
 	int MirrorFlag = 0;
 	int PlaneMirrorFlag = 0;
 	int renderdepth = 0;
@@ -101,54 +116,39 @@ struct FPortalSceneState
 		UniquePlaneMirrors.Clear();
 	}
 
-	int GetRecursion() const
-	{
-		return recursion;
-	}
-
 	bool isMirrored() const
 	{
 		return !!((MirrorFlag ^ PlaneMirrorFlag) & 1);
 	}
 
 	void StartFrame();
-	bool RenderFirstSkyPortal(int recursion, HWDrawInfo *outer_di);
-	void EndFrame(HWDrawInfo *outer_di);
-
-
+	bool RenderFirstSkyPortal(int recursion, HWDrawInfo *outer_di, FRenderState &state);
+	void EndFrame(HWDrawInfo *outer_di, FRenderState &state);
+	void RenderPortal(HWPortal *p, FRenderState &state, bool usestencil, HWDrawInfo *outer_di);
 };
 
-inline IPortal::IPortal(FPortalSceneState *s, bool local) : mState(s)
-{
-	//if (!local) s->portals.Push(this);
-}
-
-
-class HWScenePortalBase
+    
+class HWScenePortalBase : public HWPortal
 {
 protected:
-	IPortal *mOwner;
+    HWScenePortalBase(FPortalSceneState *state) : HWPortal(state, false)
+    {
+        
+    }
 public:
-	HWScenePortalBase() {}
-	virtual ~HWScenePortalBase() {}
-	void SetOwner(IPortal *p) { mOwner = p; }
 	void ClearClipper(HWDrawInfo *di, Clipper *clipper);
-
-	virtual int ClipSeg(seg_t *seg, const DVector3 &viewpos) { return PClip_Inside; }
-	virtual int ClipSubsector(subsector_t *sub) { return PClip_Inside; }
-	virtual int ClipPoint(const DVector2 &pos) { return PClip_Inside; }
-	virtual line_t *ClipLine() { return nullptr; }
-
-	virtual bool IsSky() { return false; }
-	virtual bool NeedCap() { return false; }
 	virtual bool NeedDepthBuffer() { return true; }
-	virtual void * GetSource() const = 0;	// GetSource MUST be implemented!
-	virtual const char *GetName() = 0;
-
-	virtual bool Setup(HWDrawInfo *di, Clipper *clipper) = 0;
-	virtual void Shutdown(HWDrawInfo *di) {}
-	virtual void RenderAttached(HWDrawInfo *di) {}
-
+	virtual void DrawContents(HWDrawInfo *di, FRenderState &state)
+	{
+		if (Setup(di, state, di->mClipper))
+		{
+			di->DrawScene(di, DM_PORTAL);
+			Shutdown(di, state);
+		}
+		else state.ClearScreen();
+	}
+	virtual bool Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clipper) = 0;
+	virtual void Shutdown(HWDrawInfo *di, FRenderState &rstate) {}
 };
 
 struct HWLinePortal : public HWScenePortalBase
@@ -159,14 +159,14 @@ struct HWLinePortal : public HWScenePortalBase
 
 	angle_t		angv1, angv2;	// for quick comparisons with a line or subsector
 
-	HWLinePortal(line_t *line)
+	HWLinePortal(FPortalSceneState *state, line_t *line) : HWScenePortalBase(state)
 	{
 		v1 = line->v1;
 		v2 = line->v2;
 		CalcDelta();
 	}
 
-	HWLinePortal(FLinePortalSpan *line)
+	HWLinePortal(FPortalSceneState *state, FLinePortalSpan *line) : HWScenePortalBase(state)
 	{
 		if (line->lines[0]->mType != PORTT_LINKED || line->v1 == nullptr)
 		{
@@ -207,15 +207,15 @@ struct HWMirrorPortal : public HWLinePortal
 	line_t * linedef;
 
 protected:
-	bool Setup(HWDrawInfo *di, Clipper *clipper) override;
-	void Shutdown(HWDrawInfo *di) override;
+	bool Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clipper) override;
+	void Shutdown(HWDrawInfo *di, FRenderState &rstate) override;
 	void * GetSource() const override { return linedef; }
 	const char *GetName() override;
 
 public:
 
-	HWMirrorPortal(line_t * line)
-		: HWLinePortal(line)
+	HWMirrorPortal(FPortalSceneState *state, line_t * line)
+		: HWLinePortal(state, line)
 	{
 		linedef = line;
 	}
@@ -226,7 +226,7 @@ struct HWLineToLinePortal : public HWLinePortal
 {
 	FLinePortalSpan *glport;
 protected:
-	bool Setup(HWDrawInfo *di, Clipper *clipper) override;
+	bool Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clipper) override;
 	virtual void * GetSource() const override { return glport; }
 	virtual const char *GetName() override;
 	virtual line_t *ClipLine() override { return line(); }
@@ -234,8 +234,8 @@ protected:
 
 public:
 
-	HWLineToLinePortal(FLinePortalSpan *ll)
-		: HWLinePortal(ll)
+	HWLineToLinePortal(FPortalSceneState *state, FLinePortalSpan *ll)
+		: HWLinePortal(state, ll)
 	{
 		glport = ll;
 	}
@@ -249,8 +249,8 @@ struct HWSkyboxPortal : public HWScenePortalBase
 	FSectorPortal * portal;
 
 protected:
-	bool Setup(HWDrawInfo *di, Clipper *clipper) override;
-	void Shutdown(HWDrawInfo *di) override;
+	bool Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clipper) override;
+	void Shutdown(HWDrawInfo *di, FRenderState &rstate) override;
 	virtual void * GetSource() const { return portal; }
 	virtual bool IsSky() { return true; }
 	virtual const char *GetName();
@@ -258,7 +258,7 @@ protected:
 public:
 
 
-	HWSkyboxPortal(FSectorPortal * pt)
+	HWSkyboxPortal(FPortalSceneState *state, FSectorPortal * pt) : HWScenePortalBase(state)
 	{
 		portal = pt;
 	}
@@ -270,8 +270,8 @@ struct HWSectorStackPortal : public HWScenePortalBase
 {
 	TArray<subsector_t *> subsectors;
 protected:
-	bool Setup(HWDrawInfo *di, Clipper *clipper) override;
-	void Shutdown(HWDrawInfo *di) override;
+	bool Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clipper) override;
+	void Shutdown(HWDrawInfo *di, FRenderState &rstate) override;
 	virtual void * GetSource() const { return origin; }
 	virtual bool IsSky() { return true; }	// although this isn't a real sky it can be handled as one.
 	virtual const char *GetName();
@@ -279,7 +279,7 @@ protected:
 
 public:
 
-	HWSectorStackPortal(FSectorPortalGroup *pt)
+	HWSectorStackPortal(FPortalSceneState *state, FSectorPortalGroup *pt) : HWScenePortalBase(state)
 	{
 		origin = pt;
 	}
@@ -295,18 +295,87 @@ struct HWPlaneMirrorPortal : public HWScenePortalBase
 {
 	int old_pm;
 protected:
-	bool Setup(HWDrawInfo *di, Clipper *clipper) override;
-	void Shutdown(HWDrawInfo *di) override;
+	bool Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clipper) override;
+	void Shutdown(HWDrawInfo *di, FRenderState &rstate) override;
 	virtual void * GetSource() const { return origin; }
 	virtual const char *GetName();
 	secplane_t * origin;
 
 public:
 
-	HWPlaneMirrorPortal(secplane_t * pt)
+	HWPlaneMirrorPortal(FPortalSceneState *state, secplane_t * pt) : HWScenePortalBase(state)
 	{
 		origin = pt;
 	}
 
 };
 
+
+struct HWHorizonPortal : public HWPortal
+{
+	GLHorizonInfo * origin;
+	unsigned int voffset;
+	unsigned int vcount;
+	friend struct HWEEHorizonPortal;
+
+protected:
+	virtual void DrawContents(HWDrawInfo *di, FRenderState &state);
+	virtual void * GetSource() const { return origin; }
+	virtual bool NeedDepthBuffer() { return false; }
+	virtual bool NeedCap() { return false; }
+	virtual const char *GetName();
+
+public:
+	
+	HWHorizonPortal(FPortalSceneState *state, GLHorizonInfo * pt, FRenderViewpoint &vp, bool local = false);
+};
+
+struct HWEEHorizonPortal : public HWPortal
+{
+	FSectorPortal * portal;
+
+protected:
+	virtual void DrawContents(HWDrawInfo *di, FRenderState &state);
+	virtual void * GetSource() const { return portal; }
+	virtual bool NeedDepthBuffer() { return false; }
+	virtual bool NeedCap() { return false; }
+	virtual const char *GetName();
+
+public:
+
+	HWEEHorizonPortal(FPortalSceneState *state, FSectorPortal *pt) : HWPortal(state)
+	{
+		portal = pt;
+	}
+
+};
+
+
+struct HWSkyPortal : public HWPortal
+{
+	GLSkyInfo * origin;
+	FSkyVertexBuffer *vertexBuffer;
+	friend struct HWEEHorizonPortal;
+
+	void RenderRow(HWDrawInfo *di, FRenderState &state, EDrawType prim, int row, bool apply = true);
+	void RenderBox(HWDrawInfo *di, FRenderState &state, FTextureID texno, FMaterial * gltex, float x_offset, bool sky2);
+	void RenderDome(HWDrawInfo *di, FRenderState &state, FMaterial * tex, float x_offset, float y_offset, bool mirror, int mode);
+
+protected:
+	virtual void DrawContents(HWDrawInfo *di, FRenderState &state);
+	virtual void * GetSource() const { return origin; }
+	virtual bool IsSky() { return true; }
+	virtual bool NeedDepthBuffer() { return false; }
+	virtual const char *GetName();
+
+public:
+
+
+	HWSkyPortal(FSkyVertexBuffer *vertexbuffer, FPortalSceneState *state, GLSkyInfo *  pt, bool local = false)
+		: HWPortal(state, local)
+	{
+		origin = pt;
+		vertexBuffer = vertexbuffer;
+	}
+
+};

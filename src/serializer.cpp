@@ -464,10 +464,9 @@ bool FSerializer::OpenReader(FCompressedBuffer *input)
 	}
 	else
 	{
-		char *unpacked = new char[input->mSize];
-		input->Decompress(unpacked);
-		r = new FReader(unpacked, input->mSize);
-		delete[] unpacked;
+		TArray<char> unpacked(input->mSize);
+		input->Decompress(unpacked.Data());
+		r = new FReader(unpacked.Data(), input->mSize);
 	}
 	return true;
 }
@@ -1515,7 +1514,7 @@ FSerializer &Serialize(FSerializer &arc, const char *key, FTextureID &value, FTe
 			}
 			FTextureID chk = value;
 			if (chk.GetIndex() >= TexMan.NumTextures()) chk.SetNull();
-			FTexture *pic = TexMan[chk];
+			FTexture *pic = TexMan.GetTexture(chk);
 			const char *name;
 
 			if (Wads.GetLinkedTexture(pic->SourceLump) == pic)
@@ -1545,7 +1544,7 @@ FSerializer &Serialize(FSerializer &arc, const char *key, FTextureID &value, FTe
 				assert(nameval.IsString() && typeval.IsInt());
 				if (nameval.IsString() && typeval.IsInt())
 				{
-					value = TexMan.GetTexture(UnicodeToString(nameval.GetString()), static_cast<ETextureType>(typeval.GetInt()));
+					value = TexMan.GetTextureID(UnicodeToString(nameval.GetString()), static_cast<ETextureType>(typeval.GetInt()));
 				}
 				else
 				{
@@ -1586,16 +1585,12 @@ FSerializer &Serialize(FSerializer &arc, const char *key, DObject *&value, DObje
 	if (retcode) *retcode = true;
 	if (arc.isWriting())
 	{
-		if (value != nullptr)
+		if (value != nullptr && !(value->ObjectFlags & (OF_EuthanizeMe | OF_Transient)))
 		{
 			int ndx;
 			if (value == WP_NOCHANGE)
 			{
 				ndx = -1;
-			}
-			else if (value->ObjectFlags & (OF_EuthanizeMe | OF_Transient))
-			{
-				return arc;
 			}
 			else
 			{

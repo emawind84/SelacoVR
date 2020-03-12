@@ -293,8 +293,8 @@ void DDoor::DoorSound(bool raise, DSeqNode *curseq) const
 				if (line->backsector == NULL)
 					continue;
 
-				FTexture *tex = TexMan[line->sidedef[0]->GetTexture(side_t::top)];
-				texname = tex ? tex->Name.GetChars() : NULL;
+				FTexture *tex = TexMan.GetTexture(line->sidedef[0]->GetTexture(side_t::top));
+				texname = tex ? tex->GetName().GetChars() : NULL;
 				if (texname != NULL && texname[0] == 'D' && texname[1] == 'O' && texname[2] == 'R')
 				{
 					switch (texname[3])
@@ -359,7 +359,7 @@ DDoor::DDoor (sector_t *sec, EVlDoor type, double speed, int delay, int lightTag
 	{
 	case doorClose:
 		m_Direction = -1;
-		height = sec->FindLowestCeilingSurrounding (&spot);
+		height = FindLowestCeilingSurrounding (sec, &spot);
 		m_TopDist = sec->ceilingplane.PointToDist (spot, height - 4);
 		DoorSound (false);
 		break;
@@ -367,7 +367,7 @@ DDoor::DDoor (sector_t *sec, EVlDoor type, double speed, int delay, int lightTag
 	case doorOpen:
 	case doorRaise:
 		m_Direction = 1;
-		height = sec->FindLowestCeilingSurrounding (&spot);
+		height = FindLowestCeilingSurrounding (sec, &spot);
 		m_TopDist = sec->ceilingplane.PointToDist (spot, height - 4);
 		if (m_TopDist != sec->ceilingplane.fD())
 			DoorSound (true);
@@ -381,14 +381,14 @@ DDoor::DDoor (sector_t *sec, EVlDoor type, double speed, int delay, int lightTag
 
 	case doorWaitRaise:
 		m_Direction = 2;
-		height = sec->FindLowestCeilingSurrounding (&spot);
+		height = FindLowestCeilingSurrounding (sec, &spot);
 		m_TopDist = sec->ceilingplane.PointToDist (spot, height - 4);
 		break;
 
 	case doorWaitClose:
 		m_Direction = 0;
 		m_Type = DDoor::doorRaise;
-		height = sec->FindHighestFloorPoint (&m_BotSpot);
+		height = FindHighestFloorPoint (sec, &m_BotSpot);
 		m_BotDist = sec->ceilingplane.PointToDist (m_BotSpot, height);
 		m_OldFloorDist = sec->floorplane.fD();
 		m_TopDist = sec->ceilingplane.fD();
@@ -399,12 +399,12 @@ DDoor::DDoor (sector_t *sec, EVlDoor type, double speed, int delay, int lightTag
 	if (!m_Sector->floordata || !m_Sector->floordata->IsKindOf(RUNTIME_CLASS(DPlat)) ||
 		!(barrier_cast<DPlat*>(m_Sector->floordata))->IsLift())
 	{
-		height = sec->FindHighestFloorPoint (&m_BotSpot);
+		height = FindHighestFloorPoint (sec, &m_BotSpot);
 		m_BotDist = sec->ceilingplane.PointToDist (m_BotSpot, height);
 	}
 	else
 	{
-		height = sec->FindLowestCeilingPoint(&m_BotSpot);
+		height = FindLowestCeilingPoint(sec, &m_BotSpot);
 		m_BotDist = sec->ceilingplane.PointToDist (m_BotSpot, height);
 	}
 	m_OldFloorDist = sec->floorplane.fD();
@@ -715,9 +715,8 @@ DAnimatedDoor::DAnimatedDoor (sector_t *sec, line_t *line, int speed, int delay,
 
 	picnum = tex1[side_t::top].texture;
 
-	// don't forget texture scaling here!
-	FTexture *tex = TexMan[picnum];
-	topdist = tex ? tex->GetScaledHeight() : 64;
+	FTexture *tex = TexMan.GetTexture(picnum);
+	topdist = tex ? tex->GetDisplayHeight() : 64;
 
 	topdist = m_Sector->ceilingplane.fD() - topdist * m_Sector->ceilingplane.fC();
 

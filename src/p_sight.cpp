@@ -587,7 +587,7 @@ bool SightCheck::P_SightTraverseIntercepts ()
 
 		for (auto rover : lastsector->e->XFloor.ffloors)
 		{
-			if ((rover->flags & FF_SOLID) == myseethrough || !(rover->flags & FF_EXISTS)) continue;
+			if ((rover->flags & FF_SEETHROUGH) == myseethrough || !(rover->flags & FF_EXISTS)) continue;
 			if ((Flags & SF_IGNOREWATERBOUNDARY) && (rover->flags & FF_SOLID) == 0) continue;
 
 			double ff_bottom = rover->bottom.plane->ZatPoint(seeingthing);
@@ -637,7 +637,8 @@ bool SightCheck::P_SightPathTraverse ()
 	for(auto rover : lastsector->e->XFloor.ffloors)
 	{
 		if(!(rover->flags & FF_EXISTS)) continue;
-		
+		if ((Flags & SF_IGNOREWATERBOUNDARY) && (rover->flags & FF_SOLID) == 0) continue;
+
 		double ff_bottom=rover->bottom.plane->ZatPoint(sightstart);
 		double ff_top=rover->top.plane->ZatPoint(sightstart);
 
@@ -833,7 +834,7 @@ sightcounts[2]++;
 =====================
 */
 
-bool P_CheckSight (AActor *t1, AActor *t2, int flags)
+int P_CheckSight (AActor *t1, AActor *t2, int flags)
 {
 	SightCycles.Clock();
 
@@ -933,14 +934,6 @@ sightcounts[0]++;
 done:
 	SightCycles.Unclock();
 	return res;
-}
-
-DEFINE_ACTION_FUNCTION(AActor, CheckSight)
-{
-	PARAM_SELF_PROLOGUE(AActor);
-	PARAM_OBJECT_NOT_NULL(target, AActor);
-	PARAM_INT_DEF(flags);
-	ACTION_RETURN_BOOL(P_CheckSight(self, target, flags));
 }
 
 ADD_STAT (sight)

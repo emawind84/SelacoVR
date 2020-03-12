@@ -96,6 +96,7 @@ public:
 	DThinker(no_link_type) throw();
 private:
 	static void DestroyThinkersInList (FThinkerList &list);
+	static bool DoDestroyThinkersInList(FThinkerList &list);
 	static int TickThinkers (FThinkerList *list, FThinkerList *dest);	// Returns: # of thinkers ticked
 	static int ProfileThinkers(FThinkerList *list, FThinkerList *dest);
 	static void SaveList(FSerializer &arc, DThinker *node);
@@ -148,6 +149,12 @@ public:
 	{
 	}
 	TThinkerIterator (ENamedName subclass, int statnum=MAX_STATNUM+1) : FThinkerIterator(PClass::FindClass(subclass), statnum)
+	{
+	}
+	TThinkerIterator (FName subclass, int statnum, DThinker *prev) : FThinkerIterator(PClass::FindClass(subclass), statnum, prev)
+	{
+	}
+	TThinkerIterator (ENamedName subclass, int statnum, DThinker *prev) : FThinkerIterator(PClass::FindClass(subclass), statnum, prev)
 	{
 	}
 	TThinkerIterator (const char *subclass, int statnum=MAX_STATNUM+1) : FThinkerIterator(PClass::FindClass(subclass), statnum)

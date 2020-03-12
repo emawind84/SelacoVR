@@ -64,12 +64,14 @@
 #define XHAIRPICKUPSIZE		(2+XHAIRSHRINKSIZE)
 #define POWERUPICONSIZE		32
 
+IMPLEMENT_CLASS(DHUDFont, true, false);
 IMPLEMENT_CLASS(DBaseStatusBar, false, true)
 
 IMPLEMENT_POINTERS_START(DBaseStatusBar)
 	IMPLEMENT_POINTER(Messages[0])
 	IMPLEMENT_POINTER(Messages[1])
 	IMPLEMENT_POINTER(Messages[2])
+	IMPLEMENT_POINTER(AltHud)
 IMPLEMENT_POINTERS_END
 
 EXTERN_CVAR (Bool, am_showmonsters)
@@ -143,21 +145,12 @@ void ST_FormatMapName(FString &mapname, const char *mapnamecolor)
 	cluster_info_t *cluster = FindClusterInfo (level.cluster);
 	bool ishub = (cluster != NULL && (cluster->flags & CLUSTER_HUB));
 
+	mapname = "";
 	if (am_showmaplabel == 1 || (am_showmaplabel == 2 && !ishub))
 	{
 		mapname << level.MapName << ": ";
 	}
 	mapname << mapnamecolor << level.LevelName;
-}
-
-DEFINE_ACTION_FUNCTION(FLevelLocals, FormatMapName)
-{
-	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
-	PARAM_INT(cr);
-	char mapnamecolor[3] = { '\34', char(cr + 'A'), 0 };
-	FString rets;
-	ST_FormatMapName(rets, mapnamecolor);
-	ACTION_RETURN_STRING(rets);
 }
 
 //---------------------------------------------------------------------------
@@ -176,7 +169,7 @@ void ST_LoadCrosshair(bool alwaysload)
 		players[consoleplayer].camera->player != NULL &&
 		players[consoleplayer].camera->player->ReadyWeapon != NULL)
 	{
-		num = players[consoleplayer].camera->player->ReadyWeapon->Crosshair;
+		num = players[consoleplayer].camera->player->ReadyWeapon->IntVar(NAME_Crosshair);
 	}
 	if (num == 0)
 	{
@@ -211,7 +204,7 @@ void ST_LoadCrosshair(bool alwaysload)
 		}
 	}
 	CrosshairNum = num;
-	CrosshairImage = TexMan[texid];
+	CrosshairImage = TexMan.GetTexture(texid);
 }
 
 //---------------------------------------------------------------------------
@@ -368,6 +361,21 @@ DBaseStatusBar::DBaseStatusBar ()
 	CPlayer = NULL;
 	ShowLog = false;
 	defaultScale = { (double)CleanXfac, (double)CleanYfac };
+
+	// Create the AltHud object. Todo: Make class type configurable.
+	FName classname = "AltHud";
+	auto cls = PClass::FindClass(classname);
+	if (cls)
+	{
+		AltHud = cls->CreateNew();
+
+		VMFunction * func = PClass::FindFunction(classname, "Init"); 
+		if (func != nullptr)
+		{
+			VMValue params[] = { AltHud };
+			VMCall(func, params, countof(params), nullptr, 0);
+		}
+	}
 }
 
 static void ValidateResolution(int &hres, int &vres)
@@ -412,19 +420,6 @@ void DBaseStatusBar::SetDrawSize(int reltop, int hres, int vres)
 }
 
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, SetSize)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_INT(rt);
-	PARAM_INT(vw);
-	PARAM_INT(vh);
-	PARAM_INT_DEF(hvw);
-	PARAM_INT_DEF(hvh);
-	self->SetSize(rt, vw, vh, hvw, hvh);
-	return 0;
-}
-
-
 //---------------------------------------------------------------------------
 //
 // PROP Destroy
@@ -444,6 +439,7 @@ void DBaseStatusBar::OnDestroy ()
 		}
 		Messages[i] = NULL;
 	}
+	if (AltHud) AltHud->Destroy();
 	Super::OnDestroy();
 }
 
@@ -536,15 +532,9 @@ DVector2 DBaseStatusBar::GetHUDScale() const
 	return{ double(realscale), double(realscale * (hud_aspectscale ? pixelstretch : 1.)) };
 }
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, GetHUDScale)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	ACTION_RETURN_VEC2(self->GetHUDScale());
-}
-
 //---------------------------------------------------------------------------
 //
-// PROC GetHUDScale
+//  
 //
 //---------------------------------------------------------------------------
 
@@ -555,19 +545,9 @@ void DBaseStatusBar::BeginStatusBar(int resW, int resH, int relTop, bool forceSc
 	fullscreenOffsets = false;
 }
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, BeginStatusBar)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_BOOL_DEF(fs);
-	PARAM_INT_DEF(w);
-	PARAM_INT_DEF(h);
-	PARAM_INT_DEF(r);
-	self->BeginStatusBar(w, h, r, fs);
-	return 0;
-}
 //---------------------------------------------------------------------------
 //
-// PROC GetHUDScale
+//  
 //
 //---------------------------------------------------------------------------
 
@@ -578,17 +558,6 @@ void DBaseStatusBar::BeginHUD(int resW, int resH, double Alpha, bool forcescaled
 	ForcedScale = forcescaled;
 	CompleteBorder = false;
 	fullscreenOffsets = true;
-}
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, BeginHUD)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_FLOAT_DEF(a);
-	PARAM_BOOL_DEF(fs);
-	PARAM_INT_DEF(w);
-	PARAM_INT_DEF(h);
-	self->BeginHUD(w, h, a, fs);
-	return 0;
 }
 
 //---------------------------------------------------------------------------
@@ -671,13 +640,6 @@ void DBaseStatusBar::Tick ()
 
 }
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, Tick)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	self->Tick();
-	return 0;
-}
-
 void DBaseStatusBar::CallTick()
 {
 	IFVIRTUAL(DBaseStatusBar, Tick)
@@ -728,16 +690,6 @@ void DBaseStatusBar::AttachMessage (DHUDMessageBase *msg, uint32_t id, int layer
 	GC::WriteBarrier(msg);
 }
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, AttachMessage)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_OBJECT(msg, DHUDMessageBase);
-	PARAM_UINT_DEF(id);
-	PARAM_INT_DEF(layer);
-	self->AttachMessage(msg, id, layer);
-	return 0;
-}
-
 //---------------------------------------------------------------------------
 //
 // PROC DetachMessage
@@ -766,14 +718,6 @@ DHUDMessageBase *DBaseStatusBar::DetachMessage (DHUDMessageBase *msg)
 	return NULL;
 }
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, DetachMessage)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_OBJECT(msg, DHUDMessageBase);
-	ACTION_RETURN_OBJECT(self->DetachMessage(msg));
-}
-
-
 DHUDMessageBase *DBaseStatusBar::DetachMessage (uint32_t id)
 {
 	for (size_t i = 0; i < countof(Messages); ++i)
@@ -794,13 +738,6 @@ DHUDMessageBase *DBaseStatusBar::DetachMessage (uint32_t id)
 		}
 	}
 	return NULL;
-}
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, DetachMessageID)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_INT(id);
-	ACTION_RETURN_OBJECT(self->DetachMessage(id));
 }
 
 //---------------------------------------------------------------------------
@@ -824,14 +761,6 @@ void DBaseStatusBar::DetachAllMessages ()
 		}
 	}
 }
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, DetachAllMessages)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	self->DetachAllMessages();
-	return 0;
-}
-
 
 //---------------------------------------------------------------------------
 //
@@ -891,11 +820,11 @@ void DBaseStatusBar::RefreshBackground () const
 
 		if (setblocks >= 10)
 		{
-			FTexture *p = TexMan[gameinfo.Border.b];
+			FTexture *p = TexMan.GetTextureByName(gameinfo.Border.b);
 			if (p != NULL)
 			{
-				screen->FlatFill(0, y, x, y + p->GetHeight(), p, true);
-				screen->FlatFill(x2, y, SCREENWIDTH, y + p->GetHeight(), p, true);
+				screen->FlatFill(0, y, x, y + p->GetDisplayHeight(), p, true);
+				screen->FlatFill(x2, y, SCREENWIDTH, y + p->GetDisplayHeight(), p, true);
 			}
 		}
 	}
@@ -940,8 +869,8 @@ void DBaseStatusBar::DrawCrosshair ()
 	{
 		size *= CrosshairSize;
 	}
-	w = int(CrosshairImage->GetWidth() * size);
-	h = int(CrosshairImage->GetHeight() * size);
+	w = int(CrosshairImage->GetDisplayWidth() * size);
+	h = int(CrosshairImage->GetDisplayHeight() * size);
 
 	if (crosshairhealth)
 	{
@@ -1071,15 +1000,6 @@ void DBaseStatusBar::Draw (EHudState state, double ticFrac)
 	}
 }
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, Draw)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_INT(state);
-    PARAM_FLOAT(ticFrac);
-	self->Draw((EHudState)state, ticFrac);
-	return 0;
-}
-
 void DBaseStatusBar::CallDraw(EHudState state, double ticFrac)
 {
 	IFVIRTUAL(DBaseStatusBar, Draw)
@@ -1091,8 +1011,6 @@ void DBaseStatusBar::CallDraw(EHudState state, double ticFrac)
 	screen->ClearClipRect();	// make sure the scripts don't leave a valid clipping rect behind.
 	BeginStatusBar(BaseSBarHorizontalResolution, BaseSBarVerticalResolution, BaseRelTop, false);
 }
-
-
 
 void DBaseStatusBar::DrawLog ()
 {
@@ -1106,10 +1024,10 @@ void DBaseStatusBar::DrawLog ()
 		hudheight = SCREENHEIGHT / scale;
 
 		int linelen = hudwidth<640? Scale(hudwidth,9,10)-40 : 560;
-		FBrokenLines *lines = V_BreakLines (SmallFont, linelen, CPlayer->LogText);
+		auto lines = V_BreakLines (SmallFont, linelen, CPlayer->LogText);
 		int height = 20;
 
-		for (int i = 0; lines[i].Width != -1; i++) height += SmallFont->GetHeight () + 1;
+		for (unsigned i = 0; i < lines.Size(); i++) height += SmallFont->GetHeight () + 1;
 
 		int x,y,w;
 
@@ -1130,16 +1048,13 @@ void DBaseStatusBar::DrawLog ()
 							 Scale(w, SCREENWIDTH, hudwidth), Scale(height, SCREENHEIGHT, hudheight));
 		x+=20;
 		y+=10;
-		for (int i = 0; lines[i].Width != -1; i++)
+		for (const FBrokenLines &line : lines)
 		{
-
-			screen->DrawText (SmallFont, CR_UNTRANSLATED, x, y, lines[i].Text,
+			screen->DrawText (SmallFont, CR_UNTRANSLATED, x, y, line.Text,
 				DTA_KeepRatio, true,
 				DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight, TAG_DONE);
 			y += SmallFont->GetHeight ()+1;
 		}
-
-		V_FreeBrokenLines (lines);
 	}
 }
 
@@ -1154,16 +1069,6 @@ bool DBaseStatusBar::MustDrawLog(EHudState state)
 		return !!rv;
 	}
 	return true;
-}
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, SetMugshotState)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_STRING(statename);
-	PARAM_BOOL(wait);
-	PARAM_BOOL(reset);
-	self->mugshot.SetState(statename, wait, reset);
-	return 0;
 }
 
 void DBaseStatusBar::SetMugShotState(const char *stateName, bool waitTillDone, bool reset)
@@ -1308,15 +1213,6 @@ void DBaseStatusBar::DrawWaiting () const
 	}
 }
 
-void DBaseStatusBar::FlashItem (const PClass *itemtype)
-{
-	IFVIRTUAL(DBaseStatusBar, FlashItem)
-	{
-		VMValue params[] = { (DObject*)this, (PClass*)itemtype };
-		VMCall(func, params, countof(params), nullptr, 0);
-	}
-}
-
 void DBaseStatusBar::NewGame ()
 {
 	IFVIRTUAL(DBaseStatusBar, NewGame)
@@ -1350,20 +1246,13 @@ void DBaseStatusBar::ScreenSizeChanged ()
 
 	for (size_t i = 0; i < countof(Messages); ++i)
 	{
-		DHUDMessageBase *message = Messages[i];
+	DHUDMessageBase *message = Messages[i];
 		while (message != NULL)
 		{
 			message->CallScreenSizeChanged ();
 			message = message->Next;
 		}
 	}
-}
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, ScreenSizeChanged)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	self->ScreenSizeChanged();
-	return 0;
 }
 
 void DBaseStatusBar::CallScreenSizeChanged()
@@ -1385,95 +1274,18 @@ void DBaseStatusBar::CallScreenSizeChanged()
 //
 //---------------------------------------------------------------------------
 
-AInventory *DBaseStatusBar::ValidateInvFirst (int numVisible) const
+AActor *DBaseStatusBar::ValidateInvFirst (int numVisible) const
 {
-	AInventory *item;
-	int i;
-
-	if (CPlayer->mo->InvFirst == NULL)
+	IFVM(BaseStatusBar, ValidateInvFirst)
 	{
-		CPlayer->mo->InvFirst = CPlayer->mo->FirstInv();
-		if (CPlayer->mo->InvFirst == NULL)
-		{ // Nothing to show
-			return NULL;
-		}
+		VMValue params[] = { const_cast<DBaseStatusBar*>(this), numVisible };
+		AActor *item;
+		VMReturn ret((void**)&item);
+		VMCall(func, params, 2, &ret, 1);
+		return item;
 	}
-
-	assert (CPlayer->mo->InvFirst->Owner == CPlayer->mo);
-
-	// If there are fewer than numVisible items shown, see if we can shift the
-	// view left to show more.
-	for (i = 0, item = CPlayer->mo->InvFirst; item != NULL && i < numVisible; ++i, item = item->NextInv())
-	{ }
-
-	while (i < numVisible)
-	{
-		item = CPlayer->mo->InvFirst->PrevInv ();
-		if (item == NULL)
-		{
-			break;
-		}
-		else
-		{
-			CPlayer->mo->InvFirst = item;
-			++i;
-		}
-	}
-
-	if (CPlayer->mo->InvSel == NULL)
-	{
-		// Nothing selected, so don't move the view.
-		return CPlayer->mo->InvFirst == NULL ? CPlayer->mo->Inventory : CPlayer->mo->InvFirst;
-	}
-	else
-	{
-		// Check if InvSel is already visible
-		for (item = CPlayer->mo->InvFirst, i = numVisible;
-			 item != NULL && i != 0;
-			 item = item->NextInv(), --i)
-		{
-			if (item == CPlayer->mo->InvSel)
-			{
-				return CPlayer->mo->InvFirst;
-			}
-		}
-		// Check if InvSel is to the right of the visible range
-		for (i = 1; item != NULL; item = item->NextInv(), ++i)
-		{
-			if (item == CPlayer->mo->InvSel)
-			{
-				// Found it. Now advance InvFirst
-				for (item = CPlayer->mo->InvFirst; i != 0; --i)
-				{
-					item = item->NextInv();
-				}
-				return item;
-			}
-		}
-		// Check if InvSel is to the left of the visible range
-		for (item = CPlayer->mo->Inventory;
-			item != CPlayer->mo->InvSel;
-			item = item->NextInv())
-		{ }
-		if (item != NULL)
-		{
-			// Found it, so let it become the first item shown
-			return item;
-		}
-		// Didn't find the selected item, so don't move the view.
-		// This should never happen, so let debug builds assert.
-		assert (item != NULL);
-		return CPlayer->mo->InvFirst;
-	}
+	return nullptr;
 }
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, ValidateInvFirst)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_INT(num);
-	ACTION_RETURN_POINTER(self->ValidateInvFirst(num));
-}
-
 
 uint32_t DBaseStatusBar::GetTranslation() const
 {
@@ -1507,28 +1319,6 @@ void DBaseStatusBar::StatusbarToRealCoords(double &x, double &y, double &w, doub
 	}
 }
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, StatusbarToRealCoords)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_FLOAT(x);
-	PARAM_FLOAT_DEF(y);
-	PARAM_FLOAT_DEF(w);
-	PARAM_FLOAT_DEF(h);
-	self->StatusbarToRealCoords(x, y, w, h);
-	if (numret > 0) ret[0].SetFloat(x);
-	if (numret > 1) ret[1].SetFloat(y);
-	if (numret > 2) ret[2].SetFloat(w);
-	if (numret > 3) ret[3].SetFloat(h);
-	return MIN(4, numret);
-}
-
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, GetTopOfStatusbar)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	ACTION_RETURN_INT(self->GetTopOfStatusbar());
-}
-
 //============================================================================
 //
 // draw stuff
@@ -1540,10 +1330,10 @@ void DBaseStatusBar::DrawGraphic(FTextureID texture, double x, double y, int fla
 	if (!texture.isValid())
 		return;
 
-	FTexture *tex = (flags & DI_DONTANIMATE)?  TexMan[texture] : TexMan(texture);
+	FTexture *tex = TexMan.GetTexture(texture, !(flags & DI_DONTANIMATE));
 
-	double texwidth = tex->GetScaledWidthDouble() * scaleX;
-	double texheight = tex->GetScaledHeightDouble() * scaleY;
+	double texwidth = tex->GetDisplayWidthDouble() * scaleX;
+	double texheight = tex->GetDisplayHeightDouble() * scaleY;
 
 	if (boxwidth > 0 || boxheight > 0)
 	{
@@ -1595,14 +1385,14 @@ void DBaseStatusBar::DrawGraphic(FTextureID texture, double x, double y, int fla
 	{
 	case DI_ITEM_HCENTER:	x -= boxwidth / 2; break;
 	case DI_ITEM_RIGHT:		x -= boxwidth; break;
-	case DI_ITEM_HOFFSET:	x -= tex->GetScaledLeftOffsetDouble(0) * boxwidth / texwidth; break;
+	case DI_ITEM_HOFFSET:	x -= tex->GetDisplayLeftOffsetDouble() * boxwidth / texwidth; break;
 	}
 
 	switch (flags & DI_ITEM_VMASK)
 	{
 	case DI_ITEM_VCENTER: y -= boxheight / 2; break;
 	case DI_ITEM_BOTTOM:  y -= boxheight; break;
-	case DI_ITEM_VOFFSET: y -= tex->GetScaledTopOffsetDouble(0) * boxheight / texheight; break;
+	case DI_ITEM_VOFFSET: y -= tex->GetDisplayTopOffsetDouble() * boxheight / texheight; break;
 	}
 
 	if (!fullscreenOffsets)
@@ -1653,78 +1443,6 @@ void DBaseStatusBar::DrawGraphic(FTextureID texture, double x, double y, int fla
 		TAG_DONE);
 }
 
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, DrawTexture)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_INT(texid);
-	PARAM_FLOAT(x);
-	PARAM_FLOAT(y);
-	PARAM_INT_DEF(flags);
-	PARAM_FLOAT_DEF(alpha);
-	PARAM_FLOAT_DEF(w);
-	PARAM_FLOAT_DEF(h);
-	PARAM_FLOAT_DEF(scaleX);
-	PARAM_FLOAT_DEF(scaleY);
-	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
-	self->DrawGraphic(FSetTextureID(texid), x, y, flags, alpha, w, h, scaleX, scaleY);
-	return 0;
-}
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, DrawImage)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_STRING(texid);
-	PARAM_FLOAT(x);
-	PARAM_FLOAT(y);
-	PARAM_INT_DEF(flags);
-	PARAM_FLOAT_DEF(alpha);
-	PARAM_FLOAT_DEF(w);
-	PARAM_FLOAT_DEF(h);
-	PARAM_FLOAT_DEF(scaleX);
-	PARAM_FLOAT_DEF(scaleY);
-	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
-	self->DrawGraphic(TexMan.CheckForTexture(texid, ETextureType::Any), x, y, flags, alpha, w, h, scaleX, scaleY);
-	return 0;
-}
-
-//============================================================================
-//
-// encapsulates all settings a HUD font may need
-//
-//============================================================================
-
-class DHUDFont : public DObject
-{
-	// this blocks CreateNew on this class which is the intent here.
-	DECLARE_ABSTRACT_CLASS(DHUDFont, DObject);
-
-public:
-	FFont *mFont;
-	int mSpacing;
-	bool mMonospaced;
-	int mShadowX;
-	int mShadowY;
-
-	DHUDFont(FFont *f, int sp, bool ms, int sx, int sy)
-		: mFont(f), mSpacing(sp), mMonospaced(ms), mShadowX(sx), mShadowY(sy)
-	{}
-};
-
-IMPLEMENT_CLASS(DHUDFont, true, false);
-
-DEFINE_ACTION_FUNCTION(DHUDFont, Create)
-{
-	PARAM_PROLOGUE;
-	PARAM_POINTER(fnt, FFont);
-	PARAM_INT_DEF(spac);
-	PARAM_BOOL_DEF(mono);
-	PARAM_INT_DEF(sx);
-	PARAM_INT_DEF(sy);
-	ACTION_RETURN_POINTER(Create<DHUDFont>(fnt, spac, mono, sy, sy));
-}
-
-DEFINE_FIELD(DHUDFont, mFont);
 
 //============================================================================
 //
@@ -1802,20 +1520,20 @@ void DBaseStatusBar::DrawString(FFont *font, const FString &cstring, double x, d
 		}
 
 		int width;
-		FTexture* c = font->GetChar((unsigned char)ch, &width);
+		FTexture* c = font->GetChar((unsigned char)ch, fontcolor, &width);
 		if (c == NULL) //missing character.
 		{
 			continue;
 		}
 
 		if (!monospaced) //If we are monospaced lets use the offset
-			x += (c->GetLeftOffset(0) + 1); //ignore x offsets since we adapt to character size
+			x += (c->GetDisplayLeftOffsetDouble() + 1); //ignore x offsets since we adapt to character size
 
 		double rx, ry, rw, rh;
 		rx = x + drawOffset.X;
 		ry = y + drawOffset.Y;
-		rw = c->GetScaledWidthDouble();
-		rh = c->GetScaledHeightDouble();
+		rw = c->GetDisplayWidthDouble();
+		rh = c->GetDisplayHeightDouble();
 
 		if (!fullscreenOffsets)
 		{
@@ -1849,26 +1567,16 @@ void DBaseStatusBar::DrawString(FFont *font, const FString &cstring, double x, d
 			TAG_DONE);
 
 		if (!monospaced)
-			x += width + spacing - (c->GetLeftOffset(0) + 1);
+			x += width + spacing - (c->GetDisplayLeftOffsetDouble() + 1);
 		else
 			x += spacing;
 	}
 
 }
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, DrawString)
+void SBar_DrawString(DBaseStatusBar *self, DHUDFont *font, const FString &string, double x, double y, int flags, int trans, double alpha, int wrapwidth, int linespacing)
 {
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_POINTER_NOT_NULL(font, DHUDFont);
-	PARAM_STRING(string);
-	PARAM_FLOAT(x);
-	PARAM_FLOAT(y);
-	PARAM_INT_DEF(flags);
-	PARAM_INT_DEF(trans);
-	PARAM_FLOAT_DEF(alpha);
-	PARAM_INT_DEF(wrapwidth);
-	PARAM_INT_DEF(linespacing);
-
+	if (font == nullptr) ThrowAbortException(X_READ_NIL, nullptr);
 	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
 
 	// resolve auto-alignment before making any adjustments to the position values.
@@ -1882,19 +1590,17 @@ DEFINE_ACTION_FUNCTION(DBaseStatusBar, DrawString)
 
 	if (wrapwidth > 0)
 	{
-		FBrokenLines *brk = V_BreakLines(font->mFont, wrapwidth, string, true);
-		for (int i = 0; brk[i].Width >= 0; i++)
+		auto brk = V_BreakLines(font->mFont, wrapwidth, string, true);
+		for (auto &line : brk)
 		{
-			self->DrawString(font->mFont, brk[i].Text, x, y, flags, alpha, trans, font->mSpacing, font->mMonospaced, font->mShadowX, font->mShadowY);
+			self->DrawString(font->mFont, line.Text, x, y, flags, alpha, trans, font->mSpacing, font->mMonospaced, font->mShadowX, font->mShadowY);
 			y += font->mFont->GetHeight() + linespacing;
 		}
-		V_FreeBrokenLines(brk);
 	}
 	else
 	{
 		self->DrawString(font->mFont, string, x, y, flags, alpha, trans, font->mSpacing, font->mMonospaced, font->mShadowX, font->mShadowY);
 	}
-	return 0;
 }
 
 
@@ -1955,22 +1661,6 @@ void DBaseStatusBar::TransformRect(double &x, double &y, double &w, double &h, i
 }
 
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, TransformRect)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_FLOAT(x);
-	PARAM_FLOAT(y);
-	PARAM_FLOAT(w);
-	PARAM_FLOAT(h);
-	PARAM_INT_DEF(flags);
-	self->TransformRect(x, y, w, h, flags);
-	if (numret > 0) ret[0].SetFloat(x);
-	if (numret > 1) ret[1].SetFloat(y);
-	if (numret > 2) ret[2].SetFloat(w);
-	if (numret > 3) ret[3].SetFloat(h);
-	return MIN(4, numret);
-}
-
 //============================================================================
 //
 // draw stuff
@@ -1993,20 +1683,6 @@ void DBaseStatusBar::Fill(PalEntry color, double x, double y, double w, double h
 }
 
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, Fill)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_COLOR(color);
-	PARAM_FLOAT(x);
-	PARAM_FLOAT(y);
-	PARAM_FLOAT(w);
-	PARAM_FLOAT(h);
-	PARAM_INT_DEF(flags);
-	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
-	self->Fill(color, x, y, w, h, flags);
-	return 0;
-}
-
 //============================================================================
 //
 // draw stuff
@@ -2023,18 +1699,6 @@ void DBaseStatusBar::SetClipRect(double x, double y, double w, double h, int fla
 	screen->SetClipRect(x1, y1, ww, hh);
 }
 
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, SetClipRect)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_FLOAT(x);
-	PARAM_FLOAT(y);
-	PARAM_FLOAT(w);
-	PARAM_FLOAT(h);
-	PARAM_INT_DEF(flags);
-	self->SetClipRect(x, y, w, h, flags);
-	return 0;
-}
 
 //============================================================================
 //
@@ -2061,27 +1725,6 @@ CCMD (showpop)
 	}
 }
 
-DEFINE_FIELD(DBaseStatusBar, RelTop);
-DEFINE_FIELD(DBaseStatusBar, HorizontalResolution);
-DEFINE_FIELD(DBaseStatusBar, VerticalResolution);
-DEFINE_FIELD(DBaseStatusBar, Centering);
-DEFINE_FIELD(DBaseStatusBar, FixedOrigin);
-DEFINE_FIELD(DBaseStatusBar, CompleteBorder);
-DEFINE_FIELD(DBaseStatusBar, CrosshairSize);
-DEFINE_FIELD(DBaseStatusBar, Displacement);
-DEFINE_FIELD(DBaseStatusBar, CPlayer);
-DEFINE_FIELD(DBaseStatusBar, ShowLog);
-DEFINE_FIELD(DBaseStatusBar, Alpha);
-DEFINE_FIELD(DBaseStatusBar, drawOffset);
-DEFINE_FIELD(DBaseStatusBar, drawClip);
-DEFINE_FIELD(DBaseStatusBar, fullscreenOffsets);
-DEFINE_FIELD(DBaseStatusBar, defaultScale);
-DEFINE_FIELD(DBaseStatusBar, artiflashTick);
-DEFINE_FIELD(DBaseStatusBar, itemflashFade);
-
-DEFINE_GLOBAL(StatusBar);
-
-
 static DObject *InitObject(PClass *type, int paramnum, VM_ARGS)
 {
 	auto obj =  type->CreateNew();
@@ -2090,35 +1733,6 @@ static DObject *InitObject(PClass *type, int paramnum, VM_ARGS)
 }
 
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, GetGlobalACSString)
-{
-	PARAM_PROLOGUE;
-	PARAM_INT(index);
-	ACTION_RETURN_STRING(FBehavior::StaticLookupString(ACS_GlobalVars[index]));
-}
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, GetGlobalACSArrayString)
-{
-	PARAM_PROLOGUE;
-	PARAM_INT(arrayno);
-	PARAM_INT(index);
-	ACTION_RETURN_STRING(FBehavior::StaticLookupString(ACS_GlobalArrays[arrayno][index]));
-}
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, GetGlobalACSValue)
-{
-	PARAM_PROLOGUE;
-	PARAM_INT(index);
-	ACTION_RETURN_INT(ACS_GlobalVars[index]);
-}
-
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, GetGlobalACSArrayValue)
-{
-	PARAM_PROLOGUE;
-	PARAM_INT(arrayno);
-	PARAM_INT(index);
-	ACTION_RETURN_INT(ACS_GlobalArrays[arrayno][index]);
-}
 
 enum ENumFlags
 {
@@ -2126,42 +1740,83 @@ enum ENumFlags
 	FNF_FILLZEROS = 0x2,
 };
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, FormatNumber)
+void FormatNumber(int number, int minsize, int maxsize, int flags, const FString &prefix, FString *result)
 {
-	PARAM_PROLOGUE;
-	PARAM_INT(number);
-	PARAM_INT_DEF(minsize);
-	PARAM_INT_DEF(maxsize);
-	PARAM_INT_DEF(flags);
-	PARAM_STRING_DEF(prefix);
 	static int maxvals[] = { 1, 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999 };
 
-	if (number == 0 && (flags & FNF_WHENNOTZERO)) ACTION_RETURN_STRING("");
+	if (number == 0 && (flags & FNF_WHENNOTZERO))
+	{
+		*result = "";
+		return;
+	}
 	if (maxsize > 0 && maxsize < 10)
 	{
 		number = clamp(number, -maxvals[maxsize - 1], maxvals[maxsize]);
 	}
-	FString fmt;
+	FString &fmt = *result;
 	if (minsize <= 1) fmt.Format("%s%d", prefix.GetChars(), number);
 	else if (flags & FNF_FILLZEROS) fmt.Format("%s%0*d", prefix.GetChars(), minsize, number);
 	else fmt.Format("%s%*d", prefix.GetChars(), minsize, number);
-	ACTION_RETURN_STRING(fmt);
 }
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, ReceivedWeapon)
-{
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	self->mugshot.Grin();
-	return 0;
-}
+//---------------------------------------------------------------------------
+//
+// Weapons List
+//
+//---------------------------------------------------------------------------
 
-DEFINE_ACTION_FUNCTION(DBaseStatusBar, GetMugshot)
+int GetInventoryIcon(AActor *item, uint32_t flags, int *applyscale)
 {
-	PARAM_SELF_PROLOGUE(DBaseStatusBar);
-	PARAM_INT(accuracy);
-	PARAM_INT_DEF(stateflags);
-	PARAM_STRING_DEF(def_face);
-	auto tex = self->mugshot.GetFace(self->CPlayer, def_face, accuracy, (FMugShot::StateFlags)stateflags);
-	ACTION_RETURN_INT(tex ? tex->id.GetIndex() : -1);
+	if (applyscale != NULL)
+	{
+		*applyscale = false;
+	}
+
+	if (item == nullptr) return 0;
+
+	FTextureID picnum, Icon = item->TextureIDVar(NAME_Icon), AltIcon = item->TextureIDVar(NAME_AltHUDIcon);
+	FState * state = NULL, *ReadyState;
+
+	picnum.SetNull();
+	if (flags & DI_ALTICONFIRST)
+	{
+		if (!(flags & DI_SKIPALTICON) && AltIcon.isValid())
+			picnum = AltIcon;
+		else if (!(flags & DI_SKIPICON))
+			picnum = Icon;
+	}
+	else
+	{
+		if (!(flags & DI_SKIPICON) && Icon.isValid())
+			picnum = Icon;
+		else if (!(flags & DI_SKIPALTICON))
+			picnum = AltIcon;
+	}
+
+	if (!picnum.isValid()) //isNull() is bad for checking, because picnum could be also invalid (-1)
+	{
+		if (!(flags & DI_SKIPSPAWN) && item->SpawnState && item->SpawnState->sprite != 0)
+		{
+			state = item->SpawnState;
+
+			if (applyscale != NULL && !(flags & DI_FORCESCALE))
+			{
+				*applyscale = true;
+			}
+		}
+		// no spawn state - now try the ready state if it's weapon
+		else if (!(flags & DI_SKIPREADY) && item->GetClass()->IsDescendantOf(NAME_Weapon) && (ReadyState = item->FindState(NAME_Ready)) && ReadyState->sprite != 0)
+		{
+			state = ReadyState;
+		}
+		if (state && (unsigned)state->sprite < (unsigned)sprites.Size())
+		{
+			spritedef_t * sprdef = &sprites[state->sprite];
+			spriteframe_t * sprframe = &SpriteFrames[sprdef->spriteframes + state->GetFrame()];
+
+			picnum = sprframe->Texture[0];
+		}
+	}
+	return picnum.GetIndex();
 }
 

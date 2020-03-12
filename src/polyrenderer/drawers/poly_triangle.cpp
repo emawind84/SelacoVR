@@ -68,17 +68,16 @@ void PolyTriangleDrawer::SetViewport(const DrawerCommandQueuePtr &queue, int x, 
 	isBgraRenderTarget = dest_bgra;
 
 	int offsetx = clamp(x, 0, dest_width);
-	int offsety = clamp(y, 0, dest_height);
 	int pixelsize = dest_bgra ? 4 : 1;
 
 	int viewport_x = x - offsetx;
-	int viewport_y = y - offsety;
+	int viewport_y = y;
 	int viewport_width = width;
 	int viewport_height = height;
 
-	dest += (offsetx + offsety * dest_pitch) * pixelsize;
+	dest += offsetx * pixelsize;
 	dest_width = clamp(viewport_x + viewport_width, 0, dest_width - offsetx);
-	dest_height = clamp(viewport_y + viewport_height, 0, dest_height - offsety);
+	dest_height = clamp(viewport_y + viewport_height, 0, dest_height);
 
 	queue->Push<PolySetViewportCommand>(viewport_x, viewport_y, viewport_width, viewport_height, dest, dest_width, dest_height, dest_pitch, dest_bgra);
 }
@@ -127,8 +126,11 @@ void PolyTriangleThreadData::ClearStencil(uint8_t value)
 	int height = buffer->Height();
 	uint8_t *data = buffer->Values();
 
-	data += core * width;
-	for (int y = core; y < height; y += num_cores)
+	int skip = skipped_by_thread(0);
+	int count = count_for_thread(0, height);
+
+	data += skip * width;
+	for (int i = 0; i < count; i++)
 	{
 		memset(data, value, width);
 		data += num_cores * width;
@@ -162,16 +164,7 @@ void PolyTriangleThreadData::DrawElements(const PolyDrawArgs &drawargs, const vo
 		return;
 
 	TriDrawTriangleArgs args;
-	args.dest = dest;
-	args.pitch = dest_pitch;
-	args.clipright = dest_width;
-	args.clipbottom = dest_height;
 	args.uniforms = &drawargs;
-	args.destBgra = dest_bgra;
-	args.stencilbuffer = PolyStencilBuffer::Instance()->Values();
-	args.stencilpitch = PolyStencilBuffer::Instance()->Width();
-	args.zbuffer = PolyZBuffer::Instance()->Values();
-	args.depthOffset = weaponScene ? 1.0f : 0.0f;
 
 	ShadedTriVertex vert[3];
 	if (drawmode == PolyDrawMode::Triangles)
@@ -216,16 +209,7 @@ void PolyTriangleThreadData::DrawArray(const PolyDrawArgs &drawargs, const void 
 		return;
 
 	TriDrawTriangleArgs args;
-	args.dest = dest;
-	args.pitch = dest_pitch;
-	args.clipright = dest_width;
-	args.clipbottom = dest_height;
 	args.uniforms = &drawargs;
-	args.destBgra = dest_bgra;
-	args.stencilbuffer = PolyStencilBuffer::Instance()->Values();
-	args.stencilpitch = PolyStencilBuffer::Instance()->Width();
-	args.zbuffer = PolyZBuffer::Instance()->Values();
-	args.depthOffset = weaponScene ? 1.0f : 0.0f;
 
 	int vinput = 0;
 
@@ -642,7 +626,7 @@ int PolyTriangleThreadData::ClipEdge(const ShadedTriVertex *verts, ShadedTriVert
 PolyTriangleThreadData *PolyTriangleThreadData::Get(DrawerThread *thread)
 {
 	if (!thread->poly)
-		thread->poly = std::make_shared<PolyTriangleThreadData>(thread->core, thread->num_cores);
+		thread->poly = std::make_shared<PolyTriangleThreadData>(thread->core, thread->num_cores, thread->numa_node, thread->num_numa_nodes, thread->numa_start_y, thread->numa_end_y);
 	return thread->poly.get();
 }
 

@@ -369,7 +369,8 @@ OptionValue "Gender"
 {
 	0, "$OPTVAL_MALE"
 	1, "$OPTVAL_FEMALE"
-	2, "$OPTVAL_OTHER"
+	2, "$OPTVAL_NEUTRAL"
+	3, "$OPTVAL_OTHER"
 }
 
 ListMenu "PlayerMenu"
@@ -1553,16 +1554,6 @@ OptionString ALResamplers
 	// filled in by the sound code
 }
 
-OptionString OutputFormats
-{
-	"PCM-8",		"$OPTSTR_PCM8BIT"
-	"PCM-16",		"$OPTSTR_PCM16BIT"
-	"PCM-24",		"$OPTSTR_PCM24BIT"
-	"PCM-32",		"$OPTSTR_PCM32BIT"
-	"PCM-Float",	"$OPTSTR_PCMFLOAT"
-}
-
-
 OptionString SpeakerModes
 {
 	"Auto",		"$OPTSTR_AUTO"
@@ -1584,12 +1575,6 @@ OptionString Resamplers
 	"Spline",		"$OPTSTR_SPLINE"
 }
 
-
-OptionString SoundBackendsOpenALOnly
-{
-	"openal",	"$OPTSTR_OPENAL"
-	"null",		"$OPTSTR_NOSOUND"
-}
 
 OptionMenu OpenALSoundItems protected
 {
@@ -1617,22 +1602,7 @@ OptionMenu SoundOptions protected
 	Option "$SNDMNU_RANDOMIZEPITCHES",	"snd_pitched", "OnOff"
 	Slider "$SNDMNU_CHANNELS",			"snd_channels", 64, 256, 8, 0
 	StaticText " "
-	Option "$SNDMNU_BACKGROUND",			"i_soundinbackground", "OnOff"
-	StaticText " "
-
-	ifoption(openal)
-	{
-		Option "$SNDMNU_BACKEND",		"snd_backend", "SoundBackendsOpenALOnly"
-		Submenu "$SNDMNU_OPENAL",		"OpenALSoundItems"
-	}
-	StaticText " "
-	Command "$SNDMNU_RESTART",			"snd_reset"
-
-	StaticText " "
 	Submenu "$SNDMNU_ADVANCED",			"AdvSoundOptions"
-	Submenu "$SNDMNU_MIDIPLAYER",		"MidiPlayerOptions"
-	Submenu "$SNDMNU_MODREPLAYER",		"ModReplayerOptions"
-	StaticText " "
 	Submenu "$OPTMNU_REVERB",			"ReverbEdit"
 }
 
@@ -1665,6 +1635,21 @@ OptionMenu AdvSoundOptions protected
 	Title "$ADVSNDMNU_TITLE"
 	Option "$ADVSNDMNU_SAMPLERATE",			"snd_samplerate", "SampleRates"
 	Option "$ADVSNDMNU_HRTF",				"snd_hrtf", "AutoOffOn"
+	StaticText " "
+	Option "$SNDMNU_BACKGROUND",			"i_soundinbackground", "OnOff"
+	StaticText " "
+
+	ifoption(openal)
+	{
+	StaticText " "
+		Submenu "$SNDMNU_OPENAL",		"OpenALSoundItems"
+	}
+
+	StaticText " "
+	Submenu "$SNDMNU_MIDIPLAYER",		"MidiPlayerOptions"
+	Submenu "$SNDMNU_MODREPLAYER",		"ModReplayerOptions"
+	StaticText " "
+	Command "$SNDMNU_RESTART",			"snd_reset"
 }
 
 OptionMenu GusConfigMenu protected
@@ -2121,6 +2106,7 @@ OptionValue "LightingModes"
 	3, "$OPTVAL_DARK"
 	4, "$OPTVAL_LEGACY"
 	8, "$OPTVAL_SOFTWARE"
+	16, "$OPTVAL_VANILLA"
 }
 
 OptionValue "Precision"
@@ -2167,51 +2153,32 @@ OptionValue "Particles"
 OptionValue "HqResizeModes"
 {
    0, "$OPTVAL_OFF"
-   1, "$OPTVAL_SCALE2X"
-   2, "$OPTVAL_SCALE3X"
-   3, "$OPTVAL_SCALE4X"
-   4, "$OPTVAL_HQ2X"
-   5, "$OPTVAL_HQ3X"
-   6, "$OPTVAL_HQ4X"
-   7, "$OPTVAL_HQ2XMMX"
-   8, "$OPTVAL_HQ3XMMX"
-   9, "$OPTVAL_HQ4XMMX"
-   10, "$OPTVAL_2XBRZ"
-   11, "$OPTVAL_3XBRZ"
-   12, "$OPTVAL_4XBRZ"
-   18, "$OPTVAL_5XBRZ"
-   19, "$OPTVAL_6XBRZ"
-   13, "$OPTVAL_OLD_2XBRZ"
-   14, "$OPTVAL_OLD_3XBRZ"
-   15, "$OPTVAL_OLD_4XBRZ"
-   16, "$OPTVAL_OLD_5XBRZ"
-   17, "$OPTVAL_OLD_6XBRZ"
-   20, "$OPTVAL_NORMAL2X"
-   21, "$OPTVAL_NORMAL3X"
-   22, "$OPTVAL_NORMAL4X"
-   23, "$OPTVAL_NORMAL5X"
-   24, "$OPTVAL_NORMAL6X"
+   1, "$OPTVAL_SCALENX"
+   2, "$OPTVAL_HQNX"
+   3, "$OPTVAL_HQNXMMX"
+   4, "$OPTVAL_NXBRZ"
+   5, "$OPTVAL_OLD_NXBRZ"
+   6, "$OPTVAL_NORMALNX"
+}
+
+OptionValue "HqResizeMultipliers"
+{
+   1, "$OPTVAL_OFF"
+   2, "2x"
+   3, "3x"
+   4, "4x"
+   5, "5x"
+   6, "6x"
 }
 
 OptionValue "HqResizeModesNoMMX"
 {
    0, "$OPTVAL_OFF"
-   1, "$OPTVAL_SCALE2X"
-   2, "$OPTVAL_SCALE3X"
-   3, "$OPTVAL_SCALE4X"
-   4, "$OPTVAL_HQ2X"
-   5, "$OPTVAL_HQ3X"
-   6, "$OPTVAL_HQ4X"
-   10, "$OPTVAL_2XBRZ"
-   11, "$OPTVAL_3XBRZ"
-   12, "$OPTVAL_4XBRZ"
-   18, "$OPTVAL_5XBRZ"
-   19, "$OPTVAL_6XBRZ"
-   13, "$OPTVAL_OLD_2XBRZ"
-   14, "$OPTVAL_OLD_3XBRZ"
-   15, "$OPTVAL_OLD_4XBRZ"
-   16, "$OPTVAL_OLD_5XBRZ"
-   17, "$OPTVAL_OLD_6XBRZ"
+   1, "$OPTVAL_SCALENX"
+   2, "$OPTVAL_HQNX"
+   4, "$OPTVAL_NXBRZ"
+   5, "$OPTVAL_OLD_NXBRZ"
+   6, "$OPTVAL_NORMALNX"
 }
 
 OptionValue "FogMode"
@@ -2279,12 +2246,13 @@ OptionMenu "GLTextureGLOptions" protected
 
 	ifOption(MMX)
 	{
-		Option "$GLTEXMNU_HQRESIZE",		gl_texture_hqresize,			"HqResizeModes"
+		Option "$GLTEXMNU_HQRESIZE",		gl_texture_hqresizemode,		"HqResizeModes"
 	}
 	else
 	{
-		Option "$GLTEXMNU_HQRESIZE",		gl_texture_hqresize,			"HqResizeModesNoMMX"
+		Option "$GLTEXMNU_HQRESIZE",		gl_texture_hqresizemode,		"HqResizeModesNoMMX"
 	}
+	Option "$GLTEXMNU_HQRESIZEMULT",	gl_texture_hqresizemult,		"HqResizeMultipliers"
 	StaticText "!HQRESIZE_WARNING!"
 
 	Option "$GLTEXMNU_RESIZETEX",		gl_texture_hqresize_textures,	"OnOff"

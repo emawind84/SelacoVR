@@ -56,6 +56,7 @@
 #include "p_spec.h"
 #include "g_levellocals.h"
 #include "vm.h"
+#include "p_destructible.h"
 
 // Remaps EE sector change types to Generic_Floor values. According to the Eternity Wiki:
 /*
@@ -1763,7 +1764,7 @@ FUNC(LS_Thing_Raise)
 
 	if (arg0==0)
 	{
-		ok = P_Thing_Raise (it,NULL, arg1);
+		ok = P_Thing_Raise (it, it, arg1);
 	}
 	else
 	{
@@ -1771,7 +1772,7 @@ FUNC(LS_Thing_Raise)
 
 		while ( (target = iterator.Next ()) )
 		{
-			ok |= P_Thing_Raise(target,NULL, arg1);
+			ok |= P_Thing_Raise(target, target, arg1);
 		}
 	}
 	return ok;
@@ -2158,15 +2159,14 @@ FUNC(LS_Radius_Quake)
 FUNC(LS_UsePuzzleItem)
 // UsePuzzleItem (item, script)
 {
-	AInventory *item;
+	AActor *item;
 
 	if (!it) return false;
 
 	// Check player's inventory for puzzle item
-	auto pitype = PClass::FindActor(NAME_PuzzleItem);
 	for (item = it->Inventory; item != NULL; item = item->Inventory)
 	{
-		if (item->IsKindOf (pitype))
+		if (item->IsKindOf (NAME_PuzzleItem))
 		{
 			if (item->IntVar(NAME_PuzzleItemNumber) == arg0)
 			{
@@ -2433,7 +2433,7 @@ FUNC(LS_Sector_SetColor)
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
-		level.sectors[secnum].SetColor(arg1, arg2, arg3, arg4);
+		level.sectors[secnum].SetColor(PalEntry(255, arg1, arg2, arg3), arg4);
 	}
 
 	return true;
@@ -2446,7 +2446,7 @@ FUNC(LS_Sector_SetFade)
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
-		level.sectors[secnum].SetFade(arg1, arg2, arg3);
+		level.sectors[secnum].SetFade(PalEntry(255, arg1, arg2, arg3));
 	}
 	return true;
 }
@@ -2960,7 +2960,7 @@ FUNC(LS_SetPlayerProperty)
 			{ // Take power from activator
 				if (power != 4)
 				{
-					AInventory *item = it->FindInventory(powers[power], true);
+					auto item = it->FindInventory(powers[power], true);
 					if (item != NULL)
 					{
 						item->Destroy ();
@@ -3000,7 +3000,7 @@ FUNC(LS_SetPlayerProperty)
 				{ // Take power
 					if (power != 4)
 					{
-						AInventory *item = players[i].mo->FindInventory (PClass::FindActor(powers[power]));
+						auto item = players[i].mo->FindInventory (PClass::FindActor(powers[power]));
 						if (item != NULL)
 						{
 							item->Destroy ();
@@ -3177,7 +3177,7 @@ FUNC(LS_NoiseAlert)
 		emitter = iter.Next();
 	}
 
-	P_NoiseAlert (target, emitter);
+	P_NoiseAlert (emitter, target);
 	return true;
 }
 
@@ -3478,6 +3478,59 @@ FUNC(LS_Sector_SetCeilingGlow)
 	return true;
 }
 
+FUNC(LS_Line_SetHealth)
+// Line_SetHealth(id, health)
+{
+	FLineIdIterator itr(arg0);
+	int l;
+
+	if (arg1 < 0)
+		arg1 = 0;
+
+	while ((l = itr.Next()) >= 0)
+	{
+		line_t* line = &level.lines[l];
+		line->health = arg1;
+		if (line->healthgroup)
+			P_SetHealthGroupHealth(line->healthgroup, arg1);
+	}
+	return true;
+}
+
+FUNC(LS_Sector_SetHealth)
+// Sector_SetHealth(id, part, health)
+{
+	FSectorTagIterator itr(arg0);
+	int s;
+
+	if (arg2 < 0)
+		arg2 = 0;
+
+	while ((s = itr.Next()) >= 0)
+	{
+		sector_t* sector = &level.sectors[s];
+		if (arg1 == SECPART_Ceiling)
+		{
+			sector->healthceiling = arg2;
+			if (sector->healthceilinggroup)
+				P_SetHealthGroupHealth(sector->healthceilinggroup, arg2);
+		}
+		else if (arg1 == SECPART_Floor)
+		{
+			sector->healthfloor = arg2;
+			if (sector->healthfloorgroup)
+				P_SetHealthGroupHealth(sector->healthfloorgroup, arg2);
+		}
+		else if (arg1 == SECPART_3D)
+		{
+			sector->health3d = arg2;
+			if (sector->health3dgroup)
+				P_SetHealthGroupHealth(sector->health3dgroup, arg2);
+		}
+	}
+	return true;
+}
+
 static lnSpecFunc LineSpecials[] =
 {
 	/*   0 */ LS_NOP,
@@ -3630,8 +3683,8 @@ static lnSpecFunc LineSpecials[] =
 	/* 147 */ LS_NOP,
 	/* 148 */ LS_NOP,
 	/* 149 */ LS_NOP,
-	/* 150 */ LS_NOP,
-	/* 151 */ LS_NOP,
+	/* 150 */ LS_Line_SetHealth,
+	/* 151 */ LS_Sector_SetHealth,
 	/* 152 */ LS_NOP,		// 152 Team_Score
 	/* 153 */ LS_NOP,		// 153 Team_GivePoints
 	/* 154 */ LS_Teleport_NoStop,
@@ -3901,11 +3954,11 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, ExecuteSpecial)
 	PARAM_OBJECT(activator, AActor);
 	PARAM_POINTER(linedef, line_t);
 	PARAM_BOOL(lineside);
-	PARAM_INT_DEF(arg1);
-	PARAM_INT_DEF(arg2);
-	PARAM_INT_DEF(arg3);
-	PARAM_INT_DEF(arg4);
-	PARAM_INT_DEF(arg5);
+	PARAM_INT(arg1);
+	PARAM_INT(arg2);
+	PARAM_INT(arg3);
+	PARAM_INT(arg4);
+	PARAM_INT(arg5);
 
 	bool res = !!P_ExecuteSpecial(special, linedef, activator, lineside, arg1, arg2, arg3, arg4, arg5);
 

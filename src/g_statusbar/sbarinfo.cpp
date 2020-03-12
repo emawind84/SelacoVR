@@ -1039,22 +1039,22 @@ public:
 		}
 		wrapper->ForceHUDScale(script->huds[hud]->ForceScaled());
 
-		if (CPlayer->ReadyWeapon != NULL)
+		if (CPlayer->ReadyWeapon != nullptr)
 		{
-			ammo1 = CPlayer->ReadyWeapon->Ammo1;
-			ammo2 = CPlayer->ReadyWeapon->Ammo2;
-			if (ammo1 == NULL)
+			ammo1 = CPlayer->ReadyWeapon->PointerVar<AActor>(NAME_Ammo1);
+			ammo2 = CPlayer->ReadyWeapon->PointerVar<AActor>(NAME_Ammo2);
+			if (ammo1 == nullptr)
 			{
 				ammo1 = ammo2;
-				ammo2 = NULL;
+				ammo2 = nullptr;
 			}
 		}
 		else
 		{
-			ammo1 = ammo2 = NULL;
+			ammo1 = ammo2 = nullptr;
 		}
-		ammocount1 = ammo1 != NULL ? ammo1->Amount : 0;
-		ammocount2 = ammo2 != NULL ? ammo2->Amount : 0;
+		ammocount1 = ammo1 != nullptr ? ammo1->IntVar(NAME_Amount) : 0;
+		ammocount2 = ammo2 != nullptr ? ammo2->IntVar(NAME_Amount) : 0;
 
 		//prepare ammo counts
 		armor = CPlayer->mo->FindInventory(NAME_BasicArmor);
@@ -1188,12 +1188,11 @@ public:
 
 		if((offsetflags & SBarInfoCommand::CENTER) == SBarInfoCommand::CENTER)
 		{
-			if (forceWidth < 0)	dx -= (texture->GetScaledWidthDouble()/2.0)-texture->GetScaledLeftOffsetDouble(0);
-			else	dx -= forceWidth*(0.5-(texture->GetScaledLeftOffsetDouble(0)/texture->GetScaledWidthDouble()));
-			//Unoptimalized ^^formula is dx -= forceWidth/2.0-(texture->GetScaledLeftOffsetDouble()*forceWidth/texture->GetScaledWidthDouble());
+			if (forceWidth < 0)	dx -= (texture->GetDisplayWidthDouble()/2.0)-texture->GetDisplayLeftOffsetDouble();
+			else	dx -= forceWidth*(0.5-(texture->GetDisplayLeftOffsetDouble()/texture->GetDisplayWidthDouble()));
 			
-			if (forceHeight < 0)	dy -= (texture->GetScaledHeightDouble()/2.0)-texture->GetScaledTopOffsetDouble(0);
-			else	dy -= forceHeight*(0.5-(texture->GetScaledTopOffsetDouble(0)/texture->GetScaledHeightDouble()));
+			if (forceHeight < 0)	dy -= (texture->GetDisplayHeightDouble()/2.0)-texture->GetDisplayTopOffsetDouble();
+			else	dy -= forceHeight*(0.5-(texture->GetDisplayTopOffsetDouble()/texture->GetDisplayHeightDouble()));
 		}
 
 		dx += xOffset;
@@ -1202,12 +1201,12 @@ public:
 		if(!fullScreenOffsets)
 		{
 			double tmp = 0;
-			w = forceWidth < 0 ? texture->GetScaledWidthDouble() : forceWidth;
-			h = forceHeight < 0 ? texture->GetScaledHeightDouble() : forceHeight;
-			double dcx = clip[0] == 0 ? 0 : dx + clip[0] - texture->GetScaledLeftOffsetDouble(0);
-			double dcy = clip[1] == 0 ? 0 : dy + clip[1] - texture->GetScaledTopOffsetDouble(0);
-			double dcr = clip[2] == 0 ? INT_MAX : dx + w - clip[2] - texture->GetScaledLeftOffsetDouble(0);
-			double dcb = clip[3] == 0 ? INT_MAX : dy + h - clip[3] - texture->GetScaledTopOffsetDouble(0);
+			w = forceWidth < 0 ? texture->GetDisplayWidthDouble() : forceWidth;
+			h = forceHeight < 0 ? texture->GetDisplayHeightDouble() : forceHeight;
+			double dcx = clip[0] == 0 ? 0 : dx + clip[0] - texture->GetDisplayLeftOffsetDouble();
+			double dcy = clip[1] == 0 ? 0 : dy + clip[1] - texture->GetDisplayTopOffsetDouble();
+			double dcr = clip[2] == 0 ? INT_MAX : dx + w - clip[2] - texture->GetDisplayLeftOffsetDouble();
+			double dcb = clip[3] == 0 ? INT_MAX : dy + h - clip[3] - texture->GetDisplayTopOffsetDouble();
 
 			if(clip[0] != 0 || clip[1] != 0)
 			{
@@ -1271,8 +1270,8 @@ public:
 			bool xright = *x < 0 && !x.RelCenter();
 			bool ybot = *y < 0 && !y.RelCenter();
 
-			w = (forceWidth < 0 ? texture->GetScaledWidthDouble() : forceWidth);
-			h = (forceHeight < 0 ? texture->GetScaledHeightDouble() : forceHeight);
+			w = (forceWidth < 0 ? texture->GetDisplayWidthDouble() : forceWidth);
+			h = (forceHeight < 0 ? texture->GetDisplayHeightDouble() : forceHeight);
 			if(vid_fps && rx < 0 && ry >= 0)
 				ry += 10;
 
@@ -1289,10 +1288,10 @@ public:
 			// Check for clipping
 			if(clip[0] != 0 || clip[1] != 0 || clip[2] != 0 || clip[3] != 0)
 			{
-				rcx = clip[0] == 0 ? 0 : rx+((clip[0] - texture->GetScaledLeftOffsetDouble(0))*Scale.X);
-				rcy = clip[1] == 0 ? 0 : ry+((clip[1] - texture->GetScaledTopOffsetDouble(0))*Scale.Y);
-				rcr = clip[2] == 0 ? INT_MAX : rx+w-((clip[2] + texture->GetScaledLeftOffsetDouble(0))*Scale.X);
-				rcb = clip[3] == 0 ? INT_MAX : ry+h-((clip[3] + texture->GetScaledTopOffsetDouble(0))*Scale.Y);
+				rcx = clip[0] == 0 ? 0 : rx+((clip[0] - texture->GetDisplayLeftOffsetDouble())*Scale.X);
+				rcy = clip[1] == 0 ? 0 : ry+((clip[1] - texture->GetDisplayTopOffsetDouble())*Scale.Y);
+				rcr = clip[2] == 0 ? INT_MAX : rx+w-((clip[2] + texture->GetDisplayLeftOffsetDouble())*Scale.X);
+				rcb = clip[3] == 0 ? INT_MAX : ry+h-((clip[3] + texture->GetDisplayTopOffsetDouble())*Scale.Y);
 			}
 
 			if(clearDontDraw)
@@ -1380,7 +1379,8 @@ public:
 				width = font->GetCharWidth((unsigned char) *str);
 			else
 				width = font->GetCharWidth((unsigned char) script->spacingCharacter);
-			FTexture* c = font->GetChar((unsigned char) *str, &width);
+			bool redirected = false;
+			FTexture* c = font->GetChar((unsigned char) *str, fontcolor, &width);
 			if(c == NULL) //missing character.
 			{
 				str++;
@@ -1389,13 +1389,13 @@ public:
 			int character = (unsigned char)*str;
 
 			if (script->spacingCharacter == '\0') //If we are monospaced lets use the offset
-				ax += (c->GetLeftOffset(0) + 1); //ignore x offsets since we adapt to character size
+				ax += (c->GetDisplayLeftOffset() + 1); //ignore x offsets since we adapt to character size
 
 			double rx, ry, rw, rh;
 			rx = ax + xOffset;
 			ry = ay + yOffset;
-			rw = c->GetScaledWidthDouble();
-			rh = c->GetScaledHeightDouble();
+			rw = c->GetDisplayWidthDouble();
+			rh = c->GetDisplayHeightDouble();
 
 			if(script->spacingCharacter != '\0')
 			{
@@ -1453,7 +1453,7 @@ public:
 				DTA_Alpha, Alpha,
 				TAG_DONE);
 			if (script->spacingCharacter == '\0')
-				ax += width + spacing - (c->GetLeftOffset(0) + 1);
+				ax += width + spacing - (c->GetDisplayLeftOffsetDouble() + 1);
 			else //width gets changed at the call to GetChar()
 				ax += font->GetCharWidth((unsigned char) script->spacingCharacter) + spacing;
 			str++;
@@ -1467,9 +1467,15 @@ public:
 		return TRANSLATION(TRANSLATION_Players, int(CPlayer - players));
 	}
 
-	AInventory *ammo1, *ammo2;
+	PClassActor *AmmoType(int no) const
+	{
+		auto w = StatusBar->CPlayer->ReadyWeapon;
+		return w == nullptr ? nullptr : (w->PointerVar<PClassActor>(no == 1 ? NAME_AmmoType1 : NAME_AmmoType2));
+	}
+
+	AActor *ammo1, *ammo2;
 	int ammocount1, ammocount2;
-	AInventory *armor;
+	AActor *armor;
 	FImageCollection Images;
 	unsigned int invBarOffset;
 	player_t *CPlayer = nullptr;
@@ -1503,14 +1509,24 @@ void SBarInfoMainBlock::DrawAux(const SBarInfoMainBlock *block, DSBarInfo *statu
 //
 //==========================================================================
 
-DEFINE_ACTION_FUNCTION(DSBarInfo, Destroy)
+static void SBarInfo_Destroy(DSBarInfo *self)
+{
+	delete self;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DSBarInfo, Destroy, SBarInfo_Destroy)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(DSBarInfo);
 	delete self;
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION(DSBarInfo, AttachToPlayer)
+static void SBarInfo_AttachToPlayer(DSBarInfo *self, player_t *player)
+{
+	self->_AttachToPlayer(player);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DSBarInfo, AttachToPlayer, SBarInfo_AttachToPlayer)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(DSBarInfo);
 	PARAM_POINTER(player, player_t);
@@ -1518,7 +1534,12 @@ DEFINE_ACTION_FUNCTION(DSBarInfo, AttachToPlayer)
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION(DSBarInfo, Draw)
+static void SBarInfo_Draw(DSBarInfo *self, int state)
+{
+	self->_Draw((EHudState)state);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DSBarInfo, Draw, SBarInfo_Draw)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(DSBarInfo);
 	PARAM_INT(State);
@@ -1526,28 +1547,48 @@ DEFINE_ACTION_FUNCTION(DSBarInfo, Draw)
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION(DSBarInfo, NewGame)
+static void SBarInfo_NewGame(DSBarInfo *self)
+{
+	self->_NewGame();
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DSBarInfo, NewGame, SBarInfo_NewGame)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(DSBarInfo);
 	self->_NewGame();
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION(DSBarInfo, MustDrawLog)
+static int SBarInfo_MustDrawLog(DSBarInfo *self, int state)
+{
+	return self->_MustDrawLog((EHudState)state);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DSBarInfo, MustDrawLog, SBarInfo_MustDrawLog)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(DSBarInfo);
 	PARAM_INT(State);
 	ACTION_RETURN_BOOL(self->_MustDrawLog((EHudState)State));
 }
 
-DEFINE_ACTION_FUNCTION(DSBarInfo, Tick)
+static void SBarInfo_Tick(DSBarInfo *self)
+{
+	self->_Tick();
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DSBarInfo, Tick, SBarInfo_Tick)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(DSBarInfo);
 	self->_Tick();
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION(DSBarInfo, ShowPop)
+static void SBarInfo_ShowPop(DSBarInfo *self, int state)
+{
+	self->_ShowPop(state);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DSBarInfo, ShowPop, SBarInfo_ShowPop)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(DSBarInfo);
 	PARAM_INT(State);
@@ -1555,7 +1596,12 @@ DEFINE_ACTION_FUNCTION(DSBarInfo, ShowPop)
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION(DSBarInfo, GetProtrusion)
+static int SBarInfo_GetProtrusion(DSBarInfo *self, double scale)
+{
+	return self->_GetProtrusion(scale);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DSBarInfo, GetProtrusion, SBarInfo_GetProtrusion)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(DSBarInfo);
 	PARAM_FLOAT(scalefac);

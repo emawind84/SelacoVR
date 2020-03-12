@@ -53,6 +53,7 @@ struct FBlockNode;
 struct FPortalGroupArray;
 struct visstyle_t;
 class FLightDefaults;
+struct FSection;
 //
 // NOTES: AActor
 //
@@ -404,6 +405,8 @@ enum ActorFlag8
 	MF8_BLOCKASPLAYER	= 0x00000004,	// actor is blocked by player-blocking lines even if not a player
 	MF8_DONTFACETALKER	= 0x00000008,	// don't alter the angle to face the player in conversations
 	MF8_HITOWNER		= 0x00000010,	// projectile can hit the actor that fired it
+	MF8_NOFRICTION		= 0x00000020,	// friction doesn't apply to the actor at all
+	MF8_NOFRICTIONBOUNCE	= 0x00000040,	// don't bounce off walls when on icy floors
 };
 
 // --- mobj.renderflags ---
@@ -486,6 +489,8 @@ enum ActorBounceFlag
 	BOUNCE_AutoOffFloorOnly = 1<<13,		// like BOUNCE_AutoOff, but only on floors
 	BOUNCE_UseBounceState = 1<<14,	// Use Bounce[.*] states
 	BOUNCE_NotOnShootables = 1<<15,	// do not bounce off shootable actors if we are a projectile. Explode instead.
+	BOUNCE_BounceOnUnrips = 1<<16,	// projectile bounces on actors with DONTRIP
+	BOUNCE_NotOnSky = 1<<17,		// Don't bounce on sky floors / ceilings / walls
 
 	BOUNCE_TypeMask = BOUNCE_Walls | BOUNCE_Floors | BOUNCE_Ceilings | BOUNCE_Actors | BOUNCE_AutoOff | BOUNCE_HereticType | BOUNCE_MBF,
 
@@ -549,7 +554,7 @@ typedef TFlags<ActorFlag6> ActorFlags6;
 typedef TFlags<ActorFlag7> ActorFlags7;
 typedef TFlags<ActorFlag8> ActorFlags8;
 typedef TFlags<ActorRenderFlag> ActorRenderFlags;
-typedef TFlags<ActorBounceFlag, uint16_t> ActorBounceFlags;
+typedef TFlags<ActorBounceFlag> ActorBounceFlags;
 typedef TFlags<ActorRenderFeatureFlag> ActorRenderFeatureFlags;
 DEFINE_TFLAGS_OPERATORS (ActorFlags)
 DEFINE_TFLAGS_OPERATORS (ActorFlags2)
@@ -588,7 +593,6 @@ enum EThingSpecialActivationType
 
 
 class FDecalBase;
-class AInventory;
 
 inline AActor *GetDefaultByName (const char *name)
 {
@@ -638,7 +642,6 @@ public:
 	AActor &operator= (const AActor &other);
 	~AActor ();
 
-	virtual void Finalize(FStateDefinitions &statedef);
 	virtual void OnDestroy() override;
 	virtual void Serialize(FSerializer &arc) override;
 	virtual void PostSerialize() override;
@@ -682,8 +685,6 @@ public:
 
 	void LevelSpawned();				// Called after BeginPlay if this actor was spawned by the world
 	void HandleSpawnFlags();	// Translates SpawnFlags into in-game flags.
-
-	virtual void MarkPrecacheSounds() const;	// Marks sounds used by this actor for precaching.
 
 	virtual void Activate (AActor *activator);
 	void CallActivate(AActor *activator);
@@ -746,28 +747,11 @@ public:
 	// APlayerPawn for some specific handling for players. None of this
 	// should ever be overridden by custom classes.
 
-	// Adds the item to this actor's inventory and sets its Owner.
-	virtual void AddInventory (AInventory *item);
-
-	// Give an item to the actor and pick it up.
-	// Returns true if the item pickup succeeded.
-	bool GiveInventory (PClassActor *type, int amount, bool givecheat = false);
-
-	// Removes the item from the inventory list.
-	virtual void RemoveInventory (AInventory *item);
-
-	// Take the amount value of an item from the inventory list.
-	// If nothing is left, the item may be destroyed.
-	// Returns true if the initial item count is positive.
-	virtual bool TakeInventory (PClassActor *itemclass, int amount, bool fromdecorate = false, bool notakeinfinite = false);
-
-	bool SetInventory(PClassActor *itemclass, int amount, bool beyondMax);
-
 	// Uses an item and removes it from the inventory.
-	virtual bool UseInventory (AInventory *item);
+	bool UseInventory (AActor *item);
 
 	// Tosses an item out of the inventory.
-	AInventory *DropInventory (AInventory *item, int amt = -1);
+	AActor *DropInventory (AActor *item, int amt = -1);
 
 	// Removes all items from the inventory.
 	void ClearInventory();
@@ -776,21 +760,15 @@ public:
 	bool CheckLocalView (int playernum) const;
 
 	// Finds the first item of a particular type.
-	AInventory *FindInventory (PClassActor *type, bool subclass=false);
-	AInventory *FindInventory (FName type, bool subclass = false);
+	AActor *FindInventory (PClassActor *type, bool subclass=false);
+	AActor *FindInventory (FName type, bool subclass = false);
 	template<class T> T *FindInventory ()
 	{
 		return static_cast<T *> (FindInventory (RUNTIME_CLASS(T)));
 	}
 
 	// Adds one item of a particular type. Returns NULL if it could not be added.
-	AInventory *GiveInventoryType (PClassActor *type);
-
-	// Returns the first item held with IF_INVBAR set.
-	AInventory *FirstInv ();
-
-	// Tries to give the actor some ammo.
-	bool GiveAmmo (PClassActor *type, int amount);
+	AActor *GiveInventoryType (PClassActor *type);
 
 	// Destroys all the inventory the actor is holding.
 	void DestroyAllInventory ();
@@ -809,10 +787,11 @@ public:
 	void ObtainInventory (AActor *other);
 
 	// Die. Now.
-	virtual bool Massacre ();
+	bool Massacre ();
 
 	// Transforms the actor into a finely-ground paste
-	virtual bool Grind(bool items);
+	bool Grind(bool items);
+	bool CallGrind(bool items);
 
 	// Get this actor's team
 	int GetTeam();
@@ -992,11 +971,6 @@ public:
 		}
 	}
 
-	double AccuracyFactor()
-	{
-		return 1. / (1 << (accuracy * 5 / 100));
-	}
-
 	void ClearInterpolation();
 
 	void Move(const DVector3 &vel)
@@ -1032,7 +1006,6 @@ public:
 
 	void AttachLight(unsigned int count, const FLightDefaults *lightdef);
 	void SetDynamicLights();
-
 
 // info for drawing
 // NOTE: The first member variable *must* be snext.
@@ -1083,6 +1056,7 @@ public:
 	FBlockNode		*BlockNode;			// links in blocks (if needed)
 	struct sector_t	*Sector;
 	subsector_t *		subsector;
+	FSection *			section;
 	double			floorz, ceilingz;	// closest together of contacted secs
 	double			dropoffz;		// killough 11/98: the lowest floor over all contacted Sectors.
 
@@ -1182,6 +1156,9 @@ public:
 
 	AActor			*BlockingMobj;	// Actor that blocked the last move
 	line_t			*BlockingLine;	// Line that blocked the last move
+	sector_t		*Blocking3DFloor;	// 3D floor that blocked the last move (if any)
+	sector_t		*BlockingCeiling;	// Sector that blocked the last move (ceiling plane slope)
+	sector_t		*BlockingFloor;		// Sector that blocked the last move (floor plane slope)
 
 	DAngle			ThrustAngleOffset; //For VR: offset thrust angles by this amount
 
@@ -1204,7 +1181,7 @@ public:
 	int validcount;
 
 
-	TObjPtr<AInventory*>	Inventory;		// [RH] This actor's inventory
+	TObjPtr<AActor*>	Inventory;		// [RH] This actor's inventory
 	uint32_t			InventoryID;	// A unique ID to keep track of inventory items
 
 	uint8_t smokecounter;
@@ -1262,6 +1239,11 @@ public:
 	int PrevPortalGroup;
 	TArray<TObjPtr<AActor*> > AttachedLights;
 
+	// When was this actor spawned?
+	int SpawnTime;
+	uint32_t SpawnOrder;
+
+
 	// ThingIDs
 	static void ClearTIDHashes ();
 	void AddToHash ();
@@ -1283,7 +1265,7 @@ public:
 	void LinkToWorld (FLinkContext *ctx, bool spawningmapthing=false, sector_t *sector = NULL);
 	void UnlinkFromWorld(FLinkContext *ctx);
 	void AdjustFloorClip ();
-	bool InStateSequence(FState * newstate, FState * basestate);
+	bool IsMapActor();
 	int GetTics(FState * newstate);
 	bool SetState (FState *newstate, bool nofunction=false);
 	virtual void SplashCheck();
@@ -1304,12 +1286,6 @@ public:
 	bool IsZeroDamage() const
 	{
 		return DamageVal == 0 && DamageFunc == nullptr;
-	}
-
-	void RestoreDamage()
-	{
-		DamageVal = GetDefault()->DamageVal;
-		DamageFunc = GetDefault()->DamageFunc;
 	}
 
 	FState *FindState (FName label) const
@@ -1364,7 +1340,7 @@ public:
 	DVector3 PosRelative(int grp) const;
 	DVector3 PosRelative(const AActor *other) const;
 	DVector3 PosRelative(sector_t *sec) const;
-	DVector3 PosRelative(line_t *line) const;
+	DVector3 PosRelative(const line_t *line) const;
 
 	FVector3 SoundPos() const
 	{

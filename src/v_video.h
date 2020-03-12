@@ -34,6 +34,7 @@
 #ifndef __V_VIDEO_H__
 #define __V_VIDEO_H__
 
+#include <functional>
 #include "doomtype.h"
 #include "vectors.h"
 
@@ -43,11 +44,20 @@
 #include "c_cvars.h"
 #include "v_colortables.h"
 #include "v_2ddrawer.h"
-#include <functional>
+#include "hwrenderer/dynlights/hw_shadowmap.h"
 
 struct sector_t;
 class IShaderProgram;
 class FTexture;
+struct FPortalSceneState;
+class FSkyVertexBuffer;
+class IIndexBuffer;
+class IVertexBuffer;
+class IDataBuffer;
+class FFlatVertexBuffer;
+class GLViewpointBuffer;
+class FLightBuffer;
+struct HWDrawInfo;
 
 enum EHWCaps
 {
@@ -63,6 +73,7 @@ enum EHWCaps
 	RFL_INVALIDATE_BUFFER = 64,
 	RFL_DEBUG = 128,
 };
+
 
 struct IntRect
 {
@@ -207,7 +218,6 @@ enum
 	DTA_SrcHeight,
 	DTA_LegacyRenderStyle,	// takes an old-style STYLE_* constant instead of an FRenderStyle
 	DTA_Burn,				// activates the burn shader for this element
-
 };
 
 enum
@@ -276,6 +286,7 @@ struct VMVa_List
 	VMValue *args;
 	int curindex;
 	int numargs;
+	const uint8_t *reginfo;
 };
 
 struct BlendInfo
@@ -289,65 +300,36 @@ struct BlendInfo
 //
 // VIDEO
 //
-// [RH] Made screens more implementation-independant:
 //
 class DCanvas
 {
 public:
 	DCanvas (int width, int height, bool bgra);
-	virtual ~DCanvas ();
+	~DCanvas ();
+	void Resize(int width, int height);
 
 	// Member variable access
-	inline uint8_t *GetPixels () const { return PixelBuffer; }
+	inline uint8_t *GetPixels () const { return Pixels.Data(); }
 	inline int GetWidth () const { return Width; }
 	inline int GetHeight () const { return Height; }
 	inline int GetPitch () const { return Pitch; }
 	inline bool IsBgra() const { return Bgra; }
 
-	// Note: pitch here is in pixels, not bytes.
-	bool SetBuffer(int width, int height, int pitch, uint8_t *buffer)
-	{
-		assert(buffer);
-		Width = width;
-		Height = height;
-		Pitch = pitch;
-		PixelBuffer = buffer;
-		return true;
-	}
-
-
 protected:
-	uint8_t *PixelBuffer;
+	TArray<uint8_t> Pixels;
 	int Width;
 	int Height;
 	int Pitch;
 	bool Bgra;
 };
 
-// A canvas in system memory.
-
-class DSimpleCanvas : public DCanvas
-{
-	typedef DCanvas Super;
-public:
-	DSimpleCanvas (int width, int height, bool bgra);
-	~DSimpleCanvas ();
-	void Resize(int width, int height);
-};
-
-
 class FUniquePalette;
 class IHardwareTexture;
 class FTexture;
-class IUniformBuffer;
 
-// A canvas that represents the actual display. The video code is responsible
-// for actually implementing this. Built on top of SimpleCanvas, because it
-// needs a system memory buffer when buffered output is enabled.
 
 class DFrameBuffer
 {
-	typedef DSimpleCanvas Super;
 protected:
 
 	void DrawTextureV(FTexture *img, double x, double y, uint32_t tag, va_list tags) = delete;
@@ -369,18 +351,32 @@ protected:
 	PalEntry SourcePalette[256];		// This is where unpaletted textures get their palette from
 
 public:
-	int hwcaps = 0;
-	float glslversion = 0;			// This is here so that the differences between old OpenGL and new OpenGL/Vulkan can be handled by platform independent code.
-	int instack[2] = { 0,0 };	// this is globally maintained state for portal recursion avoidance.
-	bool enable_quadbuffered = false;
+	// Hardware render state that needs to be exposed to the API independent part of the renderer. For ease of access this is stored in the base class.
+	int hwcaps = 0;								// Capability flags
+	float glslversion = 0;						// This is here so that the differences between old OpenGL and new OpenGL/Vulkan can be handled by platform independent code.
+	int instack[2] = { 0,0 };					// this is globally maintained state for portal recursion avoidance.
+	int stencilValue = 0;						// Global stencil test value
+	bool enable_quadbuffered = false;			// Quad-buffered stereo available?
+	unsigned int uniformblockalignment = 256;	// Hardware dependent uniform buffer alignment.
+	unsigned int maxuniformblock = 65536;
+	const char *gl_vendorstring;				// On OpenGL (not Vulkan) we have to account for some issues with Intel.
+	FPortalSceneState *mPortalState;			// global portal state.
+	FSkyVertexBuffer *mSkyData = nullptr;		// the sky vertex buffer
+	FFlatVertexBuffer *mVertexData = nullptr;	// Global vertex data
+	GLViewpointBuffer *mViewpoints = nullptr;	// Viewpoint render data.
+	FLightBuffer *mLights = nullptr;			// Dynamic lights
+	IShadowMap mShadowMap;
 
 	IntRect mScreenViewport;
 	IntRect mSceneViewport;
 	IntRect mOutputLetterbox;
+	float mSceneClearColor[4];
+
 
 public:
 	DFrameBuffer (int width=1, int height=1);
-	virtual ~DFrameBuffer() {}
+	virtual ~DFrameBuffer();
+	virtual void InitializeState() = 0;	// For stuff that needs 'screen' set.
 
 	void SetSize(int width, int height);
 	void SetVirtualSize(int width, int height)
@@ -402,7 +398,7 @@ public:
 	}
 
 	// Make the surface visible.
-	virtual void Update () = 0;
+	virtual void Update ();
 
 	// Return a pointer to 256 palette entries that can be written to.
 	PalEntry *GetPalette ();
@@ -437,7 +433,7 @@ public:
 	// Delete any resources that need to be deleted after restarting with a different IWAD
 	virtual void CleanForRestart() {}
 	virtual void SetTextureFilterMode() {}
-	virtual IHardwareTexture *CreateHardwareTexture(FTexture *tex) { return nullptr; }
+	virtual IHardwareTexture *CreateHardwareTexture() { return nullptr; }
 	virtual void PrecacheMaterial(FMaterial *mat, int translation) {}
 	virtual FModelRenderer *CreateModelRenderer(int mli) { return nullptr; }
 	virtual void UnbindTexUnit(int no) {}
@@ -451,8 +447,11 @@ public:
 	virtual void BlurScene(float amount) {}
     
     // Interface to hardware rendering resources
-    virtual IUniformBuffer *CreateUniformBuffer(size_t size, bool staticuse = false) { return nullptr; }
 	virtual IShaderProgram *CreateShaderProgram() { return nullptr; }
+	virtual IVertexBuffer *CreateVertexBuffer() { return nullptr; }
+	virtual IIndexBuffer *CreateIndexBuffer() { return nullptr; }
+	virtual IDataBuffer *CreateDataBuffer(int bindingpoint, bool ssbo) { return nullptr; }
+	bool BuffersArePersistent() { return !!(hwcaps & RFL_BUFFER_STORAGE); }
 
 	// Begin/End 2D drawing operations.
 	void Begin2D() { isIn2D = true; }
@@ -477,10 +476,8 @@ public:
 
 	// Report a game restart
 	void InitPalette();
-	virtual void InitForLevel() {}
-	virtual void SetClearColor(int color) {}
+	void SetClearColor(int color);
 	virtual uint32_t GetCaps();
-	virtual void RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV);
 	virtual void WriteSavePic(player_t *player, FileWriter *file, int width, int height);
 	virtual sector_t *RenderView(player_t *player) { return nullptr;  }
 
@@ -514,16 +511,16 @@ public:
 	// Fill a simple polygon with a texture
 	void FillSimplePoly(FTexture *tex, FVector2 *points, int npoints,
 		double originx, double originy, double scalex, double scaley, DAngle rotation,
-		const FColormap &colormap, PalEntry flatcolor, int lightlevel, int bottomclip);
+		const FColormap &colormap, PalEntry flatcolor, int lightlevel, int bottomclip, uint32_t *indices, size_t indexcount);
 
 	// Set an area to a specified color
 	void Clear(int left, int top, int right, int bottom, int palcolor, uint32_t color);
 
 	// Draws a line
-	void DrawLine(int x0, int y0, int x1, int y1, int palColor, uint32_t realcolor);
+	void DrawLine(int x0, int y0, int x1, int y1, int palColor, uint32_t realcolor, uint8_t alpha = 255);
 
 	// Draws a line with thickness
-	void DrawThickLine(int x0, int y0, int x1, int y1, double thickness, uint32_t realcolor);
+	void DrawThickLine(int x0, int y0, int x1, int y1, double thickness, uint32_t realcolor, uint8_t alpha = 255);
 
 	// Draws a single pixel
 	void DrawPixel(int x, int y, int palcolor, uint32_t rgbcolor);
@@ -567,7 +564,7 @@ public:
 	// Retrieves a buffer containing image data for a screenshot.
 	// Hint: Pitch can be negative for upside-down images, in which case buffer
 	// points to the last row in the buffer, which will be the first row output.
-	virtual void GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, ESSType &color_type, float &gamma) {}
+	virtual TArray<uint8_t> GetScreenshotBuffer(int &pitch, ESSType &color_type, float &gamma) { return TArray<uint8_t>(); }
 
 	static float GetZNear() { return 5.f; }
 	static float GetZFar() { return 65536.f; }

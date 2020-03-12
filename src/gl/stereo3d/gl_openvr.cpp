@@ -37,7 +37,7 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderbuffers.h"
 #include "v_2ddrawer.h" // crosshair
-#include "gl/models/gl_models.h"
+#include "hwrenderer/models/hw_models.h"
 #include "g_levellocals.h" // pixelstretch
 #include "g_statusbar/sbar.h"
 #include <cmath>
@@ -49,7 +49,8 @@
 #include "d_gui.h"
 #include "d_event.h"
 #include "i_time.h"
-#include "gl/scene/gl_drawinfo.h"
+#include "hwrenderer/data/flatvertices.h"
+#include "hwrenderer/data/hw_viewpointbuffer.h"
 
 #include "gl_openvr.h"
 #include "openvr_include.h"
@@ -154,6 +155,8 @@ bool IsOpenVRPresent()
 #endif
 }
 
+void Draw2D(F2DDrawer* drawer, FRenderState& state, bool outside2D);
+
 // feature toggles, for testing and debugging
 static const bool doTrackHmdYaw = true;
 static const bool doTrackHmdPitch = true;
@@ -189,10 +192,10 @@ namespace s3d
 			Height = m_pTex->unHeight;
 		}
 
-		const uint8_t *GetColumn(FRenderStyle style, unsigned int column, const Span **spans_out)
+		/*const uint8_t *GetColumn(FRenderStyle style, unsigned int column, const Span **spans_out)
 		{
 			return nullptr;
-		}
+		}*/
 		const uint8_t *GetPixels(FRenderStyle style)
 		{
 			return m_pTex->rubTextureMapData;
@@ -243,10 +246,9 @@ public:
 		FMaterial * tex = FMaterial::ValidateTexture(pFTex, false);
 		auto vbuf = GetVertexBuffer(renderer);
 		vbuf->SetupFrame(renderer, 0, 0, 0);
-		renderer->SetVertexBuffer(vbuf);
 		renderer->SetMaterial(pFTex, CLAMP_NONE, translation);
 		renderer->DrawElements(pModel->unTriangleCount * 3, 0);
-		gl_RenderState.SetVertexBuffer(GLRenderer->mVBO); //this needs to be set back to avoid the level rendering black even though the next draw will be the UI for this eye(???)
+		gl_RenderState.SetVertexBuffer(screen->mVertexData);
 	}
 
 	virtual void BuildVertexBuffer(FModelRenderer* renderer) override
@@ -323,8 +325,8 @@ public:
 
 			pFTex = new FControllerTexture(pTexture);
 
-			auto* di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
-			FGLModelRenderer renderer(di, -1);
+			auto* di = HWDrawInfo::StartDrawInfo(nullptr, r_viewpoint, nullptr);
+			FGLModelRenderer renderer(di, gl_RenderState, -1);
 			BuildVertexBuffer(&renderer);
 			di->EndDrawInfo();
 			return true;
@@ -693,6 +695,12 @@ VSMatrix OpenVREyePose::getQuadInWorld(
 	return new_projection;
 }
 
+void ApplyVPUniforms(HWDrawInfo* di)
+{
+	di->VPUniforms.CalcDependencies();
+	di->vpIndex = screen->mViewpoints->SetViewpoint(gl_RenderState, &di->VPUniforms);
+}
+
 void OpenVREyePose::AdjustHud() const
 {
 	// Draw crosshair on a separate quad, before updating HUD matrix
@@ -701,7 +709,7 @@ void OpenVREyePose::AdjustHud() const
 	{
 		return;
 	}
-	auto *di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
+	auto *di = HWDrawInfo::StartDrawInfo(nullptr, r_viewpoint, nullptr);
 
 	di->VPUniforms.mViewMatrix.loadIdentity();
 	const OpenVRMode * openVrMode = static_cast<const OpenVRMode *>(vrmode);
@@ -719,8 +727,8 @@ void OpenVREyePose::AdjustHud() const
 			crosshair_width_meters,
 			false,
 			0.0);
-		di->ApplyVPUniforms();
-		GLRenderer->Draw2D(openVrMode->crossHairDrawer, true);
+		ApplyVPUniforms(di);
+		::Draw2D(openVrMode->crossHairDrawer, gl_RenderState, true);
 	}
 
 	// Update HUD matrix to render on a separate quad
@@ -732,16 +740,16 @@ void OpenVREyePose::AdjustHud() const
 		menu_width_meters, 
 		true,
 		pitch_offset);
-	di->ApplyVPUniforms();
+	ApplyVPUniforms(di);
 	di->EndDrawInfo();
 }
 
-void OpenVREyePose::AdjustBlend(FDrawInfo *di) const
+void OpenVREyePose::AdjustBlend(HWDrawInfo *di) const
 {
 	bool new_di = false;
 	if (di == nullptr)
 	{
-		di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
+		di = HWDrawInfo::StartDrawInfo(nullptr, r_viewpoint, nullptr);
 		new_di = true;
 	}
 
@@ -749,7 +757,7 @@ void OpenVREyePose::AdjustBlend(FDrawInfo *di) const
 	proj.loadIdentity();
 	proj.translate(-1, 1, 0);
 	proj.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
-	di->ApplyVPUniforms();
+	ApplyVPUniforms(di);
 
 	if (new_di)
 	{
@@ -834,8 +842,9 @@ void OpenVRMode::AdjustViewport(DFrameBuffer* screen) const
 	screen->mScreenViewport.height = sceneHeight;
 }
 
-void OpenVRMode::AdjustPlayerSprites(FDrawInfo* di) const
+void OpenVRMode::AdjustPlayerSprites(HWDrawInfo* di) const
 {
+
 	GetWeaponTransform(&gl_RenderState.mModelMatrix);
 
 	float scale = 0.00125f * openvr_weaponScale;
@@ -865,11 +874,12 @@ void OpenVRMode::UnAdjustCrossHair() const
 	viewwindowy = cachedViewwindowy;
 }
 
-void OpenVRMode::DrawControllerModels(FDrawInfo *di) const
+void OpenVRMode::DrawControllerModels(HWDrawInfo *di) const
 {
+	
 	if(!openvr_drawControllers)
 		return; 
-	FGLModelRenderer renderer(di, -1);
+	FGLModelRenderer renderer(di, gl_RenderState, -1);
 	for (int i = 0; i < MAX_ROLES; ++i) 
 	{
 		if (GetHandTransform(i, &gl_RenderState.mModelMatrix) && controllers[i].model)

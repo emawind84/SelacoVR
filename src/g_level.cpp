@@ -85,6 +85,7 @@
 #include "g_levellocals.h"
 #include "actorinlines.h"
 #include "i_time.h"
+#include "p_maputl.h"
 
 void STAT_StartNewGame(const char *lev);
 void STAT_ChangeLevel(const char *newl);
@@ -122,10 +123,11 @@ CUSTOM_CVAR(Bool, gl_notexturefill, false, CVAR_NOINITCALL)
 CUSTOM_CVAR(Int, gl_lightmode, 3, CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
 	int newself = self;
-	if (newself > 4) newself = 8;	// use 8 for software lighting to avoid conflicts with the bit mask
-	if (newself < 0) newself = 0;
+	if (newself > 8) newself = 16;	// use 8 and 16 for software lighting to avoid conflicts with the bit mask
+	else if (newself > 4) newself = 8;
+	else if (newself < 0) newself = 0;
 	if (self != newself) self = newself;
-	else if ((level.info == nullptr || level.info->lightmode == -1)) level.lightmode = self;
+	else if ((level.info == nullptr || level.info->lightmode == ELightMode::NotSet)) level.lightmode = (ELightMode)*self;
 }
 
 
@@ -363,14 +365,16 @@ void G_NewInit ()
 	{
 		player_t *p = &players[i];
 		userinfo_t saved_ui;
-		saved_ui.TransferFrom(players[i].userinfo);
-		int chasecam = p->cheats & CF_CHASECAM;
+		saved_ui.TransferFrom(p->userinfo);
+		const int chasecam = p->cheats & CF_CHASECAM;
+		const bool settings_controller = p->settings_controller;
 		p->~player_t();
 		::new(p) player_t;
-		players[i].cheats |= chasecam;
-		players[i].playerstate = PST_DEAD;
-		playeringame[i] = 0;
-		players[i].userinfo.TransferFrom(saved_ui);
+		p->settings_controller = settings_controller;
+		p->cheats |= chasecam;
+		p->playerstate = PST_DEAD;
+		p->userinfo.TransferFrom(saved_ui);
+		playeringame[i] = false;
 	}
 	BackupSaveName = "";
 	consoleplayer = 0;
@@ -492,6 +496,7 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 		level.time = 0;
 		level.maptime = 0;
 		level.totaltime = 0;
+		level.spawnindex = 0;
 
 		if (!multiplayer || !deathmatch)
 		{
@@ -526,11 +531,8 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 	{
 		gamestate = GS_LEVEL;
 	}
-	G_DoLoadLevel (0, false);
-	if(!savegamerestore)
-	{
-		E_NewGame();
-	}
+	
+	G_DoLoadLevel (0, false, !savegamerestore);
 }
 
 //
@@ -744,7 +746,7 @@ void G_DoCompleted (void)
 	if (gamestate == GS_TITLELEVEL)
 	{
 		level.MapName = nextlevel;
-		G_DoLoadLevel (startpos, false);
+		G_DoLoadLevel (startpos, false, false);
 		startpos = 0;
 		viewactive = true;
 		return;
@@ -868,6 +870,7 @@ void G_DoCompleted (void)
 		}
 		level.time = 0;
 		level.maptime = 0;
+		level.spawnindex = 0;
 	}
 
 	finishstate = mode;
@@ -919,7 +922,7 @@ void DAutosaver::Tick ()
 
 extern gamestate_t 	wipegamestate; 
  
-void G_DoLoadLevel (int position, bool autosave)
+void G_DoLoadLevel (int position, bool autosave, bool newGame)
 { 
 	static int lastposition = 0;
 	gamestate_t oldgs = gamestate;
@@ -970,7 +973,7 @@ void G_DoLoadLevel (int position, bool autosave)
 	//	a flat. The data is in the WAD only because
 	//	we look for an actual index, instead of simply
 	//	setting one.
-	skyflatnum = TexMan.GetTexture (gameinfo.SkyFlatName, ETextureType::Flat, FTextureManager::TEXMAN_Overridable);
+	skyflatnum = TexMan.GetTextureID (gameinfo.SkyFlatName, ETextureType::Flat, FTextureManager::TEXMAN_Overridable);
 
 	// DOOM determines the sky texture to be used
 	// depending on the current episode and the game version.
@@ -1005,7 +1008,12 @@ void G_DoLoadLevel (int position, bool autosave)
 
 	level.maptime = 0;
 
-	P_SetupLevel (level.MapName, position);
+	if (newGame)
+	{
+		E_NewGame(EventHandlerType::Global);
+	}
+
+	P_SetupLevel (level.MapName, position, newGame);
 
 	AM_LevelInit();
 
@@ -1253,7 +1261,7 @@ void G_DoWorldDone (void)
 		level.MapName = nextlevel;
 	}
 	G_StartTravel ();
-	G_DoLoadLevel (startpos, true);
+	G_DoLoadLevel (startpos, true, false);
 	startpos = 0;
 	gameaction = ga_nothing;
 	viewactive = true; 
@@ -1279,7 +1287,7 @@ void G_StartTravel ()
 		if (playeringame[i])
 		{
 			AActor *pawn = players[i].mo;
-			AInventory *inv;
+			AActor *inv;
 			players[i].camera = NULL;
 
 			// Only living players travel. Dead ones get a new body on the new level.
@@ -1318,7 +1326,7 @@ int G_FinishTravel ()
 {
 	TThinkerIterator<APlayerPawn> it (STAT_TRAVELLING);
 	APlayerPawn *pawn, *pawndup, *oldpawn, *next;
-	AInventory *inv;
+	AActor *inv;
 	FPlayerStart *start;
 	int pnum;
 	int failnum = 0;
@@ -1406,7 +1414,7 @@ int G_FinishTravel ()
 			inv->ChangeStatNum (STAT_INVENTORY);
 			inv->LinkToWorld (nullptr);
 
-			IFVIRTUALPTR(inv, AInventory, Travelled)
+			IFVIRTUALPTRNAME(inv, NAME_Inventory, Travelled)
 			{
 				VMValue params[1] = { inv };
 				VMCall(func, params, 1, nullptr, 0);
@@ -1452,8 +1460,8 @@ void G_InitLevelLocals ()
 	level.info = info;
 	level.skyspeed1 = info->skyspeed1;
 	level.skyspeed2 = info->skyspeed2;
-	level.skytexture1 = TexMan.GetTexture(info->SkyPic1, ETextureType::Wall, FTextureManager::TEXMAN_Overridable | FTextureManager::TEXMAN_ReturnFirst);
-	level.skytexture2 = TexMan.GetTexture(info->SkyPic2, ETextureType::Wall, FTextureManager::TEXMAN_Overridable | FTextureManager::TEXMAN_ReturnFirst);
+	level.skytexture1 = TexMan.GetTextureID(info->SkyPic1, ETextureType::Wall, FTextureManager::TEXMAN_Overridable | FTextureManager::TEXMAN_ReturnFirst);
+	level.skytexture2 = TexMan.GetTextureID(info->SkyPic2, ETextureType::Wall, FTextureManager::TEXMAN_Overridable | FTextureManager::TEXMAN_ReturnFirst);
 	level.fadeto = info->fadeto;
 	level.cdtrack = info->cdtrack;
 	level.cdid = info->cdid;
@@ -1510,6 +1518,7 @@ void G_InitLevelLocals ()
 	level.fogdensity = info->fogdensity;
 	level.outsidefogdensity = info->outsidefogdensity;
 	level.skyfog = info->skyfog;
+	level.deathsequence = info->deathsequence;
 
 	level.pixelstretch = info->pixelstretch;
 
@@ -1518,7 +1527,7 @@ void G_InitLevelLocals ()
 
 	level.DefaultEnvironment = info->DefaultEnvironment;
 
-	level.lightmode = info->lightmode < 0? gl_lightmode : info->lightmode;
+	level.lightmode = info->lightmode == ELightMode::NotSet? (ELightMode)*gl_lightmode : info->lightmode;
 	level.brightfog = info->brightfog < 0? gl_brightfog : !!info->brightfog;
 	level.lightadditivesurfaces = info->lightadditivesurfaces < 0 ? gl_lightadditivesurfaces : !!info->lightadditivesurfaces;
 	level.notexturefill = info->notexturefill < 0 ? gl_notexturefill : !!info->notexturefill;
@@ -1953,6 +1962,25 @@ void FLevelLocals::Tick ()
 //
 //==========================================================================
 
+void FLevelLocals::Mark()
+{
+	canvasTextureInfo.Mark();
+	for (auto &s : sectorPortals)
+	{
+		GC::Mark(s.mSkybox);
+	}
+	// Mark dead bodies.
+	for (auto &p : bodyque)
+	{
+		GC::Mark(p);
+	}
+}
+
+//==========================================================================
+//
+//
+//==========================================================================
+
 void FLevelLocals::AddScroller (int secnum)
 {
 	if (secnum < 0)
@@ -2002,9 +2030,47 @@ void FLevelLocals::SetMusicVolume(float f)
 }
 
 //==========================================================================
+// IsPointInMap
 //
-//
+// Checks to see if a point is inside the void or not.
+// Made by dpJudas, modified and implemented by Major Cooke
 //==========================================================================
+
+
+int IsPointInMap(double x, double y, double z)
+{
+	subsector_t *subsector = R_PointInSubsector(FLOAT2FIXED(x), FLOAT2FIXED(y));
+	if (!subsector) return false;
+
+	for (uint32_t i = 0; i < subsector->numlines; i++)
+	{
+		// Skip single sided lines.
+		seg_t *seg = subsector->firstline + i;
+		if (seg->backsector != nullptr)	continue;
+
+		divline_t dline;
+		P_MakeDivline(seg->linedef, &dline);
+		bool pol = P_PointOnDivlineSide(x, y, &dline) < 1;
+		if (!pol) return false;
+	}
+
+	double ceilingZ = subsector->sector->ceilingplane.ZatPoint(x, y);
+	if (z > ceilingZ) return false;
+
+	double floorZ = subsector->sector->floorplane.ZatPoint(x, y);
+	if (z < floorZ) return false;
+
+	return true;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, IsPointInMap, IsPointInMap)
+{
+	PARAM_PROLOGUE;
+	PARAM_FLOAT(x);
+	PARAM_FLOAT(y);
+	PARAM_FLOAT(z);
+	ACTION_RETURN_BOOL(IsPointInMap(x, y, z));
+}
 
 template <typename T>
 inline T VecDiff(const T& v1, const T& v2)
@@ -2056,9 +2122,9 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, SphericalCoords)
 	PARAM_FLOAT(targetX);
 	PARAM_FLOAT(targetY);
 	PARAM_FLOAT(targetZ);
-	PARAM_ANGLE_DEF(viewYaw);
-	PARAM_ANGLE_DEF(viewPitch);
-	PARAM_BOOL_DEF(absolute);
+	PARAM_ANGLE(viewYaw);
+	PARAM_ANGLE(viewPitch);
+	PARAM_BOOL(absolute);
 
 	DVector3 viewpoint(viewpointX, viewpointY, viewpointZ);
 	DVector3 target(targetX, targetY, targetZ);
@@ -2071,128 +2137,6 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, SphericalCoords)
 	));
 }
 
-DEFINE_ACTION_FUNCTION(FLevelLocals, Vec2Offset)
-{
-	PARAM_PROLOGUE;
-	PARAM_FLOAT(x);
-	PARAM_FLOAT(y);
-	PARAM_FLOAT(dx);
-	PARAM_FLOAT(dy);
-	PARAM_BOOL_DEF(absolute);
-	if (absolute)
-	{
-		ACTION_RETURN_VEC2(DVector2(x + dx, y + dy));
-	}
-	else
-	{
-		DVector2 v = P_GetOffsetPosition(x, y, dx, dy);
-		ACTION_RETURN_VEC2(v);
-	}
-}
-
-DEFINE_ACTION_FUNCTION(FLevelLocals, Vec2OffsetZ)
-{
-	PARAM_PROLOGUE;
-	PARAM_FLOAT(x);
-	PARAM_FLOAT(y);
-	PARAM_FLOAT(dx);
-	PARAM_FLOAT(dy);
-	PARAM_FLOAT(atz);
-	PARAM_BOOL_DEF(absolute);
-	if (absolute)
-	{
-		ACTION_RETURN_VEC3(DVector3(x + dx, y + dy, atz));
-	}
-	else
-	{
-		DVector2 v = P_GetOffsetPosition(x, y, dx, dy);
-		ACTION_RETURN_VEC3(DVector3(v, atz));
-	}
-}
-
-DEFINE_ACTION_FUNCTION(FLevelLocals, Vec3Offset)
-{
-	PARAM_PROLOGUE;
-	PARAM_FLOAT(x);
-	PARAM_FLOAT(y);
-	PARAM_FLOAT(z);
-	PARAM_FLOAT(dx);
-	PARAM_FLOAT(dy);
-	PARAM_FLOAT(dz);
-	PARAM_BOOL_DEF(absolute);
-	if (absolute)
-	{
-		ACTION_RETURN_VEC3(DVector3(x + dx, y + dy, z + dz));
-	}
-	else
-	{
-		DVector2 v = P_GetOffsetPosition(x, y, dx, dy);
-		ACTION_RETURN_VEC3(DVector3(v, z + dz));
-	}
-}
-
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-DEFINE_GLOBAL(level);
-DEFINE_FIELD(FLevelLocals, sectors)
-DEFINE_FIELD(FLevelLocals, lines)
-DEFINE_FIELD(FLevelLocals, sides)
-DEFINE_FIELD(FLevelLocals, vertexes)
-DEFINE_FIELD(FLevelLocals, sectorPortals)
-DEFINE_FIELD(FLevelLocals, time)
-DEFINE_FIELD(FLevelLocals, maptime)
-DEFINE_FIELD(FLevelLocals, totaltime)
-DEFINE_FIELD(FLevelLocals, starttime)
-DEFINE_FIELD(FLevelLocals, partime)
-DEFINE_FIELD(FLevelLocals, sucktime)
-DEFINE_FIELD(FLevelLocals, cluster)
-DEFINE_FIELD(FLevelLocals, clusterflags)
-DEFINE_FIELD(FLevelLocals, levelnum)
-DEFINE_FIELD(FLevelLocals, LevelName)
-DEFINE_FIELD(FLevelLocals, MapName)
-DEFINE_FIELD(FLevelLocals, NextMap)
-DEFINE_FIELD(FLevelLocals, NextSecretMap)
-DEFINE_FIELD(FLevelLocals, F1Pic)
-DEFINE_FIELD(FLevelLocals, maptype)
-DEFINE_FIELD(FLevelLocals, Music)
-DEFINE_FIELD(FLevelLocals, musicorder)
-DEFINE_FIELD(FLevelLocals, skytexture1)
-DEFINE_FIELD(FLevelLocals, skytexture2)
-DEFINE_FIELD(FLevelLocals, skyspeed1)
-DEFINE_FIELD(FLevelLocals, skyspeed2)
-DEFINE_FIELD(FLevelLocals, total_secrets)
-DEFINE_FIELD(FLevelLocals, found_secrets)
-DEFINE_FIELD(FLevelLocals, total_items)
-DEFINE_FIELD(FLevelLocals, found_items)
-DEFINE_FIELD(FLevelLocals, total_monsters)
-DEFINE_FIELD(FLevelLocals, killed_monsters)
-DEFINE_FIELD(FLevelLocals, gravity)
-DEFINE_FIELD(FLevelLocals, aircontrol)
-DEFINE_FIELD(FLevelLocals, airfriction)
-DEFINE_FIELD(FLevelLocals, airsupply)
-DEFINE_FIELD(FLevelLocals, teamdamage)
-DEFINE_FIELD(FLevelLocals, fogdensity)
-DEFINE_FIELD(FLevelLocals, outsidefogdensity)
-DEFINE_FIELD(FLevelLocals, skyfog)
-DEFINE_FIELD(FLevelLocals, pixelstretch)
-DEFINE_FIELD_BIT(FLevelLocals, flags, noinventorybar, LEVEL_NOINVENTORYBAR)
-DEFINE_FIELD_BIT(FLevelLocals, flags, monsterstelefrag, LEVEL_MONSTERSTELEFRAG)
-DEFINE_FIELD_BIT(FLevelLocals, flags, actownspecial, LEVEL_ACTOWNSPECIAL)
-DEFINE_FIELD_BIT(FLevelLocals, flags, sndseqtotalctrl, LEVEL_SNDSEQTOTALCTRL)
-DEFINE_FIELD_BIT(FLevelLocals, flags2, allmap, LEVEL2_ALLMAP)
-DEFINE_FIELD_BIT(FLevelLocals, flags2, missilesactivateimpact, LEVEL2_MISSILESACTIVATEIMPACT)
-DEFINE_FIELD_BIT(FLevelLocals, flags2, monsterfallingdamage, LEVEL2_MONSTERFALLINGDAMAGE)
-DEFINE_FIELD_BIT(FLevelLocals, flags2, checkswitchrange, LEVEL2_CHECKSWITCHRANGE)
-DEFINE_FIELD_BIT(FLevelLocals, flags2, polygrind, LEVEL2_POLYGRIND)
-DEFINE_FIELD_BIT(FLevelLocals, flags2, allowrespawn, LEVEL2_ALLOWRESPAWN)
-DEFINE_FIELD_BIT(FLevelLocals, flags2, nomonsters, LEVEL2_NOMONSTERS)
-DEFINE_FIELD_BIT(FLevelLocals, flags2, frozen, LEVEL2_FROZEN)
-DEFINE_FIELD_BIT(FLevelLocals, flags2, infinite_flight, LEVEL2_INFINITE_FLIGHT)
-DEFINE_FIELD_BIT(FLevelLocals, flags2, no_dlg_freeze, LEVEL2_CONV_SINGLE_UNFREEZE)
 
 //==========================================================================
 //
@@ -2243,5 +2187,14 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, ChangeSky)
 	sky1texture = self->skytexture1 = FSetTextureID(sky1);
 	sky2texture = self->skytexture2 = FSetTextureID(sky2);
 	R_InitSkyMap();
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(FLevelLocals, StartIntermission)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	PARAM_NAME(seq);
+	PARAM_INT(state);
+	F_StartIntermission(seq, (uint8_t)state);
 	return 0;
 }

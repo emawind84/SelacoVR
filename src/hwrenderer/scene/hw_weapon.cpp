@@ -34,6 +34,8 @@
 #include "r_data/models/models.h"
 #include "hw_weapon.h"
 #include "hw_fakeflat.h"
+
+#include "hwrenderer/models/hw_models.h"
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
 #include "hwrenderer/textures/hw_material.h"
 #include "hwrenderer/utility/hw_lighting.h"
@@ -41,11 +43,87 @@
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/data/flatvertices.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "hw_renderstate.h"
 
 EXTERN_CVAR(Float, transsouls)
 EXTERN_CVAR(Int, gl_fuzztype)
 EXTERN_CVAR(Bool, r_drawplayersprites)
 EXTERN_CVAR(Bool, r_deathcamera)
+
+
+//==========================================================================
+//
+// R_DrawPSprite
+//
+//==========================================================================
+
+void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
+{
+	if (huds->RenderStyle.BlendOp == STYLEOP_Shadow)
+	{
+		state.SetColor(0.2f, 0.2f, 0.2f, 0.33f, huds->cm.Desaturation);
+	}
+	else
+	{
+		state.SetColor(huds->lightlevel, 0, isFullbrightScene(), huds->cm, huds->alpha, true);
+	}
+	state.SetLightIndex(-1);
+	state.SetRenderStyle(huds->RenderStyle);
+	state.SetTextureMode(huds->RenderStyle);
+	state.SetObjectColor(huds->ObjectColor);
+	if (huds->owner->Sector)
+	{
+		state.SetAddColor(huds->owner->Sector->AdditiveColors[sector_t::sprites] | 0xff000000);
+	}
+	else
+	{
+		state.SetAddColor(0);
+	}
+	state.SetDynLight(huds->dynrgb[0], huds->dynrgb[1], huds->dynrgb[2]);
+	state.EnableBrightmap(!(huds->RenderStyle.Flags & STYLEF_ColorIsFixed));
+
+	if (huds->mframe)
+	{
+		state.AlphaFunc(Alpha_GEqual, 0);
+
+		FGLModelRenderer renderer(this, state, huds->lightindex);
+		renderer.RenderHUDModel(huds->weapon, huds->mx, huds->my);
+		state.SetVertexBuffer(screen->mVertexData);
+	}
+	else
+	{
+		float thresh = (huds->tex->tex->GetTranslucency() || huds->OverrideShader != -1) ? 0.f : gl_mask_sprite_threshold;
+		state.AlphaFunc(Alpha_GEqual, thresh);
+		state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
+		state.Draw(DT_TriangleStrip, huds->mx, 4);
+	}
+
+	state.SetTextureMode(TM_NORMAL);
+	state.AlphaFunc(Alpha_GEqual, gl_mask_sprite_threshold);
+	state.SetObjectColor(0xffffffff);
+	state.SetAddColor(0);
+	state.SetDynLight(0, 0, 0);
+	state.EnableBrightmap(false);
+}
+
+//==========================================================================
+//
+// R_DrawPlayerSprites
+//
+//==========================================================================
+
+void HWDrawInfo::DrawPlayerSprites(bool hudModelStep, FRenderState &state)
+{
+	auto oldlightmode = level.lightmode;
+	if (!hudModelStep && level.isSoftwareLighting()) level.SetFallbackLightMode();	// Software lighting cannot handle 2D content.
+	for (auto &hudsprite : hudsprites)
+	{
+		if ((!!hudsprite.mframe) == hudModelStep)
+			DrawPSprite(&hudsprite, state);
+	}
+	level.lightmode = oldlightmode;
+}
 
 
 //==========================================================================
@@ -62,8 +140,8 @@ static bool isBright(DPSprite *psp)
 		FTextureID lump = sprites[psp->GetSprite()].GetSpriteFrame(psp->GetFrame(), 0, 0., nullptr);
 		if (lump.isValid())
 		{
-			FTexture * tex = TexMan(lump);
-			if (tex) disablefullbright = tex->bDisableFullbright;
+			FTexture * tex = TexMan.GetTexture(lump, true);
+			if (tex) disablefullbright = tex->isFullbrightDisabled();
 		}
 		return psp->GetState()->GetFullbright() && !disablefullbright;
 	}
@@ -153,8 +231,7 @@ static WeaponLighting GetWeaponLighting(sector_t *viewsector, const DVector3 &po
 	}
 	else
 	{
-		sector_t fs;
-		auto fakesec = hw_FakeFlat(viewsector, &fs, in_area, false);
+		auto fakesec = hw_FakeFlat(viewsector, in_area, false);
 
 		// calculate light level for weapon sprites
 		l.lightlevel = hw_ClampLight(fakesec->lightlevel);
@@ -192,7 +269,7 @@ static WeaponLighting GetWeaponLighting(sector_t *viewsector, const DVector3 &po
 
 		l.lightlevel = hw_CalcLightLevel(l.lightlevel, getExtraLight(), true, 0);
 
-		if (level.lightmode == 8 || l.lightlevel < 92)
+		if (level.isSoftwareLighting() || l.lightlevel < 92)
 		{
 			// Korshun: the way based on max possible light level for sector like in software renderer.
 			double min_L = 36.0 / 31.0 - ((l.lightlevel / 255.0) * (63.0 / 31.0)); // Lightlevel in range 0-63
@@ -363,21 +440,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 	x2 += viewwindowx;
 
 	// killough 12/98: fix psprite positioning problem
-	ftexturemid = 100.f - sy - r.top;
-
-	AWeapon * wi = player->ReadyWeapon;
-	if (wi && wi->YAdjust != 0)
-	{
-		float fYAd = wi->YAdjust;
-		if (screenblocks >= 11)
-		{
-			ftexturemid -= fYAd;
-		}
-		else
-		{
-			ftexturemid -= float(StatusBar->GetDisplacement()) * fYAd;
-		}
-	}
+	ftexturemid = 100.f - sy - r.top - psp->GetYAdjust(screenblocks >= 11);
 
 	scale = (SCREENHEIGHT*vw) / (SCREENWIDTH * 200.0f);
 	y1 = viewwindowy + vh / 2 - (ftexturemid * scale);
@@ -399,7 +462,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 		v2 = tex->GetSpriteVB();
 	}
 
-	auto verts = di->AllocVertices(4);
+	auto verts = screen->mVertexData->AllocVertices(4);
 	mx = verts.second;
 
 	verts.first[0].Set(x1, y1, 0, u1, v1);
@@ -442,8 +505,8 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 
 	// hack alert! Rather than changing everything in the underlying lighting code let's just temporarily change
 	// light mode here to draw the weapon sprite.
-	int oldlightmode = level.lightmode;
-	if (level.lightmode == 8) level.lightmode = 2;
+	auto oldlightmode = level.lightmode;
+	if (level.isSoftwareLighting()) level.SetFallbackLightMode();
 
 	for (DPSprite *psp = player->psprites; psp != nullptr && psp->GetID() < PSP_TARGETCENTER; psp = psp->GetNext())
 	{
@@ -474,7 +537,7 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 			else
 			{
 				hw_GetDynModelLight(playermo, lightdata);
-				hudsprite.lightindex = UploadLights(lightdata);
+				hudsprite.lightindex = screen->mLights->UploadLights(lightdata);
 			}
 		}
 		
@@ -490,7 +553,7 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 			hudsprite.player = player;
 			if (!hudsprite.GetWeaponRect(this, psp, spos.X, spos.Y, player)) continue;
 		}
-		AddHUDSprite(&hudsprite);
+		hudsprites.Push(hudsprite);
 	}
 	level.lightmode = oldlightmode;
 	PrepareTargeterSprites();
@@ -538,8 +601,9 @@ void HWDrawInfo::PrepareTargeterSprites()
 			hudsprite.weapon = psp;
 			if (hudsprite.GetWeaponRect(this, psp, psp->x, psp->y, player))
 			{
-				AddHUDSprite(&hudsprite);
+				hudsprites.Push(hudsprite);
 			}
 		}
 	}
 }
+

@@ -163,6 +163,85 @@ bool P_Thing_Move (int tid, AActor *source, int mapspot, bool fog)
 	return false;
 }
 
+// [MC] Was part of P_Thing_Projectile, now its own function for use in ZScript.
+// Aims mobj at targ based on speed and targ's velocity.
+void VelIntercept(AActor *targ, AActor *mobj, double speed, bool aimpitch = false, bool oldvel = false)
+{
+	if (targ == nullptr || mobj == nullptr)	return;
+
+	if (speed > 0 && !targ->Vel.isZero())
+	{
+		DVector3 aim = mobj->Vec3To(targ);
+		aim.Z += targ->Height / 2;
+		// Aiming at the target's position some time in the future
+		// is basically just an application of the law of sines:
+		//     a/sin(A) = b/sin(B)
+		// Thanks to all those on the notgod phorum for helping me
+		// with the math. I don't think I would have thought of using
+		// trig alone had I been left to solve it by myself.
+
+		bool nolead = false;
+		DVector3 tvel = targ->Vel;
+		if (!(targ->flags & MF_NOGRAVITY) && targ->waterlevel < 3)
+		{ // If the target is subject to gravity and not underwater,
+		  // assume that it isn't moving vertically. Thanks to gravity,
+		  // even if we did consider the vertical component of the target's
+		  // velocity, we would still miss more often than not.
+			tvel.Z = 0.0;
+			nolead = !!(targ->Vel.X == 0 && targ->Vel.Y == 0);
+		}
+		if (!nolead)
+		{
+			double dist = aim.Length();
+			double targspeed = tvel.Length();
+			double ydotx = -aim | tvel;
+			double a = g_acos(clamp(ydotx / targspeed / dist, -1.0, 1.0));
+			double multiplier = double(pr_leadtarget.Random2())*0.1 / 255 + 1.1;
+			double sinb = -clamp(targspeed*multiplier * g_sin(a) / speed, -1.0, 1.0);
+			DVector3 prevel = mobj->Vel;
+			// Use the cross product of two of the triangle's sides to get a
+			// rotation vector.
+			DVector3 rv(tvel ^ aim);
+			// The vector must be normalized.
+			rv.MakeUnit();
+			// Now combine the rotation vector with angle b to get a rotation matrix.
+			DMatrix3x3 rm(rv, g_cos(g_asin(sinb)), sinb);
+			// And multiply the original aim vector with the matrix to get a
+			// new aim vector that leads the target.
+			DVector3 aimvec = rm * aim;
+			// And make the projectile follow that vector at the desired speed.
+			mobj->Vel = aimvec * (speed / dist);
+			mobj->AngleFromVel();
+			if (oldvel)
+			{
+				mobj->Vel = prevel;
+			}
+			if (aimpitch) // [MC] Ripped right out of A_FaceMovementDirection
+			{
+				const DVector2 velocity = mobj->Vel.XY();
+				mobj->Angles.Pitch = -VecToAngle(velocity.Length(), mobj->Vel.Z);
+			}
+		}
+		else
+		{
+			mobj->Angles.Yaw = mobj->AngleTo(targ);
+			mobj->Vel = aim.Resized(speed);
+		}
+	}
+}
+
+DEFINE_ACTION_FUNCTION(AActor, VelIntercept)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT_NOT_NULL(targ, AActor);
+	PARAM_FLOAT(speed);
+	PARAM_BOOL(aimpitch);
+	PARAM_BOOL(oldvel);
+	if (speed < 0)	speed = self->Speed;
+	VelIntercept(targ, self, speed, aimpitch, oldvel);
+	return 0;
+}
+
 bool P_Thing_Projectile (int tid, AActor *source, int type, const char *type_name, DAngle angle,
 	double speed, double vspeed, int dest, AActor *forcedest, int gravity, int newtid,
 	bool leadTarget)
@@ -244,58 +323,11 @@ bool P_Thing_Projectile (int tid, AActor *source, int type, const char *type_nam
 					}
 					mobj->target = spot;
 
-					if (targ != NULL)
+					if (targ != nullptr)
 					{
-						DVector3 aim = mobj->Vec3To(targ);
-						aim.Z += targ->Height / 2;
-
-						if (leadTarget && speed > 0 && !targ->Vel.isZero())
+						if (leadTarget)
 						{
-							// Aiming at the target's position some time in the future
-							// is basically just an application of the law of sines:
-							//     a/sin(A) = b/sin(B)
-							// Thanks to all those on the notgod phorum for helping me
-							// with the math. I don't think I would have thought of using
-							// trig alone had I been left to solve it by myself.
-
-							DVector3 tvel = targ->Vel;
-							if (!(targ->flags & MF_NOGRAVITY) && targ->waterlevel < 3)
-							{ // If the target is subject to gravity and not underwater,
-							  // assume that it isn't moving vertically. Thanks to gravity,
-							  // even if we did consider the vertical component of the target's
-							  // velocity, we would still miss more often than not.
-								tvel.Z = 0.0;
-								if (targ->Vel.X == 0 && targ->Vel.Y == 0)
-								{
-									goto nolead;
-								}
-							}
-							double dist = aim.Length();
-							double targspeed = tvel.Length();
-							double ydotx = -aim | tvel;
-							double a = g_acos (clamp (ydotx / targspeed / dist, -1.0, 1.0));
-							double multiplier = double(pr_leadtarget.Random2())*0.1/255+1.1;
-							double sinb = -clamp (targspeed*multiplier * g_sin(a) / speed, -1.0, 1.0);
-
-							// Use the cross product of two of the triangle's sides to get a
-							// rotation vector.
-							DVector3 rv(tvel ^ aim);
-							// The vector must be normalized.
-							rv.MakeUnit();
-							// Now combine the rotation vector with angle b to get a rotation matrix.
-							DMatrix3x3 rm(rv, g_cos(g_asin(sinb)), sinb);
-							// And multiply the original aim vector with the matrix to get a
-							// new aim vector that leads the target.
-							DVector3 aimvec = rm * aim;
-							// And make the projectile follow that vector at the desired speed.
-							mobj->Vel = aimvec * (speed / dist);
-							mobj->AngleFromVel();
-						}
-						else
-						{
-nolead:
-							mobj->Angles.Yaw = mobj->AngleTo(targ);
-							mobj->Vel = aim.Resized (speed);
+							VelIntercept(targ, mobj, speed);
 						}
 						if (mobj->flags2 & MF2_SEEKERMISSILE)
 						{
@@ -391,7 +423,7 @@ void P_RemoveThing(AActor * actor)
 	if (actor->player == NULL || actor != actor->player->mo)
 	{
 		// Don't also remove owned inventory items
-		if (actor->IsKindOf(RUNTIME_CLASS(AInventory)) && static_cast<AInventory*>(actor)->Owner != NULL) return;
+		if (!actor->IsMapActor())
 
 		// be friendly to the level statistics. ;)
 		actor->ClearCounters();
@@ -400,12 +432,15 @@ void P_RemoveThing(AActor * actor)
 
 }
 
-bool P_Thing_Raise(AActor *thing, AActor *raiser, int nocheck)
+bool P_Thing_Raise(AActor *thing, AActor *raiser, int flags)
 {
+	if (!thing)	
+		return false;
+
 	FState * RaiseState = thing->GetRaiseState();
 	if (RaiseState == NULL)
 	{
-		return true;	// monster doesn't have a raise state
+		return false;	// monster doesn't have a raise state
 	}
 	
 	AActor *info = thing->GetDefault ();
@@ -420,7 +455,7 @@ bool P_Thing_Raise(AActor *thing, AActor *raiser, int nocheck)
 	thing->flags |= MF_SOLID;
 	thing->Height = info->Height;	// [RH] Use real height
 	thing->radius = info->radius;	// [RH] Use real radius
-	if (!nocheck && !P_CheckPosition (thing, thing->Pos()))
+	if (!(flags & RF_NOCHECKPOSITION) && !P_CheckPosition (thing, thing->Pos()))
 	{
 		thing->flags = oldflags;
 		thing->radius = oldradius;
@@ -428,12 +463,14 @@ bool P_Thing_Raise(AActor *thing, AActor *raiser, int nocheck)
 		return false;
 	}
 
+	if (!P_CanResurrect(raiser, thing))
+		return false;
 
 	S_Sound (thing, CHAN_BODY, "vile/raise", 1, ATTN_IDLE);
 
 	thing->Revive();
 
-	if (raiser != NULL)
+	if ((flags & RF_TRANSFERFRIENDLINESS) && raiser != nullptr)
 	{
 		// Let's copy the friendliness of the one who raised it.
 		thing->CopyFriendliness(raiser, false);
@@ -515,13 +552,6 @@ PClassActor *P_GetSpawnableType(int spawnnum)
 	return NULL;
 }
 
-DEFINE_ACTION_FUNCTION(AActor, GetSpawnableType)
-{
-	PARAM_PROLOGUE;
-	PARAM_INT(num);
-	ACTION_RETURN_POINTER(P_GetSpawnableType(num));
-}
-
 struct MapinfoSpawnItem
 {
 	FName classname;	// DECORATE is read after MAPINFO so we do not have the actual classes available here yet.
@@ -542,23 +572,22 @@ static int SpawnableSort(const void *a, const void *b)
 static void DumpClassMap(FClassMap &themap)
 {
 	FClassMap::Iterator it(themap);
-	FClassMap::Pair *pair, **allpairs;
+	FClassMap::Pair *pair;
+	TArray<FClassMap::Pair*> allpairs(themap.CountUsed(), true);
 	int i = 0;
 
 	// Sort into numerical order, since their arrangement in the map can
 	// be in an unspecified order.
-	allpairs = new FClassMap::Pair *[themap.CountUsed()];
 	while (it.NextPair(pair))
 	{
 		allpairs[i++] = pair;
 	}
-	qsort(allpairs, i, sizeof(*allpairs), SpawnableSort);
+	qsort(allpairs.Data(), i, sizeof(allpairs[0]), SpawnableSort);
 	for (int j = 0; j < i; ++j)
 	{
 		pair = allpairs[j];
 		Printf ("%d %s\n", pair->Key, pair->Value->TypeName.GetChars());
 	}
-	delete[] allpairs;
 }
 
 CCMD(dumpspawnables)
@@ -737,13 +766,11 @@ int P_Thing_CheckProximity(AActor *self, PClass *classname, double distance, int
 		else if (classname != mo->GetClass())
 			continue;
 
-		if (mo->IsKindOf(RUNTIME_CLASS(AInventory)))
+		if (!mo->IsMapActor())
 		{
 			// Skip owned item because its position could remain unchanged since attachment to owner
 			// Most likely it is the last location of this item in the world before pick up
-			AInventory *const inventory = static_cast<AInventory*>(mo);
-			if (inventory != nullptr && inventory->Owner != nullptr)
-				continue;
+			continue;
 		}
 
 		// [MC]Make sure it's in range and respect the desire for Z or not. The function forces it to use
@@ -956,15 +983,17 @@ int P_Thing_Warp(AActor *caller, AActor *reference, double xofs, double yofs, do
 DEFINE_ACTION_FUNCTION(AActor, Warp)
 {
 	PARAM_SELF_PROLOGUE(AActor)
-	PARAM_OBJECT_DEF(destination, AActor)
-	PARAM_FLOAT_DEF(xofs)				
-	PARAM_FLOAT_DEF(yofs)				
-	PARAM_FLOAT_DEF(zofs)				
-	PARAM_ANGLE_DEF(angle)				
-	PARAM_INT_DEF(flags)				
-	PARAM_FLOAT_DEF(heightoffset)		
-	PARAM_FLOAT_DEF(radiusoffset)		
-	PARAM_ANGLE_DEF(pitch)				
+	PARAM_OBJECT(destination, AActor)
+	PARAM_FLOAT(xofs)				
+	PARAM_FLOAT(yofs)				
+	PARAM_FLOAT(zofs)				
+	PARAM_ANGLE(angle)				
+	PARAM_INT(flags)				
+	PARAM_FLOAT(heightoffset)		
+	PARAM_FLOAT(radiusoffset)		
+	PARAM_ANGLE(pitch)				
 
-	ACTION_RETURN_INT(!!P_Thing_Warp(self, destination, xofs, yofs, zofs, angle, flags, heightoffset, radiusoffset, pitch));
+	const int result = destination == nullptr ? 0 :
+		P_Thing_Warp(self, destination, xofs, yofs, zofs, angle, flags, heightoffset, radiusoffset, pitch);
+	ACTION_RETURN_INT(result);
 }

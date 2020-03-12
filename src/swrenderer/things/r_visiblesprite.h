@@ -55,7 +55,7 @@ namespace swrenderer
 
 		virtual void Render(RenderThread *thread, short *cliptop, short *clipbottom, int minZ, int maxZ, Fake3DTranslucent clip3DFloor) = 0;
 
-		FTexture *pic = nullptr;
+		FSoftwareTexture *pic = nullptr;
 
 		short x1 = 0, x2 = 0;
 		float gzb = 0.0f, gzt = 0.0f; // global bottom / top for silhouette clipping
@@ -73,6 +73,7 @@ namespace swrenderer
 
 		FVector3 gpos = { 0.0f, 0.0f, 0.0f }; // origin in world coordinates
 		sector_t *sector = nullptr; // sector this sprite is in
+		FSection *section;
 
 		ColormapLight Light;
 		float Alpha = 0.0f;

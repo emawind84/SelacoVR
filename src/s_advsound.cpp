@@ -59,28 +59,14 @@
 
 struct FRandomSoundList
 {
-	FRandomSoundList()
-	: Sounds(0), SfxHead(0), NumSounds(0)
-	{
-	}
-	~FRandomSoundList()
-	{
-		if (Sounds != NULL)
-		{
-			delete[] Sounds;
-			Sounds = NULL;
-		}
-	}
-
-	uint16_t		*Sounds;	// A list of sounds that can result for the following id
-	uint16_t		SfxHead;	// The sound id used to reference this list
-	uint16_t		NumSounds;
+	TArray<uint32_t> Choices;
+	uint32_t Owner = 0;
 };
 
 struct FPlayerClassLookup
 {
 	FString		Name;
-	uint16_t		ListIndex[3];	// indices into PlayerSounds (0xffff means empty)
+	uint16_t		ListIndex[GENDER_MAX];	// indices into PlayerSounds (0xffff means empty)
 };
 
 // Used to lookup a sound like "*grunt". This contains all player sounds for
@@ -350,9 +336,9 @@ static bool S_CheckSound(sfxinfo_t *startsfx, sfxinfo_t *sfx, TArray<sfxinfo_t *
 	if (me->bRandomHeader)
 	{
 		const FRandomSoundList *list = &S_rnd[me->link];
-		for (int i = 0; i < list->NumSounds; ++i)
+		for (unsigned i = 0; i < list->Choices.Size(); ++i)
 		{
-			auto rsfx = &S_sfx[list->Sounds[i]];
+			auto rsfx = &S_sfx[list->Choices[i]];
 			if (rsfx == startsfx)
 			{
 				Printf(TEXTCOLOR_RED "recursive sound $random found for %s:\n", startsfx->name.GetChars());
@@ -427,7 +413,7 @@ int S_PickReplacement(int refid)
 	while (S_sfx[refid].bRandomHeader)
 	{
 		const FRandomSoundList *list = &S_rnd[S_sfx[refid].link];
-		refid = list->Sounds[pr_randsound() % list->NumSounds];
+		refid = list->Choices[pr_randsound(list->Choices.Size())];
 	}
 	return refid;
 }
@@ -465,10 +451,10 @@ unsigned int S_GetMSLength(FSoundID sound)
 			int length = 0;
 			const FRandomSoundList *list = &S_rnd[sfx->link];
 
-			for (int i=0; i < list->NumSounds; i++)
+			for (auto &me : list->Choices)
 			{
 				// unfortunately we must load all sounds to find the longest one... :(
-				int thislen = S_GetMSLength(list->Sounds[i]);
+				int thislen = S_GetMSLength(me);
 				if (thislen > length) length = thislen;
 			}
 			return length;
@@ -504,11 +490,11 @@ void S_CacheRandomSound (sfxinfo_t *sfx)
 	if (sfx->bRandomHeader)
 	{
 		const FRandomSoundList *list = &S_rnd[sfx->link];
-		for (int i = 0; i < list->NumSounds; ++i)
+		for (unsigned i = 0; i < list->Choices.Size(); ++i)
 		{
-			sfx = &S_sfx[list->Sounds[i]];
+			sfx = &S_sfx[list->Choices[i]];
 			sfx->bUsed = true;
-			S_CacheSound (&S_sfx[list->Sounds[i]]);
+			S_CacheSound (&S_sfx[list->Choices[i]]);
 		}
 	}
 }
@@ -685,10 +671,8 @@ static int S_AddSound (const char *logicalname, int lumpnum, FScanner *sc)
 		if (sfx->bRandomHeader)
 		{
 			FRandomSoundList *rnd = &S_rnd[sfx->link];
-			delete[] rnd->Sounds;
-			rnd->Sounds = NULL;
-			rnd->NumSounds = 0;
-			rnd->SfxHead = 0;
+			rnd->Choices.Reset();
+			rnd->Owner = 0;
 		}
 		sfx->lumpnum = lumpnum;
 		sfx->bRandomHeader = false;
@@ -1069,7 +1053,7 @@ void S_AddLocalSndInfo(int lump)
 static void S_AddSNDINFO (int lump)
 {
 	bool skipToEndIf;
-	TArray<uint16_t> list;
+	TArray<uint32_t> list;
 
 	FScanner sc(lump);
 	skipToEndIf = false;
@@ -1390,12 +1374,12 @@ static void S_AddSNDINFO (int lump)
 
 				list.Clear ();
 				sc.MustGetString ();
-				random.SfxHead = S_AddSound (sc.String, -1, &sc);
+				uint32_t Owner = S_AddSound (sc.String, -1, &sc);
 				sc.MustGetStringName ("{");
 				while (sc.GetString () && !sc.Compare ("}"))
 				{
-					uint16_t sfxto = S_FindSoundTentative (sc.String);
-					if (sfxto == random.SfxHead)
+					uint32_t sfxto = S_FindSoundTentative (sc.String);
+					if (sfxto == random.Owner)
 					{
 						Printf("Definition of random sound '%s' refers to itself recursively.\n", sc.String);
 						continue;
@@ -1404,17 +1388,18 @@ static void S_AddSNDINFO (int lump)
 				}
 				if (list.Size() == 1)
 				{ // Only one sound: treat as $alias
-					S_sfx[random.SfxHead].link = list[0];
-					S_sfx[random.SfxHead].NearLimit = -1;
+					S_sfx[Owner].link = list[0];
+					S_sfx[Owner].NearLimit = -1;
 				}
 				else if (list.Size() > 1)
 				{ // Only add non-empty random lists
-					random.NumSounds = (uint16_t)list.Size();
-					S_sfx[random.SfxHead].link = (uint16_t)S_rnd.Push (random);
-					S_sfx[random.SfxHead].bRandomHeader = true;
-					S_rnd[S_sfx[random.SfxHead].link].Sounds = new uint16_t[random.NumSounds];
-					memcpy (S_rnd[S_sfx[random.SfxHead].link].Sounds, &list[0], sizeof(uint16_t)*random.NumSounds);
-					S_sfx[random.SfxHead].NearLimit = -1;
+					auto index = S_rnd.Reserve(1);
+					auto &random = S_rnd.Last();
+					random.Choices = std::move(list);
+					random.Owner = Owner;
+					S_sfx[Owner].link = index;
+					S_sfx[Owner].bRandomHeader = true;
+					S_sfx[Owner].NearLimit = -1;
 				}
 				}
 				break;
@@ -1622,7 +1607,8 @@ static int S_AddPlayerClass (const char *name)
 		FPlayerClassLookup lookup;
 
 		lookup.Name = name;
-		lookup.ListIndex[2] = lookup.ListIndex[1] = lookup.ListIndex[0] = 0xffff;
+		for(int i = 0; i < GENDER_MAX; i++)
+			lookup.ListIndex[i] = 0xffff;
 		cnum = (int)PlayerClassLookups.Push (lookup);
 		PlayerClassesIsSorted = false;
 
@@ -1770,11 +1756,11 @@ static int S_LookupPlayerSound (int classidx, int gender, FSoundID refid)
 	{
 		int g;
 
-		for (g = 0; g < 3 && listidx == 0xffff; ++g)
+		for (g = 0; g < GENDER_MAX && listidx == 0xffff; ++g)
 		{
 			listidx = PlayerClassLookups[classidx].ListIndex[g];
 		}
-		if (g == 3)
+		if (g == GENDER_MAX)
 		{ // No sounds defined at all for this class (can this happen?)
 			if (classidx != DefPlayerClass)
 			{
@@ -1796,7 +1782,7 @@ static int S_LookupPlayerSound (int classidx, int gender, FSoundID refid)
 	{ // This sound is unavailable.
 		if (ingender != 0)
 		{ // Try "male"
-			return S_LookupPlayerSound (classidx, 0, refid);
+			return S_LookupPlayerSound (classidx, GENDER_MALE, refid);
 		}
 		if (classidx != DefPlayerClass)
 		{ // Try the default class.
@@ -1912,7 +1898,7 @@ bool S_AreSoundsEquivalent (AActor *actor, int id1, int id2)
 int S_FindSkinnedSound (AActor *actor, FSoundID refid)
 {
 	const char *pclass;
-	int gender = GENDER_MALE;
+	int gender = 0;
 
 	if (actor != NULL && actor->IsKindOf(RUNTIME_CLASS(APlayerPawn)))
 	{
@@ -2074,7 +2060,7 @@ void S_MarkPlayerSounds (const char *playerclass)
 	{
 		classidx = DefPlayerClass;
 	}
-	for (int g = 0; g < 3; ++g)
+	for (int g = 0; g < GENDER_MAX; ++g)
 	{
 		int listidx = PlayerClassLookups[classidx].ListIndex[0];
 		if (listidx != 0xffff)
@@ -2103,9 +2089,9 @@ CCMD (soundlist)
 		{
 			Printf ("%3d. %s -> #%d {", i, sfx->name.GetChars(), sfx->link);
 			const FRandomSoundList *list = &S_rnd[sfx->link];
-			for (size_t j = 0; j < list->NumSounds; ++j)
+			for (auto &me : list->Choices)
 			{
-				Printf (" %s ", S_sfx[list->Sounds[j]].name.GetChars());
+				Printf (" %s ", S_sfx[me].name.GetChars());
 			}
 			Printf ("}\n");
 		}
@@ -2178,7 +2164,7 @@ CCMD (playersounds)
 
 	for (i = 0; i < PlayerClassLookups.Size(); ++i)
 	{
-		for (j = 0; j < 3; ++j)
+		for (j = 0; j < GENDER_MAX; ++j)
 		{
 			if ((l = PlayerClassLookups[i].ListIndex[j]) != 0xffff)
 			{
@@ -2231,18 +2217,20 @@ void AAmbientSound::Serialize(FSerializer &arc)
 
 //==========================================================================
 //
-// AmbientSound :: MarkPrecacheSounds
+// AmbientSound :: MarkAmbientSounds
 //
 //==========================================================================
 
-void AAmbientSound::MarkPrecacheSounds() const
+DEFINE_ACTION_FUNCTION(AAmbientSound, MarkAmbientSounds)
 {
-	Super::MarkPrecacheSounds();
-	FAmbientSound *ambient = Ambients.CheckKey(args[0]);
+	PARAM_SELF_PROLOGUE(AAmbientSound);
+
+	FAmbientSound *ambient = Ambients.CheckKey(self->args[0]);
 	if (ambient != NULL)
 	{
 		ambient->sound.MarkUsed();
 	}
+	return 0;
 }
 
 //==========================================================================
@@ -2456,4 +2444,12 @@ void S_ParseMusInfo()
 	}
 }
 
+
+DEFINE_ACTION_FUNCTION(DObject, MarkSound)
+{
+	PARAM_PROLOGUE;
+	PARAM_SOUND(sound_id);
+	sound_id.MarkUsed();
+	return 0;
+}
 

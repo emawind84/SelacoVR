@@ -236,7 +236,7 @@ bool FOBJModel::Load(const char* fn, int lumpnum, const char* buffer, int length
  */
 template<typename T, size_t L> void FOBJModel::ParseVector(TArray<T> &array)
 {
-	float *coord = new float[L];
+	float coord[L];
 	for (size_t axis = 0; axis < L; axis++)
 	{
 		sc.MustGetFloat();
@@ -244,7 +244,6 @@ template<typename T, size_t L> void FOBJModel::ParseVector(TArray<T> &array)
 	}
 	T vec(coord);
 	array.Push(vec);
-	delete[] coord;
 }
 
 /**
@@ -637,11 +636,11 @@ void FOBJModel::RenderFrame(FModelRenderer *renderer, FTexture * skin, int frame
 		{
 			if (i < MD3_MAX_SURFACES && curSpriteMDLFrame->surfaceskinIDs[curMDLIndex][i].isValid())
 			{
-				userSkin = TexMan(curSpriteMDLFrame->surfaceskinIDs[curMDLIndex][i]);
+				userSkin = TexMan.GetTexture(curSpriteMDLFrame->surfaceskinIDs[curMDLIndex][i], true);
 			}
 			else if (surf->skin.isValid())
 			{
-				userSkin = TexMan(surf->skin);
+				userSkin = TexMan.GetTexture(surf->skin, true);
 			}
 		}
 

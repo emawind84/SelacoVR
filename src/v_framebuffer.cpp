@@ -48,6 +48,9 @@
 #include "vm.h"
 #include "r_videoscale.h"
 #include "i_time.h"
+#include "hwrenderer/scene/hw_portal.h"
+#include "hwrenderer/utility/hw_clock.h"
+#include "hwrenderer/data/flatvertices.h"
 
 
 CVAR(Bool, gl_scale_viewport, true, CVAR_ARCHIVE);
@@ -81,87 +84,6 @@ void DFrameBuffer::CalcGamma (float gamma, uint8_t gammalookup[256])
 
 //==========================================================================
 //
-// DSimpleCanvas Constructor
-//
-// A simple canvas just holds a buffer in main memory.
-//
-//==========================================================================
-
-DSimpleCanvas::DSimpleCanvas (int width, int height, bool bgra)
-	: DCanvas (width, height, bgra)
-{
-	PixelBuffer = nullptr;
-	Resize(width, height);
-}
-
-void DSimpleCanvas::Resize(int width, int height)
-{
-	Width = width;
-	Height = height;
-
-	if (PixelBuffer != NULL)
-	{
-		delete[] PixelBuffer;
-		PixelBuffer = NULL;
-	}
-
-	// Making the pitch a power of 2 is very bad for performance
-	// Try to maximize the number of cache lines that can be filled
-	// for each column drawing operation by making the pitch slightly
-	// longer than the width. The values used here are all based on
-	// empirical evidence.
-
-	if (width <= 640)
-	{
-		// For low resolutions, just keep the pitch the same as the width.
-		// Some speedup can be seen using the technique below, but the speedup
-		// is so marginal that I don't consider it worthwhile.
-		Pitch = width;
-	}
-	else
-	{
-		// If we couldn't figure out the CPU's L1 cache line size, assume
-		// it's 32 bytes wide.
-		if (CPU.DataL1LineSize == 0)
-		{
-			CPU.DataL1LineSize = 32;
-		}
-		// The Athlon and P3 have very different caches, apparently.
-		// I am going to generalize the Athlon's performance to all AMD
-		// processors and the P3's to all non-AMD processors. I don't know
-		// how smart that is, but I don't have a vast plethora of
-		// processors to test with.
-		if (CPU.bIsAMD)
-		{
-			Pitch = width + CPU.DataL1LineSize;
-		}
-		else
-		{
-			Pitch = width + MAX(0, CPU.DataL1LineSize - 8);
-		}
-	}
-	int bytes_per_pixel = Bgra ? 4 : 1;
-	PixelBuffer = new uint8_t[Pitch * height * bytes_per_pixel];
-	memset (PixelBuffer, 0, Pitch * height * bytes_per_pixel);
-}
-
-//==========================================================================
-//
-// DSimpleCanvas Destructor
-//
-//==========================================================================
-
-DSimpleCanvas::~DSimpleCanvas ()
-{
-	if (PixelBuffer != NULL)
-	{
-		delete[] PixelBuffer;
-		PixelBuffer = NULL;
-	}
-}
-
-//==========================================================================
-//
 // DFrameBuffer Constructor
 //
 // A frame buffer canvas is the most common and represents the image that
@@ -172,6 +94,12 @@ DSimpleCanvas::~DSimpleCanvas ()
 DFrameBuffer::DFrameBuffer (int width, int height)
 {
 	SetSize(width, height);
+	mPortalState = new FPortalSceneState;
+}
+
+DFrameBuffer::~DFrameBuffer()
+{
+	delete mPortalState;
 }
 
 void DFrameBuffer::SetSize(int width, int height)
@@ -279,6 +207,24 @@ void DFrameBuffer::GetFlashedPalette(PalEntry pal[256])
 	DoBlending(SourcePalette, pal, 256, Flash.r, Flash.g, Flash.b, Flash.a);
 }
 
+void DFrameBuffer::Update()
+{
+	CheckBench();
+
+	int initialWidth = GetClientWidth();
+	int initialHeight = GetClientHeight();
+	int clientWidth = ViewportScaledWidth(initialWidth, initialHeight);
+	int clientHeight = ViewportScaledHeight(initialWidth, initialHeight);
+	if (clientWidth < 320) clientWidth = 320;
+	if (clientHeight < 200) clientHeight = 200;
+	if (clientWidth > 0 && clientHeight > 0 && (GetWidth() != clientWidth || GetHeight() != clientHeight))
+	{
+		SetVirtualSize(clientWidth, clientHeight);
+		V_OutputResized(clientWidth, clientHeight);
+		mVertexData->OutputResized(clientWidth, clientHeight);
+	}
+}
+
 PalEntry *DFrameBuffer::GetPalette()
 {
 	return SourcePalette;
@@ -297,6 +243,14 @@ void DFrameBuffer::GetFlash(PalEntry &rgb, int &amount)
 	amount = Flash.a;
 }
 
+void DFrameBuffer::SetClearColor(int color)
+{
+	PalEntry pe = GPalette.BaseColors[color];
+	mSceneClearColor[0] = pe.r / 255.f;
+	mSceneClearColor[1] = pe.g / 255.f;
+	mSceneClearColor[2] = pe.b / 255.f;
+	mSceneClearColor[3] = 1.f;
+}
 
 //==========================================================================
 //
@@ -403,11 +357,6 @@ uint32_t DFrameBuffer::GetCaps()
 		FlagSet |= RFF_COLORMAP;
 
 	return (uint32_t)FlagSet;
-}
-
-void DFrameBuffer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV)
-{
-	SWRenderer->RenderTextureView(tex, Viewpoint, FOV);
 }
 
 void DFrameBuffer::WriteSavePic(player_t *player, FileWriter *file, int width, int height)
@@ -526,30 +475,3 @@ void DFrameBuffer::ScaleCoordsFromWindow(int16_t &x, int16_t &y)
 	x = int16_t((x - letterboxX) * Width / letterboxWidth);
 	y = int16_t((y - letterboxY) * Height / letterboxHeight);
 }
-
-//===========================================================================
-// 
-// 
-//
-//===========================================================================
-
-#define DBGBREAK assert(0)
-
-class DDummyFrameBuffer : public DFrameBuffer
-{
-	typedef DFrameBuffer Super;
-public:
-	DDummyFrameBuffer(int width, int height)
-		: DFrameBuffer(0, 0)
-	{
-		SetVirtualSize(width, height);
-	}
-	// These methods should never be called.
-	void Update() { DBGBREAK; }
-	bool IsFullscreen() { DBGBREAK; return 0; }
-	int GetClientWidth() { DBGBREAK; return 0; }
-	int GetClientHeight() { DBGBREAK; return 0; }
-
-	float Gamma;
-};
-

@@ -38,25 +38,36 @@
 #include "gl/textures/gl_samplers.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_vrmodes.h"
-#include "gl/data/gl_vertexbuffer.h"
-#include "gl/data/gl_uniformbuffer.h"
-#include "gl/models/gl_models.h"
+#include "hwrenderer/models/hw_models.h"
+#include "hwrenderer/scene/hw_skydome.h"
+#include "hwrenderer/data/hw_viewpointbuffer.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
 #include "gl/shaders/gl_shaderprogram.h"
 #include "gl_debug.h"
 #include "r_videoscale.h"
+#include "gl_buffers.h"
+
+#include "hwrenderer/data/flatvertices.h"
 
 EXTERN_CVAR (Bool, vid_vsync)
-
-FGLRenderer *GLRenderer;
+EXTERN_CVAR(Bool, r_drawvoxels)
+EXTERN_CVAR(Int, gl_tonemap)
+EXTERN_CVAR(Bool, gl_texture_usehires)
 
 void gl_LoadExtensions();
 void gl_PrintStartupLog();
+void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D = false);
+
 
 CUSTOM_CVAR(Int, vid_hwgamma, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	if (self < 0 || self > 2) self = 2;
 	if (screen != nullptr) screen->SetGamma();
 }
+
+namespace OpenGLRenderer
+{
+	FGLRenderer *GLRenderer;
 
 //==========================================================================
 //
@@ -75,23 +86,22 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, bool fullscreen) :
 	FHardwareTexture::InitGlobalState();
 	gl_RenderState.Reset();
 
-	GLRenderer = new FGLRenderer(this);
+	GLRenderer = nullptr;
 	InitPalette();
-
-	InitializeState();
-	mDebug = std::make_shared<FGLDebug>();
-	mDebug->Update();
-	SetGamma();
-
-	// Move some state to the framebuffer object for easier access.
-	hwcaps = gl.flags;
-	glslversion = gl.glslversion;
 }
 
 OpenGLFrameBuffer::~OpenGLFrameBuffer()
 {
-	delete GLRenderer;
-	GLRenderer = NULL;
+	if (mVertexData != nullptr) delete mVertexData;
+	if (mSkyData != nullptr) delete mSkyData;
+	if (mViewpoints != nullptr) delete mViewpoints;
+	if (mLights != nullptr) delete mLights;
+
+	if (GLRenderer)
+	{
+		delete GLRenderer;
+		GLRenderer = nullptr;
+	}
 }
 
 //==========================================================================
@@ -114,14 +124,19 @@ void OpenGLFrameBuffer::InitializeState()
 
 	gl_LoadExtensions();
 
+	// Move some state to the framebuffer object for easier access.
+	hwcaps = gl.flags;
+	glslversion = gl.glslversion;
+	uniformblockalignment = gl.uniformblockalignment;
+	maxuniformblock = gl.maxuniformblock;
+	gl_vendorstring = gl.vendorstring;
+
 	if (first)
 	{
 		first=false;
 		gl_PrintStartupLog();
 	}
 
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClearDepth(1.0f);
 	glDepthFunc(GL_LESS);
 
 	glEnable(GL_DITHER);
@@ -134,10 +149,22 @@ void OpenGLFrameBuffer::InitializeState()
 	glDisable(GL_LINE_SMOOTH);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearDepth(1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	GLRenderer->Initialize(GetWidth(), GetHeight());
 	SetViewportRects(nullptr);
+
+	mVertexData = new FFlatVertexBuffer(GetWidth(), GetHeight());
+	mSkyData = new FSkyVertexBuffer;
+	mViewpoints = new GLViewpointBuffer;
+	mLights = new FLightBuffer();
+
+	GLRenderer = new FGLRenderer(this);
+	GLRenderer->Initialize(GetWidth(), GetHeight());
+
+	mDebug = std::make_shared<FGLDebug>();
+	mDebug->Update();
 }
 
 //==========================================================================
@@ -156,39 +183,7 @@ void OpenGLFrameBuffer::Update()
 	Flush3D.Unclock();
 
 	Swap();
-	CheckBench();
-
-	int initialWidth = GetClientWidth();
-	int initialHeight = GetClientHeight();
-	int clientWidth = ViewportScaledWidth(initialWidth, initialHeight);
-	int clientHeight = ViewportScaledHeight(initialWidth, initialHeight);
-	if (clientWidth < 320) clientWidth = 320;
-	if (clientHeight < 200) clientHeight = 200;
-	if (clientWidth > 0 && clientHeight > 0 && (GetWidth() != clientWidth || GetHeight() != clientHeight))
-	{
-		SetVirtualSize(clientWidth, clientHeight);
-		V_OutputResized(clientWidth, clientHeight);
-		GLRenderer->mVBO->OutputResized(clientWidth, clientHeight);
-	}
-}
-
-//===========================================================================
-//
-// 
-//
-//===========================================================================
-
-void OpenGLFrameBuffer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV)
-{
-	if (!V_IsHardwareRenderer())
-	{
-		Super::RenderTextureView(tex, Viewpoint, FOV);
-	}
-	else if (GLRenderer != nullptr)
-	{
-		GLRenderer->RenderTextureView(tex, Viewpoint, FOV);
-		camtexcount++;
-	}
+	Super::Update();
 }
 
 //===========================================================================
@@ -225,9 +220,6 @@ sector_t *OpenGLFrameBuffer::RenderView(player_t *player)
 // 
 //
 //===========================================================================
-
-EXTERN_CVAR(Bool, r_drawvoxels)
-EXTERN_CVAR(Int, gl_tonemap)
 
 uint32_t OpenGLFrameBuffer::GetCaps()
 {
@@ -334,24 +326,37 @@ void OpenGLFrameBuffer::SetTextureFilterMode()
 	if (GLRenderer != nullptr && GLRenderer->mSamplerManager != nullptr) GLRenderer->mSamplerManager->SetTextureFilterMode();
 }
 
-IHardwareTexture *OpenGLFrameBuffer::CreateHardwareTexture(FTexture *tex) 
+IHardwareTexture *OpenGLFrameBuffer::CreateHardwareTexture() 
 { 
-	return new FHardwareTexture(tex->bNoCompress);
+	return new FHardwareTexture(true/*tex->bNoCompress*/);
 }
 
 void OpenGLFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 {
-	gl_RenderState.SetMaterial(mat, CLAMP_NONE, translation, false, false);
+	auto tex = mat->tex;
+	if (tex->isSWCanvas()) return;
+
+	// Textures that are already scaled in the texture lump will not get replaced by hires textures.
+	int flags = mat->isExpanded() ? CTF_Expand : (gl_texture_usehires && !tex->isScaled()) ? CTF_CheckHires : 0;
+	int numLayers = mat->GetLayers();
+	auto base = static_cast<FHardwareTexture*>(mat->GetLayer(0, translation));
+
+	if (base->BindOrCreate(tex, 0, CLAMP_NONE, translation, flags))
+	{
+		for (int i = 1; i < numLayers; i++)
+		{
+			FTexture *layer;
+			auto systex = static_cast<FHardwareTexture*>(mat->GetLayer(i, 0, &layer));
+			systex->BindOrCreate(layer, i, CLAMP_NONE, 0, mat->isExpanded() ? CTF_Expand : 0);
+		}
+	}
+	// unbind everything. 
+	FHardwareTexture::UnbindAll();
 }
 
-FModelRenderer *OpenGLFrameBuffer::CreateModelRenderer(int mli) 
+FModelRenderer *OpenGLFrameBuffer::CreateModelRenderer(int mli)
 {
-	return new FGLModelRenderer(nullptr, mli);
-}
-
-IUniformBuffer *OpenGLFrameBuffer::CreateUniformBuffer(size_t size, bool staticuse)
-{
-    return new GLUniformBuffer(size, staticuse);
+	return new FGLModelRenderer(nullptr, gl_RenderState, mli);
 }
 
 IShaderProgram *OpenGLFrameBuffer::CreateShaderProgram() 
@@ -359,6 +364,20 @@ IShaderProgram *OpenGLFrameBuffer::CreateShaderProgram()
 	return new FShaderProgram; 
 }
 
+IVertexBuffer *OpenGLFrameBuffer::CreateVertexBuffer()
+{ 
+	return new GLVertexBuffer; 
+}
+
+IIndexBuffer *OpenGLFrameBuffer::CreateIndexBuffer()
+{ 
+	return new GLIndexBuffer; 
+}
+
+IDataBuffer *OpenGLFrameBuffer::CreateDataBuffer(int bindingpoint, bool ssbo)
+{
+	return new GLDataBuffer(bindingpoint, ssbo);
+}
 
 void OpenGLFrameBuffer::TextureFilterChanged()
 {
@@ -380,15 +399,6 @@ void OpenGLFrameBuffer::SetViewportRects(IntRect *bounds)
 	}
 }
 
-
-void OpenGLFrameBuffer::InitForLevel()
-{
-	if (GLRenderer != NULL)
-	{
-		GLRenderer->SetupLevel();
-	}
-}
-
 void OpenGLFrameBuffer::UpdatePalette()
 {
 	if (GLRenderer)
@@ -401,15 +411,6 @@ void OpenGLFrameBuffer::UpdatePalette()
 // 
 //
 //===========================================================================
-
-void OpenGLFrameBuffer::SetClearColor(int color)
-{
-	PalEntry pe = GPalette.BaseColors[color];
-	GLRenderer->mSceneClearColor[0] = pe.r / 255.f;
-	GLRenderer->mSceneClearColor[1] = pe.g / 255.f;
-	GLRenderer->mSceneClearColor[2] = pe.b / 255.f;
-}
-
 
 void OpenGLFrameBuffer::BeginFrame()
 {
@@ -424,7 +425,7 @@ void OpenGLFrameBuffer::BeginFrame()
 //
 //===========================================================================
 
-void OpenGLFrameBuffer::GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, ESSType &color_type, float &gamma)
+TArray<uint8_t> OpenGLFrameBuffer::GetScreenshotBuffer(int &pitch, ESSType &color_type, float &gamma)
 {
 	const auto &viewport = mOutputLetterbox;
 
@@ -440,7 +441,7 @@ void OpenGLFrameBuffer::GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, 
 	int w = SCREENWIDTH;
 	int h = SCREENHEIGHT;
 
-	auto ScreenshotBuffer = new uint8_t[w * h * 3];
+	TArray<uint8_t> ScreenshotBuffer(w * h * 3, true);
 
 	float rcpWidth = 1.0f / w;
 	float rcpHeight = 1.0f / h;
@@ -462,10 +463,10 @@ void OpenGLFrameBuffer::GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, 
 
 	pitch = w * 3;
 	color_type = SS_RGB;
-	buffer = ScreenshotBuffer;
 
 	// Screenshot should not use gamma correction if it was already applied to rendered image
 	gamma = 1 == vid_hwgamma || (2 == vid_hwgamma && !fullscreen) ? 1.0f : Gamma;
+	return ScreenshotBuffer;
 }
 
 //===========================================================================
@@ -476,35 +477,21 @@ void OpenGLFrameBuffer::GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, 
 
 void OpenGLFrameBuffer::Draw2D(bool outside2D)
 {
-	if (GLRenderer != nullptr) GLRenderer->Draw2D(&m2DDrawer, outside2D);
+	if (GLRenderer != nullptr)
+	{
+		FGLDebug::PushGroup("Draw2D");
+		if (VRMode::GetVRMode(true)->mEyeCount == 1)
+			GLRenderer->mBuffers->BindCurrentFB();
+
+		::Draw2D(&m2DDrawer, gl_RenderState, outside2D);
+		FGLDebug::PopGroup();
+	}
 }
 
 void OpenGLFrameBuffer::PostProcessScene(int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D)
 {
 	GLRenderer->PostProcessScene(fixedcm, afterBloomDrawEndScene2D);
 }
-
-//==========================================================================
-//
-// This is just a wrapper around the hardware texture being extracted below so that it can be passed to the 2D code.
-//
-//==========================================================================
-
-class FGLWipeTexture : public FTexture
-{
-public:
-
-	FGLWipeTexture(int w, int h)
-	{
-		Width = w;
-		Height = h;
-		WidthBits = 4;
-		UseType = ETextureType::SWCanvas;
-		bNoCompress = true;
-		SystemTexture[0] = screen->CreateHardwareTexture(this);
-	}
-
-};
 
 //==========================================================================
 //
@@ -520,10 +507,10 @@ FTexture *OpenGLFrameBuffer::WipeStartScreen()
 {
 	const auto &viewport = screen->mScreenViewport;
 
-	FGLWipeTexture *tex = new FGLWipeTexture(viewport.width, viewport.height);
-	tex->SystemTexture[0]->CreateTexture(nullptr, viewport.width, viewport.height, 0, false, 0, "WipeStartScreen");
+	auto tex = new FWrapperTexture(viewport.width, viewport.height, 1);
+	tex->GetSystemTexture()->CreateTexture(nullptr, viewport.width, viewport.height, 0, false, 0, "WipeStartScreen");
 	glFinish();
-	static_cast<FHardwareTexture*>(tex->SystemTexture[0])->Bind(0, false, false);
+	static_cast<FHardwareTexture*>(tex->GetSystemTexture())->Bind(0, false);
 
 	GLRenderer->mBuffers->BindCurrentFB();
 	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, viewport.left, viewport.top, viewport.width, viewport.height);
@@ -542,12 +529,13 @@ FTexture *OpenGLFrameBuffer::WipeEndScreen()
 {
 	GLRenderer->Flush();
 	const auto &viewport = screen->mScreenViewport;
-	FGLWipeTexture *tex = new FGLWipeTexture(viewport.width, viewport.height);
-	tex->SystemTexture[0]->CreateTexture(NULL, viewport.width, viewport.height, 0, false, 0, "WipeEndScreen");
+	auto tex = new FWrapperTexture(viewport.width, viewport.height, 1);
+	tex->GetSystemTexture()->CreateTexture(NULL, viewport.width, viewport.height, 0, false, 0, "WipeEndScreen");
 	glFinish();
-	static_cast<FHardwareTexture*>(tex->SystemTexture[0])->Bind(0, false, false);
+	static_cast<FHardwareTexture*>(tex->GetSystemTexture())->Bind(0, false);
 	GLRenderer->mBuffers->BindCurrentFB();
 	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, viewport.left, viewport.top, viewport.width, viewport.height);
 	return tex;
 }
 
+}

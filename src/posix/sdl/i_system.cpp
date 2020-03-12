@@ -173,7 +173,7 @@ void Linux_I_FatalError(const char* errortext)
 }
 #endif
 
-void I_FatalError (const char *error, ...)
+void I_FatalError (const char *error, va_list ap)
 {
 	static bool alreadyThrown = false;
 	gameisdead = true;
@@ -183,10 +183,7 @@ void I_FatalError (const char *error, ...)
 		alreadyThrown = true;
 		char errortext[MAX_ERRORTEXT];
 		int index;
-		va_list argptr;
-		va_start (argptr, error);
-		index = vsnprintf (errortext, MAX_ERRORTEXT, error, argptr);
-		va_end (argptr);
+		index = vsnprintf (errortext, MAX_ERRORTEXT, error, ap);
 
 #ifdef __APPLE__
 		Mac_I_FatalError(errortext);
@@ -214,16 +211,25 @@ void I_FatalError (const char *error, ...)
 	}
 }
 
+void I_FatalError(const char* const error, ...)
+{
+	va_list argptr;
+	va_start(argptr, error);
+	I_FatalError(error, argptr);
+	va_end(argptr);
+
+}
+
 void I_Error (const char *error, ...)
 {
 	va_list argptr;
 	char errortext[MAX_ERRORTEXT];
 
-	va_start (argptr, error);
+	va_start(argptr, error);
+
 	vsprintf (errortext, error, argptr);
 	va_end (argptr);
-
-	throw CRecoverableError (errortext);
+	throw CRecoverableError(errortext);
 }
 
 void I_SetIWADInfo ()
@@ -234,30 +240,29 @@ void I_DebugPrint(const char *cp)
 {
 }
 
-void I_PrintStr (const char *cp)
+void I_PrintStr(const char *cp)
 {
-	// Strip out any color escape sequences before writing to the log file
-	char * copy = new char[strlen(cp)+1];
+	// Strip out any color escape sequences before writing to debug output
+	TArray<char> copy(strlen(cp) + 1, true);
 	const char * srcp = cp;
-	char * dstp = copy;
+	char * dstp = copy.Data();
 
 	while (*srcp != 0)
 	{
-		if (*srcp!=0x1c && *srcp!=0x1d && *srcp!=0x1e && *srcp!=0x1f)
+		if (*srcp != 0x1c && *srcp != 0x1d && *srcp != 0x1e && *srcp != 0x1f)
 		{
-			*dstp++=*srcp++;
+			*dstp++ = *srcp++;
 		}
 		else
 		{
-			if (srcp[1]!=0) srcp+=2;
+			if (srcp[1] != 0) srcp += 2;
 			else break;
 		}
 	}
-	*dstp=0;
+	*dstp = 0;
 
-	fputs (copy, stdout);
-	delete [] copy;
-	fflush (stdout);
+	fputs(copy.Data(), stdout);
+	fflush(stdout);
 }
 
 int I_PickIWad (WadStuff *wads, int numwads, bool showwin, int defaultiwad)

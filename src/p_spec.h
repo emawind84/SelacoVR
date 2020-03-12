@@ -92,8 +92,9 @@ const double CARRYFACTOR = 3 / 32.;
 //		it returns true, and the player is allowed to live.
 bool	CheckIfExitIsGood (AActor *self, level_info_t *info);
 
+class MapLoader;
 // at map load
-void	P_SpawnSpecials (void);
+void	P_SpawnSpecials (MapLoader *ml);
 
 // every tic
 void	P_UpdateSpecials (void);
@@ -439,7 +440,7 @@ protected:
 
 	// [RH] Need these for BOOM-ish transferring ceilings
 	FTextureID	m_Texture;
-	secspecial_t m_NewSpecial;
+	secspecial_t m_NewSpecial{};
 
 	// ID
 	int 		m_Tag;
@@ -536,7 +537,7 @@ public:
 	bool		m_Hexencrush;
 	bool		m_Instant;
 	int 		m_Direction;
-	secspecial_t m_NewSpecial;
+	secspecial_t m_NewSpecial{};
 	FTextureID	m_Texture;
 	double	 	m_FloorDestDist;
 	double	 	m_Speed;

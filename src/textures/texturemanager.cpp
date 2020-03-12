@@ -52,6 +52,9 @@
 #include "r_renderer.h"
 #include "r_sky.h"
 #include "vm.h"
+#include "image.h"
+#include "formats/multipatchtexture.h"
+#include "swrenderer/textures/r_swtexture.h"
 
 FTextureManager TexMan;
 
@@ -96,6 +99,7 @@ FTextureManager::~FTextureManager ()
 
 void FTextureManager::DeleteAll()
 {
+	FImageSource::ClearImages();
 	for (unsigned int i = 0; i < Textures.Size(); ++i)
 	{
 		delete Textures[i].Texture;
@@ -136,6 +140,31 @@ void FTextureManager::DeleteAll()
 	}
 	mAnimatedDoors.Clear();
 	BuildTileData.Clear();
+}
+
+//==========================================================================
+//
+// Flushes all hardware dependent data.
+// Thia must not, under any circumstances, delete the wipe textures, because
+// all CCMDs triggering a flush can be executed while a wipe is in progress
+//
+// This now also deletes the software textures because having the software
+// renderer use the texture scalers is a planned feature and that is the
+// main reason to call this outside of the destruction code.
+//
+//==========================================================================
+
+void FTextureManager::FlushAll()
+{
+	for (int i = TexMan.NumTextures() - 1; i >= 0; i--)
+	{
+		for (int j = 0; j < 2; j++)
+		{
+			Textures[i].Texture->SystemTextures.Clean(true, true);
+			delete Textures[i].Texture->SoftwareTexture;
+			Textures[i].Texture->SoftwareTexture = nullptr;
+		}
+	}
 }
 
 //==========================================================================
@@ -260,13 +289,18 @@ FTextureID FTextureManager::CheckForTexture (const char *name, ETextureType uset
 	return FTextureID(-1);
 }
 
-DEFINE_ACTION_FUNCTION(_TexMan, CheckForTexture)
+static int CheckForTexture(const FString &name, int type, int flags)
+{
+	return TexMan.CheckForTexture(name, static_cast<ETextureType>(type), flags).GetIndex();
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, CheckForTexture, CheckForTexture)
 {
 	PARAM_PROLOGUE;
 	PARAM_STRING(name);
 	PARAM_INT(type);
-	PARAM_INT_DEF(flags);
-	ACTION_RETURN_INT(TexMan.CheckForTexture(name, static_cast<ETextureType>(type), flags).GetIndex());
+	PARAM_INT(flags);
+	ACTION_RETURN_INT(CheckForTexture(name, type, flags));
 }
 
 //==========================================================================
@@ -324,7 +358,7 @@ int FTextureManager::ListTextures (const char *name, TArray<FTextureID> &list, b
 //
 //==========================================================================
 
-FTextureID FTextureManager::GetTexture (const char *name, ETextureType usetype, BITFIELD flags)
+FTextureID FTextureManager::GetTextureID (const char *name, ETextureType usetype, BITFIELD flags)
 {
 	FTextureID i;
 
@@ -356,20 +390,6 @@ FTexture *FTextureManager::FindTexture(const char *texname, ETextureType usetype
 {
 	FTextureID texnum = CheckForTexture (texname, usetype, flags);
 	return !texnum.isValid()? NULL : Textures[texnum.GetIndex()].Texture;
-}
-
-//==========================================================================
-//
-// FTextureManager :: UnloadAll
-//
-//==========================================================================
-
-void FTextureManager::UnloadAll ()
-{
-	for (unsigned int i = 0; i < Textures.Size(); ++i)
-	{
-		Textures[i].Texture->Unload ();
-	}
 }
 
 //==========================================================================
@@ -418,7 +438,9 @@ FTextureID FTextureManager::CreateTexture (int lumpnum, ETextureType usetype)
 {
 	if (lumpnum != -1)
 	{
-		FTexture *out = FTexture::CreateTexture(lumpnum, usetype);
+		FString str;
+		Wads.GetLumpName(str, lumpnum);
+		FTexture *out = FTexture::CreateTexture(str, lumpnum, usetype);
 
 		if (out != NULL) return AddTexture (out);
 		else
@@ -447,16 +469,9 @@ void FTextureManager::ReplaceTexture (FTextureID picnum, FTexture *newtexture, b
 	newtexture->Name = oldtexture->Name;
 	newtexture->UseType = oldtexture->UseType;
 	Textures[index].Texture = newtexture;
-
 	newtexture->id = oldtexture->id;
-	if (free && !oldtexture->bKeepAround)
-	{
-		delete oldtexture;
-	}
-	else
-	{
-		oldtexture->id.SetInvalid();
-	}
+	oldtexture->Name = "";
+	AddTexture(oldtexture);
 }
 
 //==========================================================================
@@ -565,7 +580,7 @@ void FTextureManager::AddHiresTextures (int wadnum)
 				if (amount == 0)
 				{
 					// A texture with this name does not yet exist
-					FTexture * newtex = FTexture::CreateTexture (firsttx, ETextureType::Any);
+					FTexture * newtex = FTexture::CreateTexture (Name, firsttx, ETextureType::Any);
 					if (newtex != NULL)
 					{
 						newtex->UseType=ETextureType::Override;
@@ -576,7 +591,7 @@ void FTextureManager::AddHiresTextures (int wadnum)
 				{
 					for(unsigned int i = 0; i < tlist.Size(); i++)
 					{
-						FTexture * newtex = FTexture::CreateTexture (firsttx, ETextureType::Any);
+						FTexture * newtex = FTexture::CreateTexture ("", firsttx, ETextureType::Any);
 						if (newtex != NULL)
 						{
 							FTexture * oldtex = Textures[tlist[i].GetIndex()].Texture;
@@ -604,7 +619,7 @@ void FTextureManager::AddHiresTextures (int wadnum)
 //
 //==========================================================================
 
-void FTextureManager::LoadTextureDefs(int wadnum, const char *lumpname)
+void FTextureManager::LoadTextureDefs(int wadnum, const char *lumpname, FMultipatchTextureBuilder &build)
 {
 	int remapLump, lastLump;
 
@@ -614,12 +629,12 @@ void FTextureManager::LoadTextureDefs(int wadnum, const char *lumpname)
 	{
 		if (Wads.GetLumpFile(remapLump) == wadnum)
 		{
-			ParseTextureDef(remapLump);
+			ParseTextureDef(remapLump, build);
 		}
 	}
 }
 
-void FTextureManager::ParseTextureDef(int lump)
+void FTextureManager::ParseTextureDef(int lump, FMultipatchTextureBuilder &build)
 {
 	TArray<FTextureID> tlist;
 
@@ -675,7 +690,7 @@ void FTextureManager::ParseTextureDef(int lump)
 						(sl=oldtex->GetSourceLump()) >= 0 && Wads.GetLumpNamespace(sl) == ns_sprites)
 						)
 					{
-						FTexture * newtex = FTexture::CreateTexture (lumpnum, ETextureType::Any);
+						FTexture * newtex = FTexture::CreateTexture ("", lumpnum, ETextureType::Any);
 						if (newtex != NULL)
 						{
 							// Replace the entire texture and adjust the scaling and offset factors.
@@ -714,14 +729,13 @@ void FTextureManager::ParseTextureDef(int lump)
 
 				if (lumpnum>=0)
 				{
-					FTexture *newtex = FTexture::CreateTexture(lumpnum, ETextureType::Override);
+					FTexture *newtex = FTexture::CreateTexture(src, lumpnum, ETextureType::Override);
 
 					if (newtex != NULL)
 					{
 						// Replace the entire texture and adjust the scaling and offset factors.
 						newtex->bWorldPanning = true;
 						newtex->SetScaledSize(width, height);
-						newtex->Name = src;
 
 						FTextureID oldtex = TexMan.CheckForTexture(src, ETextureType::MiscPatch);
 						if (oldtex.isValid()) 
@@ -737,23 +751,23 @@ void FTextureManager::ParseTextureDef(int lump)
 		}
 		else if (sc.Compare("texture"))
 		{
-			ParseXTexture(sc, ETextureType::Override);
+			build.ParseTexture(sc, ETextureType::Override);
 		}
 		else if (sc.Compare("sprite"))
 		{
-			ParseXTexture(sc, ETextureType::Sprite);
+		build.ParseTexture(sc, ETextureType::Sprite);
 		}
 		else if (sc.Compare("walltexture"))
 		{
-			ParseXTexture(sc, ETextureType::Wall);
+		build.ParseTexture(sc, ETextureType::Wall);
 		}
 		else if (sc.Compare("flat"))
 		{
-			ParseXTexture(sc, ETextureType::Flat);
+		build.ParseTexture(sc, ETextureType::Flat);
 		}
 		else if (sc.Compare("graphic"))
 		{
-			ParseXTexture(sc, ETextureType::MiscPatch);
+		build.ParseTexture(sc, ETextureType::MiscPatch);
 		}
 		else if (sc.Compare("#include"))
 		{
@@ -767,7 +781,7 @@ void FTextureManager::ParseTextureDef(int lump)
 			}
 			else
 			{
-				ParseTextureDef(includelump);
+				ParseTextureDef(includelump, build);
 			}
 		}
 		else
@@ -813,7 +827,7 @@ void FTextureManager::AddPatches (int lumpnum)
 //
 //==========================================================================
 
-void FTextureManager::LoadTextureX(int wadnum)
+void FTextureManager::LoadTextureX(int wadnum, FMultipatchTextureBuilder &build)
 {
 	// Use the most recent PNAMES for this WAD.
 	// Multiple PNAMES in a WAD will be ignored.
@@ -831,7 +845,7 @@ void FTextureManager::LoadTextureX(int wadnum)
 
 	int texlump1 = Wads.CheckNumForName ("TEXTURE1", ns_global, wadnum);
 	int texlump2 = Wads.CheckNumForName ("TEXTURE2", ns_global, wadnum);
-	AddTexturesLumps (texlump1, texlump2, pnames);
+	build.AddTexturesLumps (texlump1, texlump2, pnames);
 }
 
 //==========================================================================
@@ -840,7 +854,7 @@ void FTextureManager::LoadTextureX(int wadnum)
 //
 //==========================================================================
 
-void FTextureManager::AddTexturesForWad(int wadnum)
+void FTextureManager::AddTexturesForWad(int wadnum, FMultipatchTextureBuilder &build)
 {
 	int firsttexture = Textures.Size();
 	int lumpcount = Wads.GetNumLumps();
@@ -855,7 +869,7 @@ void FTextureManager::AddTexturesForWad(int wadnum)
 	AddGroup(wadnum, ns_patches, ETextureType::WallPatch);
 
 	// Second step: TEXTUREx lumps
-	LoadTextureX(wadnum);
+	LoadTextureX(wadnum, build);
 
 	// Third step: Flats
 	AddGroup(wadnum, ns_flats, ETextureType::Flat);
@@ -917,7 +931,7 @@ void FTextureManager::AddTexturesForWad(int wadnum)
 
 		// Try to create a texture from this lump and add it.
 		// Unfortunately we have to look at everything that comes through here...
-		FTexture *out = FTexture::CreateTexture(i, skin ? ETextureType::SkinGraphic : ETextureType::MiscPatch);
+		FTexture *out = FTexture::CreateTexture(Name, i, skin ? ETextureType::SkinGraphic : ETextureType::MiscPatch);
 
 		if (out != NULL) 
 		{
@@ -926,8 +940,8 @@ void FTextureManager::AddTexturesForWad(int wadnum)
 	}
 
 	// Check for text based texture definitions
-	LoadTextureDefs(wadnum, "TEXTURES");
-	LoadTextureDefs(wadnum, "HIRESTEX");
+	LoadTextureDefs(wadnum, "TEXTURES", build);
+	LoadTextureDefs(wadnum, "HIRESTEX", build);
 
 	// Seventh step: Check for hires replacements.
 	AddHiresTextures(wadnum);
@@ -1008,7 +1022,9 @@ void FTextureManager::Init()
 	FTexture::InitGrayMap();
 
 	// Texture 0 is a dummy texture used to indicate "no texture"
-	AddTexture (new FDummyTexture);
+	auto nulltex = new FImageTexture(nullptr);
+	nulltex->SetUseType(ETextureType::Null);
+	AddTexture (nulltex);
 	// some special textures used in the game.
 	AddTexture(CreateShaderTexture(false, false));
 	AddTexture(CreateShaderTexture(false, true));
@@ -1016,14 +1032,14 @@ void FTextureManager::Init()
 	AddTexture(CreateShaderTexture(true, true));
 
 	int wadcnt = Wads.GetNumWads();
+
+	FMultipatchTextureBuilder build(*this);
+
 	for(int i = 0; i< wadcnt; i++)
 	{
-		AddTexturesForWad(i);
+		AddTexturesForWad(i, build);
 	}
-	for (unsigned i = 0; i < Textures.Size(); i++)
-	{
-		Textures[i].Texture->ResolvePatches();
-	}
+	build.ResolveAllPatches();
 
 	// Add one marker so that the last WAD is easier to handle and treat
 	// Build tiles as a completely separate block.
@@ -1111,8 +1127,8 @@ void FTextureManager::InitPalettedVersions()
 			}
 			if (pic1.isValid() && pic2.isValid())
 			{
-				FTexture *owner = TexMan[pic1];
-				FTexture *owned = TexMan[pic2];
+				FTexture *owner = GetTexture(pic1);
+				FTexture *owned = GetTexture(pic2);
 
 				if (owner && owned) owner->PalVersion = owned;
 			}
@@ -1126,11 +1142,11 @@ void FTextureManager::InitPalettedVersions()
 //
 //==========================================================================
 
-// fixme: The way this is used, it is mostly useless.
 FTextureID FTextureManager::PalCheck(FTextureID tex)
 {
-	if (vid_nopalsubstitutions) return tex;
-	auto ftex = operator[](tex);
+	// In any true color mode this shouldn't do anything.
+	if (vid_nopalsubstitutions || V_IsTrueColor()) return tex;
+	auto ftex = GetTexture(tex);
 	if (ftex != nullptr && ftex->PalVersion != nullptr) return ftex->PalVersion->id;
 	return tex;
 }
@@ -1254,7 +1270,7 @@ void FTextureManager::AdjustSpriteOffsets()
 			Wads.GetLumpName(str, i);
 			str[8] = 0;
 			FTextureID texid = TexMan.CheckForTexture(str, ETextureType::Sprite, 0);
-			if (texid.isValid() && Wads.GetLumpFile(TexMan[texid]->SourceLump) > Wads.GetIwadNum())
+			if (texid.isValid() && Wads.GetLumpFile(GetTexture(texid)->SourceLump) > Wads.GetIwadNum())
 			{
 				// This texture has been replaced by some PWAD.
 				memcpy(&sprid, str, 4);
@@ -1289,7 +1305,7 @@ void FTextureManager::AdjustSpriteOffsets()
 			}
 			if (texno.isValid())
 			{
-				FTexture * tex = TexMan[texno];
+				FTexture * tex = GetTexture(texno);
 
 				int lumpnum = tex->GetSourceLump();
 				// We only want to change texture offsets for sprites in the IWAD or the file this lump originated from.
@@ -1394,7 +1410,7 @@ DEFINE_ACTION_FUNCTION(_TexMan, GetName)
 
 	if (tex != nullptr)
 	{
-		if (tex->Name.IsNotEmpty()) retval = tex->Name;
+		if (tex->GetName().IsNotEmpty()) retval = tex->GetName();
 		else
 		{
 			// Textures for full path names do not have their own name, they merely link to the source lump.
@@ -1412,18 +1428,26 @@ DEFINE_ACTION_FUNCTION(_TexMan, GetName)
 //
 //==========================================================================
 
-DEFINE_ACTION_FUNCTION(_TexMan, GetSize)
+static int GetTextureSize(int texid, int *py)
 {
-	PARAM_PROLOGUE;
-	PARAM_INT(texid);
 	auto tex = TexMan.ByIndex(texid);
 	int x, y;
 	if (tex != nullptr)
 	{
-		x = tex->GetWidth();
-		y = tex->GetHeight();
+		x = tex->GetDisplayWidth();
+		y = tex->GetDisplayHeight();
 	}
 	else x = y = -1;
+	if (py) *py = y;
+	return x;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, GetSize, GetTextureSize)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(texid);
+	int x, y;
+	x = GetTextureSize(texid, &y);
 	if (numret > 0) ret[0].SetInt(x);
 	if (numret > 1) ret[1].SetInt(y);
 	return MIN(numret, 2);
@@ -1434,17 +1458,61 @@ DEFINE_ACTION_FUNCTION(_TexMan, GetSize)
 //
 //
 //==========================================================================
+static void GetScaledSize(int texid, DVector2 *pvec)
+{
+	auto tex = TexMan.ByIndex(texid);
+	double x, y;
+	if (tex != nullptr)
+	{
+		x = tex->GetDisplayWidthDouble();
+		y = tex->GetDisplayHeightDouble();
+	}
+	else x = y = -1;
+	if (pvec)
+	{
+		pvec->X = x;
+		pvec->Y = y;
+	}
+}
 
-DEFINE_ACTION_FUNCTION(_TexMan, GetScaledSize)
+DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, GetScaledSize, GetScaledSize)
 {
 	PARAM_PROLOGUE;
 	PARAM_INT(texid);
+	DVector2 vec;
+	GetScaledSize(texid, &vec);
+	ACTION_RETURN_VEC2(vec);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+static void GetScaledOffset(int texid, DVector2 *pvec)
+{
 	auto tex = TexMan.ByIndex(texid);
+	double x, y;
 	if (tex != nullptr)
 	{
-		ACTION_RETURN_VEC2(DVector2(tex->GetScaledWidthDouble(), tex->GetScaledHeightDouble()));
+		x = tex->GetDisplayLeftOffsetDouble();
+		y = tex->GetDisplayTopOffsetDouble();
 	}
-	ACTION_RETURN_VEC2(DVector2(-1, -1));
+	else x = y = -1;
+	if (pvec)
+	{
+		pvec->X = x;
+		pvec->Y = y;
+	}
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, GetScaledOffset, GetScaledOffset)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(texid);
+	DVector2 vec;
+	GetScaledOffset(texid, &vec);
+	ACTION_RETURN_VEC2(vec);
 }
 
 //==========================================================================
@@ -1453,34 +1521,18 @@ DEFINE_ACTION_FUNCTION(_TexMan, GetScaledSize)
 //
 //==========================================================================
 
-DEFINE_ACTION_FUNCTION(_TexMan, GetScaledOffset)
+static int CheckRealHeight(int texid)
 {
-	PARAM_PROLOGUE;
-	PARAM_INT(texid);
 	auto tex = TexMan.ByIndex(texid);
-	if (tex != nullptr)
-	{
-		ACTION_RETURN_VEC2(DVector2(tex->GetScaledLeftOffsetDouble(0), tex->GetScaledTopOffsetDouble(0)));
-	}
-	ACTION_RETURN_VEC2(DVector2(-1, -1));
+	if (tex != nullptr) return tex->CheckRealHeight();
+	else return -1;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-DEFINE_ACTION_FUNCTION(_TexMan, CheckRealHeight)
+DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, CheckRealHeight, CheckRealHeight)
 {
 	PARAM_PROLOGUE;
 	PARAM_INT(texid);
-	auto tex = TexMan.ByIndex(texid);
-	if (tex != nullptr)
-	{
-		ACTION_RETURN_INT(tex->CheckRealHeight());
-	}
-	ACTION_RETURN_INT(-1);
+	ACTION_RETURN_INT(CheckRealHeight(texid));
 }
 
 //==========================================================================

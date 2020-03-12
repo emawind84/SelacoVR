@@ -40,7 +40,7 @@ IMPLEMENT_CLASS(DShape2D, false, false)
 DEFINE_ACTION_FUNCTION(DShape2D, Clear)
 {
 	PARAM_SELF_PROLOGUE(DShape2D);
-	PARAM_INT_DEF(which);
+	PARAM_INT(which);
 	if ( which&C_Verts ) self->mVertices.Clear();
 	if ( which&C_Coords ) self->mCoords.Clear();
 	if ( which&C_Indices ) self->mIndices.Clear();
@@ -125,7 +125,6 @@ void F2DDrawer::AddIndices(int firstvert, int count, ...)
 
 bool F2DDrawer::SetStyle(FTexture *tex, DrawParms &parms, PalEntry &vertexcolor, RenderCommand &quad)
 {
-	auto fmt = tex->GetFormat();
 	FRenderStyle style = parms.style;
 	float alpha;
 	bool stencilling;
@@ -203,22 +202,22 @@ bool F2DDrawer::SetStyle(FTexture *tex, DrawParms &parms, PalEntry &vertexcolor,
 
 		if (style.Flags & STYLEF_RedIsAlpha)
 		{
-			quad.mDrawMode = DTM_AlphaTexture;
+			quad.mDrawMode = TM_ALPHATEXTURE;
 		}
 		else
 		{
-			quad.mDrawMode = DTM_Stencil;
+			quad.mDrawMode = TM_STENCIL;
 		}
 	}
 	else
 	{
 		if (style.Flags & STYLEF_RedIsAlpha)
 		{
-			quad.mDrawMode = DTM_AlphaTexture;
+			quad.mDrawMode = TM_ALPHATEXTURE;
 		}
 		else if (style.Flags & STYLEF_InvertSource)
 		{
-			quad.mDrawMode = DTM_Invert;
+			quad.mDrawMode = TM_INVERSE;
 		}
 
 		if (parms.specialcolormap != nullptr)
@@ -237,9 +236,9 @@ bool F2DDrawer::SetStyle(FTexture *tex, DrawParms &parms, PalEntry &vertexcolor,
 
 	if (!parms.masked)
 	{
-		// For DTM_AlphaTexture and DTM_Stencil the mask cannot be turned off because it would not yield a usable result.
-		if (quad.mDrawMode == DTM_Normal) quad.mDrawMode = DTM_Opaque;
-		else if (quad.mDrawMode == DTM_Invert) quad.mDrawMode = DTM_InvertOpaque;
+		// For TM_ALPHATEXTURE and TM_STENCIL the mask cannot be turned off because it would not yield a usable result.
+		if (quad.mDrawMode == TM_NORMAL) quad.mDrawMode = TM_OPAQUE;
+		else if (quad.mDrawMode == TM_INVERSE) quad.mDrawMode = TM_INVERTOPAQUE;
 	}
 	quad.mRenderStyle = parms.style;	// this  contains the blend mode and blend equation settings.
     if (parms.burn) quad.mFlags |= DTF_Burn;
@@ -298,12 +297,12 @@ void F2DDrawer::AddTexture(FTexture *img, DrawParms &parms)
 	dg.mType = DrawTypeTriangles;
 	dg.mVertCount = 4;
 	dg.mTexture = img;
-	if (img->bWarped) dg.mFlags |= DTF_Wrap;
+	if (img->isWarped()) dg.mFlags |= DTF_Wrap;
 
 	dg.mTranslation = 0;
 	SetStyle(img, parms, vertexcolor, dg);
 
-	if (!img->bHasCanvas && parms.remap != nullptr && !parms.remap->Inactive)
+	if (!img->isHardwareCanvas() && parms.remap != nullptr && !parms.remap->Inactive)
 	{
 		dg.mTranslation = parms.remap;
 	}
@@ -378,7 +377,7 @@ void F2DDrawer::AddShape( FTexture *img, DShape2D *shape, DrawParms &parms )
 	dg.mTranslation = 0;
 	SetStyle(img, parms, vertexcolor, dg);
 
-	if (!img->bHasCanvas && parms.remap != nullptr && !parms.remap->Inactive)
+	if (!img->isHardwareCanvas() && parms.remap != nullptr && !parms.remap->Inactive)
 		dg.mTranslation = parms.remap;
 
 	double minx = 16383, miny = 16383, maxx = -16384, maxy = -16384;
@@ -419,7 +418,8 @@ void F2DDrawer::AddShape( FTexture *img, DShape2D *shape, DrawParms &parms )
 
 void F2DDrawer::AddPoly(FTexture *texture, FVector2 *points, int npoints,
 		double originx, double originy, double scalex, double scaley,
-		DAngle rotation, const FColormap &colormap, PalEntry flatcolor, int lightlevel)
+		DAngle rotation, const FColormap &colormap, PalEntry flatcolor, int lightlevel,
+		uint32_t *indices, size_t indexcount)
 {
 	// Use an equation similar to player sprites to determine shade
 
@@ -429,7 +429,7 @@ void F2DDrawer::AddPoly(FTexture *texture, FVector2 *points, int npoints,
 	double fadelevel;
 
 	// The hardware renderer's light modes 0, 1 and 4 use a linear light scale which must be used here as well. Otherwise the automap gets too dark.
-	if (vid_rendermode != 4 || (level.lightmode >= 2 && level.lightmode != 4))
+	if (vid_rendermode != 4 || level.isDarkLightMode() || level.isSoftwareLighting())
 	{
 		double map = (NUMCOLORMAPS * 2.) - ((lightlevel + 12) * (NUMCOLORMAPS / 128.));
 		fadelevel = clamp((map - 12) / NUMCOLORMAPS, 0.0, 1.0);
@@ -465,8 +465,8 @@ void F2DDrawer::AddPoly(FTexture *texture, FVector2 *points, int npoints,
 	float cosrot = (float)cos(rotation.Radians());
 	float sinrot = (float)sin(rotation.Radians());
 
-	float uscale = float(1.f / (texture->GetScaledWidth() * scalex));
-	float vscale = float(1.f / (texture->GetScaledHeight() * scaley));
+	float uscale = float(1.f / (texture->GetDisplayWidth() * scalex));
+	float vscale = float(1.f / (texture->GetDisplayHeight() * scaley));
 	float ox = float(originx);
 	float oy = float(originy);
 
@@ -487,9 +487,20 @@ void F2DDrawer::AddPoly(FTexture *texture, FVector2 *points, int npoints,
 	poly.mIndexIndex = mIndices.Size();
 	poly.mIndexCount += (npoints - 2) * 3;
 
-	for (int i = 2; i < npoints; ++i)
+	if (indices == nullptr || indexcount == 0)
 	{
-		AddIndices(poly.mVertIndex, 3, 0, i - 1, i);
+		for (int i = 2; i < npoints; ++i)
+		{
+			AddIndices(poly.mVertIndex, 3, 0, i - 1, i);
+		}
+	}
+	else
+	{
+		int addr = mIndices.Reserve(indexcount);
+		for (size_t i = 0; i < indexcount; i++)
+		{
+			mIndices[addr + i] = addr + indices[i];
+		}
 	}
 
 	AddCommand(&poly);
@@ -517,17 +528,17 @@ void F2DDrawer::AddFlatFill(int left, int top, int right, int bottom, FTexture *
 	// scaling is not used here.
 	if (!local_origin)
 	{
-		fU1 = float(left) / src->GetWidth();
-		fV1 = float(top) / src->GetHeight();
-		fU2 = float(right) / src->GetWidth();
-		fV2 = float(bottom) / src->GetHeight();
+		fU1 = float(left) / src->GetDisplayWidth();
+		fV1 = float(top) / src->GetDisplayHeight();
+		fU2 = float(right) / src->GetDisplayWidth();
+		fV2 = float(bottom) / src->GetDisplayHeight();
 	}
 	else
 	{
 		fU1 = 0;
 		fV1 = 0;
-		fU2 = float(right - left) / src->GetWidth();
-		fV2 = float(bottom - top) / src->GetHeight();
+		fU2 = float(right - left) / src->GetDisplayWidth();
+		fV2 = float(bottom - top) / src->GetDisplayHeight();
 	}
 	dg.mVertIndex = (int)mVertices.Reserve(4);
 	auto ptr = &mVertices[dg.mVertIndex];
@@ -574,10 +585,10 @@ void F2DDrawer::AddColorOnlyQuad(int x1, int y1, int w, int h, PalEntry color, F
 //
 //==========================================================================
 
-void F2DDrawer::AddLine(int x1, int y1, int x2, int y2, int palcolor, uint32_t color)
+void F2DDrawer::AddLine(int x1, int y1, int x2, int y2, int palcolor, uint32_t color, uint8_t alpha)
 {
 	PalEntry p = color ? (PalEntry)color : GPalette.BaseColors[palcolor];
-	p.a = 255;
+	p.a = alpha;
 
 	RenderCommand dg;
 
@@ -596,9 +607,10 @@ void F2DDrawer::AddLine(int x1, int y1, int x2, int y2, int palcolor, uint32_t c
 //
 //==========================================================================
 
-void F2DDrawer::AddThickLine(int x1, int y1, int x2, int y2, double thickness, uint32_t color)
+void F2DDrawer::AddThickLine(int x1, int y1, int x2, int y2, double thickness, uint32_t color, uint8_t alpha)
 {
 	PalEntry p = (PalEntry)color;
+	p.a = alpha;
 
 	DVector2 point0(x1, y1);
 	DVector2 point1(x2, y2);

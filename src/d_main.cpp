@@ -120,7 +120,6 @@ extern void ReadStatistics();
 extern void M_SetDefaultMode ();
 extern void G_NewInit ();
 extern void SetupPlayerClasses ();
-extern void HUD_InitHud();
 void DeinitMenus();
 const FIWADInfo *D_FindIWAD(TArray<FString> &wadfiles, const char *iwad, const char *basewad);
 
@@ -186,18 +185,19 @@ CVAR (Int, snd_drawoutput, 0, 0);
 CUSTOM_CVAR (String, vid_cursor, "None", CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
 	bool res = false;
+	
 
 	if (!stricmp(self, "None" ) && gameinfo.CursorPic.IsNotEmpty())
 	{
-		res = I_SetCursor(TexMan[gameinfo.CursorPic]);
+		res = I_SetCursor(TexMan.GetTextureByName(gameinfo.CursorPic));
 	}
 	else
 	{
-		res = I_SetCursor(TexMan[self]);
+		res = I_SetCursor(TexMan.GetTextureByName(self));
 	}
 	if (!res)
 	{
-		I_SetCursor(TexMan["cursor"]);
+		I_SetCursor(TexMan.GetTextureByName("cursor"));
 	}
 }
 
@@ -778,7 +778,7 @@ void D_Display ()
 		if (hud_althud && viewheight == SCREENHEIGHT && screenblocks > 10)
 		{
 			StatusBar->DrawBottomStuff (HUD_AltHud);
-			if (DrawFSHUD || automapactive) DrawHUD();
+			if (DrawFSHUD || automapactive) StatusBar->DrawAltHUD();
 			if (players[consoleplayer].camera && players[consoleplayer].camera->player && !automapactive)
 			{
 				StatusBar->DrawCrosshair();
@@ -839,16 +839,16 @@ void D_Display ()
 		int x;
 		FString pstring = "By ";
 
-		tex = TexMan(gameinfo.PauseSign);
-		x = (SCREENWIDTH - tex->GetScaledWidth() * CleanXfac)/2 +
-			tex->GetScaledLeftOffset(0) * CleanXfac;
+		tex = TexMan.GetTextureByName(gameinfo.PauseSign, true);
+		x = (SCREENWIDTH - tex->GetDisplayWidth() * CleanXfac)/2 +
+			tex->GetDisplayLeftOffset() * CleanXfac;
 		screen->DrawTexture (tex, x, 4, DTA_CleanNoMove, true, TAG_DONE);
 		if (paused && multiplayer)
 		{
 			pstring += players[paused - 1].userinfo.GetName();
 			screen->DrawText(SmallFont, CR_RED,
 				(screen->GetWidth() - SmallFont->StringWidth(pstring)*CleanXfac) / 2,
-				(tex->GetScaledHeight() * CleanYfac) + 4, pstring, DTA_CleanNoMove, true, TAG_DONE);
+				(tex->GetDisplayHeight() * CleanYfac) + 4, pstring, DTA_CleanNoMove, true, TAG_DONE);
 		}
 	}
 
@@ -860,8 +860,8 @@ void D_Display ()
 		D_DrawIcon = NULL;
 		if (picnum.isValid())
 		{
-			FTexture *tex = TexMan[picnum];
-			screen->DrawTexture (tex, 160 - tex->GetScaledWidth()/2, 100 - tex->GetScaledHeight()/2,
+			FTexture *tex = TexMan.GetTexture(picnum);
+			screen->DrawTexture (tex, 160 - tex->GetDisplayWidth()/2, 100 - tex->GetDisplayHeight()/2,
 				DTA_320x200, true, TAG_DONE);
 		}
 		NoWipe = 10;
@@ -1056,7 +1056,7 @@ void D_PageDrawer (void)
 	screen->Clear(0, 0, SCREENWIDTH, SCREENHEIGHT, 0, 0);
 	if (Page.Exists())
 	{
-		screen->DrawTexture (TexMan(Page), 0, 0,
+		screen->DrawTexture (TexMan.GetTexture(Page, true), 0, 0,
 			DTA_Fullscreen, true,
 			DTA_Masked, false,
 			DTA_BilinearFilter, true,
@@ -1246,7 +1246,7 @@ void D_DoAdvanceDemo (void)
 	case 3:
 		if (gameinfo.advisoryTime)
 		{
-			Advisory = TexMan["ADVISOR"];
+			Advisory = TexMan.GetTextureByName("ADVISOR");
 			demosequence = 1;
 			pagetic = (int)(gameinfo.advisoryTime * TICRATE);
 			break;
@@ -1857,6 +1857,16 @@ static FString ParseGameInfo(TArray<FString> &pwads, const char *fn, const char 
 			sc.MustGetString();
 			DoomStartupInfo.Song = sc.String;
 		}
+		else if (!nextKey.CompareNoCase("LOADLIGHTS"))
+		{
+			sc.MustGetNumber();
+			DoomStartupInfo.LoadLights = !!sc.Number;
+		}
+		else if (!nextKey.CompareNoCase("LOADBRIGHTMAPS"))
+		{
+			sc.MustGetNumber();
+			DoomStartupInfo.LoadBrightmaps = !!sc.Number;
+		}
 		else
 		{
 			// Silently ignore unknown properties
@@ -1909,7 +1919,7 @@ static FString CheckGameInfo(TArray<FString> & pwads)
 				if (lmp->Namespace == ns_global && !stricmp(lmp->Name, "GAMEINFO"))
 				{
 					// Found one!
-					FString iwad = ParseGameInfo(pwads, resfile->Filename, (const char*)lmp->CacheLump(), lmp->LumpSize);
+					FString iwad = ParseGameInfo(pwads, resfile->FileName, (const char*)lmp->CacheLump(), lmp->LumpSize);
 					delete resfile;
 					return iwad;
 				}
@@ -2026,13 +2036,13 @@ static void AddAutoloadFiles(const char *autoname)
 	// [SP] Dialog reaction - load lights.pk3 and brightmaps.pk3 based on user choices
 	if (!(gameinfo.flags & GI_SHAREWARE))
 	{
-		if (autoloadlights)
+		if (DoomStartupInfo.LoadLights == 1 || (DoomStartupInfo.LoadLights != 0 && autoloadlights))
 		{
 			const char *lightswad = BaseFileSearch ("lights.pk3", NULL);
 			if (lightswad)
 				D_AddFile (allwads, lightswad);
 		}
-		if (autoloadbrightmaps)
+		if (DoomStartupInfo.LoadBrightmaps == 1 || (DoomStartupInfo.LoadBrightmaps != 0 && autoloadbrightmaps))
 		{
 			const char *bmwad = BaseFileSearch ("brightmaps.pk3", NULL);
 			if (bmwad)
@@ -2540,7 +2550,6 @@ void D_DoomMain (void)
 
 		//SBarInfo support. Note that the first SBARINFO lump contains the mugshot definition so it even needs to be read when a regular status bar is being used.
 		SBarInfo::Load();
-		HUD_InitHud();
 
 		if (!batchrun)
 		{
@@ -2714,11 +2723,12 @@ void D_DoomMain (void)
 		DestroyCVarsFlagged(CVAR_MOD);	// Delete any cvar left by mods
 		FS_Close();						// destroy the global FraggleScript.
 		DeinitMenus();
-		LightDefaults.Clear();			// this can leak heap memory if it isn't cleared.
+		LightDefaults.DeleteAndClear();			// this can leak heap memory if it isn't cleared.
 
 		// delete DoomStartupInfo data
-		DoomStartupInfo.Name = (const char*)0;
+		DoomStartupInfo.Name = "";
 		DoomStartupInfo.BkColor = DoomStartupInfo.FgColor = DoomStartupInfo.Type = 0;
+		DoomStartupInfo.LoadLights = DoomStartupInfo.LoadBrightmaps = -1;
 
 		GC::FullGC();					// clean up before taking down the object list.
 

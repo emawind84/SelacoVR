@@ -65,8 +65,6 @@ namespace swrenderer
 		void BeginDrawModel(AActor *actor, FSpriteModelFrame *smf, const VSMatrix &objectToWorldMatrix, bool mirrored) override;
 		void EndDrawModel(AActor *actor, FSpriteModelFrame *smf) override;
 		IModelVertexBuffer *CreateVertexBuffer(bool needindex, bool singleframe) override;
-		void SetVertexBuffer(IModelVertexBuffer *buffer) override;
-		void ResetVertexBuffer() override;
 		VSMatrix GetViewToWorldMatrix() override;
 		void BeginDrawHUDModel(AActor *actor, const VSMatrix &objectToWorldMatrix, bool mirrored) override;
 		void EndDrawHUDModel(AActor *actor) override;
@@ -80,7 +78,15 @@ namespace swrenderer
 		RenderThread *Thread = nullptr;
 		Fake3DTranslucent Clip3DFloor;
 
-		AActor *ModelActor = nullptr;
+		FRenderStyle RenderStyle;
+		float RenderAlpha;
+		sector_t *sector;
+		bool fullbrightSprite;
+		int lightlevel;
+		double visibility;
+		uint32_t fillcolor;
+		uint32_t Translation;
+
 		Mat4f ObjectToWorld;
 		PolyClipPlane ClipTop, ClipBottom;
 		FTexture *SkinTexture = nullptr;

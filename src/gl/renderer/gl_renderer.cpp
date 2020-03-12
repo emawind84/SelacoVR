@@ -35,6 +35,7 @@
 #include "p_effect.h"
 #include "d_player.h"
 #include "a_dynlight.h"
+#include "cmdlib.h"
 #include "g_game.h"
 #include "swrenderer/r_swscene.h"
 #include "hwrenderer/utility/hw_clock.h"
@@ -42,29 +43,33 @@
 #include "gl_load/gl_interface.h"
 #include "gl/system/gl_framebuffer.h"
 #include "hwrenderer/utility/hw_cvars.h"
-#include "gl/scene/gl_portal.h"
 #include "gl/system/gl_debug.h"
 #include "gl/renderer/gl_renderer.h"
-#include "gl/renderer/gl_lightdata.h"
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/renderer/gl_renderbuffers.h"
-#include "gl/data/gl_vertexbuffer.h"
-#include "gl/scene/gl_drawinfo.h"
 #include "hwrenderer/utility/hw_vrmodes.h"
 #include "hwrenderer/postprocessing/hw_presentshader.h"
 #include "hwrenderer/postprocessing/hw_present3dRowshader.h"
 #include "hwrenderer/postprocessing/hw_shadowmapshader.h"
+#include "hwrenderer/data/flatvertices.h"
+#include "hwrenderer/scene/hw_skydome.h"
+#include "hwrenderer/scene/hw_fakeflat.h"
 #include "gl/shaders/gl_postprocessshaderinstance.h"
 #include "gl/textures/gl_samplers.h"
-#include "gl/dynlights/gl_lightbuffer.h"
-#include "gl/data/gl_viewpointbuffer.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "hwrenderer/data/hw_viewpointbuffer.h"
 #include "r_videoscale.h"
 #include <hwrenderer\utility\hw_vrmodes.h>
+#include "r_data/models/models.h"
+#include "gl/renderer/gl_postprocessstate.h"
 
 EXTERN_CVAR(Int, screenblocks)
 EXTERN_CVAR(Bool, cl_capfps)
 
 extern bool NoInterpolateView;
+
+namespace OpenGLRenderer
+{
 
 //===========================================================================
 //
@@ -102,15 +107,9 @@ void FGLRenderer::Initialize(int width, int height)
 	glBindVertexArray(mVAOID);
 	FGLDebug::LabelObject(GL_VERTEX_ARRAY, mVAOID, "FGLRenderer.mVAOID");
 
-	mVBO = new FFlatVertexBuffer(width, height);
-	mSkyVBO = new FSkyVertexBuffer;
-	mLights = new FLightBuffer();
-	mViewpoints = new GLViewpointBuffer;
-	gl_RenderState.SetVertexBuffer(mVBO);
 	mFBID = 0;
 	mOldFBID = 0;
 
-	SetupLevel();
 	mShaderManager = new FShaderManager;
 	mSamplerManager = new FSamplerManager;
 }
@@ -119,29 +118,34 @@ FGLRenderer::~FGLRenderer()
 {
 	FlushModels();
 	AActor::DeleteAllAttachedLights();
-	FMaterial::FlushAll();
+	TexMan.FlushAll();
 	if (mShaderManager != nullptr) delete mShaderManager;
 	if (mSamplerManager != nullptr) delete mSamplerManager;
-	if (mVBO != nullptr) delete mVBO;
-	if (mSkyVBO != nullptr) delete mSkyVBO;
-	if (mLights != nullptr) delete mLights;
-	if (mViewpoints != nullptr) delete mViewpoints;
 	if (mFBID != 0) glDeleteFramebuffers(1, &mFBID);
 	if (mVAOID != 0)
 	{
 		glBindVertexArray(0);
 		glDeleteVertexArrays(1, &mVAOID);
 	}
-	if (PortalQueryObject != 0) glDeleteQueries(1, &PortalQueryObject);
+	if (PortalQueryObject != 0)
+		glDeleteQueries(1, &PortalQueryObject);
 
-	if (swdrawer) delete swdrawer;
-	if (mBuffers) delete mBuffers;
-	if (mSaveBuffers) delete mSaveBuffers;
-	if (mPresentShader) delete mPresentShader;
-	if (mPresent3dCheckerShader) delete mPresent3dCheckerShader;
-	if (mPresent3dColumnShader) delete mPresent3dColumnShader;
-	if (mPresent3dRowShader) delete mPresent3dRowShader;
-	if (mShadowMapShader) delete mShadowMapShader;
+	if (swdrawer)
+		delete swdrawer;
+	if (mBuffers)
+		delete mBuffers;
+	if (mSaveBuffers)
+		delete mSaveBuffers;
+	if (mPresentShader)
+		delete mPresentShader;
+	if (mPresent3dCheckerShader)
+		delete mPresent3dCheckerShader;
+	if (mPresent3dColumnShader)
+		delete mPresent3dColumnShader;
+	if (mPresent3dRowShader)
+		delete mPresent3dRowShader;
+	if (mShadowMapShader)
+		delete mShadowMapShader;
 	delete mCustomPostProcessShaders;
 }
 
@@ -157,11 +161,6 @@ void FGLRenderer::ResetSWScene()
 	if (swdrawer != nullptr)
 		delete swdrawer;
 	swdrawer = nullptr;
-}
-
-void FGLRenderer::SetupLevel()
-{
-	mVBO->CreateVBO();
 }
 
 //===========================================================================
@@ -193,16 +192,42 @@ void FGLRenderer::EndOffscreen()
 	glBindFramebuffer(GL_FRAMEBUFFER, mOldFBID);
 }
 
-//-----------------------------------------------------------------------------
+//===========================================================================
 //
-// renders the view
 //
-//-----------------------------------------------------------------------------
+//
+//===========================================================================
+
+void FGLRenderer::UpdateShadowMap()
+{
+	if (screen->mShadowMap.PerformUpdate())
+	{
+		FGLDebug::PushGroup("ShadowMap");
+
+		FGLPostProcessState savedState;
+
+		mBuffers->BindShadowMapFB();
+
+		mShadowMapShader->Bind(NOQUEUE);
+		mShadowMapShader->Uniforms->ShadowmapQuality = gl_shadowmap_quality;
+		mShadowMapShader->Uniforms.Set();
+
+		glViewport(0, 0, gl_shadowmap_quality, 1024);
+		RenderScreenQuad();
+
+		const auto &viewport = screen->mScreenViewport;
+		glViewport(viewport.left, viewport.top, viewport.width, viewport.height);
+
+		mBuffers->BindShadowMapTexture(16);
+		FGLDebug::PopGroup();
+		screen->mShadowMap.FinishUpdate();
+	}
+}
 
 sector_t *FGLRenderer::RenderView(player_t *player)
 {
-	gl_RenderState.SetVertexBuffer(mVBO);
-	mVBO->Reset();
+	gl_RenderState.SetVertexBuffer(screen->mVertexData);
+	screen->mVertexData->Reset();
 	sector_t *retsec;
 
 	if (!V_IsHardwareRenderer())
@@ -213,6 +238,10 @@ sector_t *FGLRenderer::RenderView(player_t *player)
 	}
 	else
 	{
+		hw_ClearFakeFlat();
+
+		iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
+
 		checkBenchActive();
 
 		// reset statistics counters
@@ -226,14 +255,17 @@ sector_t *FGLRenderer::RenderView(player_t *player)
 
 		P_FindParticleSubsectors();
 
-		mLights->Clear();
-		mViewpoints->Clear();
+		screen->mLights->Clear();
+		screen->mViewpoints->Clear();
 
 		// NoInterpolateView should have no bearing on camera textures, but needs to be preserved for the main view below.
 		bool saved_niv = NoInterpolateView;
 		NoInterpolateView = false;
 		// prepare all camera textures that have been used in the last frame
-		FCanvasTextureInfo::UpdateAll();
+		level.canvasTextureInfo.UpdateAll([&](AActor *camera, FCanvasTexture *camtex, double fov)
+		{
+			RenderTextureView(camtex, camera, fov);
+		});
 		NoInterpolateView = saved_niv;
 
 		// now render the main view
@@ -248,7 +280,7 @@ sector_t *FGLRenderer::RenderView(player_t *player)
 			fovratio = ratio;
 		}
 
-		mShadowMap.Update();
+		UpdateShadowMap();
 		retsec = RenderViewpoint(r_viewpoint, player->camera, NULL, r_viewpoint.FieldOfView.Degrees, ratio, fovratio, true, true);
 	}
 	All.Unclock();
@@ -263,7 +295,7 @@ sector_t *FGLRenderer::RenderView(player_t *player)
 
 void FGLRenderer::BindToFrameBuffer(FMaterial *mat)
 {
-	auto BaseLayer = static_cast<FHardwareTexture*>(mat->GetLayer(0));
+	auto BaseLayer = static_cast<FHardwareTexture*>(mat->GetLayer(0, 0));
 
 	if (BaseLayer == nullptr)
 	{
@@ -283,7 +315,8 @@ void FGLRenderer::BindToFrameBuffer(FMaterial *mat)
 
 void FGLRenderer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV)
 {
-	FMaterial *gltex = FMaterial::ValidateTexture(tex, false);
+	// This doesn't need to clear the fake flat cache. It can be shared between camera textures and the main view of a scene.
+	FMaterial * gltex = FMaterial::ValidateTexture(tex, false);
 
 	int width = gltex->TextureWidth();
 	int height = gltex->TextureHeight();
@@ -301,7 +334,8 @@ void FGLRenderer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, doub
 
 	EndOffscreen();
 
-	tex->SetUpdated();
+	tex->SetUpdated(true);
+	static_cast<OpenGLFrameBuffer*>(screen)->camtexcount++;
 }
 
 //===========================================================================
@@ -318,36 +352,37 @@ void FGLRenderer::WriteSavePic(player_t *player, FileWriter *file, int width, in
     bounds.width = width;
     bounds.height = height;
     
-    // if mVBO is persistently mapped we must be sure the GPU finished reading from it before we fill it with new data.
+    // we must be sure the GPU finished reading from the buffer before we fill it with new data.
     glFinish();
     
     // Switch to render buffers dimensioned for the savepic
     mBuffers = mSaveBuffers;
     
-    P_FindParticleSubsectors();    // make sure that all recently spawned particles have a valid subsector.
-    gl_RenderState.SetVertexBuffer(mVBO);
-    mVBO->Reset();
-    mLights->Clear();
-	mViewpoints->Clear();
+	hw_ClearFakeFlat();
+	P_FindParticleSubsectors();    // make sure that all recently spawned particles have a valid subsector.
+	gl_RenderState.SetVertexBuffer(screen->mVertexData);
+	screen->mVertexData->Reset();
+	screen->mLights->Clear();
+	screen->mViewpoints->Clear();
 
-    // This shouldn't overwrite the global viewpoint even for a short time.
-    FRenderViewpoint savevp;
-    sector_t *viewsector = RenderViewpoint(savevp, players[consoleplayer].camera, &bounds, r_viewpoint.FieldOfView.Degrees, 1.6f, 1.6f, true, false);
-    glDisable(GL_STENCIL_TEST);
-    gl_RenderState.SetSoftLightLevel(-1);
-    CopyToBackbuffer(&bounds, false);
-    
-    // strictly speaking not needed as the glReadPixels should block until the scene is rendered, but this is to safeguard against shitty drivers
-    glFinish();
-    
-    uint8_t * scr = (uint8_t *)M_Malloc(width * height * 3);
-    glReadPixels(0,0,width, height,GL_RGB,GL_UNSIGNED_BYTE,scr);
-    M_CreatePNG (file, scr + ((height-1) * width * 3), NULL, SS_RGB, width, height, -width * 3, Gamma);
-    M_Free(scr);
-    
-    // Switch back the screen render buffers
-    screen->SetViewportRects(nullptr);
-    mBuffers = mScreenBuffers;
+	// This shouldn't overwrite the global viewpoint even for a short time.
+	FRenderViewpoint savevp;
+	sector_t *viewsector = RenderViewpoint(savevp, players[consoleplayer].camera, &bounds, r_viewpoint.FieldOfView.Degrees, 1.6f, 1.6f, true, false);
+	glDisable(GL_STENCIL_TEST);
+	gl_RenderState.SetSoftLightLevel(-1);
+	CopyToBackbuffer(&bounds, false);
+
+	// strictly speaking not needed as the glReadPixels should block until the scene is rendered, but this is to safeguard against shitty drivers
+	glFinish();
+
+	uint8_t *scr = (uint8_t *)M_Malloc(width * height * 3);
+	glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, scr);
+	M_CreatePNG(file, scr + ((height - 1) * width * 3), NULL, SS_RGB, width, height, -width * 3, Gamma);
+	M_Free(scr);
+
+	// Switch back the screen render buffers
+	screen->SetViewportRects(nullptr);
+	mBuffers = mScreenBuffers;
 }
 
 //===========================================================================
@@ -362,14 +397,16 @@ void FGLRenderer::BeginFrame()
 	mSaveBuffers->Setup(SAVEPICWIDTH, SAVEPICHEIGHT, SAVEPICWIDTH, SAVEPICHEIGHT);
 }
 
+
+
 void FGLRenderer::gl_FillScreen()
 {
-	GLRenderer->mViewpoints->Set2D(SCREENWIDTH, SCREENHEIGHT);
+	screen->mViewpoints->Set2D(gl_RenderState, SCREENWIDTH, SCREENHEIGHT);
 	gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
 	gl_RenderState.EnableTexture(false);
 	gl_RenderState.Apply();
 	// The fullscreen quad is stored at index 4 in the main vertex buffer.
-	GLRenderer->mVBO->RenderArray(GL_TRIANGLE_STRIP, FFlatVertexBuffer::FULLSCREEN_INDEX, 4);
+	glDrawArrays(GL_TRIANGLE_STRIP, FFlatVertexBuffer::FULLSCREEN_INDEX, 4);
 }
 
 //==========================================================================
@@ -386,13 +423,13 @@ void FGLRenderer::DrawBlend(BlendInfo blendinfo)
 
 	if (blendinfo.multiplicativeBlend)
 	{
-		gl_RenderState.BlendFunc(GL_DST_COLOR, GL_ZERO);
+		gl_RenderState.SetRenderStyle(STYLE_Multiply);
 		gl_RenderState.SetColor(extra_red, extra_green, extra_blue, 1.0f);
 		gl_FillScreen();
 	}
 
-	gl_RenderState.SetTextureMode(TM_MODULATE);
-	gl_RenderState.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	gl_RenderState.SetTextureMode(TM_NORMAL);
+	gl_RenderState.SetRenderStyle(STYLE_Translucent);
 	if (blend[3] > 0.0f)
 	{
 		gl_RenderState.SetColor(blend[0], blend[1], blend[2], blend[3]);
@@ -401,216 +438,4 @@ void FGLRenderer::DrawBlend(BlendInfo blendinfo)
 	gl_RenderState.ResetColor();
 	gl_RenderState.EnableTexture(true);
 }
-
-//===========================================================================
-//
-// Vertex buffer for 2D drawer
-//
-//===========================================================================
-
-class F2DVertexBuffer : public FSimpleVertexBuffer
-{
-	uint32_t ibo_id;
-
-	// Make sure we can build upon FSimpleVertexBuffer.
-	static_assert(offsetof(FSimpleVertex, x) == offsetof(F2DDrawer::TwoDVertex, x), "x not aligned");
-	static_assert(offsetof(FSimpleVertex, u) == offsetof(F2DDrawer::TwoDVertex, u), "u not aligned");
-	static_assert(offsetof(FSimpleVertex, color) == offsetof(F2DDrawer::TwoDVertex, color0), "color not aligned");
-
-public:
-	F2DVertexBuffer()
-	{
-		glGenBuffers(1, &ibo_id);
-	}
-	~F2DVertexBuffer()
-	{
-		if (ibo_id != 0)
-		{
-			glDeleteBuffers(1, &ibo_id);
-		}
-	}
-	void UploadData(F2DDrawer::TwoDVertex *vertices, int vertcount, int *indices, int indexcount)
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
-		glBufferData(GL_ARRAY_BUFFER, vertcount * sizeof(vertices[0]), vertices, GL_STREAM_DRAW);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexcount * sizeof(indices[0]), indices, GL_STREAM_DRAW);
-	}
-
-	void BindVBO() override
-	{
-		FSimpleVertexBuffer::BindVBO();
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id);
-	}
-};
-
-//===========================================================================
-//
-// Draws the 2D stuff. This is the version for OpenGL 3 and later.
-//
-//===========================================================================
-
-CVAR(Bool, gl_aalines, false, CVAR_ARCHIVE)
-
-void FGLRenderer::Draw2D(F2DDrawer *drawer, bool outside2D)
-{
-	auto vrmode = VRMode::GetVRMode(true);
-	//In vr mode viewport setting is already done in FGLRenderer::Flush()
-	if (vrmode->mEyeCount == 1)
-	{
-		twoD.Clock();
-		FGLDebug::PushGroup("Draw2D");
-		mBuffers->BindCurrentFB();
-
-		const auto &mScreenViewport = screen->mScreenViewport;
-		glViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
-		GLRenderer->mViewpoints->Set2D(screen->GetWidth(), screen->GetHeight());
-
-		drawer->SwapColors();
-	}
-
-	auto &vertices = drawer->mVertices;
-	auto &indices = drawer->mIndices;
-	auto &commands = drawer->mData;
-
-	if (commands.Size() == 0)
-	{
-		twoD.Unclock();
-		return;
-	}
-
-	if (vrmode->IsVR())
-	{
-		auto findResult = std::find_if(commands.begin(), commands.end(), [&](F2DDrawer::RenderCommand cmd) { return cmd.mOutside2D == outside2D; });
-		if (findResult == commands.end())
-		{
-			return;
-		}
-	}
-
-	auto vb = new F2DVertexBuffer;
-	vb->UploadData(&vertices[0], vertices.Size(), &indices[0], indices.Size());
-	gl_RenderState.SetVertexBuffer(vb);
-	gl_RenderState.EnableFog(false);
-
-	for (auto &cmd : commands)
-	{
-		if (vrmode->IsVR())
-		{
-			if (cmd.mOutside2D && !outside2D)
-				continue;
-
-			if (!cmd.mOutside2D && outside2D)
-				continue;
-		}
-
-		int gltrans = -1;
-		int tm, sb, db, be;
-		// The texture mode being returned here cannot be used, because the higher level code
-		// already manipulated the data so that some cases will not be handled correctly.
-		// Since we already get a proper mode from the calling code this doesn't really matter.
-		gl_GetRenderStyle(cmd.mRenderStyle, false, false, &tm, &sb, &db, &be);
-		gl_RenderState.BlendEquation(be);
-		gl_RenderState.BlendFunc(sb, db);
-		gl_RenderState.EnableBrightmap(!(cmd.mRenderStyle.Flags & STYLEF_ColorIsFixed));
-		gl_RenderState.EnableFog(2); // Special 2D mode 'fog'.
-
-		// Rather than adding remapping code, let's enforce that the constants here are equal.
-		static_assert(int(F2DDrawer::DTM_Normal) == int(TM_MODULATE), "DTM_Normal != TM_MODULATE");
-		static_assert(int(F2DDrawer::DTM_Opaque) == int(TM_OPAQUE), "DTM_Opaque != TM_OPAQUE");
-		static_assert(int(F2DDrawer::DTM_Invert) == int(TM_INVERSE), "DTM_Invert != TM_INVERSE");
-		static_assert(int(F2DDrawer::DTM_InvertOpaque) == int(TM_INVERTOPAQUE), "DTM_InvertOpaque != TM_INVERTOPAQUE");
-		static_assert(int(F2DDrawer::DTM_Stencil) == int(TM_MASK), "DTM_Stencil != TM_MASK");
-		static_assert(int(F2DDrawer::DTM_AlphaTexture) == int(TM_REDTOALPHA), "DTM_AlphaTexture != TM_REDTOALPHA");
-		gl_RenderState.SetTextureMode(cmd.mDrawMode);
-		if (cmd.mFlags & F2DDrawer::DTF_Scissor)
-		{
-			glEnable(GL_SCISSOR_TEST);
-			// scissor test doesn't use the current viewport for the coordinates, so use real screen coordinates
-			// Note that the origin here is the lower left corner!
-			auto sciX = screen->ScreenToWindowX(cmd.mScissor[0]);
-			auto sciY = screen->ScreenToWindowY(cmd.mScissor[3]);
-			auto sciW = screen->ScreenToWindowX(cmd.mScissor[2]) - sciX;
-			auto sciH = screen->ScreenToWindowY(cmd.mScissor[1]) - sciY;
-			glScissor(sciX, sciY, sciW, sciH);
-		}
-		else
-			glDisable(GL_SCISSOR_TEST);
-
-		if (cmd.mSpecialColormap[0].a != 0)
-		{
-			gl_RenderState.SetTextureMode(TM_FIXEDCOLORMAP);
-			gl_RenderState.SetObjectColor(cmd.mSpecialColormap[0]);
-			gl_RenderState.SetObjectColor2(cmd.mSpecialColormap[1]);
-		}
-		gl_RenderState.SetFog(cmd.mColor1, 0);
-		gl_RenderState.SetColor(1, 1, 1, 1, cmd.mDesaturate);
-
-		gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
-
-		if (cmd.mTexture != nullptr)
-		{
-			auto mat = FMaterial::ValidateTexture(cmd.mTexture, false);
-			if (mat == nullptr)
-				continue;
-
-			if (gltrans == -1 && cmd.mTranslation != nullptr)
-				gltrans = cmd.mTranslation->GetUniqueIndex();
-			gl_RenderState.SetMaterial(mat, cmd.mFlags & F2DDrawer::DTF_Wrap ? CLAMP_NONE : CLAMP_XY_NOMIP, -gltrans, -1, cmd.mDrawMode == F2DDrawer::DTM_AlphaTexture);
-			gl_RenderState.EnableTexture(true);
-
-			// Canvas textures are stored upside down
-			if (cmd.mTexture->bHasCanvas)
-			{
-				gl_RenderState.mTextureMatrix.loadIdentity();
-				gl_RenderState.mTextureMatrix.scale(1.f, -1.f, 1.f);
-				gl_RenderState.mTextureMatrix.translate(0.f, 1.f, 0.0f);
-				gl_RenderState.EnableTextureMatrix(true);
-			}
-			if (cmd.mFlags & F2DDrawer::DTF_Burn)
-			{
-				gl_RenderState.SetEffect(EFF_BURN);
-			}
-		}
-		else
-		{
-			gl_RenderState.EnableTexture(false);
-		}
-		gl_RenderState.Apply();
-
-		switch (cmd.mType)
-		{
-		case F2DDrawer::DrawTypeTriangles:
-			glDrawElements(GL_TRIANGLES, cmd.mIndexCount, GL_UNSIGNED_INT, (const void *)(cmd.mIndexIndex * sizeof(unsigned int)));
-			break;
-
-		case F2DDrawer::DrawTypeLines:
-			glDrawArrays(GL_LINES, cmd.mVertIndex, cmd.mVertCount);
-			break;
-
-		case F2DDrawer::DrawTypePoints:
-			glDrawArrays(GL_POINTS, cmd.mVertIndex, cmd.mVertCount);
-			break;
-		}
-		gl_RenderState.SetObjectColor(0xffffffff);
-		gl_RenderState.SetObjectColor2(0);
-		gl_RenderState.EnableTextureMatrix(false);
-		gl_RenderState.SetEffect(EFF_NONE);
-		
-	}
-	glDisable(GL_SCISSOR_TEST);
-
-	gl_RenderState.BlendEquation(GL_FUNC_ADD);
-	gl_RenderState.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	gl_RenderState.SetVertexBuffer(mVBO);
-	gl_RenderState.EnableTexture(true);
-	gl_RenderState.EnableBrightmap(true);
-	gl_RenderState.SetTextureMode(TM_MODULATE);
-	gl_RenderState.EnableFog(false);
-	gl_RenderState.ResetColor();
-	gl_RenderState.Apply();
-	delete vb;
-	FGLDebug::PopGroup();
-	twoD.Unclock();
-}
+} // namespace OpenGLRenderer

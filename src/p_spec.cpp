@@ -94,10 +94,8 @@
 #include "d_player.h"
 #include "g_levellocals.h"
 #include "actorinlines.h"
-#ifndef NO_EDATA
-#include "edata.h"
-#endif
 #include "vm.h"
+#include "p_setup.h"
 
 #include "c_console.h"
 
@@ -437,7 +435,7 @@ void P_PlayerInSpecialSector (player_t *player, sector_t * sector)
 	}
 
 	// Has hit ground.
-	AInventory *ironfeet;
+	AActor *ironfeet;
 
 	// [RH] Apply any customizable damage
 	if (sector->damageamount > 0)
@@ -445,10 +443,9 @@ void P_PlayerInSpecialSector (player_t *player, sector_t * sector)
 		// Allow subclasses. Better would be to implement it as armor and let that reduce
 		// the damage as part of the normal damage procedure. Unfortunately, I don't have
 		// different damage types yet, so that's not happening for now.
-		auto pitype = PClass::FindActor(NAME_PowerIronFeet);
 		for (ironfeet = player->mo->Inventory; ironfeet != NULL; ironfeet = ironfeet->Inventory)
 		{
-			if (ironfeet->IsKindOf(pitype))
+			if (ironfeet->IsKindOf(NAME_PowerIronFeet))
 				break;
 		}
 
@@ -615,22 +612,12 @@ void P_GiveSecret(AActor *actor, bool printmessage, bool playsound, int sectornu
 	level.found_secrets++;
 }
 
-DEFINE_ACTION_FUNCTION(AActor, GiveSecret)
-{
-	PARAM_SELF_PROLOGUE(AActor);
-	PARAM_BOOL_DEF(printmessage);
-	PARAM_BOOL_DEF(playsound);
-	P_GiveSecret(self, printmessage, playsound, -1);
-	return 0;
-}
-
-
 DEFINE_ACTION_FUNCTION(FLevelLocals, GiveSecret)
 {
 	PARAM_PROLOGUE;
 	PARAM_OBJECT(activator, AActor);
-	PARAM_BOOL_DEF(printmessage);
-	PARAM_BOOL_DEF(playsound);
+	PARAM_BOOL(printmessage);
+	PARAM_BOOL(playsound);
 	P_GiveSecret(activator, printmessage, playsound, -1);
 	return 0;
 }
@@ -646,7 +633,7 @@ void P_PlayerOnSpecialFlat (player_t *player, int floorType)
 	if (Terrains[floorType].DamageAmount &&
 		!(level.time & Terrains[floorType].DamageTimeMask))
 	{
-		AInventory *ironfeet = NULL;
+		AActor *ironfeet = NULL;
 
 		if (Terrains[floorType].AllowProtection)
 		{
@@ -1310,7 +1297,7 @@ void P_InitSectorSpecial(sector_t *sector, int special)
 // After the map has been loaded, scan for specials that spawn thinkers
 //
 
-void P_SpawnSpecials (void)
+void P_SpawnSpecials (MapLoader *ml)
 {
 	P_SetupPortals();
 
@@ -1323,7 +1310,7 @@ void P_SpawnSpecials (void)
 	}
 
 #ifndef NO_EDATA
-	ProcessEDSectors();
+	ml->ProcessEDSectors();
 #endif
 
 	

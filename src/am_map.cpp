@@ -62,6 +62,7 @@
 #include "a_keys.h"
 #include "g_levellocals.h"
 #include "actorinlines.h"
+#include "earcut.hpp"
 
 
 //=============================================================================
@@ -871,7 +872,7 @@ CCMD(am_togglegrid)
 
 CCMD(am_toggletexture)
 {
-	if (am_textured && hasglnodes)
+	if (am_textured)
 	{
 		textured = !textured;
 		Printf ("%s\n", GStrings(textured ? "AMSTR_TEXON" : "AMSTR_TEXOFF"));
@@ -1193,12 +1194,12 @@ static void AM_ScrollParchment (double dmapx, double dmapy)
 
 	if (mapback.isValid())
 	{
-		FTexture *backtex = TexMan[mapback];
+		FTexture *backtex = TexMan.GetTexture(mapback);
 
 		if (backtex != NULL)
 		{
-			int pwidth = backtex->GetWidth();
-			int pheight = backtex->GetHeight();
+			int pwidth = backtex->GetDisplayWidth();
+			int pheight = backtex->GetDisplayHeight();
 
 			while(mapxstart > 0)
 				mapxstart -= pwidth;
@@ -1688,11 +1689,11 @@ void AM_clearFB (const AMColor &color)
 	}
 	else
 	{
-		FTexture *backtex = TexMan[mapback];
+		FTexture *backtex = TexMan.GetTexture(mapback);
 		if (backtex != NULL)
 		{
-			int pwidth = backtex->GetWidth();
-			int pheight = backtex->GetHeight();
+			int pwidth = backtex->GetDisplayWidth();
+			int pheight = backtex->GetDisplayHeight();
 			int x, y;
 
 			//blit the automap background to the screen.
@@ -2054,6 +2055,7 @@ sector_t * AM_FakeFlat(AActor *viewer, sector_t * sec, sector_t * dest)
 void AM_drawSubsectors()
 {
 	static TArray<FVector2> points;
+	std::vector<uint32_t> indices;
 	double scale = scale_mtof;
 	DAngle rotation;
 	sector_t tempsec;
@@ -2067,27 +2069,28 @@ void AM_drawSubsectors()
 	auto &subsectors = level.subsectors;
 	for (unsigned i = 0; i < subsectors.Size(); ++i)
 	{
-		if (subsectors[i].flags & SSECF_POLYORG)
+		auto sub = &subsectors[i];
+		if (sub->flags & SSECF_POLYORG)
 		{
 			continue;
 		}
 
-		if ((!(subsectors[i].flags & SSECMF_DRAWN) || (subsectors[i].render_sector->MoreFlags & SECMF_HIDDEN)) && am_cheat == 0)
+		if ((!(sub->flags & SSECMF_DRAWN) || (sub->flags & SSECF_HOLE) || (sub->render_sector->MoreFlags & SECMF_HIDDEN)) && am_cheat == 0)
 		{
 			continue;
 		}
 
-		if (am_portaloverlay && subsectors[i].render_sector->PortalGroup != MapPortalGroup && subsectors[i].render_sector->PortalGroup != 0)
+		if (am_portaloverlay && sub->render_sector->PortalGroup != MapPortalGroup && sub->render_sector->PortalGroup != 0)
 		{
 			continue;
 		}
 
 		// Fill the points array from the subsector.
-		points.Resize(subsectors[i].numlines);
-		for (uint32_t j = 0; j < subsectors[i].numlines; ++j)
+		points.Resize(sub->numlines);
+		for (uint32_t j = 0; j < sub->numlines; ++j)
 		{
-			mpoint_t pt = { subsectors[i].firstline[j].v1->fX(),
-							subsectors[i].firstline[j].v1->fY() };
+			mpoint_t pt = { sub->firstline[j].v1->fX(),
+							sub->firstline[j].v1->fY() };
 			if (am_rotate == 1 || (am_rotate == 2 && viewactive))
 			{
 				AM_rotatePoint(&pt.x, &pt.y);
@@ -2096,7 +2099,7 @@ void AM_drawSubsectors()
 			points[j].Y = float(f_y + (f_h - (pt.y - m_y) * scale));
 		}
 		// For lighting and texture determination
-		sector_t *sec = AM_FakeFlat(players[consoleplayer].camera, subsectors[i].render_sector, &tempsec);
+		sector_t *sec = AM_FakeFlat(players[consoleplayer].camera, sub->render_sector, &tempsec);
 		floorlight = sec->GetFloorLight();
 		// Find texture origin.
 		originpt.x = -sec->GetXOffset(sector_t::floor);
@@ -2123,7 +2126,7 @@ void AM_drawSubsectors()
 			double secx;
 			double secy;
 			double seczb, seczt;
-            auto &vp = r_viewpoint;
+			auto &vp = r_viewpoint;
 			double cmpz = vp.Pos.Z;
 
 			if (players[consoleplayer].camera && sec == players[consoleplayer].camera->Sector)
@@ -2144,7 +2147,7 @@ void AM_drawSubsectors()
 			{
 				F3DFloor *rover = sec->e->XFloor.ffloors[i];
 				if (!(rover->flags & FF_EXISTS)) continue;
-				if (rover->flags & (FF_FOG|FF_THISINSIDE)) continue;
+				if (rover->flags & (FF_FOG | FF_THISINSIDE)) continue;
 				if (!(rover->flags & FF_RENDERPLANES)) continue;
 				if (rover->alpha == 0) continue;
 				double roverz = rover->top.plane->ZatPoint(secx, secy);
@@ -2194,7 +2197,7 @@ void AM_drawSubsectors()
 
 		// If this subsector has not actually been seen yet (because you are cheating
 		// to see it on the map), tint and desaturate it.
-		if (!(subsectors[i].flags & SSECMF_DRAWN))
+		if (!(sub->flags & SSECMF_DRAWN))
 		{
 			colormap.LightColor = PalEntry(
 				(colormap.LightColor.r + 255) / 2,
@@ -2209,10 +2212,29 @@ void AM_drawSubsectors()
 		}
 
 		// Draw the polygon.
-		FTexture *pic = TexMan(maptex);
-		if (pic != NULL && pic->UseType != ETextureType::Null)
+		if (maptex.isValid())
 		{
-			screen->FillSimplePoly(TexMan(maptex),
+			// Hole filling "subsectors" are not necessarily convex so they require real triangulation.
+			// These things are extremely rare so performance is secondary here.
+			if (sub->flags & SSECF_HOLE && sub->numlines > 3)
+			{
+				using Point = std::pair<double, double>;
+				std::vector<std::vector<Point>> polygon;
+				std::vector<Point> *curPoly;
+
+				polygon.resize(1);
+				curPoly = &polygon.back();
+				curPoly->resize(points.Size());
+
+				for (unsigned i = 0; i < points.Size(); i++)
+				{
+					(*curPoly)[i] = { points[i].X, points[i].Y };
+				}
+				indices = mapbox::earcut(polygon);
+			}
+			else indices.clear();
+
+			screen->FillSimplePoly(TexMan.GetTexture(maptex, true),
 				&points[0], points.Size(),
 				originx, originy,
 				scale / scalex,
@@ -2221,8 +2243,8 @@ void AM_drawSubsectors()
 				colormap,
 				flatcolor,
 				floorlight,
-				f_y + f_h
-				);
+				f_y + f_h,
+				indices.data(), indices.size());
 		}
 	}
 }
@@ -2921,8 +2943,8 @@ void AM_drawKeys ()
 	mpoint_t p;
 	DAngle	 angle;
 
-	TThinkerIterator<AInventory> it(NAME_Key);
-	AInventory *key;
+	TThinkerIterator<AActor> it(NAME_Key);
+	AActor *key;
 
 	while ((key = it.Next()) != NULL)
 	{
@@ -2943,7 +2965,6 @@ void AM_drawKeys ()
 			// Find the key's own color.
 			// Only works correctly if single-key locks have lower numbers than any-key locks.
 			// That is the case for all default keys, however.
-			int P_GetMapColorForKey (AInventory * key);
 			int c = P_GetMapColorForKey(key);
 
 			if (c >= 0)	color.FromRGB(RPART(c), GPART(c), BPART(c));
@@ -2998,7 +3019,7 @@ void AM_drawThings ()
 						rotation = int((angle.Normalized360() * (16. / 360.)).Degrees);
 
 						const FTextureID textureID = frame->Texture[show > 2 ? rotation : 0];
-						texture = TexMan(textureID);
+						texture = TexMan.GetTexture(textureID, true);
 					}
 
 					if (texture == NULL) goto drawTriangle;	// fall back to standard display if no sprite can be found.
@@ -3043,8 +3064,7 @@ void AM_drawThings ()
 							}
 							else if (am_showkeys)
 							{
-								int P_GetMapColorForKey (AInventory * key);
-								int c = P_GetMapColorForKey(static_cast<AInventory *>(t));
+								int c = P_GetMapColorForKey(t);
 
 								if (c >= 0)	color.FromRGB(RPART(c), GPART(c), BPART(c));
 								else color = AMColors[AMColors.ThingColor_CountItem];
@@ -3095,7 +3115,7 @@ void AM_drawThings ()
 static void DrawMarker (FTexture *tex, double x, double y, int yadjust,
 	INTBOOL flip, double xscale, double yscale, int translation, double alpha, uint32_t fillcolor, FRenderStyle renderstyle)
 {
-	if (tex == NULL || tex->UseType == ETextureType::Null)
+	if (tex == NULL || !tex->isValid())
 	{
 		return;
 	}
@@ -3104,8 +3124,8 @@ static void DrawMarker (FTexture *tex, double x, double y, int yadjust,
 		AM_rotatePoint (&x, &y);
 	}
 	screen->DrawTexture (tex, CXMTOF(x) + f_x, CYMTOF(y) + yadjust + f_y,
-		DTA_DestWidthF, tex->GetScaledWidthDouble() * CleanXfac * xscale,
-		DTA_DestHeightF, tex->GetScaledHeightDouble() * CleanYfac * yscale,
+		DTA_DestWidthF, tex->GetDisplayWidthDouble() * CleanXfac * xscale,
+		DTA_DestHeightF, tex->GetDisplayHeightDouble() * CleanYfac * yscale,
 		DTA_ClipTop, f_y,
 		DTA_ClipBottom, f_y + f_h,
 		DTA_ClipLeft, f_x,
@@ -3130,7 +3150,7 @@ void AM_drawMarks ()
 	{
 		if (markpoints[i].x != -1)
 		{
-			DrawMarker (TexMan(marknums[i]), markpoints[i].x, markpoints[i].y, -3, 0,
+			DrawMarker (TexMan.GetTexture(marknums[i], true), markpoints[i].x, markpoints[i].y, -3, 0,
 				1, 1, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
 		}
 	}
@@ -3163,13 +3183,13 @@ void AM_drawAuthorMarkers ()
 
 		if (mark->picnum.isValid())
 		{
-			tex = TexMan(mark->picnum);
-			if (tex->Rotations != 0xFFFF)
+			tex = TexMan.GetTexture(mark->picnum, true);
+			if (tex->GetRotations() != 0xFFFF)
 			{
-				spriteframe_t *sprframe = &SpriteFrames[tex->Rotations];
+				spriteframe_t *sprframe = &SpriteFrames[tex->GetRotations()];
 				picnum = sprframe->Texture[0];
 				flip = sprframe->Flip & 1;
-				tex = TexMan[picnum];
+				tex = TexMan.GetTexture(picnum);
 			}
 		}
 		else
@@ -3184,7 +3204,7 @@ void AM_drawAuthorMarkers ()
 				spriteframe_t *sprframe = &SpriteFrames[sprdef->spriteframes + mark->frame];
 				picnum = sprframe->Texture[0];
 				flip = sprframe->Flip & 1;
-				tex = TexMan[picnum];
+				tex = TexMan.GetTexture(picnum);
 			}
 		}
 		FActorIterator it (mark->args[0]);
@@ -3192,11 +3212,7 @@ void AM_drawAuthorMarkers ()
 
 		while (marked != NULL)
 		{
-			// Use more correct info if we have GL nodes available
-			if (mark->args[1] == 0 ||
-				(mark->args[1] == 1 && (hasglnodes ?
-				 marked->subsector->flags & SSECMF_DRAWN :
-				 marked->Sector->MoreFlags & SECMF_DRAWN)))
+			if (mark->args[1] == 0 || (mark->args[1] == 1 && (marked->subsector->flags & SSECMF_DRAWN)))
 			{
 				DrawMarker (tex, marked->X(), marked->Y(), 0, flip, mark->Scale.X, mark->Scale.Y, mark->Translation,
 					mark->Alpha, mark->fillcolor, mark->RenderStyle);
@@ -3260,7 +3276,7 @@ void AM_Drawer (int bottom)
 	}
 	AM_activateNewScale();
 
-	if (am_textured && hasglnodes && textured && !viewactive)
+	if (am_textured && textured && !viewactive)
 		AM_drawSubsectors();
 
 	if (grid)	

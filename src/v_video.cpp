@@ -93,6 +93,11 @@ CUSTOM_CVAR(Int, vid_maxfps, 200, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 CUSTOM_CVAR(Int, vid_rendermode, 4, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
+	if (self < 0 || self > 4)
+	{
+		self = 4;
+	}
+
 	if (usergame)
 	{
 		// [SP] Update pitch limits to the netgame/gamesim.
@@ -103,6 +108,7 @@ CUSTOM_CVAR(Int, vid_rendermode, 4, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOIN
 	// No further checks needed. All this changes now is which scene drawer the render backend calls.
 }
 
+CVAR(Int, vid_renderer, 1, 0)	// for some stupid mods which threw caution out of the window...
 
 
 EXTERN_CVAR(Bool, r_blendmethod)
@@ -127,6 +133,7 @@ public:
 	bool IsFullscreen() { DBGBREAK; return 0; }
 	int GetClientWidth() { DBGBREAK; return 0; }
 	int GetClientHeight() { DBGBREAK; return 0; }
+	void InitializeState() override {}
 
 	float Gamma;
 };
@@ -175,6 +182,7 @@ DCanvas::DCanvas (int _width, int _height, bool _bgra)
 	Width = _width;
 	Height = _height;
 	Bgra = _bgra;
+	Resize(_width, _height);
 }
 
 //==========================================================================
@@ -186,6 +194,58 @@ DCanvas::DCanvas (int _width, int _height, bool _bgra)
 DCanvas::~DCanvas ()
 {
 }
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void DCanvas::Resize(int width, int height)
+{
+	Width = width;
+	Height = height;
+	
+	// Making the pitch a power of 2 is very bad for performance
+	// Try to maximize the number of cache lines that can be filled
+	// for each column drawing operation by making the pitch slightly
+	// longer than the width. The values used here are all based on
+	// empirical evidence.
+	
+	if (width <= 640)
+	{
+		// For low resolutions, just keep the pitch the same as the width.
+		// Some speedup can be seen using the technique below, but the speedup
+		// is so marginal that I don't consider it worthwhile.
+		Pitch = width;
+	}
+	else
+	{
+		// If we couldn't figure out the CPU's L1 cache line size, assume
+		// it's 32 bytes wide.
+		if (CPU.DataL1LineSize == 0)
+		{
+			CPU.DataL1LineSize = 32;
+		}
+		// The Athlon and P3 have very different caches, apparently.
+		// I am going to generalize the Athlon's performance to all AMD
+		// processors and the P3's to all non-AMD processors. I don't know
+		// how smart that is, but I don't have a vast plethora of
+		// processors to test with.
+		if (CPU.bIsAMD)
+		{
+			Pitch = width + CPU.DataL1LineSize;
+		}
+		else
+		{
+			Pitch = width + MAX(0, CPU.DataL1LineSize - 8);
+		}
+	}
+	int bytes_per_pixel = Bgra ? 4 : 1;
+	Pixels.Resize(Pitch * height * bytes_per_pixel);
+	memset (Pixels.Data(), 0, Pixels.Size());
+}
+
 
 //==========================================================================
 //
@@ -593,6 +653,7 @@ bool IVideo::SetResolution ()
 	}
 
 	screen = buff;
+	screen->InitializeState();
 	screen->SetGamma();
 
 	V_UpdateModeSize(screen->GetWidth(), screen->GetHeight());
@@ -863,7 +924,7 @@ void ScaleWithAspect (int &w, int &h, int Width, int Height)
 
 CCMD(vid_setsize)
 {
-	if (argv.argc() < 2)
+	if (argv.argc() < 3)
 	{
 		Printf("Usage: vid_setsize width height\n");
 	}

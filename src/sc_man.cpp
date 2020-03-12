@@ -249,14 +249,10 @@ bool FScanner::OpenFile (const char *name)
 	FileReader fr;
 	if (!fr.OpenFile(name)) return false;
 	auto filesize = fr.GetLength();
-	auto filebuf = new uint8_t[filesize];
-	if (fr.Read(filebuf, filesize) != filesize)
-	{
-		delete[] filebuf;
-		return false;
-	}
-	ScriptBuffer = FString((const char *)filebuf, filesize);
-	delete[] filebuf;
+	auto filebuff = fr.Read();
+	if (filebuff.Size() == 0 && filesize > 0) return false;
+
+	ScriptBuffer = FString((const char *)filebuff.Data(), filesize);
 	ScriptName = name;	// This is used for error messages so the full file name is preferable
 	LumpNum = -1;
 	PrepareScript ();
@@ -1124,7 +1120,7 @@ void FScanner::ScriptMessage (const char *message, ...)
 		va_end (arglist);
 	}
 
-	Printf (TEXTCOLOR_RED "Script error, \"%s\" line %d:\n" TEXTCOLOR_RED "%s\n", ScriptName.GetChars(),
+	Printf (TEXTCOLOR_RED "Script error, \"%s\"" TEXTCOLOR_RED "line %d:\n" TEXTCOLOR_RED "%s\n", ScriptName.GetChars(),
 		AlreadyGot? AlreadyGotLine : Line, composed.GetChars());
 }
 

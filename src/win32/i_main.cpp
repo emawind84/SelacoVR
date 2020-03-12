@@ -71,6 +71,7 @@
 #include "r_utility.h"
 #include "g_levellocals.h"
 #include "s_sound.h"
+#include "vm.h"
 
 #include "stats.h"
 #include "st_start.h"
@@ -1048,21 +1049,27 @@ void DoMain (HINSTANCE hInstance)
 		}
 		exit(0);
 	}
-	catch (class CDoomError &error)
+	catch (std::exception &error)
 	{
 		I_ShutdownGraphics ();
 		RestoreConView ();
 		S_StopMusic(true);
 		I_FlushBufferedConsoleStuff();
-		if (error.GetMessage ())
+		auto msg = error.what();
+		if (strcmp(msg, "NoRunExit"))
 		{
+			if (CVMAbortException::stacktrace.IsNotEmpty())
+			{
+				Printf("%s", CVMAbortException::stacktrace.GetChars());
+			}
+
 			if (!batchrun)
 			{
-				ShowErrorPane(error.GetMessage());
+				ShowErrorPane(msg);
 			}
 			else
 			{
-				Printf("%s\n", error.GetMessage());
+				Printf("%s\n", msg);
 			}
 		}
 		exit (-1);
