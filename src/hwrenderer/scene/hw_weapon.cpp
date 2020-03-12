@@ -45,11 +45,23 @@
 #include "hwrenderer/data/flatvertices.h"
 #include "hwrenderer/dynlights/hw_lightbuffer.h"
 #include "hw_renderstate.h"
+#include <hwrenderer\utility\hw_vrmodes.h>
+//#include <gl\models\gl_models.h>
 
 EXTERN_CVAR(Float, transsouls)
 EXTERN_CVAR(Int, gl_fuzztype)
-EXTERN_CVAR(Bool, r_drawplayersprites)
 EXTERN_CVAR(Bool, r_deathcamera)
+EXTERN_CVAR(Bool, r_drawplayersprites)
+EXTERN_CVAR(Int, r_PlayerSprites3DMode)
+EXTERN_CVAR(Float, gl_fatItemWidth)
+
+enum PlayerSprites3DMode
+{
+	CROSSED,
+	BACK_ONLY,
+	ITEM_ONLY,
+	FAT_ITEM,
+};
 
 
 //==========================================================================
@@ -83,6 +95,8 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 	state.SetDynLight(huds->dynrgb[0], huds->dynrgb[1], huds->dynrgb[2]);
 	state.EnableBrightmap(!(huds->RenderStyle.Flags & STYLEF_ColorIsFixed));
 
+	auto vrmode = VRMode::GetVRMode(true);
+
 	if (huds->mframe)
 	{
 		state.AlphaFunc(Alpha_GEqual, 0);
@@ -95,8 +109,126 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 	{
 		float thresh = (huds->tex->tex->GetTranslucency() || huds->OverrideShader != -1) ? 0.f : gl_mask_sprite_threshold;
 		state.AlphaFunc(Alpha_GEqual, thresh);
-		state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
-		state.Draw(DT_TriangleStrip, huds->mx, 4);
+
+		if (vrmode->mEyeCount == 1 || (r_PlayerSprites3DMode != ITEM_ONLY && r_PlayerSprites3DMode != FAT_ITEM))
+		{
+			state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
+			state.Draw(DT_TriangleStrip, huds->mx, 4);
+		}
+
+		player_t* player = huds->player;
+		DPSprite* psp = huds->weapon;
+		bool alphatexture = huds->RenderStyle.Flags & STYLEF_RedIsAlpha;
+		float sy;
+
+		//TODO Cleanup code for rendering weapon models from sprites in VR mode
+		if (psp->GetID() == PSP_WEAPON && vrmode->RenderPlayerSpritesCrossed())
+		{
+			if (r_PlayerSprites3DMode == BACK_ONLY)
+				return;
+
+			float fU1, fV1;
+			float fU2, fV2;
+
+			auto *wi = player->ReadyWeapon;
+			if (wi == nullptr)
+				return;
+
+			// decide which patch to use
+			bool mirror;
+			FTextureID lump = sprites[psp->GetSprite()].GetSpriteFrame(psp->GetFrame(), 0, 0., &mirror);
+			if (!lump.isValid()) return;
+
+			FMaterial* tex = FMaterial::ValidateTexture(lump, true, false);
+			if (!tex) return;
+
+			state.SetMaterial(tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
+
+			float vw = (float)viewwidth;
+			float vh = (float)viewheight;
+
+			FState* spawn = wi->FindState(NAME_Spawn);
+
+			lump = sprites[spawn->sprite].GetSpriteFrame(0, 0, 0., &mirror);
+			if (!lump.isValid()) return;
+
+			tex = FMaterial::ValidateTexture(lump, true, false);
+			if (!tex) return;
+
+			state.AlphaFunc(Alpha_GEqual, 1);
+			state.SetMaterial(tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
+			//TODO Remove explicit calling GL renderstate
+			//gl_RenderState.Apply();
+			
+
+			float z1 = 0.0f;
+			float z2 = (huds->y2 - huds->y1) * MIN(3, tex->GetWidth() / tex->GetHeight());
+
+			if (!(mirror) != !(psp->Flags & PSPF_FLIP))
+			{
+				fU2 = tex->GetSpriteUL();
+				fV1 = tex->GetSpriteVT();
+				fU1 = tex->GetSpriteUR();
+				fV2 = tex->GetSpriteVB();
+			}
+			else
+			{
+				fU1 = tex->GetSpriteUL();
+				fV1 = tex->GetSpriteVT();
+				fU2 = tex->GetSpriteUR();
+				fV2 = tex->GetSpriteVB();
+			}
+
+			if (r_PlayerSprites3DMode == FAT_ITEM)
+			{
+				float x1 = vw / 2 + (huds->x1 - vw / 2) * gl_fatItemWidth;
+				float x2 = vw / 2 + (huds->x2 - vw / 2) * gl_fatItemWidth;
+
+				for (float x = x1; x < x2; x += 1)
+				{
+					auto vert = screen->mVertexData->AllocVertices(4);
+					auto vp = vert.first;
+					vp[0].Set(x, huds->y1, -z1, fU1, fV1);
+					vp[1].Set(x, huds->y2, -z1, fU1, fV2);
+					vp[2].Set(x, huds->y1, -z2, fU2, fV1);
+					vp[3].Set(x, huds->y2, -z2, fU2, fV2);
+					state.Draw(DT_TriangleStrip, vert.second, 4);
+				}
+			}
+			else
+			{
+				float crossAt;
+				if (r_PlayerSprites3DMode == ITEM_ONLY)
+				{
+					crossAt = 0.0f;
+					sy = 0.0f;
+				}
+				else
+				{
+					sy = huds->y2 - huds->y1;
+					crossAt = sy * 0.25f;
+				}
+
+				float y1 = huds->y1 - crossAt;
+				float y2 = huds->y2 - crossAt;
+
+				auto vert = screen->mVertexData->AllocVertices(4);
+				auto vp = vert.first;
+				vp[0].Set(vw / 2 - crossAt, y1, -z1, fU1, fV1);
+				vp[1].Set(vw / 2 + sy / 2, y2, -z1, fU1, fV2);
+				vp[2].Set(vw / 2 - crossAt, y1, -z2, fU2, fV1);
+				vp[3].Set(vw / 2 + sy / 2, y2, -z2, fU2, fV2);
+				state.Draw(DT_TriangleStrip, vert.second, 4);
+
+				auto vert2 = screen->mVertexData->AllocVertices(4);
+				auto vp2 = vert2.first;
+				vp2[0].Set(vw / 2 + crossAt, y1, -z1, fU1, fV1);
+				vp2[1].Set(vw / 2 - sy / 2, y2, -z1, fU1, fV2);
+				vp2[2].Set(vw / 2 + crossAt, y1, -z2, fU2, fV1);
+				vp2[3].Set(vw / 2 - sy / 2, y2, -z2, fU2, fV2);
+				state.Draw(DT_TriangleStrip, vert2.second, 4);
+			}
+		}
 	}
 
 	state.SetTextureMode(TM_NORMAL);
@@ -115,6 +247,9 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 
 void HWDrawInfo::DrawPlayerSprites(bool hudModelStep, FRenderState &state)
 {
+	auto vrmode = VRMode::GetVRMode(true);
+	vrmode->AdjustPlayerSprites(this);
+	
 	auto oldlightmode = level.lightmode;
 	if (!hudModelStep && level.isSoftwareLighting()) level.SetFallbackLightMode();	// Software lighting cannot handle 2D content.
 	for (auto &hudsprite : hudsprites)
@@ -122,7 +257,19 @@ void HWDrawInfo::DrawPlayerSprites(bool hudModelStep, FRenderState &state)
 		if ((!!hudsprite.mframe) == hudModelStep)
 			DrawPSprite(&hudsprite, state);
 	}
+	
+	vrmode->DrawControllerModels(this);
+
+	state.SetObjectColor(0xffffffff);
+	state.SetDynLight(0, 0, 0);
+	state.EnableBrightmap(false);
+
 	level.lightmode = oldlightmode;
+	if (!hudModelStep)
+	{
+		vrmode->UnAdjustPlayerSprites();
+	}
+
 }
 
 

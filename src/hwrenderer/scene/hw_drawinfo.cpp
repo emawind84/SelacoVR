@@ -603,7 +603,14 @@ void HWDrawInfo::DrawEndScene2D(sector_t * viewsector, FRenderState &state)
 	state.EnableDepthTest(false);
 	state.EnableMultisampling(false);
 
-	DrawPlayerSprites(false, state);
+	if (!vrmode->RenderPlayerSpritesInScene())
+	{
+		// [BB] Only draw the sprites if we didn't render a HUD model before.
+		if ( renderHUDModel == false )
+		{
+			DrawPlayerSprites(false, state);
+		}
+	}
 
 	state.SetSoftLightLevel(-1);
 
