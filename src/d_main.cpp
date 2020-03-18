@@ -734,6 +734,12 @@ void D_Display ()
 	}
 	else
 	{
+		if (vr_mode != 0)
+		{
+			//When wipegamestate differs from gamestate, game cannot be paused
+			//see condition in P_CheckTickerPaused
+			wipegamestate = gamestate;
+		}
 		wipe = nullptr;
 	}
 	
