@@ -2853,6 +2853,7 @@ VRPREFMNU_RIGHT					= "Right";
 VRPREFMNU_HEAD					= "Head";
 VRPREFMNU_OFF_HAND				= "Off Hand";
 VRPREFMNU_WEAPONSCALE			= "Weapon Scale";
+VRPREFMNU_HUDDISTANCE			= "HUD Distance";
 VRPREFMNU_DRAWCONTROLLERS		= "Draw controllers";
 
 VRPREFMNU_CROSSED				= "Crossed";

@@ -133,6 +133,8 @@ EXTERN_CVAR(Float, openvr_weaponRotate);
 EXTERN_CVAR(Float, openvr_weaponScale);
 
 CVAR(Float, openvr_kill_momentum, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, openvr_hudDistance, 0.4f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
 const float DEAD_ZONE = 0.25f;
 
 
@@ -732,8 +734,8 @@ void OpenVREyePose::AdjustHud() const
 	}
 
 	// Update HUD matrix to render on a separate quad
-	const float menu_distance_meters = 1.0f;
-	const float menu_width_meters = 0.4f * menu_distance_meters;
+	const float menu_distance_meters = 1.f;
+	const float menu_width_meters = openvr_hudDistance * menu_distance_meters;
 	const float pitch_offset = -8.0;
 	di->VPUniforms.mProjectionMatrix = getQuadInWorld(
 		menu_distance_meters, 
