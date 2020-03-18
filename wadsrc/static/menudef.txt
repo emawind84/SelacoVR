@@ -2362,7 +2362,7 @@ OptionMenu "OpenVROptions" protected
 	Slider "$VRPREFMNU_WEAPONSCALE",			openvr_weaponScale,						0, 10, 0.2, 0
 	Slider "$VRPREFMNU_HUDDISTANCE",			openvr_hudDistance,						0.4, 1, 0.05, 0
 	Slider "$VRPREFMNU_HUDPITCH",				openvr_hudPitch,						-15, 15, 1, 0
-	Option "$VRPREFMNU_DRAWCONTROLLERS",		openvr_drawControllers,					"OnOff"
+	//Option "$VRPREFMNU_DRAWCONTROLLERS",		openvr_drawControllers,					"OnOff"
 }
 OptionMenu "ReverbEdit" protected
 {

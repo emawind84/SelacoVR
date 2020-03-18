@@ -95,7 +95,7 @@ public:
 	virtual void AdjustCrossHair() const override;
 	virtual void UnAdjustCrossHair() const override;
 
-	virtual void DrawControllerModels(HWDrawInfo* di) const override;
+	virtual void DrawControllerModels(HWDrawInfo* di, FRenderState& state) const override;
 	
 	virtual bool GetHandTransform(int hand, VSMatrix* out) const override;
 	virtual bool GetWeaponTransform(VSMatrix* out) const override;

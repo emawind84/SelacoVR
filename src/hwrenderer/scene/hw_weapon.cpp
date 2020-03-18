@@ -258,7 +258,7 @@ void HWDrawInfo::DrawPlayerSprites(bool hudModelStep, FRenderState &state)
 			DrawPSprite(&hudsprite, state);
 	}
 	
-	vrmode->DrawControllerModels(this);
+	vrmode->DrawControllerModels(this, state);
 
 	state.SetObjectColor(0xffffffff);
 	state.SetDynLight(0, 0, 0);

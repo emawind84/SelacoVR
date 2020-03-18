@@ -251,7 +251,6 @@ public:
 		vbuf->SetupFrame(renderer, 0, 0, 0);
 		renderer->SetMaterial(pFTex, CLAMP_NONE, translation);
 		renderer->DrawElements(pModel->unTriangleCount * 3, 0);
-		gl_RenderState.SetVertexBuffer(screen->mVertexData);
 	}
 
 	virtual void BuildVertexBuffer(FModelRenderer* renderer) override
@@ -877,21 +876,22 @@ void OpenVRMode::UnAdjustCrossHair() const
 	viewwindowy = cachedViewwindowy;
 }
 
-void OpenVRMode::DrawControllerModels(HWDrawInfo *di) const
+void OpenVRMode::DrawControllerModels(HWDrawInfo *di, FRenderState& state) const
 {
 	
 	if(!openvr_drawControllers)
 		return; 
-	FGLModelRenderer renderer(di, gl_RenderState, -1);
+	FGLModelRenderer renderer(di, state, -1);
 	for (int i = 0; i < MAX_ROLES; ++i) 
 	{
-		if (GetHandTransform(i, &gl_RenderState.mModelMatrix) && controllers[i].model)
+		if (GetHandTransform(i, &state.mModelMatrix) && controllers[i].model)
 		{
-			gl_RenderState.EnableModelMatrix(true);
+			state.EnableModelMatrix(true);
 
 			controllers[i].model->RenderFrame(&renderer, 0, 0, 0, 0);
+			state.SetVertexBuffer(screen->mVertexData);
 
-			gl_RenderState.EnableModelMatrix(false);
+			state.EnableModelMatrix(false);
 		}
 	}
 }
