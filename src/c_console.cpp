@@ -947,7 +947,7 @@ int PrintString (int printlevel, const char *outline)
 	return 0;	// Don't waste time on calculating this if nothing at all was printed...
 }
 
-extern bool gameisdead;
+bool gameisdead;
 
 int VPrintf (int printlevel, const char *format, va_list parms)
 {
@@ -1948,10 +1948,7 @@ struct TabData
 	{
 	}
 
-	TabData(const TabData &other)
-	: UseCount(other.UseCount), TabName(other.TabName)
-	{
-	}
+	TabData(const TabData &other) = default;
 };
 
 static TArray<TabData> TabCommands (TArray<TabData>::NoInit);

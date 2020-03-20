@@ -1827,6 +1827,7 @@ CNTRLMNU_POPUPS					= "Strife Popup Screens";
 CNTRLMNU_MISSION				= "Mission objectives";
 CNTRLMNU_KEYS					= "Keys list";
 CNTRLMNU_STATS					= "Weapons/ammo/stats";
+CNTRLMNU_LAYOUT					= "Default Control Layout";
 
 // Mouse Menu
 
@@ -2516,6 +2517,7 @@ OPTVAL_VTAZDOOM				= "Auto (ZDoom Preferred)";
 OPTVAL_VTAVANILLA			= "Auto (Vanilla Preferred)";
 OPTVAL_SCALENEAREST			= "Scaled (Nearest)";
 OPTVAL_SCALELINEAR			= "Scaled (Linear)";
+OPTVAL_LOWEST				= "Lowest Possible Scale";
 OPTVAL_LETTERBOX			= "Letterbox";
 OPTVAL_SMALL				= "Small";
 OPTVAL_LARGE				= "Large";
@@ -2873,6 +2875,10 @@ OPTVAL_HIGH					= "High";
 OPTVAL_EXTREME				= "Extreme";
 OPTVAL_OBVERSEFIRST			= "Obverse";
 OPTVAL_REVERSEFIRST			= "Reverse";
+OPTVAL_CLASSICZ				= "Classic ZDoom";
+OPTVAL_MODERN				= "Modern (WASD)";
+OPTVAL_MODERN2				= "Modern (ESDF)";
+OPTVAL_MODERN3				= "Modern (IJKL)";
 
 // QZDoom exclusive:
 

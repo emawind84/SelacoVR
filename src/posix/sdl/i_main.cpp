@@ -58,12 +58,8 @@
 #include "r_utility.h"
 #include "doomstat.h"
 #include "vm.h"
-#include "atterm.h"
 
 // MACROS ------------------------------------------------------------------
-
-// The maximum number of functions that can be registered with atterm.
-#define MAX_TERMS	64
 
 // TYPES -------------------------------------------------------------------
 
@@ -85,8 +81,6 @@ void Linux_I_FatalError(const char* errortext);
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
-extern volatile int game_running;
-
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
 // The command line arguments.
@@ -97,14 +91,7 @@ FArgs *Args;
 
 // CODE --------------------------------------------------------------------
 
-void exit_handler(int dummy) {
-        game_running = 0;
-}
 
-static void NewFailure ()
-{
-    I_FatalError ("Failed to allocate memory from system heap");
-}
 
 static int DoomSpecificInfo (char *buffer, char *end)
 {
@@ -117,46 +104,59 @@ static int DoomSpecificInfo (char *buffer, char *end)
 #ifdef __VERSION__
 	p += snprintf (buffer+p, size-p, "Compiler version: %s\n", __VERSION__);
 #endif
-	p += snprintf (buffer+p, size-p, "\nCommand line:");
-	for (i = 0; i < Args->NumArgs(); ++i)
-	{
-		p += snprintf (buffer+p, size-p, " %s", Args->GetArg(i));
-	}
-	p += snprintf (buffer+p, size-p, "\n");
-	
-	for (i = 0; (arg = Wads.GetWadName (i)) != NULL; ++i)
-	{
-		p += snprintf (buffer+p, size-p, "\nWad %d: %s", i, arg);
-	}
 
-	if (gamestate != GS_LEVEL && gamestate != GS_TITLELEVEL)
+	// If Args is nullptr, then execution is at either
+	//  * early stage of initialization, additional info contains only default values
+	//  * late stage of shutdown, most likely main() was done, and accessing global variables is no longer safe
+	if (Args)
 	{
-		p += snprintf (buffer+p, size-p, "\n\nNot in a level.");
-	}
-	else
-	{
-		p += snprintf (buffer+p, size-p, "\n\nCurrent map: %s", level.MapName.GetChars());
-
-		if (!viewactive)
+		p += snprintf(buffer + p, size - p, "\nCommand line:");
+		for (i = 0; i < Args->NumArgs(); ++i)
 		{
-			p += snprintf (buffer+p, size-p, "\n\nView not active.");
+			p += snprintf(buffer + p, size - p, " %s", Args->GetArg(i));
+		}
+		p += snprintf(buffer + p, size - p, "\n");
+
+		for (i = 0; (arg = Wads.GetWadName(i)) != NULL; ++i)
+		{
+			p += snprintf(buffer + p, size - p, "\nWad %d: %s", i, arg);
+		}
+
+		if (gamestate != GS_LEVEL && gamestate != GS_TITLELEVEL)
+		{
+			p += snprintf(buffer + p, size - p, "\n\nNot in a level.");
 		}
 		else
 		{
-			p += snprintf (buffer+p, size-p, "\n\nviewx = %f", r_viewpoint.Pos.X);
-			p += snprintf (buffer+p, size-p, "\nviewy = %f", r_viewpoint.Pos.Y);
-			p += snprintf (buffer+p, size-p, "\nviewz = %f", r_viewpoint.Pos.Z);
-			p += snprintf (buffer+p, size-p, "\nviewangle = %f", r_viewpoint.Angles.Yaw.Degrees);
+			p += snprintf(buffer + p, size - p, "\n\nCurrent map: %s", level.MapName.GetChars());
+
+			if (!viewactive)
+			{
+				p += snprintf(buffer + p, size - p, "\n\nView not active.");
+			}
+			else
+			{
+				auto& vp = r_viewpoint;
+				p += snprintf(buffer + p, size - p, "\n\nviewx = %f", vp.Pos.X);
+				p += snprintf(buffer + p, size - p, "\nviewy = %f", vp.Pos.Y);
+				p += snprintf(buffer + p, size - p, "\nviewz = %f", vp.Pos.Z);
+				p += snprintf(buffer + p, size - p, "\nviewangle = %f", vp.Angles.Yaw.Degrees);
+			}
 		}
 	}
+
 	buffer[p++] = '\n';
 	buffer[p++] = '\0';
 
 	return p;
 }
 
+void I_DetectOS()
+{
+	// The POSIX version never implemented this.
+}
+
 void I_StartupJoysticks();
-void I_ShutdownJoysticks();
 
 #ifdef __ANDROID__
 
@@ -181,8 +181,6 @@ int main (int argc, char **argv)
 		GetVersionString(), GetGitTime(), __DATE__);
 
 	seteuid (getuid ());
-    std::set_new_handler (NewFailure);
-
 	// Set LC_NUMERIC environment variable in case some library decides to
 	// clear the setlocale call at least this will be correct.
 	// Note that the LANG environment variable is overridden by LC_*
@@ -195,102 +193,37 @@ int main (int argc, char **argv)
 		fprintf (stderr, "Could not initialize SDL:\n%s\n", SDL_GetError());
 		return -1;
 	}
-	atterm (SDL_Quit);
 
 	printf("\n");
 	
-    try
-    {
-		Args = new FArgs(argc, argv);
 
-		/*
-		  killough 1/98:
+	Args = new FArgs(argc, argv);
 
-		  This fixes some problems with exit handling
-		  during abnormal situations.
+	// Should we even be doing anything with progdir on Unix systems?
+	char program[PATH_MAX];
+	if (realpath (argv[0], program) == NULL)
+		strcpy (program, argv[0]);
+	char *slash = strrchr (program, '/');
+	if (slash != NULL)
+	{
+		*(slash + 1) = '\0';
+		progdir = program;
+	}
+	else
+	{
+		progdir = "./";
+	}
+	
+	I_StartupJoysticks();
 
-		  The old code called I_Quit() to end program,
-		  while now I_Quit() is installed as an exit
-		  handler and exit() is called to exit, either
-		  normally or abnormally. Seg faults are caught
-		  and the error handler is used, to prevent
-		  being left in graphics mode or having very
-		  loud SFX noise because the sound card is
-		  left in an unstable state.
-		*/
+	const int result = D_DoomMain();
 
-		atexit (call_terms);
-		atterm (I_Quit);
-		/*
-		  Register signal handlers to interrupt D_DoomMain and D_DoomLoop, allowing
-		  call_terms() to be invoked at the conclusion of the main thread/quit menu
-		  rather than at exit. The atexit() call can remain to handle edge cases
-		  where a signal cannot be intercepted, such as Alt+F4 or closing the window
-		  via the GUI.
 
-		  Fixes segmentation fault on exit when using the KMSDRM SDL video driver.
-		*/
-		signal(SIGINT, exit_handler);
-		signal(SIGTERM, exit_handler);
+	SDL_Quit();
 
-		// Should we even be doing anything with progdir on Unix systems?
-		char program[PATH_MAX];
-		if (realpath (argv[0], program) == NULL)
-			strcpy (program, argv[0]);
-		char *slash = strrchr (program, '/');
-		if (slash != NULL)
-		{
-			*(slash + 1) = '\0';
-			progdir = program;
-		}
-		else
-		{
-			progdir = "./";
-		}
-
-		I_StartupJoysticks();
-		C_InitConsole (80*8, 25*8, false);
-		D_DoomMain ();
-    }
-    catch (std::exception &error)
-    {
-		I_ShutdownJoysticks();
-
-		const char *const message = error.what();
-
-		if (strcmp(message, "NoRunExit"))
-		{
-			if (CVMAbortException::stacktrace.IsNotEmpty())
-			{
-				Printf("%s", CVMAbortException::stacktrace.GetChars());
-			}
-#ifdef __ANDROID__
-        	LOGI("FATAL ERROR: %s",  message);
-        	LogWritter_Write(message);
+#ifdef __ANDROID__ // So it it properly reset next time it starts up
+	usleep(1000 * 500);
+	exit(0);
 #endif
-			if (batchrun)
-			{
-				Printf("%s\n", message);
-			}
-			else
-			{
-#ifdef __APPLE__
-				Mac_I_FatalError(message);
-#endif // __APPLE__
-
-#ifdef __linux__
-				Linux_I_FatalError(message);
-#endif // __linux__
-			}
-		}
-
-		exit (-1);
-    }
-    catch (...)
-    {
-		call_terms ();
-		throw;
-    }
-    call_terms();
-    return 0;
+	return result;
 }

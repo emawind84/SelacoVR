@@ -53,7 +53,6 @@
 #include "v_video.h"
 #include "version.h"
 #include "videomodes.h"
-#include "atterm.h"
 
 #include "gl/system/gl_system.h"
 #include "gl/data/gl_vertexbuffer.h"
@@ -69,8 +68,8 @@
 - (void)exitAppOnClose
 {
 	NSButton* closeButton = [self standardWindowButton:NSWindowCloseButton];
-	[closeButton setAction:@selector(terminate:)];
-	[closeButton setTarget:NSApp];
+	[closeButton setAction:@selector(sendExitEvent:)];
+	[closeButton setTarget:[NSApp delegate]];
 }
 
 @end
@@ -1201,11 +1200,10 @@ void I_InitGraphics()
 	ticker.SetGenericRepDefault(val, CVAR_Bool);
 
 	Video = new CocoaVideo;
-	atterm(I_ShutdownGraphics);
 }
 
 
-static void I_DeleteRenderer()
+void I_DeleteRenderer()
 {
 	delete Renderer;
 	Renderer = NULL;
@@ -1222,7 +1220,6 @@ void I_CreateRenderer()
 		Renderer = 1 == currentrenderer
 			? gl_CreateInterface()
 			: new FSoftwareRenderer;
-		atterm(I_DeleteRenderer);
 	}
 }
 

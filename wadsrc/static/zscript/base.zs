@@ -426,7 +426,8 @@ class Object native
 	native static double G_SkillPropertyFloat(int p);
 	native static vector3, int G_PickDeathmatchStart();
 	native static vector3, int G_PickPlayerStart(int pnum, int flags = 0);
-	native static void S_Sound (Sound sound_id, int channel, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0);
+	deprecated("4.3") native static void S_Sound (Sound sound_id, int channel, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0);
+	native static void S_StartSound (Sound sound_id, int channel, int flags = 0, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0);
 	native static void S_PauseSound (bool notmusic, bool notsfx);
 	native static void S_ResumeSound (bool notsfx);
 	native static bool S_ChangeMusic(String music_name, int order = 0, bool looping = true, bool force = false);
@@ -701,6 +702,7 @@ struct LevelLocals native
 	native readonly int outsidefogdensity;
 	native readonly int skyfog;
 	native readonly float pixelstretch;
+	native readonly float MusicVolume;
 	native name deathsequence;
 	native readonly int compatflags;
 	native readonly int compatflags2;

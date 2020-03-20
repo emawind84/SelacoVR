@@ -48,6 +48,7 @@
 #include "gl/textures/gl_samplers.h"
 #include "gl/textures/gl_translate.h"
 #include "gl/models/gl_models.h"
+#include "stats.h"
 
 //==========================================================================
 //
@@ -64,7 +65,7 @@ CCMD(gl_flush)
 	if (GLRenderer != NULL) GLRenderer->FlushTextures();
 }
 
-CUSTOM_CVAR(Int, gl_texture_filter, 6, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+CUSTOM_CVAR(Int, gl_texture_filter, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 {
 	if (self < 0 || self > 6) self=4;
 	if (GLRenderer != NULL && GLRenderer->mSamplerManager != NULL) GLRenderer->mSamplerManager->SetTextureFilterMode();
@@ -747,6 +748,10 @@ void gl_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 
 	if (gl_precache)
 	{
+		cycle_t precache;
+		precache.Reset();
+		precache.Clock();
+
 		// cache all used textures
 		for (int i = cnt - 1; i >= 0; i--)
 		{
@@ -768,6 +773,9 @@ void gl_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 			if (modellist[i]) 
 				Models[i]->BuildVertexBuffer(&renderer);
 		}
+
+		precache.Unclock();
+		DPrintf(DMSG_NOTIFY, "Textures precached in %.3f ms\n", precache.TimeMS());
 	}
 
 	delete[] spritehitlist;
