@@ -7,6 +7,7 @@ Built/tested on Oculus Quest and ALVR but other VR setups should work.
 This build exposes OpenVR controller input for definition (you will need to define the controls).
 
 One hand (right by default) is tracked for the weapon. I have included two modified weapon packs authored by Fishbiter. 
+
 You could also try an HD weapon pack made by ajantaju https://github.com/hh79/gz3doom/files/4378108/HDVRweapons.zip or a weapon pack made for Brutal Doom https://github.com/ajantaju/br_vr
 
 # Not done
