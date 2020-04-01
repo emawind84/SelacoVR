@@ -73,6 +73,7 @@ protected:
 		float distance, 
 		float width, 
 		bool doFixPitch,
+		bool doFixRoll,
 		float pitchOffset
 	) const;
 };
