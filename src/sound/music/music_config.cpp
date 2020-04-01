@@ -270,8 +270,11 @@ CUSTOM_CVAR(String, opn_custom_bank, "", CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR
 //
 //==========================================================================
 
-
-CUSTOM_CVAR(String, midi_config, GAMENAMELOWERCASE, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_VIRTUAL)
+#ifdef __ANDROID__
+CUSTOM_CVAR(String, midi_config, "./audiopack/snd_timidity/timidity.cfg", CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_VIRTUAL)
+#else
+CUSTOM_CVAR(String, midi_config, "gzdoom", CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_VIRTUAL)
+#endif
 {
 	FORWARD_STRING_CVAR(gus_config);
 }
@@ -387,7 +390,11 @@ CUSTOM_CVAR(Float, min_sustain_time, 5000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CV
 	FORWARD_CVAR(min_sustain_time);
 }
 
-CUSTOM_CVAR(String, timidity_config, GAMENAMELOWERCASE, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_VIRTUAL)
+#ifdef __ANDROID__
+CUSTOM_CVAR(String, timidity_config, "./audiopack/snd_timidity/timidity.cfg", CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_VIRTUAL)
+#else
+CUSTOM_CVAR(String, timidity_config, "gzdoom", CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_VIRTUAL)
+#endif
 {
 	FORWARD_STRING_CVAR(timidity_config);
 }
