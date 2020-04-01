@@ -135,8 +135,8 @@ EXTERN_CVAR(Float, openvr_weaponScale);
 CVAR(Float, openvr_kill_momentum, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, openvr_hudDistance, 0.4f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, openvr_hudPitch, -8.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Bool, openvr_fixPitch,false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Bool, openvr_fixRoll, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, openvr_fixPitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, openvr_fixRoll,  true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 const float DEAD_ZONE = 0.25f;
 

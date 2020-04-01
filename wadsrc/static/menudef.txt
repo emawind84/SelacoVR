@@ -2361,7 +2361,7 @@ OptionMenu "OpenVROptions" protected
 	Slider "$VRPREFMNU_FATITEMWIDTH",			gl_fatItemWidth,						0, 1, 0.05, 0
 	Slider "$VRPREFMNU_WEAPONSCALE",			openvr_weaponScale,						0, 10, 0.2, 0
 	Slider "$VRPREFMNU_HUDDISTANCE",			openvr_hudDistance,						0.4, 1, 0.05, 0
-	Slider "$VRPREFMNU_HUDPITCH",				openvr_hudPitch,						-15, 15, 1, 0
+	Slider "$VRPREFMNU_HUDPITCH",				openvr_hudPitch,						-20, 20, 1, 0
 	Option "$VRPREFMNU_UNFIXPITCH",				openvr_fixPitch,						"OnOff"
 	Option "$VRPREFMNU_UNFIXROLL",				openvr_fixRoll,							"OnOff"
 	//Option "$VRPREFMNU_DRAWCONTROLLERS",		openvr_drawControllers,					"OnOff"
