@@ -26,6 +26,7 @@ public:
 	VkFormat OutputFormat;
 	int SwapChain;
 	int ShadowMapBuffers;
+	int StencilTest;
 	VkSampleCountFlagBits Samples;
 
 	bool operator<(const VkPPRenderPassKey &other) const { return memcmp(this, &other, sizeof(VkPPRenderPassKey)) < 0; }
@@ -52,7 +53,6 @@ public:
 	VkPostprocess();
 	~VkPostprocess();
 
-	void BeginFrame();
 	void RenderBuffersReset();
 
 	void SetActiveRenderTarget();
@@ -73,6 +73,7 @@ public:
 private:
 	void NextEye(int eyeCount);
 
+	std::unique_ptr<VulkanDescriptorSet> AllocateDescriptorSet(VulkanDescriptorSetLayout *layout);
 	VulkanSampler *GetSampler(PPFilterMode filter, PPWrapMode wrap);
 
 	std::array<std::unique_ptr<VulkanSampler>, 4> mSamplers;
@@ -134,10 +135,10 @@ public:
 	void Draw() override;
 
 private:
-	void RenderScreenQuad(VkPPRenderPassSetup *passSetup, VulkanDescriptorSet *descriptorSet, VulkanFramebuffer *framebuffer, int framebufferWidth, int framebufferHeight, int x, int y, int width, int height, const void *pushConstants, uint32_t pushConstantsSize);
+	void RenderScreenQuad(VkPPRenderPassSetup *passSetup, VulkanDescriptorSet *descriptorSet, VulkanFramebuffer *framebuffer, int framebufferWidth, int framebufferHeight, int x, int y, int width, int height, const void *pushConstants, uint32_t pushConstantsSize, bool stencilTest);
 
 	VulkanDescriptorSet *GetInput(VkPPRenderPassSetup *passSetup, const TArray<PPTextureInput> &textures, bool bindShadowMapBuffers);
-	VulkanFramebuffer *GetOutput(VkPPRenderPassSetup *passSetup, const PPOutput &output, int &framebufferWidth, int &framebufferHeight);
+	VulkanFramebuffer *GetOutput(VkPPRenderPassSetup *passSetup, const PPOutput &output, bool stencilTest, int &framebufferWidth, int &framebufferHeight);
 
 	VkPPShader *GetVkShader(PPShader *shader);
 	VkPPTexture *GetVkTexture(PPTexture *texture);
