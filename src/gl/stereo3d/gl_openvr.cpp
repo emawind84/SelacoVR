@@ -329,8 +329,8 @@ public:
 
 			pFTex = new FControllerTexture(pTexture);
 
-			auto* di = HWDrawInfo::StartDrawInfo(nullptr, r_viewpoint, nullptr);
-			FGLModelRenderer renderer(di, gl_RenderState, -1);
+			auto* di = HWDrawInfo::StartDrawInfo(r_viewpoint.ViewLevel, nullptr, r_viewpoint, nullptr);
+			FHWModelRenderer renderer(di, gl_RenderState, -1);
 			BuildVertexBuffer(&renderer);
 			di->EndDrawInfo();
 			return true;
@@ -716,7 +716,7 @@ void OpenVREyePose::AdjustHud() const
 	{
 		return;
 	}
-	auto *di = HWDrawInfo::StartDrawInfo(nullptr, r_viewpoint, nullptr);
+	auto *di = HWDrawInfo::StartDrawInfo(r_viewpoint.ViewLevel, nullptr, r_viewpoint, nullptr);
 
 	di->VPUniforms.mViewMatrix.loadIdentity();
 	const OpenVRMode * openVrMode = static_cast<const OpenVRMode *>(vrmode);
@@ -758,7 +758,7 @@ void OpenVREyePose::AdjustBlend(HWDrawInfo *di) const
 	bool new_di = false;
 	if (di == nullptr)
 	{
-		di = HWDrawInfo::StartDrawInfo(nullptr, r_viewpoint, nullptr);
+		di = HWDrawInfo::StartDrawInfo(r_viewpoint.ViewLevel, nullptr, r_viewpoint, nullptr);
 		new_di = true;
 	}
 
@@ -888,7 +888,7 @@ void OpenVRMode::DrawControllerModels(HWDrawInfo *di, FRenderState& state) const
 	
 	if(!openvr_drawControllers)
 		return; 
-	FGLModelRenderer renderer(di, state, -1);
+	FHWModelRenderer renderer(di, state, -1);
 	for (int i = 0; i < MAX_ROLES; ++i) 
 	{
 		if (GetHandTransform(i, &state.mModelMatrix) && controllers[i].model)
@@ -914,7 +914,7 @@ bool OpenVRMode::GetHandTransform(int hand, VSMatrix* mat) const
 			return false;
 		}
 
-		APlayerPawn* playermo = r_viewpoint.camera->player->mo;
+		AActor* playermo = r_viewpoint.camera->player->mo;
 		DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
 
 		mat->translate(pos.X, pos.Z, pos.Y);
@@ -1004,7 +1004,6 @@ void OpenVRMode::Present() const {
 		GLRenderer->mBuffers->BindEyeTexture(1, 0);
 		GLRenderer->DrawPresentTexture(rightHalfScreen, true);
 	}
-
 	if (doRenderToHmd) 
 	{
 		leftEyeView->submitFrame(vrCompositor);
@@ -1247,11 +1246,19 @@ void OpenVRMode::SetUp() const
 	}
 	else {
 		// TODO: Draw a more interesting background behind the 2D screen
-		for (int i = 0; i < 2; ++i) {
-			GLRenderer->mBuffers->BindEyeFB(i);
+		const int eyeCount = mEyeCount;
+		GLRenderer->mBuffers->CurrentEye() = 0;  // always begin at zero, in case eye count changed
+		for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
+		{
+			const auto& eye = mEyes[GLRenderer->mBuffers->CurrentEye()];
+
+			GLRenderer->mBuffers->BindCurrentFB();
 			glClearColor(0.3f, 0.1f, 0.1f, 1.0f); // draw a dark red universe
 			glClear(GL_COLOR_BUFFER_BIT);
+			if (eyeCount - eye_ix > 1)
+				GLRenderer->mBuffers->NextEye(eyeCount);
 		}
+		GLRenderer->mBuffers->BlitToEyeTexture(GLRenderer->mBuffers->CurrentEye(), false);
 	}
 
 	static TrackedDevicePose_t poses[k_unMaxTrackedDeviceCount];

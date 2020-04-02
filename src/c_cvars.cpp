@@ -40,9 +40,9 @@
 #include "c_console.h"
 #include "c_dispatch.h"
 
-#include "doomstat.h"
+#include "g_game.h"
 #include "d_player.h"
-
+#include "v_video.h"
 #include "d_netinf.h"
 
 #include "menu/menu.h"
@@ -1855,7 +1855,7 @@ CCMD (toggle)
 			val = var->GetGenericRep (CVAR_Bool);
 			val.Bool = !val.Bool;
 			var->SetGenericRep (val, CVAR_Bool);
-			Printf ("\"%s\" is \"%s\"\n", var->GetName(),
+			Printf ("\"%s\" = \"%s\"\n", var->GetName(),
 				val.Bool ? "true" : "false");
 		}
 	}

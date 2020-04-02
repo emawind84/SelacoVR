@@ -53,6 +53,7 @@
 
 #include "i_video.h"
 #include "v_video.h"
+#include "i_system.h"
 
 // Data.
 #include "m_misc.h"
@@ -64,6 +65,7 @@
 #include "gi.h"
 
 #include "gameconfigfile.h"
+#include "gstrings.h"
 
 FGameConfigFile *GameConfig;
 
@@ -510,7 +512,7 @@ void WritePNGfile (FileWriter *file, const uint8_t *buffer, const PalEntry *pale
 		!M_AppendPNGText (file, "Software", software) ||
 		!M_FinishPNG (file))
 	{
-		Printf ("Could not create screenshot.\n");
+		Printf ("%s\n", GStrings("TXT_SCREENSHOTERR"));
 	}
 }
 
@@ -611,12 +613,6 @@ void M_ScreenShot (const char *filename)
 	auto buffer = screen->GetScreenshotBuffer(pitch, color_type, gamma);
 	if (buffer.Size() > 0)
 	{
-		PalEntry palette[256];
-
-		if (color_type == SS_PAL)
-		{
-			screen->GetFlashedPalette(palette);
-		}
 		file = FileWriter::Open(autoname);
 		if (file == NULL)
 		{
@@ -625,12 +621,12 @@ void M_ScreenShot (const char *filename)
 		}
 		if (writepcx)
 		{
-			WritePCXfile(file, buffer.Data(), palette, color_type,
+			WritePCXfile(file, buffer.Data(), nullptr, color_type,
 				screen->GetWidth(), screen->GetHeight(), pitch);
 		}
 		else
 		{
-			WritePNGfile(file, buffer.Data(), palette, color_type,
+			WritePNGfile(file, buffer.Data(), nullptr, color_type,
 				screen->GetWidth(), screen->GetHeight(), pitch, gamma);
 		}
 		delete file;

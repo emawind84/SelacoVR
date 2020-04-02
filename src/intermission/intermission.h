@@ -7,6 +7,7 @@
 #include "textures/textures.h"
 #include "s_sound.h"
 #include "v_font.h"
+#include "g_game.h"
 
 struct event_t;
 
@@ -206,7 +207,7 @@ class DIntermissionScreenText : public DIntermissionScreen
 {
 	DECLARE_CLASS (DIntermissionScreenText, DIntermissionScreen)
 
-	const char *mText;
+	FString mText;
 	int mTextSpeed;
 	int mTextX, mTextY;
 	int mTextCounter;

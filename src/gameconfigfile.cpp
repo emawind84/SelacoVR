@@ -47,6 +47,9 @@
 #include "doomstat.h"
 #include "gi.h"
 #include "d_main.h"
+#if !defined _MSC_VER && !defined __APPLE__
+#include "i_system.h"  // for SHARE_DIR
+#endif // !_MSC_VER && !__APPLE__
 
 EXTERN_CVAR (Bool, con_centernotify)
 EXTERN_CVAR (Int, msg0color)
@@ -482,6 +485,17 @@ void FGameConfigFile::DoGlobalSetup ()
 						gl_texture_hqresizemode = 0; gl_texture_hqresizemult = 1;
 						break;
 					}
+				}
+			}
+			if (last < 217)
+			{
+				auto var = FindCVar("vid_scalemode", NULL);
+				UCVarValue newvalue;
+				newvalue.Int = 2;
+				if (var != NULL)
+				{
+					UCVarValue v = var->GetGenericRep(CVAR_Int);
+					if (v.Int == 3) var->SetGenericRep(newvalue, CVAR_Int);
 				}
 			}
 		}

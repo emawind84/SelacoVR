@@ -1,11 +1,9 @@
-/Debug
 *.ncb
 *.suo
 *.pdb
 *.ilk
 *.aps
 /fmodapi*/
-/Release
 /wadsrc_wad
 *.user
 /build
@@ -82,3 +80,5 @@ config.h
 .DS_Store
 /build_vc2017-32
 /build2
+/build_vc2019-64
+/glslang/glslang/OSDependent/Windows/

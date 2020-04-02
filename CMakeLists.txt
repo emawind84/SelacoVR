@@ -13,21 +13,6 @@ endif()
 list( APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
 include( FindPackageHandleStandardArgs )
 
-# Produce a warning if XP support will be missing when building a 32 bit target for MSVC.
-if( MSVC )
-	if(NOT "${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
-
-		list( APPEND WINXP_TOOLSETS v140_xp v141_xp)
-		list( FIND WINXP_TOOLSETS "${CMAKE_GENERATOR_TOOLSET}" HAVE_WINXP_SUPPORT)
-
-		if( HAVE_WINXP_SUPPORT EQUAL -1 )
-			string( REPLACE ";" " or " WINXP_TOOLSETS_STR "${WINXP_TOOLSETS}" )
-			message( WARNING "This project supports Windows XP but you must set the optional toolset to ${WINXP_TOOLSETS_STR} manually to have it in your build!\n"
-				"Assign toolset's name to CMAKE_GENERATOR_TOOLSET variable or use -T <toolset> from the command prompt." )
-		endif()
-	endif()
-endif()
-
 # Support cross compiling
 option( FORCE_CROSSCOMPILE "Turn on cross compiling." NO )
 if( FORCE_CROSSCOMPILE )
@@ -163,17 +148,30 @@ option( NO_OPENAL "Disable OpenAL sound support" OFF )
 find_package( BZip2 )
 find_package( JPEG )
 find_package( ZLIB )
-# find_package( asmjit )
- # no, we're not using external asmjit for now, we made too many modifications to our's.
- # if the asmjit author uses our changes then we'll update this.
+
+include( TargetArch )
+
+target_architecture(ZDOOM_TARGET_ARCH)
+
+if( ${ZDOOM_TARGET_ARCH} MATCHES "x86_64" )
+	set( HAVE_VM_JIT ON )
+	set( HAVE_VULKAN ON )
+endif()
+
+# no, we're not using external asmjit for now, we made too many modifications to our's.
+# if the asmjit author uses our changes then we'll update this.
+
+#if( ${HAVE_VM_JIT} )
+#	find_package( asmjit )
+#endif()
 
 # GME
-find_path( GME_INCLUDE_DIR gme/gme.h )
-find_library( GME_LIBRARIES gme )
-mark_as_advanced( GME_INCLUDE_DIR GME_LIBRARIES )
-FIND_PACKAGE_HANDLE_STANDARD_ARGS( GME
-	REQUIRED_VARS GME_LIBRARIES GME_INCLUDE_DIR
-)
+#find_path( GME_INCLUDE_DIR gme/gme.h )
+#find_library( GME_LIBRARIES gme )
+#mark_as_advanced( GME_INCLUDE_DIR GME_LIBRARIES )
+#FIND_PACKAGE_HANDLE_STANDARD_ARGS( GME
+#	REQUIRED_VARS GME_LIBRARIES GME_INCLUDE_DIR
+#)
 
 if( MSVC )
 	# Eliminate unreferenced functions and data
@@ -183,7 +181,11 @@ if( MSVC )
 	# String pooling
 	# Function-level linking
 	# Disable run-time type information
-	set( ALL_C_FLAGS "/GF /Gy /GR-" )
+	if ( HAVE_VULKAN )
+		set( ALL_C_FLAGS "/GF /Gy /GR- /DHAVE_VULKAN" )
+	else()
+		set( ALL_C_FLAGS "/GF /Gy /GR-" )
+	endif()
 
 	# Use SSE 2 as minimum always as the true color drawers needs it for __vectorcall
 	#set( ALL_C_FLAGS "${ALL_C_FLAGS} /arch:SSE2") # This is already the default
@@ -217,14 +219,13 @@ if( MSVC )
 	set( DEB_C_FLAGS "/D _CRTDBG_MAP_ALLOC /MTd" )
 
 	# Disable warnings for unsecure CRT functions from VC8+
-	if( MSVC_VERSION GREATER 1399 )
-		set( ALL_C_FLAGS "${ALL_C_FLAGS} /wd4996" )
-	endif()
+	set( ALL_C_FLAGS "${ALL_C_FLAGS} /wd4996 /DUNICODE /D_UNICODE" )
 
 	# The CMake configurations set /GR and /MD by default, which conflict with our settings.
 	string(REPLACE "/MD " " " CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE} )
 	string(REPLACE "/MD " " " CMAKE_CXX_FLAGS_MINSIZEREL ${CMAKE_CXX_FLAGS_MINSIZEREL} )
 	string(REPLACE "/MD " " " CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} )
+	string(REPLACE "/Ob1 " "/Ob2 " CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} )
 	string(REPLACE "/MDd " " " CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG} )
 	string(REPLACE "/MD " " " CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE} )
 	string(REPLACE "/MD " " " CMAKE_C_FLAGS_MINSIZEREL ${CMAKE_C_FLAGS_MINSIZEREL} )
@@ -233,7 +234,12 @@ if( MSVC )
 	string(REPLACE " /GR" " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} )
 else()
 	set( REL_LINKER_FLAGS "" )
-	set( ALL_C_FLAGS "-ffp-contract=off" )
+	if ( HAVE_VULKAN )
+		set( ALL_C_FLAGS "-ffp-contract=off -DHAVE_VULKAN" )
+	else()
+		set( ALL_C_FLAGS "-ffp-contract=off" )
+	endif()
+	
 	set( REL_C_FLAGS "" )
 	set( DEB_C_FLAGS "" )
 
@@ -274,9 +280,16 @@ set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${DEB_C_FLAGS} -D_DEBUG" )
 option(FORCE_INTERNAL_ZLIB "Use internal zlib" ON)
 option(FORCE_INTERNAL_JPEG "Use internal jpeg")
 option(FORCE_INTERNAL_BZIP2 "Use internal bzip2")
-option(FORCE_INTERNAL_GME "Use internal gme")
+option(FORCE_INTERNAL_GME "Use internal gme" ON)
+mark_as_advanced( FORCE_INTERNAL_GME )
 option(FORCE_INTERNAL_ASMJIT "Use internal asmjit" ON)
 mark_as_advanced( FORCE_INTERNAL_ASMJIT )
+
+if (HAVE_VULKAN)
+	add_subdirectory( glslang/glslang)
+	add_subdirectory( glslang/spirv )
+	add_subdirectory( glslang/OGLCompilersDLL )
+endif()
 
 # Fast math flags, required by some subprojects
 set( ZD_FASTMATH_FLAG "" )
@@ -297,15 +310,17 @@ else()
 	set( ZLIB_LIBRARY z )
 endif()
 
-if( ASMJIT_FOUND AND NOT FORCE_INTERNAL_ASMJIT )
-	message( STATUS "Using system asmjit, includes found at ${ASMJIT_INCLUDE_DIR}" )
-else()
-	message( STATUS "Using internal asmjit" )
-	set( SKIP_INSTALL_ALL TRUE ) # Avoid installing asmjit alongside zdoom
-	add_subdirectory( asmjit )
-	set( ASMJIT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/asmjit )
-	set( ASMJIT_LIBRARIES asmjit )
-	set( ASMJIT_LIBRARY asmjit )
+if( ${HAVE_VM_JIT} )
+	if( ASMJIT_FOUND AND NOT FORCE_INTERNAL_ASMJIT )
+		message( STATUS "Using system asmjit, includes found at ${ASMJIT_INCLUDE_DIR}" )
+	else()
+		message( STATUS "Using internal asmjit" )
+		set( SKIP_INSTALL_ALL TRUE ) # Avoid installing asmjit alongside zdoom
+		add_subdirectory( asmjit )
+		set( ASMJIT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/asmjit )
+		set( ASMJIT_LIBRARIES asmjit )
+		set( ASMJIT_LIBRARY asmjit )
+	endif()
 endif()
 
 if( JPEG_FOUND AND NOT FORCE_INTERNAL_JPEG )

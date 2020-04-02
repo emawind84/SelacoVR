@@ -47,7 +47,6 @@
 #include "hwrenderer/dynlights/hw_shadowmap.h"
 
 struct sector_t;
-class IShaderProgram;
 class FTexture;
 struct FPortalSceneState;
 class FSkyVertexBuffer;
@@ -86,6 +85,21 @@ struct IntRect
 		left += xofs;
 		top += yofs;
 	}
+
+	void AddToRect(int x, int y)
+	{
+		if (x < left)
+			left = x;
+		if (x > left + width)
+			width = x - left;
+
+		if (y < top)
+			top = y;
+		if (y > top + height)
+			height = y - top;
+	}
+
+
 };
 
 
@@ -289,14 +303,6 @@ struct VMVa_List
 	const uint8_t *reginfo;
 };
 
-struct BlendInfo
-{
-	float blend[4] = { 0, 0, 0, 0 };
-	float extra_red = 0;
-	float extra_green = 0;
-	float extra_blue = 0;
-	bool multiplicativeBlend = false;
-};
 //
 // VIDEO
 //
@@ -337,8 +343,8 @@ protected:
 
 	template<class T>
 	bool ParseDrawTextureTags(FTexture *img, double x, double y, uint32_t tag, T& tags, DrawParms *parms, bool fortext) const;
-	void DrawTextCommon(FFont *font, int normalcolor, double x, double y, const char *string, DrawParms &parms);
-	void BuildGammaTable(uint16_t *gt);
+	template<class T>
+	void DrawTextCommon(FFont *font, int normalcolor, double x, double y, const T *string, DrawParms &parms);
 
 	F2DDrawer m2DDrawer;
 private:
@@ -347,16 +353,12 @@ private:
 protected:
 	int clipleft = 0, cliptop = 0, clipwidth = -1, clipheight = -1;
 
-	PalEntry Flash;						// Only needed to support some cruft in the interface that only makes sense for the software renderer
-	PalEntry SourcePalette[256];		// This is where unpaletted textures get their palette from
-
 public:
 	// Hardware render state that needs to be exposed to the API independent part of the renderer. For ease of access this is stored in the base class.
 	int hwcaps = 0;								// Capability flags
 	float glslversion = 0;						// This is here so that the differences between old OpenGL and new OpenGL/Vulkan can be handled by platform independent code.
 	int instack[2] = { 0,0 };					// this is globally maintained state for portal recursion avoidance.
 	int stencilValue = 0;						// Global stencil test value
-	bool enable_quadbuffered = false;			// Quad-buffered stereo available?
 	unsigned int uniformblockalignment = 256;	// Hardware dependent uniform buffer alignment.
 	unsigned int maxuniformblock = 65536;
 	const char *gl_vendorstring;				// On OpenGL (not Vulkan) we have to account for some issues with Intel.
@@ -400,28 +402,11 @@ public:
 	// Make the surface visible.
 	virtual void Update ();
 
-	// Return a pointer to 256 palette entries that can be written to.
-	PalEntry *GetPalette ();
-
 	// Stores the palette with flash blended in into 256 dwords
-	void GetFlashedPalette (PalEntry palette[256]);
-
 	// Mark the palette as changed. It will be updated on the next Update().
 	virtual void UpdatePalette() {}
 
-	// Sets the gamma level. Returns false if the hardware does not support
-	// gamma changing. (Always true for now, since palettes can always be
-	// gamma adjusted.)
 	virtual void SetGamma() {}
-
-	// Sets a color flash. RGB is the color, and amount is 0-256, with 256
-	// being all flash and 0 being no flash. Returns false if the hardware
-	// does not support this. (Always true for now, since palettes can always
-	// be flashed.)
-	bool SetFlash (PalEntry rgb, int amount);
-
-	// Converse of SetFlash
-	void GetFlash (PalEntry &rgb, int &amount);
 
 	// Returns true if running fullscreen.
 	virtual bool IsFullscreen () = 0;
@@ -436,18 +421,16 @@ public:
 	virtual IHardwareTexture *CreateHardwareTexture() { return nullptr; }
 	virtual void PrecacheMaterial(FMaterial *mat, int translation) {}
 	virtual FModelRenderer *CreateModelRenderer(int mli) { return nullptr; }
-	virtual void UnbindTexUnit(int no) {}
 	virtual void TextureFilterChanged() {}
 	virtual void BeginFrame() {}
-	virtual void SwapColors() { m2DDrawer.SwapColors(); }
 	virtual void SetWindowSize(int w, int h) {}
+	virtual void StartPrecaching() {}
 
 	virtual int GetClientWidth() = 0;
 	virtual int GetClientHeight() = 0;
 	virtual void BlurScene(float amount) {}
     
     // Interface to hardware rendering resources
-	virtual IShaderProgram *CreateShaderProgram() { return nullptr; }
 	virtual IVertexBuffer *CreateVertexBuffer() { return nullptr; }
 	virtual IIndexBuffer *CreateIndexBuffer() { return nullptr; }
 	virtual IDataBuffer *CreateDataBuffer(int bindingpoint, bool ssbo) { return nullptr; }
@@ -475,7 +458,6 @@ public:
 	}
 
 	// Report a game restart
-	void InitPalette();
 	void SetClearColor(int color);
 	virtual uint32_t GetCaps();
 	virtual void WriteSavePic(player_t *player, FileWriter *file, int width, int height);
@@ -502,7 +484,7 @@ public:
 	// Dim part of the canvas
 	void Dim(PalEntry color, float amount, int x1, int y1, int w, int h, FRenderStyle *style = nullptr);
 	void DoDim(PalEntry color, float amount, int x1, int y1, int w, int h, FRenderStyle *style = nullptr);
-	void FillBlend(sector_t* viewsector, BlendInfo &blendinfo);
+	FVector4 CalcBlend(sector_t * viewsector, PalEntry *modulateColor);
 	void DrawBlend(sector_t * viewsector);
 
 	// Fill an area with a texture
@@ -547,11 +529,10 @@ public:
 	void DrawText(FFont *font, int normalcolor, double x, double y, const char *string, VMVa_List &args);
 	void DrawChar(FFont *font, int normalcolor, double x, double y, int character, int tag_first, ...);
 	void DrawChar(FFont *font, int normalcolor, double x, double y, int character, VMVa_List &args);
+	void DrawText(FFont *font, int normalcolor, double x, double y, const char32_t *string, int tag_first, ...);
 
 	void DrawFrame(int left, int top, int width, int height);
-	void DrawBorder(int x1, int y1, int x2, int y2);
-	void DrawViewBorder();
-	void RefreshViewBorder();
+	void DrawBorder(FTextureID, int x1, int y1, int x2, int y2);
 
 	// Calculate gamma table
 	void CalcGamma(float gamma, uint8_t gammalookup[256]);
@@ -560,6 +541,7 @@ public:
 	int ScreenToWindowX(int x);
 	int ScreenToWindowY(int y);
 
+	void FPSLimit();
 
 	// Retrieves a buffer containing image data for a screenshot.
 	// Hint: Pitch can be negative for upside-down images, in which case buffer
@@ -576,6 +558,7 @@ protected:
 	void DrawRateStuff ();
 
 private:
+	uint64_t fpsLimitTime = 0;
 
 	uint64_t LastMS = 0, LastSec = 0, FrameCount = 0, LastCount = 0, LastTic = 0;
 
@@ -629,20 +612,52 @@ bool AspectTallerThanWide(float aspect);
 void ScaleWithAspect(int &w, int &h, int Width, int Height);
 
 int GetUIScale(int altval);
+int GetConScale(int altval);
 
 EXTERN_CVAR(Int, uiscale);
 EXTERN_CVAR(Int, con_scaletext);
 EXTERN_CVAR(Int, con_scale);
 
-inline int active_con_scaletext()
+inline int active_con_scaletext(bool newconfont = false)
 {
-	return GetUIScale(con_scaletext);
+	return newconfont? GetConScale(con_scaletext) : GetUIScale(con_scaletext);
 }
 
 inline int active_con_scale()
 {
-	return GetUIScale(con_scale);
+	return GetConScale(con_scale);
 }
+
+
+class ScaleOverrider
+{
+	int savedxfac, savedyfac, savedwidth, savedheight;
+
+public:
+	// This is to allow certain elements to use an optimal fullscreen scale which for the menu would be too large.
+	// The old code contained far too much mess to compensate for the menus which negatively affected everything else.
+	// However, for compatibility reasons the currently used variables cannot be changed so they have to be overridden temporarily.
+	// This class provides a safe interface for this because it ensures that the values get restored afterward.
+	// Currently, the intermission and the level summary screen use this.
+	ScaleOverrider()
+	{
+		savedxfac = CleanXfac;
+		savedyfac = CleanYfac;
+		savedwidth = CleanWidth;
+		savedheight = CleanHeight;
+		V_CalcCleanFacs(320, 200, screen->GetWidth(), screen->GetHeight(), &CleanXfac, &CleanYfac);
+		CleanWidth = screen->GetWidth() / CleanXfac;
+		CleanHeight = screen->GetHeight() / CleanYfac;
+	}
+
+	~ScaleOverrider()
+	{
+		CleanXfac = savedxfac;
+		CleanYfac = savedyfac;
+		CleanWidth = savedwidth;
+		CleanHeight = savedheight;
+	}
+};
 
 
 #endif // __V_VIDEO_H__

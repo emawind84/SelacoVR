@@ -33,7 +33,7 @@
 */
 
 #include "doomtype.h"
-#include "doomstat.h"
+#include "g_game.h"
 #include "d_event.h"
 #include "w_wad.h"
 #include "gi.h"
@@ -49,6 +49,8 @@
 #include "menu/menu.h"
 #include "d_net.h"
 #include "g_levellocals.h"
+#include "utf8.h"
+#include "templates.h"
 
 FIntermissionDescriptorList IntermissionDescriptors;
 
@@ -209,7 +211,6 @@ int DIntermissionScreenFader::Responder (event_t *ev)
 {
 	if (ev->type == EV_KeyDown)
 	{
-		V_SetBlend(0,0,0,0);
 		return -1;
 	}
 	return Super::Responder(ev);
@@ -252,10 +253,21 @@ void DIntermissionScreenText::Init(FIntermissionAction *desc, bool first)
 	if (mText[0] == '$') mText = GStrings(&mText[1]);
 	mTextSpeed = static_cast<FIntermissionActionTextscreen*>(desc)->mTextSpeed;
 	mTextX = static_cast<FIntermissionActionTextscreen*>(desc)->mTextX;
+	bool usesDefault = mTextX < 0;
 	if (mTextX < 0) mTextX =gameinfo.TextScreenX;
 	mTextY = static_cast<FIntermissionActionTextscreen*>(desc)->mTextY;
 	if (mTextY < 0) mTextY =gameinfo.TextScreenY;
-	mTextLen = (int)strlen(mText);
+
+	// If the text is too wide, center it so that it works better on widescreen displays.
+	// On 4:3 it'd still be cut off, though.
+	int width = SmallFont->StringWidth(mText);
+	if (usesDefault && mTextX + width > 320 - mTextX)
+	{
+		mTextX = (320 - width) / 2;
+	}
+
+
+	mTextLen = (int)mText.CharacterCount();
 	mTextDelay = static_cast<FIntermissionActionTextscreen*>(desc)->mTextDelay;
 	mTextColor = static_cast<FIntermissionActionTextscreen*>(desc)->mTextColor;
 	// For text screens, the duration only counts when the text is complete.
@@ -285,7 +297,7 @@ void DIntermissionScreenText::Drawer ()
 		size_t count;
 		int c;
 		const FRemapTable *range;
-		const char *ch = mText;
+		const uint8_t *ch = (const uint8_t*)mText.GetChars();
 		const int kerning = SmallFont->GetDefaultKerning();
 
 		// Count number of rows in this text. Since it does not word-wrap, we just count
@@ -302,6 +314,7 @@ void DIntermissionScreenText::Drawer ()
 
 		int cx = (mTextX - 160)*CleanXfac + screen->GetWidth() / 2;
 		int cy = (mTextY - 100)*CleanYfac + screen->GetHeight() / 2;
+		cx = MAX<int>(0, cx);
 		int startx = cx;
 
 		// Does this text fall off the end of the screen? If so, try to eliminate some margins first.
@@ -327,7 +340,7 @@ void DIntermissionScreenText::Drawer ()
 
 		for ( ; count > 0 ; count-- )
 		{
-			c = *ch++;
+			c = GetCharFromString(ch);
 			if (!c)
 				break;
 			if (c == '\n')
@@ -376,7 +389,7 @@ void DIntermissionScreenCast::Init(FIntermissionAction *desc, bool first)
 		mCastSounds[i].mSound = static_cast<FIntermissionActionCast*>(desc)->mCastSounds[i].mSound;
 	}
 	caststate = mDefaults->SeeState;
-	if (mClass->IsDescendantOf(RUNTIME_CLASS(APlayerPawn)))
+	if (mClass->IsDescendantOf(NAME_PlayerPawn))
 	{
 		advplayerstate = mDefaults->MissileState;
 		casttranslation = TRANSLATION(TRANSLATION_Players, consoleplayer);
@@ -419,7 +432,7 @@ int DIntermissionScreenCast::Responder (event_t *ev)
 		castframes = 0;
 		castattacking = false;
 
-		if (mClass->IsDescendantOf(RUNTIME_CLASS(APlayerPawn)))
+		if (mClass->IsDescendantOf(NAME_PlayerPawn))
 		{
 			int snd = S_FindSkinnedSound(players[consoleplayer].mo, "*death");
 			if (snd != 0) S_Sound (CHAN_VOICE | CHAN_UI, snd, 1, ATTN_NONE);
@@ -479,7 +492,7 @@ int DIntermissionScreenCast::Ticker ()
 	{
 		// go into attack frame
 		castattacking = true;
-		if (!mClass->IsDescendantOf(RUNTIME_CLASS(APlayerPawn)))
+		if (!mClass->IsDescendantOf(NAME_PlayerPawn))
 		{
 			if (castonmelee)
 				basestate = caststate = mDefaults->MeleeState;
@@ -546,7 +559,7 @@ void DIntermissionScreenCast::Drawer ()
 
 		if (!(mDefaults->flags4 & MF4_NOSKIN) &&
 			mDefaults->SpawnState != NULL && caststate->sprite == mDefaults->SpawnState->sprite &&
-			mClass->IsDescendantOf(RUNTIME_CLASS(APlayerPawn)) &&
+			mClass->IsDescendantOf(NAME_PlayerPawn) &&
 			Skins.Size() > 0)
 		{
 			// Only use the skin sprite if this class has not been removed from the
@@ -681,7 +694,7 @@ DIntermissionController::DIntermissionController(FIntermissionDescriptor *Desc, 
 	mIndex = 0;
 	mAdvance = false;
 	mSentAdvance = false;
-	mScreen = NULL;
+	mScreen = nullptr;
 	mFirst = true;
 	mGameState = state;
 }
@@ -696,6 +709,7 @@ bool DIntermissionController::NextPage ()
 		// last page
 		return false;
 	}
+	bg.SetInvalid();
 
 	if (mScreen != NULL)
 	{
@@ -787,11 +801,10 @@ void DIntermissionController::Ticker ()
 			switch (mGameState)
 			{
 			case FSTATE_InLevel:
-				if (level.cdtrack == 0 || !S_ChangeCDMusic (level.cdtrack, level.cdid))
-					S_ChangeMusic (level.Music, level.musicorder);
+				primaryLevel->SetMusic();
 				gamestate = GS_LEVEL;
 				wipegamestate = GS_LEVEL;
-				P_ResumeConversation ();
+				gameaction = ga_resumeconversation;
 				viewactive = true;
 				Destroy();
 				break;
@@ -834,11 +847,11 @@ void DIntermissionController::OnDestroy ()
 
 void F_StartIntermission(FIntermissionDescriptor *desc, bool deleteme, uint8_t state)
 {
+	ScaleOverrider s;
 	if (DIntermissionController::CurrentIntermission != NULL)
 	{
 		DIntermissionController::CurrentIntermission->Destroy();
 	}
-	V_SetBlend (0,0,0,0);
 	S_StopAllChannels ();
 	gameaction = ga_nothing;
 	gamestate = GS_FINALE;
@@ -880,6 +893,7 @@ void F_StartIntermission(FName seq, uint8_t state)
 
 bool F_Responder (event_t* ev)
 {
+	ScaleOverrider s;
 	if (DIntermissionController::CurrentIntermission != NULL)
 	{
 		return DIntermissionController::CurrentIntermission->Responder(ev);
@@ -895,6 +909,7 @@ bool F_Responder (event_t* ev)
 
 void F_Ticker ()
 {
+	ScaleOverrider s;
 	if (DIntermissionController::CurrentIntermission != NULL)
 	{
 		DIntermissionController::CurrentIntermission->Ticker();
@@ -909,6 +924,7 @@ void F_Ticker ()
 
 void F_Drawer ()
 {
+	ScaleOverrider s;
 	if (DIntermissionController::CurrentIntermission != NULL)
 	{
 		DIntermissionController::CurrentIntermission->Drawer();
@@ -924,6 +940,7 @@ void F_Drawer ()
 
 void F_EndFinale ()
 {
+	ScaleOverrider s;
 	if (DIntermissionController::CurrentIntermission != NULL)
 	{
 		DIntermissionController::CurrentIntermission->Destroy();
@@ -939,6 +956,7 @@ void F_EndFinale ()
 
 void F_AdvanceIntermission()
 {
+	ScaleOverrider s;
 	if (DIntermissionController::CurrentIntermission != NULL)
 	{
 		DIntermissionController::CurrentIntermission->mAdvance = true;
