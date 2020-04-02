@@ -41,20 +41,20 @@ const char *GetVersionString();
 
 /** Lots of different version numbers **/
 
-#define VERSIONSTR "4.0.0"
+#define VERSIONSTR "4.1.0"
 
 // The version as seen in the Windows resource
-#define RC_FILEVERSION 4,0,0,0
-#define RC_PRODUCTVERSION 4,0,0,0
+#define RC_FILEVERSION 4,1,0,0
+#define RC_PRODUCTVERSION 4,1,0,0
 #define RC_PRODUCTVERSION2 VERSIONSTR
 // These are for content versioning.
 #define VER_MAJOR 4
-#define VER_MINOR 0
+#define VER_MINOR 1
 #define VER_REVISION 0
 
 // This should always refer to the GZDoom version a derived port is based on and not reflect the derived port's version number!
 #define ENG_MAJOR 4
-#define ENG_MINOR 0
+#define ENG_MINOR 1
 #define ENG_REVISION 0
 
 // Version identifier for network games.
@@ -62,11 +62,7 @@ const char *GetVersionString();
 // didn't change anything that will affect sync.
 #define NETGAMEVERSION 235
 
-// Version stored in the ini's [LastRun] section.
-// Bump it if you made some configuration change that you want to
-// be able to migrate in FGameConfigFile::DoGlobalSetup().
-#define LASTRUNVERSION "217"
-
+#define LASTRUNVERSION "218"
 // Protocol version used in demos.
 // Bump it if you change existing DEM_ commands or add new ones.
 // Otherwise, it should be safe to leave it alone.

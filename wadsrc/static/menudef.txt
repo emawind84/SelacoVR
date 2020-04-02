@@ -370,7 +370,7 @@ OptionMenu "OptionsMenu" protected
 	Submenu "$OPTMNU_JOYSTICK",			"JoystickOptions"
 	Submenu "VR Options",    			"OpenVROptions"
 	StaticText " "
-	Submenu "$OPTMNU_PLAYER",			"PlayerMenu"
+	Submenu "$OPTMNU_PLAYER",			"NewPlayerMenu"
 	Submenu "$OPTMNU_GAMEPLAY",			"GameplayOptions"
 	Submenu "$OPTMNU_COMPATIBILITY",	"CompatibilityOptions"
 	Submenu "$OPTMNU_AUTOMAP",			"AutomapOptions"
@@ -402,6 +402,58 @@ OptionValue "Gender"
 	3, "$OPTVAL_OTHER"
 }
 
+OptionValue "PlayerTeam"
+{
+	// Filled in programmatically
+}
+
+OptionValue "PlayerColors"
+{
+	// Filled in programmatically
+}
+
+OptionValue "PlayerClass"
+{
+	// Filled in programmatically
+}
+
+OptionValue "PlayerSkin"
+{
+	// Filled in programmatically
+}
+
+/*
+	IfGame(Doom, Heretic, Strife, Chex)
+	{
+		MouseWindow 0, 220
+		PlayerDisplay 220, 48, "20 00 00", "80 00 40", 1, "PlayerDisplay"
+	}
+	IfGame(Hexen)
+	{
+		MouseWindow 0, 220
+		PlayerDisplay 220, 48, "00 07 00", "40 53 40", 1, "PlayerDisplay"
+	}
+*/
+
+OptionMenu "NewPlayerMenu" protected
+{
+	Title "$MNU_PLAYERSETUP"
+	PlayerNameField "$PLYRMNU_NAME"
+	PlayerTeamItem "$PLYRMNU_TEAM", "PlayerTeam"
+	PlayerColorItem "$PLYRMNU_PLAYERCOLOR", "PlayerColors"
+	PlayerColorSlider "$PLYRMNU_RED", 0
+	PlayerColorSlider "$PLYRMNU_GREEN", 1
+	PlayerColorSlider "$PLYRMNU_BLUE", 2
+	PlayerClassItem "$PLYRMNU_PLAYERCLASS", "PlayerClass"
+	PlayerSkinItem "$PLYRMNU_PLAYERSKIN", "PlayerSkin"
+	PlayerGenderItem "$PLYRMNU_PLAYERGENDER", "Gender"
+	AutoaimSlider "$PLYRMNU_AUTOAIM"
+	PlayerSwitchOnPickupItem "$PLYRMNU_SWITCHONPICKUP", "OffOn"
+	Option "$PLYRMNU_ALWAYSRUN", cl_run, "OnOff"
+	Class "NewPlayerMenu"
+}
+
+// The old player menu is kept for mods that redefine it.
 ListMenu "PlayerMenu"
 {
 	StaticTextCentered 160, 6, "$MNU_PLAYERSETUP"
@@ -873,6 +925,7 @@ OptionMenu "VideoOptions" protected
 	Slider "$DSPLYMNU_CONTRAST",				"vid_contrast",	   				0.1, 3.0, 0.1
 	Slider "$DSPLYMNU_SATURATION",				"vid_saturation",  				-3.0, 3.0, 0.25, 2
 	StaticText " "
+	Option "$DSPLYMNU_WIPETYPE",				"wipetype", "Wipes"
 	Option "$DSPLYMNU_DRAWFUZZ",				"r_drawfuzz", "Fuzziness"
 	Option "$DSPLYMNU_OLDTRANS",				"r_vanillatrans", "VanillaTrans"
 	Slider "$DSPLYMNU_TRANSSOUL",				"transsouls", 0.25, 1.0, 0.05, 2
@@ -2190,7 +2243,6 @@ OptionMenu CustomResolutionMenu protected
 	StaticText "$VIDMNU_RESPRESETHEAD"
 	StaticText ""
 	StaticText "$VIDMNU_ASPECT43"
-	Command "320x240", "menu_resolution_set_custom 320 240"
 	Command "640x480", "menu_resolution_set_custom 640 480"
 	Command "1024x768", "menu_resolution_set_custom 1024 768"
 	Command "1280x960", "menu_resolution_set_custom 1280 960"
@@ -2533,7 +2585,7 @@ OptionMenu "OpenGLOptions" protected
 
 OptionMenu "VR3DMenu" protected
 {
-	Title "GLPREFMNU_VRMODE"
+	Title "$GLPREFMNU_VRMODE"
 	Option "$GLMNU_3DMODE",					vr_mode, 						"VRMode"
 	IfOption(Windows)
 	{
@@ -2699,12 +2751,14 @@ OptionString "LanguageOptions"
 	"auto", "Auto"
 	"default", "English (US)"
 	"eng", "English (UK)"
-	"de", "Deutsch"
-	"es", "Español (España)"
-	"esm", "Español (Latino)"
-	"fr", "Français"
-	"it", "Italiano"
-	"ru", "Русский"
+	"de", "Deutsch (German)"
+	"es", "Español (España) (Castilian Spanish)"
+	"esm", "Español (Latino) (Latin American Spanish)"
+	"fr", "Français (French)"
+	"it", "Italiano (Italian)"
+	"ko", "한국의 (Korean)"
+	"pt", "Português do Brasil (Brazilian Portuguese)"
+	"ru", "Русский (Russian)"
 }
 
 /*=======================================
@@ -2737,7 +2791,7 @@ OptionMenu "vkoptions"
 	StaticText "$VK_WARNING"
 	StaticText "$VK_RESTART"
 	StaticText ""
-	Option "$VKMNU_ENABLE",				"vid_backend", "OffOn"
+	Option "$VKMNU_ENABLE",				"vid_enablevulkan", "OnOff"
 	TextField "$VKMNU_DEVICE",			vk_device
 	Option "$VKMNU_HDR",				"vk_hdr", "OnOff"
 }

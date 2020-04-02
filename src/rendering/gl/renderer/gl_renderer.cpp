@@ -52,7 +52,6 @@
 #include "hwrenderer/data/flatvertices.h"
 #include "hwrenderer/scene/hw_skydome.h"
 #include "hwrenderer/scene/hw_fakeflat.h"
-#include "gl/shaders/gl_postprocessshaderinstance.h"
 #include "gl/textures/gl_samplers.h"
 #include "hwrenderer/dynlights/hw_lightbuffer.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
@@ -98,7 +97,6 @@ void FGLRenderer::Initialize(int width, int height)
 	mPresent3dColumnShader = new FPresent3DColumnShader();
 	mPresent3dRowShader = new FPresent3DRowShader();
 	mShadowMapShader = new FShadowMapShader();
-	mCustomPostProcessShaders = new FCustomPostProcessShaders();
 
 	// needed for the core profile, because someone decided it was a good idea to remove the default VAO.
 	glGenQueries(1, &PortalQueryObject);
@@ -126,26 +124,16 @@ FGLRenderer::~FGLRenderer()
 		glBindVertexArray(0);
 		glDeleteVertexArrays(1, &mVAOID);
 	}
-	if (PortalQueryObject != 0)
-		glDeleteQueries(1, &PortalQueryObject);
+	if (PortalQueryObject != 0) glDeleteQueries(1, &PortalQueryObject);
 
-	if (swdrawer)
-		delete swdrawer;
-	if (mBuffers)
-		delete mBuffers;
-	if (mSaveBuffers)
-		delete mSaveBuffers;
-	if (mPresentShader)
-		delete mPresentShader;
-	if (mPresent3dCheckerShader)
-		delete mPresent3dCheckerShader;
-	if (mPresent3dColumnShader)
-		delete mPresent3dColumnShader;
-	if (mPresent3dRowShader)
-		delete mPresent3dRowShader;
-	if (mShadowMapShader)
-		delete mShadowMapShader;
-	delete mCustomPostProcessShaders;
+	if (swdrawer) delete swdrawer;
+	if (mBuffers) delete mBuffers;
+	if (mSaveBuffers) delete mSaveBuffers;
+	if (mPresentShader) delete mPresentShader;
+	if (mPresent3dCheckerShader) delete mPresent3dCheckerShader;
+	if (mPresent3dColumnShader) delete mPresent3dColumnShader;
+	if (mPresent3dRowShader) delete mPresent3dRowShader;
+	if (mShadowMapShader) delete mShadowMapShader;
 }
 
 //===========================================================================

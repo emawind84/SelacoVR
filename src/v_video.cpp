@@ -108,7 +108,7 @@ CUSTOM_CVAR(Int, vid_rendermode, 4, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOIN
 	// No further checks needed. All this changes now is which scene drawer the render backend calls.
 }
 
-CUSTOM_CVAR(Int, vid_backend, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+CUSTOM_CVAR(Int, vid_enablevulkan, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	// [SP] This may seem pointless - but I don't want to implement live switching just
 	// yet - I'm pretty sure it's going to require a lot of reinits and destructions to
@@ -149,7 +149,7 @@ public:
 
 int DisplayWidth, DisplayHeight;
 
-FFont *SmallFont, *SmallFont2, *BigFont, *BigUpper, *ConFont, *IntermissionFont, *NewConsoleFont, *NewSmallFont, *CurrentConsoleFont;
+FFont *SmallFont, *SmallFont2, *BigFont, *BigUpper, *ConFont, *IntermissionFont, *NewConsoleFont, *NewSmallFont, *CurrentConsoleFont, *OriginalSmallFont, *AlternativeSmallFont, *OriginalBigFont;
 
 uint32_t Col2RGB8[65][256];
 uint32_t *Col2RGB8_LessPrecision[65];
@@ -550,7 +550,7 @@ void V_UpdateModeSize (int width, int height)
 
 	// This reference size is being used so that on 800x450 (small 16:9) a scale of 2 gets used.
 
-	CleanXfac = std::min(screen->GetWidth() / 400, screen->GetHeight() / 240);
+	CleanXfac = std::max(std::min(screen->GetWidth() / 400, screen->GetHeight() / 240), 1);
 	if (CleanXfac >= 4) CleanXfac--;	// Otherwise we do not have enough space for the episode/skill menus in some languages.
 	CleanYfac = CleanXfac;
 	CleanWidth = screen->GetWidth() / CleanXfac;
@@ -563,7 +563,7 @@ void V_UpdateModeSize (int width, int height)
 	else if (w >= 1600 && w < 1920) factor = 3; 
 	else  factor = w / 640;
 
-	CleanYfac_1 = CleanXfac_1 = MAX(1, int (CleanXfac * 0.7));
+	CleanYfac_1 = CleanXfac_1 = MAX(1, int (factor * 0.7));
 	CleanWidth_1 = width / CleanXfac_1;
 	CleanHeight_1 = height / CleanYfac_1;
 
@@ -917,6 +917,9 @@ DEFINE_GLOBAL(BigFont)
 DEFINE_GLOBAL(ConFont)
 DEFINE_GLOBAL(NewConsoleFont)
 DEFINE_GLOBAL(NewSmallFont)
+DEFINE_GLOBAL(AlternativeSmallFont)
+DEFINE_GLOBAL(OriginalSmallFont)
+DEFINE_GLOBAL(OriginalBigFont)
 DEFINE_GLOBAL(IntermissionFont)
 DEFINE_GLOBAL(CleanXfac)
 DEFINE_GLOBAL(CleanYfac)
@@ -926,3 +929,4 @@ DEFINE_GLOBAL(CleanXfac_1)
 DEFINE_GLOBAL(CleanYfac_1)
 DEFINE_GLOBAL(CleanWidth_1)
 DEFINE_GLOBAL(CleanHeight_1)
+DEFINE_GLOBAL(generic_ui)

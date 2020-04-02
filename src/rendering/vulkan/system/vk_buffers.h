@@ -13,7 +13,10 @@
 class VKBuffer : virtual public IBuffer
 {
 public:
+	VKBuffer();
 	~VKBuffer();
+
+	void Reset();
 
 	void SetData(size_t size, const void *data, bool staticdata) override;
 	void SetSubData(size_t offset, size_t size, const void *data) override;
@@ -24,6 +27,10 @@ public:
 
 	void *Lock(unsigned int size) override;
 	void Unlock() override;
+
+	static VKBuffer *First;
+	VKBuffer *Prev = nullptr;
+	VKBuffer *Next = nullptr;
 
 	VkBufferUsageFlags mBufferType = 0;
 	std::unique_ptr<VulkanBuffer> mBuffer;
@@ -50,7 +57,14 @@ public:
 class VKDataBuffer : public IDataBuffer, public VKBuffer
 {
 public:
-	VKDataBuffer(int bindingpoint, bool ssbo) : bindingpoint(bindingpoint) { mBufferType = ssbo ? VK_BUFFER_USAGE_STORAGE_BUFFER_BIT : VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; }
+	VKDataBuffer(int bindingpoint, bool ssbo, bool needresize) : bindingpoint(bindingpoint)
+	{
+		mBufferType = ssbo ? VK_BUFFER_USAGE_STORAGE_BUFFER_BIT : VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		if (needresize)
+		{
+			mBufferType |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+		}
+	}
 
 	void BindRange(size_t start, size_t length) override;
 	void BindBase() override;

@@ -73,7 +73,7 @@ EXTERN_CVAR (Int, vid_adapter)
 EXTERN_CVAR (Int, vid_displaybits)
 EXTERN_CVAR (Int, vid_defwidth)
 EXTERN_CVAR (Int, vid_defheight)
-EXTERN_CVAR (Int, vid_backend)
+EXTERN_CVAR (Int, vid_enablevulkan)
 EXTERN_CVAR (Bool, cl_capfps)
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
@@ -111,9 +111,6 @@ namespace Priv
 
 	static const uint32_t VulkanWindowFlag = 0x1000'0000;
 
-	static const int MIN_WIDTH = 320;
-	static const int MIN_HEIGHT = 200;
-
 	SDL_Window *window;
 	bool vulkanEnabled;
 	bool fullscreenSwitch;
@@ -144,8 +141,16 @@ namespace Priv
 		if (Priv::window != nullptr)
 		{
 			// Enforce minimum size limit
-			SDL_SetWindowMinimumSize(Priv::window, Priv::MIN_WIDTH, Priv::MIN_HEIGHT);
+			SDL_SetWindowMinimumSize(Priv::window, VID_MIN_WIDTH, VID_MIN_HEIGHT);
 		}
+	}
+
+	void DestroyWindow()
+	{
+		assert(Priv::window != nullptr);
+
+		SDL_DestroyWindow(Priv::window);
+		Priv::window = nullptr;
 	}
 
 	void SetupPixelFormat(int multisample, const int *glver)
@@ -241,7 +246,7 @@ SDLVideo::SDLVideo ()
 	}
 
 #ifdef HAVE_VULKAN
-	Priv::vulkanEnabled = vid_backend == 0
+	Priv::vulkanEnabled = vid_enablevulkan == 1
 		&& Priv::Vulkan_GetDrawableSize && Priv::Vulkan_GetInstanceExtensions && Priv::Vulkan_CreateSurface;
 
 	if (Priv::vulkanEnabled)
@@ -258,7 +263,9 @@ SDLVideo::SDLVideo ()
 
 SDLVideo::~SDLVideo ()
 {
+#ifdef HAVE_VULKAN
 	delete device;
+#endif
 }
 
 DFrameBuffer *SDLVideo::CreateFrameBuffer ()
@@ -277,6 +284,11 @@ DFrameBuffer *SDLVideo::CreateFrameBuffer ()
 		}
 		catch (CRecoverableError const&)
 		{
+			if (Priv::window != nullptr)
+			{
+				Priv::DestroyWindow();
+			}
+
 			Priv::vulkanEnabled = false;
 		}
 	}
@@ -358,10 +370,10 @@ void SystemBaseFrameBuffer::ToggleFullscreen(bool yes)
 
 void SystemBaseFrameBuffer::SetWindowSize(int w, int h)
 {
-	if (w < Priv::MIN_WIDTH || h < Priv::MIN_HEIGHT)
+	if (w < VID_MIN_WIDTH || h < VID_MIN_HEIGHT)
 	{
-		w = Priv::MIN_WIDTH;
-		h = Priv::MIN_HEIGHT;
+		w = VID_MIN_WIDTH;
+		h = VID_MIN_HEIGHT;
 	}
 	win_w = w;
 	win_h = h;
@@ -429,8 +441,7 @@ SystemGLFrameBuffer::SystemGLFrameBuffer(void *hMonitor, bool fullscreen)
 		GLContext = SDL_GL_CreateContext(Priv::window);
 		if (GLContext == nullptr)
 		{
-			SDL_DestroyWindow(Priv::window);
-			Priv::window = nullptr;
+			Priv::DestroyWindow();
 		}
 		else
 		{
@@ -448,8 +459,7 @@ SystemGLFrameBuffer::~SystemGLFrameBuffer ()
 			SDL_GL_DeleteContext(GLContext);
 		}
 
-		SDL_DestroyWindow(Priv::window);
-		Priv::window = nullptr;
+		Priv::DestroyWindow();
 	}
 }
 

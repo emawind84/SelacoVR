@@ -46,6 +46,9 @@
 #include "v_2ddrawer.h"
 #include "hwrenderer/dynlights/hw_shadowmap.h"
 
+static const int VID_MIN_WIDTH = 640;
+static const int VID_MIN_HEIGHT = 400;
+
 struct sector_t;
 class FTexture;
 struct FPortalSceneState;
@@ -232,6 +235,16 @@ enum
 	DTA_SrcHeight,
 	DTA_LegacyRenderStyle,	// takes an old-style STYLE_* constant instead of an FRenderStyle
 	DTA_Burn,				// activates the burn shader for this element
+	DTA_Spacing,			// Strings only: Additional spacing between characters
+	DTA_Monospace,			// Fonts only: Use a fixed distance between characters.
+};
+
+enum EMonospacing : int
+{
+	Off = 0,
+	CellLeft = 1,
+	CellCenter = 2,
+	CellRight = 3
 };
 
 enum
@@ -282,6 +295,8 @@ struct DrawParms
 	int desaturate;
 	int scalex, scaley;
 	int cellx, celly;
+	int monospace;
+	int spacing;
 	int maxstrlen;
 	bool fortext;
 	bool virtBottom;
@@ -379,6 +394,7 @@ public:
 	DFrameBuffer (int width=1, int height=1);
 	virtual ~DFrameBuffer();
 	virtual void InitializeState() = 0;	// For stuff that needs 'screen' set.
+	virtual bool IsVulkan() { return false; }
 
 	void SetSize(int width, int height);
 	void SetVirtualSize(int width, int height)
@@ -433,7 +449,7 @@ public:
     // Interface to hardware rendering resources
 	virtual IVertexBuffer *CreateVertexBuffer() { return nullptr; }
 	virtual IIndexBuffer *CreateIndexBuffer() { return nullptr; }
-	virtual IDataBuffer *CreateDataBuffer(int bindingpoint, bool ssbo) { return nullptr; }
+	virtual IDataBuffer *CreateDataBuffer(int bindingpoint, bool ssbo, bool needsresize) { return nullptr; }
 	bool BuffersArePersistent() { return !!(hwcaps & RFL_BUFFER_STORAGE); }
 
 	// Begin/End 2D drawing operations.

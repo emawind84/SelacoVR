@@ -51,7 +51,7 @@
 #include "i_system.h"
 #include "swrenderer/r_swrenderer.h"
 
-EXTERN_CVAR(Int, vid_backend)
+EXTERN_CVAR(Int, vid_enablevulkan)
 
 extern HWND Window;
 
@@ -130,15 +130,16 @@ void I_InitGraphics ()
 	}
 
 #ifdef HAVE_VULKAN
-	if (vid_backend == 0)
+	if (vid_enablevulkan == 1)
 	{
 		// first try Vulkan, if that fails OpenGL
 		try
 		{
 			Video = new Win32VulkanVideo();
 		}
-		catch (CRecoverableError &)
+		catch (CRecoverableError &error)
 		{
+			Printf(TEXTCOLOR_RED "Initialization of Vulkan failed: %s\n", error.what());
 			Video = new Win32GLVideo();
 		}
 	}

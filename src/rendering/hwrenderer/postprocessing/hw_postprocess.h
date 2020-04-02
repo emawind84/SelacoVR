@@ -2,6 +2,9 @@
 
 #include "hwrenderer/data/shaderuniforms.h"
 #include <memory>
+#include <map>
+
+struct PostProcessShader;
 
 typedef FRenderStyle PPBlendMode;
 typedef IntRect PPViewport;
@@ -292,7 +295,7 @@ public:
 class PPShader : public PPResource
 {
 public:
-	PPShader() { }
+	PPShader() = default;
 	PPShader(const FString &fragment, const FString &defines, const std::vector<UniformFieldDesc> &uniforms, int version = 330) : FragmentShader(fragment), Defines(defines), Uniforms(uniforms), Version(version) { }
 
 	void ResetBackend() override { Backend.reset(); }
@@ -631,7 +634,7 @@ struct DepthBlurUniforms
 {
 	float BlurSharpness;
 	float PowExponent;
-	FVector2 InvFullResolution;
+	float Padding0, Padding1;
 
 	static std::vector<UniformFieldDesc> Desc()
 	{
@@ -639,7 +642,8 @@ struct DepthBlurUniforms
 		{
 			{ "BlurSharpness", UniformType::Float, offsetof(DepthBlurUniforms, BlurSharpness) },
 			{ "PowExponent", UniformType::Float, offsetof(DepthBlurUniforms, PowExponent) },
-			{ "InvFullResolution", UniformType::Vec2, offsetof(DepthBlurUniforms, InvFullResolution) }
+			{ "Padding0", UniformType::Float, offsetof(DepthBlurUniforms, Padding0) },
+			{ "Padding1", UniformType::Float, offsetof(DepthBlurUniforms, Padding1) }
 		};
 	}
 };
@@ -647,7 +651,7 @@ struct DepthBlurUniforms
 struct AmbientCombineUniforms
 {
 	int SampleCount;
-	int Padding0, Padding1, Padding2;
+	int DebugMode, Padding1, Padding2;
 	FVector2 Scale;
 	FVector2 Offset;
 
@@ -656,7 +660,7 @@ struct AmbientCombineUniforms
 		return
 		{
 			{ "SampleCount", UniformType::Int, offsetof(AmbientCombineUniforms, SampleCount) },
-			{ "Padding0", UniformType::Int, offsetof(AmbientCombineUniforms, Padding0) },
+			{ "DebugMode", UniformType::Int, offsetof(AmbientCombineUniforms, DebugMode) },
 			{ "Padding1", UniformType::Int, offsetof(AmbientCombineUniforms, Padding1) },
 			{ "Padding2", UniformType::Int, offsetof(AmbientCombineUniforms, Padding2) },
 			{ "Scale", UniformType::Vec2, offsetof(AmbientCombineUniforms, Scale) },
@@ -777,6 +781,39 @@ private:
 	PPShader ShadowMap = { "shaders/glsl/shadowmap.fp", "", ShadowMapUniforms::Desc() };
 };
 
+class PPCustomShaderInstance
+{
+public:
+	PPCustomShaderInstance(PostProcessShader *desc);
+
+	void Run(PPRenderState *renderstate);
+
+	PostProcessShader *Desc = nullptr;
+
+private:
+	void AddUniformField(size_t &offset, const FString &name, UniformType type, size_t fieldsize, size_t alignment = 0);
+	void SetTextures(PPRenderState *renderstate);
+	void SetUniforms(PPRenderState *renderstate);
+
+	PPShader Shader;
+	int UniformStructSize = 0;
+	std::vector<UniformFieldDesc> Fields;
+	std::vector<std::unique_ptr<FString>> FieldNames;
+	std::map<FTexture*, std::unique_ptr<PPTexture>> Textures;
+	std::map<FString, size_t> FieldOffset;
+};
+
+class PPCustomShaders
+{
+public:
+	void Run(PPRenderState *renderstate, FString target);
+
+private:
+	void CreateShaders();
+
+	std::vector<std::unique_ptr<PPCustomShaderInstance>> mShaders;
+};
+
 /////////////////////////////////////////////////////////////////////////////
 
 class Postprocess
@@ -791,6 +828,7 @@ public:
 	PPAmbientOcclusion ssao;
 	PPPresent present;
 	PPShadowMap shadowmap;
+	PPCustomShaders customShaders;
 };
 
 extern Postprocess hw_postprocess;

@@ -69,6 +69,8 @@ EXTERN_CVAR(Bool, cl_capfps)
 EXTERN_CVAR(Bool, gl_no_skyclear)
 
 extern bool NoInterpolateView;
+extern int rendered_commandbuffers;
+int current_rendered_commandbuffers;
 
 VulkanFrameBuffer::VulkanFrameBuffer(void *hMonitor, bool fullscreen, VulkanDevice *dev) : 
 	Super(hMonitor, fullscreen) 
@@ -78,15 +80,24 @@ VulkanFrameBuffer::VulkanFrameBuffer(void *hMonitor, bool fullscreen, VulkanDevi
 	swapChain = std::make_unique<VulkanSwapChain>(device);
 	mSwapChainImageAvailableSemaphore.reset(new VulkanSemaphore(device));
 	mRenderFinishedSemaphore.reset(new VulkanSemaphore(device));
-	mRenderFinishedFence.reset(new VulkanFence(device));
 
-	InitPalette();
+	for (auto &semaphore : mSubmitSemaphore)
+		semaphore.reset(new VulkanSemaphore(device));
+
+	for (auto &fence : mSubmitFence)
+		fence.reset(new VulkanFence(device));
+
+	for (int i = 0; i < maxConcurrentSubmitCount; i++)
+		mSubmitWaitFences[i] = mSubmitFence[i]->fence;
 }
 
 VulkanFrameBuffer::~VulkanFrameBuffer()
 {
 	// All descriptors must be destroyed before the descriptor pool in renderpass manager is destroyed
 	for (VkHardwareTexture *cur = VkHardwareTexture::First; cur; cur = cur->Next)
+		cur->Reset();
+
+	for (VKBuffer *cur = VKBuffer::First; cur; cur = cur->Next)
 		cur->Reset();
 
 	PPResource::ResetAll();
@@ -117,7 +128,6 @@ void VulkanFrameBuffer::InitializeState()
 	uniformblockalignment = (unsigned int)device->PhysicalDevice.Properties.limits.minUniformBufferOffsetAlignment;
 	maxuniformblock = device->PhysicalDevice.Properties.limits.maxUniformBufferRange;
 
-	mTransferSemaphore.reset(new VulkanSemaphore(device));
 	mCommandPool.reset(new VulkanCommandPool(device, device->graphicsFamily));
 
 	mScreenBuffers.reset(new VkRenderBuffers());
@@ -135,8 +145,8 @@ void VulkanFrameBuffer::InitializeState()
 	CreateFanToTrisIndexBuffer();
 
 	// To do: move this to HW renderer interface maybe?
-	MatricesUBO = (VKDataBuffer*)CreateDataBuffer(-1, false);
-	StreamUBO = (VKDataBuffer*)CreateDataBuffer(-1, false);
+	MatricesUBO = (VKDataBuffer*)CreateDataBuffer(-1, false, false);
+	StreamUBO = (VKDataBuffer*)CreateDataBuffer(-1, false, false);
 	MatricesUBO->SetData(UniformBufferAlignedSize<::MatricesUBO>() * 50000, nullptr, false);
 	StreamUBO->SetData(UniformBufferAlignedSize<::StreamUBO>() * 200, nullptr, false);
 
@@ -157,21 +167,6 @@ void VulkanFrameBuffer::Update()
 
 	Flush3D.Clock();
 
-	int newWidth = GetClientWidth();
-	int newHeight = GetClientHeight();
-	if (lastSwapWidth != newWidth || lastSwapHeight != newHeight)
-	{
-		swapChain.reset();
-		swapChain = std::make_unique<VulkanSwapChain>(device);
-
-		lastSwapWidth = newWidth;
-		lastSwapHeight = newHeight;
-	}
-
-	VkResult result = vkAcquireNextImageKHR(device->device, swapChain->swapChain, std::numeric_limits<uint64_t>::max(), mSwapChainImageAvailableSemaphore->semaphore, VK_NULL_HANDLE, &presentImageIndex);
-	if (result != VK_SUCCESS)
-		throw std::runtime_error("Failed to acquire next image!");
-
 	GetPostprocess()->SetActiveRenderTarget();
 
 	Draw2D();
@@ -180,37 +175,9 @@ void VulkanFrameBuffer::Update()
 	mRenderState->EndRenderPass();
 	mRenderState->EndFrame();
 
-	mPostprocess->DrawPresentTexture(mOutputLetterbox, true, true);
-
-	SubmitCommands(true);
-
 	Flush3D.Unclock();
 
-	FPSLimit();
-	
-	Finish.Reset();
-	Finish.Clock();
-
-	VkSemaphore waitSemaphores[] = { mRenderFinishedSemaphore->semaphore };
-	VkSwapchainKHR swapChains[] = { swapChain->swapChain };
-	VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = waitSemaphores;
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-	presentInfo.pImageIndices = &presentImageIndex;
-	presentInfo.pResults = nullptr;
-	vkQueuePresentKHR(device->presentQueue, &presentInfo);
-
-	vkWaitForFences(device->device, 1, &mRenderFinishedFence->fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
-	vkResetFences(device->device, 1, &mRenderFinishedFence->fence);
-
-	mDrawCommands.reset();
-	mTransferCommands.reset();
-	DeleteFrameObjects();
-
-	Finish.Unclock();
+	WaitForCommands(true);
 
 	Super::Update();
 }
@@ -221,42 +188,101 @@ void VulkanFrameBuffer::DeleteFrameObjects()
 	FrameDeleteList.ImageViews.clear();
 	FrameDeleteList.Buffers.clear();
 	FrameDeleteList.Descriptors.clear();
+	FrameDeleteList.CommandBuffers.clear();
 }
 
-void VulkanFrameBuffer::SubmitCommands(bool finish)
+void VulkanFrameBuffer::FlushCommands(VulkanCommandBuffer **commands, size_t count, bool finish, bool lastsubmit)
 {
-	if (mTransferCommands)
+	int currentIndex = mNextSubmit % maxConcurrentSubmitCount;
+
+	if (mNextSubmit >= maxConcurrentSubmitCount)
 	{
-		mTransferCommands->end();
-
-		QueueSubmit submit;
-		submit.addCommandBuffer(mTransferCommands.get());
-		submit.addSignal(mTransferSemaphore.get());
-		submit.execute(device, device->graphicsQueue);
+		vkWaitForFences(device->device, 1, &mSubmitFence[currentIndex]->fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+		vkResetFences(device->device, 1, &mSubmitFence[currentIndex]->fence);
 	}
-
-	mDrawCommands->end();
 
 	QueueSubmit submit;
-	submit.addCommandBuffer(mDrawCommands.get());
-	if (mTransferCommands)
-	{
-		submit.addWait(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, mTransferSemaphore.get());
-	}
-	if (finish)
+
+	for (size_t i = 0; i < count; i++)
+		submit.addCommandBuffer(commands[i]);
+
+	if (mNextSubmit > 0)
+		submit.addWait(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, mSubmitSemaphore[(mNextSubmit - 1) % maxConcurrentSubmitCount].get());
+
+	if (finish && presentImageIndex != 0xffffffff)
 	{
 		submit.addWait(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, mSwapChainImageAvailableSemaphore.get());
 		submit.addSignal(mRenderFinishedSemaphore.get());
 	}
-	submit.execute(device, device->graphicsQueue, mRenderFinishedFence.get());
 
-	if (!finish)
+	if (!lastsubmit)
+		submit.addSignal(mSubmitSemaphore[currentIndex].get());
+
+	submit.execute(device, device->graphicsQueue, mSubmitFence[currentIndex].get());
+	mNextSubmit++;
+}
+
+void VulkanFrameBuffer::FlushCommands(bool finish, bool lastsubmit)
+{
+	if (mDrawCommands || mTransferCommands)
 	{
-		vkWaitForFences(device->device, 1, &mRenderFinishedFence->fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
-		vkResetFences(device->device, 1, &mRenderFinishedFence->fence);
-		mDrawCommands.reset();
-		mTransferCommands.reset();
-		DeleteFrameObjects();
+		VulkanCommandBuffer *commands[2];
+		size_t count = 0;
+
+		if (mTransferCommands)
+		{
+			mTransferCommands->end();
+			commands[count++] = mTransferCommands.get();
+			FrameDeleteList.CommandBuffers.push_back(std::move(mTransferCommands));
+		}
+
+		if (mDrawCommands)
+		{
+			mDrawCommands->end();
+			commands[count++] = mDrawCommands.get();
+			FrameDeleteList.CommandBuffers.push_back(std::move(mDrawCommands));
+		}
+
+		FlushCommands(commands, count, finish, lastsubmit);
+
+		current_rendered_commandbuffers += (int)count;
+	}
+}
+
+void VulkanFrameBuffer::WaitForCommands(bool finish)
+{
+	if (finish)
+	{
+		Finish.Reset();
+		Finish.Clock();
+
+		presentImageIndex = swapChain->AcquireImage(GetClientWidth(), GetClientHeight(), mSwapChainImageAvailableSemaphore.get());
+		if (presentImageIndex != 0xffffffff)
+			mPostprocess->DrawPresentTexture(mOutputLetterbox, true, true);
+	}
+
+	FlushCommands(finish, true);
+
+	if (finish)
+	{
+		FPSLimit();
+
+		if (presentImageIndex != 0xffffffff)
+			swapChain->QueuePresent(presentImageIndex, mRenderFinishedSemaphore.get());
+	}
+
+	int numWaitFences = MIN(mNextSubmit, (int)maxConcurrentSubmitCount);
+	vkWaitForFences(device->device, numWaitFences, mSubmitWaitFences, VK_TRUE, std::numeric_limits<uint64_t>::max());
+	vkResetFences(device->device, numWaitFences, mSubmitWaitFences);
+
+	DeleteFrameObjects();
+	mNextSubmit = 0;
+
+	if (finish)
+	{
+		Finish.Unclock();
+		rendered_commandbuffers = current_rendered_commandbuffers;
+		current_rendered_commandbuffers = 0;
 	}
 }
 
@@ -275,8 +301,7 @@ void VulkanFrameBuffer::WriteSavePic(player_t *player, FileWriter *file, int wid
 		bounds.height = height;
 
 		// we must be sure the GPU finished reading from the buffer before we fill it with new data.
-		if (mDrawCommands)
-			SubmitCommands(false);
+		WaitForCommands(false);
 
 		// Switch to render buffers dimensioned for the savepic
 		mActiveRenderBuffers = mSaveBuffers.get();
@@ -567,11 +592,7 @@ uint32_t VulkanFrameBuffer::GetCaps()
 
 void VulkanFrameBuffer::SetVSync(bool vsync)
 {
-	if (swapChain->vsync != vsync)
-	{
-		swapChain.reset();
-		swapChain = std::make_unique<VulkanSwapChain>(device);
-	}
+	// This is handled in VulkanSwapChain::AcquireImage.
 }
 
 void VulkanFrameBuffer::CleanForRestart()
@@ -612,9 +633,9 @@ IIndexBuffer *VulkanFrameBuffer::CreateIndexBuffer()
 	return new VKIndexBuffer();
 }
 
-IDataBuffer *VulkanFrameBuffer::CreateDataBuffer(int bindingpoint, bool ssbo)
+IDataBuffer *VulkanFrameBuffer::CreateDataBuffer(int bindingpoint, bool ssbo, bool needsresize)
 {
-	auto buffer = new VKDataBuffer(bindingpoint, ssbo);
+	auto buffer = new VKDataBuffer(bindingpoint, ssbo, needsresize);
 
 	auto fb = GetVulkanFrameBuffer();
 	switch (bindingpoint)
@@ -641,8 +662,7 @@ void VulkanFrameBuffer::TextureFilterChanged()
 	if (mSamplerManager)
 	{
 		// Destroy the texture descriptors as they used the old samplers
-		for (VkHardwareTexture *cur = VkHardwareTexture::First; cur; cur = cur->Next)
-			cur->ResetDescriptors();
+		VkHardwareTexture::ResetAllDescriptors();
 
 		mSamplerManager->SetTextureFilterMode();
 	}
@@ -651,8 +671,7 @@ void VulkanFrameBuffer::TextureFilterChanged()
 void VulkanFrameBuffer::StartPrecaching()
 {
 	// Destroy the texture descriptors to avoid problems with potentially stale textures.
-	for (VkHardwareTexture *cur = VkHardwareTexture::First; cur; cur = cur->Next)
-		cur->ResetDescriptors();
+	VkHardwareTexture::ResetAllDescriptors();
 }
 
 void VulkanFrameBuffer::BlurScene(float amount)
@@ -720,7 +739,7 @@ void VulkanFrameBuffer::CopyScreenToBuffer(int w, int h, void *data)
 	GetDrawCommands()->copyImageToBuffer(image->image, layout, staging->buffer, 1, &region);
 
 	// Submit command buffers and wait for device to finish the work
-	SubmitCommands(false);
+	WaitForCommands(false);
 
 	// Map and convert from rgba8 to rgb8
 	uint8_t *dest = (uint8_t*)data;

@@ -23,7 +23,7 @@ class VulkanFrameBuffer : public SystemBaseFrameBuffer
 public:
 	VulkanDevice *device;
 	std::unique_ptr<VulkanSwapChain> swapChain;
-	uint32_t presentImageIndex = 0;
+	uint32_t presentImageIndex = 0xffffffff;
 
 	VulkanCommandBuffer *GetTransferCommands();
 	VulkanCommandBuffer *GetDrawCommands();
@@ -33,6 +33,8 @@ public:
 	VkRenderState *GetRenderState() { return mRenderState.get(); }
 	VkPostprocess *GetPostprocess() { return mPostprocess.get(); }
 	VkRenderBuffers *GetBuffers() { return mActiveRenderBuffers; }
+
+	void FlushCommands(bool finish, bool lastsubmit = false);
 
 	unsigned int GetLightBufferBlockSize() const;
 
@@ -57,12 +59,14 @@ public:
 		std::vector<std::unique_ptr<VulkanImageView>> ImageViews;
 		std::vector<std::unique_ptr<VulkanBuffer>> Buffers;
 		std::vector<std::unique_ptr<VulkanDescriptorSet>> Descriptors;
+		std::vector<std::unique_ptr<VulkanCommandBuffer>> CommandBuffers;
 	} FrameDeleteList;
 
 	std::unique_ptr<SWSceneDrawer> swdrawer;
 
 	VulkanFrameBuffer(void *hMonitor, bool fullscreen, VulkanDevice *dev);
 	~VulkanFrameBuffer();
+	bool IsVulkan() override { return true; }
 
 	void Update();
 
@@ -85,16 +89,18 @@ public:
 	FModelRenderer *CreateModelRenderer(int mli) override;
 	IVertexBuffer *CreateVertexBuffer() override;
 	IIndexBuffer *CreateIndexBuffer() override;
-	IDataBuffer *CreateDataBuffer(int bindingpoint, bool ssbo) override;
+	IDataBuffer *CreateDataBuffer(int bindingpoint, bool ssbo, bool needsresize) override;
 
 	FTexture *WipeStartScreen() override;
 	FTexture *WipeEndScreen() override;
 
 	TArray<uint8_t> GetScreenshotBuffer(int &pitch, ESSType &color_type, float &gamma) override;
 
-	void SetVSync(bool vsync);
+	void SetVSync(bool vsync) override;
 
 	void Draw2D(bool outside2D = false) override;
+
+	void WaitForCommands(bool finish);
 
 private:
 	sector_t *RenderViewpoint(FRenderViewpoint &mainvp, AActor * camera, IntRect * bounds, float fov, float ratio, float fovratio, bool mainview, bool toscreen);
@@ -102,10 +108,10 @@ private:
 	void DrawScene(HWDrawInfo *di, int drawmode);
 	void PrintStartupLog();
 	void CreateFanToTrisIndexBuffer();
-	void SubmitCommands(bool finish);
 	void CopyScreenToBuffer(int w, int h, void *data);
 	void UpdateShadowMap();
 	void DeleteFrameObjects();
+	void FlushCommands(VulkanCommandBuffer **commands, size_t count, bool finish, bool lastsubmit);
 
 	std::unique_ptr<VkShaderManager> mShaderManager;
 	std::unique_ptr<VkSamplerManager> mSamplerManager;
@@ -115,18 +121,20 @@ private:
 	std::unique_ptr<VkRenderPassManager> mRenderPassManager;
 	std::unique_ptr<VulkanCommandPool> mCommandPool;
 	std::unique_ptr<VulkanCommandBuffer> mTransferCommands;
-	std::unique_ptr<VulkanCommandBuffer> mDrawCommands;
-	std::unique_ptr<VulkanSemaphore> mTransferSemaphore;
 	std::unique_ptr<VkRenderState> mRenderState;
+
+	std::unique_ptr<VulkanCommandBuffer> mDrawCommands;
+
+	enum { maxConcurrentSubmitCount = 8};
+	std::unique_ptr<VulkanSemaphore> mSubmitSemaphore[maxConcurrentSubmitCount];
+	std::unique_ptr<VulkanFence> mSubmitFence[maxConcurrentSubmitCount];
+	VkFence mSubmitWaitFences[maxConcurrentSubmitCount];
+	int mNextSubmit = 0;
 
 	std::unique_ptr<VulkanSemaphore> mSwapChainImageAvailableSemaphore;
 	std::unique_ptr<VulkanSemaphore> mRenderFinishedSemaphore;
-	std::unique_ptr<VulkanFence> mRenderFinishedFence;
 
 	VkRenderBuffers *mActiveRenderBuffers = nullptr;
-
-	int lastSwapWidth = 0;
-	int lastSwapHeight = 0;
 };
 
 inline VulkanFrameBuffer *GetVulkanFrameBuffer() { return static_cast<VulkanFrameBuffer*>(screen); }

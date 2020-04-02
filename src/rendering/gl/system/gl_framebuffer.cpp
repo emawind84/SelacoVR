@@ -82,7 +82,6 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, bool fullscreen) :
 	gl_RenderState.Reset();
 
 	GLRenderer = nullptr;
-	InitPalette();
 }
 
 OpenGLFrameBuffer::~OpenGLFrameBuffer()
@@ -339,7 +338,7 @@ IIndexBuffer *OpenGLFrameBuffer::CreateIndexBuffer()
 	return new GLIndexBuffer; 
 }
 
-IDataBuffer *OpenGLFrameBuffer::CreateDataBuffer(int bindingpoint, bool ssbo)
+IDataBuffer *OpenGLFrameBuffer::CreateDataBuffer(int bindingpoint, bool ssbo, bool needsresize)
 {
 	return new GLDataBuffer(bindingpoint, ssbo);
 }

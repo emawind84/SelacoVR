@@ -48,6 +48,8 @@
 #include "i_system.h"
 #include "v_video.h"
 #include "gstrings.h"
+#include "teaminfo.h"
+#include "r_data/sprites.h"
 
 
 void ClearSaveGames();
@@ -1120,9 +1122,9 @@ void M_StartupEpisodeMenu(FGameStartup *gs)
 			// center the menu on the screen if the top space is larger than the bottom space
 			int totalheight = posy + AllEpisodes.Size() * ld->mLinespacing - topy;
 
-			if (totalheight < 190 || AllEpisodes.Size() == 1)
+			if (totalheight < CleanHeight-10 || AllEpisodes.Size() == 1)
 			{
-				int newtop = (200 - totalheight + topy) / 2;
+				int newtop = (CleanHeight - totalheight + topy) / 2;
 				int topdelta = newtop - topy;
 				if (topdelta < 0)
 				{
@@ -1543,6 +1545,95 @@ void M_CreateMenus()
 	{
 		I_BuildALResamplersList(*opt);
 	}
+	opt = OptionValues.CheckKey(NAME_PlayerTeam);
+	if (opt != nullptr)
+	{
+		auto op = *opt; 
+		op->mValues.Resize(Teams.Size() + 1);
+		op->mValues[0].Value = 0;
+		op->mValues[0].Text = "$OPTVAL_NONE";
+		for (unsigned i = 0; i < Teams.Size(); i++)
+		{
+			op->mValues[i+1].Value = i+1;
+			op->mValues[i+1].Text = Teams[i].GetName();
+		}
+	}
+	opt = OptionValues.CheckKey(NAME_PlayerClass);
+	if (opt != nullptr)
+	{
+		auto op = *opt;
+		int o = 0;
+		if (!gameinfo.norandomplayerclass && PlayerClasses.Size() > 1)
+		{
+			op->mValues.Resize(PlayerClasses.Size()+1);
+			op->mValues[0].Value = -1;
+			op->mValues[0].Text = "$MNU_RANDOM";
+			o = 1;
+		}
+		else op->mValues.Resize(PlayerClasses.Size());
+		for (unsigned i = 0; i < PlayerClasses.Size(); i++)
+		{
+			op->mValues[i+o].Value = i;
+			op->mValues[i+o].Text = GetPrintableDisplayName(PlayerClasses[i].Type);
+		}
+	}
+}
+
+
+DEFINE_ACTION_FUNCTION(DMenu, UpdateColorsets)
+{
+	PARAM_PROLOGUE;
+	PARAM_POINTER(playerClass, FPlayerClass);
+
+	TArray<int> PlayerColorSets;
+
+	EnumColorSets(playerClass->Type, &PlayerColorSets);
+
+	auto opt = OptionValues.CheckKey(NAME_PlayerColors);
+	if (opt != nullptr)
+	{
+		auto op = *opt;
+		op->mValues.Resize(PlayerColorSets.Size() + 1);
+		op->mValues[0].Value = -1;
+		op->mValues[0].Text = "$OPTVAL_CUSTOM";
+		for (unsigned i = 0; i < PlayerColorSets.Size(); i++)
+		{
+			auto cset = GetColorSet(playerClass->Type, PlayerColorSets[i]);
+			op->mValues[i + 1].Value = PlayerColorSets[i];
+			op->mValues[i + 1].Text = cset? cset->Name.GetChars() : "?";	// The null case should never happen here.
+		}
+	}
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DMenu, UpdateSkinOptions)
+{
+	PARAM_PROLOGUE;
+	PARAM_POINTER(playerClass, FPlayerClass);
+
+	auto opt = OptionValues.CheckKey(NAME_PlayerSkin);
+	if (opt != nullptr)
+	{
+		auto op = *opt;
+
+		if ((GetDefaultByType(playerClass->Type)->flags4 & MF4_NOSKIN) || players[consoleplayer].userinfo.GetPlayerClassNum() == -1)
+		{
+			op->mValues.Resize(1);
+			op->mValues[0].Value = -1;
+			op->mValues[0].Text = "$OPTVAL_DEFAULT";
+		}
+		else
+		{
+			op->mValues.Clear();
+			for (unsigned i = 0; i < Skins.Size(); i++)
+			{
+				op->mValues.Reserve(1);
+				op->mValues.Last().Value = i;
+				op->mValues.Last().Text = Skins[i].Name;
+			}
+		}
+	}
+	return 0;
 }
 
 //=============================================================================
@@ -1631,9 +1722,9 @@ void M_StartupSkillMenu(FGameStartup *gs)
 				// center the menu on the screen if the top space is larger than the bottom space
 				int totalheight = posy + MenuSkills.Size() * ld->mLinespacing - topy;
 
-				if (totalheight < 190 || MenuSkills.Size() == 1)
+				if (totalheight < CleanHeight-10 || MenuSkills.Size() == 1)
 				{
-					int newtop = (200 - totalheight + topy) / 2;
+					int newtop = (CleanHeight - totalheight + topy) / 2;
 					int topdelta = newtop - topy;
 					if (topdelta < 0)
 					{

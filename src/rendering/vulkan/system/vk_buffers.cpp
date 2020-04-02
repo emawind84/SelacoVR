@@ -6,14 +6,35 @@
 #include "vulkan/renderer/vk_renderpass.h"
 #include "doomerrors.h"
 
+VKBuffer *VKBuffer::First = nullptr;
+
+VKBuffer::VKBuffer()
+{
+	Next = First;
+	First = this;
+	if (Next) Next->Prev = this;
+}
+
 VKBuffer::~VKBuffer()
 {
-	if (map)
+	if (Next) Next->Prev = Prev;
+	if (Prev) Prev->Next = Next;
+	else First = Next;
+
+	if (mBuffer && map)
 		mBuffer->Unmap();
 
 	auto fb = GetVulkanFrameBuffer();
 	if (fb && mBuffer)
 		fb->FrameDeleteList.Buffers.push_back(std::move(mBuffer));
+}
+
+void VKBuffer::Reset()
+{
+	if (mBuffer && map)
+		mBuffer->Unmap();
+	mBuffer.reset();
+	mStaging.reset();
 }
 
 void VKBuffer::SetData(size_t size, const void *data, bool staticdata)
@@ -90,7 +111,30 @@ void VKBuffer::SetSubData(size_t offset, size_t size, const void *data)
 
 void VKBuffer::Resize(size_t newsize)
 {
-	I_FatalError("VKBuffer::Resize not implemented\n");
+	auto fb = GetVulkanFrameBuffer();
+
+	// Grab old buffer
+	size_t oldsize = buffersize;
+	std::unique_ptr<VulkanBuffer> oldBuffer = std::move(mBuffer);
+	oldBuffer->Unmap();
+	map = nullptr;
+
+	// Create new buffer
+	BufferBuilder builder;
+	builder.setUsage(mBufferType, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT);
+	builder.setSize(newsize);
+	mBuffer = builder.create(fb->device);
+	buffersize = newsize;
+
+	// Transfer data from old to new
+	fb->GetTransferCommands()->copyBuffer(oldBuffer.get(), mBuffer.get(), 0, 0, oldsize);
+	fb->WaitForCommands(false);
+
+	// Fetch pointer to new buffer
+	map = mBuffer->Map(0, newsize);
+
+	// Old buffer may be part of the dynamic set
+	fb->GetRenderPassManager()->UpdateDynamicSet();
 }
 
 void VKBuffer::Map()

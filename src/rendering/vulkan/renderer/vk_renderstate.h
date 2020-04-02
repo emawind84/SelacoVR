@@ -87,10 +87,7 @@ protected:
 	int mColorMask = 15;
 	int mCullMode = 0;
 
-	float mShaderTimer = 0.0f;
-
 	MatricesUBO mMatrices = {};
-	StreamData mStreamData = {};
 	PushConstants mPushConstants = {};
 
 	uint32_t mLastViewpointOffset = 0xffffffff;
@@ -105,14 +102,14 @@ protected:
 
 	VSMatrix mIdentityMatrix;
 
+	int mLastVertexOffsets[2] = { 0, 0 };
 	IVertexBuffer *mLastVertexBuffer = nullptr;
 	IIndexBuffer *mLastIndexBuffer = nullptr;
 
-	bool mLastGlowEnabled = true;
-	bool mLastGradientEnabled = true;
-	bool mLastSplitEnabled = true;
 	bool mLastModelMatrixEnabled = true;
 	bool mLastTextureMatrixEnabled = true;
+
+	int mApplyCount = 0;
 
 	struct RenderTarget
 	{

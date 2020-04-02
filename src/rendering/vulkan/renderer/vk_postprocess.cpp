@@ -46,7 +46,7 @@ void VkPostprocess::PostProcessScene(int fixedcm, const std::function<void()> &a
 	VkPPRenderState renderstate;
 
 	hw_postprocess.exposure.Render(&renderstate, sceneWidth, sceneHeight);
-	//mCustomPostProcessShaders->Run("beforebloom");
+	hw_postprocess.customShaders.Run(&renderstate, "beforebloom");
 	hw_postprocess.bloom.RenderBloom(&renderstate, sceneWidth, sceneHeight, fixedcm);
 
 	SetActiveRenderTarget();
@@ -56,7 +56,7 @@ void VkPostprocess::PostProcessScene(int fixedcm, const std::function<void()> &a
 	hw_postprocess.colormap.Render(&renderstate, fixedcm);
 	hw_postprocess.lens.Render(&renderstate);
 	hw_postprocess.fxaa.Render(&renderstate);
-	//mCustomPostProcessShaders->Run("scene");
+	hw_postprocess.customShaders.Run(&renderstate, "scene");
 }
 
 void VkPostprocess::BlitSceneToPostprocess()
@@ -175,6 +175,9 @@ void VkPostprocess::DrawPresentTexture(const IntRect &box, bool applyGamma, bool
 {
 	auto fb = GetVulkanFrameBuffer();
 
+	VkPPRenderState renderstate;
+	hw_postprocess.customShaders.Run(&renderstate, "screen");
+
 	PresentUniforms uniforms;
 	if (!applyGamma /*|| framebuffer->IsHWGammaActive()*/)
 	{
@@ -200,7 +203,7 @@ void VkPostprocess::DrawPresentTexture(const IntRect &box, bool applyGamma, bool
 		uniforms.InvGamma *= 2.2f;
 	}
 
-	VkPPRenderState renderstate;
+	renderstate.Clear();
 	renderstate.Shader = &hw_postprocess.present.Present;
 	renderstate.Uniforms.Set(uniforms);
 	renderstate.Viewport = box;
@@ -266,8 +269,6 @@ void VkPostprocess::UpdateShadowMap()
 
 void VkPostprocess::BeginFrame()
 {
-	mFrameDescriptorSets.clear();
-
 	if (!mDescriptorPool)
 	{
 		DescriptorPoolBuilder builder;
@@ -286,7 +287,7 @@ void VkPostprocess::RenderBuffersReset()
 
 VulkanSampler *VkPostprocess::GetSampler(PPFilterMode filter, PPWrapMode wrap)
 {
-	int index = (((int)filter) << 2) | (int)wrap;
+	int index = (((int)filter) << 1) | (int)wrap;
 	auto &sampler = mSamplers[index];
 	if (sampler)
 		return sampler.get();
@@ -393,12 +394,12 @@ VkPPShader::VkPPShader(PPShader *shader)
 
 	ShaderBuilder vertbuilder;
 	vertbuilder.setVertexShader(LoadShaderCode(shader->VertexShader, "", shader->Version));
-	VertexShader = vertbuilder.create(fb->device);
+	VertexShader = vertbuilder.create(shader->VertexShader.GetChars(), fb->device);
 	VertexShader->SetDebugName(shader->VertexShader.GetChars());
 
 	ShaderBuilder fragbuilder;
 	fragbuilder.setFragmentShader(LoadShaderCode(shader->FragmentShader, prolog, shader->Version));
-	FragmentShader = fragbuilder.create(fb->device);
+	FragmentShader = fragbuilder.create(shader->FragmentShader.GetChars(), fb->device);
 	FragmentShader->SetDebugName(shader->FragmentShader.GetChars());
 }
 
@@ -533,8 +534,9 @@ VulkanDescriptorSet *VkPPRenderState::GetInput(VkPPRenderPassSetup *passSetup, c
 	write.updateSets(fb->device);
 	imageTransition.execute(fb->GetDrawCommands());
 
-	pp->mFrameDescriptorSets.push_back(std::move(descriptors));
-	return pp->mFrameDescriptorSets.back().get();
+	VulkanDescriptorSet *set = descriptors.get();
+	fb->FrameDeleteList.Descriptors.push_back(std::move(descriptors));
+	return set;
 }
 
 VulkanFramebuffer *VkPPRenderState::GetOutput(VkPPRenderPassSetup *passSetup, const PPOutput &output, int &framebufferWidth, int &framebufferHeight)

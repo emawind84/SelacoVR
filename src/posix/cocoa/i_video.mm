@@ -40,6 +40,7 @@
 
 #include "i_common.h"
 
+#include "v_video.h"
 #include "bitmap.h"
 #include "c_dispatch.h"
 #include "doomstat.h"
@@ -94,7 +95,7 @@ EXTERN_CVAR(Bool, vid_vsync)
 EXTERN_CVAR(Bool, vid_hidpi)
 EXTERN_CVAR(Int,  vid_defwidth)
 EXTERN_CVAR(Int,  vid_defheight)
-EXTERN_CVAR(Int,  vid_backend)
+EXTERN_CVAR(Int,  vid_enablevulkan)
 EXTERN_CVAR(Bool, vk_debug)
 
 CUSTOM_CVAR(Bool, vid_autoswitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
@@ -341,7 +342,7 @@ class CocoaVideo : public IVideo
 public:
 	CocoaVideo()
 	{
-		ms_isVulkanEnabled = vid_backend == 0 && NSAppKitVersionNumber >= 1404; // NSAppKitVersionNumber10_11
+		ms_isVulkanEnabled = vid_enablevulkan == 1 && NSAppKitVersionNumber >= 1404; // NSAppKitVersionNumber10_11
 	}
 
 	~CocoaVideo()
@@ -482,7 +483,7 @@ void SystemBaseFrameBuffer::ToggleFullscreen(bool yes)
 
 void SystemBaseFrameBuffer::SetWindowSize(int width, int height)
 {
-	if (width < MINIMUM_WIDTH || height < MINIMUM_HEIGHT)
+	if (width < VID_MIN_WIDTH || height < VID_MIN_HEIGHT)
 	{
 		return;
 	}
@@ -549,8 +550,8 @@ void SystemBaseFrameBuffer::SetWindowedMode()
 		[m_window setHidesOnDeactivate:NO];
 	}
 
-	const int minimumFrameWidth  = MINIMUM_WIDTH;
-	const int minimumFrameHeight = MINIMUM_HEIGHT + GetTitleBarHeight();
+	const int minimumFrameWidth  = VID_MIN_WIDTH;
+	const int minimumFrameHeight = VID_MIN_HEIGHT + GetTitleBarHeight();
 	const NSSize minimumFrameSize = NSMakeSize(minimumFrameWidth, minimumFrameHeight);
 	[m_window setMinSize:minimumFrameSize];
 
