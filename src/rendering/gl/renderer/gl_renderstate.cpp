@@ -166,7 +166,7 @@ bool FGLRenderState::ApplyShader()
 	activeShader->muClipSplit.Set(mClipSplit);
 	activeShader->muSpecularMaterial.Set(mGlossiness, mSpecularLevel);
 	activeShader->muAddColor.Set(mStreamData.uAddColor);
-	activeShader->muDetailParms.Set(mDetailParms.vec);
+	activeShader->muDetailParms.Set(&mStreamData.uDetailParms.X);
 	activeShader->muGlobalFadeMode.Set(mGlobalFadeMode);
 	activeShader->muGlobalFade.Set(gl_global_fade ? 1 : 0);
 	activeShader->muGlobalFadeDensity.Set(gl_global_fade_density);
@@ -197,6 +197,7 @@ bool FGLRenderState::ApplyShader()
 		activeShader->muSplitBottomPlane.Set(&mStreamData.uSplitBottomPlane.X);
 		activeShader->currentsplitstate = mSplitEnabled;
 	}
+
 
 	if (mTextureMatrixEnabled)
 	{
