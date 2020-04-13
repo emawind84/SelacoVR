@@ -1136,7 +1136,7 @@ set (PCH_SOURCES
 	rendering/gl/renderer/gl_scene.cpp
 	rendering/gl/shaders/gl_shader.cpp
 	rendering/gl/shaders/gl_shaderprogram.cpp
-	gl/stereo3d/gl_openvr.cpp
+	rendering/gl/stereo3d/gl_openvr.cpp
 	rendering/gl_load/gl_interface.cpp
 	rendering/gl/system/gl_framebuffer.cpp
 	rendering/gl/system/gl_debug.cpp
