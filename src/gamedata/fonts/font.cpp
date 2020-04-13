@@ -841,7 +841,7 @@ double GetBottomAlignOffset(FFont *font, int c)
 //
 //==========================================================================
 
-int FFont::StringWidth(const uint8_t *string) const
+int FFont::StringWidth(const uint8_t *string, int spacing) const
 {
 	int w = 0;
 	int maxw = 0;
@@ -871,13 +871,17 @@ int FFont::StringWidth(const uint8_t *string) const
 				maxw = w;
 			w = 0;
 		}
+		else if (spacing >= 0)
+		{
+			w += GetCharWidth(chr) + GlobalKerning + spacing;
+		}
 		else
 		{
-			w += GetCharWidth(chr) + GlobalKerning;
+			w -= spacing;
 		}
 	}
 
-	return MAX(maxw, w);
+	return std::max(maxw, w);
 }
 
 //==========================================================================
