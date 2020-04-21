@@ -496,7 +496,7 @@ LOCAL_LDLIBS +=  -lEGL
 #LOCAL_LDLIBS += -Wl,--no-warn-shared-textrel
 
 LOCAL_STATIC_LIBRARIES :=  sndfile mpg123 fluidsynth-static SDL2_net libjpeg zlib_lz lzma_lz gdtoa_lz dumb_lz gme_lz bzip2_lz zmusic_lz logwritter
-LOCAL_SHARED_LIBRARIES := touchcontrols openal SDL2 jwzgles_shared core_shared
+LOCAL_SHARED_LIBRARIES := touchcontrols openal SDL2 jwzgles_shared core_shared saffal
 
 LOCAL_STATIC_LIBRARIES +=
 
