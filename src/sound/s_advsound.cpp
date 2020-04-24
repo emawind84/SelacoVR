@@ -412,7 +412,7 @@ unsigned int S_GetMSLength(FSoundID sound)
 		}
 	}
 
-	sfx = soundEngine->LoadSound(sfx);
+	sfx = soundEngine->LoadSound(sfx, nullptr);
 	if (sfx != NULL) return GSnd->GetMSLength(sfx->data);
 	else return 0;
 }

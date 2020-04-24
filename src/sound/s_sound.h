@@ -33,6 +33,7 @@
 class AActor;
 class FScanner;
 class FSerializer;
+struct FLevelLocals;
 
 #include "s_soundinternal.h"
 #include "s_doomsound.h"
@@ -42,6 +43,8 @@ class FSerializer;
 //
 
 // Called after a level is loaded. Ensures that most sounds are loaded.
+
+struct FSoundLoadBuffer;
 
 // [RH] S_sfx "maintenance" routines
 void S_ClearSoundData();

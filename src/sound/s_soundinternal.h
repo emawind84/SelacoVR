@@ -18,6 +18,9 @@ struct sfxinfo_t
 	// Next field is for use by the system sound interface.
 	// A non-null data means the sound has been loaded.
 	SoundHandle	data;
+    // Also for the sound interface. Used for 3D positional
+    // sounds, may be the same as data.
+    SoundHandle data3d;
 
 	FString		name;					// [RH] Sound name defined in SNDINFO
 	int 		lumpnum;				// lump number of sfx
@@ -56,6 +59,7 @@ struct sfxinfo_t
 	void Clear()
 	{
 		data.Clear();
+		data3d.Clear();
 		lumpnum = -1;				// lump number of sfx
 		next = -1;
 		index = 0;			// [RH] For hashing
@@ -248,6 +252,7 @@ protected:
 	TArray<FRandomSoundList> S_rnd;
 
 private:
+	void LoadSound3D(sfxinfo_t* sfx, FSoundLoadBuffer* pBuffer);
 	void LinkChannel(FSoundChan* chan, FSoundChan** head);
 	void UnlinkChannel(FSoundChan* chan);
 	void ReturnChannel(FSoundChan* chan);
@@ -274,7 +279,7 @@ public:
 	void EvictAllChannels();
 
 	void StopChannel(FSoundChan* chan);
-	sfxinfo_t* LoadSound(sfxinfo_t* sfx);
+	sfxinfo_t* LoadSound(sfxinfo_t* sfx, FSoundLoadBuffer* pBuffer);
 
 	// Initializes sound stuff, including volume
 	// Sets channels, SFX and music volume,
