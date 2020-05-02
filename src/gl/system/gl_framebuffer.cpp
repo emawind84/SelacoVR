@@ -235,6 +235,13 @@ void OpenGLFrameBuffer::Swap()
 
 	SwapBuffers();
 
+#ifdef USE_GL_HW_BUFFERS
+    GLRenderer->NextVtxBuffer();
+    GLRenderer->NextSkyBuffer();
+
+    GLRenderer->GPUWaitSync();
+#endif
+
 #ifndef __MOBILE__
 	if (!swapbefore) glFinish();
 #endif
