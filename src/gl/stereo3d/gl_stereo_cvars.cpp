@@ -38,7 +38,11 @@
 CVAR(Int, vr_mode, 0, CVAR_GLOBALCONFIG)
 
 // switch left and right eye views
+#ifdef __ANDROID__
+CVAR(Bool, vr_swap_eyes, true, CVAR_GLOBALCONFIG)
+#else
 CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG)
+#endif
 
 // For broadest GL compatibility, require user to explicitly enable quad-buffered stereo mode.
 // Setting vr_enable_quadbuffered_stereo does not automatically invoke quad-buffered stereo,
