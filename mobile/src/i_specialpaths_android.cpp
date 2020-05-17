@@ -44,7 +44,7 @@ FString M_GetAppDataPath(bool create)
 {
 	// Don't use GAME_DIR and such so that ZDoom and its child ports can
 	// share the node cache.
-	FString path = NicePath("./lzdoom/config/" GAMENAMELOWERCASE);
+	FString path = NicePath("./user_files/lzdoom/config/" GAMENAMELOWERCASE);
 	if (create)
 	{
 		CreatePath(path);
@@ -57,7 +57,7 @@ FString GetUserFile (const char *file)
 	FString path;
 	struct stat info;
 
-	path = NicePath("./lzdoom/config/");
+	path = NicePath("./user_files/lzdoom/config/");
 
 	if (stat (path, &info) == -1)
 	{
@@ -92,7 +92,7 @@ FString M_GetCachePath(bool create)
 {
 	// Don't use GAME_DIR and such so that ZDoom and its child ports can
 	// share the node cache.
-	FString path = NicePath("./lzdoom/cache/");
+	FString path = NicePath("./user_files/lzdoom/cache/");
 	if (create)
 	{
 		CreatePath(path);
@@ -165,7 +165,7 @@ FString M_GetConfigPath(bool for_reading)
 
 FString M_GetScreenshotsPath()
 {
-	return NicePath("./lzdoom/screenshots/");
+	return NicePath("./user_files/lzdoom/screenshots/");
 }
 
 //===========================================================================
@@ -178,7 +178,7 @@ FString M_GetScreenshotsPath()
 
 FString M_GetSavegamesPath()
 {
-	return NicePath("./lzdoom/saves/");
+	return NicePath("./user_files/lzdoom/saves/");
 }
 
 //===========================================================================
@@ -191,5 +191,5 @@ FString M_GetSavegamesPath()
 
 FString M_GetDocumentsPath()
 {
-	return NicePath("./lzdoom/");
+	return NicePath("./user_files/lzdoom/");
 }
