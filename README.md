@@ -1,5 +1,5 @@
 # GZDoom-VR 
-Based on gz3doom (http://rotatingpenguin.com/gz3doom/), OpenVr Doom https://github.com/Fishbiter/gz3doom and QuestZDoom https://github.com/DrBeef/QuestZDoom
+Based on gz3doom http://rotatingpenguin.com/gz3doom/, OpenVr Doom https://github.com/Fishbiter/gz3doom and QuestZDoom https://github.com/DrBeef/QuestZDoom
 
 The aim of this fork is to update base GZDoom version.
 
