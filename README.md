@@ -12,20 +12,28 @@ One hand (right by default) is tracked for the weapon. I have included two modif
 There are some optional mods tested for using with this fork
 
 https://github.com/hh79/gz3doom/files/4378108/HDVRweapons.zip HD weapon pack made by ajantaju
+
 https://github.com/ajantaju/br_vr weapon pack made for Brutal Doom
+
 https://github.com/mmaulwurff/laser-sight/releases laser sight mod
+
 https://www.moddb.com/downloads/doom-neural-upscale-2x texture upscale mod
+
 https://forum.zdoom.org/download/file.php?id=30459&sid=df63736751c12c3ebb76230d1dc86543 blood color fixer mod
 
 # New console variables
 
 openvr_rightHanded - set to 0 for left hand
+
 openvr_weaponRotate - A pitch to change how weapons sit in the hand.
+
 vr_floor_offset - A fllor offset
+
 vr_vunits_per_meter - Number of doom units in a metre. The default is 30.
 
 #
 Copyright (c) 1998-2020 ZDoom + GZDoom teams, and contributors
+
 Doom Source (c) 1997 id Software, Raven Software, and contributors
 
 Please see license files for individual contributor licenses
