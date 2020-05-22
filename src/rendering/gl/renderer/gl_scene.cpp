@@ -201,6 +201,8 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 
 		// Stereo mode specific perspective projection
 		di->VPUniforms.mProjectionMatrix = eye->GetProjection(fov, ratio, fovratio);
+		// Retain unshifted center eye pos so all sprites show the same frame
+		vp.CenterPos = vp.Pos;
 		// Stereo mode specific viewpoint adjustment
 		vp.Pos += eye->GetViewShift(vp.HWAngles.Yaw.Degrees);
 		di->SetupView(gl_RenderState, vp.Pos.X, vp.Pos.Y, vp.Pos.Z, false, false);

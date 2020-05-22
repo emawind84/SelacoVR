@@ -708,13 +708,13 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	// Thing is invisible if close to the camera.
 	if (thing->renderflags & RF_MAYBEINVISIBLE)
 	{
-		if (fabs(thingpos.X - vp.Pos.X) < 32 && fabs(thingpos.Y - vp.Pos.Y) < 32) return;
+		if (fabs(thingpos.X - vp.CenterPos.X) < 32 && fabs(thingpos.Y - vp.CenterPos.Y) < 32) return;
 	}
 
 	// Too close to the camera. This doesn't look good if it is a sprite.
-	if (fabs(thingpos.X - vp.Pos.X) < 2 && fabs(thingpos.Y - vp.Pos.Y) < 2)
+	if (fabs(thingpos.X - vp.CenterPos.X) < 2 && fabs(thingpos.Y - vp.CenterPos.Y) < 2)
 	{
-		if (vp.Pos.Z >= thingpos.Z - 2 && vp.Pos.Z <= thingpos.Z + thing->Height + 2)
+		if (vp.CenterPos.Z >= thingpos.Z - 2 && vp.CenterPos.Z <= thingpos.Z + thing->Height + 2)
 		{
 			// exclude vertically moving objects from this check.
 			if (!thing->Vel.isZero())
@@ -736,7 +736,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			if (speed >= thing->target->radius / 2)
 			{
 				double clipdist = clamp(thing->Speed, thing->target->radius, thing->target->radius * 2);
-				if ((thingpos - vp.Pos).LengthSquared() < clipdist * clipdist) return;
+				if ((thingpos - vp.CenterPos).LengthSquared() < clipdist * clipdist) return;
 			}
 		}
 		thing->flags7 |= MF7_FLYCHEAT;	// do this only once for the very first frame, but not if it gets into range again.
@@ -785,7 +785,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	if (!modelframe)
 	{
 		bool mirror;
-		DAngle ang = (thingpos - vp.Pos).Angle();
+		DAngle ang = (thingpos - vp.CenterPos).Angle();
 		FTextureID patch;
 		// [ZZ] add direct picnum override
 		if (isPicnumOverride)
@@ -903,7 +903,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		gltexture = nullptr;
 	}
 
-	depth = FloatToFixed((x - vp.Pos.X) * vp.TanCos + (y - vp.Pos.Y) * vp.TanSin);
+	depth = FloatToFixed((x - vp.CenterPos.X) * vp.TanCos + (y - vp.CenterPos.Y) * vp.TanSin);
 
 	// light calculation
 
@@ -1220,7 +1220,7 @@ void HWSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	z1=z-scalefac;
 	z2=z+scalefac;
 
-	depth = FloatToFixed((x - vp.Pos.X) * vp.TanCos + (y - vp.Pos.Y) * vp.TanSin);
+	depth = FloatToFixed((x - vp.CenterPos.X) * vp.TanCos + (y - vp.CenterPos.Y) * vp.TanSin);
 
 	actor=nullptr;
 	this->particle=particle;
