@@ -27,7 +27,7 @@ openvr_rightHanded - set to 0 for left hand
 
 openvr_weaponRotate - A pitch to change how weapons sit in the hand.
 
-vr_floor_offset - A fllor offset
+vr_floor_offset - A floor offset
 
 vr_vunits_per_meter - Number of doom units in a metre. The default is 30.
 
