@@ -2647,12 +2647,16 @@ OptionMenu "OpenVROptions" protected
 	Slider "$VRPREFMNU_WORLDSCALE",				vr_vunits_per_meter,					1, 60, 1, 0
 	Slider "$VRPREFMNU_FLOOROFFSET",			vr_floor_offset,						-10, 10, 0.1, 0
 	Option "$VRPREFMNU_SPRITEWEAPON3D",			r_PlayerSprites3DMode,					"Sprites3DMode"
-	Slider "$VRPREFMNU_FATITEMWIDTH",			gl_fatItemWidth,						0, 1, 0.05, 0
-	Slider "$VRPREFMNU_WEAPONSCALE",			openvr_weaponScale,						0, 10, 0.2, 0
-	Slider "$VRPREFMNU_HUDDISTANCE",			openvr_hudDistance,						0.4, 1, 0.05, 0
+	Slider "$VRPREFMNU_FATITEMWIDTH",			gl_fatItemWidth,						0, 1, 0.05, 2
+	Slider "$VRPREFMNU_WEAPONSCALE",			openvr_weaponScale,						0, 10, 0.2, 2
+	StaticText " "
+	Slider "$VRPREFMNU_HUDDISTANCE",			openvr_hudDistance,						0.4, 1, 0.05, 2
 	Slider "$VRPREFMNU_HUDPITCH",				openvr_hudPitch,						-20, 20, 1, 0
 	Option "$VRPREFMNU_UNFIXPITCH",				openvr_fixPitch,						"OnOff"
 	Option "$VRPREFMNU_UNFIXROLL",				openvr_fixRoll,							"OnOff"
+	StaticText " "
+	Slider "$VRPREFMNU_PICKUPHAPTIC",			vr_pickup_haptic_level,					0, 1, 0.1, 2
+	Slider "$VRPREFMNU_QUAKEHAPTIC",			vr_quake_haptic_level,					0, 1, 0.1, 2
 	//Option "$VRPREFMNU_DRAWCONTROLLERS",		openvr_drawControllers,					"OnOff"
 }
 OptionMenu "ReverbEdit" protected

@@ -39,9 +39,12 @@
 #include "sbar.h"
 #include "r_utility.h"
 #include "actorinlines.h"
+#include "hwrenderer\utility\hw_vrmodes.h"
 
 #define ST_RAMPAGEDELAY 		(2*TICRATE)
 #define ST_MUCHPAIN 			20
+
+EXTERN_CVAR(Float, vr_pickup_haptic_level)
 
 TArray<FMugShotState> MugShotStates;
 
@@ -334,6 +337,10 @@ int FMugShot::UpdateState(player_t *player, StateFlags stateflags)
 		{
 			if (player->bonuscount)
 			{
+				auto vrmode = VRMode::GetVRMode(true);
+				vrmode->Vibrate(200, 0, vr_pickup_haptic_level);
+				vrmode->Vibrate(200, 1, vr_pickup_haptic_level);
+
 				SetState("grin", false);
 				return 0;
 			}

@@ -78,6 +78,25 @@ protected:
 	) const;
 };
 
+class OpenVRHaptics
+{
+
+public:
+
+	OpenVRHaptics(openvr::VR_IVRSystem_FnTable* vrSystem);
+
+	void Vibrate(float duration, int channel, float intensity);
+	void ProcessHaptics();
+
+private:
+	openvr::VR_IVRSystem_FnTable* vrSystem;
+	uint32_t controllerIDs[2];
+	//0 = left, 1 = right
+	float vibration_channel_duration[2] = { 0.0f, 0.0f };
+	float vibration_channel_intensity[2] = { 0.0f, 0.0f };
+
+};
+
 class OpenVRMode : public VRMode
 {
 public:
@@ -104,6 +123,11 @@ public:
 	virtual bool RenderPlayerSpritesInScene() const { return true; }
 	virtual bool IsInitialized() const { return hmdWasFound; }
 
+	virtual void Vibrate(float duration, int channel, float intensity) const
+	{ 
+		haptics->Vibrate(duration, channel, intensity);
+	}
+
 protected:
 	OpenVRMode();
 	// void updateDoomViewDirection() const;
@@ -111,6 +135,7 @@ protected:
 
 	OpenVREyePose* leftEyeView;
 	OpenVREyePose* rightEyeView;
+	OpenVRHaptics* haptics;
 
 	openvr::VR_IVRSystem_FnTable * vrSystem;
 	openvr::VR_IVRCompositor_FnTable * vrCompositor;

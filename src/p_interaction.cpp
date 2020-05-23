@@ -61,6 +61,7 @@
 #include "g_levellocals.h"
 #include "events.h"
 #include "actorinlines.h"
+#include "hwrenderer\utility\hw_vrmodes.h"
 
 static FRandom pr_botrespawn ("BotRespawn");
 static FRandom pr_killmobj ("ActorDie");
@@ -1348,6 +1349,10 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 		if (player == target->Level->GetConsolePlayer() )
 		{
 			I_Tactile (40,10,40+temp*2);
+			float level = (float)(0.4 + (0.6 * (temp / 100.0)));
+			auto vrmode = VRMode::GetVRMode(true);
+			vrmode->Vibrate(200, 0, level);
+			vrmode->Vibrate(200, 1, level);
 		}
 	}
 	else

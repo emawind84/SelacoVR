@@ -99,6 +99,7 @@
 #include "actorinlines.h"
 #include "a_dynlight.h"
 #include "fragglescript/t_fs.h"
+#include "hwrenderer\utility\hw_vrmodes.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -116,6 +117,8 @@ static void PlayerLandedOnThing (AActor *mo, AActor *onmobj);
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
 EXTERN_CVAR (Int,  cl_rockettrails)
+EXTERN_CVAR(Bool, openvr_rightHanded)
+
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
@@ -6755,6 +6758,11 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 	}
 	if (P_CheckMissileSpawn (MissileActor, source->radius))
 	{
+		//Haptics
+		long rightHanded = openvr_rightHanded;
+		auto vrmode = VRMode::GetVRMode(true);
+		vrmode->Vibrate(150, rightHanded ? 1 : 0, 0.8f);
+
 		return MissileActor;
 	}
 	return NULL;

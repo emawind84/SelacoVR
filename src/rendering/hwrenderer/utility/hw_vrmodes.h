@@ -82,4 +82,5 @@ struct VRMode
 	virtual bool RenderPlayerSpritesCrossed() const { return false; }
 	virtual bool RenderPlayerSpritesInScene() const { return false; }
 	virtual bool IsInitialized() const { return true; }
+	virtual void Vibrate(float duration, int channel, float intensity) const { }
 };

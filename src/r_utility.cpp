@@ -64,11 +64,13 @@
 #include "actorinlines.h"
 #include "g_game.h"
 #include "i_system.h"
+#include "rendering\hwrenderer\utility\hw_vrmodes.h"
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
 extern bool DrawFSHUD;		// [RH] Defined in d_main.cpp
 EXTERN_CVAR (Bool, cl_capfps)
+EXTERN_CVAR(Float, vr_quake_haptic_level)
 
 // TYPES -------------------------------------------------------------------
 
@@ -906,6 +908,16 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 			if (jiggers.Intensity.Z != 0 || jiggers.Offset.Z != 0)
 			{
 				viewpoint.Pos.Z += QuakePower(quakefactor, jiggers.Intensity.Z, jiggers.Offset.Z);
+			}
+
+			//Haptic Quake
+			if (vr_quake_haptic_level > 0.0) {
+				double left = QuakePower(vr_quake_haptic_level, jiggers.Intensity.X, jiggers.Offset.X);
+				double right = QuakePower(vr_quake_haptic_level, jiggers.Intensity.Y, jiggers.Offset.Y);
+
+				auto vrmode = VRMode::GetVRMode(true);
+				vrmode->Vibrate(10, 0, (float)left); // left
+				vrmode->Vibrate(10, 1, (float)right); // right
 			}
 		}
 	}

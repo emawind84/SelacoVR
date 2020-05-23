@@ -59,6 +59,10 @@ CVAR(Float, openvr_weaponRotate, -30, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 CVAR(Float, openvr_weaponScale, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
+CVAR(Float, vr_pickup_haptic_level, 0.25f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+CVAR(Float, vr_quake_haptic_level, 0.8f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
 #define isqrt2 0.7071067812f
 
 VRMode::VRMode(int eyeCount, float horizontalViewportScale,

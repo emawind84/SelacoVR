@@ -92,12 +92,13 @@
 #include "r_sky.h"
 #include "g_levellocals.h"
 #include "actorinlines.h"
-#include <hwrenderer\utility\hw_vrmodes.h>
+#include "hwrenderer\utility\hw_vrmodes.h"
 
 
 CVAR(Bool, cl_bloodsplats, true, CVAR_ARCHIVE)
 CVAR(Int, sv_smartaim, 0, CVAR_ARCHIVE | CVAR_SERVERINFO)
 CVAR(Bool, cl_doautoaim, false, CVAR_ARCHIVE)
+EXTERN_CVAR(Bool, openvr_rightHanded)
 
 static void CheckForPushSpecial(line_t *line, int side, AActor *mobj, DVector2 * posforwindowcheck = NULL);
 static void SpawnShootDecal(AActor *t1, AActor *defaults, const FTraceResults &trace);
@@ -4415,11 +4416,20 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	direction = { pc * angle.Cos(), pc * angle.Sin(), -pitch.Sin() };
 	shootz = t1->Center() - t1->Floorclip + t1->AttackOffset();
 
+	auto vrmode = VRMode::GetVRMode(true);
+
 	if (t1->player != NULL)
 	{
 		// this is coming from a weapon attack function which needs to transfer information to the obituary code,
 		// We need to preserve this info from the damage type because the actual damage type can get overridden by the puff
 		pflag = DMG_PLAYERATTACK;
+
+		if (damage > 0) {
+			//Haptics
+			long rightHanded = openvr_rightHanded;
+			vrmode->Vibrate(50, rightHanded ? 1 : 0, 0.8f);
+			
+		}
 	}
 
 	// [MC] If overriding, set it to the base of the actor.
@@ -4494,7 +4504,6 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 
 
 	DVector3 tempos;
-	auto vrmode = VRMode::GetVRMode(true);
 	if (vrmode->mEyeCount == 1)
 	{
 		// [MC] Check the flags and set the position according to what is desired.
