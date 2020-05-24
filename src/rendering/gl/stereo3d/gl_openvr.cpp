@@ -579,7 +579,7 @@ namespace s3d
 			// We want to align those two heights here
 			const player_t& player = players[consoleplayer];
 			double vh = player.viewheight; // Doom thinks this is where you are
-			double hh = (openvr_X_hmd[1][3] - vr_floor_offset) * vr_vunits_per_meter; // HMD is actually here
+			double hh = ((openvr_X_hmd[1][3] - vr_floor_offset) * vr_vunits_per_meter) / pixelstretch; // HMD is actually here
 			doom_EyeOffset[2] += hh - vh;
 			// TODO: optionally allow player to jump and crouch by actually jumping and crouching
 		}
@@ -969,7 +969,7 @@ namespace s3d
 			mat->translate(pos.X, pos.Z, pos.Y);
 			mat->scale(vr_vunits_per_meter, vr_vunits_per_meter / pixelstretch , -vr_vunits_per_meter);
 			mat->rotate(-deltaYawDegrees - 180, 0, 1, 0);
-			mat->translate(-openvr_origin.x, -vr_floor_offset + (openvr_origin.y - openvr_origin.y / pixelstretch), -openvr_origin.z);
+			mat->translate(-openvr_origin.x, -vr_floor_offset, -openvr_origin.z);
 
 			LSMatrix44 handToAbs;
 			vSMatrixFromHmdMatrix34(handToAbs, controllers[hand].pose.mDeviceToAbsoluteTracking);
