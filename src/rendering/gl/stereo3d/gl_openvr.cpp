@@ -955,7 +955,6 @@ namespace s3d
 	{
 		if (controllers[hand].active)
 		{
-			mat->loadIdentity();
 			if (r_viewpoint.camera->player == nullptr)
 			{
 				return false;
@@ -963,20 +962,19 @@ namespace s3d
 
 			AActor* playermo = r_viewpoint.camera->player->mo;
 			DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
+		
+			double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 
+			mat->loadIdentity();
 			mat->translate(pos.X, pos.Z, pos.Y);
-
-			mat->scale(vr_vunits_per_meter, vr_vunits_per_meter, -vr_vunits_per_meter);
-
+			mat->scale(vr_vunits_per_meter, vr_vunits_per_meter / pixelstretch , -vr_vunits_per_meter);
 			mat->rotate(-deltaYawDegrees - 180, 0, 1, 0);
-
-			mat->translate(-openvr_origin.x, -vr_floor_offset, -openvr_origin.z);
+			mat->translate(-openvr_origin.x, -vr_floor_offset + (openvr_origin.y - openvr_origin.y / pixelstretch), -openvr_origin.z);
 
 			LSMatrix44 handToAbs;
 			vSMatrixFromHmdMatrix34(handToAbs, controllers[hand].pose.mDeviceToAbsoluteTracking);
-
 			mat->multMatrix(handToAbs.transpose());
-
+			
 			return true;
 		}
 		return false;
