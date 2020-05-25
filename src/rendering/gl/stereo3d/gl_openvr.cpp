@@ -955,18 +955,19 @@ namespace s3d
 	{
 		if (controllers[hand].active)
 		{
-			if (r_viewpoint.camera->player == nullptr)
+			auto player = r_viewpoint.camera->player;
+			if (player == nullptr)
 			{
 				return false;
 			}
 
-			AActor* playermo = r_viewpoint.camera->player->mo;
+			AActor* playermo = player->mo;
 			DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
 		
 			double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 
 			mat->loadIdentity();
-			mat->translate(pos.X, pos.Z, pos.Y);
+			mat->translate(r_viewpoint.Pos.X, r_viewpoint.Pos.Z - player->viewheight, r_viewpoint.Pos.Y);
 			mat->scale(vr_vunits_per_meter, vr_vunits_per_meter / pixelstretch , -vr_vunits_per_meter);
 			mat->rotate(-deltaYawDegrees - 180, 0, 1, 0);
 			mat->translate(-openvr_origin.x, -vr_floor_offset, -openvr_origin.z);
