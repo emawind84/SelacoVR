@@ -23,11 +23,6 @@ if( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 	endif()
 endif()
 
-option( DYN_FLUIDSYNTH "Dynamically load fluidsynth" ON )
-option( DYN_OPENAL "Dynamically load OpenAL" ON )
-option( DYN_SNDFILE "Dynamically load libsndfile" ON )
-option( DYN_MPG123 "Dynamically load libmpg123" ON )
-
 if( APPLE )
     option( OSX_COCOA_BACKEND "Use native Cocoa backend instead of SDL" ON )
 endif()
@@ -209,26 +204,7 @@ endif()
 
 if( NO_OPENAL )
 	add_definitions( -DNO_OPENAL=1 )
-
-	set(MPG123_FOUND NO)
-	set(SNDFILE_FOUND NO)
-else()
-	# Search for libSndFile
-
-	if ( NOT DYN_SNDFILE )
-		find_package( SndFile )
-	endif()
-
-	# Search for libmpg123
-
-	if ( NOT DYN_MPG123 )
-		find_package( MPG123 )
-	endif()
 endif()
-
-# Search for FluidSynth
-
-find_package( FluidSynth )
 
 # Decide on SSE setup
 
@@ -353,7 +329,7 @@ if( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 	endif ()
 
 	if( NOT X64 AND NOT CAN_DO_MFPMATH )
-		set( CMAKE_C_FLAGS "-DNO_SSE ${CMAKE_CXX_FLAGS}" )
+		set( CMAKE_C_FLAGS "-DNO_SSE ${CMAKE_C_FLAGS}" )
 		set( CMAKE_CXX_FLAGS "-DNO_SSE ${CMAKE_CXX_FLAGS}" )
 	endif()
 
@@ -388,6 +364,7 @@ if( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 	if( WIN32 )
 		set( CMAKE_CXX_FLAGS "-Wno-unknown-pragmas -Wno-comment -Wno-format ${CMAKE_CXX_FLAGS}" )
 		set( CMAKE_CXX_FLAGS "-D_UNICODE -DUNICODE ${CMAKE_CXX_FLAGS}" )
+		set( CMAKE_CXX_FLAGS "-D_WIN32_WINNT=0x0600 ${CMAKE_CXX_FLAGS}" )
 		set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -municode" )
 	endif()
 
@@ -424,15 +401,8 @@ if( NOT STRUPR_EXISTS )
 	add_definitions( -DNEED_STRUPR=1 )
 endif()
 
-CHECK_FUNCTION_EXISTS( stricmp STRICMP_EXISTS )
-if( NOT STRICMP_EXISTS )
-	add_definitions( -Dstricmp=strcasecmp )
-endif()
-
-CHECK_FUNCTION_EXISTS( strnicmp STRNICMP_EXISTS )
-if( NOT STRNICMP_EXISTS )
-	add_definitions( -Dstrnicmp=strncasecmp )
-endif()
+require_stricmp()
+require_strnicmp()
 
 if( NOT MSVC )
 	add_definitions( -D__forceinline=inline )
@@ -462,32 +432,16 @@ add_custom_target( revision_check ALL
 
 # Libraries ZDoom needs
 
-message( STATUS "Fluid synth libs: ${FLUIDSYNTH_LIBRARIES}" )
 set( ZDOOM_LIBS ${ZDOOM_LIBS} "${ZLIB_LIBRARIES}" "${JPEG_LIBRARIES}" "${BZIP2_LIBRARIES}" "${GME_LIBRARIES}" "${CMAKE_DL_LIBS}" )
 if (HAVE_VULKAN)
 	set( ZDOOM_LIBS ${ZDOOM_LIBS} "glslang" "SPIRV" "OGLCompiler")
 endif()
-include_directories( "${ZLIB_INCLUDE_DIR}" "${BZIP2_INCLUDE_DIR}" "${LZMA_INCLUDE_DIR}" "${JPEG_INCLUDE_DIR}" "${GME_INCLUDE_DIR}" )
+include_directories( "${ZLIB_INCLUDE_DIR}" "${BZIP2_INCLUDE_DIR}" "${LZMA_INCLUDE_DIR}" "${JPEG_INCLUDE_DIR}" "${ZMUSIC_INCLUDE_DIR}" )
 
 if( ${HAVE_VM_JIT} )
 	add_definitions( -DHAVE_VM_JIT )
 	include_directories( "${ASMJIT_INCLUDE_DIR}" )
 	set( ZDOOM_LIBS ${ZDOOM_LIBS} "${ASMJIT_LIBRARIES}")
-endif()
-
-if( SNDFILE_FOUND )
-    set( ZDOOM_LIBS ${ZDOOM_LIBS} "${SNDFILE_LIBRARIES}" )
-    include_directories( "${SNDFILE_INCLUDE_DIRS}" )
-endif()
-if( MPG123_FOUND )
-    set( ZDOOM_LIBS ${ZDOOM_LIBS} "${MPG123_LIBRARIES}" )
-    include_directories( "${MPG123_INCLUDE_DIR}" )
-endif()
-if( NOT DYN_FLUIDSYNTH )
-	if( FLUIDSYNTH_FOUND )
-		set( ZDOOM_LIBS ${ZDOOM_LIBS} "${FLUIDSYNTH_LIBRARIES}" )
-		include_directories( "${FLUIDSYNTH_INCLUDE_DIR}" )
-	endif()
 endif()
 
 option( ENABLE_OPENVR "Enable OpenVR virtual reality mode" ON )
@@ -558,10 +512,7 @@ endif()
 
 # Start defining source files for ZDoom
 set( PLAT_WIN32_SOURCES
-	sound/mididevices/music_win_mididevice.cpp
 	win32/hardware.cpp
-	win32/helperthread.cpp
-	win32/i_cd.cpp
 	win32/i_crash.cpp
 	win32/i_input.cpp
 	win32/i_keyboard.cpp
@@ -574,6 +525,7 @@ set( PLAT_WIN32_SOURCES
 	win32/i_system.cpp
 	win32/i_specialpaths.cpp
 	win32/st_start.cpp
+	win32/st_start_util.cpp
 	win32/gl_sysfb.cpp
 	win32/base_sysfb.cpp
 	win32/win32basevideo.cpp
@@ -584,7 +536,6 @@ if (HAVE_VULKAN)
 endif()
 	
 set( PLAT_POSIX_SOURCES
-	posix/i_cd.cpp
 	posix/i_steam.cpp )
 set( PLAT_SDL_SOURCES
 	posix/sdl/crashcatcher.c
@@ -607,7 +558,6 @@ set( PLAT_COCOA_SOURCES
 	posix/cocoa/i_input.mm
 	posix/cocoa/i_joystick.cpp
 	posix/cocoa/i_main.mm
-	posix/cocoa/i_main_except.cpp
 	posix/cocoa/i_system.mm
 	posix/cocoa/i_video.mm
 	posix/cocoa/st_console.mm
@@ -691,42 +641,20 @@ add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sc_man_scanner.h
 
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
-if( DYN_SNDFILE)
-	add_definitions( -DHAVE_SNDFILE -DDYN_SNDFILE )
-elseif( SNDFILE_FOUND )
-	add_definitions( -DHAVE_SNDFILE )
-endif()
-
-if( DYN_MPG123)
-	add_definitions( -DHAVE_MPG123 -DDYN_MPG123 )
-elseif( MPG123_FOUND )
-	add_definitions( -DHAVE_MPG123 )
-endif()
-
-if( DYN_FLUIDSYNTH )
-	add_definitions( -DHAVE_FLUIDSYNTH -DDYN_FLUIDSYNTH )
-elseif( FLUIDSYNTH_FOUND )
-	add_definitions( -DHAVE_FLUIDSYNTH )
-endif()
-
 option( SEND_ANON_STATS "Enable sending of anonymous hardware statistics" ON )
 
 if( NOT SEND_ANON_STATS )
 	add_definitions( -DNO_SEND_STATS )
 endif()
 
-# Disable ADLMIDI's and OPNMIDI's MIDI Sequencer
-add_definitions(-DADLMIDI_DISABLE_MIDI_SEQUENCER)
-add_definitions(-DOPNMIDI_DISABLE_MIDI_SEQUENCER)
-
-# Disable OPNMIDI's experimental yet emulator (using of it has some issues and missing notes in playback)
-add_definitions(-DOPNMIDI_DISABLE_GX_EMULATOR)
-
 # Project files should be aware of the header files. We can GLOB these since
 # there's generally a new cpp for every header so this file will get changed
 file( GLOB HEADER_FILES
-	fragglescript/*.h
-	g_shared/*.h
+	console/*.h
+	playsim/*.h
+	playsim/bots/*.h
+	playsim/fragglescript/*.h
+	playsim/mapthinkers/*.h
 	g_statusbar/*.h
 	gamedata/*.h
 	gamedata/resourcefiles/*.h
@@ -739,10 +667,9 @@ file( GLOB HEADER_FILES
 	intermission/*.h
 	maploader/*.h
 	menu/*.h
-	sound/adlmidi/*.h*
-	sound/opnmidi/*.h*
-	sound/oplsynth/*.h
-	sound/oplsynth/dosbox/*.h
+	sound/*.h
+	sound/backend/*.h*
+	sound/music/*.h*
 	posix/*.h
 	posix/cocoa/*.h
 	posix/sdl/*.h
@@ -753,19 +680,14 @@ file( GLOB HEADER_FILES
 	utility/sfmt/*.h
 	utility/math./*h
 	utility/*.h
-	sound/*.h
 	scripting/*.h
 	scripting/backend/*.h
 	scripting/decorate/*.h
 	scripting/zscript/*.h
 	scripting/vm/*.h
 	sound/midisources/*.h
-	sound/oplsynth/*.h
-	sound/oplsynth/dosbox/*.h
 	sound/thirdparty/*.h
-	sound/timidity/*.h
-	sound/timiditypp/*.h
-	sound/wildmidi/*.h
+	rendering/*.h
 	rendering/2d/*.h
 	rendering/swrenderer/*.h
 	rendering/swrenderer/textures/*.h
@@ -888,6 +810,7 @@ set( NOT_COMPILED_SOURCE_FILES
 	scripting/zscript/zcc-parse.lemon
 	zcc-parse.c
 	zcc-parse.h
+	win32/zdoom.natvis
 )
 
 set( VM_JIT_SOURCES
@@ -910,13 +833,8 @@ set( FASTMATH_SOURCES
 	rendering/swrenderer/r_all.cpp
 	rendering/swrenderer/r_swscene.cpp
 	rendering/polyrenderer/poly_all.cpp
-	sound/oplsynth/opl_mus_player.cpp
-	sound/mpg123_decoder.cpp
-	sound/music_midi_base.cpp
-	sound/oalsound.cpp
-	sound/sndfile_decoder.cpp
-	sound/timiditypp/fft4g.cpp
-	sound/timiditypp/reverb.cpp
+	sound/music/music_midi_base.cpp
+	sound/backend/oalsound.cpp
 	gamedata/textures/hires/hqnx/init.cpp
 	gamedata/textures/hires/hqnx/hq2x.cpp
 	gamedata/textures/hires/hqnx/hq3x.cpp
@@ -944,32 +862,8 @@ set( FASTMATH_SOURCES
 	rendering/hwrenderer/scene/hw_walls_vertex.cpp
 	rendering/hwrenderer/scene/hw_weapon.cpp
 	r_data/models/models.cpp
-	r_data/matrix.cpp
-	sound/adlmidi/adldata.cpp
-	sound/adlmidi/adlmidi.cpp
-	sound/adlmidi/adlmidi_load.cpp
-	sound/adlmidi/adlmidi_midiplay.cpp
-	sound/adlmidi/adlmidi_opl3.cpp
-	sound/adlmidi/adlmidi_private.cpp
-	sound/adlmidi/chips/dosbox/dbopl.cpp
-	sound/adlmidi/chips/dosbox_opl3.cpp
-	sound/adlmidi/chips/nuked/nukedopl3_174.c
-	sound/adlmidi/chips/nuked/nukedopl3.c
-	sound/adlmidi/chips/nuked_opl3.cpp
-	sound/adlmidi/chips/nuked_opl3_v174.cpp
-	sound/adlmidi/wopl/wopl_file.c
-	sound/opnmidi/chips/gens_opn2.cpp
-	sound/opnmidi/chips/gens/Ym2612_Emu.cpp
-	sound/opnmidi/chips/mame/mame_ym2612fm.c
-	sound/opnmidi/chips/mame_opn2.cpp
-	sound/opnmidi/chips/nuked_opn2.cpp
-	sound/opnmidi/chips/nuked/ym3438.c
-	sound/opnmidi/opnmidi.cpp
-	sound/opnmidi/opnmidi_load.cpp
-	sound/opnmidi/opnmidi_midiplay.cpp
-	sound/opnmidi/opnmidi_opn2.cpp
-	sound/opnmidi/opnmidi_private.cpp
-	sound/opnmidi/wopn/wopn_file.c)
+	utility/matrix.cpp
+)
 	
 #Vulkan stuff must go into a separate list later because it needs to be disabled for some platforms
 set (VULKAN_SOURCES
@@ -980,6 +874,7 @@ set (VULKAN_SOURCES
 	rendering/vulkan/system/vk_buffers.cpp
 	rendering/vulkan/renderer/vk_renderstate.cpp
 	rendering/vulkan/renderer/vk_renderpass.cpp
+	rendering/vulkan/renderer/vk_streambuffer.cpp
 	rendering/vulkan/renderer/vk_postprocess.cpp
 	rendering/vulkan/renderer/vk_renderbuffers.cpp
 	rendering/vulkan/shaders/vk_shader.cpp
@@ -996,20 +891,20 @@ endif()
 
 set (PCH_SOURCES
 	am_map.cpp
-	b_bot.cpp
-	b_func.cpp
-	b_game.cpp
-	b_move.cpp
-	b_think.cpp
+	playsim/bots/b_bot.cpp
+	playsim/bots/b_func.cpp
+	playsim/bots/b_game.cpp
+	playsim/bots/b_move.cpp
+	playsim/bots/b_think.cpp
 	bbannouncer.cpp
-	c_bind.cpp
-	c_cmds.cpp
-	c_console.cpp
-	c_consolebuffer.cpp
-	c_cvars.cpp
-	c_dispatch.cpp
-	c_expr.cpp
-	c_functions.cpp
+	console/c_bind.cpp
+	console/c_cmds.cpp
+	console/c_console.cpp
+	console/c_consolebuffer.cpp
+	console/c_cvars.cpp
+	console/c_dispatch.cpp
+	console/c_expr.cpp
+	console/c_functions.cpp
 	ct_chat.cpp
 	d_iwad.cpp
 	d_main.cpp
@@ -1033,39 +928,40 @@ set (PCH_SOURCES
 	m_cheat.cpp
 	m_joy.cpp
 	m_misc.cpp
-	p_acs.cpp
-	p_actionfunctions.cpp
+	playsim/p_acs.cpp
+	playsim/p_actionfunctions.cpp
 	p_conversation.cpp
-	p_destructible.cpp
-	p_effect.cpp
-	p_enemy.cpp
-	p_interaction.cpp
-	p_lnspec.cpp
-	p_map.cpp
-	p_maputl.cpp
-	p_mobj.cpp
+	playsim/p_destructible.cpp
+	playsim/p_effect.cpp
+	playsim/p_enemy.cpp
+	playsim/p_interaction.cpp
+	playsim/p_lnspec.cpp
+	playsim/p_map.cpp
+	playsim/p_maputl.cpp
+	playsim/p_mobj.cpp
 	p_openmap.cpp
-	p_pspr.cpp
+	playsim/p_pspr.cpp
 	p_saveg.cpp
 	p_setup.cpp
-	p_spec.cpp
+	playsim/p_spec.cpp
 	p_states.cpp
-	p_things.cpp
+	playsim/p_things.cpp
 	p_tick.cpp
-	p_user.cpp
-	r_utility.cpp
-	r_sky.cpp
-	r_videoscale.cpp
-	s_advsound.cpp
-	s_environment.cpp
-	s_sndseq.cpp
-	s_sound.cpp
+	playsim/p_user.cpp
+	rendering/r_utility.cpp
+	rendering/r_sky.cpp
+	rendering/r_videoscale.cpp
+	sound/s_advsound.cpp
+	sound/s_environment.cpp
+	sound/s_sndseq.cpp
+	sound/s_sound.cpp
+	sound/s_music.cpp
 	serializer.cpp
 	scriptutil.cpp
 	st_stuff.cpp
-	v_framebuffer.cpp
-	v_palette.cpp
-	v_video.cpp
+	rendering/v_framebuffer.cpp
+	r_data/v_palette.cpp
+	rendering/v_video.cpp
 	wi_stuff.cpp
 	gamedata/a_keys.cpp
 	gamedata/a_weapons.cpp
@@ -1083,40 +979,40 @@ set (PCH_SOURCES
 	gamedata/p_terrain.cpp
 	gamedata/statistics.cpp
 	gamedata/teaminfo.cpp
-	g_shared/a_pickups.cpp
-	g_shared/a_action.cpp
-	g_shared/a_decals.cpp
-	g_shared/a_decalfx.cpp
-	g_shared/a_doors.cpp
-	g_shared/a_dynlight.cpp
-	g_shared/a_flashfader.cpp
-	g_shared/a_lightning.cpp
-	g_shared/a_morph.cpp
-	g_shared/a_quake.cpp
-	g_shared/a_specialspot.cpp
-	g_shared/a_ceiling.cpp
-	g_shared/a_floor.cpp
-	g_shared/a_lights.cpp
-	g_shared/a_lighttransfer.cpp
-	g_shared/a_pillar.cpp
-	g_shared/a_plats.cpp
-	g_shared/a_pusher.cpp
-	g_shared/a_scroll.cpp
-	g_shared/dsectoreffect.cpp
-	g_shared/p_secnodes.cpp
-	g_shared/p_sectors.cpp
-	g_shared/p_sight.cpp
-	g_shared/p_switch.cpp
-	g_shared/p_tags.cpp
-	g_shared/p_teleport.cpp
-	g_shared/actorptrselect.cpp
-	g_shared/dthinker.cpp
-	g_shared/p_3dfloors.cpp
-	g_shared/p_3dmidtex.cpp
-	g_shared/p_linkedsectors.cpp
-	g_shared/p_trace.cpp
-	g_shared/po_man.cpp
-	g_shared/portal.cpp
+	playsim/mapthinkers/a_decalfx.cpp
+	playsim/mapthinkers/a_doors.cpp
+	playsim/mapthinkers/a_lightning.cpp
+	playsim/mapthinkers/a_quake.cpp
+	playsim/mapthinkers/a_ceiling.cpp
+	playsim/mapthinkers/a_floor.cpp
+	playsim/mapthinkers/a_lights.cpp
+	playsim/mapthinkers/a_lighttransfer.cpp
+	playsim/mapthinkers/a_pillar.cpp
+	playsim/mapthinkers/a_plats.cpp
+	playsim/mapthinkers/a_pusher.cpp
+	playsim/mapthinkers/a_scroll.cpp
+	playsim/mapthinkers/dsectoreffect.cpp
+	playsim/a_pickups.cpp
+	playsim/a_action.cpp
+	playsim/a_decals.cpp
+	playsim/a_dynlight.cpp
+	playsim/a_flashfader.cpp
+	playsim/a_morph.cpp
+	playsim/a_specialspot.cpp
+	playsim/p_secnodes.cpp
+	playsim/p_sectors.cpp
+	playsim/p_sight.cpp
+	playsim/p_switch.cpp
+	playsim/p_tags.cpp
+	playsim/p_teleport.cpp
+	playsim/actorptrselect.cpp
+	playsim/dthinker.cpp
+	playsim/p_3dfloors.cpp
+	playsim/p_3dmidtex.cpp
+	playsim/p_linkedsectors.cpp
+	playsim/p_trace.cpp
+	playsim/po_man.cpp
+	playsim/portal.cpp
 	g_statusbar/hudmessages.cpp
 	g_statusbar/shared_hud.cpp
 	g_statusbar/sbarinfo.cpp
@@ -1220,6 +1116,7 @@ set (PCH_SOURCES
 	gamedata/textures/formats/emptytexture.cpp
 	gamedata/textures/formats/shadertexture.cpp
 	gamedata/textures/formats/tgatexture.cpp
+	gamedata/textures/formats/stbtexture.cpp
 	gamedata/textures/hires/hqresize.cpp
 	gamedata/textures/hires/hirestex.cpp
 	gamedata/fonts/singlelumpfont.cpp
@@ -1232,15 +1129,15 @@ set (PCH_SOURCES
 	gamedata/p_xlat.cpp
 	gamedata/xlat/parse_xlat.cpp
 	gamedata/xlat/parsecontext.cpp
-	fragglescript/t_func.cpp
-	fragglescript/t_load.cpp
-	fragglescript/t_oper.cpp
-	fragglescript/t_parse.cpp
-	fragglescript/t_prepro.cpp
-	fragglescript/t_script.cpp
-	fragglescript/t_spec.cpp
-	fragglescript/t_variable.cpp
-	fragglescript/t_cmd.cpp
+	playsim/fragglescript/t_func.cpp
+	playsim/fragglescript/t_load.cpp
+	playsim/fragglescript/t_oper.cpp
+	playsim/fragglescript/t_parse.cpp
+	playsim/fragglescript/t_prepro.cpp
+	playsim/fragglescript/t_script.cpp
+	playsim/fragglescript/t_spec.cpp
+	playsim/fragglescript/t_variable.cpp
+	playsim/fragglescript/t_cmd.cpp
 	intermission/intermission.cpp
 	intermission/intermission_parse.cpp
 	r_data/colormaps.cpp
@@ -1284,74 +1181,15 @@ set (PCH_SOURCES
 	scripting/zscript/zcc_compile.cpp
 	scripting/zscript/zcc_parser.cpp
 	utility/sfmt/SFMT.cpp
-	sound/i_music.cpp
-	sound/i_sound.cpp
-	sound/i_soundfont.cpp
-	sound/mididevices/music_adlmidi_mididevice.cpp
-	sound/mididevices/music_opldumper_mididevice.cpp
-	sound/mididevices/music_opl_mididevice.cpp
-	sound/mididevices/music_opnmidi_mididevice.cpp
-	sound/mididevices/music_timiditypp_mididevice.cpp
-	sound/mididevices/music_fluidsynth_mididevice.cpp
-	sound/mididevices/music_softsynth_mididevice.cpp
-	sound/mididevices/music_timidity_mididevice.cpp
-	sound/mididevices/music_wildmidi_mididevice.cpp
-	sound/mididevices/music_wavewriter_mididevice.cpp
-	sound/midisources/midisource.cpp
-	sound/midisources/midisource_mus.cpp
-	sound/midisources/midisource_smf.cpp
-	sound/midisources/midisource_hmi.cpp
-	sound/midisources/midisource_xmi.cpp
-	sound/musicformats/music_cd.cpp
-	sound/musicformats/music_dumb.cpp
-	sound/musicformats/music_gme.cpp
-	sound/musicformats/music_libsndfile.cpp
-	sound/musicformats/music_midistream.cpp
-	sound/musicformats/music_opl.cpp
-	sound/musicformats/music_stream.cpp
-	sound/oplsynth/fmopl.cpp
-	sound/oplsynth/musicblock.cpp
-	sound/oplsynth/oplio.cpp
-	sound/oplsynth/dosbox/opl.cpp
-	sound/oplsynth/OPL3.cpp
-	sound/oplsynth/nukedopl3.cpp
-	sound/timidity/common.cpp
-	sound/timidity/instrum.cpp
-	sound/timidity/instrum_dls.cpp
-	sound/timidity/instrum_font.cpp
-	sound/timidity/instrum_sf2.cpp
-	sound/timidity/mix.cpp
-	sound/timidity/playmidi.cpp
-	sound/timidity/resample.cpp
-	sound/timidity/timidity.cpp
-	sound/timiditypp/common.cpp
-	sound/timiditypp/configfile.cpp
-	sound/timiditypp/effect.cpp
-	sound/timiditypp/filter.cpp
-	sound/timiditypp/freq.cpp
-	sound/timiditypp/instrum.cpp
-	sound/timiditypp/mblock.cpp
-	sound/timiditypp/mix.cpp
-	sound/timiditypp/playmidi.cpp
-	sound/timiditypp/quantity.cpp
-	sound/timiditypp/readmidic.cpp
-	sound/timiditypp/recache.cpp
-	sound/timiditypp/resample.cpp
-	sound/timiditypp/sbkconv.cpp
-	sound/timiditypp/sffile.cpp
-	sound/timiditypp/sfitem.cpp
-	sound/timiditypp/smplfile.cpp
-	sound/timiditypp/sndfont.cpp
-	sound/timiditypp/tables.cpp
-	sound/wildmidi/file_io.cpp
-	sound/wildmidi/gus_pat.cpp
-	sound/wildmidi/reverb.cpp
-	sound/wildmidi/wildmidi_lib.cpp
-	sound/wildmidi/wm_error.cpp
+	sound/music/i_music.cpp
+	sound/music/i_soundfont.cpp
+	sound/backend/i_sound.cpp
+	sound/music/music_config.cpp
 	rendering/swrenderer/textures/r_swtexture.cpp
 	rendering/swrenderer/textures/warptexture.cpp
 	rendering/swrenderer/textures/swcanvastexture.cpp
 	events.cpp
+	utility/palette.cpp
 	utility/files.cpp
 	utility/files_decompress.cpp
 	utility/m_png.cpp
@@ -1367,9 +1205,7 @@ set (PCH_SOURCES
 	utility/sc_man.cpp
 	utility/stats.cpp
 	utility/cmdlib.cpp
-	utility/colormatcher.cpp
 	utility/configfile.cpp
-	utility/i_module.cpp
 	utility/i_time.cpp
 	utility/m_alloc.cpp
 	utility/m_argv.cpp
@@ -1387,7 +1223,12 @@ else()
 	set( NOT_COMPILED_SOURCE_FILES ${NOT_COMPILED_SOURCE_FILES} ${VM_JIT_SOURCES} )
 endif()
 
-enable_precompiled_headers( g_pch.h PCH_SOURCES )
+if( MSVC )
+	enable_precompiled_headers( g_pch.h PCH_SOURCES )
+else()
+	# Temporary solution for compilers other than MSVC
+	set_source_files_properties( ${PCH_SOURCES} PROPERTIES COMPILE_FLAGS "-include g_pch.h" )
+endif()
 
 add_executable( zdoom WIN32 MACOSX_BUNDLE
 	${HEADER_FILES}
@@ -1439,31 +1280,34 @@ if( UNIX )
 	endif()
 endif()
 
-target_link_libraries( zdoom ${ZDOOM_LIBS} gdtoa dumb lzma )
+target_link_libraries( zdoom ${ZDOOM_LIBS} gdtoa dumb lzma adl opn timidity timidityplus wildmidi oplsynth zmusic )
 
 include_directories( .
 	g_statusbar
-	g_shared
+	console
+	playsim
+	playsim/bots
+	playsim/mapthinkers
 	gamedata
 	gamedata/textures
 	gamedata/fonts
 	rendering
 	rendering/2d
+	r_data
 	sound
-	sound/oplsynth
-	sound/timidity
-	sound/wildmidi
+	sound/music
+	sound/backend
 	xlat
 	utility
 	utility/nodebuilder
 	scripting
 	scripting/vm
+	rendering
 	rendering/vulkan/thirdparty
-	../gdtoa
-	../dumb/include
-	../glslang/glslang/Public
-	../glslang/spirv
-	${CMAKE_BINARY_DIR}/gdtoa
+	../libraries/gdtoa
+	../libraries/glslang/glslang/Public
+	../libraries/glslang/spirv
+	${CMAKE_BINARY_DIR}/libraries/gdtoa
 	${SYSTEM_SOURCES_DIR} )
 
 add_dependencies( zdoom revision_check )
@@ -1535,9 +1379,16 @@ if( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 endif()
 
 if( APPLE )
+	set( LINK_FRAMEWORKS "-framework Cocoa -framework IOKit -framework OpenGL")
+
+	if( HAVE_VULKAN )
+		set( LINK_FRAMEWORKS "${LINK_FRAMEWORKS} -framework QuartzCore" )
+	endif()
+
 	set_target_properties(zdoom PROPERTIES
-		LINK_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL"
-		MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/posix/osx/zdoom-info.plist" )
+		LINK_FLAGS "${LINK_FRAMEWORKS}"
+		MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/posix/osx/zdoom-info.plist"
+		XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "" )
 
 	# Dymanic libraries like libvulkan.dylib or libMoltenVK.dylib will be loaded by dlopen()
 	# if placed in the directory with the main executable
@@ -1559,21 +1410,9 @@ if(OPENVR_SHARED_LIBRARY)
 endif()
 
 source_group("Audio Files" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/.+")
-source_group("Audio Files\\ADL MIDI" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/adlmidi/.+")
-source_group("Audio Files\\OPN MIDI" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/opnmidi/.+")
-source_group("Audio Files\\OPL Synth" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/oplsynth/.+")
-source_group("Audio Files\\OPL Synth\\DOSBox" FILES sound/oplsynth/dosbox/opl.cpp sound/oplsynth/dosbox/opl.h)
-source_group("Audio Files\\Timidity" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/timidity/.+")
-source_group("Audio Files\\Timiditypp" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/timiditypp/.+")
-source_group("Audio Files\\WildMidi" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/wildmidi/.+")
-source_group("Audio Files\\MIDI Devices" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/mididevices/.+")
-source_group("Audio Files\\MIDI Sources" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/midisources/.+")
+source_group("Audio Files\\Backend" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/backend/.+")
 source_group("Audio Files\\Music formats" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/musicformats/.+")
 source_group("Audio Files\\Third-party" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/thirdparty/.+")
-source_group("External\\Math" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/math/.+")
-source_group("External\\RapidJSON" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/.+")
-source_group("External\\SFMT" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sfmt/.+")
-source_group("FraggleScript" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/fragglescript/.+")
 source_group("Game Data" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gamedata/.+")
 source_group("Game Data\\Resource Files" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gamedata/resourcefiles/.+")
 source_group("Game Data\\Fonts" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gamedata/fonts/.+")
@@ -1586,6 +1425,10 @@ source_group("Game Data\\Textures\\Formats" REGULAR_EXPRESSION "^${CMAKE_CURRENT
 source_group("Intermission" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/intermission/.+")
 source_group("Map Loader" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/maploader/.+")
 source_group("Menu" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/menu/.+")
+source_group("Playsim" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/playsim/.+")
+source_group("Playsim\\Bots" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/playsim/bots/.+")
+source_group("Playsim\\FraggleScript" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/playsim/fragglescript/.+")
+source_group("Playsim\\Map Thinkers" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/playsim/mapthinkers/.+")
 source_group("Rendering" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rendering/.+")
 source_group("Rendering\\2D" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rendering/2d/.+")
 source_group("Rendering\\Hardware Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/.+")
@@ -1648,7 +1491,6 @@ source_group("Utility\\Node Builder" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE
 source_group("Utility\\Math" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/utility/math/.+")
 source_group("Utility\\RapidJSON" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/utility/rapidjson/.+")
 source_group("Utility\\SFMT" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/utility/sfmt/.+")
-source_group("Shared Game" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/g_shared/.+")
 source_group("Statusbar" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/g_statusbar/.+")
 source_group("Versioning" FILES version.h win32/zdoom.rc)
 source_group("Xlat" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/xlat/.+" FILES ${CMAKE_CURRENT_BINARY_DIR}/xlat_parser.c ${CMAKE_CURRENT_BINARY_DIR}/xlat_parser.h)

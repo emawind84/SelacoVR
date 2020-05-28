@@ -35,7 +35,6 @@
 // HEADER FILES ------------------------------------------------------------
 
 #define WIN32_LEAN_AND_MEAN
-#define _WIN32_WINNT 0x0501
 #include <windows.h>
 #include <richedit.h>
 #include <tlhelp32.h>
@@ -68,12 +67,6 @@
 
 // Maximum number of files that might appear in a crash report.
 #define MAX_FILES 5
-
-#ifndef __BIG_ENDIAN__
-#define MAKE_ID(a,b,c,d)	((a)|((b)<<8)|((c)<<16)|((d)<<24))
-#else
-#define MAKE_ID(a,b,c,d)	((d)|((c)<<8)|((b)<<16)|((a)<<24))
-#endif
 
 #define ZIP_LOCALFILE	MAKE_ID('P','K',3,4)
 #define ZIP_CENTRALFILE	MAKE_ID('P','K',1,2)
@@ -511,7 +504,7 @@ HANDLE WriteLogFile(HWND edit)
 //
 //==========================================================================
 
-void CreateCrashLog (char *custominfo, DWORD customsize, HWND richlog)
+void CreateCrashLog (const char *custominfo, DWORD customsize, HWND richlog)
 {
 	// Do not collect information more than once.
 	if (NumFiles != 0)

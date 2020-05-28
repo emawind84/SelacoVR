@@ -4,8 +4,8 @@
 #include "r_defs.h"
 #include "v_video.h"
 #include "vectors.h"
-#include "r_renderer.h"
-#include "r_data/matrix.h"
+#include "swrenderer/r_renderer.h"
+#include "matrix.h"
 #include "gl/renderer/gl_renderbuffers.h"
 #include "hwrenderer/scene/hw_portal.h"
 #include "hwrenderer/dynlights/hw_shadowmap.h"
@@ -27,7 +27,7 @@ class FGLRenderBuffers;
 class FGL2DDrawer;
 class FHardwareTexture;
 class SWSceneDrawer;
-class GLViewpointBuffer;
+class HWViewpointBuffer;
 struct FRenderViewpoint;
 
 namespace OpenGLRenderer
@@ -101,11 +101,10 @@ public:
 	void EndOffscreen();
 	void UpdateShadowMap();
 
-	private: void FGLRenderer::gl_FillScreen();
 	void BindToFrameBuffer(FMaterial *mat);
 
 private:
-
+	void gl_FillScreen();
 	void DrawScene(HWDrawInfo *di, int drawmode);
 	bool QuadStereoCheckInitialRenderContextState();
 	void PresentAnaglyph(bool r, bool g, bool b);

@@ -39,7 +39,6 @@
 #include "v_video.h"
 #include "r_defs.h"
 #include "r_utility.h"
-#include "r_renderer.h"
 #include "doomstat.h"
 #include "gi.h"
 #include "g_level.h"
@@ -1133,7 +1132,7 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawLine)
 	PARAM_INT(color);
 	PARAM_INT(alpha);
 	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
-	screen->DrawLine(x0, y0, x1, y1, -1, color, alpha);
+	screen->DrawLine(x0, y0, x1, y1, -1, color | MAKEARGB(255, 0, 0, 0), alpha);
 	return 0;
 }
 

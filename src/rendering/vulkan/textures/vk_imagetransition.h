@@ -3,6 +3,7 @@
 
 #include "vulkan/system/vk_objects.h"
 #include "vulkan/system/vk_builders.h"
+#include "vulkan/renderer/vk_renderpass.h"
 
 class VkTextureImage
 {
@@ -11,9 +12,9 @@ public:
 	{
 		AspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		Layout = VK_IMAGE_LAYOUT_UNDEFINED;
+		PPFramebuffer.reset();
 		DepthOnlyView.reset();
 		View.reset();
-		Image.reset();
 	}
 
 	void GenerateMipmaps(VulkanCommandBuffer *cmdbuffer);
@@ -23,6 +24,9 @@ public:
 	std::unique_ptr<VulkanImageView> DepthOnlyView;
 	VkImageLayout Layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	VkImageAspectFlags AspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+	std::unique_ptr<VulkanFramebuffer> PPFramebuffer;
+	std::map<VkRenderPassKey, std::unique_ptr<VulkanFramebuffer>> RSFramebuffers;
 };
 
 class VkImageTransition

@@ -85,8 +85,6 @@
 #include "i_system.h"
 #include "textures/bitmap.h"
 
-#include "optwin32.h"
-
 // MACROS ------------------------------------------------------------------
 
 #ifdef _MSC_VER
@@ -104,6 +102,8 @@ extern void LayoutMainWindow(HWND hWnd, HWND pane);
 
 // PUBLIC FUNCTION PROTOTYPES ----------------------------------------------
 
+void DestroyCustomCursor();
+
 // PRIVATE FUNCTION PROTOTYPES ---------------------------------------------
 
 static void CalculateCPUSpeed();
@@ -111,11 +111,9 @@ static void CalculateCPUSpeed();
 static HCURSOR CreateCompatibleCursor(FBitmap &cursorpic, int leftofs, int topofs);
 static HCURSOR CreateAlphaCursor(FBitmap &cursorpic, int leftofs, int topofs);
 static HCURSOR CreateBitmapCursor(int xhot, int yhot, HBITMAP and_mask, HBITMAP color_mask);
-static void DestroyCustomCursor();
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
-EXTERN_CVAR(String, language);
 EXTERN_CVAR (Bool, queryiwad);
 // Used on welcome/IWAD screen.
 EXTERN_CVAR (Bool, disableautoload)
@@ -136,17 +134,14 @@ CVAR (String, queryiwad_key, "shift", CVAR_GLOBALCONFIG|CVAR_ARCHIVE);
 CVAR (Bool, con_debugoutput, false, 0);
 
 double PerfToSec, PerfToMillisec;
-uint32_t LanguageIDs[4];
 
 UINT TimerPeriod;
 
-bool gameisdead;
 int sys_ostype = 0;
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
 static ticcmd_t emptycmd;
-static bool HasExited;
 
 static WadStuff *WadList;
 static int NumWads;
@@ -340,97 +335,8 @@ void I_Init()
 	CheckCPUID(&CPU);
 	CalculateCPUSpeed();
 	DumpCPUInfo(&CPU);
-
-	atterm (I_ShutdownSound);
-	I_InitSound ();
 }
 
-//==========================================================================
-//
-// I_Quit
-//
-//==========================================================================
-
-void I_Quit()
-{
-	HasExited = true;		/* Prevent infinitely recursive exits -- killough */
-
-	timeEndPeriod(TimerPeriod);
-
-	if (demorecording)
-	{
-		G_CheckDemoStatus();
-	}
-
-	C_DeinitConsole();
-}
-
-
-//==========================================================================
-//
-// I_FatalError
-//
-// Throw an error that will end the game.
-//
-//==========================================================================
-
-void I_FatalError(const char *error, ...)
-{
-	static BOOL alreadyThrown = false;
-	gameisdead = true;
-
-	if (!alreadyThrown)		// ignore all but the first message -- killough
-	{
-		alreadyThrown = true;
-		char errortext[MAX_ERRORTEXT];
-		va_list argptr;
-		va_start(argptr, error);
-		myvsnprintf(errortext, MAX_ERRORTEXT, error, argptr);
-		va_end(argptr);
-		OutputDebugStringA(errortext);
-
-		// Record error to log (if logging)
-		if (Logfile)
-		{
-			fprintf(Logfile, "\n**** DIED WITH FATAL ERROR:\n%s\n", errortext);
-			fflush(Logfile);
-		}
-
-		throw CFatalError(errortext);
-	}
-
-	if (!HasExited)		// If it hasn't exited yet, exit now -- killough
-	{
-		HasExited = 1;	// Prevent infinitely recursive exits -- killough
-		exit(-1);
-	}
-}
-
-//==========================================================================
-//
-// I_Error
-//
-// Throw an error that will send us to the console if we are far enough
-// along in the startup process.
-//
-//==========================================================================
-
-void I_Error(const char *error, ...)
-{
-	va_list argptr;
-	char errortext[MAX_ERRORTEXT];
-
-	va_start(argptr, error);
-	myvsnprintf(errortext, MAX_ERRORTEXT, error, argptr);
-	va_end(argptr);
-	if (IsDebuggerPresent())
-	{
-		auto wstr = WideString(errortext);
-		OutputDebugStringW(wstr.c_str());
-	}
-
-	throw CRecoverableError(errortext);
-}
 
 //==========================================================================
 //
@@ -592,8 +498,11 @@ static TArray<FString> bufferedConsoleStuff;
 
 void I_DebugPrint(const char *cp)
 {
-	auto wstr = WideString(cp);
-	OutputDebugStringW(wstr.c_str());
+	if (IsDebuggerPresent())
+	{
+		auto wstr = WideString(cp);
+		OutputDebugStringW(wstr.c_str());
+	}
 }
 
 void I_PrintStr(const char *cp)
@@ -809,7 +718,6 @@ bool I_SetCursor(FTexture *cursorpic)
 		// Replace the existing cursor with the new one.
 		DestroyCustomCursor();
 		CustomCursor = cursor;
-		atterm(DestroyCustomCursor);
 	}
 	else
 	{
@@ -1012,7 +920,7 @@ static HCURSOR CreateBitmapCursor(int xhot, int yhot, HBITMAP and_mask, HBITMAP 
 //
 //==========================================================================
 
-static void DestroyCustomCursor()
+void DestroyCustomCursor()
 {
 	if (CustomCursor != NULL)
 	{

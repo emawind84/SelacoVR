@@ -81,17 +81,7 @@ void I_StartTic (void);
 // for normal input.
 ticcmd_t *I_BaseTiccmd (void);
 
-
-// Called by M_Responder when quit is selected.
-// Clean exit, displays sell blurb.
-void I_Quit (void);
-
-
 void I_Tactile (int on, int off, int total);
-
-void addterm (void (*func)(void), const char *name);
-#define atterm(t) addterm (t, #t)
-void popterm ();
 
 void I_DebugPrint (const char *cp);
 

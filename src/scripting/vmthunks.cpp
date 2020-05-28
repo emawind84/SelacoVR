@@ -46,7 +46,6 @@
 #include "a_weapons.h"
 #include "d_player.h"
 #include "p_setup.h"
-#include "i_music.h"
 #include "am_map.h"
 #include "v_video.h"
 #include "gi.h"
@@ -1340,6 +1339,72 @@ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, SetXOffset, SetXOffset)
 	 return 0;
  }
 
+ static F3DFloor* Get3DFloor(sector_t *self, unsigned int index)
+ {
+ 	 if (index >= self->e->XFloor.ffloors.Size())
+ 	 	return nullptr;
+	 return self->e->XFloor.ffloors[index];
+ }
+
+ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, Get3DFloor, Get3DFloor)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(sector_t);
+	 PARAM_INT(index);
+	 ACTION_RETURN_POINTER(Get3DFloor(self,index));
+ }
+
+ static int Get3DFloorCount(sector_t *self)
+ {
+	 return self->e->XFloor.ffloors.Size();
+ }
+
+ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, Get3DFloorCount, Get3DFloorCount)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(sector_t);
+	 ACTION_RETURN_INT(self->e->XFloor.ffloors.Size());
+ }
+
+ static sector_t* GetAttached(sector_t *self, unsigned int index)
+ {
+ 	 if (index >= self->e->XFloor.attached.Size())
+ 	 	return nullptr;
+	 return self->e->XFloor.attached[index];
+ }
+
+ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, GetAttached, GetAttached)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(sector_t);
+	 PARAM_INT(index);
+	 ACTION_RETURN_POINTER(GetAttached(self,index));
+ }
+
+ static int GetAttachedCount(sector_t *self)
+ {
+	 return self->e->XFloor.attached.Size();
+ }
+
+ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, GetAttachedCount, GetAttachedCount)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(sector_t);
+	 ACTION_RETURN_INT(self->e->XFloor.attached.Size());
+ }
+
+ static int Get3DFloorTexture(F3DFloor *self, int pos)
+ {
+ 	 if ( pos )
+ 		 return self->bottom.texture->GetIndex();
+ 	 return self->top.texture->GetIndex();
+ }
+
+ DEFINE_ACTION_FUNCTION_NATIVE(_F3DFloor, GetTexture, Get3DFloorTexture)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(F3DFloor);
+	 PARAM_INT(pos);
+	 if ( pos )
+		 ACTION_RETURN_INT(self->bottom.texture->GetIndex());
+	 ACTION_RETURN_INT(self->top.texture->GetIndex());
+ }
+
  //===========================================================================
  //
  //  line_t exports
@@ -2000,6 +2065,17 @@ DEFINE_ACTION_FUNCTION_NATIVE(FFont, GetHeight, GetHeight)
 	ACTION_RETURN_INT(self->GetHeight());
 }
 
+static int GetDisplacement(FFont* font)
+{
+	return font->GetDisplacement();
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(FFont, GetDisplacement, GetDisplacement)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FFont);
+	ACTION_RETURN_INT(self->GetDisplacement());
+}
+
 double GetBottomAlignOffset(FFont *font, int c);
 DEFINE_ACTION_FUNCTION_NATIVE(FFont, GetBottomAlignOffset, GetBottomAlignOffset)
 {
@@ -2019,6 +2095,19 @@ DEFINE_ACTION_FUNCTION_NATIVE(FFont, StringWidth, StringWidth)
 	PARAM_SELF_STRUCT_PROLOGUE(FFont);
 	PARAM_STRING(str);
 	ACTION_RETURN_INT(StringWidth(self, str));
+}
+
+static int GetMaxAscender(FFont* font, const FString& str)
+{
+	const char* txt = str[0] == '$' ? GStrings(&str[1]) : str.GetChars();
+	return font->GetMaxAscender(txt);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(FFont, GetMaxAscender, GetMaxAscender)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FFont);
+	PARAM_STRING(str);
+	ACTION_RETURN_INT(GetMaxAscender(self, str));
 }
 
 static int CanPrint(FFont *font, const FString &str)
@@ -2952,7 +3041,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, SphericalCoords, SphericalCoords)
 	PARAM_FLOAT(viewPitch);
 	PARAM_BOOL(absolute);
 	DVector3 result;
-	SphericalCoords(self, viewpointX, viewpointY, viewpointZ, targetX, targetY, targetZ, viewYaw, viewpointZ, absolute, &result);
+	SphericalCoords(self, viewpointX, viewpointY, viewpointZ, targetX, targetY, targetZ, viewYaw, viewPitch, absolute, &result);
 	ACTION_RETURN_VEC3(result);
 }
 
@@ -2965,7 +3054,7 @@ static int isFrozen(FLevelLocals *self)
 DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, isFrozen, isFrozen)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
-	return isFrozen(self);
+	ACTION_RETURN_INT(isFrozen(self));
 }
 
 void setFrozen(FLevelLocals *self, int on)
@@ -3037,6 +3126,7 @@ DEFINE_FIELD(FLevelLocals, MapName)
 DEFINE_FIELD(FLevelLocals, NextMap)
 DEFINE_FIELD(FLevelLocals, NextSecretMap)
 DEFINE_FIELD(FLevelLocals, F1Pic)
+DEFINE_FIELD(FLevelLocals, AuthorName)
 DEFINE_FIELD(FLevelLocals, maptype)
 DEFINE_FIELD(FLevelLocals, Music)
 DEFINE_FIELD(FLevelLocals, musicorder)
@@ -3157,6 +3247,14 @@ DEFINE_FIELD_X(Side, side_t, Flags)
 DEFINE_FIELD_X(Secplane, secplane_t, normal)
 DEFINE_FIELD_X(Secplane, secplane_t, D)
 DEFINE_FIELD_X(Secplane, secplane_t, negiC)
+
+DEFINE_FIELD_NAMED_X(F3DFloor, F3DFloor, bottom.plane, bottom);
+DEFINE_FIELD_NAMED_X(F3DFloor, F3DFloor, top.plane, top);
+DEFINE_FIELD_X(F3DFloor, F3DFloor, flags);
+DEFINE_FIELD_X(F3DFloor, F3DFloor, master);
+DEFINE_FIELD_X(F3DFloor, F3DFloor, model);
+DEFINE_FIELD_X(F3DFloor, F3DFloor, target);
+DEFINE_FIELD_X(F3DFloor, F3DFloor, alpha);
 
 DEFINE_FIELD_X(Vertex, vertex_t, p)
 

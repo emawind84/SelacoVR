@@ -26,7 +26,7 @@
 #include <string.h>
 #include "gl_load/gl_load.h"
 #include "gl_load/gl_interface.h"
-#include "r_data/matrix.h"
+#include "matrix.h"
 #include "hwrenderer/scene//hw_drawstructs.h"
 #include "hwrenderer/scene//hw_renderstate.h"
 #include "hwrenderer/textures/hw_material.h"
@@ -69,6 +69,7 @@ class FGLRenderState : public FRenderState
 	int lastClamp = 0;
 	int lastTranslation = 0;
 	int maxBoundMaterial = -1;
+	size_t mLastMappedLightIndex = SIZE_MAX;
 
 	IVertexBuffer *mCurrentVertexBuffer;
 	int mCurrentVertexOffsets[2];	// one per binding point

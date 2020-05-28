@@ -54,7 +54,7 @@
 #include "v_video.h"
 #include "templates.h"
 #include "r_utility.h"
-#include "r_renderer.h"
+#include "swrenderer/r_renderer.h"
 #include <atomic>
 
 FDynamicColormap NormalLight;
@@ -451,7 +451,7 @@ static void InitBoomColormaps ()
 //
 //==========================================================================
 
-static void DeinitSWColorMaps()
+void DeinitSWColorMaps()
 {
 	FreeSpecialLights();
 	if (realcolormaps.Maps != nullptr)
@@ -474,8 +474,6 @@ static void DeinitSWColorMaps()
 
 void InitSWColorMaps()
 {
-	DeinitSWColorMaps();
-	atterm(DeinitSWColorMaps);
 	InitBoomColormaps();
 	NormalLight.Color = PalEntry (255, 255, 255);
 	NormalLight.Fade = 0;

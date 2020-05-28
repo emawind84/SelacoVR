@@ -52,7 +52,6 @@
 #include "sbar.h"
 #include "r_utility.h"
 #include "r_sky.h"
-#include "r_renderer.h"
 #include "serializer.h"
 #include "g_levellocals.h"
 #include "events.h"
@@ -60,6 +59,7 @@
 #include "r_sky.h"
 #include "version.h"
 #include "fragglescript/t_script.h"
+#include "s_music.h"
 
 EXTERN_CVAR(Bool, save_formatted)
 

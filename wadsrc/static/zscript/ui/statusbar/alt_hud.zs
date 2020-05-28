@@ -68,7 +68,7 @@ class AltHud ui
 		if (IndexFont == NULL) IndexFont = ConFont;	// Emergency fallback
 
 		invgem_left = TexMan.CheckForTexture("INVGEML1", TexMan.Type_MiscPatch);
-		invgem_left = TexMan.CheckForTexture("INVGEMR1", TexMan.Type_MiscPatch);
+		invgem_right = TexMan.CheckForTexture("INVGEMR1", TexMan.Type_MiscPatch);
 		tnt1a0 = TexMan.CheckForTexture("TNT1A0", TexMan.Type_Sprite);
 		fragpic = TexMan.CheckForTexture("HU_FRAGS", TexMan.Type_MiscPatch);
 		statspace = SmallFont.StringWidth("Ac:");
@@ -731,7 +731,7 @@ class AltHud ui
 
 		if (withmapname)
 		{
-			let font = generic_ui? NewSmallFont : SmallFont;
+			let font = generic_ui? NewSmallFont : SmallFont.CanPrint(Level.LevelName)? SmallFont : OriginalSmallFont;
 			int hh = font.GetHeight();
 
 			screen.DrawText(font, hudcolor_titl, hudwidth - 6 - font.StringWidth(Level.MapName), ypos, Level.MapName,
@@ -953,7 +953,10 @@ class AltHud ui
 			DrawTimeString(font, hudcolor_ltim, Level.maptime, hudwidth-2, bottom, 1);
 		}
 
-		screen.DrawText(font, Font.CR_BRICK, 2, hudheight - fonth - 1, Level.FormatMapName(hudcolor_titl),
+		let amstr = Level.FormatMapName(hudcolor_titl);
+		font = generic_ui? NewSmallFont : SmallFont.CanPrint(amstr)? SmallFont : OriginalSmallFont;
+
+		screen.DrawText(font, Font.CR_BRICK, 2, hudheight - fonth - 1, amstr,
 			DTA_KeepRatio, true,
 			DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight);
 
