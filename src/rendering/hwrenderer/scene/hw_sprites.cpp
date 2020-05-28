@@ -486,7 +486,7 @@ void HWSprite::CreateVertices(HWDrawInfo *di)
 	if (modelframe == nullptr)
 	{
 		FVector3 v[4];
-		polyoffset = CalculateVertices(di, v, &di->Viewpoint.Pos);
+		polyoffset = CalculateVertices(di, v, &di->Viewpoint.CenterPos);
 		auto vert = screen->mVertexData->AllocVertices(4);
 		auto vp = vert.first;
 		vertexindex = vert.second;

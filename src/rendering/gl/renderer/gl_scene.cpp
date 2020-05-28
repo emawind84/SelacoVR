@@ -175,6 +175,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 	vrmode->SetUp();
 	const int eyeCount = vrmode->mEyeCount;
 	mBuffers->CurrentEye() = 0;  // always begin at zero, in case eye count changed
+	DVector3 centerPos;
 	for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
 	{
 		const auto &eye = vrmode->mEyes[mBuffers->CurrentEye()];
@@ -198,13 +199,16 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 		di->SetViewArea();
 		auto cm =  di->SetFullbrightFlags(mainview ? vp.camera->player : nullptr);
 		di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
-
 		// Stereo mode specific perspective projection
 		di->VPUniforms.mProjectionMatrix = eye->GetProjection(fov, ratio, fovratio);
-		// Retain unshifted center eye pos so all sprites show the same frame
-		vp.CenterPos = vp.Pos;
 		// Stereo mode specific viewpoint adjustment
 		vp.Pos += eye->GetViewShift(vp.HWAngles.Yaw.Degrees);
+		if (eye_ix == 0)
+		{
+			centerPos = vp.Pos;
+		}
+		// Retain eye position between eyes so all sprites show the same frame
+		vp.CenterPos = centerPos;
 		di->SetupView(gl_RenderState, vp.Pos.X, vp.Pos.Y, vp.Pos.Z, false, false);
 
 		// std::function until this can be done better in a cross-API fashion.
