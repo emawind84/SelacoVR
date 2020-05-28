@@ -209,7 +209,6 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 			centerPos = vp.Pos;
 		// Retain eye position between eyes so all sprites show the same frame
 		vp.CenterPos = centerPos;
-
 		di->SetupView(gl_RenderState, vp.Pos.X, vp.Pos.Y, vp.Pos.Z, false, false);
 
 		// std::function until this can be done better in a cross-API fashion.

@@ -41,28 +41,32 @@ const char *GetVersionString();
 
 /** Lots of different version numbers **/
 
-#define VERSIONSTR "4.2.4"
+#define VERSIONSTR "4.4pre"
 
 // The version as seen in the Windows resource
-#define RC_FILEVERSION 4,2,4,0
-#define RC_PRODUCTVERSION 4,2,4,0
+#define RC_FILEVERSION 4,3,3,0
+#define RC_PRODUCTVERSION 4,3,3,0
 #define RC_PRODUCTVERSION2 VERSIONSTR
 // These are for content versioning.
 #define VER_MAJOR 4
-#define VER_MINOR 2
-#define VER_REVISION 4
+#define VER_MINOR 3
+#define VER_REVISION 3
 
 // This should always refer to the GZDoom version a derived port is based on and not reflect the derived port's version number!
 #define ENG_MAJOR 4
-#define ENG_MINOR 2
-#define ENG_REVISION 4
+#define ENG_MINOR 3
+#define ENG_REVISION 3
 
 // Version identifier for network games.
 // Bump it every time you do a release unless you're certain you
 // didn't change anything that will affect sync.
 #define NETGAMEVERSION 235
 
-#define LASTRUNVERSION "218"
+// Version stored in the ini's [LastRun] section.
+// Bump it if you made some configuration change that you want to
+// be able to migrate in FGameConfigFile::DoGlobalSetup().
+#define LASTRUNVERSION "219"
+
 // Protocol version used in demos.
 // Bump it if you change existing DEM_ commands or add new ones.
 // Otherwise, it should be safe to leave it alone.
@@ -84,7 +88,7 @@ const char *GetVersionString();
 
 // Use 4500 as the base git save version, since it's higher than the
 // SVN revision ever got.
-#define SAVEVER 4556
+#define SAVEVER 4557
 
 // This is so that derivates can use the same savegame versions without worrying about engine compatibility
 #define GAMESIG "GZDOOM"

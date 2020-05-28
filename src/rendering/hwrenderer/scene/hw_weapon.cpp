@@ -112,7 +112,7 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 
 		if (vrmode->mEyeCount == 1 || (r_PlayerSprites3DMode != ITEM_ONLY && r_PlayerSprites3DMode != FAT_ITEM))
 		{
-			state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
+			state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, (huds->weapon->Flags & PSPF_PLAYERTRANSLATED) ? huds->owner->Translation : 0, huds->OverrideShader);
 			state.Draw(DT_TriangleStrip, huds->mx, 4);
 		}
 
@@ -230,7 +230,6 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 			}
 		}
 	}
-
 	state.SetTextureMode(TM_NORMAL);
 	state.AlphaFunc(Alpha_GEqual, gl_mask_sprite_threshold);
 	state.SetObjectColor(0xffffffff);
