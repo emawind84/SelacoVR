@@ -54,6 +54,8 @@ EXTERN_CVAR(Bool, r_deathcamera)
 EXTERN_CVAR(Bool, r_drawplayersprites)
 EXTERN_CVAR(Int, r_PlayerSprites3DMode)
 EXTERN_CVAR(Float, gl_fatItemWidth)
+//To force translucency for weapon sprites, tex->GetTranslucency returns false result for 32 bit PNG
+CVAR(Bool, r_transparentPlayerSprites, true, CVAR_ARCHIVE)
 
 enum PlayerSprites3DMode
 {
@@ -107,11 +109,10 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 	}
 	else
 	{
-		float thresh = (huds->tex->tex->GetTranslucency() || huds->OverrideShader != -1) ? 0.f : gl_mask_sprite_threshold;
-		state.AlphaFunc(Alpha_GEqual, thresh);
-
 		if (vrmode->mEyeCount == 1 || (r_PlayerSprites3DMode != ITEM_ONLY && r_PlayerSprites3DMode != FAT_ITEM))
 		{
+			float thresh = (!r_transparentPlayerSprites && (huds->tex->tex->GetTranslucency() || huds->OverrideShader != -1)) ? 0.f : gl_mask_sprite_threshold;
+			state.AlphaFunc(Alpha_GEqual, thresh);
 			state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, (huds->weapon->Flags & PSPF_PLAYERTRANSLATED) ? huds->owner->Translation : 0, huds->OverrideShader);
 			state.Draw(DT_TriangleStrip, huds->mx, 4);
 		}
