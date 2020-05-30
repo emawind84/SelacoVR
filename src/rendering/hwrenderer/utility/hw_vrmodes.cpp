@@ -34,34 +34,42 @@
 
 // Set up 3D-specific console variables:
 CVAR(Int, vr_mode, 10, CVAR_GLOBALCONFIG)
-
 // switch left and right eye views
 CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG)
-
 // intraocular distance in meters
 CVAR(Float, vr_ipd, 0.062f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
-
 // distance between viewer and the display screen
 CVAR(Float, vr_screendist, 0.80f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
 
+CVAR(Float, vr_kill_momentum, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
 // default conversion between (vertical) DOOM units and meters
 CVAR(Float, vr_vunits_per_meter, 32.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
-
 CVAR(Float, vr_floor_offset, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
-
 CVAR(Bool, openvr_rightHanded, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-
-CVAR(Bool, openvr_moveFollowsOffHand, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-
+CVAR(Bool, openvr_moveFollowsOffHand, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, openvr_drawControllers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-
-CVAR(Float, openvr_weaponRotate, -30, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-
-CVAR(Float, openvr_weaponScale, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-
+CVAR(Float, openvr_weaponRotate, -40, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, openvr_weaponScale, 0.3f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_pickup_haptic_level, 0.25f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-
 CVAR(Float, vr_quake_haptic_level, 0.8f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+//HUD control
+CVAR(Float, vr_hud_scale, 0.35f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_hud_stereo, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_hud_distance, 0.70f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_hud_rotate, 5.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_hud_fixed_pitch, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_hud_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+//AutoMap control
+CVAR(Bool, vr_automap_use_hud, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_automap_scale, 0.4f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_automap_stereo, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_automap_distance, 1.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_automap_rotate, 13.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_automap_fixed_pitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_automap_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 #define isqrt2 0.7071067812f
 

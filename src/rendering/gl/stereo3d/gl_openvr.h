@@ -68,14 +68,7 @@ protected:
 	int eye;
 
 	mutable const openvr::TrackedDevicePose_t * currentPose;
-
-	VSMatrix getQuadInWorld(
-		float distance, 
-		float width, 
-		bool doFixPitch,
-		bool doFixRoll,
-		float pitchOffset
-	) const;
+	VSMatrix getHUDProjection() const;
 };
 
 class OpenVRHaptics

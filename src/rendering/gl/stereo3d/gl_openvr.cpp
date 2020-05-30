@@ -127,6 +127,7 @@ EXTERN_CVAR(Bool, gl_billboard_faces_camera);
 EXTERN_CVAR(Int, gl_multisample);
 EXTERN_CVAR(Float, vr_vunits_per_meter)
 EXTERN_CVAR(Float, vr_floor_offset)
+EXTERN_CVAR(Float, vr_ipd);
 
 EXTERN_CVAR(Bool, openvr_rightHanded)
 EXTERN_CVAR(Bool, openvr_moveFollowsOffHand)
@@ -134,11 +135,25 @@ EXTERN_CVAR(Bool, openvr_drawControllers)
 EXTERN_CVAR(Float, openvr_weaponRotate);
 EXTERN_CVAR(Float, openvr_weaponScale);
 
-CVAR(Float, openvr_kill_momentum, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Float, openvr_hudDistance, 0.4f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Float, openvr_hudPitch, -8.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Bool, openvr_fixPitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Bool, openvr_fixRoll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+EXTERN_CVAR(Float, vr_kill_momentum, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+//HUD control
+EXTERN_CVAR(Float, vr_hud_scale);
+EXTERN_CVAR(Float, vr_hud_stereo);
+EXTERN_CVAR(Float, vr_hud_distance);
+EXTERN_CVAR(Float, vr_hud_rotate);
+EXTERN_CVAR(Bool, vr_hud_fixed_pitch);
+EXTERN_CVAR(Bool, vr_hud_fixed_roll);
+
+//Automap  control
+EXTERN_CVAR(Bool, vr_automap_use_hud);
+EXTERN_CVAR(Float, vr_automap_scale);
+EXTERN_CVAR(Float, vr_automap_stereo);
+EXTERN_CVAR(Float, vr_automap_distance);
+EXTERN_CVAR(Float, vr_automap_rotate);
+EXTERN_CVAR(Bool, vr_automap_fixed_pitch);
+EXTERN_CVAR(Bool, vr_automap_fixed_roll);
+
 
 const float DEAD_ZONE = 0.25f;
 
@@ -687,15 +702,25 @@ namespace s3d
 		return true;
 	}
 
-	VSMatrix OpenVREyePose::getQuadInWorld(
-		float distance, // meters
-		float width, // meters 
-		bool doFixPitch,
-		bool doFixRoll,
-		float pitchOffset) const
+	void ApplyVPUniforms(HWDrawInfo* di)
+	{
+		di->VPUniforms.CalcDependencies();
+		di->vpIndex = screen->mViewpoints->SetViewpoint(gl_RenderState, &di->VPUniforms);
+	}
+
+	template<class TYPE>
+	TYPE& getHUDValue(TYPE& automap, TYPE& hud)
+	{
+		return (automapactive && !vr_automap_use_hud) ? automap : hud;
+	}
+
+	VSMatrix OpenVREyePose::getHUDProjection() const
 	{
 		VSMatrix new_projection;
 		new_projection.loadIdentity();
+
+		float stereo_separation = (vr_ipd * 0.5) * vr_vunits_per_meter * getHUDValue<FFloatCVar>(vr_automap_stereo, vr_hud_stereo) * (eye == 1 ? -1.0 : 1.0);
+		new_projection.translate(stereo_separation, 0, 0);
 
 		// doom_units from meters
 		new_projection.scale(
@@ -703,7 +728,7 @@ namespace s3d
 			vr_vunits_per_meter,
 			-vr_vunits_per_meter);
 		double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
-		new_projection.scale(pixelstretch, pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
+		new_projection.scale(1.0, pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
 
 		const OpenVREyePose* activeEye = this;
 
@@ -713,44 +738,42 @@ namespace s3d
 
 		// Follow HMD orientation, EXCEPT for roll angle (keep weapon upright)
 		if (activeEye->currentPose) {
-			if (doFixRoll) {
-				float openVrRollDegrees = RAD2DEG(-eulerAnglesFromMatrix(activeEye->currentPose->mDeviceToAbsoluteTracking).v[2]);
+
+			if (getHUDValue<FBoolCVar>(vr_automap_fixed_roll, vr_hud_fixed_roll))
+			{
+				float openVrRollDegrees = RAD2DEG(-eulerAnglesFromMatrix(this->currentPose->mDeviceToAbsoluteTracking).v[2]);
 				new_projection.rotate(-openVrRollDegrees, 0, 0, 1);
 			}
 
-			if (doFixPitch) {
-				float openVrPitchDegrees = RAD2DEG(-eulerAnglesFromMatrix(activeEye->currentPose->mDeviceToAbsoluteTracking).v[1]);
+			new_projection.rotate(getHUDValue<FFloatCVar>(vr_automap_rotate, vr_hud_rotate), 1, 0, 0);
+
+			if (getHUDValue<FBoolCVar>(vr_automap_fixed_pitch, vr_hud_fixed_pitch))
+			{
+				float openVrPitchDegrees = RAD2DEG(-eulerAnglesFromMatrix(this->currentPose->mDeviceToAbsoluteTracking).v[1]);
 				new_projection.rotate(-openVrPitchDegrees, 1, 0, 0);
 			}
-			if (pitchOffset != 0)
-				new_projection.rotate(-pitchOffset, 1, 0, 0);
 		}
 
 		// hmd coordinates (meters) from ndc coordinates
 		// const float weapon_distance_meters = 0.55f;
 		// const float weapon_width_meters = 0.3f;
-		const float aspect = SCREENWIDTH / float(SCREENHEIGHT);
+		double distance = getHUDValue<FFloatCVar>(vr_automap_distance, vr_hud_distance);
 		new_projection.translate(0.0, 0.0, distance);
+		double vr_scale = getHUDValue<FFloatCVar>(vr_automap_scale, vr_hud_scale);
 		new_projection.scale(
-			-width,
-			width / aspect,
-			-width);
+			-vr_scale,
+			vr_scale,
+			-vr_scale);
 
 		// ndc coordinates from pixel coordinates
 		new_projection.translate(-1.0, 1.0, 0);
 		new_projection.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
 
-		VSMatrix proj(activeEye->projectionMatrix);
+		VSMatrix proj(this->projectionMatrix);
 		proj.multMatrix(new_projection);
 		new_projection = proj;
 
 		return new_projection;
-	}
-
-	void ApplyVPUniforms(HWDrawInfo* di)
-	{
-		di->VPUniforms.CalcDependencies();
-		di->vpIndex = screen->mViewpoints->SetViewpoint(gl_RenderState, &di->VPUniforms);
 	}
 
 	void OpenVREyePose::AdjustHud() const
@@ -763,37 +786,7 @@ namespace s3d
 		}
 		auto* di = HWDrawInfo::StartDrawInfo(r_viewpoint.ViewLevel, nullptr, r_viewpoint, nullptr);
 
-		di->VPUniforms.mViewMatrix.loadIdentity();
-		const OpenVRMode* openVrMode = static_cast<const OpenVRMode*>(vrmode);
-		if (openVrMode
-			&& openVrMode->crossHairDrawer
-			// Don't draw the crosshair if there is none
-			&& CrosshairImage != NULL
-			&& gamestate != GS_TITLELEVEL
-			&& r_viewpoint.camera->health > 0)
-		{
-			const float crosshair_distance_meters = 10.0f; // meters
-			const float crosshair_width_meters = 0.2f * crosshair_distance_meters;
-			di->VPUniforms.mProjectionMatrix = getQuadInWorld(
-				crosshair_distance_meters,
-				crosshair_width_meters,
-				openvr_fixPitch,
-				openvr_fixRoll,
-				0.0);
-			ApplyVPUniforms(di);
-			::Draw2D(openVrMode->crossHairDrawer, gl_RenderState, true);
-		}
-
-		// Update HUD matrix to render on a separate quad
-		const float menu_distance_meters = 1.f;
-		const float menu_width_meters = openvr_hudDistance * menu_distance_meters;
-		const float pitch_offset = openvr_hudPitch;
-		di->VPUniforms.mProjectionMatrix = getQuadInWorld(
-			menu_distance_meters,
-			menu_width_meters,
-			openvr_fixPitch,
-			openvr_fixRoll,
-			pitch_offset);
+		di->VPUniforms.mProjectionMatrix = getHUDProjection();
 		ApplyVPUniforms(di);
 		di->EndDrawInfo();
 	}
@@ -1382,7 +1375,7 @@ namespace s3d
 						}
 					}
 
-					if (player && openvr_kill_momentum)
+					if (player && vr_kill_momentum)
 					{
 						if (role == (openvr_rightHanded ? 0 : 1))
 						{

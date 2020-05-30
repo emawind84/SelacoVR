@@ -41,7 +41,7 @@ const char *GetVersionString();
 
 /** Lots of different version numbers **/
 
-#define VERSIONSTR "4.4pre"
+#define VERSIONSTR "4.3.3"
 
 // The version as seen in the Windows resource
 #define RC_FILEVERSION 4,3,3,0
@@ -96,9 +96,9 @@ const char *GetVersionString();
 #define OPTIONALWAD "game_support.pk3"
 
 // More stuff that needs to be different for derivatives.
-#define GAMENAME "GZDoom"
-#define WGAMENAME L"GZDoom"
-#define GAMENAMELOWERCASE "gzdoom"
+#define GAMENAME "GZDoomVR"
+#define WGAMENAME L"GZDoomVR"
+#define GAMENAMELOWERCASE "gzdoomvr"
 #define FORUM_URL "http://forum.zdoom.org/"
 #define BUGS_FORUM_URL	"http://forum.zdoom.org/viewforum.php?f=2"
 
