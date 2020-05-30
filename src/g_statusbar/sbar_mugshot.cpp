@@ -338,9 +338,12 @@ int FMugShot::UpdateState(player_t *player, StateFlags stateflags)
 		{
 			if (player->bonuscount)
 			{
-				auto vrmode = VRMode::GetVRMode(true);
-				vrmode->Vibrate(200, 0, vr_pickup_haptic_level);
-				vrmode->Vibrate(200, 1, vr_pickup_haptic_level);
+				//Short haptic blip on pickup
+				if (vr_pickup_haptic_level > 0.0) {
+					auto vrmode = VRMode::GetVRMode(true);
+					vrmode->Vibrate(80, 0, vr_pickup_haptic_level);
+					vrmode->Vibrate(80, 1, vr_pickup_haptic_level);
+				}
 
 				SetState("grin", false);
 				return 0;

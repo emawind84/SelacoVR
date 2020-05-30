@@ -117,6 +117,7 @@ static void PlayerLandedOnThing (AActor *mo, AActor *onmobj);
 
 EXTERN_CVAR (Int,  cl_rockettrails)
 EXTERN_CVAR(Bool, openvr_rightHanded)
+EXTERN_CVAR(Float, vr_missile_haptic_level)
 
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
@@ -6774,10 +6775,14 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 	}
 	if (P_CheckMissileSpawn (MissileActor, source->radius))
 	{
-		//Haptics
-		long rightHanded = openvr_rightHanded;
-		auto vrmode = VRMode::GetVRMode(true);
-		vrmode->Vibrate(150, rightHanded ? 1 : 0, 0.8f);
+		 //Could be the Brutal Doom flashlight!
+		if (MissileActor->DamageType.GetIndex() != 0 && vr_missile_haptic_level > 0)
+		{
+			//Haptics
+			long rightHanded = openvr_rightHanded;
+			auto vrmode = VRMode::GetVRMode(true);
+			vrmode->Vibrate(150, rightHanded ? 1 : 0, vr_missile_haptic_level);
+		}
 
 		return MissileActor;
 	}

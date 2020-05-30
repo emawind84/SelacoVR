@@ -2690,11 +2690,12 @@ OptionMenu "OpenVROptions" protected
 	Slider "$VRPREFMNU_WEAPONSCALE",			openvr_weaponScale,						0, 1, 0.05, 2
 	StaticText " "
 	Option "$VRPREFMNU_MOMENTUM",	    		"vr_kill_momentum", "OnOff"
+	Option "$VRPREFMNU_DRAWCONTROLLERS",		openvr_drawControllers,					"OnOff"
 	StaticText " "
 	StaticText "$VRPREFMNU_HAPTICS"
 	Slider "$VRPREFMNU_PICKUPHAPTIC",			vr_pickup_haptic_level,					0, 1, 0.1, 2
+	Slider "$VRPREFMNU_MISSILEHAPTIC",			vr_missile_haptic_level,				0, 1, 0.1, 2
 	Slider "$VRPREFMNU_QUAKEHAPTIC",			vr_quake_haptic_level,					0, 1, 0.1, 2
-	Option "$VRPREFMNU_DRAWCONTROLLERS",		openvr_drawControllers,					"OnOff"
 	StaticText ""
     Submenu "$VRHUDMNU_TITLE",	"VRHUDOptions"
 }

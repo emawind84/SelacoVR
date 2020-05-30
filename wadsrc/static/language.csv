@@ -3790,6 +3790,7 @@ Sprite only,VRPREFMNU_BACK_ONLY,,,,,,,,,,,,,,,,,,,,,,
 Item only,VRPREFMNU_ITEM_ONLY,,,,,,,,,,,,,,,,,,,,,,
 Fat item,VRPREFMNU_FAT_ITEM,,,,,,,,,,,,,,,,,,,,,,
 Item Pickup Haptic Level,VRPREFMNU_PICKUPHAPTIC,,,,,,,,,,,,,,,,,,,,,,
+Missile Haptic Level,VRPREFMNU_MISSILEHAPTIC,,,,,,,,,,,,,,,,,,,,,,
 Quake Haptic Level,VRPREFMNU_QUAKEHAPTIC,,,,,,,,,,,,,,,,,,,,,,
 ,USE_GENERIC_FONT,This is not a text to be translated but an engine switch for complex languages.,,,,,,,,,,,,,1,1,,,,,,,
 ,REQUIRED_CHARACTERS,This should list all uppercase characters that are REQUIRED for proper language display. If it is acceptable that accents get omitted a character should NOT be listed here!,,,ÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ,ÄÖÜẞ,ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩς,ĈĜĤĴŜŬ,ÁÉÍÓÚÑÜ,,ÄÖ,ÀÂÇÉÈÊËÎÏÔŒÙÛŸ,ÁÉÍÓÖÚÜŐŰ,ÀÈÉÌÒÙ,,,"ÉËÖ

@@ -1363,7 +1363,7 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 		temp = damage < 100 ? damage : 100;
 		if (player == target->Level->GetConsolePlayer() )
 		{
-			I_Tactile (40,10,40+temp*2);
+			//I_Tactile (40,10,40+temp*2);
 			float level = (float)(0.4 + (0.6 * (temp / 100.0)));
 			auto vrmode = VRMode::GetVRMode(true);
 			vrmode->Vibrate(200, 0, level);
