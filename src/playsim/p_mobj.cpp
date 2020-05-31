@@ -6751,9 +6751,23 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
 	{
 		pos = source->player->mo->AttackPos;
-		DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
+		DAngle p;
+		p.Degrees = 0;
+		DVector3 dir = source->player->mo->AttackDir(source, angle, p);
 		an = dir.Angle();
-		pitch = dir.Pitch();
+
+		//
+		//  FIX FOR FLAT PROJECTILE SPREAD FROM SHOTGUNS AND OTHER MULTI-PROJECTILE WEAPONS
+		//
+        //Bit of a hack as it makes the pitch a little off, but in order for weapon projectile spread
+        //to work correctly, we can't fix the pitch to that of the controller otherwise random spread
+        //turns into a flat line of projectiles. Using the difference between the previous known angles and
+        //the current angles (which were potenitally modified by A_FireProjectile) gives us the "random"
+        //difference applied to the pitch by the script
+        //
+        //A VR player is unlikely to be whipping their head up and down so fast as to make a meaningful
+        //difference to the pitch between two frames, so this is 'good enough' for now.
+		pitch = dir.Pitch() + (source->PrevAngles.Pitch - source->Angles.Pitch);
 	}
 	AActor *MissileActor = Spawn (source->Level, type, pos, ALLOW_REPLACE);
 	if (pMissileActor) *pMissileActor = MissileActor;
