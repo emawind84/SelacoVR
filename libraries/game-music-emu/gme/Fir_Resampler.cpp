@@ -36,19 +36,19 @@ static void gen_sinc( double rolloff, int width, double offset, double spacing, 
 	while ( count-- )
 	{
 		*out++ = 0;
-		//double w = angle * to_w;
-		//if ( fabs( w ) < PI )
-		//{
-		//	double rolloff_cos_a = rolloff * cos( angle );
-		//	double num =  1 - rolloff_cos_a -
-		//			pow_a_n * cos(angle * maxh) +
-		//			pow_a_n * rolloff * cos( (maxh - 1) * angle );
-		//	double den = 1 - rolloff_cos_a - rolloff_cos_a + rolloff * rolloff;
-		//	double sinc = scale * num / den - scale;
-		//	
-		//	out [-1] = (short) (cos( w ) * sinc + sinc);
-		//}
-		//angle += step;
+		double w = angle * to_w;
+		if (fabs(w) < PI)
+		{
+			double rolloff_cos_a = rolloff * cos(angle);
+			double num = 1 - rolloff_cos_a -
+				pow_a_n * cos(maxh * angle) +
+				pow_a_n * rolloff * cos((maxh - 1) * angle);
+			double den = 1 - rolloff_cos_a - rolloff_cos_a + rolloff * rolloff;
+			double sinc = scale * num / den - scale;
+
+			out[-1] = (short)(cos(w) * sinc + sinc);
+		}
+		angle += step;
 	}
 }
 
