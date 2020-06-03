@@ -4330,8 +4330,8 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
         //
         //A VR player is unlikely to be whipping their head up and down so fast as to make a meaningful
         //difference to the pitch between two frames, so this is 'good enough' for now.
-        attackPitch = t1->player->mo->AttackPitch + (t1->PrevAngles.Pitch - t1->Angles.Pitch);
-        attackAngle = t1->player->mo->AttackAngle + (angle - t1->Angles.Yaw);
+        attackPitch = t1->PrevAngles.Pitch - t1->Angles.Pitch;
+        attackAngle = angle - t1->Angles.Yaw;
     }
 
 	aim.flags = flags;
