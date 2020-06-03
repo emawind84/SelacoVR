@@ -1376,7 +1376,7 @@ void HWWall::DoMidTexture(HWDrawInfo *di, seg_t * seg, bool drawfogboundary,
 	{
 		tci.mRenderHeight = -tci.mRenderHeight;
 		tci.mScale.Y = -tci.mScale.Y;
-		flags |= GLWF_NOSLICE;
+		flags |= HWF_NOSLICE;
 	}
 	SetWallCoordinates(seg, &tci, texturetop, topleft, topright, bottomleft, bottomright, t_ofs);
 
@@ -1437,7 +1437,7 @@ void HWWall::DoMidTexture(HWDrawInfo *di, seg_t * seg, bool drawfogboundary,
 		FloatRect *splitrect;
 		int v = gltexture->GetAreas(&splitrect);
 		if (seg->frontsector == seg->backsector) flags |= HWF_NOSPLIT;	// we don't need to do vertex splits if a line has both sides in the same sector
-		if (v>0 && !drawfogboundary && !(seg->linedef->flags & ML_WRAP_MIDTEX) && !(flags & GLWF_NOSLICE))
+		if (v>0 && !drawfogboundary && !(seg->linedef->flags&ML_WRAP_MIDTEX) && !(flags & HWF_NOSLICE))
 		{
 			// split the poly!
 			int i,t=0;
