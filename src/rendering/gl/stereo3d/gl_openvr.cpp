@@ -179,16 +179,17 @@ bool IsOpenVRPresent()
 #endif
 }
 
+
 //bit of a hack, assume player is at "normal" height when not crouching
 float getDoomPlayerHeightWithoutCrouch(const player_t* player)
 {
-	static float height = player->viewheight;
-	if (player->crouching == 0 &&
-		player->crouchfactor == 1.0)
+	static float height = 0;
+	if (height == 0)
 	{
 		// Doom thinks this is where you are
 		height = player->viewheight;
 	}
+
 	return height;
 }
 
@@ -1294,7 +1295,7 @@ namespace s3d
 
 		haptics->ProcessHaptics();
 
-		if (gamestate == GS_LEVEL) {
+		if (gamestate == GS_LEVEL || gamestate == GS_TITLELEVEL) {
 			cachedScreenBlocks = screenblocks;
 			screenblocks = 12; // always be full-screen during 3D scene render
 		}
