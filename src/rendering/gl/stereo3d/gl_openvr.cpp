@@ -2,6 +2,8 @@
 //---------------------------------------------------------------------------
 //
 // Copyright(C) 2016-2017 Christopher Bruns
+// Copyright(C) 2020 Simon Brown
+// Copyright(C) 2020 Krzysztof Marecki
 // All rights reserved.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -135,7 +137,7 @@ EXTERN_CVAR(Bool, openvr_drawControllers)
 EXTERN_CVAR(Float, openvr_weaponRotate);
 EXTERN_CVAR(Float, openvr_weaponScale);
 
-EXTERN_CVAR(Float, vr_kill_momentum, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+EXTERN_CVAR(Float, vr_kill_momentum)
 
 //HUD control
 EXTERN_CVAR(Float, vr_hud_scale);
@@ -175,6 +177,19 @@ bool IsOpenVRPresent()
 	}
 	return cached_result;
 #endif
+}
+
+//bit of a hack, assume player is at "normal" height when not crouching
+float getDoomPlayerHeightWithoutCrouch(const player_t* player)
+{
+	static float height = player->viewheight;
+	if (player->crouching == 0 &&
+		player->crouchfactor == 1.0)
+	{
+		// Doom thinks this is where you are
+		height = player->viewheight;
+	}
+	return height;
 }
 
 void Draw2D(F2DDrawer* drawer, FRenderState& state, bool outside2D);
@@ -593,7 +608,7 @@ namespace s3d
 			// In Doom, the virtual player foot level is viewheight below the current viewpoint (on the Z axis)
 			// We want to align those two heights here
 			const player_t& player = players[consoleplayer];
-			double vh = player.viewheight; // Doom thinks this is where you are
+			double vh = getDoomPlayerHeightWithoutCrouch(&player); // Doom thinks this is where you are
 			double hh = ((openvr_X_hmd[1][3] - vr_floor_offset) * vr_vunits_per_meter) / pixelstretch; // HMD is actually here
 			doom_EyeOffset[2] += hh - vh;
 			// TODO: optionally allow player to jump and crouch by actually jumping and crouching
@@ -960,7 +975,7 @@ namespace s3d
 			double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 
 			mat->loadIdentity();
-			mat->translate(r_viewpoint.Pos.X, r_viewpoint.Pos.Z - player->viewheight, r_viewpoint.Pos.Y);
+			mat->translate(r_viewpoint.Pos.X, r_viewpoint.Pos.Z - getDoomPlayerHeightWithoutCrouch(player), r_viewpoint.Pos.Y);
 			mat->scale(vr_vunits_per_meter, vr_vunits_per_meter / pixelstretch , -vr_vunits_per_meter);
 			mat->rotate(-deltaYawDegrees - 180, 0, 1, 0);
 			mat->translate(-openvr_origin.x, -vr_floor_offset, -openvr_origin.z);
