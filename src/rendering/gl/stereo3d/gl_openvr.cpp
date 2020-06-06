@@ -1111,18 +1111,19 @@ namespace s3d
 		// Roll can be local, because it doesn't affect gameplay.
 		if (doTrackHmdRoll)
 			vp.HWAngles.Roll = RAD2DEG(-hmdroll);
-
+		
 		// Late-schedule update to renderer angles directly, too
 		if (doLateScheduledRotationTracking) {
-			if (doTrackHmdPitch)
+			if (doTrackHmdPitch) {
 				vp.HWAngles.Pitch = RAD2DEG(-hmdpitch);
+			}
 			if (doTrackHmdYaw) {
-				double viewYaw = r_viewpoint.Angles.Yaw.Degrees + RAD2DEG(hmdYawDelta);
+				double viewYaw = vp.Angles.Yaw.Degrees + RAD2DEG(hmdYawDelta);
 				while (viewYaw <= -180.0)
 					viewYaw += 360.0;
 				while (viewYaw > 180.0)
 					viewYaw -= 360.0;
-				r_viewpoint.Angles.Yaw = viewYaw;
+				vp.Angles.Yaw = viewYaw;
 			}
 		}
 	}
@@ -1295,11 +1296,11 @@ namespace s3d
 
 		haptics->ProcessHaptics();
 
-		if (gamestate == GS_LEVEL || gamestate == GS_TITLELEVEL) {
+		if (gamestate == GS_LEVEL) {
 			cachedScreenBlocks = screenblocks;
 			screenblocks = 12; // always be full-screen during 3D scene render
 		}
-		else {
+		else if (gamestate != GS_TITLELEVEL) {
 			// TODO: Draw a more interesting background behind the 2D screen
 			const int eyeCount = mEyeCount;
 			GLRenderer->mBuffers->CurrentEye() = 0;  // always begin at zero, in case eye count changed
@@ -1323,14 +1324,14 @@ namespace s3d
 		);
 
 		TrackedDevicePose_t& hmdPose0 = poses[k_unTrackedDeviceIndex_Hmd];
-
+		
 		if (hmdPose0.bPoseIsValid) {
 			const HmdMatrix34_t& hmdPose = hmdPose0.mDeviceToAbsoluteTracking;
 			HmdVector3d_t eulerAngles = eulerAnglesFromMatrix(hmdPose);
 			updateHmdPose(r_viewpoint, eulerAngles.v[0], eulerAngles.v[1], eulerAngles.v[2]);
 			leftEyeView->setCurrentHmdPose(&hmdPose0);
 			rightEyeView->setCurrentHmdPose(&hmdPose0);
-
+			
 			player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 
 			// Check for existence of VR motion controllers...
@@ -1407,7 +1408,7 @@ namespace s3d
 
 				}
 			}
-
+	
 			LSMatrix44 mat;
 			if (player)
 			{
@@ -1448,7 +1449,7 @@ namespace s3d
 				openvr_origin += openvr_dpos;
 			}
 		}
-
+		
 		I_StartupOpenVR();
 
 		//To feel smooth, yaw changes need to accumulate over the (sub) tic (i.e. render frame, not per tic)
