@@ -1,7 +1,5 @@
-# GZDoom-VR 
-Based on gz3doom http://rotatingpenguin.com/gz3doom/, OpenVr Doom https://github.com/Fishbiter/gz3doom and QuestZDoom https://github.com/DrBeef/QuestZDoom
-
-The aim of this fork is to update base GZDoom version.
+# GZDoomVR 
+GZDoom fork for VR based on gz3doom http://rotatingpenguin.com/gz3doom/, OpenVr Doom https://github.com/Fishbiter/gz3doom and QuestZDoom https://github.com/DrBeef/QuestZDoom
 
 Built/tested on HP Reverb and Oculus Quest using Virtual Desktop but other VR setups should work as long they are compatible with OpenVR API.
 
@@ -15,21 +13,11 @@ https://github.com/hh79/gz3doom/files/4378108/HDVRweapons.zip HD weapon pack mad
 
 https://github.com/ajantaju/br_vr weapon pack made for Brutal Doom
 
-https://github.com/mmaulwurff/laser-sight/releases laser sight mod
+https://github.com/mmaulwurff/laser-sight/releases laser sight mod, you need this for aiming
 
 https://www.moddb.com/downloads/doom-neural-upscale-2x texture upscale mod
 
 https://forum.zdoom.org/download/file.php?id=30459&sid=df63736751c12c3ebb76230d1dc86543 blood color fixer mod
-
-# New console variables
-
-openvr_rightHanded - set to 0 for left hand
-
-openvr_weaponRotate - A pitch to change how weapons sit in the hand.
-
-vr_floor_offset - A floor offset
-
-vr_vunits_per_meter - Number of doom units in a metre. The default is 30.
 
 #
 Copyright (c) 1998-2020 ZDoom + GZDoom teams, and contributors
