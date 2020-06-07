@@ -1,5 +1,5 @@
 # GZDoomVR 
-GZDoom fork for VR based on gz3doom http://rotatingpenguin.com/gz3doom/, OpenVr Doom https://github.com/Fishbiter/gz3doom and QuestZDoom https://github.com/DrBeef/QuestZDoom
+A GZDoom's VR fork based on gz3doom http://rotatingpenguin.com/gz3doom/, OpenVr Doom https://github.com/Fishbiter/gz3doom and QuestZDoom https://github.com/DrBeef/QuestZDoom
 
 Built/tested on HP Reverb and Oculus Quest using Virtual Desktop but other VR setups should work as long they are compatible with OpenVR API.
 
