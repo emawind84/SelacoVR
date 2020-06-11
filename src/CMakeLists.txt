@@ -913,7 +913,6 @@ set (PCH_SOURCES
 	hu_scores.cpp
 	i_net.cpp
 	m_cheat.cpp
-	m_joy.cpp
 	m_misc.cpp
 	playsim/p_acs.cpp
 	playsim/p_actionfunctions.cpp
@@ -1182,6 +1181,7 @@ set (PCH_SOURCES
 	common/engine/renderstyle.cpp
 	common/engine/v_colortables.cpp
 	common/engine/serializer.cpp
+	common/engine/m_joy.cpp
 	common/engine/m_random.cpp
 	common/objects/dobject.cpp
 	common/objects/dobjgc.cpp
