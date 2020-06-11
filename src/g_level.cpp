@@ -40,10 +40,10 @@
 #include "s_sound.h"
 #include "d_event.h"
 #include "m_random.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 #include "doomstat.h"
 #include "wi_stuff.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "am_map.h"
 #include "c_dispatch.h"
 
@@ -73,7 +73,7 @@
 #include "a_sharedglobal.h"
 #include "r_utility.h"
 #include "p_spec.h"
-#include "serializer.h"
+#include "serializer_doom.h"
 #include "vm.h"
 #include "events.h"
 #include "i_music.h"
@@ -81,6 +81,7 @@
 #include "p_conversation.h"
 #include "p_effect.h"
 #include "stringtable.h"
+#include "c_buttons.h"
 
 #include "gi.h"
 
@@ -90,6 +91,7 @@
 #include "i_time.h"
 #include "p_maputl.h"
 #include "s_music.h"
+#include "texturemanager.h"
 
 void STAT_StartNewGame(const char *lev);
 void STAT_ChangeLevel(const char *newl, FLevelLocals *Level);
@@ -194,7 +196,7 @@ void G_DeferedInitNew (const char *mapname, int newskill)
 	gameaction = ga_newgame2;
 }
 
-void G_DeferedInitNew (FGameStartup *gs)
+void G_DeferedInitNew (FNewGameStartup *gs)
 {
 	if (gs->PlayerClass != NULL) playerclass = gs->PlayerClass;
 	d_mapname = AllEpisodes[gs->Episode].mEpisodeMap;
@@ -605,7 +607,7 @@ void FLevelLocals::ChangeLevel(const char *levelname, int position, int inflags,
 		}
 		else 
 		{
-			nextlevel.Format("enDSeQ%04x", int(gameinfo.DefaultEndSequence));
+			nextlevel.Format("enDSeQ%04x", gameinfo.DefaultEndSequence.GetIndex());
 		}
 	}
 	else if (strncmp(levelname, "enDSeQ", 6) != 0)
@@ -632,8 +634,7 @@ void FLevelLocals::ChangeLevel(const char *levelname, int position, int inflags,
 		nextlevel = levelname;
 	}
 
-	if (nextSkill != -1)
-		NextSkill = nextSkill;
+	NextSkill = (unsigned)nextSkill < AllSkills.Size() ? nextSkill : -1;
 
 	if (inflags & CHANGELEVEL_NOINTERMISSION)
 	{
@@ -812,6 +813,12 @@ void G_DoCompleted (void)
 	// Close the conversation menu if open.
 	P_FreeStrifeConversations ();
 
+	S_StopAllChannels();
+	for (auto Level : AllLevels())
+	{
+		SN_StopAllSequences(Level);
+	}
+
 	if (primaryLevel->DoCompleted(nextlevel, staticWmInfo))
 	{
 		gamestate = GS_INTERMISSION;
@@ -886,14 +893,10 @@ bool FLevelLocals::DoCompleted (FString nextlevel, wbstartstruct_t &wminfo)
 		{
 			if (texids[i]->isValid() && langtable[i] != FStringTable::default_table)
 			{
-				FTexture *tex = TexMan.GetTexture(*texids[i]);
-				if (tex != nullptr)
+				FGameTexture *tex = TexMan.GetGameTexture(*texids[i]);
+				if (tex != nullptr && !tex->isUserContent())
 				{
-					int filenum = Wads.GetLumpFile(tex->GetSourceLump());
-					if (filenum >= 0 && filenum <= Wads.GetMaxIwadNum())
-					{
-						texids[i]->SetInvalid();
-					}
+					texids[i]->SetInvalid();
 				}
 			}
 		}
@@ -1046,7 +1049,7 @@ void G_DoLoadLevel(const FString &nextmapname, int position, bool autosave, bool
 	gameaction = ga_nothing;
 
 	// clear cmd building stuff
-	ResetButtonStates();
+	buttonMap.ResetButtonStates();
 
 	SendItemUse = nullptr;
 	SendItemDrop = nullptr;
@@ -1507,7 +1510,7 @@ int FLevelLocals::FinishTravel ()
 		pawn->flags2 &= ~MF2_BLASTED;
 		if (oldpawn != nullptr)
 		{
-			DObject::StaticPointerSubstitution (oldpawn, pawn);
+			StaticPointerSubstitution (oldpawn, pawn);
 			oldpawn->Destroy();
 		}
 		if (pawndup != NULL)
@@ -1569,6 +1572,7 @@ FLevelLocals::FLevelLocals() : Behaviors(this), tagManager(this)
 FLevelLocals::~FLevelLocals()
 {
 	if (localEventManager) delete localEventManager;
+	if (aabbTree) delete aabbTree;
 }
 
 //==========================================================================
@@ -1796,11 +1800,12 @@ void G_ReadSnapshots(FResourceFile *resf)
 		FResourceLump * resl = resf->GetLump(j);
 		if (resl != nullptr)
 		{
-			auto ptr = strstr(resl->FullName, ".map.json");
+			auto name = resl->getName();
+			auto ptr = strstr(name, ".map.json");
 			if (ptr != nullptr)
 			{
-				ptrdiff_t maplen = ptr - resl->FullName.GetChars();
-				FString mapname(resl->FullName.GetChars(), (size_t)maplen);
+				ptrdiff_t maplen = ptr - name;
+				FString mapname(name, (size_t)maplen);
 				i = FindLevelInfo(mapname);
 				if (i != nullptr)
 				{
@@ -1809,11 +1814,11 @@ void G_ReadSnapshots(FResourceFile *resf)
 			}
 			else
 			{
-				auto ptr = strstr(resl->FullName, ".mapd.json");
+				auto ptr = strstr(name, ".mapd.json");
 				if (ptr != nullptr)
 				{
-					ptrdiff_t maplen = ptr - resl->FullName.GetChars();
-					FString mapname(resl->FullName.GetChars(), (size_t)maplen);
+					ptrdiff_t maplen = ptr - name;
+					FString mapname(name, (size_t)maplen);
 					TheDefaultLevelInfo.Snapshot = resl->GetRawData();
 				}
 			}
@@ -2226,7 +2231,6 @@ int IsPointInMap(FLevelLocals *Level, double x, double y, double z)
 
 void FLevelLocals::SetMusic()
 {
-	if (cdtrack == 0 || !S_ChangeCDMusic(cdtrack, cdid))
-		S_ChangeMusic(Music, musicorder);
+	S_ChangeMusic(Music, musicorder);
 }
 

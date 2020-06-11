@@ -23,8 +23,8 @@
 #include <float.h>
 
 #include "templates.h"
-
-#include "w_wad.h"
+#include "v_draw.h"
+#include "filesystem.h"
 #include "doomdef.h"
 #include "doomstat.h"
 #include "r_sky.h"
@@ -53,8 +53,8 @@
 #include "swrenderer/viewport/r_viewport.h"
 #include "swrenderer/drawers/r_draw.h"
 #include "swrenderer/drawers/r_draw_rgba.h"
-#include "swrenderer/drawers/r_thread.h"
-#include "swrenderer/r_memory.h"
+#include "r_thread.h"
+#include "r_memory.h"
 #include "swrenderer/r_renderthread.h"
 #include "swrenderer/things/r_playersprite.h"
 #include <chrono>

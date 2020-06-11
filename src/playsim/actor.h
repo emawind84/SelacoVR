@@ -40,8 +40,8 @@
 #include "info.h"
 
 #include "doomdef.h"
-#include "textures/textures.h"
-#include "r_data/renderstyle.h"
+#include "textures.h"
+#include "renderstyle.h"
 #include "s_sound.h"
 #include "memarena.h"
 #include "g_level.h"
@@ -605,6 +605,11 @@ inline AActor *GetDefaultByName (const char *name)
 	return (AActor *)(PClass::FindClass(name)->Defaults);
 }
 
+inline AActor* GetDefaultByName(FName name)
+{
+	return (AActor*)(PClass::FindClass(name)->Defaults);
+}
+
 inline AActor *GetDefaultByType (const PClass *type)
 {
 	return (AActor *)(type->Defaults);
@@ -675,7 +680,7 @@ public:
 	// Adjusts the angle for deflection/reflection of incoming missiles
 	// Returns true if the missile should be allowed to explode anyway
 	bool AdjustReflectionAngle (AActor *thing, DAngle &angle);
-	int AbsorbDamage(int damage, FName dmgtype);
+	int AbsorbDamage(int damage, FName dmgtype, AActor *inflictor, AActor *source, int flags);
 	void AlterWeaponSprite(visstyle_t *vis);
 
 	// Returns true if this actor is within melee range of its target
@@ -852,7 +857,7 @@ public:
 		return (Pos().XY() - otherpos).LengthSquared();
 	}
 
-	double Distance2D(AActor *other, bool absolute = false)
+	double Distance2D(AActor *other, bool absolute = false) const
 	{
 		DVector2 otherpos = absolute ? other->Pos() : other->PosRelative(this);
 		return (Pos().XY() - otherpos).Length();
@@ -863,7 +868,7 @@ public:
 		return DVector2(X() - x, Y() - y).Length();
 	}
 
-	double Distance2D(AActor *other, double xadd, double yadd, bool absolute = false)
+	double Distance2D(AActor *other, double xadd, double yadd, bool absolute = false) const
 	{
 		DVector3 otherpos = absolute ? other->Pos() : other->PosRelative(this);
 		return DVector2(X() - otherpos.X + xadd, Y() - otherpos.Y + yadd).Length();
@@ -1430,7 +1435,7 @@ public:
 
 	// This is used by many vertical velocity calculations.
 	// Better have it in one place, if something needs to be changed about the formula.
-	double DistanceBySpeed(AActor *dest, double speed)
+	double DistanceBySpeed(AActor *dest, double speed) const
 	{
 		return MAX(1., Distance2D(dest) / speed);
 	}
@@ -1438,7 +1443,7 @@ public:
 	int ApplyDamageFactor(FName damagetype, int damage) const;
 	int GetModifiedDamage(FName damagetype, int damage, bool passive, AActor *inflictor, AActor *source, int flags = 0);
 	void DeleteAttachedLights();
-	bool isFrozen();
+	bool isFrozen() const;
 
 	bool				hasmodel;
 
@@ -1560,6 +1565,8 @@ struct FTranslatedLineTarget
 	bool unlinked;	// found by a trace that went through an unlinked portal.
 };
 
+
+void StaticPointerSubstitution(AActor* old, AActor* notOld);
 
 #define S_FREETARGMOBJ	1
 

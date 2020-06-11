@@ -32,7 +32,7 @@ struct SectorPortal native play
 struct Vertex native play
 {
 	native readonly Vector2 p;
-	native int Index();
+	native clearscope int Index();
 }
 
 struct Side native play
@@ -94,7 +94,7 @@ struct Side native play
 	native clearscope Vertex V1();
 	native clearscope Vertex V2();
 
-	native int Index();
+	native clearscope int Index();
 	
 	int GetUDMFInt(Name nm)
 	{
@@ -175,7 +175,7 @@ struct Line native play
 	native bool isVisualPortal();
 	native Line getPortalDestination();
 	native int getPortalAlignment();
-	native int Index();
+	native clearscope int Index();
 	native bool Activate(Actor activator, int side, int type);
 	native bool RemoteActivate(Actor activator, int side, int type, Vector3 pos);
 	
@@ -234,7 +234,8 @@ struct F3DFloor native play
 		FF_UPPERTEXTURE	 = 0x20000,
 		FF_LOWERTEXTURE  = 0x40000,
 		FF_THINFLOOR     = 0x80000,	// EDGE
-		FF_SCROLLY       = 0x100000,  // EDGE - not yet implemented!!!
+		FF_SCROLLY       = 0x100000,  // old leftover definition
+		FF_NODAMAGE      = 0x100000,  // no damage transfers
 		FF_FIX           = 0x200000,  // use floor of model sector as floor and floor of real sector as ceiling
 		FF_INVERTSECTOR  = 0x400000,	// swap meaning of sector planes
 		FF_DYNAMIC       = 0x800000,	// created by partitioning another 3D-floor due to overlap
@@ -412,7 +413,7 @@ struct Sector native play
 
 	native readonly int			sectornum;
 
-	native int Index();
+	native clearscope int Index();
 
 	native double, Sector, F3DFloor NextHighestCeilingAt(double x, double y, double bottomz, double topz, int flags = 0);
 	native double, Sector, F3DFloor NextLowestFloorAt(double x, double y, double z, int flags = 0, double steph = 0);
@@ -423,7 +424,7 @@ struct Sector native play
 	native int GetAttachedCount();
 
 	native void RemoveForceField();
-	deprecated("3.8") static clearscope Sector PointInSector(Vector2 pt)
+	deprecated("3.8", "Use Level.PointInSector instead") static clearscope Sector PointInSector(Vector2 pt)
 	{
 		return level.PointInSector(pt);
 	}
@@ -588,7 +589,7 @@ struct Sector native play
 
 class SectorTagIterator : Object native
 {
-	deprecated("3.8") static SectorTagIterator Create(int tag, line defline = null)
+	deprecated("3.8", "Use Level.CreateSectorTagIterator() instead") static SectorTagIterator Create(int tag, line defline = null)
 	{
 		return level.CreateSectorTagIterator(tag, defline);
 	}
@@ -598,7 +599,7 @@ class SectorTagIterator : Object native
 
 class LineIdIterator : Object native
 {
-	deprecated("3.8") static LineIdIterator Create(int tag)
+	deprecated("3.8", "Use Level.CreateLineIdIterator() instead") static LineIdIterator Create(int tag)
 	{
 		return level.CreateLineIdIterator(tag);
 	}

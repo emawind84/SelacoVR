@@ -27,7 +27,7 @@
 #include "doomdef.h"
 #include "m_swap.h"
 
-#include "w_wad.h"
+#include "filesystem.h"
 #include "c_console.h"
 #include "c_cvars.h"
 #include "c_dispatch.h"
@@ -47,7 +47,7 @@
 #include "v_palette.h"
 #include "r_data/r_translate.h"
 #include "r_data/colormaps.h"
-#include "r_data/voxels.h"
+#include "voxels.h"
 #include "p_local.h"
 #include "p_maputl.h"
 #include "r_voxel.h"
@@ -62,7 +62,7 @@
 #include "swrenderer/viewport/r_viewport.h"
 #include "swrenderer/drawers/r_draw_rgba.h"
 #include "swrenderer/drawers/r_draw_pal.h"
-#include "swrenderer/r_memory.h"
+#include "r_memory.h"
 #include "swrenderer/r_renderthread.h"
 
 EXTERN_CVAR(Bool, r_fullbrightignoresectorcolor);

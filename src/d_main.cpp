@@ -1,5 +1,4 @@
 //-----------------------------------------------------------------------------
-//
 // Copyright 1993-1996 id Software
 // Copyright 1999-2016 Randy Heit
 // Copyright 2002-2016 Christoph Oelckers
@@ -43,7 +42,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "doomerrors.h"
+#include "engineerrors.h"
 
 #include "i_time.h"
 #include "d_gui.h"
@@ -51,7 +50,7 @@
 #include "doomdef.h"
 #include "doomstat.h"
 #include "gstrings.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "s_sound.h"
 #include "v_video.h"
 #include "intermission/intermission.h"
@@ -90,6 +89,7 @@
 #include "d_netinf.h"
 #include "m_cheat.h"
 #include "m_joy.h"
+#include "v_draw.h"
 #include "po_man.h"
 #include "p_local.h"
 #include "autosegs.h"
@@ -101,16 +101,37 @@
 #include "i_system.h"
 #include "g_cvars.h"
 #include "r_data/r_vanillatrans.h"
-#include <hwrenderer\utility\hw_vrmodes.h>
+#include "hwrenderer/data/hw_vrmodes.h"
 #include "s_music.h"
 #include "swrenderer/r_swcolormaps.h"
+#include "findfile.h"
+#include "md5.h"
+#include "c_buttons.h"
+#include "d_buttons.h"
+#include "i_interface.h"
+#include "animations.h"
+#include "texturemanager.h"
+#include "formats/multipatchtexture.h"
+#include "scriptutil.h"
+#include "v_palette.h"
+#include "texturemanager.h"
+#include "hw_clock.h"
+#include "hwrenderer/scene/hw_drawinfo.h"
+
+#ifdef __unix__
+#include "i_system.h"  // for SHARE_DIR
+#endif // __unix__
 
 EXTERN_CVAR(Bool, hud_althud)
 EXTERN_CVAR(Int, vr_mode)
 EXTERN_CVAR(Bool, cl_customizeinvulmap)
+EXTERN_CVAR(Bool, log_vgafont)
+EXTERN_CVAR(Bool, dlg_vgafont)
+
 void DrawHUD();
 void D_DoAnonStats();
 void I_DetectOS();
+void UpdateGenericUI(bool cvar);
 
 
 // MACROS ------------------------------------------------------------------
@@ -139,19 +160,17 @@ bool D_CheckNetGame ();
 void D_ProcessEvents ();
 void G_BuildTiccmd (ticcmd_t* cmd);
 void D_DoAdvanceDemo ();
-void D_AddWildFile (TArray<FString> &wadfiles, const char *pattern);
 void D_LoadWadSettings ();
 void ParseGLDefs();
 void DrawFullscreenSubtitle(const char *text);
 void D_Cleanup();
 void FreeSBarInfoScript();
 void I_UpdateWindowTitle();
-void C_GrabCVarDefaults ();
+void S_ParseMusInfo();
 
 // PRIVATE FUNCTION PROTOTYPES ---------------------------------------------
 
 void D_DoomLoop ();
-const char *BaseFileSearch (const char *file, const char *ext, bool lookfirstinprogdir=false);
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
@@ -160,22 +179,67 @@ EXTERN_CVAR (Bool, freelook)
 EXTERN_CVAR (Float, m_pitch)
 EXTERN_CVAR (Float, m_yaw)
 EXTERN_CVAR (Bool, invertmouse)
+EXTERN_CVAR (Bool, invertmousex)
 EXTERN_CVAR (Bool, lookstrafe)
 EXTERN_CVAR (Int, screenblocks)
 EXTERN_CVAR (Bool, sv_cheats)
 EXTERN_CVAR (Bool, sv_unlimited_pickup)
 EXTERN_CVAR (Bool, r_drawplayersprites)
 EXTERN_CVAR (Bool, show_messages)
+EXTERN_CVAR(Bool, ticker)
 
 extern bool setmodeneeded;
-extern bool gameisdead;
 extern bool demorecording;
 extern bool M_DemoNoPlay;	// [RH] if true, then skip any demos in the loop
 extern bool insave;
 extern TDeletingArray<FLightDefaults *> LightDefaults;
 
+const char* iwad_folders[13] = { "flats/", "textures/", "hires/", "sprites/", "voxels/", "colormaps/", "acs/", "maps/", "voices/", "patches/", "graphics/", "sounds/", "music/" };
+const char* iwad_reserved[12] = { "mapinfo", "zmapinfo", "gameinfo", "sndinfo", "sbarinfo", "menudef", "gldefs", "animdefs", "decorate", "zscript", "iwadinfo", "maps/" };
+
+
+CUSTOM_CVAR(Float, i_timescale, 1.0f, CVAR_NOINITCALL)
+{
+	if (netgame)
+	{
+		Printf("Time scale cannot be changed in net games.\n");
+		self = 1.0f;
+	}
+	else if (self >= 0.05f)
+	{
+		I_FreezeTime(true);
+		TimeScale = self;
+		I_FreezeTime(false);
+	}
+	else
+	{
+		Printf("Time scale must be at least 0.05!\n");
+	}
+}
+
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
+
+CUSTOM_CVAR(Int, vid_rendermode, 4, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+{
+	if (self < 0 || self > 4)
+	{
+		self = 4;
+	}
+	else if (self == 2 || self == 3)
+	{
+		self = self - 2; // softpoly to software
+	}
+
+	if (usergame)
+	{
+		// [SP] Update pitch limits to the netgame/gamesim.
+		players[consoleplayer].SendPitchLimits();
+	}
+	screen->SetTextureFilterMode();
+
+	// No further checks needed. All this changes now is which scene drawer the render backend calls.
+}
 
 CUSTOM_CVAR (Int, fraglimit, 0, CVAR_SERVERINFO)
 {
@@ -205,15 +269,15 @@ CUSTOM_CVAR (String, vid_cursor, "None", CVAR_ARCHIVE | CVAR_NOINITCALL)
 
 	if (!stricmp(self, "None" ) && gameinfo.CursorPic.IsNotEmpty())
 	{
-		res = I_SetCursor(TexMan.GetTextureByName(gameinfo.CursorPic));
+		res = I_SetCursor(TexMan.GetGameTextureByName(gameinfo.CursorPic));
 	}
 	else
 	{
-		res = I_SetCursor(TexMan.GetTextureByName(self));
+		res = I_SetCursor(TexMan.GetGameTextureByName(self));
 	}
 	if (!res)
 	{
-		I_SetCursor(TexMan.GetTextureByName("cursor"));
+		I_SetCursor(TexMan.GetGameTextureByName("cursor"));
 	}
 }
 
@@ -222,6 +286,8 @@ CVAR (Bool, disableautoload, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBAL
 CVAR (Bool, autoloadbrightmaps, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 CVAR (Bool, autoloadlights, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 CVAR (Bool, r_debug_disable_vis_filter, false, 0)
+CVAR(Bool, vid_fps, false, 0)
+CVAR(Int, vid_showpalette, 0, 0)
 
 bool hud_toggled = false;
 bool wantToRestart;
@@ -233,7 +299,6 @@ int NoWipe;				// [RH] Allow wipe? (Needs to be set each time)
 bool singletics = false;	// debug flag to cancel adaptiveness
 FString startmap;
 bool autostart;
-FString StoredWarp;
 bool advancedemo;
 FILE *debugfile;
 FILE *hashfile;
@@ -242,14 +307,13 @@ int eventhead;
 int eventtail;
 gamestate_t wipegamestate = GS_DEMOSCREEN;	// can be -1 to force a wipe
 bool PageBlank;
-FTexture *Advisory;
+FGameTexture *Advisory;
 FTextureID Page;
 const char *Subtitle;
 bool nospriterename;
-FStartupInfo DoomStartupInfo;
+FStartupInfo GameStartupInfo;
 FString lastIWAD;
 int restart = 0;
-bool batchrun;	// just run the startup and collect all error messages in a logfile, then quit without any interaction
 bool AppActive = true;
 
 cycle_t FrameCycles;
@@ -264,6 +328,86 @@ static int demosequence;
 static int pagetic;
 
 // CODE --------------------------------------------------------------------
+
+void D_GrabCVarDefaults()
+{
+	int lump, lastlump = 0;
+	int lumpversion, gamelastrunversion;
+	gamelastrunversion = atoi(LASTRUNVERSION);
+
+	while ((lump = fileSystem.FindLump("DEFCVARS", &lastlump)) != -1)
+	{
+		// don't parse from wads
+		if (lastlump > fileSystem.GetLastEntry(fileSystem.GetMaxIwadNum()))
+			I_FatalError("Cannot load DEFCVARS from a wadfile!\n");
+
+		FScanner sc(lump);
+
+		sc.MustGetString();
+		if (!sc.Compare("version"))
+			sc.ScriptError("Must declare version for defcvars! (currently: %i)", gamelastrunversion);
+		sc.MustGetNumber();
+		lumpversion = sc.Number;
+		if (lumpversion > gamelastrunversion)
+			sc.ScriptError("Unsupported version %i (%i supported)", lumpversion, gamelastrunversion);
+		if (lumpversion < 219)
+			sc.ScriptError("Version must be at least 219 (current version %i)", gamelastrunversion);
+
+		FBaseCVar* var;
+		FString CurrentFindCVar;
+
+		while (sc.GetString())
+		{
+			if (sc.Compare("set"))
+			{
+				sc.MustGetString();
+			}
+
+			CurrentFindCVar = sc.String;
+
+			if (lumpversion < 220)
+			{
+				CurrentFindCVar.ToLower();
+
+				// these two got renamed
+				if (strcmp(CurrentFindCVar, "gamma") == 0)
+				{
+					CurrentFindCVar = "vid_gamma";
+				}
+				if (strcmp(CurrentFindCVar, "fullscreen") == 0)
+				{
+					CurrentFindCVar = "vid_fullscreen";
+				}
+
+				// this was removed
+				if (strcmp(CurrentFindCVar, "cd_drive") == 0)
+					break;
+			}
+
+			var = FindCVar(CurrentFindCVar, NULL);
+
+			if (var != NULL)
+			{
+				if (var->GetFlags() & CVAR_ARCHIVE)
+				{
+					UCVarValue val;
+
+					sc.MustGetString();
+					val.String = const_cast<char*>(sc.String);
+					var->SetGenericRepDefault(val, CVAR_String);
+				}
+				else
+				{
+					sc.ScriptError("Cannot set cvar default for non-config cvar '%s'", sc.String);
+				}
+			}
+			else
+			{
+				sc.ScriptError("Unknown cvar '%s'", sc.String);
+			}
+		}
+	}
+}
 
 //==========================================================================
 //
@@ -351,7 +495,7 @@ void D_PostEvent (const event_t *ev)
 	events[eventhead] = *ev;
 	if (ev->type == EV_Mouse && menuactive == MENU_Off && ConsoleState != c_down && ConsoleState != c_falling && !primaryLevel->localEventManager->Responder(ev) && !paused)
 	{
-		if (Button_Mlook.bDown || freelook)
+		if (buttonMap.ButtonDown(Button_Mlook) || freelook)
 		{
 			int look = int(ev->y * m_pitch * mouse_sensitivity * 16.0);
 			if (invertmouse)
@@ -359,9 +503,12 @@ void D_PostEvent (const event_t *ev)
 			G_AddViewPitch (look, true);
 			events[eventhead].y = 0;
 		}
-		if (!Button_Strafe.bDown && !lookstrafe)
+		if (!buttonMap.ButtonDown(Button_Strafe) && !lookstrafe)
 		{
-			G_AddViewAngle (int(ev->x * m_yaw * mouse_sensitivity * 8.0), true);
+			int turn = int(ev->x * m_yaw * mouse_sensitivity * 8.0);
+			if (invertmousex)
+				turn = -turn;
+			G_AddViewAngle (turn, true);
 			events[eventhead].x = 0;
 		}
 		if ((events[eventhead].x | events[eventhead].y) == 0)
@@ -653,6 +800,12 @@ CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
 		w = COMPATF2_POINTONLINE | COMPATF2_EXPLODE2;
 		break;
 
+	case 7: // Stricter MBF compatibility
+		v = COMPATF_CORPSEGIBS | COMPATF_NOBLOCKFRIENDS | COMPATF_MBFMONSTERMOVE | COMPATF_INVISIBILITY |
+			COMPATF_NOTOSSDROPS | COMPATF_MUSHROOM | COMPATF_NO_PASSMOBJ | COMPATF_BOOMSCROLL | COMPATF_WALLRUN |
+			COMPATF_TRACE | COMPATF_HITSCAN | COMPATF_MISSILECLIP | COMPATF_MASKEDMIDTEX | COMPATF_SOUNDTARGET;
+		w = COMPATF2_POINTONLINE | COMPATF2_EXPLODE1 | COMPATF2_EXPLODE2;
+		break;
 	}
 	compatflags = v;
 	compatflags2 = w;
@@ -704,6 +857,142 @@ CVAR (Flag, compat_railing,				compatflags2, COMPATF2_RAILING);
 
 CVAR(Bool, vid_activeinbackground, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
+EXTERN_CVAR(Bool, r_drawvoxels)
+EXTERN_CVAR(Int, gl_tonemap)
+static uint32_t GetCaps()
+{
+	ActorRenderFeatureFlags FlagSet;
+	if (!V_IsHardwareRenderer())
+	{
+		FlagSet = RFF_UNCLIPPEDTEX;
+
+		if (V_IsTrueColor())
+			FlagSet |= RFF_TRUECOLOR;
+		else
+			FlagSet |= RFF_COLORMAP;
+
+	}
+	else
+	{
+		// describe our basic feature set
+		FlagSet = RFF_FLATSPRITES | RFF_MODELS | RFF_SLOPE3DFLOORS |
+			RFF_TILTPITCH | RFF_ROLLSPRITES | RFF_POLYGONAL | RFF_MATSHADER | RFF_POSTSHADER | RFF_BRIGHTMAP;
+
+		if (gl_tonemap != 5) // not running palette tonemap shader
+			FlagSet |= RFF_TRUECOLOR;
+	}
+
+	if (r_drawvoxels)
+		FlagSet |= RFF_VOXELS;
+	return (uint32_t)FlagSet;
+}
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+
+static void DrawPaletteTester(int paletteno)
+{
+	int blocksize = screen->GetHeight() / 50;
+
+	int t = paletteno;
+	int k = 0;
+	for (int i = 0; i < 16; ++i)
+	{
+		for (int j = 0; j < 16; ++j)
+		{
+			PalEntry pe;
+			if (t > 1)
+			{
+				auto palette = GPalette.GetTranslation(TRANSLATION_Standard, t - 2)->Palette;
+				pe = palette[k];
+			}
+			else GPalette.BaseColors[k];
+			k++;
+			Dim(twod, pe, 1.f, j * blocksize, i * blocksize, blocksize, blocksize);
+		}
+	}
+}
+
+//==========================================================================
+//
+// DFrameBuffer :: DrawRateStuff
+//
+// Draws the fps counter, dot ticker, and palette debug.
+//
+//==========================================================================
+uint64_t LastCount;
+
+static void DrawRateStuff()
+{
+	static uint64_t LastMS = 0, LastSec = 0, FrameCount = 0, LastTic = 0;
+
+	// Draws frame time and cumulative fps
+	if (vid_fps)
+	{
+		uint64_t ms = screen->FrameTime;
+		uint64_t howlong = ms - LastMS;
+		if ((signed)howlong >= 0)
+		{
+			char fpsbuff[40];
+			int chars;
+			int rate_x;
+
+			int textScale = active_con_scale(twod);
+
+			chars = mysnprintf(fpsbuff, countof(fpsbuff), "%2llu ms (%3llu fps)", (unsigned long long)howlong, (unsigned long long)LastCount);
+			rate_x = screen->GetWidth() / textScale - NewConsoleFont->StringWidth(&fpsbuff[0]);
+			ClearRect(twod, rate_x * textScale, 0, screen->GetWidth(), NewConsoleFont->GetHeight() * textScale, GPalette.BlackIndex, 0);
+			DrawText(twod, NewConsoleFont, CR_WHITE, rate_x, 0, (char*)&fpsbuff[0],
+				DTA_VirtualWidth, screen->GetWidth() / textScale,
+				DTA_VirtualHeight, screen->GetHeight() / textScale,
+				DTA_KeepRatio, true, TAG_DONE);
+
+			uint32_t thisSec = (uint32_t)(ms / 1000);
+			if (LastSec < thisSec)
+			{
+				LastCount = FrameCount / (thisSec - LastSec);
+				LastSec = thisSec;
+				FrameCount = 0;
+			}
+			FrameCount++;
+		}
+		LastMS = ms;
+	}
+
+	int Height = screen->GetHeight();
+
+	// draws little dots on the bottom of the screen
+	if (ticker)
+	{
+		int64_t t = I_GetTime();
+		int64_t tics = t - LastTic;
+
+		LastTic = t;
+		if (tics > 20) tics = 20;
+
+		int i;
+		for (i = 0; i < tics * 2; i += 2)		ClearRect(twod, i, Height - 1, i + 1, Height, 255, 0);
+		for (; i < 20 * 2; i += 2)			ClearRect(twod, i, Height - 1, i + 1, Height, 0, 0);
+	}
+
+	// draws the palette for debugging
+	if (vid_showpalette)
+	{
+		DrawPaletteTester(vid_showpalette);
+	}
+}
+
+static void End2DAndUpdate()
+{
+	DrawRateStuff();
+	twod->End();
+	CheckBench();
+	screen->Update();
+}
+
 //==========================================================================
 //
 // D_Display
@@ -714,7 +1003,7 @@ CVAR(Bool, vid_activeinbackground, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 void D_Display ()
 {
-	FTexture *wipe = nullptr;
+	FGameTexture *wipe = nullptr;
 	int wipe_type;
 	sector_t *viewsec;
 
@@ -732,7 +1021,7 @@ void D_Display ()
 	cycles.Clock();
 
 	r_UseVanillaTransparency = UseVanillaTransparency(); // [SP] Cache UseVanillaTransparency() call
-	r_renderercaps = screen->GetCaps(); // [SP] Get the current capabilities of the renderer
+	r_renderercaps = GetCaps(); // [SP] Get the current capabilities of the renderer
 
 	if (players[consoleplayer].camera == NULL)
 	{
@@ -757,7 +1046,7 @@ void D_Display ()
 	if (setmodeneeded)
 	{
 		setmodeneeded = false;
-		screen->ToggleFullscreen(fullscreen);
+		screen->ToggleFullscreen(vid_fullscreen);
 		V_OutputResized(screen->GetWidth(), screen->GetHeight());
 	}
 
@@ -789,7 +1078,7 @@ void D_Display ()
 		if (vr_mode == 0 || vid_rendermode != 4)
 		{
 			// save the current screen if about to wipe
-			wipe = screen->WipeStartScreen ();
+			wipe = MakeGameTexture(screen->WipeStartScreen(), nullptr, ETextureType::SWCanvas);
 
 			switch (wipegamestate)
 			{
@@ -825,10 +1114,10 @@ void D_Display ()
 	}
 	
 	screen->FrameTime = I_msTimeFS();
-	TexMan.UpdateAnimations(screen->FrameTime);
+	TexAnim.UpdateAnimations(screen->FrameTime);
 	R_UpdateSky(screen->FrameTime);
 	screen->BeginFrame();
-	screen->ClearClipRect();
+	twod->ClearClipRect();
 	if ((gamestate == GS_LEVEL || gamestate == GS_TITLELEVEL) && gametic != 0)
 	{
 		// [ZZ] execute event hook that we just started the frame
@@ -837,15 +1126,15 @@ void D_Display ()
 		
 		D_Render([&]()
 		{
-			viewsec = screen->RenderView(&players[consoleplayer]);
+			viewsec = RenderView(&players[consoleplayer]);
 		}, true);
 
-		screen->Begin2D();
+		twod->Begin(screen->GetWidth(), screen->GetHeight());
 		if (!hud_toggled)
 		{
 			if (vrmode->mEyeCount == 1)
 			{
-				screen->DrawBlend(viewsec);
+				V_DrawBlend(viewsec);
 			}
 			if (automapactive)
 			{
@@ -890,14 +1179,13 @@ void D_Display ()
 	}
 	else
 	{
-		screen->Begin2D();
+		twod->Begin(screen->GetWidth(), screen->GetHeight());
 		switch (gamestate)
 		{
 			case GS_FULLCONSOLE:
-				screen->Begin2D();
 				C_DrawConsole ();
 				M_Drawer ();
-				screen->End2DAndUpdate ();
+				End2DAndUpdate ();
 				return;
 				
 			case GS_INTERMISSION:
@@ -923,20 +1211,17 @@ void D_Display ()
 		// draw pause pic
 		if ((paused || pauseext) && menuactive == MENU_Off)
 		{
-			FTexture *tex;
-			int x;
-
-			tex = TexMan.GetTextureByName(gameinfo.PauseSign, true);
-			x = (SCREENWIDTH - tex->GetDisplayWidth() * CleanXfac)/2 +
+			auto tex = TexMan.GetGameTextureByName(gameinfo.PauseSign, true);
+			double x = (SCREENWIDTH - tex->GetDisplayWidth() * CleanXfac)/2 +
 				tex->GetDisplayLeftOffset() * CleanXfac;
-			screen->DrawTexture (tex, x, 4, DTA_CleanNoMove, true, TAG_DONE);
+			DrawTexture(twod, tex, x, 4, DTA_CleanNoMove, true, TAG_DONE);
 			if (paused && multiplayer)
 			{
 				FFont *font = generic_ui? NewSmallFont : SmallFont;
 				FString pstring = GStrings("TXT_BY");
 				pstring.Substitute("%s", players[paused - 1].userinfo.GetName());
-				screen->DrawText(font, CR_RED,
-					(screen->GetWidth() - font->StringWidth(pstring)*CleanXfac) / 2,
+				DrawText(twod, font, CR_RED,
+					(twod->GetWidth() - font->StringWidth(pstring)*CleanXfac) / 2,
 					(tex->GetDisplayHeight() * CleanYfac) + 4, pstring, DTA_CleanNoMove, true, TAG_DONE);
 			}
 		}
@@ -949,8 +1234,8 @@ void D_Display ()
 			D_DrawIcon = NULL;
 			if (picnum.isValid())
 			{
-				FTexture *tex = TexMan.GetTexture(picnum);
-				screen->DrawTexture (tex, 160 - tex->GetDisplayWidth()/2, 100 - tex->GetDisplayHeight()/2,
+				auto tex = TexMan.GetGameTexture(picnum);
+				DrawTexture(twod, tex, 160 - tex->GetDisplayWidth()/2, 100 - tex->GetDisplayHeight()/2,
 					DTA_320x200, true, TAG_DONE);
 			}
 			NoWipe = 10;
@@ -972,8 +1257,8 @@ void D_Display ()
 		C_DrawConsole ();	// draw console
 		M_Drawer ();			// menu is drawn even on top of everything
 		if (!hud_toggled)
-			FStat::PrintStat ();
-		screen->End2DAndUpdate ();
+			FStat::PrintStat (twod);
+		End2DAndUpdate ();
 	}
 	else
 	{
@@ -983,8 +1268,8 @@ void D_Display ()
 
 		GSnd->SetSfxPaused(true, 1);
 		I_FreezeTime(true);
-		screen->End2D();
-		auto wipend = screen->WipeEndScreen ();
+		twod->End();
+		auto wipend = MakeGameTexture(screen->WipeEndScreen(), nullptr, ETextureType::SWCanvas);
 		auto wiper = Wiper::Create(wipe_type);
 		wiper->SetTextures(wipe, wipend);
 
@@ -1000,11 +1285,11 @@ void D_Display ()
 				diff = (nowtime - wipestart) * 40 / 1000;	// Using 35 here feels too slow.
 			} while (diff < 1);
 			wipestart = nowtime;
-			screen->Begin2D();
+			twod->Begin(screen->GetWidth(), screen->GetHeight());
 			done = wiper->Run(1);
 			C_DrawConsole ();	// console and
 			M_Drawer ();			// menu are drawn even on top of wipes
-			screen->End2DAndUpdate ();
+			End2DAndUpdate ();
 			NetUpdate ();			// [RH] not sure this is needed anymore
 		} while (!done);
 		delete wiper;
@@ -1147,10 +1432,10 @@ void D_PageTicker (void)
 
 void D_PageDrawer (void)
 {
-	screen->Clear(0, 0, SCREENWIDTH, SCREENHEIGHT, 0, 0);
+	ClearRect(twod, 0, 0, SCREENWIDTH, SCREENHEIGHT, 0, 0);
 	if (Page.Exists())
 	{
-		screen->DrawTexture (TexMan.GetTexture(Page, true), 0, 0,
+		DrawTexture(twod, TexMan.GetGameTexture(Page, true), 0, 0,
 			DTA_Fullscreen, true,
 			DTA_Masked, false,
 			DTA_BilinearFilter, true,
@@ -1162,7 +1447,7 @@ void D_PageDrawer (void)
 	}
 	if (Advisory != nullptr)
 	{
-		screen->DrawTexture (Advisory, 4, 160, DTA_320x200, true, TAG_DONE);
+		DrawTexture(twod, Advisory, 4, 160, DTA_320x200, true, TAG_DONE);
 	}
 }
 
@@ -1208,7 +1493,7 @@ void D_DoStrifeAdvanceDemo ()
 	case 0:
 		pagetic = 6 * TICRATE;
 		pagename = "TITLEPIC";
-		if (Wads.CheckNumForName ("d_logo", ns_music) < 0)
+		if (fileSystem.CheckNumForName ("d_logo", ns_music) < 0)
 		{ // strife0.wad does not have d_logo
 			S_StartMusic ("");
 		}
@@ -1351,7 +1636,7 @@ void D_DoAdvanceDemo (void)
 	case 3:
 		if (gameinfo.advisoryTime)
 		{
-			Advisory = TexMan.GetTextureByName("ADVISOR");
+			Advisory = TexMan.GetGameTextureByName("ADVISOR");
 			demosequence = 1;
 			pagetic = (int)(gameinfo.advisoryTime * TICRATE);
 			break;
@@ -1364,7 +1649,7 @@ void D_DoAdvanceDemo (void)
 		{
 			democount++;
 			mysnprintf (demoname + 4, countof(demoname) - 4, "%d", democount);
-			if (Wads.CheckNumForName (demoname) < 0)
+			if (fileSystem.CheckNumForName (demoname) < 0)
 			{
 				demosequence = 0;
 				democount = 0;
@@ -1395,7 +1680,7 @@ void D_DoAdvanceDemo (void)
 		gamestate = GS_DEMOSCREEN;
 		if (gameinfo.creditPages.Size() > 0)
 		{
-			pagename = gameinfo.creditPages[pagecount];
+			pagename = gameinfo.creditPages[pagecount].GetChars();
 			pagecount = (pagecount+1) % gameinfo.creditPages.Size();
 		}
 		demosequence = 1;
@@ -1451,7 +1736,7 @@ void ParseCVarInfo()
 	int lump, lastlump = 0;
 	bool addedcvars = false;
 
-	while ((lump = Wads.FindLump("CVARINFO", &lastlump)) != -1)
+	while ((lump = fileSystem.FindLump("CVARINFO", &lastlump)) != -1)
 	{
 		FScanner sc(lump);
 		sc.SetCMode(true);
@@ -1595,243 +1880,6 @@ void ParseCVarInfo()
 
 //==========================================================================
 //
-// D_AddFile
-//
-//==========================================================================
-
-bool D_AddFile (TArray<FString> &wadfiles, const char *file, bool check, int position)
-{
-	if (file == NULL || *file == '\0')
-	{
-		return false;
-	}
-
-	if (check && !DirEntryExists (file))
-	{
-		const char *f = BaseFileSearch (file, ".wad");
-		if (f == NULL)
-		{
-			Printf ("Can't find '%s'\n", file);
-			return false;
-		}
-		file = f;
-	}
-
-	FString f = file;
-	FixPathSeperator(f);
-	if (position == -1) wadfiles.Push(f);
-	else wadfiles.Insert(position, f);
-	return true;
-}
-
-//==========================================================================
-//
-// D_AddWildFile
-//
-//==========================================================================
-
-void D_AddWildFile (TArray<FString> &wadfiles, const char *value)
-{
-	if (value == NULL || *value == '\0')
-	{
-		return;
-	}
-	const char *wadfile = BaseFileSearch (value, ".wad");
-
-	if (wadfile != NULL)
-	{
-		D_AddFile (wadfiles, wadfile);
-	}
-	else
-	{ // Try pattern matching
-		findstate_t findstate;
-		char path[PATH_MAX];
-		char *sep;
-		void *handle = I_FindFirst (value, &findstate);
-
-		strcpy (path, value);
-		sep = strrchr (path, '/');
-		if (sep == NULL)
-		{
-			sep = strrchr (path, '\\');
-#ifdef _WIN32
-			if (sep == NULL && path[1] == ':')
-			{
-				sep = path + 1;
-			}
-#endif
-		}
-
-		if (handle != ((void *)-1))
-		{
-			do
-			{
-				if (!(I_FindAttr(&findstate) & FA_DIREC))
-				{
-					if (sep == NULL)
-					{
-						D_AddFile (wadfiles, I_FindName (&findstate));
-					}
-					else
-					{
-						strcpy (sep+1, I_FindName (&findstate));
-						D_AddFile (wadfiles, path);
-					}
-				}
-			} while (I_FindNext (handle, &findstate) == 0);
-		}
-		I_FindClose (handle);
-	}
-}
-
-//==========================================================================
-//
-// D_AddConfigWads
-//
-// Adds all files in the specified config file section.
-//
-//==========================================================================
-
-void D_AddConfigWads (TArray<FString> &wadfiles, const char *section)
-{
-	if (GameConfig->SetSection (section))
-	{
-		const char *key;
-		const char *value;
-		FConfigFile::Position pos;
-
-		while (GameConfig->NextInSection (key, value))
-		{
-			if (stricmp (key, "Path") == 0)
-			{
-				// D_AddWildFile resets GameConfig's position, so remember it
-				GameConfig->GetPosition (pos);
-				D_AddWildFile (wadfiles, ExpandEnvVars(value));
-				// Reset GameConfig's position to get next wad
-				GameConfig->SetPosition (pos);
-			}
-		}
-	}
-}
-
-//==========================================================================
-//
-// D_AddDirectory
-//
-// Add all .wad files in a directory. Does not descend into subdirectories.
-//
-//==========================================================================
-
-static void D_AddDirectory (TArray<FString> &wadfiles, const char *dir)
-{
-	char curdir[PATH_MAX];
-
-	if (getcwd (curdir, PATH_MAX))
-	{
-		char skindir[PATH_MAX];
-		findstate_t findstate;
-		void *handle;
-		size_t stuffstart;
-
-		stuffstart = strlen (dir);
-		memcpy (skindir, dir, stuffstart*sizeof(*dir));
-		skindir[stuffstart] = 0;
-
-		if (skindir[stuffstart-1] == '/')
-		{
-			skindir[--stuffstart] = 0;
-		}
-
-		if (!chdir (skindir))
-		{
-			skindir[stuffstart++] = '/';
-			if ((handle = I_FindFirst ("*.wad", &findstate)) != (void *)-1)
-			{
-				do
-				{
-					if (!(I_FindAttr (&findstate) & FA_DIREC))
-					{
-						strcpy (skindir + stuffstart, I_FindName (&findstate));
-						D_AddFile (wadfiles, skindir);
-					}
-				} while (I_FindNext (handle, &findstate) == 0);
-				I_FindClose (handle);
-			}
-		}
-		chdir (curdir);
-	}
-}
-
-
-//==========================================================================
-//
-// BaseFileSearch
-//
-// If a file does not exist at <file>, looks for it in the directories
-// specified in the config file. Returns the path to the file, if found,
-// or NULL if it could not be found.
-//
-//==========================================================================
-
-const char *BaseFileSearch (const char *file, const char *ext, bool lookfirstinprogdir)
-{
-	static char wad[PATH_MAX];
-
-	if (file == NULL || *file == '\0')
-	{
-		return NULL;
-	}
-	if (lookfirstinprogdir)
-	{
-		mysnprintf (wad, countof(wad), "%s%s%s", progdir.GetChars(), progdir.Back() == '/' ? "" : "/", file);
-		if (DirEntryExists (wad))
-		{
-			return wad;
-		}
-	}
-
-	if (DirEntryExists (file))
-	{
-		mysnprintf (wad, countof(wad), "%s", file);
-		return wad;
-	}
-
-	if (GameConfig != NULL && GameConfig->SetSection ("FileSearch.Directories"))
-	{
-		const char *key;
-		const char *value;
-
-		while (GameConfig->NextInSection (key, value))
-		{
-			if (stricmp (key, "Path") == 0)
-			{
-				FString dir;
-
-				dir = NicePath(value);
-				if (dir.IsNotEmpty())
-				{
-					mysnprintf (wad, countof(wad), "%s%s%s", dir.GetChars(), dir.Back() == '/' ? "" : "/", file);
-					if (DirEntryExists (wad))
-					{
-						return wad;
-					}
-				}
-			}
-		}
-	}
-
-	// Retry, this time with a default extension
-	if (ext != NULL)
-	{
-		FString tmp = file;
-		DefaultExtension (tmp, ext);
-		return BaseFileSearch (tmp, NULL);
-	}
-	return NULL;
-}
-
-//==========================================================================
-//
 // ConsiderPatches
 //
 // Tries to add any deh/bex patches from the command line.
@@ -1847,8 +1895,8 @@ bool ConsiderPatches (const char *arg)
 	argc = Args->CheckParmList(arg, &args);
 	for (i = 0; i < argc; ++i)
 	{
-		if ( (f = BaseFileSearch(args[i], ".deh")) ||
-			 (f = BaseFileSearch(args[i], ".bex")) )
+		if ( (f = BaseFileSearch(args[i], ".deh", false, GameConfig)) ||
+			 (f = BaseFileSearch(args[i], ".bex", false, GameConfig)) )
 		{
 			D_LoadDehFile(f);
 		}
@@ -1879,7 +1927,7 @@ static void GetCmdLineFiles(TArray<FString> &wadfiles)
 	argc = Args->CheckParmList("-file", &args);
 	for (i = 0; i < argc; ++i)
 	{
-		D_AddWildFile(wadfiles, args[i]);
+		D_AddWildFile(wadfiles, args[i], ".wad", GameConfig);
 	}
 }
 
@@ -1932,11 +1980,11 @@ static FString ParseGameInfo(TArray<FString> &pwads, const char *fn, const char 
 				}
 				if (!FileExists(checkpath))
 				{
-					pos += D_AddFile(pwads, sc.String, true, pos);
+					pos += D_AddFile(pwads, sc.String, true, pos, GameConfig);
 				}
 				else
 				{
-					pos += D_AddFile(pwads, checkpath, true, pos);
+					pos += D_AddFile(pwads, checkpath, true, pos, GameConfig);
 				}
 			}
 			while (sc.CheckToken(','));
@@ -1949,44 +1997,44 @@ static FString ParseGameInfo(TArray<FString> &pwads, const char *fn, const char 
 		else if (!nextKey.CompareNoCase("STARTUPTITLE"))
 		{
 			sc.MustGetString();
-			DoomStartupInfo.Name = sc.String;
+			GameStartupInfo.Name = sc.String;
 		}
 		else if (!nextKey.CompareNoCase("STARTUPCOLORS"))
 		{
 			sc.MustGetString();
-			DoomStartupInfo.FgColor = V_GetColor(NULL, sc);
+			GameStartupInfo.FgColor = V_GetColor(NULL, sc);
 			sc.MustGetStringName(",");
 			sc.MustGetString();
-			DoomStartupInfo.BkColor = V_GetColor(NULL, sc);
+			GameStartupInfo.BkColor = V_GetColor(NULL, sc);
 		}
 		else if (!nextKey.CompareNoCase("STARTUPTYPE"))
 		{
 			sc.MustGetString();
 			FString sttype = sc.String;
 			if (!sttype.CompareNoCase("DOOM"))
-				DoomStartupInfo.Type = FStartupInfo::DoomStartup;
+				GameStartupInfo.Type = FStartupInfo::DoomStartup;
 			else if (!sttype.CompareNoCase("HERETIC"))
-				DoomStartupInfo.Type = FStartupInfo::HereticStartup;
+				GameStartupInfo.Type = FStartupInfo::HereticStartup;
 			else if (!sttype.CompareNoCase("HEXEN"))
-				DoomStartupInfo.Type = FStartupInfo::HexenStartup;
+				GameStartupInfo.Type = FStartupInfo::HexenStartup;
 			else if (!sttype.CompareNoCase("STRIFE"))
-				DoomStartupInfo.Type = FStartupInfo::StrifeStartup;
-			else DoomStartupInfo.Type = FStartupInfo::DefaultStartup;
+				GameStartupInfo.Type = FStartupInfo::StrifeStartup;
+			else GameStartupInfo.Type = FStartupInfo::DefaultStartup;
 		}
 		else if (!nextKey.CompareNoCase("STARTUPSONG"))
 		{
 			sc.MustGetString();
-			DoomStartupInfo.Song = sc.String;
+			GameStartupInfo.Song = sc.String;
 		}
 		else if (!nextKey.CompareNoCase("LOADLIGHTS"))
 		{
 			sc.MustGetNumber();
-			DoomStartupInfo.LoadLights = !!sc.Number;
+			GameStartupInfo.LoadLights = !!sc.Number;
 		}
 		else if (!nextKey.CompareNoCase("LOADBRIGHTMAPS"))
 		{
 			sc.MustGetNumber();
-			DoomStartupInfo.LoadBrightmaps = !!sc.Number;
+			GameStartupInfo.LoadBrightmaps = !!sc.Number;
 		}
 		else
 		{
@@ -2003,49 +2051,23 @@ static FString ParseGameInfo(TArray<FString> &pwads, const char *fn, const char 
 
 static FString CheckGameInfo(TArray<FString> & pwads)
 {
-	// scan the list of WADs backwards to find the last one that contains a GAMEINFO lump
-	for(int i=pwads.Size()-1; i>=0; i--)
+	FileSystem check;
+
+	LumpFilterInfo lfi;
+	for (auto p : iwad_folders) lfi.reservedFolders.Push(p);
+	for (auto p : iwad_reserved) lfi.requiredPrefixes.Push(p);
+
+	// Open the entire list as a temporary file system and look for a GAMEINFO lump. The last one will automatically win.
+	check.InitMultipleFiles(pwads, true, &lfi);
+	if (check.GetNumEntries() > 0)
 	{
-		bool isdir = false;
-		FResourceFile *resfile;
-		const char *filename = pwads[i];
-
-		// Does this exist? If so, is it a directory?
-		if (!DirEntryExists(pwads[i], &isdir))
+		int num = check.CheckNumForName("GAMEINFO");
+		if (num >= 0)
 		{
-			Printf(TEXTCOLOR_RED "Could not stat %s\n", filename);
-			continue;
-		}
-
-		if (!isdir)
-		{
-			FileReader fr;
-			if (!fr.OpenFile(filename))
-			{ 
-				// Didn't find file
-				continue;
-			}
-			resfile = FResourceFile::OpenResourceFile(filename, fr, true);
-		}
-		else
-			resfile = FResourceFile::OpenDirectory(filename, true);
-
-		if (resfile != NULL)
-		{
-			uint32_t cnt = resfile->LumpCount();
-			for(int i=cnt-1; i>=0; i--)
-			{
-				FResourceLump *lmp = resfile->GetLump(i);
-
-				if (lmp->Namespace == ns_global && !stricmp(lmp->Name, "GAMEINFO"))
-				{
-					// Found one!
-					FString iwad = ParseGameInfo(pwads, resfile->FileName, (const char*)lmp->CacheLump(), lmp->LumpSize);
-					delete resfile;
-					return iwad;
-				}
-			}
-			delete resfile;
+			// Found one!
+			auto data = check.GetFileData(num);
+			auto wadname = check.GetResourceFileName(check.GetFileContainer(num));
+			return ParseGameInfo(pwads, wadname, (const char*)data.Data(), data.Size());
 		}
 	}
 	return "";
@@ -2059,9 +2081,9 @@ static FString CheckGameInfo(TArray<FString> & pwads)
 
 static void SetMapxxFlag()
 {
-	int lump_name = Wads.CheckNumForName("MAP01", ns_global, Wads.GetIwadNum());
-	int lump_wad = Wads.CheckNumForFullName("maps/map01.wad", Wads.GetIwadNum());
-	int lump_map = Wads.CheckNumForFullName("maps/map01.map", Wads.GetIwadNum());
+	int lump_name = fileSystem.CheckNumForName("MAP01", ns_global, fileSystem.GetIwadNum());
+	int lump_wad = fileSystem.CheckNumForFullName("maps/map01.wad", fileSystem.GetIwadNum());
+	int lump_map = fileSystem.CheckNumForFullName("maps/map01.map", fileSystem.GetIwadNum());
 
 	if (lump_name >= 0 || lump_wad >= 0 || lump_map >= 0) gameinfo.flags |= GI_MAPxx;
 }
@@ -2136,17 +2158,17 @@ static void AddAutoloadFiles(const char *autoname)
 	// [SP] Dialog reaction - load lights.pk3 and brightmaps.pk3 based on user choices
 	if (!(gameinfo.flags & GI_SHAREWARE))
 	{
-		if (DoomStartupInfo.LoadLights == 1 || (DoomStartupInfo.LoadLights != 0 && autoloadlights))
+		if (GameStartupInfo.LoadLights == 1 || (GameStartupInfo.LoadLights != 0 && autoloadlights))
 		{
-			const char *lightswad = BaseFileSearch ("lights.pk3", NULL);
+			const char *lightswad = BaseFileSearch ("lights.pk3", NULL, false, GameConfig);
 			if (lightswad)
-				D_AddFile (allwads, lightswad);
+				D_AddFile (allwads, lightswad, true, -1, GameConfig);
 		}
-		if (DoomStartupInfo.LoadBrightmaps == 1 || (DoomStartupInfo.LoadBrightmaps != 0 && autoloadbrightmaps))
+		if (GameStartupInfo.LoadBrightmaps == 1 || (GameStartupInfo.LoadBrightmaps != 0 && autoloadbrightmaps))
 		{
-			const char *bmwad = BaseFileSearch ("brightmaps.pk3", NULL);
+			const char *bmwad = BaseFileSearch ("brightmaps.pk3", NULL, false, GameConfig);
 			if (bmwad)
-				D_AddFile (allwads, bmwad);
+				D_AddFile (allwads, bmwad, true, -1, GameConfig);
 		}
 	}
 
@@ -2159,9 +2181,9 @@ static void AddAutoloadFiles(const char *autoname)
 		// voices. I never got around to writing the utility to do it, though.
 		// And I probably never will now. But I know at least one person uses
 		// it for something else, so this gets to stay here.
-		const char *wad = BaseFileSearch ("zvox.wad", NULL);
+		const char *wad = BaseFileSearch ("zvox.wad", NULL, false, GameConfig);
 		if (wad)
-			D_AddFile (allwads, wad);
+			D_AddFile (allwads, wad, true, -1, GameConfig);
 	
 		// [RH] Add any .wad files in the skins directory
 #ifdef __unix__
@@ -2170,15 +2192,15 @@ static void AddAutoloadFiles(const char *autoname)
 		file = progdir;
 #endif
 		file += "skins";
-		D_AddDirectory (allwads, file);
+		D_AddDirectory (allwads, file, "*.wad", GameConfig);
 
 #ifdef __unix__
 		file = NicePath("$HOME/" GAME_DIR "/skins");
-		D_AddDirectory (allwads, file);
+		D_AddDirectory (allwads, file, "*.wad", GameConfig);
 #endif	
 
 		// Add common (global) wads
-		D_AddConfigWads (allwads, "Global.Autoload");
+		D_AddConfigFiles(allwads, "Global.Autoload", "*.wad", GameConfig);
 
 		long len;
 		int lastpos = -1;
@@ -2186,7 +2208,7 @@ static void AddAutoloadFiles(const char *autoname)
 		while ((len = LumpFilterIWAD.IndexOf('.', lastpos+1)) > 0)
 		{
 			file = LumpFilterIWAD.Left(len) + ".Autoload";
-			D_AddConfigWads(allwads, file);
+			D_AddConfigFiles(allwads, file, "*.wad", GameConfig);
 			lastpos = len;
 		}
 	}
@@ -2330,69 +2352,720 @@ static void CheckCmdLine()
 	}
 }
 
-//==========================================================================
-//
-// I_Error
-//
-// Throw an error that will send us to the console if we are far enough
-// along in the startup process.
-//
-//==========================================================================
-
-void I_Error(const char *error, ...)
-{
-	va_list argptr;
-	char errortext[MAX_ERRORTEXT];
-
-	va_start(argptr, error);
-	myvsnprintf(errortext, MAX_ERRORTEXT, error, argptr);
-	va_end(argptr);
-	I_DebugPrint(errortext);
-
-	throw CRecoverableError(errortext);
-}
-
-//==========================================================================
-//
-// I_FatalError
-//
-// Throw an error that will end the game.
-//
-//==========================================================================
-extern FILE *Logfile;
-
-void I_FatalError(const char *error, ...)
-{
-	static bool alreadyThrown = false;
-	gameisdead = true;
-
-	if (!alreadyThrown)		// ignore all but the first message -- killough
-	{
-		alreadyThrown = true;
-		char errortext[MAX_ERRORTEXT];
-		va_list argptr;
-		va_start(argptr, error);
-		myvsnprintf(errortext, MAX_ERRORTEXT, error, argptr);
-		va_end(argptr);
-		I_DebugPrint(errortext);
-
-		// Record error to log (if logging)
-		if (Logfile)
-		{
-			fprintf(Logfile, "\n**** DIED WITH FATAL ERROR:\n%s\n", errortext);
-			fflush(Logfile);
-		}
-
-		throw CFatalError(errortext);
-	}
-	std::terminate(); // recursive I_FatalErrors must immediately terminate.
-}
-
 static void NewFailure ()
 {
     I_FatalError ("Failed to allocate memory from system heap");
 }
 
+
+//==========================================================================
+//
+// RenameSprites
+//
+// Renames sprites in IWADs so that unique actors can have unique sprites,
+// making it possible to import any actor from any game into any other
+// game without jumping through hoops to resolve duplicate sprite names.
+// You just need to know what the sprite's new name is.
+//
+//==========================================================================
+
+static void RenameSprites(FileSystem &fileSystem, const TArray<FString>& deletelumps)
+{
+	bool renameAll;
+	bool MNTRZfound = false;
+	const char* altbigfont = gameinfo.gametype == GAME_Strife ? "SBIGFONT" : (gameinfo.gametype & GAME_Raven) ? "HBIGFONT" : "DBIGFONT";
+
+	static const uint32_t HereticRenames[] =
+	{ MAKE_ID('H','E','A','D'), MAKE_ID('L','I','C','H'),		// Ironlich
+	};
+
+	static const uint32_t HexenRenames[] =
+	{ MAKE_ID('B','A','R','L'), MAKE_ID('Z','B','A','R'),		// ZBarrel
+	  MAKE_ID('A','R','M','1'), MAKE_ID('A','R','_','1'),		// MeshArmor
+	  MAKE_ID('A','R','M','2'), MAKE_ID('A','R','_','2'),		// FalconShield
+	  MAKE_ID('A','R','M','3'), MAKE_ID('A','R','_','3'),		// PlatinumHelm
+	  MAKE_ID('A','R','M','4'), MAKE_ID('A','R','_','4'),		// AmuletOfWarding
+	  MAKE_ID('S','U','I','T'), MAKE_ID('Z','S','U','I'),		// ZSuitOfArmor and ZArmorChunk
+	  MAKE_ID('T','R','E','1'), MAKE_ID('Z','T','R','E'),		// ZTree and ZTreeDead
+	  MAKE_ID('T','R','E','2'), MAKE_ID('T','R','E','S'),		// ZTreeSwamp150
+	  MAKE_ID('C','A','N','D'), MAKE_ID('B','C','A','N'),		// ZBlueCandle
+	  MAKE_ID('R','O','C','K'), MAKE_ID('R','O','K','K'),		// rocks and dirt in a_debris.cpp
+	  MAKE_ID('W','A','T','R'), MAKE_ID('H','W','A','T'),		// Strife also has WATR
+	  MAKE_ID('G','I','B','S'), MAKE_ID('P','O','L','5'),		// RealGibs
+	  MAKE_ID('E','G','G','M'), MAKE_ID('P','R','K','M'),		// PorkFX
+	  MAKE_ID('I','N','V','U'), MAKE_ID('D','E','F','N'),		// Icon of the Defender
+	};
+
+	static const uint32_t StrifeRenames[] =
+	{ MAKE_ID('M','I','S','L'), MAKE_ID('S','M','I','S'),		// lots of places
+	  MAKE_ID('A','R','M','1'), MAKE_ID('A','R','M','3'),		// MetalArmor
+	  MAKE_ID('A','R','M','2'), MAKE_ID('A','R','M','4'),		// LeatherArmor
+	  MAKE_ID('P','M','A','P'), MAKE_ID('S','M','A','P'),		// StrifeMap
+	  MAKE_ID('T','L','M','P'), MAKE_ID('T','E','C','H'),		// TechLampSilver and TechLampBrass
+	  MAKE_ID('T','R','E','1'), MAKE_ID('T','R','E','T'),		// TreeStub
+	  MAKE_ID('B','A','R','1'), MAKE_ID('B','A','R','C'),		// BarricadeColumn
+	  MAKE_ID('S','H','T','2'), MAKE_ID('M','P','U','F'),		// MaulerPuff
+	  MAKE_ID('B','A','R','L'), MAKE_ID('B','B','A','R'),		// StrifeBurningBarrel
+	  MAKE_ID('T','R','C','H'), MAKE_ID('T','R','H','L'),		// SmallTorchLit
+	  MAKE_ID('S','H','R','D'), MAKE_ID('S','H','A','R'),		// glass shards
+	  MAKE_ID('B','L','S','T'), MAKE_ID('M','A','U','L'),		// Mauler
+	  MAKE_ID('L','O','G','G'), MAKE_ID('L','O','G','W'),		// StickInWater
+	  MAKE_ID('V','A','S','E'), MAKE_ID('V','A','Z','E'),		// Pot and Pitcher
+	  MAKE_ID('C','N','D','L'), MAKE_ID('K','N','D','L'),		// Candle
+	  MAKE_ID('P','O','T','1'), MAKE_ID('M','P','O','T'),		// MetalPot
+	  MAKE_ID('S','P','I','D'), MAKE_ID('S','T','L','K'),		// Stalker
+	};
+
+	const uint32_t* renames;
+	int numrenames;
+
+	switch (gameinfo.gametype)
+	{
+	case GAME_Doom:
+	default:
+		// Doom's sprites don't get renamed.
+		renames = nullptr;
+		numrenames = 0;
+		break;
+
+	case GAME_Heretic:
+		renames = HereticRenames;
+		numrenames = sizeof(HereticRenames) / 8;
+		break;
+
+	case GAME_Hexen:
+		renames = HexenRenames;
+		numrenames = sizeof(HexenRenames) / 8;
+		break;
+
+	case GAME_Strife:
+		renames = StrifeRenames;
+		numrenames = sizeof(StrifeRenames) / 8;
+		break;
+	}
+
+	unsigned NumFiles = fileSystem.GetNumEntries();
+
+	for (uint32_t i = 0; i < NumFiles; i++)
+	{
+		// check for full Minotaur animations. If this is not found
+		// some frames need to be renamed.
+		if (fileSystem.GetFileNamespace(i) == ns_sprites)
+		{
+			auto& shortName = fileSystem.GetShortName(i);
+			if (shortName.dword == MAKE_ID('M', 'N', 'T', 'R') && shortName.String[4] == 'Z')
+			{
+				MNTRZfound = true;
+				break;
+			}
+		}
+	}
+
+	renameAll = !!Args->CheckParm("-oldsprites") || nospriterename;
+
+	for (uint32_t i = 0; i < NumFiles; i++)
+	{
+		auto& shortName = fileSystem.GetShortName(i);
+		if (fileSystem.GetFileNamespace(i) == ns_sprites)
+		{
+			// Only sprites in the IWAD normally get renamed
+			if (renameAll || fileSystem.GetFileContainer(i) == fileSystem.GetIwadNum())
+			{
+				for (int j = 0; j < numrenames; ++j)
+				{
+					if (shortName.dword == renames[j * 2])
+					{
+						shortName.dword = renames[j * 2 + 1];
+					}
+				}
+				if (gameinfo.gametype == GAME_Hexen)
+				{
+					if (fileSystem.CheckFileName(i, "ARTIINVU"))
+					{
+						shortName.String[4] = 'D'; shortName.String[5] = 'E';
+						shortName.String[6] = 'F'; shortName.String[7] = 'N';
+					}
+				}
+			}
+
+			if (!MNTRZfound)
+			{
+				if (shortName.dword == MAKE_ID('M', 'N', 'T', 'R'))
+				{
+					for (size_t fi : {4, 6})
+					{
+						if (shortName.String[fi] >= 'F' && shortName.String[fi] <= 'K')
+						{
+							shortName.String[fi] += 'U' - 'F';
+						}
+					}
+				}
+			}
+
+			// When not playing Doom rename all BLOD sprites to BLUD so that
+			// the same blood states can be used everywhere
+			if (!(gameinfo.gametype & GAME_DoomChex))
+			{
+				if (shortName.dword == MAKE_ID('B', 'L', 'O', 'D'))
+				{
+					shortName.dword = MAKE_ID('B', 'L', 'U', 'D');
+				}
+			}
+		}
+		else if (fileSystem.GetFileNamespace(i) == ns_global)
+		{
+			int fn = fileSystem.GetFileContainer(i);
+			if (fn >= fileSystem.GetIwadNum() && fn <= fileSystem.GetMaxIwadNum() && deletelumps.Find(shortName.String) < deletelumps.Size())
+			{
+				shortName.String[0] = 0;	// Lump must be deleted from directory.
+			}
+			// Rename the game specific big font lumps so that the font manager does not have to do problematic special checks for them.
+			else if (!strcmp(shortName.String, altbigfont))
+			{
+				strcpy(shortName.String, "BIGFONT");
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+// RenameNerve
+//
+// Renames map headers and map name pictures in nerve.wad so as to load it
+// alongside Doom II and offer both episodes without causing conflicts.
+// MD5 checksum for NERVE.WAD: 967d5ae23daf45196212ae1b605da3b0 (3,819,855)
+// MD5 checksum for Unity version of NERVE.WAD: 4214c47651b63ee2257b1c2490a518c9 (3,821,966)
+//
+//==========================================================================
+void RenameNerve(FileSystem& fileSystem)
+{
+	if (gameinfo.gametype != GAME_Doom)
+		return;
+
+	const int numnerveversions = 2;
+
+	bool found = false;
+	uint8_t cksum[16];
+	static const uint8_t nerve[numnerveversions][16] = {
+			{ 0x96, 0x7d, 0x5a, 0xe2, 0x3d, 0xaf, 0x45, 0x19,
+				0x62, 0x12, 0xae, 0x1b, 0x60, 0x5d, 0xa3, 0xb0 },
+			{ 0x42, 0x14, 0xc4, 0x76, 0x51, 0xb6, 0x3e, 0xe2,
+				0x25, 0x7b, 0x1c, 0x24, 0x90, 0xa5, 0x18, 0xc9 }
+	};
+	size_t nervesize[numnerveversions] = { 3819855, 3821966 }; // NERVE.WAD's file size
+	int w = fileSystem.GetIwadNum();
+	while (++w < fileSystem.GetNumWads())
+	{
+		auto fr = fileSystem.GetFileReader(w);
+		int isizecheck = -1;
+		if (fr == NULL)
+		{
+			continue;
+		}
+		for (int icheck = 0; icheck < numnerveversions; icheck++)
+			if (fr->GetLength() == (long)nervesize[icheck])
+				isizecheck = icheck;
+		if (isizecheck == -1)
+		{
+			// Skip MD5 computation when there is a
+			// cheaper way to know this is not the file
+			continue;
+		}
+		fr->Seek(0, FileReader::SeekSet);
+		MD5Context md5;
+		md5Update(*fr, md5, (unsigned)fr->GetLength());
+		md5.Final(cksum);
+		if (memcmp(nerve[isizecheck], cksum, 16) == 0)
+		{
+			found = true;
+			break;
+		}
+	}
+
+	if (!found)
+		return;
+
+	for (int i = fileSystem.GetFirstEntry(w); i <= fileSystem.GetLastEntry(w); i++)
+	{
+		auto& shortName = fileSystem.GetShortName(i);
+		// Only rename the maps from NERVE.WAD
+		if (shortName.dword == MAKE_ID('C', 'W', 'I', 'L'))
+		{
+			shortName.String[0] = 'N';
+		}
+		else if (shortName.dword == MAKE_ID('M', 'A', 'P', '0'))
+		{
+			shortName.String[6] = shortName.String[4];
+			shortName.String[5] = '0';
+			shortName.String[4] = 'L';
+			shortName.dword = MAKE_ID('L', 'E', 'V', 'E');
+		}
+	}
+}
+
+//==========================================================================
+//
+// FixMacHexen
+//
+// Discard all extra lumps in Mac version of Hexen IWAD (demo or full)
+// to avoid any issues caused by names of these lumps, including:
+//  * Wrong height of small font
+//  * Broken life bar of mage class
+//
+//==========================================================================
+
+void FixMacHexen(FileSystem& fileSystem)
+{
+	if (GAME_Hexen != gameinfo.gametype)
+	{
+		return;
+	}
+
+	FileReader* reader = fileSystem.GetFileReader(fileSystem.GetIwadNum());
+	auto iwadSize = reader->GetLength();
+
+	static const long DEMO_SIZE = 13596228;
+	static const long BETA_SIZE = 13749984;
+	static const long FULL_SIZE = 21078584;
+
+	if (DEMO_SIZE != iwadSize
+		&& BETA_SIZE != iwadSize
+		&& FULL_SIZE != iwadSize)
+	{
+		return;
+	}
+
+	reader->Seek(0, FileReader::SeekSet);
+
+	uint8_t checksum[16];
+	MD5Context md5;
+
+	md5Update(*reader, md5, (unsigned)iwadSize);
+	md5.Final(checksum);
+
+	static const uint8_t HEXEN_DEMO_MD5[16] =
+	{
+		0x92, 0x5f, 0x9f, 0x50, 0x00, 0xe1, 0x7d, 0xc8,
+		0x4b, 0x0a, 0x6a, 0x3b, 0xed, 0x3a, 0x6f, 0x31
+	};
+
+	static const uint8_t HEXEN_BETA_MD5[16] =
+	{
+		0x2a, 0xf1, 0xb2, 0x7c, 0xd1, 0x1f, 0xb1, 0x59,
+		0xe6, 0x08, 0x47, 0x2a, 0x1b, 0x53, 0xe4, 0x0e
+	};
+
+	static const uint8_t HEXEN_FULL_MD5[16] =
+	{
+		0xb6, 0x81, 0x40, 0xa7, 0x96, 0xf6, 0xfd, 0x7f,
+		0x3a, 0x5d, 0x32, 0x26, 0xa3, 0x2b, 0x93, 0xbe
+	};
+
+	const bool isBeta = 0 == memcmp(HEXEN_BETA_MD5, checksum, sizeof checksum);
+
+	if (!isBeta
+		&& 0 != memcmp(HEXEN_DEMO_MD5, checksum, sizeof checksum)
+		&& 0 != memcmp(HEXEN_FULL_MD5, checksum, sizeof checksum))
+	{
+		return;
+	}
+
+	static const int EXTRA_LUMPS = 299;
+
+	// Hexen Beta is very similar to Demo but it has MAP41: Maze at the end of the WAD
+	// So keep this map if it's present but discard all extra lumps
+
+	const int lastLump = fileSystem.GetLastEntry(fileSystem.GetIwadNum()) - (isBeta ? 12 : 0);
+	assert(fileSystem.GetFirstEntry(fileSystem.GetIwadNum()) + 299 < lastLump);
+
+	for (int i = lastLump - EXTRA_LUMPS + 1; i <= lastLump; ++i)
+	{
+		auto& shortName = fileSystem.GetShortName(i);
+		shortName.String[0] = '\0';
+	}
+}
+
+static void FindStrifeTeaserVoices(FileSystem& fileSystem)
+{
+	if (gameinfo.gametype == GAME_Strife && gameinfo.flags & GI_SHAREWARE)
+	{
+		unsigned NumFiles = fileSystem.GetNumEntries();
+		for (uint32_t i = 0; i < NumFiles; i++)
+		{
+			auto& shortName = fileSystem.GetShortName(i);
+			if (fileSystem.GetFileNamespace(i) == ns_global)
+			{
+				// Only sprites in the IWAD normally get renamed
+				if (fileSystem.GetFileContainer(i) == fileSystem.GetIwadNum())
+				{
+					if (shortName.String[0] == 'V' &&
+						shortName.String[1] == 'O' &&
+						shortName.String[2] == 'C')
+					{
+						int j;
+
+						for (j = 3; j < 8; ++j)
+						{
+							if (shortName.String[j] != 0 && !isdigit(shortName.String[j]))
+								break;
+						}
+						if (j == 8)
+						{
+							fileSystem.SetFileNamespace(i, ns_strifevoices);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
+static const char *DoomButtons[] =
+{
+	"am_panleft",
+	"user2" ,
+	"jump" ,
+	"right" ,
+	"zoom" ,
+	"back" ,
+	"am_zoomin",
+	"reload" ,
+	"lookdown" ,
+	"am_zoomout",
+	"user4" ,
+	"attack" ,
+	"user1" ,
+	"klook" ,
+	"forward" ,
+	"movedown" ,
+	"altattack" ,
+	"moveleft" ,
+	"moveright" ,
+	"am_panright",
+	"am_panup" ,
+	"mlook" ,
+	"crouch" ,
+	"left" ,
+	"lookup" ,
+	"user3" ,
+	"strafe" ,
+	"am_pandown",
+	"showscores" ,
+	"speed" ,
+	"use" ,
+	"moveup" };
+
+CVAR(Bool, lookspring, true, CVAR_ARCHIVE);	// Generate centerview when -mlook encountered?
+EXTERN_CVAR(String, language)
+
+CUSTOM_CVAR(Int, mouse_capturemode, 1, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
+{
+	if (self < 0)
+	{
+		self = 0;
+	}
+	else if (self > 2)
+	{
+		self = 2;
+	}
+}
+
+
+void Mlook_ReleaseHandler()
+{
+	if (lookspring)
+	{
+		Net_WriteByte(DEM_CENTERVIEW);
+	}
+}
+
+int StrTable_GetGender()
+{
+	return players[consoleplayer].userinfo.GetGender();
+}
+
+bool StrTable_ValidFilter(const char* str)
+{
+	if (gameinfo.gametype == GAME_Strife && (gameinfo.flags & GI_SHAREWARE) && !stricmp(str, "strifeteaser")) return true;
+	return stricmp(str, GameNames[gameinfo.gametype]) == 0;
+}
+
+bool System_WantGuiCapture()
+{
+	bool wantCapt;
+
+	if (menuactive == MENU_Off)
+	{
+		wantCapt = ConsoleState == c_down || ConsoleState == c_falling || chatmodeon;
+	}
+	else
+	{
+		wantCapt = (menuactive == MENU_On || menuactive == MENU_OnNoPause);
+	}
+
+	// [ZZ] check active event handlers that want the UI processing
+	if (!wantCapt && primaryLevel->localEventManager->CheckUiProcessors())
+		wantCapt = true;
+
+	return wantCapt;
+}
+
+bool System_WantLeftButton()
+{
+	return (gamestate == GS_DEMOSCREEN || gamestate == GS_TITLELEVEL);
+}
+
+bool System_NetGame()
+{
+	return netgame;
+}
+
+bool System_WantNativeMouse()
+{
+	return primaryLevel->localEventManager->CheckRequireMouse();
+}
+
+static bool System_CaptureModeInGame()
+{
+	if (demoplayback || paused) return false;
+	switch (mouse_capturemode)
+	{
+	default:
+	case 0:
+		return gamestate == GS_LEVEL;
+	case 1:
+		return gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_FINALE;
+	case 2:
+		return true;
+	}
+}
+
+static void System_PlayStartupSound(const char* sndname)
+{
+	S_Sound(CHAN_BODY, 0, sndname, 1, ATTN_NONE);
+}
+
+static bool System_IsSpecialUI()
+{
+	return (generic_ui || !!log_vgafont || !!dlg_vgafont || ConsoleState != c_up || multiplayer ||
+		(menuactive == MENU_On && CurrentMenu && !CurrentMenu->IsKindOf("ConversationMenu")));
+
+}
+
+static bool System_DisableTextureFilter()
+{
+	return !V_IsHardwareRenderer();
+}
+
+static void System_OnScreenSizeChanged()
+{
+	if (StatusBar != NULL)
+	{
+		StatusBar->CallScreenSizeChanged();
+	}
+	// Reload crosshair if transitioned to a different size
+	ST_LoadCrosshair(true);
+	if (primaryLevel && primaryLevel->automap)
+		primaryLevel->automap->NewResolution();
+}
+
+IntRect System_GetSceneRect()
+{
+	IntRect mSceneViewport;
+	// Special handling so the view with a visible status bar displays properly
+	int height, width;
+	if (screenblocks >= 10)
+	{
+		height = screen->GetHeight();
+		width = screen->GetWidth();
+	}
+	else
+	{
+		height = (screenblocks * screen->GetHeight() / 10) & ~7;
+		width = (screenblocks * screen->GetWidth() / 10);
+	}
+
+	mSceneViewport.left = viewwindowx;
+	mSceneViewport.top = screen->GetHeight() - (height + viewwindowy - ((height - viewheight) / 2));
+	mSceneViewport.width = viewwidth;
+	mSceneViewport.height = height;
+	return mSceneViewport;
+}
+
+FString System_GetLocationDescription()
+{
+	auto& vp = r_viewpoint;
+	auto Level = vp.ViewLevel;
+	return FStringf("Map %s: \"%s\",\nx = %1.4f, y = %1.4f, z = %1.4f, angle = %1.4f, pitch = %1.4f\n%llu fps\n\n",
+		Level->MapName.GetChars(), Level->LevelName.GetChars(), vp.Pos.X, vp.Pos.Y, vp.Pos.Z, vp.Angles.Yaw.Degrees, vp.Angles.Pitch.Degrees, (unsigned long long)LastCount);
+
+}
+
+//==========================================================================
+//
+// DoomSpecificInfo
+//
+// Called by the crash logger to get application-specific information.
+//
+//==========================================================================
+
+void System_CrashInfo(char* buffer, size_t bufflen, const char *lfstr)
+{
+	const char* arg;
+	char* const buffend = buffer + bufflen - 2;	// -2 for CRLF at end
+	int i;
+
+	buffer += mysnprintf(buffer, buffend - buffer, GAMENAME " version %s (%s)", GetVersionString(), GetGitHash());
+
+	buffer += snprintf(buffer, buffend - buffer, "%sCommand line:", lfstr);
+	for (i = 0; i < Args->NumArgs(); ++i)
+	{
+		buffer += snprintf(buffer, buffend - buffer, " %s", Args->GetArg(i));
+	}
+
+	for (i = 0; (arg = fileSystem.GetResourceFileName(i)) != NULL; ++i)
+	{
+		buffer += mysnprintf(buffer, buffend - buffer, "%sWad %d: %s", lfstr, i, arg);
+	}
+
+	if (gamestate != GS_LEVEL && gamestate != GS_TITLELEVEL)
+	{
+		buffer += mysnprintf(buffer, buffend - buffer, "%s%sNot in a level.", lfstr, lfstr);
+	}
+	else
+	{
+		buffer += mysnprintf(buffer, buffend - buffer, "%s%sCurrent map: %s", lfstr, lfstr, primaryLevel->MapName.GetChars());
+
+		if (!viewactive)
+		{
+			buffer += mysnprintf(buffer, buffend - buffer, "%s%sView not active.", lfstr, lfstr);
+		}
+		else
+		{
+			auto& vp = r_viewpoint;
+			buffer += mysnprintf(buffer, buffend - buffer, "%s%sviewx = %f", lfstr, lfstr, vp.Pos.X);
+			buffer += mysnprintf(buffer, buffend - buffer, "%sviewy = %f", lfstr, vp.Pos.Y);
+			buffer += mysnprintf(buffer, buffend - buffer, "%sviewz = %f", lfstr, vp.Pos.Z);
+			buffer += mysnprintf(buffer, buffend - buffer, "%sviewangle = %f", lfstr, vp.Angles.Yaw.Degrees);
+		}
+	}
+	buffer += mysnprintf(buffer, buffend - buffer, "%s", lfstr);
+	*buffer = 0;
+}
+
+
+
+static void PatchTextures()
+{
+	// The Hexen scripts use BLANK as a blank texture, even though it's really not.
+	// I guess the Doom renderer must have clipped away the line at the bottom of
+	// the texture so it wasn't visible. Change its use type to a blank null texture to really make it blank.
+	if (gameinfo.gametype == GAME_Hexen)
+	{
+		FTextureID tex = TexMan.CheckForTexture("BLANK", ETextureType::Wall, false);
+		if (tex.Exists())
+		{
+			auto texture = TexMan.GetGameTexture(tex, false);
+			texture->SetUseType(ETextureType::Null);
+		}
+	}
+}
+
+//==========================================================================
+//
+// this gets called during texture creation to fix known problems
+//
+//==========================================================================
+
+static void CheckForHacks(BuildInfo& buildinfo)
+{
+	if (buildinfo.Parts.Size() == 0)
+	{
+		return;
+	}
+
+	// Heretic sky textures are marked as only 128 pixels tall,
+	// even though they are really 200 pixels tall.
+	if (gameinfo.gametype == GAME_Heretic &&
+		buildinfo.Name.Len() == 4 &&
+		buildinfo.Name[0] == 'S' &&
+		buildinfo.Name[1] == 'K' &&
+		buildinfo.Name[2] == 'Y' &&
+		buildinfo.Name[3] >= '1' &&
+		buildinfo.Name[3] <= '3' &&
+		buildinfo.Height == 128 &&
+		buildinfo.Parts.Size() == 1)
+	{ 
+		// This must alter the size of both the texture image and the game texture.
+		buildinfo.Height = buildinfo.Parts[0].TexImage->GetImage()->GetHeight();
+		return;
+	}
+
+	// The Doom E1 sky has its patch's y offset at -8 instead of 0.
+	if (gameinfo.gametype == GAME_Doom &&
+		!(gameinfo.flags & GI_MAPxx) &&
+		buildinfo.Name.Len() == 4 &&
+		buildinfo.Parts.Size() == 1 &&
+		buildinfo.Height == 128 &&
+		buildinfo.Parts[0].OriginY == -8 &&
+		buildinfo.Name[0] == 'S' &&
+		buildinfo.Name[1] == 'K' &&
+		buildinfo.Name[2] == 'Y' &&
+		buildinfo.Name[3] == '1')
+	{
+		buildinfo.Parts[0].OriginY = 0;
+		return;
+	}
+
+	// BIGDOOR7 in Doom also has patches at y offset -4 instead of 0.
+	if (gameinfo.gametype == GAME_Doom &&
+		!(gameinfo.flags & GI_MAPxx) &&
+		buildinfo.Name.CompareNoCase("BIGDOOR7") == 0 &&
+		buildinfo.Parts.Size() == 2 &&
+		buildinfo.Height == 128 &&
+		buildinfo.Parts[0].OriginY == -4 &&
+		buildinfo.Parts[1].OriginY == -4)
+	{
+		buildinfo.Parts[0].OriginY = 0;
+		buildinfo.Parts[1].OriginY = 0;
+		return;
+	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+static void Doom_CastSpriteIDToString(FString* a, unsigned int b) 
+{ 
+	*a = (b >= sprites.Size()) ? "TNT1" : sprites[b].name; 
+}
+
+
+extern DThinker* NextToThink;
+
+static void GC_MarkGameRoots()
+{
+	GC::Mark(DIntermissionController::CurrentIntermission);
+	GC::Mark(staticEventManager.FirstEventHandler);
+	GC::Mark(staticEventManager.LastEventHandler);
+	for (auto Level : AllLevels())
+		Level->Mark();
+
+	// Mark players.
+	for (int i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i])
+			players[i].PropagateMark();
+	}
+
+	// NextToThink must not be freed while thinkers are ticking.
+	GC::Mark(NextToThink);
+}
 //==========================================================================
 //
 // D_DoomMain
@@ -2408,6 +3081,39 @@ static int D_DoomMain_Internal (void)
 	FString *args;
 	int argcount;	
 	FIWadManager *iwad_man;
+
+	GC::AddMarkerFunc(GC_MarkGameRoots);
+	VM_CastSpriteIDToString = Doom_CastSpriteIDToString;
+
+	// Set up the button list. Mlook and Klook need a bit of extra treatment.
+	buttonMap.SetButtons(DoomButtons, countof(DoomButtons));
+	buttonMap.GetButton(Button_Mlook)->ReleaseHandler = Mlook_ReleaseHandler;
+	buttonMap.GetButton(Button_Mlook)->bReleaseLock = true;
+	buttonMap.GetButton(Button_Klook)->bReleaseLock = true;
+
+	static StringtableCallbacks stblcb =
+	{
+		StrTable_ValidFilter,
+		StrTable_GetGender
+	};
+	GStrings.SetCallbacks(&stblcb);
+
+	static SystemCallbacks syscb =
+	{
+		System_WantGuiCapture,
+		System_WantLeftButton,
+		System_NetGame,
+		System_WantNativeMouse,
+		System_CaptureModeInGame,
+		System_CrashInfo,
+		System_PlayStartupSound,
+		System_IsSpecialUI,
+		System_DisableTextureFilter,
+		System_OnScreenSizeChanged,
+		System_GetSceneRect,
+		System_GetLocationDescription,
+	};
+	sysCallbacks = &syscb;
 	
 	std::set_new_handler(NewFailure);
 	const char *batchout = Args->CheckValue("-errorlog");
@@ -2424,6 +3130,7 @@ static int D_DoomMain_Internal (void)
 	else if (batchout != NULL && *batchout != 0)
 	{
 		batchrun = true;
+		nosound = true;
 		execLogfile(batchout, true);
 		Printf("Command line: ");
 		for (int i = 0; i < Args->NumArgs(); i++)
@@ -2462,14 +3169,14 @@ static int D_DoomMain_Internal (void)
 
 	// [RH] Make sure zdoom.pk3 is always loaded,
 	// as it contains magic stuff we need.
-	wad = BaseFileSearch (BASEWAD, NULL, true);
+	wad = BaseFileSearch (BASEWAD, NULL, true, GameConfig);
 	if (wad == NULL)
 	{
 		I_FatalError ("Cannot find " BASEWAD);
 	}
 	FString basewad = wad;
 
-	FString optionalwad = BaseFileSearch(OPTIONALWAD, NULL, true);
+	FString optionalwad = BaseFileSearch(OPTIONALWAD, NULL, true, GameConfig);
 
 	iwad_man = new FIWadManager(basewad, optionalwad);
 
@@ -2477,6 +3184,16 @@ static int D_DoomMain_Internal (void)
 	GameConfig->DoAutoloadSetup(iwad_man);
 
 	// reinit from here
+
+	ConsoleCallbacks cb = {
+		D_UserInfoChanged,
+		D_SendServerInfoChange,
+		D_SendServerFlagChange,
+		G_GetUserCVar,
+		[]() { return gamestate != GS_FULLCONSOLE && gamestate != GS_STARTUP; }
+	};
+
+	C_InstallHandlers(&cb);
 
 	do
 	{
@@ -2510,6 +3227,8 @@ static int D_DoomMain_Internal (void)
 		gameinfo.nokeyboardcheats = iwad_info->nokeyboardcheats;
 		gameinfo.ConfigName = iwad_info->Configname;
 		lastIWAD = iwad;
+		endoomName = gameinfo.Endoom;
+
 
 		if ((gameinfo.flags & GI_SHAREWARE) && pwads.Size() > 0)
 		{
@@ -2539,7 +3258,7 @@ static int D_DoomMain_Internal (void)
 		CopyFiles(allwads, pwads);
 		if (exec != NULL)
 		{
-			exec->AddPullins(allwads);
+			exec->AddPullins(allwads, GameConfig);
 		}
 
 		// Since this function will never leave we must delete this array here manually.
@@ -2552,12 +3271,41 @@ static int D_DoomMain_Internal (void)
 		}
 
 		if (!batchrun) Printf ("W_Init: Init WADfiles.\n");
-		Wads.InitMultipleFiles (allwads, iwad_info->DeleteLumps);
+
+		LumpFilterInfo lfi;
+		lfi.dotFilter = LumpFilterIWAD;
+
+		static const struct { int match; const char* name; } blanket[] =
+		{
+			{ GAME_Raven,			"game-Raven" },
+			{ GAME_DoomStrifeChex,	"game-DoomStrifeChex" },
+			{ GAME_DoomChex,		"game-DoomChex" },
+			{ GAME_Any, NULL }
+		};
+
+		for (auto& inf : blanket)
+		{
+			if (gameinfo.gametype & inf.match) lfi.gameTypeFilter.Push(inf.name);
+		}
+		lfi.gameTypeFilter.Push(FStringf("game-%s", GameTypeName()));
+
+		for (auto p : iwad_folders) lfi.reservedFolders.Push(p);
+		for (auto p : iwad_reserved) lfi.requiredPrefixes.Push(p);
+
+		lfi.postprocessFunc = [&]()
+		{
+			RenameNerve(fileSystem);
+			RenameSprites(fileSystem, iwad_info->DeleteLumps);
+			FixMacHexen(fileSystem);
+			FindStrifeTeaserVoices(fileSystem);
+		};
+
+		fileSystem.InitMultipleFiles (allwads, false, &lfi);
 		allwads.Clear();
 		allwads.ShrinkToFit();
 		SetMapxxFlag();
 
-		C_GrabCVarDefaults(); //parse DEFCVARS
+		D_GrabCVarDefaults(); //parse DEFCVARS
 
 		GameConfig->DoKeySetup(gameinfo.ConfigName);
 
@@ -2573,7 +3321,7 @@ static int D_DoomMain_Internal (void)
 		}
 
 		// [RH] Initialize localizable strings.
-		GStrings.LoadStrings ();
+		GStrings.LoadStrings (language);
 
 		V_InitFontColors ();
 
@@ -2585,7 +3333,10 @@ static int D_DoomMain_Internal (void)
 		if (!restart)
 		{
 			if (!batchrun) Printf ("I_Init: Setting up machine state.\n");
-			I_Init ();
+			CheckCPUID(&CPU);
+			CalculateCPUSpeed();
+			auto ci = DumpCPUInfo(&CPU);
+			Printf("%s", ci.GetChars());
 		}
 
 		// [RH] Initialize palette management
@@ -2618,6 +3369,26 @@ static int D_DoomMain_Internal (void)
 		if (!batchrun) Printf ("ST_Init: Init startup screen.\n");
 		if (!restart)
 		{
+			if (GameStartupInfo.Type == FStartupInfo::DefaultStartup)
+			{
+				switch (gameinfo.gametype)
+				{
+				case GAME_Hexen:
+					GameStartupInfo.Type = FStartupInfo::HexenStartup;
+					break;
+
+				case GAME_Heretic:
+					GameStartupInfo.Type = FStartupInfo::HereticStartup;
+					break;
+
+				case GAME_Strife:
+					GameStartupInfo.Type = FStartupInfo::StrifeStartup;
+					break;
+
+				default:
+					break;
+				}
+			}
 			StartScreen = FStartupScreen::CreateInstance (TexMan.GuesstimateNumTextures() + 5);
 		}
 		else
@@ -2643,11 +3414,17 @@ static int D_DoomMain_Internal (void)
 		S_ParseMusInfo();
 
 		if (!batchrun) Printf ("Texman.Init: Init texture manager.\n");
-		TexMan.Init();
+		UpdateUpscaleMask();
+		SpriteFrames.Clear();
+		TexMan.Init([]() { StartScreen->Progress(); }, CheckForHacks);
+		PatchTextures();
+		TexAnim.Init();
 		C_InitConback();
 
 		StartScreen->Progress();
 		V_InitFonts();
+		V_LoadTranslations();
+		UpdateGenericUI(false);
 
 		// [CW] Parse any TEAMINFO lumps.
 		if (!batchrun) Printf ("ParseTeamInfo: Load team definitions.\n");
@@ -2806,6 +3583,10 @@ static int D_DoomMain_Internal (void)
 			}
 
 			V_Init2();
+			twod->fullscreenautoaspect = gameinfo.fullscreenautoaspect;
+			// Initialize the size of the 2D drawer so that an attempt to access it outside the draw code won't crash.
+			twod->Begin(screen->GetWidth(), screen->GetHeight());
+			twod->End();
 			UpdateJoystickMenu(NULL);
 			UpdateVRModes();
 
@@ -2890,9 +3671,10 @@ static int D_DoomMain_Internal (void)
 	while (1);
 }
 
-int D_DoomMain()
+int GameMain()
 {
 	int ret = 0;
+	GameTicRate = TICRATE;
 	try
 	{
 		ret = D_DoomMain_Internal();
@@ -2908,7 +3690,6 @@ int D_DoomMain()
 	}
 	// Unless something really bad happened, the game should only exit through this single point in the code.
 	// No more 'exit', please.
-	// Todo: Move all engine cleanup here instead of using exit handlers and replace the scattered 'exit' calls with a special exception.
 	D_Cleanup();
 	CloseNetwork();
 	GC::FinalGC = true;
@@ -2959,11 +3740,10 @@ void D_Cleanup()
 	M_SaveDefaults(NULL);			// save config before the restart
 	
 	// delete all data that cannot be left until reinitialization
-	if (screen) screen->CleanForRestart();
+	CleanSWDrawer();
 	V_ClearFonts();					// must clear global font pointers
 	ColorSets.Clear();
 	PainFlashes.Clear();
-	R_DeinitTranslationTables();	// some tables are initialized from outside the translation code.
 	gameinfo.~gameinfo_t();
 	new (&gameinfo) gameinfo_t;		// Reset gameinfo
 	S_Shutdown();					// free all channels and delete playlist
@@ -2971,11 +3751,13 @@ void D_Cleanup()
 	DestroyCVarsFlagged(CVAR_MOD);	// Delete any cvar left by mods
 	DeinitMenus();
 	LightDefaults.DeleteAndClear();			// this can leak heap memory if it isn't cleared.
+	TexAnim.DeleteAll();
+	TexMan.DeleteAll();
 	
-	// delete DoomStartupInfo data
-	DoomStartupInfo.Name = "";
-	DoomStartupInfo.BkColor = DoomStartupInfo.FgColor = DoomStartupInfo.Type = 0;
-	DoomStartupInfo.LoadLights = DoomStartupInfo.LoadBrightmaps = -1;
+	// delete GameStartupInfo data
+	GameStartupInfo.Name = "";
+	GameStartupInfo.BkColor = GameStartupInfo.FgColor = GameStartupInfo.Type = 0;
+	GameStartupInfo.LoadLights = GameStartupInfo.LoadBrightmaps = -1;
 	
 	GC::FullGC();					// clean up before taking down the object list.
 	
@@ -2989,6 +3771,12 @@ void D_Cleanup()
 	
 	GC::DelSoftRootHead();
 	
+	for (auto& p : players)
+	{
+		p.PendingWeapon = nullptr;
+	}
+	PClassActor::AllActorClasses.Clear();
+	ScriptUtil::Clear();
 	PClass::StaticShutdown();
 	
 	GC::FullGC();					// perform one final garbage collection after shutdown
@@ -3120,20 +3908,47 @@ CUSTOM_CVAR(Int, I_FriendlyWindowTitle, 1, CVAR_GLOBALCONFIG|CVAR_ARCHIVE|CVAR_N
 
 void I_UpdateWindowTitle()
 {
+	FString titlestr;
 	switch (I_FriendlyWindowTitle)
 	{
 	case 1:
 		if (level.LevelName && level.LevelName.GetChars()[0])
 		{
-			FString titlestr;
-			titlestr.Format("%s - %s", level.LevelName.GetChars(), DoomStartupInfo.Name.GetChars());
-			I_SetWindowTitle(titlestr.GetChars());
+			titlestr.Format("%s - %s", level.LevelName.GetChars(), GameStartupInfo.Name.GetChars());
 			break;
 		}
 	case 2:
-		I_SetWindowTitle(DoomStartupInfo.Name.GetChars());
+		titlestr = GameStartupInfo.Name;
 		break;
 	default:
 		I_SetWindowTitle(NULL);
+		return;
 	}
+
+	// Strip out any color escape sequences before setting a window title
+	TArray<char> copy(titlestr.Len() + 1);
+	const char* srcp = titlestr;
+	char* dstp = copy.Data();
+
+	while (*srcp != 0)
+	{
+
+		if (*srcp != TEXTCOLOR_ESCAPE)
+		{
+			*dstp++ = *srcp++;
+		}
+		else if (srcp[1] == '[')
+		{
+			srcp += 2;
+			while (*srcp != ']' && *srcp != 0) srcp++;
+			if (*srcp == ']') srcp++;
+		}
+		else
+		{
+			if (srcp[1] != 0) srcp += 2;
+			else break;
+		}
+	}
+	*dstp = 0;
+	I_SetWindowTitle(copy.Data());
 }

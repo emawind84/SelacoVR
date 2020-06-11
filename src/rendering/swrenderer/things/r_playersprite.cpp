@@ -27,7 +27,7 @@
 #include "doomdef.h"
 #include "m_swap.h"
 
-#include "w_wad.h"
+#include "filesystem.h"
 #include "swrenderer/things/r_playersprite.h"
 #include "c_console.h"
 #include "c_cvars.h"
@@ -52,19 +52,21 @@
 #include "v_palette.h"
 #include "r_data/r_translate.h"
 #include "r_data/colormaps.h"
-#include "r_data/voxels.h"
+#include "voxels.h"
 #include "p_local.h"
 #include "p_maputl.h"
 #include "r_voxel.h"
+#include "texturemanager.h"
 #include "swrenderer/segments/r_drawsegment.h"
 #include "swrenderer/scene/r_portal.h"
 #include "swrenderer/scene/r_scene.h"
 #include "swrenderer/scene/r_light.h"
 #include "swrenderer/things/r_sprite.h"
 #include "swrenderer/viewport/r_viewport.h"
-#include "swrenderer/r_memory.h"
+#include "r_memory.h"
 #include "swrenderer/r_renderthread.h"
 #include "g_levellocals.h"
+#include "v_draw.h"
 
 EXTERN_CVAR(Bool, r_drawplayersprites)
 EXTERN_CVAR(Bool, r_deathcamera)
@@ -207,7 +209,7 @@ namespace swrenderer
 		spriteframe_t*		sprframe;
 		FTextureID			picnum;
 		uint16_t				flip;
-		FTexture*			tex;
+		FGameTexture*			tex;
 		bool				noaccel;
 		double				alpha = owner->Alpha;
 
@@ -227,7 +229,7 @@ namespace swrenderer
 
 		picnum = sprframe->Texture[0];
 		flip = sprframe->Flip & 1;
-		tex = TexMan.GetTexture(picnum);
+		tex = TexMan.GetGameTexture(picnum);
 
 		if (!tex->isValid())
 			return;
@@ -266,7 +268,7 @@ namespace swrenderer
 		double pspriteyscale = pspritexscale * viewport->BaseYaspectMul * ((double)SCREENHEIGHT / SCREENWIDTH) * r_viewwindow.WidescreenRatio;
 		double pspritexiscale = 1 / pspritexscale;
 
-		int tleft = tex->GetDisplayLeftOffset();
+		int tleft = tex->GetDisplayLeftOffset(0);
 		int twidth = tex->GetDisplayWidth();
 
 		// calculate edges of the shape
@@ -289,7 +291,7 @@ namespace swrenderer
 
 		vis.renderflags = owner->renderflags;
 
-		FSoftwareTexture *stex = tex->GetSoftwareTexture();
+		FSoftwareTexture* stex = GetSoftwareTexture(tex);
 		vis.texturemid = (BASEYCENTER - sy) * stex->GetScale().Y + stex->GetTopOffset(0);
 
 		// Force it to use software rendering when drawing to a canvas texture.
@@ -377,7 +379,7 @@ namespace swrenderer
 
 				if (visstyle.Invert)
 				{
-					vis.Light.BaseColormap = &SpecialSWColormaps[INVERSECOLORMAP];
+					vis.Light.BaseColormap = &SpecialSWColormaps[REALINVERSECOLORMAP];
 					vis.Light.ColormapNum = 0;
 					noaccel = true;
 				}
@@ -461,7 +463,7 @@ namespace swrenderer
 	{
 		for (const HWAccelPlayerSprite &sprite : AcceleratedSprites)
 		{
-			screen->DrawTexture(sprite.pic->GetTexture(),
+			DrawTexture(twod, sprite.pic->GetTexture(),
 				viewwindowx + sprite.x1,
 				viewwindowy + viewheight / 2 - sprite.texturemid * sprite.yscale - 0.5,
 				DTA_DestWidthF, FIXED2DBL(sprite.pic->GetWidth() * sprite.xscale),

@@ -88,7 +88,8 @@
 #include "po_man.h"
 #include "p_spec.h"
 #include "p_checkposition.h"
-#include "serializer.h"
+#include "serializer_doom.h"
+#include "serialize_obj.h"
 #include "r_utility.h"
 #include "thingdef.h"
 #include "d_player.h"
@@ -98,7 +99,7 @@
 #include "actorinlines.h"
 #include "a_dynlight.h"
 #include "fragglescript/t_fs.h"
-#include "hwrenderer\utility\hw_vrmodes.h"
+#include "hwrenderer/data/hw_vrmodes.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -231,7 +232,6 @@ void AActor::Serialize(FSerializer &arc)
 		A("tics", tics)
 		A("state", state)
 		A("damage", DamageVal)
-		.Terrain("floorterrain", floorterrain, &def->floorterrain)
 		A("projectilekickback", projectileKickback)
 		A("flags", flags)
 		A("flags2", flags2)
@@ -265,7 +265,6 @@ void AActor::Serialize(FSerializer &arc)
 		A("floorclip", Floorclip)
 		A("tid", tid)
 		A("special", special)
-		.Args("args", args, def->args, special)
 		A("accuracy", accuracy)
 		A("stamina", stamina)
 		("goal", goal)
@@ -371,6 +370,10 @@ void AActor::Serialize(FSerializer &arc)
 		A("spawnorder", SpawnOrder)
 		A("friction", Friction)
 		A("userlights", UserLights);
+
+		SerializeTerrain(arc, "floorterrain", floorterrain, &def->floorterrain);
+		SerializeArgs(arc, "args", args, def->args, special);
+
 }
 
 #undef A
@@ -3235,14 +3238,14 @@ bool AActor::AdjustReflectionAngle (AActor *thing, DAngle &angle)
 	return false;
 }
 
-int AActor::AbsorbDamage(int damage, FName dmgtype)
+int AActor::AbsorbDamage(int damage, FName dmgtype, AActor *inflictor, AActor *source, int flags)
 {
 	for (AActor *item = Inventory; item != nullptr; item = item->Inventory)
 	{
 		IFVIRTUALPTRNAME(item, NAME_Inventory, AbsorbDamage)
 		{
-			VMValue params[4] = { item, damage, dmgtype.GetIndex(), &damage };
-			VMCall(func, params, 4, nullptr, 0);
+			VMValue params[7] = { item, damage, dmgtype.GetIndex(), &damage, inflictor, source, flags };
+			VMCall(func, params, 7, nullptr, 0);
 		}
 	}
 	return damage;
@@ -3977,6 +3980,7 @@ void AActor::Tick ()
 						// to be in line with the case when an actor's side is hit.
 						if (!res && (flags & MF_MISSILE))
 						{
+							P_DoMissileDamage(this, onmo);
 							P_ExplodeMissile(this, nullptr, onmo);
 						}
 					}
@@ -4016,7 +4020,7 @@ void AActor::Tick ()
 		// Check for poison damage, but only once per PoisonPeriod tics (or once per second if none).
 		if (PoisonDurationReceived && (Level->time % (PoisonPeriodReceived ? PoisonPeriodReceived : TICRATE) == 0))
 		{
-			P_DamageMobj(this, NULL, Poisoner, PoisonDamageReceived, PoisonDamageTypeReceived ? PoisonDamageTypeReceived : (FName)NAME_Poison, 0);
+			P_DamageMobj(this, NULL, Poisoner, PoisonDamageReceived, PoisonDamageTypeReceived != NAME_None ? PoisonDamageTypeReceived : (FName)NAME_Poison, 0);
 
 			--PoisonDurationReceived;
 
@@ -4538,7 +4542,7 @@ void ConstructActor(AActor *actor, const DVector3 &pos, bool SpawningMapThing)
 			return;
 		}
 	}
-	if (Level->flags & LEVEL_NOALLIES && !actor->player)
+	if (Level->flags & LEVEL_NOALLIES && !actor->IsKindOf(NAME_PlayerPawn))
 	{
 		actor->flags &= ~MF_FRIENDLY;
 	}
@@ -4663,6 +4667,19 @@ void AActor::HandleSpawnFlags ()
 			//Printf("Secret %s in sector %i!\n", GetTag(), Sector->sectornum);
 			flags5 |= MF5_COUNTSECRET;
 			Level->total_secrets++;
+		}
+	}
+	if (SpawnFlags & MTF_NOCOUNT)
+	{
+		if (flags & MF_COUNTKILL)
+		{
+			flags &= ~MF_COUNTKILL;
+			Level->total_monsters--;
+		}
+		if (flags & MF_COUNTITEM)
+		{
+			flags &= ~MF_COUNTITEM;
+			Level->total_items--;
 		}
 	}
 }
@@ -4874,22 +4891,37 @@ void AActor::AdjustFloorClip ()
 	double shallowestclip = INT_MAX;
 	const msecnode_t *m;
 
-	// possibly standing on a 3D-floor
-	if (Sector->e->XFloor.ffloors.Size() && Z() > Sector->floorplane.ZatPoint(this)) Floorclip = 0;
-
 	// [RH] clip based on shallowest floor player is standing on
 	// If the sector has a deep water effect, then let that effect
 	// do the floorclipping instead of the terrain type.
 	for (m = touching_sectorlist; m; m = m->m_tnext)
 	{
 		DVector3 pos = PosRelative(m->m_sector);
-		sector_t *hsec = m->m_sector->GetHeightSec();
-		if (hsec == NULL && m->m_sector->floorplane.ZatPoint (pos) == Z())
+		sector_t* hsec = m->m_sector->GetHeightSec();
+		if (hsec == NULL)
 		{
-			double clip = Terrains[m->m_sector->GetTerrain(sector_t::floor)].FootClip;
-			if (clip < shallowestclip)
+			if (m->m_sector->floorplane.ZatPoint(pos) == Z())
 			{
-				shallowestclip = clip;
+				double clip = Terrains[m->m_sector->GetTerrain(sector_t::floor)].FootClip;
+				if (clip < shallowestclip)
+				{
+					shallowestclip = clip;
+				}
+			}
+			else
+			{
+				for (auto& ff : m->m_sector->e->XFloor.ffloors)
+				{
+					if ((ff->flags & FF_SOLID) && (ff->flags & FF_EXISTS) && ff->top.plane->ZatPoint(pos) == Z())
+					{
+						double clip = Terrains[ff->top.model->GetTerrain(ff->top.isceiling)].FootClip;
+						if (clip < shallowestclip)
+						{
+							shallowestclip = clip;
+						}
+					}
+				}
+
 			}
 		}
 	}
@@ -4926,29 +4958,66 @@ EXTERN_CVAR(Float, fov)
 
 extern bool demonew;
 
-AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
+//==========================================================================
+//
+// This once was the main method for pointer cleanup, but
+// nowadays its only use is swapping out PlayerPawns.
+// This requires pointer fixing throughout all objects and a few
+// global variables, but it only needs to look at pointers that
+// can point to a player.
+//
+//==========================================================================
+
+void StaticPointerSubstitution(AActor* old, AActor* notOld)
 {
-	player_t *p;
-	AActor *mobj, *oldactor;
-	uint8_t	  state;
-	DVector3 spawn;
-	DAngle SpawnAngle;
+	DObject* probe;
+	size_t changed = 0;
+	int i;
 
-	if (mthing == NULL)
+	if (old == nullptr) return;
+
+	// This is only allowed to replace players or swap out morphed monsters
+	if (!old->IsKindOf(NAME_PlayerPawn) || (notOld != nullptr && !notOld->IsKindOf(NAME_PlayerPawn)))
 	{
-		return NULL;
+		if (notOld == nullptr) return;
+		if (!old->IsKindOf(NAME_MorphedMonster) && !notOld->IsKindOf(NAME_MorphedMonster)) return;
 	}
-	// not playing?
-	if ((unsigned)playernum >= (unsigned)MAXPLAYERS || !PlayerInGame(playernum) )
-		return NULL;
-
-	// Old lerp data needs to go
-	if (playernum == consoleplayer)
+	// Go through all objects.
+	i = 0; DObject* last = 0;
+	for (probe = GC::Root; probe != NULL; probe = probe->ObjNext)
 	{
-		P_PredictionLerpReset();
+		i++;
+		changed += probe->PointerSubstitution(old, notOld);
+		last = probe;
 	}
 
-	p = Players[playernum];
+	// Go through players.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i])
+		{
+			AActor* replacement = notOld;
+			auto& p = players[i];
+
+			if (p.mo == old)					p.mo = replacement, changed++;
+			if (p.poisoner.ForceGet() == old)			p.poisoner = replacement, changed++;
+			if (p.attacker.ForceGet() == old)			p.attacker = replacement, changed++;
+			if (p.camera.ForceGet() == old)				p.camera = replacement, changed++;
+			if (p.ConversationNPC.ForceGet() == old)	p.ConversationNPC = replacement, changed++;
+			if (p.ConversationPC.ForceGet() == old)		p.ConversationPC = replacement, changed++;
+		}
+	}
+
+	// Go through sectors. Only the level this actor belongs to is relevant.
+	for (auto& sec : old->Level->sectors)
+	{
+		if (sec.SoundTarget == old) sec.SoundTarget = notOld;
+	}
+}
+
+void FLevelLocals::PlayerSpawnPickClass (int playernum)
+{
+	auto p = Players[playernum];
 
 	if (p->cls == NULL)
 	{
@@ -4977,6 +5046,33 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 		}
 		p->cls = PlayerClasses[p->CurrentPlayerClass].Type;
 	}
+}
+
+AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
+{
+	player_t *p;
+	AActor *mobj, *oldactor;
+	uint8_t	  state;
+	DVector3 spawn;
+	DAngle SpawnAngle;
+
+	if (mthing == NULL)
+	{
+		return NULL;
+	}
+	// not playing?
+	if ((unsigned)playernum >= (unsigned)MAXPLAYERS || !PlayerInGame(playernum) )
+		return NULL;
+
+	// Old lerp data needs to go
+	if (playernum == consoleplayer)
+	{
+		P_PredictionLerpReset();
+	}
+
+	p = Players[playernum];
+
+	PlayerSpawnPickClass(playernum);
 
 	if (( dmflags2 & DF2_SAME_SPAWN_SPOT ) &&
 		( p->playerstate == PST_REBORN ) &&
@@ -5188,7 +5284,7 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 				if (sec.SoundTarget == oldactor) sec.SoundTarget = nullptr;
 			}
 
-			DObject::StaticPointerSubstitution (oldactor, p->mo);
+			StaticPointerSubstitution (oldactor, p->mo);
 
 			localEventManager->PlayerRespawned(PlayerNum(p));
 			Behaviors.StartTypedScripts (SCRIPT_Respawn, p->mo, true);
@@ -5471,6 +5567,11 @@ AActor *FLevelLocals::SpawnMapThing (FMapThing *mthing, int position)
 	else if (sz == ONCEILINGZ)
 		mobj->AddZ(-mthing->pos.Z);
 
+	if (mobj->flags2 & MF2_FLOORCLIP)
+	{
+		mobj->AdjustFloorClip();
+	}
+
 	mobj->SpawnPoint = mthing->pos;
 	mobj->SpawnAngle = mthing->angle;
 	mobj->SpawnFlags = mthing->flags;
@@ -5540,7 +5641,7 @@ AActor *FLevelLocals::SpawnMapThing (FMapThing *mthing, int position)
 	{
 		if (mthing->arg0str != NAME_None)
 		{
-			PalEntry color = V_GetColor(nullptr, mthing->arg0str);
+			PalEntry color = V_GetColor(nullptr, mthing->arg0str.GetChars());
 			mobj->args[0] = color.r;
 			mobj->args[1] = color.g;
 			mobj->args[2] = color.b;
@@ -7296,7 +7397,7 @@ int AActor::GetModifiedDamage(FName damagetype, int damage, bool passive, AActor
 	{
 		IFVIRTUALPTRNAME(inv, NAME_Inventory, ModifyDamage)
 		{
-			VMValue params[8] = { (DObject*)inv, damage, int(damagetype), &damage, passive, inflictor, source, flags };
+			VMValue params[8] = { (DObject*)inv, damage, damagetype.GetIndex(), &damage, passive, inflictor, source, flags };
 			VMCall(func, params, 8, nullptr, 0);
 		}
 		inv = inv->Inventory;

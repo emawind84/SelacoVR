@@ -70,14 +70,15 @@
 #include "p_enemy.h"
 #include "a_sharedglobal.h"
 #include "a_keys.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "cmdlib.h"
 #include "sbar.h"
 #include "intermission/intermission.h"
 #include "c_console.h"
 #include "c_dispatch.h"
 #include "d_net.h"
-#include "serializer.h"
+#include "serializer_doom.h"
+#include "serialize_obj.h"
 #include "d_player.h"
 #include "r_utility.h"
 #include "p_blockmap.h"
@@ -92,6 +93,7 @@
 #include "v_video.h"
 #include "gstrings.h"
 #include "s_music.h"
+#include "d_main.h"
 
 static FRandom pr_skullpop ("SkullPop");
 
@@ -227,7 +229,7 @@ void SetupPlayerClasses ()
 	for (unsigned i = 0; i < gameinfo.PlayerClasses.Size(); i++)
 	{
 		PClassActor *cls = PClass::FindActor(gameinfo.PlayerClasses[i]);
-		if (ValidatePlayerClass(cls, gameinfo.PlayerClasses[i]))
+		if (ValidatePlayerClass(cls, gameinfo.PlayerClasses[i].GetChars()))
 		{
 			newclass.Flags = 0;
 			newclass.Type = cls;
@@ -388,11 +390,11 @@ void player_t::SetLogNumber (int num)
 	}
 
 	mysnprintf (lumpname, countof(lumpname), "LOG%d", num);
-	lumpnum = Wads.CheckNumForName (lumpname);
+	lumpnum = fileSystem.CheckNumForName (lumpname);
 	if (lumpnum != -1)
 	{
-		auto fn = Wads.GetLumpFile(lumpnum);
-		auto wadname = Wads.GetWadName(fn);
+		auto fn = fileSystem.GetFileContainer(lumpnum);
+		auto wadname = fileSystem.GetResourceFileName(fn);
 		if (!stricmp(wadname, "STRIFE0.WAD") || !stricmp(wadname, "STRIFE1.WAD") || !stricmp(wadname, "SVE.WAD"))
 		{
 			// If this is an original IWAD text, try looking up its lower priority string version first.
@@ -406,7 +408,7 @@ void player_t::SetLogNumber (int num)
 			}
 		}
 
-		auto lump = Wads.ReadLump(lumpnum);
+		auto lump = fileSystem.ReadFile(lumpnum);
 		SetLogText (lump.GetString());
 	}
 }
@@ -631,7 +633,7 @@ void player_t::SendPitchLimits() const
 	{
 		int uppitch, downpitch;
 
-		if (V_IsSoftwareRenderer())
+		if (!V_IsHardwareRenderer())
 		{
 			uppitch = GetSoftPitch(false);
 			downpitch = GetSoftPitch(true);
@@ -788,6 +790,12 @@ DEFINE_ACTION_FUNCTION(_PlayerInfo, GetWBobSpeed)
 	ACTION_RETURN_FLOAT(self->userinfo.GetWBobSpeed());
 }
 
+DEFINE_ACTION_FUNCTION(_PlayerInfo, GetWBobFire)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(player_t);
+	ACTION_RETURN_FLOAT(self->userinfo.GetWBobFire());
+}
+
 DEFINE_ACTION_FUNCTION(_PlayerInfo, GetMoveBob)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(player_t);
@@ -820,16 +828,16 @@ static int SetupCrouchSprite(AActor *self, int crouchsprite)
 		FString normspritename = sprites[self->SpawnState->sprite].name;
 		FString crouchspritename = sprites[crouchsprite].name;
 
-		int spritenorm = Wads.CheckNumForName(normspritename + "A1", ns_sprites);
+		int spritenorm = fileSystem.CheckNumForName(normspritename + "A1", ns_sprites);
 		if (spritenorm == -1)
 		{
-			spritenorm = Wads.CheckNumForName(normspritename + "A0", ns_sprites);
+			spritenorm = fileSystem.CheckNumForName(normspritename + "A0", ns_sprites);
 		}
 
-		int spritecrouch = Wads.CheckNumForName(crouchspritename + "A1", ns_sprites);
+		int spritecrouch = fileSystem.CheckNumForName(crouchspritename + "A1", ns_sprites);
 		if (spritecrouch == -1)
 		{
-			spritecrouch = Wads.CheckNumForName(crouchspritename + "A0", ns_sprites);
+			spritecrouch = fileSystem.CheckNumForName(crouchspritename + "A0", ns_sprites);
 		}
 
 		if (spritenorm == -1 || spritecrouch == -1)
@@ -838,10 +846,10 @@ static int SetupCrouchSprite(AActor *self, int crouchsprite)
 			return false;
 		}
 
-		int wadnorm = Wads.GetLumpFile(spritenorm);
-		int wadcrouch = Wads.GetLumpFile(spritenorm);
+		int wadnorm = fileSystem.GetFileContainer(spritenorm);
+		int wadcrouch = fileSystem.GetFileContainer(spritenorm);
 
-		if (wadnorm > Wads.GetMaxIwadNum() && wadcrouch <= Wads.GetMaxIwadNum())
+		if (wadnorm > fileSystem.GetMaxIwadNum() && wadcrouch <= fileSystem.GetMaxIwadNum())
 		{
 			// Question: Add an option / disable crouching or do what?
 			return false;
@@ -912,27 +920,27 @@ DEFINE_ACTION_FUNCTION(AActor, A_PlayerScream)
 
 	if (!sound && self->special1<10)
 	{ // Wimpy death sound
-		sound = S_FindSkinnedSoundEx (self, "*wimpydeath", self->player->LastDamageType);
+		sound = S_FindSkinnedSoundEx (self, "*wimpydeath", self->player->LastDamageType.GetChars());
 	}
 	if (!sound && self->health <= -50)
 	{
 		if (self->health > -100)
 		{ // Crazy death sound
-			sound = S_FindSkinnedSoundEx (self, "*crazydeath", self->player->LastDamageType);
+			sound = S_FindSkinnedSoundEx (self, "*crazydeath", self->player->LastDamageType.GetChars());
 		}
 		if (!sound)
 		{ // Extreme death sound
-			sound = S_FindSkinnedSoundEx (self, "*xdeath", self->player->LastDamageType);
+			sound = S_FindSkinnedSoundEx (self, "*xdeath", self->player->LastDamageType.GetChars());
 			if (!sound)
 			{
-				sound = S_FindSkinnedSoundEx (self, "*gibbed", self->player->LastDamageType);
+				sound = S_FindSkinnedSoundEx (self, "*gibbed", self->player->LastDamageType.GetChars());
 				chan = CHAN_BODY;
 			}
 		}
 	}
 	if (!sound)
 	{ // Normal death sound
-		sound = S_FindSkinnedSoundEx (self, "*death", self->player->LastDamageType);
+		sound = S_FindSkinnedSoundEx (self, "*death", self->player->LastDamageType.GetChars());
 	}
 
 	if (chan != CHAN_VOICE)

@@ -36,7 +36,7 @@
 
 #include "actor.h"
 #include "p_conversation.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "cmdlib.h"
 #include "v_text.h"
 #include "gi.h"
@@ -57,6 +57,7 @@
 #include "vm.h"
 #include "v_video.h"
 #include "actorinlines.h"
+#include "v_draw.h"
 
 static FRandom pr_randomspeech("RandomSpeech");
 

@@ -36,23 +36,26 @@
 #include "d_player.h"
 #include "g_game.h" // G_Add...
 #include "p_local.h" // P_TryMove
-#include "gl/renderer/gl_renderer.h"
-#include "gl/renderer/gl_renderbuffers.h"
+#include "gl_renderer.h"
+#include "gl_renderbuffers.h"
 #include "v_2ddrawer.h" // crosshair
-#include "hwrenderer/models/hw_models.h"
+#include "models.h"
+#include "hw_models.h"
 #include "g_levellocals.h" // pixelstretch
 #include "g_statusbar/sbar.h"
 #include <cmath>
 #include "c_cvars.h"
 #include "cmdlib.h"
 #include "LSMatrix.h"
-#include "w_wad.h"
+#include "common/filesystem/filesystem.h"
 #include "m_joy.h"
 #include "d_gui.h"
 #include "d_event.h"
 #include "i_time.h"
 #include "hwrenderer/data/flatvertices.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
+#include "texturemanager.h"
+#include "hwrenderer/scene/hw_drawinfo.h"
 
 #include "gl_openvr.h"
 #include "openvr_include.h"
@@ -277,13 +280,13 @@ namespace s3d
 			return 0;
 		}
 
-		virtual void RenderFrame(FModelRenderer* renderer, FTexture* skin, int frame, int frame2, double inter, int translation = 0)  override
+		virtual void RenderFrame(FModelRenderer* renderer, FGameTexture* skin, int frame, int frame2, double inter, int translation = 0)  override
 		{
 			if (!isLoaded())
 				return;
-			FMaterial* tex = FMaterial::ValidateTexture(pFTex, false);
-			auto vbuf = GetVertexBuffer(renderer);
-			vbuf->SetupFrame(renderer, 0, 0, 0);
+			FMaterial* tex = FMaterial::ValidateTexture(pFTex, false, false);
+			auto vbuf = GetVertexBuffer(renderer->GetType());
+			renderer->SetupFrame(this, 0, 0, 0);
 			renderer->SetMaterial(pFTex, CLAMP_NONE, translation);
 			renderer->DrawElements(pModel->unTriangleCount * 3, 0);
 		}
@@ -293,7 +296,7 @@ namespace s3d
 			if (loadState != LOADSTATE_LOADED)
 				return;
 
-			auto vbuf = GetVertexBuffer(renderer);
+			auto vbuf = GetVertexBuffer(renderer->GetType());
 			if (vbuf != NULL)
 				return;
 
@@ -321,7 +324,7 @@ namespace s3d
 
 			vbuf->UnlockVertexBuffer();
 			vbuf->UnlockIndexBuffer();
-			SetVertexBuffer(renderer, vbuf);
+			SetVertexBuffer(renderer->GetType(), vbuf);
 		}
 
 		virtual void AddSkins(uint8_t* hitlist) override
@@ -360,7 +363,8 @@ namespace s3d
 			if (eError == EVRRenderModelError_VRRenderModelError_None) {
 				loadState = LOADSTATE_LOADED;
 
-				pFTex = new FControllerTexture(pTexture);
+				auto tex = new FControllerTexture(pTexture);
+				pFTex = MakeGameTexture(tex, "Controllers", ::ETextureType::Any);
 
 				auto* di = HWDrawInfo::StartDrawInfo(r_viewpoint.ViewLevel, nullptr, r_viewpoint, nullptr);
 				FHWModelRenderer renderer(di, gl_RenderState, -1);
@@ -375,7 +379,7 @@ namespace s3d
 	private:
 		RenderModel_t* pModel;
 		RenderModel_TextureMap_t* pTexture;
-		FTexture* pFTex;
+		FGameTexture* pFTex;
 		LoadState loadState;
 		std::string modelName;
 		VR_IVRRenderModels_FnTable* vrRenderModels;

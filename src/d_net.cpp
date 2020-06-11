@@ -71,6 +71,7 @@
 
 EXTERN_CVAR (Int, disableautosave)
 EXTERN_CVAR (Int, autosavecount)
+EXTERN_CVAR(Bool, cl_capfps)
 
 //#define SIMULATEERRORS		(RAND_MAX/3)
 #define SIMULATEERRORS			0
@@ -145,8 +146,6 @@ static int 	entertic;
 static int	oldentertics;
 
 extern	bool	 advancedemo;
-
-CVAR (Bool, cl_capfps, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 CVAR(Bool, net_ticbalance, false, CVAR_SERVERINFO | CVAR_NOSAVE)
 CUSTOM_CVAR(Int, net_extratic, 0, CVAR_SERVERINFO | CVAR_NOSAVE)
@@ -2539,7 +2538,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 			s = ReadString(stream);
 			int argn = ReadByte(stream);
 
-			RunScript(stream, players[player].mo, -FName(s), argn & 127, (argn & 128) ? ACS_ALWAYS : 0);
+			RunScript(stream, players[player].mo, -FName(s).GetIndex(), argn & 127, (argn & 128) ? ACS_ALWAYS : 0);
 		}
 		break;
 

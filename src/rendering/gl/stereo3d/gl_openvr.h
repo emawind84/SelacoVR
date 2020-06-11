@@ -28,7 +28,7 @@
 #define GL_OPENVR_H_
 
 #include "r_utility.h" // viewpitch
-#include "hwrenderer/utility/hw_vrmodes.h"
+#include "hwrenderer/data/hw_vrmodes.h"
 
 namespace openvr {
 	// forward declarations

@@ -40,18 +40,20 @@
 #include "swrenderer/r_swcolormaps.h"
 #include "v_palette.h"
 #include "v_video.h"
-#include "m_png.h"
+#include "common/textures/m_png.h"
 #include "r_swrenderer.h"
 #include "scene/r_opaque_pass.h"
 #include "scene/r_3dfloors.h"
 #include "scene/r_portal.h"
-#include "textures/textures.h"
-#include "r_data/voxels.h"
+#include "textures.h"
+#include "voxels.h"
 #include "drawers/r_draw_rgba.h"
 #include "p_setup.h"
 #include "g_levellocals.h"
 #include "image.h"
 #include "imagehelpers.h"
+#include "texturemanager.h"
+#include "d_main.h"
 
 // [BB] Use ZDoom's freelook limit for the sotfware renderer.
 // Note: ZDoom's limit is chosen such that the sky is rendered properly.
@@ -81,13 +83,13 @@ FRenderer *CreateSWRenderer()
 	return new FSoftwareRenderer;
 }
 
-void FSoftwareRenderer::PreparePrecache(FTexture *ttex, int cache)
+void FSoftwareRenderer::PreparePrecache(FGameTexture *ttex, int cache)
 {
 	bool isbgra = V_IsTrueColor();
 
-	if (ttex != nullptr && ttex->isValid() && !ttex->isCanvas())
+	if (ttex != nullptr && ttex->isValid() && !ttex->isSoftwareCanvas())
 	{
-		FSoftwareTexture *tex = ttex->GetSoftwareTexture();
+		FSoftwareTexture *tex = GetSoftwareTexture(ttex);
 
 		if (tex->CheckPixels())
 		{
@@ -95,18 +97,18 @@ void FSoftwareRenderer::PreparePrecache(FTexture *ttex, int cache)
 		}
 		else if (cache != 0)
 		{
-			FImageSource::RegisterForPrecache(ttex->GetImage());
+			FImageSource::RegisterForPrecache(ttex->GetTexture()->GetImage(), V_IsTrueColor());
 		}
 	}
 }
 
-void FSoftwareRenderer::PrecacheTexture(FTexture *ttex, int cache)
+void FSoftwareRenderer::PrecacheTexture(FGameTexture *ttex, int cache)
 {
 	bool isbgra = V_IsTrueColor();
 
-	if (ttex != nullptr && ttex->isValid() && !ttex->isCanvas())
+	if (ttex != nullptr && ttex->isValid() && !ttex->isSoftwareCanvas())
 	{
-		FSoftwareTexture *tex = ttex->GetSoftwareTexture();
+		FSoftwareTexture *tex = GetSoftwareTexture(ttex);
 		if (cache & FTextureManager::HIT_Columnmode)
 		{
 			const FSoftwareTextureSpan *spanp;
@@ -172,12 +174,12 @@ void FSoftwareRenderer::Precache(uint8_t *texhitlist, TMap<PClassActor*, bool> &
 	FImageSource::BeginPrecaching();
 	for (int i = cnt - 1; i >= 0; i--)
 	{
-		PreparePrecache(TexMan.ByIndex(i), texhitlist[i]);
+		PreparePrecache(TexMan.GameByIndex(i), texhitlist[i]);
 	}
 
 	for (int i = cnt - 1; i >= 0; i--)
 	{
-		PrecacheTexture(TexMan.ByIndex(i), texhitlist[i]);
+		PrecacheTexture(TexMan.GameByIndex(i), texhitlist[i]);
 	}
 	FImageSource::EndPrecaching();
 }
@@ -226,6 +228,8 @@ void FSoftwareRenderer::SetClearColor(int color)
 	mScene.SetClearColor(color);
 }
 
+FSWCanvasTexture* GetSWCamTex(FCanvasTexture* camtex);
+
 void FSoftwareRenderer::RenderTextureView (FCanvasTexture *camtex, AActor *viewpoint, double fov)
 {
 	auto renderTarget = mScene.MainThread()->Viewport->RenderTarget;
@@ -236,7 +240,7 @@ void FSoftwareRenderer::RenderTextureView (FCanvasTexture *camtex, AActor *viewp
 	cameraViewpoint = r_viewpoint;
 	cameraViewwindow = r_viewwindow;
 
-	auto tex = static_cast<FSWCanvasTexture*>(camtex->GetSoftwareTexture());
+	auto tex = GetSWCamTex(camtex);
 	
 	DCanvas *Canvas = renderTarget->IsBgra() ? tex->GetCanvasBgra() : tex->GetCanvas();
 

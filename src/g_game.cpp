@@ -50,13 +50,13 @@
 #include "c_console.h"
 #include "c_bind.h"
 #include "c_dispatch.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "p_local.h" 
 #include "gstrings.h"
 #include "r_sky.h"
 #include "g_game.h"
 #include "sbar.h"
-#include "m_png.h"
+#include "common/textures/m_png.h"
 #include "a_keys.h"
 #include "cmdlib.h"
 #include "d_net.h"
@@ -67,17 +67,22 @@
 #include "r_utility.h"
 #include "a_morph.h"
 #include "p_spec.h"
-#include "serializer.h"
+#include "serializer_doom.h"
 #include "vm.h"
 #include "dobjgc.h"
 #include "gi.h"
 #include "a_dynlight.h"
 #include "i_system.h"
 #include "p_conversation.h"
+#include "v_palette.h"
 
+#include "v_video.h"
 #include "g_hub.h"
 #include "g_levellocals.h"
 #include "events.h"
+#include "c_buttons.h"
+#include "d_buttons.h"
+#include "hwrenderer/scene/hw_drawinfo.h"
 
 
 static FRandom pr_dmspawn ("DMSpawn");
@@ -198,7 +203,8 @@ int				lookspeed[2] = {450, 512};
 
 CVAR (Bool,		cl_run,			false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always run?
 CVAR (Bool,		invertmouse,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Invert mouse look down/up?
-CVAR (Bool,		freelook,		false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always mlook?
+CVAR (Bool,		invertmousex,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Invert mouse look left/right?
+CVAR (Bool,		freelook,		true,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always mlook?
 CVAR (Bool,		lookstrafe,		false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always strafe with mouse?
 CVAR (Float,	m_pitch,		1.f,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Mouse speeds
 CVAR (Float,	m_yaw,			1.f,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
@@ -313,6 +319,14 @@ CCMD (slot)
 				VMCall(func, param, 3, &ret, 1);
 			}
 		}
+
+		// [Nash] Option to display the name of the weapon being switched to.
+		if (players[consoleplayer].playerstate != PST_LIVE) return;
+		if (SendItemUse != players[consoleplayer].ReadyWeapon && (displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
+		{
+			StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(nullptr, SendItemUse->GetTag(),
+				1.5f, 0.90f, 0, 0, (EColorRange)*nametagcolor, 2.f, 0.35f), MAKE_ID('W', 'E', 'P', 'N'));
+		}
 	}
 }
 
@@ -356,6 +370,7 @@ CCMD (weapnext)
 	}
 
 	// [BC] Option to display the name of the weapon being cycled to.
+	if (players[consoleplayer].playerstate != PST_LIVE) return;
 	if ((displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
 	{
 		StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(nullptr, SendItemUse->GetTag(),
@@ -382,6 +397,7 @@ CCMD (weapprev)
 	}
 
 	// [BC] Option to display the name of the weapon being cycled to.
+	if (players[consoleplayer].playerstate != PST_LIVE) return;
 	if ((displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
 	{
 		StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(nullptr, SendItemUse->GetTag(),
@@ -411,11 +427,11 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, DisplayNameTag, DisplayNameTag)
 
 CCMD (invnext)
 {
-	if (who != NULL)
+	if (players[consoleplayer].mo != nullptr)
 	{
 		IFVM(PlayerPawn, InvNext)
 		{
-			VMValue param = who;
+			VMValue param = players[consoleplayer].mo;
 			VMCall(func, &param, 1, nullptr, 0);
 		}
 	}
@@ -423,11 +439,11 @@ CCMD (invnext)
 
 CCMD(invprev)
 {
-	if (who != NULL)
+	if (players[consoleplayer].mo != nullptr)
 	{
 		IFVM(PlayerPawn, InvPrev)
 		{
-			VMValue param = who;
+			VMValue param = players[consoleplayer].mo;
 			VMCall(func, &param, 1, nullptr, 0);
 		}
 	}
@@ -458,9 +474,9 @@ CCMD(invquery)
 
 CCMD (use)
 {
-	if (argv.argc() > 1 && who != NULL)
+	if (argv.argc() > 1 && players[consoleplayer].mo != NULL)
 	{
-		SendItemUse = who->FindInventory(argv[1]);
+		SendItemUse = players[consoleplayer].mo->FindInventory(argv[1]);
 	}
 }
 
@@ -481,19 +497,19 @@ CCMD (weapdrop)
 
 CCMD (drop)
 {
-	if (argv.argc() > 1 && who != NULL)
+	if (argv.argc() > 1 && players[consoleplayer].mo != NULL)
 	{
-		SendItemDrop = who->FindInventory(argv[1]);
+		SendItemDrop = players[consoleplayer].mo->FindInventory(argv[1]);
 		SendItemDropAmount = argv.argc() > 2 ? atoi(argv[2]) : -1;
 	}
 }
 
 CCMD (useflechette)
 { 
-	if (who == nullptr) return;
-	IFVIRTUALPTRNAME(who, NAME_PlayerPawn, GetFlechetteItem)
+	if (players[consoleplayer].mo == nullptr) return;
+	IFVIRTUALPTRNAME(players[consoleplayer].mo, NAME_PlayerPawn, GetFlechetteItem)
 	{
-		VMValue params[] = { who };
+		VMValue params[] = { players[consoleplayer].mo };
 		AActor *cls;
 		VMReturn ret((void**)&cls);
 		VMCall(func, params, 1, &ret, 1);
@@ -504,15 +520,17 @@ CCMD (useflechette)
 
 CCMD (select)
 {
+	if (!players[consoleplayer].mo) return;
+	auto user = players[consoleplayer].mo;
 	if (argv.argc() > 1)
 	{
-		auto item = who->FindInventory(argv[1]);
+		auto item = user->FindInventory(argv[1]);
 		if (item != NULL)
 		{
-			who->PointerVar<AActor>(NAME_InvSel) = item;
+			user->PointerVar<AActor>(NAME_InvSel) = item;
 		}
 	}
-	who->player->inventorytics = 5*TICRATE;
+	user->player->inventorytics = 5*TICRATE;
 }
 
 static inline int joyint(double val)
@@ -526,6 +544,29 @@ static inline int joyint(double val)
 		return int(floor(val));
 	}
 }
+
+FBaseCVar* G_GetUserCVar(int playernum, const char* cvarname)
+{
+	if ((unsigned)playernum >= MAXPLAYERS || !playeringame[playernum])
+	{
+		return nullptr;
+	}
+	FBaseCVar** cvar_p = players[playernum].userinfo.CheckKey(FName(cvarname, true));
+	FBaseCVar* cvar;
+	if (cvar_p == nullptr || (cvar = *cvar_p) == nullptr || (cvar->GetFlags() & CVAR_IGNORE))
+	{
+		return nullptr;
+	}
+	return cvar;
+}
+
+static ticcmd_t emptycmd;
+
+ticcmd_t* G_BaseTiccmd()
+{
+	return &emptycmd;
+}
+
 
 //
 // G_BuildTiccmd
@@ -543,20 +584,20 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 
 	ticcmd_t	*base;
 
-	base = I_BaseTiccmd (); 			// empty, or external driver
+	base = G_BaseTiccmd (); 
 	*cmd = *base;
 
 	cmd->consistancy = consistancy[consoleplayer][(maketic/ticdup)%BACKUPTICS];
 
-	strafe = Button_Strafe.bDown;
-	speed = Button_Speed.bDown ^ (int)cl_run;
+	strafe = buttonMap.ButtonDown(Button_Strafe);
+	speed = buttonMap.ButtonDown(Button_Speed) ^ (int)cl_run;
 
 	forward = side = fly = 0;
 
 	// [RH] only use two stage accelerative turning on the keyboard
 	//		and not the joystick, since we treat the joystick as
 	//		the analog device it is.
-	if (Button_Left.bDown || Button_Right.bDown)
+	if (buttonMap.ButtonDown(Button_Left) || buttonMap.ButtonDown(Button_Right))
 		turnheld += ticdup;
 	else
 		turnheld = 0;
@@ -564,9 +605,9 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	// let movement keys cancel each other out
 	if (strafe)
 	{
-		if (Button_Right.bDown)
+		if (buttonMap.ButtonDown(Button_Right))
 			side += sidemove[speed];
-		if (Button_Left.bDown)
+		if (buttonMap.ButtonDown(Button_Left))
 			side -= sidemove[speed];
 	}
 	else
@@ -576,77 +617,77 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 		if (turnheld < SLOWTURNTICS)
 			tspeed += 2;		// slow turn
 		
-		if (Button_Right.bDown)
+		if (buttonMap.ButtonDown(Button_Right))
 		{
 			G_AddViewAngle (*angleturn[tspeed]);
 		}
-		if (Button_Left.bDown)
+		if (buttonMap.ButtonDown(Button_Left))
 		{
 			G_AddViewAngle (-*angleturn[tspeed]);
 		}
 	}
 
-	if (Button_LookUp.bDown)
+	if (buttonMap.ButtonDown(Button_LookUp))
 	{
 		G_AddViewPitch (lookspeed[speed]);
 	}
-	if (Button_LookDown.bDown)
+	if (buttonMap.ButtonDown(Button_LookDown))
 	{
 		G_AddViewPitch (-lookspeed[speed]);
 	}
 
-	if (Button_MoveUp.bDown)
+	if (buttonMap.ButtonDown(Button_MoveUp))
 		fly += flyspeed[speed];
-	if (Button_MoveDown.bDown)
+	if (buttonMap.ButtonDown(Button_MoveDown))
 		fly -= flyspeed[speed];
 
-	if (Button_Klook.bDown)
+	if (buttonMap.ButtonDown(Button_Klook))
 	{
-		if (Button_Forward.bDown)
+		if (buttonMap.ButtonDown(Button_Forward))
 			G_AddViewPitch (lookspeed[speed]);
-		if (Button_Back.bDown)
+		if (buttonMap.ButtonDown(Button_Back))
 			G_AddViewPitch (-lookspeed[speed]);
 	}
 	else
 	{
-		if (Button_Forward.bDown)
+		if (buttonMap.ButtonDown(Button_Forward))
 			forward += forwardmove[speed];
-		if (Button_Back.bDown)
+		if (buttonMap.ButtonDown(Button_Back))
 			forward -= forwardmove[speed];
 	}
 
-	if (Button_MoveRight.bDown)
+	if (buttonMap.ButtonDown(Button_MoveRight))
 		side += sidemove[speed];
-	if (Button_MoveLeft.bDown)
+	if (buttonMap.ButtonDown(Button_MoveLeft))
 		side -= sidemove[speed];
 
 	// buttons
-	if (Button_Attack.bDown)		cmd->ucmd.buttons |= BT_ATTACK;
-	if (Button_AltAttack.bDown)		cmd->ucmd.buttons |= BT_ALTATTACK;
-	if (Button_Use.bDown)			cmd->ucmd.buttons |= BT_USE;
-	if (Button_Jump.bDown)			cmd->ucmd.buttons |= BT_JUMP;
-	if (Button_Crouch.bDown)		cmd->ucmd.buttons |= BT_CROUCH;
-	if (Button_Zoom.bDown)			cmd->ucmd.buttons |= BT_ZOOM;
-	if (Button_Reload.bDown)		cmd->ucmd.buttons |= BT_RELOAD;
+	if (buttonMap.ButtonDown(Button_Attack))		cmd->ucmd.buttons |= BT_ATTACK;
+	if (buttonMap.ButtonDown(Button_AltAttack))		cmd->ucmd.buttons |= BT_ALTATTACK;
+	if (buttonMap.ButtonDown(Button_Use))			cmd->ucmd.buttons |= BT_USE;
+	if (buttonMap.ButtonDown(Button_Jump))			cmd->ucmd.buttons |= BT_JUMP;
+	if (buttonMap.ButtonDown(Button_Crouch))		cmd->ucmd.buttons |= BT_CROUCH;
+	if (buttonMap.ButtonDown(Button_Zoom))			cmd->ucmd.buttons |= BT_ZOOM;
+	if (buttonMap.ButtonDown(Button_Reload))		cmd->ucmd.buttons |= BT_RELOAD;
 
-	if (Button_User1.bDown)			cmd->ucmd.buttons |= BT_USER1;
-	if (Button_User2.bDown)			cmd->ucmd.buttons |= BT_USER2;
-	if (Button_User3.bDown)			cmd->ucmd.buttons |= BT_USER3;
-	if (Button_User4.bDown)			cmd->ucmd.buttons |= BT_USER4;
+	if (buttonMap.ButtonDown(Button_User1))			cmd->ucmd.buttons |= BT_USER1;
+	if (buttonMap.ButtonDown(Button_User2))			cmd->ucmd.buttons |= BT_USER2;
+	if (buttonMap.ButtonDown(Button_User3))			cmd->ucmd.buttons |= BT_USER3;
+	if (buttonMap.ButtonDown(Button_User4))			cmd->ucmd.buttons |= BT_USER4;
 
-	if (Button_Speed.bDown)			cmd->ucmd.buttons |= BT_SPEED;
-	if (Button_Strafe.bDown)		cmd->ucmd.buttons |= BT_STRAFE;
-	if (Button_MoveRight.bDown)		cmd->ucmd.buttons |= BT_MOVERIGHT;
-	if (Button_MoveLeft.bDown)		cmd->ucmd.buttons |= BT_MOVELEFT;
-	if (Button_LookDown.bDown)		cmd->ucmd.buttons |= BT_LOOKDOWN;
-	if (Button_LookUp.bDown)		cmd->ucmd.buttons |= BT_LOOKUP;
-	if (Button_Back.bDown)			cmd->ucmd.buttons |= BT_BACK;
-	if (Button_Forward.bDown)		cmd->ucmd.buttons |= BT_FORWARD;
-	if (Button_Right.bDown)			cmd->ucmd.buttons |= BT_RIGHT;
-	if (Button_Left.bDown)			cmd->ucmd.buttons |= BT_LEFT;
-	if (Button_MoveDown.bDown)		cmd->ucmd.buttons |= BT_MOVEDOWN;
-	if (Button_MoveUp.bDown)		cmd->ucmd.buttons |= BT_MOVEUP;
-	if (Button_ShowScores.bDown)	cmd->ucmd.buttons |= BT_SHOWSCORES;
+	if (buttonMap.ButtonDown(Button_Speed))			cmd->ucmd.buttons |= BT_SPEED;
+	if (buttonMap.ButtonDown(Button_Strafe))		cmd->ucmd.buttons |= BT_STRAFE;
+	if (buttonMap.ButtonDown(Button_MoveRight))		cmd->ucmd.buttons |= BT_MOVERIGHT;
+	if (buttonMap.ButtonDown(Button_MoveLeft))		cmd->ucmd.buttons |= BT_MOVELEFT;
+	if (buttonMap.ButtonDown(Button_LookDown))		cmd->ucmd.buttons |= BT_LOOKDOWN;
+	if (buttonMap.ButtonDown(Button_LookUp))		cmd->ucmd.buttons |= BT_LOOKUP;
+	if (buttonMap.ButtonDown(Button_Back))			cmd->ucmd.buttons |= BT_BACK;
+	if (buttonMap.ButtonDown(Button_Forward))		cmd->ucmd.buttons |= BT_FORWARD;
+	if (buttonMap.ButtonDown(Button_Right))			cmd->ucmd.buttons |= BT_RIGHT;
+	if (buttonMap.ButtonDown(Button_Left))			cmd->ucmd.buttons |= BT_LEFT;
+	if (buttonMap.ButtonDown(Button_MoveDown))		cmd->ucmd.buttons |= BT_MOVEDOWN;
+	if (buttonMap.ButtonDown(Button_MoveUp))		cmd->ucmd.buttons |= BT_MOVEUP;
+	if (buttonMap.ButtonDown(Button_ShowScores))	cmd->ucmd.buttons |= BT_SHOWSCORES;
 
 	// Handle joysticks/game controllers.
 	float joyaxes[NUM_JOYAXIS];
@@ -654,12 +695,12 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	I_GetAxes(joyaxes);
 
 	// Remap some axes depending on button state.
-	if (Button_Strafe.bDown || (Button_Mlook.bDown && lookstrafe))
+	if (buttonMap.ButtonDown(Button_Strafe) || (buttonMap.ButtonDown(Button_Mlook) && lookstrafe))
 	{
 		joyaxes[JOYAXIS_Side] = joyaxes[JOYAXIS_Yaw];
 		joyaxes[JOYAXIS_Yaw] = 0;
 	}
-	if (Button_Mlook.bDown)
+	if (buttonMap.ButtonDown(Button_Mlook))
 	{
 		joyaxes[JOYAXIS_Pitch] = joyaxes[JOYAXIS_Forward];
 		joyaxes[JOYAXIS_Forward] = 0;
@@ -679,7 +720,7 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	fly += joyint(joyaxes[JOYAXIS_Up] * 2048);
 
 	// Handle mice.
-	if (!Button_Mlook.bDown && !freelook)
+	if (!buttonMap.ButtonDown(Button_Mlook) && !freelook)
 	{
 		forward += (int)((float)mousey * m_forward);
 	}
@@ -1009,7 +1050,29 @@ bool G_Responder (event_t *ev)
 			ev->type == EV_Mouse);
 }
 
+//==========================================================================
+//
+// FRandom :: StaticSumSeeds
+//
+// This function produces a uint32_t that can be used to check the consistancy
+// of network games between different machines. Only a select few RNGs are
+// used for the sum, because not all RNGs are important to network sync.
+//
+//==========================================================================
 
+extern FRandom pr_spawnmobj;
+extern FRandom pr_acs;
+extern FRandom pr_chase;
+extern FRandom pr_damagemobj;
+
+static uint32_t StaticSumSeeds()
+{
+	return
+		pr_spawnmobj.Seed() +
+		pr_acs.Seed() +
+		pr_chase.Seed() +
+		pr_damagemobj.Seed();
+}
 
 //
 // G_Ticker
@@ -1039,7 +1102,7 @@ void G_Ticker ()
 	if (ToggleFullscreen)
 	{
 		ToggleFullscreen = false;
-		AddCommandString ("toggle fullscreen");
+		AddCommandString ("toggle vid_fullscreen");
 	}
 
 	// do things to change the game state
@@ -1128,7 +1191,7 @@ void G_Ticker ()
 
 	// [RH] Include some random seeds and player stuff in the consistancy
 	// check, not just the player's x position like BOOM.
-	uint32_t rngsum = FRandom::StaticSumSeeds ();
+	uint32_t rngsum = StaticSumSeeds ();
 
 	//Added by MC: For some of that bot stuff. The main bot function.
 	primaryLevel->BotInfo.Main (primaryLevel);
@@ -1603,9 +1666,9 @@ void FLevelLocals::QueueBody (AActor *body)
 		GetTranslationType(body->Translation) == TRANSLATION_PlayersExtra)
 	{
 		// This needs to be able to handle multiple levels, in case a level with dead players is used as a secondary one later.
-		*translationtables[TRANSLATION_PlayerCorpses][modslot] = *TranslationToTable(body->Translation);
-		body->Translation = TRANSLATION(TRANSLATION_PlayerCorpses,modslot);
-		translationtables[TRANSLATION_PlayerCorpses][modslot]->UpdateNative();
+		GPalette.CopyTranslation(TRANSLATION(TRANSLATION_PlayerCorpses, modslot), body->Translation);
+		body->Translation = TRANSLATION(TRANSLATION_PlayerCorpses, modslot);
+
 	}
 
 	const int skinidx = body->player->userinfo.GetSkin();
@@ -1646,7 +1709,24 @@ void FLevelLocals::DoReborn (int playernum, bool freshbot)
 	}
 	else
 	{
-		bool isUnfriendly = players[playernum].mo && !(players[playernum].mo->flags & MF_FRIENDLY);
+		bool isUnfriendly;
+
+		PlayerSpawnPickClass(playernum);
+
+		// this condition should never be false
+		assert(players[playernum].cls != NULL);
+
+		if (players[playernum].cls != NULL)
+		{
+			isUnfriendly = !(GetDefaultByType(players[playernum].cls)->flags & MF_FRIENDLY);
+			DPrintf(DMSG_NOTIFY, "Player class IS defined: unfriendly is %i\n", isUnfriendly);
+		}
+		else
+		{
+			// we shouldn't be here, but if we are, get the player's current status
+			isUnfriendly = players[playernum].mo && !(players[playernum].mo->flags & MF_FRIENDLY);
+			DPrintf(DMSG_NOTIFY, "Player class NOT defined: unfriendly is %i\n", isUnfriendly);
+		}
 
 		// respawn at the start
 		// first disassociate the corpse
@@ -1754,7 +1834,7 @@ static bool CheckSingleWad (const char *name, bool &printRequires, bool printwar
 	{
 		return true;
 	}
-	if (Wads.CheckIfWadLoaded (name) < 0)
+	if (fileSystem.CheckIfResourceFileLoaded (name) < 0)
 	{
 		if (printwarn)
 		{
@@ -1803,6 +1883,48 @@ static void LoadGameError(const char *label, const char *append = "")
 	Printf ("%s %s\n", message.GetChars(), append);
 }
 
+void C_SerializeCVars(FSerializer& arc, const char* label, uint32_t filter)
+{
+	FBaseCVar* cvar;
+	FString dump;
+
+	if (arc.BeginObject(label))
+	{
+		if (arc.isWriting())
+		{
+			for (cvar = CVars; cvar != NULL; cvar = cvar->m_Next)
+			{
+				if ((cvar->Flags & filter) && !(cvar->Flags & (CVAR_NOSAVE | CVAR_IGNORE | CVAR_CONFIG_ONLY)))
+				{
+					UCVarValue val = cvar->GetGenericRep(CVAR_String);
+					char* c = const_cast<char*>(val.String);
+					arc(cvar->GetName(), c);
+				}
+			}
+		}
+		else
+		{
+			for (cvar = CVars; cvar != NULL; cvar = cvar->m_Next)
+			{
+				if ((cvar->Flags & filter) && !(cvar->Flags & (CVAR_NOSAVE | CVAR_IGNORE | CVAR_CONFIG_ONLY)))
+				{
+					UCVarValue val;
+					char* c = nullptr;
+					arc(cvar->GetName(), c);
+					if (c != nullptr)
+					{
+						val.String = c;
+						cvar->SetGenericRep(val, CVAR_String);
+						delete[] c;
+					}
+				}
+			}
+		}
+		arc.EndObject();
+	}
+}
+
+
 void G_DoLoadGame ()
 {
 	bool hidecon;
@@ -1829,8 +1951,8 @@ void G_DoLoadGame ()
 
 	SaveVersion = 0;
 
-	void *data = info->CacheLump();
-	FSerializer arc(nullptr);
+	void *data = info->Lock();
+	FSerializer arc;
 	if (!arc.OpenReader((const char *)data, info->LumpSize))
 	{
 		LoadGameError("TXT_FAILEDTOREADSG");
@@ -1905,7 +2027,7 @@ void G_DoLoadGame ()
 		return;
 	}
 
-	data = info->CacheLump();
+	data = info->Lock();
 	if (!arc.OpenReader((const char *)data, info->LumpSize))
 	{
 		LoadGameError("TXT_SGINFOERR");
@@ -2118,13 +2240,13 @@ static void PutSaveWads (FSerializer &arc)
 	const char *name;
 
 	// Name of IWAD
-	name = Wads.GetWadName (Wads.GetIwadNum());
+	name = fileSystem.GetResourceFileName (fileSystem.GetIwadNum());
 	arc.AddString("Game WAD", name);
 
 	// Name of wad the map resides in
-	if (Wads.GetLumpFile (primaryLevel->lumpnum) > Wads.GetIwadNum())
+	if (fileSystem.GetFileContainer (primaryLevel->lumpnum) > fileSystem.GetIwadNum())
 	{
-		name = Wads.GetWadName (Wads.GetLumpFile (primaryLevel->lumpnum));
+		name = fileSystem.GetResourceFileName (fileSystem.GetFileContainer (primaryLevel->lumpnum));
 		arc.AddString("Map WAD", name);
 	}
 }
@@ -2149,56 +2271,6 @@ static void PutSaveComment (FSerializer &arc)
 	arc.AddString("Comment", comment);
 }
 
-void DoWriteSavePic(FileWriter *file, ESSType ssformat, uint8_t *scr, int width, int height, sector_t *viewsector, bool upsidedown)
-{
-	PalEntry palette[256];
-	PalEntry modulateColor;
-	auto blend = screen->CalcBlend(viewsector, &modulateColor);
-	int pixelsize = 1;
-	// Apply the screen blend, because the renderer does not provide this.
-	if (ssformat == SS_RGB)
-	{
-		int numbytes = width * height * 3;
-		pixelsize = 3;
-		if (modulateColor != 0xffffffff)
-		{
-			float r = modulateColor.r / 255.f;
-			float g = modulateColor.g / 255.f;
-			float b = modulateColor.b / 255.f;
-			for (int i = 0; i < numbytes; i += 3)
-			{
-				scr[i] = uint8_t(scr[i] * r);
-				scr[i + 1] = uint8_t(scr[i + 1] * g);
-				scr[i + 2] = uint8_t(scr[i + 2] * b);
-			}
-		}
-		float iblendfac = 1.f - blend.W;
-		blend.X *= blend.W;
-		blend.Y *= blend.W;
-		blend.Z *= blend.W;
-		for (int i = 0; i < numbytes; i += 3)
-		{
-			scr[i] = uint8_t(scr[i] * iblendfac + blend.X);
-			scr[i + 1] = uint8_t(scr[i + 1] * iblendfac + blend.Y);
-			scr[i + 2] = uint8_t(scr[i + 2] * iblendfac + blend.Z);
-		}
-	}
-	else
-	{
-		// Apply the screen blend to the palette. The colormap related parts get skipped here because these are already part of the image.
-		DoBlending(GPalette.BaseColors, palette, 256, uint8_t(blend.X), uint8_t(blend.Y), uint8_t(blend.Z), uint8_t(blend.W*255));
-	}
-
-	int pitch = width * pixelsize;
-	if (upsidedown)
-	{
-		scr += ((height - 1) * width * pixelsize);
-		pitch *= -1;
-	}
-
-	M_CreatePNG(file, scr, ssformat == SS_PAL? palette : nullptr, ssformat, width, height, pitch, Gamma);
-}
-
 static void PutSavePic (FileWriter *file, int width, int height)
 {
 	if (width <= 0 || height <= 0 || !storesavepic)
@@ -2209,7 +2281,7 @@ static void PutSavePic (FileWriter *file, int width, int height)
 	{
 		D_Render([&]()
 			{
-				screen->WriteSavePic(&players[consoleplayer], file, width, height);
+				WriteSavePic(&players[consoleplayer], file, width, height);
 			}, false);
 	}
 }
@@ -2262,8 +2334,8 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 	}
 
 	BufferWriter savepic;
-	FSerializer savegameinfo(nullptr);		// this is for displayable info about the savegame
-	FSerializer savegameglobals(nullptr);	// and this for non-level related info that must be saved.
+	FSerializer savegameinfo;		// this is for displayable info about the savegame
+	FSerializer savegameglobals;	// and this for non-level related info that must be saved.
 
 	savegameinfo.OpenWriter(true);
 	savegameglobals.OpenWriter(save_formatted);
@@ -2762,12 +2834,12 @@ void G_DoPlayDemo (void)
 	gameaction = ga_nothing;
 
 	// [RH] Allow for demos not loaded as lumps
-	demolump = Wads.CheckNumForFullName (defdemoname, true);
+	demolump = fileSystem.CheckNumForFullName (defdemoname, true);
 	if (demolump >= 0)
 	{
-		int demolen = Wads.LumpLength (demolump);
+		int demolen = fileSystem.FileLength (demolump);
 		demobuffer = (uint8_t *)M_Malloc(demolen);
-		Wads.ReadLump (demolump, demobuffer);
+		fileSystem.ReadFile (demolump, demobuffer);
 	}
 	else
 	{

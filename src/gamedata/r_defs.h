@@ -35,6 +35,8 @@
 #include "m_bbox.h"
 #include "dobjgc.h"
 #include "r_data/r_translate.h"
+#include "texmanip.h"
+#include "fcolormap.h"
 
 // Some more or less basic data types
 // we depend on.
@@ -54,9 +56,6 @@ struct sector_t;
 class AActor;
 struct FSection;
 struct FLevelLocals;
-
-#define MAXWIDTH 12000
-#define MAXHEIGHT 5000
 
 const uint16_t NO_INDEX = 0xffffu;
 const uint32_t NO_SIDE = 0xffffffffu;
@@ -1650,21 +1649,21 @@ typedef uint8_t lighttable_t;	// This could be wider for >8 bit display.
 //
 //----------------------------------------------------------------------------------
 
-inline bool FBoundingBox::inRange(const line_t *ld) const
+inline bool inRange(const FBoundingBox &box, const line_t *ld)
 {
-	return Left() < ld->bbox[BOXRIGHT] &&
-		Right() > ld->bbox[BOXLEFT] &&
-		Top() > ld->bbox[BOXBOTTOM] &&
-		Bottom() < ld->bbox[BOXTOP];
+	return box.Left() < ld->bbox[BOXRIGHT] &&
+		box.Right() > ld->bbox[BOXLEFT] &&
+		box.Top() > ld->bbox[BOXBOTTOM] &&
+		box.Bottom() < ld->bbox[BOXTOP];
 }
 
 
-inline void FColormap::CopyFrom3DLight(lightlist_t *light)
+inline void CopyFrom3DLight(FColormap &cm, lightlist_t *light)
 {
-	CopyLight(light->extra_colormap);
+	cm.CopyLight(light->extra_colormap);
 	if (light->caster && (light->caster->flags&FF_FADEWALLS) && light->extra_colormap.FadeColor != 0)
 	{
-		CopyFog(light->extra_colormap);
+		cm.CopyFog(light->extra_colormap);
 	}
 }
 

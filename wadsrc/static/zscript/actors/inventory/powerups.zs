@@ -356,7 +356,11 @@ class PowerInvulnerable : Powerup
 		{
 			return;
 		}
-
+		Owner.bInvulnerable = true;
+		if (Mode == 'Reflective')
+		{
+			Owner.bReflective = true;
+		}
 		if (Mode == 'Ghost')
 		{
 			if (!Owner.bShadow)
@@ -565,7 +569,7 @@ class PowerInvisibility : Powerup
 		Super.DoEffect();
 		// Due to potential interference with other PowerInvisibility items
 		// the effect has to be refreshed each tic.
-		double ts = (Strength / 100) * (special1 + 1);
+		double ts = (Strength / 100.) * (special1 + 1);
 		
 		if (ts > 1.) ts = 1.;
 		let newAlpha = clamp((1. - ts), 0., 1.);
@@ -761,7 +765,7 @@ class PowerIronFeet : Powerup
 		Powerup.Color "00 ff 00", 0.125;
 	}
 	
-	override void AbsorbDamage (int damage, Name damageType, out int newdamage)
+	override void AbsorbDamage (int damage, Name damageType, out int newdamage, Actor inflictor, Actor source, int flags)
 	{
 		if (damageType == 'Drowning')
 		{
@@ -795,7 +799,7 @@ class PowerMask : PowerIronFeet
 		Inventory.Icon "I_MASK";
 	}
 	
-	override void AbsorbDamage (int damage, Name damageType, out int newdamage)
+	override void AbsorbDamage (int damage, Name damageType, out int newdamage, Actor inflictor, Actor source, int flags)
 	{
 		if (damageType == 'Fire' || damageType == 'Drowning')
 		{
@@ -1323,9 +1327,11 @@ class PowerTargeter : Powerup
 		}
 
 		PSprite center = player.GetPSprite(PSprite.TARGETCENTER);
-		center.x = POS_X;
-		center.y = POS_Y;
-
+		if (center)
+		{
+			center.x = POS_X;
+			center.y = POS_Y;
+		}
 		PositionAccuracy ();
 	}
 
@@ -1402,12 +1408,18 @@ class PowerTargeter : Powerup
 		if (player != null)
 		{
 			PSprite left = player.GetPSprite(PSprite.TARGETLEFT);
-			left.x = POS_X - (100 - player.mo.accuracy);
-			left.y = POS_Y;
+			if (left)
+			{
+				left.x = POS_X - (100 - player.mo.accuracy);
+				left.y = POS_Y;
+			}
 
 			PSprite right = player.GetPSprite(PSprite.TARGETRIGHT);
-			right.x = POS_X + (100 - player.mo.accuracy);
-			right.y = POS_Y;
+			if (right)
+			{
+				right.x = POS_X + (100 - player.mo.accuracy);
+				right.y = POS_Y;
+			}
 		}
 	}
 	
@@ -1660,7 +1672,7 @@ class PowerDamage : Powerup
 		if (!passive && damage > 0)
 		{
 			newdamage = max(1, ApplyDamageFactors(GetClass(), damageType, damage, damage * 4));
-			if (Owner != null && newdamage > damage) Owner.A_StartSound(ActiveSound, CHAN_AUTO, 1.0, false, ATTN_NONE);
+			if (Owner != null && newdamage > damage) Owner.A_StartSound(ActiveSound, CHAN_AUTO, CHANF_DEFAULT, 1.0, ATTN_NONE);
 		}
 	}
 }
@@ -1691,7 +1703,7 @@ class PowerProtection : Powerup
 		let o = Owner;	// copy to a local variable for quicker access.
 		if (o != null)
 		{
-			o.A_StartSound(SeeSound, CHAN_AUTO, 1.0, false, ATTN_NONE);
+			o.A_StartSound(SeeSound, CHAN_AUTO, CHANF_DEFAULT, 1.0, ATTN_NONE);
 
 			// Transfer various protection flags if owner does not already have them.
 			// If the owner already has the flag, clear it from the powerup.
@@ -1731,7 +1743,7 @@ class PowerProtection : Powerup
 		let o = Owner;	// copy to a local variable for quicker access.
 		if (o != null)
 		{
-			o.A_StartSound(DeathSound, CHAN_AUTO, 1.0, false, ATTN_NONE);
+			o.A_StartSound(DeathSound, CHAN_AUTO, CHANF_DEFAULT, 1.0, ATTN_NONE);
 			
 			o.bNoRadiusDmg &= !bNoRadiusDmg;
 			o.bDontMorph &= !bDontMorph;
@@ -1754,7 +1766,7 @@ class PowerProtection : Powerup
 		if (passive && damage > 0)
 		{
 			newdamage = max(0, ApplyDamageFactors(GetClass(), damageType, damage, damage / 4));
-			if (Owner != null && newdamage < damage) Owner.A_StartSound(ActiveSound, CHAN_AUTO, 1.0, false, ATTN_NONE);
+			if (Owner != null && newdamage < damage) Owner.A_StartSound(ActiveSound, CHAN_AUTO, CHANF_DEFAULT, 1.0, ATTN_NONE);
 		}
 	}
 }

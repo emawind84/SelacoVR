@@ -10,7 +10,7 @@
 #include "c_cvars.h"
 #include "v_font.h"
 #include "gi.h"
-#include "textures/textures.h"
+#include "textures.h"
 
 EXTERN_CVAR(Float, snd_menuvolume)
 EXTERN_CVAR(Int, m_use_mouse);
@@ -47,14 +47,14 @@ enum EMenuKey
 };
 
 
-struct FGameStartup
+struct FNewGameStartup
 {
 	const char *PlayerClass;
 	int Episode;
 	int Skill;
 };
 
-extern FGameStartup GameStartupInfo;
+extern FNewGameStartup NewGameStartupInfo;
 
 struct FSaveGameNode
 {
@@ -72,8 +72,7 @@ private:
 	FSaveGameNode NewSaveNode;
 	int LastSaved = -1;
 	int LastAccessed = -1;
-	TArray<char> SavePicData;
-	FTexture *SavePic = nullptr;
+	FGameTexture *SavePic = nullptr;
 
 public:
 	int WindowSize = 0;
@@ -346,8 +345,8 @@ void M_ActivateMenu(DMenu *menu);
 void M_ClearMenus ();
 void M_PreviousMenu ();
 void M_ParseMenuDefs();
-void M_StartupEpisodeMenu(FGameStartup *gs);
-void M_StartupSkillMenu(FGameStartup *gs);
+void M_StartupEpisodeMenu(FNewGameStartup *gs);
+void M_StartupSkillMenu(FNewGameStartup *gs);
 void M_StartControlPanel (bool makeSound, bool scaleoverride = false);
 void M_SetMenu(FName menu, int param = -1);
 void M_StartMessage(const char *message, int messagemode, FName action = NAME_None);

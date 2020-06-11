@@ -68,18 +68,20 @@
 #include "v_text.h"
 #include "p_setup.h"
 #include "gi.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 #include "types.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "p_conversation.h"
 #include "v_video.h"
 #include "i_time.h"
 #include "m_argv.h"
 #include "fragglescript/t_fs.h"
 #include "swrenderer/r_swrenderer.h"
-#include "hwrenderer/data/flatvertices.h"
+#include "flatvertices.h"
 #include "xlat/xlat.h"
 #include "vm.h"
+#include "texturemanager.h"
+#include "hw_vertexbuilder.h"
 
 enum
 {
@@ -1158,7 +1160,7 @@ void MapLoader::LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 template<class nodetype, class subsectortype>
 bool MapLoader::LoadNodes (MapData * map)
 {
-	FMemLump	data;
+	FileData	data;
 	int 		j;
 	int 		k;
 	nodetype	*mn;
@@ -1700,13 +1702,6 @@ void MapLoader::LoadLineDefs (MapData * map)
 		}
 		else
 		{
-			// patch missing first sides instead of crashing out.
-			// Visual glitches are better than not being able to play.
-			if (LittleShort(mld->sidenum[0]) == NO_INDEX)
-			{
-				Printf("Line %d has no first side.\n", i);
-				mld->sidenum[0] = 0;
-			}
 			sidecount++;
 			if (LittleShort(mld->sidenum[1]) != NO_INDEX)
 				sidecount++;
@@ -1745,6 +1740,22 @@ void MapLoader::LoadLineDefs (MapData * map)
 			ProcessEDLinedef(ld, mld->tag);
 		}
 #endif
+		// cph 2006/09/30 - fix sidedef errors right away.
+		for (int j=0; j < 2; j++)
+		{
+			if (LittleShort(mld->sidenum[j]) != NO_INDEX && mld->sidenum[j] >= Level->sides.Size())
+			{
+				mld->sidenum[j] = 0; // dummy sidedef
+				Printf("Linedef %d has a bad sidedef\n", i);
+			}
+		}
+		// patch missing first sides instead of crashing out.
+		// Visual glitches are better than not being able to play.
+		if (LittleShort(mld->sidenum[0]) == NO_INDEX)
+		{
+			Printf("Line %d has no first side.\n", i);
+			mld->sidenum[0] = 0;
+		}
 
 		ld->v1 = &Level->vertexes[LittleShort(mld->v1)];
 		ld->v2 = &Level->vertexes[LittleShort(mld->v2)];
@@ -2032,52 +2043,6 @@ void MapLoader::LoopSidedefs (bool firstloop)
 //
 //===========================================================================
 
-int MapLoader::DetermineTranslucency (int lumpnum)
-{
-	auto tranmap = Wads.OpenLumpReader (lumpnum);
-	uint8_t index;
-	PalEntry newcolor;
-	PalEntry newcolor2;
-
-	tranmap.Seek (GPalette.BlackIndex * 256 + GPalette.WhiteIndex, FileReader::SeekSet);
-	tranmap.Read (&index, 1);
-
-	newcolor = GPalette.BaseColors[GPalette.Remap[index]];
-
-	tranmap.Seek (GPalette.WhiteIndex * 256 + GPalette.BlackIndex, FileReader::SeekSet);
-	tranmap.Read (&index, 1);
-	newcolor2 = GPalette.BaseColors[GPalette.Remap[index]];
-	if (newcolor2.r == 255)	// if black on white results in white it's either
-							// fully transparent or additive
-	{
-		if (developer >= DMSG_NOTIFY)
-		{
-			char lumpname[9];
-			lumpname[8] = 0;
-			Wads.GetLumpName (lumpname, lumpnum);
-			Printf ("%s appears to be additive translucency %d (%d%%)\n", lumpname, newcolor.r,
-				newcolor.r*100/255);
-		}
-		return -newcolor.r;
-	}
-
-	if (developer >= DMSG_NOTIFY)
-	{
-		char lumpname[9];
-		lumpname[8] = 0;
-		Wads.GetLumpName (lumpname, lumpnum);
-		Printf ("%s appears to be translucency %d (%d%%)\n", lumpname, newcolor.r,
-			newcolor.r*100/255);
-	}
-	return newcolor.r;
-}
-
-//===========================================================================
-//
-//
-//
-//===========================================================================
-
 void MapLoader::ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, intmapsidedef_t *msd, int special, int tag, short *alpha, FMissingTextureTracker &missingtex)
 {
 	switch (special)
@@ -2150,10 +2115,21 @@ void MapLoader::ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec
 				// The translator set the alpha argument already; no reason to do it again.
 				sd->SetTexture(side_t::mid, FNullTextureID());
 			}
-			else if ((lumpnum = Wads.CheckNumForName (msd->midtexture)) > 0 &&
-				Wads.LumpLength (lumpnum) == 65536)
+			else if ((lumpnum = fileSystem.CheckNumForName (msd->midtexture)) > 0 &&
+				fileSystem.FileLength (lumpnum) == 65536)
 			{
-				*alpha = (short)DetermineTranslucency (lumpnum);
+				auto fr = fileSystem.OpenFileReader(lumpnum);
+				*alpha = (short)GPalette.DetermineTranslucency (fr);
+
+				if (developer >= DMSG_NOTIFY)
+				{
+					char lumpname[9];
+					lumpname[8] = 0;
+					fileSystem.GetFileShortName(lumpname, lumpnum);
+					if (*alpha < 0) Printf("%s appears to be additive translucency %d (%d%%)\n", lumpname, -*alpha, -*alpha * 100 / 255);
+					else Printf("%s appears to be translucency %d (%d%%)\n", lumpname, *alpha, *alpha * 100 / 255);
+				}
+
 				sd->SetTexture(side_t::mid, FNullTextureID());
 			}
 			else
@@ -2213,11 +2189,11 @@ void MapLoader::LoadSideDefs2 (MapData *map, FMissingTextureTracker &missingtex)
 		// killough 4/4/98: allow sidedef texture names to be overloaded
 		// killough 4/11/98: refined to allow colormaps to work as wall
 		// textures if invalid as colormaps but valid as textures.
-
+		// cph 2006/09/30 - catch out-of-range sector numbers; use sector 0 instead
 		if ((unsigned)LittleShort(msd->sector)>=Level->sectors.Size())
 		{
 			Printf (PRINT_HIGH, "Sidedef %d has a bad sector\n", i);
-			sd->sector = sec = nullptr;
+			sd->sector = sec = &Level->sectors[0];
 		}
 		else
 		{
@@ -2410,7 +2386,7 @@ void MapLoader::CreateBlockMap ()
 		{
 			if (bx > bx2)
 			{
-				swapvalues (block, endblock);
+				std::swap (block, endblock);
 			}
 			do
 			{
@@ -2422,7 +2398,7 @@ void MapLoader::CreateBlockMap ()
 		{
 			if (by > by2)
 			{
-				swapvalues (block, endblock);
+				std::swap (block, endblock);
 			}
 			do
 			{
@@ -3257,7 +3233,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 
 	InitRenderInfo();				// create hardware independent renderer resources for the level. This must be done BEFORE the PolyObj Spawn!!!
 	Level->ClearDynamic3DFloorData();	// CreateVBO must be run on the plain 3D floor data.
-	screen->mVertexData->CreateVBO(Level->sectors);
+	CreateVBO(screen->mVertexData, Level->sectors);
 
 	for (auto &sec : Level->sectors)
 	{
@@ -3272,5 +3248,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 	PO_Init();				// Initialize the polyobjs
 	if (!Level->IsReentering())
 		Level->FinalizePortals();	// finalize line portals after polyobjects have been initialized. This info is needed for properly flagging them.
+
+	Level->aabbTree = new DoomLevelAABBTree(Level);
 }
 

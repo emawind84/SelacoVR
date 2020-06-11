@@ -31,7 +31,7 @@
 #include "r_sky.h"
 #include "v_video.h"
 #include "m_swap.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "stats.h"
 #include "a_sharedglobal.h"
 #include "d_net.h"
@@ -40,7 +40,7 @@
 #include "v_palette.h"
 #include "r_data/colormaps.h"
 #include "r_walldraw.h"
-#include "swrenderer/r_memory.h"
+#include "r_memory.h"
 #include "swrenderer/line/r_line.h"
 #include "swrenderer/scene/r_scene.h"
 #include "swrenderer/scene/r_light.h"
@@ -65,7 +65,7 @@ namespace swrenderer
 			float t = -tleft.X;
 			tleft.X = -tright.X;
 			tright.X = t;
-			swapvalues(tleft.Y, tright.Y);
+			std::swap(tleft.Y, tright.Y);
 		}
 
 		float fsx1, fsz1, fsx2, fsz2;

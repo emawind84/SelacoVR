@@ -44,8 +44,8 @@ const char *GetVersionString();
 #define VERSIONSTR "4.3.3"
 
 // The version as seen in the Windows resource
-#define RC_FILEVERSION 4,3,3,0
-#define RC_PRODUCTVERSION 4,3,3,0
+#define RC_FILEVERSION 4,4,0,0
+#define RC_PRODUCTVERSION 4,4,0,0
 #define RC_PRODUCTVERSION2 VERSIONSTR
 // These are for content versioning.
 #define VER_MAJOR 4
@@ -65,7 +65,7 @@ const char *GetVersionString();
 // Version stored in the ini's [LastRun] section.
 // Bump it if you made some configuration change that you want to
 // be able to migrate in FGameConfigFile::DoGlobalSetup().
-#define LASTRUNVERSION "219"
+#define LASTRUNVERSION "220"
 
 // Protocol version used in demos.
 // Bump it if you change existing DEM_ commands or add new ones.
@@ -84,16 +84,18 @@ const char *GetVersionString();
 #define SAVEGAME_EXT "zds"
 
 // MINSAVEVER is the minimum level snapshot version that can be loaded.
-#define MINSAVEVER	4556
+#define MINSAVEVER 4556
 
 // Use 4500 as the base git save version, since it's higher than the
 // SVN revision ever got.
-#define SAVEVER 4557
+#define SAVEVER 4558
 
 // This is so that derivates can use the same savegame versions without worrying about engine compatibility
 #define GAMESIG "GZDOOM"
 #define BASEWAD "gzdoom.pk3"
 #define OPTIONALWAD "game_support.pk3"
+#define GZDOOM 1
+#define VR3D_ENABLED
 
 // More stuff that needs to be different for derivatives.
 #define GAMENAME "GZDoomVR"
@@ -107,6 +109,11 @@ const char *GetVersionString();
 #else
 #define GAME_DIR ".config/" GAMENAMELOWERCASE
 #endif
+
+const int SAVEPICWIDTH = 216;
+const int SAVEPICHEIGHT = 162;
+const int VID_MIN_WIDTH = 320;
+const int VID_MIN_HEIGHT = 200;
 
 
 #endif //__VERSION_H__

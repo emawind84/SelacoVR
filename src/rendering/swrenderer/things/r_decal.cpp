@@ -30,7 +30,7 @@
 #include "r_sky.h"
 #include "v_video.h"
 #include "m_swap.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "stats.h"
 #include "a_sharedglobal.h"
 #include "d_net.h"
@@ -41,6 +41,7 @@
 #include "swrenderer/drawers/r_draw.h"
 #include "v_palette.h"
 #include "r_data/colormaps.h"
+#include "texturemanager.h"
 #include "swrenderer/line/r_wallsetup.h"
 #include "swrenderer/line/r_walldraw.h"
 #include "swrenderer/segments/r_drawsegment.h"
@@ -50,7 +51,7 @@
 #include "swrenderer/things/r_wallsprite.h"
 #include "swrenderer/viewport/r_viewport.h"
 #include "swrenderer/viewport/r_spritedrawer.h"
-#include "swrenderer/r_memory.h"
+#include "r_memory.h"
 #include "swrenderer/r_renderthread.h"
 
 namespace swrenderer
@@ -122,13 +123,11 @@ namespace swrenderer
 			}
 		}
 
-		FTexture *tex = TexMan.GetPalettedTexture(decal->PicNum, true);
-
-		if (tex == NULL || !tex->isValid())
+		FSoftwareTexture *WallSpriteTile = GetPalettedSWTexture(decal->PicNum, true);
+		if (WallSpriteTile == NULL)
 		{
 			return;
 		}
-		FSoftwareTexture *WallSpriteTile = tex->GetSoftwareTexture();
 
 		// Determine left and right edges of sprite. Since this sprite is bound
 		// to a wall, we use the wall's angle instead of the decal's. This is
@@ -218,14 +217,6 @@ namespace swrenderer
 			}
 		}
 
-		// Clip sprite to drawseg
-		x1 = MAX<int>(clipper->x1, x1);
-		x2 = MIN<int>(clipper->x2, x2);
-		if (x1 >= x2)
-		{
-			return;
-		}
-
 		// Prepare lighting
 		ProjectedWallLight light;
 		light.SetColormap(lightsector, curline);
@@ -250,7 +241,7 @@ namespace swrenderer
 			if (visible)
 			{
 				thread->PrepareTexture(WallSpriteTile, decal->RenderStyle);
-				drawerargs.DrawMasked(thread, zpos + WallSpriteTile->GetTopOffset(0) * decal->ScaleY, decal->ScaleY, decal->RenderFlags & RF_XFLIP, decal->RenderFlags & RF_YFLIP, WallC, light, WallSpriteTile, mfloorclip, mceilingclip, decal->RenderStyle);
+				drawerargs.DrawMasked(thread, zpos + WallSpriteTile->GetTopOffset(0) * decal->ScaleY, decal->ScaleY, decal->RenderFlags & RF_XFLIP, decal->RenderFlags & RF_YFLIP, WallC, clipper->x1, clipper->x2, light, WallSpriteTile, mfloorclip, mceilingclip, decal->RenderStyle);
 			}
 
 			// If this sprite is RF_CLIPFULL on a two-sided line, needrepeat will
