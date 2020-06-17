@@ -650,6 +650,7 @@ int ZCCCompiler::Compile()
 	CreateStructTypes();
 	CompileAllConstants();
 	CompileAllFields();
+	InitDefaults();
 	InitFunctions();
 	return FScriptPosition::ErrorCounter;
 }
@@ -1952,6 +1953,18 @@ void ZCCCompiler::SetImplicitArgs(TArray<PType*>* args, TArray<uint32_t>* argfla
 	}
 }
 
+
+void ZCCCompiler::InitDefaults()
+{
+	for (auto c : Classes)
+	{
+		if (c->ClassType()->ParentClass)
+		{
+			auto ti = c->ClassType();
+			ti->InitializeDefaults();
+		}
+	}
+}
 
 //==========================================================================
 //

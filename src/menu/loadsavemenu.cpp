@@ -33,7 +33,7 @@
 **
 */
 
-#include "menu/menu.h"
+#include "doommenu.h"
 #include "version.h"
 #include "g_game.h"
 #include "common/textures/m_png.h"

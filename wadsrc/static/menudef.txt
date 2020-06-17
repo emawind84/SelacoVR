@@ -802,12 +802,6 @@ OptionMenu "JoystickConfigMenu" protected
 //
 //-------------------------------------------------------------------------------------------
 
-OptionValue ColumnMethods
-{
-	0.0, "$OPTVAL_ORIGINAL"
-	1.0, "$OPTVAL_OPTIMIZED"
-}
-
 OptionValue BlendMethods
 {
 	0.0, "$OPTVAL_CLASSIC"
@@ -2402,6 +2396,7 @@ OptionValue "LightingModes"
 	2, "$OPTVAL_DOOM"
 	3, "$OPTVAL_DARK"
 	4, "$OPTVAL_LEGACY"
+	5, "$OPTVAL_BUILD"
 	8, "$OPTVAL_SOFTWARE"
 	16, "$OPTVAL_VANILLA"
 }

@@ -937,7 +937,6 @@ set (PCH_SOURCES
 	rendering/r_utility.cpp
 	rendering/r_sky.cpp
 	sound/s_advsound.cpp
-	sound/s_reverbedit.cpp
 	sound/s_sndseq.cpp
 	sound/s_doomsound.cpp
 	serializer_doom.cpp
@@ -1023,13 +1022,14 @@ set (PCH_SOURCES
 	maploader/compatibility.cpp
 	maploader/postprocessor.cpp
 	menu/joystickmenu.cpp
-	menu/loadsavemenu.cpp
 	menu/menu.cpp
-	menu/menudef.cpp
 	menu/messagebox.cpp
 	menu/optionmenu.cpp
-	menu/playermenu.cpp
 	menu/resolutionmenu.cpp
+	menu/doommenu.cpp
+	menu/loadsavemenu.cpp
+	menu/playermenu.cpp
+	menu/menudef.cpp
 	gamedata/textures/animations.cpp
 	gamedata/textures/anim_switches.cpp
 	gamedata/textures/buildloader.cpp
@@ -1079,6 +1079,7 @@ set (PCH_SOURCES
 	common/audio/sound/oalsound.cpp
 	common/audio/sound/s_environment.cpp
 	common/audio/sound/s_sound.cpp
+	common/audio/sound/s_reverbedit.cpp
 	common/audio/music/music_midi_base.cpp
 	common/audio/music/music.cpp
 	common/audio/music/i_music.cpp
@@ -1173,6 +1174,7 @@ set (PCH_SOURCES
 	common/filesystem/file_directory.cpp
 	common/filesystem/resourcefile.cpp
 	common/engine/cycler.cpp
+	common/engine/d_event.cpp
 	common/engine/stats.cpp
 	common/engine/sc_man.cpp
 	common/engine/palettecontainer.cpp
@@ -1186,6 +1188,7 @@ set (PCH_SOURCES
 	common/objects/dobject.cpp
 	common/objects/dobjgc.cpp
 	common/objects/dobjtype.cpp
+	
 	common/rendering/v_framebuffer.cpp
 	common/rendering/v_video.cpp
 	common/rendering/r_thread.cpp
@@ -1228,7 +1231,7 @@ set (PCH_SOURCES
 	common/scripting/vm/vmexec.cpp
 	common/scripting/vm/vmframe.cpp
 	common/scripting/interface/stringformat.cpp
-	#common/scripting/interface/exports.cpp
+	common/scripting/interface/vmnatives.cpp
 	common/scripting/frontend/ast.cpp
 	common/scripting/frontend/zcc_compile.cpp
 	common/scripting/frontend/zcc_parser.cpp
@@ -1352,6 +1355,7 @@ include_directories( .
 	rendering/2d
 	r_data
 	sound
+	menu
 	sound/backend
 	xlat
 	utility
