@@ -235,6 +235,7 @@ int				lookspeed[2] = {450, 512};
 
 CVAR (Bool,		cl_run,			true,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always run?
 CVAR (Bool,		invertmouse,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Invert mouse look down/up?
+CVAR (Bool,		invertmousex,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Invert mouse look left/right?
 CVAR (Bool,		freelook,		true,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always mlook?
 CVAR (Bool,		lookstrafe,		false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always strafe with mouse?
 CVAR (Float,	m_pitch,		1.f,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Mouse speeds
@@ -348,6 +349,14 @@ CCMD (slot)
 				VMCall(func, param, 3, &ret, 1);
 			}
 		}
+
+		// [Nash] Option to display the name of the weapon being switched to.
+		if (players[consoleplayer].playerstate != PST_LIVE) return;
+		if (SendItemUse != players[consoleplayer].ReadyWeapon && (displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
+		{
+			StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(SmallFont, SendItemUse->GetTag(),
+				1.5f, 0.90f, 0, 0, (EColorRange)*nametagcolor, 2.f, 0.35f), MAKE_ID('W', 'E', 'P', 'N'));
+		}
 	}
 }
 
@@ -391,6 +400,7 @@ CCMD (weapnext)
 	}
 
 	// [BC] Option to display the name of the weapon being cycled to.
+	if (players[consoleplayer].playerstate != PST_LIVE) return;
 	if ((displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
 	{
 		StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(SmallFont, SendItemUse->GetTag(),
@@ -417,6 +427,7 @@ CCMD (weapprev)
 	}
 
 	// [BC] Option to display the name of the weapon being cycled to.
+	if (players[consoleplayer].playerstate != PST_LIVE) return;
 	if ((displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
 	{
 		StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(SmallFont, SendItemUse->GetTag(),
@@ -800,9 +811,6 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	cmd->ucmd.sidemove <<= 8;
 }
 
-//[Graf Zahl] This really helps if the mouse update rate can't be increased!
-CVAR (Bool,		smooth_mouse,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
-
 static int LookAdjust(int look)
 {
 	look <<= 16;
@@ -860,7 +868,7 @@ void G_AddViewPitch (int look, bool mouse)
 	}
 	if (look != 0)
 	{
-		LocalKeyboardTurner = (!mouse || smooth_mouse);
+		LocalKeyboardTurner = !mouse;
 	}
 }
 
@@ -875,7 +883,7 @@ void G_AddViewAngle (int yaw, bool mouse)
 	LocalViewAngle -= yaw;
 	if (yaw != 0)
 	{
-		LocalKeyboardTurner = (!mouse || smooth_mouse);
+		LocalKeyboardTurner = !mouse;
 	}
 }
 
@@ -1694,7 +1702,24 @@ void G_DoReborn (int playernum, bool freshbot)
 	}
 	else
 	{
-		bool isUnfriendly = players[playernum].mo && !(players[playernum].mo->flags & MF_FRIENDLY);
+		bool isUnfriendly;
+
+		PlayerSpawnPickClass(playernum);
+
+		// this condition should never be false
+		assert(players[playernum].cls != NULL);
+
+		if (players[playernum].cls != NULL)
+		{
+			isUnfriendly = !(GetDefaultByType(players[playernum].cls)->flags & MF_FRIENDLY);
+			DPrintf(DMSG_NOTIFY, "Player class IS defined: unfriendly is %i\n", isUnfriendly);
+		}
+		else
+		{
+			// we shouldn't be here, but if we are, get the player's current status
+			isUnfriendly = players[playernum].mo && !(players[playernum].mo->flags & MF_FRIENDLY);
+			DPrintf(DMSG_NOTIFY, "Player class NOT defined: unfriendly is %i\n", isUnfriendly);
+		}
 
 		// respawn at the start
 		// first disassociate the corpse

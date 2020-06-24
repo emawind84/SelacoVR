@@ -185,7 +185,7 @@ class OpenALSoundStream : public SoundStream
 		if(Renderer->FreeSfx.Size() == 0)
 		{
 			FSoundChan *lowest = Renderer->FindLowestChannel();
-			if(lowest) Renderer->ForceStopChannel(lowest);
+			if(lowest) Renderer->StopChannel(lowest);
 
 			if(Renderer->FreeSfx.Size() == 0)
 				return false;
@@ -665,14 +665,6 @@ OpenALSoundRenderer::OpenALSoundRenderer()
 		alcCloseDevice(Device);
 		Device = NULL;
 		return;
-	}
-
-	ALCint refresh=0;
-	alcGetIntegerv(Device, ALC_REFRESH, 1, &refresh);
-	if(refresh > 0)
-	{
-		// Round up instead of down
-		UpdateTimeMS = (1000+refresh-1) / refresh;
 	}
 
 	ALCint numMono=0, numStereo=0;
@@ -1189,26 +1181,12 @@ void OpenALSoundRenderer::UnloadSound(SoundHandle sfx)
 			if((ALuint)bufID == buffer)
 			{
 				FSoundChan *next = schan->NextChan;
-				ForceStopChannel(schan);
+				StopChannel(schan);
 				schan = next;
 				continue;
 			}
 		}
 		schan = schan->NextChan;
-	}
-
-	// Make sure to kill any currently fading sounds too
-	for(auto iter = FadingSources.begin();iter != FadingSources.end();)
-	{
-		ALint bufID = 0;
-		alGetSourcei(iter->first, AL_BUFFER, &bufID);
-		if(static_cast<ALuint>(bufID) == buffer)
-		{
-			FreeSource(iter->first);
-			iter = FadingSources.erase(iter);
-		}
-		else
-			++iter;
 	}
 
 	alDeleteBuffers(1, &buffer);
@@ -1229,12 +1207,12 @@ SoundStream *OpenALSoundRenderer::CreateStream(SoundStreamCallback callback, int
 	return stream;
 }
 
-FISoundChannel *OpenALSoundRenderer::StartSound(SoundHandle sfx, float vol, int pitch, int chanflags, FISoundChannel *reuse_chan)
+FISoundChannel *OpenALSoundRenderer::StartSound(SoundHandle sfx, float vol, int pitch, int chanflags, FISoundChannel *reuse_chan, float startTime)
 {
 	if(FreeSfx.Size() == 0)
 	{
 		FSoundChan *lowest = FindLowestChannel();
-		if(lowest) ForceStopChannel(lowest);
+		if(lowest) StopChannel(lowest);
 
 		if(FreeSfx.Size() == 0)
 			return NULL;
@@ -1280,7 +1258,10 @@ FISoundChannel *OpenALSoundRenderer::StartSound(SoundHandle sfx, float vol, int 
 		alSourcef(source, AL_PITCH, PITCH(pitch));
 
 	if(!reuse_chan || reuse_chan->StartTime == 0)
-		alSourcef(source, AL_SEC_OFFSET, 0.f);
+	{
+		float st = (chanflags&SNDF_LOOP) ? fmod(startTime, (float)GetMSLength(sfx) / 1000.f) : clamp<float>(startTime, 0.f, (float)GetMSLength(sfx) / 1000.f);
+		alSourcef(source, AL_SEC_OFFSET, st);
+	}
 	else
 	{
 		if((chanflags&SNDF_ABSTIME))
@@ -1329,7 +1310,7 @@ FISoundChannel *OpenALSoundRenderer::StartSound(SoundHandle sfx, float vol, int 
 
 FISoundChannel *OpenALSoundRenderer::StartSound3D(SoundHandle sfx, SoundListener *listener, float vol,
 	FRolloffInfo *rolloff, float distscale, int pitch, int priority, const FVector3 &pos, const FVector3 &vel,
-	int channum, int chanflags, FISoundChannel *reuse_chan)
+	int channum, int chanflags, FISoundChannel *reuse_chan, float startTime)
 {
 	float dist_sqr = (float)(pos - listener->position).LengthSquared();
 
@@ -1340,7 +1321,7 @@ FISoundChannel *OpenALSoundRenderer::StartSound3D(SoundHandle sfx, SoundListener
 		{
 			if(lowest->Priority < priority || (lowest->Priority == priority &&
 			                                   lowest->DistanceSqr > dist_sqr))
-				ForceStopChannel(lowest);
+				StopChannel(lowest);
 		}
 		if(FreeSfx.Size() == 0)
 			return NULL;
@@ -1473,7 +1454,13 @@ FISoundChannel *OpenALSoundRenderer::StartSound3D(SoundHandle sfx, SoundListener
 		alSourcef(source, AL_PITCH, PITCH(pitch));
 
 	if(!reuse_chan || reuse_chan->StartTime == 0)
-		alSourcef(source, AL_SEC_OFFSET, 0.f);
+	{
+		float sfxlength = (float)GetMSLength(sfx) / 1000.f;
+		float st = (chanflags & SNDF_LOOP)
+				? (sfxlength > 0 ? fmod(startTime, sfxlength) : 0)
+				: clamp<float>(startTime, 0.f, sfxlength);
+		alSourcef(source, AL_SEC_OFFSET, st);
+	}
 	else
 	{
 		if((chanflags&SNDF_ABSTIME))
@@ -1543,8 +1530,15 @@ void OpenALSoundRenderer::ChannelPitch(FISoundChannel *chan, float pitch)
 		alSourcef(source, AL_PITCH, std::max(pitch, 0.0001f));
 }
 
-void OpenALSoundRenderer::FreeSource(ALuint source)
+void OpenALSoundRenderer::StopChannel(FISoundChannel *chan)
 {
+	if(chan == NULL || chan->SysChannel == NULL)
+		return;
+
+	ALuint source = GET_PTRID(chan->SysChannel);
+	// Release first, so it can be properly marked as evicted if it's being killed
+	soundEngine->ChannelEnded(chan);
+
 	alSourceRewind(source);
 	alSourcei(source, AL_BUFFER, 0);
 	getALError();
@@ -1558,41 +1552,6 @@ void OpenALSoundRenderer::FreeSource(ALuint source)
 		SfxGroup.Delete(i);
 
 	FreeSfx.Push(source);
-}
-
-void OpenALSoundRenderer::StopChannel(FISoundChannel *chan)
-{
-	if(chan == NULL || chan->SysChannel == NULL)
-		return;
-
-	ALuint source = GET_PTRID(chan->SysChannel);
-	// Release first, so it can be properly marked as evicted if it's being killed
-	soundEngine->ChannelEnded(chan);
-
-	ALint state = AL_INITIAL;
-	alGetSourcei(source, AL_SOURCE_STATE, &state);
-	if(state != AL_PLAYING)
-		FreeSource(source);
-	else
-	{
-		// The sound is being killed while playing, so set its gain to 0 and track it
-		// as it fades.
-		alSourcef(source, AL_GAIN, 0.f);
-		getALError();
-
-		FadingSources.insert(std::make_pair(
-			source, std::chrono::steady_clock::now().time_since_epoch().count()
-		));
-	}
-}
-
-void OpenALSoundRenderer::ForceStopChannel(FISoundChannel *chan)
-{
-	ALuint source = GET_PTRID(chan->SysChannel);
-	if(!source) return;
-
-	soundEngine->ChannelEnded(chan);
-	FreeSource(source);
 }
 
 
@@ -1871,23 +1830,6 @@ void OpenALSoundRenderer::UpdateSounds()
 {
 	alProcessUpdatesSOFT();
 
-	if(!FadingSources.empty())
-	{
-		auto cur_time = std::chrono::steady_clock::now().time_since_epoch();
-		for(auto iter = FadingSources.begin();iter != FadingSources.end();)
-		{
-			auto time_diff = std::chrono::duration_cast<std::chrono::milliseconds>(cur_time -
-				std::chrono::steady_clock::time_point::duration(iter->second));
-			if(time_diff.count() >= UpdateTimeMS)
-			{
-				FreeSource(iter->first);
-				iter = FadingSources.erase(iter);
-			}
-			else
-				++iter;
-		}
-	}
-
 	if(ALC.EXT_disconnect)
 	{
 		ALCint connected = ALC_TRUE;
@@ -1908,11 +1850,14 @@ bool OpenALSoundRenderer::IsValid()
 	return Device != NULL;
 }
 
-void OpenALSoundRenderer::MarkStartTime(FISoundChannel *chan)
+void OpenALSoundRenderer::MarkStartTime(FISoundChannel *chan, float startTime)
 {
 	// FIXME: Get current time (preferably from the audio clock, but the system
 	// time will have to do)
-	chan->StartTime = std::chrono::steady_clock::now().time_since_epoch().count();
+	using namespace std::chrono;
+	auto startTimeDuration = duration<double>(startTime);
+	auto diff = steady_clock::now().time_since_epoch() - startTimeDuration;
+	chan->StartTime = static_cast<uint64_t>(duration_cast<nanoseconds>(diff).count());
 }
 
 float OpenALSoundRenderer::GetAudibility(FISoundChannel *chan)
@@ -2036,7 +1981,7 @@ void OpenALSoundRenderer::PurgeStoppedSources()
 		{
 			if(schan->SysChannel != NULL && src == GET_PTRID(schan->SysChannel))
 			{
-				ForceStopChannel(schan);
+				StopChannel(schan);
 				break;
 			}
 			schan = schan->NextChan;

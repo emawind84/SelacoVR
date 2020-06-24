@@ -2782,6 +2782,10 @@ void OpenGLSWFrameBuffer::DrawTextureParms(FTexture *img, DrawParms &parms)
 	{
 		swapvalues(u0, u1);
 	}
+	if (parms.flipY)
+	{
+		swapvalues(v0, v1);
+	}
 	if (parms.windowleft > 0 || parms.windowright < parms.texwidth)
 	{
 		double wi = MIN(parms.windowright, parms.texwidth);
@@ -3822,6 +3826,9 @@ void OpenGLSWFrameBuffer::ScaleCoordsFromWindow(int16_t &x, int16_t &y)
 	int letterboxX, letterboxY, letterboxWidth, letterboxHeight;
 	GetLetterboxFrame(letterboxX, letterboxY, letterboxWidth, letterboxHeight);
 
+#if !defined(_WIN32) && !defined(__APPLE__)
+	SDLGLFB::ScaleCoordsFromWindow(x,y);
+#endif
 	// Subtract the LB video mode letterboxing
 	if (IsFullscreen())
 		y -= (GetTrueHeight() - VideoHeight) / 2;

@@ -256,7 +256,6 @@ void DIntermissionScreen::Drawer ()
 		if (CheckOverlay(i))
 			screen->DrawTexture (TexMan[mOverlays[i].mPic], mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, TAG_DONE);
 	}
-	if (!mFlatfill) screen->FillBorder (NULL);
 	if (mSubtitle)
 	{
 		const char *sub = mSubtitle.GetChars();
@@ -774,7 +773,6 @@ void DIntermissionScreenScroller::Drawer ()
 			DTA_Masked, false,
 			TAG_DONE);
 
-		screen->FillBorder (NULL);
 		mBackground = mSecondPic;
 	}
 	else 
@@ -868,20 +866,20 @@ bool DIntermissionController::Responder (event_t *ev)
 		{
 			const char *cmd = Bindings.GetBind (ev->data1);
 
-			if (cmd != NULL &&
-				(!stricmp(cmd, "toggleconsole") ||
-				 !stricmp(cmd, "screenshot")))
+			if (cmd != nullptr)
 			{
-				return false;
-			}
-
-			// The following is needed to be able to enter main menu with a controller,
-			// by pressing buttons that are usually assigned to this action, Start and Back by default
-			if (!stricmp(cmd, "menu_main") || !stricmp(cmd, "pause"))
-			{
-				M_StartControlPanel(true);
-				M_SetMenu(NAME_Mainmenu, -1);
-				return true;
+				if (!stricmp(cmd, "toggleconsole") || !stricmp(cmd, "screenshot"))
+				{
+					return false;
+				}
+				// The following is needed to be able to enter main menu with a controller,
+				// by pressing buttons that are usually assigned to this action, Start and Back by default
+				else if (!stricmp(cmd, "menu_main") || !stricmp(cmd, "pause"))
+				{
+					M_StartControlPanel(true);
+					M_SetMenu(NAME_Mainmenu, -1);
+					return true;
+				}
 			}
 		}
 
@@ -940,6 +938,7 @@ void DIntermissionController::Drawer ()
 {
 	if (mScreen != NULL)
 	{
+		screen->FillBorder(nullptr);
 		mScreen->Drawer();
 	}
 }
