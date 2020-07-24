@@ -140,6 +140,7 @@ EXTERN_CVAR(Bool, openvr_drawControllers)
 EXTERN_CVAR(Float, openvr_weaponRotate);
 EXTERN_CVAR(Float, openvr_weaponScale);
 
+EXTERN_CVAR(Bool, vr_enable_haptics);
 EXTERN_CVAR(Float, vr_kill_momentum)
 
 //HUD control
@@ -410,6 +411,10 @@ namespace s3d
 	using namespace std::chrono;
 	void  OpenVRHaptics::ProcessHaptics() 
 	{
+		if (!vr_enable_haptics) {
+			return;
+		}
+
 		static double lastFrameTime = 0.0f;
 		double timestamp = (duration_cast<milliseconds>(
 			system_clock::now().time_since_epoch())).count();
