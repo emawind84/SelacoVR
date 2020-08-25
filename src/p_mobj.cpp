@@ -5280,7 +5280,7 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 		if (state == PST_ENTER || (state == PST_LIVE && !savegamerestore))
 		{
 			Behaviors.StartTypedScripts (SCRIPT_Enter, p->mo, true);
-			E_PlayerSpawned(PlayerNum(p));
+			localEventManager->PlayerSpawned(PlayerNum(p));
 		}
 		else if (state == PST_REBORN)
 		{
