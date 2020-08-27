@@ -895,12 +895,11 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
 			thing->renderflags ^= RF_XFLIP;
 
 		r.Scale(sprscale.X, sprscale.Y);
-
-		float rightfac = -r.left;
+		
+		float SpriteOffY = thing->SpriteOffset.Y;
+		float rightfac = -r.left - thing->SpriteOffset.X;
 		float leftfac = rightfac - r.width;
-		float bottomfac = -r.top;
-		float topfac = bottomfac - r.height;
-		z1 = z - r.top;
+		z1 = z - r.top - SpriteOffY;
 		z2 = z1 - r.height;
 
 		float spriteheight = sprscale.Y * r.height;
@@ -911,37 +910,46 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
 			PerformSpriteClipAdjustment(thing, thingpos, spriteheight);
 		}
 
-		float viewvecX;
-		float viewvecY;
 		switch (spritetype)
 		{
 		case RF_FACESPRITE:
-			viewvecX = GLRenderer->mViewVector.X;
-			viewvecY = GLRenderer->mViewVector.Y;
+		{
+			float viewvecX = GLRenderer->mViewVector.X;
+			float viewvecY = GLRenderer->mViewVector.Y;
 
 			x1 = x - viewvecY*leftfac;
 			x2 = x - viewvecY*rightfac;
 			y1 = y + viewvecX*leftfac;
 			y2 = y + viewvecX*rightfac;
 			break;
-
+		}
 		case RF_FLATSPRITE:
 		{
+			float bottomfac = -r.top - SpriteOffY;
+			float topfac = bottomfac - r.height;
+
 			x1 = x + leftfac;
 			x2 = x + rightfac;
 			y1 = y - topfac;
 			y2 = y - bottomfac;
+			// [MC] Counteract in case of any potential problems. Tests so far haven't
+			// shown any outstanding issues but that doesn't mean they won't appear later
+			// when more features are added.
+			z1 += SpriteOffY;
+			z2 += SpriteOffY;
+			break;
 		}
-		break;
 		case RF_WALLSPRITE:
-			viewvecX = Angles.Yaw.Cos();
-			viewvecY = Angles.Yaw.Sin();
+		{
+			float viewvecX = Angles.Yaw.Cos();
+			float viewvecY = Angles.Yaw.Sin();
 
 			x1 = x + viewvecY*leftfac;
 			x2 = x + viewvecY*rightfac;
 			y1 = y - viewvecX*leftfac;
 			y2 = y - viewvecX*rightfac;
 			break;
+		}
 		}
 	}
 	else

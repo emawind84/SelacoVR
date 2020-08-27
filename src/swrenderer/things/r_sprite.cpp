@@ -80,6 +80,9 @@ namespace swrenderer
 
 		double tz = tr_x * thread->Viewport->viewpoint.TanCos + tr_y * thread->Viewport->viewpoint.TanSin;
 
+		tr_x = tr_x + thing->SpriteOffset.X;
+		tr_y = tr_y + thing->SpriteOffset.X;
+
 		// thing is behind view plane?
 		if (tz < MINZ)
 			return;

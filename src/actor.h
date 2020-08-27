@@ -1059,6 +1059,7 @@ public:
 
 	DVector3		OldRenderPos;
 	DVector3		Vel;
+	DVector2		SpriteOffset;
 	double			Speed;
 	double			FloatSpeed;
 
