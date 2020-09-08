@@ -58,9 +58,7 @@ FLightBuffer::FLightBuffer()
 	}
 
 	glGenBuffers(1, &mBufferId);
-#ifndef __ANDROID__	// This makes Ardeno 530 crash for some reason..
 	glBindBufferBase(mBufferType, LIGHTBUF_BINDINGPOINT, mBufferId);
-#endif
 	glBindBuffer(mBufferType, mBufferId);	// Note: Some older AMD drivers don't do that in glBindBufferBase, as they should.
 	if (gl.lightmethod == LM_DIRECT)
 	{
@@ -71,6 +69,10 @@ FLightBuffer::FLightBuffer()
 	{
 		glBufferData(mBufferType, mByteSize, NULL, GL_DYNAMIC_DRAW);
 		mBufferPointer = NULL;
+#ifdef __ANDROID__	// This is needed to stop Ardeno 530 from crashing on the first drawer
+		Begin();
+		Finish();
+#endif
 	}
 
 	Clear();
