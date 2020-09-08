@@ -168,6 +168,7 @@ public:
 
     FFlatVertexBuffer *mVBOBuff[MAX_HW_BUFFERS];
 	FSkyVertexBuffer *mSkyVBOBuff[MAX_HW_BUFFERS];
+	FLightBuffer *mLightsBuff[MAX_HW_BUFFERS];
 
     // Used instead of GLsync
     GLsync syncBuff[MAX_HW_BUFFERS];
@@ -188,6 +189,13 @@ public:
         SkyBuff++;
         SkyBuff %= nbrHwBuffers;
     }
+
+    void NextLightBuffer()
+	{
+		mLights = mLightsBuff[LightBuff];
+		LightBuff++;
+		LightBuff %= nbrHwBuffers;
+	}
 #endif
 	FFlatVertexBuffer *mVBO;
 	FSkyVertexBuffer *mSkyVBO;

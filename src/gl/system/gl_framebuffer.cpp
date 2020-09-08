@@ -238,7 +238,7 @@ void OpenGLFrameBuffer::Swap()
 #ifdef USE_GL_HW_BUFFERS
     GLRenderer->NextVtxBuffer();
     GLRenderer->NextSkyBuffer();
-
+	GLRenderer->NextLightBuffer();
     GLRenderer->GPUWaitSync();
 #endif
 

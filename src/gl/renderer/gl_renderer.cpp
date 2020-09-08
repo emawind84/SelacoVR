@@ -182,15 +182,18 @@ void FGLRenderer::Initialize(int width, int height)
     {
     	mVBOBuff[n] = new FFlatVertexBuffer(width, height);
     	mSkyVBOBuff[n] = new FSkyVertexBuffer;
+    	if (!gl.legacyMode) mLightsBuff[n] = new FLightBuffer;
     }
     NextVtxBuffer();
     NextSkyBuffer();
+    if (!gl.legacyMode) NextLightBuffer();
 #else
 	mVBO = new FFlatVertexBuffer(width, height);
 	mSkyVBO = new FSkyVertexBuffer;
-#endif
 	if (!gl.legacyMode) mLights = new FLightBuffer();
 	else mLights = NULL;
+#endif
+
 
 	gl_RenderState.SetVertexBuffer(mVBO);
 	mFBID = 0;

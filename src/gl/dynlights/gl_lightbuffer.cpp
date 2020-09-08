@@ -150,7 +150,7 @@ int FLightBuffer::UploadLights(FDynLightData &data)
 		else
 		{
 			glBufferData(mBufferType, mByteSize, NULL, GL_DYNAMIC_DRAW);
-			mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT|GL_MAP_INVALIDATE_BUFFER_BIT);
+			mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 		}
 
 		// copy contents and delete the old buffer.
@@ -184,7 +184,7 @@ void FLightBuffer::Begin()
 	if (gl.lightmethod == LM_DEFERRED)
 	{
 		glBindBuffer(mBufferType, mBufferId);
-		mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT);
+		mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 	}
 }
 
@@ -201,8 +201,9 @@ void FLightBuffer::Finish()
 int FLightBuffer::BindUBO(unsigned int index)
 {
 	unsigned int offset = (index / mBlockAlign) * mBlockAlign;
-
+#ifndef USE_GL_HW_BUFFERS // Always bind because there are multiple buffers and lose track of which is bound
 	if (offset != mLastMappedIndex)
+#endif
 	{
 		// this will only get called if a uniform buffer is used. For a shader storage buffer we only need to bind the buffer once at the start to all shader programs
 		mLastMappedIndex = offset;
