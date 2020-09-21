@@ -218,7 +218,9 @@ FGLRenderer::~FGLRenderer()
 	if (mSamplerManager != NULL) delete mSamplerManager;
 	if (mVBO != NULL) delete mVBO;
 	if (mSkyVBO != NULL) delete mSkyVBO;
+#ifndef __ANDROID__ // Can cause crash
 	if (mLights != NULL) delete mLights;
+#endif
 	if (mFBID != 0) glDeleteFramebuffers(1, &mFBID);
 	if (mVAOID != 0)
 	{

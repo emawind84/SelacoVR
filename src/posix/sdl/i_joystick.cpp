@@ -311,11 +311,13 @@ void I_StartupJoysticks()
 }
 void I_ShutdownInput()
 {
+#ifndef __ANDROID__ // Causes crash
 	if(JoystickManager)
 	{
 		delete JoystickManager;
 		SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
 	}
+#endif
 }
 
 void I_GetJoysticks(TArray<IJoystickConfig *> &sticks)
