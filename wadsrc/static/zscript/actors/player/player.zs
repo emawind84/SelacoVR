@@ -1695,7 +1695,11 @@ class PlayerPawn : Actor
 			if (player.ReadyWeapon != null)
 			{
 				let psp = player.GetPSprite(PSP_WEAPON);
-				if (psp) psp.y = WEAPONTOP;
+				if (psp) 
+				{
+					psp.y = WEAPONTOP;
+					player.ReadyWeapon.ResetPSprite(psp);
+				}
 				player.SetPsprite(PSP_WEAPON, player.ReadyWeapon.GetReadyState());
 			}
 			return;
@@ -2588,8 +2592,17 @@ class PSprite : Object native play
 	native double y;
 	native double oldx;
 	native double oldy;
+	native Vector2 pivot;
+	native Vector2 scale;
+	native double rotation;
+	native int HAlign, VAlign;
+	native Vector2 Coord0;		// [MC] Not the actual coordinates. Just the offsets by A_OverlayVertexOffset.
+	native Vector2 Coord1;
+	native Vector2 Coord2;
+	native Vector2 Coord3;
 	native double alpha;
 	native Bool firstTic;
+	native bool InterpolateTic;
 	native int Tics;
 	native bool bAddWeapon;
 	native bool bAddBob;
@@ -2598,6 +2611,8 @@ class PSprite : Object native play
 	native bool bFlip;	
 	native bool bMirror;
 	native bool bPlayerTranslated;
+	native bool bPivotPercent;
+	native bool bInterpolate;
 
 	native void SetState(State newstate, bool pending = false);
 
