@@ -318,16 +318,16 @@ void EventManager::WorldThingDied(AActor* actor, AActor* inflictor)
 		handler->WorldThingDied(actor, inflictor);
 }
 
-void EventManager::WorldThingGround(AActor* actor)
+void EventManager::WorldThingGround(AActor* actor, FState* st)
 {
 	// don't call anything if actor was destroyed on PostBeginPlay/BeginPlay/whatever.
 	if (actor->ObjectFlags & OF_EuthanizeMe)
 		return;
 
-	if (ShouldCallStatic(true)) staticEventManager.WorldThingGround(actor);
+	if (ShouldCallStatic(true)) staticEventManager.WorldThingGround(actor, st);
 
 	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
-		handler->WorldThingGround(actor);
+		handler->WorldThingGround(actor, st);
 }
 
 void EventManager::WorldThingRevived(AActor* actor)
@@ -814,7 +814,7 @@ void DStaticEventHandler::WorldThingDied(AActor* actor, AActor* inflictor)
 	}
 }
 
-void DStaticEventHandler::WorldThingGround(AActor* actor)
+void DStaticEventHandler::WorldThingGround(AActor* actor, FState* st)
 {
 	IFVIRTUAL(DStaticEventHandler, WorldThingGround)
 	{
@@ -822,6 +822,7 @@ void DStaticEventHandler::WorldThingGround(AActor* actor)
 		if (isEmpty(func)) return;
 		FWorldEvent e = owner->SetupWorldEvent();
 		e.Thing = actor;
+		e.CrushedState = st;
 		VMValue params[2] = { (DStaticEventHandler*)this, &e };
 		VMCall(func, params, 2, nullptr, 0);
 	}
