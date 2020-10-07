@@ -49,7 +49,6 @@ namespace {
 
 enum class EventType {
 	Null,
-	Delay,
 	Action
 };
 
@@ -315,8 +314,10 @@ EventType AlsaMIDIDevice::PullEvent(EventState & state) {
 			break;
 		}
 	}
-	// We didn't really recognize the event, treat it as a delay
-	return EventType::Delay;
+	// We didn't really recognize the event, treat it as a NOP
+	state.data.type = SND_SEQ_EVENT_NONE;
+	snd_seq_ev_set_fixed(&state.data);
+	return EventType::Action;
 }
 
 void AlsaMIDIDevice::SetExit(bool exit) {
@@ -371,13 +372,6 @@ void AlsaMIDIDevice::PumpEvents() {
 			if(WaitForExit(pump_step, status)) {
 				break;
 			}
-			continue;
-		}
-
-		// chomp delays as they come...
-		if(type == EventType::Delay) {
-			buffer_ticks += event.ticks;
-			Position += event.size_of;
 			continue;
 		}
 
