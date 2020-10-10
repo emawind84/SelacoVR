@@ -460,7 +460,7 @@ DObject *PClass::CreateNew()
 	else
 		memset (mem, 0, Size);
 
-	if (ConstructNative == nullptr)
+	if (ConstructNative == nullptr || bAbstract)
 	{
 		M_Free(mem);
 		I_Error("Attempt to instantiate abstract class %s.", TypeName.GetChars());

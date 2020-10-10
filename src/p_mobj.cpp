@@ -4471,6 +4471,12 @@ AActor *AActor::StaticSpawn (PClassActor *type, const DVector3 &pos, replace_t a
 	{
 		I_Error ("Tried to spawn a class-less actor\n");
 	}
+	else if (type->bAbstract)
+	{
+		// [Player701] Abstract actors cannot be spawned by any means
+		Printf("Attempt to spawn an instance of abstract actor class %s\n", type->TypeName.GetChars());
+		return nullptr;
+	}
 
 	if (allowreplacement)
 	{
