@@ -7,7 +7,7 @@ struct _ native	// These are the global variables, the struct is only here to av
 	native readonly Array<@Team> Teams;
 	native int validcount;
 	native readonly bool multiplayer;
-	native play @LevelLocals level;
+	native play LevelLocals level;
 	native @KeyBindings Bindings;
 	native @KeyBindings AutomapBindings;
 	native play @DehInfo deh;
@@ -416,8 +416,15 @@ struct GameInfoStruct native
 	native double normsidemove[2];
 }
 
+struct SystemTime
+{
+	native static ui int Now(); // This returns the epoch time
+	native static clearscope String Format(String timeForm, int timeVal); // This converts an epoch time to a local time, then uses the strftime syntax to format it
+}
+
 class Object native
 {
+	const TICRATE = 35;
 	native bool bDestroyed;
 
 	// These must be defined in some class, so that the compiler can find them. Object is just fine, as long as they are private to external code.
@@ -498,8 +505,8 @@ class Thinker : Object native play
 		MAX_STATNUM = 127
 	}
 
-	const TICRATE = 35;
-	
+	native LevelLocals Level; // hack hack
+
 	virtual native void Tick();
 	virtual native void PostBeginPlay();
 	native void ChangeStatNum(int stat);
@@ -783,6 +790,7 @@ struct LevelLocals native
 
 	native static void ExitLevel(int position, bool keepFacing);
 	native static void SecretExitLevel(int position);
+	native static void ChangeLevel(string levelname, int position = 0, int flags = 0, int skill = -1);
 }
 
 struct StringTable native

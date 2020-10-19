@@ -48,7 +48,7 @@
 
 #define FUDGEFACTOR		10
 
-static FRandom pr_teleport ("Teleport");
+static FRandom pr_teleport ("Teleport", false);
 
 CVAR (Bool, telezoom, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 
@@ -158,6 +158,19 @@ bool P_Teleport (AActor *thing, DVector3 pos, DAngle angle, int flags)
 			pos.Z = floorheight;
 		}
 	}
+	// [MK] notify thing of incoming teleport, check for an early cancel
+	// if it returns false
+	{
+		int nocancel = 1;
+		IFVIRTUALPTR(thing, AActor, PreTeleport)
+		{
+			VMValue params[] = { thing, pos.X, pos.Y, pos.Z, angle.Degrees, flags };
+			VMReturn ret;
+			ret.IntAt(&nocancel);
+			VMCall(func, params, countof(params), &ret, 1);
+		}
+		if ( !nocancel ) return false;
+	}
 	if (!P_TeleportMove (thing, pos, false))
 	{
 		return false;
@@ -222,6 +235,14 @@ bool P_Teleport (AActor *thing, DVector3 pos, DAngle angle, int flags)
 		thing->Vel.Zero();
 		// killough 10/98: kill all bobbing velocity too
 		if (player)	player->Vel.Zero();
+	}
+	// [MK] notify thing of successful teleport
+	{
+		IFVIRTUALPTR(thing, AActor, PostTeleport)
+		{
+			VMValue params[] = { thing, pos.X, pos.Y, pos.Z, angle.Degrees, flags };
+			VMCall(func, params, countof(params), nullptr, 1);
+		}
 	}
 	return true;
 }

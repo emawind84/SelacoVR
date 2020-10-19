@@ -204,6 +204,7 @@ CUSTOM_CVAR (Int, fraglimit, 0, CVAR_SERVERINFO)
 CVAR (Float, timelimit, 0.f, CVAR_SERVERINFO);
 CVAR (Int, wipetype, 1, CVAR_ARCHIVE);
 CVAR (Int, snd_drawoutput, 0, 0);
+CVAR (Bool, fixunitystatusbar, false, 0);
 CUSTOM_CVAR (String, vid_cursor, "None", CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
 	bool res = false;
@@ -536,6 +537,7 @@ CVAR (Flag, sv_dontcheckammo,		dmflags2, DF2_DONTCHECKAMMO);
 CVAR (Flag, sv_killbossmonst,		dmflags2, DF2_KILLBOSSMONST);
 CVAR (Flag, sv_nocountendmonst,		dmflags2, DF2_NOCOUNTENDMONST);
 CVAR (Flag, sv_respawnsuper,		dmflags2, DF2_RESPAWN_SUPER);
+CVAR (Flag, sv_nothingspawn,		dmflags2, DF2_NO_COOP_THING_SPAWN);
 
 //==========================================================================
 //
@@ -598,7 +600,7 @@ CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
 			COMPATF_TRACE | COMPATF_MISSILECLIP | COMPATF_SOUNDTARGET | COMPATF_NO_PASSMOBJ | COMPATF_LIMITPAIN |
 			COMPATF_DEHHEALTH | COMPATF_INVISIBILITY | COMPATF_CROSSDROPOFF | COMPATF_CORPSEGIBS | COMPATF_HITSCAN |
 			COMPATF_WALLRUN | COMPATF_NOTOSSDROPS | COMPATF_LIGHT | COMPATF_MASKEDMIDTEX;
-		w = COMPATF2_BADANGLES | COMPATF2_FLOORMOVE | COMPATF2_POINTONLINE | COMPATF2_EXPLODE2;
+		w = COMPATF2_BADANGLES | COMPATF2_FLOORMOVE | COMPATF2_POINTONLINE | COMPATF2_EXPLODE2 | COMPATF2_OLD_RANDOM_GENERATOR;
 		break;
 
 	case 3: // Boom compat mode
@@ -677,6 +679,7 @@ CVAR (Flag, compat_checkswitchrange,	compatflags2, COMPATF2_CHECKSWITCHRANGE);
 CVAR (Flag, compat_explode1,			compatflags2, COMPATF2_EXPLODE1);
 CVAR (Flag, compat_explode2,			compatflags2, COMPATF2_EXPLODE2);
 CVAR (Flag, compat_railing,				compatflags2, COMPATF2_RAILING);
+CVAR (Flag, compat_oldrandom,			compatflags2, COMPATF2_OLD_RANDOM_GENERATOR);
 
 CVAR(Bool, vid_activeinbackground, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
@@ -1018,6 +1021,8 @@ void D_Display ()
 
 void D_ErrorCleanup ()
 {
+	bool aux;
+
 	savegamerestore = false;
 	if (screen)
 		screen->Unlock ();
@@ -1026,7 +1031,9 @@ void D_ErrorCleanup ()
 	if (demorecording || demoplayback)
 		G_CheckDemoStatus ();
 	Net_ClearBuffers ();
+	aux = netgame; // for NetServerInfo
 	G_NewInit ();
+	netgame = aux;
 	M_ClearMenus ();
 	singletics = false;
 	playeringame[0] = 1;
@@ -2123,6 +2130,7 @@ static void D_DoomInit()
 	srand(rngseed);
 		
 	FRandom::StaticClearRandom ();
+	M_ClearRandom();
 
 	if (!batchrun) Printf ("M_LoadDefaults: Load system defaults.\n");
 	M_LoadDefaults ();			// load before initing other systems
@@ -2398,6 +2406,29 @@ static void NewFailure ()
     I_FatalError ("Failed to allocate memory from system heap");
 }
 
+static void FixUnityStatusBar()
+{
+	if (gameinfo.flags & GI_FIXUNITYSBAR)
+	{
+		FTexture* sbartex = TexMan.FindTexture("stbar", ETextureType::MiscPatch);
+
+		// texture not found, we're not here to operate on a non-existent texture so just exit
+		if (!sbartex)
+			return;
+
+		// where is this texture located? if it's not in an iwad, then exit
+		int lumpnum = sbartex->GetSourceLump();
+		if (lumpnum >= 0 && lumpnum < Wads.GetNumLumps())
+		{
+			int wadno = Wads.GetLumpFile(lumpnum);
+			if (wadno != Wads.GetIwadNum())
+				return;
+		}
+
+		fixunitystatusbar = true;
+	}
+}
+
 //==========================================================================
 //
 // D_DoomMain
@@ -2430,6 +2461,7 @@ static int D_DoomMain_Internal (void)
 	else if (batchout != NULL && *batchout != 0)
 	{
 		batchrun = true;
+		nosound = true;
 		execLogfile(batchout, true);
 		Printf("Command line: ");
 		for (int i = 0; i < Args->NumArgs(); i++)
@@ -2636,6 +2668,8 @@ static int D_DoomMain_Internal (void)
 		if (!batchrun) Printf ("Texman.Init: Init texture manager.\n");
 		TexMan.Init();
 		C_InitConback();
+
+		FixUnityStatusBar();
 
 		StartScreen->Progress();
 		V_InitFonts();

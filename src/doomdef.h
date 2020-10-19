@@ -184,6 +184,8 @@ enum ESkillLevels
 #define KEY_JOY6				(KEY_FIRSTJOYBUTTON+5)
 #define KEY_JOY7				(KEY_FIRSTJOYBUTTON+6)
 #define KEY_JOY8				(KEY_FIRSTJOYBUTTON+7)
+#define KEY_JOY14				(KEY_FIRSTJOYBUTTON+13)
+#define KEY_JOY15				(KEY_FIRSTJOYBUTTON+14)
 #define KEY_LASTJOYBUTTON		0x187
 #define KEY_JOYPOV1_UP			0x188
 #define KEY_JOYPOV1_RIGHT		0x189
@@ -428,7 +430,7 @@ enum
 // [BC] More dmflags. w00p!
 enum
 {
-//	DF2_YES_IMPALING		= 1 << 0,	// Player gets implaed on MF2_IMPALE items
+//	DF2_YES_IMPALING		= 1 << 0,	// Player gets impaled on MF2_IMPALE items
 	DF2_YES_WEAPONDROP		= 1 << 1,	// Drop current weapon upon death
 //	DF2_NO_RUNES			= 1 << 2,	// Don't spawn runes
 //	DF2_INSTANT_RETURN		= 1 << 3,	// Instantly return flags and skulls when player carrying it dies (ST/CTF)
@@ -456,6 +458,7 @@ enum
 	DF2_KILLBOSSMONST		= 1 << 25,	// Kills all monsters spawned by a boss cube when the boss dies
 	DF2_NOCOUNTENDMONST		= 1 << 26,	// Do not count monsters in 'end level when dying' sectors towards kill count
 	DF2_RESPAWN_SUPER		= 1 << 27,	// Respawn invulnerability and invisibility
+	DF2_NO_COOP_THING_SPAWN	= 1 << 28,	// Don't spawn multiplayer things in coop games
 };
 
 // [RH] Compatibility flags.
@@ -506,6 +509,7 @@ enum : unsigned int
 	COMPATF2_EXPLODE2		= 1 << 9,	// Use original explosion code throughout.
 	COMPATF2_RAILING		= 1 << 10,	// Bugged Strife railings.
 	COMPATF2_SCRIPTWAIT		= 1 << 11,	// Use old scriptwait implementation where it doesn't wait on a non-running script.
+	COMPATF2_OLD_RANDOM_GENERATOR	= 1 << 12,	// [BB] Use Doom's random table instead of ZDoom's random number generator.
 };
 
 // Emulate old bugs for select maps. These are not exposed by a cvar

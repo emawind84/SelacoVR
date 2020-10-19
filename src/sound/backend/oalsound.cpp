@@ -52,6 +52,11 @@ FModule OpenALModule{"OpenAL"};
 
 #include "oalload.h"
 
+CUSTOM_CVAR(Int, snd_channels, 128, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)	// number of channels available
+{
+	if (self < 64) self = 64;
+}
+CVAR(Bool, snd_waterreverb, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) 
 CVAR (String, snd_aldevice, "Default", CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Bool, snd_efx, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (String, snd_alresampler, "Default", CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
@@ -176,7 +181,7 @@ class OpenALSoundStream : public SoundStream
 	ALuint Source;
 
 	std::atomic<bool> Playing;
-	bool Looping;
+	//bool Looping;
 	ALfloat Volume;
 
 	bool SetupSource()
@@ -222,7 +227,7 @@ class OpenALSoundStream : public SoundStream
 
 public:
 	OpenALSoundStream(OpenALSoundRenderer *renderer)
-	  : Renderer(renderer), Source(0), Playing(false), Looping(false), Volume(1.0f)
+	  : Renderer(renderer), Source(0), Playing(false), Volume(1.0f)
 	{
 		memset(Buffers, 0, sizeof(Buffers));
 		Renderer->AddStream(this);
@@ -1101,6 +1106,10 @@ SoundHandle OpenALSoundRenderer::LoadSound(uint8_t *sfxdata, int length)
 		data.resize(total * 2);
 	}
 	data.resize(total);
+	if (total == 0)
+	{
+		return retval;
+	}
 	SoundDecoder_Close(decoder);
 
 #ifdef __MOBILE__
@@ -1550,6 +1559,9 @@ void OpenALSoundRenderer::StopChannel(FISoundChannel *chan)
 		ReverbSfx.Delete(i);
 	if((i=SfxGroup.Find(source)) < SfxGroup.Size())
 		SfxGroup.Delete(i);
+
+	if (!(chan->ChanFlags & CHANF_EVICTED))
+		soundEngine->SoundDone(chan);
 
 	FreeSfx.Push(source);
 }

@@ -181,6 +181,8 @@ bool			playeringame[MAXPLAYERS];
 int 			consoleplayer;			// player taking events
 int 			gametic;
 
+time_t 			epochoffset = 0;		// epoch start in seconds (0 = January 1st, 1970)
+
 CVAR(Bool, demo_compress, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 FString			newdemoname;
 FString			newdemomap;
@@ -698,6 +700,7 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (Button_MoveDown.bDown)		cmd->ucmd.buttons |= BT_MOVEDOWN;
 	if (Button_MoveUp.bDown)		cmd->ucmd.buttons |= BT_MOVEUP;
 	if (Button_ShowScores.bDown)	cmd->ucmd.buttons |= BT_SHOWSCORES;
+	if (speed) cmd->ucmd.buttons |= BT_RUN;
 
 	// Handle joysticks/game controllers.
 	float joyaxes[NUM_JOYAXIS];
@@ -1801,8 +1804,11 @@ void G_DoPlayerPop(int playernum)
 
 void G_ScreenShot (const char *filename)
 {
-	shotfile = filename;
-	gameaction = ga_screenshot;
+	if (gameaction == ga_nothing)
+	{
+		shotfile = filename;
+		gameaction = ga_screenshot;
+	}
 }
 
 
@@ -2032,6 +2038,9 @@ void G_DoLoadGame ()
 		level.info->Snapshot.Clean();
 
 	BackupSaveName = savename;
+
+	if (longsavemessages) Printf("%s (%s)\n", GStrings("GGLOADED"), savename.GetChars());
+	else Printf("%s\n", GStrings("GGLOADED"));
 
 	// At this point, the GC threshold is likely a lot higher than the
 	// amount of memory in use, so bring it down now by starting a
@@ -2692,6 +2701,7 @@ bool G_ProcessIFFDemo (FString &mapname)
 			if (mapname[0] != 0)
 			{
 				FRandom::StaticClearRandom ();
+				M_ClearRandom();
 			}
 			consoleplayer = *demo_p++;
 			break;
@@ -3017,7 +3027,10 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, MakeScreenShot)
 
 void G_MakeAutoSave()
 {
-	gameaction = ga_autosave;
+	if (gameaction == ga_nothing)
+	{
+		gameaction = ga_autosave;
+	}
 }
 
 DEFINE_ACTION_FUNCTION(FLevelLocals, MakeAutoSave)
