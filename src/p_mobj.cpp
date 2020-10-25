@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 //
 // Copyright 1993-1996 id Software
 // Copyright 1994-1996 Raven Software
@@ -5450,6 +5450,8 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 	AActor *mobj, *mobj2;
 	bool spawned;
 
+	bool spawnmulti = G_SkillProperty(SKILLP_SpawnMulti) || multiplayer;
+
 	if (mthing->EdNum == 0 || mthing->EdNum == -1)
 		return NULL;
 
@@ -5538,6 +5540,10 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 		else if (multiplayer)
 		{
 			mask = MTF_COOPERATIVE;
+		}
+		else if (spawnmulti)
+		{
+			mask = MTF_COOPERATIVE|MTF_SINGLE;
 		}
 		else
 		{
