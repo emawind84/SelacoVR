@@ -5486,7 +5486,7 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 	AActor *mobj, *mobj2;
 	bool spawned;
 
-	bool spawnmulti = G_SkillProperty(SKILLP_SpawnMulti) || multiplayer;
+	bool spawnmulti = G_SkillProperty(SKILLP_SpawnMulti) || !!(dmflags2 & DF2_ALWAYS_SPAWN_MULTI);
 
 	if (mthing->EdNum == 0 || mthing->EdNum == -1)
 		return NULL;
