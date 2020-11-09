@@ -51,6 +51,7 @@
 // TYPES -------------------------------------------------------------------
 
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
+bool AreCompatiblePointerTypes(PType* dest, PType* source, bool forcompare = false);
 
 // PUBLIC FUNCTION PROTOTYPES ----------------------------------------------
 
@@ -245,14 +246,14 @@ void PClass::StaticShutdown ()
 	}
 	FunctionPtrList.Clear();
 	VMFunction::DeleteAll();
+	// From this point onward no scripts may be called anymore because the data needed by the VM is getting deleted now.
+	// This flags DObject::Destroy not to call any scripted OnDestroy methods anymore.
+	bVMOperational = false;
 
 	// Make a full garbage collection here so that all destroyed but uncollected higher level objects 
 	// that still exist are properly taken down before the low level data is deleted.
 	GC::FullGC();
 
-	// From this point onward no scripts may be called anymore because the data needed by the VM is getting deleted now.
-	// This flags DObject::Destroy not to call any scripted OnDestroy methods anymore.
-	bVMOperational = false;
 
 	Namespaces.ReleaseSymbols();
 
@@ -434,7 +435,7 @@ DObject *PClass::CreateNew()
 	else
 		memset (mem, 0, Size);
 
-	if (ConstructNative == nullptr)
+	if (ConstructNative == nullptr || bAbstract)
 	{
 		M_Free(mem);
 		I_Error("Attempt to instantiate abstract class %s.", TypeName.GetChars());
@@ -665,7 +666,7 @@ PClass *PClass::FindClassTentative(FName name)
 //
 //==========================================================================
 
-int PClass::FindVirtualIndex(FName name, PFunction::Variant *variant, PFunction *parentfunc)
+int PClass::FindVirtualIndex(FName name, PFunction::Variant *variant, PFunction *parentfunc, bool exactReturnType)
 {
 	auto proto = variant->Proto;
 	for (unsigned i = 0; i < Virtuals.Size(); i++)
@@ -693,7 +694,10 @@ int PClass::FindVirtualIndex(FName name, PFunction::Variant *variant, PFunction 
 
 			for (unsigned a = 0; a < proto->ReturnTypes.Size(); a++)
 			{
-				if (proto->ReturnTypes[a] != vproto->ReturnTypes[a])
+				PType* expected = vproto->ReturnTypes[a];
+				PType* actual = proto->ReturnTypes[a];
+
+				if (expected != actual && (exactReturnType || !AreCompatiblePointerTypes(expected, actual)))
 				{
 					fail = true;
 					break;

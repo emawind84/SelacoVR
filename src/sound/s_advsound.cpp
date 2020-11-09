@@ -132,6 +132,7 @@ enum SICommands
 	SI_MusicAlias,
 	SI_EDFOverride,
 	SI_Attenuation,
+	SI_PitchSet,
 };
 
 // Blood was a cool game. If Monolith ever releases the source for it,
@@ -218,6 +219,7 @@ static const char *SICommandStrings[] =
 	"$musicalias",
 	"$edfoverride",
 	"$attenuation",
+	"$pitchset",
 	NULL
 };
 
@@ -764,7 +766,6 @@ void S_ParseSndInfo (bool redefine)
 
 	S_ShrinkPlayerSoundLists ();
 
-	sfx_empty = fileSystem.CheckNumForName ("dsempty", ns_sounds);
 	S_CheckIntegrity();
 }
 
@@ -1033,6 +1034,25 @@ static void S_AddSNDINFO (int lump)
 				sfx = soundEngine->FindSoundTentative (sc.String);
 				sc.MustGetNumber ();
 				S_sfx[sfx].PitchMask = (1 << clamp (sc.Number, 0, 7)) - 1;
+				}
+				break;
+
+			case SI_PitchSet: {
+				// $pitchset <logical name> <pitch amount as float> [range maximum]
+				int sfx;
+
+				sc.MustGetString();
+				sfx = soundEngine->FindSoundTentative(sc.String);
+				sc.MustGetFloat();
+				S_sfx[sfx].DefPitch = (float)sc.Float;
+				if (sc.CheckFloat())
+				{
+					S_sfx[sfx].DefPitchMax = (float)sc.Float;
+				}
+				else
+				{
+					S_sfx[sfx].DefPitchMax = 0;
+				}
 				}
 				break;
 
@@ -1648,19 +1668,6 @@ int S_FindSkinnedSoundEx (AActor *actor, const char *name, const char *extendedn
 		id = name;
 	}
 	return S_FindSkinnedSound (actor, id);
-}
-
-//==========================================================================
-//
-// sfxinfo_t :: MarkUsed
-//
-// Marks this sound for precaching.
-//
-//==========================================================================
-
-void sfxinfo_t::MarkUsed()
-{
-	bUsed = true;
 }
 
 //==========================================================================

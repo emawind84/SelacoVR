@@ -377,8 +377,30 @@ void ZCCCompiler::ProcessMixin(ZCC_MixinDef *cnode, PSymbolTreeNode *treenode)
 
 void ZCCCompiler::ProcessStruct(ZCC_Struct *cnode, PSymbolTreeNode *treenode, ZCC_Class *outer)
 {
-	Structs.Push(new ZCC_StructWork(static_cast<ZCC_Struct *>(cnode), treenode, outer));
-	ZCC_StructWork *cls = Structs.Last();
+	ZCC_StructWork* cls = nullptr;
+
+	// If this is a struct extension, put the new node directly into the existing class.
+	if (cnode->Flags == ZCC_Extension)
+	{
+		for (auto strct : Structs)
+		{
+			if (strct->NodeName() == cnode->NodeName)
+			{
+				cls = strct;
+				break;
+			}
+		}
+		if (cls == nullptr)
+		{
+			Error(cnode, "Struct %s cannot be found in the current translation unit.", FName(cnode->NodeName).GetChars());
+			return;
+		}
+	}
+	else
+	{
+		Structs.Push(new ZCC_StructWork(static_cast<ZCC_Struct*>(cnode), treenode, outer));
+		cls = Structs.Last();
+	}
 
 	auto node = cnode->Body;
 	PSymbolTreeNode *childnode;
@@ -494,7 +516,15 @@ ZCCCompiler::ZCCCompiler(ZCC_AST &ast, DObject *_outer, PSymbolTable &_symbols, 
 					ProcessClass(static_cast<ZCC_Class *>(node), tnode);
 					break;
 				}
+				goto common;
 			case AST_Struct:
+				if (static_cast<ZCC_Class*>(node)->Flags == ZCC_Extension)
+				{
+					ProcessStruct(static_cast<ZCC_Struct*>(node), tnode, nullptr);
+					break;
+				}
+
+			common:
 			case AST_ConstantDef:
 			case AST_Enum:
 				if ((tnode = AddTreeNode(static_cast<ZCC_NamedNode *>(node)->NodeName, node, GlobalTreeNodes)))
@@ -1476,8 +1506,12 @@ bool ZCCCompiler::CompileFields(PContainerType *type, TArray<ZCC_VarDeclarator *
 		auto name = field->Names;
 		do
 		{
-			if (fieldtype->Size == 0 && !(varflags & VARF_Native))	// Size not known yet.
+			if ((fieldtype->Size == 0 || !fieldtype->SizeKnown) && !(varflags & VARF_Native))	// Size not known yet.
 			{
+				if (type != nullptr)
+				{
+					type->SizeKnown = false;
+				}
 				return false;
 			}
 
@@ -1532,6 +1566,10 @@ bool ZCCCompiler::CompileFields(PContainerType *type, TArray<ZCC_VarDeclarator *
 
 							if (OutNamespace->Symbols.AddSymbol(f) == nullptr)
 							{ // name is already in use
+								if (type != nullptr)
+								{
+									type->SizeKnown = false;
+								}
 								f->Destroy();
 								return false;
 							}
@@ -1565,6 +1603,12 @@ bool ZCCCompiler::CompileFields(PContainerType *type, TArray<ZCC_VarDeclarator *
 		} while (name != field->Names);
 		Fields.Delete(0);
 	}
+
+	if (type != nullptr)
+	{
+		type->SizeKnown = Fields.Size() == 0;
+	}
+
 	return Fields.Size() == 0;
 }
 
@@ -2009,7 +2053,7 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 			} while (t != f->Type);
 		}
 
-		int notallowed = ZCC_Latent | ZCC_Meta | ZCC_ReadOnly | ZCC_Abstract | ZCC_Internal;
+		int notallowed = ZCC_Latent | ZCC_Meta | ZCC_ReadOnly | ZCC_Internal;
 
 		if (f->Flags & notallowed)
 		{
@@ -2055,6 +2099,7 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 		if (f->Flags & ZCC_Deprecated) varflags |= VARF_Deprecated;
 		if (f->Flags & ZCC_Virtual) varflags |= VARF_Virtual;
 		if (f->Flags & ZCC_Override) varflags |= VARF_Override;
+		if (f->Flags & ZCC_Abstract) varflags |= VARF_Abstract;
 		if (f->Flags & ZCC_VarArg) varflags |= VARF_VarArg;
 		if (f->Flags & ZCC_FuncConst) varflags |= VARF_ReadOnly; // FuncConst method is internally marked as VARF_ReadOnly
 		if (mVersion >= MakeVersion(2, 4, 0))
@@ -2098,7 +2143,7 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 
 		if (varflags & VARF_Override) varflags &= ~VARF_Virtual;	// allow 'virtual override'.
 																	// Only one of these flags may be used.
-		static int exclude[] = { ZCC_Virtual, ZCC_Override, ZCC_Action, ZCC_Static };
+		static int exclude[] = { ZCC_Abstract, ZCC_Virtual, ZCC_Override, ZCC_Action, ZCC_Static };
 		int excludeflags = 0;
 		int fc = 0;
 		for (size_t i = 0; i < countof(exclude); i++)
@@ -2114,7 +2159,7 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 			Error(f, "Invalid combination of qualifiers %s on function %s", FlagsToString(excludeflags).GetChars(), FName(f->Name).GetChars());
 			varflags |= VARF_Method;
 		}
-		if (varflags & VARF_Override) varflags |= VARF_Virtual;	// Now that the flags are checked, make all override functions virtual as well.
+		if (varflags & (VARF_Override | VARF_Abstract)) varflags |= VARF_Virtual;	// Now that the flags are checked, make all override and abstract functions virtual as well.
 
 		// [ZZ] this doesn't make sense either.
 		if ((varflags&(VARF_ReadOnly | VARF_Method)) == VARF_ReadOnly) // non-method const function
@@ -2147,6 +2192,12 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 
 		if (f->Flags & ZCC_Native)
 		{
+			if (varflags & VARF_Abstract)
+			{
+				Error(f, "Native functions cannot be abstract");
+				return;
+			}
+
 			varflags |= VARF_Native;
 			afd = FindFunction(c->Type(), FName(f->Name).GetChars());
 			if (afd == nullptr)
@@ -2338,19 +2389,20 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 
 		if (!(f->Flags & ZCC_Native))
 		{
-			if (f->Body == nullptr)
+			if (f->Body != nullptr && (varflags & VARF_Abstract))
+			{
+				Error(f, "Abstract function %s cannot have a body", FName(f->Name).GetChars());
+				return;
+			}
+
+			if (f->Body == nullptr && !(varflags & VARF_Abstract))
 			{
 				Error(f, "Empty function %s", FName(f->Name).GetChars());
 				return;
 			}
-			else
-			{
-				auto code = ConvertAST(c->Type(), f->Body);
-				if (code != nullptr)
-				{
-					newfunc = FunctionBuildList.AddFunction(OutNamespace, mVersion, sym, code, FStringf("%s.%s", c->Type()->TypeName.GetChars(), FName(f->Name).GetChars()), false, -1, 0, Lump);
-				}
-			}
+
+			FxExpression* code = f->Body != nullptr ? ConvertAST(c->Type(), f->Body) : nullptr;
+			newfunc = FunctionBuildList.AddFunction(OutNamespace, mVersion, sym, code, FStringf("%s.%s", c->Type()->TypeName.GetChars(), FName(f->Name).GetChars()), false, -1, 0, Lump);
 		}
 		if (sym->Variants[0].Implementation != nullptr && hasdefault)	// do not copy empty default lists, they only waste space and processing time.
 		{
@@ -2363,6 +2415,7 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 			sym->Variants[0].Implementation->VarFlags = sym->Variants[0].Flags;
 		}
 
+		bool exactReturnType = mVersion < MakeVersion(4, 4);
 		PClass *clstype = forclass? static_cast<PClassType *>(c->Type())->Descriptor : nullptr;
 		if (varflags & VARF_Virtual)
 		{
@@ -2374,9 +2427,15 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 
 			if (forclass)
 			{
+				if ((varflags & VARF_Abstract) && !clstype->bAbstract)
+				{
+					Error(f, "Abstract functions can only be defined in abstract classes");
+					return;
+				}
+
 				auto parentfunc = clstype->ParentClass? dyn_cast<PFunction>(clstype->ParentClass->VMType->Symbols.FindSymbol(sym->SymbolName, true)) : nullptr;
 
-				int vindex = clstype->FindVirtualIndex(sym->SymbolName, &sym->Variants[0], parentfunc);
+				int vindex = clstype->FindVirtualIndex(sym->SymbolName, &sym->Variants[0], parentfunc, exactReturnType);
 				// specifying 'override' is necessary to prevent one of the biggest problem spots with virtual inheritance: Mismatching argument types.
 				if (varflags & VARF_Override)
 				{
@@ -2456,7 +2515,7 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 		}
 		else if (forclass)
 		{
-			int vindex = clstype->FindVirtualIndex(sym->SymbolName, &sym->Variants[0], nullptr);
+			int vindex = clstype->FindVirtualIndex(sym->SymbolName, &sym->Variants[0], nullptr, exactReturnType);
 			if (vindex != -1)
 			{
 				Error(f, "Function %s attempts to override parent function without 'override' qualifier", FName(f->Name).GetChars());
@@ -2491,6 +2550,18 @@ void ZCCCompiler::InitFunctions()
 		for (auto f : c->Functions)
 		{
 			CompileFunction(c, f, true);
+		}
+
+		// [Player701] Make sure all abstract functions are overridden
+		if (!c->ClassType()->bAbstract)
+		{
+			for (auto v : c->ClassType()->Virtuals)
+			{
+				if (v->VarFlags & VARF_Abstract)
+				{
+					Error(c->cls, "Non-abstract class %s must override abstract function %s", c->Type()->TypeName.GetChars(), v->PrintableName.GetChars());
+				}
+			}
 		}
 	}
 }

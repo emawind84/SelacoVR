@@ -2,7 +2,7 @@
 #include "d_event.h"
 #include "i_input.h"
 #include "openvr_include.h"
-#include <menu\menu.h>
+#include "menu.h"
 
 using namespace openvr;
 

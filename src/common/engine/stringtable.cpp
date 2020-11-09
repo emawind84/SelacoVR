@@ -39,6 +39,7 @@
 #include "filesystem.h"
 #include "sc_man.h"
 #include "printf.h"
+#include "i_interface.h"
 
 //==========================================================================
 //
@@ -237,12 +238,12 @@ bool FStringTable::ParseLanguageCSV(int lumpnum, const TArray<uint8_t> &buffer)
 				if (filterstr.IsNotEmpty())
 				{
 					bool ok = false;
-					if (callbacks && callbacks->ValidFilter)
+					if (sysCallbacks.CheckGame)
 					{
 						auto filter = filterstr.Split(" ", FString::TOK_SKIPEMPTY);
 						for (auto& entry : filter)
 						{
-							if (callbacks->ValidFilter(entry))
+							if (sysCallbacks.CheckGame(entry))
 							{
 								ok = true;
 								break;
@@ -356,7 +357,7 @@ void FStringTable::LoadLanguage (int lumpnum, const TArray<uint8_t> &buffer)
 				sc.MustGetStringName("ifgame");
 				sc.MustGetStringName("(");
 				sc.MustGetString();
-				skip |= (!callbacks || !callbacks->ValidFilter || !callbacks->ValidFilter(sc.String));
+				skip |= (!sysCallbacks.CheckGame || !sysCallbacks.CheckGame(sc.String));
 				sc.MustGetStringName(")");
 				sc.MustGetString();
 
@@ -450,7 +451,7 @@ void FStringTable::InsertString(int lumpnum, int langid, FName label, const FStr
 		auto replace = allMacros.CheckKey(lookupname);
 		for (int i = 0; i < 4; i++)
 		{
-			const char *replacement = replace && replace->Replacements[i] ? replace->Replacements[i].GetChars() : "";
+			const char *replacement = replace? replace->Replacements[i].GetChars() : "";
 			te.strings[i].Substitute(replacee, replacement);
 		}
 	}
@@ -564,7 +565,7 @@ const char *FStringTable::GetString(const char *name, uint32_t *langtable, int g
 	{
 		return nullptr;
 	}
-	if (gender == -1 && callbacks && callbacks->GetPlayerGender) gender = callbacks->GetPlayerGender();
+	if (gender == -1 && sysCallbacks.GetGender) gender = sysCallbacks.GetGender();
 	if (gender < 0 || gender > 3) gender = 0;
 	FName nm(name, true);
 	if (nm != NAME_None)
@@ -575,7 +576,10 @@ const char *FStringTable::GetString(const char *name, uint32_t *langtable, int g
 			if (item)
 			{
 				if (langtable) *langtable = map.first;
-				return item->strings[gender].GetChars();
+				auto c = item->strings[gender].GetChars();
+				if (c && *c == '$' && c[1] == '$')
+					return GetString(c + 2, langtable, gender);
+				return c;
 			}
 		}
 	}
@@ -594,7 +598,7 @@ const char *FStringTable::GetLanguageString(const char *name, uint32_t langtable
 	{
 		return nullptr;
 	}
-	if (gender == -1 && callbacks && callbacks->GetPlayerGender) gender = callbacks->GetPlayerGender();
+	if (gender == -1 && sysCallbacks.GetGender) gender = sysCallbacks.GetGender();
 	if (gender < 0 || gender > 3) gender = 0;
 	FName nm(name, true);
 	if (nm != NAME_None)
@@ -662,3 +666,5 @@ const char *StringMap::MatchString (const char *string) const
 }
 
 FStringTable GStrings;
+
+

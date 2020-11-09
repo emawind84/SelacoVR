@@ -81,7 +81,7 @@ static const FLOP FxFlops[] =
 	{ NAME_Round,	FLOP_ROUND,		[](double v) { return round(v);  } },
 };
 
-static bool AreCompatiblePointerTypes(PType* dest, PType* source, bool forcompare = false);
+bool AreCompatiblePointerTypes(PType* dest, PType* source, bool forcompare = false);
 
 //==========================================================================
 //
@@ -271,7 +271,7 @@ PFunction *FindBuiltinFunction(FName funcname)
 //
 //==========================================================================
 
-static bool AreCompatiblePointerTypes(PType *dest, PType *source, bool forcompare)
+bool AreCompatiblePointerTypes(PType *dest, PType *source, bool forcompare)
 {
 	if (dest->isPointer() && source->isPointer())
 	{
@@ -4282,13 +4282,13 @@ FxExpression *FxBinaryLogical::Resolve(FCompileContext& ctx)
 	{
 		if (b_left==0 || b_right==0)
 		{
-			FxExpression *x = new FxConstant(true, ScriptPosition);
+			FxExpression *x = new FxConstant(false, ScriptPosition);
 			delete this;
 			return x;
 		}
 		else if (b_left==1 && b_right==1)
 		{
-			FxExpression *x = new FxConstant(false, ScriptPosition);
+			FxExpression *x = new FxConstant(true, ScriptPosition);
 			delete this;
 			return x;
 		}
@@ -6053,6 +6053,12 @@ FxExpression *FxIdentifier::Resolve(FCompileContext& ctx)
 			delete this;
 			return nullptr;
 		}
+	}
+
+	if (compileEnvironment.CheckSpecialGlobalIdentifier)
+	{
+		auto result = compileEnvironment.CheckSpecialGlobalIdentifier(this, ctx);
+		if (result != this) return result;
 	}
 
 	if (auto *cvar = FindCVar(Identifier.GetChars(), nullptr))
@@ -8540,6 +8546,13 @@ FxExpression *FxVMFunctionCall::Resolve(FCompileContext& ctx)
 		if (!result) return nullptr;
 	}
 
+	// [Player701] Catch attempts to call abstract functions directly at compile time
+	if (NoVirtual && Function->Variants[0].Implementation->VarFlags & VARF_Abstract)
+	{
+		ScriptPosition.Message(MSG_ERROR, "Cannot call abstract function %s", Function->Variants[0].Implementation->PrintableName.GetChars());
+		delete this;
+		return nullptr;
+	}
 
 	CallingFunction = ctx.Function;
 	if (ArgList.Size() > 0)

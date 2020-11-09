@@ -39,6 +39,16 @@
 #include "v_collection.h"
 #include "v_text.h"
 #include "renderstyle.h"
+#include "v_2ddrawer.h"
+#include "v_draw.h"
+#include "c_cvars.h"
+
+
+EXTERN_CVAR(Int, con_scaletext);
+inline int active_con_scaletext(F2DDrawer* drawer, bool newconfont = false)
+{
+	return newconfont ? GetConScale(drawer, con_scaletext) : GetUIScale(drawer, con_scaletext);
+}
 
 class player_t;
 struct FRemapTable;
@@ -529,6 +539,10 @@ void ST_CreateStatusBar(bool bTitleLevel);
 extern FGameTexture *CrosshairImage;
 
 int GetInventoryIcon(AActor *item, uint32_t flags, int *applyscale = nullptr);
+
+class FFont;
+void C_MidPrint(FFont* font, const char* message, bool bold = false);
+
 
 
 enum DI_Flags

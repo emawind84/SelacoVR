@@ -111,7 +111,7 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 	static VRMode vrmi_checker(2, isqrt2, isqrt2, 1.f, vrmi_checker_eyes);
 	static s3d::OpenVRMode vrmi_openvr(vrmi_openvr_eyes);
 
-	int mode = !toscreen || (sysCallbacks && sysCallbacks->DisableTextureFilter && sysCallbacks->DisableTextureFilter()) ? 0 : vr_mode;
+	int mode = !toscreen || (sysCallbacks.DisableTextureFilter && sysCallbacks.DisableTextureFilter()) ? 0 : vr_mode;
 
 	switch (mode)
 	{

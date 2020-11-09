@@ -77,18 +77,17 @@ CVAR (Bool, sv_cheats, false, CVAR_SERVERINFO | CVAR_LATCH)
 CVAR (Bool, sv_unlimited_pickup, false, CVAR_SERVERINFO)
 CVAR (Int, cl_blockcheats, 0, 0)
 
-CVAR(Float, mouse_sensitivity, 1.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Bool, show_messages, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVARD(Bool, show_messages, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "enable/disable showing messages")
 CVAR(Bool, show_obituaries, true, CVAR_ARCHIVE)
 
 
-CCMD (toggleconsole)
+bool CheckCheatmode (bool printmsg, bool sponly)
 {
-	C_ToggleConsole();
-}
-
-bool CheckCheatmode (bool printmsg)
-{
+	if (sponly && netgame)
+	{
+		if (printmsg) Printf("Not in a singleplayer game.\n");
+		return true;
+	}
 	if ((G_SkillProperty(SKILLP_DisableCheats) || netgame || deathmatch) && (!sv_cheats))
 	{
 		if (printmsg) Printf ("sv_cheats must be true to enable this command.\n");
@@ -569,7 +568,6 @@ CCMD (special)
 }
 
 
-
 //==========================================================================
 //
 // CCMD warp
@@ -985,7 +983,7 @@ static void PrintSecretString(const char *string, bool thislevel)
 				else colstr = TEXTCOLOR_GREEN;
 			}
 		}
-		auto brok = V_BreakLines(CurrentConsoleFont, twod->GetWidth()*95/100, string);
+		auto brok = V_BreakLines(CurrentConsoleFont, twod->GetWidth()*95/100, *string == '$' ? GStrings(++string) : string);
 
 		for (auto &line : brok)
 		{

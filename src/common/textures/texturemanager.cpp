@@ -240,7 +240,7 @@ FTextureID FTextureManager::CheckForTexture (const char *name, ETextureType uset
 	{
 		// We intentionally only look for textures in subdirectories.
 		// Any graphic being placed in the zip's root directory can not be found by this.
-		if (strchr(name, '/'))
+		if (strchr(name, '/') || (flags & TEXMAN_ForceLookup))
 		{
 			FGameTexture *const NO_TEXTURE = (FGameTexture*)-1;
 			int lump = fileSystem.CheckNumForFullName(name);
@@ -264,6 +264,11 @@ FTextureID FTextureManager::CheckForTexture (const char *name, ETextureType uset
 				}
 			}
 		}
+	}
+	if (!(flags & TEXMAN_NoAlias))
+	{
+		int* alias = aliases.CheckKey(name);
+		if (alias) return FTextureID(*alias);
 	}
 
 	return FTextureID(-1);
@@ -1539,6 +1544,19 @@ void FTextureManager::SetTranslation(FTextureID fromtexnum, FTextureID totexnum)
 }
 
 
+//-----------------------------------------------------------------------------
+//
+// Adds an alias name to the texture manager.
+// Aliases are only checked if no real texture with the given name exists.
+//
+//-----------------------------------------------------------------------------
+
+void FTextureManager::AddAlias(const char* name, FGameTexture* tex)
+{
+	FTextureID id = tex->GetID();
+	if (tex != Textures[id.GetIndex()].Texture || !tex->isValid()) return;	// Whatever got passed in here was not valid, so ignore the alias.
+	aliases.Insert(name, id.GetIndex());
+}
 
 //==========================================================================
 //

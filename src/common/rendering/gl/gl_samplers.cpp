@@ -109,19 +109,32 @@ uint8_t FSamplerManager::Bind(int texunit, int num, int lastval)
 	
 void FSamplerManager::SetTextureFilterMode()
 {
-	UnbindAll();
-	int filter = sysCallbacks && sysCallbacks->DisableTextureFilter && sysCallbacks->DisableTextureFilter() ? 0 : gl_texture_filter;
+	GLint bounds[IHardwareTexture::MAX_TEXTURES];
+	
+	// Unbind all
+	for(int i = IHardwareTexture::MAX_TEXTURES-1; i >= 0; i--)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glGetIntegerv(GL_SAMPLER_BINDING, &bounds[i]);
+		glBindSampler(i, 0);
+	}
+
+	int filter = sysCallbacks.DisableTextureFilter && sysCallbacks.DisableTextureFilter() ? 0 : gl_texture_filter;
 
 	for (int i = 0; i < 4; i++)
 	{
 		glSamplerParameteri(mSamplers[i], GL_TEXTURE_MIN_FILTER, TexFilter[filter].minfilter);
 		glSamplerParameteri(mSamplers[i], GL_TEXTURE_MAG_FILTER, TexFilter[filter].magfilter);
-		glSamplerParameterf(mSamplers[i], GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_texture_filter_anisotropic);
+		glSamplerParameterf(mSamplers[i], GL_TEXTURE_MAX_ANISOTROPY_EXT, filter > 0? gl_texture_filter_anisotropic : 1.0);
 	}
 	glSamplerParameteri(mSamplers[CLAMP_XY_NOMIP], GL_TEXTURE_MIN_FILTER, TexFilter[filter].magfilter);
 	glSamplerParameteri(mSamplers[CLAMP_XY_NOMIP], GL_TEXTURE_MAG_FILTER, TexFilter[filter].magfilter);
 	glSamplerParameteri(mSamplers[CLAMP_CAMTEX], GL_TEXTURE_MIN_FILTER, TexFilter[filter].magfilter);
 	glSamplerParameteri(mSamplers[CLAMP_CAMTEX], GL_TEXTURE_MAG_FILTER, TexFilter[filter].magfilter);
+	for(int i = 0; i < IHardwareTexture::MAX_TEXTURES; i++)
+	{
+		glBindSampler(i, bounds[i]);
+	}
 }
 
 

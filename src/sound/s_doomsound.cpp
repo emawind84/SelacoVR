@@ -95,10 +95,10 @@ class DoomSoundEngine : public SoundEngine
 		S_sfx[ndx].UserData[0] = 0;
 		return ndx;
 	}
-	bool CheckSoundLimit(sfxinfo_t* sfx, const FVector3& pos, int near_limit, float limit_range, int sourcetype, const void* actor, int channel) override
+	bool CheckSoundLimit(sfxinfo_t* sfx, const FVector3& pos, int near_limit, float limit_range, int sourcetype, const void* actor, int channel, float attenuation) override
 	{
 		if (sourcetype != SOURCE_Actor) actor = nullptr; //ZDoom did this.
-		return SoundEngine::CheckSoundLimit(sfx, pos, near_limit, limit_range, sourcetype, actor, channel);
+		return SoundEngine::CheckSoundLimit(sfx, pos, near_limit, limit_range, sourcetype, actor, channel, attenuation);
 	}
 
 
@@ -471,7 +471,8 @@ FSoundID DoomSoundEngine::ResolveSound(const void * ent, int type, FSoundID soun
 
 static bool VerifyActorSound(AActor* ent, FSoundID& sound_id, int& channel, EChanFlags flags)
 {
-	if (ent == nullptr || ent->Sector->Flags & SECF_SILENT || ent->Level != primaryLevel)
+	if (ent == nullptr || ent->ObjectFlags & OF_EuthanizeMe || ent->Sector->Flags & SECF_SILENT || 
+		ent->Level != primaryLevel)
 		return false;
 
 	if ((flags & CHANF_MAYBE_LOCAL) && (compatflags & COMPATF_SILENTPICKUP))

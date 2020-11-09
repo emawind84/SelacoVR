@@ -122,7 +122,7 @@ class OptionMenuItemSubmenu : OptionMenuItem
 
 	override bool Activate()
 	{
-		Menu.MenuSound("menu/choose");
+		Menu.MenuSound("menu/advance");
 		Menu.SetMenu(mAction, mParam);
 		return true;
 	}
@@ -502,14 +502,14 @@ class OptionMenuItemControlBase : OptionMenuItem
 	//=============================================================================
 	override int Draw(OptionMenuDescriptor desc, int y, int indent, bool selected)
 	{
-		drawLabel(indent, y, mWaiting? OptionMenuSettings.mFontColorHighlight: 
-			(selected? OptionMenuSettings.mFontColorSelection : OptionMenuSettings.mFontColor));
+		drawLabel(indent, y, mWaiting ? OptionMenuSettings.mFontColorHighlight :
+			(selected ? OptionMenuSettings.mFontColorSelection : OptionMenuSettings.mFontColor));
 
 		String description;
-		int Key1, Key2;
+		Array<int> keys;
 
-		[Key1, Key2] = mBindings.GetKeysForCommand(mAction);
-		description = KeyBindings.NameKeys (Key1, Key2);
+		mBindings.GetAllKeysForCommand(keys, mAction);
+		description = KeyBindings.NameAllKeys(keys);
 		if (description.Length() > 0)
 		{
 			drawValue(indent, y, Font.CR_WHITE, description);
@@ -699,8 +699,9 @@ class OptionMenuSliderBase : OptionMenuItem
 	int mShowValue;
 	int mDrawX;
 	int mSliderShort;
+	CVar mGrayCheck;
 
-	protected void Init(String label, double min, double max, double step, int showval, Name command = 'none')
+	protected void Init(String label, double min, double max, double step, int showval, Name command = 'none', CVar graycheck = NULL)
 	{
 		Super.Init(label, command);
 		mMin = min;
@@ -709,6 +710,7 @@ class OptionMenuSliderBase : OptionMenuItem
 		mShowValue = showval;
 		mDrawX = 0;
 		mSliderShort = 0;
+		mGrayCheck = graycheck;
 	}
 
 	virtual double GetSliderValue()
@@ -720,18 +722,29 @@ class OptionMenuSliderBase : OptionMenuItem
 	{
 	}
 
+	bool IsGrayed(void)
+	{
+		return mGrayCheck != NULL && !mGrayCheck.GetInt();
+	}
+
+	override bool Selectable(void)
+	{
+		return !IsGrayed();
+	}
+
 	//=============================================================================
 	//
 	// Draw a slider. Set fracdigits negative to not display the current value numerically.
 	//
 	//=============================================================================
 
-	private void DrawSliderElement (int color, int x, int y, String str)
+	private void DrawSliderElement (int color, int x, int y, String str, bool grayed = false)
 	{
-		screen.DrawText (ConFont, color, x, y, str, DTA_CellX, 16 * CleanXfac_1, DTA_CellY, 16 * CleanYfac_1);
+		int overlay = grayed? Color(96, 48, 0, 0) : 0;
+		screen.DrawText (ConFont, color, x, y, str, DTA_CellX, 16 * CleanXfac_1, DTA_CellY, 16 * CleanYfac_1, DTA_ColorOverlay, overlay);
 	}
 
-	protected void DrawSlider (int x, int y, double min, double max, double cur, int fracdigits, int indent)
+	protected void DrawSlider (int x, int y, double min, double max, double cur, int fracdigits, int indent, bool grayed = false)
 	{
 		String formater = String.format("%%.%df", fracdigits);	// The format function cannot do the '%.*f' syntax.
 		String textbuf;
@@ -753,21 +766,21 @@ class OptionMenuSliderBase : OptionMenuItem
 
 		if (!mSliderShort)
 		{
-			DrawSliderElement(Font.CR_WHITE, x, cy, "\x10\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x12");
-			DrawSliderElement(Font.FindFontColor(gameinfo.mSliderColor), x + int((5 + ((ccur * 78) / range)) * 2 * CleanXfac_1), cy, "\x13");
+			DrawSliderElement(Font.CR_WHITE, x, cy, "\x10\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x12", grayed);
+			DrawSliderElement(Font.FindFontColor(gameinfo.mSliderColor), x + int((5 + ((ccur * 78) / range)) * 2 * CleanXfac_1), cy, "\x13", grayed);
 		}
 		else
 		{
 			// On 320x200 we need a shorter slider
-			DrawSliderElement(Font.CR_WHITE, x, cy, "\x10\x11\x11\x11\x11\x11\x12");
-			DrawSliderElement(Font.FindFontColor(gameinfo.mSliderColor), x + int((5 + ((ccur * 38) / range)) * 2 * CleanXfac_1), cy, "\x13");
+			DrawSliderElement(Font.CR_WHITE, x, cy, "\x10\x11\x11\x11\x11\x11\x12", grayed);
+			DrawSliderElement(Font.FindFontColor(gameinfo.mSliderColor), x + int((5 + ((ccur * 38) / range)) * 2 * CleanXfac_1), cy, "\x13", grayed);
 			right -= 5*8*CleanXfac;
 		}
 
 		if (fracdigits >= 0 && right + maxlen <= screen.GetWidth())
 		{
 			textbuf = String.format(formater, cur);
-			drawText(right, y, Font.CR_DARKGRAY, textbuf);
+			drawText(right, y, Font.CR_DARKGRAY, textbuf, grayed);
 		}
 	}
 
@@ -775,9 +788,9 @@ class OptionMenuSliderBase : OptionMenuItem
 	//=============================================================================
 	override int Draw(OptionMenuDescriptor desc, int y, int indent, bool selected)
 	{
-		drawLabel(indent, y, selected? OptionMenuSettings.mFontColorSelection : OptionMenuSettings.mFontColor);
+		drawLabel(indent, y, selected? OptionMenuSettings.mFontColorSelection : OptionMenuSettings.mFontColor, IsGrayed());
 		mDrawX = indent + CursorSpace();
-		DrawSlider (mDrawX, y, mMin, mMax, GetSliderValue(), mShowValue, indent);
+		DrawSlider (mDrawX, y, mMin, mMax, GetSliderValue(), mShowValue, indent, IsGrayed());
 		return indent;
 	}
 
@@ -850,9 +863,9 @@ class OptionMenuItemSlider : OptionMenuSliderBase
 {
 	CVar mCVar;
 	
-	OptionMenuItemSlider Init(String label, Name command, double min, double max, double step, int showval = 1)
+	OptionMenuItemSlider Init(String label, Name command, double min, double max, double step, int showval = 1, CVar graycheck = NULL)
 	{
-		Super.Init(label, min, max, step, showval, command);
+		Super.Init(label, min, max, step, showval, command, graycheck);
 		mCVar =CVar.FindCVar(command);
 		return self;
 	}
@@ -1223,40 +1236,63 @@ class OptionMenuItemScaleSlider : OptionMenuItemSlider
 
 //=============================================================================
 //
-// Placeholder classes for overhauled video mode menu. Do not use!
-// Their sole purpose is to support mods with full copy of embedded MENUDEF
+// Flag option by Accensus
 //
 //=============================================================================
 
-class OptionMenuItemScreenResolution : OptionMenuItem
+class OptionMenuItemFlagOption : OptionMenuItemOption
 {
-	String mResTexts[3];
-	int mSelection;
-	int mHighlight;
-	int mMaxValid;
+	int mBitShift;
 
-	enum EValues
+	OptionMenuItemFlagOption Init(String label, Name command, Name values, int bitShift, CVar greycheck = null, int center = 0)
 	{
-		SRL_INDEX = 0x30000,
-		SRL_SELECTION = 0x30003,
-		SRL_HIGHLIGHT = 0x30004,
-	};
+		Super.Init(label, command, values, greycheck, center);
+		mBitShift = bitShift;
 
-	OptionMenuItemScreenResolution Init(String command)
-	{
 		return self;
 	}
 
-	override bool Selectable()
+	override int GetSelection()
 	{
-		return false;
-	}
-}
+		int Selection = 0;
+		int cnt = OptionValues.GetCount(mValues);
+		if (cnt > 0 && mCVar != null)
+		{
+			if (OptionValues.GetTextValue(mValues, 0).Length() == 0)
+			{
+				int CurrentFlags = mCVar.GetInt();
 
-class VideoModeMenu : OptionMenu
-{
-	static bool SetSelectedSize()
+				for (int i = 0; i < cnt; i++)
+				{
+					int OptionValue = int(OptionValues.GetValue(mValues, i));
+					if (CurrentFlags & (OptionValue << mBitShift))
+					{
+						Selection = i;
+						break;
+					}
+				}
+			}
+		}
+		return Selection;
+	}
+
+	override void SetSelection(int Selection)
 	{
-		return false;
+		int cnt = OptionValues.GetCount(mValues);
+		if (cnt > 0 && mCVar != null)
+		{
+			if (OptionValues.GetTextValue(mValues, 0).Length() == 0)
+			{
+				int OptionValue = int(OptionValues.GetValue(mValues, Selection));
+				int CurrentFlags = mCVar.GetInt();
+
+				switch (OptionValue)
+				{
+				case 0: CurrentFlags &= ~(1 << mBitShift); break;
+				case 1: CurrentFlags |= (1 << mBitShift); break;
+				}
+				mCVar.SetInt(CurrentFlags);
+			}
+		}
 	}
 }

@@ -87,11 +87,12 @@ template<class T> void ArrayDelete(T *self, int index, int count)
 
 template<class T, class U, int fill = 1> void ArrayInsert(T *self, int index, U val)
 {
-	//int oldSize = self->Size();
+	int oldSize = self->Size();
 	self->Insert(index, static_cast<typename T::value_type>(val));
-	// Is this even necessary? All Insert does is inserting one defined element into the array and moving the rest.
-	// It never creates empty tailing entries. fillcount in the macro will always be 0
-	//if (fill) { DYNARRAY_FILL_ITEMS_SKIP(1); }
+	if constexpr (fill) 
+	{
+		for (unsigned i = oldSize; i < self->Size() - 1; i++) (*self)[i] = 0;
+	}
 }
 
 template<class T> void ArrayShrinkToFit(T *self)
@@ -119,6 +120,17 @@ template<class T, int fill = 1> void ArrayResize(T *self, int amount)
 template<class T> unsigned int ArrayReserve(T *self, int amount)
 {
 	return self->Reserve(amount);
+}
+
+template<> unsigned int ArrayReserve(TArray<DObject*> *self, int amount)
+{
+	const unsigned int oldSize = self->Reserve(amount);
+	const unsigned int fillCount = self->Size() - oldSize;
+
+	if (fillCount > 0)
+		memset(&(*self)[oldSize], 0, sizeof(DObject*) * fillCount);
+	
+	return oldSize;
 }
 
 template<class T> int ArrayMax(T *self)
@@ -868,8 +880,10 @@ DEFINE_ACTION_FUNCTION_NATIVE(FDynArray_Obj, Delete, ArrayDelete<FDynArray_Obj>)
 
 void ObjArrayInsert(FDynArray_Obj *self,int index, DObject *obj)
 {
+	int oldSize = self->Size();
 	GC::WriteBarrier(obj);
 	self->Insert(index, obj);
+	for (unsigned i = oldSize; i < self->Size() - 1; i++) (*self)[i] = nullptr;
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(FDynArray_Obj, Insert, ObjArrayInsert)
@@ -908,7 +922,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(FDynArray_Obj, Reserve, ArrayReserve<FDynArray_Obj
 {
 	PARAM_SELF_STRUCT_PROLOGUE(FDynArray_Obj);
 	PARAM_INT(count);
-	ACTION_RETURN_INT(self->Reserve(count));
+	ACTION_RETURN_INT(ArrayReserve(self, count));
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(FDynArray_Obj, Max, ArrayMax<FDynArray_Obj>)

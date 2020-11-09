@@ -2,6 +2,11 @@
 
 class ListMenuDescriptor : MenuDescriptor native
 {
+	enum EScale
+	{
+		CleanScale = -1,
+		OptCleanScale = -2
+	};
 	native Array<ListMenuItem> mItems;
 	native int mSelectedItem;
 	native double mSelectOfsX;
@@ -16,21 +21,19 @@ class ListMenuDescriptor : MenuDescriptor native
 	native int mFontColor;
 	native int mFontColor2;
 	native bool mCenter;
+	native bool mAnimatedTransition;
+	native int mVirtWidth, mVirtHeight;
 
-	void Reset()
+	native void Reset();
+	int DisplayWidth()
 	{
-		// Reset the default settings (ignore all other values in the struct)
-		mSelectOfsX = 0;
-		mSelectOfsY = 0;
-		mSelector.SetInvalid();
-		mDisplayTop = 0;
-		mXpos = 0;
-		mYpos = 0;
-		mLinespacing = 0;
-		mNetgameMessage = "";
-		mFont = NULL;
-		mFontColor = Font.CR_UNTRANSLATED;
-		mFontColor2 = Font.CR_UNTRANSLATED;
+		if (mVirtWidth == OptCleanScale) return m_cleanscale ? CleanScale : 320;
+		return mVirtWidth;
+	}
+	int DisplayHeight()
+	{
+		if (mVirtWidth == OptCleanScale) return m_cleanscale ? CleanScale : 200;
+		return mVirtHeight;
 	}
 }
 
@@ -49,6 +52,7 @@ class ListMenu : Menu
 	{
 		Super.Init(parent);
 		mDesc = desc;
+		AnimatedTransition = mDesc.mAnimatedTransition;
 		if (desc.mCenter)
 		{
 			double center = 160;
@@ -143,7 +147,7 @@ class ListMenu : Menu
 	override bool MenuEvent (int mkey, bool fromcontroller)
 	{
 		int oldSelect = mDesc.mSelectedItem;
-		int startedAt = mDesc.mSelectedItem;
+		int startedAt = max(0, mDesc.mSelectedItem);
 
 		switch (mkey)
 		{
@@ -170,7 +174,7 @@ class ListMenu : Menu
 		case MKEY_Enter:
 			if (mDesc.mSelectedItem >= 0 && mDesc.mItems[mDesc.mSelectedItem].Activate())
 			{
-				MenuSound("menu/choose");
+				MenuSound("menu/advance");
 			}
 			return true;
 
@@ -189,9 +193,25 @@ class ListMenu : Menu
 	{
 		int sel = -1;
 
-		// convert x/y from screen to virtual coordinates, according to CleanX/Yfac use in DrawTexture
-		x = ((x - (screen.GetWidth() / 2)) / CleanXfac) + 160;
-		y = ((y - (screen.GetHeight() / 2)) / CleanYfac) + 100;
+		int w = mDesc.DisplayWidth();
+		double sx, sy;
+		if (w == ListMenuDescriptor.CleanScale)
+		{
+			// convert x/y from screen to virtual coordinates, according to CleanX/Yfac use in DrawTexture
+			x = ((x - (screen.GetWidth() / 2)) / CleanXfac) + 160;
+			y = ((y - (screen.GetHeight() / 2)) / CleanYfac) + 100;
+		}
+		else
+		{
+			// for fullscreen scale, transform coordinates so that for the given rect the coordinates are within (0, 0, w, h)
+			int h = mDesc.DisplayHeight();
+			double fx, fy, fw, fh;
+			[fx, fy, fw, fh] = Screen.GetFullscreenRect(w, h, FSMode_ScaleToFit43);
+			
+			x = int((x - fx) * w / fw);
+			y = int((y - fy) * h / fh);
+		}
+
 
 		if (mFocusControl != NULL)
 		{
@@ -247,10 +267,13 @@ class ListMenu : Menu
 	{
 		for(int i=0;i<mDesc.mItems.Size(); i++)
 		{
-			if (mDesc.mItems[i].mEnabled) mDesc.mItems[i].Drawer(mDesc.mSelectedItem == i);
+			if (mDesc.mItems[i].mEnabled) mDesc.mItems[i].Draw(mDesc.mSelectedItem == i, mDesc);
 		}
 		if (mDesc.mSelectedItem >= 0 && mDesc.mSelectedItem < mDesc.mItems.Size())
-			mDesc.mItems[mDesc.mSelectedItem].DrawSelector(mDesc.mSelectOfsX, mDesc.mSelectOfsY, mDesc.mSelector);
+		{
+			if (!menuDelegate.DrawSelector(mDesc))
+				mDesc.mItems[mDesc.mSelectedItem].DrawSelector(mDesc.mSelectOfsX, mDesc.mSelectOfsY, mDesc.mSelector, mDesc);
+		}
 		Super.Drawer();
 	}
 	

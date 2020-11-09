@@ -69,6 +69,10 @@ CVAR(Bool, m_blockcontrollers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR (Float, snd_menuvolume, 0.6f, CVAR_ARCHIVE)
 CVAR(Int, m_use_mouse, 2, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Int, m_show_backbutton, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Bool, m_cleanscale, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+// Option Search
+CVAR(Bool, os_isanyof, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
 
 static DMenu *GetCurrentMenu()
 {
@@ -99,6 +103,9 @@ float			BackbuttonAlpha;
 static bool		MenuEnabled = true;
 DMenu			*CurrentMenu;
 int				MenuTime;
+DObject*		menuDelegate;
+static MenuTransition transition;
+
 
 extern PClass *DefaultListMenuClass;
 extern PClass *DefaultOptionMenuClass;
@@ -118,6 +125,7 @@ bool OkForLocalization(FTextureID texnum, const char* substitute);
 IMPLEMENT_CLASS(DMenuDescriptor, false, false)
 IMPLEMENT_CLASS(DListMenuDescriptor, false, false)
 IMPLEMENT_CLASS(DOptionMenuDescriptor, false, false)
+IMPLEMENT_CLASS(DImageScrollerDescriptor, false, false)
 
 DMenuDescriptor *GetMenuDescriptor(int name)
 {
@@ -131,6 +139,13 @@ DEFINE_ACTION_FUNCTION_NATIVE(DMenuDescriptor, GetDescriptor, GetMenuDescriptor)
 	PARAM_NAME(name);
 	ACTION_RETURN_OBJECT(GetMenuDescriptor(name.GetIndex()));
 }
+
+size_t DMenuDescriptor::PropagateMark()
+{
+	for (auto item : mItems) GC::Mark(item);
+	return 0;
+}
+
 
 void DListMenuDescriptor::Reset()
 {
@@ -147,14 +162,16 @@ void DListMenuDescriptor::Reset()
 	mFontColor = CR_UNTRANSLATED;
 	mFontColor2 = CR_UNTRANSLATED;
 	mFromEngine = false;
+	mVirtWidth = mVirtHeight = -1;	// default to clean scaling
 }
 
-
-size_t DListMenuDescriptor::PropagateMark()
+DEFINE_ACTION_FUNCTION(DListMenuDescriptor, Reset)
 {
-	for (auto item : mItems) GC::Mark(item);
+	PARAM_SELF_PROLOGUE(DListMenuDescriptor);
+	self->Reset();
 	return 0;
 }
+
 
 void DOptionMenuDescriptor::Reset()
 {
@@ -166,12 +183,6 @@ void DOptionMenuDescriptor::Reset()
 	mFont = BigUpper;
 }
 
-size_t DOptionMenuDescriptor::PropagateMark()
-{
-	for (auto item : mItems) GC::Mark(item);
-	return 0;
-}
-
 void M_MarkMenus()
 {
 	MenuDescriptorList::Iterator it(MenuDescriptors);
@@ -181,7 +192,65 @@ void M_MarkMenus()
 		GC::Mark(pair->Value);
 	}
 	GC::Mark(CurrentMenu);
+	GC::Mark(menuDelegate);
+	GC::Mark(transition.previous);
+	GC::Mark(transition.current);
 }
+
+
+//============================================================================
+//
+// Transition animation
+//
+//============================================================================
+
+bool MenuTransition::StartTransition(DMenu* from, DMenu* to, MenuTransitionType animtype)
+{
+	if (!from->canAnimate() || !to->canAnimate() || animtype == MA_None)
+	{
+		return false;
+	}
+	else
+	{
+		start = I_GetTimeNS() * (120. / 1'000'000'000.);
+		length = 30;
+		dir = animtype == MA_Advance ? 1 : -1;
+		destroyprev = animtype == MA_Return;
+		previous = from;
+		current = to;
+		if (from) GC::WriteBarrier(from);
+		if (to) GC::WriteBarrier(to);
+		return true;
+	}
+}
+
+bool MenuTransition::Draw()
+{
+	double now = I_GetTimeNS() * (120. / 1'000'000'000);
+	if (now < start + length)
+	{
+		double factor = screen->GetWidth()/2;
+		double phase = (now - start) / double(length) * M_PI + M_PI / 2;
+		DVector2 origin;
+
+		origin.Y = 0;
+		origin.X = factor * dir * (sin(phase) - 1.);
+		twod->SetOffset(origin);
+		previous->CallDrawer();
+		origin.X = factor * dir * (sin(phase) + 1.);
+		twod->SetOffset(origin);
+		current->CallDrawer();
+		origin = { 0,0 };
+		twod->SetOffset(origin);
+		return true;
+	}
+	if (destroyprev && previous) previous->Destroy();
+	previous = nullptr;
+	current = nullptr;
+	return false;
+}
+
+
 //============================================================================
 //
 // DMenu base class
@@ -286,7 +355,7 @@ void DMenu::Close ()
 	if (CurrentMenu == nullptr) return;	// double closing can happen in the save menu.
 	assert(CurrentMenu == this);
 	CurrentMenu = mParentMenu;
-	Destroy();
+
 	if (CurrentMenu != nullptr)
 	{
 		GC::WriteBarrier(CurrentMenu);
@@ -295,11 +364,16 @@ void DMenu::Close ()
 			VMValue params[] = { CurrentMenu };
 			VMCall(func, params, 1, nullptr, 0);
 		}
-
+		if (transition.StartTransition(this, CurrentMenu, MA_Return))
+		{
+			return;
+		}
 	}
-	else
+
+	Destroy();
+	if (CurrentMenu == nullptr)
 	{
-		M_ClearMenus ();
+		M_ClearMenus();
 	}
 }
 
@@ -385,6 +459,17 @@ void M_DoStartControlPanel (bool scaleoverride)
 	}
 }
 
+
+bool M_IsAnimated()
+{
+	if (ConsoleState == c_down) return false;
+	if (!CurrentMenu) return false;
+	if (CurrentMenu->Animated) return true;
+	if (transition.previous) return true;
+	return false;
+}
+
+
 //=============================================================================
 //
 //
@@ -394,10 +479,14 @@ void M_DoStartControlPanel (bool scaleoverride)
 void M_ActivateMenu(DMenu *menu)
 {
 	if (menuactive == MENU_Off) menuactive = MENU_On;
-	if (CurrentMenu != nullptr && CurrentMenu->mMouseCapture)
+	if (CurrentMenu != nullptr)
 	{
-		CurrentMenu->mMouseCapture = false;
-		I_ReleaseMouseCapture();
+		if (CurrentMenu->mMouseCapture)
+		{
+			CurrentMenu->mMouseCapture = false;
+			I_ReleaseMouseCapture();
+		}
+		transition.StartTransition(CurrentMenu, menu, MA_Advance);
 	}
 	CurrentMenu = menu;
 	GC::WriteBarrier(CurrentMenu);
@@ -416,7 +505,7 @@ DEFINE_ACTION_FUNCTION(DMenu, ActivateMenu)
 //
 //=============================================================================
 
-bool M_SetSpecialMenu(FName menu, int param);	// game specific checks
+bool M_SetSpecialMenu(FName& menu, int param);	// game specific checks
 
 void M_SetMenu(FName menu, int param)
 {
@@ -458,6 +547,21 @@ void M_SetMenu(FName menu, int param)
 
 			DMenu *newmenu = (DMenu*)cls->CreateNew();
 			IFVIRTUALPTRNAME(newmenu, "OptionMenu", Init)
+			{
+				VMValue params[3] = { newmenu, CurrentMenu, ld };
+				VMCall(func, params, 3, nullptr, 0);
+			}
+			M_ActivateMenu(newmenu);
+		}
+		else if ((*desc)->IsKindOf(RUNTIME_CLASS(DImageScrollerDescriptor)))
+		{
+			auto ld = static_cast<DImageScrollerDescriptor*>(*desc);
+			PClass* cls = ld->mClass;
+			if (cls == nullptr) cls = DefaultOptionMenuClass;
+			if (cls == nullptr) cls = PClass::FindClass("ImageScrollerMenu");
+
+			DMenu* newmenu = (DMenu*)cls->CreateNew();
+			IFVIRTUALPTRNAME(newmenu, "ImageScrollerMenu", Init)
 			{
 				VMValue params[3] = { newmenu, CurrentMenu, ld };
 				VMCall(func, params, 3, nullptr, 0);
@@ -588,16 +692,19 @@ bool M_Responder (event_t *ev)
 			switch (ch)
 			{
 			case KEY_JOY1:
+			case KEY_JOY3:
+			case KEY_JOY15:
 			case KEY_PAD_A:
 				mkey = MKEY_Enter;
 				break;
 
 			case KEY_JOY2:
+			case KEY_JOY14:
 			case KEY_PAD_B:
 				mkey = MKEY_Back;
 				break;
 
-			case KEY_JOY3:
+			case KEY_JOY4:
 			case KEY_PAD_X:
 				mkey = MKEY_Clear;
 				break;
@@ -614,28 +721,28 @@ bool M_Responder (event_t *ev)
 
 			case KEY_PAD_DPAD_UP:
 			case KEY_PAD_LTHUMB_UP:
-			case KEY_JOYAXIS1MINUS:
+			case KEY_JOYAXIS2MINUS:
 			case KEY_JOYPOV1_UP:
 				mkey = MKEY_Up;
 				break;
 
 			case KEY_PAD_DPAD_DOWN:
 			case KEY_PAD_LTHUMB_DOWN:
-			case KEY_JOYAXIS1PLUS:
+			case KEY_JOYAXIS2PLUS:
 			case KEY_JOYPOV1_DOWN:
 				mkey = MKEY_Down;
 				break;
 
 			case KEY_PAD_DPAD_LEFT:
 			case KEY_PAD_LTHUMB_LEFT:
-			case KEY_JOYAXIS2MINUS:
+			case KEY_JOYAXIS1MINUS:
 			case KEY_JOYPOV1_LEFT:
 				mkey = MKEY_Left;
 				break;
 
 			case KEY_PAD_DPAD_RIGHT:
 			case KEY_PAD_LTHUMB_RIGHT:
-			case KEY_JOYAXIS2PLUS:
+			case KEY_JOYAXIS1PLUS:
 			case KEY_JOYPOV1_RIGHT:
 				mkey = MKEY_Right;
 				break;
@@ -741,14 +848,29 @@ void M_Drawer (void)
 
 	if (CurrentMenu != nullptr && menuactive != MENU_Off) 
 	{
-		if (!CurrentMenu->DontBlur) screen->BlurScene(0);
+		if (!CurrentMenu->DontBlur) screen->BlurScene(menuBlurAmount);
 		if (!CurrentMenu->DontDim)
 		{
-			if (sysCallbacks && sysCallbacks->MenuDim) sysCallbacks->MenuDim();
+			if (sysCallbacks.MenuDim) sysCallbacks.MenuDim();
 		}
-		CurrentMenu->CallDrawer();
+		bool going = false;
+		if (transition.previous)
+		{
+			going = transition.Draw();
+			if (!going)
+			{
+				if (transition.dir == -1) delete transition.previous;
+				transition.previous = nullptr;
+				transition.current = nullptr;
+			}
+		}
+		if (!going)
+		{
+			CurrentMenu->CallDrawer();
+		}
 	}
 }
+
 
 //=============================================================================
 //
@@ -758,6 +880,11 @@ void M_Drawer (void)
 
 void M_ClearMenus()
 {
+	if (menuactive == MENU_Off) return;
+
+	transition.previous = transition.current = nullptr;
+	transition.dir = 0;
+
 	while (CurrentMenu != nullptr)
 	{
 		DMenu* parent = CurrentMenu->mParentMenu;
@@ -767,6 +894,7 @@ void M_ClearMenus()
 	menuactive = MENU_Off;
 	if (CurrentScaleOverrider)  delete CurrentScaleOverrider;
 	CurrentScaleOverrider = nullptr;
+	if (sysCallbacks.MenuClosed) sysCallbacks.MenuClosed();
 }
 
 //=============================================================================
@@ -827,134 +955,6 @@ void M_EnableMenu (bool on)
 //
 //=============================================================================
 
-CCMD (menu_main)
-{
-	M_StartControlPanel(true);
-	M_SetMenu(NAME_Mainmenu, -1);
-}
-
-CCMD (menu_load)
-{	// F3
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_Loadgamemenu, -1);
-}
-
-CCMD (menu_save)
-{	// F2
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_Savegamemenu, -1);
-}
-
-CCMD (menu_help)
-{	// F1
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_Readthismenu, -1);
-}
-
-CCMD (menu_game)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_Playerclassmenu, -1);	// The playerclass menu is the first in the 'start game' chain
-}
-								
-CCMD (menu_options)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_Optionsmenu, -1);
-}
-
-CCMD (menu_player)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_Playermenu, -1);
-}
-
-CCMD (menu_messages)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_MessageOptions, -1);
-}
-
-CCMD (menu_automap)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_AutomapOptions, -1);
-}
-
-CCMD (menu_scoreboard)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_ScoreboardOptions, -1);
-}
-
-CCMD (menu_mapcolors)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_MapColorMenu, -1);
-}
-
-CCMD (menu_keys)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_CustomizeControls, -1);
-}
-
-CCMD (menu_gameplay)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_GameplayOptions, -1);
-}
-
-CCMD (menu_compatibility)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_CompatibilityOptions, -1);
-}
-
-CCMD (menu_mouse)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_MouseOptions, -1);
-}
-
-CCMD (menu_joystick)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_JoystickOptions, -1);
-}
-
-CCMD (menu_sound)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_SoundOptions, -1);
-}
-
-CCMD (menu_advsound)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_AdvSoundOptions, -1);
-}
-
-CCMD (menu_modreplayer)
-{
-	M_StartControlPanel(true);
-	M_SetMenu(NAME_ModReplayerOptions, -1);
-}
-
-CCMD (menu_display)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_VideoOptions, -1);
-}
-
-CCMD (menu_video)
-{
-	M_StartControlPanel (true);
-	M_SetMenu(NAME_VideoModeMenu, -1);
-}
-
-
-
 CCMD (openmenu)
 {
 	if (argv.argc() < 2)
@@ -999,12 +999,16 @@ CCMD(undocolorpic)
 DEFINE_GLOBAL(menuactive)
 DEFINE_GLOBAL(BackbuttonTime)
 DEFINE_GLOBAL(BackbuttonAlpha)
+DEFINE_GLOBAL(GameTicRate)
+DEFINE_GLOBAL(menuDelegate)
 
 DEFINE_FIELD(DMenu, mParentMenu)
 DEFINE_FIELD(DMenu, mMouseCapture);
 DEFINE_FIELD(DMenu, mBackbuttonSelected);
 DEFINE_FIELD(DMenu, DontDim);
 DEFINE_FIELD(DMenu, DontBlur);
+DEFINE_FIELD(DMenu, AnimatedTransition);
+DEFINE_FIELD(DMenu, Animated);
 
 DEFINE_FIELD(DMenuDescriptor, mMenuName)
 DEFINE_FIELD(DMenuDescriptor, mNetgameMessage)
@@ -1030,7 +1034,10 @@ DEFINE_FIELD(DListMenuDescriptor, mAutoselect)
 DEFINE_FIELD(DListMenuDescriptor, mFont)
 DEFINE_FIELD(DListMenuDescriptor, mFontColor)
 DEFINE_FIELD(DListMenuDescriptor, mFontColor2)
+DEFINE_FIELD(DListMenuDescriptor, mAnimatedTransition)
 DEFINE_FIELD(DListMenuDescriptor, mCenter)
+DEFINE_FIELD(DListMenuDescriptor, mVirtWidth)
+DEFINE_FIELD(DListMenuDescriptor, mVirtHeight)
 
 DEFINE_FIELD(DOptionMenuDescriptor, mItems)
 DEFINE_FIELD(DOptionMenuDescriptor, mTitle)
@@ -1051,6 +1058,15 @@ DEFINE_FIELD(FOptionMenuSettings, mFontColorHeader)
 DEFINE_FIELD(FOptionMenuSettings, mFontColorHighlight)
 DEFINE_FIELD(FOptionMenuSettings, mFontColorSelection)
 DEFINE_FIELD(FOptionMenuSettings, mLinespacing)
+
+DEFINE_FIELD(DImageScrollerDescriptor, mItems)
+DEFINE_FIELD(DImageScrollerDescriptor, textBackground)
+DEFINE_FIELD(DImageScrollerDescriptor, textBackgroundBrightness)
+DEFINE_FIELD(DImageScrollerDescriptor,textFont)
+DEFINE_FIELD(DImageScrollerDescriptor, textScale)
+DEFINE_FIELD(DImageScrollerDescriptor, mAnimatedTransition)
+DEFINE_FIELD(DImageScrollerDescriptor, virtWidth)
+DEFINE_FIELD(DImageScrollerDescriptor, virtHeight)
 
 
 struct IJoystickConfig;
@@ -1130,6 +1146,17 @@ DMenuItemBase * CreateListMenuItemText(double x, double y, int height, int hotke
 	FString keystr = FString(char(hotkey));
 	FString textstr = text;
 	VMValue params[] = { p, x, y, height, &keystr, &textstr, font, int(color1.d), int(color2.d), command.GetIndex(), param };
+	auto f = dyn_cast<PFunction>(c->FindSymbol("InitDirect", false));
+	VMCall(f->Variants[0].Implementation, params, countof(params), nullptr, 0);
+	return (DMenuItemBase*)p;
+}
+
+DMenuItemBase* CreateListMenuItemStaticText(double x, double y, const char* text, FFont* font, PalEntry color, bool centered)
+{
+	auto c = PClass::FindClass("ListMenuItemStaticText");
+	auto p = c->CreateNew();
+	FString textstr = text;
+	VMValue params[] = { p, x, y, &textstr, font, int(color.d), centered };
 	auto f = dyn_cast<PFunction>(c->FindSymbol("InitDirect", false));
 	VMCall(f->Variants[0].Implementation, params, countof(params), nullptr, 0);
 	return (DMenuItemBase*)p;

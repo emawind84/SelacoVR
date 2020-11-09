@@ -4,6 +4,7 @@
 #include "serializer.h"
 #include "d_event.h"
 #include "sbar.h"
+#include "info.h"
 
 class DStaticEventHandler;
 struct EventManager;
@@ -80,6 +81,7 @@ public:
 	void WorldUnloaded();
 	void WorldThingSpawned(AActor* actor);
 	void WorldThingDied(AActor* actor, AActor* inflictor);
+	void WorldThingGround(AActor* actor, FState* st);
 	void WorldThingRevived(AActor* actor);
 	void WorldThingDamaged(AActor* actor, AActor* inflictor, AActor* source, int damage, FName mod, int flags, DAngle angle);
 	void WorldThingDestroyed(AActor* actor);
@@ -97,6 +99,7 @@ public:
 
 	//
 	void PlayerEntered(int num, bool fromhub);
+	void PlayerSpawned(int num);
 	void PlayerRespawned(int num);
 	void PlayerDied(int num);
 	void PlayerDisconnected(int num);
@@ -161,6 +164,7 @@ struct FWorldEvent
 	DVector3 DamagePosition;
 	bool DamageIsRadius; // radius damage yes/no
 	int NewDamage = 0; // sector/line damaged. allows modifying damage
+	FState* CrushedState = nullptr; // custom crush state set in thingground
 };
 
 struct FPlayerEvent
@@ -233,6 +237,8 @@ struct EventManager
 	void WorldThingSpawned(AActor* actor);
 	// called after AActor::Die of each actor.
 	void WorldThingDied(AActor* actor, AActor* inflictor);
+	// called inside AActor::Grind just before the corpse is destroyed
+	void WorldThingGround(AActor* actor, FState* st);
 	// called after AActor::Revive.
 	void WorldThingRevived(AActor* actor);
 	// called before P_DamageMobj and before AActor::DamageMobj virtuals.
@@ -263,6 +269,8 @@ struct EventManager
 	void RenderUnderlay(EHudState state);
 	// this executes when a player enters the level (once). PlayerEnter+inhub = RETURN
 	void PlayerEntered(int num, bool fromhub);
+	// this executes at the same time as ENTER scripts
+	void PlayerSpawned(int num);
 	// this executes when a player respawns. includes resurrect cheat.
 	void PlayerRespawned(int num);
 	// this executes when a player dies (partially duplicating worldthingdied, but whatever)

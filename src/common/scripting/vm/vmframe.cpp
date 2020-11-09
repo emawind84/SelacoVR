@@ -45,7 +45,11 @@
 #include "version.h"
 
 #ifdef HAVE_VM_JIT
+#ifdef __DragonFly__
+CUSTOM_CVAR(Bool, vm_jit, false, CVAR_NOINITCALL)
+#else
 CUSTOM_CVAR(Bool, vm_jit, true, CVAR_NOINITCALL)
+#endif
 {
 	Printf("You must restart " GAMENAME " for this change to take effect.\n");
 	Printf("This cvar is currently not saved. You must specify it on the command line.");
@@ -280,6 +284,13 @@ static bool CanJit(VMScriptFunction *func)
 
 int VMScriptFunction::FirstScriptCall(VMFunction *func, VMValue *params, int numparams, VMReturn *ret, int numret)
 {
+	// [Player701] Check that we aren't trying to call an abstract function.
+	// This shouldn't happen normally, but if it does, let's catch this explicitly
+	// rather than let GZDoom crash.
+	if (func->VarFlags & VARF_Abstract)
+	{
+		ThrowAbortException(X_OTHER, "attempt to call abstract function %s.", func->PrintableName.GetChars());
+	}
 #ifdef HAVE_VM_JIT
 	if (vm_jit && CanJit(static_cast<VMScriptFunction*>(func)))
 	{
@@ -650,7 +661,11 @@ CVMAbortException::CVMAbortException(EVMAbortException reason, const char *morei
 	}
 	if (moreinfo != nullptr)
 	{
-		AppendMessage(" ");
+		// [Player701] avoid double space
+		if (reason != X_OTHER)
+		{
+			AppendMessage(" ");
+		}
 		size_t len = strlen(m_Message);
 		myvsnprintf(m_Message + len, MAX_ERRORTEXT - len, moreinfo, ap);
 	}
