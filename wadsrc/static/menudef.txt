@@ -369,7 +369,7 @@ OptionMenu "OptionsMenu" protected
 	Submenu "$OPTMNU_CONTROLS",			"CustomizeControls"
 	Submenu "$OPTMNU_MOUSE",			"MouseOptions"
 	Submenu "$OPTMNU_JOYSTICK",			"JoystickOptions"
-	Submenu "VR Options",    			"OpenVROptions"
+	Submenu "$VRPREFMNU",    			"OpenVROptions"
 	StaticText " "
 	Submenu "$OPTMNU_PLAYER",			"NewPlayerMenu"
 	Submenu "$OPTMNU_GAMEPLAY",			"GameplayOptions"

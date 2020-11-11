@@ -101,7 +101,7 @@ CVAR(Bool, r_deathcamera, false, CVAR_ARCHIVE)
 CVAR(Int, r_clearbuffer, 0, 0)
 CVAR(Bool, r_drawvoxels, true, 0)
 CVAR(Bool, r_drawplayersprites, true, 0)	// [RH] Draw player sprites?
-CVAR(Int, r_PlayerSprites3DMode, 0, CVAR_ARCHIVE);
+CVAR(Int, r_PlayerSprites3DMode, 1, CVAR_ARCHIVE);
 CVAR(Float, gl_fatItemWidth, 0.5f, CVAR_ARCHIVE);
 CUSTOM_CVAR(Float, r_quakeintensity, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
@@ -355,7 +355,7 @@ double R_GetGlobVis(const FViewWindow &viewwindow, double vis)
 //
 //==========================================================================
 
-CUSTOM_CVAR (Int, screenblocks, 10, CVAR_ARCHIVE)
+CUSTOM_CVAR (Int, screenblocks, 11, CVAR_ARCHIVE)
 {
 	if (self > 12)
 		self = 12;
