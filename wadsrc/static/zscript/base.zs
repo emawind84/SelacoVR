@@ -406,6 +406,7 @@ struct GameInfoStruct native
 	native double gibfactor;
 	native bool intermissioncounter;
 	native Name mSliderColor;
+	native Name mSliderBackColor;
 	native Color defaultbloodcolor;
 	native double telefogheight;
 	native int defKickback;
