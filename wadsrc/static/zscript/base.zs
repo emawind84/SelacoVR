@@ -413,6 +413,7 @@ struct GameInfoStruct native
 	native TextureID berserkpic;
 	native double normforwardmove[2];
 	native double normsidemove[2];
+	native bool mHideParTimes;
 }
 
 struct SystemTime

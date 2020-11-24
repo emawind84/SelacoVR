@@ -78,6 +78,7 @@ DEFINE_FIELD_X(GameInfoStruct, gameinfo_t, berserkpic)
 DEFINE_FIELD_X(GameInfoStruct, gameinfo_t, defaultdropstyle)
 DEFINE_FIELD_X(GameInfoStruct, gameinfo_t, normforwardmove)
 DEFINE_FIELD_X(GameInfoStruct, gameinfo_t, normsidemove)
+DEFINE_FIELD_X(GameInfoStruct, gameinfo_t, mHideParTimes)
 
 const char *GameNames[17] =
 {
@@ -445,6 +446,7 @@ void FMapInfoParser::ParseGameInfo()
 			GAMEINFOKEY_TWODOUBLES(normforwardmove, "normforwardmove")
 			GAMEINFOKEY_TWODOUBLES(normsidemove, "normsidemove")
 			GAMEINFOKEY_BOOL(nomergepickupmsg, "nomergepickupmsg")
+			GAMEINFOKEY_BOOL(mHideParTimes, "hidepartimes")
 
 		else
 		{
