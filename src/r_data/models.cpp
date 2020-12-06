@@ -48,7 +48,7 @@
 #ifdef _MSC_VER
 #pragma warning(disable:4244) // warning C4244: conversion from 'double' to 'float', possible loss of data
 #endif
-#include <hwrenderer\scene\hw_drawinfo.h>
+#include "hwrenderer/scene/hw_drawinfo.h"
 
 CVAR(Bool, gl_interpolate_model_frames, true, CVAR_ARCHIVE)
 CVAR(Float, gl_weaponOfsY, 0.0f, CVAR_ARCHIVE)

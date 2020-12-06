@@ -39,7 +39,7 @@
 #include "sbar.h"
 #include "r_utility.h"
 #include "actorinlines.h"
-#include "hwrenderer\data\hw_vrmodes.h"
+#include "hwrenderer/data/hw_vrmodes.h"
 #include "texturemanager.h"
 
 #define ST_RAMPAGEDELAY 		(2*TICRATE)
