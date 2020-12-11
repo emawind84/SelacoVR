@@ -21,7 +21,7 @@
 */
 
 #include "v_video.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 #include "templates.h"
 #include "r_videoscale.h"
 #include "i_time.h"

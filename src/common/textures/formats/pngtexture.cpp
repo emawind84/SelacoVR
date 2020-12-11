@@ -36,7 +36,7 @@
 
 #include "files.h"
 #include "templates.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 #include "bitmap.h"
 #include "imagehelpers.h"
 #include "image.h"

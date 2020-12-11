@@ -46,7 +46,7 @@
 #include "m_crc32.h"
 #include "m_swap.h"
 #include "c_cvars.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 
 
 // MACROS ------------------------------------------------------------------

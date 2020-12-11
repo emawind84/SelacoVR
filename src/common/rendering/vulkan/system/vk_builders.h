@@ -455,7 +455,6 @@ inline std::unique_ptr<VulkanImage> ImageBuilder::tryCreate(VulkanDevice *device
 	return std::make_unique<VulkanImage>(device, image, allocation, imageInfo.extent.width, imageInfo.extent.height, imageInfo.mipLevels);
 }
 
-
 /////////////////////////////////////////////////////////////////////////////
 
 inline ImageViewBuilder::ImageViewBuilder()

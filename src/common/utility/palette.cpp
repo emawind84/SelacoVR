@@ -40,7 +40,7 @@
 #include "filesystem.h"
 #include "printf.h"
 #include "templates.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 
 /****************************/
 /* Palette management stuff */

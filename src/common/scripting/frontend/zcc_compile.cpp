@@ -1937,17 +1937,6 @@ PType *ZCCCompiler::ResolveArraySize(PType *baseType, ZCC_Expression *arraysize,
 		indices = std::move(fixedIndices);
 	}
 
-	if (mVersion >= MakeVersion(3, 7, 2))
-	{
-		TArray<ZCC_Expression *> fixedIndices;
-		for (auto node : indices)
-		{
-			fixedIndices.Insert (0, node);
-		}
-
-		indices = std::move(fixedIndices);
-	}
-
 	FCompileContext ctx(OutNamespace, cls, false);
 	for (auto node : indices)
 	{

@@ -21,7 +21,7 @@
 //
 
 #include "filesystem.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 #include "c_dispatch.h"
 #include "hw_ihwtexture.h"
 #include "hw_material.h"

@@ -35,7 +35,7 @@
 #include "gl_system.h"
 #include "files.h"
 #include "v_video.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 #include "filesystem.h"
 #include "i_time.h"
 #include "cmdlib.h"
@@ -53,7 +53,6 @@
 #include "hw_lightbuffer.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 #include "r_videoscale.h"
-#include "hwrenderer/data/hw_vrmodes.h"
 #include "model.h"
 #include "gl_postprocessstate.h"
 #include "gl_buffers.h"
@@ -65,7 +64,7 @@ namespace OpenGLRenderer
 {
 
 //===========================================================================
-//
+// 
 // Renderer interface
 //
 //===========================================================================
@@ -76,7 +75,7 @@ namespace OpenGLRenderer
 //
 //-----------------------------------------------------------------------------
 
-FGLRenderer::FGLRenderer(OpenGLFrameBuffer *fb)
+FGLRenderer::FGLRenderer(OpenGLFrameBuffer *fb) 
 {
 	framebuffer = fb;
 }
@@ -104,7 +103,7 @@ void FGLRenderer::Initialize(int width, int height)
 	mSamplerManager = new FSamplerManager;
 }
 
-FGLRenderer::~FGLRenderer()
+FGLRenderer::~FGLRenderer() 
 {
 	FlushModels();
 	TexMan.FlushAll();
@@ -126,7 +125,7 @@ FGLRenderer::~FGLRenderer()
 }
 
 //===========================================================================
-//
+// 
 //
 //
 //===========================================================================
@@ -144,14 +143,14 @@ bool FGLRenderer::StartOffscreen()
 }
 
 //===========================================================================
-//
+// 
 //
 //
 //===========================================================================
 
 void FGLRenderer::EndOffscreen()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, mOldFBID);
+	glBindFramebuffer(GL_FRAMEBUFFER, mOldFBID); 
 }
 
 //===========================================================================

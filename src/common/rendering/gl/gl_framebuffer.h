@@ -2,7 +2,7 @@
 #define __GL_FRAMEBUFFER
 
 #include "gl_sysfb.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 
 #include <memory>
 

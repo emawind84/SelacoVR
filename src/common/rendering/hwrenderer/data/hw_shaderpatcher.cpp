@@ -214,10 +214,10 @@ FString RemoveSamplerBindings(FString code, TArray<std::pair<FString, int>> &sam
 	return code;
 }
 
-FString RemoveLayoutLocationDecl(FString code, const char* inoutkeyword)
+FString RemoveLayoutLocationDecl(FString code, const char *inoutkeyword)
 {
 	long len = (long)code.Len();
-	char* chars = code.LockBuffer();
+	char *chars = code.LockBuffer();
 
 	long startIndex = 0;
 	while (true)

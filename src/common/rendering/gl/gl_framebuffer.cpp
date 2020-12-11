@@ -35,7 +35,7 @@
 
 #include "gl_system.h"
 #include "v_video.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 #include "templates.h"
 #include "i_time.h"
 
