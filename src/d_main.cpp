@@ -1834,6 +1834,14 @@ const char *BaseFileSearch (const char *file, const char *ext, bool lookfirstinp
 		}
 	}
 
+#ifdef __MOBILE__
+	mysnprintf(wad, countof(wad), "./res/%s", file);
+	if (DirEntryExists(wad))
+	{
+		return wad;
+	}
+#endif
+
 	// Retry, this time with a default extension
 	if (ext != NULL)
 	{
