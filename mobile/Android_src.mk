@@ -59,6 +59,7 @@ $(GZDOOM_TOP_PATH)/src/../libraries/zmusic \
  $(TOP_DIR)/AudioLibs_OpenTouch/libmpg123 \
  $(TOP_DIR)/jpeg8d \
  $(TOP_DIR)/Clibs_OpenTouch \
+ $(TOP_DIR)/Clibs_OpenTouch\idtech1 \
  $(TOP_DIR)/jwzgles \
  $(TOP_DIR)/MobileTouchControls  \
  $(GZDOOM_TOP_PATH)/mobile/src
