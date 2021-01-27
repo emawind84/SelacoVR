@@ -53,6 +53,10 @@
 #include "gl_debug.h"
 #include "r_videoscale.h"
 
+#ifdef __MOBILE__
+#include "gl/shaders/gl_shader.h"
+#endif
+
 EXTERN_CVAR (Float, vid_brightness)
 EXTERN_CVAR (Float, vid_contrast)
 EXTERN_CVAR (Bool, vid_vsync)
@@ -246,8 +250,9 @@ void OpenGLFrameBuffer::Swap()
 	if (!swapbefore) glFinish();
 #endif
 
-#ifdef __MOBILE__
+#ifdef __MOBILE__ // touch screen changes state
     gl_RenderState.SetVertexBuffer(NULL);
+    GLRenderer->mShaderManager->SetActiveShader(NULL);
 #endif
 	Finish.Unclock();
 	camtexcount = 0;
