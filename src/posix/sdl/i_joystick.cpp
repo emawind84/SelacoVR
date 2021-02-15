@@ -63,7 +63,7 @@ public:
 	{
 		if(Device != NULL)
 			M_SaveJoystickConfig(this);
-		SDL_JoystickClose(Device);
+		//SDL_JoystickClose(Device);
 	}
 
 	bool IsValid() const
