@@ -461,6 +461,7 @@ CVAR (Flag, sv_cooplosearmor,	dmflags, DF_COOP_LOSE_ARMOR);
 CVAR (Flag, sv_cooplosepowerups,	dmflags, DF_COOP_LOSE_POWERUPS);
 CVAR (Flag, sv_cooploseammo,	dmflags, DF_COOP_LOSE_AMMO);
 CVAR (Flag, sv_coophalveammo,	dmflags, DF_COOP_HALVE_AMMO);
+CVAR (Flag, sv_instantreaction,	dmflags, DF_INSTANT_REACTION);
 
 // Some (hopefully cleaner) interface to these settings.
 CVAR (Mask, sv_crouch,			dmflags, DF_NO_CROUCH|DF_YES_CROUCH);
@@ -2171,25 +2172,25 @@ static void AddAutoloadFiles(const char *autoname)
 	{
 		if (DoomStartupInfo.LoadLights == 1 || (DoomStartupInfo.LoadLights != 0 && autoloadlights))
 		{
-			const char *lightswad = BaseFileSearch ("lights.pk3", NULL);
+			const char *lightswad = BaseFileSearch ("lights.pk3", NULL, true);
 			if (lightswad)
 				D_AddFile (allwads, lightswad);
 		}
 		if (DoomStartupInfo.LoadBrightmaps == 1 || (DoomStartupInfo.LoadBrightmaps != 0 && autoloadbrightmaps))
 		{
-			const char *bmwad = BaseFileSearch ("brightmaps.pk3", NULL);
+			const char *bmwad = BaseFileSearch ("brightmaps.pk3", NULL, true);
 			if (bmwad)
 				D_AddFile (allwads, bmwad);
 		}
 		if (DoomStartupInfo.LoadWidescreen == 1 || (DoomStartupInfo.LoadWidescreen != 0 && autoloadwidescreen))
 		{
-			const char *wswad = BaseFileSearch ("game_widescreen_gfx.pk3", NULL);
+			const char *wswad = BaseFileSearch ("game_widescreen_gfx.pk3", NULL, true);
 			if (wswad)
 				D_AddFile (allwads, wswad);
 		}
 		if (DoomStartupInfo.LoadConpics == 1 || (DoomStartupInfo.LoadConpics != 0 && autoloadconpics))
 		{
-			const char *conpicswad = BaseFileSearch ("game_conpics_gfx.pk3", NULL);
+			const char *conpicswad = BaseFileSearch ("game_conpics_gfx.pk3", NULL, true);
 			if (conpicswad)
 				D_AddFile (allwads, conpicswad);
 		}
