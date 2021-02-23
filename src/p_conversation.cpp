@@ -682,6 +682,22 @@ static int FindNode (const FStrifeDialogueNode *node)
 
 //============================================================================
 //
+// ClearConversationStuff
+//
+// Clear the conversation pointers on the player
+//
+//============================================================================
+
+static void ClearConversationStuff(player_t* player)
+{
+	player->ConversationFaceTalker = false;
+	player->ConversationNPC = nullptr;
+	player->ConversationPC = nullptr;
+	player->ConversationNPCAngle = 0.;
+}
+
+//============================================================================
+//
 // CheckStrifeItem
 //
 // Checks if you have an item. A NULL itemtype is always considered to be
@@ -1009,6 +1025,7 @@ static void HandleReply(player_t *player, bool isconsole, int nodenum, int reply
 		if (!(npc->flags8 & MF8_DONTFACETALKER))
 			npc->Angles.Yaw = player->ConversationNPCAngle;
 		npc->flags5 &= ~MF5_INCONVERSATION;
+		if (gameaction != ga_slideshow) ClearConversationStuff(player);
 		return;
 	}
 
@@ -1026,6 +1043,7 @@ static void HandleReply(player_t *player, bool isconsole, int nodenum, int reply
 			if (!(npc->flags8 & MF8_DONTFACETALKER))
 				npc->Angles.Yaw = player->ConversationNPCAngle;
 			npc->flags5 &= ~MF5_INCONVERSATION;
+			if (gameaction != ga_slideshow) ClearConversationStuff(player);
 			return;
 		}
 	}
@@ -1164,10 +1182,7 @@ static void HandleReply(player_t *player, bool isconsole, int nodenum, int reply
 	if (gameaction != ga_slideshow)
 	{
 		npc->flags5 &= ~MF5_INCONVERSATION;
-		player->ConversationFaceTalker = false;
-		player->ConversationNPC = nullptr;
-		player->ConversationPC = nullptr;
-		player->ConversationNPCAngle = 0.;
+		ClearConversationStuff(player);
 	}
 
 	if (isconsole)
@@ -1211,10 +1226,7 @@ void P_ConversationCommand (int netcode, int pnum, uint8_t **stream)
 		}
 		if (netcode == DEM_CONVNULL)
 		{
-			player->ConversationFaceTalker = false;
-			player->ConversationNPC = nullptr;
-			player->ConversationPC = nullptr;
-			player->ConversationNPCAngle = 0.;
+			ClearConversationStuff(player);
 		}
 	}
 }
