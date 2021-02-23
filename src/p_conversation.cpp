@@ -930,13 +930,15 @@ void P_StartConversation (AActor *npc, AActor *pc, bool facetalker, bool saveang
 		}
 	}
 
+	// [Nash] Play voice clip from the actor so that positional audio can be heard by all players
+	if (CurNode->SpeakerVoice != 0) S_Sound(npc, CHAN_VOICE, CHANF_NOPAUSE, CurNode->SpeakerVoice, 1, ATTN_NORM);
+
 	// The rest is only done when the conversation is actually displayed.
 	if (pc->player == &players[consoleplayer])
 	{
 		if (CurNode->SpeakerVoice != 0)
 		{
 			I_SetMusicVolume (dlg_musicvolume);
-			S_Sound (npc, CHAN_VOICE, CHANF_NOPAUSE, CurNode->SpeakerVoice, 1, ATTN_NORM);
 		}
 
 		// Create the menu. This may be a user-defined class so check if it is good to use.
