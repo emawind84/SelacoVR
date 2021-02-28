@@ -942,6 +942,8 @@ class PlayerPawn : Actor
 	{
 		let player = self.player;
 
+		if (!player) return;
+
 		// [RH] Zoom the player's FOV
 		float desired = player.DesiredFOV;
 		// Adjust FOV using on the currently held weapon.
