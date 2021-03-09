@@ -4167,6 +4167,7 @@ enum
 	APROP_MaxStepHeight	= 44,
 	APROP_MaxDropOffHeight= 45,
 	APROP_DamageType	= 46,
+	APROP_SoundClass	= 47,
 };
 
 // These are needed for ACS's APROP_RenderStyle
@@ -4430,6 +4431,17 @@ void DLevelScript::DoSetActorProperty (AActor *actor, int property, int value)
 		actor->DamageType = FBehavior::StaticLookupString(value);
 		break;
 
+	case APROP_SoundClass:
+		if (actor->IsKindOf(NAME_PlayerPawn))
+		{
+			if (actor->player != NULL)
+			{
+				actor->player->SoundClass = FBehavior::StaticLookupString(value);
+			}
+		}
+		
+		break;
+
 	default:
 		// do nothing.
 		break;
@@ -4527,6 +4539,7 @@ int DLevelScript::GetActorProperty (int tid, int property)
 	case APROP_MaxStepHeight: return DoubleToACS(actor->MaxStepHeight);
 	case APROP_MaxDropOffHeight: return DoubleToACS(actor->MaxDropOffHeight);
 	case APROP_DamageType:	return GlobalACSStrings.AddString(actor->DamageType);
+	case APROP_SoundClass:	return GlobalACSStrings.AddString(actor->player->SoundClass.GetChars());
 
 	default:				return 0;
 	}
@@ -4600,6 +4613,7 @@ int DLevelScript::CheckActorProperty (int tid, int property, int value)
 		case APROP_Species:		string = actor->GetSpecies(); break;
 		case APROP_NameTag:		string = actor->GetTag(); break;
 		case APROP_DamageType:	string = actor->DamageType; break;
+		case APROP_SoundClass:  string = actor->player->SoundClass; break;
 	}
 	if (string == NULL) string = "";
 	return (!stricmp(string, FBehavior::StaticLookupString(value)));
