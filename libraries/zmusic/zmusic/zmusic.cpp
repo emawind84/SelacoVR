@@ -435,6 +435,12 @@ DLL_EXPORT bool ZMusic_IsLooping(MusInfo *song)
 	return song->m_Looping;
 }
 
+DLL_EXPORT int ZMusic_GetDeviceType(MusInfo* song)
+{
+	if (!song) return false;
+	return song->GetDeviceType();
+}
+
 DLL_EXPORT bool ZMusic_IsMIDI(MusInfo *song)
 {
 	if (!song) return false;
