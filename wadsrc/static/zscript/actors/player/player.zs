@@ -2033,7 +2033,7 @@ class PlayerPawn : Actor
 				next = item.Inv;
 				if (item.InterHubAmount < 1)
 				{
-					item.Destroy ();
+					item.DepleteOrDestroy ();
 				}
 				item = next;
 			}
