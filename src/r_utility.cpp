@@ -103,6 +103,21 @@ CUSTOM_CVAR(Float, r_quakeintensity, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 	else if (self > 1.f) self = 1.f;
 }
 
+CUSTOM_CVAR(Int, r_actorspriteshadow, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+{
+	if (self < 0)
+		self = 0;
+	else if (self > 2)
+		self = 2;
+}
+CUSTOM_CVAR(Float, r_actorspriteshadowdist, 1500.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+{
+	if (self < 0.f)
+		self = 0.f;
+	else if (self > 8192.f)
+		self = 8192.f;
+}
+
 int 			viewwindowx;
 int 			viewwindowy;
 int				viewwidth;
@@ -1238,5 +1253,31 @@ CUSTOM_CVAR(Float, maxviewpitch, 90.f, CVAR_ARCHIVE | CVAR_SERVERINFO)
 	{
 		// [SP] Update pitch limits to the netgame/gamesim.
 		players[consoleplayer].SendPitchLimits();
+	}
+}
+
+//==========================================================================
+//
+// R_ShouldDrawSpriteShadow
+//
+//==========================================================================
+
+bool R_ShouldDrawSpriteShadow(AActor *thing)
+{
+	switch (r_actorspriteshadow)
+	{
+	case 1:
+		return (thing->renderflags & RF_CASTSPRITESHADOW);
+
+	case 2:
+		if (thing->renderflags & RF_CASTSPRITESHADOW)
+		{
+			return true;
+		}
+		return (thing->renderflags & RF_CASTSPRITESHADOW) || (!(thing->renderflags & RF_NOSPRITESHADOW) && ((thing->flags3 & MF3_ISMONSTER) || thing->player != nullptr));
+
+	default:
+	case 0:
+		return false;
 	}
 }

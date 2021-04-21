@@ -72,7 +72,7 @@ EXTERN_CVAR(Bool, gl_light_sprites)
 
 namespace swrenderer
 {
-	void RenderSprite::Project(RenderThread *thread, AActor *thing, const DVector3 &pos, FTexture *tex, const DVector2 &spriteScale, int renderflags, WaterFakeSide fakeside, F3DFloor *fakefloor, F3DFloor *fakeceiling, sector_t *current_sector, int spriteshade, bool foggy, FDynamicColormap *basecolormap)
+	void RenderSprite::Project(RenderThread *thread, AActor *thing, const DVector3 &pos, FTexture *tex, const DVector2 &spriteScale, int renderflags, WaterFakeSide fakeside, F3DFloor *fakefloor, F3DFloor *fakeceiling, sector_t *current_sector, int spriteshade, bool foggy, FDynamicColormap *basecolormap, bool isSpriteShadow)
 	{
 		// transform the origin point
 		double tr_x = pos.X - thread->Viewport->viewpoint.Pos.X;
@@ -248,7 +248,14 @@ namespace swrenderer
 
 		bool fullbright = !vis->foggy && ((renderflags & RF_FULLBRIGHT) || (thing->flags5 & MF5_BRIGHT));
 		bool fadeToBlack = (vis->RenderStyle.Flags & STYLEF_FadeToBlack) != 0;
-		
+
+		if (isSpriteShadow)
+		{
+			vis->RenderStyle = LegacyRenderStyles[STYLE_TranslucentStencil];
+			vis->FillColor = 0;
+			vis->Alpha *= 0.5;
+		}
+
 		if (r_dynlights && gl_light_sprites)
 		{
 			float lit_red = 0;
