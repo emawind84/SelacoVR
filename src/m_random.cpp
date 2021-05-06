@@ -170,7 +170,6 @@ static TDeletingArray<FRandom *> NewRNGs;
 
 // CODE --------------------------------------------------------------------
 
-// Which one is deterministic?
 unsigned int P_Random (void)
 {
 	prndindex = (prndindex+1)&0xff;
