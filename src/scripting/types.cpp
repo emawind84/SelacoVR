@@ -33,6 +33,7 @@
 **
 */
 
+#include <limits>
 #include "vmintern.h"
 #include "s_sound.h"
 #include "dthinker.h"
