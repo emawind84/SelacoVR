@@ -117,7 +117,6 @@ protected:
 	static TReqProc<FluidSynthModule, int (*)(fluid_synth_t *, const char *, int, char *, int *, int *, int)> fluid_synth_sysex;
 	
 	bool LoadFluidSynth(const char *fluid_lib);
-	void UnloadFluidSynth();
 #endif
 };
 
@@ -253,9 +252,6 @@ FluidSynthMIDIDevice::~FluidSynthMIDIDevice()
 	{
 		delete_fluid_settings(FluidSettings);
 	}
-#ifdef DYN_FLUIDSYNTH
-	UnloadFluidSynth();
-#endif
 }
 
 //==========================================================================
@@ -538,35 +534,29 @@ DYN_FLUID_SYM(fluid_synth_sysex);
 
 bool FluidSynthMIDIDevice::LoadFluidSynth(const char *fluid_lib)
 {
-	if (fluid_lib && strlen(fluid_lib) > 0)
+    static bool is_loaded = false;
+    static bool is_checked = false;
+
+	if (!is_checked)
 	{
-		if(!FluidSynthModule.Load({fluid_lib}))
+		if (fluid_lib && strlen(fluid_lib) > 0)
 		{
-			const char* libname = fluid_lib;
-			if (printfunc) printfunc("Could not load %s\n", libname);
+			is_loaded = FluidSynthModule.Load({ fluid_lib });
+			if (!is_loaded)
+				if (printfunc) printfunc("Could not load %s\n", fluid_lib);
 		}
-		else
-			return true;
+
+		if (!is_loaded)
+		{
+			is_loaded = FluidSynthModule.Load({ FLUIDSYNTHLIB1, FLUIDSYNTHLIB2 });
+			if (!is_loaded)
+				if (printfunc) printfunc("Could not load " FLUIDSYNTHLIB1 " or " FLUIDSYNTHLIB2 "\n");
+		}
+
+		is_checked = true;
 	}
 
-	if(!FluidSynthModule.Load({FLUIDSYNTHLIB1, FLUIDSYNTHLIB2}))
-	{
-		if (printfunc) printfunc("Could not load " FLUIDSYNTHLIB1 " or " FLUIDSYNTHLIB2 "\n");
-		return false;
-	}
-
-	return true;
-}
-
-//==========================================================================
-//
-// FluidSynthMIDIDevice :: UnloadFluidSynth
-//
-//==========================================================================
-
-void FluidSynthMIDIDevice::UnloadFluidSynth()
-{
-	FluidSynthModule.Unload();
+	return is_loaded;
 }
 
 #endif
