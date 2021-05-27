@@ -227,6 +227,7 @@ CUSTOM_CVAR(Bool, vid_hw2d, true, CVAR_NOINITCALL)
 
 CVAR(Bool, d3d_antilag, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Int, d3d_showpacks, 0, 0)
+CVAR(Bool, d3d_nogammaramp, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Bool, vid_hwaalines, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 // CODE --------------------------------------------------------------------
@@ -1119,7 +1120,7 @@ void D3DFB::Update ()
 
 		NeedGammaUpdate = false;
 		igamma = 1 / Gamma;
-		if (!Windowed)
+		if (!Windowed && !d3d_nogammaramp)
 		{
 			D3DGAMMARAMP ramp;
 
@@ -1130,7 +1131,7 @@ void D3DFB::Update ()
 			LOG("SetGammaRamp\n");
 			D3DDevice->SetGammaRamp(0, D3DSGR_CALIBRATE, &ramp);
 		}
-		else
+		else if (Windowed)
 		{
 			if (igamma != 1)
 			{
