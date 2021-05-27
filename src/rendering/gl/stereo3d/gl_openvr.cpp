@@ -1028,7 +1028,9 @@ namespace s3d
 
 		yaw -= actor->Angles.Yaw;
 
-		//Don't set pitch to 0 here, we need the pitch element for the random projectile spread
+		//ignore specified pitch(would need to compensate for auto aimand no(vanilla) Doom weapon varies this)
+		//pitch -= actor->Angles.Pitch;
+		pitch.Degrees = 0;
 				
 		pc = pitch.Cos();
 

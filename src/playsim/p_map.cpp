@@ -4355,28 +4355,6 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 
 	aim_t aim;
 
-	DVector3 pos = t1->Pos();
-	DAngle attackPitch = t1->Angles.Pitch;
-	DAngle attackAngle = angle;
-	if (t1->player != nullptr && t1->player->mo->OverrideAttackPosDir)
-    {
-	    pos = t1->player->mo->AttackPos;
-
-        //
-        //  FIX FOR FLAT PROJECTILE SPREAD FROM SHOTGUNS AND OTHER MULTI-PROJECTILE WEAPONS
-        //
-        //Bit of a hack as it makes the pitch a little off, but in order for weapon projectile spread
-        //to work correctly, we can't fix the pitch to that of the controller otherwise random spread
-        //turns into a flat line of projectiles. Using the difference between the previous known angles and
-        //the current angles (which were potenitally modified by A_FireProjectile) gives us the "random"
-        //difference applied to the pitch by the script
-        //
-        //A VR player is unlikely to be whipping their head up and down so fast as to make a meaningful
-        //difference to the pitch between two frames, so this is 'good enough' for now.
-        attackPitch = t1->PrevAngles.Pitch - t1->Angles.Pitch;
-        attackAngle = angle - t1->Angles.Yaw;
-    }
-
 	aim.flags = flags;
 	aim.shootthing = t1;
 	aim.friender = (friender == NULL) ? t1 : friender;
@@ -4384,10 +4362,10 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 	aim.startpos = t1->Pos();
 	aim.aimtrace = angle.ToVector(distance);
 	aim.limitz = aim.shootz = shootz;
-	aim.toppitch = attackPitch - vrange;
-	aim.bottompitch = attackPitch + vrange;
+	aim.toppitch = t1->Angles.Pitch - vrange;
+	aim.bottompitch = t1->Angles.Pitch + vrange;
 	aim.attackrange = distance;
-	aim.aimpitch = attackPitch;
+	aim.aimpitch = t1->Angles.Pitch;
 	aim.lastsector = t1->Sector;
 	aim.startfrac = 0;
 	aim.unlinked = false;
@@ -4517,21 +4495,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	if (t1->player != NULL && t1->player->mo->OverrideAttackPosDir)
 	{
 		fromPos = t1->player->mo->AttackPos;
-
-		//Include pitch delta here
-		DAngle pitchDelta;
-        pitchDelta = (t1->player->mo->Angles.Pitch - pitch);
-        if (damage == 0 // Laser sight
-			||
-        		//This is to catch the scenario in vanilla Doom (or suchlike) where a.BulletSlope is calculating a completely
-        		//different pitch, if delta is outside a tolerance of +/- 5 degrees, then just use the pitch of the
-        		//controller as we did before.
-                fabs(pitchDelta.Degrees) > 5.f)
-        {
-            pitchDelta.Degrees = 0;
-        }
-
-		direction = t1->player->mo->AttackDir(t1, angle, pitchDelta);
+		direction = t1->player->mo->AttackDir(t1, angle, pitch);
 	}
 	else
 	{
