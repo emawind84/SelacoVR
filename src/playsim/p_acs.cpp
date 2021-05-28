@@ -569,6 +569,8 @@ FRandom pr_acs ("ACS");
 // SpawnDecal flags
 #define SDF_ABSANGLE		1
 #define SDF_PERMANENT		2
+#define SDF_FIXED_ZOFF		4
+#define SDF_FIXED_DISTANCE	8
 
 // GetArmorInfo
 enum
@@ -4779,6 +4781,7 @@ enum EACSFunctions
 	ACSF_StartSlideshow,
 	ACSF_GetSectorHealth,
 	ACSF_GetLineHealth,
+	ACSF_SetSubtitleNumber,
 
 		// Eternity's
 	ACSF_GetLineX = 300,
@@ -5261,7 +5264,7 @@ int DLevelScript::SwapActorTeleFog(AActor *activator, int tid)
 			if (rettype == TypeSInt32 || rettype == TypeBool || rettype == TypeColor || rettype == TypeName || rettype == TypeSound)
 			{
 				VMReturn ret(&retval);
-				VMCall(func, &params[0], params.Size(), &ret, 1);
+				VMCallWithDefaults(func, params, &ret, 1);
 				if (rettype == TypeName)
 				{
 					retval = GlobalACSStrings.AddString(FName(ENamedName(retval)).GetChars());
@@ -6053,7 +6056,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
             }
 
 		case ACSF_SpawnDecal:
-			// int SpawnDecal(int tid, str decalname, int flags, fixed angle, int zoffset, int distance)
+			// int SpawnDecal(int tid, str decalname, int flags, fixed angle, int|fixed zoffset, int|fixed distance)
 			// Returns number of decals spawned (not including spreading)
 			{
 				int count = 0;
@@ -6062,8 +6065,8 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 				{
 					int flags = (argCount > 2) ? args[2] : 0;
 					DAngle angle = ACSToAngle((argCount > 3) ? args[3] : 0);
-					int zoffset = (argCount > 4) ? args[4]: 0;
-					int distance = (argCount > 5) ? args[5] : 64;
+					double zoffset = (argCount > 4) ? ((flags & SDF_FIXED_ZOFF) ? ACSToDouble(args[4]) : args[4]) : 0;
+					double distance = (argCount > 5) ? ((flags & SDF_FIXED_DISTANCE) ? ACSToDouble(args[5]) : args[5]) : 64;
 
 					if (args[0] == 0)
 					{
@@ -6299,7 +6302,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 				int tid1 = 0, tid2 = 0;
 				switch (argCount)
 				{
-				case 4: tid2 = args[3];
+				case 4: tid2 = args[3]; [[fallthrough]];
 				case 3: tid1 = args[2];
 				}
 
@@ -6697,6 +6700,27 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			}
 			return DoubleToACS(result);
 		}
+
+		case ACSF_SetSubtitleNumber:
+			if (argCount >= 2)
+			{
+				// only players allowed as activator
+				if (activator != nullptr && activator->player != nullptr)
+				{
+					int logNum = args[0];
+					FSoundID sid = 0;
+
+					const char* lookup = Level->Behaviors.LookupString(args[1]);
+					if (lookup != nullptr)
+					{
+						sid = lookup;
+					}
+
+					activator->player->SetSubtitle(logNum, sid);
+				}
+			}
+			break;
+
 		default:
 			break;
 	}
@@ -8109,6 +8133,7 @@ int DLevelScript::RunScript()
 
 		case PCD_SETRESULTVALUE:
 			resultValue = STACK(1);
+			[[fallthrough]];
 		case PCD_DROP: //fall through.
 			sp--;
 			break;
@@ -8578,7 +8603,7 @@ scriptwait:
 			lookup = Level->Behaviors.LookupString (STACK(1));
 			if (lookup != NULL)
 			{
-				int key1 = 0, key2 = 0;
+				int key1, key2;
 
 				Bindings.GetKeysForCommand ((char *)lookup, &key1, &key2);
 
@@ -9049,15 +9074,19 @@ scriptwait:
 			break;
 
 		case PCD_FIXEDMUL:
-			STACK(2) = FixedMul (STACK(2), STACK(1));
+			STACK(2) = MulScale(STACK(2), STACK(1), 16);
 			sp--;
 			break;
 
 		case PCD_FIXEDDIV:
-			STACK(2) = FixedDiv (STACK(2), STACK(1));
+		{
+			int a = STACK(2), b = STACK(1);
+			// Overflow check.
+			if ((uint32_t)abs(a) >> (31 - 16) >= (uint32_t)abs(b)) STACK(2) = (a ^ b) < 0 ? FIXED_MIN : FIXED_MAX;
+			else STACK(2) = DivScale(STACK(2), STACK(1), 16);
 			sp--;
 			break;
-
+		}
 		case PCD_SETGRAVITY:
 			Level->gravity = ACSToDouble(STACK(1));
 			sp--;

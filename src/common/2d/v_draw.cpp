@@ -45,6 +45,16 @@ EXTERN_CVAR(Int, vid_aspect)
 EXTERN_CVAR(Int, uiscale)
 CVAR(Bool, ui_screenborder_classic_scaling, true, CVAR_ARCHIVE)
 
+// vid_allowtrueultrawide - preserve the classic behavior of stretching screen elements to 16:9 when false
+// Defaults to "true" now because "21:9" (actually actually 64:27) screens are becoming more common, it's
+// nonsense that graphics should not be able to actually use that extra screen space.
+
+extern bool setsizeneeded;
+CUSTOM_CVAR(Int, vid_allowtrueultrawide, 1, CVAR_ARCHIVE|CVAR_NOINITCALL)
+{
+	setsizeneeded = true;
+}
+
 static void VirtualToRealCoords(F2DDrawer* drawer, double Width, double Height, double& x, double& y, double& w, double& h,
 	double vwidth, double vheight, bool vbottom, bool handleaspect);
 
@@ -79,7 +89,7 @@ float ActiveRatio(int width, int height, float* trueratio)
 		17 / 10.0f,
 		5 / 4.0f,
 		17 / 10.0f,
-		21 / 9.0f
+		64 / 27.0f	// 21:9 is actually 64:27 in reality - pow(4/3, 3.0) - https://en.wikipedia.org/wiki/21:9_aspect_ratio
 	};
 
 	float ratio = width / (float)height;
@@ -313,6 +323,22 @@ DEFINE_ACTION_FUNCTION(_Screen, ClearClipRect)
 	twod->ClearClipRect();
 	return 0;
 }
+
+DEFINE_ACTION_FUNCTION(_Screen, ClearScreen)
+{
+	PARAM_PROLOGUE;
+	twod->ClearScreen();
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(_Screen, SetScreenFade)
+{
+	PARAM_PROLOGUE;
+	PARAM_FLOAT(x);
+	twod->SetScreenFade(float(x));
+	return 0;
+}
+
 
 void F2DDrawer::GetClipRect(int *x, int *y, int *w, int *h)
 {
@@ -1253,11 +1279,20 @@ static void VirtualToRealCoords(F2DDrawer *drawer, double Width, double Height, 
 {
 	float myratio = float(handleaspect ? ActiveRatio (Width, Height) : (4.0 / 3.0));
 
-    // if 21:9 AR, map to 16:9 for all callers.
-    // this allows for black bars and stops the stretching of fullscreen images
-    if (myratio > 1.7f) {
-        myratio = 16.0f / 9.0f;
-    }
+	// if 21:9 AR, map to 16:9 for all callers.
+	// this allows for black bars and stops the stretching of fullscreen images
+
+	switch (vid_allowtrueultrawide)
+	{
+	case 1:
+	default:
+		myratio = MIN(64.0f / 27.0f, myratio);
+		break;
+	case 0:
+		myratio = MIN(16.0f / 9.0f, myratio);
+	case -1:
+		break;
+	}
 
 	double right = x + w;
 	double bottom = y + h;

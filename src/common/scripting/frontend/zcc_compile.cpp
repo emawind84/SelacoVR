@@ -523,6 +523,7 @@ ZCCCompiler::ZCCCompiler(ZCC_AST &ast, DObject *_outer, PSymbolTable &_symbols, 
 					ProcessStruct(static_cast<ZCC_Struct*>(node), tnode, nullptr);
 					break;
 				}
+				goto common;
 
 			common:
 			case AST_ConstantDef:
@@ -2485,6 +2486,8 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 							{
 								newfunc->ArgFlags.Push(sym->Variants[0].ArgFlags[i]);
 							}
+
+							newfunc->Proto = sym->Variants[0].Proto;
 						}
 					}
 				}
@@ -2655,6 +2658,7 @@ FxExpression *ZCCCompiler::ConvertNode(ZCC_TreeNode *ast, bool substitute)
 				}
 			}
 			// fall through if this isn't an array access node.
+			[[fallthrough]];
 
 		default:
 			Error(fcall, "Invalid function identifier");

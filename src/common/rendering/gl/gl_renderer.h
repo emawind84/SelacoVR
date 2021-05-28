@@ -91,7 +91,7 @@ private:
 	void gl_FillScreen();
 	bool QuadStereoCheckInitialRenderContextState();
 	void PresentAnaglyph(bool r, bool g, bool b);
-	void PresentSideBySide();
+	void PresentSideBySide(int);
 	void PresentTopBottom();
 	void prepareInterleavedPresent(FPresentShaderBase& shader);
 	void PresentColumnInterleaved();

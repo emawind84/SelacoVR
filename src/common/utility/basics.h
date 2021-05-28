@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <algorithm>
 
 #define MAXWIDTH 12000
 #define MAXHEIGHT 5000
@@ -93,24 +94,6 @@ inline double RAD2DEG(double deg)
 	return deg * (180. / M_PI);
 }
 
-// Auto-registration sections for GCC.
-// Apparently, you cannot do string concatenation inside section attributes.
-#ifdef __MACH__
-#define SECTION_AREG "__DATA,areg"
-#define SECTION_CREG "__DATA,creg"
-#define SECTION_FREG "__DATA,freg"
-#define SECTION_GREG "__DATA,greg"
-#define SECTION_MREG "__DATA,mreg"
-#define SECTION_YREG "__DATA,yreg"
-#else
-#define SECTION_AREG "areg"
-#define SECTION_CREG "creg"
-#define SECTION_FREG "freg"
-#define SECTION_GREG "greg"
-#define SECTION_MREG "mreg"
-#define SECTION_YREG "yreg"
-#endif
-
 // This is needed in common code, despite being Doom specific.
 enum EStateUseFlags
 {
@@ -119,3 +102,6 @@ enum EStateUseFlags
 	SUF_WEAPON = 4,
 	SUF_ITEM = 8,
 };
+
+using std::min;
+using std::max;

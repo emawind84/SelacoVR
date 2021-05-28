@@ -49,7 +49,7 @@ class PlayerPawn : Actor
 	double		ViewBob;				// [SP] ViewBob Multiplier
 	double		FullHeight;
 	double		curBob;
-	float		prevBob;
+	double		prevBob;
 
 	meta Name HealingRadiusType;
 	meta Name InvulMode;
@@ -80,6 +80,7 @@ class PlayerPawn : Actor
 	flagdef NoThrustWhenInvul: PlayerFlags, 0;
 	flagdef CanSuperMorph: PlayerFlags, 1;
 	flagdef CrouchableMorph: PlayerFlags, 2;
+	flagdef WeaponLevel2Ended: PlayerFlags, 3;
 	
 	Default
 	{
@@ -137,6 +138,21 @@ class PlayerPawn : Actor
 		else
 		{
 			if (health > 0) Height = FullHeight;
+		}
+
+		if (bWeaponLevel2Ended)
+		{
+			bWeaponLevel2Ended = false;
+			if (player.ReadyWeapon != NULL && player.ReadyWeapon.bPowered_Up)
+			{
+				player.ReadyWeapon.EndPowerup ();
+			}
+			if (player.PendingWeapon != NULL && player.PendingWeapon != WP_NOCHANGE &&
+				player.PendingWeapon.bPowered_Up &&
+				player.PendingWeapon.SisterWeapon != NULL)
+			{
+				player.PendingWeapon = player.PendingWeapon.SisterWeapon;
+			}
 		}
 		Super.Tick();
 	}
@@ -928,6 +944,8 @@ class PlayerPawn : Actor
 	{
 		let player = self.player;
 
+		if (!player) return;
+
 		// [RH] Zoom the player's FOV
 		float desired = player.DesiredFOV;
 		// Adjust FOV using on the currently held weapon.
@@ -1573,7 +1591,6 @@ class PlayerPawn : Actor
 	virtual void PlayerThink()
 	{
 		let player = self.player;
-		prevBob = player.bob;
 		UserCmd cmd = player.cmd;
 		
 		CheckFOV();
@@ -2022,7 +2039,7 @@ class PlayerPawn : Actor
 				next = item.Inv;
 				if (item.InterHubAmount < 1)
 				{
-					item.Destroy ();
+					item.DepleteOrDestroy ();
 				}
 				item = next;
 			}
@@ -2675,8 +2692,8 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native int killcount;
 	native int itemcount;
 	native int secretcount;
-	native int damagecount;
-	native int bonuscount;
+	native uint damagecount;
+	native uint bonuscount;
 	native int hazardcount;
 	native int hazardinterval;
 	native Name hazardtype;

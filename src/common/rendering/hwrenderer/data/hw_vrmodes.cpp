@@ -123,6 +123,7 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 	case VR_REDCYAN:
 	case VR_QUADSTEREO:
 	case VR_AMBERBLUE:
+	case VR_SIDEBYSIDELETTERBOX:
 		return &vrmi_stereo;
 
 	case VR_SIDEBYSIDESQUISHED:

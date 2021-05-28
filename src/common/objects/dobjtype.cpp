@@ -206,13 +206,10 @@ void PClass::StaticInit ()
 {
 	Namespaces.GlobalNamespace = Namespaces.NewNamespace(0);
 
-	FAutoSegIterator probe(CRegHead, CRegTail);
-
-	while (*++probe != nullptr)
+	AutoSegs::TypeInfos.ForEach([](ClassReg* typeInfo)
 	{
-		((ClassReg *)*probe)->RegisterClass ();
-	}
-	probe.Reset();
+		typeInfo->RegisterClass();
+	});
 
 	// Keep built-in classes in consistant order. I did this before, though
 	// I'm not sure if this is really necessary to maintain any sort of sync.
@@ -268,14 +265,10 @@ void PClass::StaticShutdown ()
 	AllClasses.Clear();
 	ClassMap.Clear();
 
-	FAutoSegIterator probe(CRegHead, CRegTail);
-
-	while (*++probe != nullptr)
+	AutoSegs::TypeInfos.ForEach([](ClassReg* typeInfo)
 	{
-		auto cr = ((ClassReg *)*probe);
-		cr->MyClass = nullptr;
-	}
-	
+		typeInfo->MyClass = nullptr;
+	});
 }
 
 //==========================================================================
@@ -713,13 +706,17 @@ int PClass::FindVirtualIndex(FName name, PFunction::Variant *variant, PFunction 
 						if (!(parentfunc->Variants[0].ArgFlags[a] & VARF_Optional)) return -1;
 					}
 
-					// Todo: extend the prototype
+					// Extend the prototype
+					TArray<PType*> argumentTypes = proto->ArgumentTypes;
+
 					for (unsigned a = proto->ArgumentTypes.Size(); a < vproto->ArgumentTypes.Size(); a++)
 					{
-						proto->ArgumentTypes.Push(vproto->ArgumentTypes[a]);
+						argumentTypes.Push(vproto->ArgumentTypes[a]);
 						variant->ArgFlags.Push(parentfunc->Variants[0].ArgFlags[a]);
 						variant->ArgNames.Push(NAME_None);
 					}
+
+					variant->Proto = NewPrototype(proto->ReturnTypes, argumentTypes);
 				}
 				return i;
 			}

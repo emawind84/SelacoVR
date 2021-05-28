@@ -182,6 +182,7 @@ struct gameinfo_t
 	FName mFontColorHighlight;
 	FName mFontColorSelection;
 	FName mSliderColor;
+	FName mSliderBackColor;
 	FString mBackButton;
 	double gibfactor;
 	int TextScreenX;
@@ -207,6 +208,7 @@ struct gameinfo_t
 	double normsidemove[2];
 	int fullscreenautoaspect = 3;
 	bool nomergepickupmsg;
+	bool mHideParTimes;
 
 	const char *GetFinalePage(unsigned int num) const;
 };

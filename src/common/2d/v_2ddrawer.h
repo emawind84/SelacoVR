@@ -1,6 +1,7 @@
 #ifndef __2DDRAWER_H
 #define __2DDRAWER_H
 
+#include "buffers.h"
 #include "tarray.h"
 #include "vectors.h"
 #include "textures.h"
@@ -31,27 +32,7 @@ enum EClearWhich
 	C_Indices = 4,
 };
 
-class DShape2D : public DObject
-{
-
-	DECLARE_CLASS(DShape2D,DObject)
-public:
-	DShape2D()
-	{
-		transform.Identity();
-	}
-
-	TArray<int> mIndices;
-	TArray<DVector2> mVertices;
-	TArray<DVector2> mCoords;
-
-	DMatrix3x3 transform;
-
-	// dirty stores whether we need to re-apply the transformation
-	// otherwise it uses the cached values
-	bool dirty = true;
-	TArray<DVector2> mTransformedVertices;
-};
+class F2DVertexBuffer;
 
 struct F2DPolygons
 {
@@ -66,6 +47,8 @@ struct F2DPolygons
 	}
 
 };
+
+class DShape2D;
 
 class F2DDrawer
 {
@@ -137,6 +120,15 @@ public:
 		uint8_t mFlags;
 		//When a render command should run in VR on the whole screen, not just center qued used for 2D rendering. Used e.g. for nightvision
 		bool mOutside2D = false;
+		float mScreenFade;
+
+		bool useTransform;
+		DMatrix3x3 transform;
+
+		DShape2D* shape2D;
+		int shape2DBufIndex;
+		int shape2DIndexCount;
+		int shape2DCommandCounter;
 
 		RenderCommand()
 		{
@@ -146,6 +138,7 @@ public:
 		// If these fields match, two draw commands can be batched.
 		bool isCompatible(const RenderCommand &other) const
 		{
+			if (shape2D != nullptr || other.shape2D != nullptr) return false;
 			return mTexture == other.mTexture &&
 				mType == other.mType &&
 				mTranslationId == other.mTranslationId &&
@@ -157,8 +150,17 @@ public:
 				mDrawMode == other.mDrawMode &&
 				mFlags == other.mFlags &&
 				mLightLevel == other.mLightLevel &&
-				mColor1.d == other.mColor1.d;
-
+				mColor1.d == other.mColor1.d &&
+				useTransform == other.useTransform &&
+				mScreenFade == other.mScreenFade &&
+				(
+					!useTransform ||
+					(
+						transform[0] == other.transform[0] &&
+						transform[1] == other.transform[1] &&
+						transform[2] == other.transform[2]
+					)
+				);
 		}
 	};
 
@@ -174,7 +176,7 @@ public:
 	int fullscreenautoaspect = 3;
 	int cliptop = -1, clipleft = -1, clipwidth = -1, clipheight = -1;
 	
-	int AddCommand(const RenderCommand *data);
+	int AddCommand(RenderCommand *data);
 	void AddIndices(int firstvert, int count, ...);
 private:
 	void AddIndices(int firstvert, TArray<int> &v);
@@ -189,7 +191,7 @@ public:
 	void AddPoly(FGameTexture *texture, FVector2 *points, int npoints,
 		double originx, double originy, double scalex, double scaley,
 		DAngle rotation, const FColormap &colormap, PalEntry flatcolor, double lightlevel, uint32_t *indices, size_t indexcount);
-	void AddPoly(FGameTexture* img, FVector4 *vt, size_t vtcount, unsigned int *ind, size_t idxcount, int translation, PalEntry color, FRenderStyle style, int clipx1, int clipy1, int clipx2, int clipy2);
+	void AddPoly(FGameTexture* img, FVector4 *vt, size_t vtcount, const unsigned int *ind, size_t idxcount, int translation, PalEntry color, FRenderStyle style, int clipx1, int clipy1, int clipx2, int clipy2);
 	void FillPolygon(int* rx1, int* ry1, int* xb1, int32_t npoints, int picnum, int palette, int shade, int props, const FVector2& xtex, const FVector2& ytex, const FVector2& otex,
 		int clipx1, int clipy1, int clipx2, int clipy2);
 	void AddFlatFill(int left, int top, int right, int bottom, FGameTexture *src, int local_origin = false, double flatscale = 1.0, PalEntry color = 0xffffffff, ERenderStyle rs = STYLE_Normal);
@@ -238,6 +240,73 @@ public:
 	}
 
 	bool mIsFirstPass = true;
+};
+
+class DShape2D : public DObject
+{
+
+	DECLARE_CLASS(DShape2D,DObject)
+public:
+	DShape2D()
+	{
+		transform.Identity();
+	}
+
+	TArray<int> mIndices;
+	TArray<DVector2> mVertices;
+	TArray<DVector2> mCoords;
+
+	double minx = 0.0;
+	double maxx = 0.0;
+	double miny = 0.0;
+	double maxy = 0.0;
+
+	DMatrix3x3 transform;
+
+	TArray<F2DVertexBuffer> buffers;
+	bool needsVertexUpload = true;
+	int bufIndex = -1;
+	int lastCommand = -1;
+
+	bool uploadedOnce = false;
+	DrawParms* lastParms;
+
+	~DShape2D();
+};
+
+
+//===========================================================================
+// 
+// Vertex buffer for 2D drawer
+//
+//===========================================================================
+
+class F2DVertexBuffer
+{
+	IVertexBuffer *mVertexBuffer;
+	IIndexBuffer *mIndexBuffer;
+
+
+public:
+
+	F2DVertexBuffer();
+
+	~F2DVertexBuffer()
+	{
+		delete mIndexBuffer;
+		delete mVertexBuffer;
+	}
+
+	void UploadData(F2DDrawer::TwoDVertex *vertices, int vertcount, int *indices, int indexcount)
+	{
+		mVertexBuffer->SetData(vertcount * sizeof(*vertices), vertices, false);
+		mIndexBuffer->SetData(indexcount * sizeof(unsigned int), indices, false);
+	}
+
+	std::pair<IVertexBuffer *, IIndexBuffer *> GetBufferObjects() const
+	{
+		return std::make_pair(mVertexBuffer, mIndexBuffer);
+	}
 };
 
 

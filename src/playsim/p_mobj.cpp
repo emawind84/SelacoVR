@@ -3246,8 +3246,11 @@ bool AActor::AdjustReflectionAngle (AActor *thing, DAngle &angle)
 
 int AActor::AbsorbDamage(int damage, FName dmgtype, AActor *inflictor, AActor *source, int flags)
 {
-	for (AActor *item = Inventory; item != nullptr; item = item->Inventory)
+	AActor *next;
+	for (AActor *item = Inventory; item != nullptr; item = next)
 	{
+		// [Player701] Remember the next item now in case the current item is destroyed later
+		next = item->Inventory;
 		IFVIRTUALPTRNAME(item, NAME_Inventory, AbsorbDamage)
 		{
 			VMValue params[7] = { item, damage, dmgtype.GetIndex(), &damage, inflictor, source, flags };
@@ -4478,7 +4481,8 @@ void ConstructActor(AActor *actor, const DVector3 &pos, bool SpawningMapThing)
 
 	FRandom &rng = Level->BotInfo.m_Thinking ? pr_botspawnmobj : pr_spawnmobj;
 
-	if (actor->isFast() && actor->flags3 & MF3_ISMONSTER)
+	if ((!!G_SkillProperty(SKILLP_InstantReaction) || actor->flags5 & MF5_ALWAYSFAST || !!(dmflags & DF_INSTANT_REACTION))
+		&& actor->flags3 & MF3_ISMONSTER)
 		actor->reactiontime = 0;
 
 	if (actor->flags3 & MF3_ISMONSTER)
@@ -6706,24 +6710,6 @@ DEFINE_ACTION_FUNCTION(AActor, OldSpawnMissile)
 //
 //---------------------------------------------------------------------------
 
-AActor *P_SpawnMissileAngle (AActor *source, PClassActor *type, DAngle angle, double vz)
-{
-	if (source == nullptr || type == nullptr)
-	{
-		return NULL;
-	}
-	return P_SpawnMissileAngleZSpeed (source, source->Z() + 32 + source->GetBobOffset(), type, angle, vz, GetDefaultSpeed (type));
-}
-
-AActor *P_SpawnMissileAngleZ (AActor *source, double z, PClassActor *type, DAngle angle, double vz)
-{
-	if (type == nullptr)
-	{
-		return nullptr;
-	}
-	return P_SpawnMissileAngleZSpeed (source, z, type, angle, vz, GetDefaultSpeed (type));
-}
-
 AActor *P_SpawnMissileZAimed (AActor *source, double z, AActor *dest, PClassActor *type)
 {
 	if (source == nullptr || type == nullptr)
@@ -7433,6 +7419,19 @@ void AActor::SetTag(const char *def)
 	else Tag = mStringPropertyData.Alloc(def);
 }
 
+const char *AActor::GetCharacterName() const
+{
+	if (Conversation && Conversation->SpeakerName.Len() != 0)
+	{
+		const char *cname = Conversation->SpeakerName.GetChars();
+		if (cname[0] == '$')
+		{
+			return GStrings(cname + 1);
+		}
+		else return cname;
+	}
+	return GetTag();
+}
 
 void AActor::ClearCounters()
 {

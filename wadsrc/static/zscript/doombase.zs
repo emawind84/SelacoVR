@@ -107,6 +107,7 @@ extend struct GameInfoStruct
 	native TextureID berserkpic;
 	native double normforwardmove[2];
 	native double normsidemove[2];
+	native bool mHideParTimes;
 }
 
 extend class Object
@@ -125,7 +126,7 @@ extend class Object
 	{
 		return level.PickPlayerStart(pnum, flags);
 	}
-	deprecated("4.3", "Use S_StartSound() instead") native static void S_Sound (Sound sound_id, int channel, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0);
+	deprecated("4.3", "Use S_StartSound() instead") native static void S_Sound (Sound sound_id, int channel, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0, float startTime = 0.0);
 	native static void S_StartSound (Sound sound_id, int channel, int flags = 0, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0, float startTime = 0.0);
 	native static void S_PauseSound (bool notmusic, bool notsfx);
 	native static void S_ResumeSound (bool notsfx);
@@ -319,6 +320,53 @@ struct DropItem native
 	native readonly int Amount;
 }
 
+struct LevelInfo native
+{
+	native readonly int levelnum;
+	native readonly String MapName;
+	native readonly String NextMap;
+	native readonly String NextSecretMap;
+	native readonly String SkyPic1;
+	native readonly String SkyPic2;
+	native readonly String F1Pic;
+	native readonly int cluster;
+	native readonly int partime;
+	native readonly int sucktime;
+	native readonly int flags;
+	native readonly int flags2;
+	native readonly int flags3;
+	native readonly String Music;
+	native readonly String LevelName;
+	native readonly String AuthorName;
+	native readonly int musicorder;
+	native readonly float skyspeed1;
+	native readonly float skyspeed2;
+	native readonly int cdtrack;
+	native readonly double gravity;
+	native readonly double aircontrol;
+	native readonly int airsupply;
+	native readonly int compatflags;
+	native readonly int compatflags2;
+	native readonly name deathsequence;
+	native readonly int fogdensity;
+	native readonly int outsidefogdensity;
+	native readonly int skyfog;
+	native readonly float pixelstretch;
+	native readonly name RedirectType;
+	native readonly String RedirectMapName;
+	native readonly double teamdamage;
+
+	native bool isValid() const;
+	native String LookupLevelName() const;
+
+	native static int GetLevelInfoCount();
+	native static LevelInfo GetLevelInfo(int index);
+	native static LevelInfo FindLevelInfo(String mapname);
+	native static LevelInfo FindLevelByNum(int num);
+	native static bool MapExists(String mapname);
+	native static String MapChecksum(String mapname);
+}
+
 struct LevelLocals native
 {
 	enum EUDMF
@@ -395,7 +443,7 @@ struct LevelLocals native
 	native name deathsequence;
 	native readonly int compatflags;
 	native readonly int compatflags2;
-// level_info_t *info cannot be done yet.
+	native readonly LevelInfo info;
 
 	native String GetUDMFString(int type, int index, Name key);
 	native int GetUDMFInt(int type, int index, Name key);

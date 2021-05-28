@@ -932,7 +932,7 @@ FxExpression *FxIntCast::Resolve(FCompileContext &ctx)
 		{
 			ExpVal constval = static_cast<FxConstant *>(basex)->GetValue();
 			FxExpression *x = new FxConstant(constval.GetInt(), ScriptPosition);
-			if (constval.GetInt() != constval.GetFloat())
+			if (constval.GetInt() != constval.GetFloat() && !Explicit)
 			{
 				ScriptPosition.Message(MSG_WARNING, "Truncation of floating point constant %f", constval.GetFloat());
 			}
@@ -2170,7 +2170,6 @@ FxExpression *FxPreIncrDecr::Resolve(FCompileContext &ctx)
 ExpEmit FxPreIncrDecr::Emit(VMFunctionBuilder *build)
 {
 	assert(Token == TK_Incr || Token == TK_Decr);
-	assert(ValueType == Base->ValueType && IsNumeric());
 
 	int zero = build->GetConstantInt(0);
 	int regtype = ValueType->GetRegType();
@@ -2257,7 +2256,6 @@ FxExpression *FxPostIncrDecr::Resolve(FCompileContext &ctx)
 ExpEmit FxPostIncrDecr::Emit(VMFunctionBuilder *build)
 {
 	assert(Token == TK_Incr || Token == TK_Decr);
-	assert(ValueType == Base->ValueType && IsNumeric());
 
 	int zero = build->GetConstantInt(0);
 	int regtype = ValueType->GetRegType();
@@ -2967,6 +2965,7 @@ FxExpression *FxMulDiv::Resolve(FCompileContext& ctx)
 		case '/':
 			// For division, the vector must be the first operand.
 			if (right->IsVector()) goto error;
+			[[fallthrough]];
 
 		case '*':
 			if (left->IsVector() && right->IsNumeric())
@@ -5260,7 +5259,6 @@ FxExpression *FxMinMax::Resolve(FCompileContext &ctx)
 				else
 				{
 					ExpVal value = static_cast<FxConstant *>(choices[j])->GetValue();
-					assert(value.Type == ValueType);
 					if (Type == NAME_Min)
 					{
 						if (value.Type->GetRegType() == REGT_FLOAT)
@@ -8255,6 +8253,14 @@ FxExpression *FxMemberFunctionCall::Resolve(FCompileContext& ctx)
 			return x->Resolve(ctx);
 		}
 	}
+	if (MethodName == NAME_IsAbstract && Self->ValueType->isClassPointer())
+	{
+		if (CheckArgSize(NAME_IsAbstract, ArgList, 0, 0, ScriptPosition))
+		{
+			auto x = new FxIsAbstract(Self);
+			return x->Resolve(ctx);
+		}
+	}
 
 	if (Self->ValueType->isRealPointer())
 	{
@@ -8697,7 +8703,7 @@ FxExpression *FxVMFunctionCall::Resolve(FCompileContext& ctx)
 				bool writable;
 				ArgList[i] = ArgList[i]->Resolve(ctx);	// must be resolved before the address is requested.
 
-				if (ArgList[i]->ValueType->isRealPointer())
+				if (ArgList[i] && ArgList[i]->ValueType->isRealPointer())
 				{
 					auto pointedType = ArgList[i]->ValueType->toPointer()->PointedType;
 					if (pointedType && pointedType->isDynArray())
@@ -9013,7 +9019,6 @@ FxExpression *FxFlopFunctionCall::Resolve(FCompileContext& ctx)
 
 ExpEmit FxFlopFunctionCall::Emit(VMFunctionBuilder *build)
 {
-	assert(ValueType == ArgList[0]->ValueType);
 	ExpEmit from = ArgList[0]->Emit(build);
 	ExpEmit to;
 	assert(from.Konst == 0);
@@ -9244,6 +9249,47 @@ ExpEmit FxGetClassName::Emit(VMFunctionBuilder *build)
 	}
 	ExpEmit to(build, REGT_INT);
 	build->Emit(OP_LW, to.RegNum, op.RegNum, build->GetConstantInt(myoffsetof(PClass, TypeName)));
+	return to;
+}
+
+//==========================================================================
+//
+//
+//==========================================================================
+
+FxIsAbstract::FxIsAbstract(FxExpression *self)
+	:FxExpression(EFX_IsAbstract, self->ScriptPosition)
+{
+	Self = self;
+}
+
+FxIsAbstract::~FxIsAbstract()
+{
+	SAFE_DELETE(Self);
+}
+
+FxExpression *FxIsAbstract::Resolve(FCompileContext &ctx)
+{
+	SAFE_RESOLVE(Self, ctx);
+
+	if (!Self->ValueType->isClassPointer())
+	{
+		ScriptPosition.Message(MSG_ERROR, "IsAbstract() requires a class pointer");
+		delete this;
+		return nullptr;
+	}
+	ValueType = TypeBool;
+	return this;
+}
+
+ExpEmit FxIsAbstract::Emit(VMFunctionBuilder *build)
+{
+	ExpEmit op = Self->Emit(build);
+	op.Free(build);
+
+	ExpEmit to(build, REGT_INT);
+	build->Emit(OP_LBU, to.RegNum, op.RegNum, build->GetConstantInt(myoffsetof(PClass, bAbstract)));
+
 	return to;
 }
 

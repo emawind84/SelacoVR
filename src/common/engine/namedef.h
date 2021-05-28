@@ -27,6 +27,10 @@ xx(Spray)
 xx(Ghost)
 xx(Reflective)
 
+// Iron Feet types
+//xx(Normal)	// defined below
+xx(Full)
+
 // Invisibility types
 xx(Additive)
 xx(Cumulative)
@@ -301,6 +305,7 @@ xx(BuiltinNew)
 xx(GetClass)
 xx(GetParentClass)
 xx(GetClassName)
+xx(IsAbstract)
 xx(GetDefaultByType)
 xx(Exp)
 xx(Log10)
@@ -520,6 +525,7 @@ xx(ZDoom)
 xx(ZDoomTranslated)
 xx(Vavoom)
 xx(GZDoom)
+xx(Eternity)
 
 xx(Xpanningfloor)
 xx(Ypanningfloor)
@@ -1101,4 +1107,5 @@ xy(menu_change, "menu/change")
 xy(menu_advance, "menu/advance")
 
 xx(zoomsize)
-
+xx(ScreenJobRunner)
+xx(RazeStatusBar)

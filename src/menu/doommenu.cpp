@@ -157,6 +157,7 @@ bool M_SetSpecialMenu(FName& menu, int param)
 		// sent either from skill menu or confirmation screen. Skill gets only set if sent from skill menu
 		// Now we can finally start the game. Ugh...
 		NewGameStartupInfo.Skill = param;
+		[[fallthrough]];
 	case NAME_StartgameConfirmed:
 
 		G_DeferedInitNew (&NewGameStartupInfo);
@@ -479,13 +480,13 @@ CCMD (togglemessages)
 {
 	if (show_messages)
 	{
-		Printf("%s\n", GStrings("MSGOFF"));
+		Printf(TEXTCOLOR_RED "%s\n", GStrings("MSGOFF"));
 		show_messages = false;
 	}
 	else
 	{
-		Printf("%s\n", GStrings("MSGON"));
 		show_messages = true;
+		Printf(TEXTCOLOR_RED "%s\n", GStrings("MSGON"));
 	}
 }
 
