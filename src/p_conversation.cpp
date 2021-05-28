@@ -194,6 +194,20 @@ void P_LoadStrifeConversations (MapData *map, const char *mapname)
 	}
 	else
 	{
+		// additive dialogues via MAPINFO
+		bool addedDialogues = false;
+		for (const FString addd : gameinfo.AddDialogues)
+		{
+			if (!LoadScriptFile(addd, true, 0))
+			{
+				continue;
+			}
+			else
+			{
+				addedDialogues = true;
+			}
+		}
+
 		if (strnicmp (mapname, "MAP", 3) == 0)
 		{
 			char scriptname_b[9] = { 'S','C','R','I','P','T',mapname[3],mapname[4],0 };
