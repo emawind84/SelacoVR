@@ -2063,11 +2063,9 @@ void C_GrabCVarDefaults ()
 			{
 				CurrentFindCVar = "fullscreen";
 			}
-			if (strcmp(CurrentFindCVar, "cl_defaultconfiguration") == 0)
-			{
-				CurrentFindCVar = "k_modern";
-			}
 			// these are removed
+			if (strcmp(CurrentFindCVar, "cl_defaultconfiguration") == 0)
+				break;
 			if (strcmp(CurrentFindCVar, "m_sensitivity_x") == 0)
 				break;
 			if (strcmp(CurrentFindCVar, "m_sensitivity_y") == 0)
