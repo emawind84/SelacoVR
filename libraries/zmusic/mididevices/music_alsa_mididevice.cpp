@@ -159,7 +159,7 @@ int AlsaMIDIDevice::Open()
 		snd_seq_port_info_set_port(pinfo, IntendedPortId);
 		snd_seq_port_info_set_port_specified(pinfo, 1);
 
-		snd_seq_port_info_set_name(pinfo, "GZDoom Music");
+		snd_seq_port_info_set_name(pinfo, "LZDoom Music");
 
 		snd_seq_port_info_set_capability(pinfo, 0);
 		snd_seq_port_info_set_type(pinfo, SND_SEQ_PORT_TYPE_MIDI_GENERIC | SND_SEQ_PORT_TYPE_APPLICATION);
@@ -171,7 +171,7 @@ int AlsaMIDIDevice::Open()
 
 	if (QueueId < 0)
 	{
-		QueueId = snd_seq_alloc_named_queue(sequencer.handle, "GZDoom Queue");
+		QueueId = snd_seq_alloc_named_queue(sequencer.handle, "LZDoom Queue");
 	}
 
 	if (!Connected) {

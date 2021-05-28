@@ -67,7 +67,7 @@ bool AlsaSequencer::Open() {
 	if(error) {
 		return false;
 	}
-	error = snd_seq_set_client_name(handle, "GZDoom");
+	error = snd_seq_set_client_name(handle, "LZDoom");
 	if(error) {
 		snd_seq_close(handle);
 		handle = nullptr;
