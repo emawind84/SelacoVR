@@ -300,6 +300,10 @@ D3DFB::D3DFB (UINT adapter, int width, int height, bool bgra, bool fullscreen)
 		return;
 	}
 
+	for (int i = 0; i < 256; i++)
+	{
+		GammaTable[i] = (BYTE)i;
+	}
 	memcpy(SourcePalette, GPalette.BaseColors, sizeof(PalEntry)*256);
 
 	Windowed = !(static_cast<Win32Video *>(Video)->GoFullscreen(fullscreen));
@@ -1120,18 +1124,25 @@ void D3DFB::Update ()
 
 		NeedGammaUpdate = false;
 		igamma = 1 / Gamma;
-		if (!Windowed && !d3d_nogammaramp)
+		if (!Windowed)
 		{
-			D3DGAMMARAMP ramp;
-
-			for (int i = 0; i < 256; ++i)
+			if (!d3d_nogammaramp)
 			{
-				ramp.blue[i] = ramp.green[i] = ramp.red[i] = WORD(65535.f * powf(i / 255.f, igamma));
+				D3DGAMMARAMP ramp;
+
+				for (int i = 0; i < 256; ++i)
+				{
+					ramp.blue[i] = ramp.green[i] = ramp.red[i] = WORD(65535.f * powf(i / 255.f, igamma));
+				}
+				LOG("SetGammaRamp\n");
+				D3DDevice->SetGammaRamp(0, D3DSGR_CALIBRATE, &ramp);
 			}
-			LOG("SetGammaRamp\n");
-			D3DDevice->SetGammaRamp(0, D3DSGR_CALIBRATE, &ramp);
+			else
+			{
+				CalcGamma (Gamma, GammaTable);
+			}
 		}
-		else if (Windowed)
+		else
 		{
 			if (igamma != 1)
 			{
@@ -1651,9 +1662,18 @@ void D3DFB::UploadPalette ()
 
 		for (i = 0; i < SkipAt; ++i, pix += 4)
 		{
-			pix[0] = SourcePalette[i].b;
-			pix[1] = SourcePalette[i].g;
-			pix[2] = SourcePalette[i].r;
+			if (!d3d_nogammaramp)
+			{
+				pix[0] = SourcePalette[i].b;
+				pix[1] = SourcePalette[i].g;
+				pix[2] = SourcePalette[i].r;
+			}
+			else
+			{
+				pix[0] = GammaTable[SourcePalette[i].b];
+				pix[1] = GammaTable[SourcePalette[i].g];
+				pix[2] = GammaTable[SourcePalette[i].r];
+			}
 			pix[3] = (i == 0 ? 0 : 255);
 			// To let masked textures work, the first palette entry's alpha is 0.
 		}
