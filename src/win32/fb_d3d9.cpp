@@ -1660,22 +1660,26 @@ void D3DFB::UploadPalette ()
 		uint8_t *pix = (uint8_t *)lockrect.pBits;
 		int i;
 
-		for (i = 0; i < SkipAt; ++i, pix += 4)
+		if (!d3d_nogammaramp || SM14)
 		{
-			if (!d3d_nogammaramp)
+			for (i = 0; i < SkipAt; ++i, pix += 4)
 			{
 				pix[0] = SourcePalette[i].b;
 				pix[1] = SourcePalette[i].g;
 				pix[2] = SourcePalette[i].r;
+				pix[3] = (i == 0 ? 0 : 255);
+				// To let masked textures work, the first palette entry's alpha is 0.
 			}
-			else
+		}
+		else
+		{
+			for (i = 0; i < SkipAt; ++i, pix += 4)
 			{
 				pix[0] = GammaTable[SourcePalette[i].b];
 				pix[1] = GammaTable[SourcePalette[i].g];
 				pix[2] = GammaTable[SourcePalette[i].r];
+				pix[3] = (i == 0 ? 0 : 255);
 			}
-			pix[3] = (i == 0 ? 0 : 255);
-			// To let masked textures work, the first palette entry's alpha is 0.
 		}
 		pix += 4;
 		for (; i < 255; ++i, pix += 4)
