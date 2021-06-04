@@ -582,13 +582,14 @@ CUSTOM_CVAR (Int, compatflags2, 0, CVAR_ARCHIVE|CVAR_SERVERINFO)
 
 CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
-	int v, w = 0;
+	int v, w;
 
 	switch (self)
 	{
 	default:
 	case 0:
 		v = 0;
+		w = 0;
 		break;
 
 	case 1:	// Doom2.exe compatible with a few relaxed settings
