@@ -1126,7 +1126,7 @@ void D3DFB::Update ()
 		igamma = 1 / Gamma;
 		if (!Windowed)
 		{
-			if (!d3d_nogammaramp)
+			if (!d3d_nogammaramp || SM14)
 			{
 				D3DGAMMARAMP ramp;
 
