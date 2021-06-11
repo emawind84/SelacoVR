@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 //
 // Copyright 1993-1996 id Software
 // Copyright 1994-1996 Raven Software
@@ -5317,6 +5317,124 @@ AActor *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 	return mobj;
 }
 
+bool CheckDoubleSpawn (AActor *&mobj, const AActor *info, const FMapThing *mthing, const double sz, PClassActor *type, bool first)
+{
+	bool spawned = true;
+
+	if (first) // not a double spawn
+	{
+		if (!P_CheckPosition (mobj, mobj->Pos(), false))
+		{
+			mobj->Destroy();
+			mobj = AActor::StaticSpawn (type, DVector3(mthing->pos.X + 2 * info->radius, mthing->pos.Y, sz), NO_REPLACE, true);
+		}
+		else return spawned;
+	}
+
+	if (!P_CheckPosition (mobj, mobj->Pos(), false))
+	{
+		mobj->Destroy();
+		mobj = AActor::StaticSpawn (type, DVector3(mthing->pos.X - 2 * info->radius, mthing->pos.Y, sz), NO_REPLACE, true);
+		if (!P_CheckPosition (mobj, mobj->Pos(), false))
+		{
+			mobj->Destroy();
+			mobj = AActor::StaticSpawn (type, DVector3(mthing->pos.X, mthing->pos.Y + 2 * info->radius, sz), NO_REPLACE, true);
+			if (!P_CheckPosition (mobj, mobj->Pos(), false))
+			{
+				mobj->Destroy();
+				mobj = AActor::StaticSpawn (type, DVector3(mthing->pos.X, mthing->pos.Y - 2 * info->radius, sz), NO_REPLACE, true);
+				if (!P_CheckPosition (mobj, mobj->Pos(), false))
+				{
+					mobj->Destroy();
+					spawned = false;
+				}
+			}
+		}
+	}
+
+	return spawned;
+}
+
+void SetMobj (AActor *mobj, const FMapThing *mthing)
+{
+	if (mobj->flags2 & MF2_FLOORCLIP)
+	{
+		mobj->AdjustFloorClip();
+	}
+
+	mobj->SpawnPoint = mthing->pos;
+	mobj->SpawnAngle = mthing->angle;
+	mobj->SpawnFlags = mthing->flags;
+	if (mthing->friendlyseeblocks > 0)
+		mobj->friendlyseeblocks = mthing->friendlyseeblocks;
+	if (mthing->Gravity < 0) mobj->Gravity = -mthing->Gravity;
+	else if (mthing->Gravity > 0) mobj->Gravity *= mthing->Gravity;
+	else 
+	{
+		mobj->flags |= MF_NOGRAVITY;
+		mobj->Gravity = 0;
+	}
+
+	// if the actor got args defined either in DECORATE or MAPINFO we must ignore the map's properties.
+	if (!(mobj->flags2 & MF2_ARGSDEFINED))
+	{
+		// [RH] Set the thing's special
+		mobj->special = mthing->special;
+		for(int j=0;j<5;j++) mobj->args[j]=mthing->args[j];
+	}
+
+	// [RH] Add ThingID to mobj and link it in with the others
+	mobj->SetTID(mthing->thingid);
+
+	mobj->PrevAngles.Yaw = mobj->Angles.Yaw = (double)mthing->angle;
+
+	// Check if this actor's mapthing has a conversation defined
+	if (mthing->Conversation > 0)
+	{
+		// Make sure that this does not partially overwrite the default dialogue settings.
+		int root = GetConversation(mthing->Conversation);
+		if (root != -1)
+		{
+			mobj->ConversationRoot = root;
+			mobj->Conversation = StrifeDialogues[mobj->ConversationRoot];
+		}
+	}
+
+	// Set various UDMF options
+	if (mthing->Alpha >= 0)
+		mobj->Alpha = mthing->Alpha;
+	if (mthing->RenderStyle != STYLE_Count)
+		mobj->RenderStyle = (ERenderStyle)mthing->RenderStyle;
+	if (mthing->Scale.X != 0)
+		mobj->Scale.X = mthing->Scale.X * mobj->Scale.X;
+	if (mthing->Scale.Y != 0)
+		mobj->Scale.Y = mthing->Scale.Y * mobj->Scale.Y;
+	if (mthing->pitch)
+		mobj->Angles.Pitch = (double)mthing->pitch;
+	if (mthing->roll)
+		mobj->Angles.Roll = (double)mthing->roll;
+	if (mthing->score)
+		mobj->Score = mthing->score;
+	if (mthing->fillcolor)
+		mobj->fillcolor = (mthing->fillcolor & 0xffffff) | (ColorMatcher.Pick((mthing->fillcolor & 0xff0000) >> 16,
+			(mthing->fillcolor & 0xff00) >> 8, (mthing->fillcolor & 0xff)) << 24);
+
+	mobj->CallBeginPlay ();
+	if (!(mobj->ObjectFlags & OF_EuthanizeMe))
+	{
+		mobj->LevelSpawned ();
+	}
+
+	if (mthing->Health > 0)
+		mobj->health = int(mobj->health * mthing->Health);
+	else
+		mobj->health = -int(mthing->Health);
+	if (mthing->Health == 0)
+		mobj->CallDie(NULL, NULL);
+	else if (mthing->Health != 1)
+		mobj->StartHealth = mobj->health;
+}
+
 
 //
 // P_SpawnMapThing
@@ -5328,7 +5446,8 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 {
 	PClassActor *i;
 	int mask;
-	AActor *mobj;
+	AActor *mobj, *mobj2;
+	bool spawned;
 
 	if (mthing->EdNum == 0 || mthing->EdNum == -1)
 		return NULL;
@@ -5344,8 +5463,8 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 		mentry = DoomEdMap.CheckKey(0);
 		if (mentry == NULL)	// we need a valid entry for the rest of this function so if we can't find a default, let's exit right away.
 		{
-		return NULL;
-	}
+			return NULL;
+		}
 	}
 	if (mentry->Type == NULL && mentry->Special <= 0)
 	{
@@ -5604,74 +5723,14 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 	else if (sz == ONCEILINGZ)
 		mobj->AddZ(-mthing->pos.Z);
 
-	if (mobj->flags2 & MF2_FLOORCLIP)
-	{
-		mobj->AdjustFloorClip();
-	}
-
-	mobj->SpawnPoint = mthing->pos;
-	mobj->SpawnAngle = mthing->angle;
-	mobj->SpawnFlags = mthing->flags;
-	if (mthing->friendlyseeblocks > 0)
-		mobj->friendlyseeblocks = mthing->friendlyseeblocks;
-	if (mthing->FloatbobPhase >= 0 && mthing->FloatbobPhase < 64) mobj->FloatBobPhase = mthing->FloatbobPhase;
-	if (mthing->Gravity < 0) mobj->Gravity = -mthing->Gravity;
-	else if (mthing->Gravity > 0) mobj->Gravity *= mthing->Gravity;
-	else 
-	{
-		mobj->flags |= MF_NOGRAVITY;
-		mobj->Gravity = 0;
-	}
+	if (mthing->FloatbobPhase >= 0 && mthing->FloatbobPhase < 64)
+		mobj->FloatBobPhase = mthing->FloatbobPhase;
 
 	// For Hexen floatbob 'compatibility' we do not really want to alter the floorz.
 	if (mobj->specialf1 == 0 || !(mobj->flags2 & MF2_FLOATBOB) || !(ib_compatflags & BCOMPATF_FLOATBOB))
 	{
 		P_FindFloorCeiling(mobj, FFCF_SAMESECTOR | FFCF_ONLY3DFLOORS | FFCF_3DRESTRICT);
 	}
-
-	// if the actor got args defined either in DECORATE or MAPINFO we must ignore the map's properties.
-	if (!(mobj->flags2 & MF2_ARGSDEFINED))
-	{
-		// [RH] Set the thing's special
-		mobj->special = mthing->special;
-		for(int j=0;j<5;j++) mobj->args[j]=mthing->args[j];
-	}
-
-	// [RH] Add ThingID to mobj and link it in with the others
-	mobj->SetTID(mthing->thingid);
-
-	mobj->PrevAngles.Yaw = mobj->Angles.Yaw = (double)mthing->angle;
-
-	// Check if this actor's mapthing has a conversation defined
-	if (mthing->Conversation > 0)
-	{
-		// Make sure that this does not partially overwrite the default dialogue settings.
-		int root = GetConversation(mthing->Conversation);
-		if (root != -1)
-		{
-			mobj->ConversationRoot = root;
-			mobj->Conversation = StrifeDialogues[mobj->ConversationRoot];
-		}
-	}
-
-	// Set various UDMF options
-	if (mthing->Alpha >= 0)
-		mobj->Alpha = mthing->Alpha;
-	if (mthing->RenderStyle != STYLE_Count)
-		mobj->RenderStyle = (ERenderStyle)mthing->RenderStyle;
-	if (mthing->Scale.X != 0)
-		mobj->Scale.X = mthing->Scale.X * mobj->Scale.X;
-	if (mthing->Scale.Y != 0)
-		mobj->Scale.Y = mthing->Scale.Y * mobj->Scale.Y;
-	if (mthing->pitch)
-		mobj->Angles.Pitch = (double)mthing->pitch;
-	if (mthing->roll)
-		mobj->Angles.Roll = (double)mthing->roll;
-	if (mthing->score)
-		mobj->Score = mthing->score;
-	if (mthing->fillcolor)
-		mobj->fillcolor = (mthing->fillcolor & 0xffffff) | (ColorMatcher.Pick((mthing->fillcolor & 0xff0000) >> 16,
-			(mthing->fillcolor & 0xff00) >> 8, (mthing->fillcolor & 0xff)) << 24);
 
 	// allow color strings for lights and reshuffle the args for spot lights
 	if (i->IsDescendantOf(NAME_DynamicLight))
@@ -5697,24 +5756,28 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 		}
 	}
 
-	mobj->CallBeginPlay ();
-	if (!(mobj->ObjectFlags & OF_EuthanizeMe))
+	if ((G_SkillProperty(SKILLP_DoubleSpawn) || (dmflags2 & DF2_DOUBLESPAWN)) && info->flags3 & MF3_ISMONSTER
+		&& i->TypeName != NAME_SpiderMastermind)
 	{
-		mobj->LevelSpawned ();
+		spawned = CheckDoubleSpawn (mobj, info, mthing, sz, i, true); // previously double spawned monster might block
+		if (spawned)
+		{
+			SetMobj(mobj, mthing);
+		}
+		mobj2 = AActor::StaticSpawn (i, DVector3(mthing->pos.X + 2 * info->radius, mthing->pos.Y, sz), NO_REPLACE, true);
+		spawned = CheckDoubleSpawn (mobj2, info, mthing, sz, i, false);
+		if (spawned)
+		{
+			SetMobj(mobj2, mthing);
+		}
 	}
-
-	if (mthing->Health > 0)
-		mobj->health = int(mobj->health * mthing->Health);
 	else
-		mobj->health = -int(mthing->Health);
-	if (mthing->Health == 0)
-		mobj->CallDie(NULL, NULL);
-	else if (mthing->Health != 1)
-		mobj->StartHealth = mobj->health;
+	{
+		SetMobj(mobj, mthing);
+	}
 
 	return mobj;
 }
-
 
 
 //

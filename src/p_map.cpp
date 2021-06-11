@@ -1921,6 +1921,11 @@ bool P_CheckPosition(AActor *thing, const DVector2 &pos, FCheckPosition &tm, boo
 		tm.dropoffz = thingdropoffz;
 	}
 
+	if ( !(thing->flags&(MF_DROPOFF|MF_FLOAT))
+		&& tm.floorz - tm.dropoffz > thing->MaxDropOffHeight && (G_SkillProperty(SKILLP_DoubleSpawn) || (dmflags2 & DF2_DOUBLESPAWN))
+		&& (gameinfo.gametype == GAME_Doom || gameinfo.gametype == GAME_Heretic))
+		return false;       // don't stand over a dropoff
+
 	return (thing->BlockingMobj = thingblocker) == NULL;
 }
 
