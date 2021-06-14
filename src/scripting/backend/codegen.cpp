@@ -1466,7 +1466,7 @@ FxFontCast::FxFontCast(FxExpression *x)
 	: FxExpression(EFX_FontCast, x->ScriptPosition)
 {
 	basex = x;
-	ValueType = TypeSound;
+	ValueType = TypeFont;
 }
 
 //==========================================================================
