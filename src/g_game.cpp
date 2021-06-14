@@ -3045,6 +3045,7 @@ DEFINE_GLOBAL(gamestate)
 DEFINE_GLOBAL(skyflatnum)
 DEFINE_GLOBAL_NAMED(bglobal.freeze, globalfreeze)
 DEFINE_GLOBAL(gametic)
+DEFINE_GLOBAL(GameTicRate)
 DEFINE_GLOBAL(demoplayback)
 DEFINE_GLOBAL(automapactive);
 DEFINE_GLOBAL(Net_Arbitrator);

@@ -50,6 +50,7 @@
 static uint64_t FirstFrameStartTime;
 static uint64_t CurrentFrameStartTime;
 static uint64_t FreezeTime;
+int GameTicRate = 35;
 
 static double TimeScale = 1.0;
 
