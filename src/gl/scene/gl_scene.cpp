@@ -944,14 +944,6 @@ sector_t * GLSceneDrawer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, f
 
 void FGLRenderer::RenderView (player_t* player)
 {
-	GLRenderer->NextVtxBuffer();
-	GLRenderer->NextSkyBuffer();
-	GLRenderer->NextLightBuffer();
-
-	if (gl_sync) {
-		GLRenderer->GPUWaitSync();
-	}
-
 	gl_ClearFakeFlat();
 
 	checkBenchActive();
