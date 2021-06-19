@@ -90,7 +90,6 @@ EXTERN_CVAR (Float, underwater_fade_scalar)
 EXTERN_CVAR (Float, r_visibility)
 EXTERN_CVAR (Bool, gl_legacy_mode)
 EXTERN_CVAR (Bool, r_drawvoxels)
-EXTERN_CVAR(Bool, gl_sync)
 
 extern bool NoInterpolateView;
 
