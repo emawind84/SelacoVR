@@ -565,11 +565,11 @@ void P_SpawnScrollers(void)
 		{
 			if (l->args[0] != 0)
 			{
-				FLineIdIterator itr(l->args[0]);
-				while ((s = itr.Next()) >= 0)
-				{
-					if (s != (int)i)
-						Create<DScroller>(dx, dy, &level.lines[s], control, accel);
+			FLineIdIterator itr(l->args[0]);
+			while ((s = itr.Next()) >= 0)
+			{
+				if (s != (int)i)
+					Create<DScroller>(dx, dy, &level.lines[s], control, accel);
 				}
 			}
 			else

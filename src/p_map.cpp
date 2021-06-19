@@ -102,6 +102,8 @@
 #include "g_levellocals.h"
 #include "actorinlines.h"
 
+#include <QzDoom/VrCommon.h>
+
 CVAR(Bool, cl_bloodsplats, true, CVAR_ARCHIVE)
 CVAR(Int, sv_smartaim, 0, CVAR_ARCHIVE | CVAR_SERVERINFO)
 CVAR(Bool, cl_doautoaim, false, CVAR_ARCHIVE)
@@ -4205,7 +4207,7 @@ struct aim_t
 					}
 					else continue;					// shot over the thing
 				}
-				continue;					// shot under the thing
+				else continue;					// shot under the thing
 			}
 
 			if (crossedffloors)
@@ -4340,17 +4342,39 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 
 	aim_t aim;
 
+	DVector3 pos = t1->Pos();
+	DAngle attackPitch = t1->Angles.Pitch;
+	DAngle attackAngle = angle;
+	if (t1->player != nullptr && t1->player->mo->OverrideAttackPosDir)
+    {
+	    pos = t1->player->mo->AttackPos;
+
+        //
+        //  FIX FOR FLAT PROJECTILE SPREAD FROM SHOTGUNS AND OTHER MULTI-PROJECTILE WEAPONS
+        //
+        //Bit of a hack as it makes the pitch a little off, but in order for weapon projectile spread
+        //to work correctly, we can't fix the pitch to that of the controller otherwise random spread
+        //turns into a flat line of projectiles. Using the difference between the previous known angles and
+        //the current angles (which were potenitally modified by A_FireProjectile) gives us the "random"
+        //difference applied to the pitch by the script
+        //
+        //A VR player is unlikely to be whipping their head up and down so fast as to make a meaningful
+        //difference to the pitch between two frames, so this is 'good enough' for now.
+        attackPitch = t1->player->mo->AttackPitch + (t1->PrevAngles.Pitch - t1->Angles.Pitch);
+        attackAngle = t1->player->mo->AttackAngle + (angle - t1->Angles.Yaw);
+    }
+
 	aim.flags = flags;
 	aim.shootthing = t1;
-	aim.friender = (friender == NULL) ? t1 : friender;
+	aim.friender = (friender == nullptr) ? t1 : friender;
 	aim.aimdir = aim_t::aim_up | aim_t::aim_down;
-	aim.startpos = t1->Pos();
-	aim.aimtrace = angle.ToVector(distance);
+	aim.startpos = pos;
+	aim.aimtrace = attackAngle.ToVector(distance);
 	aim.limitz = aim.shootz = shootz;
-	aim.toppitch = t1->Angles.Pitch - vrange;
-	aim.bottompitch = t1->Angles.Pitch + vrange;
+	aim.toppitch = attackPitch - vrange;
+	aim.bottompitch = attackPitch + vrange;
 	aim.attackrange = distance;
-	aim.aimpitch = t1->Angles.Pitch;
+	aim.aimpitch = attackPitch;
 	aim.lastsector = t1->Sector;
 	aim.startfrac = 0;
 	aim.unlinked = false;
@@ -4364,7 +4388,13 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 	{
 		*pLineTarget = *result;
 	}
-	return result->linetarget ? result->pitch : t1->Angles.Pitch;
+
+	if (result->linetarget)
+	{
+		return result->pitch;
+	}
+
+	return t1->Angles.Pitch;
 }
 
 //==========================================================================
@@ -4416,6 +4446,8 @@ static ETraceStatus CheckForActor(FTraceResults &res, void *userdata)
 // if damage == 0, it is just a test trace that will leave linetarget set
 //
 //==========================================================================
+EXTERN_CVAR(Int, vr_control_scheme)
+extern bool weaponStabilised;
 
 AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	DAngle pitch, int damage, FName damageType, PClassActor *pufftype, int flags, FTranslatedLineTarget*victim, int *actualdamage, 
@@ -4454,6 +4486,18 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 		// this is coming from a weapon attack function which needs to transfer information to the obituary code,
 		// We need to preserve this info from the damage type because the actual damage type can get overridden by the puff
 		pflag = DMG_PLAYERATTACK;
+
+		if ( damage > 0) {
+            //Haptics
+            long rightHanded = vr_control_scheme < 10;
+            QzDoom_Vibrate(150, rightHanded ? 1 : 0, 0.8);
+			QzDoom_HapticEvent("fire_weapon", rightHanded ? 2 : 1, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
+
+            if (weaponStabilised) {
+                QzDoom_Vibrate(150, rightHanded ? 0 : 1, 0.6);
+				QzDoom_HapticEvent("fire_weapon", rightHanded ? 1 : 2, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
+			}
+        }
 	}
 
 	// [MC] If overriding, set it to the base of the actor.
@@ -4521,8 +4565,27 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	// LAF_ABSOFFSET: Ignore the angle.
 
 	DVector3 tempos;
+	if (t1->player != NULL && t1->player->mo->OverrideAttackPosDir)
+	{
+		tempos = t1->player->mo->AttackPos;
 
-	if (flags & LAF_ABSPOSITION)
+		//Include pitch delta here
+		DAngle pitchDelta;
+        pitchDelta = (t1->Angles.Pitch - pitch);
+        if (damage == 0 // Laser sight or other non-damage inflicting thing
+			||
+			//This is to catch the scenario in vanilla Doom (or suchlike) where a.BulletSlope is calculating a completely
+			//different pitch, if delta is outside a tolerance of +/- 5 degrees, then just use the pitch of the
+			//controller as we did before.
+			//Otherwise, pitch can vary +/- 5 degrees for a random scatter
+			fabs(pitchDelta.Degrees) > 5.f)
+        {
+            pitchDelta.Degrees = 0;
+        }
+
+		direction = t1->player->mo->AttackDir(t1, angle, pitchDelta);
+	}
+	else if (flags & LAF_ABSPOSITION)
 	{
 		tempos = DVector3(offsetforward, offsetside, sz);
 	}

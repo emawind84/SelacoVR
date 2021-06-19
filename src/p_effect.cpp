@@ -56,7 +56,7 @@
 #include "g_levellocals.h"
 #include "vm.h"
 
-CVAR (Int, cl_rockettrails, 1, CVAR_ARCHIVE);
+CVAR (Int, cl_rockettrails, 2, CVAR_ARCHIVE); // Default to using sprite rocket trail particle for VR
 CVAR (Bool, r_rail_smartspiral, 0, CVAR_ARCHIVE);
 CVAR (Int, r_rail_spiralsparsity, 1, CVAR_ARCHIVE);
 CVAR (Int, r_rail_trailsparsity, 1, CVAR_ARCHIVE);
@@ -130,7 +130,7 @@ void P_InitParticles ();
 
 // [BC] Allow the maximum number of particles to be specified by a cvar (so people
 // with lots of nice hardware can have lots of particles!).
-CUSTOM_CVAR( Int, r_maxparticles, 4000, CVAR_ARCHIVE )
+CUSTOM_CVAR( Int, r_maxparticles, 100, CVAR_ARCHIVE ) //Default to min for VR
 {
 	if ( self == 0 )
 		self = 4000;

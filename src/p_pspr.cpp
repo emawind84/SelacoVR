@@ -269,7 +269,7 @@ DPSprite *player_t::GetPSprite(PSPLayers layer)
 	}
 
 	if (newcaller == nullptr) return nullptr; // Error case was not handled properly. This function cannot give a guarantee to always succeed!
-	
+
 	DPSprite *pspr = FindPSprite(layer);
 	if (pspr == nullptr)
 	{

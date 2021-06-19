@@ -16,8 +16,11 @@ struct FRenderViewpoint
 {
 	FRenderViewpoint();
 
-	player_t		*player;		// For which player is this viewpoint being renderered? (can be null for camera textures)
+    DAngle			FieldOfView() const;	// current field of view
+
+    player_t		*player;		// For which player is this viewpoint being renderered? (can be null for camera textures)
 	DVector3		Pos;			// Camera position
+	DVector3		CenterEyePos;	// Camera position without view shift
 	DVector3		ActorPos;		// Camera actor's position
 	DRotator		Angles;			// Camera angles
 	DVector3		Path[2];		// View path for portal calculations
@@ -28,7 +31,6 @@ struct FRenderViewpoint
 
 	AActor			*camera;		// camera actor
 	sector_t		*sector;		// [RH] keep track of sector viewing from
-	DAngle			FieldOfView;	// current field of view
 
 	double			TicFrac;		// fraction of tic for interpolation
 	uint32_t		FrameTime;		// current frame's time in tics.

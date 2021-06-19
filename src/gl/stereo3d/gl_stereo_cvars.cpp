@@ -31,35 +31,67 @@
 #include "gl/stereo3d/gl_quadstereo.h"
 #include "gl/stereo3d/gl_sidebyside3d.h"
 #include "gl/stereo3d/gl_interleaved3d.h"
+#include "gl/stereo3d/gl_oculusquest.h"
 #include "gl/system/gl_cvars.h"
 #include "version.h"
 
+#include <QzDoom/VrCommon.h>
+
 // Set up 3D-specific console variables:
-CVAR(Int, vr_mode, 0, CVAR_GLOBALCONFIG)
+CVAR(Int, vr_mode, 15, CVAR_GLOBALCONFIG)
 
 // switch left and right eye views
-#ifdef __ANDROID__
-CVAR(Bool, vr_swap_eyes, true, CVAR_GLOBALCONFIG)
-#else
 CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG)
-#endif
 
 // For broadest GL compatibility, require user to explicitly enable quad-buffered stereo mode.
 // Setting vr_enable_quadbuffered_stereo does not automatically invoke quad-buffered stereo,
 // but makes it possible for subsequent "vr_mode 7" to invoke quad-buffered stereo
 CUSTOM_CVAR(Bool, vr_enable_quadbuffered, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
-	Printf("You must restart " GAMENAME " to switch quad stereo mode\n");
+    //Does nothing
+	//Printf("You must restart " GAMENAME " to switch quad stereo mode\n");
 }
 
 // intraocular distance in meters
-CVAR(Float, vr_ipd, 0.062f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG) // METERS
+CVAR(Float, vr_ipd, 0.064f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG) // METERS
 
 // distance between viewer and the display screen
 CVAR(Float, vr_screendist, 0.80f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
 
 // default conversion between (vertical) DOOM units and meters
-CVAR(Float, vr_hunits_per_meter, 41.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
+CVAR(Float, vr_vunits_per_meter, 34.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
+CVAR(Float, vr_height_adjust, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
+CVAR(Int, vr_control_scheme, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_move_use_offhand, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_teleport, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_weaponRotate, -30, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_weaponScale, 1.02f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_snapTurn, 45.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, vr_move_speed, 19, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_run_multiplier, 1.5, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_switch_sticks, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_secondary_button_mappings, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_two_handed_weapons, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_momentum, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // Only used in player.zs
+
+CVAR(Float, vr_pickup_haptic_level, 0.2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_quake_haptic_level, 0.8, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+//HUD control
+CVAR(Float, vr_hud_scale, 0.25f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_hud_stereo, 1.4f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_hud_rotate, 10.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_hud_fixed_pitch, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_hud_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+//AutoMap control
+CVAR(Bool, vr_automap_use_hud, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_automap_scale, 0.4f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_automap_stereo, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_automap_rotate, 13.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_automap_fixed_pitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_automap_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
 
 // Manage changing of 3D modes:
 namespace s3d {
@@ -75,10 +107,10 @@ void Stereo3DMode::setCurrentMode(const Stereo3DMode& mode) {
 /* static */
 const Stereo3DMode& Stereo3DMode::getCurrentMode() 
 {
-	if (gl.legacyMode) vr_mode = 0;	// GL 2 does not support this feature.
+	//if (gl.legacyMode) vr_mode = 0;	// GL 2 does not support this feature.
 
 	// NOTE: Ensure that these vr_mode values correspond to the ones in wadsrc/static/menudef.z
-	switch (vr_mode)
+/*	switch (vr_mode)
 	{
 	case 1:
 		setCurrentMode(GreenMagenta::getInstance(vr_ipd));
@@ -109,7 +141,7 @@ const Stereo3DMode& Stereo3DMode::getCurrentMode()
 	// TODO: 8: Oculus Rift
 	case 9:
 		setCurrentMode(AmberBlue::getInstance(vr_ipd));
-		break;	
+		break;
 	// TODO: 10: HTC Vive/OpenVR
 	case 11:
 		setCurrentMode(TopBottom3D::getInstance(vr_ipd));
@@ -123,11 +155,16 @@ const Stereo3DMode& Stereo3DMode::getCurrentMode()
 	case 14:
 		setCurrentMode(CheckerInterleaved3D::getInstance(vr_ipd));
 		break;
+	case 15:
+		setCurrentMode(OculusQuestMode::getInstance());
+		break;
 	case 0:
 	default:
 		setCurrentMode(MonoView::getInstance());
 		break;
-	}
+	}*/
+
+	setCurrentMode(OculusQuestMode::getInstance());
 	return *currentStereo3DMode;
 }
 

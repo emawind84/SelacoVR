@@ -93,6 +93,9 @@ enum gamestate_t : int
 
 extern	gamestate_t 	gamestate;
 
+extern "C" int getGameState();
+
+
 // wipegamestate can be set to -1
 //	to force a wipe on the next draw
 extern gamestate_t wipegamestate;
@@ -539,8 +542,6 @@ enum
 
 #define BLINKTHRESHOLD (4*32)
 
-#ifdef USE_GL_HW_BUFFERS
-#define MAX_HW_BUFFERS 4
-#endif
+#define MAX_HW_BUFFERS 10
 
 #endif	// __DOOMDEF_H__

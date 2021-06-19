@@ -1329,8 +1329,8 @@ class PowerTargeter : Powerup
 		PSprite center = player.GetPSprite(PSprite.TARGETCENTER);
 		if (center)
 		{
-			center.x = POS_X;
-			center.y = POS_Y;
+		center.x = POS_X;
+		center.y = POS_Y;
 		}
 		PositionAccuracy ();
 	}
@@ -1410,15 +1410,15 @@ class PowerTargeter : Powerup
 			PSprite left = player.GetPSprite(PSprite.TARGETLEFT);
 			if (left)
 			{
-				left.x = POS_X - (100 - player.mo.accuracy);
-				left.y = POS_Y;
+			left.x = POS_X - (100 - player.mo.accuracy);
+			left.y = POS_Y;
 			}
 
 			PSprite right = player.GetPSprite(PSprite.TARGETRIGHT);
 			if (right)
 			{
-				right.x = POS_X + (100 - player.mo.accuracy);
-				right.y = POS_Y;
+			right.x = POS_X + (100 - player.mo.accuracy);
+			right.y = POS_Y;
 			}
 		}
 	}

@@ -45,7 +45,6 @@
 #ifndef __GNUC__
 #define INITGUID
 #endif
-#define DIRECTINPUT_VERSION 0x800
 #include <windows.h>
 #include <dbt.h>
 #include <dinput.h>
@@ -92,6 +91,13 @@
 #include "events.h"
 #include "doomerrors.h"
 
+// Prototypes and declarations.
+#include "rawinput.h"
+// Definitions
+#define RIF(name, ret, args) \
+	name##Proto My##name;
+#include "rawinput.h"
+
 
 // Compensate for w32api's lack
 #ifndef GET_XBUTTON_WPARAM
@@ -106,6 +112,7 @@
 #define INGAME_PRIORITY_CLASS	NORMAL_PRIORITY_CLASS
 #endif
 
+static void FindRawInputFunctions();
 FJoystickCollection *JoyDevices[NUM_JOYDEVICES];
 
 
@@ -144,6 +151,11 @@ int BlockMouseMove;
 
 CVAR (Bool, i_soundinbackground, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Bool, k_allowfullscreentoggle, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+
+CUSTOM_CVAR(Bool, norawinput, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+{
+	Printf("This won't take effect until " GAMENAME " is restarted.\n");
+}
 
 extern int chatmodeon;
 
@@ -366,22 +378,25 @@ LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	if (message == WM_INPUT)
 	{
-		UINT size;
-
-		if (!GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &size, sizeof(RAWINPUTHEADER)) &&
-			size != 0)
+		if (MyGetRawInputData != NULL)
 		{
-			uint8_t *buffer = (uint8_t *)alloca(size);
-			if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, buffer, &size, sizeof(RAWINPUTHEADER)) == size)
+			UINT size;
+
+			if (!MyGetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &size, sizeof(RAWINPUTHEADER)) &&
+				size != 0)
 			{
-				int code = GET_RAWINPUT_CODE_WPARAM(wParam);
-				if (Keyboard == NULL || !Keyboard->ProcessRawInput((RAWINPUT *)buffer, code))
+				uint8_t *buffer = (uint8_t *)alloca(size);
+				if (MyGetRawInputData((HRAWINPUT)lParam, RID_INPUT, buffer, &size, sizeof(RAWINPUTHEADER)) == size)
 				{
-					if (Mouse == NULL || !Mouse->ProcessRawInput((RAWINPUT *)buffer, code))
+					int code = GET_RAWINPUT_CODE_WPARAM(wParam);
+					if (Keyboard == NULL || !Keyboard->ProcessRawInput((RAWINPUT *)buffer, code))
 					{
-						if (JoyDevices[INPUT_RawPS2] != NULL)
+						if (Mouse == NULL || !Mouse->ProcessRawInput((RAWINPUT *)buffer, code))
 						{
-							JoyDevices[INPUT_RawPS2]->ProcessRawInput((RAWINPUT *)buffer, code);
+							if (JoyDevices[INPUT_RawPS2] != NULL)
+							{
+								JoyDevices[INPUT_RawPS2]->ProcessRawInput((RAWINPUT *)buffer, code);
+							}
 						}
 					}
 				}
@@ -635,6 +650,8 @@ bool I_InitInput (void *hwnd)
 	noidle = !!Args->CheckParm ("-noidle");
 	g_pdi = NULL;
 	g_pdi3 = NULL;
+
+	FindRawInputFunctions();
 
 	// Try for DirectInput 8 first, then DirectInput 3 for NT 4's benefit.
 	DInputDLL = LoadLibraryA("dinput8.dll");
@@ -949,3 +966,26 @@ bool FInputDevice::WndProcHook(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	return false;
 }
 
+//==========================================================================
+//
+// FindRawInputFunctions
+//
+// Finds functions for raw input, if available.
+//
+//==========================================================================
+
+static void FindRawInputFunctions()
+{
+	if (!norawinput)
+	{
+		HMODULE user32 = GetModuleHandleA("user32.dll");
+
+		if (user32 == NULL)
+		{
+			return;		// WTF kind of broken system are we running on?
+		}
+#define RIF(name,ret,args) \
+		My##name = (name##Proto)GetProcAddress(user32, #name);
+#include "rawinput.h"
+	}
+}

@@ -63,11 +63,13 @@
 #include "i_time.h"
 #include "actorinlines.h"
 
+#include <QzDoom/VrCommon.h>
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
 extern bool DrawFSHUD;		// [RH] Defined in d_main.cpp
 EXTERN_CVAR (Bool, cl_capfps)
+EXTERN_CVAR (Float, vr_quake_haptic_level)
 
 // TYPES -------------------------------------------------------------------
 
@@ -97,7 +99,9 @@ CVAR (Bool, r_deathcamera, false, CVAR_ARCHIVE)
 CVAR (Int, r_clearbuffer, 0, 0)
 CVAR (Bool, r_drawvoxels, true, 0)
 CVAR (Bool, r_drawplayersprites, true, 0)	// [RH] Draw player sprites?
-CUSTOM_CVAR(Float, r_quakeintensity, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, r_PlayerSprites3DMode, 1, CVAR_ARCHIVE); // Back only as default
+CVAR(Float, gl_fatItemWidth, 0.5f, CVAR_ARCHIVE);
+CUSTOM_CVAR(Float, r_quakeintensity, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // Defaulted to 0 for VR
 {
 	if (self < 0.f) self = 0.f;
 	else if (self > 1.f) self = 1.f;
@@ -107,6 +111,8 @@ int 			viewwindowx;
 int 			viewwindowy;
 int				viewwidth;
 int 			viewheight;
+
+extern "C" float QzDoom_GetFOV();
 
 FRenderViewpoint::FRenderViewpoint()
 {
@@ -122,12 +128,19 @@ FRenderViewpoint::FRenderViewpoint()
 	TanSin = 0.0;
 	camera = nullptr;
 	sector = nullptr;
-	FieldOfView = 90.; // Angles in the SCREENWIDTH wide window
 	TicFrac = 0.0;
 	FrameTime = 0;
 	extralight = 0;
 	showviewer = false;
 }
+
+DAngle	FRenderViewpoint::FieldOfView() const
+{
+    //Get for VR
+    DAngle fov = QzDoom_GetFOV();
+    return fov;
+}
+
 
 FRenderViewpoint r_viewpoint;
 FViewWindow		r_viewwindow;
@@ -163,13 +176,14 @@ DEFINE_GLOBAL(LocalViewPitch);
 void R_SetFOV (FRenderViewpoint &viewpoint, DAngle fov)
 {
 
-	if (fov < 5.) fov = 5.;
+/*	if (fov < 5.) fov = 5.;
 	else if (fov > 170.) fov = 170.;
 	if (fov != viewpoint.FieldOfView)
 	{
 		viewpoint.FieldOfView = fov;
 		setsizeneeded = true;
 	}
+ */
 }
 
 //==========================================================================
@@ -239,7 +253,7 @@ void R_SetWindow (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, int wind
 	}
 
 
-	DAngle fov = viewpoint.FieldOfView;
+	DAngle fov = viewpoint.FieldOfView();
 
 	// For widescreen displays, increase the FOV so that the middle part of the
 	// screen that would be visible on a 4:3 display has the requested FOV.
@@ -350,7 +364,7 @@ double R_GetGlobVis(const FViewWindow &viewwindow, double vis)
 //
 //==========================================================================
 
-CUSTOM_CVAR (Int, screenblocks, 10, CVAR_ARCHIVE)
+CUSTOM_CVAR (Int, screenblocks, 11, CVAR_ARCHIVE)
 {
 	if (self > 12)
 		self = 12;
@@ -735,6 +749,7 @@ static double QuakePower(double factor, double intensity, double offset)
 	return factor * (offset + randumb);
 }
 
+
 //==========================================================================
 //
 // R_SetupFrame
@@ -906,6 +921,17 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 			{
 				viewpoint.Pos.Z += QuakePower(quakefactor, jiggers.Intensity.Z, jiggers.Offset.Z);
 			}
+
+			//Haptic Quake
+            if (vr_quake_haptic_level > 0.0) {
+                double left = QuakePower(vr_quake_haptic_level, jiggers.Intensity.X, jiggers.Offset.X);
+                double right = QuakePower(vr_quake_haptic_level, jiggers.Intensity.Y, jiggers.Offset.Y);
+                QzDoom_Vibrate(10, 0, (float)left); // left
+                QzDoom_Vibrate(10, 1, (float)right); // right
+
+                QzDoom_HapticEvent("rumble_front", 0, 100 * left * C_GetExternalHapticLevelValue("rumble"), 120, 0);
+                QzDoom_HapticEvent("rumble_back", 0, 100 * right * C_GetExternalHapticLevelValue("rumble"), 120, 0);
+            }
 		}
 	}
 

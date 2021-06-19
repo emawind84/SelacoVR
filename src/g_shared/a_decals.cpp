@@ -553,7 +553,7 @@ DBaseDecal *DBaseDecal::CloneSelf (const FDecalTemplate *tpl, double ix, double 
 	return decal;
 }
 
-CUSTOM_CVAR (Int, cl_maxdecals, 1024, CVAR_ARCHIVE)
+CUSTOM_CVAR (Int, cl_maxdecals, 20, CVAR_ARCHIVE)
 {
 	if (self < 0)
 	{
@@ -759,9 +759,9 @@ void SprayDecal(AActor *shooter, const char *name, double distance, DVector3 off
 	//same for direction
 	if (direction.isZero() )
 	{
-		DAngle ang = shooter->Angles.Yaw;
-		DAngle pitch = shooter->Angles.Pitch;
-		double c = pitch.Cos();
+	DAngle ang = shooter->Angles.Yaw;
+	DAngle pitch = shooter->Angles.Pitch;
+	double c = pitch.Cos();
 		dir = DVector3(c * ang.Cos(), c * ang.Sin(), -pitch.Sin());
 	}
 	

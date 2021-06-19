@@ -66,7 +66,7 @@ int DMenu::InMenu;
 // Todo: Move these elsewhere
 //
 CVAR (Float, mouse_sensitivity, 1.5f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-CVAR (Bool, show_messages, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR (Bool, show_messages, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG) // Defaulted to off for VR
 CVAR (Bool, show_obituaries, true, CVAR_ARCHIVE)
 CVAR (Int, m_showinputgrid, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, m_blockcontrollers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
@@ -253,8 +253,8 @@ bool DMenu::CallMenuEvent(int mkey, bool fromcontroller)
 
 static void SetMouseCapture(bool on)
 {
-	if (on) I_SetMouseCapture();
-	else I_ReleaseMouseCapture();
+//	if (on) I_SetMouseCapture();
+//	else I_ReleaseMouseCapture();
 }
 DEFINE_ACTION_FUNCTION_NATIVE(DMenu, SetMouseCapture, SetMouseCapture)
 {
@@ -370,6 +370,11 @@ void M_StartControlPanel (bool makeSound)
 	BackbuttonAlpha = 0;
 }
 
+int getMenuState()
+{
+	return (int)menuactive;
+}
+
 //=============================================================================
 //
 //
@@ -382,7 +387,7 @@ void M_ActivateMenu(DMenu *menu)
 	if (CurrentMenu != nullptr && CurrentMenu->mMouseCapture)
 	{
 		CurrentMenu->mMouseCapture = false;
-		I_ReleaseMouseCapture();
+		//I_ReleaseMouseCapture();
 	}
 	CurrentMenu = menu;
 	GC::WriteBarrier(CurrentMenu);
@@ -1119,11 +1124,6 @@ CCMD(undocolorpic)
 		}
 	}
 }
-
-#ifdef __MOBILE__ // This is so the vm can access this, but more complicated!
-extern bool g_bindingbutton;
-DEFINE_GLOBAL(g_bindingbutton);
-#endif
 
 DEFINE_GLOBAL(menuactive)
 DEFINE_GLOBAL(BackbuttonTime)

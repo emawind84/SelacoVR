@@ -1682,7 +1682,7 @@ void AM_Ticker ()
 	}
 
 #ifdef __MOBILE__
-	Mobile_AM_controls(&am_zoomdir,&m_paninc.x,&m_paninc.y);
+//	Mobile_AM_controls(&am_zoomdir,&m_paninc.x,&m_paninc.y);
 #endif
 
 	// Change the zoom if necessary

@@ -3,9 +3,9 @@ LOCAL_PATH := $(call my-dir)/../src
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := lzdoom
+LOCAL_MODULE    := qzdoom
 
-LOCAL_CFLAGS   :=   -DNO_CLOCK_GETTIME -D__MOBILE__ -DNO_PIX_BUFF  -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DUSE_GL_HW_BUFFERS  -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
+LOCAL_CFLAGS   :=  -D__MOBILE__ -DNO_PIX_BUFF -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
 
 
 LOCAL_CPPFLAGS := -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++14 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security  -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
@@ -23,7 +23,6 @@ endif
 	
 LOCAL_C_INCLUDES := \
  $(TOP_DIR)/ \
-  $(TOP_DIR)/AudioLibs_OpenTouch/fluidsynth-lite/include \
  $(GZDOOM_TOP_PATH)/src/  \
  $(GZDOOM_TOP_PATH)/mobile/src/extrafiles  \
  $(GZDOOM_TOP_PATH)/game-music-emu/ \
@@ -31,7 +30,7 @@ LOCAL_C_INCLUDES := \
  $(GZDOOM_TOP_PATH)/lzma/C \
  $(GZDOOM_TOP_PATH)/bzip2 \
  $(GZDOOM_TOP_PATH)/asmjit \
-	$(GZDOOM_TOP_PATH)/src/sound \
+ $(GZDOOM_TOP_PATH)/src/sound \
 	$(GZDOOM_TOP_PATH)/src/sound/music \
 	$(GZDOOM_TOP_PATH)/src/sound/backend \
  $(GZDOOM_TOP_PATH)/src/textures \
@@ -44,24 +43,22 @@ LOCAL_C_INCLUDES := \
  $(GZDOOM_TOP_PATH)/src/scripting \
  $(GZDOOM_TOP_PATH)/src/scripting/vm \
  $(GZDOOM_TOP_PATH)/src/posix \
-$(GZDOOM_TOP_PATH)/src/posix\sdl \
-$(GZDOOM_TOP_PATH)/src/../libraries/gdtoa \
-$(GZDOOM_TOP_PATH)/src/../libraries/bzip2 \
-$(GZDOOM_TOP_PATH)/src/../libraries/game-music-emu/ \
-$(GZDOOM_TOP_PATH)/src/../libraries/dumb/include \
-$(GZDOOM_TOP_PATH)/src/../libraries/glslang/glslang/Public \
-$(GZDOOM_TOP_PATH)/src/../libraries/glslang/spirv \
-$(GZDOOM_TOP_PATH)/src/../libraries/lzma/C \
-$(GZDOOM_TOP_PATH)/src/../libraries/zmusic \
- $(SDL_INCLUDE_PATHS) \
- $(TOP_DIR)/AudioLibs_OpenTouch/openal/include/AL \
- $(TOP_DIR)/AudioLibs_OpenTouch/libsndfile-android/jni/ \
- $(TOP_DIR)/AudioLibs_OpenTouch/libmpg123 \
- $(TOP_DIR)/jpeg8d \
- $(TOP_DIR)/Clibs_OpenTouch \
- $(TOP_DIR)/jwzgles \
- $(TOP_DIR)/MobileTouchControls  \
- $(GZDOOM_TOP_PATH)/mobile/src
+ $(GZDOOM_TOP_PATH)/src/posix\nosdl \
+ $(GZDOOM_TOP_PATH)/src/../libraries/gdtoa \
+ $(GZDOOM_TOP_PATH)/src/../libraries/bzip2 \
+ $(GZDOOM_TOP_PATH)/src/../libraries/game-music-emu/ \
+ $(GZDOOM_TOP_PATH)/src/../libraries/dumb/include \
+ $(GZDOOM_TOP_PATH)/src/../libraries/glslang/glslang/Public \
+ $(GZDOOM_TOP_PATH)/src/../libraries/glslang/spirv \
+ $(GZDOOM_TOP_PATH)/src/../libraries/lzma/C \
+ $(GZDOOM_TOP_PATH)/src/../libraries/zmusic \
+ $(SUPPORT_LIBS)/fluidsynth-lite/include \
+ $(SUPPORT_LIBS)/openal/include/AL \
+ $(SUPPORT_LIBS)/libsndfile-android/jni/ \
+ $(SUPPORT_LIBS)/libmpg123 \
+ $(SUPPORT_LIBS)/jpeg8d \
+ $(GZDOOM_TOP_PATH)/mobile/src \
+ $(GL4ES_PATH)
 
 
 #############################################################################
@@ -70,27 +67,20 @@ $(GZDOOM_TOP_PATH)/src/../libraries/zmusic \
 
 
 ANDROID_SRC_FILES = \
-    ../../../Clibs_OpenTouch/idtech1/gzdoom_game_interface.cpp \
-    ../../../Clibs_OpenTouch/idtech1/touch_interface.cpp \
-    ../../../Clibs_OpenTouch/idtech1/android_jni.cpp \
     ../mobile/src/i_specialpaths_android.cpp
 
 PLAT_POSIX_SOURCES = \
-	posix/i_steam.cpp \
-	posix/i_system_posix.cpp
+	posix/i_steam.cpp
 
-PLAT_SDL_SOURCES = \
-	posix/sdl/crashcatcher.c \
-	posix/sdl/hardware.cpp \
-	posix/sdl/i_gui.cpp \
-	posix/sdl/i_input.cpp \
-	posix/sdl/i_joystick.cpp \
-	posix/sdl/i_main.cpp \
-	posix/sdl/i_system.cpp \
-	posix/sdl/sdlglvideo.cpp \
-	posix/sdl/sdlvideo.cpp \
-	posix/sdl/st_start.cpp
-
+PLAT_NOSDL_SOURCES = \
+	posix/nosdl/crashcatcher.c \
+	posix/nosdl/hardware.cpp \
+	posix/nosdl/i_gui.cpp \
+	posix/nosdl/i_joystick.cpp \
+	posix/nosdl/i_system.cpp \
+	posix/nosdl/glvideo.cpp \
+	posix/nosdl/video.cpp \
+	posix/nosdl/st_start.cpp
 
 
 FASTMATH_SOURCES = \
@@ -338,6 +328,7 @@ PCH_SOURCES = \
 	gl/stereo3d/gl_quadstereo.cpp \
 	gl/stereo3d/gl_sidebyside3d.cpp \
 	gl/stereo3d/gl_interleaved3d.cpp \
+	gl/stereo3d/gl_oculusquest.cpp \
 	gl/system/gl_interface.cpp \
 	gl/system/gl_framebuffer.cpp \
 	gl/system/gl_swframebuffer.cpp \
@@ -449,14 +440,24 @@ PCH_SOURCES = \
 	events.cpp \
 	GuillotineBinPack.cpp \
 	SkylineBinPack.cpp \
+	
 
+QZDOOM_SRC = \
+   ../../QzDoom/QzDoom_SurfaceView.c \
+   ../../QzDoom/VrCompositor.c \
+   ../../QzDoom/VrInputCommon.c \
+   ../../QzDoom/VrInputDefault.c \
+   ../../QzDoom/mathlib.c \
+   ../../QzDoom/matrixlib.c \
+   ../../QzDoom/argtable3.c
 
 
 LOCAL_SRC_FILES = \
     __autostart.cpp \
+    $(QZDOOM_SRC) \
     $(ANDROID_SRC_FILES) \
     $(PLAT_POSIX_SOURCES) \
-    $(PLAT_SDL_SOURCES) \
+    $(PLAT_NOSDL_SOURCES) \
     $(FASTMATH_SOURCES) \
     $(PCH_SOURCES) \
 	x86.cpp \
@@ -481,31 +482,27 @@ LOCAL_SRC_FILES = \
 	math/tan.c \
 	math/tanh.c \
 	math/fastsin.cpp \
-	zzautozend.cpp \
+	zzautozend.cpp
+
 
 # Turn down optimisation of this file so clang doesnt produce ldrd instructions which are missaligned
 p_acs.cpp_CFLAGS := -O1
 
-LOCAL_LDLIBS := -ldl -llog -lOpenSLES
-LOCAL_LDLIBS +=-lGLESv1_CM
-#LOCAL_LDLIBS += -lGLESv3
+LOCAL_LDLIBS := -ldl -llog -lOpenSLES -landroid
+LOCAL_LDLIBS += -lGLESv3
 
 LOCAL_LDLIBS +=  -lEGL
 
 # This is stop a linker warning for mp123 lib failing build
 #LOCAL_LDLIBS += -Wl,--no-warn-shared-textrel
 
-LOCAL_STATIC_LIBRARIES :=  sndfile mpg123 fluidsynth-static SDL2_net libjpeg zlib_lz lzma_lz gdtoa_lz dumb_lz gme_lz bzip2_lz zmusic_lz logwritter
-LOCAL_SHARED_LIBRARIES := touchcontrols openal SDL2 jwzgles_shared core_shared saffal
+LOCAL_STATIC_LIBRARIES :=  sndfile mpg123 fluidsynth-static libjpeg zlib_lz lzma_lz gdtoa_lz dumb_lz gme_lz bzip2_lz zmusic_lz
+LOCAL_SHARED_LIBRARIES :=  openal vrapi
 
 LOCAL_STATIC_LIBRARIES +=
 
 include $(BUILD_SHARED_LIBRARY)
 
-
-
-
-
-
+$(call import-module,VrApi/Projects/AndroidPrebuilt/jni)
 
 

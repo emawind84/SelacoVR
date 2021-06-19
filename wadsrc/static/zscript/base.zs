@@ -52,8 +52,6 @@ struct _ native	// These are the global variables, the struct is only here to av
 	native int LocalViewPitch;
 	native readonly @MusPlayingInfo musplaying;
 	native readonly bool generic_ui;
-	// __MOBILE__
-	native bool g_bindingbutton;
 }
 
 struct MusPlayingInfo native

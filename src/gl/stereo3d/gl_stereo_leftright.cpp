@@ -36,7 +36,7 @@
 #include <cmath>
 
 EXTERN_CVAR(Float, vr_screendist)
-EXTERN_CVAR(Float, vr_hunits_per_meter)
+EXTERN_CVAR(Float, vr_vunits_per_meter)
 EXTERN_CVAR(Bool, vr_swap_eyes)
 
 namespace s3d {
@@ -69,8 +69,8 @@ VSMatrix ShiftedEyePose::GetProjection(float fov, float aspectRatio, float fovRa
 /* virtual */
 void ShiftedEyePose::GetViewShift(float yaw, float outViewShift[3]) const
 {
-	float dx = -cos(DEG2RAD(yaw)) * vr_hunits_per_meter * getShift();
-	float dy = sin(DEG2RAD(yaw)) * vr_hunits_per_meter * getShift();
+	float dx = -cos(DEG2RAD(yaw)) * vr_vunits_per_meter *  getShift();
+	float dy = sin(DEG2RAD(yaw)) * vr_vunits_per_meter *  getShift();
 	outViewShift[0] = dx;
 	outViewShift[1] = dy;
 	outViewShift[2] = 0;

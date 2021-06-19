@@ -45,7 +45,9 @@ CUSTOM_CVAR(Int, r_mirror_recursions,2,CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 	if (self>10) self=10;
 }
 bool gl_plane_reflection_i;	// This is needed in a header that cannot include the CVAR stuff...
-CUSTOM_CVAR(Bool, gl_plane_reflection, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
+
+//Disable reflections in VR
+CUSTOM_CVAR(Bool, gl_plane_reflection, false, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 {
 	gl_plane_reflection_i = self;
 }
@@ -55,7 +57,7 @@ CUSTOM_CVAR(Bool, gl_render_precise, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 	gl_seamless=self;
 }
 
-CUSTOM_CVAR (Float, vid_brightness, 0.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CUSTOM_CVAR (Float, vid_brightness, 0.05f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 {
 	if (screen != NULL)
 	{
@@ -63,7 +65,7 @@ CUSTOM_CVAR (Float, vid_brightness, 0.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 	}
 }
 
-CUSTOM_CVAR (Float, vid_contrast, 1.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CUSTOM_CVAR (Float, vid_contrast, 1.1f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 {
 	if (screen != NULL)
 	{
@@ -71,7 +73,7 @@ CUSTOM_CVAR (Float, vid_contrast, 1.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 	}
 }
 
-CUSTOM_CVAR (Float, vid_saturation, 1.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CUSTOM_CVAR (Float, vid_saturation, 1.2f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG) //Defaulted for VR
 {
 	if (screen != NULL)
 	{

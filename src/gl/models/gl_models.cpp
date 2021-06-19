@@ -55,6 +55,7 @@
 CVAR(Bool, gl_light_models, true, CVAR_ARCHIVE)
 
 extern int modellightindex;
+float gldepthmin, gldepthmax;
 
 VSMatrix FGLModelRenderer::GetViewToWorldMatrix()
 {
@@ -94,6 +95,11 @@ void FGLModelRenderer::BeginDrawHUDModel(AActor *actor, const VSMatrix &objectTo
 {
 	glDepthFunc(GL_LEQUAL);
 
+	/* hack the depth range to prevent view model from poking into walls */
+    gldepthmin = 0;
+    gldepthmax = 1;
+    glDepthRangef(gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
+
 	// [BB] In case the model should be rendered translucent, do back face culling.
 	// This solves a few of the problems caused by the lack of depth sorting.
 	// TO-DO: Implement proper depth sorting.
@@ -114,6 +120,8 @@ void FGLModelRenderer::EndDrawHUDModel(AActor *actor)
 	glDepthFunc(GL_LESS);
 	if (!(actor->RenderStyle == LegacyRenderStyles[STYLE_Normal]))
 		glDisable(GL_CULL_FACE);
+
+    glDepthRangef(gldepthmin, gldepthmax);
 }
 
 IModelVertexBuffer *FGLModelRenderer::CreateVertexBuffer(bool needindex, bool singleframe)
@@ -305,7 +313,7 @@ unsigned int *FModelVertexBuffer::LockIndexBuffer(unsigned int size)
 	                ibo_mem = (char*)realloc(ibo_mem,ibo_size);
 	            }
 	        }
-	
+
 	        return (unsigned int*)ibo_mem;
     	}
     	else
@@ -318,7 +326,7 @@ unsigned int *FModelVertexBuffer::LockIndexBuffer(unsigned int size)
 		else
 			return (unsigned int*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 #ifdef __MOBILE__
-		}			
+		}
 #endif
 	}
 	else

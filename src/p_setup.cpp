@@ -60,6 +60,8 @@
 
 #include <math.h>
 #include <float.h>
+#include <QzDoom/VrCommon.h>
+
 #ifdef _MSC_VER
 #include <malloc.h>		// for alloca()
 #endif
@@ -3011,16 +3013,16 @@ static void AddToList(uint8_t *hitlist, FTextureID texid, int bitmask)
 
 	const auto addAnimations = [hitlist, bitmask](const FTextureID texid)
 	{
-		for (auto anim : TexMan.mAnimations)
+	for (auto anim : TexMan.mAnimations)
+	{
+		if (texid == anim->BasePic || (!anim->bDiscrete && anim->BasePic < texid && texid < anim->BasePic + anim->NumFrames))
 		{
-			if (texid == anim->BasePic || (!anim->bDiscrete && anim->BasePic < texid && texid < anim->BasePic + anim->NumFrames))
+			for (int i = anim->BasePic.GetIndex(); i < anim->BasePic.GetIndex() + anim->NumFrames; i++)
 			{
-				for (int i = anim->BasePic.GetIndex(); i < anim->BasePic.GetIndex() + anim->NumFrames; i++)
-				{
-					hitlist[i] |= (uint8_t)bitmask;
-				}
+				hitlist[i] |= (uint8_t)bitmask;
 			}
 		}
+	}
 	};
 
 	addAnimations(texid);
@@ -3162,7 +3164,7 @@ void P_FreeLevelData ()
 
 	interpolator.ClearInterpolations();	// [RH] Nothing to interpolate on a fresh level.
 	if (Renderer)
-		Renderer->CleanLevelData();
+	Renderer->CleanLevelData();
 	FPolyObj::ClearAllSubsectorLinks(); // can't be done as part of the polyobj deletion process.
 	SN_StopAllSequences ();
 	DThinker::DestroyAllThinkers ();
@@ -3828,6 +3830,10 @@ void P_SetupLevel(const char *lumpname, int position, bool newGame)
 	{
 		AnnounceGameStart();
 	}
+
+	//Trigger a Yaw/Pitch recalc in the QuestZDoom code to avoid moving in the wrong direction
+	resetDoomYaw = true;
+	resetPreviousPitch = true;
 
 	// This check was previously done at run time each time the heightsec was checked.
 	// However, since 3D floors are static data, we can easily precalculate this and store it in the sector's flags for quick access.

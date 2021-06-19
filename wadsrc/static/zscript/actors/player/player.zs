@@ -138,6 +138,19 @@ class PlayerPawn : Actor
 			if (health > 0) Height = FullHeight;
 		}
 		Super.Tick();
+
+
+        //Taken from the Wolf-3D TC - Prevent player having momentum/acceleration to avoid puking
+		CVar vr_momentum = CVar.FindCVar("vr_momentum");
+		if ((!vr_momentum || !vr_momentum.GetInt()) && pos.z == floorz)
+		{
+			vel *= 0;
+			Speed = Default.Speed * 8;
+		}
+		else
+		{
+			Speed = Default.Speed;
+		}
 	}
 
 	//===========================================================================
@@ -2560,7 +2573,7 @@ class PSprite : Object native play
 	native bool bFlip;	
 	native bool bMirror;
 	native bool bPlayerTranslated;
-
+	
 	native void SetState(State newstate, bool pending = false);
 
 	//------------------------------------------------------------------------

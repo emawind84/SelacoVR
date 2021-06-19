@@ -58,6 +58,7 @@
 **
 */
 
+#include <QzDoom/VrCommon.h>
 #include "templates.h"
 #include "doomdef.h"
 #include "d_event.h"
@@ -125,12 +126,8 @@ CUSTOM_CVAR(Float, cl_predict_lerpthreshold, 2.00f, CVAR_ARCHIVE | CVAR_GLOBALCO
 ColorSetList ColorSets;
 PainFlashList PainFlashes;
 
-// [Nash] FOV cvar setting
-CUSTOM_CVAR(Float, fov, 90.f, CVAR_ARCHIVE | CVAR_USERINFO | CVAR_NOINITCALL)
-{
-	player_t *p = &players[consoleplayer];
-	p->SetFOV(fov);
-}
+// FOV cvar - This is not really used, is only here in case a mod needs to call it
+CVAR(Float, fov, 90.f, CVAR_ARCHIVE | CVAR_USERINFO | CVAR_NOINITCALL)
 
 struct PredictPos
 {
@@ -1263,7 +1260,23 @@ void P_PlayerThink (player_t *player)
 		I_Error ("No player %td start\n", player - players + 1);
 	}
 
-	if (player->SubtitleCounter > 0)
+    static int previous_health = 0;
+
+    if (previous_health != player->health)
+    {
+        if (player->health > previous_health)
+        {
+            QzDoom_HapticEvent("healstation", 0, 100 * C_GetExternalHapticLevelValue("healstation"), 0, 0);
+        }
+    }
+    else if (player->health > 0 && player->health <= 25)
+    {
+        //heartbeat is a special case that uses intensity for a different purpose
+        QzDoom_HapticEvent("heartbeat", 0, player->health * C_GetExternalHapticLevelValue("heartbeat"), 0, 0);
+    }
+
+
+    if (player->SubtitleCounter > 0)
 	{
 		player->SubtitleCounter--;
 	}
@@ -1289,11 +1302,14 @@ void P_PlayerThink (player_t *player)
 	// Don't interpolate the view for more than one tic
 	player->cheats &= ~CF_INTERPVIEW;
 
+
 	IFVIRTUALPTRNAME(player->mo, NAME_PlayerPawn, PlayerThink)
 	{
 		VMValue param = player->mo;
 		VMCall(func, &param, 1, nullptr, 0);
 	}
+
+    previous_health = player->health;
 }
 
 void P_PredictionLerpReset()
@@ -1749,6 +1765,11 @@ bool P_IsPlayerTotallyFrozen(const player_t *player)
 // native members
 //
 //==========================================================================
+
+
+DEFINE_FIELD(AActor, OverrideAttackPosDir);
+DEFINE_FIELD(AActor, AttackPos);
+DEFINE_FIELD(AActor, AttackDir);
 
 DEFINE_FIELD_X(PlayerInfo, player_t, mo)
 DEFINE_FIELD_X(PlayerInfo, player_t, playerstate)

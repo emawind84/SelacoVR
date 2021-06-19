@@ -41,7 +41,7 @@ const char *GetVersionString();
 
 /** Lots of different version numbers **/
 
-#define VERSIONSTR "3.86"
+#define VERSIONSTR "DrBeef's QuestZDoom-1.2.3 (LZDoom 3.86)"
 
 // The version as seen in the Windows resource
 #define RC_FILEVERSION 3,86,0
@@ -79,7 +79,7 @@ const char *GetVersionString();
 #define SAVEGAME_EXT "zds"
 
 // MINSAVEVER is the minimum level snapshot version that can be loaded.
-#define MINSAVEVER 4555
+#define MINSAVEVER	4555
 
 // Use 4500 as the base git save version, since it's higher than the
 // SVN revision ever got.
@@ -97,11 +97,8 @@ const char *GetVersionString();
 
 
 // More stuff that needs to be different for derivatives.
-#define GAMENAME "LZDoom"
-#define WGAMENAME L"LZDoom"
-#define GAMENAMELOWERCASE "lzdoom"
-#define FORUM_URL "http://forum.zdoom.org/"
-#define BUGS_FORUM_URL	"http://forum.zdoom.org/viewforum.php?f=2"
+#define GAMENAME "QZDoom"
+#define GAMENAMELOWERCASE "qzdoom"
 
 #if defined(__APPLE__) || defined(_WIN32)
 #define GAME_DIR GAMENAME

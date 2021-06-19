@@ -148,7 +148,7 @@ static char *work = NULL;
 static int worklen = 0;
 
 CVAR(Float, con_notifytime, 3.f, CVAR_ARCHIVE)
-CVAR(Bool, con_centernotify, false, CVAR_ARCHIVE)
+CVAR(Bool, con_centernotify, true, CVAR_ARCHIVE)
 CUSTOM_CVAR(Int, con_scaletext, 0, CVAR_ARCHIVE)		// Scale notify text at high resolutions?
 {
 	if (self < 0) self = 0;
@@ -905,7 +905,6 @@ void AddToConsole (int printlevel, const char *text)
 #ifdef __ANDROID__
 #include <android/log.h>
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO,"Gzdoom", __VA_ARGS__))
-#include "LogWritter.h"
 #endif
 
 /* Adds a string to the console and also to the notify buffer */
@@ -913,7 +912,6 @@ int PrintString (int printlevel, const char *outline)
 {
 #ifdef __ANDROID__
 	LOGI("PrintString: %s",outline);
-	LogWritter_Write(outline);
 #endif
 
 	if (printlevel < msglevel || *outline == '\0')
@@ -947,7 +945,7 @@ int PrintString (int printlevel, const char *outline)
 	return 0;	// Don't waste time on calculating this if nothing at all was printed...
 }
 
-bool gameisdead;
+extern bool gameisdead;
 
 int VPrintf (int printlevel, const char *format, va_list parms)
 {

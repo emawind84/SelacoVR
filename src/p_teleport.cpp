@@ -27,6 +27,7 @@
 //-----------------------------------------------------------------------------
 
 
+#include <QzDoom/VrCommon.h>
 #include "templates.h"
 #include "doomtype.h"
 #include "doomdef.h"
@@ -50,7 +51,7 @@
 
 static FRandom pr_teleport ("Teleport");
 
-CVAR (Bool, telezoom, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
+CVAR (Bool, telezoom, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG); // Default to off for VR
 
 //==========================================================================
 //
@@ -198,6 +199,8 @@ bool P_Teleport (AActor *thing, DVector3 pos, DAngle angle, int flags)
 			// [BC] && bHaltVelocity.
 			if (telezoom && thing->player->mo == thing && !(flags & TELF_KEEPVELOCITY))
 				thing->player->FOV = MIN (175.f, thing->player->DesiredFOV + 45.f);
+
+			resetDoomYaw = true;
 		}
 	}
 	// [BC] && bHaltVelocity.

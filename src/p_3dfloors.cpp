@@ -284,7 +284,7 @@ static int P_Set3DFloor(line_t * line, int param, int param2, int alpha)
 			// if flooding is used the floor must be non-solid and is automatically made shootthrough and seethrough
 			if ((param2 & 128) && !(flags & FF_SOLID)) flags |= FF_FLOOD | FF_SEETHROUGH | FF_SHOOTTHROUGH;
 			if (param2 & 512) flags |= FF_FADEWALLS;
-			if (param2 & 1024) flags |= FF_RESET;
+			if (param2&1024) flags |= FF_RESET;
 			if (param2 & 2048) flags |= FF_NODAMAGE;
 			FTextureID tex = line->sidedef[0]->GetTexture(side_t::top);
 			if (!tex.Exists() && alpha < 255)
@@ -325,7 +325,7 @@ void P_PlayerOnSpecial3DFloor(player_t* player)
 			// Player must be on top of the floor to be affected...
 			if(player->mo->Z() != rover->top.plane->ZatPoint(player->mo)) continue;
 		}
-		else 
+		else
 		{
 			//Water and DEATH FOG!!! heh
 			if ((rover->flags & FF_NODAMAGE) ||

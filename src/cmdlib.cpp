@@ -982,7 +982,7 @@ void ScanDirectory(TArray<FFileList> &list, const char *dirpath)
 					continue;
 				}
 
-				FFileList* fl = &list[list.Reserve(1)];
+				FFileList *fl = &list[list.Reserve(1)];
 				fl->Filename << dirpath << fn;
 				fl->isDirectory = true;
 				FString newdir = fl->Filename;
@@ -991,7 +991,7 @@ void ScanDirectory(TArray<FFileList> &list, const char *dirpath)
 			}
 			else
 			{
-				FFileList* fl = &list[list.Reserve(1)];
+				FFileList *fl = &list[list.Reserve(1)];
 				fl->Filename << dirpath << fn;
 				fl->isDirectory = false;
 			}

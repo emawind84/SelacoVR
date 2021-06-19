@@ -56,6 +56,7 @@
 EXTERN_CVAR (Float, vid_brightness)
 EXTERN_CVAR (Float, vid_contrast)
 EXTERN_CVAR (Bool, vid_vsync)
+EXTERN_CVAR (Int, gl_hardware_buffers)
 
 CVAR(Bool, gl_aalines, false, CVAR_ARCHIVE)
 
@@ -66,7 +67,7 @@ void gl_PrintStartupLog();
 
 extern bool vid_hdr_active;
 
-CUSTOM_CVAR(Int, vid_hwgamma, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+CUSTOM_CVAR(Int, vid_hwgamma, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL) //Defaulted off for VR
 {
 	if (self < 0 || self > 2) self = 2;
 	if (GLRenderer != NULL && GLRenderer->framebuffer != NULL) GLRenderer->framebuffer->DoSetGamma();
@@ -77,12 +78,8 @@ CUSTOM_CVAR(Int, vid_hwgamma, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITC
 //
 //
 //==========================================================================
-#ifdef USE_GL_HW_BUFFERS
-OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen, int nbrHwBuffers) :
-#else
 OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen) :
-#endif
-	Super(hMonitor, width, height, bits, refreshHz, fullscreen, false) 
+	Super(hMonitor, width, height, bits, refreshHz, fullscreen, false)
 {
 	// SetVSync needs to be at the very top to workaround a bug in Nvidia's OpenGL driver.
 	// If wglSwapIntervalEXT is called after glBindFramebuffer in a frame the setting is not changed!
@@ -94,9 +91,6 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int 
 	gl_RenderState.Reset();
 
 	GLRenderer = new FGLRenderer(this);
-#ifdef USE_GL_HW_BUFFERS
-    GLRenderer->nbrHwBuffers = nbrHwBuffers;
-#endif
 	memcpy (SourcePalette, GPalette.BaseColors, sizeof(PalEntry)*256);
 	UpdatePalette ();
 	ScreenshotBuffer = NULL;
@@ -179,6 +173,7 @@ void OpenGLFrameBuffer::Update()
 	Begin2D(false);
 
 	DrawRateStuff();
+	DrawVersionString();
 	GLRenderer->Flush();
 
 	Swap();
@@ -197,14 +192,10 @@ void OpenGLFrameBuffer::Update()
 		Pitch = Width = clientWidth;
 		Height = clientHeight;
 		V_OutputResized(Width, Height);
-#ifdef USE_GL_HW_BUFFERS
-        for (int n = 0; n < GLRenderer->nbrHwBuffers; n++)
-        {
-            GLRenderer->mVBOBuff[n]->OutputResized(Width, Height);
-        }
-#else
-		GLRenderer->mVBO->OutputResized(Width, Height);
-#endif
+
+		for (int n = 0; n < gl_hardware_buffers; n++) {
+			GLRenderer->mVBOBuff[n]->OutputResized(Width, Height);
+		}
 	}
 
 	GLRenderer->SetOutputViewport(nullptr);
@@ -217,38 +208,25 @@ void OpenGLFrameBuffer::Update()
 //
 //==========================================================================
 
-CVAR(Bool, gl_finishbeforeswap, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
+CVAR(Bool, gl_finish, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
+CVAR(Bool, gl_sync, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 extern int camtexcount;
 
 void OpenGLFrameBuffer::Swap()
 {
-	bool swapbefore = gl_finishbeforeswap && camtexcount == 0;
 	Finish.Reset();
 	Finish.Clock();
-#ifndef __MOBILE__
-	if (swapbefore) glFinish();
-#endif
 
-#ifdef USE_GL_HW_BUFFERS
-    GLRenderer->GPUDropSync();
-#endif
+	if (gl_sync) {
+		GLRenderer->GPUDropSync();
+	}
+	else if (gl_finish)
+    {
+        glFinish(); // Don't appear to need this on the Quest 2
+    }
 
-	SwapBuffers();
-
-#ifdef USE_GL_HW_BUFFERS
-    GLRenderer->NextVtxBuffer();
-    GLRenderer->NextSkyBuffer();
-
-    GLRenderer->GPUWaitSync();
-#endif
-
-#ifndef __MOBILE__
-	if (!swapbefore) glFinish();
-#endif
-
-#ifdef __MOBILE__
     gl_RenderState.SetVertexBuffer(NULL);
-#endif
+
 	Finish.Unclock();
 	camtexcount = 0;
 	FHardwareTexture::UnbindAll();
@@ -598,9 +576,6 @@ void OpenGLFrameBuffer::ScaleCoordsFromWindow(int16_t &x, int16_t &y)
 	int letterboxWidth = GLRenderer->mOutputLetterbox.width;
 	int letterboxHeight = GLRenderer->mOutputLetterbox.height;
 
-#if !defined(_WIN32) && !defined(__APPLE__)
-	SDLGLFB::ScaleCoordsFromWindow(x,y);
-#endif
 	// Subtract the LB video mode letterboxing
 	if (IsFullscreen())
 		y -= (GetTrueHeight() - VideoHeight) / 2;

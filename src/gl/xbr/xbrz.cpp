@@ -614,10 +614,10 @@ void scaleImage(const uint32_t* src, uint32_t* trg, int srcWidth, int srcHeight,
             oobReader.readDhlp(ker4, x);
 
             /*  preprocessing blend result:
-                ---------
+            ---------
                 | F | G |   evaluate corner between F, G, J, K
                 |---+---|   current input pixel is at position F
-                | J | K |
+            | J | K |
                 ---------                                        */
             const BlendResult res = preProcessCorners<ColorDistance>(ker4, cfg);
             addTopR(preProcBuf[x], res.blend_j); //set 2nd known corner for (x, yFirst)
@@ -690,10 +690,10 @@ void scaleImage(const uint32_t* src, uint32_t* trg, int srcWidth, int srcHeight,
             unsigned char blend_xy = preProcBuf[x]; //for current (x, y) position
             {
                 /*  preprocessing blend result:
-                    ---------
+                ---------
                     | F | G |   evaluate corner between F, G, J, K
                     |---+---|   current input pixel is at position F
-                    | J | K |
+                | J | K |
                     ---------                                        */
                 const BlendResult res = preProcessCorners<ColorDistance>(ker4, cfg);
                 addBottomR(blend_xy, res.blend_f); //all four corners of (x, y) have been determined at this point due to processing sequence!

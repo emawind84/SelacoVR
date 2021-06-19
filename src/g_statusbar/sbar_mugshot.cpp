@@ -43,8 +43,12 @@
 #include "r_utility.h"
 #include "actorinlines.h"
 
+#include <QzDoom/VrCommon.h>
+
 #define ST_RAMPAGEDELAY 		(2*TICRATE)
 #define ST_MUCHPAIN 			20
+
+EXTERN_CVAR(Float, vr_pickup_haptic_level)
 
 TArray<FMugShotState> MugShotStates;
 
@@ -348,6 +352,14 @@ int FMugShot::UpdateState(player_t *player, StateFlags stateflags)
 		{
 			if (player->bonuscount)
 			{
+				//Short haptic blip on pickup
+				if (vr_pickup_haptic_level > 0.0) {
+					QzDoom_Vibrate(80, 0, vr_pickup_haptic_level); // left
+					QzDoom_Vibrate(80, 1, vr_pickup_haptic_level); // right
+
+					QzDoom_HapticEvent("pickup", 0, 100 * C_GetExternalHapticLevelValue("pickup"), 0, 0);
+				}
+
 				SetState("grin", false);
 				return 0;
 			}

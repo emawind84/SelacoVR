@@ -41,6 +41,8 @@
 
 
 #include <stdio.h>
+#include <gl/system/gl_framebuffer.h>
+#include <QzDoom/VrCommon.h>
 
 #include "i_system.h"
 #include "x86.h"
@@ -95,8 +97,6 @@ FRenderer *Renderer;
 
 EXTERN_CVAR (Bool, swtruecolor)
 EXTERN_CVAR (Bool, fullscreen)
-
-CVAR(Int, vid_rendermode, 4, 0)	// for some stupid mods which threw caution out of the window...
 
 #if defined(_DEBUG) && defined(_M_IX86) && !defined(__MINGW32__)
 #define DBGBREAK	{ __asm int 3 }
@@ -171,8 +171,8 @@ static uint32_t Col2RGB8_2[63][256];
 // There's also only one, not four.
 DFrameBuffer *screen;
 
-CVAR (Int, vid_defwidth, 640, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-CVAR (Int, vid_defheight, 480, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR (Int, vid_defwidth, 1280, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR (Int, vid_defheight, 1280, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Int, vid_defbits, 8, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Bool, vid_fps, false, 0)
 CVAR (Bool, ticker, false, 0)
@@ -194,7 +194,7 @@ CUSTOM_CVAR (Int, vid_refreshrate, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 	}
 }
 
-CUSTOM_CVAR (Float, dimamount, -1.f, CVAR_ARCHIVE)
+CUSTOM_CVAR (Float, dimamount, 0.f, CVAR_ARCHIVE)
 {
 	if (self < 0.f && self != -1.f)
 	{
@@ -856,6 +856,37 @@ void DFrameBuffer::CopyWithGammaBgra(void *output, int pitch, const uint8_t *gam
 	}
 }
 
+//==========================================================================
+//
+// DFrameBuffer :: DrawVersionString
+//
+// Draws the version string to the main screen
+//
+//==========================================================================
+
+void DFrameBuffer::DrawVersionString ()
+{
+	static uint64_t first = screen->FrameTime;
+
+	//Only show version string for 5 seconds
+	if ((screen->FrameTime - first) > 5000)
+	{
+		return;
+	}
+
+	if (gamestate == GS_STARTUP ||
+			gamestate == GS_DEMOSCREEN) {
+		char buff[60];
+
+		int textScale = active_con_scale();
+
+		mysnprintf(buff, countof(buff), "%s", GetVersionString());
+		DrawText(ConFont, CR_WHITE, 0, 0, (char *) &buff[0],
+				 DTA_VirtualWidth, screen->GetWidth() / textScale,
+				 DTA_VirtualHeight, screen->GetHeight() / textScale,
+				 DTA_KeepRatio, true, TAG_DONE);
+	}
+}
 
 //==========================================================================
 //
@@ -872,32 +903,32 @@ void DFrameBuffer::DrawRateStuff ()
 	{
 		uint64_t ms = screen->FrameTime;
 		uint64_t howlong = ms - LastMS;
-		if ((signed)howlong >= 0)
-		{
-			char fpsbuff[40];
-			int chars;
-			int rate_x;
+        if ((signed)howlong >= 0)
+        {
+            char fpsbuff[40];
+            int chars;
+            int rate_x;
 
-			int textScale = active_con_scale();
+            int textScale = active_con_scale();
 
 			chars = mysnprintf (fpsbuff, countof(fpsbuff), "%2" PRIu64 " ms (%3" PRIu64 " fps)", howlong, LastCount);
-			rate_x = Width / textScale - ConFont->StringWidth(&fpsbuff[0]);
-			Clear (rate_x * textScale, 0, Width, ConFont->GetHeight() * textScale, GPalette.BlackIndex, 0);
-			DrawText (ConFont, CR_WHITE, rate_x, 0, (char *)&fpsbuff[0],
-				DTA_VirtualWidth, screen->GetWidth() / textScale,
-				DTA_VirtualHeight, screen->GetHeight() / textScale,
-				DTA_KeepRatio, true, TAG_DONE);
+            rate_x = Width / textScale - ConFont->StringWidth(&fpsbuff[0]);
+            Clear (rate_x * textScale, 0, Width, ConFont->GetHeight() * textScale, GPalette.BlackIndex, 0);
+            DrawText (ConFont, CR_WHITE, rate_x, 0, (char *)&fpsbuff[0],
+                      DTA_VirtualWidth, screen->GetWidth() / textScale,
+                      DTA_VirtualHeight, screen->GetHeight() / textScale,
+                      DTA_KeepRatio, true, TAG_DONE);
 
 			uint32_t thisSec = (uint32_t)(ms/1000);
-			if (LastSec < thisSec)
-			{
-				LastCount = FrameCount / (thisSec - LastSec);
-				LastSec = thisSec;
-				FrameCount = 0;
-			}
-			FrameCount++;
-		}
-		LastMS = ms;
+            if (LastSec < thisSec)
+            {
+                LastCount = FrameCount / (thisSec - LastSec);
+                LastSec = thisSec;
+                FrameCount = 0;
+            }
+            FrameCount++;
+        }
+        LastMS = ms;
 	}
 
 	// draws little dots on the bottom of the screen
@@ -1522,8 +1553,10 @@ void V_Init (bool restart)
 		{
 			if (height == 0)
 			{
-				width = vid_defwidth;
-				height = vid_defheight;
+				uint32_t uWidth, uHeight;
+                QzDoom_GetScreenRes(&uWidth, &uHeight);
+				width = uWidth;
+				height = uHeight;
 			}
 			else
 			{
@@ -1752,7 +1785,7 @@ void IVideo::DumpAdapters ()
 	Printf("Multi-monitor support unavailable.\n");
 }
 
-CUSTOM_CVAR(Bool, vid_hdr, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+CUSTOM_CVAR(Bool, vid_hdr, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	Printf("This won't take effect until " GAMENAME " is restarted.\n");
 }

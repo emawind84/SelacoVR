@@ -43,6 +43,7 @@
 #include "r_data/models/models_ue1.h"
 #include "r_data/models/models_obj.h"
 #include "i_time.h"
+#include "gl/stereo3d/gl_stereo3d.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244) // warning C4244: conversion from 'double' to 'float', possible loss of data
@@ -50,6 +51,8 @@
 
 CVAR(Bool, gl_interpolate_model_frames, true, CVAR_ARCHIVE)
 EXTERN_CVAR(Bool, r_drawvoxels)
+EXTERN_CVAR(Int, vr_control_scheme)
+EXTERN_CVAR(Float, vr_weaponScale)
 
 extern TDeletingArray<FVoxel *> Voxels;
 extern TDeletingArray<FVoxelDef *> VoxelDefs;
@@ -189,9 +192,23 @@ void FModelRenderer::RenderHUDModel(DPSprite *psp, float ofsX, float ofsY)
 	if (smf == nullptr)
 		return;
 
-	// The model position and orientation has to be drawn independently from the position of the player,
+    long oculusquest_rightHanded = vr_control_scheme < 10;
+
+    // The model position and orientation has to be drawn independently from the position of the player,
 	// but we need to position it correctly in the world for light to work properly.
 	VSMatrix objectToWorldMatrix = GetViewToWorldMatrix();
+	if (s3d::Stereo3DMode::getCurrentMode().GetHandTransform(oculusquest_rightHanded ? 1 : 0, &objectToWorldMatrix))
+	{
+		float scale = 0.01f;
+		objectToWorldMatrix.scale(scale, scale, scale);
+		objectToWorldMatrix.translate(0, 5, 30);
+	}
+	else
+	{
+		DVector3 pos = playermo->Pos();
+		objectToWorldMatrix.translate(pos.X, pos.Z + 40, pos.Y);
+		objectToWorldMatrix.rotate(-playermo->Angles.Yaw.Degrees - 90, 0, 1, 0);
+	}
 
 	// Scaling model (y scale for a sprite means height, i.e. z in the world!).
 	objectToWorldMatrix.scale(smf->xscale, smf->zscale, smf->yscale);
@@ -210,6 +227,9 @@ void FModelRenderer::RenderHUDModel(DPSprite *psp, float ofsX, float ofsY)
 	objectToWorldMatrix.rotate(-smf->angleoffset, 0, 1, 0);
 	objectToWorldMatrix.rotate(smf->pitchoffset, 0, 0, 1);
 	objectToWorldMatrix.rotate(-smf->rolloffset, 1, 0, 0);
+
+	//Scale weapon
+	objectToWorldMatrix.scale(vr_weaponScale, vr_weaponScale, vr_weaponScale);
 
 	float orientation = smf->xscale * smf->yscale * smf->zscale;
 

@@ -867,7 +867,7 @@ bool JoinGame (int i)
 		SendAbort();
 		return false;
 	}
-	
+
 	StartScreen->NetMessage ("Total players: %d", doomcom.numnodes);
 
 	doomcom.id = DOOMCOM_ID;

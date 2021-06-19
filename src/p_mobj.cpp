@@ -109,6 +109,8 @@
 #include "actorinlines.h"
 #include "a_dynlight.h"
 
+#include <QzDoom/VrCommon.h>
+
 // MACROS ------------------------------------------------------------------
 
 #define WATER_SINK_FACTOR		0.125
@@ -915,6 +917,16 @@ bool P_GiveBody(AActor *actor, int num, int max)
 				{
 					player->health = max;
 				}
+
+				if (player == &players[consoleplayer])
+				{
+					float level = (float)(0.4 + (0.6 * (num / 100.0)));
+					QzDoom_Vibrate(100, 0, level); // left
+					QzDoom_Vibrate(100, 1, level); // right
+
+					QzDoom_HapticEvent("healstation", 0, 100 * level * C_GetExternalHapticLevelValue("healstation"), 0, 0);
+				}
+
 				actor->health = player->health;
 				return true;
 			}
@@ -4898,17 +4910,17 @@ void AActor::AdjustFloorClip ()
 	for (m = touching_sectorlist; m; m = m->m_tnext)
 	{
 		DVector3 pos = PosRelative(m->m_sector);
-		sector_t* hsec = m->m_sector->GetHeightSec();
+		sector_t *hsec = m->m_sector->GetHeightSec();
 		if (hsec == NULL)
 		{
 			if (m->m_sector->floorplane.ZatPoint(pos) == Z())
+		{
+			double clip = Terrains[m->m_sector->GetTerrain(sector_t::floor)].FootClip;
+			if (clip < shallowestclip)
 			{
-				double clip = Terrains[m->m_sector->GetTerrain(sector_t::floor)].FootClip;
-				if (clip < shallowestclip)
-				{
-					shallowestclip = clip;
-				}
+				shallowestclip = clip;
 			}
+		}
 			else
 			{
 				for (auto& ff : m->m_sector->e->XFloor.ffloors)
@@ -4955,7 +4967,8 @@ DEFINE_ACTION_FUNCTION(AActor, AdjustFloorClip)
 //
 EXTERN_CVAR (Bool, chasedemo)
 EXTERN_CVAR(Bool, sv_singleplayerrespawn)
-EXTERN_CVAR(Float, fov)
+
+extern "C" float QzDoom_GetFOV();
 
 extern bool demonew;
 
@@ -5104,7 +5117,7 @@ AActor *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 		mobj->sprite = Skins[p->userinfo.GetSkin()].sprite;
 	}
 
-	p->DesiredFOV = p->FOV = fov;
+	p->DesiredFOV = p->FOV = QzDoom_GetFOV();
 	p->camera = p->mo;
 	p->playerstate = PST_LIVE;
 	p->refire = 0;
@@ -6725,6 +6738,8 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnSubMissile)
 = Tries to aim at a nearby monster
 ================
 */
+EXTERN_CVAR(Int, vr_control_scheme)
+extern bool weaponStabilised;
 
 AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 							  PClassActor *type, DAngle angle, FTranslatedLineTarget *pLineTarget, AActor **pMissileActor,
@@ -6793,6 +6808,27 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 		}
 	}
 	DVector3 pos = source->Vec2OffsetZ(x, y, z);
+	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
+	{
+		pos = source->player->mo->AttackPos;
+		DAngle p;
+		p.Degrees = 0;
+		DVector3 dir = source->player->mo->AttackDir(source, angle, p);
+		an = dir.Angle();
+
+		//
+		//  FIX FOR FLAT PROJECTILE SPREAD FROM SHOTGUNS AND OTHER MULTI-PROJECTILE WEAPONS
+		//
+        //Bit of a hack as it makes the pitch a little off, but in order for weapon projectile spread
+        //to work correctly, we can't fix the pitch to that of the controller otherwise random spread
+        //turns into a flat line of projectiles. Using the difference between the previous known angles and
+        //the current angles (which were potenitally modified by A_FireProjectile) gives us the "random"
+        //difference applied to the pitch by the script
+        //
+        //A VR player is unlikely to be whipping their head up and down so fast as to make a meaningful
+        //difference to the pitch between two frames, so this is 'good enough' for now.
+		pitch = dir.Pitch() + (source->PrevAngles.Pitch - source->Angles.Pitch);
+	}
 	AActor *MissileActor = Spawn (type, pos, ALLOW_REPLACE);
 
 	if (MissileActor == nullptr) return nullptr;
@@ -6813,8 +6849,24 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 	{
 		MissileActor->SetFriendPlayer(source->player);
 	}
+
 	if (P_CheckMissileSpawn (MissileActor, source->radius))
 	{
+		if (MissileActor->DamageFunc != nullptr || // If it causes damage...
+		    MissileActor->DamageType.GetIndex() != 0 ||
+		    MissileActor->SeeSound != 0) // .. or if it plays a sound, we might as well play a haptic
+		{
+			//Haptics
+			long rightHanded = vr_control_scheme < 10;
+			QzDoom_Vibrate(150, rightHanded ? 1 : 0, 0.8);
+			QzDoom_HapticEvent("fire_weapon", rightHanded ? 2 : 1, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
+			if (weaponStabilised)
+			{
+				QzDoom_Vibrate(150, rightHanded ? 0 : 1, 0.6);
+				QzDoom_HapticEvent("fire_weapon", rightHanded ? 1 : 2, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
+			}
+		}
+
 		return MissileActor;
 	}
 	return NULL;

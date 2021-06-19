@@ -8,7 +8,6 @@ uparrow +forward
 downarrow +back
 , +moveleft
 . +moveright
-enter invuse
 mouse2 +strafe
 mouse3 +forward
 mouse4 +speed

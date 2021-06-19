@@ -1677,6 +1677,21 @@ FBaseCVar *FindCVarSub (const char *var_name, int namelen)
 	return var;
 }
 
+EXTERN_CVAR(Float, ext_haptic_level_global_intensity)
+
+float C_GetExternalHapticLevelValue(const char *haptic_name)
+{
+	char buffer[256];
+	sprintf(buffer, "ext_haptic_level_%s", haptic_name);
+	FBaseCVar *pCVar = FindCVar(buffer, NULL);
+	if (pCVar != NULL)
+	{
+		return pCVar->GetGenericRep(CVAR_Float).Float * ext_haptic_level_global_intensity;
+	}
+
+	return ext_haptic_level_global_intensity;
+}
+
 FBaseCVar *GetCVar(int playernum, const char *cvarname)
 {
 	FBaseCVar *cvar = FindCVar(cvarname, nullptr);

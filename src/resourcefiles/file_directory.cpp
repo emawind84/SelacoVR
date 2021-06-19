@@ -96,9 +96,9 @@ FDirectory::FDirectory(const char * directory, bool nosubdirflag)
 		// Todo for Linux: Resolve the path before using it
 	#endif
 	dirname = directory;
-#ifdef _WIN32
-	free((void *)directory);
-#endif
+	#ifdef _WIN32
+		free((void *)directory);
+	#endif
 	dirname.Substitute("\\", "/");
 	if (dirname[dirname.Len()-1] != '/') dirname += '/';
 	FileName = dirname;
@@ -163,13 +163,13 @@ int FDirectory::AddDirectory(const char *dirpath)
 				if (GetFileInfo(fn, &size, nullptr))
 				{
 					AddEntry(fn, (int)size);
-					count++;
-				}
+				count++;
 			}
+		}
 
 		} while (I_FindNext (handle, &find) == 0);
 		I_FindClose (handle);
-	}
+		}
 	return count;
 }
 

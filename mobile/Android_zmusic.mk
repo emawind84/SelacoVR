@@ -19,9 +19,9 @@ $(LOCAL_PATH)/../timidity \
 $(LOCAL_PATH)/../timidityplus \
 $(LOCAL_PATH)/../wildmidi \
 $(LOCAL_PATH)/../game-music-emu \
-$(TOP_DIR)/AudioLibs_OpenTouch/fluidsynth-lite/include \
-$(TOP_DIR)/AudioLibs_OpenTouch/libsndfile-android/jni/ \
-$(TOP_DIR)/AudioLibs_OpenTouch/libmpg123 \
+$(SUPPORT_LIBS)/fluidsynth-lite/include \
+$(SUPPORT_LIBS)/libsndfile-android/jni/ \
+$(SUPPORT_LIBS)/libmpg123 \
 
 
 LOCAL_SRC_FILES =  	\

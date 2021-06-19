@@ -366,10 +366,10 @@ class Weapon : StateProvider
 			let pspr = player.GetPSprite(PSP_WEAPON);
 			if (pspr)
 			{
-				pspr.x = 0;
-				pspr.y = WEAPONTOP;
-			}
+			pspr.x = 0;
+			pspr.y = WEAPONTOP;
 		}
+	}
 	}
 
 	static int GetButtonStateFlags(int flags)
@@ -421,20 +421,24 @@ class Weapon : StateProvider
 
 	action void A_ZoomFactor(double zoom = 1, int flags = 0)
 	{
-		let player = self.player;
-		if (player != NULL && player.ReadyWeapon != NULL)
-		{
-			zoom = 1 / clamp(zoom, 0.1, 50.0);
-			if (flags & 1)
-			{ // Make the zoom instant.
-				player.FOV = player.DesiredFOV * zoom;
-			}
-			if (flags & 2)
-			{ // Disable pitch/yaw scaling.
-				zoom = -zoom;
-			}
-			player.ReadyWeapon.FOVScale = zoom;
-		}
+	    CVar recoil = CVar.FindCVar('vr_recoil');
+        if (recoil.GetBool())
+        {
+        	let player = self.player;
+            if (player != NULL && player.ReadyWeapon != NULL)
+            {
+                zoom = 1 / clamp(zoom, 0.1, 50.0);
+                if (flags & 1)
+                { // Make the zoom instant.
+                    player.FOV = player.DesiredFOV * zoom;
+                }
+                if (flags & 2)
+                { // Disable pitch/yaw scaling.
+                    zoom = -zoom;
+                }
+                player.ReadyWeapon.FOVScale = zoom;
+            }
+        }
 	}
 
 	//===========================================================================
@@ -873,9 +877,9 @@ class Weapon : StateProvider
 		let pspr = p.GetPSprite(PSP_WEAPON);
 		if (pspr)
 		{
-			pspr.y = WEAPONBOTTOM;
-			pspr.ResetInterpolation();
-			pspr.SetState(GetUpState());
+		pspr.y = WEAPONBOTTOM;
+		pspr.ResetInterpolation();
+		pspr.SetState(GetUpState());
 		}
 	}
 

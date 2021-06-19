@@ -4,7 +4,7 @@
 #ifdef _WIN32
 #include "win32gliface.h"
 #else
-#include "sdlglvideo.h"
+#include "glvideo.h"
 #endif
 
 #include <memory>
@@ -19,20 +19,16 @@ class OpenGLFrameBuffer : public Win32GLFrameBuffer
 	typedef Win32GLFrameBuffer Super;
 #else
 //#include "sdlglvideo.h"
-class OpenGLFrameBuffer : public SDLGLFB
+class OpenGLFrameBuffer : public NoSDLGLFB
 {
-	typedef SDLGLFB Super;	//[C]commented, DECLARE_CLASS defines this in linux
+	typedef NoSDLGLFB Super;	//[C]commented, DECLARE_CLASS defines this in linux
 #endif
 
 
 public:
 
 	explicit OpenGLFrameBuffer() {}
-#ifdef USE_GL_HW_BUFFERS
-	OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen, int nbrHwBuffers) ;
-#else
 	OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen) ;
-#endif
 	~OpenGLFrameBuffer();
 
 	void InitializeState();

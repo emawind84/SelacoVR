@@ -1,4 +1,5 @@
 //-----------------------------------------------------------------------------
+//
 // Copyright 1993-1996 id Software
 // Copyright 1999-2016 Randy Heit
 // Copyright 2002-2016 Christoph Oelckers
@@ -130,7 +131,7 @@ void CloseNetwork();
 void P_Shutdown();
 void M_SaveDefaultsFinal();
 void R_Shutdown();
-void I_ShutdownInput();
+//void I_ShutdownInput();
 #ifdef _WIN32
 void StopFPSLimit();
 #endif
@@ -164,7 +165,6 @@ EXTERN_CVAR (Bool, freelook)
 EXTERN_CVAR (Float, m_pitch)
 EXTERN_CVAR (Float, m_yaw)
 EXTERN_CVAR (Bool, invertmouse)
-EXTERN_CVAR (Bool, invertmousex)
 EXTERN_CVAR (Bool, lookstrafe)
 EXTERN_CVAR (Int, screenblocks)
 EXTERN_CVAR (Bool, sv_cheats)
@@ -343,10 +343,7 @@ void D_PostEvent (const event_t *ev)
 		}
 		if (!Button_Strafe.bDown && !lookstrafe)
 		{
-			int turn = int(ev->x * m_yaw * mouse_sensitivity * 8.0);
-			if (invertmousex)
-				turn = -turn;
-			G_AddViewAngle (turn, true);
+			G_AddViewAngle (int(ev->x * m_yaw * mouse_sensitivity * 8.0), true);
 			events[eventhead].x = 0;
 		}
 		if ((events[eventhead].x | events[eventhead].y) == 0)
@@ -688,6 +685,8 @@ CVAR(Bool, vid_activeinbackground, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 //
 //==========================================================================
 
+extern "C" float QzDoom_GetFOV();
+
 void D_Display ()
 {
 	bool wipe;
@@ -716,7 +715,7 @@ void D_Display ()
 
 	if (viewactive)
 	{
-		DAngle fov = 90.f;
+		DAngle fov = QzDoom_GetFOV();
 		AActor *cam = players[consoleplayer].camera;
 		if (cam)
 		{
@@ -1020,7 +1019,7 @@ void D_ErrorCleanup ()
 {
 	savegamerestore = false;
 	if (screen)
-		screen->Unlock ();
+	screen->Unlock ();
 	bglobal.RemoveAllBots (true);
 	D_QuitNetGame ();
 	if (demorecording || demoplayback)
@@ -1049,7 +1048,6 @@ void D_ErrorCleanup ()
 // calls I_GetTime, I_StartFrame, and I_StartTic
 //
 //==========================================================================
-
 void D_DoomLoop ()
 {
 	int lasttic = 0;
@@ -1070,14 +1068,14 @@ void D_DoomLoop ()
 			if (gametic > lasttic)
 			{
 				lasttic = gametic;
-				I_StartFrame ();
+				//I_StartFrame (); // not used
 			}
 			I_SetFrameTime();
 
 			// process one or more tics
 			if (singletics)
 			{
-				I_StartTic ();
+				//I_StartTic ();
 				D_ProcessEvents ();
 				G_BuildTiccmd (&netcmds[consoleplayer][maketic%BACKUPTICS]);
 				if (advancedemo)
@@ -1097,7 +1095,7 @@ void D_DoomLoop ()
 				TryRunTics (); // will run at least one tic
 			}
 			// Update display, next frame, with current state.
-			I_StartTic ();
+			//I_StartTic ();
 			D_Display ();
 			S_UpdateMusic();
 			if (wantToRestart)
@@ -1120,7 +1118,7 @@ void D_DoomLoop ()
 			Printf("%s", error.stacktrace.GetChars());
 			D_ErrorCleanup();
 		}
-	}
+    }
 }
 
 //==========================================================================
@@ -2335,68 +2333,6 @@ static void CheckCmdLine()
 	}
 }
 
-//==========================================================================
-//
-// I_Error
-//
-// Throw an error that will send us to the console if we are far enough
-// along in the startup process.
-//
-//==========================================================================
-
-void I_Error(const char *error, ...)
-{
-	va_list argptr;
-	char errortext[MAX_ERRORTEXT];
-
-	va_start(argptr, error);
-	myvsnprintf(errortext, MAX_ERRORTEXT, error, argptr);
-	va_end(argptr);
-	I_DebugPrint(errortext);
-
-	throw CRecoverableError(errortext);
-}
-
-//==========================================================================
-//
-// I_FatalError
-//
-// Throw an error that will end the game.
-//
-//==========================================================================
-extern FILE *Logfile;
-
-void I_FatalError(const char *error, ...)
-{
-	static bool alreadyThrown = false;
-	gameisdead = true;
-
-	if (!alreadyThrown)		// ignore all but the first message -- killough
-	{
-		alreadyThrown = true;
-		char errortext[MAX_ERRORTEXT];
-		va_list argptr;
-		va_start(argptr, error);
-		myvsnprintf(errortext, MAX_ERRORTEXT, error, argptr);
-		va_end(argptr);
-		I_DebugPrint(errortext);
-
-		// Record error to log (if logging)
-		if (Logfile)
-		{
-			fprintf(Logfile, "\n**** DIED WITH FATAL ERROR:\n%s\n", errortext);
-			fflush(Logfile);
-		}
-
-		throw CFatalError(errortext);
-	}
-	std::terminate(); // recursive I_FatalErrors must immediately terminate.
-}
-
-static void NewFailure ()
-{
-    I_FatalError ("Failed to allocate memory from system heap");
-}
 
 //==========================================================================
 //
@@ -2414,12 +2350,11 @@ static int D_DoomMain_Internal (void)
 	int argcount;	
 	FIWadManager *iwad_man;
 	
-	std::set_new_handler(NewFailure);
 	const char *batchout = Args->CheckValue("-errorlog");
-	
+
 	C_InitConsole(80*8, 25*8, false);
 	Printf("%s version %s\n", GAMENAME, GetVersionString());
-	I_DetectOS();
+	//I_DetectOS();
 
 	// +logfile gets checked too late to catch the full startup log in the logfile so do some extra check for it here.
 	FString logfile = Args->TakeValue("+logfile");
@@ -2463,8 +2398,8 @@ static int D_DoomMain_Internal (void)
 
 	D_DoomInit();
 
-	extern void D_ConfirmSendStats();
-	D_ConfirmSendStats();
+	//extern void D_ConfirmSendStats();
+	//D_ConfirmSendStats();
 
 	// [RH] Make sure zdoom.pk3 is always loaded,
 	// as it contains magic stuff we need.
@@ -2797,7 +2732,7 @@ static int D_DoomMain_Internal (void)
 
 			V_Init2();
 			gl_PatchMenu();
-			UpdateJoystickMenu(NULL);
+			//UpdateJoystickMenu(NULL);
 
 			v = Args->CheckValue ("-loadgame");
 			if (v)
@@ -2870,8 +2805,8 @@ static int D_DoomMain_Internal (void)
 
 		D_DoAnonStats();
 
-		if (I_FriendlyWindowTitle)
-			I_SetWindowTitle(DoomStartupInfo.Name.GetChars());
+//		if (I_FriendlyWindowTitle)
+//			I_SetWindowTitle(DoomStartupInfo.Name.GetChars());
 
 		D_DoomLoop ();		// this only returns if a 'restart' CCMD is given.
 		// 
@@ -2898,7 +2833,6 @@ int D_DoomMain()
 	}
 	catch (const std::exception &error)
 	{
-		I_ShowFatalError(error.what());
 		ret = -1;
 	}
 	// Unless something really bad happened, the game should only exit through this single point in the code.
@@ -2914,12 +2848,22 @@ int D_DoomMain()
 	R_Shutdown();
 	I_DeleteRenderer();
 	I_ShutdownGraphics();
-	I_ShutdownInput();
+	//I_ShutdownInput();
 	M_SaveDefaultsFinal();
 	DeleteStartupScreen();
 	delete Args;
 	Args = nullptr;
 	return ret;
+}
+
+// The command line arguments.
+FArgs *Args;
+
+void VR_DoomMain(int argc, char** argv)
+{
+    progdir = "/sdcard/QuestZDoom/";
+    Args = new FArgs(argc, argv);
+    D_DoomMain ();
 }
 
 //==========================================================================
@@ -2935,68 +2879,68 @@ void D_Cleanup()
 		G_CheckDemoStatus();
 	}
 
-	// Music and sound should be stopped first
-	S_StopMusic(true);
+		// Music and sound should be stopped first
+		S_StopMusic(true);
 	S_ClearSoundData();
 	S_UnloadReverbDef();
 	G_ClearMapinfo();
 
-	M_ClearMenus();					// close menu if open
-	F_EndFinale();					// If an intermission is active, end it now
-	AM_ClearColorsets();
+		M_ClearMenus();					// close menu if open
+		F_EndFinale();					// If an intermission is active, end it now
+		AM_ClearColorsets();
 	DeinitSWColorMaps();
 	FreeSBarInfoScript();
 #ifdef _WIN32
 	StopFPSLimit();
 #endif
 
-	// clean up game state
-	ST_Clear();
-	D_ErrorCleanup ();
+		// clean up game state
+		ST_Clear();
+		D_ErrorCleanup ();
 	P_Shutdown();
 
-	M_SaveDefaults(NULL);			// save config before the restart
+		M_SaveDefaults(NULL);			// save config before the restart
 
-	// delete all data that cannot be left until reinitialization
-	V_ClearFonts();					// must clear global font pointers
-	ColorSets.Clear();
-	PainFlashes.Clear();
-	R_DeinitTranslationTables();	// some tables are initialized from outside the translation code.
-	gameinfo.~gameinfo_t();
-	new (&gameinfo) gameinfo_t;		// Reset gameinfo
-	S_Shutdown();					// free all channels and delete playlist
-	C_ClearAliases();				// CCMDs won't be reinitialized so these need to be deleted here
-	DestroyCVarsFlagged(CVAR_MOD);	// Delete any cvar left by mods
-	FS_Close();						// destroy the global FraggleScript.
-	DeinitMenus();
-	LightDefaults.Clear();			// this can leak heap memory if it isn't cleared.
+		// delete all data that cannot be left until reinitialization
+		V_ClearFonts();					// must clear global font pointers
+		ColorSets.Clear();
+		PainFlashes.Clear();
+		R_DeinitTranslationTables();	// some tables are initialized from outside the translation code.
+		gameinfo.~gameinfo_t();
+		new (&gameinfo) gameinfo_t;		// Reset gameinfo
+		S_Shutdown();					// free all channels and delete playlist
+		C_ClearAliases();				// CCMDs won't be reinitialized so these need to be deleted here
+		DestroyCVarsFlagged(CVAR_MOD);	// Delete any cvar left by mods
+		FS_Close();						// destroy the global FraggleScript.
+		DeinitMenus();
+		LightDefaults.Clear();			// this can leak heap memory if it isn't cleared.
 
-	// delete DoomStartupInfo data
-	DoomStartupInfo.Name = "";
-	DoomStartupInfo.BkColor = DoomStartupInfo.FgColor = DoomStartupInfo.Type = 0;
-	DoomStartupInfo.LoadLights = DoomStartupInfo.LoadBrightmaps = -1;
+		// delete DoomStartupInfo data
+		DoomStartupInfo.Name = "";
+		DoomStartupInfo.BkColor = DoomStartupInfo.FgColor = DoomStartupInfo.Type = 0;
+		DoomStartupInfo.LoadLights = DoomStartupInfo.LoadBrightmaps = -1;
 
-	GC::FullGC();					// clean up before taking down the object list.
+		GC::FullGC();					// clean up before taking down the object list.
 
-	// Delete the reference to the VM functions here which were deleted and will be recreated after the restart.
-	FAutoSegIterator probe(ARegHead, ARegTail);
-	while (*++probe != NULL)
-	{
-		AFuncDesc *afunc = (AFuncDesc *)*probe;
-		*(afunc->VMPointer) = NULL;
-	}
+		// Delete the reference to the VM functions here which were deleted and will be recreated after the restart.
+		FAutoSegIterator probe(ARegHead, ARegTail);
+		while (*++probe != NULL)
+		{
+			AFuncDesc *afunc = (AFuncDesc *)*probe;
+			*(afunc->VMPointer) = NULL;
+		}
 
-	GC::DelSoftRootHead();
+		GC::DelSoftRootHead();
 
-	PClass::StaticShutdown();
+			PClass::StaticShutdown();
 
-	GC::FullGC();					// perform one final garbage collection after shutdown
+		GC::FullGC();					// perform one final garbage collection after shutdown
 
-	assert(GC::Root == nullptr);
+		assert(GC::Root == nullptr);
 
-	restart++;
-	PClass::bShutdown = false;
-	PClass::bVMOperational = false;
+		restart++;
+		PClass::bShutdown = false;
+		PClass::bVMOperational = false;
 }
 
 //==========================================================================
@@ -3077,25 +3021,6 @@ void FStartupScreen::LoadingStatus(const char *message, int colors)
 void FStartupScreen::AppendStatusLine(const char *status)
 {
 }
-
-//===========================================================================
-//
-// DeleteStartupScreen
-//
-// Makes sure the startup screen has been deleted before quitting.
-//
-//===========================================================================
-
-void DeleteStartupScreen()
-{
-	if (StartScreen != nullptr)
-	{
-		delete StartScreen;
-		StartScreen = nullptr;
-	}
-}
-
-
 
 void FStartupScreen::Progress(void) {}
 void FStartupScreen::NetInit(char const *,int) {}

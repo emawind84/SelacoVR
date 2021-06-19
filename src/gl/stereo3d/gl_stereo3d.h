@@ -51,13 +51,19 @@ public:
 class EyePose 
 {
 public:
-	EyePose() {}
+	EyePose() : m_isActive(false) {}
 	virtual ~EyePose() {}
 	virtual VSMatrix GetProjection(float fov, float aspectRatio, float fovRatio) const;
 	virtual Viewport GetViewport(const Viewport& fullViewport) const;
 	virtual void GetViewShift(float yaw, float outViewShift[3]) const;
-	virtual void SetUp() const {};
-	virtual void TearDown() const {};
+	virtual void SetUp() const {m_isActive = true;}
+	virtual void TearDown() const {m_isActive = false;}
+	virtual void AdjustHud() const {}
+	virtual void AdjustBlend() const {}
+	bool isActive() const {return m_isActive;}
+
+private:
+	mutable bool m_isActive;
 };
 
 
@@ -81,7 +87,17 @@ public:
 	virtual bool IsMono() const { return false; }
 	virtual void AdjustViewports() const {};
 	virtual void AdjustPlayerSprites() const {};
+	virtual void UnAdjustPlayerSprites() const {};
+	virtual void AdjustCrossHair() const {}
+	virtual void UnAdjustCrossHair() const {}
+
 	virtual void Present() const = 0;
+
+	virtual bool GetHandTransform(int hand, VSMatrix* out) const { return false; }
+	virtual bool GetWeaponTransform(VSMatrix* out) const { return false; }
+	virtual bool RenderPlayerSpritesCrossed() const { return false; }
+	virtual bool RenderPlayerSpritesInScene() const { return false; }
+	virtual bool GetTeleportLocation(DVector3 &out) const { return false; }
 
 protected:
 	TArray<const EyePose *> eye_ptrs;

@@ -98,6 +98,9 @@
 #include "events.h"
 #include "d_main.h"
 
+#include <QzDoom/VrInput.h>
+#include <cmath>
+
 
 static FRandom pr_dmspawn ("DMSpawn");
 static FRandom pr_pspawn ("PlayerSpawn");
@@ -133,6 +136,9 @@ CVAR (String, save_dir, "", CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 CVAR (Bool, cl_waitforsave, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR (Bool, enablescriptscreenshot, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 EXTERN_CVAR (Float, con_midtime);
+EXTERN_CVAR(Bool, vr_teleport);
+EXTERN_CVAR(Int, vr_move_speed);
+EXTERN_CVAR(Float, vr_run_multiplier);
 
 //==========================================================================
 //
@@ -156,6 +162,11 @@ CVAR(Int, nametagcolor, CR_GOLD, CVAR_ARCHIVE)
 gameaction_t	gameaction;
 gamestate_t 	gamestate = GS_STARTUP;
 FName			SelectedSlideshow;		// what to start when ga_slideshow
+
+int getGameState()
+{
+	return (int)gamestate;
+}
 
 int 			paused;
 bool			pauseext;
@@ -233,9 +244,8 @@ int				lookspeed[2] = {450, 512};
 
 #define SLOWTURNTICS	6 
 
-CVAR (Bool,		cl_run,			true,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always run?
+CVAR (Bool,		cl_run,			false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always run?
 CVAR (Bool,		invertmouse,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Invert mouse look down/up?
-CVAR (Bool,		invertmousex,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Invert mouse look left/right?
 CVAR (Bool,		freelook,		true,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always mlook?
 CVAR (Bool,		lookstrafe,		false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always strafe with mouse?
 CVAR (Float,	m_pitch,		1.f,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Mouse speeds
@@ -383,6 +393,27 @@ CCMD (pause)
 CCMD (turn180)
 {
 	sendturn180 = true;
+}
+
+extern bool cinemamode;
+extern float cinemamodeYaw;
+extern float cinemamodePitch;
+extern vec3_t hmdorientation;
+extern float snapturn;
+CCMD (cinemamode)
+{
+	cinemamode = !cinemamode;
+
+	//Store these
+	cinemamodeYaw = hmdorientation[YAW] + snapTurn;
+	cinemamodePitch = hmdorientation[PITCH];
+
+	//Reset angles back to normal view
+	if (!cinemamode)
+    {
+	    resetDoomYaw = true;
+	    resetPreviousPitch = true;
+    }
 }
 
 CCMD (weapnext)
@@ -574,9 +605,13 @@ static inline int joyint(double val)
 }
 
 
-#ifdef __MOBILE__
-extern void Mobile_IN_Move(ticcmd_t* cmd );
-#endif
+extern "C" void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float *hmd_side, float *up, float *yaw, float *pitch, float *roll );
+
+static int mAngleFromRadians(double radians)
+{
+	double m = std::round(65535.0 * radians / (2.0 * M_PI));
+	return int(m);
+}
 
 //
 // G_BuildTiccmd
@@ -616,9 +651,9 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (strafe)
 	{
 		if (Button_Right.bDown)
-			side += sidemove[speed];
+			side += (vr_move_speed * (speed ? vr_run_multiplier : 1.0));
 		if (Button_Left.bDown)
-			side -= sidemove[speed];
+			side -= (vr_move_speed * (speed ? vr_run_multiplier : 1.0));
 	}
 	else
 	{
@@ -661,9 +696,9 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	else
 	{
 		if (Button_Forward.bDown)
-			forward += forwardmove[speed];
+			forward += (vr_move_speed * (speed ? vr_run_multiplier : 1.0));
 		if (Button_Back.bDown)
-			forward -= forwardmove[speed];
+			forward -= (vr_move_speed * (speed ? vr_run_multiplier : 1.0));
 	}
 
 	if (Button_MoveRight.bDown)
@@ -699,45 +734,14 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (Button_MoveUp.bDown)		cmd->ucmd.buttons |= BT_MOVEUP;
 	if (Button_ShowScores.bDown)	cmd->ucmd.buttons |= BT_SHOWSCORES;
 
-	// Handle joysticks/game controllers.
-	float joyaxes[NUM_JOYAXIS];
-
-	I_GetAxes(joyaxes);
-
-	// Remap some axes depending on button state.
-	if (Button_Strafe.bDown || (Button_Mlook.bDown && lookstrafe))
-	{
-		joyaxes[JOYAXIS_Side] = joyaxes[JOYAXIS_Yaw];
-		joyaxes[JOYAXIS_Yaw] = 0;
+	if (!vr_teleport) {
+		float joyforward=0;
+		float joyside=0;
+		float dummy=0;
+		VR_GetMove(&joyforward, &joyside, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy);
+		side += joyint(joyside * (vr_move_speed * (speed ? vr_run_multiplier : 1.0)));
+		forward += joyint(joyforward * (vr_move_speed * (speed ? vr_run_multiplier : 1.0)));
 	}
-	if (Button_Mlook.bDown)
-	{
-		joyaxes[JOYAXIS_Pitch] = joyaxes[JOYAXIS_Forward];
-		joyaxes[JOYAXIS_Forward] = 0;
-	}
-
-	if (joyaxes[JOYAXIS_Pitch] != 0)
-	{
-		G_AddViewPitch(joyint(joyaxes[JOYAXIS_Pitch] * 2048));
-	}
-	if (joyaxes[JOYAXIS_Yaw] != 0)
-	{
-		G_AddViewAngle(joyint(-1280 * joyaxes[JOYAXIS_Yaw]));
-	}
-
-	side -= joyint(sidemove[speed] * joyaxes[JOYAXIS_Side]);
-	forward += joyint(joyaxes[JOYAXIS_Forward] * forwardmove[speed]);
-	fly += joyint(joyaxes[JOYAXIS_Up] * 2048);
-
-	// Handle mice.
-	if (!Button_Mlook.bDown && !freelook)
-	{
-		forward += (int)((float)mousey * m_forward);
-	}
-
-#ifdef __MOBILE__
-    Mobile_IN_Move(cmd);
-#endif
 
 	cmd->ucmd.pitch = LocalViewPitch >> 16;
 
@@ -811,6 +815,9 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	cmd->ucmd.sidemove <<= 8;
 }
 
+//[Graf Zahl] This really helps if the mouse update rate can't be increased!
+CVAR (Bool,		smooth_mouse,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
+
 static int LookAdjust(int look)
 {
 	look <<= 16;
@@ -868,7 +875,7 @@ void G_AddViewPitch (int look, bool mouse)
 	}
 	if (look != 0)
 	{
-		LocalKeyboardTurner = !mouse;
+		LocalKeyboardTurner = (!mouse || smooth_mouse);
 	}
 }
 
@@ -883,7 +890,7 @@ void G_AddViewAngle (int yaw, bool mouse)
 	LocalViewAngle -= yaw;
 	if (yaw != 0)
 	{
-		LocalKeyboardTurner = !mouse;
+		LocalKeyboardTurner = (!mouse || smooth_mouse);
 	}
 }
 

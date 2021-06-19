@@ -59,6 +59,7 @@
 #include "gl/utility/gl_clock.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "gl/renderer/gl_quaddrawer.h"
+#include "gl/stereo3d/gl_stereo3d.h"
 
 CVAR(Bool, gl_usecolorblending, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_sprite_blend, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
@@ -271,7 +272,7 @@ void GLSprite::Draw(int pass)
 		{
 			if (RenderStyle.BlendOp != STYLEOP_Shadow)
 			{
-				if (gl_lights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
+				if (vr_dynlights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
 				{
 					if (!particle)
 					{
@@ -356,7 +357,7 @@ void GLSprite::Draw(int pass)
 	}
 	if (RenderStyle.BlendOp != STYLEOP_Shadow)
 	{
-		if (gl_lights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
+		if (vr_dynlights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
 		{
 			if (modelframe && !particle)
 				dynlightindex = gl_SetDynModelLight(gl_light_sprites ? actor : NULL, dynlightindex);
@@ -756,20 +757,39 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
 	// Some added checks if the camera actor is not supposed to be seen. It can happen that some portal setup has this actor in view in which case it may not be skipped here
 	if (thing == camera && !r_viewpoint.showviewer)
 	{
-		DVector3 thingorigin = thing->Pos();
-		if (thruportal == 1) thingorigin += Displacements.getOffset(thing->Sector->PortalGroup, sector->PortalGroup);
-		if (fabs(thingorigin.X - r_viewpoint.ActorPos.X) < 2 && fabs(thingorigin.Y - r_viewpoint.ActorPos.Y) < 2) return;
+        DVector3 thingorigin = thing->Pos();
+
+        //If we get here, then we want to override the location of the camera actor
+        if (s3d::Stereo3DMode::getCurrentMode().GetTeleportLocation(thingpos))
+        {
+            thingorigin = thingpos;
+
+            //Scale Doom Guy up a bit
+            sprscale *= 1.2;
+        }
+
+		if (!r_viewpoint.showviewer) {
+			if (thruportal == 1)
+				thingorigin += Displacements.getOffset(thing->Sector->PortalGroup,
+													   sector->PortalGroup);
+
+			if (fabs(thingorigin.X - r_viewpoint.ActorPos.X) < 2 &&
+				fabs(thingorigin.Y - r_viewpoint.ActorPos.Y) < 2) {
+				return;
+			}
+		}
 	}
+
 	// Thing is invisible if close to the camera.
 	if (thing->renderflags & RF_MAYBEINVISIBLE)
 	{
-		if (fabs(thingpos.X - r_viewpoint.Pos.X) < 32 && fabs(thingpos.Y - r_viewpoint.Pos.Y) < 32) return;
+		if (fabs(thingpos.X - r_viewpoint.CenterEyePos.X) < 32 && fabs(thingpos.Y - r_viewpoint.CenterEyePos.Y) < 32) return;
 	}
 
 	// Too close to the camera. This doesn't look good if it is a sprite.
-	if (fabs(thingpos.X - r_viewpoint.Pos.X) < 2 && fabs(thingpos.Y - r_viewpoint.Pos.Y) < 2)
+	if (fabs(thingpos.X - r_viewpoint.CenterEyePos.X) < 2 && fabs(thingpos.Y - r_viewpoint.CenterEyePos.Y) < 2)
 	{
-		if (r_viewpoint.Pos.Z >= thingpos.Z - 2 && r_viewpoint.Pos.Z <= thingpos.Z + thing->Height + 2)
+		if (r_viewpoint.CenterEyePos.Z >= thingpos.Z - 2 && r_viewpoint.CenterEyePos.Z <= thingpos.Z + thing->Height + 2)
 		{
 			// exclude vertically moving objects from this check.
 			if (!thing->Vel.isZero())
@@ -791,7 +811,7 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
 			if (speed >= thing->target->radius / 2)
 			{
 				double clipdist = clamp(thing->Speed, thing->target->radius, thing->target->radius * 2);
-				if ((thingpos - r_viewpoint.Pos).LengthSquared() < clipdist * clipdist) return;
+				if ((thingpos - r_viewpoint.CenterEyePos).LengthSquared() < clipdist * clipdist) return;
 			}
 		}
 		thing->flags7 |= MF7_FLYCHEAT;	// do this only once for the very first frame, but not if it gets into range again.
@@ -841,7 +861,7 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
 	if (!modelframe)
 	{
 		bool mirror;
-		DAngle ang = (thingpos - r_viewpoint.Pos).Angle();
+		DAngle ang = (thingpos - r_viewpoint.CenterEyePos).Angle();
 		FTextureID patch;
 		// [ZZ] add direct picnum override
 		if (isPicnumOverride)
@@ -959,7 +979,7 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
 		gltexture = NULL;
 	}
 
-	depth = (float)((x - r_viewpoint.Pos.X) * r_viewpoint.TanCos + (y - r_viewpoint.Pos.Y) * r_viewpoint.TanSin);
+	depth = (float)((x - r_viewpoint.CenterEyePos.X) * r_viewpoint.TanCos + (y - r_viewpoint.CenterEyePos.Y) * r_viewpoint.TanSin);
 
 	// light calculation
 
@@ -1287,7 +1307,7 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 	z1=z-scalefac;
 	z2=z+scalefac;
 
-	depth = (float)((x - r_viewpoint.Pos.X) * r_viewpoint.TanCos + (y - r_viewpoint.Pos.Y) * r_viewpoint.TanSin);
+	depth = FloatToFixed((x - r_viewpoint.CenterEyePos.X) * r_viewpoint.TanCos + (y - r_viewpoint.CenterEyePos.Y) * r_viewpoint.TanSin);
 
 	actor=NULL;
 	this->particle=particle;

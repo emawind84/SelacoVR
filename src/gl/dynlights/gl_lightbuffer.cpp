@@ -58,9 +58,7 @@ FLightBuffer::FLightBuffer()
 	}
 
 	glGenBuffers(1, &mBufferId);
-#ifndef __ANDROID__	// This makes Ardeno 530 crash for some reason..
 	glBindBufferBase(mBufferType, LIGHTBUF_BINDINGPOINT, mBufferId);
-#endif
 	glBindBuffer(mBufferType, mBufferId);	// Note: Some older AMD drivers don't do that in glBindBufferBase, as they should.
 	if (gl.lightmethod == LM_DIRECT)
 	{
@@ -150,7 +148,7 @@ int FLightBuffer::UploadLights(FDynLightData &data)
 		else
 		{
 			glBufferData(mBufferType, mByteSize, NULL, GL_DYNAMIC_DRAW);
-			mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT|GL_MAP_INVALIDATE_BUFFER_BIT);
+			mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 		}
 
 		// copy contents and delete the old buffer.
@@ -184,7 +182,7 @@ void FLightBuffer::Begin()
 	if (gl.lightmethod == LM_DEFERRED)
 	{
 		glBindBuffer(mBufferType, mBufferId);
-		mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT);
+		mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 	}
 }
 
@@ -202,7 +200,7 @@ int FLightBuffer::BindUBO(unsigned int index)
 {
 	unsigned int offset = (index / mBlockAlign) * mBlockAlign;
 
-	if (offset != mLastMappedIndex)
+
 	{
 		// this will only get called if a uniform buffer is used. For a shader storage buffer we only need to bind the buffer once at the start to all shader programs
 		mLastMappedIndex = offset;

@@ -7,4 +7,4 @@ d +moveright
 e +jump
 x crouch
 mouse2 +altattack
-mouse3 invuse
+mouse3 +speed

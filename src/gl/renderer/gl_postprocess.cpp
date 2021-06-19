@@ -18,8 +18,8 @@
 **     misrepresented as being the original software.
 **  3. This notice may not be removed or altered from any source distribution.
 **
-**  gl_postprocess.cpp
-**  Post processing effects in the render pipeline
+** gl_postprocess.cpp
+** Post processing effects in the render pipeline
 **
 */
 
@@ -66,6 +66,8 @@
 #include "gl/stereo3d/gl_stereo3d.h"
 #include "r_videoscale.h"
 
+#include <QzDoom/VrCommon.h>
+
 extern bool vid_hdr_active;
 
 //==========================================================================
@@ -81,11 +83,7 @@ CUSTOM_CVAR(Float, gl_bloom_amount, 1.4f, CVAR_ARCHIVE)
 
 CVAR(Float, gl_exposure_scale, 1.3f, CVAR_ARCHIVE)
 CVAR(Float, gl_exposure_min, 0.35f, CVAR_ARCHIVE)
-#ifdef __ANDROID__
-CVAR(Float, gl_exposure_base, 0.1f, CVAR_ARCHIVE)
-#else
 CVAR(Float, gl_exposure_base, 0.35f, CVAR_ARCHIVE)
-#endif
 CVAR(Float, gl_exposure_speed, 0.05f, CVAR_ARCHIVE)
 
 CUSTOM_CVAR(Int, gl_tonemap, 0, CVAR_ARCHIVE)
@@ -152,7 +150,7 @@ CUSTOM_CVAR(Bool, gl_paltonemap_reverselookup, true, CVAR_ARCHIVE | CVAR_NOINITC
 		GLRenderer->ClearTonemapPalette();
 }
 
-CVAR(Float, gl_menu_blur, -1.0f, CVAR_ARCHIVE)
+CVAR(Float, gl_menu_blur, 0.0f, CVAR_ARCHIVE)
 
 EXTERN_CVAR(Float, vid_brightness)
 EXTERN_CVAR(Float, vid_contrast)
@@ -798,6 +796,9 @@ void FGLRenderer::Flush()
 	}
 	else
 	{
+		const bool is2D = (gamestate != GS_LEVEL) || cinemamode;
+		if (is2D) stereo3dMode.SetUp();
+
 		// Render 2D to eye textures
 		for (int eye_ix = 0; eye_ix < stereo3dMode.eye_count(); ++eye_ix)
 		{
@@ -805,6 +806,10 @@ void FGLRenderer::Flush()
 			mBuffers->BindEyeFB(eye_ix);
 			glViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
 			glScissor(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
+
+			//Only adjust HUD if we are 3D and not showing menu (otherwise we are rendering to a cylinder compositor layer)
+			if (!is2D && !getMenuState())	stereo3dMode.getEyePose(eye_ix)->AdjustHud();
+
 			m2DDrawer->Draw();
 			FGLDebug::PopGroup();
 		}
@@ -814,6 +819,7 @@ void FGLRenderer::Flush()
 		FGLDebug::PushGroup("PresentEyes");
 		stereo3dMode.Present();
 		FGLDebug::PopGroup();
+		if (is2D) stereo3dMode.TearDown();
 	}
 }
 

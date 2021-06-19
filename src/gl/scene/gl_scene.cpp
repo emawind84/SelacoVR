@@ -90,6 +90,7 @@ EXTERN_CVAR (Float, underwater_fade_scalar)
 EXTERN_CVAR (Float, r_visibility)
 EXTERN_CVAR (Bool, gl_legacy_mode)
 EXTERN_CVAR (Bool, r_drawvoxels)
+EXTERN_CVAR(Bool, gl_sync)
 
 extern bool NoInterpolateView;
 
@@ -323,7 +324,7 @@ void GLSceneDrawer::RenderScene(int recursion)
 
 	// if we don't have a persistently mapped buffer, we have to process all the dynamic lights up front,
 	// so that we don't have to do repeated map/unmap calls on the buffer.
-	bool haslights = GLRenderer->mLightCount > 0 && FixedColormap == CM_DEFAULT && gl_lights;
+	bool haslights = GLRenderer->mLightCount > 0 && FixedColormap == CM_DEFAULT && vr_dynlights;
 	if (gl.lightmethod == LM_DEFERRED && haslights)
 	{
 		GLRenderer->mLights->Begin();
@@ -473,7 +474,7 @@ void GLSceneDrawer::RenderTranslucent()
 //
 //-----------------------------------------------------------------------------
 
-void GLSceneDrawer::DrawScene(int drawmode)
+void GLSceneDrawer::DrawScene(int drawmode, sector_t * viewsector)
 {
 	static int recursion=0;
 	static int ssao_portals_available = 0;
@@ -507,6 +508,11 @@ void GLSceneDrawer::DrawScene(int drawmode)
 	GLRenderer->mClipPortal = NULL;	// this must be reset before any portal recursion takes place.
 
 	RenderScene(recursion);
+
+	if (s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
+	{
+		DrawPlayerSprites(viewsector, IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player));
+	}
 
 	if (applySSAO && gl_RenderState.GetPassType() == GBUFFER_PASS)
 	{
@@ -682,15 +688,18 @@ void GLSceneDrawer::EndDrawScene(sector_t * viewsector)
 {
 	gl_RenderState.EnableFog(false);
 
-	// [BB] HUD models need to be rendered here. Make sure that
-	// DrawPlayerSprites is only called once. Either to draw
-	// HUD models or to draw the weapon sprites.
-	const bool renderHUDModel = IsHUDModelForPlayerAvailable( players[consoleplayer].camera->player );
-	if ( renderHUDModel )
+	const bool renderHUDModel = IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
+	if (!s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
 	{
-		// [BB] The HUD model should be drawn over everything else already drawn.
-		glClear(GL_DEPTH_BUFFER_BIT);
-		DrawPlayerSprites (viewsector, true);
+		// [BB] HUD models need to be rendered here. Make sure that
+		// DrawPlayerSprites is only called once. Either to draw
+		// HUD models or to draw the weapon sprites.
+		if (renderHUDModel)
+		{
+			// [BB] The HUD model should be drawn over everything else already drawn.
+			glClear(GL_DEPTH_BUFFER_BIT);
+			DrawPlayerSprites(viewsector, true);
+		}
 	}
 
 	glDisable(GL_STENCIL_TEST);
@@ -718,11 +727,15 @@ void GLSceneDrawer::DrawEndScene2D(sector_t * viewsector)
 {
 	const bool renderHUDModel = IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
 
-	// [BB] Only draw the sprites if we didn't render a HUD model before.
-	if (renderHUDModel == false)
+	if (!s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
 	{
-		DrawPlayerSprites(viewsector, false);
+		// [BB] Only draw the sprites if we didn't render a HUD model before.
+		if (renderHUDModel == false)
+		{
+			DrawPlayerSprites(viewsector, false);
+		}
 	}
+	
 	if (gl.legacyMode)
 	{
 		gl_RenderState.DrawColormapOverlay();
@@ -749,7 +762,7 @@ void GLSceneDrawer::DrawEndScene2D(sector_t * viewsector)
 //
 //-----------------------------------------------------------------------------
 
-void GLSceneDrawer::ProcessScene(bool toscreen)
+void GLSceneDrawer::ProcessScene(bool toscreen, sector_t * viewsector)
 {
 	FDrawInfo::StartDrawInfo(this);
 	iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
@@ -758,7 +771,7 @@ void GLSceneDrawer::ProcessScene(bool toscreen)
 	int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
 	memset(&currentmapsection[0], 0, currentmapsection.Size());
 	currentmapsection[mapsection>>3] |= 1 << (mapsection & 7);
-	DrawScene(toscreen ? DM_MAINVIEW : DM_OFFSCREEN);
+	DrawScene(toscreen ? DM_MAINVIEW : DM_OFFSCREEN, viewsector);
 	FDrawInfo::EndDrawInfo();
 
 }
@@ -881,11 +894,12 @@ sector_t * GLSceneDrawer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, f
 		SetViewAngle(r_viewpoint.Angles.Yaw);
 		// Stereo mode specific viewpoint adjustment - temporarily shifts global ViewPos
 		eye->GetViewShift(GLRenderer->mAngles.Yaw.Degrees, viewShift);
+		r_viewpoint.CenterEyePos = r_viewpoint.Pos; // Retain unshifted center eye pos so all sprites show the same frame
 		s3d::ScopedViewShifter viewShifter(viewShift);
 		SetViewMatrix(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, false, false);
 		gl_RenderState.ApplyMatrices();
 
-		ProcessScene(toscreen);
+		ProcessScene(toscreen, lviewsector);
 		if (mainview)
 		{
 			if (FGLRenderBuffers::IsEnabled()) PostProcess.Clock();
@@ -907,6 +921,7 @@ sector_t * GLSceneDrawer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, f
 					gl_RenderState.ApplyMatrices();
 				}
 
+				eye->AdjustBlend();
 				DrawBlend(lviewsector);
 			}
 		}
@@ -929,6 +944,14 @@ sector_t * GLSceneDrawer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, f
 
 void FGLRenderer::RenderView (player_t* player)
 {
+	GLRenderer->NextVtxBuffer();
+	GLRenderer->NextSkyBuffer();
+	GLRenderer->NextLightBuffer();
+
+	if (gl_sync) {
+		GLRenderer->GPUWaitSync();
+	}
+
 	gl_ClearFakeFlat();
 
 	checkBenchActive();
@@ -974,7 +997,7 @@ void FGLRenderer::RenderView (player_t* player)
 	mLightCount = !!level.lights;
 
 	mShadowMap.Update();
-	sector_t * viewsector = drawer.RenderViewpoint(player->camera, NULL, r_viewpoint.FieldOfView.Degrees, ratio, fovratio, true, true);
+	sector_t * viewsector = drawer.RenderViewpoint(player->camera, NULL, r_viewpoint.FieldOfView().Degrees, ratio, fovratio, true, true);
 
 	All.Unclock();
 }
@@ -984,21 +1007,6 @@ void FGLRenderer::RenderView (player_t* player)
 // Render the view to a savegame picture
 //
 //===========================================================================
-#ifdef __ANDROID__
-uint8_t * gles_convertRGB(uint8_t * data, int width, int height)
-{
-	uint8_t *src = data;
-	uint8_t *dst = data;
-
-	for (int i=0; i<width*height; i++) {
-		for (int j=0; j<3; j++)
-			*(dst++) = *(src++);
-		src++;
-	}
-
-	return dst;
-}
-#endif
 
 void GLSceneDrawer::WriteSavePic (player_t *player, FileWriter *file, int width, int height)
 {
@@ -1020,7 +1028,7 @@ void GLSceneDrawer::WriteSavePic (player_t *player, FileWriter *file, int width,
 	GLRenderer->mLightCount = !!level.lights;
 
 	sector_t *viewsector = RenderViewpoint(players[consoleplayer].camera, &bounds,
-								r_viewpoint.FieldOfView.Degrees, 1.6f, 1.6f, true, false);
+								r_viewpoint.FieldOfView().Degrees, 1.6f, 1.6f, true, false);
 	glDisable(GL_STENCIL_TEST);
 	gl_RenderState.SetFixedColormap(CM_DEFAULT);
 	gl_RenderState.SetSoftLightLevel(-1);
@@ -1032,16 +1040,9 @@ void GLSceneDrawer::WriteSavePic (player_t *player, FileWriter *file, int width,
 	GLRenderer->CopyToBackbuffer(&bounds, false);
 	glFlush();
 
-#ifdef __MOBILE__ //Some androids do not like GL_RGB
-	uint8_t * scr = (uint8_t *)M_Malloc(width * height * 4);
-	glReadPixels(0,0,width, height,GL_RGBA,GL_UNSIGNED_BYTE,scr);
-	gles_convertRGB(scr,width,height);
-    M_CreatePNG (file, scr + ((height-1) * width * 3), NULL, SS_RGB, width, height, -width * 3, Gamma);
-#else
 	uint8_t * scr = (uint8_t *)M_Malloc(width * height * 3);
 	glReadPixels(0,0,width, height,GL_RGB,GL_UNSIGNED_BYTE,scr);
 	M_CreatePNG (file, scr + ((height-1) * width * 3), NULL, SS_RGB, width, height, -width * 3, Gamma);
-#endif
 	M_Free(scr);
 }
 

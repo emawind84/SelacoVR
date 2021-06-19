@@ -1503,6 +1503,15 @@ public:
 	bool isFrozen() const;
 
 	bool				hasmodel;
+
+	//For VR, override firing position - Thank-you Fishbiter for this code!!
+	bool OverrideAttackPosDir;
+
+	DVector3 AttackPos;
+	DAngle   AttackPitch;
+	DAngle   AttackAngle;
+
+	DVector3 (*AttackDir)(AActor* actor, DAngle yaw, DAngle pitch);
 };
 
 class FActorIterator
