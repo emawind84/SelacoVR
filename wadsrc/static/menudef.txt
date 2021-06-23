@@ -362,6 +362,11 @@ OptionMenu "OptionsMenu" protected
 	StaticText " "
 }
 
+// Fake simplified menu
+OptionMenu "OptionsMenuSimple" protected
+{
+}
+
 //-------------------------------------------------------------------------------------------
 //
 // The player menu
