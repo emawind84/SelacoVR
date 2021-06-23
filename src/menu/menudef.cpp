@@ -375,6 +375,18 @@ static void ParseListMenuBody(FScanner &sc, DListMenuDescriptor *desc)
 			sc.MustGetString();
 			desc->mNetgameMessage = sc.String;
 		}
+		else if (sc.Compare("size")) // eat size
+		{
+			if (sc.CheckNumber())
+			{
+				sc.MustGetStringName(",");
+				sc.MustGetNumber();
+			}
+			else
+			{
+				sc.MustGetString();
+			}
+		}
 		else
 		{
 			bool success = false;
