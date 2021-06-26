@@ -698,7 +698,7 @@ inline bool IsDistanceCulled(AActor* thing)
 	return false;
 }
 
-void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
+void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal, bool isSpriteShadow)
 {
 	sector_t rs;
 	sector_t * rendersector;
@@ -823,6 +823,12 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
 	y = thingpos.Y;
 	if (spritetype == RF_FACESPRITE) z -= thing->Floorclip; // wall and flat sprites are to be considered level geometry so this may not apply.
 
+	// snap shadow Z to the floor
+	if (isSpriteShadow)
+	{
+		z = thing->floorz;
+	}
+
 	// [RH] Make floatbobbing a renderer-only effect.
 	if (thing->flags2 & MF2_FLOATBOB)
 	{
@@ -831,6 +837,13 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
 	}
 
 	modelframe = isPicnumOverride ? nullptr : FindModelFrame(thing->GetClass(), spritenum, thing->frame, !!(thing->flags & MF_DROPPED));
+
+	// don't bother drawing sprite shadows if this is a model (it will never look right)
+	if (modelframe && isSpriteShadow)
+	{
+		return;
+	}
+
 	if (!modelframe)
 	{
 		bool mirror;
@@ -894,7 +907,7 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
 		if (thing->renderflags & RF_SPRITEFLIP) // [SP] Flip back
 			thing->renderflags ^= RF_XFLIP;
 
-		r.Scale(sprscale.X, sprscale.Y);
+		r.Scale(sprscale.X, isSpriteShadow ? sprscale.Y * 0.15 : sprscale.Y);
 		
 		float SpriteOffY = thing->SpriteOffset.Y;
 		float rightfac = -r.left - thing->SpriteOffset.X;
@@ -1118,13 +1131,30 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal)
 		}
 	}
 
+	// for sprite shadow, use a translucent stencil renderstyle
+	if (isSpriteShadow)
+	{
+		RenderStyle = STYLE_Stencil;
+		ThingColor = MAKEARGB(255, 0, 0, 0);
+		trans = 0.5f;
+		hw_styleflags = STYLEHW_NoAlphaTest;
+	}
+
 	if (trans == 0.0f) return;
 
 	// end of light calculation
 
 	actor = thing;
 	index = thing->SpawnOrder;
-	particle = NULL;
+
+	// sprite shadows should have a fixed index of -1 (ensuring they're drawn behind particles which have index 0)
+	// sorting should be irrelevant since they're always translucent
+	if (isSpriteShadow)
+	{
+		index = -1;
+	}
+
+	particle = nullptr;
 
 	const bool drawWithXYBillboard = (!(actor->renderflags & RF_FORCEYBILLBOARD)
 		&& (actor->renderflags & RF_SPRITETYPEMASK) == RF_FACESPRITE
@@ -1357,6 +1387,13 @@ void GLSceneDrawer::RenderActorsInPortal(FGLLinePortal *glport)
 					th->Prev += newpos - savedpos;
 
 					GLSprite spr(this);
+
+					// [Nash] draw sprite shadow
+					if (R_ShouldDrawSpriteShadow(th))
+					{
+						spr.Process(th, gl_FakeFlat(th->Sector, in_area, false, &fakesector), 2, true);
+					}
+
 					spr.Process(th, gl_FakeFlat(th->Sector, in_area, false, &fakesector), 2);
 					th->Angles.Yaw = savedangle;
 					th->SetXYZ(savedpos);
