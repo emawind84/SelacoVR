@@ -326,7 +326,7 @@ class Menu : Object native ui version("2.4")
 	{
 		String label = Stringtable.Localize(text);
 		int overlay = grayed? Color(96,48,0,0) : 0;
-		screen.DrawText (OptionFont(), color, x, y, text, DTA_CleanNoMove_1, true, DTA_ColorOverlay, overlay);
+		screen.DrawText (OptionFont(), OptionColor(color), x, y, text, DTA_CleanNoMove_1, true, DTA_ColorOverlay, overlay);
 	}
 
 	private static bool uiKeyIsInputKey(UiEvent ev, int inputKey)

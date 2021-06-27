@@ -58,7 +58,7 @@ class OptionMenuItem : MenuItemBase
 		String label = Stringtable.Localize(mLabel);
 
 		int x;
-		int w = SmallFont.StringWidth(label) * CleanXfac_1;
+		int w = Menu.OptionWidth(label) * CleanXfac_1;
 		if (!mCentered) x = indent - w;
 		else x = (screen.GetWidth() - w) / 2;
 		DrawText(x, y, color, label, grayed);
@@ -83,7 +83,7 @@ class OptionMenuItem : MenuItemBase
 	override int GetIndent()
 	{
 		if (mCentered) return 0;
-		return SmallFont.StringWidth(Stringtable.Localize(mLabel));
+		return Menu.OptionWidth(Stringtable.Localize(mLabel));
 	}
 	
 	override bool MouseEvent(int type, int x, int y)
@@ -659,7 +659,7 @@ class OptionMenuItemStaticTextSwitchable : OptionMenuItem
 		String txt = StringTable.Localize(mCurrent? mAltText : mLabel);
 		int w = SmallFont.StringWidth(txt) * CleanXfac_1;
 		int x = (screen.GetWidth() - w) / 2;
-		screen.DrawText (SmallFont, mColor, x, y, txt, DTA_CleanNoMove_1, true);
+		drawText(x, y, mColor, txt);
 		return -1;
 	}
 
@@ -729,6 +729,11 @@ class OptionMenuSliderBase : OptionMenuItem
 	//
 	//=============================================================================
 
+	private void DrawSliderElement (int color, int x, int y, String str)
+	{
+		screen.DrawText (ConFont, color, x, y, str, DTA_CellX, 8 * CleanXfac_1, DTA_CellY, 8 * CleanYfac_1);
+	}
+
 	protected void DrawSlider (int x, int y, double min, double max, double cur, int fracdigits, int indent)
 	{
 		String formater = String.format("%%.%df", fracdigits);	// The format function cannot do the '%.*f' syntax.
@@ -751,21 +756,21 @@ class OptionMenuSliderBase : OptionMenuItem
 
 		if (!mSliderShort)
 		{
-			Menu.DrawConText(Font.CR_WHITE, x, cy, "\x10\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x12");
-			Menu.DrawConText(Font.FindFontColor(gameinfo.mSliderColor), x + int((5 + ((ccur * 78) / range)) * CleanXfac_1), cy, "\x13");
+			DrawSliderElement(Font.CR_WHITE, x, cy, "\x10\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x12");
+			DrawSliderElement(Font.FindFontColor(gameinfo.mSliderColor), x + int((5 + ((ccur * 78) / range)) * CleanXfac_1), cy, "\x13");
 		}
 		else
 		{
 			// On 320x200 we need a shorter slider
-			Menu.DrawConText(Font.CR_WHITE, x, cy, "\x10\x11\x11\x11\x11\x11\x12");
-			Menu.DrawConText(Font.FindFontColor(gameinfo.mSliderColor), x + int((5 + ((ccur * 38) / range)) * CleanXfac_1), cy, "\x13");
+			DrawSliderElement(Font.CR_WHITE, x, cy, "\x10\x11\x11\x11\x11\x11\x12");
+			DrawSliderElement(Font.FindFontColor(gameinfo.mSliderColor), x + int((5 + ((ccur * 38) / range)) * CleanXfac_1), cy, "\x13");
 			right -= 5*8*CleanXfac_1;
 		}
 
 		if (fracdigits >= 0 && right + maxlen <= screen.GetWidth())
 		{
 			textbuf = String.format(formater, cur);
-			screen.DrawText(SmallFont, Font.CR_DARKGRAY, right, y, textbuf, DTA_CleanNoMove_1, true);
+			drawText(right, y, Font.CR_DARKGRAY, textbuf);
 		}
 	}
 
