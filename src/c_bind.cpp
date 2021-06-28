@@ -373,6 +373,34 @@ void C_NameKeys (char *str, int first, int second)
 		*str = '\0';
 }
 
+//=============================================================================
+//
+//
+//
+//=============================================================================
+
+FString C_NameKeys (int *keys, int count, bool colors)
+{
+	FString result;
+	for (int i = 0; i < count; i++)
+	{
+		int key = keys[i];
+		if (key == 0) continue;
+		for (int j = 0; j < i; j++)
+		{
+			if (key == keys[j])
+			{
+				key = 0;
+				break;
+			}
+		}
+		if (key == 0) continue;
+		if (result.IsNotEmpty()) result += colors? TEXTCOLOR_BLACK ", " TEXTCOLOR_NORMAL : ", ";
+		result += KeyName(key);
+	}
+	return result;
+}
+
 DEFINE_ACTION_FUNCTION(FKeyBindings, NameKeys)
 {
 	PARAM_PROLOGUE;
@@ -547,6 +575,28 @@ int FKeyBindings::GetKeysForCommand (const char *cmd, int *first, int *second)
 		i++;
 	}
 	return c;
+}
+
+//=============================================================================
+//
+//
+//
+//=============================================================================
+
+TArray<int> FKeyBindings::GetKeysForCommand (const char *cmd)
+{
+	int i = 0;
+	TArray<int> result;
+
+	while (i < NUM_KEYS)
+	{
+		if (stricmp (cmd, Binds[i]) == 0)
+		{
+			result.Push(i);
+		}
+		i++;
+	}
+	return result;
 }
 
 DEFINE_ACTION_FUNCTION(FKeyBindings, GetKeysForCommand)
