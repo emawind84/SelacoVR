@@ -1853,7 +1853,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Look)
 	}
 	else if (self->SeeSound)
 	{
-		if (self->flags2 & MF2_BOSS)
+		if ((self->flags2 & MF2_BOSS) || (self->flags8 & MF8_FULLVOLSEE))
 		{ // full volume
 			S_Sound (self, CHAN_VOICE, 0, self->SeeSound, 1, ATTN_NONE);
 		}
@@ -3089,7 +3089,12 @@ void A_BossDeath(AActor *self)
 	FName mytype = self->GetClass()->TypeName;
 
 	// Ugh...
-	FName type = self->GetClass()->GetReplacee()->TypeName;
+	auto replacee = self->GetClass()->GetReplacee(self->Level);
+	FName type = replacee->TypeName;
+	int flags8 = self->flags8;
+	
+	if (type != mytype) flags8 |= ((AActor*)replacee->Defaults)->flags8;
+	
 	
 	// Do generic special death actions first
 	bool checked = false;
@@ -3113,24 +3118,30 @@ void A_BossDeath(AActor *self)
 	// [RH] These all depend on the presence of level flags now
 	//		rather than being hard-coded to specific levels/episodes.
 
-	if ((level.flags & (LEVEL_MAP07SPECIAL|
+	if (((level.flags & (LEVEL_MAP07SPECIAL|
 						LEVEL_BRUISERSPECIAL|
 						LEVEL_CYBORGSPECIAL|
 						LEVEL_SPIDERSPECIAL|
 						LEVEL_HEADSPECIAL|
 						LEVEL_MINOTAURSPECIAL|
-						LEVEL_SORCERER2SPECIAL)) == 0)
+						LEVEL_SORCERER2SPECIAL)) == 0) &&
+		((level.flags3 & (LEVEL3_E1M8SPECIAL | LEVEL3_E2M8SPECIAL | LEVEL3_E3M8SPECIAL | LEVEL3_E4M8SPECIAL | LEVEL3_E4M6SPECIAL)) == 0))
 		return;
 
 	if ((i_compatflags & COMPATF_ANYBOSSDEATH) || ( // [GZ] Added for UAC_DEAD
-		((level.flags & LEVEL_MAP07SPECIAL) && (type == NAME_Fatso || type == NAME_Arachnotron)) ||
+		((level.flags & LEVEL_MAP07SPECIAL) && (flags8 & (MF8_MAP07BOSS1|MF8_MAP07BOSS2))) ||
 		((level.flags & LEVEL_BRUISERSPECIAL) && (type == NAME_BaronOfHell)) ||
 		((level.flags & LEVEL_CYBORGSPECIAL) && (type == NAME_Cyberdemon)) ||
 		((level.flags & LEVEL_SPIDERSPECIAL) && (type == NAME_SpiderMastermind)) ||
 		((level.flags & LEVEL_HEADSPECIAL) && (type == NAME_Ironlich)) ||
 		((level.flags & LEVEL_MINOTAURSPECIAL) && (type == NAME_Minotaur)) ||
-		((level.flags & LEVEL_SORCERER2SPECIAL) && (type == NAME_Sorcerer2))
-	   ))
+		((level.flags & LEVEL_SORCERER2SPECIAL) && (type == NAME_Sorcerer2)) ||
+		((level.flags3 & LEVEL3_E1M8SPECIAL) && (flags8 & MF8_E1M8BOSS)) ||
+		((level.flags3 & LEVEL3_E2M8SPECIAL) && (flags8 & MF8_E2M8BOSS)) ||
+		((level.flags3 & LEVEL3_E3M8SPECIAL) && (flags8 & MF8_E3M8BOSS)) ||
+		((level.flags3 & LEVEL3_E4M8SPECIAL) && (flags8 & MF8_E4M8BOSS)) ||
+		((level.flags3 & LEVEL3_E4M6SPECIAL) && (flags8 & MF8_E4M6BOSS))
+		))
 		;
 	else
 		return;
@@ -3147,16 +3158,21 @@ void A_BossDeath(AActor *self)
 	}
 	if (level.flags & LEVEL_MAP07SPECIAL)
 	{
+		// samereplacement will only be considered if both Fatso and Arachnotron are flagged as MAP07 bosses and the current monster maps to one of them.
 		PClassActor * fatso = PClass::FindActor(NAME_Fatso);
 		PClassActor * arachnotron = PClass::FindActor(NAME_Arachnotron);
-		bool samereplacement = (type == NAME_Fatso || type == NAME_Arachnotron) && fatso && arachnotron && fatso->GetReplacement() == arachnotron->GetReplacement();
+		bool samereplacement = (type == NAME_Fatso || type == NAME_Arachnotron) && 
+			fatso && arachnotron && 
+			(GetDefaultByType(fatso)->flags8 & MF8_MAP07BOSS1) && 
+			(GetDefaultByType(arachnotron)->flags8 & MF8_MAP07BOSS2) &&
+			fatso->GetReplacement() == arachnotron->GetReplacement();
 
-		if (type == NAME_Fatso || samereplacement)
+		if ((flags8 & MF8_MAP07BOSS1) || samereplacement)
 		{
 			EV_DoFloor (DFloor::floorLowerToLowest, NULL, 666, 1., 0, -1, 0, false);
 		}
 		
-		if (type == NAME_Arachnotron || samereplacement)
+		if ((flags8 & MF8_MAP07BOSS2) || samereplacement)
 		{
 			EV_DoFloor (DFloor::floorRaiseByTexture, NULL, 667, 1., 0, -1, 0, false);
 		}
