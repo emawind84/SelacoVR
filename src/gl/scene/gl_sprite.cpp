@@ -828,9 +828,8 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal, bool is
 	{
 		z = thing->floorz;
 	}
-
 	// [RH] Make floatbobbing a renderer-only effect.
-	if (thing->flags2 & MF2_FLOATBOB)
+	else if (thing->flags2 & MF2_FLOATBOB)
 	{
 		float fz = thing->GetBobOffset(r_viewpoint.TicFrac);
 		z += fz;
