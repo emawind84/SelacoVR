@@ -207,6 +207,17 @@ skill hard
 	Key = "u"
 }
 
+skill extreme_lzd
+{
+	DoubleSpawn
+	HealthFactor = 0.6
+	DisableCheats
+	SpawnFilter = Hard
+	PicName = "M_EXTR"
+	Name = "$SKILL_EXTREME"
+	MustConfirm
+}
+
 skill nightmare
 {
 	AmmoFactor = 2
