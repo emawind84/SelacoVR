@@ -272,7 +272,7 @@ void GLSprite::Draw(int pass)
 		{
 			if (RenderStyle.BlendOp != STYLEOP_Shadow)
 			{
-				if (vr_dynlights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
+				if (gl_lights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
 				{
 					if (!particle)
 					{
@@ -357,7 +357,7 @@ void GLSprite::Draw(int pass)
 	}
 	if (RenderStyle.BlendOp != STYLEOP_Shadow)
 	{
-		if (vr_dynlights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
+		if (gl_lights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
 		{
 			if (modelframe && !particle)
 				dynlightindex = gl_SetDynModelLight(gl_light_sprites ? actor : NULL, dynlightindex);

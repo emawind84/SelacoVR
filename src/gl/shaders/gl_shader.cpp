@@ -722,7 +722,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 #ifdef __ANDROID__
 	if (shadowmapindex >= 0) glUniform1i(shadowmapindex, 16);
 #else
-		if (shadowmapindex > 0) glUniform1i(shadowmapindex, 16);
+	if (shadowmapindex > 0) glUniform1i(shadowmapindex, 16);
 #endif
 	glUseProgram(0);
 	return linked;

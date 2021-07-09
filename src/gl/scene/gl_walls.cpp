@@ -1625,7 +1625,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 			float bch1a = bch1, bch2a = bch2;
 			if (frontsector->GetTexture(sector_t::floor) != skyflatnum || backsector->GetTexture(sector_t::floor) != skyflatnum)
 			{
-				// the back sector's floor obstructs part of this wall				
+				// the back sector's floor obstructs part of this wall
 				if (ffh1 > bch1 && ffh2 > bch2 && (seg->linedef->flags & ML_DRAWFULLHEIGHT) == 0)
 				{
 					bch2a = ffh2;

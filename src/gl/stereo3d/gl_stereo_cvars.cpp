@@ -107,63 +107,6 @@ void Stereo3DMode::setCurrentMode(const Stereo3DMode& mode) {
 /* static */
 const Stereo3DMode& Stereo3DMode::getCurrentMode() 
 {
-	//if (gl.legacyMode) vr_mode = 0;	// GL 2 does not support this feature.
-
-	// NOTE: Ensure that these vr_mode values correspond to the ones in wadsrc/static/menudef.z
-/*	switch (vr_mode)
-	{
-	case 1:
-		setCurrentMode(GreenMagenta::getInstance(vr_ipd));
-		break;
-	case 2:
-		setCurrentMode(RedCyan::getInstance(vr_ipd));
-		break;
-	case 3:
-		setCurrentMode(SideBySideFull::getInstance(vr_ipd));
-		break;
-	case 4:
-		setCurrentMode(SideBySideSquished::getInstance(vr_ipd));
-		break;
-	case 5:
-		setCurrentMode(LeftEyeView::getInstance(vr_ipd));
-		break;
-	case 6:
-		setCurrentMode(RightEyeView::getInstance(vr_ipd));
-		break;
-	case 7:
-		if (vr_enable_quadbuffered) {
-			setCurrentMode(QuadStereo::getInstance(vr_ipd));
-		}
-		else {
-			setCurrentMode(MonoView::getInstance());
-		}
-		break;
-	// TODO: 8: Oculus Rift
-	case 9:
-		setCurrentMode(AmberBlue::getInstance(vr_ipd));
-		break;
-	// TODO: 10: HTC Vive/OpenVR
-	case 11:
-		setCurrentMode(TopBottom3D::getInstance(vr_ipd));
-		break;
-	case 12:
-		setCurrentMode(RowInterleaved3D::getInstance(vr_ipd));
-		break;
-	case 13:
-		setCurrentMode(ColumnInterleaved3D::getInstance(vr_ipd));
-		break;
-	case 14:
-		setCurrentMode(CheckerInterleaved3D::getInstance(vr_ipd));
-		break;
-	case 15:
-		setCurrentMode(OculusQuestMode::getInstance());
-		break;
-	case 0:
-	default:
-		setCurrentMode(MonoView::getInstance());
-		break;
-	}*/
-
 	setCurrentMode(OculusQuestMode::getInstance());
 	return *currentStereo3DMode;
 }

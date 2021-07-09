@@ -82,14 +82,11 @@ static TArray<FDynamicLight*> FreeList;
 static FRandom randLight;
 
 //Default dynamic lights to false
-CUSTOM_CVAR (Bool, vr_dynlights, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+CUSTOM_CVAR (Bool, gl_lights, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	if (self) AActor::RecreateAllAttachedLights();
 	else AActor::DeleteAllAttachedLights();
 }
-
-//Original dynamic lights cvar does nothing
-CVAR (Bool, gl_lights, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 //==========================================================================
 //

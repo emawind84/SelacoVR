@@ -149,58 +149,6 @@ static void BuildModesList (int hiwidth, int hiheight, int hi_bits)
 		ratiomatch = -1;
 	}
 	showbits = BitTranslate[DummyDepthCvar];
-
-	return;
-
-	if (Video != NULL)
-	{
-		Video->StartModeIterator (showbits, screen->IsFullscreen());
-	}
-
-	DOptionMenuDescriptor *opt = GetVideoModeMenu();
-	if (opt != NULL)
-	{
-		for (i = NAME_res_0; i<= NAME_res_9; i++)
-		{
-			DMenuItemBase *it = opt->GetItem((ENamedName)i);
-			if (it != NULL)
-			{
-				it->SetValue(OptionMenuItemScreenResolution::SRL_HIGHLIGHT, -1);
-				for (c = 0; c < 3; c++)
-				{
-					bool haveMode = false;
-
-					if (Video != NULL)
-					{
-						while ((haveMode = Video->NextMode (&width, &height, &letterbox)) &&
-							ratiomatch >= 0)
-						{
-							int ratio;
-							CheckRatio (width, height, &ratio);
-							if (ratio == ratiomatch)
-								break;
-						}
-					}
-
-					if (haveMode)
-					{
-						if (width == hiwidth && height == hiheight)
-						{
-							it->SetValue(OptionMenuItemScreenResolution::SRL_SELECTION, c);
-							it->SetValue(OptionMenuItemScreenResolution::SRL_HIGHLIGHT, c);
-						}
-						
-						mysnprintf (strtemp, countof(strtemp), "%dx%d%s", width, height, letterbox?TEXTCOLOR_BROWN" LB":"");
-						it->SetString(OptionMenuItemScreenResolution::SRL_INDEX+c, strtemp);
-					}
-					else
-					{
-						it->SetString(OptionMenuItemScreenResolution::SRL_INDEX+c, "");
-					}
-				}
-			}
-		}
-	}
 }
 
 

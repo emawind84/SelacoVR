@@ -233,7 +233,7 @@ void GLWall::SkyTop(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex
 	if (fs->GetTexture(sector_t::ceiling)==skyflatnum)
 	{
 		if (bs->special == GLSector_NoSkyDraw || (bs->MoreFlags & SECMF_NOSKYWALLS) != 0 || (seg->linedef->flags & ML_NOSKYWALLS) != 0) return;
-		if (bs->GetTexture(sector_t::ceiling)==skyflatnum) 
+		if (bs->GetTexture(sector_t::ceiling)==skyflatnum)
 		{
 			// if the back sector is closed the sky must be drawn!
 			if (bs->ceilingplane.ZatPoint(v1) > bs->floorplane.ZatPoint(v1) ||

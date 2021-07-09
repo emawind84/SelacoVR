@@ -421,6 +421,8 @@ void FGLRenderer::SetupLevel(bool resetBufferIndices)
 		NextVtxBuffer();
 		SkyBuff = 0;
 		NextSkyBuffer();
+		LightBuff = 0;
+		NextLightBuffer();
 	}
 
 	for (int n = 0; n < gl_hardware_buffers; n++) {

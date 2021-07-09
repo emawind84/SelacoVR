@@ -873,7 +873,7 @@ void FWadCollection::RenameSprites ()
 					for (size_t fi : {4, 6})
 					{
 						if (LumpInfo[i].lump->Name[fi] >= 'F' && LumpInfo[i].lump->Name[fi] <= 'K')
-					{
+						{
 							LumpInfo[i].lump->Name[fi] += 'U' - 'F';
 						}
 					}

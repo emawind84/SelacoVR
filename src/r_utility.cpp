@@ -749,7 +749,6 @@ static double QuakePower(double factor, double intensity, double offset)
 	return factor * (offset + randumb);
 }
 
-
 //==========================================================================
 //
 // R_SetupFrame
