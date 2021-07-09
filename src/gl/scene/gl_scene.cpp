@@ -70,9 +70,7 @@
 #include "gl/utility/gl_clock.h"
 #include "gl/utility/gl_templates.h"
 #include "vm.h"
-#ifdef NO_VBO
-#include "gl/renderer/gl_quaddrawer.h"
-#endif
+
 //==========================================================================
 //
 // CVARs
@@ -540,18 +538,6 @@ void gl_FillScreen()
 	gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
 	gl_RenderState.EnableTexture(false);
 	gl_RenderState.Apply();
-#ifdef NO_VBO
-    if(gl.novbo)
-    {
-    FQuadDrawer qd;
-    qd.Set(0, 0, 0, 0, 0, 0);
-    qd.Set(1, 0, viewheight, 0, 0, 0);
-    qd.Set(2, viewwidth, 0, 0, 0, 0);
-    qd.Set(3, viewwidth, viewheight, 0, 0, 0);
-    qd.Render(GL_TRIANGLE_STRIP);
-    }
-    else
-#endif
 	// The fullscreen quad is stored at index 4 in the main vertex buffer.
 	GLRenderer->mVBO->RenderArray(GL_TRIANGLE_STRIP, FFlatVertexBuffer::FULLSCREEN_INDEX, 4);
 

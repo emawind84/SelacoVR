@@ -253,12 +253,6 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	}
 	else
 	{
-#ifdef __MOBILE__
-        if( gl.glesVer == 1 )
-        {
-    	    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, (mipmap && TexFilter[gl_texture_filter].mipmapping) );
-    	}
-#endif
 		rw = GetTexDimension (w);
 		rh = GetTexDimension (h);
 
@@ -313,46 +307,18 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	}
 
 #ifdef __MOBILE__
-    
-    if(!(gl.flags & RFL_BGRA))
-    {
-        texformat = GL_RGBA;
-        BGRAtoRGBA( buffer, rw * rh );
-    }
-    else
-    {
-        texformat = GL_BGRA;
-    }
-    glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, texformat, GL_UNSIGNED_BYTE, buffer);
+	BGRAtoRGBA( buffer, rw * rh );
+    glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 #else
 	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer);
 #endif
 	if (deletebuffer) free(buffer);
 
-#ifdef __MOBILE__
-    if( gl.glesVer > 1 )
-#endif
 	if (mipmap && TexFilter[gl_texture_filter].mipmapping)
 	{
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glTex->mipmapped = true;
 	}
-#ifdef __MOBILE__
-    if( gl.glesVer == 1 )
-    {
-    	bool use_mipmapping = TexFilter[gl_texture_filter].mipmapping;
-	
-	    if (mipmap && use_mipmapping)
-	    {
-	        glTex->mipmapped = true;
-	    }
-	    else
-	    {
-	        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, TexFilter[gl_texture_filter].magfilter);
-	    }
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, TexFilter[gl_texture_filter].magfilter);
-	}
-#endif
 
 	if (texunit != 0) glActiveTexture(GL_TEXTURE0);
 	return glTex->glTexID;
