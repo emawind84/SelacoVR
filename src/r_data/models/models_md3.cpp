@@ -26,10 +26,6 @@
 #include "m_crc32.h"
 #include "r_data/models/models.h"
 
-#ifdef __MOBILE__
-#include "gl/system/gl_interface.h"
-#endif
-
 #define MAX_QPATH 64
 
 #ifdef _MSC_VER
@@ -289,11 +285,6 @@ void FMD3Model::BuildVertexBuffer(FModelRenderer *renderer)
 			{
 				for (int l = 0; l < 3; l++)
 				{
-#ifdef __MOBILE__
-                    if (!(gl.flags & RFL_UINT_IDX))
-                        ((unsigned short*)indxptr)[iindex++] = surf->Tris[k].VertIndex[l];
-                    else
-#endif
 					indxptr[iindex++] = surf->Tris[k].VertIndex[l];
 				}
 			}
@@ -383,11 +374,6 @@ void FMD3Model::RenderFrame(FModelRenderer *renderer, FTexture * skin, int frame
 
 		renderer->SetMaterial(surfaceSkin, false, translation);
 		GetVertexBuffer(renderer)->SetupFrame(renderer, surf->vindex + frameno * surf->numVertices, surf->vindex + frameno2 * surf->numVertices, surf->numVertices);
-#ifdef __MOBILE__
-        if (!(gl.flags & RFL_UINT_IDX))
-            renderer->DrawElements(surf->numTriangles * 3, surf->iindex * sizeof(unsigned short));
-        else
-#endif
 		renderer->DrawElements(surf->numTriangles * 3, surf->iindex * sizeof(unsigned int));
 	}
 	renderer->SetInterpolation(0.f);
