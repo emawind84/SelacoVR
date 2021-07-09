@@ -1216,7 +1216,7 @@ OptionMenu "MiscOptions" protected
 	{
 		Option	"$DSPLYMNU_SHOWENDOOM",			"showendoom", "Endoom"
 	}
-
+	Option "$MISCMNU_HIDEEXTREME",				"menu_hideextreme", "OnOff"
 	StaticText " "
 	Option "$MISCMNU_ALWAYSTALLY",				"sv_alwaystally", "AlwaysTally"
 
