@@ -64,12 +64,7 @@ static void CollectExtensions()
 	const char *extension;
 
 	int max = 0;
-#ifdef __MOBILE__
-	max = 0;
-#else
-    glGetIntegerv(GL_NUM_EXTENSIONS, &max);
-#endif
-
+	glGetIntegerv(GL_NUM_EXTENSIONS, &max);
 
 	if (max == 0)
 	{
@@ -140,81 +135,11 @@ static void InitContext()
 
 #define FUDGE_FUNC(name, ext) 	if (_ptrc_##name == NULL) _ptrc_##name = _ptrc_##name##ext;
 
-#ifdef __MOBILE__
-extern "C" extern int glesLoad;
-#endif
+
 void gl_LoadExtensions()
 {
 	InitContext();
 	CollectExtensions();
-
-#ifdef __MOBILE__
-
-    if(CheckExtension("GL_OES_texture_npot") || CheckExtension("GL_ARB_texture_non_power_of_two"))
-    {
-        Printf("NPOT allowed");
-        gl.flags |= RFL_NPOT;
-    }
-
-    if(CheckExtension("GL_EXT_texture_format_BGRA8888") || CheckExtension("GL_EXT_bgra"))
-    {
-        Printf("BGRA allowed");
-        gl.flags |= RFL_BGRA;
-    }
-
-    if(CheckExtension("GL_OES_element_index_uint"))
-    {
-        Printf("UINT element index allowed");
-        gl.flags |= RFL_UINT_IDX;
-    }
-
-    if(force_uint_idx == true)
-    {
-        Printf("FORCING UINT element index allowed");
-        gl.flags |= RFL_UINT_IDX;
-    }
-	
-	gl.vendorstring = "ANDROID";
-
-    const char *version = Args->CheckValue("-glversion");
-    if( glesLoad == 1 )
-    {
-        gl.glesVer = 1;
-        gl.es = true;
-        gl.legacyMode = true;
-        gl.lightmethod = LM_LEGACY;
-        gl.buffermethod = BM_LEGACY;
-        gl.glslversion = 0;
-        gl.flags |= RFL_NO_CLIP_PLANES;
-
-        //This is needed to the fix the brutal doom white lines?!
-        glDisable(GL_CLIP_PLANE0);
-        glEnable(GL_CLIP_PLANE0);
-    }
-    else if( glesLoad == 2 ) // GLES 2 with GL4ES
-    {
-        gl.glesVer = 2;
-        gl.legacyMode = true;
-        gl.novbo = true;
-        gl.lightmethod = LM_LEGACY;
-        gl.buffermethod = BM_LEGACY;
-        gl.glslversion = 0;
-        gl.flags |= RFL_NO_CLIP_PLANES;
-    }
-    else if( glesLoad == 3 ) // GLES 3
-    {
-        gl.glesVer = 3;
-        gl.es = true;
-        gl.novbo = false;
-        gl.legacyMode = false;
-        gl.lightmethod = LM_DEFERRED;
-        gl.buffermethod = BM_DEFERRED;
-        gl.glslversion = 3.3;
-        gl.flags |= RFL_NO_CLIP_PLANES;
-        gl.flags |= RFL_UINT_IDX;
-		gl.flags |= RFL_SHADER_STORAGE_BUFFER;
-    }
-#else
 
 	const char *glversion = (const char*)glGetString(GL_VERSION);
 	gl.es = false;
@@ -261,10 +186,13 @@ void gl_LoadExtensions()
 		gl.vendorstring = (char*)glGetString(GL_VENDOR);
 
 		// Use the slowest/oldest modern path for now
+		gl.glslversion = 3.3;
 		gl.legacyMode = false;
 		gl.lightmethod = LM_DEFERRED;
 		gl.buffermethod = BM_DEFERRED;
 		gl.flags |= RFL_NO_CLIP_PLANES;
+		gl.flags |= RFL_UINT_IDX;
+		gl.flags |= RFL_SHADER_STORAGE_BUFFER;
 	}
 	else
 	{
@@ -367,7 +295,7 @@ void gl_LoadExtensions()
 			}
 		}
 	}
-#endif
+
 	int v;
 	
 	if (!gl.legacyMode)
@@ -430,9 +358,6 @@ void gl_PrintStartupLog()
 	Printf ("GL_VENDOR: %s\n", glGetString(GL_VENDOR));
 	Printf ("GL_RENDERER: %s\n", glGetString(GL_RENDERER));
 	Printf ("GL_VERSION: %s (%s profile)\n", glGetString(GL_VERSION), (v & GL_CONTEXT_CORE_PROFILE_BIT)? "Core" : "Compatibility");
-#ifdef __MOBILE__
-    if( gl.glesVer > 1)
-#endif
 	Printf ("GL_SHADING_LANGUAGE_VERSION: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	Printf (PRINT_LOG, "GL_EXTENSIONS:");
 	for (unsigned i = 0; i < m_Extensions.Size(); i++)

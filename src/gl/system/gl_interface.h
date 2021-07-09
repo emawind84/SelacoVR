@@ -24,13 +24,7 @@ enum RenderFlags
 	RFL_NO_CLIP_PLANES = 32,
 
 	RFL_INVALIDATE_BUFFER = 64,
-	RFL_DEBUG = 128,
-
-#ifdef __MOBILE__
-    RFL_NPOT = 256,
-    RFL_BGRA = 512,
-    RFL_UINT_IDX = 1024,
-#endif
+	RFL_DEBUG = 128
 };
 
 enum TexMode
@@ -74,12 +68,6 @@ struct RenderContext
 	bool legacyMode;
 	bool es;
 
-#ifdef __MOBILE__
-    int glesVer;
-#endif
-#ifdef NO_VBO
-    bool novbo;
-#endif
 	int MaxLights() const
 	{
 		return maxuniforms>=2048? 128:64;
