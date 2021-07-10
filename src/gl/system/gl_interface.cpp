@@ -190,6 +190,8 @@ void gl_LoadExtensions()
 		gl.lightmethod = LM_DEFERRED;
 		gl.buffermethod = BM_DEFERRED;
 		gl.flags |= RFL_NO_CLIP_PLANES;
+		if (gl_light_buffer_type == 1)
+			gl.flags |= RFL_SHADER_STORAGE_BUFFER;
 	}
 	else
 	{
@@ -274,6 +276,9 @@ void gl_LoadExtensions()
 			int v = 0;
 			glGetIntegerv(GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS, &v);
 			if (v == 0)
+				gl.flags &= ~RFL_SHADER_STORAGE_BUFFER;
+
+			if (gl_light_buffer_type != 1)
 				gl.flags &= ~RFL_SHADER_STORAGE_BUFFER;
 
 			if (gl_version >= 4.3f || CheckExtension("GL_ARB_invalidate_subdata")) gl.flags |= RFL_INVALIDATE_BUFFER;
