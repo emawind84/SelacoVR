@@ -447,7 +447,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	{
 		if (gl.es)
 		{
-			vp_comb.Format("#version 300 es\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
+			vp_comb.Format(ES_VERSION_STR"\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
 		}
 		else if (gl.glslversion < 1.4f) // This differentiation is for some Intel drivers which fail on #extension, so use of #version 140 is necessary
 		{
@@ -460,8 +460,12 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	}
 	else
 	{
+		if (gl.es)
+		{
+			vp_comb.Format(ES_VERSION_STR"\n#define SHADER_STORAGE_LIGHTS\n");
+		}
 		// This differentiation is for Intel which do not seem to expose the full extension, even if marked as required.
-		if (gl.glslversion < 4.3f)
+		else if (gl.glslversion < 4.3f)
 			vp_comb = "#version 400 core\n#extension GL_ARB_shader_storage_buffer_object : require\n#define SHADER_STORAGE_LIGHTS\n";
 		else
 			vp_comb = "#version 430 core\n#define SHADER_STORAGE_LIGHTS\n";
