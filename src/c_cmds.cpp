@@ -1510,22 +1510,6 @@ CCMD(idclip)
 	Net_WriteByte (CHT_NOCLIP);
 }
 
-CCMD(randi)
-{
-	if (CheckCheatmode ())
-		return;
-
-	if (players[consoleplayer].health < 100)
-	{
-		Net_WriteByte (DEM_GIVECHEAT);
-		Net_WriteString ("health");
-		Net_WriteLong(0);
-	}
-	Net_WriteByte (DEM_GIVECHEAT);
-	Net_WriteString ("greenarmor");
-	Net_WriteLong(0);
-}
-
 CCMD(angleconvtest)
 {
 	Printf("Testing degrees to angle conversion:\n");
