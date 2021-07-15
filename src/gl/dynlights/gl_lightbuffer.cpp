@@ -34,17 +34,18 @@
 #include "gl/system/gl_interface.h"
 #include "gl/utility//gl_clock.h"
 
-static const int ELEMENTS_PER_LIGHT = 4;			// each light needs 4 vec4's.
-static const int ELEMENT_SIZE = (4*sizeof(float));
-
+CVAR(Int, gl_max_lights, 10000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CUSTOM_CVAR (Int, gl_light_buffer_type, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	Printf("You must restart " GAMENAME " to switch the light buffer\n");
 }
 
+static const int ELEMENTS_PER_LIGHT = 4;			// each light needs 4 vec4's.
+static const int ELEMENT_SIZE = (4*sizeof(float));
+
 FLightBuffer::FLightBuffer()
 {
-	int maxNumberOfLights = 80000;
+	int maxNumberOfLights = gl_max_lights;
 	
 	mBufferSize = maxNumberOfLights * ELEMENTS_PER_LIGHT;
 	mByteSize = mBufferSize * ELEMENT_SIZE;
@@ -62,10 +63,9 @@ FLightBuffer::FLightBuffer()
 	else
 	{
 		mBufferType = GL_UNIFORM_BUFFER;
-		mBlockSize = gl.maxuniformblock / ELEMENT_SIZE;
+		mBlockSize = 2 * 1024 / ELEMENT_SIZE;
 		mBlockAlign = gl.uniformblockalignment / ELEMENT_SIZE;
 		mMaxUploadSize = (mBlockSize - mBlockAlign);
-		mByteSize += gl.maxuniformblock;	// to avoid mapping beyond the end of the buffer.
 	}
 
 	glGenBuffers(1, &mBufferId);
@@ -148,6 +148,7 @@ int FLightBuffer::UploadLights(FDynLightData &data)
 	}
 	else
 	{
+		Printf("ERROR - We have run out of BUFFERS!, mIndex=%d\n", thisindex + totalsize);
 		return -1;	// Buffer is full. Since it is being used live at the point of the upload we cannot do much here but to abort.
 	}
 }
