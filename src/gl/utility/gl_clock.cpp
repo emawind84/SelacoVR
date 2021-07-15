@@ -72,6 +72,7 @@ int vertexcount, flatvertices, flatprimitives;
 
 int rendered_lines,rendered_flats,rendered_sprites,render_vertexsplit,render_texsplit,rendered_decals, rendered_portals;
 int iter_dlightf, iter_dlight, draw_dlight, draw_dlightf;
+int lightbuffer_curindex, vertexbuffer_curindex;
 
 double		gl_SecondsPerCycle = 1e-8;
 double		gl_MillisecPerCycle = 1e-5;		// 100 MHz
@@ -183,6 +184,7 @@ static void AppendRenderStats(FString &out)
 		"Flats: %d (%d primitives, %d vertices)\n"
 		"Sprites: %d, Decals=%d, Portals: %d\n",
 		rendered_lines, render_vertexsplit, render_texsplit, vertexcount, rendered_flats, flatprimitives, flatvertices, rendered_sprites,rendered_decals, rendered_portals );
+	out.AppendFormat("Buffers: vertex=%d, dlight=%d", vertexbuffer_curindex, lightbuffer_curindex);
 }
 
 static void AppendLightStats(FString &out)
