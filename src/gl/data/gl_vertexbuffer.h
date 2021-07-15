@@ -149,7 +149,12 @@ public:
 		FFlatVertex *p = GetBuffer();
 		*poffset = mCurIndex;
 		mCurIndex += num;
-		if (mCurIndex >= BUFFER_SIZE_TO_USE) mCurIndex = mIndex;
+		if (mCurIndex >= (gl_buffer_size - 500))
+		{
+			Printf("ERROR - We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
+			mCurIndex = mIndex;
+		}
+		vertexbuffer_curindex = mCurIndex;
 		return p;
 	}
 
@@ -159,7 +164,12 @@ public:
 		unsigned int diff = newofs - mCurIndex;
 		*poffset = mCurIndex;
 		mCurIndex = newofs;
-		if (mCurIndex >= BUFFER_SIZE_TO_USE) mCurIndex = mIndex;
+		if (mCurIndex >= (gl_buffer_size - 500))
+		{
+			Printf("ERROR - We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
+			mCurIndex = mIndex;
+		}
+		vertexbuffer_curindex = mCurIndex;
 		return diff;
 	}
 #ifdef __GL_PCH_H	// we need the system includes for this but we cannot include them ourselves without creating #define clashes. The affected files wouldn't try to draw anyway.

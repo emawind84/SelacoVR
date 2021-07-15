@@ -61,6 +61,7 @@ extern glcycle_t drawcalls;
 extern int iter_dlightf, iter_dlight, draw_dlight, draw_dlightf;
 extern int rendered_lines,rendered_flats,rendered_sprites,rendered_decals,render_vertexsplit,render_texsplit;
 extern int rendered_portals;
+extern int lightbuffer_curindex, vertexbuffer_curindex;
 
 extern int vertexcount, flatvertices, flatprimitives;
 
