@@ -38,6 +38,7 @@
 #include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
 
+CVAR(Int, gl_buffer_size, 10000, CVAR_ARCHIVE);
 
 //==========================================================================
 //
