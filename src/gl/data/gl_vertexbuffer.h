@@ -141,12 +141,6 @@ public:
 
 	FFlatVertex *GetBuffer()
 	{
-        if (mCurIndex >= gl_buffer_size)
-        {
-            Printf("ERROR - Trying to index an invalid BUFFER!, mCurIndex=%d\n", mCurIndex);
-            mCurIndex = mIndex;
-            return nullptr;
-        }
 		return &map[mCurIndex];
 	}
 	FFlatVertex *Alloc(int num, int *poffset)
