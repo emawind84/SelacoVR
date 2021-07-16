@@ -184,13 +184,17 @@ static void AppendRenderStats(FString &out)
 		"Flats: %d (%d primitives, %d vertices)\n"
 		"Sprites: %d, Decals=%d, Portals: %d\n",
 		rendered_lines, render_vertexsplit, render_texsplit, vertexcount, rendered_flats, flatprimitives, flatvertices, rendered_sprites,rendered_decals, rendered_portals );
-	out.AppendFormat("Buffers: vertex=%d, dlight=%d", vertexbuffer_curindex, lightbuffer_curindex);
 }
 
 static void AppendLightStats(FString &out)
 {
 	out.AppendFormat("DLight - Walls: %d processed, %d rendered - Flats: %d processed, %d rendered\n", 
 		iter_dlight, draw_dlight, iter_dlightf, draw_dlightf );
+}
+
+static void AppendBufferStats(FString &out)
+{
+	out.AppendFormat("Buffers: vertexbuffer=%d, lightbuffer=%d", vertexbuffer_curindex, lightbuffer_curindex);
 }
 
 ADD_STAT(rendertimes)
@@ -218,6 +222,13 @@ ADD_STAT(lightstats)
 {
 	FString out;
 	AppendLightStats(out);
+	return out;
+}
+
+ADD_STAT(bufferstats)
+{
+	FString out;
+	AppendBufferStats(out);
 	return out;
 }
 
