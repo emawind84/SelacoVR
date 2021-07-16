@@ -145,7 +145,7 @@ int FLightBuffer::UploadLights(FDynLightData &data)
 		memcpy(&copyptr[4 + 4*size0], &data.arrays[1][0], size1 * ELEMENT_SIZE);
 		memcpy(&copyptr[4 + 4*(size0 + size1)], &data.arrays[2][0], size2 * ELEMENT_SIZE);
 
-		lightbuffer_curindex = thisindex + totalsize;
+		lightbuffer_curindex = thisindex;
 		return thisindex;
 	}
 	else
