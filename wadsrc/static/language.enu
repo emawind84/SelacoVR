@@ -1893,6 +1893,7 @@ DSPLYMNU_SKYMODE				= "Sky render mode";
 DSPLYMNU_LINEARSKY				= "Linear skies";
 DSPLYMNU_GZDFULLBRIGHT			= "Fullbright overrides sector color";
 DSPLYMNU_MODELS					= "Models";
+DSPLYMNU_MODELSCARMACK			= "Models (Carmack)";
 DSPLYMNU_SCALEFUZZ				= "Scale fuzz effect";
 DSPLYMNU_SPRITECULL				= "Sprite Cull Distance";
 DSPLYMNU_LINECULL				= "Wall Cull Distance";
