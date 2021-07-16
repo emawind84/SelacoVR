@@ -903,32 +903,32 @@ void DFrameBuffer::DrawRateStuff ()
 	{
 		uint64_t ms = screen->FrameTime;
 		uint64_t howlong = ms - LastMS;
-        if ((signed)howlong >= 0)
-        {
-            char fpsbuff[40];
-            int chars;
-            int rate_x;
+		if ((signed)howlong >= 0)
+		{
+			char fpsbuff[40];
+			int chars;
+			int rate_x;
 
-            int textScale = active_con_scale();
+			int textScale = active_con_scale();
 
 			chars = mysnprintf (fpsbuff, countof(fpsbuff), "%2" PRIu64 " ms (%3" PRIu64 " fps)", howlong, LastCount);
-            rate_x = Width / textScale - ConFont->StringWidth(&fpsbuff[0]);
-            Clear (rate_x * textScale, 0, Width, ConFont->GetHeight() * textScale, GPalette.BlackIndex, 0);
-            DrawText (ConFont, CR_WHITE, rate_x, 0, (char *)&fpsbuff[0],
-                      DTA_VirtualWidth, screen->GetWidth() / textScale,
-                      DTA_VirtualHeight, screen->GetHeight() / textScale,
-                      DTA_KeepRatio, true, TAG_DONE);
+			rate_x = Width / textScale - ConFont->StringWidth(&fpsbuff[0]);
+			Clear (rate_x * textScale, 0, Width, ConFont->GetHeight() * textScale, GPalette.BlackIndex, 0);
+			DrawText (ConFont, CR_WHITE, rate_x, 0, (char *)&fpsbuff[0],
+				DTA_VirtualWidth, screen->GetWidth() / textScale,
+				DTA_VirtualHeight, screen->GetHeight() / textScale,
+				DTA_KeepRatio, true, TAG_DONE);
 
 			uint32_t thisSec = (uint32_t)(ms/1000);
-            if (LastSec < thisSec)
-            {
-                LastCount = FrameCount / (thisSec - LastSec);
-                LastSec = thisSec;
-                FrameCount = 0;
-            }
-            FrameCount++;
-        }
-        LastMS = ms;
+			if (LastSec < thisSec)
+			{
+				LastCount = FrameCount / (thisSec - LastSec);
+				LastSec = thisSec;
+				FrameCount = 0;
+			}
+			FrameCount++;
+		}
+		LastMS = ms;
 	}
 
 	// draws little dots on the bottom of the screen
