@@ -358,6 +358,11 @@ OptionMenu "OptionsMenu" protected
 	StaticText " "
 }
 
+// Fake simplified menu
+OptionMenu "OptionsMenuSimple" protected
+{
+}
+
 //-------------------------------------------------------------------------------------------
 //
 // The player menu
@@ -639,6 +644,7 @@ OptionMenu "OtherControlsMenu" protected
 	Control    "$CNTRLMNU_ADJUST_GAMMA"    , "bumpgamma"
 
 	StaticText ""
+	Control    "$CNTRLMNU_OPEN_MAIN"       , "menu_main"
 	Control    "$CNTRLMNU_OPEN_HELP"       , "menu_help"
 	Control    "$CNTRLMNU_OPEN_SAVE"       , "menu_save"
 	Control    "$CNTRLMNU_OPEN_LOAD"       , "menu_load"
@@ -861,6 +867,13 @@ OptionValue VanillaTrans
 	3.0, "$OPTVAL_VTAVANILLA"
 }
 
+OptionValue "SpriteShadowModes"
+{
+	0, "$OPTVAL_OFF"
+	1, "$OPTVAL_DEFAULT"
+	2, "$OPTVAL_SPRSHADALWAYS"
+}
+
 OptionValue GPUSwitch
 {
 	0.0, "$OPTVAL_DEFAULT"
@@ -912,6 +925,7 @@ OptionMenu "VideoOptions" protected
 	Slider "$DSPLYMNU_SATURATION",				"vid_saturation",  				-3.0, 3.0, 0.25, 2
 	Option "$DSPLYMNU_HWGAMMA",					"vid_hwgamma", "HWGammaModes"
 	StaticText " "
+	Option "$DSPLYMNU_SPRITESHADOW",			"r_actorspriteshadow", "SpriteShadowModes"
 	Option "$DSPLYMNU_CUSTOMINVERTMAP",			"cl_customizeinvulmap", "OnOff"
 	ColorPicker "$DSPLYMNU_CUSTOMINVERTC1",		"cl_custominvulmapcolor1"
 	ColorPicker "$DSPLYMNU_CUSTOMINVERTC2",		"cl_custominvulmapcolor2"
@@ -1587,6 +1601,7 @@ OptionMenu GameplayOptions protected
 	Option "$GMPLYMNU_DONTCHECKAMMO",			"sv_dontcheckammo", "NoYes"
 	Option "$GMPLYMNU_KILLBOSSSPAWNS",			"sv_killbossmonst", "YesNo"
 	Option "$GMPLYMNU_NOCOUNTENDMONSTER",		"sv_nocountendmonst", "NoYes"
+	Option "$GMPLYMNU_DOUBLESPAWN",				"sv_doublespawn", "YesNo"
 	Class "GameplayMenu"
 }
 

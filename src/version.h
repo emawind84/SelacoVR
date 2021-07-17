@@ -49,7 +49,7 @@ const char *GetVersionString();
 #define RC_PRODUCTVERSION2 VERSIONSTR
 // These are for content versioning.
 #define VER_MAJOR 4
-#define VER_MINOR 5
+#define VER_MINOR 6
 #define VER_REVISION 0
 
 // Version identifier for network games.
@@ -60,7 +60,7 @@ const char *GetVersionString();
 // Version stored in the ini's [LastRun] section.
 // Bump it if you made some configuration change that you want to
 // be able to migrate in FGameConfigFile::DoGlobalSetup().
-#define LASTRUNVERSION "220"
+#define LASTRUNVERSION "222"
 
 // Protocol version used in demos.
 // Bump it if you change existing DEM_ commands or add new ones.
