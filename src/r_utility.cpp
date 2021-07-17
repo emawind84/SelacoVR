@@ -107,7 +107,7 @@ CUSTOM_CVAR(Float, r_quakeintensity, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // 
 	else if (self > 1.f) self = 1.f;
 }
 
-CUSTOM_CVAR(Int, r_actorspriteshadow, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CUSTOM_CVAR(Int, r_actorspriteshadow, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
 	if (self < 0)
 		self = 0;
