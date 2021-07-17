@@ -188,8 +188,8 @@ static void AppendRenderStats(FString &out)
 
 static void AppendLightStats(FString &out)
 {
-	out.AppendFormat("DLight - Walls: %d processed, %d rendered - Flats: %d processed, %d rendered\n", 
-		iter_dlight, draw_dlight, iter_dlightf, draw_dlightf );
+	out.AppendFormat("DLight - Walls: %d processed, %d rendered\n", iter_dlight, draw_dlight);
+	out.AppendFormat("DLight - Flats: %d processed, %d rendered\n", iter_dlightf, draw_dlightf);
 }
 
 static void AppendBufferStats(FString &out)
