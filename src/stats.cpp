@@ -92,7 +92,7 @@ void FStat::PrintStat ()
 	int textScale = active_con_scale();
 
 	int fontheight = ConFont->GetHeight() + 1;
-	int y = SCREENHEIGHT / textScale;
+	int y = SCREENHEIGHT / textScale - fontheight * 8;
 	int count = 0;
 
 	for (FStat *stat = FirstStat; stat != NULL; stat = stat->m_Next)

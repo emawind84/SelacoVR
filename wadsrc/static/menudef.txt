@@ -714,7 +714,7 @@ OptionMenu "MouseOptions" protected
 	StaticText 	""
 	Slider "$MOUSEMNU_SENSITIVITY",		"mouse_sensitivity", 0.5, 2.5, 0.1
 	Option "$MOUSEMNU_NOPRESCALE",		"m_noprescale", "NoYes"
-	Option "$MOUSEMNU_SMOOTHMOUSE",		"smooth_mouse", "YesNo"
+	Option "$MOUSEMNU_SMOOTHMOUSE",		"m_filter", "YesNo"
 	StaticText 	""
 	Slider "$MOUSEMNU_TURNSPEED",		"m_yaw", 0, 2.5, 0.1
 	Slider "$MOUSEMNU_MOUSELOOKSPEED",	"m_pitch", 0, 2.5, 0.1
@@ -722,6 +722,7 @@ OptionMenu "MouseOptions" protected
 	Slider "$MOUSEMNU_STRAFESPEED",		"m_side", 0, 2.5, 0.1
 	StaticText 	""
 	Option "$MOUSEMNU_ALWAYSMOUSELOOK",	"freelook", "OnOff"
+	Option "$MOUSEMNU_INVERTMOUSEX",		"invertmousex", "OnOff"
 	Option "$MOUSEMNU_INVERTMOUSE",		"invertmouse", "OnOff"
 	Option "$MOUSEMNU_LOOKSPRING",		"lookspring", "OnOff"
 	Option "$MOUSEMNU_LOOKSTRAFE",		"lookstrafe", "OnOff"

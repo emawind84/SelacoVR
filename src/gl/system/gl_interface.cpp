@@ -190,7 +190,6 @@ void gl_LoadExtensions()
 		gl.vendorstring = (char*)glGetString(GL_VENDOR);
 
 		// Use the slowest/oldest modern path for now
-		gl.glslversion = 3.3;
 		gl.legacyMode = false;
 		gl.lightmethod = LM_DEFERRED;
 		gl.buffermethod = BM_DEFERRED;
@@ -371,9 +370,9 @@ void gl_PrintStartupLog()
 
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &v);
 	Printf("\nMax. texture size: %d\n", v);
-#ifndef __MOBILE__
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &v);
 	Printf ("Max. texture units: %d\n", v);
+#ifndef __MOBILE__
 	glGetIntegerv(GL_MAX_VARYING_FLOATS, &v);
 	Printf ("Max. varying: %d\n", v);
 #endif
