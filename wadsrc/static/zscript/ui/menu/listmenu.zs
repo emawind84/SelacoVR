@@ -2,6 +2,11 @@
 
 class ListMenuDescriptor : MenuDescriptor native
 {
+	enum EScale
+	{
+		CleanScale = -1,
+		OptCleanScale = -2
+	};
 	native Array<ListMenuItem> mItems;
 	native int mSelectedItem;
 	native double mSelectOfsX;
@@ -31,6 +36,14 @@ class ListMenuDescriptor : MenuDescriptor native
 		mFont = NULL;
 		mFontColor = Font.CR_UNTRANSLATED;
 		mFontColor2 = Font.CR_UNTRANSLATED;
+	}
+	int DisplayWidth()
+	{
+		return CleanScale;
+	}
+	int DisplayHeight()
+	{
+		return CleanScale;
 	}
 }
 
