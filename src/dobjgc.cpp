@@ -728,7 +728,7 @@ ADD_STAT(gc)
 		"  Sweep  ",
 		"Finalize " };
 	FString out;
-	out.Format("[%s] Alloc:%6zuK  Thresh:%6zuK  Est:%6zuK  Steps: %d",
+	out.Format("GC - [%s] Alloc:%6zuK  Thresh:%6zuK\nGC - Est:%6zuK  Steps: %d",
 		StateStrings[GC::State],
 		(GC::AllocBytes + 1023) >> 10,
 		(GC::Threshold + 1023) >> 10,
