@@ -2,51 +2,9 @@
 #define __GL_CLOCK_H
 
 #include "stats.h"
-#include "x86.h"
-#include "m_fixed.h"
+#include "i_time.h"
 
 extern bool gl_benching;
-
-extern double gl_SecondsPerCycle;
-extern double gl_MillisecPerCycle;
-
-#ifdef _MSC_VER
-
-__forceinline int64_t GetClockCycle ()
-{
-	return __rdtsc();
-}
-
-#elif defined __APPLE__ && (defined __i386__ || defined __x86_64__)
-
-inline int64_t GetClockCycle()
-{
-	return __builtin_ia32_rdtsc();
-}
-
-#elif defined(__GNUG__) && defined(__i386__)
-
-inline int64_t GetClockCycle()
-{
-	if (CPU.bRDTSC)
-	{
-		int64_t res;
-		asm volatile ("rdtsc" : "=A" (res));
-		return res;
-	}
-	else
-	{
-		return 0;
-	}	
-}
-
-#else
-
-inline int64_t GetClockCycle ()
-{
-	return 0;
-}
-#endif
 
 class glcycle_t
 {
@@ -67,24 +25,24 @@ public:
 		// Not using QueryPerformanceCounter directly, so we don't need
 		// to pull in the Windows headers for every single file that
 		// wants to do some profiling.
-		int64_t time = (gl_benching? GetClockCycle() : 0);
+		int64_t time = (gl_benching? I_nsTime() : 0);
 		Counter -= time;
 	}
 	
 	__forceinline void Unclock()
 	{
-		int64_t time = (gl_benching? GetClockCycle() : 0);
+		int64_t time = (gl_benching? I_nsTime() : 0);
 		Counter += time;
 	}
 	
 	double Time()
 	{
-		return double(Counter) * gl_SecondsPerCycle;
+		return double(Counter) / 1'000'000'000;
 	}
 	
 	double TimeMS()
 	{
-		return double(Counter) * gl_MillisecPerCycle;
+		return double(Counter) / 1'000'000;
 	}
 
 private:
@@ -108,7 +66,7 @@ extern int vertexcount, flatvertices, flatprimitives;
 
 void ResetProfilingData();
 void CheckBench();
-void  checkBenchActive();
+void CheckBenchActive();
 
 
 #endif

@@ -277,7 +277,7 @@ CCMD(bench)
 
 bool gl_benching = false;
 
-void  checkBenchActive()
+void  CheckBenchActive()
 {
 	FStat *stat = FStat::FindStat("rendertimes");
 	gl_benching = ((stat != NULL && stat->isActive()) || printstats);

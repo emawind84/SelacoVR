@@ -916,7 +916,7 @@ void FGLRenderer::RenderView (player_t* player)
 {
 	gl_ClearFakeFlat();
 
-	checkBenchActive();
+	CheckBenchActive();
 
 	gl_RenderState.SetVertexBuffer(mVBO);
 	mVBO->Reset();
