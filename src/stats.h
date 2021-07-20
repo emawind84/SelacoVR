@@ -35,109 +35,8 @@
 #define __STATS_H__
 
 #include "zstring.h"
+#include "i_time.h"
 
-#if !defined _WIN32 && !defined __APPLE__
-
-#ifdef NO_CLOCK_GETTIME
-class cycle_t
-{
-public:
-	cycle_t &operator= (const cycle_t &o) { return *this; }
-	void Reset() {}
-	void Clock() {}
-	void Unclock() {}
-	double Time() { return 0; }
-	double TimeMS() { return 0; }
-};
-
-#else
-
-#include <time.h>
-
-class cycle_t
-{
-public:
-	void Reset()
-	{
-		Sec = 0;
-	}
-	
-	void Clock()
-	{
-		timespec ts;
-		
-		clock_gettime(CLOCK_MONOTONIC, &ts);
-		Sec -= ts.tv_sec + ts.tv_nsec * 1e-9;
-	}
-	
-	void Unclock()
-	{
-		timespec ts;
-		
-		clock_gettime(CLOCK_MONOTONIC, &ts);
-		Sec += ts.tv_sec + ts.tv_nsec * 1e-9;
-	}
-	
-	double Time()
-	{
-		return Sec;
-	}
-	
-	double TimeMS()
-	{
-		return Sec * 1e3;
-	}
-
-private:
-	double Sec;
-};
-
-#endif
-
-#else
-
-// Windows and macOS
-#include "x86.h"
-
-extern double PerfToSec, PerfToMillisec;
-
-#ifdef _MSC_VER
-// Trying to include intrin.h here results in some bizarre errors, so I'm just
-// going to duplicate the function prototype instead.
-//#include <intrin.h>
-extern "C" unsigned __int64 __rdtsc(void);
-#pragma intrinsic(__rdtsc)
-inline unsigned __int64 rdtsc()
-{
-	return __rdtsc();
-}
-#else
-inline uint64_t rdtsc()
-{
-#ifdef __amd64__
-	uint64_t tsc;
-	asm volatile ("rdtsc; shlq $32, %%rdx; orq %%rdx, %%rax" : "=a" (tsc) :: "%rdx");
-	return tsc;
-#elif defined __ppc__
-	unsigned int lower, upper, temp;
-	do
-	{
-		asm volatile ("mftbu %0 \n mftb %1 \n mftbu %2 \n" 
-			: "=r"(upper), "=r"(lower), "=r"(temp));
-	}
-	while (upper != temp);
-	return (static_cast<unsigned long long>(upper) << 32) | lower;
-#else // i386
-	if (CPU.bRDTSC)
-	{
-		uint64_t tsc;
-		asm volatile ("\trdtsc\n" : "=A" (tsc));
-		return tsc;
-	}
-	return 0;
-#endif // __amd64__
-}
-#endif
 
 class cycle_t
 {
@@ -149,24 +48,24 @@ public:
 	
 	void Clock()
 	{
-		int64_t time = rdtsc();
+		int64_t time = I_nsTime();
 		Counter -= time;
 	}
 	
 	void Unclock()
 	{
-		int64_t time = rdtsc();
+		int64_t time = I_nsTime();
 		Counter += time;
 	}
 	
 	double Time()
 	{
-		return Counter * PerfToSec;
+		return double(Counter) / 1'000'000'000;
 	}
 	
 	double TimeMS()
 	{
-		return Counter * PerfToMillisec;
+		return double(Counter) / 1'000'000;
 	}
 
 	int64_t GetRawCounter()
@@ -177,8 +76,6 @@ public:
 private:
 	int64_t Counter;
 };
-
-#endif
 
 class FStat
 {
