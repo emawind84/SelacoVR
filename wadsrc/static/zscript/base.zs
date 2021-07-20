@@ -991,6 +991,7 @@ struct StringStruct native
 	native void DeleteLastCharacter();
 	native int CodePointCount() const;
 	native int, int GetNextCodePoint(int position) const;
+	native void Substitute(String str, String replace);
 }
 
 class SectorEffect : Thinker native

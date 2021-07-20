@@ -3123,14 +3123,16 @@ static void P_PrecacheLevel()
 		AddToList(hitlist, sky2texture, FTextureManager::HIT_Sky);
 	}
 
+	static const BITFIELD checkForTextureFlags = FTextureManager::TEXMAN_Overridable | FTextureManager::TEXMAN_TryAny | FTextureManager::TEXMAN_ReturnFirst | FTextureManager::TEXMAN_DontCreate;
+
 	for (auto n : gameinfo.PrecachedTextures)
 	{
-		FTextureID tex = TexMan.CheckForTexture(n, ETextureType::Wall, FTextureManager::TEXMAN_Overridable | FTextureManager::TEXMAN_TryAny | FTextureManager::TEXMAN_ReturnFirst);
+		FTextureID tex = TexMan.CheckForTexture(n, ETextureType::Wall, checkForTextureFlags);
 		if (tex.Exists()) AddToList(hitlist, tex, FTextureManager::HIT_Wall);
 	}
 	for (unsigned i = 0; i < level.info->PrecacheTextures.Size(); i++)
 	{
-		FTextureID tex = TexMan.CheckForTexture(level.info->PrecacheTextures[i], ETextureType::Wall, FTextureManager::TEXMAN_Overridable | FTextureManager::TEXMAN_TryAny | FTextureManager::TEXMAN_ReturnFirst);
+		FTextureID tex = TexMan.CheckForTexture(level.info->PrecacheTextures[i], ETextureType::Wall, checkForTextureFlags);
 		if (tex.Exists()) AddToList(hitlist, tex, FTextureManager::HIT_Wall);
 	}
 

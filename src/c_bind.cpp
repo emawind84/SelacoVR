@@ -627,6 +627,13 @@ DEFINE_ACTION_FUNCTION(FKeyBindings, GetAllKeysForCommand)
 	return 0;
 }
 
+DEFINE_ACTION_FUNCTION(FKeyBindings, GetBinding)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FKeyBindings);
+	PARAM_INT(key);
+	ACTION_RETURN_STRING(self->GetBinding(key));
+}
+
 //=============================================================================
 //
 //
