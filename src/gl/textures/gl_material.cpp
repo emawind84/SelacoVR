@@ -335,11 +335,7 @@ const FHardwareTexture *FGLTexture::Bind(int texunit, int clampmode, int transla
 				}
 				tex->ProcessData(buffer, w, h, false);
 			}
-#ifdef __MOBILE__
 			if (!hwtex->CreateTexture(buffer, w, h, texunit, needmipmap, translation, "FGLTexture.Bind",true))
-#else
-			if (!hwtex->CreateTexture(buffer, w, h, texunit, needmipmap, translation, "FGLTexture.Bind")) 
-#endif
 			{
 				// could not create texture
 				delete[] buffer;

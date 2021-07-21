@@ -148,7 +148,6 @@ void FHardwareTexture::Resize(int width, int height, unsigned char *src_data, un
 	}
 }
 
-#ifdef __MOBILE__
 static void BGRAtoRGBA(unsigned char * buffer, int numPixels)
 {
     uint32_t *temp = (uint32_t *)buffer;
@@ -161,8 +160,9 @@ static void BGRAtoRGBA(unsigned char * buffer, int numPixels)
 
 static void GL_ResampleTexture (uint32_t *in, uint32_t inwidth, uint32_t inheight, uint32_t *out,  uint32_t outwidth, uint32_t outheight)
 {
+#ifdef __MOBILE__
 	LOGI("GL_ResampleTexture %dx%d -> %dx%d",inwidth,inheight,outwidth,outheight);
-
+#endif
 	int		i, j;
 	uint32_t	*inrow, *inrow2;
 	uint32_t	frac, fracstep;
@@ -206,7 +206,7 @@ static void GL_ResampleTexture (uint32_t *in, uint32_t inwidth, uint32_t inheigh
 	free(p1);
 	free(p2);
 }
-#endif
+
 //===========================================================================
 // 
 //	Loads the texture image into the hardware
@@ -217,11 +217,7 @@ static void GL_ResampleTexture (uint32_t *in, uint32_t inwidth, uint32_t inheigh
 //
 //===========================================================================
 
-#ifdef __MOBILE__
 unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, int translation, const FString &name, bool material)
-#else
-unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, int translation, const FString &name)
-#endif
 {
 	int rh,rw;
 	int texformat=TexFormat[gl_texture_format];
@@ -256,8 +252,7 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 		rw = GetTexDimension (w);
 		rh = GetTexDimension (h);
 
-#ifdef __MOBILE__
-       if (rw == w && rh == h) // Same size, do nothing
+		if (rw == w && rh == h) // Same size, do nothing
 		{
 		}
 		else if (rw < w || rh < h)
@@ -291,27 +286,11 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
             deletebuffer=true;
             buffer=(unsigned char *)scaledbuffer;
         }
-#else
-		if (rw < w || rh < h)
-		{
-			// The texture is larger than what the hardware can handle so scale it down.
-			unsigned char * scaledbuffer=(unsigned char *)calloc(4,rw * (rh+1));
-			if (scaledbuffer)
-			{
-				Resize(rw, rh, buffer, scaledbuffer);
-				deletebuffer=true;
-				buffer=scaledbuffer;
-			}
-		}
-#endif
 	}
 
-#ifdef __MOBILE__
 	BGRAtoRGBA( buffer, rw * rh );
-    glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-#else
-	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer);
-#endif
+	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+
 	if (deletebuffer) free(buffer);
 
 	if (mipmap && TexFilter[gl_texture_filter].mipmapping)
