@@ -760,9 +760,9 @@ void SprayDecal(AActor *shooter, const char *name, double distance, DVector3 off
 	//same for direction
 	if (direction.isZero() )
 	{
-	DAngle ang = shooter->Angles.Yaw;
-	DAngle pitch = shooter->Angles.Pitch;
-	double c = pitch.Cos();
+		DAngle ang = shooter->Angles.Yaw;
+		DAngle pitch = shooter->Angles.Pitch;
+		double c = pitch.Cos();
 		dir = DVector3(c * ang.Cos(), c * ang.Sin(), -pitch.Sin());
 	}
 	

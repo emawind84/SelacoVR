@@ -826,34 +826,34 @@ CCMD (rebind)
 //=============================================================================
 
 void C_BindLump(int lump)
+{
+	FScanner sc(lump);
+
+	while (sc.GetString())
 	{
-		FScanner sc(lump);
+		FKeyBindings *dest = &Bindings;
+		int key;
 
-		while (sc.GetString())
+		// bind destination is optional and is the same as the console command
+		if (sc.Compare("bind"))
 		{
-			FKeyBindings *dest = &Bindings;
-			int key;
-
-			// bind destination is optional and is the same as the console command
-			if (sc.Compare("bind"))
-			{
-				sc.MustGetString();
-			}
-			else if (sc.Compare("doublebind"))
-			{
-				dest = &DoubleBindings;
-				sc.MustGetString();
-			}
-			else if (sc.Compare("mapbind"))
-			{
-				dest = &AutomapBindings;
-				sc.MustGetString();
-			}
-			key = GetConfigKeyFromName(sc.String);
 			sc.MustGetString();
-			dest->SetBind(key, sc.String);
 		}
+		else if (sc.Compare("doublebind"))
+		{
+			dest = &DoubleBindings;
+			sc.MustGetString();
+		}
+		else if (sc.Compare("mapbind"))
+		{
+			dest = &AutomapBindings;
+			sc.MustGetString();
+		}
+		key = GetConfigKeyFromName(sc.String);
+		sc.MustGetString();
+		dest->SetBind(key, sc.String);
 	}
+}
 
 void C_BindDefaults ()
 {

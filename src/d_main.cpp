@@ -1033,7 +1033,7 @@ void D_ErrorCleanup ()
 
 	savegamerestore = false;
 	if (screen)
-	screen->Unlock ();
+		screen->Unlock ();
 	bglobal.RemoveAllBots (true);
 	D_QuitNetGame ();
 	if (demorecording || demoplayback)
@@ -1064,6 +1064,7 @@ void D_ErrorCleanup ()
 // calls I_GetTime, I_StartFrame, and I_StartTic
 //
 //==========================================================================
+
 void D_DoomLoop ()
 {
 	int lasttic = 0;
@@ -1134,7 +1135,7 @@ void D_DoomLoop ()
 			Printf("%s", error.stacktrace.GetChars());
 			D_ErrorCleanup();
 		}
-    }
+	}
 }
 
 //==========================================================================
@@ -2966,68 +2967,68 @@ void D_Cleanup()
 		G_CheckDemoStatus();
 	}
 
-		// Music and sound should be stopped first
-		S_StopMusic(true);
+	// Music and sound should be stopped first
+	S_StopMusic(true);
 	S_ClearSoundData();
 	S_UnloadReverbDef();
 	G_ClearMapinfo();
 
-		M_ClearMenus();					// close menu if open
-		F_EndFinale();					// If an intermission is active, end it now
-		AM_ClearColorsets();
+	M_ClearMenus();					// close menu if open
+	F_EndFinale();					// If an intermission is active, end it now
+	AM_ClearColorsets();
 	DeinitSWColorMaps();
 	FreeSBarInfoScript();
 #ifdef _WIN32
 	StopFPSLimit();
 #endif
 
-		// clean up game state
-		ST_Clear();
-		D_ErrorCleanup ();
+	// clean up game state
+	ST_Clear();
+	D_ErrorCleanup ();
 	P_Shutdown();
 
-		M_SaveDefaults(NULL);			// save config before the restart
+	M_SaveDefaults(NULL);			// save config before the restart
 
-		// delete all data that cannot be left until reinitialization
-		V_ClearFonts();					// must clear global font pointers
-		ColorSets.Clear();
-		PainFlashes.Clear();
-		R_DeinitTranslationTables();	// some tables are initialized from outside the translation code.
-		gameinfo.~gameinfo_t();
-		new (&gameinfo) gameinfo_t;		// Reset gameinfo
-		S_Shutdown();					// free all channels and delete playlist
-		C_ClearAliases();				// CCMDs won't be reinitialized so these need to be deleted here
-		DestroyCVarsFlagged(CVAR_MOD);	// Delete any cvar left by mods
-		FS_Close();						// destroy the global FraggleScript.
-		DeinitMenus();
-		LightDefaults.Clear();			// this can leak heap memory if it isn't cleared.
+	// delete all data that cannot be left until reinitialization
+	V_ClearFonts();					// must clear global font pointers
+	ColorSets.Clear();
+	PainFlashes.Clear();
+	R_DeinitTranslationTables();	// some tables are initialized from outside the translation code.
+	gameinfo.~gameinfo_t();
+	new (&gameinfo) gameinfo_t;		// Reset gameinfo
+	S_Shutdown();					// free all channels and delete playlist
+	C_ClearAliases();				// CCMDs won't be reinitialized so these need to be deleted here
+	DestroyCVarsFlagged(CVAR_MOD);	// Delete any cvar left by mods
+	FS_Close();						// destroy the global FraggleScript.
+	DeinitMenus();
+	LightDefaults.Clear();			// this can leak heap memory if it isn't cleared.
 
 	// delete DoomStartupInfo data
 	DoomStartupInfo.Name = "";
 	DoomStartupInfo.BkColor = DoomStartupInfo.FgColor = DoomStartupInfo.Type = 0;
 	DoomStartupInfo.LoadConpics = DoomStartupInfo.LoadWidescreen = DoomStartupInfo.LoadLights = DoomStartupInfo.LoadBrightmaps = -1;
 
-		GC::FullGC();					// clean up before taking down the object list.
+	GC::FullGC();					// clean up before taking down the object list.
 
-		// Delete the reference to the VM functions here which were deleted and will be recreated after the restart.
-		FAutoSegIterator probe(ARegHead, ARegTail);
-		while (*++probe != NULL)
-		{
-			AFuncDesc *afunc = (AFuncDesc *)*probe;
-			*(afunc->VMPointer) = NULL;
-		}
+	// Delete the reference to the VM functions here which were deleted and will be recreated after the restart.
+	FAutoSegIterator probe(ARegHead, ARegTail);
+	while (*++probe != NULL)
+	{
+		AFuncDesc *afunc = (AFuncDesc *)*probe;
+		*(afunc->VMPointer) = NULL;
+	}
 
-		GC::DelSoftRootHead();
+	GC::DelSoftRootHead();
 
-			PClass::StaticShutdown();
+	PClass::StaticShutdown();
 
-		GC::FullGC();					// perform one final garbage collection after shutdown
+	GC::FullGC();					// perform one final garbage collection after shutdown
 
-		assert(GC::Root == nullptr);
+	assert(GC::Root == nullptr);
 
-		restart++;
-		PClass::bShutdown = false;
-		PClass::bVMOperational = false;
+	restart++;
+	PClass::bShutdown = false;
+	PClass::bVMOperational = false;
 }
 
 //==========================================================================
