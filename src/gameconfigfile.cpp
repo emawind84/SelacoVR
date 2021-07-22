@@ -507,6 +507,23 @@ void FGameConfigFile::DoGlobalSetup ()
 			{
 				adl_volume_model = 0;
 			}
+			if (last < 223)
+			{
+				FBaseCVar *var = FindCVar("storesavepic", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("gl_max_lights", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("gl_light_shadowmap", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("gl_sprite_distance_cull", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("gl_line_distance_cull", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("r_sprite_distance_cull", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("r_sprite_distance_cull", NULL);
+				if (var != NULL) var->ResetToDefault();
+			}
 		}
 	}
 }
