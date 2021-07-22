@@ -172,7 +172,8 @@ static void AppendRenderTimes(FString &str)
 	str.AppendFormat("W: Render=%2.3f, Setup=%2.3f, Clip=%2.3f\n"
 		"F: Render=%2.3f, Setup=%2.3f\n"
 		"S: Render=%2.3f, Setup=%2.3f\n"
-		"All=%2.3f, Render=%2.3f, Setup=%2.3f, BSP = %2.3f, Portal=%2.3f, Drawcalls=%2.3f, Postprocess=%2.3f, Finish=%2.3f\n",
+		"All=%2.3f, Render=%2.3f, Setup=%2.3f, BSP = %2.3f\n"
+		"Portal=%2.3f, Drawcalls=%2.3f, Postprocess=%2.3f, Finish=%2.3f\n",
 	RenderWall.TimeMS(), setupwall, clipwall, RenderFlat.TimeMS(), SetupFlat.TimeMS(),
 	RenderSprite.TimeMS(), SetupSprite.TimeMS(), All.TimeMS() + Finish.TimeMS(), RenderAll.TimeMS(),
 	ProcessAll.TimeMS(), bsp, PortalAll.TimeMS(), drawcalls.TimeMS(), PostProcess.TimeMS(), Finish.TimeMS());

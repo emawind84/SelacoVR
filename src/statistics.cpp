@@ -574,7 +574,7 @@ FString GetStatString()
 	for(unsigned i = 0; i < LevelData.Size(); i++)
 	{
 		OneLevel *l = &LevelData[i];
-		compose.AppendFormat("Level %s - Kills: %d/%d - Items: %d/%d - Secrets: %d/%d - Time: %d:%02d\n", 
+		compose.AppendFormat("Level %s - Kills: %d/%d - Items: %d/%d\nSecrets: %d/%d - Time: %d:%02d\n", 
 			l->Levelname.GetChars(), l->killcount, l->totalkills, l->itemcount, l->totalitems, l->secretcount, l->totalsecrets,
 			l->leveltime/(60*TICRATE), (l->leveltime/TICRATE)%60);
 	}

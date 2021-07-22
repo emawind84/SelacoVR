@@ -749,7 +749,7 @@ ADD_STAT(VM)
 	memmove(&VMCalls[1], &VMCalls[0], 9 * sizeof(int));
 	VMCycles[0].Reset();
 	VMCalls[0] = 0;
-	return FStringf("VM time in last 10 tics: %f ms, %d calls, peak = %f ms", added, addedc, peak);
+	return FStringf("VM time in last 10 tics: %f ms\n%d calls, peak = %f ms", added, addedc, peak);
 }
 
 //-----------------------------------------------------------------------------
