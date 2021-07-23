@@ -276,13 +276,9 @@ void OpenGLFrameBuffer::Wiper::MakeVBO(OpenGLFrameBuffer *fb)
 {
 	FSimpleVertex make[4];
 	FSimpleVertex *ptr = make;
-#ifdef __MOBILE__
+
 	float ur = (float)fb->GetWidth() / (float)FHardwareTexture::GetTexDimension(fb->GetWidth());
 	float vb = (float)fb->GetHeight() / (float)FHardwareTexture::GetTexDimension(fb->GetHeight());
-#else
-	float ur = fb->GetWidth() / FHardwareTexture::GetTexDimension(fb->GetWidth());
-	float vb = fb->GetHeight() / FHardwareTexture::GetTexDimension(fb->GetHeight());
-#endif
 
 	ptr->Set(0, 0, 0, 0, vb);
 	ptr++;
@@ -373,13 +369,10 @@ int OpenGLFrameBuffer::Wiper_Melt::MakeVBO(int ticks, OpenGLFrameBuffer *fb, boo
 	FSimpleVertex *make = new FSimpleVertex[321*4];
 	FSimpleVertex *ptr = make;
 	int dy;
-#ifdef __MOBILE__
+
 	float ur = (float)fb->GetWidth() / (float)FHardwareTexture::GetTexDimension(fb->GetWidth());
 	float vb = (float)fb->GetHeight() / (float)FHardwareTexture::GetTexDimension(fb->GetHeight());
-#else
-	float ur = fb->GetWidth() / FHardwareTexture::GetTexDimension(fb->GetWidth());
-	float vb = fb->GetHeight() / FHardwareTexture::GetTexDimension(fb->GetHeight());
-#endif
+
 	ptr->Set(0, 0, 0, 0, vb);
 	ptr++;
 	ptr->Set(0, fb->Height, 0, 0, 0);
@@ -542,13 +535,10 @@ bool OpenGLFrameBuffer::Wiper_Burn::Run(int ticks, OpenGLFrameBuffer *fb)
 			*dest++ = MAKEARGB(s,255,255,255);
 		}
 	}
-#ifdef __MOBILE__
+
 	float ur = (float)fb->GetWidth() / (float)FHardwareTexture::GetTexDimension(fb->GetWidth());
 	float vb = (float)fb->GetHeight() / (float)FHardwareTexture::GetTexDimension(fb->GetHeight());
-#else
-	float ur = fb->GetWidth() / FHardwareTexture::GetTexDimension(fb->GetWidth());
-	float vb = fb->GetHeight() / FHardwareTexture::GetTexDimension(fb->GetHeight());
-#endif
+
 
 	// Put the initial screen back to the buffer.
 	gl_RenderState.SetTextureMode(TM_OPAQUE);
