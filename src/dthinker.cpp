@@ -53,7 +53,7 @@ extern cycle_t BotSupportCycles;
 extern cycle_t ActionCycles;
 extern int BotWTG;
 
-EXTERN_CVAR (Int, vid_renderer)
+extern int currentrenderer;
 EXTERN_CVAR (Bool, gl_lights)
 EXTERN_CVAR (Bool, r_dynlights)
 
@@ -628,7 +628,7 @@ void DThinker::RunThinkers ()
 			}
 		} while (count != 0);
 
-		if (level.lights && (vid_renderer && gl_lights || !vid_renderer && r_dynlights))
+		if (level.lights && (gl_lights && currentrenderer == 1 || r_dynlights && currentrenderer == 0))
 		{
 			for (auto light = level.lights; light;)
 			{
@@ -657,7 +657,7 @@ void DThinker::RunThinkers ()
 			}
 		} while (count != 0);
 
-		if (level.lights && (vid_renderer && gl_lights || !vid_renderer && r_dynlights))
+		if (level.lights && (gl_lights && currentrenderer == 1 || r_dynlights && currentrenderer == 0))
 		{
 			// Also profile the internal dynamic lights, even though they are not implemented as thinkers.
 			auto &prof = Profiles[NAME_InternalDynamicLight];
