@@ -153,7 +153,7 @@ public:
 		mCurIndex += num;
 		if (mCurIndex >= (gl_buffer_size - 500))
 		{
-			Printf("ERROR - We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
+			DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
 			mCurIndex = mIndex;
 		}
 		vertexbuffer_curindex = mCurIndex;
@@ -168,7 +168,7 @@ public:
 		mCurIndex = newofs;
 		if (mCurIndex >= (gl_buffer_size - 500))
 		{
-			Printf("ERROR - We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
+			DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
 			mCurIndex = mIndex;
 		}
 		vertexbuffer_curindex = mCurIndex;
