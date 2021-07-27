@@ -150,7 +150,7 @@ int FLightBuffer::UploadLights(FDynLightData &data)
 	}
 	else
 	{
-		Printf("ERROR - We have run out of BUFFERS!, mIndex=%d\n", thisindex + totalsize);
+		DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mIndex=%d\n", thisindex + totalsize);
 		return -1;	// Buffer is full. Since it is being used live at the point of the upload we cannot do much here but to abort.
 	}
 }
