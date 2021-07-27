@@ -101,6 +101,7 @@ public:
 	int			GetSprite()						const { return Sprite; }
 	int			GetFrame()						const { return Frame; }
 	int			GetTics()						const {	return Tics; }
+	uint32_t	GetTranslation()					  { return Translation; }
 	FState*		GetState()						const { return State; }
 	DPSprite*	GetNext()							  { return Next; }
 	AActor*		GetCaller()							  { return Caller; }
@@ -122,6 +123,7 @@ public:
 	WeaponInterp Vert;		// Current Position
 	bool firstTic;
 	int Tics;
+	uint32_t Translation;
 	int Flags;
 	FRenderStyle Renderstyle;
 

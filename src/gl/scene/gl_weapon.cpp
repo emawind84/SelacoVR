@@ -97,7 +97,9 @@ void GLSceneDrawer::DrawPSprite (player_t * player,DPSprite *psp, float sx, floa
 	FMaterial * tex = FMaterial::ValidateTexture(lump, true, false);
 	if (!tex) return;
 
-	gl_RenderState.SetMaterial(tex, CLAMP_XY_NOMIP, psp->Flags & PSPF_PLAYERTRANSLATED ? psp->Owner->mo->Translation : 0, OverrideShader, alphatexture);
+	uint32_t trans = psp->GetTranslation() != 0 ? psp->GetTranslation() : 0;
+	if ((psp->Flags & PSPF_PLAYERTRANSLATED)) trans = psp->Owner->mo->Translation;
+	gl_RenderState.SetMaterial(tex, CLAMP_XY_NOMIP, trans, OverrideShader, alphatexture);
 
 	float vw = (float)viewwidth;
 	float vh = (float)viewheight;
