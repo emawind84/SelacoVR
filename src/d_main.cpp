@@ -3026,7 +3026,6 @@ void D_Cleanup()
 #endif
 
 	// clean up game state
-	ST_Clear();
 	D_ErrorCleanup ();
 	P_Shutdown();
 
