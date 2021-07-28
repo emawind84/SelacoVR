@@ -57,7 +57,7 @@ void Mac_I_FatalError(const char* errortext);
 void Linux_I_FatalError(const char* errortext)
 {
 	// Close window or exit fullscreen and release mouse capture
-	SDL_Quit();
+	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 
 	const char *str;
 	if((str=getenv("KDE_FULL_SESSION")) && strcmp(str, "true") == 0)
