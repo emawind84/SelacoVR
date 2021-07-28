@@ -1543,7 +1543,7 @@ void DBaseStatusBar::DrawGraphic(FTextureID texture, double x, double y, int fla
 		DTA_AlphaChannel, !!(flags & DI_ALPHAMAPPED),
 		DTA_FillColor, (flags & DI_ALPHAMAPPED) ? 0 : -1,
 		DTA_FlipX, !!(flags & DI_MIRROR),
-		DTA_LegacyRenderStyle, style,
+		DTA_LegacyRenderStyle, (flags & DI_ALPHAMAPPED) ? STYLE_Shaded : style,
 		TAG_DONE);
 }
 
