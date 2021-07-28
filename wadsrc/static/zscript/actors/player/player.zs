@@ -1273,7 +1273,7 @@ class PlayerPawn : Actor
 			Angle += cmd.yaw * (360./65536.);
 		}
 
-		player.onground = (pos.z <= floorz) || bOnMobj || bMBFBouncer || (player.cheats & CF_NOCLIP2);
+		player.onground = (pos.z <= floorz + 1) || bOnMobj || bMBFBouncer || (player.cheats & CF_NOCLIP2);
 
 		// killough 10/98:
 		//
