@@ -371,24 +371,17 @@ CCMD (changemap)
 	if (argv.argc() > 1)
 	{
 		const char *mapname = argv[1];
-		if (!strcmp(mapname, "*")) mapname = level.MapName.GetChars();
-
-		if (strstr(mapname, "next") && !P_CheckMapData(mapname))
+		if (!strcmp(mapname, "*"))
 		{
-			if (!strcmp(mapname, "next"))
-			{
-				if (level.NextMap.Len() > 0 && level.NextMap.Compare("enDSeQ", 6))
-				{
-					mapname = level.NextMap.GetChars();
-				}
-			}
-			else if (!strcmp(mapname, "nextsecret"))
-			{
-				if (level.NextSecretMap.Len() > 0 && level.NextSecretMap.Compare("enDSeQ", 6))
-				{
-					mapname = level.NextSecretMap.GetChars();
-				}
-			}
+			mapname = level.MapName.GetChars();
+		}
+		else if (!strcmp(mapname, "+") && level.NextMap.Len() > 0 && level.NextMap.Compare("enDSeQ", 6))
+		{
+			mapname = level.NextMap.GetChars();
+		}
+		else if (!strcmp(mapname, "+$") && level.NextSecretMap.Len() > 0 && level.NextSecretMap.Compare("enDSeQ", 6))
+		{
+			mapname = level.NextSecretMap.GetChars();
 		}
 
 		try
