@@ -1,5 +1,4 @@
 //-----------------------------------------------------------------------------
-//
 // Copyright 1993-1996 id Software
 // Copyright 1999-2016 Randy Heit
 // Copyright 2002-2016 Christoph Oelckers
@@ -2381,6 +2380,72 @@ static void CheckCmdLine()
 	}
 }
 
+//==========================================================================
+//
+// I_Error
+//
+// Throw an error that will send us to the console if we are far enough
+// along in the startup process.
+//
+//==========================================================================
+
+void I_Error(const char *error, ...)
+{
+	va_list argptr;
+	char errortext[MAX_ERRORTEXT];
+
+	va_start(argptr, error);
+	myvsnprintf(errortext, MAX_ERRORTEXT, error, argptr);
+	va_end(argptr);
+	I_DebugPrint(errortext);
+
+#ifdef __ANDROID__
+	LOGI("ERROR: %s", errortext);
+#endif
+
+	throw CRecoverableError(errortext);
+}
+
+//==========================================================================
+//
+// I_FatalError
+//
+// Throw an error that will end the game.
+//
+//==========================================================================
+extern FILE *Logfile;
+
+void I_FatalError(const char *error, ...)
+{
+	static bool alreadyThrown = false;
+	gameisdead = true;
+
+	if (!alreadyThrown)		// ignore all but the first message -- killough
+	{
+		alreadyThrown = true;
+		char errortext[MAX_ERRORTEXT];
+		va_list argptr;
+		va_start(argptr, error);
+		myvsnprintf(errortext, MAX_ERRORTEXT, error, argptr);
+		va_end(argptr);
+		I_DebugPrint(errortext);
+
+		// Record error to log (if logging)
+		if (Logfile)
+		{
+			fprintf(Logfile, "\n**** DIED WITH FATAL ERROR:\n%s\n", errortext);
+			fflush(Logfile);
+		}
+
+		throw CFatalError(errortext);
+	}
+	std::terminate(); // recursive I_FatalErrors must immediately terminate.
+}
+
+static void NewFailure ()
+{
+    I_FatalError ("Failed to allocate memory from system heap");
+}
 
 static void FixUnityStatusBar()
 {
@@ -2421,6 +2486,7 @@ static int D_DoomMain_Internal (void)
 	int argcount;	
 	FIWadManager *iwad_man;
 	
+	std::set_new_handler(NewFailure);
 	const char *batchout = Args->CheckValue("-errorlog");
 
 	C_InitConsole(80*8, 25*8, false);
@@ -2921,6 +2987,7 @@ int D_DoomMain()
 	}
 	catch (const std::exception &error)
 	{
+		I_ShowFatalError(error.what());
 		ret = -1;
 	}
 	// Unless something really bad happened, the game should only exit through this single point in the code.
@@ -3109,6 +3176,25 @@ void FStartupScreen::LoadingStatus(const char *message, int colors)
 void FStartupScreen::AppendStatusLine(const char *status)
 {
 }
+
+//===========================================================================
+//
+// DeleteStartupScreen
+//
+// Makes sure the startup screen has been deleted before quitting.
+//
+//===========================================================================
+
+void DeleteStartupScreen()
+{
+	if (StartScreen != nullptr)
+	{
+		delete StartScreen;
+		StartScreen = nullptr;
+	}
+}
+
+
 
 void FStartupScreen::Progress(void) {}
 void FStartupScreen::NetInit(char const *,int) {}

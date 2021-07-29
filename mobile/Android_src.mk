@@ -70,7 +70,8 @@ ANDROID_SRC_FILES = \
     ../mobile/src/i_specialpaths_android.cpp
 
 PLAT_POSIX_SOURCES = \
-	posix/i_steam.cpp
+	posix/i_steam.cpp \
+	posix/i_system_posix.cpp
 
 PLAT_NOSDL_SOURCES = \
 	posix/nosdl/crashcatcher.c \

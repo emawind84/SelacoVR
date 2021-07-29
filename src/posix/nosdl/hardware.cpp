@@ -107,15 +107,13 @@ void I_InitGraphics ()
 	val.Bool = !!Args->CheckParm ("-devparm");
 	ticker.SetGenericRepDefault (val, CVAR_Bool);
 	
-	currentrenderer = vid_renderer;
+	//currentrenderer = vid_renderer;
 	Video = new NoSDLGLVideo(0);
 	
 	if (Video == NULL)
 		I_FatalError ("Failed to initialize display");
 
 	Video->SetWindowedScale (vid_winscale);
-
-	currentrenderer = vid_renderer;
 }
 
 void I_DeleteRenderer()

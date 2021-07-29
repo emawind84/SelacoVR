@@ -43,11 +43,10 @@
 #include "doomdef.h"
 #include "i_system.h"
 #include "c_cvars.h"
+#include "doomerrors.h"
 
 #ifdef __ANDROID__
 #include <android/log.h>
-#include <gzdoom-g3.3mgw_mobile/src/doomerrors.h>
-
 #define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,"NETOWRK",__VA_ARGS__)
 #define fprintf my_fprintf
 
@@ -93,11 +92,7 @@ class FTTYStartupScreen : public FStartupScreen
 
 // PUBLIC FUNCTION PROTOTYPES ----------------------------------------------
 
-void I_ShutdownJoysticks();
-
 // PRIVATE FUNCTION PROTOTYPES ---------------------------------------------
-
-void DeleteStartupScreen();
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
@@ -129,23 +124,6 @@ static const char SpinnyProgressChars[4] = { '|', '/', '-', '\\' };
 FStartupScreen *FStartupScreen::CreateInstance(int max_progress)
 {
 	return new FTTYStartupScreen(max_progress);
-}
-
-//===========================================================================
-//
-// DeleteStartupScreen
-//
-// Makes sure the startup screen has been deleted before quitting.
-//
-//===========================================================================
-
-void DeleteStartupScreen()
-{
-	if (StartScreen != NULL)
-	{
-		delete StartScreen;
-		StartScreen = NULL;
-	}
 }
 
 //===========================================================================
@@ -373,7 +351,6 @@ bool FTTYStartupScreen::NetLoop(bool (*timer_callback)(void *), void *userdata)
 		}
 	}
 }
-
 
 void ST_Endoom()
 {
