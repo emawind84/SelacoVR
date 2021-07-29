@@ -130,7 +130,7 @@ int FLightBuffer::UploadLights(FDynLightData &data)
 	
 	if (totalsize <= 1) return -1;	// there are no lights
 
-	assert(mBufferPointer != nullptr);
+	//assert(mBufferPointer != nullptr);
 	if (mBufferPointer == nullptr) return -1;
 	
 	unsigned thisindex = mIndex.fetch_add(totalsize);
