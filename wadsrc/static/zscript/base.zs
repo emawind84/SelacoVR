@@ -106,7 +106,7 @@ struct TexMan
 		NOT_FLAT			= 24
 	};
 
-	native static TextureID CheckForTexture(String name, int usetype, int flags = TryAny);
+	native static TextureID CheckForTexture(String name, int usetype = Type_Any, int flags = TryAny);
 	native static void ReplaceTextures(String from, String to, int flags);
 	native static String GetName(TextureID tex);
 	native static int, int GetSize(TextureID tex);
