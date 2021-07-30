@@ -98,7 +98,7 @@ jobs:
         cd build
         mkdir package
         if [[ "${{ runner.os }}" == 'Windows' ]]; then
-          cp ${{ matrix.config.build_type }}/*.pk3 package
+          cp *.pk3 package
         elif [[ "${{ runner.os }}" == 'macOS' ]]; then
           cp -r lzdoom.app package
         elif [[ "${{ runner.os }}" == 'Linux' ]]; then
