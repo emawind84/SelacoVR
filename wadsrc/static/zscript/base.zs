@@ -189,6 +189,8 @@ enum DrawTextureTags
 	DTA_FullscreenEx,		// advanced fullscreen control.
 	DTA_FullscreenScale,	// enable DTA_Fullscreen coordinate calculation for placed overlays.
 
+	DTA_CleanTop,			// Like DTA_Clean but aligns to the top of the screen instead of the center.
+
 };
 
 class Shape2DTransform : Object native
