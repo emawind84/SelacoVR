@@ -271,7 +271,7 @@ public:
 	bool uploadedOnce = false;
 	DrawParms* lastParms;
 
-	~DShape2D();
+	void OnDestroy() override;
 };
 
 
