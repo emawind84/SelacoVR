@@ -55,7 +55,6 @@
 #include "gl/shaders/gl_shader.h"
 #include "gl/stereo3d/scoped_color_mask.h"
 #include "gl/textures/gl_material.h"
-#include "gl/utility/gl_clock.h"
 #include "gl/utility/gl_templates.h"
 
 //-----------------------------------------------------------------------------
@@ -180,12 +179,10 @@ void GLPortal::DrawPortalStencil(int pass)
 bool GLPortal::Start(bool usestencil, bool doquery)
 {
 	rendered_portals++;
-//	PortalAll.Clock();
 	if (usestencil)
 	{
 		if (!gl_portals) 
 		{
-//			PortalAll.Unclock();
 			return false;
 		}
 	
@@ -243,7 +240,6 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 						// restore default stencil op.
 						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 						glStencilFunc(GL_EQUAL, recursion, ~0);		// draw sky into stencil
-						PortalAll.Unclock();
 						return false;
 					}
 				}
@@ -302,7 +298,6 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 	GLRenderer->mCurrentPortal = this;
 
 	if (PrevPortal != NULL) PrevPortal->PushState();
-//	PortalAll.Unclock();
 	return true;
 }
 
@@ -343,7 +338,6 @@ void GLPortal::End(bool usestencil)
 {
 	bool needdepth = NeedDepthBuffer();
 
-	PortalAll.Clock();
 	if (PrevPortal != NULL) PrevPortal->PopState();
 	GLRenderer->mCurrentPortal = PrevPortal;
 	GLRenderer->mClipPortal = PrevClipPortal;
@@ -442,7 +436,6 @@ void GLPortal::End(bool usestencil)
 		}
 		glDepthFunc(GL_LESS);
 	}
-	PortalAll.Unclock();
 }
 
 
@@ -1076,7 +1069,7 @@ void GLLineToLinePortal::RenderAttached()
 // are 2 problems with it:
 //
 // 1. Setting this up completely negates any performance gains.
-// 2. It doesn't work with a 360° field of view (as when you are looking up.)
+// 2. It doesn't work with a 360ï¿½ field of view (as when you are looking up.)
 //
 //
 // So the brute force mechanism is just as good.
@@ -1153,8 +1146,6 @@ GLHorizonPortal::GLHorizonPortal(GLHorizonInfo * pt, bool local)
 //-----------------------------------------------------------------------------
 void GLHorizonPortal::DrawContents()
 {
-	PortalAll.Clock();
-
 	FMaterial * gltexture;
 	player_t * player=&players[consoleplayer];
 	GLSectorPlane * sp = &origin->plane;
@@ -1163,7 +1154,6 @@ void GLHorizonPortal::DrawContents()
 	if (!gltexture) 
 	{
 		ClearScreen();
-		PortalAll.Unclock();
 		return;
 	}
 	gl_RenderState.SetCameraPos(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z);
@@ -1199,7 +1189,6 @@ void GLHorizonPortal::DrawContents()
 	GLRenderer->mVBO->RenderArray(GL_TRIANGLE_STRIP, voffset + vcount, 10);
 
 	gl_RenderState.EnableTextureMatrix(false);
-	PortalAll.Unclock();
 
 }
 
@@ -1226,7 +1215,6 @@ void GLHorizonPortal::DrawContents()
 
 void GLEEHorizonPortal::DrawContents()
 {
-	PortalAll.Clock();
 	sector_t *sector = portal->mOrigin;
 	if (sector->GetTexture(sector_t::floor) == skyflatnum ||
 		sector->GetTexture(sector_t::ceiling) == skyflatnum)
