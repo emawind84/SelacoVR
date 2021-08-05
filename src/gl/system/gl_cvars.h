@@ -28,6 +28,7 @@ EXTERN_CVAR (Bool, gl_light_particles);
 EXTERN_CVAR (Bool, gl_light_shadowmap);
 EXTERN_CVAR (Int, gl_shadowmap_quality);
 EXTERN_CVAR (Int, gl_light_buffer_type);
+EXTERN_CVAR (Float, gl_light_distance_cull);
 
 EXTERN_CVAR(Int, gl_fogmode)
 EXTERN_CVAR(Int, gl_lightmode)

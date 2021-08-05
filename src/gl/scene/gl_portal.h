@@ -41,6 +41,7 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/utility/gl_templates.h"
+#include "gl/utility/gl_clock.h"
 #include "gl/data/gl_data.h"
 
 struct GLHorizonInfo
@@ -158,11 +159,13 @@ public:
 		// Start may perform an occlusion query. If that returns 0 there
 		// is no need to draw the stencil's contents and there's also no
 		// need to restore the affected area becasue there is none!
+		PortalAll.Clock();
 		if (Start(usestencil, doquery))
 		{
 			DrawContents();
 			End(usestencil);
 		}
+		PortalAll.Unclock();
 	}
 
 	void AddLine(GLWall * l)

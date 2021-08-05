@@ -48,8 +48,6 @@
 #include "gl/utility/gl_templates.h"
 #include "gl/renderer/gl_quaddrawer.h"
 
-EXTERN_CVAR(Bool, gl_seamless)
-
 //==========================================================================
 //
 // Collect lights for shader
@@ -102,7 +100,7 @@ void GLWall::SetupLights()
 	// Iterate through all dynamic lights which touch this wall and render them
 	while (node)
 	{
-		if (node->lightsource->IsActive())
+		if (node->lightsource->IsActive() && !gl_IsDistanceCulled(node->lightsource))
 		{
 			iter_dlight++;
 

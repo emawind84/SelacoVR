@@ -106,7 +106,7 @@ struct TexMan
 		NOT_FLAT			= 24
 	};
 
-	native static TextureID CheckForTexture(String name, int usetype, int flags = TryAny);
+	native static TextureID CheckForTexture(String name, int usetype = Type_Any, int flags = TryAny);
 	native static void ReplaceTextures(String from, String to, int flags);
 	native static String GetName(TextureID tex);
 	native static int, int GetSize(TextureID tex);
@@ -188,6 +188,8 @@ enum DrawTextureTags
 
 	DTA_FullscreenEx,		// advanced fullscreen control.
 	DTA_FullscreenScale,	// enable DTA_Fullscreen coordinate calculation for placed overlays.
+
+	DTA_CleanTop,			// Like DTA_Clean but aligns to the top of the screen instead of the center.
 
 };
 
@@ -406,6 +408,7 @@ struct GameInfoStruct native
 	native double gibfactor;
 	native bool intermissioncounter;
 	native Name mSliderColor;
+	native Name mSliderBackColor;
 	native Color defaultbloodcolor;
 	native double telefogheight;
 	native int defKickback;
