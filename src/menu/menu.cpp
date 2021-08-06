@@ -370,11 +370,6 @@ void M_StartControlPanel (bool makeSound)
 	BackbuttonAlpha = 0;
 }
 
-int getMenuState()
-{
-	return (int)menuactive;
-}
-
 //=============================================================================
 //
 //
@@ -1132,6 +1127,7 @@ CCMD(undocolorpic)
 		}
 	}
 }
+
 
 DEFINE_GLOBAL(menuactive)
 DEFINE_GLOBAL(BackbuttonTime)
