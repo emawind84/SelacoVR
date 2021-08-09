@@ -1366,14 +1366,6 @@ class LevelCompatibility : LevelPostProcessor
 				break;
 			}
 			
-			case '11EA5B8357DEB70A8F00900117831191': // kdizd_12.pk3 z1m3
-			{
-				// Fix incorrectly tagged underwater sector which causes render glitches.
-				ClearSectorTags(7857);
-				AddSectorTag(7857, 82);
-				break;
-			}
-			
 			case '7B1EB6C1231CD03E90F4A1C0D51A8B6D': // ur_final.wad map17
 			{
 				SetLineSpecial(3020, Transfer_Heights, 19);
