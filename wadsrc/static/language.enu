@@ -1923,7 +1923,6 @@ DSPLYMNU_GPUSWITCH				= "Notebook Switchable GPU";
 DSPLYMNU_CUSTOMINVERTMAP		= "Custom Inverse Map";
 DSPLYMNU_CUSTOMINVERTC1			= "Custom Inverse Color Dark";
 DSPLYMNU_CUSTOMINVERTC2			= "Custom Inverse Color Light";
-DSPLYMNU_RENDERSKYDOME			= "Render the skydome";
 
 // HUD Options
 HUDMNU_TITLE					= "HUD Options";
@@ -2826,6 +2825,7 @@ GLPREFMNU_PALTONEMAPPOWER		= "Tonemap Palette Exponent";
 GLPREFMNU_SWLMBANDED			= "Banded SW Lightmode";
 GLPREFMNU_VRIPD					= "Distance Between Your Eyes";
 GLPREFMNU_VRSCREENDIST			= "Distance From Your Screen";
+GLPREFMNU_RENDERSKYDOME			= "Render the skydome";
 
 // Option Values
 OPTVAL_SMART 				= "Smart";

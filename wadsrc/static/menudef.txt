@@ -945,7 +945,6 @@ OptionMenu "VideoOptions" protected
 	Option "$DSPLYMNU_TELEZOOM",				"telezoom", "OnOff"
 	Slider "$DSPLYMNU_QUAKEINTENSITY",			"r_quakeintensity", 0.0, 1.0, 0.05, 2
 	Option "$DSPLYMNU_NOMONSTERINTERPOLATION",	"nomonsterinterpolation", "NoYes"
-	Option "$DSPLYMNU_RENDERSKYDOME",			"gl_skydome", "YesNo"
 }
 
 
@@ -2746,6 +2745,7 @@ OptionMenu "OpenGLOptions" protected
 	Option "$GLPREFMNU_SPRBILLFACECAMERA",		gl_billboard_faces_camera,		"OnOff"
 	Option "$GLPREFMNU_PARTICLESTYLE",			gl_particles_style,				"Particles"
 	Option "$GLPREFMNU_RENDERQUALITY",			gl_render_precise,				"Precision"
+	Option "$GLPREFMNU_RENDERSKYDOME",			gl_skydome, 					"YesNo"
 	StaticText " "
 	Slider "$DSPLYMNU_SPRITECULL",			gl_sprite_distance_cull, 1000.0, 8000.0, 500.0, 0
 	Slider "$DSPLYMNU_LINECULL",			gl_line_distance_cull, 2000.0, 16000.0, 1000.0, 0
