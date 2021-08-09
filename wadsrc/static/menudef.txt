@@ -905,8 +905,8 @@ OptionMenu "SWROptions" protected
 	Option "$DSPLYMNU_MODELS",					"r_models", "OnOff"
 	Option "$DSPLYMNU_MODELSCARMACK",			"r_models_carmack", "OnOff"
 	StaticText " "
-	Slider "$DSPLYMNU_SPRITECULL",			"r_sprite_distance_cull",	1000.0, 8000.0, 500.0, 0
-	Slider "$DSPLYMNU_LINECULL",			"r_line_distance_cull",	2000.0, 16000.0, 1000.0, 0
+	ScaleSlider "$DSPLYMNU_SPRITECULL",			"r_sprite_distance_cull", 0.0, 8000.0, 500.0, "Culling disabled"
+	ScaleSlider "$DSPLYMNU_LINECULL",			"r_line_distance_cull", 0.0, 16000.0, 1000.0, "Culling disabled"
 	Command "$DSPLYMNU_DISABLERENDERCULL",	"disablerendercull"
 }
 
@@ -2747,8 +2747,8 @@ OptionMenu "OpenGLOptions" protected
 	Option "$GLPREFMNU_RENDERQUALITY",			gl_render_precise,				"Precision"
 	Option "$GLPREFMNU_RENDERSKYDOME",			gl_skydome, 					"YesNo"
 	StaticText " "
-	Slider "$DSPLYMNU_SPRITECULL",			gl_sprite_distance_cull, 1000.0, 8000.0, 500.0, 0
-	Slider "$DSPLYMNU_LINECULL",			gl_line_distance_cull, 2000.0, 16000.0, 1000.0, 0
+	ScaleSlider "$DSPLYMNU_SPRITECULL",			gl_sprite_distance_cull, 0.0, 8000.0, 500.0, "Culling disabled"
+	ScaleSlider "$DSPLYMNU_LINECULL",			gl_line_distance_cull, 0.0, 16000.0, 1000.0, "Culling disabled"
 	Command "$DSPLYMNU_DISABLERENDERCULL",	"disablerendercull"
 	StaticText " "
 	Slider "$GLPREFMNU_MENUBLUR",				gl_menu_blur, 0, 5.0, 0.5, 2
