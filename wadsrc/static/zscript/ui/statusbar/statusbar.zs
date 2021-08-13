@@ -1187,7 +1187,7 @@ class BaseStatusBar native ui
 				}
 				else
 				{
-					DrawInventoryIcon(item, itempos + (boxsize.X * i, 0), flags | DI_ITEM_CENTER );
+					DrawInventoryIcon(item, itempos + (boxsize.X * i, 0), flags | DI_ITEM_CENTER | DI_DIMDEPLETED );
 				}
 			}
 			

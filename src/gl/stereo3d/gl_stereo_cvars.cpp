@@ -35,10 +35,10 @@
 #include "version.h"
 
 // Set up 3D-specific console variables:
-CVAR(Int, vr_mode, 0, CVAR_GLOBALCONFIG)
+CVAR(Int, vr_mode, 0, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
 
 // switch left and right eye views
-CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
 
 // For broadest GL compatibility, require user to explicitly enable quad-buffered stereo mode.
 // Setting vr_enable_quadbuffered_stereo does not automatically invoke quad-buffered stereo,
