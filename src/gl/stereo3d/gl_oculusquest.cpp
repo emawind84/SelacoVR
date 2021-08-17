@@ -455,7 +455,7 @@ namespace s3d
             movebob = 0;
         }
 
-        if (gamestate == GS_LEVEL && !getMenuState()) {
+        if (gamestate == GS_LEVEL && getMenuState() == MENU_Off) {
             cachedScreenBlocks = screenblocks;
             screenblocks = 12;
             QzDoom_setUseScreenLayer(false);
@@ -475,23 +475,21 @@ namespace s3d
         vr_weapon_pitchadjust = vr_weaponRotate;
         vr_snapturn_angle = vr_snapTurn;
         vr_switchsticks = vr_switch_sticks;
-        vr_moveuseoffhand = !vr_move_use_offhand;
+        vr_moveuseoffhand = vr_move_use_offhand;
         vr_use_teleport = vr_teleport;
         vr_secondarybuttonmappings = vr_secondary_button_mappings;
         vr_twohandedweapons = vr_two_handed_weapons;
         QzDoom_getTrackedRemotesOrientation(vr_control_scheme);
 
         //Some crazy stuff to ascertain the actual yaw that doom is using at the right times!
-        if (gamestate != GS_LEVEL || getMenuState() || (gamestate == GS_LEVEL && resetDoomYaw))
+        if (getGameState() != GS_LEVEL || getMenuState() != MENU_Off)
         {
             doomYaw = (float)r_viewpoint.Angles.Yaw.Degrees;
-            if (gamestate == GS_LEVEL && resetDoomYaw) {
-                resetDoomYaw = false;
-            }
-            if (gamestate != GS_LEVEL || getMenuState())
-            {
-                resetDoomYaw = true;
-            }
+            resetDoomYaw = true;
+        }
+        else if (getGameState() == GS_LEVEL && resetDoomYaw) {
+            doomYaw = (float)r_viewpoint.Angles.Yaw.Degrees;
+            resetDoomYaw = false;
         }
 
         player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
@@ -543,7 +541,7 @@ namespace s3d
                         auto vel = player->mo->Vel;
                         player->mo->Vel = DVector3(m_TeleportLocation.X - player->mo->X(),
                                                    m_TeleportLocation.Y - player->mo->Y(), 0);
-                        bool wasOnGround = player->mo->Z() <= player->mo->floorz;
+                        bool wasOnGround = player->mo->Z() <= player->mo->floorz + 0.1;
                         double oldZ = player->mo->Z();
                         P_XYMovement(player->mo, DVector2(0, 0));
 
@@ -568,7 +566,7 @@ namespace s3d
                 //Positional movement - Thanks fishbiter!!
                 auto vel = player->mo->Vel;
                 player->mo->Vel = DVector3((DVector2(hmd_side, hmd_forward) * vr_vunits_per_meter), 0);
-                bool wasOnGround = player->mo->Z() <= player->mo->floorz;
+                bool wasOnGround = player->mo->Z() <= player->mo->floorz + 0.1;
                 double oldZ = player->mo->Z();
                 P_XYMovement(player->mo, DVector2(0, 0));
 
@@ -628,7 +626,7 @@ namespace s3d
 
         if (!cinemamode)
         {
-            if (gamestate == GS_LEVEL && !getMenuState())
+            if (getGameState() == GS_LEVEL && getMenuState() == MENU_Off)
             {
                 doomYaw += hmdYawDeltaDegrees;
                 GLRenderer->mAngles.Roll = roll;
@@ -649,7 +647,7 @@ namespace s3d
 /* virtual */
     void OculusQuestMode::TearDown() const
     {
-        if (gamestate == GS_LEVEL && cachedScreenBlocks != 0 && !getMenuState()) {
+        if (getGameState() == GS_LEVEL && cachedScreenBlocks != 0 && !getMenuState()) {
             screenblocks = cachedScreenBlocks;
         }
         super::TearDown();

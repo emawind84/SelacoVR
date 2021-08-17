@@ -524,6 +524,11 @@ void FGameConfigFile::DoGlobalSetup ()
 				var = FindCVar("r_sprite_distance_cull", NULL);
 				if (var != NULL) var->ResetToDefault();
 			}
+			if (last < 224)
+			{
+				FBaseCVar *var = FindCVar("vr_move_use_offhand", NULL);
+				if (var != NULL) var->ResetToDefault();
+			}
 		}
 	}
 }

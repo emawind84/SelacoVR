@@ -2374,7 +2374,7 @@ OptionMenu VROptionsMenu protected
 
 	StaticText ""
 	StaticText "Locomotion"
-	Option "Off-hand Move Direction",	"vr_move_use_offhand", "OffOn"
+	Option "Off-hand Move Direction",	"vr_move_use_offhand", "OnOff"
 	Option "Use Teleport",		        "vr_teleport", "OnOff"
 	Option "Allow slidey movement (Momentum)",	    "vr_momentum", "OnOff"
 	Slider "Walking Speed",		        "vr_move_speed", 5, 50, 1, 2
