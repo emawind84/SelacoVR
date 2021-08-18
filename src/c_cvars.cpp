@@ -1897,20 +1897,24 @@ CCMD (unset)
 
 CCMD (resetcvar)
 {
-	if (argv.argc() != 2)
+	if (argv.argc() < 2)
 	{
 		Printf ("usage: resetcvar <variable>\n");
 	}
 	else
 	{
-		FBaseCVar *var = FindCVar (argv[1], NULL);
-		if (var != NULL)
+		for (int i = 1; i < argv.argc(); i++)
 		{
-			var->ResetToDefault();
-		}
-		else
-		{
-			Printf ("No such variable: %s\n", argv[1]);
+			FBaseCVar *var;
+			if (var = FindCVar(argv[i], NULL))
+			{
+				var->ResetToDefault();
+				DPrintf(DMSG_SPAMMY, "Reset variable %s\n", argv[i]);
+			}
+			else
+			{
+				Printf ("No such variable: %s\n", argv[i]);
+			}
 		}
 	}
 }
