@@ -1898,6 +1898,7 @@ DSPLYMNU_SCALEFUZZ				= "Scale fuzz effect";
 DSPLYMNU_SPRITECULL				= "Sprite Cull Distance";
 DSPLYMNU_LINECULL				= "Wall Cull Distance";
 DSPLYMNU_DISABLERENDERCULL		= "Disable Render Culling";
+DSPLYMNU_RESETRENDERCULL		= "Reset Render Culling";
 DSPLYMNU_DRAWFUZZ				= "Use fuzz effect";
 DSPLYMNU_OLDTRANS				= "Classic Transparency";
 DSPLYMNU_SPRITESHADOW			= "Sprite shadows";
