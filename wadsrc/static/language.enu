@@ -2751,6 +2751,7 @@ DSPLYMNU_GAMMA		= "Gamma correction";
 DSPLYMNU_CONTRAST 	= "Contrast";
 DSPLYMNU_SATURATION = "Saturation";
 DSPLYMNU_HWGAMMA	= "Hardware Gamma";
+DSPLYMNU_FOV		= "Field of view";
 
 // OpenGL Options
 GLMNU_TITLE			= "OpenGL Options";
@@ -2789,7 +2790,9 @@ GLLIGHTMNU_LIGHTSHADOWMAP			= "Light shadowmaps";
 GLLIGHTMNU_LIGHTSHADOWMAPQUALITY	= "Shadowmap quality";
 GLLIGHTMNU_LIGHTSHADOWMAPFILTER		= "Shadowmap filter";
 GLLIGHTMNU_LIGHTBUFFERTYPE			= "Light buffer type";
-GLLIGHTMNU_LIGHTSCULL				= "Lights Cull Distance";
+GLLIGHTMNU_LIGHTSCULL				= "Light cull distance";
+GLLIGHTMNU_MAXINTENSITY				= "Light max intensity (max range)";
+GLLIGHTMNU_MAXCOLLECTEDSS			= "Max collected sub sectors";
 
 // OpenGL Preferences
 GLPREFMNU_TITLE 				= "OPENGL PREFERENCES";

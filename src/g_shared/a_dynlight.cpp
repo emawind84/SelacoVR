@@ -88,8 +88,9 @@ CUSTOM_CVAR (Bool, gl_lights, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOI
 	else AActor::DeleteAllAttachedLights();
 }
 
-CVAR(Float, gl_light_max_intensity, 500.0, 0);
+CVAR(Float, gl_light_max_intensity, 1000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR(Float, gl_light_distance_cull, 4000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_light_max_collected_subsectors, 1000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
 //==========================================================================
 //
@@ -270,8 +271,8 @@ void FDynamicLight::Activate()
 		m_cycler.SetCycleType(CYCLE_Sin);
 		m_currentRadius = float(m_cycler.GetVal());
 	}
+	if (m_currentRadius > gl_light_max_intensity) m_currentRadius = gl_light_max_intensity;
 	if (m_currentRadius <= 0) m_currentRadius = 1;
-	else if (m_currentRadius > gl_light_max_intensity) m_currentRadius = gl_light_max_intensity;
 }
 
 
@@ -389,8 +390,8 @@ void FDynamicLight::Tick()
 		m_currentRadius = float(GetIntensity());
 		break;
 	}
+	if (m_currentRadius > gl_light_max_intensity) m_currentRadius = gl_light_max_intensity;
 	if (m_currentRadius <= 0) m_currentRadius = 1;
-	else if (m_currentRadius > gl_light_max_intensity) m_currentRadius = gl_light_max_intensity;
 	UpdateLocation();
 }
 
@@ -635,9 +636,11 @@ void FDynamicLight::CollectWithinRadius(const DVector3 &opos, subsector_t *subSe
 					subsector_t *sub = partner->Subsector;
 					if (sub != NULL && sub->validcount != ::validcount)
 					{
-						sub->validcount = ::validcount;
-						if (collected_ss.Size() < 200)
+						if (collected_ss.Size() < (unsigned int)gl_light_max_collected_subsectors)
+						{
+							sub->validcount = ::validcount;
 							collected_ss.Push({ sub, pos });
+						}
 					}
 				}
 			}
