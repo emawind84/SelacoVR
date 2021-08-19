@@ -2358,6 +2358,8 @@ OptionMenu VRHUDOptions protected
 	Slider "VR HUD Pitch Rotate",		"vr_hud_rotate", 0.0, 50.0, 1.0, 2
 	Option "VR HUD Fix Pitch",		    "vr_hud_fixed_pitch", "OnOff"
 	Option "VR HUD Fix Roll",		    "vr_hud_fixed_roll", "OnOff"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_hud_scale hud_scale hud_althudscale vr_hud_stereo vr_hud_rotate vr_hud_fixed_pitch vr_hud_fixed_roll"
 
 	StaticText ""
 	StaticText "Automap"
@@ -2368,6 +2370,8 @@ OptionMenu VRHUDOptions protected
 	Slider "VR Automap Pitch Rotate",		"vr_automap_rotate", 0.0, 50.0, 1.0, 2
 	Option "VR Automap Fix Pitch",		    "vr_automap_fixed_pitch", "OnOff"
 	Option "VR Automap Fix Roll",		    "vr_automap_fixed_roll", "OnOff"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_automap_use_hud vr_automap_scale vr_automap_stereo vr_automap_rotate vr_automap_fixed_pitch vr_automap_fixed_roll"
 }
 
 OptionMenu VROptionsMenu protected
@@ -2376,6 +2380,8 @@ OptionMenu VROptionsMenu protected
 
 	StaticText "Misc"
 	Slider "Height Adjust",		        "vr_height_adjust", -0.5, 1.0, 0.01, 2
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_height_adjust"
 
 	StaticText ""
 	StaticText "VR Controls"
@@ -2383,6 +2389,8 @@ OptionMenu VROptionsMenu protected
 	Option "Switch Thumbsticks",		    "vr_switch_sticks", "OnOff"
 	Option "Allow Secondary Button Mappings",	"vr_secondary_button_mappings", "OnOff"
 	Option "Two Handed Weapons",	    "vr_two_handed_weapons", "OnOff"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_control_scheme vr_switch_sticks vr_secondary_button_mappings vr_two_handed_weapons"
 
 	StaticText ""
 	StaticText "Locomotion"
@@ -2394,12 +2402,16 @@ OptionMenu VROptionsMenu protected
 	StaticText ""
 	StaticText "Set Snap-Turn to <= 10 degrees for \"Smooth\" Turn"
 	Slider "Snap-turn Angle",		    "vr_snapTurn", 0.0, 90.0, 1.0, 2
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_move_use_offhand vr_teleport vr_momentum vr_move_speed vr_run_multiplier vr_snapTurn"
 
 	StaticText ""
 	StaticText "Haptics"
 	Slider "Item Pickup Haptic Level",  "vr_pickup_haptic_level", 0.0, 1.0, 0.1, 2
 	Slider "Quake Haptic Level",        "vr_quake_haptic_level", 0.0, 1.0, 0.1, 2
 	Slider "External Haptics Intensity",   "ext_haptic_level_global_intensity", 0.0, 2.0, 0.1, 2
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_pickup_haptic_level vr_quake_haptic_level ext_haptic_level_global_intensity"
 
 	StaticText ""
 	StaticText "Weapon"
@@ -2408,6 +2420,8 @@ OptionMenu VROptionsMenu protected
 	Slider "Weapon Sprite/Model Scale",	"vr_weaponScale", 0.1, 3.0, 0.1, 2
 	Option "Weapon Sprite 3D",			"r_PlayerSprites3DMode", "Sprites3DMode"
 	Slider "Weapon Fat Item Width",		"gl_fatItemWidth", 0.1, 1.0, 0.1, 2
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_recoil vr_weaponRotate vr_weaponScale r_PlayerSprites3DMode gl_fatItemWidth"
 
 	StaticText ""
     Submenu "VR HUD/Automap Options",	"VRHUDOptions"
@@ -2738,7 +2752,7 @@ OptionMenu "GLLightOptions" protected
 	Slider "$GLLIGHTMNU_MAXINTENSITY",			gl_light_max_intensity, 50, 2000, 50, 0
 	Slider "$GLLIGHTMNU_MAXCOLLECTEDSS",		gl_light_max_collected_subsectors, 200, 5000, 100, 0
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS",				"resetcvar r_dynlights gl_lights gl_lights_checkside gl_light_sprites gl_light_particles gl_light_shadowmap gl_shadowmap_quality gl_shadowmap_filter gl_light_distance_cull gl_light_max_intensity gl_light_max_collected_subsectors" 
+	SafeCommand "$OPTMNU_DEFAULTS",				"resetcvar r_dynlights gl_lights gl_lights_checkside gl_light_sprites gl_light_particles gl_light_shadowmap gl_light_buffer_type gl_shadowmap_quality gl_shadowmap_filter gl_light_distance_cull gl_light_max_intensity gl_light_max_collected_subsectors" 
 }
 
 OptionMenu "OpenGLOptions" protected
@@ -2774,7 +2788,7 @@ OptionMenu "OpenGLOptions" protected
 	StaticText " "
 	Option "$GLPREFMNU_MULTISAMPLE", 			gl_multisample,					"Multisample"
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_lightmode gl_bandedswlight gl_fogmode gl_brightfog gl_weaponlight gl_mirror_envmap gl_enhanced_nightvision gl_enhanced_nv_stealth gl_spriteclip gl_sprite_blend gl_fuzztype gl_billboard_mode gl_billboard_faces_camera gl_particles_style gl_render_precise gl_sprite_distance_cull gl_line_distance_cull gl_menu_blur gl_multisample"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_lightmode gl_bandedswlight gl_fogmode gl_brightfog gl_weaponlight gl_mirror_envmap gl_plane_reflection gl_enhanced_nightvision gl_enhanced_nv_stealth gl_spriteclip gl_sprite_blend gl_fuzztype gl_billboard_mode gl_billboard_faces_camera gl_particles_style gl_render_precise gl_skydome gl_sprite_distance_cull gl_line_distance_cull gl_menu_blur gl_multisample"
 }
 
 OptionMenu "PostProcessMenu" protected
