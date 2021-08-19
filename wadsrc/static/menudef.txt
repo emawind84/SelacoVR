@@ -1061,6 +1061,8 @@ OptionMenu "FlashOptions" protected
 	Slider "$DSPLYMNU_BLOODFADE",				"blood_fade_scalar", 0.0, 1.0, 0.05, 2
 	Slider "$DSPLYMNU_PICKUPFADE",				"pickup_fade_scalar", 0.0, 1.0, 0.05, 2
 	Slider "$DSPLYMNU_WATERFADE",				"underwater_fade_scalar", 0.0, 1.0, 0.05, 2
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar pf_hexenweaps pf_poison pf_ice pf_hazard blood_fade_scalar pickup_fade_scalar underwater_fade_scalar"
 }
 
 OptionMenu "ScalingOptions" protected
@@ -1077,6 +1079,8 @@ OptionMenu "ScalingOptions" protected
 	ScaleSlider "$SCALEMNU_ALTHUD",				"hud_althudscale", 0.0, 8.0, 1.0, "$SCALEMNU_USEUI"
 	StaticText " "
 	Option "$SCALEMNU_HUDASPECT", 				"hud_aspectscale", "OnOff"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar uiscale con_scaletext con_scale st_scale hud_scale hud_althudscale hud_aspectscale"
 }
 //-------------------------------------------------------------------------------------------
 //
