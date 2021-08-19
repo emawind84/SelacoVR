@@ -186,9 +186,9 @@ CUSTOM_CVAR (Bool, vid_vsync, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 	}
 }
 
-CUSTOM_CVAR (Int, vid_refreshrate, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CUSTOM_CVAR (Int, vid_refreshrate, 72, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 {
-	if (screen != NULL)
+	if (screen != NULL && self > 0)
 	{
 		screen->NewRefreshRate();
 	}
@@ -1325,6 +1325,7 @@ bool V_DoModeSetup (int width, int height, int bits)
 
 	screen = buff;
 	screen->SetGamma (Gamma);
+	screen->NewRefreshRate();
 
 	// Load fonts now so they can be packed into textures straight away,
 	// if D3DFB is being used for the display.

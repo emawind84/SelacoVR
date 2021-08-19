@@ -2342,6 +2342,16 @@ OptionValue "Sprites3DMode"
 	3, "Fat Item"
 }
 
+OptionValue RefreshRate
+{
+	0, "$OPTVAL_AUTO"
+	60, "60Hz"
+	72, "72Hz"
+	80, "80Hz"
+	90, "90Hz"
+	120, "120Hz"
+}
+
 OptionMenu VRHUDOptions protected
 {
 	Title "VR HUD OPTIONS"
@@ -2426,6 +2436,7 @@ OptionMenu VROptionsMenu protected
 
 	StaticText ""
 	StaticText "Display", 1
+	Option "Refresh Rate",                          "vid_refreshrate", "RefreshRate"
 	Option "Lock FrameRate (IF LOW PERF.)",         "cl_capfps", "OnOff"
 	Option "Show FPS on HUD",		                "vid_fps", "OnOff"
 	Option "Dynamic Lights (CAUTION)",	            "gl_lights", "OnOff"

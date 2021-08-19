@@ -80,6 +80,7 @@ EXTERN_CVAR (Int, vid_adapter)
 EXTERN_CVAR (Int, vid_displaybits)
 EXTERN_CVAR (Int, vid_renderer)
 EXTERN_CVAR (Int, vid_maxfps)
+EXTERN_CVAR (Int, vid_refreshrate)
 EXTERN_CVAR (Bool, cl_capfps)
 EXTERN_CVAR (Int, gl_hardware_buffers)
 
@@ -305,6 +306,9 @@ void NoSDLGLFB::SetVSync( bool vsync )
 
 void NoSDLGLFB::NewRefreshRate ()
 {
+	if (QzDoom_SetRefreshRate(vid_refreshrate) != 0) {
+		Printf("Failed to set refresh rate to %dHz.\n", *vid_refreshrate);
+	}
 }
 
 void NoSDLGLFB::SwapBuffers()
