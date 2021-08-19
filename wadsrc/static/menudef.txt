@@ -948,6 +948,8 @@ OptionMenu "VideoOptions" protected
 	Option "$DSPLYMNU_TELEZOOM",				"telezoom", "OnOff"
 	Slider "$DSPLYMNU_QUAKEINTENSITY",			"r_quakeintensity", 0.0, 1.0, 0.05, 2
 	Option "$DSPLYMNU_NOMONSTERINTERPOLATION",	"nomonsterinterpolation", "NoYes"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar screenblocks Gamma vid_brightness vid_contrast vid_saturation vid_hwgamma fov r_actorspriteshadow cl_customizeinvulmap cl_custominvulmapcolor1 cl_custominvulmapcolor2 wipetype r_drawfuzz r_vanillatrans transsouls r_fakecontrast cl_rockettrails cl_bloodtype cl_pufftype r_maxparticles cl_maxdecals r_drawplayersprites r_deathcamera telezoom r_quakeintensity nomonsterinterpolation"
 }
 
 
@@ -1038,7 +1040,8 @@ OptionMenu "HUDOptions" protected
 	StaticText " "
 	Slider "$DSPLYMNU_MENUDIM",					"dimamount", 0, 1.0, 0.05, 2
 	ColorPicker "$DSPLYMNU_DIMCOLOR",			"dimcolor"
-
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar crosshairon crosshair crosshairforce crosshairgrow crosshaircolor crosshairhealth crosshairscale displaynametags nametagcolor st_oldouch movebob stillbob wbobspeed wbobfire dimamount dimcolor"
 }
 
 OptionMenu "FlashOptions" protected
@@ -1149,6 +1152,8 @@ OptionMenu "AltHUDOptions" protected
 	option "$ALTHUDMNU_COORDINATEMODE",			"map_point_coordinates", "AMCoordinates"
 	option "$ALTHUDMNU_STATSNAMECOLOR",			"hudcolor_statnames", "TextColors"
 	option "$ALTHUDMNU_STATSCOLOR",				"hudcolor_stats", "TextColors"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar hud_althud hud_showsecrets hud_showmonsters hud_showitems hud_showstats hud_berserk_health hud_showweapons hud_showammo hud_showtime hud_timecolor hud_showlag hud_ammo_order hud_ammo_red hud_ammo_yellow hud_health_red hud_health_yellow hud_health_green hud_armor_red hud_armor_yellow hud_armor_green hudcolor_titl hudcolor_ltim hudcolor_time hudcolor_ttim hudcolor_xyco map_point_coordinates hudcolor_statnames hudcolor_stats"
 }
 
 //-------------------------------------------------------------------------------------------
@@ -1217,7 +1222,8 @@ OptionMenu "MiscOptions" protected
 	Option "$MISCMNU_HIDEEXTREME",				"menu_hideextreme", "OnOff"
 	StaticText " "
 	Option "$MISCMNU_ALWAYSTALLY",				"sv_alwaystally", "AlwaysTally"
-
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar k_mergekeys k_allowfullscreentoggle queryiwad nocheats allcheats disableautosave saveloadconfirmation autosavecount quicksaverotation quicksaverotationcount dehload enablescriptscreenshot setslotstrict nointerscrollabort gl_cachenodes gl_cachetime clearnodecache m_quickexit showendoom menu_hideextreme sv_alwaystally"
 }
 
 //-------------------------------------------------------------------------------------------
@@ -1606,6 +1612,8 @@ OptionMenu GameplayOptions protected
 	Option "$GMPLYMNU_KILLBOSSSPAWNS",			"sv_killbossmonst", "YesNo"
 	Option "$GMPLYMNU_NOCOUNTENDMONSTER",		"sv_nocountendmonst", "NoYes"
 	Option "$GMPLYMNU_DOUBLESPAWN",				"sv_doublespawn", "YesNo"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar teamplay teamdamage sv_smartaim sv_fallingdamage sv_weapondrop sv_doubleammo sv_infiniteammo sv_infiniteinventory sv_nomonsters sv_killallmonsters sv_monsterrespawn sv_norespawn sv_itemrespawn sv_respawnsuper sv_fastmonsters sv_instantreaction sv_degeneration sv_noautoaim sv_disallowsuicide sv_jump sv_crouch sv_freelook sv_nofov sv_nobfgaim sv_noautomap sv_noautomapallies sv_disallowspying sv_chasecam sv_dontcheckammo sv_killbossmonst sv_nocountendmonst sv_doublespawn"
 	Class "GameplayMenu"
 }
 
@@ -2711,6 +2719,8 @@ OptionMenu "GLTextureGLOptions" protected
 	Option "$GLTEXMNU_RESIZEFNT",		gl_texture_hqresize_fonts,		"OnOff"
 	Option "$GLTEXMNU_PRECACHETEX",		gl_precache,					"YesNo"
 	Option "$GLTEXMNU_SORTDRAWLIST", 	gl_sort_textures,				"YesNo"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_texture_filter gl_texture_filter_anisotropic gl_texture_format gl_texture_usehires gl_texture_hqresizemode gl_texture_hqresizemult gl_texture_hqresize_textures gl_texture_hqresize_sprites gl_texture_hqresize_fonts gl_precache gl_sort_textures"
 	Class "GLTextureGLOptions"
 }
 
@@ -2763,6 +2773,8 @@ OptionMenu "OpenGLOptions" protected
 	Slider "$GLPREFMNU_MENUBLUR",				gl_menu_blur, 0, 5.0, 0.5, 2
 	StaticText " "
 	Option "$GLPREFMNU_MULTISAMPLE", 			gl_multisample,					"Multisample"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_lightmode gl_bandedswlight gl_fogmode gl_brightfog gl_weaponlight gl_mirror_envmap gl_enhanced_nightvision gl_enhanced_nv_stealth gl_spriteclip gl_sprite_blend gl_fuzztype gl_billboard_mode gl_billboard_faces_camera gl_particles_style gl_render_precise gl_sprite_distance_cull gl_line_distance_cull gl_menu_blur gl_multisample"
 }
 
 OptionMenu "PostProcessMenu" protected
@@ -2778,6 +2790,8 @@ OptionMenu "PostProcessMenu" protected
 	StaticText " "
 	Slider "$GLPREFMNU_PALTONEMAPPOWER",		gl_paltonemap_powtable,			0.2, 3.0, 0.1, 1
 	Option "$GLPREFMNU_PALTONEMAPORDER",		gl_paltonemap_reverselookup,	"LookupOrder"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_bloom gl_lens gl_ssao gl_ssao_portals gl_fxaa gl_dither_bpc gl_tonemap gl_paltonemap_powtable gl_paltonemap_reverselookup"
 }
 
 OptionMenu "ReverbEdit" protected

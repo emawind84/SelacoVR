@@ -3188,6 +3188,7 @@ void P_FreeLevelData ()
 	}
 
 	FBehavior::StaticUnloadModules ();
+	level.CorpseQueue.Clear();
 	level.segs.Clear();
 	level.sectors.Clear();
 	level.lines.Clear();
