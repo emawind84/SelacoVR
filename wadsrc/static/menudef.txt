@@ -919,6 +919,7 @@ OptionMenu "VideoOptions" protected
 	Submenu "$DSPLYMNU_SWOPT", 			"SWROptions"
 	Submenu "$GLMNU_DYNLIGHT",			"GLLightOptions"
 	StaticText " "
+	Option "Refresh Rate",                      "vid_refreshrate", "RefreshRate"
 	Slider "$DSPLYMNU_SCREENSIZE",				"screenblocks", 				3.0, 12.0, 1.0, 0
 
 	Slider "$DSPLYMNU_GAMMA",					"Gamma",						0.75, 3.0, 0.05, 2
@@ -947,7 +948,7 @@ OptionMenu "VideoOptions" protected
 	Slider "$DSPLYMNU_QUAKEINTENSITY",			"r_quakeintensity", 0.0, 1.0, 0.05, 2
 	Option "$DSPLYMNU_NOMONSTERINTERPOLATION",	"nomonsterinterpolation", "NoYes"
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar screenblocks Gamma vid_brightness vid_contrast vid_saturation vid_hwgamma fov r_actorspriteshadow cl_customizeinvulmap cl_custominvulmapcolor1 cl_custominvulmapcolor2 wipetype r_drawfuzz r_vanillatrans transsouls r_fakecontrast cl_rockettrails cl_bloodtype cl_pufftype r_maxparticles cl_maxdecals r_drawplayersprites r_deathcamera telezoom r_quakeintensity nomonsterinterpolation"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vid_refreshrate screenblocks Gamma vid_brightness vid_contrast vid_saturation vid_hwgamma fov r_actorspriteshadow cl_customizeinvulmap cl_custominvulmapcolor1 cl_custominvulmapcolor2 wipetype r_drawfuzz r_vanillatrans transsouls r_fakecontrast cl_rockettrails cl_bloodtype cl_pufftype r_maxparticles cl_maxdecals r_drawplayersprites r_deathcamera telezoom r_quakeintensity nomonsterinterpolation"
 }
 
 
@@ -1220,8 +1221,11 @@ OptionMenu "MiscOptions" protected
 	Option "$MISCMNU_HIDEEXTREME",				"menu_hideextreme", "OnOff"
 	StaticText " "
 	Option "$MISCMNU_ALWAYSTALLY",				"sv_alwaystally", "AlwaysTally"
+	StaticText ""
+	Option "Show FPS on HUD",		                "vid_fps", "OnOff"
+	Option "Lock FrameRate (IF LOW PERF.)",         "cl_capfps", "OnOff"
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar k_mergekeys k_allowfullscreentoggle queryiwad nocheats allcheats disableautosave saveloadconfirmation autosavecount quicksaverotation quicksaverotationcount dehload enablescriptscreenshot setslotstrict nointerscrollabort gl_cachenodes gl_cachetime clearnodecache m_quickexit showendoom menu_hideextreme sv_alwaystally"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar k_mergekeys k_allowfullscreentoggle queryiwad nocheats allcheats disableautosave saveloadconfirmation autosavecount quicksaverotation quicksaverotationcount dehload enablescriptscreenshot setslotstrict nointerscrollabort gl_cachenodes gl_cachetime clearnodecache m_quickexit showendoom menu_hideextreme sv_alwaystally cl_capfps"
 }
 
 //-------------------------------------------------------------------------------------------
@@ -2433,13 +2437,6 @@ OptionMenu VROptionsMenu protected
 
 	StaticText ""
     Submenu "VR HUD/Automap Options",	"VRHUDOptions"
-
-	StaticText ""
-	StaticText "Display", 1
-	Option "Refresh Rate",                          "vid_refreshrate", "RefreshRate"
-	Option "Lock FrameRate (IF LOW PERF.)",         "cl_capfps", "OnOff"
-	Option "Show FPS on HUD",		                "vid_fps", "OnOff"
-	Option "Dynamic Lights (CAUTION)",	            "gl_lights", "OnOff"
 }
 
 /*=======================================
@@ -2750,6 +2747,7 @@ OptionMenu "GLTextureGLOptions" protected
 OptionMenu "GLLightOptions" protected
 {
 	Title "$GLLIGHTMNU_TITLE"
+	Option "$GLLIGHTMNU_LIGHTSENABLED",			gl_lights,				"OnOff"
 	Option "$GLLIGHTMNU_CLIPLIGHTS",			gl_lights_checkside,	"YesNo"
 	Option "$GLLIGHTMNU_LIGHTSPRITES",			gl_light_sprites,		"YesNo"
 	Option "$GLLIGHTMNU_LIGHTPARTICLES",		gl_light_particles,		"YesNo"
