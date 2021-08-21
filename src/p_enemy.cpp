@@ -49,6 +49,7 @@
 #include "g_levellocals.h"
 #include "vm.h"
 #include "actorinlines.h"
+#include "a_ceiling.h"
 #include "p_tags.h"
 #include "doomstat.h"
 
