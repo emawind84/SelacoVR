@@ -2830,6 +2830,7 @@ GLPREFMNU_SWLMBANDED			= "Banded SW Lightmode";
 GLPREFMNU_VRIPD					= "Distance Between Your Eyes";
 GLPREFMNU_VRSCREENDIST			= "Distance From Your Screen";
 GLPREFMNU_RENDERSKYDOME			= "Render the skydome";
+GLPREFMNU_PLANEREFLECTION		= "Reflections";
 
 // Option Values
 OPTVAL_SMART 				= "Smart";
