@@ -478,8 +478,8 @@ static int P_IsUnderDamage(AActor* actor)
 
 bool P_CheckTags(sector_t* sec1, sector_t* sec2)
 {
-	//if (!tagManager.SectorHasTags(sec1) || !tagManager.SectorHasTags(sec2)) return sec1 == sec2;
-	//if (tagManager.GetFirstSectorTag(sec1) == tagManager.GetFirstSectorTag(sec2)) return true;
+	if (!level.SectorHasTags(sec1) || !level.SectorHasTags(sec2)) return sec1 == sec2;
+	if (level.GetFirstSectorTag(sec1) == level.GetFirstSectorTag(sec2)) return true;
 	// todo: check secondary tags as well.
 	return false;
 }
