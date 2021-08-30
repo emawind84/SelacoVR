@@ -659,6 +659,13 @@ OptionMenu "OtherControlsMenu" protected
 	StaticText ""
 	Control    "$CNTRLMNU_QUICKSAVE"       , "quicksave"
 	Control    "$CNTRLMNU_QUICKLOAD"       , "quickload"
+
+	StaticText ""
+	Control    "Toggle global fade"        , "fade_toggle"
+	Control    "Increase fade density"     , "fade_density_up"
+	Control    "Decrease fade density"     , "fade_density_down"
+	Control    "Increase fade gradient"    , "fade_gradient_up"
+	Control    "Decrease fade gradient"    , "fade_gradient_down"
 }
 
 OptionMenu "StrifeControlsMenu" protected
@@ -2677,11 +2684,16 @@ OptionMenu "OpenGLOptions" protected
 	Command "$DSPLYMNU_DISABLERENDERCULL",	"disablerendercull"
 	SafeCommand "$DSPLYMNU_RESETRENDERCULL",	"resetcvar gl_sprite_distance_cull gl_line_distance_cull"
 	StaticText " "
+	Option "Global fade",						gl_global_fade, "OnOff"
+	Slider "Global fade density",				gl_global_fade_density, 0.0001, 0.005, 0.0001, 4
+	Slider "Global fade gradient",				gl_global_fade_gradient, 0.1, 2, 0.1, 1
+	ColorPicker "Global fade color",			gl_global_fade_color
+	StaticText " "
 	Slider "$GLPREFMNU_MENUBLUR",				gl_menu_blur, 0, 5.0, 0.5, 2
 	StaticText " "
 	Option "$GLPREFMNU_MULTISAMPLE", 			gl_multisample,					"Multisample"
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_lightmode gl_bandedswlight gl_fogmode gl_brightfog gl_weaponlight gl_mirror_envmap gl_enhanced_nightvision gl_enhanced_nv_stealth gl_spriteclip gl_sprite_blend gl_fuzztype gl_billboard_mode gl_billboard_faces_camera gl_particles_style gl_render_precise gl_sprite_distance_cull gl_line_distance_cull gl_menu_blur gl_multisample"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_lightmode gl_bandedswlight gl_fogmode gl_brightfog gl_weaponlight gl_mirror_envmap gl_enhanced_nightvision gl_enhanced_nv_stealth gl_spriteclip gl_sprite_blend gl_fuzztype gl_billboard_mode gl_billboard_faces_camera gl_particles_style gl_render_precise gl_sprite_distance_cull gl_line_distance_cull gl_menu_blur gl_multisample gl_global_fade gl_global_fade_density gl_global_fade_gradient gl_global_fade_color"
 }
 
 OptionMenu "VR3DMenu" protected

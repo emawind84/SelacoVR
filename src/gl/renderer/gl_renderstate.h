@@ -31,12 +31,14 @@
 #include "c_cvars.h"
 #include "r_defs.h"
 #include "r_data/r_translate.h"
+#include "v_palette.h"
 
 class FVertexBuffer;
 class FShader;
 extern TArray<VSMatrix> gl_MatrixStack;
 
 EXTERN_CVAR(Bool, gl_direct_state_change)
+EXTERN_CVAR(Color, gl_global_fade_color)
 
 struct FStateVec4
 {
@@ -86,6 +88,7 @@ class FRenderState
 	int mTextureMode;
 	int mDesaturation;
 	int mSoftLight;
+	int mGlobalFadeMode;
 	float mLightParms[4];
 	int mSrcBlend, mDstBlend;
 	float mAlphaThreshold;
@@ -109,6 +112,8 @@ class FRenderState
 	FStateVec4 mClipLine;
 	PalEntry mAddColor;
 	PalEntry mFogColor;
+	PalEntry mFadeColor;
+	PalEntry mFadeColor2;
 	PalEntry mObjectColor;
 	PalEntry mObjectColor2;
 	FStateVec4 mDynColor;
@@ -408,6 +413,13 @@ public:
 		mObjectColor2 = pe;
 	}
 
+	int SetGlobalFadeMode(int fadeMode)
+	{
+		int fademode = mGlobalFadeMode;
+		mGlobalFadeMode = fadeMode;
+		return fademode;
+	}
+
 	void SetAddColor(PalEntry pe)
 	{
 		mAddColor = pe;
@@ -445,6 +457,19 @@ public:
 	PalEntry GetFogColor() const
 	{
 		return mFogColor;
+	}
+
+	void SetFadeColor(PalEntry fogColor)
+	{
+		int fadeColor = gl_global_fade_color;
+		mFadeColor = PalEntry(fadeColor);
+		mFadeColor2 = PalEntry(fadeColor);
+		if (!fogColor.isBlack() && !fogColor.isWhite())
+		{
+			mFadeColor2.r = RPART(fadeColor) * 0.5 + fogColor.r * 0.5;
+			mFadeColor2.g = GPART(fadeColor) * 0.5 + fogColor.g * 0.5;
+			mFadeColor2.b = BPART(fadeColor) * 0.5 + fogColor.b * 0.5;
+		}
 	}
 
 	void SetClipSplit(float bottom, float top)

@@ -29,6 +29,10 @@ uniform sampler2D NormalTexture;
 uniform sampler2D RandomTexture;
 #endif
 
+uniform int uGlobalFade;
+uniform float uGlobalFadeDensity;
+uniform float uGlobalFadeGradient;
+
 #define PI 3.14159265358979323846
 
 // Calculate eye space position for the specified texture coordinate
@@ -134,5 +138,15 @@ void main()
 	vec3 viewNormal = FetchNormal(TexCoord);
 	float occlusion = viewNormal != vec3(0.0) ? ComputeAO(viewPosition, viewNormal) * AOStrength + (1.0 - AOStrength) : 1.0;
 
-	FragColor = vec4(occlusion, viewPosition.z, 0.0, 1.0);
+	if (uGlobalFade == 1)
+	{
+		float fogdist = length(viewPosition.xyz);
+		float visibility = exp(-pow((fogdist * uGlobalFadeDensity), uGlobalFadeGradient));
+		visibility = clamp(visibility, 0.0, 1.0);
+		FragColor = vec4(mix(1.0, occlusion, visibility), viewPosition.z, 0.0, 1.0);
+	}
+	else
+	{
+		FragColor = vec4(occlusion, viewPosition.z, 0.0, 1.0);
+	}
 }

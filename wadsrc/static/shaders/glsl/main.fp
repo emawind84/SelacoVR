@@ -510,6 +510,47 @@ vec3 AmbientOcclusionColor()
 	return mix(uFogColor.rgb, vec3(0.0), fogfactor);
 }
 
+vec4 ApplyFadeColor(vec4 frag)
+{
+	if (uGlobalFade == 1)
+	{
+		float fogdist;
+		if (uFogEnabled == 1 || uFogEnabled == -1) 
+		{
+			// standard fog (1 or -1)
+			fogdist = max(16.0, pixelpos.w);
+		}
+		else 
+		{
+			// radial fog (2 or -2)
+			fogdist = max(16.0, distance(pixelpos.xyz, uCameraPos.xyz));
+		}
+		float visibility = exp(-pow((fogdist * uGlobalFadeDensity), uGlobalFadeGradient));
+		visibility = clamp(visibility, 0.0, 1.0);
+		if (uGlobalFadeMode == -1 && uFogEnabled < 0)
+		{
+			frag = vec4(mix(uGlobalFadeColor2.rgb, frag.rgb, visibility), frag.a * visibility);
+		}
+		else if (uGlobalFadeMode == -1 && uFogEnabled > 0)
+		{
+			frag = vec4(mix(uGlobalFadeColor.rgb, frag.rgb, visibility), frag.a * visibility);
+		}
+		else if (uGlobalFadeMode == 2 && uFogEnabled < 0)
+		{
+			frag = vec4(uGlobalFadeColor2.rgb, frag.a) * visibility;
+		}
+		else if (uGlobalFadeMode == 2 && uFogEnabled > 0)
+		{
+			frag = vec4(uGlobalFadeColor.rgb, frag.a) * visibility;
+		}
+		else if (uGlobalFadeMode == 3)
+		{
+			frag = vec4(uGlobalFadeColor2.rgb, 1.0);
+		}
+	}
+	return frag;
+}
+
 //===========================================================================
 //
 // Main shader routine
@@ -599,7 +640,8 @@ void main()
 			break;
 		}
 	}
-	FragColor = frag;
+	
+	FragColor = ApplyFadeColor(frag);
 #ifdef GBUFFER_PASS
 	FragFog = vec4(AmbientOcclusionColor(), 1.0);
 	FragNormal = vec4(vEyeNormal.xyz * 0.5 + 0.5, 1.0);
