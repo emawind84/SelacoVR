@@ -400,6 +400,10 @@ namespace s3d
 
         yaw -= actor->Angles.Yaw;
 
+        //ignore specified pitch(would need to compensate for auto aimand no(vanilla) Doom weapon varies this)
+		pitch -= actor->Angles.Pitch;
+		//pitch.Degrees = 0;
+
         double pc = pitch.Cos();
 
         LSVec3 local = { (float)(pc * yaw.Cos()), (float)(pc * yaw.Sin()), (float)(-pitch.Sin()), 0.0f };

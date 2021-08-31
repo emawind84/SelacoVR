@@ -101,7 +101,7 @@
 #include "r_sky.h"
 #include "g_levellocals.h"
 #include "actorinlines.h"
-
+#include "gl/stereo3d/gl_stereo3d.h"
 #include <QzDoom/VrCommon.h>
 
 CVAR(Bool, cl_bloodsplats, true, CVAR_ARCHIVE)
@@ -4370,39 +4370,17 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 
 	aim_t aim;
 
-	DVector3 pos = t1->Pos();
-	DAngle attackPitch = t1->Angles.Pitch;
-	DAngle attackAngle = angle;
-	if (t1->player != nullptr && t1->player->mo->OverrideAttackPosDir)
-    {
-	    pos = t1->player->mo->AttackPos;
-
-        //
-        //  FIX FOR FLAT PROJECTILE SPREAD FROM SHOTGUNS AND OTHER MULTI-PROJECTILE WEAPONS
-        //
-        //Bit of a hack as it makes the pitch a little off, but in order for weapon projectile spread
-        //to work correctly, we can't fix the pitch to that of the controller otherwise random spread
-        //turns into a flat line of projectiles. Using the difference between the previous known angles and
-        //the current angles (which were potenitally modified by A_FireProjectile) gives us the "random"
-        //difference applied to the pitch by the script
-        //
-        //A VR player is unlikely to be whipping their head up and down so fast as to make a meaningful
-        //difference to the pitch between two frames, so this is 'good enough' for now.
-        attackPitch = t1->player->mo->AttackPitch + (t1->PrevAngles.Pitch - t1->Angles.Pitch);
-        attackAngle = t1->player->mo->AttackAngle + (angle - t1->Angles.Yaw);
-    }
-
 	aim.flags = flags;
 	aim.shootthing = t1;
 	aim.friender = (friender == nullptr) ? t1 : friender;
 	aim.aimdir = aim_t::aim_up | aim_t::aim_down;
-	aim.startpos = pos;
-	aim.aimtrace = attackAngle.ToVector(distance);
+	aim.startpos = t1->Pos();
+	aim.aimtrace = angle.ToVector(distance);
 	aim.limitz = aim.shootz = shootz;
-	aim.toppitch = attackPitch - vrange;
-	aim.bottompitch = attackPitch + vrange;
+	aim.toppitch = t1->Angles.Pitch - vrange;
+	aim.bottompitch = t1->Angles.Pitch + vrange;
 	aim.attackrange = distance;
-	aim.aimpitch = attackPitch;
+	aim.aimpitch = t1->Angles.Pitch;
 	aim.lastsector = t1->Sector;
 	aim.startfrac = 0;
 	aim.unlinked = false;
@@ -4484,6 +4462,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	double sz, double offsetforward, double offsetside)
 {
 	bool nointeract = !!(flags & LAF_NOINTERACT);
+	DVector3 fromPos;
 	DVector3 direction;
 	double shootz;
 	FTraceResults trace;
@@ -4535,6 +4514,16 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	if (flags & LAF_OVERRIDEZ)
 		shootz = t1->Z();
 	shootz += sz;
+
+	if (t1->player != NULL && t1->player->mo->OverrideAttackPosDir)
+	{
+		fromPos = t1->player->mo->AttackPos;
+		direction = t1->player->mo->AttackDir(t1, angle, pitch);
+	}
+	else
+	{
+		fromPos = t1->PosAtZ(shootz);
+	}
 
 	// We need to check the defaults of the replacement here
 	AActor *puffDefaults = GetDefaultByType(pufftype->GetReplacement());
@@ -4599,25 +4588,10 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	// LAF_ABSOFFSET: Ignore the angle.
 
 	DVector3 tempos;
-	if (t1->player != NULL && t1->player->mo->OverrideAttackPosDir)
+	const auto& stereo3dMode = s3d::Stereo3DMode::getCurrentMode();
+	if (!stereo3dMode.IsMono())
 	{
-		tempos = t1->player->mo->AttackPos;
-
-		//Include pitch delta here
-		DAngle pitchDelta;
-        pitchDelta = (t1->Angles.Pitch - pitch);
-        if (damage == 0 // Laser sight or other non-damage inflicting thing
-			||
-			//This is to catch the scenario in vanilla Doom (or suchlike) where a.BulletSlope is calculating a completely
-			//different pitch, if delta is outside a tolerance of +/- 5 degrees, then just use the pitch of the
-			//controller as we did before.
-			//Otherwise, pitch can vary +/- 5 degrees for a random scatter
-			fabs(pitchDelta.Degrees) > 5.f)
-        {
-            pitchDelta.Degrees = 0;
-        }
-
-		direction = t1->player->mo->AttackDir(t1, angle, pitchDelta);
+		tempos = fromPos;
 	}
 	else if (flags & LAF_ABSPOSITION)
 	{
