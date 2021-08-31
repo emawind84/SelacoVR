@@ -2137,7 +2137,6 @@ GMPLYMNU_SUPERRESPAWN		= "Big powerups respawn";
 GMPLYMNU_FASTMONSTERS		= "Fast monsters";
 GMPLYMNU_INSTANTREACTION	= "Instant monster reaction";
 GMPLYMNU_DEGENERATION		= "Degeneration";
-GMPLYMNU_NOAUTOAIM			= "Allow Autoaim";
 GMPLYMNU_ALLOWSUICIDE		= "Allow Suicide";
 GMPLYMNU_ALLOWJUMP			= "Allow jump";
 GMPLYMNU_ALLOWCROUCH		= "Allow crouch";
