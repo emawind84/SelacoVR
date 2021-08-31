@@ -4416,13 +4416,7 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 	{
 		*pLineTarget = *result;
 	}
-
-	if (result->linetarget)
-	{
-		return result->pitch;
-	}
-
-	return t1->Angles.Pitch;
+	return result->linetarget ? result->pitch : t1->Angles.Pitch;
 }
 
 //==========================================================================

@@ -4980,17 +4980,17 @@ void AActor::AdjustFloorClip ()
 	for (m = touching_sectorlist; m; m = m->m_tnext)
 	{
 		DVector3 pos = PosRelative(m->m_sector);
-		sector_t *hsec = m->m_sector->GetHeightSec();
+		sector_t* hsec = m->m_sector->GetHeightSec();
 		if (hsec == NULL)
 		{
 			if (m->m_sector->floorplane.ZatPoint(pos) == Z())
-		{
-			double clip = Terrains[m->m_sector->GetTerrain(sector_t::floor)].FootClip;
-			if (clip < shallowestclip)
 			{
-				shallowestclip = clip;
+				double clip = Terrains[m->m_sector->GetTerrain(sector_t::floor)].FootClip;
+				if (clip < shallowestclip)
+				{
+					shallowestclip = clip;
+				}
 			}
-		}
 			else
 			{
 				for (auto& ff : m->m_sector->e->XFloor.ffloors)
@@ -6985,7 +6985,6 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 	{
 		MissileActor->SetFriendPlayer(source->player);
 	}
-
 	if (P_CheckMissileSpawn (MissileActor, source->radius))
 	{
 		if (MissileActor->DamageFunc != nullptr || // If it causes damage...
