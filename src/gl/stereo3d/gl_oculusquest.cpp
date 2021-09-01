@@ -492,8 +492,9 @@ namespace s3d
             resetDoomYaw = false;
         }
 
-        player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+        if (getMenuState() == MENU_Off)
         {
+            player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
             if (player)
             {
                 double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
@@ -581,9 +582,8 @@ namespace s3d
                 }
                 player->mo->Vel = vel;
             }
+            updateHmdPose();
         }
-
-        updateHmdPose();
     }
 
     void OculusQuestMode::updateHmdPose() const

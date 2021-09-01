@@ -914,7 +914,7 @@ void P_StartConversation (AActor *npc, AActor *pc, bool facetalker, bool saveang
 	{
 		if (!(npc->flags8 & MF8_DONTFACETALKER))
 			A_FaceTarget (npc);
-		pc->Angles.Yaw = pc->AngleTo(npc);
+		//pc->Angles.Yaw = pc->AngleTo(npc);
 	}
 	if ((npc->flags & MF_FRIENDLY) || (npc->flags4 & MF4_NOHATEPLAYERS))
 	{
