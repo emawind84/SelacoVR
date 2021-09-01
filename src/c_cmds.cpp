@@ -1566,3 +1566,38 @@ CCMD(disablerendercull)
 		gl_sprite_distance_cull = 0.0;
 		gl_line_distance_cull = 0.0;
 }
+
+EXTERN_CVAR(Bool, gl_global_fade)
+EXTERN_CVAR(Float, gl_global_fade_density)
+EXTERN_CVAR(Float, gl_global_fade_gradient)
+EXTERN_CVAR(Bool, gl_global_fade_debug)
+
+CCMD(fade_toggle)
+{
+	gl_global_fade = !gl_global_fade;
+}
+
+CCMD(fade_density_up)
+{
+	gl_global_fade_density = gl_global_fade_density + 0.0005f;
+}
+
+CCMD(fade_density_down)
+{
+	gl_global_fade_density = gl_global_fade_density - 0.0005f;
+}
+
+CCMD(fade_gradient_up)
+{
+	gl_global_fade_gradient = gl_global_fade_gradient + 0.2f;
+}
+
+CCMD(fade_gradient_down)
+{
+	gl_global_fade_gradient = gl_global_fade_gradient - 0.2f;
+}
+
+CCMD(fade_debug)
+{
+	gl_global_fade_debug = !gl_global_fade_debug;
+}

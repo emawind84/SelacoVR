@@ -86,6 +86,9 @@ void FSSAOShader::Bind()
 		Scale.Init(*mShader, "Scale");
 		Offset.Init(*mShader, "Offset");
 		SampleIndex.Init(*mShader, "SampleIndex");
+		muGlobalFade.Init(*mShader, "uGlobalFade");
+		muGlobalFadeDensity.Init(*mShader, "uGlobalFadeDensity");
+		muGlobalFadeGradient.Init(*mShader, "uGlobalFadeGradient");
 		mMultisample = multisample;
 	}
 	mShader->Bind();

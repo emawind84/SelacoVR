@@ -42,6 +42,9 @@ public:
 	FBufferedUniform2f Scale;
 	FBufferedUniform2f Offset;
 	FBufferedUniform1i SampleIndex;
+	FBufferedUniform1i muGlobalFade;
+	FBufferedUniform1f muGlobalFadeDensity;
+	FBufferedUniform1f muGlobalFadeGradient;
 
 private:
 	enum Quality

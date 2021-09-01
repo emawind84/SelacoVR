@@ -291,6 +291,12 @@ class FShader
 	FBufferedUniform1i muViewHeight;
 	FBufferedUniform2f muSpecularMaterial;
 	FBufferedUniform1f muTimer;
+	FBufferedUniform1i muGlobalFade;
+	FBufferedUniform1i muGlobalFadeMode;
+	FBufferedUniform1f muGlobalFadeDensity;
+	FBufferedUniform1f muGlobalFadeGradient;
+	FBufferedUniformPE muGlobalFadeColor;
+	FBufferedUniformPE muGlobalFadeColor2;
 	
 	int lights_index;
 	int projectionmatrix_index;

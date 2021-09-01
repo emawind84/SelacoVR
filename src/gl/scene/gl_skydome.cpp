@@ -520,6 +520,7 @@ void GLSkyPortal::DrawContents()
 	}
 
 
+	int oldFadeMode = gl_RenderState.SetGlobalFadeMode(3);
 	gl_RenderState.ResetColor();
 	gl_RenderState.EnableFog(false);
 	gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
@@ -570,5 +571,6 @@ void GLSkyPortal::DrawContents()
 	gl_RenderState.ApplyMatrices();
 	glset.lightmode = oldlightmode;
 	gl_RenderState.SetDepthClamp(oldClamp);
+	gl_RenderState.SetGlobalFadeMode(oldFadeMode);
 }
 

@@ -157,6 +157,10 @@ EXTERN_CVAR(Float, vid_contrast)
 EXTERN_CVAR(Float, vid_saturation)
 EXTERN_CVAR(Int, gl_satformula)
 
+EXTERN_CVAR(Bool, gl_global_fade)
+EXTERN_CVAR(Float, gl_global_fade_gradient)
+EXTERN_CVAR(Float, gl_global_fade_density)
+
 CVAR(Int, gl_dither_bpc, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 
 void FGLRenderer::RenderScreenQuad()
@@ -266,6 +270,9 @@ void FGLRenderer::AmbientOccludeScene()
 	mSSAOShader->AOStrength.Set(aoStrength);
 	mSSAOShader->Scale.Set(sceneScaleX, sceneScaleY);
 	mSSAOShader->Offset.Set(sceneOffsetX, sceneOffsetY);
+	mSSAOShader->muGlobalFade.Set(gl_global_fade);
+	mSSAOShader->muGlobalFadeDensity.Set(gl_global_fade_density);
+	mSSAOShader->muGlobalFadeGradient.Set(gl_global_fade_gradient);
 	RenderScreenQuad();
 
 	// Blur SSAO texture

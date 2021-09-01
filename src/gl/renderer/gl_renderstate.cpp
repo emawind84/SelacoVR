@@ -50,6 +50,23 @@ CUSTOM_CVAR(Int, gl_shadowmap_filter, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 	if (self < 0 || self > 8) self = 1;
 }
 
+CVAR(Bool, gl_global_fade, false, CVAR_ARCHIVE)
+CUSTOM_CVAR(Float, gl_global_fade_density, 0.001f, CVAR_ARCHIVE)
+{
+	if (self < 0.0001f) self = 0.0001f;
+	if (self > 0.005f) self = 0.005f;
+}
+CUSTOM_CVAR(Float, gl_global_fade_gradient, 1.5f, CVAR_ARCHIVE)
+{
+	if (self < 0.1f) self = 0.1f;
+	if (self > 2.f) self = 2.f;
+}
+CVAR(Color, gl_global_fade_color, 0x3f3f3f, CVAR_ARCHIVE)
+CUSTOM_CVAR(Bool, gl_global_fade_debug, false, 0)
+{
+	if (self) gl_RenderState.SetGlobalFadeMode(2);
+	else gl_RenderState.SetGlobalFadeMode(-1);
+}
 
 static VSMatrix identityMatrix(1);
 TArray<VSMatrix> gl_MatrixStack;
@@ -123,6 +140,7 @@ void FRenderState::Reset()
 	mModelMatrix.loadIdentity();
 	mTextureMatrix.loadIdentity();
 	mPassType = NORMAL_PASS;
+	mGlobalFadeMode = -1;
 }
 
 //==========================================================================
@@ -190,6 +208,12 @@ bool FRenderState::ApplyShader()
 	activeShader->muViewHeight.Set(viewheight);
 	activeShader->muSpecularMaterial.Set(mGlossiness, mSpecularLevel);
 	activeShader->muAddColor.Set(mAddColor); // Can this be done without a shader?
+	activeShader->muGlobalFadeMode.Set(mGlobalFadeMode);
+	activeShader->muGlobalFade.Set(gl_global_fade ? 1 : 0);
+	activeShader->muGlobalFadeDensity.Set(gl_global_fade_density);
+	activeShader->muGlobalFadeGradient.Set(gl_global_fade_gradient);
+	activeShader->muGlobalFadeColor.Set(mFadeColor);
+	activeShader->muGlobalFadeColor2.Set(mFadeColor2);
 
 	if (mGlowEnabled)
 	{
