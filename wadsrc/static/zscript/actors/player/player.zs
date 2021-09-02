@@ -1511,7 +1511,7 @@ class PlayerPawn : Actor
 		{ // Player is frozen
 			reactiontime--;
 		}
-		else
+		else if (menuactive == Menu.Off)
 		{
 			MovePlayer();
 			CheckJump();
