@@ -2791,7 +2791,7 @@ GLLIGHTMNU_LIGHTSHADOWMAP			= "Light shadowmaps";
 GLLIGHTMNU_LIGHTSHADOWMAPQUALITY	= "Shadowmap quality";
 GLLIGHTMNU_LIGHTSHADOWMAPFILTER		= "Shadowmap filter";
 GLLIGHTMNU_LIGHTSCULL				= "Light cull distance";
-GLLIGHTMNU_MAXINTENSITY				= "Light max intensity (max range)";
+GLLIGHTMNU_MAXINTENSITY				= "Light max intensity (range)";
 GLLIGHTMNU_MAXCOLLECTEDSS			= "Max collected sub sectors";
 
 // OpenGL Preferences
