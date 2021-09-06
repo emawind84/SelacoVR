@@ -63,6 +63,7 @@
 #include "g_levellocals.h"
 #include "textures/skyboxtexture.h"
 
+#include "gl/system/gl_cvars.h"
 #include "gl/system/gl_interface.h"
 #include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
@@ -500,6 +501,7 @@ static void RenderBox(FTextureID texno, FMaterial * gltex, float x_offset, bool 
 //-----------------------------------------------------------------------------
 void GLSkyPortal::DrawContents()
 {
+	if (gl_global_fade) return;
 	if (origin->texture[0])
 	{
 		PalEntry pe = origin->texture[0]->tex->GetSkyCapColor(false);

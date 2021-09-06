@@ -25,6 +25,7 @@
 
 #include <string.h>
 #include "gl/system/gl_interface.h"
+#include "gl/renderer/gl_renderer.h"
 #include "gl/data/gl_data.h"
 #include "r_data/matrix.h"
 #include "gl/textures/gl_material.h"
@@ -462,14 +463,25 @@ public:
 	void SetFadeColor(PalEntry fogColor)
 	{
 		int fadeColor = gl_global_fade_color;
-		mFadeColor = PalEntry(fadeColor);
-		mFadeColor2 = PalEntry(fadeColor);
+		if (!mFadeColor)
+			mFadeColor = PalEntry(fadeColor);
+		if (!mFadeColor2)
+			mFadeColor2 = PalEntry(fadeColor);
 		if (!fogColor.isBlack() && !fogColor.isWhite())
 		{
 			mFadeColor2.r = RPART(fadeColor) * 0.5 + fogColor.r * 0.5;
 			mFadeColor2.g = GPART(fadeColor) * 0.5 + fogColor.g * 0.5;
 			mFadeColor2.b = BPART(fadeColor) * 0.5 + fogColor.b * 0.5;
 		}
+		GLRenderer->mSceneClearColor[0] = mFadeColor2.r / 255.f;
+		GLRenderer->mSceneClearColor[1] = mFadeColor2.g / 255.f;
+		GLRenderer->mSceneClearColor[2] = mFadeColor2.b / 255.f;
+	}
+
+	void ClearFadeColor()
+	{
+		mFadeColor = NULL;
+		mFadeColor2 = NULL;
 	}
 
 	void SetClipSplit(float bottom, float top)
