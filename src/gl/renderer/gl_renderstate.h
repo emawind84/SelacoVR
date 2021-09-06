@@ -462,14 +462,22 @@ public:
 	void SetFadeColor(PalEntry fogColor)
 	{
 		int fadeColor = gl_global_fade_color;
-		mFadeColor = PalEntry(fadeColor);
-		mFadeColor2 = PalEntry(fadeColor);
+		if (!mFadeColor)
+			mFadeColor = PalEntry(fadeColor);
+		if (!mFadeColor2)
+			mFadeColor2 = PalEntry(fadeColor);
 		if (!fogColor.isBlack() && !fogColor.isWhite())
 		{
 			mFadeColor2.r = RPART(fadeColor) * 0.5 + fogColor.r * 0.5;
 			mFadeColor2.g = GPART(fadeColor) * 0.5 + fogColor.g * 0.5;
 			mFadeColor2.b = BPART(fadeColor) * 0.5 + fogColor.b * 0.5;
 		}
+	}
+
+	void ClearFadeColor()
+	{
+		mFadeColor = NULL;
+		mFadeColor2 = NULL;
 	}
 
 	void SetClipSplit(float bottom, float top)
