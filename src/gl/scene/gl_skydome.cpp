@@ -502,6 +502,7 @@ static void RenderBox(FTextureID texno, FMaterial * gltex, float x_offset, bool 
 void GLSkyPortal::DrawContents()
 {
 	if (gl_global_fade) return;
+	if (origin->texture[0])
 	{
 		PalEntry pe = origin->texture[0]->tex->GetSkyCapColor(false);
 		GLRenderer->mSceneClearColor[0] = pe.r / 255.f;
