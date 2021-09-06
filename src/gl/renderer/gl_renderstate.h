@@ -25,6 +25,7 @@
 
 #include <string.h>
 #include "gl/system/gl_interface.h"
+#include "gl/renderer/gl_renderer.h"
 #include "gl/data/gl_data.h"
 #include "r_data/matrix.h"
 #include "gl/textures/gl_material.h"
@@ -472,6 +473,9 @@ public:
 			mFadeColor2.g = GPART(fadeColor) * 0.5 + fogColor.g * 0.5;
 			mFadeColor2.b = BPART(fadeColor) * 0.5 + fogColor.b * 0.5;
 		}
+		GLRenderer->mSceneClearColor[0] = mFadeColor2.r / 255.f;
+		GLRenderer->mSceneClearColor[1] = mFadeColor2.g / 255.f;
+		GLRenderer->mSceneClearColor[2] = mFadeColor2.b / 255.f;
 	}
 
 	void ClearFadeColor()
