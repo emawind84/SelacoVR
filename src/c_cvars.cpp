@@ -2112,12 +2112,12 @@ void C_GrabCVarDefaults ()
 				}
 				else
 				{
-					sc.ScriptError("Cannot set cvar default for non-config cvar '%s'", sc.String);
+					sc.ScriptMessage("Cannot set cvar default for non-config cvar '%s'", sc.String);
 				}
 			}
 			else
 			{
-				sc.ScriptError("Unknown cvar '%s'", sc.String);
+				sc.ScriptMessage("Unknown cvar '%s' in defcvars", sc.String);
 			}
 		}
 	}
