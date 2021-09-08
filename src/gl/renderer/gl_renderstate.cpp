@@ -63,7 +63,7 @@ CUSTOM_CVAR(Float, gl_global_fade_gradient, 1.5f, CVAR_ARCHIVE)
 }
 CUSTOM_CVAR(Color, gl_global_fade_color, 0x3f3f3f, CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
-	gl_RenderState.ClearFadeColor();
+	gl_RenderState.ResetFadeColor();
 }
 CUSTOM_CVAR(Bool, gl_global_fade_debug, false, 0)
 {
@@ -144,6 +144,7 @@ void FRenderState::Reset()
 	mTextureMatrix.loadIdentity();
 	mPassType = NORMAL_PASS;
 	mGlobalFadeMode = -1;
+	ResetFadeColor();
 }
 
 //==========================================================================
@@ -216,7 +217,6 @@ bool FRenderState::ApplyShader()
 	activeShader->muGlobalFadeDensity.Set(gl_global_fade_density);
 	activeShader->muGlobalFadeGradient.Set(gl_global_fade_gradient);
 	activeShader->muGlobalFadeColor.Set(mFadeColor);
-	activeShader->muGlobalFadeColor2.Set(mFadeColor2);
 
 	if (mGlowEnabled)
 	{
