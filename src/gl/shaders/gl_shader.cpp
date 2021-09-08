@@ -353,7 +353,6 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	i_data += "uniform float uGlobalFadeDensity;\n";
 	i_data += "uniform float uGlobalFadeGradient;\n";
 	i_data += "uniform vec4 uGlobalFadeColor;\n";
-	i_data += "uniform vec4 uGlobalFadeColor2;\n";
 
 	// dynamic lights
 	i_data += "uniform int uLightIndex;\n";
@@ -681,7 +680,6 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	muGlobalFadeDensity.Init(hShader, "uGlobalFadeDensity");
 	muGlobalFadeGradient.Init(hShader, "uGlobalFadeGradient");
 	muGlobalFadeColor.Init(hShader, "uGlobalFadeColor");
-	muGlobalFadeColor2.Init(hShader, "uGlobalFadeColor2");
 
 	lights_index = glGetUniformLocation(hShader, "lights");
 	fakevb_index = glGetUniformLocation(hShader, "fakeVB");

@@ -114,7 +114,6 @@ class FRenderState
 	PalEntry mAddColor;
 	PalEntry mFogColor;
 	PalEntry mFadeColor;
-	PalEntry mFadeColor2;
 	PalEntry mObjectColor;
 	PalEntry mObjectColor2;
 	FStateVec4 mDynColor;
@@ -460,28 +459,16 @@ public:
 		return mFogColor;
 	}
 
-	void SetFadeColor(PalEntry fogColor)
+	void InitFadeColor()
 	{
-		int fadeColor = gl_global_fade_color;
-		if (!mFadeColor)
-			mFadeColor = PalEntry(fadeColor);
-		if (!mFadeColor2)
-			mFadeColor2 = PalEntry(fadeColor);
-		if (!fogColor.isBlack() && !fogColor.isWhite())
-		{
-			mFadeColor2.r = RPART(fadeColor) * 0.5 + fogColor.r * 0.5;
-			mFadeColor2.g = GPART(fadeColor) * 0.5 + fogColor.g * 0.5;
-			mFadeColor2.b = BPART(fadeColor) * 0.5 + fogColor.b * 0.5;
-		}
-		GLRenderer->mSceneClearColor[0] = mFadeColor2.r / 255.f;
-		GLRenderer->mSceneClearColor[1] = mFadeColor2.g / 255.f;
-		GLRenderer->mSceneClearColor[2] = mFadeColor2.b / 255.f;
+		GLRenderer->mSceneClearColor[0] = mFadeColor.r / 255.f;
+		GLRenderer->mSceneClearColor[1] = mFadeColor.g / 255.f;
+		GLRenderer->mSceneClearColor[2] = mFadeColor.b / 255.f;
 	}
 
-	void ClearFadeColor()
+	void ResetFadeColor()
 	{
-		mFadeColor = NULL;
-		mFadeColor2 = NULL;
+		mFadeColor = gl_global_fade_color;
 	}
 
 	void SetClipSplit(float bottom, float top)

@@ -512,7 +512,7 @@ vec3 AmbientOcclusionColor()
 
 vec4 ApplyFadeColor(vec4 frag)
 {
-	if (uGlobalFade == 1)
+	if (uGlobalFade == 1 && uFogEnabled != 0)
 	{
 		float fogdist;
 		if (uFogEnabled == 1 || uFogEnabled == -1) 
@@ -527,25 +527,17 @@ vec4 ApplyFadeColor(vec4 frag)
 		}
 		float visibility = exp(-pow((fogdist * uGlobalFadeDensity), uGlobalFadeGradient));
 		visibility = clamp(visibility, 0.0, 1.0);
-		if (uGlobalFadeMode == -1 && uFogEnabled < 0)
-		{
-			frag = vec4(mix(uGlobalFadeColor2.rgb, frag.rgb, visibility), frag.a * visibility);
-		}
-		else if (uGlobalFadeMode == -1 && uFogEnabled > 0)
+		if (uGlobalFadeMode == -1)
 		{
 			frag = vec4(mix(uGlobalFadeColor.rgb, frag.rgb, visibility), frag.a * visibility);
 		}
-		else if (uGlobalFadeMode == 2 && uFogEnabled < 0)
-		{
-			frag = vec4(uGlobalFadeColor2.rgb, frag.a) * visibility;
-		}
-		else if (uGlobalFadeMode == 2 && uFogEnabled > 0)
+		else if (uGlobalFadeMode == 2)
 		{
 			frag = vec4(uGlobalFadeColor.rgb, frag.a) * visibility;
 		}
 		else if (uGlobalFadeMode == 3)
 		{
-			frag = vec4(uGlobalFadeColor2.rgb, 1.0);
+			frag = vec4(uGlobalFadeColor.rgb, 1.0);
 		}
 	}
 	return frag;
