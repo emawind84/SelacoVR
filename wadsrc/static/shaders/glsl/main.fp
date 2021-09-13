@@ -431,8 +431,8 @@ void SetMaterialProps(inout Material material, vec2 texCoord)
 	material.Normal = ApplyNormalMap(texCoord.st);
 
 	if ((uTextureMode & TEXF_Brightmap) != 0)
-		material.Bright = texture(brighttexture, texCoord.st);
-
+		material.Bright = desaturate(texture(brighttexture, texCoord.st));
+		
 	if ((uTextureMode & TEXF_Detailmap) != 0)
 	{
 		vec4 Detail = texture(detailtexture, texCoord.st * uDetailParms.xy) * uDetailParms.z;
@@ -440,7 +440,7 @@ void SetMaterialProps(inout Material material, vec2 texCoord)
 	}
 	
 	if ((uTextureMode & TEXF_Glowmap) != 0)
-		material.Glow = texture(glowtexture, texCoord.st);
+		material.Glow = desaturate(texture(glowtexture, texCoord.st));
 }
 
 //===========================================================================
