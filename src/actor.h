@@ -1526,8 +1526,14 @@ public:
 	DVector3 AttackPos;
 	DAngle   AttackPitch;
 	DAngle   AttackAngle;
+	DAngle   AttackRoll;
 
 	DVector3 (*AttackDir)(AActor* actor, DAngle yaw, DAngle pitch);
+
+	DVector3 OffhandPos;
+	DAngle   OffhandPitch;
+	DAngle   OffhandAngle;
+	DAngle   OffhandRoll;
 };
 
 class FActorIterator
