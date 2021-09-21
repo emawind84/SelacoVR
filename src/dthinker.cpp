@@ -45,7 +45,7 @@
 #include "g_levellocals.h"
 #include "a_dynlight.h"
 #include "v_video.h"
-
+#include "d_main.h"
 
 static int ThinkCount;
 static cycle_t ThinkCycles;
@@ -112,6 +112,18 @@ void FThinkerCollection::RunThinkers(FLevelLocals *Level)
 
 	ThinkCycles.Clock();
 
+	bool dolights;
+	if ((gl_lights && vid_rendermode == 4) || (r_dynlights && vid_rendermode != 4))
+	{
+		dolights = Level->lights || (Level->flags3 & LEVEL3_LIGHTCREATED);
+	}
+	else
+	{
+		dolights = false;
+	}
+	Level->flags3 &= ~LEVEL3_LIGHTCREATED;
+
+
 	auto recreateLights = [=]() {
 		auto it = Level->GetThinkerIterator<AActor>();
 
@@ -149,7 +161,7 @@ void FThinkerCollection::RunThinkers(FLevelLocals *Level)
 			}
 		} while (count != 0);
 
-		if (gl_lights)
+		if (dolights)
 		{
 			recreateLights();
 			for (auto light = Level->lights; light;)
@@ -179,7 +191,7 @@ void FThinkerCollection::RunThinkers(FLevelLocals *Level)
 			}
 		} while (count != 0);
 
-		if (Level->lights && gl_lights)
+		if (dolights)
 		{
 			recreateLights();
 			// Also profile the internal dynamic lights, even though they are not implemented as thinkers.
