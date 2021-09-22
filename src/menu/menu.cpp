@@ -350,11 +350,7 @@ void M_StartControlPanel (bool makeSound)
 	if (CurrentMenu != nullptr)
 		return;
 
-	ResetButtonStates ();
-	for (int i = 0; i < NUM_MKEYS; ++i)
-	{
-		MenuButtons[i].ReleaseKey(0);
-	}
+	M_ResetButtonStates();
 
 	C_HideConsole ();				// [RH] Make sure console goes bye bye.
 	menuactive = MENU_On;
@@ -368,6 +364,15 @@ void M_StartControlPanel (bool makeSound)
 	}
 	BackbuttonTime = 0;
 	BackbuttonAlpha = 0;
+}
+
+void M_ResetButtonStates()
+{
+	ResetButtonStates ();
+	for (int i = 0; i < NUM_MKEYS; ++i)
+	{
+		MenuButtons[i].ReleaseKey(0);
+	}
 }
 
 int getMenuState()
