@@ -633,7 +633,7 @@ void DThinker::RunThinkers ()
 			if (ac->flags8 & MF8_RECREATELIGHTS && Renderer != nullptr)
 			{
 				ac->flags8 &= ~MF8_RECREATELIGHTS;
-				ac->SetDynamicLights();
+				if (dolights) ac->SetDynamicLights();
 			}
 			// This was merged from P_RunEffects to eliminate the costly duplicate ThinkerIterator loop.
 			// [RH] Run particle effects
@@ -669,9 +669,9 @@ void DThinker::RunThinkers ()
 			}
 		} while (count != 0);
 
+		recreateLights();
 		if (dolights)
 		{
-			recreateLights();
 			for (auto light = level.lights; light;)
 			{
 				auto next = light->next;
@@ -699,9 +699,9 @@ void DThinker::RunThinkers ()
 			}
 		} while (count != 0);
 
+		recreateLights();
 		if (dolights)
 		{
-			recreateLights();
 			// Also profile the internal dynamic lights, even though they are not implemented as thinkers.
 			auto &prof = Profiles[NAME_InternalDynamicLight];
 			prof.timer.Clock();
