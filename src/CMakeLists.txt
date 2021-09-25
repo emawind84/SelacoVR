@@ -1175,6 +1175,7 @@ if( NOT ZDOOM_OUTPUT_OLDSTYLE )
 	# Linux distributions are slow to adopt 2.6. :(
 	set_target_properties( zdoom PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${ZDOOM_OUTPUT_DIR} )
 	set_target_properties( zdoom PROPERTIES OUTPUT_NAME ${ZDOOM_EXE_NAME} )
+	set_target_properties( zdoom PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_DEBUG True)
 else()
 	set_target_properties( zdoom PROPERTIES
 		RUNTIME_OUTPUT_NAME ${ZDOOM_EXE_NAME}

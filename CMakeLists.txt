@@ -454,7 +454,7 @@ add_subdirectory( wadsrc )
 add_subdirectory( wadsrc_bm )
 add_subdirectory( wadsrc_lights )
 add_subdirectory( wadsrc_extra )
-#add_subdirectory( src )
+add_subdirectory( src )
 
 # Update gitinfo.h
 
