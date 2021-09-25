@@ -1675,7 +1675,6 @@ static void G_QueueBody (AActor *body)
 // G_DoReborn
 //
 CVAR (Bool, pistolstart, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-EXTERN_CVAR(Int, compatmode)
 EXTERN_CVAR(Bool, sv_singleplayerrespawn)
 void G_DoReborn (int playernum, bool freshbot)
 {
