@@ -186,7 +186,7 @@ void RenderModel(FModelRenderer *renderer, float x, float y, float z, FSpriteMod
 void RenderHUDModel(FModelRenderer *renderer, DPSprite *psp, float ofsX, float ofsY)
 {
 	AActor * playermo = players[consoleplayer].camera;
-	FSpriteModelFrame *smf = FindModelFrame(playermo->player->ReadyWeapon->GetClass(), psp->GetSprite(), psp->GetFrame(), false);
+	FSpriteModelFrame *smf = psp->Caller != nullptr ? FindModelFrame(psp->Caller->GetClass(), psp->GetSprite(), psp->GetFrame(), false) : nullptr;
 
 	// [BB] No model found for this sprite, so we can't render anything.
 	if (smf == nullptr)
@@ -786,15 +786,14 @@ FSpriteModelFrame * FindModelFrame(const PClass * ti, int sprite, int frame, boo
 
 bool IsHUDModelForPlayerAvailable (player_t * player)
 {
-	if (player == nullptr || player->ReadyWeapon == nullptr)
+	if (player == nullptr || player->psprites == nullptr)
 		return false;
 
-	DPSprite *psp = player->FindPSprite(PSP_WEAPON);
-
-	if (psp == nullptr)
-		return false;
-
-	FSpriteModelFrame *smf = FindModelFrame(player->ReadyWeapon->GetClass(), psp->GetSprite(), psp->GetFrame(), false);
-	return ( smf != nullptr );
+	// [MK] check that at least one psprite uses models
+	for (DPSprite *psp = player->psprites; psp != nullptr && psp->GetID() < PSP_TARGETCENTER; psp = psp->GetNext())
+	{
+		FSpriteModelFrame *smf = psp->Caller != nullptr ? FindModelFrame(psp->Caller->GetClass(), psp->GetSprite(), psp->GetFrame(), false) : nullptr;
+		if ( smf != nullptr ) return true;
+	}
+	return false;
 }
-

@@ -38,6 +38,8 @@
 #include "texmanip.h"
 #include "fcolormap.h"
 
+#include "hwrenderer/data/buffers.h"
+
 // Some more or less basic data types
 // we depend on.
 #include "m_fixed.h"
@@ -485,6 +487,7 @@ enum
 	SECMF_HIDDEN			= 256,	// Do not draw on textured automap
 	SECMF_OVERLAPPING		= 512,	// floor and ceiling overlap and require special renderer action.
 	SECMF_NOSKYWALLS		= 1024,	// Do not draw "sky walls"
+	SECMF_LIFT				= 2048,	// For MBF monster AI
 };
 
 enum
@@ -501,13 +504,16 @@ enum
 	SECF_ENDLEVEL		= 512,	// ends level when health goes below 10
 	SECF_HAZARD			= 1024,	// Change to Strife's delayed damage handling.
 	SECF_NOATTACK		= 2048,	// monsters cannot start attacks in this sector.
+	SECF_EXIT1			= 4096,
+	SECF_EXIT2			= 8192,
+	SECF_KILLMONSTERS	= 16384,
 
 	SECF_WASSECRET		= 1 << 30,	// a secret that was discovered
 	SECF_SECRET			= 1 << 31,	// a secret sector
 
 	SECF_DAMAGEFLAGS = SECF_ENDGODMODE|SECF_ENDLEVEL|SECF_DMGTERRAINFX|SECF_HAZARD,
 	SECF_NOMODIFY = SECF_SECRET|SECF_WASSECRET,	// not modifiable by Sector_ChangeFlags
-	SECF_SPECIALFLAGS = SECF_DAMAGEFLAGS|SECF_FRICTION|SECF_PUSH,	// these flags originate from 'special and must be transferrable by floor thinkers
+	SECF_SPECIALFLAGS = SECF_DAMAGEFLAGS|SECF_FRICTION|SECF_PUSH|SECF_EXIT1|SECF_EXIT2|SECF_KILLMONSTERS,	// these flags originate from 'special' and must be transferrable by floor thinkers
 };
 
 enum
@@ -592,7 +598,7 @@ struct secspecial_t
 {
 	FName damagetype;		// [RH] Means-of-death for applied damage
 	int damageamount;			// [RH] Damage to do while standing on floor
-	short special;
+	int special;
 	short damageinterval;	// Interval for damage application
 	short leakydamage;		// chance of leaking through radiation suit
 	int Flags;
@@ -668,8 +674,7 @@ struct sector_t
 
 	FColormap Colormap;						// Sector's own color/fog info.
 
-	short		special;					// map-defined sector special type
-	short		lightlevel;
+	int		special;					// map-defined sector special type
 
 	int			sky;						// MBF sky transfer info.
 	int 		validcount;					// if == validcount, already checked
@@ -679,6 +684,7 @@ struct sector_t
 											//		the alpha mask is non-zero
 
 	bool transdoor;							// For transparent door hacks
+	short		lightlevel;
 	uint16_t MoreFlags;						// [RH] Internal sector flags
 	uint32_t Flags;							// Sector flags
 
@@ -689,16 +695,15 @@ struct sector_t
 	int							sectornum;			// for comparing sector copies
 
 	// GL only stuff starts here
-	float						reflect[2];
-
 	int							subsectorcount;		// list of subsectors
+	float						reflect[2];
 	double						transdoorheight;	// for transparent door hacks
 	subsector_t **				subsectors;
 	FSectorPortalGroup *		portals[2];			// floor and ceiling portals
 
 	int				vboindex[4];	// VBO indices of the 4 planes this sector uses during rendering. This is only needed for updating plane heights.
 	int				iboindex[4];	// IBO indices of the 4 planes this sector uses during rendering
-	double			vboheight[2];	// Last calculated height for the 2 planes of this actual sector
+	double			vboheight[HW_MAX_PIPELINE_BUFFERS][2];	// Last calculated height for the 2 planes of this actual sector
 	int				vbocount[2];	// Total count of vertices belonging to this sector's planes. This is used when a sector height changes and also contains all attached planes.
 	int				ibocount;		// number of indices per plane (identical for all planes.) If this is -1 the index buffer is not in use.
 
@@ -1436,7 +1441,7 @@ struct line_t
 {
 	vertex_t	*v1, *v2;	// vertices, from v1 to v2
 	DVector2	delta;		// precalculated v2 - v1 for side checking
-	uint32_t	flags;
+	uint32_t	flags, flags2;
 	uint32_t	activation;	// activation type
 	int			special;
 	int			args[5];	// <--- hexen-style arguments (expanded to ZDoom's full width)

@@ -34,9 +34,9 @@
 #include "i_interface.h"
 
 // Set up 3D-specific console variables:
-CVAR(Int, vr_mode, 10, CVAR_GLOBALCONFIG)
+CVAR(Int, vr_mode, 10, CVAR_GLOBALCONFIG  | CVAR_ARCHIVE)
 // switch left and right eye views
-CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG   | CVAR_ARCHIVE)
 // intraocular distance in meters
 CVAR(Float, vr_ipd, 0.062f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
 // distance between viewer and the display screen
