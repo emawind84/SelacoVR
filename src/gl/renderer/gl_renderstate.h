@@ -39,6 +39,7 @@ class FShader;
 extern TArray<VSMatrix> gl_MatrixStack;
 
 EXTERN_CVAR(Bool, gl_direct_state_change)
+EXTERN_CVAR(Bool, gl_global_fade)
 EXTERN_CVAR(Color, gl_global_fade_color)
 
 struct FStateVec4
@@ -461,9 +462,12 @@ public:
 
 	void InitFadeColor()
 	{
-		GLRenderer->mSceneClearColor[0] = mFadeColor.r / 255.f;
-		GLRenderer->mSceneClearColor[1] = mFadeColor.g / 255.f;
-		GLRenderer->mSceneClearColor[2] = mFadeColor.b / 255.f;
+		if (gl_global_fade)
+		{
+			GLRenderer->mSceneClearColor[0] = mFadeColor.r / 255.f;
+			GLRenderer->mSceneClearColor[1] = mFadeColor.g / 255.f;
+			GLRenderer->mSceneClearColor[2] = mFadeColor.b / 255.f;
+		}
 	}
 
 	void ResetFadeColor()
