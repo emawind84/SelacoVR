@@ -2398,6 +2398,7 @@ void I_Error(const char *error, ...)
 	myvsnprintf(errortext, MAX_ERRORTEXT, error, argptr);
 	va_end(argptr);
 	I_DebugPrint(errortext);
+	Printf(TEXTCOLOR_RED "%s", errortext);
 
 #ifdef __ANDROID__
 	LOGI("ERROR: %s", errortext);
