@@ -267,7 +267,7 @@ void GLSprite::Draw(int pass)
 
 	if (pass == GLPASS_LIGHTSONLY)
 	{
-		if (modelframe && !modelframe->isVoxel)
+		if (modelframe && !modelframe->isVoxel && !(modelframe->flags & MDL_NOPERPIXELLIGHTING))
 		{
 			if (RenderStyle.BlendOp != STYLEOP_Shadow)
 			{
