@@ -1534,6 +1534,8 @@ public:
 	DAngle   OffhandPitch;
 	DAngle   OffhandAngle;
 	DAngle   OffhandRoll;
+
+	DVector3 (*OffhandDir)(AActor* actor, DAngle yaw, DAngle pitch);
 };
 
 class FActorIterator

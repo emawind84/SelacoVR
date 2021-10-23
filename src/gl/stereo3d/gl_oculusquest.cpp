@@ -387,7 +387,7 @@ namespace s3d
 
 
     //Fishbiter's Function.. Thank-you!!
-    static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
+    static DVector3 MapWeaponDir(AActor* actor, DAngle yaw, DAngle pitch, bool isOffhandWeapon = false)
     {
         LSMatrix44 mat;
         if (!s3d::Stereo3DMode::getCurrentMode().GetWeaponTransform(&mat))
@@ -415,6 +415,16 @@ namespace s3d
         dir.MakeUnit();
 
         return dir;
+    }
+
+    static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
+    {
+        return MapWeaponDir(actor, yaw, pitch, false);
+    }
+
+    static DVector3 MapOffhandDir(AActor* actor, DAngle yaw, DAngle pitch)
+    {
+        return MapWeaponDir(actor, yaw, pitch, true);
     }
 
     bool OculusQuestMode::GetTeleportLocation(DVector3 &out) const
@@ -532,6 +542,8 @@ namespace s3d
                     player->mo->OffhandPos.Y = player->mo->Y() - (offhandoffset[2] * vr_vunits_per_meter);
                     player->mo->OffhandPos.Z = r_viewpoint.CenterEyePos.Z + (((hmdPosition[1] + offhandoffset[1] + vr_height_adjust) * vr_vunits_per_meter) / pixelstretch) -
                             getDoomPlayerHeightWithoutCrouch(player); // Fixes wrong shot height when in water
+
+                    player->mo->OffhandDir = MapOffhandDir;
                 }
 
                 if (vr_teleport && player->mo->health > 0) {

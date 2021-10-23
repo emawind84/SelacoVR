@@ -1954,13 +1954,12 @@ DEFINE_FIELD(AActor, friendlyseeblocks)
 DEFINE_FIELD(AActor, SpawnTime)
 DEFINE_FIELD(AActor, InventoryID)
 DEFINE_FIELD(AActor, ThruBits)
-DEFINE_FIELD(AActor, OverrideAttackPosDir);
-DEFINE_FIELD(AActor, AttackPos);
-DEFINE_FIELD(AActor, AttackDir);
+DEFINE_FIELD(AActor, OverrideAttackPosDir)
+DEFINE_FIELD(AActor, AttackPos)
 DEFINE_FIELD(AActor, AttackPitch)
 DEFINE_FIELD(AActor, AttackRoll)
 DEFINE_FIELD(AActor, AttackAngle)
-DEFINE_FIELD(AActor, OffhandPos);
+DEFINE_FIELD(AActor, OffhandPos)
 DEFINE_FIELD(AActor, OffhandPitch)
 DEFINE_FIELD(AActor, OffhandRoll)
 DEFINE_FIELD(AActor, OffhandAngle)

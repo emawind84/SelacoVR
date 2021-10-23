@@ -255,6 +255,7 @@ class Actor : Thinker native
 	native readonly double OffhandPitch;
 	native readonly double OffhandRoll;
 	native readonly double OffhandAngle;
+	native readonly bool OverrideAttackPosDir;
 
 	meta String Obituary;		// Player was killed by this actor
 	meta String HitObituary;		// Player was killed by this actor in melee
@@ -757,6 +758,8 @@ class Actor : Thinker native
 	native void VelIntercept(Actor targ, double speed = -1, bool aimpitch = true, bool oldvel = false, bool resetvel = false);
 	native void VelFromAngle(double speed = 1e37, double angle = 1e37);
 	native void Vel3DFromAngle(double speed, double angle, double pitch);
+	native vector3 AttackDir(Actor actor, double angle, double pitch);
+	native vector3 OffhandDir(Actor actor, double angle, double pitch);
 	native void Thrust(double speed = 1e37, double angle = 1e37);
 	native clearscope bool isFriend(Actor other) const;
 	native clearscope bool isHostile(Actor other) const;

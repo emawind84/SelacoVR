@@ -3484,7 +3484,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_WolfAttack)
 
 	// Target can dodge if it can see enemy
 	DAngle angle = absangle(self->target->Angles.Yaw, self->target->AngleTo(self));
-	bool dodge = (P_CheckSight(self->target, self) && angle < 30. * 256. / 360.);	// 30 byteangles ~ 21°
+	bool dodge = (P_CheckSight(self->target, self) && angle < 30. * 256. / 360.);	// 30 byteangles ~ 21ï¿½
 
 	// Distance check is simplistic
 	DVector2 vec = self->Vec2To(self->target);
@@ -5083,4 +5083,24 @@ DEFINE_ACTION_FUNCTION(AActor, GetRenderStyle)
 		if (self->RenderStyle == LegacyRenderStyles[i]) ACTION_RETURN_INT(i);
 	}
 	ACTION_RETURN_INT(-1);	// no symbolic constant exists to handle this style.
+}
+
+DEFINE_ACTION_FUNCTION(AActor, AttackDir)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT_NOT_NULL(source, AActor);
+	PARAM_ANGLE(yaw);
+	PARAM_ANGLE(pitch);
+	DVector3 dir = self->AttackDir(source, yaw, pitch);
+	ACTION_RETURN_VEC3(DVector3(dir.Angle().Degrees, dir.Pitch().Degrees, 0.));
+}
+
+DEFINE_ACTION_FUNCTION(AActor, OffhandDir)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT_NOT_NULL(source, AActor);
+	PARAM_ANGLE(yaw);
+	PARAM_ANGLE(pitch);
+	DVector3 dir = self->OffhandDir(source, yaw, pitch);
+	ACTION_RETURN_VEC3(DVector3(dir.Angle().Degrees, dir.Pitch().Degrees, 0.));
 }
