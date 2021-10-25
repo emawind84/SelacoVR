@@ -6801,13 +6801,26 @@ AActor *P_SpawnMissileAngleZSpeed (AActor *source, double z,
 		z -= source->Floorclip;
 	}
 
-	mo = Spawn (type, source->PosAtZ(z), ALLOW_REPLACE);
+	DAngle an = angle;
+	DAngle pitch = source->Angles.Pitch;
+	DVector3 pos = source->PosAtZ(z);
+	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
+	{
+		pos = source->player->mo->AttackPos;
+		DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
+		an = dir.Angle();
+		pitch = dir.Pitch();
+		double slope = -clamp(pitch.Tan(), -5., 5.);
+		vz = speed * slope;
+	}
+
+	mo = Spawn (type, pos, ALLOW_REPLACE);
 
 	if (mo == nullptr) return nullptr;
 	P_PlaySpawnSound(mo, source);
 	if (owner == nullptr) owner = source;
 	mo->target = owner;
-	mo->Angles.Yaw = angle;
+	mo->Angles.Yaw = an;
 	mo->VelFromAngle(speed);
 	mo->Vel.Z = vz;
 
