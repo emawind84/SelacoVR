@@ -6848,7 +6848,23 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnMissileAngleZSpeed)
 
 AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target)
 {
-	AActor *other = Spawn(type, source->Pos(), ALLOW_REPLACE);
+	if (source == nullptr || type == nullptr)
+	{
+		return nullptr;
+	}
+
+	DAngle an = source->Angles.Yaw;
+	DAngle pitch = source->Angles.Pitch;
+	DVector3 pos = source->Pos();
+	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
+	{
+		pos = source->player->mo->AttackPos;
+		DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
+		an = dir.Angle();
+		pitch = dir.Pitch();
+	}
+
+	AActor *other = Spawn(type, pos, ALLOW_REPLACE);
 
 	if (other == nullptr || source == nullptr || type == nullptr)
 	{
@@ -6856,7 +6872,7 @@ AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target)
 	}
 
 	other->target = target;
-	other->Angles.Yaw = source->Angles.Yaw;
+	other->Angles.Yaw = an;
 	other->VelFromAngle();
 
 	if (other->flags4 & MF4_SPECTRAL)
@@ -6873,7 +6889,7 @@ AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target)
 
 	if (P_CheckMissileSpawn(other, source->radius))
 	{
-		DAngle pitch = P_AimLineAttack(source, source->Angles.Yaw, 1024.);
+		DAngle pitch = P_AimLineAttack(source, an, 1024.);
 		other->Vel.Z = -other->Speed * pitch.Sin();
 		return other;
 	}
