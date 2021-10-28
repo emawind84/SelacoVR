@@ -4,7 +4,6 @@ class Bootspoon : Fist
 {
 	Default
 	{
-		-WEAPON.TWOHANDED
 		obituary "$OB_MPSPOON";
 		Tag "$TAG_SPOON";
 	}

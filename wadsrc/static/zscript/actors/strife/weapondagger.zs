@@ -7,7 +7,6 @@ class PunchDagger : StrifeWeapon
 	{
 		Weapon.SelectionOrder 3900;
 		+WEAPON.NOALERT
-		+WEAPON.TWOHANDED
 		Obituary "$OB_MPPUNCHDAGGER";
 		Tag "$TAG_PUNCHDAGGER";
 	}
