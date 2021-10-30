@@ -70,6 +70,7 @@ EXTERN_CVAR(Bool, vr_teleport);
 EXTERN_CVAR(Bool, vr_switch_sticks);
 EXTERN_CVAR(Bool, vr_secondary_button_mappings);
 EXTERN_CVAR(Bool, vr_two_handed_weapons);
+EXTERN_CVAR(Bool, vr_crouch_use_button);
 
 //HUD control
 EXTERN_CVAR(Float, vr_hud_scale);
@@ -95,14 +96,12 @@ extern bool		automapactive;	// in AM_map.c
 //bit of a hack, assume player is at "normal" height when not crouching
 float getDoomPlayerHeightWithoutCrouch(const player_t *player)
 {
-    static float height = 0;
-    if (height == 0)
+    // Doom thinks this is where you are
+    if (!vr_crouch_use_button)
     {
-        // Doom thinks this is where you are
-        height = player->viewheight;
+        return player->viewheight;
     }
-
-    return height;
+    return player->DefaultViewHeight();
 }
 
 extern "C" float getViewpointYaw()
@@ -513,6 +512,16 @@ namespace s3d
             if (player)
             {
                 double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+
+                if (!vr_crouch_use_button)
+                {
+                    player->crouching = 10;
+                    player->viewheight = ((hmdPosition[1] + vr_height_adjust) * vr_vunits_per_meter) / pixelstretch;
+                }
+                else if (player->crouching == 10)
+                {
+                    player->Uncrouch();
+                }
 
                 //Weapon firing tracking - Thanks Fishbiter for the inspiration of how/where to use this!
                 {

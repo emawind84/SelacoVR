@@ -2596,7 +2596,10 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 			players[player].health > 0 && !(players[player].oldbuttons & BT_JUMP) &&
 			!P_IsPlayerTotallyFrozen(&players[player]))
 		{
-			players[player].crouching = players[player].crouchdir < 0 ? 1 : -1;
+			if (players[player].crouching != 10)
+			{
+				players[player].crouching = players[player].crouchdir < 0 ? 1 : -1;
+			}
 		}
 		break;
 

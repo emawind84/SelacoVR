@@ -1135,6 +1135,7 @@ class PlayerPawn : Actor
 		double oldheight = player.viewheight;
 
 		player.crouchdir = direction;
+		player.crouchfactor = player.viewheight / ViewHeight;
 		player.crouchfactor += crouchspeed;
 
 		// check whether the move is ok
@@ -1151,7 +1152,10 @@ class PlayerPawn : Actor
 		}
 		Height = savedheight;
 
-		player.crouchfactor = clamp(player.crouchfactor, 0.5, 1.);
+		if (direction != 0)
+		{  // clamp when using crouch with button only
+			player.crouchfactor = clamp(player.crouchfactor, 0.5, 1.);
+		}
 		player.viewheight = ViewHeight * player.crouchfactor;
 		player.crouchviewdelta = player.viewheight - ViewHeight;
 
@@ -1180,7 +1184,11 @@ class PlayerPawn : Actor
 			{
 				int crouchdir = player.crouching;
 
-				if (crouchdir == 0)
+				if (player.crouching == 10)
+				{
+					CrouchMove(0);
+				}
+				else if (crouchdir == 0)
 				{
 					crouchdir = (cmd.buttons & BT_CROUCH) ? -1 : 1;
 				}
@@ -1351,9 +1359,10 @@ class PlayerPawn : Actor
 			// When crouching, speed and bobbing have to be reduced
 			if (CanCrouch() && player.crouchfactor != 1)
 			{
-				fm *= player.crouchfactor;
-				sm *= player.crouchfactor;
-				bobfactor *= player.crouchfactor;
+				double speedfactor = clamp(player.crouchfactor, 0.5, 1.);
+				fm *= speedfactor;
+				sm *= speedfactor;
+				bobfactor *= speedfactor;
 			}
 
 			forwardmove = fm * movefactor * (35 / TICRATE);
@@ -1448,7 +1457,7 @@ class PlayerPawn : Actor
 		// [RH] check for jump
 		if (player.cmd.buttons & BT_JUMP)
 		{
-			if (player.crouchoffset != 0)
+			if (player.crouchfactor < 0.75)
 			{
 				// Jumping while crouching will force an un-crouch but not jump
 				player.crouching = 1;
@@ -1707,6 +1716,7 @@ class PlayerPawn : Actor
 		CheckPitch();
 		HandleMovement();
 		CalcHeight ();
+		console.printf("%d | %d | %d | %f | %f | %f", player.mo.height, player.viewheight, player.viewz, player.crouchfactor, player.crouchviewdelta, player.crouchoffset);
 
 		if (!(player.cheats & CF_PREDICTING))
 		{
