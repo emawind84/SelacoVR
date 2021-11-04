@@ -662,9 +662,13 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector)
 				sy += wy;
 			}
 
-
-			FSpriteModelFrame *smf = FindModelFrame(psp->GetCaller()->GetClass(), psp->GetSprite(), psp->GetFrame(), false);
-			bool hudModelStep = smf != nullptr;
+			bool hudModelStep = false;
+			DPSprite *weapon = psp->GetCaller() == player->ReadyWeapon ? readyWeaponPsp : offhandWeaponPsp;
+			if (weapon != nullptr)
+			{
+				auto *smf = FindModelFrame(weapon->GetCaller()->GetClass(), weapon->GetSprite(), weapon->GetFrame(), false);
+				hudModelStep = smf != nullptr;
+			}
 			if (!hudModelStep) s3d::Stereo3DMode::getCurrentMode().AdjustPlayerSprites(psp->GetCaller() == player->OffhandWeapon);
 			DrawPSprite(player, psp, sx, sy, hudModelStep, OverrideShader, !!(RenderStyle.Flags & STYLEF_RedIsAlpha), r_viewpoint.TicFrac);
 			if (!hudModelStep) s3d::Stereo3DMode::getCurrentMode().UnAdjustPlayerSprites();
