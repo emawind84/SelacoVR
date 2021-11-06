@@ -1716,7 +1716,6 @@ class PlayerPawn : Actor
 		CheckPitch();
 		HandleMovement();
 		CalcHeight ();
-		console.printf("%d | %d | %d | %f | %f | %f", player.mo.height, player.viewheight, player.viewz, player.crouchfactor, player.crouchviewdelta, player.crouchoffset);
 
 		if (!(player.cheats & CF_PREDICTING))
 		{
