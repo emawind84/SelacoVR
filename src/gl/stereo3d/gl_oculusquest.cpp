@@ -96,12 +96,18 @@ extern bool		automapactive;	// in AM_map.c
 //bit of a hack, assume player is at "normal" height when not crouching
 float getDoomPlayerHeightWithoutCrouch(const player_t *player)
 {
-    // Doom thinks this is where you are
     if (!vr_crouch_use_button)
     {
-        return player->viewheight;
+        double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+        return ((hmdPosition[1] + vr_height_adjust) * vr_vunits_per_meter) / pixelstretch;
     }
-    return player->DefaultViewHeight();
+    static float height = 0;
+    if (height == 0)
+    {
+        height = player->DefaultViewHeight();
+    }
+
+    return height;
 }
 
 extern "C" float getViewpointYaw()
@@ -515,8 +521,10 @@ namespace s3d
 
                 if (!vr_crouch_use_button)
                 {
+                    static double defaultViewHeight = player->DefaultViewHeight();
                     player->crouching = 10;
-                    player->viewheight = ((hmdPosition[1] + vr_height_adjust) * vr_vunits_per_meter) / pixelstretch;
+                    double hh = ((hmdPosition[1] + vr_height_adjust) * vr_vunits_per_meter) / pixelstretch;
+                    player->crouchfactor = hh / defaultViewHeight;
                 }
                 else if (player->crouching == 10)
                 {

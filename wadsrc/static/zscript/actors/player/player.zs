@@ -1135,8 +1135,10 @@ class PlayerPawn : Actor
 		double oldheight = player.viewheight;
 
 		player.crouchdir = direction;
-		player.crouchfactor = player.viewheight / ViewHeight;
-		player.crouchfactor += crouchspeed;
+		if (direction != 0)
+		{
+			player.crouchfactor += crouchspeed;
+		}
 
 		// check whether the move is ok
 		Height  = defaultheight * player.crouchfactor;
