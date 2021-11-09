@@ -473,11 +473,6 @@ namespace s3d
 
         QzDoom_processMessageQueue();
 
-        // Set VR-appropriate settings
-        {
-            movebob = 0;
-        }
-
         if (gamestate == GS_LEVEL && getMenuState() == MENU_Off) {
             cachedScreenBlocks = screenblocks;
             screenblocks = 12;
