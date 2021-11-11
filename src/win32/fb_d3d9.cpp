@@ -183,6 +183,7 @@ EXTERN_CVAR (Float, Gamma)
 EXTERN_CVAR (Bool, vid_vsync)
 EXTERN_CVAR (Float, transsouls)
 EXTERN_CVAR (Int, vid_refreshrate)
+EXTERN_CVAR (Bool, d3d_nogammaramp)
 
 extern IDirect3D9 *D3D;
 
@@ -428,7 +429,7 @@ void D3DFB::SetInitialState()
 	NeedPalUpdate = true;
 	OldRenderTarget = NULL;
 
-	if (!Windowed && SM14)
+	if (!Windowed && SM14 && !d3d_nogammaramp)
 	{
 		// Fix for Radeon 9000, possibly other R200s: When the device is
 		// reset, it resets the gamma ramp, but the driver apparently keeps a
@@ -791,7 +792,7 @@ bool D3DFB::CreateFBTexture ()
 	{
 		return false;
 	}
-	if (Windowed || PixelDoubling)
+	if (Windowed || PixelDoubling || d3d_nogammaramp)
 	{
 		// Windowed or pixel doubling: Create another render texture so we can flip between them.
 		RenderTextureToggle = 1;
@@ -1119,7 +1120,7 @@ void D3DFB::Update ()
 
 		NeedGammaUpdate = false;
 		igamma = 1 / Gamma;
-		if (!Windowed)
+		if (!Windowed && !d3d_nogammaramp)
 		{
 			D3DGAMMARAMP ramp;
 
@@ -1249,7 +1250,7 @@ void D3DFB::CopyNextFrontBuffer()
 {
 	IDirect3DSurface9 *backbuff;
 
-	if (Windowed || PixelDoubling)
+	if (Windowed || PixelDoubling || d3d_nogammaramp)
 	{
 		// Windowed mode or pixel doubling: TempRenderTexture has what we want
 		SAFE_RELEASE( FrontCopySurface );
@@ -1365,7 +1366,7 @@ void D3DFB::Draw3DPart(bool copy3d)
 	D3DDevice->SetRenderState(D3DRS_ANTIALIASEDLINEENABLE, vid_hwaalines);
 	assert(OldRenderTarget == NULL);
 	if (TempRenderTexture != NULL &&
-		((Windowed && TempRenderTexture != FinalWipeScreen) || GatheringWipeScreen || PixelDoubling))
+		(((Windowed || d3d_nogammaramp) && TempRenderTexture != FinalWipeScreen) || GatheringWipeScreen || PixelDoubling))
 	{
 		IDirect3DSurface9 *targetsurf;
 		if (SUCCEEDED(TempRenderTexture->GetSurfaceLevel(0, &targetsurf)))
@@ -1464,7 +1465,7 @@ void D3DFB::DoWindowedGamma()
 		D3DDevice->SetRenderTarget(0, OldRenderTarget);
 		D3DDevice->SetFVF(D3DFVF_FBVERTEX);
 		SetTexture(0, TempRenderTexture);
-		SetPixelShader(Windowed && GammaShader ? GammaShader : Shaders[SHADER_NormalColor]);
+		SetPixelShader((Windowed || d3d_nogammaramp) && GammaShader ? GammaShader : Shaders[SHADER_NormalColor]);
 		if (SM14 && Windowed && GammaShader)
 		{
 			SetTexture(2, GammaTexture);
