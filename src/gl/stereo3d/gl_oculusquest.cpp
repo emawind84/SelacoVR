@@ -594,7 +594,7 @@ namespace s3d
                         auto vel = player->mo->Vel;
                         player->mo->Vel = DVector3(m_TeleportLocation.X - player->mo->X(),
                                                    m_TeleportLocation.Y - player->mo->Y(), 0);
-                        bool wasOnGround = player->mo->Z() <= player->mo->floorz + 0.1;
+                        bool wasOnGround = player->mo->Z() <= player->mo->floorz + 2;
                         double oldZ = player->mo->Z();
                         P_XYMovement(player->mo, DVector2(0, 0));
 
@@ -619,7 +619,7 @@ namespace s3d
                 //Positional movement - Thanks fishbiter!!
                 auto vel = player->mo->Vel;
                 player->mo->Vel = DVector3((DVector2(hmd_side, hmd_forward) * vr_vunits_per_meter), 0);
-                bool wasOnGround = player->mo->Z() <= player->mo->floorz + 0.1;
+                bool wasOnGround = player->mo->Z() <= player->mo->floorz + 2;
                 double oldZ = player->mo->Z();
                 P_XYMovement(player->mo, DVector2(0, 0));
 
