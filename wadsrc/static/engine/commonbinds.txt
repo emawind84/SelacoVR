@@ -1,5 +1,38 @@
-// These bindings are valid for all configurations
+// Selaco Specific
+shift +DashMode
+M printObjectives
+F toggleFlashlight
+G useGadget
+H switchGadget
+C +crouch
+ctrl crouch
+Q meleeButton
+R reloader
+Z useMeds
+Alt tempability
+Mouse2 +altattack
+Mouse3 useability
+Mouse4 reloader
+capslock "codex"
+LeftBracket previousAbility
+RightBracket nextAbility
+[ previousAbility
+] nextAbility
 
+
+// Movement
+w +forward
+s +back
+a +moveleft
+d +moveright
+space +jump
+ctrl crouch
+e +use
+mouse2 +altattack
+
+
+
+// Basic
 ` toggleconsole
 1 "slot 1"
 2 "slot 2"
@@ -11,38 +44,21 @@
 8 "slot 8"
 9 "slot 9"
 0 "slot 0"
-[ invprev
-] invnext
-mwheelleft invprev
-mwheelright invnext
-enter invuse
-- sizedown
-= sizeup
-shift +speed
 mouse1 +attack
-capslock "toggle cl_run"
 f1 menu_help
 f2 menu_save
 f3 menu_load
 f4 menu_options
-f5 menu_display
-f6 quicksave
-f7 menu_endgame
-f8 togglemessages
+f5 chase
+f6 quicksaveselaco
 f9 quickload
-f11 bumpgamma
 f10 menu_quit
 tab togglemap
-pause pause
 sysrq screenshot
-t messagemode
-\ +showscores
-f12 spynext
 mwheeldown weapnext
 mwheelup weapprev
 
-// Originally just for Heretic, Hexen, and Strife.
-// I can't see why they shouldn't be for Doom or Chex either.
+
 pgup +moveup
 ins +movedown
 home land

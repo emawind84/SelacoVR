@@ -180,7 +180,11 @@ class Thinker : Object native play
 	virtual native void Tick();
 	virtual native void PostBeginPlay();
 	native void ChangeStatNum(int stat);
-	
+
+	virtual native void Sleep(int tics);
+	virtual native bool ShouldWake();
+	native void Wake();
+
 	static clearscope int Tics2Seconds(int tics)
 	{
 		return int(tics / TICRATE);

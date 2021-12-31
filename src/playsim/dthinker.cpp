@@ -108,6 +108,13 @@ void FThinkerCollection::RunThinkers(FLevelLocals *Level)
 
 	ThinkCycles.Clock();
 
+	// Handle sleeping thinkers, allow them to slip back into the regular pool when unnecessary
+	if (Level->time % 5 == 0) {
+		Thinkers[STAT_FIRST_THINKING - 1].CheckSleepingThinkers(5);
+	}
+	
+
+
 	bool dolights;
 	if ((gl_lights && vid_rendermode == 4) || (r_dynlights && vid_rendermode != 4))
 	{
@@ -138,6 +145,7 @@ void FThinkerCollection::RunThinkers(FLevelLocals *Level)
 			}
 		}
 	};
+
 
 	if (!profilethinkers)
 	{
@@ -576,6 +584,40 @@ void FThinkerList::SaveList(FSerializer &arc)
 	}
 }
 
+
+int FThinkerList::CheckSleepingThinkers(int ticsElapsed) {
+	int count = 0;
+	DThinker *node = GetHead();
+	DThinker *nextNode = nullptr;
+
+	if (node == nullptr) return 0;
+
+	while (node != Sentinel)
+	{
+		
+		nextNode = node->NextThinker;
+		
+		if (!(node->ObjectFlags & OF_EuthanizeMe))
+		{ // Only check thinkers not scheduled for destruction
+			node->sleepTimer -= ticsElapsed;
+			if(node->sleepTimer <= 0) {
+				if (node->sleepInterval <= 0 || node->CallShouldWake()) {
+					++count;
+					node->Wake();
+				}
+				else {
+					node->sleepTimer = node->sleepInterval;
+				}
+			}
+		}
+
+		node = nextNode;
+	}
+
+	return count;
+}
+
+
 //==========================================================================
 //
 //
@@ -618,6 +660,7 @@ int FThinkerList::TickThinkers(FThinkerList *dest)
 			node->ObjectFlags &= ~OF_JustSpawned;
 			GC::CheckGC();
 		}
+		
 		node = NextToThink;
 	}
 	return count;
@@ -771,6 +814,78 @@ void DThinker::CallPostBeginPlay()
 void DThinker::PostSerialize()
 {
 }
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+
+// Sleep =========================================================================
+DEFINE_ACTION_FUNCTION(DThinker, Sleep)
+{
+	PARAM_SELF_PROLOGUE(DThinker);
+	PARAM_INT(tics);
+	self->Sleep(tics);
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DThinker, ShouldWake)
+{
+	PARAM_SELF_PROLOGUE(DThinker);
+	ACTION_RETURN_BOOL(self->ShouldWake());
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DThinker, Wake)
+{
+	PARAM_SELF_PROLOGUE(DThinker);
+	self->Wake();
+	return 0;
+}
+
+
+void DThinker::CallSleep(int tics) {
+	IFVIRTUAL(DThinker, Sleep)
+	{
+		VMValue params[] = { (DObject*)this, tics };
+		VMCall(func, params, 2, nullptr, 0);
+	}
+	else return Sleep(tics);
+}
+
+bool DThinker::CallShouldWake() {
+	IFVIRTUAL(DThinker, ShouldWake)
+	{
+		VMValue params[] = { (DObject*)this };
+		int retb;
+		VMReturn ret(&retb);
+		VMCall(func, params, 1, &ret, 1);
+		return !!retb;
+	}
+	return ShouldWake();
+}
+
+bool DThinker::ShouldWake() {
+	return true;	// Default thinkers are undefined and shouldn't sleep
+}
+
+void DThinker::Wake() {
+	if (sleepInterval <= 0) { // only wake if asleep
+		return;
+	}
+
+	ChangeStatNum(STAT_DEFAULT);
+	sleepInterval = 0;
+	sleepTimer = 0;
+}
+
+void DThinker::Sleep(int tics) {
+	ChangeStatNum(STAT_FIRST_THINKING - 1);
+	sleepInterval = tics;
+	sleepTimer = tics;
+}
+
+
 
 //==========================================================================
 //

@@ -60,7 +60,8 @@ struct FThinkerList
 	bool IsEmpty() const;
 	void DestroyThinkers();
 	bool DoDestroyThinkers();
-	int TickThinkers(FThinkerList *dest);	// Returns: # of thinkers ticked
+	int CheckSleepingThinkers(int ticsElapsed = 1);			// Check and unsleep thinkers periodically
+	int TickThinkers(FThinkerList *dest);					// Returns: # of thinkers ticked
 	int ProfileThinkers(FThinkerList *dest);
 	void SaveList(FSerializer &arc);
 
@@ -104,6 +105,13 @@ public:
 	virtual void PostBeginPlay ();	// Called just before the first tick
 	virtual void CallPostBeginPlay(); // different in actor.
 	virtual void PostSerialize();
+
+	virtual bool ShouldWake();		// Should wake from sleep
+	virtual void Wake();
+	virtual void Sleep(int tics = 10);
+	virtual void CallSleep(int tics = 10);
+	virtual bool CallShouldWake();
+
 	void Serialize(FSerializer &arc) override;
 	size_t PropagateMark();
 	
@@ -119,6 +127,10 @@ private:
 	friend class FDoomSerializer;
 
 	DThinker *NextThinker = nullptr, *PrevThinker = nullptr;
+
+	// Sleep info
+	int sleepInterval;	// How many tics to sleep before checking for wake
+	int sleepTimer;		// Timer data
 
 public:
 	FLevelLocals *Level;
