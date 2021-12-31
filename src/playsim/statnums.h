@@ -61,6 +61,9 @@ enum
 	STAT_MAPMARKER,							// Map marker actors
 	STAT_DLIGHT,
 	
+	STAT_SLEEP = 60,
+	STAT_SLEEP_FOREVER = 61,
+
 	STAT_USER = 70,
 	STAT_USER_MAX = 90,
 

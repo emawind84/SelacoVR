@@ -163,6 +163,9 @@ class Thinker : Object native play
 		STAT_MAPMARKER,							// Map marker actors
 		STAT_DLIGHT,							// Dynamic lights
 
+		STAT_SLEEP = 60,						// Pool of sleepers, don't add to this without Sleep()
+		STAT_SLEEP_FOREVER = 61,				// Pool if indefinite sleepers. Adding to this pool is OK.
+
 		STAT_USER = 70,
 		STAT_USER_MAX = 90,
 
@@ -183,7 +186,8 @@ class Thinker : Object native play
 
 	virtual native void Sleep(int tics);
 	virtual native bool ShouldWake();
-	native void Wake();
+	virtual native void Wake();
+	native void SleepIndefinite();
 
 	static clearscope int Tics2Seconds(int tics)
 	{

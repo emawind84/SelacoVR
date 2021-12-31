@@ -67,6 +67,13 @@ class MapSpot : Actor
 		RenderStyle "None";
 		CameraHeight 0;
 	}
+
+	override void Tick() {
+		Super.Tick();
+
+		// Instead of sleeping
+		ChangeStatNum(STAT_FIRST_THINKING - 2);
+	}
 }	
 
 // same with different editor number for Legacy maps -----------------------
