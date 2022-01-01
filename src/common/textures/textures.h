@@ -62,6 +62,8 @@ enum
 	CLAMP_NOFILTER_X,
 	CLAMP_NOFILTER_Y,
 	CLAMP_NOFILTER_XY,
+	CLAMP_NONE_FORCE_FILTER,		// Forced filtering for 2D drawing
+	CLAMP_XY_NOMIP_FORCE_FILTER,	// Forced riltering for 2D drawing
 	CLAMP_CAMTEX,
 	NUMSAMPLERS
 };

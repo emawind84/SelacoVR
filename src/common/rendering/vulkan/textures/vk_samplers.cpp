@@ -134,6 +134,30 @@ void VkSamplerManager::Create()
 		mSamplers[CLAMP_CAMTEX] = builder.create(vDevice);
 		mSamplers[CLAMP_CAMTEX]->SetDebugName("VkSamplerManager.mSamplers");
 	}
+
+	// Set up forced filters for UI drawing
+	{
+		SamplerBuilder builder;
+		builder.setMagFilter(VK_FILTER_LINEAR);
+		builder.setMinFilter(VK_FILTER_LINEAR);
+		builder.setAddressMode(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT);
+		builder.setMipmapMode(VK_SAMPLER_MIPMAP_MODE_LINEAR);
+		builder.setMaxLod(0.25f);
+		mSamplers[CLAMP_NONE_FORCE_FILTER] = builder.create(vDevice);
+		mSamplers[CLAMP_NONE_FORCE_FILTER]->SetDebugName("VkSamplerManager.mSamplers");
+	}
+
+	// And for clamped version
+	{
+		SamplerBuilder builder;
+		builder.setMagFilter(VK_FILTER_LINEAR);
+		builder.setMinFilter(VK_FILTER_LINEAR);
+		builder.setAddressMode(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_REPEAT);
+		builder.setMipmapMode(VK_SAMPLER_MIPMAP_MODE_LINEAR);
+		builder.setMaxLod(0.25f);
+		mSamplers[CLAMP_XY_NOMIP_FORCE_FILTER] = builder.create(vDevice);
+		mSamplers[CLAMP_XY_NOMIP_FORCE_FILTER]->SetDebugName("VkSamplerManager.mSamplers");
+	}
 }
 
 void VkSamplerManager::Destroy()

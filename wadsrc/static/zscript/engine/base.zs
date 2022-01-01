@@ -330,7 +330,7 @@ enum DrawTextureTags
 	DTA_KeepRatio,		// doesn't adjust screen size for DTA_Virtual* if the aspect ratio is not 4:3
 	DTA_RenderStyle,	// same as render style for actors
 	DTA_ColorOverlay,	// DWORD: ARGB to overlay on top of image; limited to black for software
-	DTA_Internal1,
+	DTA_Filtering,		// Apply Linear/Bilinear filtering depending on texture
 	DTA_Internal2,
 	DTA_Desaturate,		// explicit desaturation factor (does not do anything in Legacy OpenGL)
 	DTA_Fullscreen,		// Draw image fullscreen (same as DTA_VirtualWidth/Height with graphics size.)
