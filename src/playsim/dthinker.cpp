@@ -93,17 +93,9 @@ void FThinkerCollection::Link(DThinker *thinker, int statnum)
 // Add to the list but insert the sleeper sorted by sleepCount
 void FThinkerCollection::LinkSleeper(DThinker *thinker, int statnum)
 {
-	FThinkerList *list;
-	if ((thinker->ObjectFlags & OF_JustSpawned) && statnum >= STAT_FIRST_THINKING)
-	{
-		list = &FreshThinkers[statnum];
-	}
-	else
-	{
-		if (statnum != STAT_TRAVELLING) thinker->ObjectFlags &= ~OF_JustSpawned;
-		list = &Thinkers[statnum];
-	}
-	list->AddSleeper(thinker);
+
+	//if (statnum != STAT_TRAVELLING) thinker->ObjectFlags &= ~OF_JustSpawned;
+	Thinkers[statnum].AddTail(thinker);
 }
 
 //==========================================================================
@@ -481,14 +473,14 @@ void FThinkerList::AddAfter(DThinker *after, DThinker *thinker)
 	GC::WriteBarrier(after, thinker);
 	GC::WriteBarrier(nnext, thinker);
 	GC::WriteBarrier(thinker, nnext);
-	GC::WriteBarrier(nnext, after);
-	GC::WriteBarrier(after, nnext);
 }
 
-
+/*  Sorting ended up causing tiny little lag spikes and will no longer be used in favor of a slower but more stable method
 void FThinkerList::AddSleeper(DThinker *thinker) {
+
 	DThinker *node = GetHead();
 	DThinker *tail = GetTail();
+	DThinker *head = node;
 
 	if (Sentinel == nullptr || !node || node == GetTail()) {
 		AddTail(thinker);
@@ -500,32 +492,60 @@ void FThinkerList::AddSleeper(DThinker *thinker) {
 	thinker->sleepTimer = thinker->sleepInterval + sleepCount;
 
 	// Find location to add to
-	if (thinker->sleepTimer == 0 || node->sleepTimer >= thinker->sleepTimer) {
+	if (thinker->sleepTimer == 0 || head->sleepTimer >= thinker->sleepTimer) {
 		AddHead(thinker);
 		return;
 	}
+	else if (tail->sleepTimer <= thinker->sleepTimer) {
+		AddTail(thinker);
+		return;
+	}
 	else {
-		while (node != Sentinel) {
-			assert(node != nullptr);
-			auto next = node->NextThinker;
-			
-			if (node->sleepTimer >= thinker->sleepTimer || node == tail || node == Sentinel) {
+		// Determine direction
+		if (thinker->sleepTimer > head->sleepTimer + (tail->sleepTimer - head->sleepTimer / 2)) {
+			// Backwards
+			node = tail;
+			while (node != Sentinel) {
+				assert(node != nullptr);
+				auto prev = node->PrevThinker;
+
+				if (node->sleepTimer <= thinker->sleepTimer) {
+					AddAfter(node, thinker);
+					return;
+				}
+
+				if (node == head) {
+					AddHead(thinker);
+					return;
+				}
+
+				node = prev;
+			}
+		}
+		else {
+			// Forwards
+			while (node != Sentinel) {
+				assert(node != nullptr);
+				auto next = node->NextThinker;
+
+				if (node->sleepTimer >= thinker->sleepTimer) {
+					AddAfter(node->PrevThinker, thinker);
+					return;
+				}
+
 				if (node == tail) {
 					AddTail(thinker);
+					return;
 				}
-				else {
-					AddAfter(node, thinker);
-				}
-				return;
-			}
 
-			node = next;
+				node = next;
+			}
 		}
 	}
 
 	// We shouldn't be here
 	assert(0);
-}
+}*/
 
 //==========================================================================
 //
@@ -708,11 +728,11 @@ int FThinkerList::CheckSleepingThinkers(int ticsElapsed) {
 	DThinker *nextNode = nullptr;
 
 	if (node == nullptr) {
-		sleepCount = 0;
+		//sleepCount = 0;
 		return 0;
 	}
 
-	sleepCount += ticsElapsed;
+	/*sleepCount += ticsElapsed;
 
 	while (node != Sentinel)
 	{
@@ -738,7 +758,26 @@ int FThinkerList::CheckSleepingThinkers(int ticsElapsed) {
 		}
 
 		node = nextNode;
+	}*/
+
+	while (node != Sentinel)
+	{
+		nextNode = node->NextThinker;
+
+		if (!(node->ObjectFlags & OF_EuthanizeMe))
+		{ // Only check thinkers not scheduled for destruction
+			node->sleepTimer -= ticsElapsed;
+			if (node->sleepTimer  <= 0) {
+				if (node->sleepInterval <= 0 || node->CallShouldWake()) {
+					++count;
+					node->CallWake();
+				}
+			}
+		}
+
+		node = nextNode;
 	}
+
 
 	// TODO: Might have to perform some maintenance on sleepCount to prevent it from getting too big
 
@@ -995,7 +1034,7 @@ void DThinker::CallWake() {
 	IFVIRTUAL(DThinker, Wake)
 	{
 		VMValue params[] = { (DObject*)this };
-		VMCall(func, params, 2, nullptr, 0);
+		VMCall(func, params, 1, nullptr, 0);
 	}
 	else return Wake();
 }
@@ -1034,6 +1073,7 @@ void DThinker::Sleep(int tics) {
 
 	Remove();
 	sleepInterval = tics;
+	sleepTimer = tics;
 	Level->Thinkers.LinkSleeper(this, STAT_SLEEP);
 }
 

@@ -55,7 +55,7 @@ struct FThinkerList
 {
 	// No destructor. If this list goes away it's the GC's task to clean the orphaned thinkers. Otherwise this may clash with engine shutdown.
 	void AddTail(DThinker *thinker);
-	void AddSleeper(DThinker *thinker);
+	//void AddSleeper(DThinker *thinker);
 	void AddHead(DThinker *thinker);
 	void AddAfter(DThinker *after, DThinker *thinker);
 
@@ -71,9 +71,6 @@ struct FThinkerList
 	int TickThinkers(FThinkerList *dest);					// Returns: # of thinkers ticked
 	int ProfileThinkers(FThinkerList *dest);
 	void SaveList(FSerializer &arc);
-	
-	int sleepCount = 0;		// Counts up towards the next sleeping object
-							// Only used for STAT_SLEEP
 
 private:
 	DThinker *Sentinel = nullptr;
