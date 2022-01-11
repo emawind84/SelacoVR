@@ -3041,6 +3041,7 @@ void DAutomap::DrawMarker (FGameTexture *tex, double x, double y, int yadjust,
 		DTA_Alpha, alpha,
 		DTA_FillColor, fillcolor,
 		DTA_RenderStyle, renderstyle.AsDWORD,
+		DTA_BilinearFilter, true,
 		TAG_DONE);
 }
 
