@@ -1278,15 +1278,6 @@ void G_Ticker ()
 	default:
 		break;
 	}
-	// Do some more aggressive GC maintenance when the game ticker is inactive. 
-	if ((gamestate != GS_LEVEL && gamestate != GS_TITLELEVEL) || paused || P_CheckTickerPaused())
-	{
-		size_t ac = std::max<size_t>(10, GC::AllocCount);
-		for (size_t i = 0; i < ac; i++)
-		{
-			if (!GC::CheckGC()) break;
-		}
-	}
 
 	// [MK] Additional ticker for UI events right after all others
 	E_PostUiTick();
