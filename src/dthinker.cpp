@@ -817,7 +817,6 @@ int DThinker::TickThinkers (FThinkerList *list, FThinkerList *dest)
 			ThinkCount++;
 			node->CallTick();
 			node->ObjectFlags &= ~OF_JustSpawned;
-			GC::CheckGC();
 		}
 		node = NextToThink;
 	}
@@ -868,7 +867,6 @@ int DThinker::ProfileThinkers(FThinkerList *list, FThinkerList *dest)
 			node->CallTick();
 			prof.timer.Unclock();
 			node->ObjectFlags &= ~OF_JustSpawned;
-			GC::CheckGC();
 		}
 		node = NextToThink;
 	}
