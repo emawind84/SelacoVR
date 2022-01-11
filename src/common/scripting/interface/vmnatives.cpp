@@ -1055,9 +1055,10 @@ DEFINE_ACTION_FUNCTION_NATIVE(_System, MusicEnabled, MusicEnabled)
 	ACTION_RETURN_INT(MusicEnabled());
 }
 
-DEFINE_ACTION_FUNCTION_NATIVE(_System, GetTimeFrac, I_GetTimeFrac)
+DEFINE_ACTION_FUNCTION(_System, GetTimeFrac)
 {
-	ACTION_RETURN_FLOAT(I_GetTimeFrac());
+	double tf = I_GetTimeFrac();
+	ACTION_RETURN_FLOAT(tf);
 }
 
 
