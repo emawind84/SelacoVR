@@ -412,6 +412,8 @@ struct Screen native
 	native static Color PaletteColor(int index);
 	native static int GetWidth();
 	native static int GetHeight();
+	native static int GetWindowWidth();
+	native static int GetWindowHeight();
 	native static void Clear(int left, int top, int right, int bottom, Color color, int palcolor = -1);
 	native static void Dim(Color col, double amount, int x, int y, int w, int h, ERenderStyle style = STYLE_Translucent);
 
