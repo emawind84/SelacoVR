@@ -110,6 +110,7 @@ class Actor : Thinker native
 	native vector2 Scale;
 	native TextureID picnum;
 	native double Alpha;
+	native color selfLighting;
 	native readonly color fillcolor;	// must be set with SetShade to initialize correctly.
 	native Sector CurSector;
 	native double CeilingZ;
@@ -380,6 +381,7 @@ class Actor : Thinker native
 		Mass 100;
 		RenderStyle 'Normal';
 		Alpha 1;
+		SelfLighting "00 00 00";
 		MinMissileChance 200;
 		MeleeRange 64 - MELEEDELTA;
 		MaxDropoffHeight 24;

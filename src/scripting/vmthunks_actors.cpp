@@ -1833,6 +1833,7 @@ DEFINE_FIELD_NAMED(AActor, Scale.Y, scaley)
 DEFINE_FIELD(AActor, RenderStyle)
 DEFINE_FIELD(AActor, picnum)
 DEFINE_FIELD(AActor, Alpha)
+DEFINE_FIELD(AActor, selfLighting)
 DEFINE_FIELD(AActor, fillcolor)
 DEFINE_FIELD_NAMED(AActor, Sector, CurSector)	// clashes with type 'sector'.
 DEFINE_FIELD(AActor, subsector)

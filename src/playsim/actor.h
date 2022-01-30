@@ -982,13 +982,14 @@ public:
 	uint8_t			frame;				// sprite frame to draw
 	uint8_t			effects;			// [RH] see p_effect.h
 	uint8_t			fountaincolor;		// Split out of 'effect' to have easier access.
+	PalEntry		selfLighting;		// (@Cockatrice) Self illumination, add this value to lighting calculations
 	FRenderStyle	RenderStyle;		// Style to draw this actor with
 	FTextureID		picnum;				// Draw this instead of sprite if valid
-	uint32_t			fillcolor;			// Color to draw when STYLE_Shaded
-	uint32_t			Translation;
+	uint32_t		fillcolor;			// Color to draw when STYLE_Shaded
+	uint32_t		Translation;
 
-	uint32_t			RenderRequired;		// current renderer must have this feature set
-	uint32_t			RenderHidden;		// current renderer must *not* have any of these features
+	uint32_t		RenderRequired;		// current renderer must have this feature set
+	uint32_t		RenderHidden;		// current renderer must *not* have any of these features
 
 	ActorRenderFlags	renderflags;		// Different rendering flags
 	ActorFlags		flags;

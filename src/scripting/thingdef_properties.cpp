@@ -781,6 +781,17 @@ DEFINE_PROPERTY(stencilcolor, C, Actor)
 //==========================================================================
 //
 //==========================================================================
+DEFINE_PROPERTY(selfLighting, C, Actor)
+{
+	PROP_COLOR_PARM(color, 0, &bag.ScriptPosition);
+
+	defaults->selfLighting = color;
+	defaults->selfLighting.a = 0;
+}
+
+//==========================================================================
+//
+//==========================================================================
 DEFINE_PROPERTY(bloodcolor, C, Actor)
 {
 	PROP_COLOR_PARM(color, 0, &bag.ScriptPosition);

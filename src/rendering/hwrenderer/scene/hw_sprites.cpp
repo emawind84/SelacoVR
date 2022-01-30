@@ -83,6 +83,8 @@ CVAR(Int, gl_particles_style, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // 0 = square
 CVAR(Int, gl_billboard_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_billboard_faces_camera, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_billboard_particles, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_selflighting, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
 CUSTOM_CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
 {
 	if (self < 0 || self > 8) self = 0;
@@ -99,7 +101,9 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 	bool additivefog = false;
 	bool foglayer = false;
 	int rel = fullbright ? 0 : getExtraLight();
+	
 	auto &vp = di->Viewpoint;
+
 
 	if (translucent)
 	{
@@ -181,9 +185,31 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 				: ThingColor.Modulate(cursec->SpecialColors[sector_t::sprites]);
 
 			state.SetObjectColor(finalcol);
+
+			/*
+			// TODO: Add leftover color from selfLighting to additive
+			PalEntry addCol;
+			if (actor) {
+				addCol = PalEntry(255,
+					clamp(cursec->AdditiveColors[sector_t::sprites].r + actor->selfLighting.r, 0, 255),
+					clamp(cursec->AdditiveColors[sector_t::sprites].g + actor->selfLighting.g, 0, 255),
+					clamp(cursec->AdditiveColors[sector_t::sprites].b + actor->selfLighting.b, 0, 255));
+			}
+			else {
+				addCol = cursec->AdditiveColors[sector_t::sprites] | 0xff000000;
+			}
+			
+			state.SetAddColor(addCol);*/
+
 			state.SetAddColor(cursec->AdditiveColors[sector_t::sprites] | 0xff000000);
 		}
-		di->SetColor(state, lightlevel, rel, di->isFullbrightScene(), Colormap, trans);
+		/*else if (actor && actor->selfLighting != 0) {
+			state.SetAddColor(actor->selfLighting | 0xFF000000);
+		}*/
+
+		// (@Cockatrice) Add bonus luminence based on the selfLighting field color
+		int lightBonus = !actor || !gl_selflighting ? 0 : actor->selfLighting.Luminance() * 3;
+		di->SetColor(state, lightlevel + lightBonus, rel, di->isFullbrightScene(), Colormap, trans);
 	}
 
 
@@ -988,8 +1014,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		((thing->renderflags & RF_FULLBRIGHT) && (!texture || !texture->isFullbrightDisabled()));
 
 	lightlevel = fullbright ? 255 :
-		hw_ClampLight(rendersector->GetTexture(sector_t::ceiling) == skyflatnum ?
-			rendersector->GetCeilingLight() : rendersector->GetFloorLight());
+		hw_ClampLight(rendersector->GetTexture(sector_t::ceiling) == skyflatnum ? rendersector->GetCeilingLight() : rendersector->GetFloorLight());
 	foglevel = (uint8_t)clamp<short>(rendersector->lightlevel, 0, 255);
 
 	lightlevel = rendersector->CheckSpriteGlow(lightlevel, thingpos);
@@ -1035,6 +1060,17 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		else if (di->Level->flags3 & LEVEL3_NOCOLOREDSPRITELIGHTING)
 		{
 			Colormap.Decolorize();
+		}
+
+		// (@Cockatrice) Boost the colormap self lighting in the sprite def
+		// I'm not sure if this is really correct but it seems to work fine!
+		if (gl_selflighting && thing && thing->selfLighting != 0) {
+			PalEntry actBoost = thing->selfLighting;
+			//Colormap.LightColor = Colormap.LightColor.Modulate(thing->selfLighting);
+			Colormap.LightColor = PalEntry(Colormap.LightColor.a,
+				clamp(Colormap.LightColor.r + actBoost.r, 0, 255),
+				clamp(Colormap.LightColor.g + actBoost.g, 0, 255),
+				clamp(Colormap.LightColor.b + actBoost.b, 0, 255));
 		}
 	}
 
