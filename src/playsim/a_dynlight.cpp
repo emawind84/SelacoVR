@@ -869,6 +869,39 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_AttachLightDef, AttachLightDef)
 //
 //
 //==========================================================================
+// 
+// @Cockatrice Added to allow non-256 bound color values to lights
+// Due to VM function size restriction, the light type must be the ALPHA part of COLOR
+int AttachLightEx(AActor* self, int _lightid, int color, double colorIntensity, int radius1, int radius2, int flags, double ofs_x, double ofs_y, double ofs_z, double param, double spoti, double spoto, double spotp)
+{
+	int type = APART(color);
+	FName lightid = FName(ENamedName(_lightid));
+	auto userlight = self->UserLights[FindUserLight(self, lightid, true)];
+	userlight->SetType(ELightType(APART(type)));
+	userlight->SetArg(LIGHT_RED, int(RPART(color) * colorIntensity));
+	userlight->SetArg(LIGHT_GREEN, int(GPART(color) * colorIntensity));
+	userlight->SetArg(LIGHT_BLUE, int(BPART(color) * colorIntensity));
+	userlight->SetArg(LIGHT_INTENSITY, radius1);
+	userlight->SetArg(LIGHT_SECONDARY_INTENSITY, radius2);
+	userlight->SetFlags(LightFlags::FromInt(flags));
+	float of[] = { float(ofs_x), float(ofs_y), float(ofs_z) };
+	userlight->SetOffset(of);
+	userlight->SetParameter(type == PulseLight ? param * TICRATE : param * 360.);
+	userlight->SetSpotInnerAngle(spoti);
+	userlight->SetSpotOuterAngle(spoto);
+	if (spotp >= -90. && spotp <= 90.)
+	{
+		userlight->SetSpotPitch(spotp);
+	}
+	else
+	{
+		userlight->UnsetSpotPitch();
+	}
+
+	self->flags8 |= MF8_RECREATELIGHTS;
+	self->Level->flags3 |= LEVEL3_LIGHTCREATED;
+	return 1;
+}
 
 int AttachLightDirect(AActor *self, int _lightid, int type, int color, int radius1, int radius2, int flags, double ofs_x, double ofs_y, double ofs_z, double param, double spoti, double spoto, double spotp)
 {
@@ -916,6 +949,25 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_AttachLight, AttachLightDirect)
 	PARAM_FLOAT(spoto);
 	PARAM_FLOAT(spotp);
 	ACTION_RETURN_BOOL(AttachLightDirect(self, lightid.GetIndex(), type, color, radius1, radius2, flags, ofs_x, ofs_y, ofs_z, parami, spoti, spoto, spotp));
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_AttachLightEx, AttachLightEx)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_NAME(lightid);
+	PARAM_INT(color);
+	PARAM_FLOAT(colIntensity);
+	PARAM_INT(radius1);
+	PARAM_INT(radius2);
+	PARAM_INT(flags);
+	PARAM_FLOAT(ofs_x);
+	PARAM_FLOAT(ofs_y);
+	PARAM_FLOAT(ofs_z);
+	PARAM_FLOAT(parami);
+	PARAM_FLOAT(spoti);
+	PARAM_FLOAT(spoto);
+	PARAM_FLOAT(spotp);
+	ACTION_RETURN_BOOL(AttachLightEx(self, lightid.GetIndex(), color, colIntensity, radius1, radius2, flags, ofs_x, ofs_y, ofs_z, parami, spoti, spoto, spotp));
 }
 
 //==========================================================================

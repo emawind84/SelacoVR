@@ -1226,6 +1226,10 @@ class Actor : Thinker native
 	
 	native bool A_AttachLightDef(Name lightid, Name lightdef);
 	native bool A_AttachLight(Name lightid, int type, Color lightcolor, int radius1, int radius2, int flags = 0, Vector3 ofs = (0,0,0), double param = 0, double spoti = 10, double spoto = 25, double spotp = 0);
+	
+	// @Cockatrice, due to 14 arg limit to VM funcs, the light color's ALPHA value is the light type
+	native bool A_AttachLightEx(Name lightid, Color lightcolor, double colIntensity, int radius1, int radius2, int flags = 0, Vector3 ofs = (0,0,0), double param = 0, double spoti = 10, double spoto = 25, double spotp = 0);
+	
 	native bool A_RemoveLight(Name lightid);
 
 	int ACS_NamedExecute(name script, int mapnum=0, int arg1=0, int arg2=0, int arg3=0)
