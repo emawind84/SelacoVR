@@ -2,8 +2,8 @@ class DynamicLight : Actor
 {
 	double SpotInnerAngle;
 	double SpotOuterAngle;
-	private int lighttype;
-	private int lightflags;
+	protected int lighttype;
+	protected int lightflags;
 
 	property SpotInnerAngle: SpotInnerAngle;
 	property SpotOuterAngle: SpotOuterAngle;
@@ -52,9 +52,10 @@ class DynamicLight : Actor
 	};
 
 	native void SetOffset(Vector3 offset);
-	private native void AttachLight();
-	private native void ActivateLight();
-	private native void DeactivateLight();
+	protected native void AttachLight();
+	protected native void ActivateLight();
+	protected native void DeactivateLight();
+	protected native void DeleteAttachedLights();
 
 	Default
 	{
@@ -110,6 +111,21 @@ class DynamicLight : Actor
 		DeactivateLight();
 	}
 	
+	void SetLightParams(int newType, int newFlags = 0) {
+		lightType = newType;
+
+		if(newFlags != 0) {
+			lightflags = newFlags;
+		}
+	}
+
+	clearscope int getLightType() {
+		return lightType;
+	}
+
+	clearscope int getFlags() {
+		return lightflags;
+	}
 }
 
 
