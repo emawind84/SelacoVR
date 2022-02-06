@@ -178,6 +178,24 @@ DEFINE_ACTION_FUNCTION_NATIVE(ADynamicLight, DeactivateLight, DeactivateLight)
 //
 //==========================================================================
 
+void DeleteAttachedLights (AActor* self)
+{
+	self->DeleteAttachedLights();
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(ADynamicLight, DeleteAttachedLights, DeleteAttachedLights)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	DeleteAttachedLights(self);
+	return 0;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 static void SetOffset(AActor *self, double x, double y, double z)
 {
 	for (auto l : self->AttachedLights)
