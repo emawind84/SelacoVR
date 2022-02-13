@@ -208,6 +208,37 @@ void G_DeferedInitNew (FNewGameStartup *gs)
 	finishstate = FINISH_NoHub;
 }
 
+
+DEFINE_ACTION_FUNCTION(FLevelLocals, StartNewGame)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	PARAM_INT(episode);
+	PARAM_INT(skill);
+	PARAM_STRING(playerClass);
+
+	// Make sure this call is coming from a menu, 
+	if (menuactive == MENU_Off) {
+		Printf("Sorry, you cannot start a new game outside of a menu.\n");
+		return 0;
+	}
+
+	FNewGameStartup s;
+	s.PlayerClass = playerClass.IsEmpty() ? NULL : playerClass.GetChars();
+	s.Episode = episode;
+	s.Skill = skill;
+
+	G_DeferedInitNew(&s);
+	
+	if (gamestate == GS_FULLCONSOLE)
+	{
+		gamestate = GS_HIDECONSOLE;
+		gameaction = ga_newgame;
+	}
+	M_ClearMenus();
+
+	return 0;
+}
+
 //==========================================================================
 //
 //
