@@ -863,12 +863,6 @@ bool PIT_CheckLine(FMultiBlockLinesIterator &mit, FMultiBlockLinesIterator::Chec
 
 	// MBF bouncers are treated as missiles here.
 	bool Projectile = (tm.thing->flags & MF_MISSILE || tm.thing->BounceFlags & BOUNCE_MBF);
-	// MBF considers that friendly monsters are not blocked by monster-blocking lines.
-	// This is added here as a compatibility option. Note that monsters that are dehacked
-	// into being friendly with the MBF flag automatically gain MF3_NOBLOCKMONST, so this
-	// just optionally generalizes the behavior to other friendly monsters.
-	bool NotBlocked = ((tm.thing->flags3 & MF3_NOBLOCKMONST)
-		|| ((i_compatflags & COMPATF_NOBLOCKFRIENDS) && (tm.thing->flags & MF_FRIENDLY)));
 
 	uint32_t ProjectileBlocking = ML_BLOCKEVERYTHING | ML_BLOCKPROJECTILE;
 	if ( tm.thing->flags8 & MF8_BLOCKASPLAYER ) ProjectileBlocking |= ML_BLOCK_PLAYERS | ML_BLOCKING;
@@ -879,11 +873,8 @@ bool PIT_CheckLine(FMultiBlockLinesIterator &mit, FMultiBlockLinesIterator::Chec
 		{
 			rail = true;
 		}
-		else if ((ld->flags & (ML_BLOCKING | ML_BLOCKEVERYTHING)) || 				// explicitly blocking everything
-			(!(NotBlocked) && (ld->flags & ML_BLOCKMONSTERS)) || 				// block monsters only
-			(((tm.thing->player != NULL) || (tm.thing->flags8 & MF8_BLOCKASPLAYER)) && (ld->flags & ML_BLOCK_PLAYERS)) ||		// block players
-			((Projectile) && (ld->flags & ML_BLOCKPROJECTILE)) ||				// block projectiles
-			((tm.thing->flags & MF_FLOAT) && (ld->flags & ML_BLOCK_FLOATERS)))	// block floaters
+		else if (P_IsBlockedByLine(tm.thing, ld) ||
+			((Projectile) && (ld->flags & ML_BLOCKPROJECTILE)))
 		{
 			if (cres.portalflags & FFCF_NOFLOOR)
 			{
@@ -1997,7 +1988,7 @@ int P_TestMobjZ(AActor *actor, bool quick, AActor **pOnmobj)
 {
 	AActor *onmobj = nullptr;
 	if (pOnmobj) *pOnmobj = nullptr;
-	if (actor->flags & MF_NOCLIP)
+	if ((actor->flags & MF_NOCLIP) || (actor->flags2 & MF2_THRUACTORS))
 	{
 		return true;
 	}
@@ -2015,7 +2006,7 @@ int P_TestMobjZ(AActor *actor, bool quick, AActor **pOnmobj)
 		{
 			continue;
 		}
-		if ((actor->flags2 | thing->flags2) & MF2_THRUACTORS)
+		if (thing->flags2 & MF2_THRUACTORS)
 		{
 			continue;
 		}
@@ -3020,19 +3011,7 @@ void FSlide::SlideTraverse(const DVector2 &start, const DVector2 &end)
 			}
 			goto isblocking;
 		}
-		if (li->flags & (ML_BLOCKING | ML_BLOCKEVERYTHING))
-		{
-			goto isblocking;
-		}
-		if (li->flags & ML_BLOCK_PLAYERS && ((slidemo->player != NULL) || (slidemo->flags8 & MF8_BLOCKASPLAYER)))
-		{
-			goto isblocking;
-		}
-		if (li->flags & ML_BLOCKMONSTERS && !((slidemo->flags3 & MF3_NOBLOCKMONST)
-			|| ((i_compatflags & COMPATF_NOBLOCKFRIENDS) && (slidemo->flags & MF_FRIENDLY))))
-		{
-			goto isblocking;
-		}
+		if (P_IsBlockedByLine(slidemo, li)) goto isblocking;
 
 		// set openrange, opentop, openbottom
 		P_LineOpening(open, slidemo, li, it.InterceptPoint(in));
