@@ -338,6 +338,7 @@ DefaultOptionMenu
 OptionMenu "OptionsMenu" protected
 {
 	Title "$OPTMNU_TITLE"
+	Submenu "QuestZDoom Quick Menu",			    "QZDOptionsMenu"
 	Submenu "VR Options",			    "VROptionsMenu"
 	StaticText " "
 	Submenu "$OPTMNU_CONTROLS",			"CustomizeControls"
@@ -2367,6 +2368,8 @@ OptionValue RefreshRate
 	120, "120Hz"
 }
 
+
+
 OptionMenu VRHUDOptions protected
 {
 	Title "VR HUD OPTIONS"
@@ -2451,6 +2454,8 @@ OptionMenu VROptionsMenu protected
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_recoil vr_weaponRotate vr_weaponScale r_PlayerSprites3DMode gl_fatItemWidth"
 }
+
+
 
 /*=======================================
  *
@@ -2950,3 +2955,48 @@ OptionValue "os_isanyof_values"
 	1, "$OS_ANY"
 }
 
+/*=======================================
+ *
+ * QZD Quick Menu
+ *
+ *=======================================*/
+OptionMenu QZDOptionsMenu protected
+{
+	Title "QUESTZDOOM Quick Menu"
+
+	StaticText " "
+	StaticText "CHANGE QUEST REFRESH RATE - USUALLY 60HZ RECOMMENDED "
+	Option "Refresh Rate",                      "vid_refreshrate", "RefreshRate"
+	
+	StaticText " "
+	StaticText "STRONGLY RECOMMEND TURNING OFF FOR PERFORMANCE "
+	Option "Dynamic Lights",			gl_lights,				"OnOff"
+	
+	StaticText " "
+	StaticText "TURN OFF FOR PERFORMANCE BOOST (SKY NOT SHOWN) "
+	Option "$GLPREFMNU_RENDERSKYDOME",			gl_skydome, 					"YesNo"
+	
+	StaticText " "
+	StaticText "MAY CAUSE ISSUES WITH SOME MODS "
+	Option "$DSPLYMNU_SPRITESHADOW",			"r_actorspriteshadow", "SpriteShadowModes"
+	
+	StaticText " "
+	StaticText "SET THIS TO SSBO IF YOU ARE EXPERIENCING CRASHES "
+	Option "$GLLIGHTMNU_LIGHTBUFFERTYPE",		gl_light_buffer_type,	"LightBuffer"
+	
+	StaticText " "
+	StaticText "LIGHT / SHADOW - CERTAIN MODS LOOK BETTER WITH DIFFERENT MODES "
+	Option "$GLPREFMNU_SECLIGHTMODE",			gl_lightmode,					"LightingModes"
+	
+	StaticText " "
+	StaticText "SET TO NONE FOR ORIGINAL UNFILTERED PIXEL APPEARANCE "
+	Option "$GLTEXMNU_TEXFILTER",		gl_texture_filter,				"FilterModes"
+	
+	StaticText " "
+	StaticText "SHOW FPS IN TOP RIGHT OF SCREEN (GOOD FOR CHECKING PERFORMANCE) "
+	Option "Show FPS on HUD",		                "vid_fps", "OnOff"
+	
+	StaticText " "
+	StaticText "IS JUMP ALLOWED? "
+	Option "$GMPLYMNU_ALLOWJUMP",				"sv_jump", "JumpCrouchFreeLook"
+}
