@@ -402,7 +402,8 @@ extern bool cinemamode;
 extern float cinemamodeYaw;
 extern float cinemamodePitch;
 extern vec3_t hmdorientation;
-extern float snapturn;
+extern float snapTurn;
+
 CCMD (cinemamode)
 {
 	cinemamode = !cinemamode;
