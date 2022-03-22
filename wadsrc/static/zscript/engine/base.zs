@@ -434,6 +434,8 @@ struct Screen native
 	native static Vector2 SetOffset(double x, double y);
 	native static void ClearScreen(color col = 0);
 	native static void SetScreenFade(double factor);
+
+	native static void SetCursor(String texName = "None");
 }
 
 struct Font native
