@@ -945,7 +945,6 @@ OptionMenu "VideoOptions" protected
 	Option "$DSPLYMNU_WIPETYPE",				"wipetype", "Wipes"
 	Option "$DSPLYMNU_DRAWFUZZ",				"r_drawfuzz", "Fuzziness"
 	Option "$DSPLYMNU_OLDTRANS",				"r_vanillatrans", "VanillaTrans"
-	Slider "$DSPLYMNU_TRANSSOUL",				"transsouls", 0.25, 1.0, 0.05, 2
 	Option "$DSPLYMNU_FAKECONTRAST",			"r_fakecontrast", "Contrast"
 	Option "$DSPLYMNU_ROCKETTRAILS",			"cl_rockettrails", "RocketTrailTypes"
 	Option "$DSPLYMNU_BLOODTYPE",				"cl_bloodtype", "BloodTypes"
@@ -1151,6 +1150,7 @@ OptionMenu "AltHUDOptions" protected
 	Option "$ALTHUDMNU_SHOWSTATS",				"hud_showstats", "OnOff"
 	Option "$ALTHUDMNU_SHOWBERSERK",			"hud_berserk_health", "OnOff"
 	Option "$ALTHUDMNU_SHOWWEAPONS",			"hud_showweapons", "OnOff"
+	Option "$ALTHUDMNU_SHOWTIMESTAT",			"hud_showtimestat", "OnOff"
 	Option "$ALTHUDMNU_SHOWAMMO",				"hud_showammo", "AltHUDAmmo"
 	Option "$ALTHUDMNU_SHOWTIME",				"hud_showtime", "AltHUDTime"
 	Option "$ALTHUDMNU_TIMECOLOR",				"hud_timecolor", "TextColors"
@@ -1776,6 +1776,7 @@ OptionMenu "CompatMapMenu" protected
 	Option "$CMPTMNU_PUSHWINDOW",					"compat_pushwindow", "YesNo"
 	Option "$CMPTMNU_CHECKSWITCHRANGE",				"compat_checkswitchrange", "YesNo"
 	Option "$CMPTMNU_RAILINGHACK",					"compat_railing", "YesNo"
+	Option "$CMPTMNU_NOMBF21",						"compat_nombf21", "YeaNo"
 	Class "CompatibilityMenu"
 }
 

@@ -198,6 +198,28 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_StartSound, A_StartSound)
 	return 0;
 }
 
+
+void A_StartSoundIfNotSame(AActor *self, int soundid, int checksoundid, int channel, int flags, double volume, double attenuation, double pitch, double startTime)
+{
+	if (!S_AreSoundsEquivalent (self, soundid, checksoundid))
+		A_StartSound(self, soundid, channel, flags, volume, attenuation, pitch, startTime);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_StartSoundIfNotSame, A_StartSoundIfNotSame)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_SOUND(soundid);
+	PARAM_SOUND(checksoundid);
+	PARAM_INT(channel);
+	PARAM_INT(flags);
+	PARAM_FLOAT(volume);
+	PARAM_FLOAT(attenuation);
+	PARAM_FLOAT(pitch);
+	PARAM_FLOAT(startTime);
+	A_StartSoundIfNotSame(self, soundid, checksoundid, channel, flags, volume, attenuation, pitch, startTime);
+	return 0;
+}
+
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, IsActorPlayingSound, S_IsActorPlayingSomething)
 {
 	PARAM_SELF_PROLOGUE(AActor);

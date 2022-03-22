@@ -1500,6 +1500,8 @@ public:
 	bool isFrozen() const;
 
 	bool				hasmodel;
+
+	void PlayerLandedMakeGruntSound(AActor* onmobj);
 };
 
 class FActorIterator
