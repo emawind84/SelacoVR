@@ -55,7 +55,6 @@ class DynamicLight : Actor
 	protected native void AttachLight();
 	protected native void ActivateLight();
 	protected native void DeactivateLight();
-	protected native void DeleteAttachedLights();
 
 	Default
 	{

@@ -476,6 +476,7 @@ class Actor : Thinker native
 		return sin(fb * (180./32)) * 8;
 	}
 
+	native void DeleteAttachedLights();
 	native clearscope bool isFrozen() const;
 	virtual native void BeginPlay();
 	virtual native void Activate(Actor activator);
