@@ -1055,7 +1055,10 @@ bool DThinker::ShouldWake() {
 
 // TODO: Provide WAKE with the amount of tics slept
 void DThinker::Wake() {
-	if (sleepInterval <= 0) { // only wake if asleep
+	if (ObjectFlags & OF_EuthanizeMe) { return; }
+
+	//if (sleepInterval <= 0) { // only wake if asleep
+	if(sleepInterval == 0) {	// only wake if asleep
 		return;
 	}
 
@@ -1076,9 +1079,12 @@ void DThinker::Sleep(int tics) {
 }
 
 void DThinker::SleepIndefinite() {
+	// Only sleep if we are not going to be destroyed
+	if (ObjectFlags & OF_EuthanizeMe) { return; }
+
 	ChangeStatNum(STAT_SLEEP_FOREVER);
-	sleepInterval = 0;
-	sleepTimer = 0;
+	sleepInterval = -1;
+	sleepTimer = -1;
 }
 
 
