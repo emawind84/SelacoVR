@@ -183,7 +183,7 @@ void DeleteAttachedLights (AActor* self)
 	self->DeleteAttachedLights();
 }
 
-DEFINE_ACTION_FUNCTION_NATIVE(ADynamicLight, DeleteAttachedLights, DeleteAttachedLights)
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, DeleteAttachedLights, DeleteAttachedLights)
 {
 	PARAM_SELF_PROLOGUE(AActor);
 	DeleteAttachedLights(self);
