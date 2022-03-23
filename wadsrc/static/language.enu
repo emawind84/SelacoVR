@@ -2146,6 +2146,7 @@ GMPLYMNU_SUPERRESPAWN		= "Big powerups respawn";
 GMPLYMNU_FASTMONSTERS		= "Fast monsters";
 GMPLYMNU_INSTANTREACTION	= "Instant monster reaction";
 GMPLYMNU_DEGENERATION		= "Degeneration";
+GMPLYMNU_NOAUTOAIM			= "Allow Autoaim";
 GMPLYMNU_ALLOWSUICIDE		= "Allow Suicide";
 GMPLYMNU_ALLOWJUMP			= "Allow jump";
 GMPLYMNU_ALLOWCROUCH		= "Allow crouch";
@@ -2925,8 +2926,8 @@ OPTVAL_CLASSICZ				= "Classic ZDoom";
 OPTVAL_MODERN				= "Modern (WASD)";
 OPTVAL_MODERN2				= "Modern (ESDF)";
 OPTVAL_MODERN3				= "Modern (OKL;)";
-OPTVAL_UBO					= "UBO (faster, unstable)";
-OPTVAL_SSBO					= "SSBO (slower)";
+OPTVAL_UBO					= "UBO (better performance)";
+OPTVAL_SSBO					= "SSBO (better stability)";
 
 // QZDoom exclusive:
 
