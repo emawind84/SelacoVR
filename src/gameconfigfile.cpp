@@ -532,6 +532,15 @@ void FGameConfigFile::DoGlobalSetup ()
 				FBaseCVar *var = FindCVar("vr_move_use_offhand", NULL);
 				if (var != NULL) var->ResetToDefault();
 			}
+			if (last < 225)
+			{
+				FBaseCVar *var = FindCVar("fluid_patchset", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("timidity_config", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("midi_config", NULL);
+				if (var != NULL) var->ResetToDefault();
+			}
 		}
 	}
 }
