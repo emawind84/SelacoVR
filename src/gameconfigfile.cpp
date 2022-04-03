@@ -184,6 +184,9 @@ FGameConfigFile::FGameConfigFile ()
 		SetValueForKey("Path", "$PROGDIR/fm_banks", true);
 		SetValueForKey("Path", local_app_support + "/soundfonts", true);
 		SetValueForKey("Path", local_app_support + "/fm_banks", true);
+#elif __ANDROID__
+		SetValueForKey("Path", "./soundfonts", true);
+		SetValueForKey("Path", "./fm_banks", true);
 #elif !defined(__unix__)
 		SetValueForKey("Path", "$PROGDIR/soundfonts", true);
 		SetValueForKey("Path", "$PROGDIR/fm_banks", true);
