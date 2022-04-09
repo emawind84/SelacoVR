@@ -13,6 +13,18 @@ IWad
 
 IWad
 {
+	Name = "Selaco Demo"
+	Autoname = "selaco.aos.demo"
+	Game = "Doom"
+	Config = "Selaco"
+	IWADName = "selaco.ipk3"
+	Mapinfo = "mapinfo/doom2.txt"
+	BannerColors = "32 54 43", "c6 dc d1"
+}
+
+
+IWad
+{
 	Name = "Rise Of The Wool Ball"
 	Autoname = "woolball.rotwb"
 	Game = "Doom"
