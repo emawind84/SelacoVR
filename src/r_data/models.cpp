@@ -709,6 +709,10 @@ static void ParseModelDefLump(int Lump)
 				{
 					smf.flags |= MDL_DONTCULLBACKFACES;
 				}
+				else if (sc.Compare("alwayscullbackfaces"))
+				{
+					smf.flags |= MDL_ALWAYSCULLBACKFACES;
+				}
 				else if (sc.Compare("userotationcenter"))
 				{
 					smf.flags |= MDL_USEROTATIONCENTER;
