@@ -3794,7 +3794,7 @@ void I_UpdateWindowTitle()
 	case 1:
 		if (level.LevelName.IsNotEmpty())
 		{
-			titlestr.Format("%s - %s", level.LevelName.GetChars(), GameStartupInfo.Name.GetChars());
+			titlestr.Format("%s - %s", GameStartupInfo.Name.GetChars(), level.LevelName.GetChars());
 			break;
 		}
 		[[fallthrough]];
