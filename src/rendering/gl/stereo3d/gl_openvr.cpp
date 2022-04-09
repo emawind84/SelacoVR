@@ -84,8 +84,6 @@ double P_XYMovement(AActor* mo, DVector2 scroll);
 float I_OpenVRGetYaw();
 float I_OpenVRGetDirectionalMove();
 
-float getDoomPlayerHeightWithoutCrouch(const player_t *player);
-
 extern class DMenu* CurrentMenu;
 
 #ifdef DYN_OPENVR
@@ -120,6 +118,7 @@ extern bool trigger_teleport;
 extern float snapTurn;
 
 bool dominantGripPushed;
+double HmdHeight;
 
 #define DEFINE_ENTRY(name) static TReqProc<OpenVRModule, L##name> name{#name};
 DEFINE_ENTRY(VR_InitInternal)
@@ -160,18 +159,17 @@ EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Float, movebob);
 EXTERN_CVAR(Bool, gl_billboard_faces_camera);
 EXTERN_CVAR(Int, gl_multisample);
-EXTERN_CVAR(Float, vr_vunits_per_meter)
-EXTERN_CVAR(Float, vr_floor_offset)
+EXTERN_CVAR(Float, vr_vunits_per_meter);
+EXTERN_CVAR(Float, vr_floor_offset);
 EXTERN_CVAR(Float, vr_ipd);
 EXTERN_CVAR(Float, vr_weaponScale);
 EXTERN_CVAR(Float, vr_weaponRotate);
+EXTERN_CVAR(Int, vr_control_scheme)
+EXTERN_CVAR(Bool, vr_move_use_offhand)
 
-EXTERN_CVAR(Bool, openvr_rightHanded);
 EXTERN_CVAR(Bool, vr_use_alternate_mapping);
 EXTERN_CVAR(Bool, vr_secondary_button_mappings);
-EXTERN_CVAR(Bool, openvr_moveFollowsOffHand);
 EXTERN_CVAR(Bool, vr_teleport);
-EXTERN_CVAR(Bool, openvr_drawControllers)
 
 EXTERN_CVAR(Bool, vr_enable_haptics);
 EXTERN_CVAR(Float, vr_kill_momentum);
@@ -226,17 +224,22 @@ bool IsOpenVRPresent()
 
 
 //bit of a hack, assume player is at "normal" height when not crouching
-// float getDoomPlayerHeightWithoutCrouch(const player_t* player)
-// {
-// 	static float height = 0;
-// 	if (height == 0)
-// 	{
-// 		// Doom thinks this is where you are
-// 		height = player->viewheight;
-// 	}
+static float getDoomPlayerHeightWithoutCrouch(const player_t* player)
+{
+	static float height = 0;
+	if (!vr_crouch_use_button)
+	{
+		return HmdHeight;
+	}
+	if (height == 0)
+	{
+		// Doom thinks this is where you are
+		//height = player->viewheight;
+		height = player->DefaultViewHeight();
+	}
 
-// 	return height;
-// }
+	return height;
+}
 
 // feature toggles, for testing and debugging
 static const bool doTrackHmdYaw = true;
@@ -709,6 +712,7 @@ namespace s3d
 			const player_t& player = players[consoleplayer];
 			double vh = getDoomPlayerHeightWithoutCrouch(&player); // Doom thinks this is where you are
 			double hh = ((openvr_X_hmd[1][3] - vr_floor_offset) * vr_vunits_per_meter) / pixelstretch; // HMD is actually here
+			HmdHeight = hh;
 			doom_EyeOffset[2] += hh - vh;
 			// TODO: optionally allow player to jump and crouch by actually jumping and crouching
 		}
@@ -1037,27 +1041,6 @@ namespace s3d
 		viewwindowy = cachedViewwindowy;
 	}
 
-	void OpenVRMode::DrawControllerModels(HWDrawInfo* di, FRenderState& state) const
-	{
-
-		if (!openvr_drawControllers)
-			return;
-		FHWModelRenderer renderer(di, state, -1);
-		for (int i = 0; i < MAX_ROLES; ++i)
-		{
-			if (GetHandTransform(i, &state.mModelMatrix) && controllers[i].model)
-			{
-				state.EnableModelMatrix(true);
-
-				controllers[i].model->RenderFrame(&renderer, 0, 0, 0, 0, 0, nullptr, {}, 0);
-				state.SetVertexBuffer(screen->mVertexData);
-
-				state.EnableModelMatrix(false);
-			}
-		}
-	}
-
-
 	bool OpenVRMode::GetHandTransform(int hand, VSMatrix* mat) const
 	{
 		if (controllers[hand].active)
@@ -1091,7 +1074,8 @@ namespace s3d
 
 	void getMainHandAngles()
 	{
-		int hand = openvr_rightHanded ? 1 : 0;
+		bool rightHanded = vr_control_scheme < 10;
+		int hand = rightHanded ? 1 : 0;
 		weaponangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
 		weaponangles[PITCH] = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate).v[1]);
 		weaponangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
@@ -1099,7 +1083,8 @@ namespace s3d
 
 	void getOffHandAngles()
 	{
-		int hand = openvr_rightHanded ? 0 : 1;
+		bool rightHanded = vr_control_scheme < 10;
+		int hand = rightHanded ? 0 : 1;
 		offhandangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
 		offhandangles[PITCH] = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate).v[1]);
 		offhandangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
@@ -1270,7 +1255,8 @@ namespace s3d
 		VRControllerState_t& lastState = controllers[role].lastState;
 
 		//trigger (swaps with handedness)
-		int controller = openvr_rightHanded ? role : 1 - role;
+		bool rightHanded = vr_control_scheme < 10;
+		int controller = rightHanded ? role : 1 - role;
 
 		if (CurrentMenu != nullptr && menuactive != MENU_Off && menuactive != MENU_WaitKey)
 		{
@@ -1333,10 +1319,11 @@ namespace s3d
 	static void HandleAlternateControllerMapping(int device, int role, VRControllerState_t& newState)
 	{
 		VRControllerState_t& lastState = controllers[role].lastState;
-		int controller = openvr_rightHanded ? role : 1 - role;
+		bool rightHanded = vr_control_scheme < 10;
+		int controller = rightHanded ? role : 1 - role;
 
 		// Check if main hand grip button is hold down
-		int DominantHandRole = openvr_rightHanded ? 1 : 0;
+		int DominantHandRole = rightHanded ? 1 : 0;
 		if (vr_secondary_button_mappings
 			&& (lastState.ulButtonPressed & (1LL << openvr::vr::k_EButton_Grip)) != (newState.ulButtonPressed & (1LL << openvr::vr::k_EButton_Grip))
 			&& role == DominantHandRole) {
@@ -1475,7 +1462,6 @@ namespace s3d
 	void HandleSnapTurn()
 	{
 		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
-		int MainHandRole = openvr_rightHanded ? 1 : 0;
 
 		// Turning logic
 		static int increaseSnap = true;
@@ -1525,7 +1511,8 @@ namespace s3d
 
 	VRControllerState_t& OpenVR_GetState(int hand)
 	{
-		int controller = openvr_rightHanded ? hand : 1 - hand;
+		bool rightHanded = vr_control_scheme < 10;
+		int controller = rightHanded ? hand : 1 - hand;
 		return controllers[controller].lastState;
 	}
 
@@ -1542,7 +1529,7 @@ namespace s3d
 
 	bool OpenVR_OnHandIsRight()
 	{
-		return openvr_rightHanded;
+		return vr_control_scheme < 10;
 	}
 
 
@@ -1709,8 +1696,22 @@ namespace s3d
 
 			if (player && player->mo)
 			{
+				double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+
+				// Thanks to Emawind for the codes for natural crouching
+				if (!vr_crouch_use_button)
+				{
+					static double defaultViewHeight = player->DefaultViewHeight();
+					player->crouching = 10;
+					player->crouchfactor = HmdHeight / defaultViewHeight;
+				}
+				else if (player->crouching == 10)
+				{
+					player->Uncrouch();
+				}
+
 				LSMatrix44 mat;
-				if (GetWeaponTransform(&mat, openvr_rightHanded ? 0 : 1))
+				if (GetWeaponTransform(&mat, VR_MAINHAND))
 				{
 					player->mo->AttackPos.X = mat[3][0];
 					player->mo->AttackPos.Y = mat[3][2];
@@ -1724,7 +1725,7 @@ namespace s3d
 				}
 
 				LSMatrix44 matOffhand;
-				if (GetWeaponTransform(&matOffhand, openvr_rightHanded ? 1 : 0))
+				if (GetWeaponTransform(&matOffhand, VR_OFFHAND))
 				{
 					player->mo->OffhandPos.X = matOffhand[3][0];
 					player->mo->OffhandPos.Y = matOffhand[3][2];
@@ -1741,8 +1742,7 @@ namespace s3d
 				if (vr_teleport && player->mo->health > 0) {
 
 					DAngle yaw = DAngle::fromDeg(-deltaYawDegrees - 90 - offhandangles[YAW]);
-					DAngle pitch = DAngle::fromDeg(offhandangles[PITCH]); //+ 30);
-					double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+					DAngle pitch = DAngle::fromDeg(offhandangles[PITCH] + 30);
 
 					// Teleport Logic
 					if (ready_teleport) {
@@ -1780,7 +1780,8 @@ namespace s3d
 					trigger_teleport = false;
 				}
 
-				if (GetHandTransform(openvr_rightHanded ? 0 : 1, &mat) && openvr_moveFollowsOffHand)
+				bool rightHanded = vr_control_scheme < 10;
+				if (GetHandTransform(rightHanded ? 0 : 1, &mat) && vr_move_use_offhand)
 				{
 					player->mo->ThrustAngleOffset = DAngle::fromDeg(RAD2DEG(atan2f(-mat[2][2], -mat[2][0]))) - player->mo->Angles.Yaw;
 				}

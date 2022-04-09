@@ -141,7 +141,7 @@ float getHmdAdjustedHeightInMapUnit()
 }
 
 //bit of a hack, assume player is at "normal" height when not crouching
-float getDoomPlayerHeightWithoutCrouch(const player_t *player)
+static float getDoomPlayerHeightWithoutCrouch(const player_t *player)
 {
     if (!vr_crouch_use_button)
     {

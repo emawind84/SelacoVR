@@ -107,8 +107,6 @@ public:
 	virtual void UnAdjustPlayerSprites() const override;
 	virtual void AdjustCrossHair() const override;
 	virtual void UnAdjustCrossHair() const override;
-
-	virtual void DrawControllerModels(HWDrawInfo* di, FRenderState& state) const override;
 	
 	virtual bool GetHandTransform(int hand, VSMatrix* out) const override;
 	virtual bool RenderPlayerSpritesCrossed() const { return true; }

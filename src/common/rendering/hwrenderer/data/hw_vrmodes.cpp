@@ -122,11 +122,11 @@ CVAR(Bool, vr_automap_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 // hh79 gzdoomvr stuff
 //CVAR(Float, vr_vunits_per_meter, 32.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
 CVAR(Float, vr_floor_offset, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
-CVAR(Bool, openvr_rightHanded, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Bool, openvr_moveFollowsOffHand, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Bool, openvr_drawControllers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Float, openvr_weaponRotate, -40.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Float, openvr_weaponScale, 0.3f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+//CVAR(Bool, openvr_rightHanded, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+//CVAR(Bool, openvr_moveFollowsOffHand, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+//CVAR(Bool, openvr_drawControllers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+//CVAR(Float, openvr_weaponRotate, -40.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+//CVAR(Float, openvr_weaponScale, 0.3f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 CVARD(Bool, vr_override_weap_pos, false, 0, "Only used for testing VR environment on PC");
 CVARD(Bool, vr_render_weap_in_scene, false, 0, "Only used for testing VR environment on PC");
@@ -401,14 +401,14 @@ bool VRMode::GetWeaponTransform(VSMatrix* out, int hand_weapon) const
 	bool autoReverse = true;
 	if (player)
 	{
-		AActor *weap = hand_weapon ? player->OffhandWeapon : player->ReadyWeapon;
+		AActor *weap = (hand_weapon == VR_OFFHAND) ? player->OffhandWeapon : player->ReadyWeapon;
 		autoReverse = weap == nullptr || !(weap->IntVar(NAME_WeaponFlags) & WIF_NO_AUTO_REVERSE);
 	}
-	bool oculusquest_rightHanded = vr_control_scheme < 10;
-	int hand = hand_weapon ? 1 - oculusquest_rightHanded : oculusquest_rightHanded;
+	bool rightHanded = vr_control_scheme < 10;
+	int hand = (hand_weapon == VR_OFFHAND) ? 1 - rightHanded : rightHanded;
 	if (GetHandTransform(hand, out))
 	{
-		out->rotate(openvr_weaponRotate, 1, 0, 0);
+		out->rotate(vr_weaponRotate, 1, 0, 0);
 		if (!hand && autoReverse)
 			out->scale(-1.0f, 1.0f, 1.0f);
 		return true;
