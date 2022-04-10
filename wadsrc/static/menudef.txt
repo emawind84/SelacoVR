@@ -2826,7 +2826,8 @@ OptionMenu VROptionsMenu protected
 	StaticText "VR Controls", gold
 	Option "Control Scheme",			"vr_control_scheme", "ControlScheme"
 	Option "Switch Thumbsticks",		"vr_switch_sticks", "OnOff"
-	Option "Secondary Button Mappings",	"vr_secondary_button_mappings", "OnOff"
+	Option "$VRPREFMNU_CONTROLLERMAPPING",	vr_use_alternate_mapping,		"OnOff"
+	Option "$VRPREFMNU_GRIPCOMBO",			vr_secondary_button_mappings,	"OnOff", "vr_use_alternate_mapping"
 	Option "Two Handed Weapons",		"vr_two_handed_weapons", "OnOff"
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_control_scheme vr_switch_sticks vr_secondary_button_mappings vr_two_handed_weapons"

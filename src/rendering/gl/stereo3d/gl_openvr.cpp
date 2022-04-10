@@ -117,6 +117,8 @@ extern vec3_t offhandangles;
 
 extern bool ready_teleport;
 extern bool trigger_teleport;
+double HmdHeight;
+bool dominantGripPushed;
 
 #define DEFINE_ENTRY(name) static TReqProc<OpenVRModule, L##name> name{#name};
 DEFINE_ENTRY(VR_InitInternal)
@@ -161,8 +163,10 @@ EXTERN_CVAR(Float, vr_vunits_per_meter)
 EXTERN_CVAR(Float, vr_floor_offset)
 EXTERN_CVAR(Float, vr_ipd);
 
-EXTERN_CVAR(Bool, openvr_rightHanded)
-EXTERN_CVAR(Bool, openvr_moveFollowsOffHand)
+EXTERN_CVAR(Bool, openvr_rightHanded);
+EXTERN_CVAR(Bool, vr_use_alternate_mapping);
+EXTERN_CVAR(Bool, vr_secondary_button_mappings);
+EXTERN_CVAR(Bool, openvr_moveFollowsOffHand);
 EXTERN_CVAR(Bool, vr_teleport);
 EXTERN_CVAR(Bool, openvr_drawControllers)
 EXTERN_CVAR(Float, openvr_weaponRotate);
@@ -1042,26 +1046,6 @@ namespace s3d
 		offhandangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
 	}
 
-	// Teleport trigger logic. Thanks to DrBeef for the inspiration of how/where to use this
-	void HandleTeleportTrigger(int role, VRControllerState_t& newState, int vrAxis)
-	{
-		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
-		int OffHandRole = openvr_rightHanded ? 0 : 1;
-
-		if(vr_teleport && player && gamestate == GS_LEVEL && role == OffHandRole)
-		{
-			float joyForwardMove = newState.rAxis[vrAxis].y - DEAD_ZONE;
-
-			if ((joyForwardMove > 0.7f) && !ready_teleport) {
-				ready_teleport = true;
-			}
-			else if ((joyForwardMove < 0.6f) && ready_teleport) {
-				ready_teleport = false;
-				trigger_teleport = true;
-			}
-		}
-	}
-
 	/* virtual */
 	void OpenVRMode::Present() const {
 		// TODO: For performance, don't render to the desktop screen here
@@ -1220,10 +1204,9 @@ namespace s3d
 	static void HandleControllerState(int device, int role, VRControllerState_t& newState)
 	{
 		VRControllerState_t& lastState = controllers[role].lastState;
-
-		//trigger (swaps with handedness)
 		int controller = openvr_rightHanded ? role : 1 - role;
 
+		//trigger (swaps with handedness)
 		if (CurrentMenu == nullptr) //the quit menu is cancelled by any normal keypress, so don't generate the fire while in menus 
 		{
 			HandleVRAxis(lastState, newState, 1, 0, KEY_JOY4, KEY_JOY4, controller * (KEY_PAD_RTRIGGER - KEY_JOY4));
@@ -1255,6 +1238,148 @@ namespace s3d
 		HandleVRButton(lastState, newState, openvr::vr::k_EButton_SteamVR_Touchpad, KEY_PAD_X, role * (KEY_PAD_Y - KEY_PAD_X));
 
 		lastState = newState;
+	}
+
+	// Alternate controller mapping for Oculus, mapping is now similar to QuestZDoom and supports grip combo if enabled
+	static void HandleAlternateControllerMapping(int device, int role, VRControllerState_t& newState)
+	{
+		VRControllerState_t& lastState = controllers[role].lastState;
+		int controller = openvr_rightHanded ? role : 1 - role;
+
+		// Check if main hand grip button is hold down
+		int DominantHandRole = openvr_rightHanded ? 1 : 0;
+		if (vr_secondary_button_mappings
+			&& (lastState.ulButtonPressed & (1LL << openvr::vr::k_EButton_Grip)) != (newState.ulButtonPressed & (1LL << openvr::vr::k_EButton_Grip))
+			&& role == DominantHandRole) {
+			if (newState.ulButtonPressed & (1LL << openvr::vr::k_EButton_Grip)) {
+				dominantGripPushed = true;
+			}
+			else {
+				dominantGripPushed = false;
+			}
+		}
+
+		// main hand trigger is kept unbindable to make sure it always works in menu (swaps with handedness)
+		// openvr::vr::k_EButton_SteamVR_Trigger can be used to catch trigger fire as well but not gonna bother as long following method is not broken
+		// Mainhand trigger = Fire, Grip + Mainhand trigger = Alt Fire
+		if (CurrentMenu == nullptr) //the quit menu is cancelled by any normal keypress, so don't generate the fire while in menus 
+		{
+			if (dominantGripPushed) {
+				HandleVRAxis(lastState, newState, 1, 0, KEY_LALT, KEY_LALT, controller * (KEY_PAD_LTRIGGER - KEY_LALT));
+			}
+			else {
+				HandleVRAxis(lastState, newState, 1, 0, KEY_LSHIFT, KEY_LSHIFT, controller * (KEY_PAD_RTRIGGER - KEY_LSHIFT));
+			}
+		}
+		// Offhand trigger is now bindable (sort of)
+		// Offhand trigger = Run, Grip + Offhand trigger = unmapped
+		if (role != DominantHandRole)
+		{
+			if (dominantGripPushed) {
+				HandleVRAxis(lastState, newState, 1, 0, KEY_LALT, KEY_LALT, controller * (KEY_PAD_LTRIGGER - KEY_LALT));
+			}
+			else {
+				HandleVRAxis(lastState, newState, 1, 0, KEY_LSHIFT, KEY_LSHIFT, controller * (KEY_PAD_RTRIGGER - KEY_LSHIFT));
+			}
+		}
+		HandleUIVRAxis(lastState, newState, 1, 0, GK_RETURN, GK_RETURN);
+
+		// joysticks
+		if (axisJoystick != -1)
+		{
+			if (dominantGripPushed) {
+				HandleVRAxis(lastState, newState, axisJoystick, 0, KEY_JOYAXIS4MINUS, KEY_JOYAXIS4PLUS, role * (KEY_JOYAXIS6PLUS - KEY_JOYAXIS4PLUS));
+				HandleVRAxis(lastState, newState, axisJoystick, 1, KEY_JOYAXIS5MINUS, KEY_JOYAXIS5PLUS, role * (KEY_JOYAXIS6PLUS - KEY_JOYAXIS4PLUS));
+			}
+			else {
+				HandleVRAxis(lastState, newState, axisJoystick, 0, KEY_JOYAXIS1MINUS, KEY_JOYAXIS1PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
+				HandleVRAxis(lastState, newState, axisJoystick, 1, KEY_JOYAXIS2MINUS, KEY_JOYAXIS2PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
+			}
+			HandleUIVRAxes(lastState, newState, axisJoystick, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
+		}
+
+		// Only offhand grip is bindable in alternate mapping, main hand grip is used for grip combo
+		if(role != DominantHandRole) {
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
+		}
+		HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_Grip, GK_BACK);
+
+		// Y/B
+		// Y = Automap, Grip + Y = Fly Up
+		// B = Jump, Grip + B = Main menu
+		// Y will be defaulted to Menu button if grip combo is disabled
+		if (dominantGripPushed || !vr_secondary_button_mappings) {
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, KEY_PGUP, role * (KEY_PAD_BACK - KEY_PGUP));
+		}
+		else {
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, KEY_PAD_DPAD_UP, role * (KEY_PAD_Y - KEY_PAD_DPAD_UP));
+		}
+
+		// X/A
+		// X = Delete keybind (PAD_X), Grip + X = Fly Down
+		// A = Use, Grip + A = Crouch toggle
+		if (dominantGripPushed) {
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_A, KEY_INS, role * (KEY_PAD_LTHUMB - KEY_INS));
+		}
+		else {
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_A, KEY_PAD_X, role * (KEY_PAD_A - KEY_PAD_X));
+		}
+
+		// Thumbstick click
+		// Mainhand thumbstick = Use Inventory Item, Grip + Mainhand thumbstick = unmapped
+		// Offhand thumbstick = Jump, Grip + Offhand thumbstick = Stop Flying
+		if (dominantGripPushed) {
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_SteamVR_Touchpad, KEY_HOME, role * (KEY_TAB - KEY_HOME));
+		}
+		else {
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_SteamVR_Touchpad, KEY_SPACE, role * (KEY_ENTER - KEY_SPACE));
+		}
+
+		// Rest are unchanged
+
+		//touchpad
+		if (axisTrackpad != -1) {
+			HandleVRAxis(lastState, newState, axisTrackpad, 0, KEY_PAD_LTHUMB_LEFT, KEY_PAD_LTHUMB_RIGHT, role * (KEY_PAD_RTHUMB_LEFT - KEY_PAD_LTHUMB_LEFT));
+			HandleVRAxis(lastState, newState, axisTrackpad, 1, KEY_PAD_LTHUMB_DOWN, KEY_PAD_LTHUMB_UP, role * (KEY_PAD_RTHUMB_DOWN - KEY_PAD_LTHUMB_UP));
+			HandleUIVRAxes(lastState, newState, axisTrackpad, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
+		}
+
+		lastState = newState;
+	}
+
+	// Teleport trigger logic. Thanks to DrBeef for the inspiration of how to use this
+	void HandleTeleportTrigger(int role, VRControllerState_t& newState, int vrAxis)
+	{
+		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+		int OffHandRole = openvr_rightHanded ? 0 : 1;
+
+		if (vr_teleport && player && gamestate == GS_LEVEL && menuactive == MENU_Off && role == OffHandRole)
+		{
+			float joyForwardMove = newState.rAxis[vrAxis].y - DEAD_ZONE;
+
+			if ((joyForwardMove > 0.7f) && !ready_teleport) {
+				ready_teleport = true;
+			}
+			else if ((joyForwardMove < 0.6f) && ready_teleport) {
+				ready_teleport = false;
+				trigger_teleport = true;
+			}
+		}
+	}
+
+	// Teleport location where player sprite will be shown
+	bool OpenVRMode::GetTeleportLocation(DVector3& out) const
+	{
+		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+		if (vr_teleport &&
+			ready_teleport &&
+			(player && player->mo->health > 0) &&
+			m_TeleportTarget == TRACE_HitFloor) {
+			out = m_TeleportLocation;
+			return true;
+		}
+
+		return false;
 	}
 
 	VRControllerState_t& OpenVR_GetState(int hand)
@@ -1300,21 +1425,6 @@ namespace s3d
 			bool isMoving = (abs(newState.rAxis[axis].x) > DEAD_ZONE || abs(newState.rAxis[axis].y) > DEAD_ZONE);
 			return !isMoving && wasMoving;
 		}
-		return false;
-	}
-
-	// Teleport location sprite. Thanks to DrBeef for the codes
-	bool OpenVRMode::GetTeleportLocation(DVector3& out) const
-	{
-		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
-		if (vr_teleport &&
-			ready_teleport &&
-			(player && player->mo->health > 0) &&
-			m_TeleportTarget == TRACE_HitFloor) {
-			out = m_TeleportLocation;
-			return true;
-		}
-
 		return false;
 	}
 
@@ -1445,7 +1555,14 @@ namespace s3d
 					}
 
 					HandleTeleportTrigger(role, newState, axisJoystick);
-					HandleControllerState(i, role, newState);
+					if(vr_use_alternate_mapping)
+					{
+						HandleAlternateControllerMapping(i, role, newState);
+					}
+					else
+					{
+						HandleControllerState(i, role, newState);
+					}
 
 				}
 			}
