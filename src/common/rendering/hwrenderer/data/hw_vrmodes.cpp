@@ -82,6 +82,7 @@ CVAR(Float, vr_2dweaponOffsetX, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_2dweaponOffsetY, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_2dweaponOffsetZ, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_2dweaponScale, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Bool, vr_snap_turning, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_snapTurn, 45.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Int, vr_move_speed, 19, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_run_multiplier, 1.5, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)

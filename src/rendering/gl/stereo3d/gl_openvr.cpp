@@ -114,10 +114,10 @@ typedef vec_t vec3_t[3];
 
 extern vec3_t weaponangles;
 extern vec3_t offhandangles;
-
 extern bool ready_teleport;
 extern bool trigger_teleport;
-double HmdHeight;
+extern float snapTurn;
+
 bool dominantGripPushed;
 
 #define DEFINE_ENTRY(name) static TReqProc<OpenVRModule, L##name> name{#name};
@@ -173,7 +173,10 @@ EXTERN_CVAR(Float, openvr_weaponRotate);
 EXTERN_CVAR(Float, openvr_weaponScale);
 
 EXTERN_CVAR(Bool, vr_enable_haptics);
-EXTERN_CVAR(Float, vr_kill_momentum)
+EXTERN_CVAR(Float, vr_kill_momentum);
+EXTERN_CVAR(Bool, vr_crouch_use_button);
+EXTERN_CVAR(Bool, vr_snap_turning);
+EXTERN_CVAR(Float, vr_snapTurn);
 
 //HUD control
 EXTERN_CVAR(Float, vr_hud_scale);
@@ -1087,7 +1090,12 @@ namespace s3d
 		double hmdPitchRadians,
 		double hmdRollRadians) const
 	{
-		hmdYaw = hmdYawRadians;
+		if(vr_snap_turning){
+			hmdYaw = hmdYawRadians + DEG2RAD(snapTurn);
+		}
+		else {
+			hmdYaw = hmdYawRadians;
+		}
 		double hmdpitch = hmdPitchRadians;
 		double hmdroll = hmdRollRadians;
 
@@ -1299,7 +1307,7 @@ namespace s3d
 		}
 
 		// Only offhand grip is bindable in alternate mapping, main hand grip is used for grip combo
-		if(role != DominantHandRole) {
+		if(vr_secondary_button_mappings && role != DominantHandRole) {
 			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
 		}
 		HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_Grip, GK_BACK);
@@ -1380,6 +1388,59 @@ namespace s3d
 		}
 
 		return false;
+	}
+
+	// Snap-turn logic. Thanks to DrBeef for the codes
+	void HandleSnapTurn(int role, VRControllerState_t& newState, int vrAxis)
+	{
+		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+		int MainHandRole = openvr_rightHanded ? 1 : 0;
+
+		// Turning logic
+		static int increaseSnap = true;
+		static int decreaseSnap = true;
+
+		bool snap_turning_on = vr_snap_turning;
+
+		// Use main hand joystick left/right as buttons with grip combo
+		if (vr_use_alternate_mapping && dominantGripPushed) {
+			snap_turning_on = false;
+		}
+
+		if (snap_turning_on && player && gamestate == GS_LEVEL && menuactive == MENU_Off && role == MainHandRole)
+		{
+			float joySideMove = newState.rAxis[vrAxis].x;
+			joySideMove = joySideMove > 0 ? joySideMove - DEAD_ZONE : joySideMove + DEAD_ZONE;
+
+			if (joySideMove > 0.6f && increaseSnap) {
+				snapTurn -= vr_snapTurn;
+				if (vr_snapTurn > 10.0f) {
+					increaseSnap = false;
+				}
+			}
+			else if (joySideMove < 0.4f) {
+				increaseSnap = true;
+			}
+
+			if (joySideMove < -0.6f && decreaseSnap) {
+				snapTurn += vr_snapTurn;
+
+				//If snap turn configured for less than 10 degrees
+				if (vr_snapTurn > 10.0f) {
+					decreaseSnap = false;
+				}
+			}
+			else if (joySideMove > -0.4f) {
+				decreaseSnap = true;
+			}
+
+			if (snapTurn < -180.0f) {
+				snapTurn += 360.f;
+			}
+			else if (snapTurn > 180.0f) {
+				snapTurn -= 360.f;
+			}
+		}
 	}
 
 	VRControllerState_t& OpenVR_GetState(int hand)
@@ -1555,6 +1616,7 @@ namespace s3d
 					}
 
 					HandleTeleportTrigger(role, newState, axisJoystick);
+					HandleSnapTurn(role, newState, axisJoystick);
 					if(vr_use_alternate_mapping)
 					{
 						HandleAlternateControllerMapping(i, role, newState);
@@ -1670,6 +1732,9 @@ namespace s3d
 
 		I_StartupOpenVR();
 
+		// Smooth turning is activated only when snap turning is turned off
+		if(!vr_snap_turning && !(vr_use_alternate_mapping && dominantGripPushed))
+		{
 		//To feel smooth, yaw changes need to accumulate over the (sub) tic (i.e. render frame, not per tic)
 		unsigned int time = I_msTime();
 		static unsigned int lastTime = time;
@@ -1678,6 +1743,7 @@ namespace s3d
 		lastTime = time;
 
 		G_AddViewAngle(joyint(-1280 * I_OpenVRGetYaw() * delta * 30 / 1000), true);
+		}
 	}
 
 	/* virtual */

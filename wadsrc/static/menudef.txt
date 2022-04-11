@@ -2827,7 +2827,10 @@ OptionMenu VROptionsMenu protected
 	Option "Control Scheme",			"vr_control_scheme", "ControlScheme"
 	Option "Switch Thumbsticks",		"vr_switch_sticks", "OnOff"
 	Option "$VRPREFMNU_CONTROLLERMAPPING",	vr_use_alternate_mapping,		"OnOff"
-	Option "$VRPREFMNU_GRIPCOMBO",			vr_secondary_button_mappings,	"OnOff", "vr_use_alternate_mapping"
+	StaticText ""
+	Option "$VRPREFMNU_GRIPCOMBO",			vr_secondary_button_mappings,	"OnOff", vr_use_alternate_mapping
+	StaticText "$VRPREFMNU_GRIPCOMBO_TIP", "Brown"
+	StaticText ""
 	Option "Two Handed Weapons",		"vr_two_handed_weapons", "OnOff"
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_control_scheme vr_switch_sticks vr_secondary_button_mappings vr_two_handed_weapons"
@@ -2841,7 +2844,8 @@ OptionMenu VROptionsMenu protected
 	Slider "Walking Speed",		        "vr_move_speed", 5, 50, 1, 2
 	Slider "Run Multiplier",	        "vr_run_multiplier", 0.0, 5.0, 0.1, 2
 	StaticText ""
-	Slider "Snap-turn Angle",		    "vr_snapTurn", 0.0, 90.0, 1.0, 2
+	Option "$VRPREFMNU_SNAPTURN",		vr_snap_turning, "OnOff"
+	Slider "Snap-turn Angle",		    "vr_snapTurn", 0.0, 90.0, 1.0, 2, vr_snap_turning
 	StaticText "Set Snap-Turn <= 10 for \"Smooth\" Turn", "Brown"
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_move_use_offhand vr_teleport vr_momentum vr_crouch_use_button vr_move_speed vr_run_multiplier vr_snapTurn"
