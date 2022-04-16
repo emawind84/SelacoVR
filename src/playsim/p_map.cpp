@@ -1276,8 +1276,8 @@ void P_DoMissileDamage(AActor* inflictor, AActor* target)
 				!(target->flags & MF_NOBLOOD) &&
 				!(target->flags2 & MF2_REFLECTIVE) &&
 				!(target->flags2 & (MF2_INVULNERABLE | MF2_DORMANT)) &&
-				!(inflictor->flags3 & MF3_BLOODLESSIMPACT) &&
-				(pr_checkthing() < 192))
+				!(inflictor->flags3 & MF3_BLOODLESSIMPACT)/* &&
+				(pr_checkthing() < 192)*/)	// No more random values @cockatrice
 			{
 				P_BloodSplatter(inflictor->Pos(), target, inflictor->AngleTo(target));
 			}
