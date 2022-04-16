@@ -239,6 +239,22 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, StartNewGame)
 	return 0;
 }
 
+
+DEFINE_ACTION_FUNCTION(FLevelLocals, ReturnToTitle) 
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+
+	M_ClearMenus();
+	if (!netgame)
+	{
+		if (demorecording)
+			G_CheckDemoStatus();
+		D_StartTitle();
+	}
+
+	return 0;
+}
+
 //==========================================================================
 //
 //
