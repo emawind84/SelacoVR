@@ -520,6 +520,7 @@ struct LevelLocals native
 	native void ChangeLevel(string levelname, int position = 0, int flags = 0, int skill = -1);
 
 	native void StartNewGame(int episode, int skill = -1, string className = "");
+	native void ReturnToTitle();
 }
 
 // a few values of this need to be readable by the play code.
