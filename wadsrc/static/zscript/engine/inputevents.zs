@@ -39,14 +39,14 @@ struct UiEvent native ui version("2.4")
         Key_End         = 4,
         Key_Left        = 5,
         Key_Right       = 6,
-        Key_Alert       = 7,        // ASCII bell
+        Key_CTRL		= 7,        // Control Key
         Key_Backspace   = 8,        // ASCII
         Key_Tab         = 9,        // ASCII
         Key_LineFeed    = 10,       // ASCII
         Key_Down        = 10,
         Key_VTab        = 11,       // ASCII
         Key_Up          = 11,
-        Key_FormFeed    = 12,       // ASCII
+        Key_Menu	    = 12,       // Alt/Menu key
         Key_Return      = 13,       // ASCII
         Key_F1          = 14,
         Key_F2          = 15,
@@ -62,8 +62,8 @@ struct UiEvent native ui version("2.4")
         Key_F12         = 25,
         Key_Del         = 26,
         Key_Escape      = 27,        // ASCII
-        Key_Free1       = 28,
-        Key_Free2       = 29,
+        Key_CapsLock    = 28,
+        Key_Shift       = 29,
         Key_Back        = 30,        // browser back key
         Key_CEscape     = 31         // color escape
     }

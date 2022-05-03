@@ -429,6 +429,13 @@ void MessagePump (const SDL_Event &sev)
 			case SDLK_F10:		event.data1 = GK_F10;		break;
 			case SDLK_F11:		event.data1 = GK_F11;		break;
 			case SDLK_F12:		event.data1 = GK_F12;		break;
+			case SDLK_CAPSLOCK:	event.data1 = GK_CAPSLOCK;	break;	// @Cockatrice Added Capslock key for Selaco
+			case SDLK_LSHIFT: 
+			case SDLK_RSHIFT:	event.data1 = GK_SHIFT;		break;	// Added SHIFT for Selaco
+			case SDLK_LCTRL:
+			case SDLK_RCTRL:	event.data1 = GK_CTRL;		break;	// Added CTRL for Selaco
+			case SDLK_LALT:
+			case SDLK_RALT:		event.data1 = GK_MENU;		break;	// Added MENU/ALT for Selaco
 			default:
 				if (sev.key.keysym.sym < 256)
 				{
