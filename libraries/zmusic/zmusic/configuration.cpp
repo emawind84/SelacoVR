@@ -479,15 +479,15 @@ DLL_EXPORT bool ChangeMusicSettingInt(EIntConfigKey key, MusInfo *currSong, int 
 
 		case zmusic_timidity_reverb:
 			if (value < 0 || value > 4) value = 0;
-			else TimidityPlus_SetReverb();
 			local_timidity_reverb = value;
+			TimidityPlus_SetReverb();
 			if (pRealValue) *pRealValue = value;
 			return false;
 
 		case zmusic_timidity_reverb_level:
 			if (value < 0 || value > 127) value = 0;
-			else TimidityPlus_SetReverb();
 			local_timidity_reverb_level = value;
+			TimidityPlus_SetReverb();
 			if (pRealValue) *pRealValue = value;
 			return false;
 
@@ -686,8 +686,8 @@ DLL_EXPORT bool ChangeMusicSettingFloat(EFloatConfigKey key, MusInfo* currSong, 
 		case zmusic_fluid_chorus_level:
 			if (value < 0)
 				value = 0;
-			else if (value > 1)
-				value = 1;
+			else if (value > 10)
+				value = 10;
 
 			if (currSong != NULL)
 				currSong->ChangeSettingNum("fluidsynth.z.chorus", value);
@@ -797,7 +797,7 @@ DLL_EXPORT bool ChangeMusicSettingString(EStringConfigKey key, MusInfo* currSong
 			
 		case zmusic_gus_patchdir:
 			gusConfig.gus_patchdir = value;
-			return devType() == MDEV_GUS && gusConfig.gus_dmxgus;
+			return devType() == MDEV_GUS;
 
 		case zmusic_timidity_config:
 			timidityConfig.timidity_config = value;
