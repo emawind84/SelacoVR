@@ -36,6 +36,7 @@ namespace openvr {
 	struct Texture_t;
 	struct VR_IVRSystem_FnTable;
 	struct VR_IVRCompositor_FnTable;
+	struct VR_IVROverlay_FnTable;
 	struct VR_IVRRenderModels_FnTable;
 }
 
@@ -57,7 +58,7 @@ public:
 	void initialize(openvr::VR_IVRSystem_FnTable * vrsystem);
 	void dispose();
 	void setCurrentHmdPose(const openvr::TrackedDevicePose_t * pose) const {currentPose = pose;}
-	bool submitFrame(openvr::VR_IVRCompositor_FnTable * vrCompositor) const;
+	bool submitFrame(openvr::VR_IVRCompositor_FnTable * vrCompositor, openvr::VR_IVROverlay_FnTable* vrOverlay) const;
 
 protected:
 	VSMatrix projectionMatrix;
@@ -107,6 +108,9 @@ public:
 	virtual void UnAdjustPlayerSprites() const override;
 	virtual void AdjustCrossHair() const override;
 	virtual void UnAdjustCrossHair() const override;
+
+	virtual void SetupOverlay() override;
+	virtual void UpdateOverlaySettings() const override;
 	
 	virtual bool GetHandTransform(int hand, VSMatrix* out) const override;
 	virtual bool RenderPlayerSpritesCrossed() const { return true; }
@@ -130,6 +134,7 @@ protected:
 
 	openvr::VR_IVRSystem_FnTable * vrSystem;
 	openvr::VR_IVRCompositor_FnTable * vrCompositor;
+	openvr::VR_IVROverlay_FnTable * vrOverlay;
 	openvr::VR_IVRRenderModels_FnTable * vrRenderModels;
 	uint32_t vrToken;
 

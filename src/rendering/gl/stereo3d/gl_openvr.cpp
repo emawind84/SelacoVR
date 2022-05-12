@@ -183,6 +183,7 @@ EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Float, movebob);
 EXTERN_CVAR(Bool, gl_billboard_faces_camera);
 EXTERN_CVAR(Int, gl_multisample);
+EXTERN_CVAR(Int, vr_desktop_view);
 EXTERN_CVAR(Float, vr_vunits_per_meter);
 EXTERN_CVAR(Float, vr_height_adjust)
 EXTERN_CVAR(Float, vr_ipd);
@@ -190,6 +191,13 @@ EXTERN_CVAR(Float, vr_weaponScale);
 EXTERN_CVAR(Float, vr_weaponRotate);
 EXTERN_CVAR(Int, vr_control_scheme)
 EXTERN_CVAR(Bool, vr_move_use_offhand)
+
+EXTERN_CVAR(Int, vr_overlayscreen);
+EXTERN_CVAR(Bool, vr_overlayscreen_always);
+EXTERN_CVAR(Float, vr_overlayscreen_size);
+EXTERN_CVAR(Float, vr_overlayscreen_dist);
+EXTERN_CVAR(Float, vr_overlayscreen_vpos);
+EXTERN_CVAR(Int, vr_overlayscreen_bg);
 
 EXTERN_CVAR(Bool, vr_use_alternate_mapping);
 EXTERN_CVAR(Bool, vr_secondary_button_mappings);
@@ -296,6 +304,20 @@ static bool identifiedAxes = false;
 
 LSVec3 openvr_dpos(0, 0, 0);
 DAngle openvr_to_doom_angle;
+
+VROverlayHandle_t overlayHandle;
+Texture_t* blankTexture;
+bool doTrackHmdAngles = true;
+bool forceDisableOverlay = false;
+int prevOverlayBG = -1;
+float overlayBG[6][3] = {
+	{0.0f, 0.0f, 0.0f},
+	{0.11f, 0.0f, 0.01f},
+	{0.0f, 0.11f, 0.02f},
+	{0.0f, 0.02f, 0.11f},
+	{0.0f, 0.11f, 0.1f},
+	{0.1f, 0.1f, 0.1f}
+};
 
 namespace s3d
 {
@@ -817,7 +839,7 @@ namespace s3d
 		}
 	}
 
-	bool OpenVREyePose::submitFrame(VR_IVRCompositor_FnTable* vrCompositor) const
+	bool OpenVREyePose::submitFrame(VR_IVRCompositor_FnTable* vrCompositor, VR_IVROverlay_FnTable* vrOverlay) const
 	{
 		if (eyeTexture == nullptr)
 			return false;
@@ -854,7 +876,72 @@ namespace s3d
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		static VRTextureBounds_t tBounds = { 0, 0, 1, 1 };
-		vrCompositor->Submit(EVREye(eye), eyeTexture, &tBounds, EVRSubmitFlags_Submit_Default);
+
+		// we will disable overlay mode based on controller pitch
+		int controller1Pitch = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[0].pose.mDeviceToAbsoluteTracking, openvr_weaponRotate).v[1]);
+		int controller2Pitch = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[1].pose.mDeviceToAbsoluteTracking, openvr_weaponRotate).v[1]);
+
+		if (vr_overlayscreen > 0 && menuactive == MENU_On &&
+			(controller1Pitch > 60 || controller1Pitch < -60 || controller2Pitch > 60 || controller2Pitch < -60)
+			)
+			forceDisableOverlay = true;
+		else
+			forceDisableOverlay = false;
+
+		if(forceDisableOverlay || vr_overlayscreen == 0 || (!vr_overlayscreen_always &&
+			!paused && menuactive == MENU_Off && gamestate != GS_INTRO && gamestate != GS_TITLELEVEL && gamestate != GS_INTERMISSION && gamestate != GS_DEMOSCREEN && gamestate != GS_MENUSCREEN)
+		) {
+			//clear and hide overlay when not in use
+			vrOverlay->ClearOverlayTexture(overlayHandle);
+			vrOverlay->HideOverlay(overlayHandle);
+
+			// this is where we set the screen texture for HMD
+			vrCompositor->Submit(EVREye(eye), eyeTexture, &tBounds, EVRSubmitFlags_Submit_Default);
+		}
+		else {
+			// create a solid color backdrop texture
+			if (prevOverlayBG != vr_overlayscreen_bg) {
+				prevOverlayBG = vr_overlayscreen_bg;
+				blankTexture = new Texture_t();
+				blankTexture->handle = nullptr;
+				blankTexture->eType = ETextureType_TextureType_OpenGL;
+				blankTexture->eColorSpace = EColorSpace_ColorSpace_Linear;
+				int tWidth = screen->mSceneViewport.width;
+				int tHeight = screen->mSceneViewport.height;
+				std::vector<GLubyte> emptyDataStart(screen->mSceneViewport.width * screen->mSceneViewport.height * 4, 0);
+				unsigned char* emptyData = new unsigned char[3 * tWidth * tHeight * sizeof(unsigned char)];
+				for (unsigned int i = 0; i < tWidth * tHeight; i++)
+				{
+					emptyData[i * 3] = (unsigned char)(overlayBG[vr_overlayscreen_bg][0] * 255.0f);
+					emptyData[i * 3 + 1] = (unsigned char)(overlayBG[vr_overlayscreen_bg][1] * 255.0f);
+					emptyData[i * 3 + 2] = (unsigned char)(overlayBG[vr_overlayscreen_bg][2] * 255.0f);
+				}
+				GLuint emptyTextureID;
+				glGenTextures(1, &emptyTextureID);
+				blankTexture->handle = (void*)(std::ptrdiff_t)emptyTextureID;
+				glBindTexture(GL_TEXTURE_2D, emptyTextureID);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				if (gamestate == GS_STARTUP || gamestate == GS_DEMOSCREEN || gamestate == GS_INTRO || gamestate == GS_TITLELEVEL)
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tWidth, tHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, &emptyDataStart[0]);
+				else
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tWidth, tHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, emptyData);
+				glGenerateMipmap(GL_TEXTURE_2D);
+				delete[] emptyData;
+			}
+				
+			// set blank texture for compositor so it draws solid color background behind the overlay
+			// without compositor background the game goes in/out of steamvr and gets glitchy
+			vrCompositor->Submit(EVREye(eye), blankTexture, &tBounds, EVRSubmitFlags_Submit_Default);
+
+			static VRTextureBounds_t oBounds = { 0, 0.2, 0.8, 0.8 }; // screen texture crop for overlay
+
+			// set screen texture on overly instead of compositor
+			vrOverlay->SetOverlayTexture(overlayHandle, eyeTexture);
+			vrOverlay->SetOverlayTextureBounds(overlayHandle, &oBounds);
+			vrOverlay->SetOverlayWidthInMeters(overlayHandle, 1 + vr_overlayscreen_size);
+			vrOverlay->ShowOverlay(overlayHandle);
+		}
 		return true;
 	}
 
@@ -898,7 +985,7 @@ namespace s3d
 			if (getHUDValue<FBoolCVarRef>(vr_automap_fixed_roll, vr_hud_fixed_roll))
 			{
 				float openVrRollDegrees = RAD2DEG(-eulerAnglesFromMatrix(this->currentPose->mDeviceToAbsoluteTracking).v[2]);
-				new_projection.rotate(-openVrRollDegrees, 0, 0, 1);
+				if (doTrackHmdAngles) new_projection.rotate(-openVrRollDegrees, 0, 0, 1);
 			}
 
 			new_projection.rotate(getHUDValue<FFloatCVarRef>(vr_automap_rotate, vr_hud_rotate), 1, 0, 0);
@@ -906,7 +993,7 @@ namespace s3d
 			if (getHUDValue<FBoolCVarRef>(vr_automap_fixed_pitch, vr_hud_fixed_pitch))
 			{
 				float openVrPitchDegrees = RAD2DEG(-eulerAnglesFromMatrix(this->currentPose->mDeviceToAbsoluteTracking).v[1]);
-				new_projection.rotate(-openVrPitchDegrees, 1, 0, 0);
+				if(doTrackHmdAngles) new_projection.rotate(-openVrPitchDegrees, 1, 0, 0);
 			}
 		}
 
@@ -1027,6 +1114,8 @@ namespace s3d
 		if (vrCompositor == nullptr)
 			return;
 
+		SetupOverlay();
+
 		const std::string model_key = std::string("FnTable:") + std::string(IVRRenderModels_Version);
 		vrRenderModels = (VR_IVRRenderModels_FnTable*)VR_GetGenericInterface(model_key.c_str(), &eError);
 
@@ -1039,6 +1128,87 @@ namespace s3d
 	}
 
 	/* virtual */
+	void OpenVRMode::SetupOverlay()
+	{
+		EVRInitError eError;
+
+		VR_InitInternal(&eError, EVRApplicationType_VRApplication_Overlay);;
+		if (eError != EVRInitError_VRInitError_None) {
+			std::string errMsg = VR_GetVRInitErrorAsEnglishDescription(eError);
+			return;
+		}
+
+		const std::string comp_key = std::string("FnTable:") + std::string(IVROverlay_Version);
+		vrOverlay = (VR_IVROverlay_FnTable*)VR_GetGenericInterface(comp_key.c_str(), &eError);
+		if (vrOverlay == nullptr)
+			return;
+
+		vrOverlay->CreateOverlay((char*)"doomVROverlay", (char*)"doomVROverlay", &overlayHandle);
+	}
+
+	void OpenVRMode::UpdateOverlaySettings() const
+	{
+		float overlayDrawDistance = - 2.5f - vr_overlayscreen_dist;
+		float overlayVerticalPosition = 1.5f + vr_overlayscreen_vpos;
+
+		HmdMatrix34_t vrOverlayTransform = {
+					1.3f, 0.0f, 0.0f, 0.0f,
+					0.0f, 1.0f, 0.0f, vr_overlayscreen_vpos,
+					0.0f, 0.0f, 1.0f, overlayDrawDistance
+		};
+
+		ETrackedControllerRole trackedMainHandRole = openvr_rightHanded ? ETrackedControllerRole_TrackedControllerRole_RightHand : ETrackedControllerRole_TrackedControllerRole_LeftHand;
+		ETrackedControllerRole trackedOffHandRole = openvr_rightHanded ? ETrackedControllerRole_TrackedControllerRole_LeftHand : ETrackedControllerRole_TrackedControllerRole_RightHand;
+		TrackedDeviceIndex_t mainhandOverlayIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(trackedMainHandRole);
+		TrackedDeviceIndex_t offhandOverlayIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(trackedOffHandRole);
+
+		int overlayscreen_pos = vr_overlayscreen;
+		// when overlay follow-mode is set to the controllers it makes more sense to lock it in stationary position
+		// if the user decides to play the game in the overlay screen (to prevent nausea/gamepad user?)
+		if (vr_overlayscreen_always && vr_overlayscreen > 2) overlayscreen_pos = 1;
+
+		switch (overlayscreen_pos) {
+		case 1: // overlay stationary position
+		{
+			HmdMatrix34_t oAbsTransform = {
+							1.3f, 0.0f, 0.0f, 0.0f,
+							0.0f, 1.0f, 0.0f, overlayVerticalPosition,
+							0.0f, 0.0f, 1.0f, overlayDrawDistance
+			};
+
+			auto oTracking = (ETrackingUniverseOrigin)openvr::vr::TrackingUniverseRawAndUncalibrated;
+			vrOverlay->SetOverlayTransformAbsolute(overlayHandle, oTracking, &oAbsTransform);
+			break;
+		}
+
+		case 2: // overlay follows head movement
+			vrOverlay->SetOverlayTransformTrackedDeviceRelative(overlayHandle, openvr::vr::k_unTrackedDeviceIndex_Hmd, &vrOverlayTransform);
+			break;
+
+		case 3: // overlay follows main hand movement
+			if (mainhandOverlayIndex == k_unTrackedDeviceIndexInvalid || mainhandOverlayIndex == k_unTrackedDeviceIndex_Hmd)
+			{
+				vrOverlay->SetOverlayTransformTrackedDeviceRelative(overlayHandle, openvr::vr::k_unTrackedDeviceIndex_Hmd, &vrOverlayTransform);
+			}
+			else
+			{
+				vrOverlay->SetOverlayTransformTrackedDeviceRelative(overlayHandle, mainhandOverlayIndex, &vrOverlayTransform);
+			}
+			break;
+
+		case 4: // overlay follows off hand movement
+			if (offhandOverlayIndex == k_unTrackedDeviceIndexInvalid || offhandOverlayIndex == k_unTrackedDeviceIndex_Hmd)
+			{
+				vrOverlay->SetOverlayTransformTrackedDeviceRelative(overlayHandle, openvr::vr::k_unTrackedDeviceIndex_Hmd, &vrOverlayTransform);
+			}
+			else
+			{
+				vrOverlay->SetOverlayTransformTrackedDeviceRelative(overlayHandle, offhandOverlayIndex, &vrOverlayTransform);
+			}
+			break;
+		}
+	}
+
 	// AdjustViewports() is called from within FLGRenderer::SetOutputViewport(...)
 	void OpenVRMode::AdjustViewport(DFrameBuffer* screen) const
 	{
@@ -1146,7 +1316,13 @@ namespace s3d
 			GLRenderer->ClearBorders();
 
 			// Compute screen regions to use for left and right eye views
-			int leftWidth = screen->mOutputLetterbox.width / 2;
+			int leftWidth;
+			if(vr_desktop_view == 1)
+				leftWidth = screen->mOutputLetterbox.width;
+			else if(vr_desktop_view == 2)
+				leftWidth = 0;
+			else
+				leftWidth = screen->mOutputLetterbox.width / 2;
 			int rightWidth = screen->mOutputLetterbox.width - leftWidth;
 			IntRect leftHalfScreen = screen->mOutputLetterbox;
 			leftHalfScreen.width = leftWidth;
@@ -1154,15 +1330,19 @@ namespace s3d
 			rightHalfScreen.width = rightWidth;
 			rightHalfScreen.left += leftWidth;
 
-			GLRenderer->mBuffers->BindEyeTexture(0, 0);
-			GLRenderer->DrawPresentTexture(leftHalfScreen, true);
-			GLRenderer->mBuffers->BindEyeTexture(1, 0);
-			GLRenderer->DrawPresentTexture(rightHalfScreen, true);
+			if (vr_desktop_view < 2) {
+				GLRenderer->mBuffers->BindEyeTexture(0, 0);
+				GLRenderer->DrawPresentTexture(leftHalfScreen, true);
+			}
+			if (vr_desktop_view != 1) {
+				GLRenderer->mBuffers->BindEyeTexture(1, 0);
+				GLRenderer->DrawPresentTexture(rightHalfScreen, true);
+			}
 		}
 		if (doRenderToHmd)
 		{
-			leftEyeView->submitFrame(vrCompositor);
-			rightEyeView->submitFrame(vrCompositor);
+			leftEyeView->submitFrame(vrCompositor, vrOverlay);
+			rightEyeView->submitFrame(vrCompositor, vrOverlay);
 		}
 	}
 
@@ -1214,9 +1394,16 @@ namespace s3d
 			previousHmdYaw = hmdYaw;
 		}
 
+		if (!forceDisableOverlay && vr_overlayscreen > 0 &&
+			(gamestate == GS_INTRO || gamestate == GS_TITLELEVEL || gamestate == GS_INTERMISSION || gamestate == GS_DEMOSCREEN || gamestate == GS_MENUSCREEN || menuactive == MENU_On || paused)
+		)
+			doTrackHmdAngles = false;
+		else
+			doTrackHmdAngles = true;
+
 		/* */
 		// Pitch
-		if (doTrackHmdPitch) {
+		if (doTrackHmdPitch && doTrackHmdAngles) {
 			if (resetPreviousPitch)
 			{
 				previousPitch = vp.HWAngles.Pitch.Radians();
@@ -1236,18 +1423,18 @@ namespace s3d
 				doomYaw += RAD2DEG(hmdYawDeltaRadians);
 
 				// Roll can be local, because it doesn't affect gameplay.
-				if (doTrackHmdRoll)
+				if (doTrackHmdRoll && doTrackHmdAngles)
 				{
 					vp.HWAngles.Roll = FAngle::fromDeg(RAD2DEG(-hmdroll));
 				}
-				if (doTrackHmdPitch && doLateScheduledRotationTracking)
+				if (doTrackHmdPitch && doTrackHmdAngles && doLateScheduledRotationTracking)
 				{
 					vp.HWAngles.Pitch = FAngle::fromDeg(RAD2DEG(-hmdpitch));
 				}
 			}
 
 			// Late-schedule update to renderer angles directly, too
-			if (doTrackHmdYaw && doLateScheduledRotationTracking)
+			if (doTrackHmdYaw && doTrackHmdAngles && doLateScheduledRotationTracking)
 			{
 				double viewYaw = doomYaw;
 				while (viewYaw <= -180.0)
@@ -1416,7 +1603,7 @@ namespace s3d
 		}
 #endif
 		// Only do the following if we are definitely not in the menu
-		if (menuactive == MENU_Off)
+		if (gamestate == GS_LEVEL && menuactive == MENU_Off && !paused)
 		{
 #if 0
 			TrackedDevicePose_t pose = pOffTracking->pose;
@@ -2032,6 +2219,8 @@ namespace s3d
 			// 	gl_multisample = 4;
 		}
 
+		UpdateOverlaySettings();
+
 		haptics->ProcessHaptics();
 
 		if (gamestate == GS_LEVEL && menuactive == MENU_Off) {
@@ -2325,6 +2514,7 @@ namespace s3d
 			VR_ShutdownInternal();
 			vrSystem = nullptr;
 			vrCompositor = nullptr;
+			vrOverlay = nullptr;
 			vrRenderModels = nullptr;
 			leftEyeView->dispose();
 			rightEyeView->dispose();

@@ -2751,7 +2751,46 @@ OptionValue RefreshRate
 	120, "120Hz"
 }
 
+OptionValue "CinemaScreenFollow"
+{
+	0, "Disabled"
+	1, "Stationary"	
+	2, "Follow Head movement"	
+	3, "Follow Main Hand"	
+	4, "Follwo Offhand"
+}
 
+OptionValue "CinemaScreenBG"
+{
+	0, "Black"
+	1, "Red"
+	2, "Green"
+	3, "Blue"
+	4, "Teal"
+	5, "Grey"
+}
+
+OptionValue "DesktopViewModes"
+{
+	0, "Side-By-Side"
+	1, "Left Eye"
+	2, "Right Eye"
+}
+
+OptionMenu CinemaModeOptions protected
+{
+	Title "$VRCMODEMNU_TITLE"
+
+	StaticText " "
+	Option "$VRCINEMAMODE",						vr_overlayscreen,						"CinemaScreenFollow"
+	Option "$VRCINEMAMODE_PLAY",				vr_overlayscreen_always,				"OnOff", vr_overlayscreen
+	Slider "$VRCINEMAMODE_SIZE",				vr_overlayscreen_size,					1.0, 3.0, 0.1, 2, vr_overlayscreen
+	Slider "$VRCINEMAMODE_DIST",				vr_overlayscreen_dist,					-2.0, 2.0, 0.1, 2, vr_overlayscreen
+	Slider "$VRCINEMAMODE_VPOS",				vr_overlayscreen_vpos,					-1.0, 1.0, 0.1, 2, vr_overlayscreen
+	Option "$VRCINEMAMODE_BG",					vr_overlayscreen_bg,					"CinemaScreenBG"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS",				"resetcvar vr_overlayscreen vr_overlayscreen_always vr_overlayscreen_size vr_overlayscreen_dist vr_overlayscreen_vpos vr_overlayscreen_bg"
+}
 
 OptionMenu VRHUDOptions protected
 {
@@ -2825,13 +2864,16 @@ OptionMenu VROptionsMenu protected
 	Title "VR OPTIONS"
 
 	StaticText ""
-	Submenu "VR HUD/Automap Options",	"VRHUDOptions"
-	Submenu "VR Weapon Options",		"VRWeaponOptions"
+	Submenu "$VRCMODEMNU_TITLE",        "CinemaModeOptions"
+	Submenu "VR HUD/Automap Options",   "VRHUDOptions"
+	Submenu "VR Weapon Options",        "VRWeaponOptions"
 	StaticText ""
 	StaticText "Misc", gold
+	Option "$VRPREFMNU_DESKTOP",        "vr_desktop_view", "DesktopViewModes"
+	Slider "$VRPREFMNU_WORLDSCALE",     "vr_vunits_per_meter", 1, 60, 1, 0
 	Slider "Height Adjust",		        "vr_height_adjust", -0.5, 1.0, 0.01, 2
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_height_adjust"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_desktop_view vr_vunits_per_meter vr_height_adjust"
 
 	StaticText ""
 	StaticText "VR Controls", gold
