@@ -7,6 +7,7 @@ class Unknown : Actor
 	{
 		Radius 32;
 		Height 56;
+		Scale 0.2;
 		+NOGRAVITY
 		+NOBLOCKMAP
 		+DONTSPLASH
