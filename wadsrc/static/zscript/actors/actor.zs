@@ -410,8 +410,8 @@ class Actor : Thinker native
 		DesignatedTeam 255;
 		PainType "Normal";
 		DeathType "Normal";
-		TeleFogSourceType "TeleportFog";
-		TeleFogDestType 'TeleportFog';
+		TeleFogSourceType "";
+		TeleFogDestType '';
 		RipperLevel 0;
 		RipLevelMin 0;
 		RipLevelMax 0;
@@ -1062,6 +1062,36 @@ class Actor : Thinker native
 		A_Face(master, max_turn, max_pitch, ang_offset, pitch_offset, flags, z_ofs);
 	}
 
+
+	void A_AlertMonsters(double maxdist = 0, int flags = 0) {
+		Actor target = null;
+		Actor emitter = self;
+
+		if (player != null || (Flags & AMF_TARGETEMITTER))
+		{
+			target = self;
+		}
+		else if (self.target != null && (self.target.player != null || (Flags & AMF_TARGETNONPLAYER)))
+		{
+			target = self.target;
+		}
+
+		if (Flags & AMF_EMITFROMTARGET) emitter = target;
+
+		if (target != null && emitter != null)
+		{
+			emitter.SoundAlert(target, false, maxdist);
+		}
+	}
+
+	void A_Countdown() {
+		if (--reactiontime <= 0)
+		{
+			ExplodeMissile ();
+			bSkullFly = false;
+		}
+	}
+
 	// Action functions
 	// Meh, MBF redundant functions. Only for DeHackEd support.
 	native bool A_LineEffect(int boomspecial = 0, int tag = 0);
@@ -1140,7 +1170,7 @@ class Actor : Thinker native
 	native void Revive();
 	native void A_Weave(int xspeed, int yspeed, double xdist, double ydist);
 
-	action native state, bool A_Teleport(statelabel teleportstate = null, class<SpecialSpot> targettype = "BossSpot", class<Actor> fogtype = "TeleportFog", int flags = 0, double mindist = 128, double maxdist = 0, int ptr = AAPTR_DEFAULT);
+	//action native state, bool A_Teleport(statelabel teleportstate = null, class<SpecialSpot> targettype = "SpecialSpot", class<Actor> fogtype = "TeleportFog", int flags = 0, double mindist = 128, double maxdist = 0, int ptr = AAPTR_DEFAULT);
 	action native state, bool A_Warp(int ptr_destination, double xofs = 0, double yofs = 0, double zofs = 0, double angle = 0, int flags = 0, statelabel success_state = null, double heightoffset = 0, double radiusoffset = 0, double pitch = 0);
 	native void A_CountdownArg(int argnum, statelabel targstate = null);
 	native state A_MonsterRefire(int chance, statelabel label);

@@ -182,8 +182,11 @@ extend class PlayerPawn
 		morphed.bFly |= bFly;
 		morphed.bGhost |= bGhost;
 
-		if (enter_flash == null) enter_flash = 'TeleportFog';
-		let eflash = Spawn(enter_flash, Pos + (0, 0, gameinfo.telefogheight), ALLOW_REPLACE);
+		Actor eflash = null;
+		if (enter_flash != null) {
+			eflash = Spawn(enter_flash, Pos + (0, 0, gameinfo.telefogheight), ALLOW_REPLACE);
+		}
+		
 		let p = player;
 		player = null;
 		alternative = morphed;
@@ -198,7 +201,6 @@ extend class PlayerPawn
 		p.MorphedPlayerClass = spawntype;
 
 		p.MorphStyle = style;
-		if (exit_flash == null) exit_flash = 'TeleportFog';
 		p.MorphExitFlash = exit_flash;
 		p.health = morphed.health;
 		p.mo = morphed;

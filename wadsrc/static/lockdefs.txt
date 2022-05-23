@@ -3,6 +3,8 @@
 //
 ClearLocks
 
+/*
+
 Lock 1 Doom
 {
 	//$Title "Red key card"
@@ -685,3 +687,6 @@ Lock 131 Chex
 	RemoteMessage "$PD_YELLOWO"
 	Mapcolor 255 255 0
 }
+
+
+*/
