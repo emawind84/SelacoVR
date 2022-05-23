@@ -616,12 +616,14 @@ class FDecalBase;
 
 inline AActor *GetDefaultByName (const char *name)
 {
-	return (AActor *)(PClass::FindClass(name)->Defaults);
+	PClass *pc = PClass::FindClass(name);
+	return pc != NULL ? (AActor *)pc->Defaults : NULL;
 }
 
 inline AActor* GetDefaultByName(FName name)
 {
-	return (AActor*)(PClass::FindClass(name)->Defaults);
+	PClass *pc = PClass::FindClass(name);
+	return pc != NULL ? (AActor *)pc->Defaults : NULL;
 }
 
 inline AActor *GetDefaultByType (const PClass *type)
