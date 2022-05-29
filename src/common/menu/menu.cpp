@@ -849,7 +849,8 @@ void M_Drawer (void)
 
 	if (CurrentMenu != nullptr && menuactive != MENU_Off) 
 	{
-		if (!CurrentMenu->DontBlur) screen->BlurScene(menuBlurAmount);
+		// Allow menus to force blur when necessary @Cockatrice
+		if (!CurrentMenu->DontBlur) screen->BlurScene(CurrentMenu->BlurAmount > 0 ? CurrentMenu->BlurAmount : menuBlurAmount, CurrentMenu->BlurAmount > 0);
 		if (!CurrentMenu->DontDim)
 		{
 			if (sysCallbacks.MenuDim) sysCallbacks.MenuDim();
@@ -1008,6 +1009,7 @@ DEFINE_FIELD(DMenu, mMouseCapture);
 DEFINE_FIELD(DMenu, mBackbuttonSelected);
 DEFINE_FIELD(DMenu, DontDim);
 DEFINE_FIELD(DMenu, DontBlur);
+DEFINE_FIELD(DMenu, BlurAmount);
 DEFINE_FIELD(DMenu, AnimatedTransition);
 DEFINE_FIELD(DMenu, Animated);
 
