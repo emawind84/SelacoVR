@@ -115,7 +115,7 @@ class PlayerPawn : Actor
 		Player.SoundClass "player";
 		Player.DamageScreenColor "ff 00 00";
 		Player.MugShotMaxHealth 0;
-		Player.FlechetteType "ArtiPoisonBag3";
+		Player.FlechetteType "";
 		Player.AirCapacity 1;
 		Player.ViewBob 1;
 		Player.TeleportFreezeTime 18;
@@ -1457,14 +1457,6 @@ class PlayerPawn : Actor
 					}
 				}
 			}
-			else if (cmd.upmove > 0 && !(player.cheats & CF_PREDICTING))
-			{
-				let fly = FindInventory("ArtiFly");
-				if (fly != NULL)
-				{
-					UseInventory(fly);
-				}
-			}
 		}
 	}
 
@@ -2524,14 +2516,12 @@ extend class Actor
 	//
 	//----------------------------------------------------------------------------
 
-	void A_SkullPop(class<PlayerChunk> skulltype = "BloodySkull")
+	void A_SkullPop(class<PlayerChunk> skulltype = null)
 	{
 		// [GRB] Parameterized version
 		if (skulltype == NULL || !(skulltype is "PlayerChunk"))
 		{
-			skulltype = "BloodySkull";
-			if (skulltype == NULL)
-				return;
+			return;
 		}
 
 		bSolid = false;

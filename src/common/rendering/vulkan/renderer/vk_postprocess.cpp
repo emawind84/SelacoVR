@@ -256,7 +256,7 @@ void VkPostprocess::AmbientOccludeScene(float m5)
 	ImageTransitionScene(false);
 }
 
-void VkPostprocess::BlurScene(float gameinfobluramount)
+void VkPostprocess::BlurScene(float gameinfobluramount, bool force)
 {
 	auto fb = GetVulkanFrameBuffer();
 	int sceneWidth = fb->GetBuffers()->GetSceneWidth();
@@ -268,7 +268,7 @@ void VkPostprocess::BlurScene(float gameinfobluramount)
 	int eyeCount = vrmode->mEyeCount;
 	for (int i = 0; i < eyeCount; ++i)
 	{
-		hw_postprocess.bloom.RenderBlur(&renderstate, sceneWidth, sceneHeight, gameinfobluramount);
+		hw_postprocess.bloom.RenderBlur(&renderstate, sceneWidth, sceneHeight, gameinfobluramount, force);
 		if (eyeCount - i > 1) NextEye(eyeCount);
 	}
 }

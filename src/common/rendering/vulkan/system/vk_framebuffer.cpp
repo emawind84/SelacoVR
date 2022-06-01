@@ -450,10 +450,10 @@ void VulkanFrameBuffer::StartPrecaching()
 	VkMaterial::ResetAllDescriptors();
 }
 
-void VulkanFrameBuffer::BlurScene(float amount)
+void VulkanFrameBuffer::BlurScene(float amount, bool force)
 {
 	if (mPostprocess)
-		mPostprocess->BlurScene(amount);
+		mPostprocess->BlurScene(amount, force);
 }
 
 void VulkanFrameBuffer::UpdatePalette()

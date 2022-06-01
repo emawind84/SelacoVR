@@ -129,6 +129,7 @@ class Menu : Object native ui version("2.4")
 	native bool mBackbuttonSelected;
 	native bool DontDim;
 	native bool DontBlur;
+	native float BlurAmount;	// -1 = Ignored, > 0 = Force this much blur regardless of settings
 	native bool AnimatedTransition;
 	native bool Animated;
 
@@ -153,6 +154,7 @@ class Menu : Object native ui version("2.4")
 		mBackbuttonSelected = false;
 		DontDim = false;
 		DontBlur = false;
+		BlurAmount = -1;
 		AnimatedTransition = false;
 		Animated = false;
 	}

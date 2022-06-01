@@ -357,9 +357,9 @@ IDataBuffer *OpenGLFrameBuffer::CreateDataBuffer(int bindingpoint, bool ssbo, bo
 	return new GLDataBuffer(bindingpoint, ssbo);
 }
 
-void OpenGLFrameBuffer::BlurScene(float amount)
+void OpenGLFrameBuffer::BlurScene(float amount, bool force)
 {
-	GLRenderer->BlurScene(amount);
+	GLRenderer->BlurScene(amount, force);
 }
 
 void OpenGLFrameBuffer::InitLightmap(FLevelLocals *Level)
