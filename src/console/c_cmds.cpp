@@ -454,9 +454,6 @@ CCMD(setinv)
 
 CCMD (puke)
 {
-	if (CheckCheatmode())
-		return;
-
 	int argc = argv.argc();
 
 	if (argc < 2 || argc > 6)
@@ -499,9 +496,6 @@ CCMD (puke)
 
 CCMD (pukename)
 {
-	if (CheckCheatmode())
-		return;
-
 	int argc = argv.argc();
 
 	if (argc < 2 || argc > 7)
