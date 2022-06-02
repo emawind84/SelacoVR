@@ -409,6 +409,10 @@ void S_Sound(int channel, EChanFlags flags, FSoundID sound_id, float volume, flo
 	soundEngine->StartSound (SOURCE_None, nullptr, nullptr, channel, flags, sound_id, volume, attenuation, 0, 0.f);
 }
 
+void S_StopSoundID(int channel, FSoundID sound_id) {
+	soundEngine->StopSound(channel, sound_id);
+}
+
 DEFINE_ACTION_FUNCTION(DObject, S_Sound)
 {
 	PARAM_PROLOGUE;
@@ -433,6 +437,16 @@ DEFINE_ACTION_FUNCTION(DObject, S_StartSound)
 	PARAM_FLOAT(pitch);
 	PARAM_FLOAT(startTime);
 	S_SoundPitch(channel, EChanFlags::FromInt(flags), id, static_cast<float>(volume), static_cast<float>(attn), static_cast<float>(pitch), static_cast<float>(startTime));
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DObject, S_StopSound)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(channel);
+	PARAM_SOUND(id);
+
+	S_StopSoundID(channel, id);
 	return 0;
 }
 
