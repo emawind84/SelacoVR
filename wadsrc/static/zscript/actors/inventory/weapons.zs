@@ -80,10 +80,11 @@ class Weapon : StateProvider
 	flagdef NoDeathDeselect: WeaponFlags, 16;	// Don't jump to the Deselect state when the player dies
 	flagdef NoDeathInput: WeaponFlags, 17;		// The weapon cannot be fired/reloaded/whatever when the player is dead
 	flagdef CheatNotWeapon: WeaponFlags, 18;	// Give cheat considers this not a weapon (used by Sigil)
-	flagdef OffhandWeapon: WeaponFlags, 19;		// weapon is an offhand weapon
-	flagdef NoHandSwitch: WeaponFlags, 20;		// weapon cannot be moved from one hand to another
-	flagdef TwoHanded: WeaponFlags, 21;			// two handed weapon
-	flagdef NoAutoReverse: WeaponFlags, 22;		// prevent auto reverse of model and sprite when switching to offhand
+	flagdef NoAutoSwitchTo : WeaponFlags, 19;	// do not auto switch to this weapon ever!
+	flagdef OffhandWeapon: WeaponFlags, 20;		// weapon is an offhand weapon
+	flagdef NoHandSwitch: WeaponFlags, 21;		// weapon cannot be moved from one hand to another
+	flagdef TwoHanded: WeaponFlags, 22;			// two handed weapon
+	flagdef NoAutoReverse: WeaponFlags, 23;		// prevent auto reverse of model and sprite when switching to offhand
 
 	// no-op flags
 	flagdef NoLMS: none, 0;
