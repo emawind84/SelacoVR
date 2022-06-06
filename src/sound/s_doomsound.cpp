@@ -401,7 +401,7 @@ void S_InitData()
 
 void S_SoundPitch(int channel, EChanFlags flags, FSoundID sound_id, float volume, float attenuation, float pitch, float startTime)
 {
-	soundEngine->StartSound(SOURCE_None, nullptr, nullptr, channel, flags, sound_id, volume, attenuation, 0, pitch);
+	soundEngine->StartSound(SOURCE_None, nullptr, nullptr, channel, flags, sound_id, volume, attenuation, 0, pitch, startTime);
 }
 
 void S_Sound(int channel, EChanFlags flags, FSoundID sound_id, float volume, float attenuation)
