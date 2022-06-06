@@ -255,6 +255,16 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, ReturnToTitle)
 	return 0;
 }
 
+
+
+DEFINE_ACTION_FUNCTION(FLevelLocals, QuitGame)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+
+	throw CExitEvent(0);
+	return 0;
+}
+
 //==========================================================================
 //
 //
