@@ -58,7 +58,7 @@
 
 // HEADER FILES ------------------------------------------------------------
 #include <float.h>
-#include "templates.h"
+
 
 #include "m_random.h"
 #include "doomdef.h"
@@ -175,6 +175,7 @@ IMPLEMENT_POINTERS_START(AActor)
 	IMPLEMENT_POINTER(master)
 	IMPLEMENT_POINTER(Poisoner)
 	IMPLEMENT_POINTER(alternative)
+	IMPLEMENT_POINTER(ViewPos)
 IMPLEMENT_POINTERS_END
 
 AActor::~AActor ()
@@ -373,7 +374,10 @@ void AActor::Serialize(FSerializer &arc)
 		A("spawnorder", SpawnOrder)
 		A("friction", Friction)
 		A("SpriteOffset", SpriteOffset)
-		A("userlights", UserLights);
+		("viewpos", ViewPos)
+		A("lightlevel", LightLevel)
+		A("userlights", UserLights)
+		A("WorldOffset", WorldOffset);
 
 		SerializeTerrain(arc, "floorterrain", floorterrain, &def->floorterrain);
 		SerializeArgs(arc, "args", args, def->args, special);
@@ -1190,7 +1194,6 @@ bool AActor::Grind(bool items)
 		// see rh_log entry for February 21, 1999. Don't know if it is still relevant.
 		if (state == NULL 									// Only use the default crushed state if:
 			&& !(flags & MF_NOBLOOD)						// 1. the monster bleeeds,
-			&& (Level->i_compatflags & COMPATF_CORPSEGIBS)			// 2. the compat setting is on,
 			&& player == NULL)								// 3. and the thing isn't a player.
 		{
 			isgeneric = true;
@@ -1778,7 +1781,7 @@ bool P_SeekerMissile (AActor *actor, double thresh, double turnMax, bool precise
 		DAngle pitch = 0.;
 		if (!(actor->flags3 & (MF3_FLOORHUGGER|MF3_CEILINGHUGGER)))
 		{ // Need to seek vertically
-			double dist = MAX(1., actor->Distance2D(target));
+			double dist = max(1., actor->Distance2D(target));
 			// Aim at a player's eyes and at the middle of the actor for everything else.
 			double aimheight = target->Height/2;
 			if (target->player)
@@ -1853,7 +1856,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 		// preserve the direction instead of clamping x and y independently.
 		double cx = mo->Vel.X == 0 ? 1. : clamp(mo->Vel.X, -maxmove, maxmove) / mo->Vel.X;
 		double cy = mo->Vel.Y == 0 ? 1. : clamp(mo->Vel.Y, -maxmove, maxmove) / mo->Vel.Y;
-		double fac = MIN(cx, cy);
+		double fac = min(cx, cy);
 
 		mo->Vel.X *= fac;
 		mo->Vel.Y *= fac;
@@ -2399,84 +2402,7 @@ void P_ZMovement (AActor *mo, double oldfloorz)
 
 	mo->AddZ(mo->Vel.Z);
 
-//
-// apply gravity
-//
-	if (mo->Z() > mo->floorz && !(mo->flags & MF_NOGRAVITY))
-	{
-		double startvelz = mo->Vel.Z;
-
-		if (mo->waterlevel == 0 || (mo->player &&
-			!(mo->player->cmd.ucmd.forwardmove | mo->player->cmd.ucmd.sidemove)))
-		{
-			// [RH] Double gravity only if running off a ledge. Coming down from
-			// an upward thrust (e.g. a jump) should not double it.
-			if (mo->Vel.Z == 0 && oldfloorz > mo->floorz && mo->Z() == oldfloorz)
-			{
-				mo->Vel.Z -= grav + grav;
-			}
-			else
-			{
-				mo->Vel.Z -= grav;
-			}
-		}
-		if (mo->player == NULL)
-		{
-			if (mo->waterlevel >= 1)
-			{
-				double sinkspeed;
-
-				if ((mo->flags & MF_SPECIAL) && !(mo->flags3 & MF3_ISMONSTER))
-				{ // Pickup items don't sink if placed and drop slowly if dropped
-					sinkspeed = (mo->flags & MF_DROPPED) ? -WATER_SINK_SPEED / 8 : 0;
-				}
-				else
-				{
-					sinkspeed = -WATER_SINK_SPEED;
-
-					// If it's not a player, scale sinkspeed by its mass, with
-					// 100 being equivalent to a player.
-					if (mo->player == NULL)
-					{
-						sinkspeed = sinkspeed * clamp(mo->Mass, 1, 4000) / 100;
-					}
-				}
-				if (mo->Vel.Z < sinkspeed)
-				{ // Dropping too fast, so slow down toward sinkspeed.
-					mo->Vel.Z -= MAX(sinkspeed*2, -8.);
-					if (mo->Vel.Z > sinkspeed)
-					{
-						mo->Vel.Z = sinkspeed;
-					}
-				}
-				else if (mo->Vel.Z > sinkspeed)
-				{ // Dropping too slow/going up, so trend toward sinkspeed.
-					mo->Vel.Z = startvelz + MAX(sinkspeed/3, -8.);
-					if (mo->Vel.Z < sinkspeed)
-					{
-						mo->Vel.Z = sinkspeed;
-					}
-				}
-			}
-		}
-		else
-		{
-			if (mo->waterlevel > 1)
-			{
-				double sinkspeed = -WATER_SINK_SPEED;
-
-				if (mo->Vel.Z < sinkspeed)
-				{
-					mo->Vel.Z = (startvelz < sinkspeed) ? startvelz : sinkspeed;
-				}
-				else
-				{
-					mo->Vel.Z = startvelz + ((mo->Vel.Z - startvelz) *
-						(mo->waterlevel == 1 ? WATER_SINK_SMALL_FACTOR : WATER_SINK_FACTOR));
-				}
-			}
-		}
-	}
+	mo->CallFallAndSink(grav, oldfloorz);
 
 	// Hexen compatibility handling for floatbobbing. Ugh...
 	// Hexen yanked all items to the floor, except those being spawned at map start in the air.
@@ -2781,10 +2707,17 @@ DEFINE_ACTION_FUNCTION(AActor, CheckFakeFloorTriggers)
 //
 //===========================================================================
 
+void AActor::PlayerLandedMakeGruntSound(AActor *onmobj)
+{
+	IFVIRTUAL(AActor, PlayerLandedMakeGruntSound)
+	{
+		VMValue params[2] = { (AActor*)this, (AActor*)onmobj };
+		VMCall(func, params, 2, nullptr, 0);
+	}
+}
+
 static void PlayerLandedOnThing (AActor *mo, AActor *onmobj)
 {
-	bool grunted;
-
 	if (!mo->player)
 		return;
 
@@ -2798,28 +2731,117 @@ static void PlayerLandedOnThing (AActor *mo, AActor *onmobj)
 
 	P_FallingDamage (mo);
 
-	// [RH] only make noise if alive
-	if (mo->health > 0 && !mo->player->morphTics)
-	{
-		grunted = false;
-		// Why should this number vary by gravity?
-		if (mo->Vel.Z < -mo->player->mo->FloatVar(NAME_GruntSpeed))
-		{
-			S_Sound (mo, CHAN_VOICE, 0, "*grunt", 1, ATTN_NORM);
-			grunted = true;
-		}
-		if (onmobj != NULL || !Terrains[P_GetThingFloorType (mo)].IsLiquid)
-		{
-			if (!grunted || !S_AreSoundsEquivalent (mo, "*grunt", "*land"))
-			{
-				S_Sound (mo, CHAN_AUTO, 0, "*land", 1, ATTN_NORM);
-			}
-		}
-	}
+	mo->PlayerLandedMakeGruntSound(onmobj);
+
 //	mo->player->centering = true;
 }
 
+//==========================================================================
+//
+// AActor :: FallAndSink
+//
+//==========================================================================
 
+void AActor::FallAndSink(double grav, double oldfloorz)
+{
+	if (Z() > floorz && !(flags & MF_NOGRAVITY))
+	{
+		double startvelz = Vel.Z;
+
+		if (waterlevel == 0 || (player &&
+			!(player->cmd.ucmd.forwardmove | player->cmd.ucmd.sidemove)))
+		{
+			// [RH] Double gravity only if running off a ledge. Coming down from
+			// an upward thrust (e.g. a jump) should not double it.
+			if (Vel.Z == 0 && oldfloorz > floorz && Z() == oldfloorz)
+			{
+				Vel.Z -= grav + grav;
+			}
+			else
+			{
+				Vel.Z -= grav;
+			}
+		}
+		if (player == NULL)
+		{
+			if (waterlevel >= 1)
+			{
+				double sinkspeed;
+
+				if ((flags & MF_SPECIAL) && !(flags3 & MF3_ISMONSTER))
+				{ // Pickup items don't sink if placed and drop slowly if dropped
+					sinkspeed = (flags & MF_DROPPED) ? -WATER_SINK_SPEED / 8 : 0;
+				}
+				else
+				{
+					sinkspeed = -WATER_SINK_SPEED;
+
+					// If it's not a player, scale sinkspeed by its mass, with
+					// 100 being equivalent to a player.
+					if (player == NULL)
+					{
+						sinkspeed = sinkspeed * clamp(Mass, 1, 4000) / 100;
+					}
+				}
+				if (Vel.Z < sinkspeed)
+				{ // Dropping too fast, so slow down toward sinkspeed.
+					Vel.Z -= max(sinkspeed * 2, -8.);
+					if (Vel.Z > sinkspeed)
+					{
+						Vel.Z = sinkspeed;
+					}
+				}
+				else if (Vel.Z > sinkspeed)
+				{ // Dropping too slow/going up, so trend toward sinkspeed.
+					Vel.Z = startvelz + max(sinkspeed / 3, -8.);
+					if (Vel.Z < sinkspeed)
+					{
+						Vel.Z = sinkspeed;
+					}
+				}
+			}
+		}
+		else
+		{
+			if (waterlevel > 1)
+			{
+				double sinkspeed = -WATER_SINK_SPEED;
+
+				if (Vel.Z < sinkspeed)
+				{
+					Vel.Z = (startvelz < sinkspeed) ? startvelz : sinkspeed;
+				}
+				else
+				{
+					Vel.Z = startvelz + ((Vel.Z - startvelz) *
+						(waterlevel == 1 ? WATER_SINK_SMALL_FACTOR : WATER_SINK_FACTOR));
+				}
+			}
+		}
+	}
+}
+
+DEFINE_ACTION_FUNCTION(AActor, FallAndSink)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_FLOAT(grav);
+	PARAM_FLOAT(oldfloorz);
+	self->FallAndSink(grav, oldfloorz);
+	return 0;
+}
+
+void AActor::CallFallAndSink(double grav, double oldfloorz)
+{
+	IFVIRTUAL(AActor, FallAndSink)
+	{
+		VMValue params[3] = { (DObject*)this, grav, oldfloorz };
+		VMCall(func, params, 3, nullptr, 0);
+	}
+	else
+	{
+	FallAndSink(grav, oldfloorz);
+	}
+}
 
 //
 // P_NightmareRespawn
@@ -4244,27 +4266,32 @@ void AActor::CheckSectorTransition(sector_t *oldsec)
 
 //==========================================================================
 //
-// AActor::SplashCheck
+// AActor::UpdateWaterDepth
 //
-// Returns true if actor should splash
+// Updates the actor's current waterlevel and waterdepth.
+// Consolidates common code in UpdateWaterLevel and SplashCheck.
+//
+// Returns the floor height used for the depth check, or -FLT_MAX
+// if the actor wasn't in a sector.
 //
 //==========================================================================
 
-void AActor::SplashCheck()
+double AActor::UpdateWaterDepth(bool splash)
 {
 	double fh = -FLT_MAX;
 	bool reset = false;
 
 	waterlevel = 0;
+	waterdepth = 0;
 
 	if (Sector == NULL)
 	{
-		return;
+		return fh;
 	}
 
 	if (Sector->MoreFlags & SECMF_UNDERWATER)	// intentionally not SECMF_UNDERWATERMASK
 	{
-		waterlevel = 3;
+		waterdepth = Height;
 	}
 	else
 	{
@@ -4272,28 +4299,16 @@ void AActor::SplashCheck()
 		if (hsec != NULL)
 		{
 			fh = hsec->floorplane.ZatPoint(this);
-			//if (hsec->MoreFlags & SECMF_UNDERWATERMASK)	// also check Boom-style non-swimmable sectors
+
+			// splash checks also check Boom-style non-swimmable sectors
+			//  as well as non-solid, visible 3D floors (below)
+			if (splash || hsec->MoreFlags & SECMF_UNDERWATERMASK)
 			{
-				if (Z() < fh)
+				waterdepth = fh - Z();
+
+				if (waterdepth <= 0 && !(hsec->MoreFlags & SECMF_FAKEFLOORONLY) && (Top() > hsec->ceilingplane.ZatPoint(this)))
 				{
-					waterlevel = 1;
-					if (Center() < fh)
-					{
-						waterlevel = 2;
-						if ((player && Z() + player->viewheight <= fh) ||
-							(Top() <= fh))
-						{
-							waterlevel = 3;
-						}
-					}
-				}
-				else if (!(hsec->MoreFlags & SECMF_FAKEFLOORONLY) && (Top() > hsec->ceilingplane.ZatPoint(this)))
-				{
-					waterlevel = 3;
-				}
-				else
-				{
-					waterlevel = 0;
+					waterdepth = Height;
 				}
 			}
 		}
@@ -4306,31 +4321,55 @@ void AActor::SplashCheck()
 				if (rover->flags & FF_SOLID) continue;
 
 				bool reset = !(rover->flags & FF_SWIMMABLE);
-				if (reset && rover->alpha == 0) continue;
+				if (splash) { reset &= rover->alpha == 0; }
+				if (reset) continue;
+
 				double ff_bottom = rover->bottom.plane->ZatPoint(this);
 				double ff_top = rover->top.plane->ZatPoint(this);
 
-				if (ff_top <= Z() || ff_bottom > (Center())) continue;
+				if (ff_top <= Z() || ff_bottom > Center()) continue;
 
 				fh = ff_top;
-				if (Z() < fh)
-				{
-					waterlevel = 1;
-					if (Center() < fh)
-					{
-						waterlevel = 2;
-						if ((player && Z() + player->viewheight <= fh) ||
-							(Top() <= fh))
-						{
-							waterlevel = 3;
-						}
-					}
-				}
-
+				waterdepth = ff_top - Z();
 				break;
 			}
 		}
 	}
+
+	if (waterdepth < 0) { waterdepth = 0; }
+
+	if (waterdepth > (Height / 2))
+	{
+		// When noclipping around and going from low to high sector, your view height
+		//  can go negative, which is why this is nested inside here
+		if ((player && (waterdepth >= player->viewheight)) || (waterdepth >= Height))
+		{
+			waterlevel = 3;
+		}
+		else
+		{
+			waterlevel = 2;
+		}
+	}
+	else if (waterdepth > 0)
+	{
+		waterlevel = 1;
+	}
+
+	return fh;
+}
+
+//==========================================================================
+//
+// AActor::SplashCheck
+//
+// Returns true if actor should splash
+//
+//==========================================================================
+
+void AActor::SplashCheck()
+{
+	double fh = UpdateWaterDepth(true);
 
 	// some additional checks to make deep sectors like Boom's splash without setting
 	// the water flags. 
@@ -4352,106 +4391,36 @@ void AActor::SplashCheck()
 
 bool AActor::UpdateWaterLevel(bool dosplash)
 {
-	int oldlevel = waterlevel;
-
 	if (dosplash) SplashCheck();
 
-	double fh = -FLT_MAX;
-	bool reset = false;
+	int oldlevel = waterlevel;
+	UpdateWaterDepth(false);
 
-	waterlevel = 0;
+	// Play surfacing and diving sounds, as appropriate.
+	//
+	// (used to be that this code was wrapped around a "Sector != nullptr" check,
+	//  but actors should always be within a sector, and besides, this is just
+	//  sound stuff)
 
-	if (Sector != nullptr)
+	if (player != nullptr)
 	{
-		if (Sector->MoreFlags & SECMF_UNDERWATER)	// intentionally not SECMF_UNDERWATERMASK
+		if (oldlevel < 3 && waterlevel == 3)
 		{
-			waterlevel = 3;
+			// Our head just went under.
+			S_Sound(this, CHAN_VOICE, 0, "*dive", 1, ATTN_NORM);
 		}
-		else
+		else if (oldlevel == 3 && waterlevel < 3)
 		{
-			const sector_t *hsec = Sector->GetHeightSec();
-			if (hsec != NULL)
+			// Our head just came up.
+			if (player->air_finished > Level->maptime)
 			{
-				fh = hsec->floorplane.ZatPoint(this);
-				if (hsec->MoreFlags & SECMF_UNDERWATERMASK)	// also check Boom-style non-swimmable sectors
-				{
-					if (Z() < fh)
-					{
-						waterlevel = 1;
-						if (Center() < fh)
-						{
-							waterlevel = 2;
-							if ((player && Z() + player->viewheight <= fh) ||
-								(Top() <= fh))
-							{
-								waterlevel = 3;
-							}
-						}
-					}
-					else if (!(hsec->MoreFlags & SECMF_FAKEFLOORONLY) && (Top() > hsec->ceilingplane.ZatPoint(this)))
-					{
-						waterlevel = 3;
-					}
-					else
-					{
-						waterlevel = 0;
-					}
-				}
+				// We hadn't run out of air yet.
+				S_Sound(this, CHAN_VOICE, 0, "*surface", 1, ATTN_NORM);
 			}
-			else
-			{
-				// Check 3D floors as well!
-				for (auto rover : Sector->e->XFloor.ffloors)
-				{
-					if (!(rover->flags & FF_EXISTS)) continue;
-					if (rover->flags & FF_SOLID) continue;
-					if (!(rover->flags & FF_SWIMMABLE)) continue;
-
-					double ff_bottom = rover->bottom.plane->ZatPoint(this);
-					double ff_top = rover->top.plane->ZatPoint(this);
-
-					if (ff_top <= Z() || ff_bottom > (Center())) continue;
-
-					fh = ff_top;
-					if (Z() < fh)
-					{
-						waterlevel = 1;
-						if (Center() < fh)
-						{
-							waterlevel = 2;
-							if ((player && Z() + player->viewheight <= fh) ||
-								(Top() <= fh))
-							{
-								waterlevel = 3;
-							}
-						}
-					}
-
-					break;
-				}
-			}
-		}
-
-		// Play surfacing and diving sounds, as appropriate.
-		if (player != nullptr)
-		{
-			if (oldlevel < 3 && waterlevel == 3)
-			{ 
-				// Our head just went under.
-				S_Sound(this, CHAN_VOICE, 0, "*dive", 1, ATTN_NORM);
-			}
-			else if (oldlevel == 3 && waterlevel < 3)
-			{ 
-				// Our head just came up.
-				if (player->air_finished > Level->maptime)
-				{ 
-					// We hadn't run out of air yet.
-					S_Sound(this, CHAN_VOICE, 0, "*surface", 1, ATTN_NORM);
-				}
-				// If we were running out of air, then ResetAirSupply() will play *gasp.
-			}
+			// If we were running out of air, then ResetAirSupply() will play *gasp.
 		}
 	}
+
 	return false;	// we did the splash ourselves
 }
 
@@ -4955,6 +4924,12 @@ void AActor::OnDestroy ()
 	// unlink from sector and block lists
 	UnlinkFromWorld (nullptr);
 	flags |= MF_NOSECTOR|MF_NOBLOCKMAP;
+
+	if (ViewPos != nullptr)
+	{
+		ViewPos->Destroy();
+		ViewPos = nullptr;
+	}
 
 	// Transform any playing sound into positioned, non-actor sounds.
 	S_RelinkSound (this, NULL);
@@ -6277,6 +6252,7 @@ foundone:
 		if (smallsplash && splash->SmallSplash)
 		{
 			mo = Spawn(sec->Level, splash->SmallSplash, pos, ALLOW_REPLACE);
+			mo->target = thing;
 			if (mo) mo->Floorclip += splash->SmallSplashClip;
 		}
 		else
@@ -6298,6 +6274,7 @@ foundone:
 			if (splash->SplashBase)
 			{
 				mo = Spawn(sec->Level, splash->SplashBase, pos, ALLOW_REPLACE);
+				mo->target = thing;
 			}
 			if (thing->player && !splash->NoAlert && alert)
 			{
@@ -6697,7 +6674,7 @@ AActor *P_OldSpawnMissile(AActor *source, AActor *owner, AActor *dest, PClassAct
 	th->VelFromAngle();
 
 
-	double dist = source->DistanceBySpeed(dest, MAX(1., th->Speed));
+	double dist = source->DistanceBySpeed(dest, max(1., th->Speed));
 	th->Vel.Z = (dest->Z() - source->Z()) / dist;
 
 	if (th->flags4 & MF4_SPECTRAL)

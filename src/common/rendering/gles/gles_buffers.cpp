@@ -79,7 +79,7 @@ GLBuffer::~GLBuffer()
 		glBindBuffer(mUseType, 0);
 		glDeleteBuffers(1, &mBufferId);
 	}
-	
+
 	if (memory)
 		delete[] memory;
 }
@@ -93,8 +93,9 @@ void GLBuffer::Bind()
 }
 
 
-void GLBuffer::SetData(size_t size, const void* data, bool staticdata)
+void GLBuffer::SetData(size_t size, const void* data, BufferUsageType usage)
 {
+	bool staticdata = (usage == BufferUsageType::Static || usage == BufferUsageType::Mappable);
 	if (isData || !gles.useMappedBuffers)
 	{
 		if (memory)
@@ -128,9 +129,9 @@ void GLBuffer::SetData(size_t size, const void* data, bool staticdata)
 void GLBuffer::SetSubData(size_t offset, size_t size, const void *data)
 {
 	Bind();
-	
+
 	memcpy(memory + offset, data, size);
-	
+
 	if (!isData)
 	{
 		glBufferSubData(mUseType, offset, size, data);
@@ -142,7 +143,7 @@ void GLBuffer::Upload(size_t start, size_t size)
 	if (!gles.useMappedBuffers)
 	{
 		Bind();
-		
+
 		if(size)
 			glBufferSubData(mUseType, start, size, memory + start);
 	}
@@ -175,7 +176,7 @@ void GLBuffer::Unmap()
 void *GLBuffer::Lock(unsigned int size)
 {
 	// This initializes this buffer as a static object with no data.
-	SetData(size, nullptr, true);
+	SetData(size, nullptr, BufferUsageType::Mappable);
 	if (!isData && gles.useMappedBuffers)
 	{
 		return glMapBufferRange(mUseType, 0, size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
@@ -206,29 +207,28 @@ void GLBuffer::Unlock()
 }
 
 void GLBuffer::Resize(size_t newsize)
-{
-	assert(!nomap);	// only mappable buffers can be resized. 
-	if (newsize > buffersize && !nomap)
+{ 
+	if (newsize > buffersize)
 	{
-		/*
-		// reallocate the buffer with twice the size
-		unsigned int oldbuffer = mBufferId;
+		if (isData)
+		{
+			// Create new bigger memory
+			char* memoryNew = (char*)(new uint64_t[newsize / 8 + 16]);
 
-		// first unmap the old buffer
-		Bind();
-		glUnmapBuffer(mUseType);
+			// Copy old data
+			memcpy(memoryNew, memory, buffersize);
 
-		glGenBuffers(1, &mBufferId);
-		SetData(newsize, nullptr, false);
-		glBindBuffer(GL_COPY_READ_BUFFER, oldbuffer);
+			// Delete old memory
+			delete[] memory;
 
-		// copy contents and delete the old buffer.
-		glCopyBufferSubData(GL_COPY_READ_BUFFER, mUseType, 0, 0, buffersize);
-		glBindBuffer(GL_COPY_READ_BUFFER, 0);
-		glDeleteBuffers(1, &oldbuffer);
-		buffersize = newsize;
-		InvalidateBufferState();
-		*/
+			memory = memoryNew;
+
+			buffersize = newsize;
+		}
+		else
+		{
+			// TODO
+		}
 	}
 }
 
@@ -277,10 +277,10 @@ void GLVertexBuffer::SetFormat(int numBindingPoints, int numAttributes, size_t s
 {
 	static int VFmtToGLFmt[] = { GL_FLOAT, GL_FLOAT, GL_FLOAT, GL_FLOAT, GL_UNSIGNED_BYTE, GL_FLOAT }; // TODO Fix last entry GL_INT_2_10_10_10_REV, normals for models will be broken
 	static uint8_t VFmtToSize[] = {4, 3, 2, 1, 4, 4};
-	
+
 	mStride = stride;
 	mNumBindingPoints = numBindingPoints;
-	
+
 	for(int i = 0; i < numAttributes; i++)
 	{
 		if (attrs[i].location >= 0 && attrs[i].location < VATTR_MAX)

@@ -36,7 +36,7 @@ enum
 
 
 	FSMode_Max,
-	
+
 	// These all use ScaleToFit43, their purpose is to cut down on verbosity because they imply the virtual screen size.
 	FSMode_Predefined = 1000,
 	FSMode_Fit320x200 = 1000,
@@ -247,11 +247,13 @@ int GetUIScale(F2DDrawer* drawer, int altval);
 int GetConScale(F2DDrawer* drawer, int altval);
 
 EXTERN_CVAR(Int, uiscale);
-EXTERN_CVAR(Int, con_scale);
 
 inline int active_con_scale(F2DDrawer *drawer)
 {
-	return GetConScale(drawer, con_scale);
+	// this sets the threshold for upscaling the console font to 2560 x 1440.
+	int vscale = drawer->GetHeight() / 720;
+	int hscale = drawer->GetWidth() / 1280;
+	return max(1, min(vscale, hscale));
 }
 
 #ifdef DrawText
@@ -325,3 +327,5 @@ public:
 		CleanHeight = savedheight;
 	}
 };
+
+void Draw2D(F2DDrawer* drawer, FRenderState& state);

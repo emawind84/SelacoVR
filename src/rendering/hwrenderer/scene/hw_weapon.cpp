@@ -48,6 +48,9 @@
 #include "hw_renderstate.h"
 #include "hwrenderer/data/hw_vrmodes.h"
 
+/* Minimum of a and b. */
+#define MIN(a, b) ((a) > (b) ? (b) : (a))
+
 EXTERN_CVAR(Float, transsouls)
 EXTERN_CVAR(Int, gl_fuzztype)
 EXTERN_CVAR(Bool, r_deathcamera)
@@ -559,6 +562,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 	float			tx;
 	float			scale;
 	float			scalex;
+	float			ftextureadj;
 	float			ftexturemid;
 
 	// decide which patch to use
@@ -576,7 +580,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 	FloatRect r = spi.GetSpriteRect();
 
 	// calculate edges of the shape
-	scalex = (320.0f / (240.0f * r_viewwindow.WidescreenRatio)) * vw / 320;
+	scalex = psp->baseScale.X * (320.0f / (240.0f * r_viewwindow.WidescreenRatio)) * (vw / 320);
 
 	tx = (psp->Flags & PSPF_MIRROR) ? ((160 - r.width) - (sx + r.left)) : (sx - (160 - r.left));
 	x1 = tx * scalex + vw / 2;
@@ -591,9 +595,13 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 	x2 += viewwindowx;
 
 	// killough 12/98: fix psprite positioning problem
-	ftexturemid = 100.f - sy - r.top - psp->GetYAdjust(screenblocks >= 11);
+	ftextureadj = (120.0f / psp->baseScale.Y) - 100.0f; // [XA] scale relative to weapon baseline
+	ftexturemid = 100.f - sy - r.top - psp->GetYAdjust(screenblocks >= 11) - ftextureadj;
 
-	scale = (SCREENHEIGHT*vw) / (SCREENWIDTH * 200.0f);
+	// [XA] note: Doom's native 1.2x aspect ratio was originally
+	// handled here by multiplying SCREENWIDTH by 200 instead of
+	// 240, but now the baseScale var defines this from now on.
+	scale = psp->baseScale.Y * (SCREENHEIGHT*vw) / (SCREENWIDTH * 240.0f);
 	y1 = viewwindowy + vh / 2 - (ftexturemid * scale);
 	y2 = y1 + (r.height * scale) + 1;
 
@@ -787,6 +795,13 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 			{
 				hw_GetDynModelLight(playermo, lightdata);
 				hudsprite.lightindex = screen->mLights->UploadLights(lightdata);
+				LightProbe* probe = FindLightProbe(playermo->Level, playermo->X(), playermo->Y(), playermo->Center());
+				if (probe)
+				{
+					hudsprite.dynrgb[0] = probe->Red;
+					hudsprite.dynrgb[1] = probe->Green;
+					hudsprite.dynrgb[2] = probe->Blue;
+				}
 			}
 		}
 		

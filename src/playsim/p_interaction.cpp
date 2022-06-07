@@ -77,6 +77,7 @@ EXTERN_CVAR (Bool, show_obituaries)
 CVAR (Float, sv_damagefactormobj, 1.0, CVAR_SERVERINFO|CVAR_CHEAT)
 CVAR (Float, sv_damagefactorfriendly, 1.0, CVAR_SERVERINFO|CVAR_CHEAT)
 CVAR (Float, sv_damagefactorplayer, 1.0, CVAR_SERVERINFO|CVAR_CHEAT)
+CVAR (Float, sv_ammofactor, 1.0, CVAR_SERVERINFO|CVAR_CHEAT) // used in the zscript ammo code
 
 //
 // GET STUFF
@@ -91,7 +92,7 @@ void P_TouchSpecialThing (AActor *special, AActor *toucher)
 
 	// The pickup is at or above the toucher's feet OR
 	// The pickup is below the toucher.
-	if (delta > toucher->Height || delta < MIN(-32., -special->Height))
+	if (delta > toucher->Height || delta < min(-32., -special->Height))
 	{ // out of reach
 		return;
 	}
@@ -1472,7 +1473,7 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 				}
 			}
 
-			const int realdamage = MAX(0, damage);
+			const int realdamage = max(0, damage);
 			target->Level->localEventManager->WorldThingDamaged(target, inflictor, source, realdamage, mod, flags, angle);
 			needevent = false;
 
@@ -1480,7 +1481,7 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 			return realdamage;
 		}
 	}
-	return MAX(0, damage);
+	return max(0, damage);
 }
 
 static int DoDamageMobj(AActor *target, AActor *inflictor, AActor *source, int damage, FName mod, int flags, DAngle angle)
@@ -1497,7 +1498,7 @@ static int DoDamageMobj(AActor *target, AActor *inflictor, AActor *source, int d
 		target->Level->localEventManager->WorldThingDamaged(target, inflictor, source, realdamage, mod, flags, angle);
 	}
 
-	return MAX(0, realdamage);
+	return max(0, realdamage);
 }
 
 DEFINE_ACTION_FUNCTION(AActor, DamageMobj)

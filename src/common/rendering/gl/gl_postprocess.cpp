@@ -34,7 +34,7 @@
 #include "r_videoscale.h"
 #include "g_game.h"
 #include "v_video.h"
-#include "templates.h"
+
 #include "hw_vrmodes.h"
 #include "v_draw.h"
 

@@ -83,7 +83,6 @@ protected:
 	void ClearButtonState();
 
 	int WheelMove[2];
-	int LastX, LastY;	// for m_filter
 	int ButtonState;	// bit mask of current button states (1=down, 0=up)
 };
 

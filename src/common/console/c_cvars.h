@@ -175,7 +175,7 @@ public:
 	static void ResetColors ();		// recalc color cvars' indices after screen change
 
 	static void ListVars (const char *filter, bool plain);
-	
+
 	const FString &GetDescription() const { return Description; };
 	const FString& GetToggleMessage(int which) { return ToggleMessages[which]; }
 	void SetToggleMessages(const char* on, const char* off)
@@ -184,6 +184,12 @@ public:
 		ToggleMessages[1] = on;
 	}
 
+	void SetCallback(void (*callback)(FBaseCVar&));
+	void ClearCallback();
+
+	void SetExtraDataPointer(void *pointer);
+
+	void* GetExtraDataPointer();
 
 protected:
 	virtual void DoSet (UCVarValue value, ECVarType type) = 0;
@@ -210,8 +216,10 @@ private:
 	void (*m_Callback)(FBaseCVar &);
 	FBaseCVar *m_Next;
 
-	static bool m_UseCallback;
-	static bool m_DoNoSet;
+	static inline bool m_UseCallback = false;
+	static inline bool m_DoNoSet = false;
+
+	void *m_ExtraDataPointer;
 
 	// These need to go away!
 	friend FString C_GetMassCVarString (uint32_t filter, bool compact);
@@ -398,7 +406,7 @@ public:
 
 protected:
 	virtual void DoSet (UCVarValue value, ECVarType type);
-	
+
 	static UCVarValue FromInt2 (int value, ECVarType type);
 	static int ToInt2 (UCVarValue value, ECVarType type);
 };

@@ -34,7 +34,7 @@
 //---------------------------------------------------------------------------
 //
 
-#include "templates.h"
+
 #include "p_local.h"
 #include "t_script.h"
 #include "sbar.h"
@@ -1273,7 +1273,7 @@ void FParser::SF_MobjTarget(void)
 		}
 		
 		t_return.type = svt_mobj;
-		t_return.value.mobj = mo ? mo->target : NULL;
+		t_return.value.mobj = mo ? mo->target.Get() : nullptr;
 	}
 }
 

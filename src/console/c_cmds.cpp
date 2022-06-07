@@ -469,7 +469,7 @@ CCMD (puke)
 			return;
 		}
 		int arg[4] = { 0, 0, 0, 0 };
-		int argn = MIN<int>(argc - 2, countof(arg)), i;
+		int argn = min<int>(argc - 2, countof(arg)), i;
 
 		for (i = 0; i < argn; ++i)
 		{
@@ -516,7 +516,7 @@ CCMD (pukename)
 				always = true;
 				argstart = 3;
 			}
-			argn = MIN<int>(argc - argstart, countof(arg));
+			argn = min<int>(argc - argstart, countof(arg));
 			for (i = 0; i < argn; ++i)
 			{
 				arg[i] = atoi(argv[argstart + i]);
@@ -941,8 +941,8 @@ CCMD(currentpos)
 	AActor *mo = players[consoleplayer].mo;
 	if(mo)
 	{
-		Printf("Current player position: (%1.3f,%1.3f,%1.3f), angle: %1.3f, floorheight: %1.3f, sector:%d, lightlevel: %d\n",
-			mo->X(), mo->Y(), mo->Z(), mo->Angles.Yaw.Normalized360().Degrees, mo->floorz, mo->Sector->sectornum, mo->Sector->lightlevel);
+		Printf("Current player position: (%1.3f,%1.3f,%1.3f), angle: %1.3f, floorheight: %1.3f, sector:%d, sector lightlevel: %d, actor lightlevel\n",
+			mo->X(), mo->Y(), mo->Z(), mo->Angles.Yaw.Normalized360().Degrees, mo->floorz, mo->Sector->sectornum, mo->Sector->lightlevel, mo->LightLevel);
 	}
 	else
 	{
@@ -1023,10 +1023,10 @@ CCMD(secret)
 	maphdr.Format("[%s]", mapname);
 
 	FString linebuild;
-	char readbuffer[1024];
+	char readbuffer[10240];
 	bool inlevel = false;
 
-	while (lump.Gets(readbuffer, 1024))
+	while (lump.Gets(readbuffer, 10240))
 	{
 		if (!inlevel)
 		{

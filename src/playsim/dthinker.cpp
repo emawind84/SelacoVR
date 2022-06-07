@@ -111,7 +111,7 @@ void FThinkerCollection::RunThinkers(FLevelLocals *Level)
 	bool dolights;
 	if ((gl_lights && vid_rendermode == 4) || (r_dynlights && vid_rendermode != 4))
 	{
-		dolights = Level->lights || (Level->flags3 & LEVEL3_LIGHTCREATED);
+		dolights = true;// Level->lights || (Level->flags3 & LEVEL3_LIGHTCREATED);
 	}
 	else
 	{
@@ -247,7 +247,7 @@ void FThinkerCollection::RunThinkers(FLevelLocals *Level)
 		Printf(TEXTCOLOR_YELLOW "Total, ms   Averg, ms   Calls   Actor class\n");
 		Printf(TEXTCOLOR_YELLOW "----------  ----------  ------  --------------------\n");
 
-		const unsigned count = MIN(profilelimit > 0 ? profilelimit : UINT_MAX, sorted.Size());
+		const unsigned count = min(profilelimit > 0 ? profilelimit : UINT_MAX, sorted.Size());
 
 		for (unsigned i = 0; i < count; ++i)
 		{
@@ -616,7 +616,6 @@ int FThinkerList::TickThinkers(FThinkerList *dest)
 			ThinkCount++;
 			node->CallTick();
 			node->ObjectFlags &= ~OF_JustSpawned;
-			GC::CheckGC();
 		}
 		node = NextToThink;
 	}
@@ -667,7 +666,6 @@ int FThinkerList::ProfileThinkers(FThinkerList *dest)
 			node->CallTick();
 			prof.timer.Unclock();
 			node->ObjectFlags &= ~OF_JustSpawned;
-			GC::CheckGC();
 		}
 		node = NextToThink;
 	}

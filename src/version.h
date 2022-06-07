@@ -41,11 +41,11 @@ const char *GetVersionString();
 
 /** Lots of different version numbers **/
 
-#define VERSIONSTR "4.7.1"
+#define VERSIONSTR "4.8.0"
 
 // The version as seen in the Windows resource
-#define RC_FILEVERSION 4,7,1,0
-#define RC_PRODUCTVERSION 4,7,1,0
+#define RC_FILEVERSION 4,8,0,0
+#define RC_PRODUCTVERSION 4,8,0,0
 #define RC_PRODUCTVERSION2 VERSIONSTR
 // These are for content versioning.
 #define VER_MAJOR 4
@@ -109,6 +109,8 @@ const char *GetVersionString();
 #else
 #define GAME_DIR ".config/" GAMENAMELOWERCASE
 #endif
+
+#define DEFAULT_DISCORD_APP_ID "951303644597325885"
 
 const int SAVEPICWIDTH = 216;
 const int SAVEPICHEIGHT = 162;

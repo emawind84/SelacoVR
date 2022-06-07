@@ -29,7 +29,7 @@
 #include <array>
 
 #include "doomdef.h"
-#include "templates.h"
+
 #include "g_level.h"
 #include "st_stuff.h"
 #include "p_local.h"
@@ -3024,6 +3024,11 @@ void DAutomap::DrawMarker (FGameTexture *tex, double x, double y, int yadjust,
 	if (tex == nullptr || !tex->isValid())
 	{
 		return;
+	}
+	if (xscale < 0)
+	{
+		flip = !flip;
+		xscale = -xscale;
 	}
 	if (am_rotate == 1 || (am_rotate == 2 && viewactive))
 	{

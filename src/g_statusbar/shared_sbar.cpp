@@ -35,7 +35,7 @@
 
 #include <assert.h>
 
-#include "templates.h"
+
 #include "sbar.h"
 #include "c_cvars.h"
 #include "c_dispatch.h"
@@ -87,7 +87,6 @@ EXTERN_CVAR (Bool, am_showitems)
 EXTERN_CVAR (Bool, am_showtime)
 EXTERN_CVAR (Bool, am_showtotaltime)
 EXTERN_CVAR (Bool, noisedebug)
-EXTERN_CVAR(Bool, vid_fps)
 EXTERN_CVAR(Bool, inter_subtitles)
 EXTERN_CVAR(Bool, ui_screenborder_classic_scaling)
 
@@ -533,9 +532,8 @@ DVector2 DBaseStatusBar::GetHUDScale() const
 	// Since status bars and HUDs can be designed for non 320x200 screens this needs to be factored in here.
 	// The global scaling factors are for resources at 320x200, so if the actual ones are higher resolution
 	// the resulting scaling factor needs to be reduced accordingly.
-	int realscale = MAX<int>(1, (320 * scale) / hres);
-	double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
-	return{ double(realscale), double(realscale * (hud_aspectscale ? pixelstretch : 1.)) };
+	int realscale = max<int>(1, (320 * scale) / hres);
+	return{ double(realscale), double(realscale * (hud_aspectscale ? 1.2 : 1.)) };
 }
 
 //============================================================================
@@ -551,11 +549,12 @@ void FormatMapName(FLevelLocals *self, int cr, FString *result);
 
 void DBaseStatusBar::DoDrawAutomapHUD(int crdefault, int highlight)
 {
-	auto scale = GetUIScale(twod, hud_scale);
+	auto scalev = GetHUDScale();
+	int vwidth = int(twod->GetWidth() / scalev.X);
+	int vheight = int(twod->GetHeight() / scalev.Y);
+	
 	auto font = generic_ui ? NewSmallFont : SmallFont;
 	auto font2 = font;
-	auto vwidth = twod->GetWidth() / scale;
-	auto vheight = twod->GetHeight() / scale;
 	auto fheight = font->GetHeight();
 	FString textbuffer;
 	int sec;
@@ -571,7 +570,6 @@ void DBaseStatusBar::DoDrawAutomapHUD(int crdefault, int highlight)
 
 	if (am_showtime)
 	{
-		if (vid_fps) y += (NewConsoleFont->GetHeight() * active_con_scale(twod) + 5) / scale;
 		sec = Tics2Seconds(primaryLevel->time);
 		textbuffer.Format("%02d:%02d:%02d", sec / 3600, (sec % 3600) / 60, sec % 60);
 		DrawText(twod, font, crdefault, vwidth - zerowidth * 8 - textdist, y, textbuffer, DTA_VirtualWidth, vwidth, DTA_VirtualHeight, vheight,
@@ -633,7 +631,7 @@ void DBaseStatusBar::DoDrawAutomapHUD(int crdefault, int highlight)
 	IFVIRTUAL(DStatusBarCore, GetProtrusion)
 	{
 		int prot = 0;
-		VMValue params[] = { this, double(finalwidth * scale / w) };
+		VMValue params[] = { this, double(finalwidth * scalev.X / w) };
 		VMReturn ret(&prot);
 		VMCall(func, params, 2, &ret, 1);
 		h = prot;

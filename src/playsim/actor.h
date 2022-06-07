@@ -30,7 +30,7 @@
 #define __P_MOBJ_H__
 
 // Basics.
-#include "templates.h"
+
 
 // We need the thinker_t stuff.
 #include "dthinker.h"
@@ -423,6 +423,11 @@ enum ActorFlag8
 	MF8_MAP07BOSS2		= 0x00800000,	// MBF21 boss death.
 	MF8_AVOIDHAZARDS	= 0x01000000,	// MBF AI enhancement.
 	MF8_STAYONLIFT		= 0x02000000,	// MBF AI enhancement.
+	MF8_DONTFOLLOWPLAYERS	= 0x04000000,	// [inkoalawetrust] Friendly monster will not follow players.
+	MF8_SEEFRIENDLYMONSTERS	= 0X08000000,	// [inkoalawetrust] Hostile monster can see friendly monsters.
+	MF8_CROSSLINECHECK	= 0x10000000,	// [MC]Enables CanCrossLine virtual
+	MF8_MASTERNOSEE		= 0x20000000,	// Don't show object in first person if their master is the current camera.
+	MF8_ADDLIGHTLEVEL	= 0x40000000,	// [MC] Actor light level is additive with sector.
 };
 
 // --- mobj.renderflags ---
@@ -654,6 +659,42 @@ struct FDropItem
 	int Amount;
 };
 
+enum EViewPosFlags // [MC] Flags for SetViewPos.
+{
+	VPSF_ABSOLUTEOFFSET =	1 << 1,			// Don't include angles.
+	VPSF_ABSOLUTEPOS =		1 << 2,			// Use absolute position.
+};
+
+class DViewPosition : public DObject
+{
+	DECLARE_CLASS(DViewPosition, DObject);
+public:
+	// Variables
+	// Exposed to ZScript
+	DVector3	Offset;
+	int			Flags;
+
+	// Functions
+	DViewPosition()
+	{
+		Offset = { 0,0,0 };
+		Flags = 0;
+	}
+
+	void Set(DVector3 &off, int f = -1)
+	{
+		Offset = off;
+
+		if (f > -1)
+			Flags = f;
+	}
+
+	bool isZero()
+	{
+		return Offset.isZero();
+	}
+};
+
 const double MinVel = EQUAL_EPSILON;
 
 // Map Object definition.
@@ -732,6 +773,10 @@ public:
 	// Something just touched this actor.
 	virtual void Touch(AActor *toucher);
 	void CallTouch(AActor *toucher);
+
+	// Apply gravity and/or make actor sink in water.
+	virtual void FallAndSink(double grav, double oldfloorz);
+	void CallFallAndSink(double grav, double oldfloorz);
 
 	// Centaurs and ettins squeal when electrocuted, poisoned, or "holy"-ed
 	// Made a metadata property so no longer virtual
@@ -974,7 +1019,8 @@ public:
 	DAngle			SpriteAngle;
 	DAngle			SpriteRotation;
 	DRotator		Angles;
-	DRotator		ViewAngles;			// Offsets for cameras
+	DRotator		ViewAngles;			// Angle offsets for cameras
+	TObjPtr<DViewPosition*> ViewPos;			// Position offsets for cameras
 	DVector2		Scale;				// Scaling values; 1 is normal size
 	double			Alpha;				// Since P_CheckSight makes an alpha check this can't be a float. It has to be a double.
 
@@ -1010,6 +1056,7 @@ public:
 	DVector3		OldRenderPos;
 	DVector3		Vel;
 	DVector2		SpriteOffset;
+	DVector3		WorldOffset;
 	double			Speed;
 	double			FloatSpeed;
 
@@ -1043,32 +1090,36 @@ public:
 	FState			*state;
 	//VMFunction		*Damage;			// For missiles and monster railgun
 	int				DamageVal;
-	VMFunction		*DamageFunc;
 	int				projectileKickback;
+	VMFunction		*DamageFunc;
 
 	// [BB] If 0, everybody can see the actor, if > 0, only members of team (VisibleToTeam-1) can see it.
-	uint32_t			VisibleToTeam;
 
 	int				special1;		// Special info
 	int				special2;		// Special info
 	double			specialf1;		// With floats we cannot use the int versions for storing position or angle data without reverting to fixed point (which we do not want.)
 	double			specialf2;
 
+	uint32_t			VisibleToTeam;
 	int				weaponspecial;	// Special info for weapons.
 	int 			health;
-	uint8_t			movedir;		// 0-7
-	int8_t			visdir;
-	int16_t			movecount;		// when 0, select a new dir
-	int16_t			strafecount;	// for MF3_AVOIDMELEE
-	uint16_t			SpawnAngle;
-	TObjPtr<AActor*> target;			// thing being chased/attacked (or NULL)
-									// also the originator for missiles
-	TObjPtr<AActor*>	lastenemy;		// Last known enemy -- killough 2/15/98
-	TObjPtr<AActor*> LastHeard;		// [RH] Last actor this one heard
 	int32_t			reactiontime;	// if non 0, don't attack yet; used by
 									// player to freeze a bit after teleporting
 	int32_t			threshold;		// if > 0, the target will be chased
 	int32_t			DefThreshold;	// [MC] Default threshold which the actor will reset its threshold to after switching targets
+
+	uint8_t			movedir;		// 0-7
+	int8_t			visdir;
+	int16_t			movecount;		// when 0, select a new dir
+
+	int16_t			strafecount;	// for MF3_AVOIDMELEE
+	int16_t			LightLevel;		// Allows for overriding sector light levels.
+	uint16_t			SpawnAngle;
+
+	TObjPtr<AActor*> target;			// thing being chased/attacked (or NULL)
+									// also the originator for missiles
+	TObjPtr<AActor*>	lastenemy;		// Last known enemy -- killough 2/15/98
+	TObjPtr<AActor*> LastHeard;		// [RH] Last actor this one heard
 									// no matter what (even if shot)
 	player_t		*player;		// only valid if type of PlayerPawn
 	TObjPtr<AActor*>	LastLookActor;	// Actor last looked for (if TIDtoHate != 0)
@@ -1092,6 +1143,7 @@ public:
 	AActor			*inext, **iprev;// Links to other mobjs in same bucket
 	TObjPtr<AActor*> goal;			// Monster's goal if not chasing anything
 	int				waterlevel;		// 0=none, 1=feet, 2=waist, 3=eyes
+	double			waterdepth;		// Stores how deep into water you are, in map units
 	uint8_t			boomwaterlevel;	// splash information for non-swimmable water sectors
 	uint8_t			MinMissileChance;// [RH] If a random # is > than this, then missile attack.
 	int8_t			LastLookPlayerNumber;// Player number last looked for (if TIDtoHate == 0)
@@ -1232,6 +1284,7 @@ public:
 	bool IsMapActor();
 	int GetTics(FState * newstate);
 	bool SetState (FState *newstate, bool nofunction=false);
+	double UpdateWaterDepth(bool splash);
 	virtual void SplashCheck();
 	virtual bool UpdateWaterLevel (bool splash=true);
 	bool isFast();
@@ -1303,7 +1356,7 @@ public:
 
 	double RenderRadius() const
 	{
-		return MAX(radius, renderradius);
+		return max(radius, renderradius);
 	}
 
 	DVector3 PosRelative(int grp) const;
@@ -1455,9 +1508,10 @@ public:
 	// Better have it in one place, if something needs to be changed about the formula.
 	double DistanceBySpeed(AActor *dest, double speed) const
 	{
-		return MAX(1., Distance2D(dest) / speed);
+		return max(1., Distance2D(dest) / speed);
 	}
 
+	int GetLightLevel(sector_t* rendersector);
 	int ApplyDamageFactor(FName damagetype, int damage) const;
 	int GetModifiedDamage(FName damagetype, int damage, bool passive, AActor *inflictor, AActor *source, int flags = 0);
 	void DeleteAttachedLights();
@@ -1470,6 +1524,7 @@ public:
 	bool OverrideAttackPosDir;
 	DVector3 AttackPos;
 	DVector3 (*AttackDir)(AActor* actor, DAngle yaw, DAngle pitch);
+	void PlayerLandedMakeGruntSound(AActor* onmobj);
 };
 
 class FActorIterator

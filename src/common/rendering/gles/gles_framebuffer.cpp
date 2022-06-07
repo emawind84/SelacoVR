@@ -36,7 +36,7 @@
 #include "gles_system.h"
 #include "v_video.h"
 #include "m_png.h"
-#include "templates.h"
+
 #include "i_time.h"
 
 #include "gles_framebuffer.h"
@@ -122,7 +122,7 @@ void OpenGLFrameBuffer::InitializeState()
 {
 	static bool first=true;
 
-	mPipelineNbr = gl_pipeline_depth == 0? std::min(4, HW_MAX_PIPELINE_BUFFERS) : clamp(*gl_pipeline_depth, 1, HW_MAX_PIPELINE_BUFFERS);
+	mPipelineNbr = gl_pipeline_depth == 0? min(4, HW_MAX_PIPELINE_BUFFERS) : clamp(*gl_pipeline_depth, 1, HW_MAX_PIPELINE_BUFFERS);
 	mPipelineType = 1;
 
 	InitGLES();
@@ -136,8 +136,9 @@ void OpenGLFrameBuffer::InitializeState()
 	glEnable(GL_DITHER);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_POLYGON_OFFSET_FILL);
-	
+
 	glEnable(GL_BLEND);
+	if (gles.depthClampAvailable) glEnable(GL_DEPTH_CLAMP);
 
 	glDisable(GL_DEPTH_TEST);
 
@@ -236,7 +237,7 @@ const char* OpenGLFrameBuffer::DeviceName() const
 
 void OpenGLFrameBuffer::Swap()
 {
-	
+
 	Finish.Reset();
 	Finish.Clock();
 
@@ -244,7 +245,7 @@ void OpenGLFrameBuffer::Swap()
 
 	FPSLimit();
 	SwapBuffers();
-	
+
 	mVertexData->NextPipelineBuffer();
 	mVertexData->WaitSync();
 
@@ -286,7 +287,6 @@ void OpenGLFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 {
 	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return;
 
-	int flags = mat->GetScaleFlags();
 	int numLayers = mat->NumLayers();
 	MaterialLayerInfo* layer;
 	auto base = static_cast<FHardwareTexture*>(mat->GetLayer(0, translation, &layer));
@@ -438,7 +438,7 @@ void OpenGLFrameBuffer::Draw2D(bool outside2D)
 	if (GLRenderer != nullptr)
 	{
 		GLRenderer->mBuffers->BindCurrentFB();
-		::Draw2D(twod, gl_RenderState);
+		::Draw2D(twod, gl_RenderState, outside2D);
 	}
 }
 
