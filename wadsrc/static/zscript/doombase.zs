@@ -13,7 +13,7 @@ extend struct _
 	native readonly int gametic;
 	native readonly int Net_Arbitrator;
 	native ui BaseStatusBar StatusBar;
-	native readonly Weapon WP_NOCHANGE;
+	native readonly WeaponBase WP_NOCHANGE;
 	deprecated("3.8", "Use Actor.isFrozen() or Level.isFrozen() instead") native readonly bool globalfreeze;
 	native int LocalViewPitch;
 	

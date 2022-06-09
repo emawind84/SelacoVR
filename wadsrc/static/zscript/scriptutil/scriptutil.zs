@@ -120,7 +120,7 @@ class ScriptUtil play
 	{
 		if(activator != NULL && activator.player != NULL && cls != null)
 		{
-			let item = Weapon(activator.FindInventory(cls));
+			let item = WeaponBase(activator.FindInventory(cls));
 
 			if(item != NULL)
 			{
@@ -133,7 +133,7 @@ class ScriptUtil play
 				}
 				else
 				{
-					if(item.CheckAmmo(Weapon.EitherFire, false))
+					if(item.CheckAmmo(WeaponBase.EitherFire, false))
 					{
 						// There's enough ammo, so switch to it.
 						activator.player.PendingWeapon = item;

@@ -1366,7 +1366,7 @@ class Actor : Thinker native
 
 	
 	
-	States(Actor, Overlay, Weapon, Item)
+	States(Actor, Overlay, WeaponBase, Item)
 	{
 	Spawn:
 		TNT1 A -1;
