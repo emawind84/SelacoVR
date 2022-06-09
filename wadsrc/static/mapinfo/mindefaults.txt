@@ -47,10 +47,10 @@ gameinfo
 	menufontcolor_highlight = "lightblue"
 	menufontcolor_selection = "purple"
 	menubackbutton = "M_BACK_D"
-	playerclasses = "DoomPlayer"
+	playerclasses = "Dawn"
 	pausesign = "-NOFLAT-"
 	gibfactor = 1
-	cursorpic = "doomcurs"
+	cursorpic = "CURSOR"
 	textscreenx = 10
 	textscreeny = 10
 	defaultendsequence = "Inter_Cast"
