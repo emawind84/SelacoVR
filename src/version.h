@@ -112,8 +112,8 @@ const char *GetVersionString();
 
 #define DEFAULT_DISCORD_APP_ID "951303644597325885"
 
-const int SAVEPICWIDTH = 216;
-const int SAVEPICHEIGHT = 162;
+const int SAVEPICWIDTH = 432;
+const int SAVEPICHEIGHT = 324;
 const int VID_MIN_WIDTH = 320;
 const int VID_MIN_HEIGHT = 200;
 
