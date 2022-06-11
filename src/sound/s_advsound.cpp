@@ -1814,11 +1814,11 @@ int GetTicker(struct FAmbientSound *ambient)
 //
 //==========================================================================
 
-DEFINE_ACTION_FUNCTION(AAmbientSound, Tick)
+DEFINE_ACTION_FUNCTION(AAmbientSound, AmbientTick)
 {
 	PARAM_SELF_PROLOGUE(AActor);
 
-	self->Tick();
+	//self->Tick();
 	
 	if (self->special1 > 0)
 	{
