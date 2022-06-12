@@ -22,7 +22,7 @@ gameinfo
 	defaultbloodparticlecolor = "ff 00 00"
 	backpacktype = "Backpack"
 	armoricons = "AICNA0", 0.75, "AICNC0"
-	statusbar = "sbarinfo/doom.txt"
+	//statusbar = "sbarinfo/doom.txt"
 	intermissionmusic = ""
 	intermissioncounter = true
 	dimcolor = "6f 00 6b"
