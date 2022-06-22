@@ -60,6 +60,8 @@
 
 class AmbientSound : Actor
 {
+	bool activatedOnce;
+
 	default
 	{
 		+NOBLOCKMAP
@@ -69,20 +71,31 @@ class AmbientSound : Actor
 	}
 	
 	native void MarkAmbientSounds();
-	override native void Tick();
+	native void AmbientTick();
 	override native void Activate(Actor activator);
 	override native void Deactivate(Actor activator);
 	
 	override void BeginPlay ()
 	{
 		Super.BeginPlay ();
-		Activate (NULL);
+		bDormant = (SpawnFlags & MTF_DORMANT);
 	}
 	
 	override void MarkPrecacheSounds()
 	{
 		Super.MarkPrecacheSounds();
 		MarkAmbientSounds();
+	}
+
+	override void Tick() {
+		Super.Tick();
+
+		if(!activatedOnce && !bDormant && level.maptime > 5) {
+			Activate(NULL);
+			activatedOnce = true;
+		}
+
+		AmbientTick();
 	}
 }
 

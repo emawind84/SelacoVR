@@ -98,9 +98,9 @@ const char *GetVersionString();
 #define VR3D_ENABLED
 
 // More stuff that needs to be different for derivatives.
-#define GAMENAME "Selaco"
-#define WGAMENAME L"Selaco"
-#define GAMENAMELOWERCASE "selaco"
+#define GAMENAME "Selaco-Demo"
+#define WGAMENAME L"Selaco Demo"
+#define GAMENAMELOWERCASE "selaco-demo"
 #define FORUM_URL "http://forum.zdoom.org/"
 #define BUGS_FORUM_URL	"http://forum.zdoom.org/viewforum.php?f=2"
 
@@ -112,8 +112,8 @@ const char *GetVersionString();
 
 #define DEFAULT_DISCORD_APP_ID "951303644597325885"
 
-const int SAVEPICWIDTH = 216;
-const int SAVEPICHEIGHT = 162;
+const int SAVEPICWIDTH = 432;
+const int SAVEPICHEIGHT = 324;
 const int VID_MIN_WIDTH = 320;
 const int VID_MIN_HEIGHT = 200;
 

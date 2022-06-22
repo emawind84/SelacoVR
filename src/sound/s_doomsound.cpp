@@ -292,6 +292,9 @@ void S_Start()
 		// kill all playing sounds at start of level (trust me - a good idea)
 		soundEngine->StopAllChannels();
 
+		// reset the listener so any new audio playing before we are positioned is not heard
+		S_SetListener(nullptr);
+
 		// Check for local sound definitions. Only reload if they differ
 		// from the previous ones.
 		FString LocalSndInfo;
@@ -803,7 +806,7 @@ static void S_SetListener(AActor *listenactor)
 	else
 	{
 		listener.angle = 0;
-		listener.position.Zero();
+		listener.position = { 32000, 32000, 32000 };
 		listener.velocity.Zero();
 		listener.underwater = false;
 		listener.Environment = nullptr;

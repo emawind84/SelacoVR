@@ -36,7 +36,7 @@
 class WeaponHolder : Inventory
 {
 	int PieceMask;
-	Class<Weapon> PieceWeapon;
+	Class<WeaponBase> PieceWeapon;
 	
 	Default
 	{
@@ -54,8 +54,8 @@ class WeaponPiece : Inventory
 	}
 	
 	int PieceValue;
-	Class<Weapon> WeaponClass;
-	Weapon FullWeapon;
+	Class<WeaponBase> WeaponClass;
+	WeaponBase FullWeapon;
 	
 	property number: PieceValue;
 	property weapon: WeaponClass;
@@ -155,7 +155,7 @@ class WeaponPiece : Inventory
 		{
 			if (!toucher.FindInventory (WeaponClass))
 			{
-				FullWeapon= Weapon(Spawn(WeaponClass));
+				FullWeapon= WeaponBase(Spawn(WeaponClass));
 				
 				// The weapon itself should not give more ammo to the player.
 				FullWeapon.AmmoGive1 = 0;
