@@ -50,7 +50,7 @@ struct secplane_t;
 struct FCheckPosition;
 struct FTranslatedLineTarget;
 struct FLinePortal;
-class FViewPosition;
+class DViewPosition;
 
 #include <stdlib.h>
 
@@ -310,6 +310,7 @@ enum	// P_AimLineAttack flags
 	ALF_NOFRIENDS = 16,
 	ALF_PORTALRESTRICT = 32,	// only work through portals with a global offset (to be used for stuff that cannot remember the calculated FTranslatedLineTarget info)
 	ALF_NOWEAPONCHECK = 64,		// ignore NOAUTOAIM flag on a player's weapon.
+	ALF_IGNORENOAUTOAIM = 128,	// for informative stuff like 'linetarget' CCMD.
 };
 
 enum	// P_LineAttack flags
@@ -394,7 +395,7 @@ void	P_PlaySpawnSound(AActor *missile, AActor *spawner);
 void	P_AimCamera (AActor *t1, DVector3 &, DAngle &, sector_t *&sec, bool &unlinked);
 
 // [MC] Aiming for ViewPos
-void	P_AdjustViewPos(AActor *t1, DVector3 orig, DVector3 &, sector_t *&sec, bool &unlinked, FViewPosition *VP);
+void	P_AdjustViewPos(AActor *t1, DVector3 orig, DVector3 &, sector_t *&sec, bool &unlinked, DViewPosition *VP);
 
 
 // [RH] Means of death

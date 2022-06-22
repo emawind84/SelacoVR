@@ -156,6 +156,38 @@ bool P_CanCollideWith(AActor *tmthing, AActor *thing)
 }
 
 //==========================================================================
+// 
+// CanCrossLine
+//
+// Checks if an actor can cross a line after all checks are processed.
+// If false, the line blocks them.
+//==========================================================================
+
+bool P_CanCrossLine(AActor *mo, line_t *line, DVector3 next)
+{
+	static unsigned VIndex = ~0u;
+	if (VIndex == ~0u)
+	{
+		VIndex = GetVirtualIndex(RUNTIME_CLASS(AActor), "CanCrossLine");
+		assert(VIndex != ~0u);
+	}
+
+	VMValue params[] = { mo, line, next.X, next.Y, next.Z, false };
+	VMReturn ret;
+	int retval;
+	ret.IntAt(&retval);
+
+	auto clss = mo->GetClass();
+	VMFunction *func = clss->Virtuals.Size() > VIndex ? clss->Virtuals[VIndex] : nullptr;
+	if (func != nullptr)
+	{
+		VMCall(func, params, countof(params), &ret, 1);
+		return retval;
+	}
+	return true;
+}
+
+//==========================================================================
 //
 // FindRefPoint
 //
@@ -953,6 +985,13 @@ bool PIT_CheckLine(FMultiBlockLinesIterator &mit, FMultiBlockLinesIterator::Chec
 		}
 	}
 
+	if ((tm.thing->flags8 & MF8_CROSSLINECHECK) && !P_CanCrossLine(tm.thing, ld, tm.pos))
+	{
+		if (wasfit)
+			tm.thing->BlockingLine = ld;
+		
+		return false;
+	}
 	// If the floor planes on both sides match we should recalculate open.bottom at the actual position we are checking
 	// This is to avoid bumpy movement when crossing a linedef with the same slope on both sides.
 	// This should never narrow down the opening, though, only widen it.
@@ -4153,7 +4192,7 @@ struct aim_t
 			dist = attackrange * in->frac;
 
 			// Don't autoaim certain special actors
-			if (!cl_doautoaim && th->flags6 & MF6_NOTAUTOAIMED)
+			if (!cl_doautoaim && !(flags & ALF_IGNORENOAUTOAIM) && th->flags6 & MF6_NOTAUTOAIMED)
 			{
 				continue;
 			}
@@ -4767,10 +4806,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	PClassActor *type = PClass::FindActor(pufftype);
 	if (type == NULL)
 	{
-		if (victim != NULL)
-		{
-			memset(victim, 0, sizeof(*victim));
-		}
+		if (victim != NULL) *victim = {};
 		Printf("Attempt to spawn unknown actor type '%s'\n", pufftype.GetChars());
 		return NULL;
 	}
@@ -5424,7 +5460,7 @@ void P_AimCamera(AActor *t1, DVector3 &campos, DAngle &camangle, sector_t *&Came
 }
 
 // [MC] Used for ViewPos. Uses code borrowed from P_AimCamera.
-void P_AdjustViewPos(AActor *t1, DVector3 orig, DVector3 &campos, sector_t *&CameraSector, bool &unlinked, FViewPosition *VP)
+void P_AdjustViewPos(AActor *t1, DVector3 orig, DVector3 &campos, sector_t *&CameraSector, bool &unlinked, DViewPosition *VP)
 {
 	FTraceResults trace;
 	const DVector3 vvec = campos - orig;

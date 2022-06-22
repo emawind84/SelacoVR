@@ -100,6 +100,7 @@ class Actor : Thinker native
 	native vector3 Prev;
 	native uint ThruBits;
 	native vector2 SpriteOffset;
+	native vector3 WorldOffset;
 	native double spriteAngle;
 	native double spriteRotation;
 	native float VisibleStartAngle;
@@ -114,7 +115,7 @@ class Actor : Thinker native
 	native double FloatSpeed;
 	native SpriteID sprite;
 	native uint8 frame;
-	native vector2 Scale;
+	native fvector2 Scale;
 	native TextureID picnum;
 	native double Alpha;
 	native color selfLighting;
@@ -167,6 +168,7 @@ class Actor : Thinker native
 	native readonly int TID;
 	native readonly int TIDtoHate;
 	native readonly int WaterLevel;
+	native readonly double WaterDepth;
 	native int Score;
 	native int Accuracy;
 	native int Stamina;
@@ -253,7 +255,8 @@ class Actor : Thinker native
 	native readonly int BloodTranslation;
 	native int RenderHidden;
 	native int RenderRequired;
-	native readonly int FriendlySeeBlocks;
+	native int FriendlySeeBlocks;
+	native int16 lightlevel;
 	native readonly int SpawnTime;
 	private native int InventoryID;	// internal counter.
 
@@ -355,6 +358,7 @@ class Actor : Thinker native
 	property RenderRequired: RenderRequired;
 	property FriendlySeeBlocks: FriendlySeeBlocks;
 	property ThruBits: ThruBits;
+	property LightLevel: LightLevel;
 	
 	// need some definition work first
 	//FRenderStyle RenderStyle;
@@ -371,14 +375,15 @@ class Actor : Thinker native
 	native readonly deprecated("2.3", "Use Vel.X instead") double MomX;
 	native readonly deprecated("2.3", "Use Vel.Y instead") double MomY;
 	native readonly deprecated("2.3", "Use Vel.Z instead") double MomZ;
-	native deprecated("2.3", "Use Scale.X instead") double ScaleX;
-	native deprecated("2.3", "Use Scale.Y instead") double ScaleY;
+	native deprecated("2.3", "Use Scale.X instead") float ScaleX;
+	native deprecated("2.3", "Use Scale.Y instead") float ScaleY;
 
 	//FStrifeDialogueNode *Conversation; // [RH] The dialogue to show when this actor is used.;
 	
 	
 	Default
 	{
+		LightLevel -1; 
 		Scale 1;
 		Health DEFAULT_HEALTH;
 		Reactiontime 8;
@@ -486,6 +491,7 @@ class Actor : Thinker native
 	virtual native void Die(Actor source, Actor inflictor, int dmgflags = 0, Name MeansOfDeath = 'none');
 	virtual native bool Slam(Actor victim);
 	virtual native void Touch(Actor toucher);
+	virtual native void FallAndSink(double grav, double oldfloorz);
 	private native void Substitute(Actor replacement);
 	native ui void DisplayNameTag();
 
@@ -500,6 +506,12 @@ class Actor : Thinker native
 
 	// Called by PIT_CheckThing to check if two actors actually can collide.
 	virtual bool CanCollideWith(Actor other, bool passive)
+	{
+		return true;
+	}
+
+	// Called by PIT_CheckLine to check if an actor can cross a line.
+	virtual bool CanCrossLine(Line crossing, Vector3 next)
 	{
 		return true;
 	}
