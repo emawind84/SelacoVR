@@ -60,7 +60,7 @@ public:
 	void StartPrecaching() override;
 	void BeginFrame() override;
 	void InitLightmap(int LMTextureSize, int LMTextureCount, TArray<uint16_t>& LMTextureData) override;
-	void BlurScene(float amount) override;
+	//void BlurScene(float amount) override;
 	void BlurScene(float amount, bool force = false) override;
 	void PostProcessScene(bool swscene, int fixedcm, float flash, const std::function<void()> &afterBloomDrawEndScene2D) override;
 	void AmbientOccludeScene(float m5) override;
