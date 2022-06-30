@@ -653,9 +653,10 @@ class DActorModelData : public DObject
 {
 	DECLARE_CLASS(DActorModelData, DObject);
 public:
-	bool hasModel;
-	TArray<int> modelIDs;
-	TArray<FTextureID> skinIDs;
+	FName				modelDef;
+	bool				hasModel;
+	TArray<int>			modelIDs;
+	TArray<FTextureID>	skinIDs;
 
 	DActorModelData() = default;
 	virtual void Serialize(FSerializer& arc) override;
@@ -1087,7 +1088,6 @@ public:
 	DVector2		SpriteOffset;
 	double			Speed;
 	double			FloatSpeed;
-	FName							modelDef;
 	TObjPtr<DActorModelData*>		modelData;
 
 // interaction info
