@@ -181,6 +181,17 @@ static void PrecacheLevel(FLevelLocals *Level)
 		PClassActor *cls = PClass::FindActor(Level->info->PrecacheClasses[i]);
 		if (cls != nullptr) actorhitlist[cls] = true;
 	}
+	
+	// @Cockatrice - Also check the actor classes themselves to see if they are marked for precache
+	for (auto pc : PClassActor::AllActorClasses) {
+		auto act = GetDefaultByType(pc);
+		if (act != NULL && act->flags8 && (act->flags8 & MF8_PRECACHEALWAYS)) 
+		{
+			actorhitlist[static_cast<PClassActor*>(pc)] = true;
+			Printf("Adding actor: %s to precache list from CACHEALWAYS", act->GetCharacterName());
+		}
+	}
+
 
 	for (i = Level->sectors.Size() - 1; i >= 0; i--)
 	{
