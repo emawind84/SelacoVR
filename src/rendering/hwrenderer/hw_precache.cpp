@@ -81,6 +81,15 @@ static void PrecacheList(FMaterial *gltex, SpriteHits& translations)
 
 static void PrecacheSprite(FGameTexture *tex, SpriteHits &hits)
 {
+	auto useType = tex->GetUseType();
+	if (useType == ETextureType::Any ||
+		useType == ETextureType::Sprite ||
+		useType == ETextureType::Decal ||
+		useType == ETextureType::SkinSprite) {
+		tex->GetSpritePositioning(1);		// @Cockatrice Precalc sprite positioning so we aren't loading images at play time as often
+	}
+
+	
 	int scaleflags = CTF_Expand;
 	if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
 
