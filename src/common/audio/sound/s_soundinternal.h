@@ -287,6 +287,10 @@ public:
 
 	FSoundChan* StartSound(int sourcetype, const void* source,
 		const FVector3* pt, int channel, EChanFlags flags, FSoundID sound_id, float volume, float attenuation, FRolloffInfo* rolloff = nullptr, float spitch = 0.0f, float startTime = 0.0f);
+	
+	FSoundChan* StartSoundER(sfxinfo_t *sfx, int type, const void *source,
+		FVector3 pos, FVector3 vel, int channel, EChanFlags flags, FSoundID sound_id, FSoundID org_sound_id, float volume, float attenuation,
+		FRolloffInfo *forcedrolloff, float spitch, float startTime);
 
 	// Stops an origin-less sound from playing from this channel.
 	void StopSoundID(int sound_id);

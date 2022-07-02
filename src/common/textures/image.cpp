@@ -196,9 +196,9 @@ FBitmap FImageSource::GetCachedBitmap(const PalEntry *remap, int conversion, int
 {
 	FBitmap ret;
 
-	FString name;
+	//FString name;
 	int trans = -1;
-	fileSystem.GetFileShortName(name, SourceLump);
+	//fileSystem.GetFileShortName(name, SourceLump);
 
 	auto imageID = ImageID;
 

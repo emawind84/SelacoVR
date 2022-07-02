@@ -121,6 +121,7 @@
 #include "screenjob.h"
 #include "startscreen.h"
 #include "shiftstate.h"
+#include "s_loader.h"
 
 #ifdef __unix__
 #include "i_system.h"  // for SHARE_DIR
@@ -870,6 +871,9 @@ void D_Display ()
 	FTexture *wipestart = nullptr;
 	int wipe_type;
 	sector_t *viewsec;
+
+	// TODO: Find a new place for this!
+	AudioLoaderQueue::Instance->update();
 
 	if (nodrawers || screen == NULL)
 		return; 				// for comparative timing / profiling

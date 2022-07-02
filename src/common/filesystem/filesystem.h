@@ -141,7 +141,7 @@ public:
 		return GetFileData(lump, padding);
 	}
 
-	FileReader OpenFileReader(int lump);		// opens a reader that redirects to the containing file's one.
+	FileReader OpenFileReader(int lump, bool alwaysNew = false);		// opens a reader that redirects to the containing file's one.
 	FileReader ReopenFileReader(int lump, bool alwayscache = false);		// opens an independent reader.
 	FileReader OpenFileReader(const char* name);
 
