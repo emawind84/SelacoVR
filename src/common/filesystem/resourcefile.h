@@ -123,6 +123,10 @@ public:
 	int LockCount() const { return RefCount; }
 	const char* getName() { return FullName.GetChars(); }
 
+	// @Cockatrice - We need to be able to arbitrarily read the data of any given lump
+	// for background loading. Copy Reader => Read Lump Data => Store cache on main thread if necessary
+	virtual long ReadData(FileReader &reader, char *buffer) { return 0; }
+
 protected:
 	virtual int FillCache() { return -1; }
 
@@ -160,6 +164,7 @@ public:
 	virtual ~FResourceFile();
     // If this FResourceFile represents a directory, the Reader object is not usable so don't return it.
     FileReader *GetReader() { return Reader.isOpen()? &Reader : nullptr; }
+
 	uint32_t LumpCount() const { return NumLumps; }
 	uint32_t GetFirstEntry() const { return FirstLump; }
 	void SetFirstLump(uint32_t f) { FirstLump = f; }
@@ -177,7 +182,7 @@ struct FUncompressedLump : public FResourceLump
 	virtual FileReader *GetReader();
 	virtual int FillCache();
 	virtual int GetFileOffset() { return Position; }
-
+	virtual long ReadData(FileReader &reader, char *buffer);
 };
 
 
@@ -199,7 +204,7 @@ struct FExternalLump : public FResourceLump
 
 	FExternalLump(const char *_filename, int filesize = -1);
 	virtual int FillCache();
-
+	virtual long ReadData(FileReader &reader, char *buffer);
 };
 
 struct FMemoryLump : public FResourceLump
@@ -216,6 +221,12 @@ struct FMemoryLump : public FResourceLump
 	{
 		RefCount = INT_MAX / 2; // Make sure it never counts down to 0 by resetting it to something high each time it is used.
 		return 1;
+	}
+
+	// @Cockatrice - This should not be used during background loading, but it's included for completeness
+	virtual long ReadData(FileReader &reader, char *buffer) {
+		memcpy(buffer, Cache, LumpSize);
+		return LumpSize;
 	}
 };
 

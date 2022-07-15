@@ -19,10 +19,14 @@ struct FZipLump : public FResourceLump
 	unsigned CRC32;
 
 	virtual FileReader *GetReader();
+	//virtual FileReader CloneReader();
 	virtual int FillCache();
+	virtual long ReadData(FileReader &reader, char *buffer);
 
 private:
 	void SetLumpAddress();
+	void SetLumpAddress(FileReader &reader);
+	int GetLumpAddressOffset(FileReader &reader);
 	virtual int GetFileOffset();
 	FCompressedBuffer GetRawData();
 };

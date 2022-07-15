@@ -451,20 +451,39 @@ FCompressedBuffer FZipLump::GetRawData()
 //
 //==========================================================================
 
-void FZipLump::SetLumpAddress()
+void FZipLump::SetLumpAddress() {
+	SetLumpAddress(Owner->Reader);
+}
+
+void FZipLump::SetLumpAddress(FileReader &reader)
 {
 	// This file is inside a zip and has not been opened before.
 	// Position points to the start of the local file header, which we must
 	// read and skip so that we can get to the actual file data.
+	/*FZipLocalFileHeader localHeader;
+	int skiplen;
+
+	reader.Seek(Position, FileReader::SeekSet);
+	reader.Read(&localHeader, sizeof(localHeader));
+	skiplen = LittleShort(localHeader.NameLength) + LittleShort(localHeader.ExtraLength);
+	Position += sizeof(localHeader) + skiplen;
+	NeedFileStart = false;*/
+	
+	
+	Position += GetLumpAddressOffset(reader);
+	NeedFileStart = false;
+}
+
+int FZipLump::GetLumpAddressOffset(FileReader &reader) {
 	FZipLocalFileHeader localHeader;
 	int skiplen;
 
-	Owner->Reader.Seek(Position, FileReader::SeekSet);
-	Owner->Reader.Read(&localHeader, sizeof(localHeader));
+	reader.Seek(Position, FileReader::SeekSet);
+	reader.Read(&localHeader, sizeof(localHeader));
 	skiplen = LittleShort(localHeader.NameLength) + LittleShort(localHeader.ExtraLength);
-	Position += sizeof(localHeader) + skiplen;
-	NeedFileStart = false;
+	return sizeof(localHeader) + skiplen;
 }
+
 
 //==========================================================================
 //
@@ -509,6 +528,29 @@ int FZipLump::FillCache()
 	UncompressZipLump(Cache, Owner->Reader, Method, LumpSize, CompressedSize, GPFlags);
 	RefCount = 1;
 	return 1;
+}
+
+
+long FZipLump::ReadData(FileReader &reader, char *buffer) {
+	int64_t position = Position;
+
+	if (NeedFileStart) position += GetLumpAddressOffset(reader);
+
+	const char *mainBuffer;
+	if (Method == METHOD_STORED && (mainBuffer = Owner->Reader.GetBuffer()) != NULL)
+	{
+		// This is an in-memory filecopy directly to the file's data.
+		// @Cockatrice - For now copy the data to the assigned buffer
+		// If the caller wants to get a pointer to the buffer they will have to call a different function
+		memcpy(buffer, const_cast<char*>(mainBuffer) + position, LumpSize);
+		return LumpSize;
+	}
+
+	reader.Seek(position, FileReader::SeekSet);
+	if (UncompressZipLump(buffer, reader, Method, LumpSize, CompressedSize, GPFlags)) {
+		return LumpSize;
+	}
+	return 0;
 }
 
 //==========================================================================

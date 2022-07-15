@@ -1394,7 +1394,7 @@ FileData FileSystem::ReadFile (int lump)
 //==========================================================================
 
 
-FileReader FileSystem::OpenFileReader(int lump, bool alwaysNew)
+FileReader FileSystem::OpenFileReader(int lump)
 {
 	if ((unsigned)lump >= (unsigned)FileInfo.Size())
 	{
@@ -1404,7 +1404,7 @@ FileReader FileSystem::OpenFileReader(int lump, bool alwaysNew)
 	auto rl = FileInfo[lump].lump;
 	auto rd = rl->GetReader();
 
-	if (!alwaysNew && rl->RefCount == 0 && rd != nullptr && !rd->GetBuffer() && !(rl->Flags & LUMPF_COMPRESSED))
+	if (rl->RefCount == 0 && rd != nullptr && !rd->GetBuffer() && !(rl->Flags & LUMPF_COMPRESSED))
 	{
 		FileReader rdr;
 		rdr.OpenFilePart(*rd, rl->GetFileOffset(), rl->LumpSize);
