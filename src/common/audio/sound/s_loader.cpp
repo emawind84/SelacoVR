@@ -2,60 +2,171 @@
 #include "filesystem.h"
 #include "s_sound.h"
 #include "actor.h"
+#include "stats.h"
+#include "i_time.h"
+#include "file_directory.h"
 
 AudioLoaderQueue *AudioLoaderQueue::Instance = new AudioLoaderQueue();
 
+CVAR(Int, audio_max_threads, 4, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+
+static void AppendAudioThreadStats(int q, int l, double tt, FString &out)
+{
+	out.AppendFormat(
+		"Queued: %d\n"
+		"Loading: %d  Total: %d  Failed: %d\n"
+		"Avg Load Time: %2.3f +(%2.3f)\n"
+		"Min Load Time: %2.3f +(%2.3f)\n"
+		"Max Load Time: %2.3f +(%2.3f)\n"
+		"Update Time: %2.3f\n",
+		q, 
+		l, AudioLoaderQueue::Instance->getTotalLoaded(), AudioLoaderQueue::Instance->getTotalFailed(),
+		AudioLoaderQueue::Instance->calcLoadAvg(), AudioLoaderQueue::Instance->calcAvgIntegration(),
+		AudioLoaderQueue::Instance->calcMinLoad(), AudioLoaderQueue::Instance->calcMinIntegration(),
+		AudioLoaderQueue::Instance->calcMaxLoad(), AudioLoaderQueue::Instance->calcMaxIntegration(),
+		tt
+	);
+}
+
+ADD_STAT(audiothread)
+{
+	static int64_t lasttime = 0, lastUpdateTime = 0;
+	static int maxLoading = 0, maxQueue = 0;
+	static double maxUpdate = 0;
+
+	if (maxQueue < AudioLoaderQueue::Instance->queueSize()) { maxQueue = AudioLoaderQueue::Instance->queueSize(); }
+	if (maxLoading < AudioLoaderQueue::Instance->numActive()) { maxLoading = AudioLoaderQueue::Instance->numActive(); }
+	if (maxUpdate < AudioLoaderQueue::Instance->updateTimeLast()) { maxUpdate = AudioLoaderQueue::Instance->updateTimeLast(); }
+
+	auto t = I_msTime();
+	if (t - lasttime > 400)
+	{
+		maxQueue = AudioLoaderQueue::Instance->queueSize();
+		maxLoading = AudioLoaderQueue::Instance->numActive();
+		lasttime = t;
+	}
+
+	if (t - lastUpdateTime > 2000) {
+		maxUpdate = AudioLoaderQueue::Instance->updateTimeLast();
+		lastUpdateTime = t;
+	}
+
+	FString out;
+	AppendAudioThreadStats(maxQueue, maxLoading, maxUpdate, out);
+	return out;
+}
+
+
 AudioLoaderThread::AudioLoaderThread(AudioQItem &item) {
+	totalTime.Reset();
+	threadTime.Reset();
+	totalTime.Clock();
+
+	auto rl = fileSystem.GetFileAt(item.sfx->lumpnum);
+	auto reader = rl->Owner->GetReader();
+
+	if (!reader) {
+		FDirectory *fdir = dynamic_cast<FDirectory*>(rl->Owner);
+		if (!fdir || !dynamic_cast<FDirectoryLump*>(rl)) {
+			Printf(TEXTCOLOR_RED"AudioLoaderThread::No valid reader on owner for sfx : %s\n", item.sfx->name.GetChars());
+			data = nullptr;
+			mActive.store(false);
+			return;
+		}
+
+		// Should be a valid file reader now
+		readerCopy = rl->NewReader().CopyNew();
+	}
+
+	else { readerCopy = reader->CopyNew(); }
+
 	qItem = item;
 
 	std::thread sl(&AudioLoaderThread::startLoading, this);
 	mThread = std::move(sl);	// This seems dumb, how do I do this properly? I'm rusty.
 }
 
+AudioLoaderThread::~AudioLoaderThread() {
+	if (readerCopy) {
+		delete readerCopy;
+		readerCopy = nullptr;
+	}
+
+	// If for some reason we haven't taken ownership of the loaded data, destroy it here
+	// to prevent memory leaks
+	if (createdNewData && data != nullptr) {
+		delete[] data;
+	}
+
+	//Printf(TEXTCOLOR_BLUE"Deleted an audio loader thread.\n");
+}
+
 void AudioLoaderThread::startLoading() {
-	// Read the raw data
-	auto wlump = fileSystem.OpenFileReader(qItem.sfx->lumpnum, true);
-	auto sfxdata = wlump.Read();
+	threadTime.Clock();
+
+	auto rl = fileSystem.GetFileAt(qItem.sfx->lumpnum);
+	auto reader = readerCopy;
+	int size = rl->LumpSize;
+
+	assert(readerCopy);
+
+	if (!rl->Cache) {
+		// This resource hasn't been cached yet, we need to read it manually
+		if (!reader) {
+			// TODO: Set up failure state
+			return;
+		}
+
+		// This function is designed to be thread safe so we should be okay here
+		data = new char[rl->LumpSize];
+		size = rl->ReadData(*reader, data);
+		createdNewData = true;
+
+		// TODO: THis is currently a memory leak situation because the data created here will never be released
+		// TODO: Find out how lump data is eventually freed and use the native process for that
+	}
+	else {
+		data = rl->Cache;
+	}
+
 
 	//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 	// Try to interpret the data
-	int size = sfxdata.Size();
 	if (size > 8)
 	{
-		int32_t dmxlen = LittleLong(((int32_t *)sfxdata.Data())[1]);
+		int32_t dmxlen = LittleLong(((int32_t *)data)[1]);
 
 		// If the sound is voc, use the custom loader.
-		if (strncmp((const char *)sfxdata.Data(), "Creative Voice File", 19) == 0)
+		if (strncmp(data, "Creative Voice File", 19) == 0)
 		{
-			loadSnd = GSnd->LoadSoundVoc(sfxdata.Data(), size);
+			loadSnd = GSnd->LoadSoundVoc((uint8_t *)data, size);
 		}
 		// If the sound is raw, just load it as such.
 		else if (qItem.sfx->bLoadRAW)
 		{
-			loadSnd = GSnd->LoadSoundRaw(sfxdata.Data(), size, qItem.sfx->RawRate, 1, 8, qItem.sfx->LoopStart);
+			loadSnd = GSnd->LoadSoundRaw((uint8_t *)data, size, qItem.sfx->RawRate, 1, 8, qItem.sfx->LoopStart);
 		}
 		// Otherwise, try the sound as DMX format.
-		else if (((uint8_t *)sfxdata.Data())[0] == 3 && ((uint8_t *)sfxdata.Data())[1] == 0 && dmxlen <= size - 8)
+		else if (((uint8_t *)data)[0] == 3 && ((uint8_t *)data)[1] == 0 && dmxlen <= size - 8)
 		{
-			int frequency = LittleShort(((uint16_t *)sfxdata.Data())[1]);
+			int frequency = LittleShort(((uint16_t *)data)[1]);
 			if (frequency == 0) frequency = 11025;
-			loadSnd = GSnd->LoadSoundRaw(sfxdata.Data() + 8, dmxlen, frequency, 1, 8, qItem.sfx->LoopStart);
+			loadSnd = GSnd->LoadSoundRaw((uint8_t *)data + 8, dmxlen, frequency, 1, 8, qItem.sfx->LoopStart);
 		}
 		// If that fails, let the sound system try and figure it out.
 		else
 		{
-			loadSnd = GSnd->LoadSound(sfxdata.Data(), size);
+			loadSnd = GSnd->LoadSound((uint8_t *)data, size);
 		}
 	}
 
-	
-
+	threadTime.Unclock();
 	mActive.store(false);
 }
 
 AudioLoaderQueue::AudioLoaderQueue() {
-	
+	updateCycles.Reset();
 }
 
 
@@ -101,8 +212,8 @@ void AudioLoaderQueue::queue(sfxinfo_t *sfx, FSoundID soundID, const AudioQueueP
 	AActor *a = playInfo && playInfo->type == SOURCE_Actor ? (AActor *)playInfo->source : NULL;
 
 
-	if (mQueue.Size() == 0 && mRunning.Size() < MaxThreads) {
-		Printf(TEXTCOLOR_GREEN"STARTING BG THREAD %d : %s : %s\n", soundID, sfx->name.GetChars(), a ? a->GetCharacterName() : "<None>");
+	if (mQueue.Size() == 0 && (int)mRunning.Size() < audio_max_threads) {
+		//Printf(TEXTCOLOR_GREEN"STARTING BG THREAD %d : %s : %s\n", soundID, sfx->name.GetChars(), a ? a->GetCharacterName() : "<None>");
 		start(m);
 		return;
 	}
@@ -110,7 +221,7 @@ void AudioLoaderQueue::queue(sfxinfo_t *sfx, FSoundID soundID, const AudioQueueP
 	mQueue.Push(m);
 
 	
-	Printf(TEXTCOLOR_YELLOW"Queued %d : %s : %s\n", soundID, sfx->name.GetChars(), a ? a->GetCharacterName() : "<None>");
+	//Printf(TEXTCOLOR_YELLOW"Queued %d : %s : %s\n", soundID, sfx->name.GetChars(), a ? a->GetCharacterName() : "<None>");
 }
 
 
@@ -281,44 +392,83 @@ void AudioLoaderQueue::stopAllSounds() {
 
 
 void AudioLoaderQueue::update() {
+	updateCycles.Reset();
+	updateCycles.Clock();
+	
 	// Check if any of the load operations are complete
 	for (unsigned int x = 0; x < mRunning.Size(); x++) {
 		if (!mRunning[x]->active()) {
+			cycle_t integrationTime = cycle_t();
+			integrationTime.Reset();
+			integrationTime.Clock();
+
 			mRunning[x]->join();
+
+			// Did this thread fail?
+			if (mRunning[x]->data == nullptr) { 
+				totalFailed++;
+				continue;
+			}
 			
 			// Move audio data references
 			AudioQItem &i = mRunning[x]->qItem;
 			if (!i.sfx->data.isValid()) {
 				if (mRunning[x]->getSoundHandle().isValid()) {
-					Printf("Moving loaded audio for : %s\n", i.sfx->name.GetChars());
+					//Printf("Moving loaded audio for : %s\n", i.sfx->name.GetChars());
 					i.sfx->data = mRunning[x]->getSoundHandle();
 				} else {
 					i.sfx->lumpnum = sfx_empty;
-					Printf("Invalid audio data loaded, marking sound : %s\n", i.sfx->name.GetChars());
+					//Printf("Invalid audio data loaded, marking sound : %s\n", i.sfx->name.GetChars());
 				}
 			}
+
+			totalLoaded++;
+
+			// TODO: Set the cache pointer if there is data loaded and there is not already a cache
+			// Not sure if this is necessary as the cache is probably not needed now that the sound is buffered OpenAL
+
 
 			// Play audio(s) if specified
 			// TOODO: Play audio from this data!
 			if (i.sfx->data.isValid()) {
-				Printf("Finished loading; now playing : %s (%d copies)\n", i.sfx->name.GetChars(), i.playInfo.Size());
+				//Printf("Finished loading; now playing : %s (%d copies)\n", i.sfx->name.GetChars(), i.playInfo.Size());
 
 				for (auto snd : i.playInfo) {
 					// TODO: Get rolloff info and pass it along properly
-					// TODO: Validate sound source pointer, it may have been deleted
 					soundEngine->StartSoundER(i.sfx, snd.type, snd.source, snd.pos, snd.vel, snd.channel, snd.flags, i.soundID, snd.orgSoundID, snd.volume, snd.attenuation, &snd.rolloff, snd.pitch, snd.startTime);
 				}
 			}
 
+			mRunning[x]->totalTime.Unclock();
+			integrationTime.Unclock();
+
+			// Create a stat entry for this item
+			QStat qs = {
+				mRunning[x]->totalTime.TimeMS(),
+				mRunning[x]->threadTime.TimeMS(),
+				integrationTime.TimeMS()
+			};
+
+			mStats.Insert(0, qs);
+			mStats.Clamp(100);
+
+			auto prDistaster = mRunning[x];
 			mRunning.Delete(x);
+			delete prDistaster;
 			x--;
 		}
 	}
 
 	// Start any queued loads
-	for (unsigned int x = 0; x < MaxThreads - mRunning.Size() && mQueue.Size() > 0; x++) {
+	for (unsigned int x = 0; x < audio_max_threads - mRunning.Size() && mQueue.Size() > 0; x++) {
 		start(mQueue[0]);
 		mQueue.Delete(0);
+	}
+
+	updateCycles.Unclock();
+
+	if (updateCycles.TimeMS() > 1.0) {
+		Printf(TEXTCOLOR_YELLOW"AudioLoaderQueue::Warning Update() took more than 1ms (%0.24fms), this might be a little high!\n", updateCycles.TimeMS());
 	}
 }
 
@@ -336,12 +486,12 @@ void AudioLoaderQueue::clear() {
 		AudioQItem &i = mRunning[x]->qItem;
 		if (!i.sfx->data.isValid()) {
 			if (mRunning[x]->getSoundHandle().isValid()) {
-				Printf("Moving loaded audio for : %s\n", i.sfx->name.GetChars());
+				//Printf("Moving loaded audio for : %s\n", i.sfx->name.GetChars());
 				i.sfx->data = mRunning[x]->getSoundHandle();
 			}
 			else {
 				i.sfx->lumpnum = sfx_empty;
-				Printf("Invalid audio data loaded, marking sound : %s\n", i.sfx->name.GetChars());
+				//Printf("Invalid audio data loaded, marking sound : %s\n", i.sfx->name.GetChars());
 			}
 		}
 	}
@@ -351,7 +501,7 @@ void AudioLoaderQueue::clear() {
 
 
 void AudioLoaderQueue::start(AudioQItem &item) {
-	Printf("Starting BG load of : %s\n", item.sfx->name.GetChars());
+	//Printf("Starting BG load of : %s\n", item.sfx->name.GetChars());
 
 	mRunning.Push(new AudioLoaderThread(item));
 }

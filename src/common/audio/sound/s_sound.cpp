@@ -45,6 +45,7 @@
 #include "printf.h"
 #include "c_cvars.h"
 #include "s_loader.h"
+#include "g_levellocals.h"
 
 CVARD(Bool, snd_enabled, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "enables/disables sound effects")
 
@@ -377,6 +378,8 @@ FSoundID SoundEngine::ResolveSound(const void *, int, FSoundID soundid, float &a
 //		calculating volume.
 //
 //==========================================================================
+EXTERN_CVAR(Int, audio_max_threads);
+
 
 FSoundChan *SoundEngine::StartSound(int type, const void *source,
 	const FVector3 *pt, int channel, EChanFlags flags, FSoundID sound_id, float volume, float attenuation,
@@ -490,7 +493,7 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 	}
 
 	// If the sound is not loaded, add it to the queue instead of playing it now
-	if (!sfx->data.isValid()) {
+	if (!sfx->data.isValid() && audio_max_threads > 0 && level.maptime > 1) {
 		AudioQueuePlayInfo info = {
 			org_id, pos, vel, channel, type,
 			spitch, volume, attenuation, startTime,
@@ -975,7 +978,7 @@ sfxinfo_t *SoundEngine::LoadSound(sfxinfo_t *sfx)
 		}
 
 		DPrintf(DMSG_NOTIFY, "Loading sound \"%s\" (%td)\n", sfx->name.GetChars(), sfx - &S_sfx[0]);
-		Printf(TEXTCOLOR_GOLD"Loading sound %s on main thread!\n", sfx->name.GetChars());
+		//Printf(TEXTCOLOR_GOLD"Loading sound %s on main thread!\n", sfx->name.GetChars());
 
 		auto sfxdata = ReadSound(sfx->lumpnum);
 		int size = sfxdata.Size();

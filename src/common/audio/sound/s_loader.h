@@ -5,6 +5,7 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include "stats.h"
 
 class MThread {
 public:
@@ -66,6 +67,7 @@ class AudioLoaderThread {
 	friend class AudioLoaderQueue;	 // Should be temporary, eventually manage access to qItem
 public:
 	AudioLoaderThread(AudioQItem &item);
+	~AudioLoaderThread();
 
 	bool joinable() { return mThread.joinable(); }
 	void join() { mThread.join(); }
@@ -78,7 +80,13 @@ private:
 	std::thread mThread;
 	SoundHandle loadSnd;
 
+	// Stat handling
+	cycle_t totalTime, threadTime;
+
 	AudioQItem qItem;
+	char *data = nullptr;
+	FileReader *readerCopy = nullptr;
+	bool createdNewData = false;
 
 	void startLoading();
 };
@@ -88,11 +96,18 @@ private:
 class AudioLoaderQueue
 {
 private:
-	static const unsigned int MaxThreads = 4;		// TODO: Make this a CVAR
+	//static const unsigned int MaxThreads = 4;		// TODO: Make this a CVAR
+
+	struct QStat {
+		double totalTime, threadTime, integrationTime;
+	};
 
 	TArray<AudioQItem> mQueue;
 	TArray<AudioLoaderThread*> mRunning;
+	TArray<QStat> mStats;
 
+	cycle_t updateCycles;
+	int totalLoaded = 0, totalFailed = 0;
 
 	void start(AudioQItem &item);
 	void relinkSound(AudioQItem &item, int sourcetype, const void *from, const void *to, const FVector3 *optpos);
@@ -119,6 +134,52 @@ public:
 	void stopSound(int sourcetype, const void* actor, int channel, int soundID);
 	void stopActorSounds(int sourcetype, const void* actor, int chanmin, int chanmax);
 	void stopAllSounds();
+
+	double updateTimeLast() { return updateCycles.TimeMS(); }
+	int queueSize() { return mQueue.Size(); }
+	int numActive() { return mRunning.Size(); }
+	double avgLoad() { return calcLoadAvg(); }
+	double maxLoad() { return calcMaxLoad(); }
+	double minLoad() { return calcMinLoad(); }
+
+	double calcLoadAvg() {
+		double totalLoad = 0;
+		for (QStat &s : mStats) { totalLoad += s.threadTime; }
+		return mStats.Size() > 0 ? totalLoad / (double)mStats.Size()  : 0;
+	}
+
+	double calcMaxLoad() {
+		double maxLoad = 0;
+		for (QStat &s : mStats) { if (s.threadTime > maxLoad) maxLoad = s.threadTime; }
+		return maxLoad;
+	}
+
+	double calcMinLoad() {
+		double minLoad = mStats.Size() > 0 ? mStats[0].totalTime : -1;
+		for (QStat &s : mStats) { if (s.threadTime < minLoad) minLoad = s.threadTime; }
+		return minLoad >= 0 ? minLoad : 0;
+	}
+
+	double calcMinIntegration() {
+		double mintegration = mStats.Size() > 0 ? mStats[0].integrationTime : -1;
+		for (QStat &s : mStats) { if (s.integrationTime < mintegration) mintegration = s.integrationTime; }
+		return mintegration >= 0 ? mintegration : 0;
+	}
+
+	double calcMaxIntegration() {
+		double maxIntegration = 0;
+		for (QStat &s : mStats) { if (s.integrationTime > maxIntegration) maxIntegration = s.integrationTime; }
+		return maxIntegration;
+	}
+
+	double calcAvgIntegration() {
+		double totalInt = 0;
+		for (QStat &s : mStats) { totalInt += s.integrationTime; }
+		return mStats.Size() > 0 ? totalInt / (double)mStats.Size() : 0;
+	}
+
+	int getTotalLoaded() { return totalLoaded; }
+	int getTotalFailed() { return totalFailed; }
 
 	static AudioLoaderQueue *Instance;
 };
