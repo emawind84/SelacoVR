@@ -40,41 +40,8 @@
 #include "cmdlib.h"
 #include "printf.h"
 #include "findfile.h"
+#include "file_directory.h"
 
-//==========================================================================
-//
-// Zip Lump
-//
-//==========================================================================
-
-struct FDirectoryLump : public FResourceLump
-{
-	FileReader NewReader() override;
-	int FillCache() override;
-
-	FString mFullPath;
-};
-
-
-//==========================================================================
-//
-// Zip file
-//
-//==========================================================================
-
-class FDirectory : public FResourceFile
-{
-	TArray<FDirectoryLump> Lumps;
-	const bool nosubdir;
-
-	int AddDirectory(const char *dirpath);
-	void AddEntry(const char *fullpath, int size);
-
-public:
-	FDirectory(const char * dirname, bool nosubdirflag = false);
-	bool Open(bool quiet, LumpFilterInfo* filter);
-	virtual FResourceLump *GetLump(int no) { return ((unsigned)no < NumLumps)? &Lumps[no] : NULL; }
-};
 
 
 
@@ -257,6 +224,17 @@ int FDirectoryLump::FillCache()
 	fr.Read(Cache, LumpSize);
 	RefCount = 1;
 	return 1;
+}
+
+
+long FDirectoryLump::ReadData(FileReader &reader, char *buffer) {
+	FileReader fr;
+	if (!fr.OpenFile(mFullPath))
+	{
+		return 0;
+	}
+	fr.Read(buffer, LumpSize);
+	return LumpSize;
 }
 
 //==========================================================================
