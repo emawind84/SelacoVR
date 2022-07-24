@@ -176,7 +176,7 @@ void OpenGLFrameBuffer::InitializeState()
 	GLRenderer->Initialize(GetWidth(), GetHeight());
 	static_cast<GLDataBuffer*>(mLights->GetBuffer())->BindBase();
 
-	mDebug = std::make_shared<FGLDebug>();
+	mDebug = std::make_unique<FGLDebug>();
 	mDebug->Update();
 }
 

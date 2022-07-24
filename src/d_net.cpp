@@ -125,7 +125,7 @@ int				playerfornode[MAXNETNODES];
 
 int 			maketic;
 int 			skiptics;
-int 			ticdup;
+int 			ticdup = 1;
 
 void D_ProcessEvents (void); 
 void G_BuildTiccmd (ticcmd_t *cmd); 
@@ -1461,7 +1461,7 @@ bool DoArbitrate (void *userdata)
 		{
 			data->gotsetup[0] = 0x80;
 
-			ticdup = doomcom.ticdup = netbuffer[1];
+			ticdup = doomcom.ticdup = clamp<int>(netbuffer[1], 1, MAXTICDUP);
 			NetMode = netbuffer[2];
 
 			stream = &netbuffer[3];
@@ -1884,7 +1884,7 @@ void TryRunTics (void)
 		}
 	}
 
-	if (ticdup == 1)
+	if (ticdup <= 1)
 	{
 		availabletics = lowtic - gametic;
 	}
