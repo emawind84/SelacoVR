@@ -494,15 +494,19 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 
 	// If the sound is not loaded, add it to the queue instead of playing it now
 	if (!sfx->data.isValid() && audio_max_threads > 0 && level.maptime > 1) {
-		AudioQueuePlayInfo info = {
-			org_id, pos, vel, channel, type,
-			spitch, volume, attenuation, startTime,
-			flags, *rolloff, source
-		};
+		sfx = CheckLinks(sfx);
 
-		AudioLoaderQueue::Instance->queue(sfx, sound_id, &info);
+		if (!sfx->data.isValid()) {
+			AudioQueuePlayInfo info = {
+				org_id, pos, vel, channel, type,
+				spitch, volume, attenuation, startTime,
+				flags, *rolloff, source
+			};
 
-		return NULL;	// TODO: Is this what we want to return? The sound is likely going to get played, just not now
+			AudioLoaderQueue::Instance->queue(sfx, sound_id, &info);
+
+			return NULL;	// TODO: Is this what we want to return? The sound is likely going to get played, just not now
+		}
 	}
 
 	// Make sure the sound is loaded.
@@ -657,10 +661,17 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 }
 
 // Start sound with specific settings, do not modify data, just play the sound as specified
+// Do not check links or verify that the sound is loaded. If not loaded, no sound is played.
 FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *source,
 	FVector3 pos, FVector3 vel, int channel, EChanFlags flags, FSoundID sound_id, FSoundID org_sound_id, float volume, float attenuation,
 	FRolloffInfo *forcedrolloff, float spitch, float startTime)
 {
+	// Return NULL if the sound isn't loaded
+	if (!sfx->data.isValid()) { 
+		Printf(TEXTCOLOR_YELLOW"SoundEngine::StartSoundER() Tried to play an unloaded sound: %s\n", sfx->name);
+		return NULL;
+	}
+
 	EChanFlags chanflags = flags;
 	FRolloffInfo *rolloff;
 	int basepriority;
@@ -704,10 +715,11 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 	}
 
 	// If this sound doesn't like playing near itself, don't play it if that's what would happen.
-	if (near_limit > 0 && CheckSoundLimit(sfx, pos, near_limit, limit_range, type, source, channel, attenuation))
+	// @Cockatrice This should have already been done before getting to this stage, commenting it out for now
+	/*if (near_limit > 0 && CheckSoundLimit(sfx, pos, near_limit, limit_range, type, source, channel, attenuation))
 	{
 		chanflags |= CHANF_EVICTED;
-	}
+	}*/
 
 	// If the sound is blocked and not looped, return now. If the sound
 	// is blocked and looped, pretend to play it so that it can
@@ -716,11 +728,6 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 	{
 		return NULL;
 	}
-
-	// Make sure the sound is loaded.
-	// We don't use the queue here because this is the function the
-	// queue will call to play when it has completed loading sounds
-	sfx = LoadSound(sfx);
 
 	// Select priority.
 	if (type == SOURCE_None || source == listener.ListenerObject)
@@ -782,13 +789,21 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 	}
 	else
 	{
+		// TODO: Remove this
+		cycle_t sndTimer, lengthTimer;
+		sndTimer.Clock();
+		
+
 		int startflags = 0;
 		if (chanflags & CHANF_LOOP) startflags |= SNDF_LOOP;
 		if (chanflags & CHANF_AREA) startflags |= SNDF_AREA;
 		if (chanflags & (CHANF_UI | CHANF_NOPAUSE)) startflags |= SNDF_NOPAUSE;
 		if (chanflags & CHANF_UI) startflags |= SNDF_NOREVERB;
 
+		lengthTimer.Clock();
 		float sfxlength = (float)GSnd->GetMSLength(sfx->data) / 1000.f;
+		lengthTimer.Unclock();
+
 		startTime = (startflags & SNDF_LOOP)
 			? (sfxlength > 0 ? fmodf(startTime, sfxlength) : 0.f)
 			: clamp(startTime, 0.f, sfxlength);
@@ -800,6 +815,11 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 		else
 		{
 			chan = (FSoundChan*)GSnd->StartSound(sfx->data, volume, pitch, startflags, NULL, startTime);
+		}
+
+		sndTimer.Unclock();
+		if (sndTimer.TimeMS() > 0.5) {
+			Printf(TEXTCOLOR_RED"Starting a sound (%s) cost %0.4f + %0.4f = (0.4f)!!!\n", sfx->name.GetChars(), sndTimer.TimeMS(), lengthTimer.TimeMS(), sndTimer.TimeMS() - lengthTimer.TimeMS());
 		}
 	}
 	if (chan == NULL && (chanflags & CHANF_LOOP))
@@ -939,6 +959,36 @@ void SoundEngine::RestartChannel(FSoundChan *chan)
 	}
 }
 
+
+//==========================================================================
+//
+// CheckLinks
+//
+// Returns a pointer to the sfxinfo if there is a link, otherwise returns the same
+//
+//==========================================================================
+
+sfxinfo_t *SoundEngine::CheckLinks(sfxinfo_t *sfx) {
+	// See if there is another sound already initialized with this lump. If so,
+	// then set this one up as a link, and don't load the sound again.
+	for (unsigned int i = 0; i < S_sfx.Size(); i++)
+	{
+		if (S_sfx[i].data.isValid() && S_sfx[i].link == sfxinfo_t::NO_LINK && S_sfx[i].lumpnum == sfx->lumpnum &&
+			(!sfx->bLoadRAW || (sfx->RawRate == S_sfx[i].RawRate)))	// Raw sounds with different sample rates may not share buffers, even if they use the same source data.
+		{
+			DPrintf(DMSG_NOTIFY, "Linked %s to %s (%d)\n", sfx->name.GetChars(), S_sfx[i].name.GetChars(), i);
+			sfx->link = i;
+			// This is necessary to avoid using the rolloff settings of the linked sound if its
+			// settings are different.
+			if (sfx->Rolloff.MinDistance == 0) sfx->Rolloff = S_Rolloff;
+			return &S_sfx[i];
+		}
+	}
+
+	return sfx;
+}
+
+
 //==========================================================================
 //
 // S_LoadSound
@@ -954,7 +1004,7 @@ sfxinfo_t *SoundEngine::LoadSound(sfxinfo_t *sfx)
 
 	while (!sfx->data.isValid())
 	{
-		unsigned int i;
+		//unsigned int i;
 
 		if (sfx->lumpnum == sfx_empty)
 		{
@@ -963,7 +1013,7 @@ sfxinfo_t *SoundEngine::LoadSound(sfxinfo_t *sfx)
 
 		// See if there is another sound already initialized with this lump. If so,
 		// then set this one up as a link, and don't load the sound again.
-		for (i = 0; i < S_sfx.Size(); i++)
+		/*for (i = 0; i < S_sfx.Size(); i++)
 		{
 			if (S_sfx[i].data.isValid() && S_sfx[i].link == sfxinfo_t::NO_LINK && S_sfx[i].lumpnum == sfx->lumpnum &&
 				(!sfx->bLoadRAW || (sfx->RawRate == S_sfx[i].RawRate)))	// Raw sounds with different sample rates may not share buffers, even if they use the same source data.
@@ -975,7 +1025,8 @@ sfxinfo_t *SoundEngine::LoadSound(sfxinfo_t *sfx)
 				if (sfx->Rolloff.MinDistance == 0) sfx->Rolloff = S_Rolloff;
 				return &S_sfx[i];
 			}
-		}
+		}*/
+		sfx = CheckLinks(sfx);
 
 		DPrintf(DMSG_NOTIFY, "Loading sound \"%s\" (%td)\n", sfx->name.GetChars(), sfx - &S_sfx[0]);
 		//Printf(TEXTCOLOR_GOLD"Loading sound %s on main thread!\n", sfx->name.GetChars());
@@ -1359,6 +1410,9 @@ int SoundEngine::GetSoundPlayingInfo (int sourcetype, const void *source, int so
 			}
 		}
 	}
+
+	count += AudioLoaderQueue::Instance->getSoundPlayingInfo(sourcetype, source, sound_id, chann);
+
 	return count;
 }
 

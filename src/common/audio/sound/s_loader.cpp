@@ -377,6 +377,53 @@ void AudioLoaderQueue::stopActorSounds(int sourcetype, const void* actor, int ch
 	}
 }
 
+int AudioLoaderQueue::getSoundPlayingInfo(int sourcetype, const void *source, int sound_id, int chann) {
+	int count = 0;
+
+	for (AudioQItem &mm : mQueue) {
+		for (unsigned int x = 0; x < mm.playInfo.Size(); x++) {
+			if (chann != -1 && chann != mm.playInfo[x].channel) continue;
+
+			if (sound_id > 0) {
+				if (mm.playInfo[x].orgSoundID == sound_id && (sourcetype == SOURCE_Any ||
+					(mm.playInfo[x].source == source)))
+				{
+					count++;
+				}
+			} else {
+				if ((sourcetype == SOURCE_Any || (mm.playInfo[x].source == source)))
+				{
+					count++;
+				}
+			}
+		}
+	}
+
+	// This should be safe, the threads never actually write to qItem or use playInfo, it's just along for the ride
+	// TODO: Synchronize access to the qItem just in case changes are made and I forget 
+	for (AudioLoaderThread *tt : mRunning) {
+		for (unsigned int x = 0; x < tt->qItem.playInfo.Size(); x++) {
+			if (chann != -1 && chann != tt->qItem.playInfo[x].channel) continue;
+
+			if (sound_id > 0) {
+				if (tt->qItem.playInfo[x].orgSoundID == sound_id && (sourcetype == SOURCE_Any ||
+					(tt->qItem.playInfo[x].source == source)))
+				{
+					count++;
+				}
+			}
+			else {
+				if ((sourcetype == SOURCE_Any || (tt->qItem.playInfo[x].source == source)))
+				{
+					count++;
+				}
+			}
+		}
+	}
+
+	return count;
+}
+
 
 void AudioLoaderQueue::stopAllSounds() {
 	for (AudioQItem &mm : mQueue) {
@@ -394,6 +441,9 @@ void AudioLoaderQueue::stopAllSounds() {
 void AudioLoaderQueue::update() {
 	updateCycles.Reset();
 	updateCycles.Clock();
+
+	int numPlayed = 0;
+	double playMS = 0;
 	
 	// Check if any of the load operations are complete
 	for (unsigned int x = 0; x < mRunning.Size(); x++) {
@@ -403,6 +453,14 @@ void AudioLoaderQueue::update() {
 			integrationTime.Clock();
 
 			mRunning[x]->join();
+
+			integrationTime.Unclock();
+			
+			if (integrationTime.TimeMS() > 1.0) {
+				Printf(TEXTCOLOR_YELLOW"AudioLoaderQueue::Warning Update<join>() took more than 1ms (%0.3fms), this might be a little high!\n", integrationTime.TimeMS());
+			}
+
+			integrationTime.Clock();
 
 			// Did this thread fail?
 			if (mRunning[x]->data == nullptr) { 
@@ -433,10 +491,15 @@ void AudioLoaderQueue::update() {
 			if (i.sfx->data.isValid()) {
 				//Printf("Finished loading; now playing : %s (%d copies)\n", i.sfx->name.GetChars(), i.playInfo.Size());
 
+				cycle_t playTime;
+				playTime.Clock();
 				for (auto snd : i.playInfo) {
 					// TODO: Get rolloff info and pass it along properly
 					soundEngine->StartSoundER(i.sfx, snd.type, snd.source, snd.pos, snd.vel, snd.channel, snd.flags, i.soundID, snd.orgSoundID, snd.volume, snd.attenuation, &snd.rolloff, snd.pitch, snd.startTime);
+					numPlayed++;
 				}
+				playTime.Unclock();
+				playMS += playTime.TimeMS();
 			}
 
 			mRunning[x]->totalTime.Unclock();
@@ -468,7 +531,7 @@ void AudioLoaderQueue::update() {
 	updateCycles.Unclock();
 
 	if (updateCycles.TimeMS() > 1.0) {
-		Printf(TEXTCOLOR_YELLOW"AudioLoaderQueue::Warning Update() took more than 1ms (%0.24fms), this might be a little high!\n", updateCycles.TimeMS());
+		Printf(TEXTCOLOR_YELLOW"AudioLoaderQueue::Warning Update() took more than 1ms (%0.6fms). Played %d sounds at %0.6fms \n", updateCycles.TimeMS(), numPlayed, playMS);
 	}
 }
 

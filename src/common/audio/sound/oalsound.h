@@ -243,17 +243,19 @@ private:
     void (ALC_APIENTRY*alcDeviceResumeSOFT)(ALCdevice *device);
 
     void BackgroundProc();
+	void BackgroundQueueProc();
     void AddStream(OpenALSoundStream *stream);
     void RemoveStream(OpenALSoundStream *stream);
+	void AddPlayToQueue(ALuint source);
 
 	void LoadReverb(const ReverbContainer *env);
 	void PurgeStoppedSources();
 	static FSoundChan *FindLowestChannel();
 
-    std::thread StreamThread;
-    std::mutex StreamLock;
-    std::condition_variable StreamWake;
-    std::atomic<bool> QuitThread;
+    std::thread StreamThread, QueueThread;
+    std::mutex StreamLock, PlayQueueLock, QueueThreadLock;
+    std::condition_variable StreamWake, QueueWake;
+    std::atomic<bool> QuitThread, QuitQueueThread;
 
 	ALCdevice *Device;
 	ALCcontext *Context;
@@ -280,6 +282,7 @@ private:
     bool WasInWater;
 
     TArray<OpenALSoundStream*> Streams;
+	TArray<ALuint> PlayQueue;				// @Cockatrice - alSourcePlay is often expensive, we queue the sounds to be played from the stream thread
     friend class OpenALSoundStream;
 
 	ALCdevice *InitDevice();

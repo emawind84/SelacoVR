@@ -43,6 +43,7 @@
 #include "i_module.h"
 #include "cmdlib.h"
 #include "m_fixed.h"
+#include "stats.h"
 
 
 const char *GetSampleTypeName(SampleType type);
@@ -542,7 +543,7 @@ static void LoadALCFunc(ALCdevice *device, const char *name, T *x)
 #define LOAD_FUNC(x)  (LoadALFunc(#x, &x))
 #define LOAD_DEV_FUNC(d, x)  (LoadALCFunc(d, #x, &x))
 OpenALSoundRenderer::OpenALSoundRenderer()
-	: QuitThread(false), Device(NULL), Context(NULL), SFXPaused(0), PrevEnvironment(NULL), EnvSlot(0)
+	: QuitThread(false), QuitQueueThread(false), Device(NULL), Context(NULL), SFXPaused(0), PrevEnvironment(NULL), EnvSlot(0)
 {
 	EnvFilters[0] = EnvFilters[1] = 0;
 
@@ -818,6 +819,9 @@ OpenALSoundRenderer::OpenALSoundRenderer()
 		else for(ALint src : Sources)
 			alSourcei(src, AL_SOURCE_RESAMPLER_SOFT, ridx);
 	}
+
+	StreamThread = std::thread(std::mem_fn(&OpenALSoundRenderer::BackgroundProc), this);
+	QueueThread = std::thread(std::mem_fn(&OpenALSoundRenderer::BackgroundQueueProc), this);
 }
 #undef LOAD_DEV_FUNC
 #undef LOAD_FUNC
@@ -834,6 +838,15 @@ OpenALSoundRenderer::~OpenALSoundRenderer()
 		lock.unlock();
 		StreamWake.notify_all();
 		StreamThread.join();
+	}
+
+	if (QueueThread.joinable())
+	{
+		std::unique_lock<std::mutex> lock(QueueThreadLock);
+		QuitQueueThread.store(true);
+		lock.unlock();
+		QueueWake.notify_all();
+		QueueThread.join();
 	}
 
 	while(Streams.Size() > 0)
@@ -870,24 +883,105 @@ OpenALSoundRenderer::~OpenALSoundRenderer()
 	Device = NULL;
 }
 
+/*void OpenALSoundRenderer::BackgroundProc()
+{
+	std::unique_lock<std::mutex> lock(StreamLock);
+	std::chrono::time_point<std::chrono::steady_clock> lastStreamTime;
+
+	while(!QuitThread.load())
+	{
+		// Copy the queue
+		TArray<ALuint> q;
+		std::unique_lock<std::mutex> pqLock(PlayQueueLock);
+		q.Append(PlayQueue);
+		PlayQueue.Clear();
+		pqLock.unlock();
+
+		// Play the queue
+		for (auto s : q) { 
+			alSourcePlay(s);
+			alGetError();
+		}
+
+		
+		// Process streams
+		if(Streams.Size() == 0)
+		{
+			// If there's nothing to play, wait indefinitely.
+			//StreamWake.wait(lock);
+		}
+		else
+		{
+			// If ~100ms has passed since the last stream processing, do it now
+			auto clk = std::chrono::high_resolution_clock::now();
+			if (std::chrono::duration<double, std::milli>(lastStreamTime - clk).count() >= 100) {
+				lastStreamTime = clk;
+
+				for (size_t i = 0; i < Streams.Size(); i++)
+					Streams[i]->Process();
+			}
+		}
+
+		if(q.Size() == 0) StreamWake.wait_for(lock, std::chrono::milliseconds(5));
+	}
+}*/
 void OpenALSoundRenderer::BackgroundProc()
 {
 	std::unique_lock<std::mutex> lock(StreamLock);
-	while(!QuitThread.load())
+
+	while (!QuitThread.load())
 	{
-		if(Streams.Size() == 0)
+		// Process streams
+		if (Streams.Size() == 0)
 		{
 			// If there's nothing to play, wait indefinitely.
 			StreamWake.wait(lock);
 		}
 		else
 		{
-			// Else, process all active streams and sleep for 100ms
-			for(size_t i = 0;i < Streams.Size();i++)
+
+			for (size_t i = 0; i < Streams.Size(); i++)
 				Streams[i]->Process();
+
 			StreamWake.wait_for(lock, std::chrono::milliseconds(100));
 		}
 	}
+}
+
+
+void OpenALSoundRenderer::BackgroundQueueProc()
+{
+	std::unique_lock<std::mutex> threadLocker(QueueThreadLock);
+
+	while (!QuitQueueThread.load())
+	{
+		// Copy the queue
+		TArray<ALuint> q;
+
+		{
+			std::lock_guard l(PlayQueueLock);
+			q.Append(PlayQueue);
+			PlayQueue.Clear();
+		}
+
+		// Play the queue
+		for (auto s : q) {
+			alSourcePlay(s);
+			alGetError();
+		}
+
+		if (q.Size() == 0) QueueWake.wait_for(threadLocker, std::chrono::milliseconds(5));
+	}
+}
+
+void OpenALSoundRenderer::AddPlayToQueue(ALuint source) {
+	//std::unique_lock<std::mutex> pqLock(PlayQueueLock);
+	{
+		std::lock_guard pqLock(PlayQueueLock);
+		PlayQueue.Push(source);
+	}
+
+	QueueWake.notify_all();
 }
 
 void OpenALSoundRenderer::AddStream(OpenALSoundStream *stream)
@@ -1164,8 +1258,8 @@ void OpenALSoundRenderer::UnloadSound(SoundHandle sfx)
 
 SoundStream *OpenALSoundRenderer::CreateStream(SoundStreamCallback callback, int buffbytes, int flags, int samplerate, void *userdata)
 {
-	if(StreamThread.get_id() == std::thread::id())
-		StreamThread = std::thread(std::mem_fn(&OpenALSoundRenderer::BackgroundProc), this);
+	/*if(StreamThread.get_id() == std::thread::id())
+		StreamThread = std::thread(std::mem_fn(&OpenALSoundRenderer::BackgroundProc), this);*/
 	OpenALSoundStream *stream = new OpenALSoundStream(this);
 	if (!stream->Init(callback, buffbytes, flags, samplerate, userdata))
 	{
@@ -1247,14 +1341,18 @@ FISoundChannel *OpenALSoundRenderer::StartSound(SoundHandle sfx, float vol, int 
 		return NULL;
 
 	alSourcei(source, AL_BUFFER, buffer);
-	if((chanflags&SNDF_NOPAUSE) || !SFXPaused)
+	
+	/*if((chanflags&SNDF_NOPAUSE) || !SFXPaused) 
 		alSourcePlay(source);
 	if(getALError() != AL_NO_ERROR)
 	{
 		alSourcei(source, AL_BUFFER, 0);
 		getALError();
 		return NULL;
-	}
+	}*/
+
+	// @Cockatrice alSourcePlay blocks and sometimes is quite delayed, so instead of playing here we queue the play func
+	if ((chanflags&SNDF_NOPAUSE) || !SFXPaused) AddPlayToQueue(source);
 
 	if(!(chanflags&SNDF_NOREVERB))
 		ReverbSfx.Push(source);
@@ -1294,6 +1392,8 @@ FISoundChannel *OpenALSoundRenderer::StartSound3D(SoundHandle sfx, SoundListener
 		if(FreeSfx.Size() == 0)
 			return NULL;
 	}
+
+	alGetError();	// Clear any uncaught errors
 
 	bool manualRolloff = true;
 	ALuint buffer = GET_PTRID(sfx.data);
@@ -1414,18 +1514,38 @@ FISoundChannel *OpenALSoundRenderer::StartSound3D(SoundHandle sfx, SoundListener
 			if(offset > 0.f) alSourcef(source, AL_SEC_OFFSET, offset);
 		}
 	}
-	if(getALError() != AL_NO_ERROR)
+	if (getALError() != AL_NO_ERROR) {
+		// Temporary: Print more details about the error
+		Printf("AL Error, source: %d  pitch: %d  manual rolloff: %s", source, pitch, manualRolloff ? "yes" : "no");
 		return NULL;
+	}
 
+	cycle_t bufferT, playT;
+	bufferT.Clock();
 	alSourcei(source, AL_BUFFER, buffer);
-	if((chanflags&SNDF_NOPAUSE) || !SFXPaused)
+	bufferT.Unclock();
+
+	playT.Clock();
+
+	// @Cockatrice alSourcePlay blocks and sometimes is quite delayed, so instead of playing here we queue the play func
+	if ((chanflags&SNDF_NOPAUSE) || !SFXPaused) AddPlayToQueue(source);
+
+	/*if((chanflags&SNDF_NOPAUSE) || !SFXPaused)
 		alSourcePlay(source);
 	if(getALError() != AL_NO_ERROR)
 	{
 		alSourcei(source, AL_BUFFER, 0);
 		getALError();
 		return NULL;
-	}
+	}*/
+
+	playT.Unclock();
+
+	if (bufferT.TimeMS() > 0.05 || playT.TimeMS() > 0.05) {
+		Printf(TEXTCOLOR_RED"\nPlayQ: %0.4f-%0.4f  \n", bufferT.TimeMS(), playT.TimeMS());
+	}/* else {
+		Printf(TEXTCOLOR_BLUE"PlayQ: %0.4f-%0.4f  ", bufferT.TimeMS(), playT.TimeMS());
+	}*/
 
 	if(!(chanflags&SNDF_NOREVERB))
 		ReverbSfx.Push(source);
@@ -1479,7 +1599,23 @@ void OpenALSoundRenderer::StopChannel(FISoundChannel *chan)
 	// Release first, so it can be properly marked as evicted if it's being killed
 	soundEngine->ChannelEnded(chan);
 
+	// In the unlikely event that there is a queued play of this source, remove it
+	PlayQueueLock.lock();
+	for (unsigned int x = 0; x < PlayQueue.Size(); x++) {
+		if (PlayQueue[x] == source) {
+			PlayQueue.Delete(x);
+			x--;
+		}
+	}
+	PlayQueueLock.unlock();
+
+	// TODO: Lock the stream thread so we can be 100% sure the source is stopped after play ops complete
+	// @Cockatrice - It is imperative that we set the buffer to 0 here, and we do not set the buffer 
+	// in the background thread (even though that would save us some waiting for OpenAL time on the main thread)
+	// because if the background thread was late and tried to play this source, it would correctly fail
+	// to play because the buffer is no longer bound to the source
 	alSourceRewind(source);
+	alGetError();	// We don't care if this fails, it will fail from time to time when the source was never actually played
 	alSourcei(source, AL_BUFFER, 0);
 	getALError();
 
@@ -1911,8 +2047,17 @@ void OpenALSoundRenderer::PurgeStoppedSources()
 		FSoundChan *schan = soundEngine->GetChannels();
 		while(schan)
 		{
-			if(schan->SysChannel != NULL && src == GET_PTRID(schan->SysChannel))
+			ALuint chan;
+			if(schan->SysChannel != NULL && src == (chan = GET_PTRID(schan->SysChannel)))
 			{
+				// Check if the channel is queued for play, if so don't stop it yet
+				PlayQueueLock.lock();
+				if (PlayQueue.Contains(chan)) {
+					PlayQueueLock.unlock();
+					break;
+				}
+				PlayQueueLock.unlock();
+
 				StopChannel(schan);
 				break;
 			}

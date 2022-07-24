@@ -251,6 +251,8 @@ public:
 
 	virtual void StopChannel(FSoundChan* chan);
 	sfxinfo_t* LoadSound(sfxinfo_t* sfx);
+	sfxinfo_t* CheckLinks(sfxinfo_t *sfx);
+
 	const sfxinfo_t* GetSfx(unsigned snd)
 	{
 		if (snd >= S_sfx.Size()) return nullptr;
