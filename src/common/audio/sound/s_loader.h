@@ -6,160 +6,9 @@
 #include <atomic>
 #include <mutex>
 #include <chrono>
+#include <map>
 #include "stats.h"
-
-// @Cockatrice: Queue wrapper
-// Funcs added as are necessary
-template <typename T>
-class TSQueue {
-	TSQueue() {}
-	~TSQueue() {
-		clear();
-	}
-
-	bool dequeue(T &item) {
-		std::lock_guard lock(mQLock);
-		return mQueue.pop(item);
-	}
-
-	void queue(T &item) {
-		std::lock_guard lock(mQLock);
-		mQueue.Insert(0, item);
-	}
-
-	void clear() {
-		std::lock_guard lock(mQLock);
-		mQueue.Clear();
-	}
-
-	// Delete all items from the queue that match
-	// based on search function
-	int deleteSearch(bool(*func)(T&)) {
-		std::lock_guard lock(mQLock);
-		for (int x = 0; x < mQueue.Size(); x++) {
-			if (func(mQueue[x])) {
-				mQueue.Delete(x);
-				x--;
-			}
-		}
-	}
-
-	// Run this func for all elements in the queue
-	void foreach(void(*func)(T&)) { 
-		std::lock_guard lock(mQLock);  
-		for (int x = 0; x < mQueue.Size(); x++) { func(mQueue[x]); } 
-	}
-
-	int size() {
-		std::lock_guard lock(mQLock);
-		return mQueue.Size();
-	}
-
-protected:
-	TArray<T> mQueue;
-	std::mutex mQLock;
-};
-
-
-// ResourceLoader<InputType, OutputType>
-template <typename IP, typename OP>
-class ResourceLoader {
-	ResourceLoader() {}
-
-	void start() {
-		if (!mThread) {
-			mThread = thread(&ResourceLoader<IP, OP>::bgproc, this);
-		}
-	}
-
-	void stop() {
-		// Kill and finish the thread
-		if (mThread.joinable()) {
-			mActive.store(false);
-			mWake.notify_all();
-			mThread.join();
-		}
-	}
-
-
-	void queue(IP &input) {
-		mInputQ.queue(input);
-		mWake.notify_all();
-	}
-
-	bool getFinished(OP &output) {
-		return mOutputQ.dequeue(output);
-	}
-
-protected:
-	// Replace this to actually load the resource in the background
-	virtual bool loadResource(IP &input, OP &output) { return false; }
-
-private:
-	std::atomic<bool> mActive{ true };
-	std::thread mThread;
-	std::mutex mWakeLock;
-	std::condition_variable mWake;
-
-	TSQueue<IP> mInputQ;
-	TSQueue<OP> mOutputQ;
-
-	void bgproc() {
-		std::unique_lock<std::mutex> lock(mWakeLock);
-
-		while (mActive.load()) {
-			bool processed;
-			lock.try_lock();
-
-			// Process the queue
-			while (true) {
-				IP input;
-				if (!mInputQ.dequeue(&input)) {
-					break;
-				}
-
-				OP output;
-				if (loadResource(input, &output)) {
-					mOutputQ.queue(output);
-				}
-				processed = true;
-			}
-
-			if (!processed) {
-				mWake.wait_for(lock, std::chrono::milliseconds(5));
-			} else {
-				lock.unlock();
-			}
-		}
-	}
-};
-
-
-/*class MThread {
-public:
-	template< class Function, class... Args> explicit MThread(Function&& f, Args&&... args);
-	void join() { m_thread.join(); }
-	bool active() const noexcept { return m_active.load(std::memory_order_acquire); }
-
-private:
-	std::atomic<bool> m_active{ true };
-	std::thread m_thread;
-};
-
-
-template < class Function, class... Args >
-MThread::MThread(Function&& fn, Args&&... args) :
-	m_active(false),
-	m_thread(
-		[this](auto&& fn2, auto&&... args2) -> void {
-			m_active = true;
-			fn2(std::forward<Args>(args2)...);
-			m_active = false;
-		},
-		std::forward<Function>(fn), std::forward<Args>(args)...
-	)
-{}*/
-
+#include "TSQueue.h"
 
 // This should encapsulate pre-calculated data on how the sound will be played
 // After it finishes loading via the queue
@@ -176,11 +25,8 @@ struct AudioQueuePlayInfo {
 
 struct AudioQItem {
 	FSoundID soundID;
-	sfxinfo_t *sfx;
+	sfxinfo_t *sfx = nullptr;
 	TArray<AudioQueuePlayInfo> playInfo;
-	// Using an array because if more than one attempt to play the same unloaded sound is made, it can be queued
-	// to play when loading is complete. If playInfo is empty, the sound was just meant to be loaded and not
-	// meant to be played.
 
 	bool operator ==(const AudioQItem& b) {
 		return sfx == b.sfx || soundID == b.soundID;
@@ -188,10 +34,58 @@ struct AudioQItem {
 };
 
 
+struct AudioQInput {
+	FSoundID soundID;
+	sfxinfo_t *sfx = nullptr;
+	//TArray<AudioQueuePlayInfo> playInfo;
+	FileReader *readerCopy = nullptr;		// Requires a reader prepared on the main thread
+};
+
+struct AudioQOutput {
+	FSoundID soundID;
+	sfxinfo_t *sfx = nullptr;
+	//TArray<AudioQueuePlayInfo> playInfo;
+	char *data = nullptr;					// We only need the data if we are going to cache it but there is no reason to do that for audio since it is buffered and stored with OpenAL, so maybe remove this eventually
+	SoundHandle loadedSnd;
+	bool createdNewData = false;
+};
+
+
+
+class AudioLoadThread : public ResourceLoader<AudioQInput, AudioQOutput> {
+public:
+	std::atomic<int> currentSoundID;		// Used to externally determine if this sound is already being loaded
+
+	// Is this soundID already loading/loaded on this thread?
+	bool existsInQueue(int soundID) {
+		if (currentSoundID == soundID) return true;
+		
+		bool found = false;
+
+		mInputQ.foreach([&](AudioQInput &i) {
+			if (i.soundID == soundID) found = true;
+		});
+
+		if (found) return true;
+
+		mOutputQ.foreach([&](AudioQOutput &o) {
+			if (o.soundID == soundID) found = true;
+		});
+
+		return found;
+	}
+
+protected:
+	//bool relinkSound(AudioQueuePlayInfo &pi, int sourcetype, const void *from, const void *to, const FVector3 *optpos);
+	bool loadResource(AudioQInput &input, AudioQOutput &output) override;
+	void cancelLoad() override { currentSoundID.store(0); }
+	void completeLoad() override { currentSoundID.store(0); }
+};
+
 
 // A single thread used to read and convert audio contents
 // Does not modify any data but stores loaded audio for extraction later in the main thread
-class AudioLoaderThread {
+/*class AudioLoaderThread {
 	friend class AudioLoaderQueue;	 // Should be temporary, eventually manage access to qItem
 public:
 	AudioLoaderThread(AudioQItem &item);
@@ -218,29 +112,30 @@ private:
 
 	void startLoading();
 };
-
-
+*/
 
 class AudioLoaderQueue
 {
 private:
-	//static const unsigned int MaxThreads = 4;		// TODO: Make this a CVAR
-
 	struct QStat {
 		double totalTime, threadTime, integrationTime;
 	};
 
-	TArray<AudioQItem> mQueue;
-	TArray<AudioLoaderThread*> mRunning;
+	//TArray<AudioQItem> mQueue;
+	TArray<AudioLoadThread*> mRunning;
 	TArray<QStat> mStats;
+	std::unordered_map<int, TArray<AudioQueuePlayInfo>> mPlayQueue;	// Stores all of the playback details for each queued sound
 
 	cycle_t updateCycles;
 	int totalLoaded = 0, totalFailed = 0;
 
-	void start(AudioQItem &item);
-	void relinkSound(AudioQItem &item, int sourcetype, const void *from, const void *to, const FVector3 *optpos);
+	bool relinkSound(AudioQueuePlayInfo &item, FSoundID sndID, int sourcetype, const void *from, const void *to, const FVector3 *optpos);
+	
+	AudioLoadThread *spinupThreads();	// Start as many threads as necessary or specified, return the first one
 
 public:
+	static const int MAX_THREADS = 4;	// Max number of threads that will be allowed to be running at once, regardless of CVAR value
+	
 	AudioLoaderQueue();
 	~AudioLoaderQueue();
 
@@ -265,8 +160,8 @@ public:
 	int getSoundPlayingInfo(int sourcetype, const void *source, int sound_id, int chann);
 
 	double updateTimeLast() { return updateCycles.TimeMS(); }
-	int queueSize() { return mQueue.Size(); }
-	int numActive() { return mRunning.Size(); }
+	int queueSize();
+	int numActive();
 	double avgLoad() { return calcLoadAvg(); }
 	double maxLoad() { return calcMaxLoad(); }
 	double minLoad() { return calcMinLoad(); }
