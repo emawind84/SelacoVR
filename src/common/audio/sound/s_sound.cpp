@@ -74,6 +74,7 @@ void SoundEngine::Init(TArray<uint8_t> &curve)
 	{
 		ReturnChannel(Channels);
 	}
+
 	S_SoundCurve = std::move(curve);
 }
 
@@ -380,6 +381,34 @@ FSoundID SoundEngine::ResolveSound(const void *, int, FSoundID soundid, float &a
 	}
 }
 
+
+static inline bool IsSoundFromListener(AActor *source, AActor *listenerObject) {
+	// Check if the source is the listener, or is attached to the listener
+	// Then force the sound to 2D if it's coming from the "camera"
+	// TODO: Add a flag to cancel this out
+	if (source == listenerObject) {
+		return true;
+	}
+	else if (listenerObject && source) {
+		// Check if listener object is a player, then if the source is an inventory object or the current weapon
+		// If this actor is the current player weapon
+		if (listenerObject->player && listenerObject->player->ReadyWeapon == source) {
+			return true;
+		}
+		// @Cockatrice - Disabling inventory for now, this is probably rare to occur and is a lot of unnecessary checks
+		/*else {
+			// Check if the actor is an inventory item of the listener
+			for (AActor *item = li->Inventory; item != NULL; item = item->Inventory) {
+				if (item == source) {
+					return true;
+				}
+			}
+		}*/
+	}
+
+	return false;
+}
+
 //==========================================================================
 //
 // S_StartSound
@@ -542,9 +571,16 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 		sfx = CheckLinks(sfx);
 
 		if (!sfx->data.isValid()) {
+			bool force2D = false;
+
+			// Force 2D if the sound is from the listener
+			if (type == SOURCE_Actor && attenuation > 0 && IsSoundFromListener((AActor *)source, (AActor *)listener.ListenerObject)) {
+				force2D = true;
+			}
+
 			AudioQueuePlayInfo info = {
 				org_id, pos, vel, channel, type,
-				pitch, volume, attenuation, startTime,
+				pitch, volume, force2D ? 0 : attenuation, startTime,
 				flags, *rolloff, source
 			};
 
@@ -620,12 +656,22 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 		if (chanflags & (CHANF_UI | CHANF_NOPAUSE)) startflags |= SNDF_NOPAUSE;
 		if (chanflags & CHANF_UI) startflags |= SNDF_NOREVERB;
 
-		float sfxlength = (float)GSnd->GetMSLength(sfx->data) / 1000.f;
+		/*float sfxlength = (float)GSnd->GetMSLength(sfx->data) / 1000.f;
 		startTime = (startflags & SNDF_LOOP)
 			? (sfxlength > 0 ? fmodf(startTime, sfxlength) : 0.f)
-			: clamp(startTime, 0.f, sfxlength);
+			: clamp(startTime, 0.f, sfxlength);*/
+		// Don't get length when not necessary
+		if (abs(startTime) > 0.00001f) {
+			float sfxlength = (float)GSnd->GetMSLength(sfx->data) / 1000.f;
 
-		if (attenuation > 0 && type != SOURCE_None)
+			startTime = (startflags & SNDF_LOOP)
+				? (sfxlength > 0 ? fmodf(startTime, sfxlength) : 0.f)
+				: clamp(startTime, 0.f, sfxlength);
+		}
+
+
+		if (!(type == SOURCE_Actor && attenuation > 0 && IsSoundFromListener((AActor *)source, (AActor *)listener.ListenerObject)) 
+			&& attenuation > 0 && type != SOURCE_None)
 		{
 			chan = (FSoundChan*)GSnd->StartSound3D(sfx->data, &listener, float(volume), rolloff, float(attenuation), max(0.0001f, pitch), basepriority, pos, vel, channel, startflags, NULL, startTime);
 		}
@@ -700,7 +746,7 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 // Do not check links or verify that the sound is loaded. If not loaded, no sound is played.
 FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *source,
 	FVector3 pos, FVector3 vel, int channel, EChanFlags flags, FSoundID sound_id, FSoundID org_sound_id, float volume, float attenuation,
-	FRolloffInfo *forcedrolloff, float spitch, float startTime)
+	FRolloffInfo *forcedrolloff, float spitch, float startTime, bool usePosVel)
 {
 	// Return NULL if the sound isn't loaded
 	if (!sfx->data.isValid()) { 
@@ -721,6 +767,9 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 
 	if (sound_id <= 0 || volume <= 0 || nosfx || !SoundEnabled() || blockNewSounds || (unsigned)sound_id >= S_sfx.Size())
 		return NULL;
+
+	if(!usePosVel && type != SOURCE_Unattached && source != nullptr)
+		CalcPosVel(type, source, nullptr, channel, chanflags, sound_id, &pos, &vel, nullptr);
 
 	// When resolving a link we do not want to get the NearLimit of
 	// the referenced sound so some additional checks are required
@@ -751,11 +800,10 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 	}
 
 	// If this sound doesn't like playing near itself, don't play it if that's what would happen.
-	// @Cockatrice This should have already been done before getting to this stage, commenting it out for now
-	/*if (near_limit > 0 && CheckSoundLimit(sfx, pos, near_limit, limit_range, type, source, channel, attenuation))
+	if (near_limit > 0 && CheckSoundLimit(sfx, pos, near_limit, limit_range, type, source, channel, attenuation))
 	{
 		chanflags |= CHANF_EVICTED;
-	}*/
+	}
 
 	// If the sound is blocked and not looped, return now. If the sound
 	// is blocked and looped, pretend to play it so that it can
@@ -817,7 +865,7 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 	else
 	{
 		// TODO: Remove this
-		cycle_t sndTimer, lengthTimer;
+		cycle_t sndTimer;
 		sndTimer.Clock();
 		
 
@@ -827,13 +875,16 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 		if (chanflags & (CHANF_UI | CHANF_NOPAUSE)) startflags |= SNDF_NOPAUSE;
 		if (chanflags & CHANF_UI) startflags |= SNDF_NOREVERB;
 
-		lengthTimer.Clock();
-		float sfxlength = (float)GSnd->GetMSLength(sfx->data) / 1000.f;
-		lengthTimer.Unclock();
 
-		startTime = (startflags & SNDF_LOOP)
-			? (sfxlength > 0 ? fmodf(startTime, sfxlength) : 0.f)
-			: clamp(startTime, 0.f, sfxlength);
+		// Don't adjust start time unless it's > 0. Getting the sample length can be costly
+		if (abs(startTime) > 0.00001f) {
+			float sfxlength = (float)GSnd->GetMSLength(sfx->data) / 1000.f;
+
+			startTime = (startflags & SNDF_LOOP)
+				? (sfxlength > 0 ? fmodf(startTime, sfxlength) : 0.f)
+				: clamp(startTime, 0.f, sfxlength);
+		}
+		
 
 		if (attenuation > 0 && type != SOURCE_None)
 		{
@@ -846,7 +897,7 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 
 		sndTimer.Unclock();
 		if (sndTimer.TimeMS() > 0.5) {
-			Printf(TEXTCOLOR_RED"Starting a sound (%s) cost %0.4f + %0.4f = (0.4f)!!!\n", sfx->name.GetChars(), sndTimer.TimeMS(), lengthTimer.TimeMS(), sndTimer.TimeMS() - lengthTimer.TimeMS());
+			Printf(TEXTCOLOR_RED"Starting a sound (%s) cost %0.4f!!!\n", sfx->name.GetChars(), sndTimer.TimeMS(), sndTimer.TimeMS());
 		}
 	}
 	if (chan == NULL && (chanflags & CHANF_LOOP))

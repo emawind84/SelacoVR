@@ -210,7 +210,7 @@ protected:
 	// the complete set of sound effects
 	TArray<sfxinfo_t> S_sfx;
 	FRolloffInfo S_Rolloff{};
-	TArray<uint8_t> S_SoundCurve;
+	TArray<uint8_t> S_SoundCurve;		// @Cockatrice - As far as I know this is only inited once, but for thread safety do not change this during gameplay
 	TMap<int, int> ResIdMap;
 	TArray<FRandomSoundList> S_rnd;
 	bool blockNewSounds = false;
@@ -293,7 +293,7 @@ public:
 	
 	FSoundChan* StartSoundER(sfxinfo_t *sfx, int type, const void *source,
 		FVector3 pos, FVector3 vel, int channel, EChanFlags flags, FSoundID sound_id, FSoundID org_sound_id, float volume, float attenuation,
-		FRolloffInfo *forcedrolloff, float spitch, float startTime);
+		FRolloffInfo *forcedrolloff, float spitch, float startTime, bool usePosVel = true);
 
 	// Stops an origin-less sound from playing from this channel.
 	void StopSoundID(int sound_id);

@@ -700,8 +700,7 @@ void AudioLoaderQueue::update() {
 					playTime.Clock();
 
 					for (auto snd : playlist) {
-						// TODO: Get rolloff info and pass it along properly
-						soundEngine->StartSoundER(loaded.sfx, snd.type, snd.source, snd.pos, snd.vel, snd.channel, snd.flags, loaded.soundID, snd.orgSoundID, snd.volume, snd.attenuation, &snd.rolloff, snd.pitch, snd.startTime);
+						soundEngine->StartSoundER(loaded.sfx, snd.type, snd.source, snd.pos, snd.vel, snd.channel, snd.flags, loaded.soundID, snd.orgSoundID, snd.volume, snd.attenuation, &snd.rolloff, snd.pitch, snd.startTime, false);
 						numPlayed++;
 					}
 
