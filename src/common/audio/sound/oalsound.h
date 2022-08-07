@@ -268,6 +268,8 @@ private:
 
     void BackgroundProc();
 	void BackgroundQueueProc();
+	void FlushPlayQueue();
+	void UpdatePlayedSounds();
     void AddStream(OpenALSoundStream *stream);
     void RemoveStream(OpenALSoundStream *stream);
 

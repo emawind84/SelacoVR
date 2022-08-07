@@ -969,20 +969,6 @@ void OpenALSoundRenderer::BackgroundQueueProc()
 
 	while (!QuitQueueThread)
 	{
-		// Copy the queue
-		/*TArray<ALuint> q;
-
-		{
-			std::lock_guard l(PlayQueueLock);
-			q.Append(PlayQueue);
-			PlayQueue.Clear();
-		}
-
-		// Play the queue
-		for (auto s : q) {
-			alSourcePlay(s);
-			alGetError();
-		}*/
 		bool played = false;
 
 		OpenALQueueItem playInfo;
@@ -1007,16 +993,6 @@ void OpenALSoundRenderer::BackgroundQueueProc()
 	}
 }
 
-/*void OpenALSoundRenderer::AddPlayToQueue(ALuint source) {
-	//std::unique_lock<std::mutex> pqLock(PlayQueueLock);
-	{
-		std::lock_guard pqLock(PlayQueueLock);
-		PlayQueue.Push(source);
-	}
-
-
-	QueueWake.notify_all();
-}*/
 
 void OpenALSoundRenderer::AddStream(OpenALSoundStream *stream)
 {
@@ -1046,17 +1022,38 @@ void OpenALSoundRenderer::SetSfxVolume(float volume)
 		if(schan->SysChannel != NULL)
 		{
 			ALuint source = GET_PTRID(schan->SysChannel);
+			SFXStatus *status = statusForSource(source);
+
 			volume = SfxVolume;
 
-			alDeferUpdatesSOFT();
-			alSourcef(source, AL_MAX_GAIN, volume);
-			alSourcef(source, AL_GAIN, volume * schan->Volume);
+			//alDeferUpdatesSOFT();
+
+			if (!status || status->state != AL_INITIAL) {
+				alSourcef(source, AL_MAX_GAIN, volume);
+				alSourcef(source, AL_GAIN, volume * schan->Volume);
+			}
+			else {
+				//alProcessUpdatesSOFT();
+
+				// The sound is most likely being played right now
+				// Flush the queue and wait to see if it plays so we can stop it immediately
+				FlushPlayQueue();
+				UpdatePlayedSounds();
+
+				// Now the state may have changed, change volume
+				if (status->state != AL_INITIAL) {
+					//alDeferUpdatesSOFT();
+
+					alSourcef(source, AL_MAX_GAIN, volume);
+					alSourcef(source, AL_GAIN, volume * schan->Volume);
+				}
+			}
 		}
 		schan = schan->NextChan;
 	}
 
-	alProcessUpdatesSOFT();
-
+	//alProcessUpdates`);
+	
 	getALError();
 }
 
@@ -1493,6 +1490,7 @@ FISoundChannel *OpenALSoundRenderer::StartSound3D(SoundHandle sfx, SoundListener
 
 	playInfo.sfx = sfx;
 	playInfo.pos = pos;
+	playInfo.vel = vel;
 	playInfo.dist_sqr = dist_sqr;
 	playInfo.vol = vol;
 	playInfo.priority = 0;
@@ -1871,6 +1869,8 @@ bool OpenALSoundRenderer::StartSound3D(OpenALQueueItem &playInfo)
 		alSourcef(source, AL_ROLLOFF_FACTOR, 1.f);
 	}
 
+	getALError();
+
 	if (playInfo.dist_sqr < (0.0004f*0.0004f))
 	{
 		// Head relative
@@ -1895,6 +1895,8 @@ bool OpenALSoundRenderer::StartSound3D(OpenALQueueItem &playInfo)
 	if (AL.SOFT_source_spatialize)
 		alSourcei(source, AL_SOURCE_SPATIALIZE_SOFT, AL_TRUE);
 
+	getALError();
+
 	if (EnvSlot)
 	{
 		if (!(playInfo.chanflags&SNDF_NOREVERB))
@@ -1914,6 +1916,8 @@ bool OpenALSoundRenderer::StartSound3D(OpenALQueueItem &playInfo)
 		alSourcef(source, AL_PITCH, playInfo.pitch*PITCH_MULT);
 	else
 		alSourcef(source, AL_PITCH, playInfo.pitch);
+
+	getALError();
 
 	if (!playInfo.reuseChan)
 	{
@@ -1962,7 +1966,7 @@ void OpenALSoundRenderer::ChannelVolume(FISoundChannel *chan, float volume)
 	if(chan == NULL || chan->SysChannel == NULL)
 		return;
 
-	alDeferUpdatesSOFT();
+	//alDeferUpdatesSOFT();
 
 	ALuint source = GET_PTRID(chan->SysChannel);
 	SFXStatus *status = statusForSource(source);
@@ -1977,7 +1981,7 @@ void OpenALSoundRenderer::ChannelPitch(FISoundChannel *chan, float pitch)
 	if (chan == NULL || chan->SysChannel == NULL)
 		return;
 
-	alDeferUpdatesSOFT();
+	//alDeferUpdatesSOFT();
 
 	ALuint source = GET_PTRID(chan->SysChannel);
 	SFXStatus *s = statusForSource(source);
@@ -1990,6 +1994,13 @@ void OpenALSoundRenderer::ChannelPitch(FISoundChannel *chan, float pitch)
 	}
 }
 
+void OpenALSoundRenderer::FlushPlayQueue() {
+	QueueWake.notify_all();
+	while (!QuitQueueThread && PlayQueue.size()) {
+		std::this_thread::sleep_for(std::chrono::microseconds(10));
+	}
+}
+
 void OpenALSoundRenderer::StopChannel(FISoundChannel *chan)
 {
 	if(chan == NULL || chan->SysChannel == NULL)
@@ -1999,35 +2010,43 @@ void OpenALSoundRenderer::StopChannel(FISoundChannel *chan)
 	// Release first, so it can be properly marked as evicted if it's being killed
 	soundEngine->ChannelEnded(chan);
 
-	// In the unlikely event that there is a queued play of this source, remove it
+	// In the event that there is a queued play of this source, remove it
+	bool removedFromQueue = false;
 	PlayQueue.deleteSearch([&](OpenALQueueItem &item) {
-		return item.source == source;
+		if (item.source == source) {
+			removedFromQueue = true;
+			return true;
+		}
+		return false;
 	});
 
 	// Make sure we actually have a sound playing with this source
 	SFXStatus *status = statusForSource(source);
 	if (status) {
-		alSourceRewind(source);
-		alSourcei(source, AL_BUFFER, 0);
-		getALError();
+		if (status->state != AL_INITIAL) {
+			alSourceRewind(source);
+			alSourcei(source, AL_BUFFER, 0);
+			getALError();
+		}
+		else if(!removedFromQueue) {
+			// The sound is most likely being played right now
+			// Flush the queue and wait to see if it plays so we can stop it immediately
+			FlushPlayQueue();
+			UpdatePlayedSounds();
+
+			// TODO: Remove this
+			Printf(TEXTCOLOR_BRICK"Flushed play queue to stop channel!\n");
+
+			// Now the state may have changed, stop the sound if necessary
+			if (status->state != AL_INITIAL) {
+				Printf(TEXTCOLOR_BRICK"Turns out this was actually necessary and the sound has been stopped!\n");
+				alSourceRewind(source);
+				alSourcei(source, AL_BUFFER, 0);
+				getALError();
+			}
+		}
 	}
 
-	//uint32_t i;
-	/*
-	if((i=PausableSfx.Find(source)) < PausableSfx.Size())
-		PausableSfx.Delete(i);
-	if((i=ReverbSfx.Find(source)) < ReverbSfx.Size())
-		ReverbSfx.Delete(i);
-	if((i=SfxGroup.Find(source)) < SfxGroup.Size())
-		SfxGroup.Delete(i);*/
-
-	// Remove sounds for this source from the list
-	/*for (unsigned int x = 0; x < SfxGroup.Size(); x++) {
-		if (SfxGroup[x].source == source) {
-			SfxGroup.Delete(x);
-			break;
-		}
-	}*/
 	SfxGroup.erase(source);
 
 	if (!(chan->ChanFlags & CHANF_EVICTED))
@@ -2179,11 +2198,12 @@ void OpenALSoundRenderer::UpdateSoundParams3D(SoundListener *listener, FISoundCh
 	float dist_sqr = (float)(pos - listener->position).LengthSquared();
 	chan->DistanceSqr = dist_sqr;
 
-	alDeferUpdatesSOFT();
 	ALuint source = GET_PTRID(chan->SysChannel);
 	SFXStatus *status = statusForSource(source);
 
 	if (!status || status->state == AL_INITIAL) { return; }		// Sound is not yet playing on this source
+
+	//alDeferUpdatesSOFT();
 
 	if(dist_sqr < (0.0004f*0.0004f))
 	{
@@ -2211,7 +2231,7 @@ void OpenALSoundRenderer::UpdateListener(SoundListener *listener)
 	if(!listener->valid)
 		return;
 
-	alDeferUpdatesSOFT();
+	//alDeferUpdatesSOFT();
 
 	float angle = listener->angle;
 	ALfloat orient[6];
@@ -2505,9 +2525,8 @@ void OpenALSoundRenderer::PrintDriversList()
 	}
 }
 
-void OpenALSoundRenderer::PurgeStoppedSources()
-{
-	// Dequeue any finished sounds and set states accordingly
+// Dequeue any finished sounds and set states accordingly
+void OpenALSoundRenderer::UpdatePlayedSounds() {
 	OpenALPlayedItem played;
 	while (PlayedQueue.dequeue(played)) {
 		SFXStatus *ss = statusForSource(played.source);
@@ -2515,6 +2534,12 @@ void OpenALSoundRenderer::PurgeStoppedSources()
 			ss->state = played.state;
 		}
 	}
+}
+
+void OpenALSoundRenderer::PurgeStoppedSources()
+{
+	// Update played state for sounds that have played and not been checked
+	UpdatePlayedSounds();
 
 	// Gather channels that are stopped
 	// Since stopping a channel alters the map, we need to use a deferred list
