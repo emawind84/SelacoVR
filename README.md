@@ -23,6 +23,8 @@ https://github.com/dxt121730/BD64Weapons weapon pack for Brutal Doom 64 by dxt12
 
 https://github.com/mmaulwurff/laser-sight/releases laser sight mod, you need this for aiming
 
+https://github.com/iAmErmac/Virtual-Tactical-Vest adds a virtual vest with weapon slots by iAmErmac
+
 https://www.moddb.com/downloads/doom-neural-upscale-2x texture upscale mod
 
 https://forum.zdoom.org/download/file.php?id=30459&sid=df63736751c12c3ebb76230d1dc86543 blood color fixer mod
