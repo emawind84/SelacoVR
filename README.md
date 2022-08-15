@@ -19,6 +19,8 @@ https://github.com/hh79/gz3doom/files/4378108/HDVRweapons.zip HD weapon pack mad
 
 https://github.com/ajantaju/br_vr weapon pack made for Brutal Doom
 
+https://github.com/dxt121730/BD64Weapons weapon pack for Brutal Doom 64 by dxt121730
+
 https://github.com/mmaulwurff/laser-sight/releases laser sight mod, you need this for aiming
 
 https://www.moddb.com/downloads/doom-neural-upscale-2x texture upscale mod
