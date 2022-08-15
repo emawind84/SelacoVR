@@ -7,7 +7,12 @@ Built/tested on HP Reverb and Oculus Quest using Virtual Desktop but other VR se
 This build exposes OpenVR controller input for definition (you will need to define the controls).
 One hand (right by default) is tracked for the weapon. I have included two modified weapon packs authored by Fishbiter. 
 
-# Mods
+## Controller Info
+
+### Index Controllers
+To get the most out of your Index Controllers, choose the Community Binding "Index Controller Bindings" by gameflorist in SteamVR. It makes the maximum buttons available for binding in GZDoom.
+
+## Mods
 There are some optional mods tested for using with this fork
 
 https://github.com/hh79/gz3doom/files/4378108/HDVRweapons.zip HD weapon pack made by ajantaju
