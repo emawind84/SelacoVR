@@ -903,8 +903,14 @@ void D_Display ()
 		AActor *cam = players[consoleplayer].camera;
 		if (cam)
 		{
-			if (cam->player)
-				fov = cam->player->FOV;
+			if (cam->player) {
+				// @Cockatrice - Interpolate camera FOV changes
+				// For this to work the ZScript implementation of the player must update deltaFOV every frame
+				double ticFrac = 1.0;
+				if (!r_NoInterpolate) ticFrac = I_GetTimeFrac();
+				fov = (cam->player->deltaFOV + (cam->player->FOV - cam->player->deltaFOV) * ticFrac);
+				//fov = cam->player->FOV;
+			}
 			else fov = cam->CameraFOV;
 		}
 		R_SetFOV(vp, fov);
