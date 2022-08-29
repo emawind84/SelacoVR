@@ -56,6 +56,7 @@ public:
 	FPNGTexture (FileReader &lump, int lumpnum, int width, int height, uint8_t bitdepth, uint8_t colortype, uint8_t interlace);
 
 	int CopyPixels(FBitmap *bmp, int conversion) override;
+	int ReadPixels(FileReader *reader, FBitmap *bmp, int conversion) override;
 	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
 
 protected:
@@ -554,8 +555,11 @@ TArray<uint8_t> FPNGTexture::CreatePalettedPixels(int conversion)
 
 int FPNGTexture::CopyPixels(FBitmap *bmp, int conversion)
 {
+	FileReader lfr = fileSystem.OpenFileReader(SourceLump);
+	return ReadPixels(&lfr, bmp, conversion);
+	
 	// Parse pre-IDAT chunks. I skip the CRCs. Is that bad?
-	PalEntry pe[256];
+	/*PalEntry pe[256];
 	uint32_t len, id;
 	static char bpp[] = {1, 0, 3, 1, 2, 0, 4};
 	int pixwidth = Width * bpp[ColorType];
@@ -661,8 +665,124 @@ int FPNGTexture::CopyPixels(FBitmap *bmp, int conversion)
 
 	}
 	delete[] Pixels;
+	return transpal;*/
+}
+
+
+//===========================================================================
+//
+// FPNGTexture::ReadPixels
+//
+//===========================================================================
+
+int FPNGTexture::ReadPixels(FileReader *reader, FBitmap *bmp, int conversion)
+{
+	// Parse pre-IDAT chunks. I skip the CRCs. Is that bad?
+	PalEntry pe[256];
+	uint32_t len, id;
+	static char bpp[] = { 1, 0, 3, 1, 2, 0, 4 };
+	int pixwidth = Width * bpp[ColorType];
+	int transpal = false;
+
+	FileReader *lump = reader;
+
+	lump->Seek(33, FileReader::SeekSet);
+	for (int i = 0; i < 256; i++)	// default to a gray map
+		pe[i] = PalEntry(255, i, i, i);
+
+	lump->Read(&len, 4);
+	lump->Read(&id, 4);
+	while (id != MAKE_ID('I', 'D', 'A', 'T') && id != MAKE_ID('I', 'E', 'N', 'D'))
+	{
+		len = BigLong((unsigned int)len);
+		switch (id)
+		{
+		default:
+			lump->Seek(len, FileReader::SeekCur);
+			break;
+
+		case MAKE_ID('P', 'L', 'T', 'E'):
+			for (int i = 0; i < PaletteSize; i++)
+			{
+				pe[i].r = lump->ReadUInt8();
+				pe[i].g = lump->ReadUInt8();
+				pe[i].b = lump->ReadUInt8();
+			}
+			break;
+
+		case MAKE_ID('t', 'R', 'N', 'S'):
+			if (ColorType == 3)
+			{
+				for (uint32_t i = 0; i < len; i++)
+				{
+					pe[i].a = lump->ReadUInt8();
+					if (pe[i].a != 0 && pe[i].a != 255)
+						transpal = true;
+				}
+			}
+			else
+			{
+				lump->Seek(len, FileReader::SeekCur);
+			}
+			break;
+		}
+		lump->Seek(4, FileReader::SeekCur);	// Skip CRC
+		lump->Read(&len, 4);
+		id = MAKE_ID('I', 'E', 'N', 'D');
+		lump->Read(&id, 4);
+	}
+
+	if (ColorType == 0 && HaveTrans && NonPaletteTrans[0] < 256)
+	{
+		pe[NonPaletteTrans[0]].a = 0;
+		transpal = true;
+	}
+
+	uint8_t * Pixels = new uint8_t[pixwidth * Height];
+
+	lump->Seek(StartOfIDAT, FileReader::SeekSet);
+	lump->Read(&len, 4);
+	lump->Read(&id, 4);
+	M_ReadIDAT(*lump, Pixels, Width, Height, pixwidth, BitDepth, ColorType, Interlace, BigLong((unsigned int)len));
+
+	switch (ColorType)
+	{
+	case 0:
+	case 3:
+		bmp->CopyPixelData(0, 0, Pixels, Width, Height, 1, Width, 0, pe);
+		break;
+
+	case 2:
+		if (!HaveTrans)
+		{
+			bmp->CopyPixelDataRGB(0, 0, Pixels, Width, Height, 3, pixwidth, 0, CF_RGB);
+		}
+		else
+		{
+			bmp->CopyPixelDataRGB(0, 0, Pixels, Width, Height, 3, pixwidth, 0, CF_RGBT, nullptr,
+				NonPaletteTrans[0], NonPaletteTrans[1], NonPaletteTrans[2]);
+			transpal = true;
+		}
+		break;
+
+	case 4:
+		bmp->CopyPixelDataRGB(0, 0, Pixels, Width, Height, 2, pixwidth, 0, CF_IA);
+		transpal = -1;
+		break;
+
+	case 6:
+		bmp->CopyPixelDataRGB(0, 0, Pixels, Width, Height, 4, pixwidth, 0, CF_RGBA);
+		transpal = -1;
+		break;
+
+	default:
+		break;
+
+	}
+	delete[] Pixels;
 	return transpal;
 }
+
 
 
 #include "textures.h"
