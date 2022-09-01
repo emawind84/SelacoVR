@@ -1933,6 +1933,9 @@ DSPLYMNU_GPUSWITCH				= "Notebook Switchable GPU";
 DSPLYMNU_CUSTOMINVERTMAP		= "Custom Inverse Map";
 DSPLYMNU_CUSTOMINVERTC1			= "Custom Inverse Color Dark";
 DSPLYMNU_CUSTOMINVERTC2			= "Custom Inverse Color Light";
+DSPLYMNU_WEAPHPOS				= "Weapon horizontal position";
+DSPLYMNU_WEAPVPOS				= "Weapon vertical position";
+DSPLYMNU_WEAPSCALE				= "Weapon scale";
 
 // HUD Options
 HUDMNU_TITLE					= "HUD Options";

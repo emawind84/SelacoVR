@@ -54,6 +54,7 @@
 
 EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Float, movebob);
+EXTERN_CVAR(Float, r_weapscale);
 EXTERN_CVAR(Bool, cl_noprediction)
 EXTERN_CVAR(Bool, gl_billboard_faces_camera);
 EXTERN_CVAR(Int, gl_multisample);
@@ -300,7 +301,7 @@ namespace s3d
     {
         GetWeaponTransform(&gl_RenderState.mModelMatrix, hand);
 
-        float scale = 0.000625f * vr_weaponScale;
+        float scale = 0.000625f * vr_weaponScale * r_weapscale;
         gl_RenderState.mModelMatrix.scale(scale, -scale, scale);
         gl_RenderState.mModelMatrix.translate(-viewwidth / 2, -viewheight * 3 / 4, 0.0f); // What dis?!
 

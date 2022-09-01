@@ -2487,6 +2487,14 @@ OptionMenu VROptionsMenu protected
 	Slider "Weapon Fat Item Width",		"gl_fatItemWidth", 0.1, 1.0, 0.1, 2
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_recoil vr_weaponRotate vr_weaponScale r_PlayerSprites3DMode gl_fatItemWidth"
+
+	StaticText " "
+	StaticText "Weapon (sprite only)", gold
+	Slider "$DSPLYMNU_WEAPHPOS",			"r_weaphpos", 0, 100, 1, 0
+	Slider "$DSPLYMNU_WEAPVPOS",			"r_weapvpos", 0, 100, 1, 0
+	Slider "$DSPLYMNU_WEAPSCALE",			"r_weapscale", 0, 2.0, 0.1, 1
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar r_weaphpos r_weapvpos r_weapscale"
 }
 
 
