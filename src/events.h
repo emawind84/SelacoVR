@@ -85,8 +85,8 @@ public:
 	void WorldThingRevived(AActor* actor);
 	void WorldThingDamaged(AActor* actor, AActor* inflictor, AActor* source, int damage, FName mod, int flags, DAngle angle);
 	void WorldThingDestroyed(AActor* actor);
-	void WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate);
-	void WorldLineActivated(line_t* line, AActor* actor, int activationType);
+	void WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate, DVector3 pos);
+	void WorldLineActivated(line_t* line, AActor* actor, int activationType, DVector3 pos);
 	int WorldSectorDamaged(sector_t* sector, AActor* source, int damage, FName damagetype, int part, DVector3 position, bool isradius);
 	int WorldLineDamaged(line_t* line, AActor* source, int damage, FName damagetype, int side, DVector3 position, bool isradius);
 	void WorldLightning();
@@ -247,9 +247,9 @@ struct EventManager
 	// called before AActor::Destroy of each actor.
 	void WorldThingDestroyed(AActor* actor);
 	// called in P_ActivateLine before executing special, set shouldactivate to false to prevent activation.
-	void WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate);
+	void WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate, DVector3 *optpos);
 	// called in P_ActivateLine after successful special execution.
-	void WorldLineActivated(line_t* line, AActor* actor, int activationType);
+	void WorldLineActivated(line_t* line, AActor* actor, int activationType, DVector3 *optpos);
 	// called in P_DamageSector and P_DamageLinedef before receiving damage to the sector. returns actual damage
 	int WorldSectorDamaged(sector_t* sector, AActor* source, int damage, FName damagetype, int part, DVector3 position, bool isradius);
 	// called in P_DamageLinedef before receiving damage to the linedef. returns actual damage

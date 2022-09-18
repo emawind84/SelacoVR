@@ -383,20 +383,20 @@ void EventManager::WorldThingDestroyed(AActor* actor)
 	if (ShouldCallStatic(true)) staticEventManager.WorldThingDestroyed(actor);
 }
 
-void EventManager::WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate)
+void EventManager::WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate, DVector3 *optpos)
 {
-	if (ShouldCallStatic(true)) staticEventManager.WorldLinePreActivated(line, actor, activationType, shouldactivate);
+	if (ShouldCallStatic(true)) staticEventManager.WorldLinePreActivated(line, actor, activationType, shouldactivate, optpos);
 
 	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
-		handler->WorldLinePreActivated(line, actor, activationType, shouldactivate);
+		handler->WorldLinePreActivated(line, actor, activationType, shouldactivate, optpos != nullptr ? *optpos  : DVector3(0,0,0));
 }
 
-void EventManager::WorldLineActivated(line_t* line, AActor* actor, int activationType)
+void EventManager::WorldLineActivated(line_t* line, AActor* actor, int activationType, DVector3 *optpos)
 {
-	if (ShouldCallStatic(true)) staticEventManager.WorldLineActivated(line, actor, activationType);
+	if (ShouldCallStatic(true)) staticEventManager.WorldLineActivated(line, actor, activationType, optpos);
 
 	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
-		handler->WorldLineActivated(line, actor, activationType);
+		handler->WorldLineActivated(line, actor, activationType, optpos != nullptr ? *optpos : DVector3(0, 0, 0));
 }
 
 int EventManager::WorldSectorDamaged(sector_t* sector, AActor* source, int damage, FName damagetype, int part, DVector3 position, bool isradius)
@@ -870,7 +870,7 @@ void DStaticEventHandler::WorldThingDestroyed(AActor* actor)
 	}
 }
 
-void DStaticEventHandler::WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate)
+void DStaticEventHandler::WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate, DVector3 pos)
 {
 	IFVIRTUAL(DStaticEventHandler, WorldLinePreActivated)
 	{
@@ -881,13 +881,14 @@ void DStaticEventHandler::WorldLinePreActivated(line_t* line, AActor* actor, int
 		e.ActivatedLine = line;
 		e.ActivationType = activationType;
 		e.ShouldActivate = *shouldactivate;
+		e.DamagePosition = pos;
 		VMValue params[2] = { (DStaticEventHandler*)this, &e };
 		VMCall(func, params, 2, nullptr, 0);
 		*shouldactivate = e.ShouldActivate;
 	}
 }
 
-void DStaticEventHandler::WorldLineActivated(line_t* line, AActor* actor, int activationType)
+void DStaticEventHandler::WorldLineActivated(line_t* line, AActor* actor, int activationType, DVector3 pos)
 {
 	IFVIRTUAL(DStaticEventHandler, WorldLineActivated)
 	{
@@ -897,6 +898,7 @@ void DStaticEventHandler::WorldLineActivated(line_t* line, AActor* actor, int ac
 		e.Thing = actor;
 		e.ActivatedLine = line;
 		e.ActivationType = activationType;
+		e.DamagePosition = pos;
 		VMValue params[2] = { (DStaticEventHandler*)this, &e };
 		VMCall(func, params, 2, nullptr, 0);
 	}
