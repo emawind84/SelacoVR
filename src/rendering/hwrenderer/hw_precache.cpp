@@ -86,6 +86,14 @@ static void PrecacheSprite(FGameTexture *tex, SpriteHits &hits)
 
 	FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags);
 	if (gltex) PrecacheList(gltex, hits);
+
+	auto useType = tex->GetUseType();
+	if (useType == ETextureType::Any ||
+		useType == ETextureType::Sprite ||
+		useType == ETextureType::Decal ||
+		useType == ETextureType::SkinSprite) {
+		tex->GetSpritePositioning(1);		// @Cockatrice Precalc sprite positioning so we aren't loading images at play time as often
+	}
 }
 
 

@@ -159,13 +159,6 @@ FPlayerClass::FPlayerClass ()
 	Flags = 0;
 }
 
-FPlayerClass::FPlayerClass (const FPlayerClass &other)
-{
-	Type = other.Type;
-	Flags = other.Flags;
-	Skins = other.Skins;
-}
-
 FPlayerClass::~FPlayerClass ()
 {
 }
@@ -272,6 +265,7 @@ void player_t::CopyFrom(player_t &p, bool copyPSP)
 	cls = p.cls;
 	DesiredFOV = p.DesiredFOV;
 	FOV = p.FOV;
+	deltaFOV = p.FOV;
 	viewz = p.viewz;
 	viewheight = p.viewheight;
 	deltaviewheight = p.deltaviewheight;
@@ -977,9 +971,9 @@ void P_CheckPlayerSprite(AActor *actor, int &spritenum, DVector2 &scale)
 	if (player->userinfo.GetSkin() != 0 && !(actor->flags4 & MF4_NOSKIN))
 	{
 		// Convert from default scale to skin scale.
-		DVector2 defscale = actor->GetDefault()->Scale;
-		scale.X *= Skins[player->userinfo.GetSkin()].Scale.X / defscale.X;
-		scale.Y *= Skins[player->userinfo.GetSkin()].Scale.Y / defscale.Y;
+		FVector2 defscale = actor->GetDefault()->Scale;
+		scale.X *= Skins[player->userinfo.GetSkin()].Scale.X / double(defscale.X);
+		scale.Y *= Skins[player->userinfo.GetSkin()].Scale.Y / double(defscale.Y);
 	}
 
 	// Set the crouch sprite?
@@ -1627,6 +1621,7 @@ void player_t::Serialize(FSerializer &arc)
 
 	arc("desiredfov", DesiredFOV)
 		("fov", FOV)
+		("deltaFOV", deltaFOV)
 		("viewz", viewz)
 		("viewheight", viewheight)
 		("deltaviewheight", deltaviewheight)
@@ -1734,6 +1729,7 @@ DEFINE_FIELD_X(PlayerInfo, player_t, original_oldbuttons)
 DEFINE_FIELD_X(PlayerInfo, player_t, cls)
 DEFINE_FIELD_X(PlayerInfo, player_t, DesiredFOV)
 DEFINE_FIELD_X(PlayerInfo, player_t, FOV)
+DEFINE_FIELD_X(PlayerInfo, player_t, deltaFOV)
 DEFINE_FIELD_X(PlayerInfo, player_t, viewz)
 DEFINE_FIELD_X(PlayerInfo, player_t, viewheight)
 DEFINE_FIELD_X(PlayerInfo, player_t, deltaviewheight)

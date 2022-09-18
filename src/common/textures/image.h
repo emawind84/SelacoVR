@@ -4,10 +4,26 @@
 #include "tarray.h"
 #include "bitmap.h"
 #include "memarena.h"
+#include "files.h"
 
 class FImageSource;
 using PrecacheInfo = TMap<int, std::pair<int, int>>;
 extern FMemArena ImageArena;
+
+
+// For bg loader
+// TODO: Move to a different file
+#include <thread>
+#include <atomic>
+#include <mutex>
+#include <chrono>
+#include <map>
+#include "stats.h"
+#include "TSQueue.h"
+
+
+
+
 
 // Doom patch format header
 struct patch_t
@@ -32,11 +48,14 @@ private:
 	}
 };
 
+class ImageLoadThread;
+
 // This represents a naked image. It has no high level logic attached to it.
 // All it can do is provide raw image data to its users.
 class FImageSource
 {
 	friend class FBrightmapTexture;
+	friend class ImageLoadThread;
 protected:
 
 	static TArray<FImageSource *>ImageForLump;
@@ -52,7 +71,9 @@ protected:
 	// so that all code can benefit from future improvements to that.
 
 	virtual TArray<uint8_t> CreatePalettedPixels(int conversion);
-	virtual int CopyPixels(FBitmap *bmp, int conversion);			// This will always ignore 'luminance'.
+	virtual int CopyPixels(FBitmap *bmp, int conversion);						// This will always ignore 'luminance'.
+	virtual int ReadPixels(FileReader *reader, FBitmap *bmp, int conversion);	// Thread safe(ish) version
+
 	int CopyTranslatedPixels(FBitmap *bmp, const PalEntry *remap);
 
 
@@ -87,7 +108,7 @@ public:
 	TArray<uint8_t> GetPalettedPixels(int conversion);
 
 
-	// Unlile for paletted images there is no variant here that returns a persistent bitmap, because all users have to process the returned image into another format.
+	// Unlike for paletted images there is no variant here that returns a persistent bitmap, because all users have to process the returned image into another format.
 	FBitmap GetCachedBitmap(const PalEntry *remap, int conversion, int *trans = nullptr);
 
 	static void ClearImages() { ImageArena.FreeAll(); ImageForLump.Clear(); NextID = 0; }
@@ -172,3 +193,100 @@ protected:
 class FTexture;
 
 FTexture* CreateImageTexture(FImageSource* img) noexcept;
+
+
+
+// Image loader =============================================
+
+struct ImageLoadIn {
+	FImageSource *imgSource;
+	FileReader *readerCopy;		// Needs a unique copy of a file reader
+	int conversion;
+};
+
+struct ImageLoadOut {
+	FImageSource *imgSource;
+	FBitmap pixels;
+	int conversion;
+
+	ImageLoadOut() {
+		imgSource = nullptr;
+		conversion = 0;
+	}
+
+	ImageLoadOut(const ImageLoadOut& _Right) {
+		imgSource = _Right.imgSource;
+		conversion = _Right.conversion;
+		pixels.Copy(_Right.pixels, false);
+	}
+
+	ImageLoadOut &operator = (const ImageLoadOut& _Right) {
+		imgSource = _Right.imgSource;
+		conversion = _Right.conversion;
+		pixels.Copy(_Right.pixels, false);
+
+		return *this;
+	}
+};
+
+
+class ImageLoadThread : public ResourceLoader<ImageLoadIn, ImageLoadOut> {
+public:
+	std::atomic<int> currentImageID;
+
+	// Is this image ID already loading/loaded on this thread?
+	bool existsInQueue(int imageID) {
+		if (currentImageID == imageID) return true;
+
+		bool found = false;
+
+		mInputQ.foreach([&](ImageLoadIn &i) {
+			if (i.imgSource->GetId() == imageID) found = true;
+		});
+
+		if (found) return true;
+
+		mOutputQ.foreach([&](ImageLoadOut &o) {
+			if (o.imgSource->GetId() == imageID) found = true;
+		});
+
+		return found;
+	}
+
+protected:
+
+	bool loadResource(ImageLoadIn &input, ImageLoadOut &output) override;
+	void cancelLoad() override { currentImageID.store(0); }
+	void completeLoad() override { currentImageID.store(0); }
+};
+
+
+// Designed for background loading of texture data. Stage 1 does not include background hardware loading, just puts the pixel data in the precache
+class ImageLoaderQueue {
+private:
+	static const int MAX_THREADS = 4;
+
+	TArray<ImageLoadThread*> mRunning;
+	
+	ImageLoadThread *spinupThreads();			// Start as many threads as necessary or specified, return the first one
+	ImageLoadThread *nextAvailableThread();		// Find the least encumbered thread, start one if necessary
+
+public:
+	ImageLoaderQueue() {}
+	~ImageLoaderQueue() {
+		clear();
+	}
+
+	// Call this during the game or render loop, after loading textures it will integrate the loaded data
+	void update();
+
+	// Empty the queue, blocks until current load ops are complete
+	void clear();
+
+	void queue(FImageSource *img, int conversion);
+	
+
+	static ImageLoaderQueue *Instance;
+};
+
+// End Image Loader =========================================

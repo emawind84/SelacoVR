@@ -3249,7 +3249,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 	Level->ClearDynamic3DFloorData();	// CreateVBO must be run on the plain 3D floor data.
 	CreateVBO(screen->mVertexData, Level->sectors);
 
-	screen->InitLightmap(Level);
+	screen->InitLightmap(Level->LMTextureSize, Level->LMTextureCount, Level->LMTextureData);
 
 	for (auto &sec : Level->sectors)
 	{
@@ -3266,6 +3266,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 		Level->FinalizePortals();	// finalize line portals after polyobjects have been initialized. This info is needed for properly flagging them.
 
 	Level->aabbTree = new DoomLevelAABBTree(Level);
+	Level->levelMesh = new DoomLevelMesh(*Level);
 }
 
 //==========================================================================

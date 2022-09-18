@@ -7,6 +7,7 @@
 #include "palentry.h"
 #include "zstring.h"
 #include "textureid.h"
+#include "printf.h"
 
 // 15 because 0th texture is our texture
 #define MAX_CUSTOM_HW_SHADER_TEXTURES 15
@@ -366,6 +367,7 @@ inline FGameTexture* MakeGameTexture(FTexture* tex, const char *name, ETextureTy
 	if (!tex) return nullptr;
 	auto t = new FGameTexture(tex, name);
 	t->SetUseType(useType);
+
 	return t;
 }
 

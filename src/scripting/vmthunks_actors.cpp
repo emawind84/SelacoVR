@@ -1150,6 +1150,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, CheckMove, CheckMove)
 
 static double AimLineAttack(AActor *self, double angle, double distance, FTranslatedLineTarget *pLineTarget, double vrange, int flags, AActor *target, AActor *friender)
 {
+	flags &= ~ALF_IGNORENOAUTOAIM; // just to be safe. This flag is not supposed to be accesible to scripting.
 	return P_AimLineAttack(self, angle, distance, pLineTarget, vrange, flags, target, friender).Degrees;
 }
 
@@ -1821,7 +1822,7 @@ static void SetViewPos(AActor *self, double x, double y, double z, int flags)
 {
 	if (!self->ViewPos)
 	{
-		self->ViewPos = Create<FViewPosition>();
+		self->ViewPos = Create<DViewPosition>();
 	}
 
 	DVector3 pos = { x,y,z };
@@ -1839,9 +1840,9 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, SetViewPos, SetViewPos)
 	return 0;
 }
 
-IMPLEMENT_CLASS(FViewPosition, false, false);
-DEFINE_FIELD_X(ViewPosition, FViewPosition, Offset)
-DEFINE_FIELD_X(ViewPosition, FViewPosition, Flags)
+IMPLEMENT_CLASS(DViewPosition, false, false);
+DEFINE_FIELD_X(ViewPosition, DViewPosition, Offset)
+DEFINE_FIELD_X(ViewPosition, DViewPosition, Flags)
 
 DEFINE_FIELD(DThinker, Level)
 DEFINE_FIELD(AActor, snext)
@@ -1851,6 +1852,7 @@ DEFINE_FIELD_NAMED(AActor, __Pos.X, x)
 DEFINE_FIELD_NAMED(AActor, __Pos.Y, y)
 DEFINE_FIELD_NAMED(AActor, __Pos.Z, z)
 DEFINE_FIELD(AActor, SpriteOffset)
+DEFINE_FIELD(AActor, WorldOffset)
 DEFINE_FIELD(AActor, Prev)
 DEFINE_FIELD(AActor, SpriteAngle)
 DEFINE_FIELD(AActor, SpriteRotation)
@@ -1930,6 +1932,7 @@ DEFINE_FIELD(AActor, special)
 DEFINE_FIELD(AActor, tid)
 DEFINE_FIELD(AActor, TIDtoHate)
 DEFINE_FIELD(AActor, waterlevel)
+DEFINE_FIELD(AActor, waterdepth)
 DEFINE_FIELD(AActor, Score)
 DEFINE_FIELD(AActor, accuracy)
 DEFINE_FIELD(AActor, stamina)
@@ -2025,6 +2028,7 @@ DEFINE_FIELD(AActor, ViewPos)
 DEFINE_FIELD_NAMED(AActor, ViewAngles.Yaw, viewangle)
 DEFINE_FIELD_NAMED(AActor, ViewAngles.Pitch, viewpitch)
 DEFINE_FIELD_NAMED(AActor, ViewAngles.Roll, viewroll)
+DEFINE_FIELD(AActor, LightLevel)
 
 DEFINE_FIELD_X(FCheckPosition, FCheckPosition, thing);
 DEFINE_FIELD_X(FCheckPosition, FCheckPosition, pos);

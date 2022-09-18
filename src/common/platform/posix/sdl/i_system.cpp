@@ -79,7 +79,7 @@ double PerfToSec, PerfToMillisec;
 CVAR(Bool, con_printansi, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE);
 CVAR(Bool, con_4bitansi, false, CVAR_GLOBALCONFIG|CVAR_ARCHIVE);
 
-extern FStartupScreen *StartScreen;
+extern FStartupScreen *StartWindow;
 
 void I_SetIWADInfo()
 {
@@ -144,7 +144,15 @@ void CalculateCPUSpeed()
 {
 	PerfAvailable = false;
 	PerfToMillisec = PerfToSec = 0.;
-#ifdef __linux__
+#ifdef __aarch64__
+	// [MK] on aarch64 rather than having to calculate cpu speed, there is
+	// already an independent frequency for the perf timer
+	uint64_t frq;
+	asm volatile("mrs %0, cntfrq_el0":"=r"(frq));
+	PerfAvailable = true;
+	PerfToSec = 1./frq;
+	PerfToMillisec = PerfToSec*1000.;
+#elif defined(__linux__)
 	// [MK] read from perf values if we can
 	struct perf_event_attr pe;
 	memset(&pe,0,sizeof(struct perf_event_attr));
@@ -270,10 +278,10 @@ void I_PrintStr(const char *cp)
 		}
 	}
 
-	if (StartScreen) CleanProgressBar();
+	if (StartWindow) CleanProgressBar();
 	fputs(printData.GetChars(),stdout);
 	if (terminal) fputs("\033[0m",stdout);
-	if (StartScreen) RedrawProgressBar(ProgressBarCurPos,ProgressBarMaxPos);
+	if (StartWindow) RedrawProgressBar(ProgressBarCurPos,ProgressBarMaxPos);
 }
 
 int I_PickIWad (WadStuff *wads, int numwads, bool showwin, int defaultiwad)

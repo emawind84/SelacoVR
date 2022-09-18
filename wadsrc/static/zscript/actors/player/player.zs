@@ -952,6 +952,8 @@ class PlayerPawn : Actor
 
 		if (!player) return;
 
+		player.deltaFOV = player.FOV;
+
 		// [RH] Zoom the player's FOV
 		float desired = player.DesiredFOV;
 		// Adjust FOV using on the currently held weapon.
@@ -2680,6 +2682,7 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native Class<PlayerPawn> cls;
 	native float DesiredFOV;
 	native float FOV;
+	native float deltaFOV;
 	native double viewz;
 	native double viewheight;
 	native double deltaviewheight;
@@ -2891,7 +2894,7 @@ struct PlayerSkin native
 	native readonly uint8		range0start;
 	native readonly uint8		range0end;
 	native readonly bool		othergame;
-	native readonly Vector2		Scale;
+	native readonly FVector2	Scale;
 	native readonly int			sprite;
 	native readonly int			crouchsprite;
 	native readonly int			namespc;

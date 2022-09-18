@@ -139,7 +139,7 @@ struct FSoundChan : public FISoundChannel
 	float		Volume;
 	int 		EntChannel;	// Actor's sound channel.
 	int			UserData;	// Not used by the engine, the caller can use this to store some additional info.
-	int16_t		Pitch;		// Pitch variation.
+	float		Pitch;		// Pitch variation.
 	int16_t		NearLimit;
 	int8_t		Priority;
 	uint8_t		SourceType;
@@ -210,7 +210,7 @@ protected:
 	// the complete set of sound effects
 	TArray<sfxinfo_t> S_sfx;
 	FRolloffInfo S_Rolloff{};
-	TArray<uint8_t> S_SoundCurve;
+	TArray<uint8_t> S_SoundCurve;		// @Cockatrice - As far as I know this is only inited once, but for thread safety do not change this during gameplay
 	TMap<int, int> ResIdMap;
 	TArray<FRandomSoundList> S_rnd;
 	bool blockNewSounds = false;
@@ -251,6 +251,8 @@ public:
 
 	virtual void StopChannel(FSoundChan* chan);
 	sfxinfo_t* LoadSound(sfxinfo_t* sfx);
+	sfxinfo_t* CheckLinks(sfxinfo_t *sfx);
+
 	const sfxinfo_t* GetSfx(unsigned snd)
 	{
 		if (snd >= S_sfx.Size()) return nullptr;
@@ -271,6 +273,7 @@ public:
 	void SetVolume(FSoundChan* chan, float vol);
 
 	FSoundChan* GetChannel(void* syschan);
+	FSoundChan* FindChannel(void* syschan);
 	void RestoreEvictedChannels();
 	void CalcPosVel(FSoundChan* chan, FVector3* pos, FVector3* vel);
 
@@ -287,6 +290,10 @@ public:
 
 	FSoundChan* StartSound(int sourcetype, const void* source,
 		const FVector3* pt, int channel, EChanFlags flags, FSoundID sound_id, float volume, float attenuation, FRolloffInfo* rolloff = nullptr, float spitch = 0.0f, float startTime = 0.0f);
+	
+	FSoundChan* StartSoundER(sfxinfo_t *sfx, int type, const void *source,
+		FVector3 pos, FVector3 vel, int channel, EChanFlags flags, FSoundID sound_id, FSoundID org_sound_id, float volume, float attenuation,
+		FRolloffInfo *forcedrolloff, float spitch, float startTime, bool usePosVel = true);
 
 	// Stops an origin-less sound from playing from this channel.
 	void StopSoundID(int sound_id);

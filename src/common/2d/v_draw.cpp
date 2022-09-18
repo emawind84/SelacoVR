@@ -167,7 +167,7 @@ int GetConScale(F2DDrawer* drawer, int altval)
 	else if (uiscale == 0)
 	{
 		// Default should try to scale to 640x400
-		int vscale = drawer->GetHeight() / 800;
+		int vscale = drawer->GetHeight() / 720;
 		int hscale = drawer->GetWidth() / 1280;
 		scaleval = max(1, min(vscale, hscale));
 	}
@@ -198,10 +198,8 @@ int CleanXfac_1, CleanYfac_1, CleanWidth_1, CleanHeight_1;
 //
 //==========================================================================
 
-void DrawTexture(F2DDrawer *drawer, FGameTexture* img, double x, double y, int tags_first, ...)
+static void DoDrawTexture(F2DDrawer *drawer, FGameTexture* img, double x, double y, int tags_first, Va_List& tags)
 {
-	Va_List tags;
-	va_start(tags.list, tags_first);
 	DrawParms parms;
 
 	if (!img || !img->isValid()) return;
@@ -214,6 +212,23 @@ void DrawTexture(F2DDrawer *drawer, FGameTexture* img, double x, double y, int t
 	drawer->AddTexture(img, parms);
 }
 
+
+void DrawTexture(F2DDrawer *drawer, FGameTexture* img, double x, double y, int tags_first, ...)
+{
+	Va_List tags;
+	va_start(tags.list, tags_first);
+	DoDrawTexture(drawer, img, x, y, tags_first, tags);
+}
+
+void DrawTexture(F2DDrawer *drawer, FTextureID texid, bool animate, double x, double y, int tags_first, ...)
+{
+	Va_List tags;
+	va_start(tags.list, tags_first);
+	auto img = TexMan.GetGameTexture(texid, animate);
+	DoDrawTexture(drawer, img, x, y, tags_first, tags);
+}
+
+
 //==========================================================================
 //
 // ZScript texture drawing function
@@ -222,7 +237,7 @@ void DrawTexture(F2DDrawer *drawer, FGameTexture* img, double x, double y, int t
 
 int ListGetInt(VMVa_List &tags);
 
-static void DrawTexture(F2DDrawer *drawer, FGameTexture *img, double x, double y, VMVa_List &args)
+static void DoDrawTexture(F2DDrawer *drawer, FGameTexture *img, double x, double y, VMVa_List &args)
 {
 	DrawParms parms;
 	uint32_t tag = ListGetInt(args);
@@ -246,7 +261,7 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawTexture)
 
 	auto tex = TexMan.GameByIndex(texid, animate);
 	VMVa_List args = { param + 4, 0, numparam - 5, va_reginfo + 4 };
-	DrawTexture(twod, tex, x, y, args);
+	DoDrawTexture(twod, tex, x, y, args);
 	return 0;
 }
 

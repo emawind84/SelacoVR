@@ -280,7 +280,7 @@ void DrawTextCommon(F2DDrawer *drawer, FFont *font, int normalcolor, double x, d
 
 	ch = string;
 	cx = x;
-	cy = y;
+	cy = y + font->GetDisplacement();
 
 	if (parms.monospace == EMonospacing::CellCenter)
 		cx += parms.spacing / 2;

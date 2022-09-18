@@ -84,9 +84,7 @@ lthumb crouch
 
 /* Default automap bindings */
 mapbind f am_togglefollow
-mapbind g am_togglegrid
 mapbind p am_toggletexture
-mapbind m am_setmark
 mapbind c am_clearmarks
 mapbind 0 am_gobig
 mapbind rightarrow +am_panright

@@ -174,13 +174,14 @@ protected:
 
 	void FixXMoves();
 
-	void ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height, const DVector2 &Scale);
+	void ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height, const DVector2 &Scale, TMap<int, int> &explicitWidths);
 
 	EFontType Type = EFontType::Unknown;
 	FName AltFontName = NAME_None;
 	int FirstChar, LastChar;
 	int SpaceWidth;
 	int FontHeight;
+	int No1252;			// @Cockatrice - Disable filtering of Win1252 characters
 	int GlobalKerning;
 	int TranslationType = 0;
 	int Displacement = 0;

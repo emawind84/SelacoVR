@@ -393,7 +393,6 @@ FRenderer* SWRenderer;
 
 void R_Init ()
 {
-	StartScreen->Progress();
 	R_InitTranslationTables ();
 	R_SetViewSize (screenblocks);
 
@@ -793,7 +792,7 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 	// Handles offsetting the camera with ChaseCam and/or viewpos.
 	{
 		AActor *mo = viewpoint.camera;
-		FViewPosition *VP = mo->ViewPos;
+		DViewPosition *VP = mo->ViewPos;
 		const DVector3 orig = { mo->Pos().XY(), mo->player ? mo->player->viewz : mo->Z() + mo->GetCameraHeight() };
 		viewpoint.ActorPos = orig;
 
@@ -801,7 +800,7 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 
 		sector_t *oldsector = viewpoint.ViewLevel->PointInRenderSubsector(iview->Old.Pos)->sector;
 		if (gamestate != GS_TITLELEVEL &&
-			(player && ((player->cheats & CF_CHASECAM)) || (r_deathcamera && viewpoint.camera->health <= 0)))
+			((player && (player->cheats & CF_CHASECAM)) || (r_deathcamera && viewpoint.camera->health <= 0)))
 		{
 			// [RH] Use chasecam view
 			DefaultDraw = false;

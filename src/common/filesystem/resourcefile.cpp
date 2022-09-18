@@ -606,6 +606,23 @@ int FUncompressedLump::FillCache()
 	return 1;
 }
 
+
+long FUncompressedLump::ReadData(FileReader &reader, char *buffer) {
+	const char * readBuff = Owner->Reader.GetBuffer();
+
+	if (readBuff != NULL)
+	{
+		// @Cockatrice - This is an in-memory file, unfortunately we cannot just return the position from this method
+		// so we will have to copy the data. TODO: Add more functions to identify this scenario
+		memcpy(buffer, const_cast<char*>(readBuff) + Position, LumpSize);
+		return LumpSize;
+	}
+
+	reader.Seek(Position, FileReader::SeekSet);
+	reader.Read(buffer, LumpSize);
+	return LumpSize;
+}
+
 //==========================================================================
 //
 // Base class for uncompressed resource files
@@ -672,6 +689,22 @@ int FExternalLump::FillCache()
 	}
 	RefCount = 1;
 	return 1;
+}
+
+long FExternalLump::ReadData(FileReader &reader, char *buffer) { 
+	// Since each file is it's own lump, open this file fresh just like FillCache()
+	FileReader f;
+
+	if (f.OpenFile(Filename))
+	{
+		f.Read(buffer, LumpSize);
+	}
+	else
+	{
+		memset(buffer, 0, LumpSize);
+	}
+
+	return LumpSize;
 }
 
 

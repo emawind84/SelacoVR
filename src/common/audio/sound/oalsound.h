@@ -10,6 +10,8 @@
 #include "i_sound.h"
 #include "s_soundinternal.h"
 
+#include "TSQueue.h"
+
 #ifndef NO_OPENAL
 
 #ifdef DYN_OPENAL
@@ -117,6 +119,28 @@ AL_API const ALchar* AL_APIENTRY alGetStringiSOFT(ALenum pname, ALsizei index);
 #endif
 
 
+struct OpenALQueueItem {
+	SoundHandle sfx;
+	//SoundListener *listener;
+	float vol = 0, dist_sqr = 0, distscale = 0, startTime = 0, pitch = 0;
+	FVector3 pos, vel;
+	FRolloffInfo rolloff;
+	int channum = -1, chanflags = 0, priority = 0;
+	uint64_t chanStartTime = 0;
+	ALuint source;
+	ALuint buffer;
+	ALuint envSlot;
+	bool reuseChan = false;		// Only used to signal what type of offset startTime is
+	bool inWater = false;		// Play as if in water
+};
+
+struct OpenALPlayedItem {
+	ALuint source;
+	ALint state;
+	int channum;
+};
+
+
 class OpenALSoundStream;
 
 class OpenALSoundRenderer : public SoundRenderer
@@ -138,8 +162,8 @@ public:
 	virtual SoundStream *CreateStream(SoundStreamCallback callback, int buffbytes, int flags, int samplerate, void *userdata);
 
 	// Starts a sound.
-	virtual FISoundChannel *StartSound(SoundHandle sfx, float vol, int pitch, int chanflags, FISoundChannel *reuse_chan, float startTime);
-	virtual FISoundChannel *StartSound3D(SoundHandle sfx, SoundListener *listener, float vol, FRolloffInfo *rolloff, float distscale, int pitch, int priority, const FVector3 &pos, const FVector3 &vel, int channum, int chanflags, FISoundChannel *reuse_chan, float startTime);
+	virtual FISoundChannel *StartSound(SoundHandle sfx, float vol, float pitch, int chanflags, FISoundChannel *reuse_chan, float startTime);
+	virtual FISoundChannel *StartSound3D(SoundHandle sfx, SoundListener *listener, float vol, FRolloffInfo *rolloff, float distscale, float pitch, int priority, const FVector3 &pos, const FVector3 &vel, int channum, int chanflags, FISoundChannel *reuse_chan, float startTime);
 
 	// Changes a channel's volume.
 	virtual void ChannelVolume(FISoundChannel *chan, float volume);
@@ -243,6 +267,9 @@ private:
     void (ALC_APIENTRY*alcDeviceResumeSOFT)(ALCdevice *device);
 
     void BackgroundProc();
+	void BackgroundQueueProc();
+	void FlushPlayQueue();
+	void UpdatePlayedSounds();
     void AddStream(OpenALSoundStream *stream);
     void RemoveStream(OpenALSoundStream *stream);
 
@@ -250,24 +277,36 @@ private:
 	void PurgeStoppedSources();
 	static FSoundChan *FindLowestChannel();
 
-    std::thread StreamThread;
-    std::mutex StreamLock;
-    std::condition_variable StreamWake;
-    std::atomic<bool> QuitThread;
+    std::thread StreamThread, QueueThread;
+	std::mutex StreamLock, QueueThreadLock;
+    std::condition_variable StreamWake, QueueWake;
+    std::atomic<bool> QuitThread, QuitQueueThread;
 
 	ALCdevice *Device;
 	ALCcontext *Context;
 
 	TArray<ALuint> Sources;
 
-	ALfloat SfxVolume;
-	ALfloat MusicVolume;
+	std::atomic<ALfloat> SfxVolume;
+	std::atomic<ALfloat> MusicVolume;
 
-	int SFXPaused;
+	struct SFXStatus {
+		ALuint source = 0;
+		ALint state = AL_INITIAL;
+		bool canReverb, canPause, wasInWater;
+	};
+
+	std::atomic<int> SFXPaused;
 	TArray<ALuint> FreeSfx;
-	TArray<ALuint> PausableSfx;
-	TArray<ALuint> ReverbSfx;
-	TArray<ALuint> SfxGroup;
+	//TArray<ALuint> PausableSfx;
+	//TArray<ALuint> ReverbSfx;
+	// TODO: Change this to a map with SOURCE as the key instead of an array
+	std::unordered_map<ALuint, SFXStatus> SfxGroup;
+
+	inline SFXStatus *statusForSource(ALuint src) {
+		auto r = SfxGroup.find(src);
+		return r == SfxGroup.end() ? nullptr : &r->second;
+	}
 
 	const ReverbContainer *PrevEnvironment;
 
@@ -280,9 +319,20 @@ private:
     bool WasInWater;
 
     TArray<OpenALSoundStream*> Streams;
-    friend class OpenALSoundStream;
+	TSQueue<OpenALQueueItem> PlayQueue;			// Fill PlayQueue to play, once played appears in PlayedQueue
+	TSQueue<OpenALPlayedItem> PlayedQueue;
+	
+	friend class OpenALSoundStream;
 
 	ALCdevice *InitDevice();
+
+	// @Cockatrice: Thread safe(ish) - start sound from queue item
+	// Unfortunately makes a lot of assumptions about the safe nature of other funcs
+	// For instance GetRolloff should be safe for now, but if the sound curve is ever changed
+	// at runtime, it's no longer safe. Same goes for AL extensions, if they are changed at 
+	// at runtime this is no longer thread safe
+	bool StartSound3D(OpenALQueueItem &playInfo);
+	bool StartSound(OpenALQueueItem &playInfo);
 };
 
 #endif // NO_OPENAL

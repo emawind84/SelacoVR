@@ -61,6 +61,7 @@ FILE *myfopen(const char *filename, const char *flags)
 class StdFileReader : public FileReaderInterface
 {
 	FILE *File = nullptr;
+	FString Filename = "";
 	long StartPos = 0;
 	long FilePos = 0;
 
@@ -77,12 +78,35 @@ public:
 		File = nullptr;
 	}
 
+	FileReaderInterface* CopyNew() override {
+		StdFileReader *m = new StdFileReader();
+		m->Filename = Filename;
+		m->StartPos = StartPos;
+		m->Length = Length;
+		m->FilePos = FilePos;
+		// Do not open right away!
+
+		//m->Open(Filename, StartPos, Length);
+		//m->Seek(FilePos, SEEK_SET);
+		return m;
+	}
+
+	const inline void VerifyFileOpen() {
+		if (!File && Filename.GetChars() != "") {
+			long fPos = FilePos;
+
+			Open(Filename.GetChars(), StartPos, Length);
+			Seek(fPos, SEEK_SET);
+		}
+	}
+
 	bool Open(const char *filename, long startpos = 0, long len = -1)
 	{
 		File = myfopen(filename, "rb");
 		if (File == nullptr) return false;
 		FilePos = startpos;
 		StartPos = startpos;
+		Filename = filename;
 		Length = CalcFileLen();
 		if (len >= 0 && len < Length) Length = len;
 		if (startpos > 0) Seek(0, SEEK_SET);
@@ -110,6 +134,7 @@ public:
 		}
 		if (offset < StartPos || offset > StartPos + Length) return -1;	// out of scope
 
+		VerifyFileOpen();
 		if (0 == fseek(File, offset, SEEK_SET))
 		{
 			FilePos = offset;
@@ -126,6 +151,8 @@ public:
 		{
 			len = Length - FilePos + StartPos;
 		}
+
+		VerifyFileOpen();
 		len = (long)fread(buffer, 1, len, File);
 		FilePos += len;
 		return len;
@@ -134,6 +161,9 @@ public:
 	char *Gets(char *strbuf, int len) override
 	{
 		if (len <= 0 || FilePos >= StartPos + Length) return NULL;
+
+		VerifyFileOpen();
+
 		char *p = fgets(strbuf, len, File);
 		if (p != NULL)
 		{
@@ -148,9 +178,11 @@ public:
 	}
 
 private:
-	long CalcFileLen() const
+	long CalcFileLen()
 	{
 		long endpos;
+
+		VerifyFileOpen();
 
 		fseek(File, 0, SEEK_END);
 		endpos = ftell(File);

@@ -81,9 +81,14 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 	GlobalKerning = false;
 	SpaceWidth = 0;
 	FontHeight = 0;
+	No1252 = false;
+	Displacement = 0;
 	int FixedWidth = 0;
+	int CellHeight = 0;
 
 	TMap<int, FGameTexture*> charMap;
+	TMap<int, int> explicitWidths;
+
 	int minchar = INT_MAX;
 	int maxchar = INT_MIN;
 
@@ -119,6 +124,11 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 						sc.MustGetValue(false);
 						GlobalKerning = sc.Number;
 					}
+					else if (sc.Compare("Displacement")) {
+						sc.MustGetValue(false);
+						Displacement = sc.Number;
+					}
+					
 					if (sc.Compare("Altfont"))
 					{
 						sc.MustGetString();
@@ -150,7 +160,7 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 						FixedWidth = sc.Number;
 						sc.MustGetToken(',');
 						sc.MustGetValue(false);
-						FontHeight = sc.Number;
+						CellHeight = sc.Number;
 					}
 					else if (sc.Compare("minluminosity"))
 					{
@@ -177,6 +187,19 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 						{
 							sc.ScriptError("Unknown translation type %s", sc.String);
 						}
+					} // @Cockatrice - CharSize used to specify individual character widths for font sheets only
+					else if (sc.Compare("CharWidth")) {
+						sc.MustGetValue(false);
+						int charCode = sc.Number;
+						sc.MustGetToken('=');
+						sc.MustGetValue(false);
+						int charWidth = sc.Number;
+
+						// Add explicit width into lookup table
+						explicitWidths[charCode] = charWidth;
+					}
+					else if (sc.Compare("No1252")) {
+						No1252 = true;
 					}
 				}
 			}
@@ -185,7 +208,7 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 
 	if (FixedWidth > 0)
 	{
-		ReadSheetFont(folderdata, FixedWidth, FontHeight, Scale);
+		ReadSheetFont(folderdata, FixedWidth, CellHeight, Scale, explicitWidths);
 		Type = Folder;
 	}
 	else
@@ -367,7 +390,7 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 	}
 }
 
-void FFont::ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height, const DVector2 &Scale)
+void FFont::ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height, const DVector2 &Scale, TMap<int, int> &explicitWidths)
 {
 	// all valid lumps must be named with a hex number that represents the Unicode character index for its first character,
 	TArray<TexPartBuild> part(1, true);
@@ -395,10 +418,17 @@ void FFont::ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height
 				{
 					for (int x = 0; x < numtex_x; x++)
 					{
+						int thisPosition = int(position) + x + y * numtex_x;
+						int charWidth = width;
+
+						if (int *xp = explicitWidths.CheckKey(thisPosition)) {
+							charWidth = *xp;
+						}
+
 						part[0].OriginX = -width * x;
 						part[0].OriginY = -height * y;
 						part[0].TexImage = static_cast<FImageTexture*>(tex->GetTexture());
-						FMultiPatchTexture *image = new FMultiPatchTexture(width, height, part, false, false);
+						FMultiPatchTexture *image = new FMultiPatchTexture(charWidth, height, part, false, false);
 						FImageTexture *imgtex = new FImageTexture(image);
 						auto gtex = MakeGameTexture(imgtex, nullptr, ETextureType::FontChar);
 						gtex->SetWorldPanning(true);
@@ -406,7 +436,7 @@ void FFont::ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height
 						gtex->SetOffsets(1, 0, 0);
 						gtex->SetScale((float)Scale.X, (float)Scale.Y);
 						TexMan.AddGameTexture(gtex);
-						charMap.Insert(int(position) + x + y * numtex_x, gtex);
+						charMap.Insert(thisPosition, gtex);
 					}
 				}
 			}
@@ -436,10 +466,12 @@ void FFont::ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height
 			Chars[i].OriginalPic->CopySize(*lump, true);
 			if (Chars[i].OriginalPic != *lump) TexMan.AddGameTexture(Chars[i].OriginalPic);
 		}
-		Chars[i].XMove = int(width / Scale.X);
+
+		auto cWidth = explicitWidths.CheckKey(FirstChar + i);
+		Chars[i].XMove = cWidth ? int(*cWidth / Scale.X) : int(width / Scale.X);
 	}
 
-	if (map1252)
+	if (map1252 && !No1252)
 	{
 		// Move the Windows-1252 characters to their proper place.
 		for (int i = 0x80; i < 0xa0; i++)
@@ -451,7 +483,11 @@ void FFont::ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height
 		}
 	}
 
-	SpaceWidth = width;
+	// @Cockatrice - Check for explicit space character width
+	if (SpaceWidth == 0) {	// Only if space is not set explicitly
+		auto spWidth = explicitWidths.CheckKey(32);
+		SpaceWidth = spWidth ? *spWidth : width;
+	}
 }
 
 //==========================================================================
