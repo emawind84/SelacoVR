@@ -571,12 +571,12 @@ bool FTraceInfo::LineCheck(intercept_t *in, double dist, DVector3 hit, bool spec
 		{
 			if (TraceFlags & TRACE_PCross)
 			{
-				P_ActivateLine(in->d.line, IgnoreThis, lineside, SPAC_PCross);
+				P_ActivateLine(in->d.line, IgnoreThis, lineside, SPAC_PCross, &hit);
 			}
 			if (TraceFlags & TRACE_Impact)
 			{ // This is incorrect for "impact", but Hexen did this, so
 			  // we need to as well, for compatibility
-				P_ActivateLine(in->d.line, IgnoreThis, lineside, SPAC_Impact);
+				P_ActivateLine(in->d.line, IgnoreThis, lineside, SPAC_Impact, &hit);
 			}
 		}
 	}
