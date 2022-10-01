@@ -65,7 +65,7 @@ void CleanSWDrawer()
 #include "a_dynlight.h"
 
 
-void CollectLights(FLevelLocals* Level)
+void CollectLights(FLevelLocals* Level, double ticFrac = 1.0)
 {
 	IShadowMap* sm = &screen->mShadowMap;
 	int lightindex = 0;
@@ -79,7 +79,7 @@ void CollectLights(FLevelLocals* Level)
 			IShadowMap::LightsShadowmapped++;
 
 			light->mShadowmapIndex = lightindex;
-			sm->SetLight(lightindex, (float)light->X(), (float)light->Y(), (float)light->Z(), light->GetRadius());
+			sm->SetLight(lightindex, (float)light->iX(ticFrac), (float)light->iY(ticFrac), (float)light->iZ(ticFrac), light->GetRadius());
 			lightindex++;
 		}
 		else
@@ -112,7 +112,7 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 	{
 		screen->SetAABBTree(camera->Level->aabbTree);
 		screen->mShadowMap.SetCollectLights([=] {
-			CollectLights(camera->Level);
+			CollectLights(camera->Level, mainvp.TicFrac);
 		});
 		screen->UpdateShadowMap();
 	}

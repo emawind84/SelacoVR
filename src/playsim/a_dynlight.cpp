@@ -116,12 +116,13 @@ void AttachLight(AActor *self)
 	light->pLightFlags = (LightFlags*)&self->IntVar(NAME_lightflags);
 	light->pArgs = self->args;
 	light->specialf1 = DAngle(double(self->SpawnAngle)).Normalized360().Degrees;
-	light->Sector = self->Sector;
+	light->Sector = light->LastSector = self->Sector;
 	light->target = self;
 	light->mShadowmapIndex = 1024;
 	light->m_active = false;
 	light->visibletoplayer = true;
 	light->lighttype = (uint8_t)self->IntVar(NAME_lighttype);
+	light->Pos.Zero();
 	self->AttachedLights.Push(light);
 
 	// Disable postponed processing of dynamic light because its setup has been completed by this function
@@ -398,7 +399,14 @@ void FDynamicLight::UpdateLocation()
 		double s = angle.Sin();
 		double c = angle.Cos();
 
-		Pos = target->Vec3Offset(m_off.X * c + m_off.Y * s, m_off.X * s - m_off.Y * c, m_off.Z + target->GetBobOffset());
+		if (LastPos.isZero()) {
+			LastPos = Pos = target->Vec3Offset(m_off.X * c + m_off.Y * s, m_off.X * s - m_off.Y * c, m_off.Z + target->GetBobOffset());
+		} else {
+			LastPos = Pos;
+			Pos = target->Vec3Offset(m_off.X * c + m_off.Y * s, m_off.X * s - m_off.Y * c, m_off.Z + target->GetBobOffset());
+		}
+		
+		LastSector = Sector;
 		Sector = target->subsector->sector;	// Get the render sector. target->Sector is the sector according to play logic.
 
 		// Some z-coordinate fudging to prevent the light from getting too close to the floor or ceiling planes. With proper attenuation this would render them invisible.
@@ -670,6 +678,130 @@ void FDynamicLight::CollectWithinRadius(const DVector3 &opos, FSection *section,
 	shadowmapped = hitonesidedback && !DontShadowmap();
 }
 
+// @Cockatrice - Spotlight version, we use spotDir + pos to calculate the distance to segment
+// This is not accurate but it's good enough and the fastest way to do it without wasting a lot of time culling
+// what is behind the spotlight
+void FDynamicLight::CollectWithinRadiusSP(const DVector3 &opos, const DVector3 &spotDir, FSection *section, float radius)
+{
+	if (!section) return;
+	collected_ss.Clear();
+	collected_ss.Push({ section, opos });
+	section->validcount = dl_validcount;
+
+	bool hitonesidedback = false;
+	for (unsigned i = 0; i < collected_ss.Size(); i++)
+	{
+		auto pos = collected_ss[i].pos;
+		auto spotPos = pos + spotDir;
+		section = collected_ss[i].sect;
+
+		touching_sector = AddLightNode(&section->lighthead, section, this, touching_sector);
+
+
+		auto processSide = [&](side_t *sidedef, const vertex_t *v1, const vertex_t *v2)
+		{
+			auto linedef = sidedef->linedef;
+			if (linedef && linedef->validcount != ::validcount)
+			{
+				// light is in front of the seg
+				if ((pos.Y - v1->fY()) * (v2->fX() - v1->fX()) + (v1->fX() - pos.X) * (v2->fY() - v1->fY()) <= 0)
+				{
+					linedef->validcount = ::validcount;
+					touching_sides = AddLightNode(&sidedef->lighthead, sidedef, this, touching_sides);
+				}
+				else if (linedef->sidedef[0] == sidedef && linedef->sidedef[1] == nullptr)
+				{
+					hitonesidedback = true;
+				}
+			}
+			if (linedef)
+			{
+				FLinePortal *port = linedef->getPortal();
+				if (port && port->mType == PORTT_LINKED)
+				{
+					line_t *other = port->mDestination;
+					if (other->validcount != ::validcount)
+					{
+						subsector_t *othersub = Level->PointInRenderSubsector(other->v1->fPos() + other->Delta() / 2);
+						FSection *othersect = othersub->section;
+						if (othersect->validcount != ::validcount)
+						{
+							othersect->validcount = ::validcount;
+							collected_ss.Push({ othersect, PosRelative(other->frontsector->PortalGroup) });
+						}
+					}
+				}
+			}
+		};
+
+		for (auto &segment : section->segments)
+		{
+			// check distance from x/y to seg and if within radius add this seg and, if present the opposing subsector (lather/rinse/repeat)
+			// If out of range we do not need to bother with this seg.
+			if (DistToSeg(spotPos, segment.start, segment.end) <= radius)
+			{
+				auto sidedef = segment.sidedef;
+				if (sidedef)
+				{
+					processSide(sidedef, segment.start, segment.end);
+				}
+
+				auto partner = segment.partner;
+				if (partner)
+				{
+					FSection *sect = partner->section;
+					if (sect != nullptr && sect->validcount != dl_validcount)
+					{
+						sect->validcount = dl_validcount;
+						collected_ss.Push({ sect, pos });
+					}
+				}
+			}
+		}
+		for (auto side : section->sides)
+		{
+			auto v1 = side->V1(), v2 = side->V2();
+			if (DistToSeg(spotPos, v1, v2) <= radius)
+			{
+				processSide(side, v1, v2);
+			}
+		}
+		sector_t *sec = section->sector;
+		if (!sec->PortalBlocksSight(sector_t::ceiling))
+		{
+			line_t *other = section->segments[0].sidedef->linedef;
+			if (sec->GetPortalPlaneZ(sector_t::ceiling) < Z() + radius)
+			{
+				DVector2 refpos = other->v1->fPos() + other->Delta() / 2 + sec->GetPortalDisplacement(sector_t::ceiling);
+				subsector_t *othersub = Level->PointInRenderSubsector(refpos);
+				FSection *othersect = othersub->section;
+				if (othersect->validcount != dl_validcount)
+				{
+					othersect->validcount = dl_validcount;
+					collected_ss.Push({ othersect, PosRelative(othersub->sector->PortalGroup) });
+				}
+			}
+		}
+		if (!sec->PortalBlocksSight(sector_t::floor))
+		{
+			line_t *other = section->segments[0].sidedef->linedef;
+			if (sec->GetPortalPlaneZ(sector_t::floor) > Z() - radius)
+			{
+				DVector2 refpos = other->v1->fPos() + other->Delta() / 2 + sec->GetPortalDisplacement(sector_t::floor);
+				subsector_t *othersub = Level->PointInRenderSubsector(refpos);
+				FSection *othersect = othersub->section;
+				if (othersect->validcount != dl_validcount)
+				{
+					othersect->validcount = dl_validcount;
+					collected_ss.Push({ othersect, PosRelative(othersub->sector->PortalGroup) });
+				}
+			}
+		}
+	}
+	shadowmapped = hitonesidedback && !DontShadowmap();
+}
+
+
 //==========================================================================
 //
 // Link the light into the world
@@ -697,12 +829,35 @@ void FDynamicLight::LinkLight()
 	if (radius>0)
 	{
 		// passing in radius*radius allows us to do a distance check without any calls to sqrt
-		FSection *sect = Level->PointInRenderSubsector(Pos)->section;
+		
 
-		dl_validcount++;
-		::validcount++;
-		CollectWithinRadius(Pos, sect, float(radius*radius));
+		// @Cockatrice - If this is a spot light, collect only within a radius from the center of the spot, we don't care about stuff that is behind the spot light
+		if (IsSpot()) {
+			dl_validcount++;
+			::validcount++;
 
+			// Determine center point in the direction of the light, reduce radius by half
+			// This may not work as we may have extended outside of our sector
+			float rad = radius * 0.5f;
+			DAngle pitch = *pPitch == target->Angles.Pitch ? target->Angles.Pitch : *pPitch;
+			DAngle angle = target->Angles.Yaw;
+			double cospitch = pitch.Cos();
+			DVector3 pPos;
+			pPos.X = rad * cospitch * angle.Cos();
+			pPos.Y = rad * cospitch * angle.Sin();
+			pPos.Z = rad * -pitch.Sin();
+
+			FSection *sect = Level->PointInRenderSubsector(Pos)->section;
+			CollectWithinRadiusSP(Pos, pPos, sect, rad * rad);
+		}
+		else {
+			FSection *sect = Level->PointInRenderSubsector(Pos)->section;
+
+			dl_validcount++;
+			::validcount++;
+
+			CollectWithinRadius(Pos, sect, float(radius*radius));
+		}
 	}
 		
 	// Now delete any nodes that won't be used. These are the ones where
