@@ -2978,6 +2978,8 @@ static int D_DoomMain_Internal (void)
 int D_DoomMain()
 {
 	int ret = 0;
+	I_InitTime();
+	
 	try
 	{
 		ret = D_DoomMain_Internal();
