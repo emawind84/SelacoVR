@@ -50,6 +50,8 @@ CUSTOM_CVAR(Int, gl_fogmode, 2, CVAR_ARCHIVE | CVAR_NOINITCALL)
 	if (self < 0) self = 0;
 }
 
+// @Cockatrice - Toggle background texture fetching when supported
+CVAR(Bool, gl_texture_thread, true, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
 
 // OpenGL stuff moved here
 // GL related CVARs

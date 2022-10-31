@@ -3,6 +3,9 @@
 #include "gl_sysfb.h"
 #include "vk_device.h"
 #include "vk_objects.h"
+#include "TSQueue.h"
+#include "bitmap.h"
+#include "printf.h"
 
 struct FRenderViewpoint;
 class VkSamplerManager;
@@ -21,6 +24,38 @@ class VkRenderBuffers;
 class VkPostprocess;
 class SWSceneDrawer;
 
+struct VkTexLoadIn {
+	FImageSource *imgSource;
+	FileReader *readerCopy;		// Needs a unique copy of a file reader
+	int conversion, translation;
+
+	VkHardwareTexture *tex;		// We can create the texture on the main thread
+};
+
+struct VkTexLoadOut {
+	VkHardwareTexture *tex;
+	//VkTextureImage image;
+	int conversion, translation;
+	FImageSource *imgSource;
+};
+
+// @Cockatrice - Background loader thread to handle transfer of texture data
+class VkTexLoadThread : public ResourceLoader<VkTexLoadIn, VkTexLoadOut> {
+public:
+	VkTexLoadThread(VkCommandBufferManager *bgCmd) { cmd = bgCmd; }
+	int getCurrentImageID() { return currentImageID.load(); }
+
+protected:
+	VkCommandBufferManager *cmd;
+	std::atomic<int> currentImageID;
+	std::atomic<int> maxQueue;
+
+	bool loadResource(VkTexLoadIn &input, VkTexLoadOut &output) override;
+	void cancelLoad() override;
+	void completeLoad() override;
+};
+
+
 class VulkanFrameBuffer : public SystemBaseFrameBuffer
 {
 	typedef SystemBaseFrameBuffer Super;
@@ -30,6 +65,7 @@ public:
 	VulkanDevice *device;
 
 	VkCommandBufferManager* GetCommands() { return mCommands.get(); }
+	VkCommandBufferManager* GetBGCommands() { return mBGTransferCommands.get(); }
 	VkShaderManager *GetShaderManager() { return mShaderManager.get(); }
 	VkSamplerManager *GetSamplerManager() { return mSamplerManager.get(); }
 	VkBufferManager* GetBufferManager() { return mBufferManager.get(); }
@@ -53,6 +89,12 @@ public:
 	void InitializeState() override;
 	bool CompileNextShader() override;
 	void PrecacheMaterial(FMaterial *mat, int translation) override;
+	bool BackgroundCacheMaterial(FMaterial *mat, int translation) override;
+	bool BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags) override;
+	bool CachingActive() override { return bgTransferThread->isActive(); }
+	bool SupportsBackgroundCache() override { return true; }
+	float CacheProgress() override { return float(bgTransferThread->numQueued()); }	// TODO: Change this to report the actual progress once we have a way to mark the total number of objects to load
+	void UpdateBackgroundCache() override;
 	void UpdatePalette() override;
 	const char* DeviceName() const override;
 	int Backend() override { return 1; }
@@ -91,12 +133,26 @@ public:
 
 	bool RaytracingEnabled();
 
+	// Cache stats helpers
+	void GetBGQueueSize(int &current, int &max, int &total);
+	void GetBGStats(double &min, double &max, double &avg);
+	void ResetBGStats();
+
 private:
 	void RenderTextureView(FCanvasTexture* tex, std::function<void(IntRect &)> renderFunc) override;
 	void PrintStartupLog();
 	void CopyScreenToBuffer(int w, int h, uint8_t *data) override;
 
+	struct QueuedPatch {
+		FGameTexture *tex;
+		int translation, scaleFlags;
+	};
+
+	TSQueue<QueuedPatch> patchQueue;									// @Cockatrice - Thread safe queue of textures to create materials for and submit to the bg thread
+	std::unique_ptr<VkTexLoadThread> bgTransferThread;					// @Cockatrice - Thread that handles the background transfers
+
 	std::unique_ptr<VkCommandBufferManager> mCommands;
+	std::unique_ptr<VkCommandBufferManager> mBGTransferCommands;		// @Cockatrice - Command pool for submitting background transfers
 	std::unique_ptr<VkBufferManager> mBufferManager;
 	std::unique_ptr<VkSamplerManager> mSamplerManager;
 	std::unique_ptr<VkTextureManager> mTextureManager;

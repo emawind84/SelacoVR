@@ -417,7 +417,7 @@ bool ImageLoadThread::loadResource(ImageLoadIn &input, ImageLoadOut &output) {
 	auto *src = input.imgSource;
 	output.pixels.Create(src->GetWidth(), src->GetHeight());
 
-	int trans = src->ReadPixels(input.readerCopy, &output.pixels, input.conversion);
+	output.trans = src->ReadPixels(input.readerCopy, &output.pixels, input.conversion);
 	
 	// TODO: We have the image now, let's store it somewhere
 	

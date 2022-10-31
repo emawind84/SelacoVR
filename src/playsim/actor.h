@@ -1044,6 +1044,7 @@ public:
 	FTextureID		picnum;				// Draw this instead of sprite if valid
 	uint32_t		fillcolor;			// Color to draw when STYLE_Shaded
 	uint32_t		Translation;
+	FTextureID		LastPatch;			// @Cockatrice - Used by the hardware renderer to determine the last rendered patch
 
 	uint32_t		RenderRequired;		// current renderer must have this feature set
 	uint32_t		RenderHidden;		// current renderer must *not* have any of these features

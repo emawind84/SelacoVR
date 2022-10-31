@@ -214,6 +214,14 @@ public:
 	virtual void SetTextureFilterMode() {}
 	virtual IHardwareTexture *CreateHardwareTexture(int numchannels) { return nullptr; }
 	virtual void PrecacheMaterial(FMaterial *mat, int translation) {}
+	
+	virtual bool BackgroundCacheMaterial(FMaterial *mat, int translation) { PrecacheMaterial(mat, translation); return true; }	// @Cockatrice - Default implementation for now. DOES NOT BG CACHE 
+	virtual bool BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags) { return false; }
+	virtual bool CachingActive() { return false; }																	// Is background cache currently running?
+	virtual float CacheProgress() { return 0; }																		// Current progress of background cache op
+	virtual bool SupportsBackgroundCache() { return false; }
+	virtual void UpdateBackgroundCache() { }
+	
 	virtual FMaterial* CreateMaterial(FGameTexture* tex, int scaleflags);
 	virtual void BeginFrame() {}
 	virtual void SetWindowSize(int w, int h) {}

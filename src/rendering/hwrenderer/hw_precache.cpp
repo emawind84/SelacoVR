@@ -57,7 +57,7 @@ static void PrecacheTexture(FGameTexture *tex, int cache)
 		if (shouldUpscale(tex, UF_Texture)) scaleflags |= CTF_Upscale;
 
 		FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags);
-		if (gltex) screen->PrecacheMaterial(gltex, 0);
+		if (gltex) screen->BackgroundCacheMaterial(gltex, 0);
 	}
 }
 
@@ -70,7 +70,7 @@ static void PrecacheList(FMaterial *gltex, SpriteHits& translations)
 {
 	SpriteHits::Iterator it(translations);
 	SpriteHits::Pair* pair;
-	while (it.NextPair(pair)) screen->PrecacheMaterial(gltex, pair->Key);
+	while (it.NextPair(pair)) screen->BackgroundCacheMaterial(gltex, pair->Key);
 }
 
 //==========================================================================
@@ -87,13 +87,15 @@ static void PrecacheSprite(FGameTexture *tex, SpriteHits &hits)
 	FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags);
 	if (gltex) PrecacheList(gltex, hits);
 
-	auto useType = tex->GetUseType();
+	/*auto useType = tex->GetUseType();
 	if (useType == ETextureType::Any ||
 		useType == ETextureType::Sprite ||
 		useType == ETextureType::Decal ||
 		useType == ETextureType::SkinSprite) {
 		tex->GetSpritePositioning(1);		// @Cockatrice Precalc sprite positioning so we aren't loading images at play time as often
-	}
+		// TODO: Improve this, since we end up reading the texture from disk multiple times!! Maybe generate the necessary data the first time the image is actually loaded from disk
+		// Currently this is noticably increasing load times because of the double-disk reads for texture data
+	}*/
 }
 
 
@@ -323,6 +325,13 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 
 
 		FImageSource::EndPrecaching();
+
+		while (screen->CachingActive()) {
+			screen->UpdateBackgroundCache();
+			Printf("Cache Progress: %.2f\n", screen->CacheProgress());
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+		
 
 		// cache all used models
 		FModelRenderer* renderer = new FHWModelRenderer(nullptr, *screen->RenderState(), -1);

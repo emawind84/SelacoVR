@@ -25,6 +25,8 @@ class FGameTexture;
 class VkHardwareTexture : public IHardwareTexture
 {
 	friend class VkMaterial;
+	friend class VulkanFrameBuffer;	// TODO: Fix this, this is lazy
+
 public:
 	VkHardwareTexture(VulkanFrameBuffer* fb, int numchannels);
 	~VkHardwareTexture();
@@ -35,9 +37,13 @@ public:
 	void AllocateBuffer(int w, int h, int texelsize) override;
 	uint8_t *MapBuffer() override;
 	unsigned int CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, const char *name) override;
+	void BackgroundCreateTexture(int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap);
 
 	// Wipe screen
 	void CreateWipeTexture(int w, int h, const char *name);
+
+	// @Cockatrice - Ready to render when we have a VkTextureImage
+	bool IsValid() override { return hwState == HardwareState::READY && !!mImage->Image; }
 
 	VkTextureImage *GetImage(FTexture *tex, int translation, int flags);
 	VkTextureImage *GetDepthStencil(FTexture *tex);
@@ -45,16 +51,19 @@ public:
 	VulkanFrameBuffer* fb = nullptr;
 	std::list<VkHardwareTexture*>::iterator it;
 
+	static int GetMipLevels(int w, int h);
+
 private:
 	void CreateImage(FTexture *tex, int translation, int flags);
 
 	void CreateTexture(int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap);
-	static int GetMipLevels(int w, int h);
+	void CreateTexture(VkCommandBufferManager *bufManager, VkTextureImage *img, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap);
+	void SwapToLoadedImage();
 
-	VkTextureImage mImage;
+	std::unique_ptr<VkTextureImage> mImage, mLoadedImage;
 	int mTexelsize = 4;
 
-	VkTextureImage mDepthStencil;
+	std::unique_ptr<VkTextureImage> mDepthStencil;
 
 	uint8_t* mappedSWFB = nullptr;
 };

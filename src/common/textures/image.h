@@ -56,6 +56,8 @@ class FImageSource
 {
 	friend class FBrightmapTexture;
 	friend class ImageLoadThread;
+	friend class VkTexLoadThread;	// TODO: Remove this, lazy
+
 protected:
 
 	static TArray<FImageSource *>ImageForLump;
@@ -207,7 +209,7 @@ struct ImageLoadIn {
 struct ImageLoadOut {
 	FImageSource *imgSource;
 	FBitmap pixels;
-	int conversion;
+	int conversion, trans;
 
 	ImageLoadOut() {
 		imgSource = nullptr;

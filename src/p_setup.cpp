@@ -188,7 +188,7 @@ static void PrecacheLevel(FLevelLocals *Level)
 		if (act != NULL && act->flags8 && (act->flags8 & MF8_PRECACHEALWAYS)) 
 		{
 			actorhitlist[static_cast<PClassActor*>(pc)] = true;
-			Printf("Adding actor: %s to precache list from CACHEALWAYS", act->GetCharacterName());
+			Printf("Adding actor: %s to precache list from CACHEALWAYS\n", act->GetCharacterName());
 		}
 	}
 

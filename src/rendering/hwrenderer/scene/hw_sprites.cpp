@@ -66,7 +66,7 @@ const float LARGE_VALUE = 1e19f;
 
 EXTERN_CVAR(Bool, r_debug_disable_vis_filter)
 EXTERN_CVAR(Float, transsouls)
-
+EXTERN_CVAR(Bool, gl_texture_thread)
 
 //==========================================================================
 //
@@ -927,6 +927,48 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		int type = thing->renderflags & RF_SPRITETYPEMASK;
 		auto tex = TexMan.GetGameTexture(patch, false);
 		if (!tex || !tex->isValid()) return;
+		
+		// @Cockatrice - If this texture is not loaded, and we are able to BG load it, try to render this sprites last frame instead
+		// Also load the texture
+		FTextureID lastPatch = thing->LastPatch;
+		if (patch != lastPatch && gl_texture_thread && screen->SupportsBackgroundCache()) {
+			int scaleflags = CTF_Expand;
+			if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
+
+			FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
+			if (gltex && !gltex->IsHardwareCached(thing->Translation)) {
+				if (screen->BackgroundCacheMaterial(gltex, thing->Translation)) {	// TODO: Prevent calling this every time the sprite wants to render, it's incredibly wasteful
+					// Get the last rendered patch from this sprite
+					if (lastPatch.isValid()) {
+						patch = lastPatch;
+						auto tex = TexMan.GetGameTexture(patch, false);
+						if (!tex || !tex->isValid()) return;
+					}
+					else {
+						return;
+					}
+				}
+			}
+			else if(!gltex) {
+				// Store the patch for future collection and loading after the BSP traversal
+				if (screen->BackgroundCacheTextureMaterial(tex, thing->Translation, scaleflags)) {
+					// Get the last rendered patch from this sprite
+					if (lastPatch.isValid()) {
+						patch = lastPatch;
+						auto tex = TexMan.GetGameTexture(patch, false);
+						if (!tex || !tex->isValid()) return;
+					}
+					else {
+						return;
+					}
+				}
+			}
+
+			// If the bg cache func fails, we can't bg load the patch so just move on to the normal render path and load in the main thread
+		}
+
+		thing->LastPatch = patch;
+		
 		auto& spi = tex->GetSpritePositioning(type == RF_FACESPRITE);
 
 		vt = spi.GetSpriteVT();
@@ -951,7 +993,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			ur = spi.GetSpriteUL();
 		}
 
-		texture = TexMan.GetGameTexture(patch, false);
+		texture = TexMan.GetGameTexture(patch, false);	// @Cockatrice - Why was this being done twice? Not sure.
 		if (!texture || !texture->isValid())
 			return;
 

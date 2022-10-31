@@ -62,6 +62,8 @@
 #include "engineerrors.h"
 #include "c_dispatch.h"
 
+#include "image.h"
+
 EXTERN_CVAR(Bool, r_drawvoxels)
 EXTERN_CVAR(Int, gl_tonemap)
 EXTERN_CVAR(Int, screenblocks)
@@ -82,7 +84,164 @@ CCMD(vk_memstats)
 	}
 }
 
-CVAR(Bool, vk_raytrace, false, 0/*CVAR_ARCHIVE | CVAR_GLOBALCONFIG*/)
+CVAR(Bool, vk_raytrace, false, 0/*CVAR_ARCHIVE | CVAR_GLOBALCONFIG*/)	// @Cockatrice - UGH
+
+
+
+ADD_STAT(vkloader)
+{
+	static int maxQueue = 0, queue, total;
+	static double minLoad = 0, maxLoad = 0, avgLoad = 0;
+
+	auto sc = dynamic_cast<VulkanFrameBuffer *>(screen);
+
+	if (sc) {
+		sc->GetBGQueueSize(queue, maxQueue, total);
+		sc->GetBGStats(minLoad, maxLoad, avgLoad);
+
+		FString out;
+		out.AppendFormat(
+			"Queued: %3.3d Max: %3.3d Tot: %d\n"
+			"Min: %.3fms\n"
+			"Max: %.3fms\n"
+			"Avg: %.3fms\n",
+			queue, maxQueue, total, minLoad, maxLoad, avgLoad
+		);
+		return out;
+	}
+	
+	return "No Vulkan Device";
+}
+
+CCMD(vk_rstbgstats) {
+	auto sc = dynamic_cast<VulkanFrameBuffer *>(screen);
+	if (sc) sc->ResetBGStats();
+}
+
+void VulkanFrameBuffer::GetBGQueueSize(int &current, int &max, int &total) {
+	current = bgTransferThread->numQueued();
+	max = bgTransferThread->statMaxQueued();
+	total = bgTransferThread->statTotalLoaded();
+}
+
+void VulkanFrameBuffer::GetBGStats(double &min, double &max, double &avg) {
+	min = bgTransferThread->statMinLoadTime();
+	max = bgTransferThread->statMaxLoadTime();
+	avg = bgTransferThread->statAvgLoadTime();
+}
+
+void VulkanFrameBuffer::ResetBGStats() {
+	bgTransferThread->resetStats();
+}
+
+
+// @Cockatrice - Background Loader Stuff ===========================================
+// =================================================================================
+bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
+	currentImageID.store(input.imgSource->GetId());
+
+	output.conversion = input.conversion;
+	output.imgSource = input.imgSource;
+	output.translation = input.translation;
+	output.tex = input.tex;
+
+	// Load pixels directly with the reader we copied on the main thread
+	auto *src = input.imgSource;
+	FBitmap pixels;
+	pixels.Create(src->GetWidth(), src->GetHeight());	// TODO: Error checking
+
+	auto trans = src->ReadPixels(input.readerCopy, &pixels, input.conversion);
+
+	delete input.readerCopy;
+
+	// We have the image now, let's upload it through the channel created exclusively for background ops
+	// If we really wanted to be efficient, we would do the disk loading in one thread and the texture upload in another
+	// But for now this approach should yield reasonable results
+	bool indexed = false;	// TODO: Determine this properly
+	bool mipmap = !indexed;
+	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
+	output.tex->BackgroundCreateTexture(pixels.GetWidth(), pixels.GetHeight(), indexed ? 1 : 4, indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM, pixels.GetPixels(), !indexed);
+
+	// This is mostly copied and pasted from CreateTexture for now, since we need an image and a view but we will apply it to the texture
+	// in the main thread to avoid collisions
+	/*VkCommandBufferManager *bufManager = input.tex->fb->GetBGCommands();
+	int w = pixels.GetWidth();
+	int h = pixels.GetHeight();
+	int totalSize = w * h * (indexed ? 1 : 4);
+	
+	auto stagingBuffer = BufferBuilder()
+		.Size(totalSize)
+		.Usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY)
+		.DebugName("VkHardwareTexture.mStagingBuffer")
+		.Create(input.tex->fb->device);
+
+	uint8_t *data = (uint8_t*)stagingBuffer->Map(0, totalSize);
+	memcpy(data, pixels.GetPixels(), totalSize);
+	stagingBuffer->Unmap();
+
+	output.image.Image = ImageBuilder()
+		.Format(fmt)
+		.Size(w, h, !mipmap ? 1 : VkHardwareTexture::GetMipLevels(w, h))
+		.Usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
+		.DebugName("VkHardwareTexture.mImage")
+		.Create(input.tex->fb->device);
+
+	output.image.View = ImageViewBuilder()
+		.Image(output.image.Image.get(), fmt)
+		.DebugName("VkHardwareTexture.mImageView")
+		.Create(input.tex->fb->device);
+
+	auto cmdBuffer = bufManager->GetTransferCommands();
+
+	VkImageTransition()
+		.AddImage(&output.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, true)
+		.Execute(cmdBuffer);
+
+	VkBufferImageCopy region = {};
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.layerCount = 1;
+	region.imageExtent.depth = 1;
+	region.imageExtent.width = w;
+	region.imageExtent.height = h;
+	cmdBuffer->copyBufferToImage(stagingBuffer->buffer, output.image.Image->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+	if (mipmap) output.image.GenerateMipmaps(cmdBuffer);
+
+	// If we queued more than 64 MB of data already: wait until the uploads finish before continuing
+	bufManager->TransferDeleteList->Add(std::move(stagingBuffer));
+	if (bufManager->TransferDeleteList->TotalSize > 64 * 1024 * 1024)
+		bufManager->WaitForCommands(false, true);*/
+
+	// Always return true, because failed images need to be marked as unloadable
+	// TODO: Mark failed images as unloadable so they don't keep coming back to the queue
+	return true;
+}
+
+void VkTexLoadThread::cancelLoad() { currentImageID.store(0); }
+void VkTexLoadThread::completeLoad() { currentImageID.store(0); }
+
+// END Background Loader Stuff =====================================================
+
+void VulkanFrameBuffer::UpdateBackgroundCache() {
+	// Check for completed cache items and link textures to the data
+	VkTexLoadOut loaded;
+
+	while (bgTransferThread->popFinished(loaded)) {
+		loaded.tex->SwapToLoadedImage();
+		loaded.tex->SetHardwareState(IHardwareTexture::HardwareState::READY);
+	}
+
+	// Submit all of the patches that need to be loaded
+	QueuedPatch qp;
+	while (patchQueue.dequeue(qp)) {
+		FMaterial * gltex = FMaterial::ValidateTexture(qp.tex, qp.scaleFlags, true);
+		if (gltex && !gltex->IsHardwareCached(qp.translation)) {
+			BackgroundCacheMaterial(gltex, qp.translation);
+		}
+	}
+}
+
+
 
 VulkanFrameBuffer::VulkanFrameBuffer(void *hMonitor, bool fullscreen, VulkanDevice *dev) : 
 	Super(hMonitor, fullscreen) 
@@ -110,6 +269,7 @@ VulkanFrameBuffer::~VulkanFrameBuffer()
 		mShaderManager->Deinit();
 
 	mCommands->DeleteFrameObjects();
+	mBGTransferCommands->DeleteFrameObjects();
 }
 
 void VulkanFrameBuffer::InitializeState()
@@ -136,6 +296,7 @@ void VulkanFrameBuffer::InitializeState()
 	maxuniformblock = device->PhysicalDevice.Properties.limits.maxUniformBufferRange;
 
 	mCommands.reset(new VkCommandBufferManager(this));
+	mBGTransferCommands.reset(new VkCommandBufferManager(this));
 
 	mSamplerManager.reset(new VkSamplerManager(this));
 	mTextureManager.reset(new VkTextureManager(this));
@@ -163,6 +324,10 @@ void VulkanFrameBuffer::InitializeState()
 #else
 	mRenderState.reset(new VkRenderState(this));
 #endif
+
+	// @Cockatrice - Init the background loader
+	bgTransferThread.reset(new VkTexLoadThread(mBGTransferCommands.get()));
+	bgTransferThread->start();
 }
 
 void VulkanFrameBuffer::Update()
@@ -258,6 +423,97 @@ void VulkanFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 		auto syslayer = static_cast<VkHardwareTexture*>(mat->GetLayer(i, 0, &layer));
 		syslayer->GetImage(layer->layerTexture, 0, layer->scaleFlags);
 	}
+}
+
+
+// @Cockatrice - Cache a texture material, intended for use outside of the main thread
+bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags) {
+	if (!tex || !tex->isValid()) return false;
+
+	QueuedPatch qp = {
+		tex, translation, scaleFlags
+	};
+
+	patchQueue.queue(qp);
+
+	return true;
+}
+
+
+// @Cockatrice - Submit each texture in the material to the background loader
+// Call from main thread only
+bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation) {
+	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return false;
+
+	MaterialLayerInfo* layer;
+
+	auto systex = static_cast<VkHardwareTexture*>(mat->GetLayer(0, translation, &layer));
+	
+	//systex->GetImage(layer->layerTexture, translation, layer->scaleFlags);
+	
+	// Submit each layer to the background loader
+	int lump = layer->layerTexture->GetSourceLump();
+	FResourceLump *rLump = lump >= 0 ? fileSystem.GetFileAt(lump) : nullptr;
+	FileReader *reader;
+
+	if (rLump && systex->GetState() == IHardwareTexture::HardwareState::NONE) {
+		systex->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
+		reader = rLump->Owner->GetReader();
+		
+		FImageTexture *fLayerTexture = dynamic_cast<FImageTexture*>(layer->layerTexture);
+		
+		VkTexLoadIn in = {
+			layer->layerTexture->GetImage(),
+			reader ? reader->CopyNew() : rLump->NewReader().CopyNew(),
+			fLayerTexture ? (fLayerTexture->GetNoRemap0() ? FImageSource::noremap0 : FImageSource::normal) : FImageSource::normal,
+			translation,
+			systex
+		};
+
+		// TODO: In the case of self-generated textures we need to submit a set of pixels instead of a readable resource
+		// So for now ignore anything that can't be read as a file
+		if (in.readerCopy && in.readerCopy->isOpen()) {
+			bgTransferThread->queue(in);
+		}
+		else {
+			systex->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
+			return false;
+		}
+	}
+	
+
+	int numLayers = mat->NumLayers();
+	for (int i = 1; i < numLayers; i++)
+	{
+		auto syslayer = static_cast<VkHardwareTexture*>(mat->GetLayer(i, 0, &layer));
+		lump = layer->layerTexture->GetSourceLump();
+		rLump = lump >= 0 ? fileSystem.GetFileAt(lump) : nullptr;
+
+		if (rLump && syslayer->GetState() == IHardwareTexture::HardwareState::NONE) {
+			syslayer->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
+			reader = rLump->Owner->GetReader();
+			
+			FImageTexture *fLayerTexture = dynamic_cast<FImageTexture*>(layer->layerTexture);
+
+			VkTexLoadIn in = {
+				layer->layerTexture->GetImage(),
+				reader ? reader->CopyNew() : rLump->NewReader().CopyNew(),
+				fLayerTexture ? (fLayerTexture->GetNoRemap0() ? FImageSource::noremap0 : FImageSource::normal) : FImageSource::normal,
+				translation,
+				syslayer
+			};
+			
+			if (in.readerCopy && in.readerCopy->isOpen()) {
+				bgTransferThread->queue(in);
+			}
+			else {
+				syslayer->SetHardwareState(IHardwareTexture::HardwareState::READY);	// TODO: Set state to a special "unloadable" state
+				return false;
+			}
+		}
+	}
+
+	return true;
 }
 
 IHardwareTexture *VulkanFrameBuffer::CreateHardwareTexture(int numchannels)
@@ -425,6 +681,8 @@ void VulkanFrameBuffer::BeginFrame()
 	mSaveBuffers->BeginFrame(SAVEPICWIDTH, SAVEPICHEIGHT, SAVEPICWIDTH, SAVEPICHEIGHT);
 	mRenderState->BeginFrame();
 	mDescriptorSetManager->BeginFrame();
+
+	UpdateBackgroundCache();
 }
 
 void VulkanFrameBuffer::InitLightmap(int LMTextureSize, int LMTextureCount, TArray<uint16_t>& LMTextureData)

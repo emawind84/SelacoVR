@@ -4,6 +4,8 @@
 #include <functional>
 #include <mutex>
 #include <atomic>
+#include <chrono>
+#include "stats.h"
 #include "tarray.h"
 
 // @Cockatrice: Queue wrapper
@@ -69,6 +71,9 @@ template <typename IP, typename OP>
 class ResourceLoader {
 public:
 	ResourceLoader() {}
+	~ResourceLoader() {
+		stop();
+	}
 
 	void start() {
 		if (mThread.get_id() == std::thread::id()) {
@@ -92,6 +97,7 @@ public:
 
 	void queue(IP input) {
 		mInputQ.queue(input);
+		mMaxQueue = std::max(mMaxQueue.load(), mInputQ.size());
 		mWake.notify_all();
 	}
 
@@ -99,8 +105,42 @@ public:
 		return mInputQ.size();
 	}
 
+	bool isActive() {
+		return mActive.load() && (mRunning.load() || mInputQ.size() > 0);
+	}
+
 	bool popFinished(OP &output) {
 		return mOutputQ.dequeue(output);
+	}
+
+	void resetStats() {
+		// TODO: Block stat updates
+		mMaxQueue = 0;
+		mStatLoadTime = 0;
+		mStatLoadCount = 0;
+		mStatTotalLoaded = 0;
+		mStatMinTime = 99999.0;
+		mStatMaxTime = 0;
+	}
+
+	int statMaxQueued() {
+		return mMaxQueue.load();
+	}
+
+	double statAvgLoadTime() {
+		return mStatAvgTime;
+	}
+
+	double statMinLoadTime() {
+		return std::min(99999.0, mStatMinTime.load());
+	}
+
+	double statMaxLoadTime() {
+		return mStatMaxTime.load();
+	}
+
+	int statTotalLoaded() {
+		return mStatTotalLoaded.load();
 	}
 
 protected:
@@ -111,8 +151,14 @@ protected:
 	virtual void cancelLoad() {}		// Load was cancelled
 
 	std::atomic<bool> mActive{ true };
+	std::atomic<bool> mRunning{ false };
+	std::atomic<int> mMaxQueue{ 0 }, mStatTotalLoaded{ 0 };
+	std::atomic<double> mStatAvgTime{ 0 }, mStatMinTime{ 0 }, mStatMaxTime{ 0 };
+
+	double mStatLoadTime = 0, mStatLoadCount = 0;
+
 	std::thread mThread;
-	std::mutex mWakeLock;
+	std::mutex mWakeLock, mStatsLock;
 	std::condition_variable mWake;
 
 	TSQueue<IP> mInputQ;
@@ -129,23 +175,43 @@ private:
 			// Process the queue
 			while (true) {
 				if (mInputQ.size() > 0) {
-					prepareLoad();
-				}
+					mRunning.store(true);
 
-				IP input;
-				if (!mInputQ.dequeue(input)) {
-					cancelLoad();
+					cycle_t lTime;
+					lTime.Reset();
+					lTime.Clock();
+
+					prepareLoad();
+
+					IP input;
+					if (!mInputQ.dequeue(input)) {
+						cancelLoad();
+						break;
+					}
+
+					OP output;
+					if (loadResource(input, output)) {
+						mOutputQ.queue(output);
+					}
+					processed = true;
+
+					completeLoad();
+
+					// Update load stats
+					lTime.Unclock();
+					mStatLoadTime += lTime.TimeMS();
+					mStatLoadCount += 1;
+					mStatAvgTime = mStatLoadTime / mStatLoadCount;
+					mStatMinTime = std::min(mStatMinTime.load(), lTime.TimeMS());
+					mStatMaxTime = std::max(mStatMaxTime.load(), lTime.TimeMS());
+					mStatTotalLoaded++;
+				}
+				else {
 					break;
 				}
-
-				OP output;
-				if (loadResource(input, output)) {
-					mOutputQ.queue(output);
-				}
-				processed = true;
-
-				completeLoad();
 			}
+
+			mRunning.store(false);
 
 			if (!processed) {
 				mWake.wait_for(lock, std::chrono::milliseconds(5));

@@ -95,8 +95,8 @@ public:
 		if (!File && Filename.GetChars() != "") {
 			long fPos = FilePos;
 
-			Open(Filename.GetChars(), StartPos, Length);
-			Seek(fPos, SEEK_SET);
+			if (Open(Filename.GetChars(), StartPos, Length))
+				Seek(fPos, SEEK_SET);
 		}
 	}
 
