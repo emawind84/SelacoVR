@@ -371,6 +371,7 @@ public:
 		SetFromImage();
 	}
 	void SetNoRemap0() { bNoRemap0 = true; }
+	bool GetNoRemap0() { return bNoRemap0; }
 
 	FImageSource* GetImage() const override { return mImage; }
 	FBitmap GetBgraBitmap(const PalEntry* p, int* trans) override;

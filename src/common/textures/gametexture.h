@@ -174,6 +174,11 @@ public:
 	bool isHardwareCanvas() const { return Base->isHardwareCanvas(); }	// There's two here so that this can deal with software canvases in the hardware renderer later.
 	bool isSoftwareCanvas() const { return Base->isCanvas(); }
 
+	// @Cockatrice - Supply some way for the rest of the engine to tell if all images are loaded for this texture
+	bool isHardwareCached() {
+		return false;
+	}
+
 	void SetTranslucent(bool on) { Base->bTranslucent = on; }
 	void SetUseType(ETextureType type) { UseType = type; }
 	int GetRotations() const { return Rotations; }
