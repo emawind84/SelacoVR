@@ -119,6 +119,19 @@ DEFINE_ACTION_FUNCTION(IJoystickConfig, GetNumAxes)
 	ACTION_RETURN_INT(self->GetNumAxes());
 }
 
+DEFINE_ACTION_FUNCTION(IJoystickConfig, NumJoysticks)
+{
+	ACTION_RETURN_INT(Joysticks.Size());
+}
+
+DEFINE_ACTION_FUNCTION(IJoystickConfig, GetJoystick)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(indx);
+	ACTION_RETURN_POINTER(Joysticks[indx]);
+}
+
+
 
 void UpdateJoystickMenu(IJoystickConfig *selected)
 {

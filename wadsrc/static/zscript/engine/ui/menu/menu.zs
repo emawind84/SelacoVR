@@ -84,6 +84,8 @@ struct JoystickConfig native version("2.4")
 	native int GetNumAxes();
 	native String GetAxisName(int axis);
 
+	native static ui int NumJoysticks();
+	native static ui JoystickConfig GetJoystick(int index);
 }
 
 class Menu : Object native ui version("2.4")
