@@ -84,6 +84,8 @@ struct JoystickConfig native version("2.4")
 	native int GetNumAxes();
 	native String GetAxisName(int axis);
 
+	native void RestoreDefaults();
+
 	native static ui int NumJoysticks();
 	native static ui JoystickConfig GetJoystick(int index);
 }

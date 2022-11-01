@@ -131,6 +131,14 @@ DEFINE_ACTION_FUNCTION(IJoystickConfig, GetJoystick)
 	ACTION_RETURN_POINTER(Joysticks[indx]);
 }
 
+DEFINE_ACTION_FUNCTION(IJoystickConfig, RestoreDefaults)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	self->SetDefaultConfig();
+	return 0;
+}
+
+
 
 
 void UpdateJoystickMenu(IJoystickConfig *selected)
