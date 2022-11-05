@@ -138,6 +138,23 @@ DEFINE_ACTION_FUNCTION(IJoystickConfig, RestoreDefaults)
 	return 0;
 }
 
+DEFINE_ACTION_FUNCTION(IJoystickConfig, AddVibration)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	PARAM_FLOAT(l);
+	PARAM_FLOAT(r);
+	ACTION_RETURN_BOOL(self->AddVibration((float)l, (float)r));
+}
+
+DEFINE_ACTION_FUNCTION(IJoystickConfig, SetVibration)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	PARAM_FLOAT(l);
+	PARAM_FLOAT(r);
+	ACTION_RETURN_BOOL(self->SetVibration((float)l, (float)r));
+}
+
+
 
 
 

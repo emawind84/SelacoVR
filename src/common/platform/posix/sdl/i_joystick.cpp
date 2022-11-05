@@ -41,6 +41,10 @@
 // Very small deadzone so that floating point magic doesn't happen
 #define MIN_DEADZONE 0.000001f
 
+EXTERN_CVAR(Bool, joy_feedback)
+EXTERN_CVAR(Float, joy_feedback_scale)
+
+
 class SDLInputJoystick: public IJoystickConfig
 {
 public:
@@ -175,6 +179,8 @@ public:
 	{
 		uint8_t buttonstate;
 
+		UpdateFeedback();
+
 		for (int i = 0; i < NumAxes; ++i)
 		{
 			buttonstate = 0;
@@ -251,6 +257,30 @@ protected:
 	TArray<AxisInfo>	Axes;
 	int					NumAxes;
 	int					NumHats;
+
+	bool InternalSetVibration(float l, float r) override {
+		if (Device) {
+			if (!joy_feedback) {
+				if (lFeed != 0.0f || rFeed != 0.0f) {
+					rFeed = rFeed = 0.0f;
+
+					SDL_JoystickRumble(Device, 0, 0, 100);
+				}
+				return false;
+			}
+
+			lFeed = clamp(l, 0.0f, 1.0f);
+			rFeed = clamp(r, 0.0f, 1.0f);
+
+			return SDL_JoystickRumble(
+				Device,
+				(Uint16)round(clamp(lFeed * joy_feedback_scale, 0.0f, 1.0f) * 65535.0),
+				(Uint16)round(clamp(rFeed * joy_feedback_scale, 0.0f, 1.0f) * 65535.0),
+				50
+			) == 0;
+		}
+		
+	}
 };
 const EJoyAxis SDLInputJoystick::DefaultAxes[5] = {JOYAXIS_Side, JOYAXIS_Forward, JOYAXIS_Pitch, JOYAXIS_Yaw, JOYAXIS_Up};
 

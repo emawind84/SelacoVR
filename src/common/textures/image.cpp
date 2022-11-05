@@ -120,7 +120,7 @@ PalettedPixels FImageSource::GetCachedPalettedPixels(int conversion)
 		if (!info || info->second <= 1 || conversion != normal)
 		{
 			// This is either the only copy needed or some access outside the caching block. In these cases create a new one and directly return it.
-			Printf("returning fresh copy of %s\n", name.GetChars());
+			//Printf("returning fresh copy of %s\n", name.GetChars());
 			ret.PixelStore = CreatePalettedPixels(conversion);
 			ret.Pixels.Set(ret.PixelStore.Data(), ret.PixelStore.Size());
 		}

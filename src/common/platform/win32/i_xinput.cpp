@@ -46,6 +46,8 @@
 #include "cmdlib.h"
 #include "keydef.h"
 
+#include "i_time.h"
+
 // MACROS ------------------------------------------------------------------
 
 // This macro is defined by newer versions of xinput.h. In case we are
@@ -65,10 +67,24 @@
 #endif
 #endif
 
+#define XINPUT_DLL_A1 "xinput1_4.dll"
+#define XINPUT_DLL_W1 L"xinput1_4.dll"
+
+#ifdef UNICODE
+#define XINPUT_DLL1 XINPUT_DLL_W1
+#else
+#define XINPUT_DLL1 XINPUT_DLL_A1
+#endif 
+
+
+EXTERN_CVAR(Bool, joy_feedback)
+EXTERN_CVAR(Float, joy_feedback_scale)
+
 // TYPES -------------------------------------------------------------------
 
 typedef DWORD (WINAPI *XInputGetStateType)(DWORD index, XINPUT_STATE *state);
 typedef DWORD (WINAPI *XInputSetStateType)(DWORD index, XINPUT_STATE *state);
+typedef DWORD (WINAPI *XInputSetVibeType)(DWORD index, XINPUT_VIBRATION *vibe);
 typedef DWORD (WINAPI *XInputGetCapabilitiesType)(DWORD index, DWORD flags, XINPUT_CAPABILITIES *caps);
 typedef void  (WINAPI *XInputEnableType)(BOOL enable);
 
@@ -105,6 +121,9 @@ public:
 	void SetDefaultConfig();
 	FString GetIdentifier();
 
+	//bool SetVibration(float l, float r) override;
+	//bool AddVibration(float l, float r) override;
+
 protected:
 	struct AxisInfo
 	{
@@ -130,6 +149,8 @@ protected:
 		AXIS_RightTrigger,
 		NUM_AXES
 	};
+
+	bool InternalSetVibration(float l, float r) override;
 
 	int Index;
 	float Multiplier;
@@ -187,6 +208,7 @@ static XInputGetStateType			InputGetState;
 static XInputSetStateType			InputSetState;
 static XInputGetCapabilitiesType	InputGetCapabilities;
 static XInputEnableType				InputEnable;
+static XInputSetVibeType			InputSetVibe;
 
 static const char *AxisNames[] =
 {
@@ -269,6 +291,9 @@ void FXInputController::ProcessInput()
 	{
 		Attached();
 	}
+
+	UpdateFeedback();
+
 	if (state.dwPacketNumber == LastPacketNumber)
 	{ // Nothing has changed since last time.
 		return;
@@ -295,6 +320,44 @@ void FXInputController::ProcessInput()
 	LastPacketNumber = state.dwPacketNumber;
 	LastButtons = state.Gamepad.wButtons;
 }
+
+
+//==========================================================================
+//
+// FXInputController :: InternalSetVibration
+//
+// Set left and right vibration. Converts floating point to internal values
+// These settings may end up being zeroed out after a period of inactivty
+// as we don't want the motors to run forever. This decay is handled in 
+// the generic interface
+// 
+//==========================================================================
+
+bool FXInputController::InternalSetVibration(float l, float r) {
+	if (!joy_feedback) {
+		if (lFeed != 0.0f || rFeed != 0.0f) {
+			rFeed = rFeed = 0.0f;
+
+			XINPUT_VIBRATION vibration;
+			ZeroMemory(&vibration, sizeof(XINPUT_VIBRATION));
+			vibration.wLeftMotorSpeed = (WORD)0;
+			vibration.wRightMotorSpeed = (WORD)0;
+			InputSetVibe(Index, &vibration);
+		}
+		return false;
+	}
+
+	lFeed = clamp(l, 0.0f, 1.0f);
+	rFeed = clamp(r, 0.0f, 1.0f);
+
+	XINPUT_VIBRATION vibration;
+	ZeroMemory(&vibration, sizeof(XINPUT_VIBRATION));
+	vibration.wLeftMotorSpeed = (WORD)round(clamp(lFeed * joy_feedback_scale, 0.0f, 1.0f) * 65535.0);
+	vibration.wRightMotorSpeed = (WORD)round(clamp(rFeed * joy_feedback_scale, 0.0f, 1.0f) * 65535.0);
+
+	return InputSetVibe(Index, &vibration) == ERROR_SUCCESS;
+}
+
 
 //==========================================================================
 //
@@ -364,6 +427,8 @@ void FXInputController::Attached()
 		Axes[i].Value = 0;
 		Axes[i].ButtonValue = 0;
 	}
+	lFeed = rFeed = 0;
+	feedLastUpdate = I_msTimeF();
 	UpdateJoystickMenu(this);
 }
 
@@ -651,13 +716,21 @@ bool FXInputController::IsAxisMapDefault(int axis)
 
 FXInputManager::FXInputManager()
 {
-	XInputDLL = LoadLibrary(XINPUT_DLL);
+	// Try UAP first, should have better support
+	//XInputDLL = LoadLibrary(XINPUT_DLL1);
+
+	//if (XInputDLL == NULL) {
+	//	Printf("Switching to xinput9_1_0.dll...\n");
+		XInputDLL = LoadLibrary(XINPUT_DLL);
+	//}
+
 	if (XInputDLL != NULL)
 	{
 		InputGetState = (XInputGetStateType)GetProcAddress(XInputDLL, "XInputGetState");
 		InputSetState = (XInputSetStateType)GetProcAddress(XInputDLL, "XInputSetState");
 		InputGetCapabilities = (XInputGetCapabilitiesType)GetProcAddress(XInputDLL, "XInputGetCapabilities");
 		InputEnable = (XInputEnableType)GetProcAddress(XInputDLL, "XInputEnable");
+		InputSetVibe = (XInputSetVibeType)GetProcAddress(XInputDLL, "XInputSetState");
 		// Treat XInputEnable() function as optional
 		// It is not available in xinput9_1_0.dll which is XINPUT_DLL in modern SDKs
 		// See https://msdn.microsoft.com/en-us/library/windows/desktop/hh405051(v=vs.85).aspx
@@ -665,6 +738,7 @@ FXInputManager::FXInputManager()
 		{
 			FreeLibrary(XInputDLL);
 			XInputDLL = NULL;
+			Printf("XInput Library failed to initialize");
 		}
 	}
 	for (int i = 0; i < XUSER_MAX_COUNT; ++i)
