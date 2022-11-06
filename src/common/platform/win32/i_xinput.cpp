@@ -80,6 +80,11 @@
 EXTERN_CVAR(Bool, joy_feedback)
 EXTERN_CVAR(Float, joy_feedback_scale)
 
+CUSTOM_CVAR(Int, joy_xinput_queuesize, 5, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
+	if (self > 10) self = 10;
+	if (self < 1) self = 1;
+}
+
 // TYPES -------------------------------------------------------------------
 
 typedef DWORD (WINAPI *XInputGetStateType)(DWORD index, XINPUT_STATE *state);
@@ -87,6 +92,8 @@ typedef DWORD (WINAPI *XInputSetStateType)(DWORD index, XINPUT_STATE *state);
 typedef DWORD (WINAPI *XInputSetVibeType)(DWORD index, XINPUT_VIBRATION *vibe);
 typedef DWORD (WINAPI *XInputGetCapabilitiesType)(DWORD index, DWORD flags, XINPUT_CAPABILITIES *caps);
 typedef void  (WINAPI *XInputEnableType)(BOOL enable);
+
+
 
 class FXInputController : public IJoystickConfig
 {
@@ -108,15 +115,18 @@ public:
 	EJoyAxis GetAxisMap(int axis);
 	const char *GetAxisName(int axis);
 	float GetAxisScale(int axis);
+	float GetAxisAcceleration(int axis) override;
 
 	void SetAxisDeadZone(int axis, float deadzone);
 	void SetAxisMap(int axis, EJoyAxis gameaxis);
 	void SetAxisScale(int axis, float scale);
+	void SetAxisAcceleration(int axis, float accel) override;
 
 	bool IsSensitivityDefault();
 	bool IsAxisDeadZoneDefault(int axis);
 	bool IsAxisMapDefault(int axis);
 	bool IsAxisScaleDefault(int axis);
+	bool IsAxisAccelerationDefault(int axis) override;
 
 	void SetDefaultConfig();
 	FString GetIdentifier();
@@ -130,14 +140,17 @@ protected:
 		float Value;
 		float DeadZone;
 		float Multiplier;
+		float Acceleration;
 		EJoyAxis GameAxis;
 		uint8_t ButtonValue;
+		InputQueue<float, 10> Inputs;
 	};
 	struct DefaultAxisConfig
 	{
 		float DeadZone;
 		EJoyAxis GameAxis;
 		float Multiplier;
+		float Acceleration;
 	};
 	enum
 	{
@@ -222,13 +235,13 @@ static const char *AxisNames[] =
 
 FXInputController::DefaultAxisConfig FXInputController::DefaultAxes[NUM_AXES] =
 {
-	// Dead zone, game axis, multiplier
-	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f, JOYAXIS_Side, 1 },		// ThumbLX
-	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f, JOYAXIS_Forward, 1 },	// ThumbLY
-	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f, JOYAXIS_Yaw, 1 },		// ThumbRX
-	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f, JOYAXIS_Pitch, 0.75 },	// ThumbRY
-	{ XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 256.f, JOYAXIS_None, 0 },			// LeftTrigger
-	{ XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 256.f, JOYAXIS_None, 0 }			// RightTrigger
+	// Dead zone, game axis, multiplier, acceleration
+	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f,		JOYAXIS_Side,		1,		0.25 },		// ThumbLX
+	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f,		JOYAXIS_Forward,	1,		0.25 },		// ThumbLY
+	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Yaw,		1,		0.5 },		// ThumbRX
+	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Pitch,		0.75,	0.5 },		// ThumbRY
+	{ XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 256.f,			JOYAXIS_None,		0,		0 },		// LeftTrigger
+	{ XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 256.f,			JOYAXIS_None,		0,		0 }			// RightTrigger
 };
 
 // CODE --------------------------------------------------------------------
@@ -293,6 +306,7 @@ void FXInputController::ProcessInput()
 	}
 
 	UpdateFeedback();
+
 
 	if (state.dwPacketNumber == LastPacketNumber)
 	{ // Nothing has changed since last time.
@@ -378,11 +392,21 @@ void FXInputController::ProcessThumbstick(int value1, AxisInfo *axis1,
 	axisval2 = (value2 - SHRT_MIN) * 2.0 / 65536 - 1.0;
 	axisval1 = Joy_RemoveDeadZone(axisval1, axis1->DeadZone, NULL);
 	axisval2 = Joy_RemoveDeadZone(axisval2, axis2->DeadZone, NULL);
-	axis1->Value = float(axisval1);
-	axis2->Value = float(axisval2);
+
+	// Add to the queue
+	axis1->Inputs.add((float)axisval1);
+	axis2->Inputs.add((float)axisval2);
+
+	// Get the scaled average
+	axis1->Value = axisval1 == 0 ? 0 : axis1->Inputs.getScaledAverage(joy_xinput_queuesize, axis1->Acceleration);
+	axis2->Value = axisval2 == 0 ? 0 : axis2->Inputs.getScaledAverage(joy_xinput_queuesize, axis2->Acceleration);
+
+	// Check if we are accelerating from avg. Decelerating should be instant
+	if ((axis1->Value > 0 && axis1->Value > axisval1) || (axis1->Value < 0 && axis1->Value < axisval1)) axis1->Value = (float)axisval1;
+	if ((axis2->Value > 0 && axis2->Value > axisval2) || (axis2->Value < 0 && axis2->Value < axisval2)) axis2->Value = (float)axisval2;
 
 	// We store all four buttons in the first axis and ignore the second.
-	buttonstate = Joy_XYAxesToButtons(axisval1, axisval2);
+	buttonstate = Joy_XYAxesToButtons(axis1->Value, axis2->Value);
 	Joy_GenerateButtonEvents(axis1->ButtonValue, buttonstate, 4, base);
 	axis1->ButtonValue = buttonstate;
 }
@@ -399,12 +423,18 @@ void FXInputController::ProcessThumbstick(int value1, AxisInfo *axis1,
 void FXInputController::ProcessTrigger(int value, AxisInfo *axis, int base)
 {
 	uint8_t buttonstate;
-	double axisval;
+	float axisval = value / 256.0f;
 
-	axisval = Joy_RemoveDeadZone(value / 256.0, axis->DeadZone, &buttonstate);
+	// Seems silly to bother with axis scaling here, but I'm going to @Cockatrice
+	axis->Inputs.add(axisval);
+	axis->Value = axisval == 0 ? 0 : axis->Inputs.getScaledAverage(joy_xinput_queuesize, axis->Acceleration);
+	if ((axis->Value > 0 && axis->Value > axisval) || (axis->Value < 0 && axis->Value < axisval)) axis->Value = axisval;
+
+	axis->Value = (float)Joy_RemoveDeadZone((double)axis->Value, axis->DeadZone, &buttonstate);
+
 	Joy_GenerateButtonEvents(axis->ButtonValue, buttonstate, 1, base);
 	axis->ButtonValue = buttonstate;
-	axis->Value = float(axisval);
+	//axis->Value = float(axisval);
 }
 
 //==========================================================================
@@ -426,7 +456,9 @@ void FXInputController::Attached()
 	{
 		Axes[i].Value = 0;
 		Axes[i].ButtonValue = 0;
+		Axes[i].Inputs.pos = -1;
 	}
+	
 	lFeed = rFeed = 0;
 	feedLastUpdate = I_msTimeF();
 	UpdateJoystickMenu(this);
@@ -490,6 +522,8 @@ void FXInputController::SetDefaultConfig()
 		Axes[i].DeadZone = DefaultAxes[i].DeadZone;
 		Axes[i].GameAxis = DefaultAxes[i].GameAxis;
 		Axes[i].Multiplier = DefaultAxes[i].Multiplier;
+		Axes[i].Acceleration = DefaultAxes[i].Acceleration;
+		Axes[i].Inputs.pos = -1;
 	}
 }
 
@@ -513,7 +547,7 @@ FString FXInputController::GetIdentifier()
 FString FXInputController::GetName()
 {
 	FString res;
-	res.Format("XInput Controller #%d", Index + 1);
+	res.Format("Controller #%d (XInput)", Index + 1);
 	return res;
 }
 
@@ -623,6 +657,21 @@ float FXInputController::GetAxisScale(int axis)
 
 //==========================================================================
 //
+// FXInputController :: GetAxisAccleration
+//
+//==========================================================================
+
+float FXInputController::GetAxisAcceleration(int axis)
+{
+	if (unsigned(axis) < NUM_AXES)
+	{
+		return Axes[axis].Acceleration;
+	}
+	return 0;
+}
+
+//==========================================================================
+//
 // FXInputController :: SetAxisDeadZone
 //
 //==========================================================================
@@ -663,6 +712,20 @@ void FXInputController::SetAxisScale(int axis, float scale)
 	}
 }
 
+//==========================================================================
+//
+// FXInputController :: SetAxisAcceleration
+//
+//==========================================================================
+
+void FXInputController::SetAxisAcceleration(int axis, float acceleration)
+{
+	if (unsigned(axis) < NUM_AXES)
+	{
+		Axes[axis].Acceleration = acceleration;
+	}
+}
+
 //===========================================================================
 //
 // FXInputController :: IsAxisDeadZoneDefault
@@ -689,6 +752,21 @@ bool FXInputController::IsAxisScaleDefault(int axis)
 	if (unsigned(axis) < NUM_AXES)
 	{
 		return Axes[axis].Multiplier == DefaultAxes[axis].Multiplier;
+	}
+	return true;
+}
+
+//===========================================================================
+//
+// FXInputController :: IsAxisScaleDefault
+//
+//===========================================================================
+
+bool FXInputController::IsAxisAccelerationDefault(int axis)
+{
+	if (unsigned(axis) < NUM_AXES)
+	{
+		return Axes[axis].Acceleration == DefaultAxes[axis].Acceleration;
 	}
 	return true;
 }

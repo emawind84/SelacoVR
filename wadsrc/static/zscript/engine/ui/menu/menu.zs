@@ -74,6 +74,9 @@ struct JoystickConfig native version("2.4")
 	native float GetAxisScale(int axis);
 	native void SetAxisScale(int axis, float scale);
 
+	native float GetAxisAcceleration(int axis);
+	native void SetAxisAcceleration(int axis, float scale);
+
 	native float GetAxisDeadZone(int axis);
 	native void SetAxisDeadZone(int axis, float zone);
 

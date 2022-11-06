@@ -45,6 +45,12 @@ EXTERN_CVAR(Bool, joy_feedback)
 EXTERN_CVAR(Float, joy_feedback_scale)
 
 
+CUSTOM_CVAR(Int, joy_sdl_queuesize, 5, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
+	if (self > 10) self = 10;
+	if (self < 1) self = 1;
+}
+
+
 class SDLInputJoystick: public IJoystickConfig
 {
 public:
@@ -104,6 +110,10 @@ public:
 	{
 		return Axes[axis].Multiplier;
 	}
+	float GetAxisAcceleration(int axis) override
+	{
+		return Axes[axis].Acceleration;
+	}
 
 	void SetAxisDeadZone(int axis, float zone)
 	{
@@ -116,6 +126,10 @@ public:
 	void SetAxisScale(int axis, float scale)
 	{
 		Axes[axis].Multiplier = scale;
+	}
+	void SetAxisAcceleration(int axis, float acceleration) override
+	{
+		Axes[axis].Acceleration = acceleration;
 	}
 
 	// Used by the saver to not save properties that are at their defaults.
@@ -137,6 +151,12 @@ public:
 	{
 		return Axes[axis].Multiplier == 1.0f;
 	}
+	bool IsAxisAccelerationDefault(int axis) override
+	{
+		if (axis >= 5) return Axes[axis].Acceleration == 0.0f;
+		return Axes[axis].Acceleration == 0.5f;
+	}
+
 
 	void SetDefaultConfig()
 	{
@@ -151,10 +171,14 @@ public:
 			info.Multiplier = 1.0f;
 			info.Value = 0.0;
 			info.ButtonValue = 0;
-			if(i >= 5)
+			if (i >= 5) {
 				info.GameAxis = JOYAXIS_None;
-			else
+				info.Acceleration = 0.0f;
+			} 
+			else {
 				info.GameAxis = DefaultAxes[i];
+				info.Acceleration = 0.5f;
+			}
 			Axes.Push(info);
 		}
 	}
@@ -185,8 +209,17 @@ public:
 		{
 			buttonstate = 0;
 
-			Axes[i].Value = SDL_JoystickGetAxis(Device, i)/32767.0;
-			Axes[i].Value = Joy_RemoveDeadZone(Axes[i].Value, Axes[i].DeadZone, &buttonstate);
+			double axisval = SDL_JoystickGetAxis(Device, i)/32767.0;
+			axisval = Joy_RemoveDeadZone(axisval, Axes[i].DeadZone, &buttonstate);
+
+			// Add to the queue
+			Axes[i].Inputs.add(axisval);
+
+			// Get the scaled average
+			Axes[i].Value = axisval == 0 ? 0 : Axes[i].Inputs.getScaledAverage(joy_sdl_queuesize, Axes[i].Acceleration);
+
+			// Check if we are accelerating from avg. Decelerating should be instant
+			if ((Axes[i].Value > 0 && Axes[i].Value > axisval) || (Axes[i].Value < 0 && Axes[i].Value < axisval)) Axes[i].Value = axisval;
 
 			// Map button to axis
 			// X and Y are handled differently so if we have 2 or more axes then we'll use that code instead.
@@ -244,9 +277,11 @@ protected:
 		FString Name;
 		float DeadZone;
 		float Multiplier;
+		float Acceleration;
 		EJoyAxis GameAxis;
 		double Value;
 		uint8_t ButtonValue;
+		InputQueue<float, 10> Inputs;
 	};
 	static const EJoyAxis DefaultAxes[5];
 

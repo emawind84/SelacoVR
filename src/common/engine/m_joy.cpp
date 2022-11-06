@@ -144,6 +144,13 @@ bool M_LoadJoystickConfig(IJoystickConfig *joy)
 			joy->SetAxisScale(i, (float)atof(value));
 		}
 
+		mysnprintf(key + axislen, countof(key) - axislen, "acceleration");
+		value = GameConfig->GetValueForKey(key);
+		if (value != NULL)
+		{
+			joy->SetAxisAcceleration(i, (float)atof(value));
+		}
+
 		mysnprintf(key + axislen, countof(key) - axislen, "map");
 		value = GameConfig->GetValueForKey(key);
 		if (value != NULL)
@@ -195,6 +202,12 @@ void M_SaveJoystickConfig(IJoystickConfig *joy)
 			{
 				mysnprintf(key + axislen, countof(key) - axislen, "scale");
 				mysnprintf(value, countof(value), "%g", joy->GetAxisScale(i));
+				GameConfig->SetValueForKey(key, value);
+			}
+			if (!joy->IsAxisAccelerationDefault(i))
+			{
+				mysnprintf(key + axislen, countof(key) - axislen, "acceleration");
+				mysnprintf(value, countof(value), "%g", joy->GetAxisAcceleration(i));
 				GameConfig->SetValueForKey(key, value);
 			}
 			if (!joy->IsAxisMapDefault(i))
