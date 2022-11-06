@@ -4,6 +4,9 @@
 #include <functional>
 #include <mutex>
 #include <atomic>
+#ifdef __linux__
+#include <condition_variable>
+#endif
 #include "tarray.h"
 
 // @Cockatrice: Queue wrapper
