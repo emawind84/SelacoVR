@@ -149,12 +149,13 @@ public:
 	}
 	bool IsAxisScaleDefault(int axis)
 	{
-		return Axes[axis].Multiplier == 1.0f;
+		return Axes[axis].Multiplier == (Axes[axis].GameAxis == JOYAXIS_Pitch ? 0.55f : 1.0f);
 	}
 	bool IsAxisAccelerationDefault(int axis) override
 	{
+		
 		if (axis >= 5) return Axes[axis].Acceleration == 0.0f;
-		return Axes[axis].Acceleration == 0.5f;
+		return Axes[axis].Acceleration == (Axes[axis].GameAxis == JOYAXIS_Side || Axes[axis].GameAxis == JOYAXIS_Forward ? 0.25f : 0.5f);
 	}
 
 
@@ -168,7 +169,6 @@ public:
 			else
 				info.Name.Format("Hat %d (%c)", (i-NumAxes)/2 + 1, (i-NumAxes)%2 == 0 ? 'x' : 'y');
 			info.DeadZone = MIN_DEADZONE;
-			info.Multiplier = 1.0f;
 			info.Value = 0.0;
 			info.ButtonValue = 0;
 			if (i >= 5) {
@@ -177,8 +177,11 @@ public:
 			} 
 			else {
 				info.GameAxis = DefaultAxes[i];
-				info.Acceleration = 0.5f;
+				info.Acceleration = (info.GameAxis == JOYAXIS_Side || info.GameAxis == JOYAXIS_Forward ? 0.25f : 0.5f);
 			}
+
+			info.Multiplier = info.GameAxis == JOYAXIS_Pitch ? 0.55f : 1.0f;
+
 			Axes.Push(info);
 		}
 	}
@@ -281,7 +284,7 @@ protected:
 		EJoyAxis GameAxis;
 		double Value;
 		uint8_t ButtonValue;
-		InputQueue<float, 10> Inputs;
+		InputQueue<double, 10> Inputs;
 	};
 	static const EJoyAxis DefaultAxes[5];
 

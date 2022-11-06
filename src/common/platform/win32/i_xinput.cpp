@@ -236,10 +236,10 @@ static const char *AxisNames[] =
 FXInputController::DefaultAxisConfig FXInputController::DefaultAxes[NUM_AXES] =
 {
 	// Dead zone, game axis, multiplier, acceleration
-	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f,		JOYAXIS_Side,		1,		0.25 },		// ThumbLX
-	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f,		JOYAXIS_Forward,	1,		0.25 },		// ThumbLY
-	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Yaw,		1,		0.5 },		// ThumbRX
-	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Pitch,		0.75,	0.5 },		// ThumbRY
+	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f,		JOYAXIS_Side,		1,		0.25f },	// ThumbLX
+	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f,		JOYAXIS_Forward,	1,		0.25f },	// ThumbLY
+	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Yaw,		1,		0.5f },		// ThumbRX
+	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Pitch,		0.55f,	0.5f },		// ThumbRY
 	{ XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 256.f,			JOYAXIS_None,		0,		0 },		// LeftTrigger
 	{ XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 256.f,			JOYAXIS_None,		0,		0 }			// RightTrigger
 };
