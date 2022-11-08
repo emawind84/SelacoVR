@@ -28,6 +28,8 @@
 #include "gl/system/gl_interface.h"
 #include "r_data/models/models.h"
 
+EXTERN_CVAR(Int, gl_buffer_size);
+
 struct vertex_t;
 struct secplane_t;
 struct subsector_t;
