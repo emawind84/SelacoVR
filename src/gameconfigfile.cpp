@@ -184,6 +184,9 @@ FGameConfigFile::FGameConfigFile ()
 		SetValueForKey("Path", "$PROGDIR/fm_banks", true);
 		SetValueForKey("Path", local_app_support + "/soundfonts", true);
 		SetValueForKey("Path", local_app_support + "/fm_banks", true);
+#elif __ANDROID__
+		SetValueForKey("Path", "./soundfonts", true);
+		SetValueForKey("Path", "./fm_banks", true);
 #elif !defined(__unix__)
 		SetValueForKey("Path", "$PROGDIR/soundfonts", true);
 		SetValueForKey("Path", "$PROGDIR/fm_banks", true);
@@ -527,6 +530,15 @@ void FGameConfigFile::DoGlobalSetup ()
 			if (last < 224)
 			{
 				FBaseCVar *var = FindCVar("vr_move_use_offhand", NULL);
+				if (var != NULL) var->ResetToDefault();
+			}
+			if (last < 225)
+			{
+				FBaseCVar *var = FindCVar("fluid_patchset", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("timidity_config", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("midi_config", NULL);
 				if (var != NULL) var->ResetToDefault();
 			}
 		}

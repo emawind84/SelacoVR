@@ -154,9 +154,13 @@ enum
 	WIF_STAFF2_KICKBACK =	0x00002000, // the powered-up Heretic staff has special kickback
 	WIF_NOAUTOAIM =			0x00004000, // this weapon never uses autoaim (useful for ballistic projectiles)
 	WIF_MELEEWEAPON =		0x00008000,	// melee weapon. Used by bots and monster AI.
-	//WIF_DEHAMMO	=			0x00010000,	
-	WIF_NODEATHDESELECT =	0x00020000, // Don't jump to the Deselect state when the player dies
-	WIF_NODEATHINPUT =		0x00040000, // The weapon cannot be fired/reloaded/whatever when the player is dead
-	WIF_CHEATNOTWEAPON	=	0x08000000,	// Give cheat considers this not a weapon (used by Sigil)
+	WIF_NODEATHDESELECT =	0x00010000, // Don't jump to the Deselect state when the player dies
+	WIF_NODEATHINPUT =		0x00020000, // The weapon cannot be fired/reloaded/whatever when the player is dead
+	WIF_CHEATNOTWEAPON	=	0x00040000,	// Give cheat considers this not a weapon (used by Sigil)
+	WIF_NOAUTOSWITCHTO =	0x00080000, // cannot be switched to when autoswitching weapons.
+	WIF_OFFHANDWEAPON =		0x00100000, // weapon is an offhand weapon
+	WIF_NOHANDSWITCH =		0x00200000, // weapon cannot be moved from one hand to another
+	WIF_TWOHANDED =			0x00400000, // two handed weapon
+	WIF_NO_AUTO_REVERSE =	0x00800000, // prevent auto reverse of model and sprite when switching to offhand
 };
 

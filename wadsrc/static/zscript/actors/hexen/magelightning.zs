@@ -6,6 +6,7 @@ class MWeapLightning : MageWeapon
 	Default
 	{
 		+NOGRAVITY
+		+WEAPON.TWOHANDED
 		Weapon.SelectionOrder 1100;
 		Weapon.AmmoUse1 5;
 		Weapon.AmmoGive1 25;
@@ -59,7 +60,16 @@ class MWeapLightning : MageWeapon
 		A_WeaponReady();
 		if (random[LightningReady]() < 160)
 		{
-			A_StartSound ("MageLightningReady", CHAN_WEAPON);
+			int snd_channel = CHAN_WEAPON;
+			if (player != null)
+			{
+				Weapon weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+				if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
+				{
+					snd_channel = weap.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+				}
+			}
+			A_StartSound ("MageLightningReady", snd_channel);
 		}
 	}
 
@@ -71,8 +81,18 @@ class MWeapLightning : MageWeapon
 
 	action void A_MLightningAttack(class<Actor> floor = "LightningFloor", class<Actor> ceiling = "LightningCeiling")
 	{
-		LightningFloor fmo = LightningFloor(SpawnPlayerMissile (floor));
-		LightningCeiling cmo = LightningCeiling(SpawnPlayerMissile (ceiling));
+		int alflags = 0;
+		if (player != NULL)
+		{
+			Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weapon != NULL)
+			{
+				alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
+				weapon.DepleteAmmo (weapon.bAltFire);
+			}
+		}
+		LightningFloor fmo = LightningFloor(SpawnPlayerMissile (floor, aimflags: alflags));
+		LightningCeiling cmo = LightningCeiling(SpawnPlayerMissile (ceiling, aimflags: alflags));
 		if (fmo)
 		{
 			fmo.special1 = 0;
@@ -87,14 +107,6 @@ class MWeapLightning : MageWeapon
 		}
 		A_StartSound ("MageLightningFire", CHAN_BODY);
 
-		if (player != NULL)
-		{
-			Weapon weapon = player.ReadyWeapon;
-			if (weapon != NULL)
-			{
-				weapon.DepleteAmmo (weapon.bAltFire);
-			}
-		}
 	}
 
 	

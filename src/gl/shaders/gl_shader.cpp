@@ -408,6 +408,11 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	i_data += "uniform sampler2D texture4;\n";
 	i_data += "uniform sampler2D texture5;\n";
 	i_data += "uniform sampler2D texture6;\n";
+	i_data += "uniform sampler2D texture7;\n";
+	i_data += "uniform sampler2D texture8;\n";
+	i_data += "uniform sampler2D texture9;\n";
+	i_data += "uniform sampler2D texture10;\n";
+	i_data += "uniform sampler2D texture11;\n";
 
 	// timer data
 	i_data += "uniform float timer;\n"; // To do: we must search user shaders for this declaration and remove it
@@ -607,11 +612,6 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		glBindAttribLocation(hShader, VATTR_COLOR, "aColor");
 		glBindAttribLocation(hShader, VATTR_VERTEX2, "aVertex2");
 		glBindAttribLocation(hShader, VATTR_NORMAL, "aNormal");
-#ifndef __MOBILE__
-		glBindFragDataLocation(hShader, 0, "FragColor");
-		glBindFragDataLocation(hShader, 1, "FragFog");
-		glBindFragDataLocation(hShader, 2, "FragNormal");
-#endif
 		glLinkProgram(hShader);
 
 		glGetShaderInfoLog(hVertProg, 10000, NULL, buffer);
@@ -873,15 +873,8 @@ FShaderManager::FShaderManager()
 {
 	if (!gl.legacyMode)
 	{
-		if (gl.es) // OpenGL ES does not support multiple fragment shader outputs. As a result, no GBUFFER passes are possible.
-		{
-			mPassShaders.Push(new FShaderCollection(NORMAL_PASS));
-		}
-		else
-		{
-			for (int passType = 0; passType < MAX_PASS_TYPES; passType++)
-				mPassShaders.Push(new FShaderCollection((EPassType)passType));
-		}
+		for (int passType = 0; passType < MAX_PASS_TYPES; passType++)
+			mPassShaders.Push(new FShaderCollection((EPassType)passType));
 	}
 }
 

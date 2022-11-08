@@ -518,6 +518,8 @@ bool AActor::SetState (FState *newstate, bool nofunction)
 {
 	if (debugfile && player && (player->cheats & CF_PREDICTING))
 		fprintf (debugfile, "for pl %td: SetState while predicting!\n", player-players);
+	
+	auto oldstate = state;
 	do
 	{
 		if (newstate == NULL)
@@ -603,7 +605,7 @@ bool AActor::SetState (FState *newstate, bool nofunction)
 		newstate = newstate->GetNextState();
 	} while (tics == 0);
 
-	if (GetInfo()->LightAssociations.Size() || (state && state->Light > 0))
+	if (GetInfo()->LightAssociations.Size() || (state && state->Light > 0) || (oldstate && oldstate->Light > 0))
 	{
 		flags8 |= MF8_RECREATELIGHTS;
 		level.flags3 |= LEVEL3_LIGHTCREATED;
@@ -6788,7 +6790,7 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnMissileZAimed)
 //---------------------------------------------------------------------------
 
 AActor *P_SpawnMissileAngleZSpeed (AActor *source, double z,
-	PClassActor *type, DAngle angle, double vz, double speed, AActor *owner, bool checkspawn)
+	PClassActor *type, DAngle angle, double vz, double speed, AActor *owner, bool checkspawn, int aimflags)
 {
 	if (source == nullptr || type == nullptr)
 	{
@@ -6806,10 +6808,20 @@ AActor *P_SpawnMissileAngleZSpeed (AActor *source, double z,
 	DVector3 pos = source->PosAtZ(z);
 	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
 	{
-		pos = source->player->mo->AttackPos;
-		DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
-		an = dir.Angle();
-		pitch = dir.Pitch();
+		if (aimflags & ALF_ISOFFHAND)
+		{
+			pos = source->player->mo->OffhandPos;
+			DVector3 dir = source->player->mo->OffhandDir(source, an, pitch);
+			an = dir.Angle();
+			pitch = dir.Pitch();
+		}
+		else
+		{
+			pos = source->player->mo->AttackPos;
+			DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
+			an = dir.Angle();
+			pitch = dir.Pitch();
+		}
 		double slope = -clamp(pitch.Tan(), -5., 5.);
 		vz = speed * slope;
 	}
@@ -6842,11 +6854,12 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnMissileAngleZSpeed)
 	PARAM_FLOAT(speed);
 	PARAM_OBJECT(owner, AActor);
 	PARAM_BOOL(checkspawn);
-	ACTION_RETURN_OBJECT(P_SpawnMissileAngleZSpeed(self, z, type, angle, vz, speed, owner, checkspawn));
+	PARAM_INT(aimflags);
+	ACTION_RETURN_OBJECT(P_SpawnMissileAngleZSpeed(self, z, type, angle, vz, speed, owner, checkspawn, aimflags));
 }
 
 
-AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target)
+AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target, int aimflags)
 {
 	if (source == nullptr || type == nullptr)
 	{
@@ -6858,10 +6871,20 @@ AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target)
 	DVector3 pos = source->Pos();
 	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
 	{
-		pos = source->player->mo->AttackPos;
-		DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
-		an = dir.Angle();
-		pitch = dir.Pitch();
+		if (aimflags & ALF_ISOFFHAND)
+		{
+			pos = source->player->mo->OffhandPos;
+			DVector3 dir = source->player->mo->OffhandDir(source, an, pitch);
+			an = dir.Angle();
+			pitch = dir.Pitch();
+		}
+		else
+		{
+			pos = source->player->mo->AttackPos;
+			DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
+			an = dir.Angle();
+			pitch = dir.Pitch();
+		}
 	}
 
 	AActor *other = Spawn(type, pos, ALLOW_REPLACE);
@@ -6889,7 +6912,7 @@ AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target)
 
 	if (P_CheckMissileSpawn(other, source->radius))
 	{
-		DAngle pitch = P_AimLineAttack(source, an, 1024.);
+		DAngle pitch = P_AimLineAttack(source, an, 1024., NULL, 0., aimflags);
 		other->Vel.Z = -other->Speed * pitch.Sin();
 		return other;
 	}
@@ -6901,7 +6924,8 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnSubMissile)
 	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_CLASS(cls, AActor);
 	PARAM_OBJECT_NOT_NULL(target, AActor);
-	ACTION_RETURN_OBJECT(P_SpawnSubMissile(self, cls, target));
+	PARAM_INT(aimflags);
+	ACTION_RETURN_OBJECT(P_SpawnSubMissile(self, cls, target, aimflags));
 }
 /*
 ================
@@ -6929,9 +6953,13 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 	FTranslatedLineTarget scratch;
 	AActor *defaultobject = GetDefaultByType(type);
 	DAngle vrange = nofreeaim ? 35. : 0.;
-
+	AActor *weapon = nullptr;
+	if (source->player)
+	{
+		weapon = !!(aimflags & ALF_ISOFFHAND) ? source->player->OffhandWeapon : source->player->ReadyWeapon;
+	}
 	if (!pLineTarget) pLineTarget = &scratch;
-	if (!(aimflags & ALF_NOWEAPONCHECK) && source->player && source->player->ReadyWeapon && ((source->player->ReadyWeapon->IntVar(NAME_WeaponFlags) & WIF_NOAUTOAIM) || noautoaim))
+	if (!(aimflags & ALF_NOWEAPONCHECK) && weapon != nullptr && ((weapon->IntVar(NAME_WeaponFlags) & WIF_NOAUTOAIM) || noautoaim))
 	{
 		// Keep exactly the same angle and pitch as the player's own aim
 		an = angle;
@@ -6985,10 +7013,20 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 	DVector3 pos = source->Vec2OffsetZ(x, y, z);
 	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
 	{
-		pos = source->player->mo->AttackPos;
-		DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
-		an = dir.Angle();
-		pitch = dir.Pitch();
+		if (aimflags & ALF_ISOFFHAND)
+		{
+			pos = source->player->mo->OffhandPos;
+			DVector3 dir = source->player->mo->OffhandDir(source, an, pitch);
+			an = dir.Angle();
+			pitch = dir.Pitch();
+		}
+		else
+		{
+			pos = source->player->mo->AttackPos;
+			DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
+			an = dir.Angle();
+			pitch = dir.Pitch();
+		}
 	}
 	AActor *MissileActor = Spawn (type, pos, ALLOW_REPLACE);
 
@@ -7018,6 +7056,7 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 		{
 			//Haptics
 			long rightHanded = vr_control_scheme < 10;
+			rightHanded = (aimflags & ALF_ISOFFHAND) ? 1 - rightHanded : rightHanded;
 			QzDoom_Vibrate(150, rightHanded ? 1 : 0, 0.8);
 			QzDoom_HapticEvent("fire_weapon", rightHanded ? 2 : 1, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
 			if (weaponStabilised)

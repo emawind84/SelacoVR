@@ -67,8 +67,8 @@ public:
 
 	friend class NoSDLGLVideo;
 
-	int GetClientWidth();
-	int GetClientHeight();
+	int GetClientWidth() override;
+	int GetClientHeight() override;
 
 	virtual void ScaleCoordsFromWindow(int16_t &x, int16_t &y);
 

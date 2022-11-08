@@ -613,7 +613,7 @@ class Actor : Thinker native
 	native static int GetSpriteIndex(name sprt);
 	native clearscope static double GetDefaultSpeed(class<Actor> type);
 	native static class<Actor> GetSpawnableType(int spawnnum);
-	native static int ApplyDamageFactors(class<Inventory> itemcls, Name damagetype, int damage, int defdamage);
+	native clearscope static int ApplyDamageFactors(class<Inventory> itemcls, Name damagetype, int damage, int defdamage);
 	native void RemoveFromHash();
 	native void ChangeTid(int newtid);
 	native static int FindUniqueTid(int start = 0, int limit = 0);
@@ -673,9 +673,9 @@ class Actor : Thinker native
 	native Actor SpawnMissile(Actor dest, class<Actor> type, Actor owner = null);
 	native Actor SpawnMissileXYZ(Vector3 pos, Actor dest, Class<Actor> type, bool checkspawn = true, Actor owner = null);
 	native Actor SpawnMissileZ (double z, Actor dest, class<Actor> type);
-	native Actor SpawnMissileAngleZSpeed (double z, class<Actor> type, double angle, double vz, double speed, Actor owner = null, bool checkspawn = true);
+	native Actor SpawnMissileAngleZSpeed (double z, class<Actor> type, double angle, double vz, double speed, Actor owner = null, bool checkspawn = true, int aimflags = 0);
 	native Actor SpawnMissileZAimed (double z, Actor dest, Class<Actor> type);
-	native Actor SpawnSubMissile(Class<Actor> type, Actor target);
+	native Actor SpawnSubMissile(Class<Actor> type, Actor target, int aimflags = 0);
 	native Actor, Actor SpawnPlayerMissile(class<Actor> type, double angle = 1e37, double x = 0, double y = 0, double z = 0, out FTranslatedLineTarget pLineTarget = null, bool nofreeaim = false, bool noautoaim = false, int aimflags = 0);
 	native void SpawnTeleportFog(Vector3 pos, bool beforeTele, bool setTarget);
 	native Actor RoughMonsterSearch(int distance, bool onlyseekable = false, bool frontonly = false);
@@ -877,14 +877,14 @@ class Actor : Thinker native
 	//
 	//---------------------------------------------------------------------------
 
-	Actor SpawnMissileAngle (class<Actor> type, double angle, double vz)
+	Actor SpawnMissileAngle (class<Actor> type, double angle, double vz, int aimflags = 0)
 	{
-		return SpawnMissileAngleZSpeed (pos.z + 32 + GetBobOffset(), type, angle, vz, GetDefaultSpeed (type));
+		return SpawnMissileAngleZSpeed (pos.z + 32 + GetBobOffset(), type, angle, vz, GetDefaultSpeed (type), aimflags: aimflags);
 	}
 
-	Actor SpawnMissileAngleZ (double z, class<Actor> type, double angle, double vz, Actor owner = null)
+	Actor SpawnMissileAngleZ (double z, class<Actor> type, double angle, double vz, Actor owner = null, int aimflags = 0)
 	{
-		return SpawnMissileAngleZSpeed (z, type, angle, vz, GetDefaultSpeed (type), owner);
+		return SpawnMissileAngleZSpeed (z, type, angle, vz, GetDefaultSpeed (type), owner, aimflags: aimflags);
 	}
 	
 
@@ -1075,12 +1075,12 @@ class Actor : Thinker native
 
 	deprecated("2.3", "Use A_CustomBulletAttack() instead") native void A_BulletAttack();
 	native void A_WolfAttack(int flags = 0, sound whattoplay = "weapons/pistol", double snipe = 1.0, int maxdamage = 64, int blocksize = 128, int pointblank = 2, int longrange = 4, double runspeed = 160.0, class<Actor> pufftype = "BulletPuff");
-	deprecated("4.3", "Use A_StartSound() instead") native clearscope void A_PlaySound(sound whattoplay = "weapons/pistol", int slot = CHAN_BODY, double volume = 1.0, bool looping = false, double attenuation = ATTN_NORM, bool local = false, double pitch = 0.0);
-	native clearscope void A_StartSound(sound whattoplay, int slot = CHAN_BODY, int flags = 0, double volume = 1.0, double attenuation = ATTN_NORM, double pitch = 0.0, double startTime = 0.0);
+	deprecated("4.3", "Use A_StartSound() instead") action native clearscope void A_PlaySound(sound whattoplay = "weapons/pistol", int slot = CHAN_BODY, double volume = 1.0, bool looping = false, double attenuation = ATTN_NORM, bool local = false, double pitch = 0.0);
+	action native clearscope void A_StartSound(sound whattoplay, int slot = CHAN_BODY, int flags = 0, double volume = 1.0, double attenuation = ATTN_NORM, double pitch = 0.0, double startTime = 0.0);
 	native void A_SoundVolume(int slot, double volume);
 	native void A_SoundPitch(int slot, double pitch);
-	deprecated("2.3", "Use A_StartSound(<sound>, CHAN_WEAPON) instead") void A_PlayWeaponSound(sound whattoplay) { A_StartSound(whattoplay, CHAN_WEAPON); }
-	native void A_StopSound(int slot = CHAN_VOICE);	// Bad default but that's what is originally was...
+	deprecated("2.3", "Use A_StartSound(<sound>, CHAN_WEAPON) instead") void A_PlayWeaponSound(sound whattoplay, bool fullvol = false) { A_StartSound(whattoplay, CHAN_WEAPON, 0, 1, fullvol? ATTN_NONE : ATTN_NORM); }
+	action native void A_StopSound(int slot = CHAN_VOICE);	// Bad default but that's what is originally was...
 	void A_StopAllSounds()	{	A_StopSounds(0,0);	}
 	native void A_StopSounds(int chanmin, int chanmax);
 	deprecated("2.3", "Use A_StartSound() instead") native void A_PlaySoundEx(sound whattoplay, name slot, bool looping = false, int attenuation = 0);
@@ -1197,7 +1197,7 @@ class Actor : Thinker native
 	native void A_CopyFriendliness(int ptr_source = AAPTR_MASTER);
 
 	action native bool A_Overlay(int layer, statelabel start = null, bool nooverride = false);
-	native void A_WeaponOffset(double wx = 0, double wy = 32, int flags = 0);
+	action native void A_WeaponOffset(double wx = 0, double wy = 32, int flags = 0);
 	action native void A_OverlayScale(int layer, double wx = 1, double wy = 0, int flags = 0);
 	action native void A_OverlayRotate(int layer, double degrees = 0, int flags = 0);
 	action native void A_OverlayPivot(int layer, double wx = 0.5, double wy = 0.5, int flags = 0);

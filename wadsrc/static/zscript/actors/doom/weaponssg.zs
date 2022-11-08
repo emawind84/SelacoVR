@@ -69,19 +69,25 @@ extend class StateProvider
 		{
 			return;
 		}
+		int hand = 0;
+		int alflags = 0;
+		int snd_channel = CHAN_WEAPON;
 
-		A_StartSound ("weapons/sshotf", CHAN_WEAPON);
-		Weapon weap = player.ReadyWeapon;
+		Weapon weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
+			hand = weap.bOffhandWeapon ? 1 : 0;
+			snd_channel = weap.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+			alflags |= weap.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 			if (!weap.DepleteAmmo (weap.bAltFire, true, 2))
 				return;
 			
-			player.SetPsprite(PSP_FLASH, weap.FindState('Flash'), true);
+			player.SetPsprite(PSP_FLASH, weap.FindState('Flash'), true, weap);
 		}
+		A_StartSound ("weapons/sshotf", snd_channel);
 		player.mo.PlayAttacking2 ();
 
-		double pitch = BulletSlope ();
+		double pitch = BulletSlope (aimflags: alflags);
 			
 		for (int i = 0 ; i < 20 ; i++)
 		{
@@ -94,24 +100,54 @@ extend class StateProvider
 			// some simple trigonometry, that means the vertical angle of the shot
 			// can deviate by as many as ~7.097 degrees.
 
-			LineAttack (ang, PLAYERMISSILERANGE, pitch + Random2[FireSG2]() * (7.097 / 256), damage, 'Hitscan', "BulletPuff");
+			LineAttack (ang, PLAYERMISSILERANGE, pitch + Random2[FireSG2]() * (7.097 / 256), damage, 'Hitscan', "BulletPuff", hand ? LAF_ISOFFHAND : 0);
 		}
 	}
 
 
 	action void A_OpenShotgun2() 
 	{ 
-		A_StartSound("weapons/sshoto", CHAN_WEAPON); 
+		int snd_channel = CHAN_WEAPON;
+		if (player != null)
+		{
+			Weapon weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
+			{
+				snd_channel = weap.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+			}
+
+		}
+		A_StartSound("weapons/sshoto", snd_channel); 
 	}
 	
 	action void A_LoadShotgun2() 
 	{ 
-		A_StartSound("weapons/sshotl", CHAN_WEAPON); 
+		int snd_channel = CHAN_WEAPON;
+		if (player != null)
+		{
+			Weapon weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
+			{
+				snd_channel = weap.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+			}
+
+		}
+		A_StartSound("weapons/sshotl", snd_channel); 
 	}
 	
 	action void A_CloseShotgun2() 
 	{ 
-		A_StartSound("weapons/sshotc", CHAN_WEAPON);
+		int snd_channel = CHAN_WEAPON;
+		if (player != null)
+		{
+			Weapon weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
+			{
+				snd_channel = weap.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+			}
+
+		}
+		A_StartSound("weapons/sshotc", snd_channel);
 		A_Refire();
 	}
 }

@@ -51,22 +51,27 @@ class GoldWand : HereticWeapon
 		{
 			return;
 		}
-
-		Weapon weapon = player.ReadyWeapon;
+		int alflags = 0;
+		int laflags = 0;
+		int snd_channel = CHAN_WEAPON;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon != null)
 		{
+			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
+			laflags |= weapon.bOffhandWeapon ? LAF_ISOFFHAND : 0;
+			snd_channel = weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
 				return;
 		}
-		double pitch = BulletSlope();
+		double pitch = BulletSlope(aimflags: alflags);
 		int damage = random[FireGoldWand](7, 14);
 		double ang = angle;
 		if (player.refire)
 		{
 			ang += Random2[FireGoldWand]() * (5.625 / 256);
 		}
-		LineAttack(ang, PLAYERMISSILERANGE, pitch, damage, 'Hitscan', "GoldWandPuff1");
-		A_StartSound("weapons/wandhit", CHAN_WEAPON);
+		LineAttack(ang, PLAYERMISSILERANGE, pitch, damage, 'Hitscan', "GoldWandPuff1", laflags);
+		A_StartSound("weapons/wandhit", snd_channel);
 	}
 	
 }
@@ -104,26 +109,33 @@ class GoldWandPowered : GoldWand
 		{
 			return;
 		}
-
-		Weapon weapon = player.ReadyWeapon;
+		int hand = 0;
+		int laflags = 0;
+		int alflags = 0;
+		int snd_channel = CHAN_WEAPON;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon != null)
 		{
+			hand = weapon.bOffhandWeapon ? 1 : 0;
+			snd_channel = weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+			laflags |= hand ? LAF_ISOFFHAND : 0;
+			alflags |= hand ? ALF_ISOFFHAND : 0;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
 				return;
 		}
-		double pitch = BulletSlope();
+		double pitch = BulletSlope(aimflags: alflags);
 
 		double vz = -GetDefaultByType("GoldWandFX2").Speed * clamp(tan(pitch), -5, 5);
-		SpawnMissileAngle("GoldWandFX2", angle - (45. / 8), vz);
-		SpawnMissileAngle("GoldWandFX2", angle + (45. / 8), vz);
+		SpawnMissileAngle("GoldWandFX2", angle - (45. / 8), vz, aimflags: alflags);
+		SpawnMissileAngle("GoldWandFX2", angle + (45. / 8), vz, aimflags: alflags);
 		double ang = angle - (45. / 8);
 		for(int i = 0; i < 5; i++)
 		{
 			int damage = random[FireGoldWand](1, 8);
-			LineAttack (ang, PLAYERMISSILERANGE, pitch, damage, 'Hitscan', "GoldWandPuff2");
+			LineAttack (ang, PLAYERMISSILERANGE, pitch, damage, 'Hitscan', "GoldWandPuff2", laflags);
 			ang += ((45. / 8) * 2) / 4;
 		}
-		A_StartSound("weapons/wandhit", CHAN_WEAPON);
+		A_StartSound("weapons/wandhit", snd_channel);
 	}
 
 	

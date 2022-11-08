@@ -345,11 +345,30 @@ CCMD (turnspeeds)
 	}
 }
 
+CCMD (switchhand)
+{
+	if (argv.argc() > 1)
+	{
+		int hand = atoi (argv[1]);
+		auto mo = players[consoleplayer].mo;
+		IFVIRTUALPTRNAME(mo, NAME_PlayerPawn, SwitchWeaponHand)
+		{
+			VMValue param[] = { mo, hand };
+			VMCall(func, param, 2, nullptr, 0);
+		}
+	}
+}
+
 CCMD (slot)
 {
 	if (argv.argc() > 1)
 	{
 		int slot = atoi (argv[1]);
+		int hand = 0;
+		if (argv.argc() > 2)
+		{
+			hand = atoi(argv[2]);
+		}
 
 		auto mo = players[consoleplayer].mo;
 		if (slot < NUM_WEAPON_SLOTS && mo)
@@ -357,15 +376,16 @@ CCMD (slot)
 			// Needs to be redone
 			IFVIRTUALPTRNAME(mo, NAME_PlayerPawn, PickWeapon)
 			{
-				VMValue param[] = { mo, slot, !(dmflags2 & DF2_DONTCHECKAMMO) };
+				VMValue param[] = { mo, slot, !(dmflags2 & DF2_DONTCHECKAMMO), hand };
 				VMReturn ret((void**)&SendItemUse);
-				VMCall(func, param, 3, &ret, 1);
+				VMCall(func, param, 4, &ret, 1);
 			}
 		}
 
 		// [Nash] Option to display the name of the weapon being switched to.
 		if ((paused || pauseext) || players[consoleplayer].playerstate != PST_LIVE) return;
-		if (SendItemUse != players[consoleplayer].ReadyWeapon && (displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
+		auto weapon = hand ? players[consoleplayer].OffhandWeapon : players[consoleplayer].ReadyWeapon;
+		if (SendItemUse != weapon && (displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
 		{
 			StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(SmallFont, SendItemUse->GetTag(),
 				1.5f, 0.90f, 0, 0, (EColorRange)*nametagcolor, 2.f, 0.35f), MAKE_ID('W', 'E', 'P', 'N'));
@@ -422,15 +442,20 @@ CCMD (cinemamode)
 
 CCMD (weapnext)
 {
+	int hand = 0;
+	if (argv.argc() > 1)
+	{
+		hand = atoi (argv[1]);
+	}
 	auto mo = players[consoleplayer].mo;
 	if (mo)
 	{
 		// Needs to be redone
 		IFVIRTUALPTRNAME(mo, NAME_PlayerPawn, PickNextWeapon)
 		{
-			VMValue param[] = { mo };
+			VMValue param[] = { mo, hand };
 			VMReturn ret((void**)&SendItemUse);
-			VMCall(func, param, 1, &ret, 1);
+			VMCall(func, param, 2, &ret, 1);
 		}
 	}
 
@@ -441,7 +466,8 @@ CCMD (weapnext)
 		StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(SmallFont, SendItemUse->GetTag(),
 			1.5f, 0.90f, 0, 0, (EColorRange)*nametagcolor, 2.f, 0.35f), MAKE_ID( 'W', 'E', 'P', 'N' ));
 	}
-	if (SendItemUse != players[consoleplayer].ReadyWeapon)
+	auto weapon = hand ? players[consoleplayer].OffhandWeapon : players[consoleplayer].ReadyWeapon;
+	if (SendItemUse != weapon)
 	{
 		S_Sound(CHAN_AUTO, 0, "misc/weaponchange", 1.0, ATTN_NONE);
 	}
@@ -449,15 +475,20 @@ CCMD (weapnext)
 
 CCMD (weapprev)
 {
+	int hand = 0;
+	if (argv.argc() > 1)
+	{
+		hand = atoi (argv[1]);
+	}
 	auto mo = players[consoleplayer].mo;
 	if (mo)
 	{
 		// Needs to be redone
 		IFVIRTUALPTRNAME(mo, NAME_PlayerPawn, PickPrevWeapon)
 		{
-			VMValue param[] = { mo };
+			VMValue param[] = { mo, hand };
 			VMReturn ret((void**)&SendItemUse);
-			VMCall(func, param, 1, &ret, 1);
+			VMCall(func, param, 2, &ret, 1);
 		}
 	}
 
@@ -468,7 +499,8 @@ CCMD (weapprev)
 		StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(SmallFont, SendItemUse->GetTag(),
 			1.5f, 0.90f, 0, 0, (EColorRange)*nametagcolor, 2.f, 0.35f), MAKE_ID( 'W', 'E', 'P', 'N' ));
 	}
-	if (SendItemUse != players[consoleplayer].ReadyWeapon)
+	auto weapon = hand ? players[consoleplayer].OffhandWeapon : players[consoleplayer].ReadyWeapon;
+	if (SendItemUse != weapon)
 	{
 		S_Sound(CHAN_AUTO, 0, "misc/weaponchange", 1.0, ATTN_NONE);
 	}
@@ -556,7 +588,12 @@ CCMD (invdrop)
 
 CCMD (weapdrop)
 {
-	SendItemDrop = players[consoleplayer].ReadyWeapon;
+	int hand = 0;
+	if (argv.argc() > 1)
+	{
+		hand = atoi(argv[1]) ? 1 : 0;
+	}
+	SendItemDrop = hand ? players[consoleplayer].OffhandWeapon : players[consoleplayer].ReadyWeapon;
 	SendItemDropAmount = -1;
 }
 
@@ -718,6 +755,8 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (Button_Crouch.bDown)		cmd->ucmd.buttons |= BT_CROUCH;
 	if (Button_Zoom.bDown)			cmd->ucmd.buttons |= BT_ZOOM;
 	if (Button_Reload.bDown)		cmd->ucmd.buttons |= BT_RELOAD;
+	if (Button_OH_Attack.bDown)		cmd->ucmd.buttons |= BT_OFFHANDATTACK;
+	if (Button_OH_AltAttack.bDown)	cmd->ucmd.buttons |= BT_OFFHANDALTATTACK;
 
 	if (Button_User1.bDown)			cmd->ucmd.buttons |= BT_USER1;
 	if (Button_User2.bDown)			cmd->ucmd.buttons |= BT_USER2;
@@ -1292,15 +1331,6 @@ void G_Ticker ()
 
 	default:
 		break;
-	}
-	// Do some more aggressive GC maintenance when the game ticker is inactive. 
-	if ((gamestate != GS_LEVEL && gamestate != GS_TITLELEVEL) || paused || P_CheckTickerPaused())
-	{
-		size_t ac = std::max<size_t>(10, GC::AllocCount);
-		for (size_t i = 0; i < ac; i++)
-		{
-			if (!GC::CheckGC()) break;
-		}
 	}
 
 	// [MK] Additional ticker for UI events right after all others
@@ -3079,3 +3109,4 @@ DEFINE_GLOBAL(demoplayback)
 DEFINE_GLOBAL(automapactive);
 DEFINE_GLOBAL(Net_Arbitrator);
 DEFINE_GLOBAL(netgame);
+DEFINE_GLOBAL(paused);

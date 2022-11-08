@@ -70,6 +70,7 @@ EXTERN_CVAR(Bool, vr_teleport);
 EXTERN_CVAR(Bool, vr_switch_sticks);
 EXTERN_CVAR(Bool, vr_secondary_button_mappings);
 EXTERN_CVAR(Bool, vr_two_handed_weapons);
+EXTERN_CVAR(Bool, vr_crouch_use_button);
 
 //HUD control
 EXTERN_CVAR(Float, vr_hud_scale);
@@ -92,14 +93,23 @@ void ST_Endoom();
 
 extern bool		automapactive;	// in AM_map.c
 
+float getHmdAdjustedHeightInMapUnit()
+{
+    double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+    return ((hmdPosition[1] + vr_height_adjust) * vr_vunits_per_meter) / pixelstretch;
+}
+
 //bit of a hack, assume player is at "normal" height when not crouching
 float getDoomPlayerHeightWithoutCrouch(const player_t *player)
 {
+    if (!vr_crouch_use_button)
+    {
+        return getHmdAdjustedHeightInMapUnit();
+    }
     static float height = 0;
     if (height == 0)
     {
-        // Doom thinks this is where you are
-        height = player->viewheight;
+        height = player->DefaultViewHeight();
     }
 
     return height;
@@ -150,9 +160,7 @@ namespace s3d
         LSVec3 eyeOffset(tmp[0], tmp[1], tmp[2]);
 
         const player_t & player = players[consoleplayer];
-        double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
-        double hh = ((hmdPosition[1] + vr_height_adjust) * vr_vunits_per_meter) / pixelstretch; // HMD is actually here
-        eyeOffset[2] += hh - getDoomPlayerHeightWithoutCrouch(&player);
+        eyeOffset[2] += getHmdAdjustedHeightInMapUnit() - getDoomPlayerHeightWithoutCrouch(&player);
 
         outViewShift[0] = eyeOffset[0];
         outViewShift[1] = eyeOffset[1];
@@ -288,9 +296,9 @@ namespace s3d
         GLRenderer->mScreenViewport.height = sceneHeight;
     }
 
-    void OculusQuestMode::AdjustPlayerSprites() const
+    void OculusQuestMode::AdjustPlayerSprites(int hand) const
     {
-        GetWeaponTransform(&gl_RenderState.mModelMatrix);
+        GetWeaponTransform(&gl_RenderState.mModelMatrix, hand);
 
         float scale = 0.000625f * vr_weaponScale;
         gl_RenderState.mModelMatrix.scale(scale, -scale, scale);
@@ -357,12 +365,20 @@ namespace s3d
         return false;
     }
 
-    bool OculusQuestMode::GetWeaponTransform(VSMatrix* out) const
+    bool OculusQuestMode::GetWeaponTransform(VSMatrix* out, int hand_weapon) const
     {
-        long oculusquest_rightHanded = vr_control_scheme < 10;
-        if (GetHandTransform(oculusquest_rightHanded ? 1 : 0, out))
+        player_t * player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+        bool autoReverse = true;
+        if (player)
         {
-            if (!oculusquest_rightHanded)
+            AActor *weap = hand_weapon ? player->OffhandWeapon : player->ReadyWeapon;
+            autoReverse = weap == nullptr || !(weap->IntVar(NAME_WeaponFlags) & WIF_NO_AUTO_REVERSE);
+        }
+        bool oculusquest_rightHanded = vr_control_scheme < 10;
+        int hand = hand_weapon ? 1 - oculusquest_rightHanded : oculusquest_rightHanded;
+        if (GetHandTransform(hand, out))
+        {
+            if (!hand && autoReverse)
                 out->scale(-1.0f, 1.0f, 1.0f);
             return true;
         }
@@ -387,10 +403,10 @@ namespace s3d
 
 
     //Fishbiter's Function.. Thank-you!!
-    static DVector3 MapWeaponDir(AActor* actor, DAngle yaw, DAngle pitch, bool isOffhandWeapon = false)
+    static DVector3 MapWeaponDir(AActor* actor, DAngle yaw, DAngle pitch, int hand = 0)
     {
         LSMatrix44 mat;
-        if (!s3d::Stereo3DMode::getCurrentMode().GetWeaponTransform(&mat))
+        if (!s3d::Stereo3DMode::getCurrentMode().GetWeaponTransform(&mat, hand))
         {
             double pc = pitch.Cos();
 
@@ -419,12 +435,12 @@ namespace s3d
 
     static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
     {
-        return MapWeaponDir(actor, yaw, pitch, false);
+        return MapWeaponDir(actor, yaw, pitch, 0);
     }
 
     static DVector3 MapOffhandDir(AActor* actor, DAngle yaw, DAngle pitch)
     {
-        return MapWeaponDir(actor, yaw, pitch, true);
+        return MapWeaponDir(actor, yaw, pitch, 1);
     }
 
     bool OculusQuestMode::GetTeleportLocation(DVector3 &out) const
@@ -463,11 +479,6 @@ namespace s3d
         }
 
         QzDoom_processMessageQueue();
-
-        // Set VR-appropriate settings
-        {
-            movebob = 0;
-        }
 
         if (gamestate == GS_LEVEL && getMenuState() == MENU_Off) {
             cachedScreenBlocks = screenblocks;
@@ -512,6 +523,17 @@ namespace s3d
             if (player)
             {
                 double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+
+                if (!vr_crouch_use_button)
+                {
+                    static double defaultViewHeight = player->DefaultViewHeight();
+                    player->crouching = 10;
+                    player->crouchfactor = getHmdAdjustedHeightInMapUnit() / defaultViewHeight;
+                }
+                else if (player->crouching == 10)
+                {
+                    player->Uncrouch();
+                }
 
                 //Weapon firing tracking - Thanks Fishbiter for the inspiration of how/where to use this!
                 {
@@ -572,7 +594,7 @@ namespace s3d
                         auto vel = player->mo->Vel;
                         player->mo->Vel = DVector3(m_TeleportLocation.X - player->mo->X(),
                                                    m_TeleportLocation.Y - player->mo->Y(), 0);
-                        bool wasOnGround = player->mo->Z() <= player->mo->floorz + 0.1;
+                        bool wasOnGround = player->mo->Z() <= player->mo->floorz + 2;
                         double oldZ = player->mo->Z();
                         P_XYMovement(player->mo, DVector2(0, 0));
 
@@ -597,7 +619,7 @@ namespace s3d
                 //Positional movement - Thanks fishbiter!!
                 auto vel = player->mo->Vel;
                 player->mo->Vel = DVector3((DVector2(hmd_side, hmd_forward) * vr_vunits_per_meter), 0);
-                bool wasOnGround = player->mo->Z() <= player->mo->floorz + 0.1;
+                bool wasOnGround = player->mo->Z() <= player->mo->floorz + 2;
                 double oldZ = player->mo->Z();
                 P_XYMovement(player->mo, DVector2(0, 0));
 

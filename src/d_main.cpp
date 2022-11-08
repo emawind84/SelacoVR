@@ -935,20 +935,33 @@ void D_Display ()
 	// draw pause pic
 	if ((paused || pauseext) && menuactive == MENU_Off)
 	{
-		FTexture *tex;
-		int x;
-
-		tex = TexMan(gameinfo.PauseSign);
-		x = (SCREENWIDTH - tex->GetScaledWidth() * CleanXfac)/2 +
-			tex->GetScaledLeftOffset() * CleanXfac;
-		screen->DrawTexture (tex, x, 4, DTA_CleanNoMove, true, TAG_DONE);
-		if (paused && multiplayer)
+		// [MK] optionally let the status bar handle this
+		bool skip = false;
+		IFVIRTUALPTR(StatusBar, DBaseStatusBar, DrawPaused)
 		{
-			FString pstring = GStrings("TXT_BY");
-			pstring.Substitute("%s", players[paused - 1].userinfo.GetName());
-			screen->DrawText(SmallFont, CR_RED,
-				(screen->GetWidth() - SmallFont->StringWidth(pstring)*CleanXfac) / 2,
-				(tex->GetScaledHeight() * CleanYfac) + 4, pstring, DTA_CleanNoMove, true, TAG_DONE);
+			VMValue params[] { (DObject*)StatusBar, paused-1 };
+			int rv;
+			VMReturn ret(&rv);
+			VMCall(func, params, countof(params), &ret, 1);
+			skip = !!rv;
+		}
+		if ( !skip )
+		{
+			FTexture *tex;
+			int x;
+
+			tex = TexMan(gameinfo.PauseSign);
+			x = (SCREENWIDTH - tex->GetScaledWidth() * CleanXfac)/2 +
+				tex->GetScaledLeftOffset() * CleanXfac;
+			screen->DrawTexture (tex, x, 4, DTA_CleanNoMove, true, TAG_DONE);
+			if (paused && multiplayer)
+			{
+				FString pstring = GStrings("TXT_BY");
+				pstring.Substitute("%s", players[paused - 1].userinfo.GetName());
+				screen->DrawText(SmallFont, CR_RED,
+					(screen->GetWidth() - SmallFont->StringWidth(pstring)*CleanXfac) / 2,
+					(tex->GetScaledHeight() * CleanYfac) + 4, pstring, DTA_CleanNoMove, true, TAG_DONE);
+			}
 		}
 	}
 

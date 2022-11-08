@@ -423,7 +423,6 @@ OptionMenu "NewPlayerMenu" protected
 	PlayerClassItem "$PLYRMNU_PLAYERCLASS", "PlayerClass"
 	PlayerSkinItem "$PLYRMNU_PLAYERSKIN", "PlayerSkin"
 	PlayerGenderItem "$PLYRMNU_PLAYERGENDER", "Gender"
-	AutoaimSlider "$PLYRMNU_AUTOAIM"
 	PlayerSwitchOnPickupItem "$PLYRMNU_SWITCHONPICKUP", "OffOn"
 	Option "$PLYRMNU_ALWAYSRUN", cl_run, "OnOff"
 	Class "NewPlayerMenu"
@@ -501,6 +500,7 @@ OptionMenu "CustomizeControls" protected
 	StaticText " "
 	Option "$CNTRLMNU_LAYOUT",			"k_modern", "Layouts"
 	SafeCommand "$OPTMNU_DEFAULTS",		"resetb2defaults"
+	SafeCommand "$OPTMNU_UPDATEMISSING","binddefaults"
 }
 
 OptionMenu "ActionControlsMenu" protected
@@ -512,6 +512,8 @@ OptionMenu "ActionControlsMenu" protected
 	StaticText ""
 	Control    "$CNTRLMNU_ATTACK"           , "+attack"
 	Control    "$CNTRLMNU_ALTATTACK"        , "+altattack"
+	Control    "$CNTRLMNU_OH_ATTACK"        , "+oh_attack"
+	Control    "$CNTRLMNU_OH_ALTATTACK"     , "+oh_altatk"
 	Control    "$CNTRLMNU_RELOAD"           , "+reload"
 	Control    "$CNTRLMNU_ZOOM"             , "+zoom"
 
@@ -576,6 +578,10 @@ OptionMenu "WeaponsControlMenu" protected
 	StaticText ""
 	Control    "$CNTRLMNU_NEXTWEAPON"     , "weapnext"
 	Control    "$CNTRLMNU_PREVIOUSWEAPON" , "weapprev"
+	Control    "$CNTRLMNU_OFFHAND_NEXTWEAPON"     , "weapnext 1"
+	Control    "$CNTRLMNU_OFFHAND_PREVIOUSWEAPON" , "weapprev 1"
+	Control    "$CNTRLMNU_SWITCH_TO_OFFHAND", "switchhand 1"
+	Control    "$CNTRLMNU_SWITCH_TO_MAINHAND", "switchhand 0"
 
 	StaticText ""
 	Control    "$CNTRLMNU_SLOT1"          , "slot 1"
@@ -616,6 +622,7 @@ OptionMenu "InventoryControlsMenu" protected
 
 	StaticText ""
 	Control    "$CNTRLMNU_DROPWEAPON"   , "weapdrop"
+	Control    "$CNTRLMNU_DROPOFFHANDWEAPON"   , "weapdrop 1"
 }
 
 OptionMenu "OtherControlsMenu" protected
@@ -1042,7 +1049,6 @@ OptionMenu "HUDOptions" protected
 	StaticText " "
 	Slider "$DSPLYMNU_MOVEBOB",				"movebob", 0, 1.0, 0.05, 2
 	Slider "$DSPLYMNU_STILLBOB",			"stillbob", 0, 1.0, 0.05, 2
-	Slider "$DSPLYMNU_BOBSPEED",			"wbobspeed", 0, 2.0, 0.1
 	StaticText " "
 	Slider "$DSPLYMNU_MENUDIM",					"dimamount", 0, 1.0, 0.05, 2
 	ColorPicker "$DSPLYMNU_DIMCOLOR",			"dimcolor"
@@ -1923,6 +1929,8 @@ OptionMenu SoundOptions protected
 	StaticText " "
 	Submenu "$SNDMNU_ADVANCED",			"AdvSoundOptions"
 	Submenu "$OPTMNU_REVERB",			"ReverbEdit"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar snd_mastervolume snd_sfxvolume snd_musicvolume snd_menuvolume snd_mididevice snd_waterreverb snd_pitched snd_channels"
 }
 
 /*=======================================
@@ -1955,8 +1963,6 @@ OptionMenu AdvSoundOptions protected
 	Option "$ADVSNDMNU_SAMPLERATE",			"snd_samplerate", "SampleRates"
 	Option "$ADVSNDMNU_HRTF",				"snd_hrtf", "AutoOffOn"
 	StaticText " "
-	Option "$SNDMNU_BACKGROUND",			"i_soundinbackground", "OnOff"
-	StaticText " "
 
 	ifoption(openal)
 	{
@@ -1969,6 +1975,8 @@ OptionMenu AdvSoundOptions protected
 	Submenu "$SNDMNU_MODREPLAYER",		"ModReplayerOptions"
 	StaticText " "
 	Command "$SNDMNU_RESTART",			"snd_reset"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar snd_samplerate snd_hrtf i_soundinbackground"
 }
 
 OptionMenu GusConfigMenu protected
@@ -2092,6 +2100,19 @@ OptionMenu ModReplayerOptions protected
 	Option "$ADVSNDMNU_CHORUS", 			"fluid_chorus", "OnOff"
 	Slider "$ADVSNDMNU_MIDIVOICES", 		"fluid_voices", 16, 4096, 16, 0
 	// other CVARs need to be revieved for usefulness
+	StaticText ""
+	StaticText "Advanced Options", gold
+	Slider "Reverb room size",				"fluid_reverb_roomsize", 0, 1.2, 0.1, 1
+	Slider "Reverb damping",				"fluid_reverb_damping", 0, 1.0, 0.1, 1
+	Slider "Reverb width",					"fluid_reverb_width", 0, 100.0, 0.1, 1
+	Slider "Reverb level",					"fluid_reverb_level", 0, 1.0, 0.1, 1
+	StaticText ""
+	Slider "Chorus voices",					"fluid_chorus_voices", 0, 99, 1, 0
+	Slider "Chorus level",					"fluid_chorus_level", 0, 10.0, 0.1, 1
+	Slider "Chorus speed",					"fluid_chorus_speed", 0.29, 5.0, 0.1, 2
+	Slider "Chorus depth",					"fluid_chorus_depth", 0, 256.0, 0.1, 1
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar fluid_patchset fluid_gain fluid_voices fluid_reverb fluid_reverb_roomsize fluid_reverb_damping fluid_reverb_width fluid_reverb_level fluid_chorus fluid_chorus_voices fluid_chorus_level fluid_chorus_speed fluid_chorus_depth"
  }
 
  OptionMenu TimidityOptions protected
@@ -2099,9 +2120,11 @@ OptionMenu ModReplayerOptions protected
 	Title "$ADVSNDMNU_TIMIDITY"
 	LabeledSubMenu "$ADVSNDMNU_SELCONFIG",		"timidity_config", "TimidityConfigMenu"
 	Option "$ADVSNDMNU_REVERB", 			"timidity_reverb", "TimidityReverb"
-	Slider "$ADVSNDMNU_REVERB_LEVEL", 		"timidity_reverb_level", 9, 127, 1, 0
+	Slider "$ADVSNDMNU_REVERB_LEVEL", 		"timidity_reverb_level", 0, 127, 1, 0
 	Option "$ADVSNDMNU_CHORUS", 			"timidity_chorus", "OnOff"
 	// other CVARs need to be revieved for usefulness
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar timidity_config timidity_reverb timidity_reverb_level timidity_chorus"
  }
 
  OptionMenu GUSOptions protected
@@ -2111,6 +2134,8 @@ OptionMenu ModReplayerOptions protected
 	Slider "$ADVSNDMNU_MIDIVOICES",			"midi_voices", 16, 256, 4, 0
 	Option "$ADVSNDMNU_DMXGUS", 			"midi_dmxgus", "OnOff"
 	Option "$ADVSNDMNU_GUSMEMSIZE", 		"gus_memsize", "GusMemory"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar midi_config midi_voices midi_dmxgus gus_memsize"
  }
 
   OptionMenu WildMidiOptions protected
@@ -2119,6 +2144,8 @@ OptionMenu ModReplayerOptions protected
 	LabeledSubMenu "$ADVSNDMNU_SELCONFIG",		"wildmidi_config", "WildMidiConfigMenu"
 	Option "$ADVSNDMNU_REVERB", 			"wildmidi_reverb", "OnOff"
 	Option "$ADVSNDMNU_ADVRESAMPLING",		"wildmidi_enhanced_resampling", "OnOff"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar wildmidi_config wildmidi_reverb wildmidi_enhanced_resampling"
  }
 
  OptionMenu OPLOptions protected
@@ -2127,6 +2154,8 @@ OptionMenu ModReplayerOptions protected
 	Option "$ADVSNDMNU_OPLCORES", 			"opl_core", "OplCores"
 	Slider "$ADVSNDMNU_OPLNUMCHIPS", 		"opl_numchips", 1, 8, 1, 0
 	Option "$ADVSNDMNU_OPLFULLPAN",			"opl_fullpan", "OnOff"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar opl_core opl_numchips opl_fullpan"
  }
 
  OptionValue AdlVolumeModels
@@ -2177,6 +2206,8 @@ OptionMenu ModReplayerOptions protected
 	StaticText ""
 	Option "$ADVSNDMNU_ADLCUSTOMBANK", 	 "adl_use_custom_bank", "OnOff"
 	LabeledSubmenu "$ADVSNDMNU_OPLBANKFILE", "adl_custom_bank", "ADLMIDICustomBanksMenu"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar adl_emulator_id adl_run_at_pcm_rate adl_chips_count adl_fullpan adl_volume_model adl_use_custom_bank"
  }
 
  OptionMenu OPNOptions protected
@@ -2189,6 +2220,8 @@ OptionMenu ModReplayerOptions protected
 	StaticText ""
 	Option "$ADVSNDMNU_OPNCUSTOMBANK", 	 "opn_use_custom_bank", "OnOff"
 	LabeledSubmenu "$ADVSNDMNU_OPNBANKFILE", "opn_custom_bank", "OPNMIDICustomBanksMenu"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar opn_emulator_id opn_run_at_pcm_rate opn_chips_count opn_fullpan opn_use_custom_bank"
  }
 
 /*=======================================
@@ -2428,13 +2461,14 @@ OptionMenu VROptionsMenu protected
 	Option "Off-hand Move Direction",	"vr_move_use_offhand", "OnOff"
 	Option "Use Teleport",		        "vr_teleport", "OnOff"
 	Option "Allow slidey movement (Momentum)",	    "vr_momentum", "OnOff"
+	Option "Crouch using button",       "vr_crouch_use_button", "OnOff"
 	Slider "Walking Speed",		        "vr_move_speed", 5, 50, 1, 2
 	Slider "Run Multiplier",	        "vr_run_multiplier", 0.0, 5.0, 0.1, 2
 	StaticText ""
 	Slider "Snap-turn Angle",		    "vr_snapTurn", 0.0, 90.0, 1.0, 2
 	StaticText "Set Snap-Turn <= 10 for \"Smooth\" Turn", "Brown"
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_move_use_offhand vr_teleport vr_momentum vr_move_speed vr_run_multiplier vr_snapTurn"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_move_use_offhand vr_teleport vr_momentum vr_crouch_use_button vr_move_speed vr_run_multiplier vr_snapTurn"
 
 	StaticText ""
 	StaticText "Haptics", gold
@@ -2768,6 +2802,7 @@ OptionMenu "GLLightOptions" protected
 	Option "$GLLIGHTMNU_LIGHTSENABLED",			gl_lights,				"OnOff"
 	Option "$GLLIGHTMNU_CLIPLIGHTS",			gl_lights_checkside,	"YesNo"
 	Option "$GLLIGHTMNU_LIGHTSPRITES",			gl_light_sprites,		"YesNo"
+	Option "$GLLIGHTMNU_LIGHTWEAPONS",			gl_light_weapons,		"YesNo"
 	Option "$GLLIGHTMNU_LIGHTPARTICLES",		gl_light_particles,		"YesNo"
 	Option "$GLLIGHTMNU_LIGHTSHADOWMAP",		gl_light_shadowmap,		"YesNo"
 	Option "$GLLIGHTMNU_LIGHTBUFFERTYPE",		gl_light_buffer_type,	"LightBuffer"
@@ -2791,6 +2826,7 @@ OptionMenu "OpenGLOptions" protected
 	Option "$GLPREFMNU_FOGMODE",				gl_fogmode,						"FogMode"
 	Option "$GLPREFMNU_FOGFORCEFULLBRIGHT",		gl_brightfog,					"YesNo"
 	Slider "$GLPREFMNU_WPNLIGHTSTR",			gl_weaponlight,					0,32, 2
+	Option "$GLPREFMNU_MIRRORS",				gl_mirrors,						"OnOff"
 	Option "$GLPREFMNU_ENVIRONMENTMAPMIRROR",	gl_mirror_envmap,				"OnOff"
 	Option "$GLPREFMNU_PLANEREFLECTION",	    gl_plane_reflection,			"OnOff"
 	Option "$GLPREFMNU_ENV",					gl_enhanced_nightvision,		"OnOff"
@@ -2965,38 +3001,39 @@ OptionMenu QZDOptionsMenu protected
 	Title "QUESTZDOOM Quick Menu"
 
 	StaticText " "
-	StaticText "CHANGE QUEST REFRESH RATE - USUALLY 60HZ RECOMMENDED "
-	Option "Refresh Rate",                      "vid_refreshrate", "RefreshRate"
+	Option "Refresh Rate", "vid_refreshrate", "RefreshRate"
+	StaticText "Change the refresh rate, recommended 72Hz.", "Brown"
 	
 	StaticText " "
-	StaticText "STRONGLY RECOMMEND TURNING OFF FOR PERFORMANCE "
-	Option "Dynamic Lights",			gl_lights,				"OnOff"
+	Option "$GLLIGHTMNU_LIGHTSENABLED", gl_lights, "OnOff"
+	StaticText "Greatly affects performance, best off.", "Brown"
 	
 	StaticText " "
-	StaticText "TURN OFF FOR PERFORMANCE BOOST (SKY NOT SHOWN) "
-	Option "$GLPREFMNU_RENDERSKYDOME",			gl_skydome, 					"YesNo"
+	Option "$GLPREFMNU_RENDERSKYDOME", gl_skydome, "YesNo"
+	StaticText "Greatly affects performance, best off.", "Brown"
 	
 	StaticText " "
-	StaticText "MAY CAUSE ISSUES WITH SOME MODS "
-	Option "$DSPLYMNU_SPRITESHADOW",			"r_actorspriteshadow", "SpriteShadowModes"
+	Option "$DSPLYMNU_SPRITESHADOW", "r_actorspriteshadow", "SpriteShadowModes"
+	StaticText "May cause issues with some mods.", "Brown"
 	
 	StaticText " "
-	StaticText "SET THIS TO SSBO IF YOU ARE EXPERIENCING CRASHES "
-	Option "$GLLIGHTMNU_LIGHTBUFFERTYPE",		gl_light_buffer_type,	"LightBuffer"
+	Option "$GLLIGHTMNU_LIGHTBUFFERTYPE", gl_light_buffer_type, "LightBuffer"
+	StaticText "Choose UBO for performance and SSBO for stability.", "Brown"
 	
 	StaticText " "
-	StaticText "LIGHT / SHADOW - CERTAIN MODS LOOK BETTER WITH DIFFERENT MODES "
-	Option "$GLPREFMNU_SECLIGHTMODE",			gl_lightmode,					"LightingModes"
+	Option "$GLPREFMNU_SECLIGHTMODE", gl_lightmode, "LightingModes"
+	StaticText "Certain mods look better with different modes.", "Brown"
 	
 	StaticText " "
-	StaticText "SET TO NONE FOR ORIGINAL UNFILTERED PIXEL APPEARANCE "
-	Option "$GLTEXMNU_TEXFILTER",		gl_texture_filter,				"FilterModes"
+	Option "$GLTEXMNU_TEXFILTER", gl_texture_filter, "FilterModes"
+	StaticText "Set to None for unfiltered pixel appearance.", "Brown"
 	
 	StaticText " "
-	StaticText "SHOW FPS IN TOP RIGHT OF SCREEN (GOOD FOR CHECKING PERFORMANCE) "
-	Option "Show FPS on HUD",		                "vid_fps", "OnOff"
+	Option "Show FPS on HUD", "vid_fps", "OnOff"
+	StaticText "Option retained only for the current session.", "Brown"
 	
 	StaticText " "
-	StaticText "IS JUMP ALLOWED? "
-	Option "$GMPLYMNU_ALLOWJUMP",				"sv_jump", "JumpCrouchFreeLook"
+	Option "$GMPLYMNU_ALLOWJUMP", "sv_jump", "JumpCrouchFreeLook"
+	StaticText "Gameplay option only intended", "Brown"
+	StaticText "for a specific session/playthrough.", "Brown"
 }

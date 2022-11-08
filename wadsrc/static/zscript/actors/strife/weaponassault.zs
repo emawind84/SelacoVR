@@ -51,15 +51,19 @@ extend class StateProvider
 		{
 			return;
 		}
-
-		A_StartSound ("weapons/assaultgun", CHAN_WEAPON);
-
-		Weapon weapon = player.ReadyWeapon;
+		int laflags = 0;
+		int alflags = 0;
+		int snd_channel = CHAN_WEAPON;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon != null)
 		{
+			snd_channel = weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+			laflags |= weapon.bOffhandWeapon ? LAF_ISOFFHAND : 0;
+			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
 				return;
 		}
+		A_StartSound ("weapons/assaultgun", snd_channel);
 		player.mo.PlayAttacking2 ();
 
 		int damage = 4 * random[StrifeGun](1, 3);
@@ -69,7 +73,7 @@ extend class StateProvider
 		{
 			ang += Random2[StrifeGun]() * (22.5 / 256) * AccuracyFactor();
 		}
-		LineAttack (ang, PLAYERMISSILERANGE, BulletSlope (), damage, 'Hitscan', "StrifePuff");
+		LineAttack (ang, PLAYERMISSILERANGE, BulletSlope (aimflags: alflags), damage, 'Hitscan', "StrifePuff", laflags);
 	}
 }
 

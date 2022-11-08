@@ -9,8 +9,10 @@ class StateProvider : Inventory
 
 	action state A_JumpIfNoAmmo(statelabel label)
 	{
-		if (stateinfo == null || stateinfo.mStateType != STATE_Psprite || player == null || player.ReadyWeapon == null ||
-			player.ReadyWeapon.CheckAmmo(player.ReadyWeapon.bAltFire, false, true))
+		if (player == null) return null;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (stateinfo == null || stateinfo.mStateType != STATE_Psprite || weapon == null ||
+			weapon.CheckAmmo(weapon.bAltFire, false, true))
 		{
 			return null;
 		}
@@ -25,14 +27,14 @@ class StateProvider : Inventory
 
 	action state A_CheckForReload(int count, statelabel jump, bool dontincrement = false)
 	{
-		if (stateinfo == null || stateinfo.mStateType != STATE_Psprite || player == null || player.ReadyWeapon == null)
+		if (player == null) return null;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (stateinfo == null || stateinfo.mStateType != STATE_Psprite || weapon == null)
 		{
 			return null;
 		}
 
 		state ret = null;
-
-		let weapon = player.ReadyWeapon;
 
 		int ReloadCounter = weapon.ReloadCounter;
 		if (!dontincrement || ReloadCounter != 0)
@@ -66,8 +68,12 @@ class StateProvider : Inventory
 
 	action void A_ResetReloadCounter()
 	{
-		if (stateinfo != null && stateinfo.mStateType == STATE_Psprite && player != null && player.ReadyWeapon != null)
-			player.ReadyWeapon.ReloadCounter = 0;
+		if (player == null) return;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (stateinfo != null && stateinfo.mStateType == STATE_Psprite && weapon != null)
+		{
+			weapon.ReloadCounter = 0;
+		}
 	}
 
 	
@@ -83,32 +89,35 @@ class StateProvider : Inventory
 		if (!player) return;
 
 		let pawn = PlayerPawn(self);
-		let weapon = player.ReadyWeapon;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 
 		int i;
 		double bangle;
 		double bslope = 0.;
 		int laflags = (flags & FBF_NORANDOMPUFFZ)? LAF_NORANDOMPUFFZ : 0;
+		int alflags = 0;
 
 		if ((flags & FBF_USEAMMO) && weapon &&  stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
 			if (!weapon.DepleteAmmo(weapon.bAltFire, true))
 				return;	// out of ammo
 		}
+
+		if (weapon != NULL)
+		{
+			laflags |= weapon.bOffhandWeapon ? LAF_ISOFFHAND : 0;
+			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
+			A_StartSound(weapon.AttackSound, weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON);
+		}
 		
 		if (range == 0)	range = PLAYERMISSILERANGE;
 
 		if (!(flags & FBF_NOFLASH)) pawn.PlayAttacking2 ();
 
-		if (!(flags & FBF_NOPITCH)) bslope = BulletSlope();
+		if (!(flags & FBF_NOPITCH)) bslope = BulletSlope(aimflags: alflags);
 		bangle = Angle;
 
 		if (pufftype == NULL) pufftype = 'BulletPuff';
-
-		if (weapon != NULL)
-		{
-			A_StartSound(weapon.AttackSound, CHAN_WEAPON);
-		}
 
 		if ((numbullets == 1 && !player.refire) || numbullets == 0)
 		{
@@ -124,7 +133,7 @@ class StateProvider : Inventory
 				bool temp = false;
 				double ang = Angle - 90;
 				Vector2 ofs = AngleToVector(ang, Spawnofs_xy);
-				Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight);
+				Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight, aimflags: alflags);
 				if (proj)
 				{
 					if (!puff)
@@ -168,7 +177,7 @@ class StateProvider : Inventory
 					bool temp = false;
 					double ang = Angle - 90;
 					Vector2 ofs = AngleToVector(ang, Spawnofs_xy);
-					Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight);
+					Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight, aimflags: alflags);
 					if (proj)
 					{
 						if (!puff)
@@ -194,8 +203,12 @@ class StateProvider : Inventory
 	{
 		let player = self.player;
 		if (!player) return null;
-
-		let weapon = player.ReadyWeapon;
+		int alflags = 0;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon && weapon.bOffhandWeapon)
+		{
+			alflags |= ALF_ISOFFHAND;
+		}
 
 		FTranslatedLineTarget t;
 
@@ -217,7 +230,7 @@ class StateProvider : Inventory
 			// Temporarily adjusts the pitch
 			double saved_player_pitch = self.Pitch;
 			self.Pitch += pitch;
-			let misl = SpawnPlayerMissile (missiletype, shootangle, ofs.X, ofs.Y, spawnheight, t, false, (flags & FPF_NOAUTOAIM) != 0);
+			let misl = SpawnPlayerMissile (missiletype, shootangle, ofs.X, ofs.Y, spawnheight, t, false, (flags & FPF_NOAUTOAIM) != 0, alflags);
 			self.Pitch = saved_player_pitch;
 
 			// automatic handling of seeker missiles
@@ -253,8 +266,12 @@ class StateProvider : Inventory
 		let player = self.player;
 		if (!player) return;
 
-		let weapon = player.ReadyWeapon;
-
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		int snd_channel = CHAN_WEAPON;
+		if (weapon != NULL)
+		{
+			snd_channel = weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+		}
 		double angle;
 		double pitch;
 		FTranslatedLineTarget t;
@@ -283,7 +300,7 @@ class StateProvider : Inventory
 
 		if (!t.linetarget)
 		{
-			if (MissSound) A_StartSound(MissSound, CHAN_WEAPON);
+			if (MissSound) A_StartSound(MissSound, snd_channel);
 		}
 		else
 		{
@@ -319,8 +336,8 @@ class StateProvider : Inventory
 			}
 			if (weapon != NULL)
 			{
-				if (MeleeSound) A_StartSound(MeleeSound, CHAN_WEAPON);
-				else			A_StartSound(weapon.AttackSound, CHAN_WEAPON);
+				if (MeleeSound) A_StartSound(MeleeSound, snd_channel);
+				else			A_StartSound(weapon.AttackSound, snd_channel);
 			}
 
 			if (!(flags & CPF_NOTURN))
@@ -348,7 +365,11 @@ class StateProvider : Inventory
 		let player = self.player;
 		if (!player) return;
 
-		let weapon = player.ReadyWeapon;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon != null && weapon.bOffhandWeapon)
+		{
+			flags |= RGF_ISOFFHAND;
+		}
 
 		if (useammo && weapon != NULL && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
@@ -402,23 +423,33 @@ class StateProvider : Inventory
 		{
 			return;
 		}
-		pending = player.PendingWeapon != WP_NOCHANGE && (player.WeaponState & WF_REFIRESWITCHOK);
-		if ((player.cmd.buttons & BT_ATTACK)
-			&& !player.ReadyWeapon.bAltFire && !pending && player.health > 0)
+
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == NULL)
 		{
-			player.refire++;
-			player.mo.FireWeapon(ResolveState(flash));
+			return;
 		}
-		else if ((player.cmd.buttons & BT_ALTATTACK)
-			&& player.ReadyWeapon.bAltFire && !pending && player.health > 0)
+		int refireok = weapon == player.ReadyWeapon ? WF_REFIRESWITCHOK : WF_OFFHANDREFIRESWITCHOK;
+		int attackbt = weapon == player.ReadyWeapon ? BT_ATTACK : BT_OFFHANDATTACK;
+		int altattackbt = weapon == player.ReadyWeapon ? BT_ALTATTACK : BT_OFFHANDALTATTACK;
+		pending = player.PendingWeapon != WP_NOCHANGE && (player.WeaponState & refireok)
+			&& (player.PendingWeapon.bOffhandWeapon == weapon.bOffhandWeapon);
+		if ((player.cmd.buttons & attackbt)
+			&& !weapon.bAltFire && !pending && player.health > 0)
 		{
 			player.refire++;
-			player.mo.FireWeaponAlt(ResolveState(flash));
+			player.mo.FireWeapon(ResolveState(flash), weapon.bOffhandWeapon ? 1 : 0);
+		}
+		else if ((player.cmd.buttons & altattackbt)
+			&& weapon.bAltFire && !pending && player.health > 0)
+		{
+			player.refire++;
+			player.mo.FireWeaponAlt(ResolveState(flash), weapon.bOffhandWeapon ? 1 : 0);
 		}
 		else
 		{
 			player.refire = 0;
-			player.ReadyWeapon.CheckAmmo (player.ReadyWeapon.bAltFire? Weapon.AltFire : Weapon.PrimaryFire, true);
+			weapon.CheckAmmo (weapon.bAltFire? Weapon.AltFire : Weapon.PrimaryFire, true);
 		}
 	}
 	

@@ -70,7 +70,8 @@ class StrifeCrossbow : StrifeWeapon
 	{
 		if (player != null)
 		{
-			player.SetPsprite (PSP_FLASH, player.ReadyWeapon.FindState('Flash'));
+			Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			player.SetPsprite (PSP_FLASH, weapon.FindState('Flash'), false, weapon);
 		}
 	}
 
@@ -86,10 +87,15 @@ class StrifeCrossbow : StrifeWeapon
 		{
 			return;
 		}
-
-		Weapon weapon = player.ReadyWeapon;
+		int hand = 0;
+		int alflags = 0;
+		int snd_channel = CHAN_WEAPON;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon != null)
 		{
+			snd_channel = weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+			hand = weapon.bOffhandWeapon ? 1 : 0;
+			alflags |= hand ? ALF_ISOFFHAND : 0;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
 				return;
 		}
@@ -98,9 +104,9 @@ class StrifeCrossbow : StrifeWeapon
 			double savedangle = angle;
 			angle += Random2[Electric]() * (5.625/256) * AccuracyFactor();
 			player.mo.PlayAttacking2 ();
-			SpawnPlayerMissile (proj);
+			SpawnPlayerMissile (proj, aimflags: alflags);
 			angle = savedangle;
-			A_StartSound ("weapons/xbowshoot", CHAN_WEAPON);
+			A_StartSound ("weapons/xbowshoot", snd_channel);
 		}
 	}
 }

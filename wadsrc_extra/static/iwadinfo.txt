@@ -494,6 +494,7 @@ IWad
 	Load = "nerve.wad"
 }
 
+// Doom 2 must be last to be checked becaude MAP01 is its only requirement
 IWad
 {
 	Name = "DOOM 2: Unity Edition"
@@ -545,25 +546,10 @@ IWad
 	IWADName = "doom2.wad", 1
 	Mapinfo = "mapinfo/doom2.txt"
 	Compatibility = "Shorttex"
-	MustContain = "MAP01", "MAP30"
-	BannerColors = "a8 00 00", "a8 a8 a8"
-}
-
-// NRFTL must be last to be checked because MAP01 is its only requirement
-IWad
-{
-	Name = "DOOM 2: No Rest for the Living"
-	BannerColors = "a8 00 00", "a8 a8 a8"
 	MustContain = "MAP01"
-	Required = "DOOM 2: Hell on Earth"
-	Autoname = "doom.id.doom2.nerve"
-	Game = "Doom"
-	Config = "Doom"
-	IWADName = "nerve.wad"
-	Mapinfo = "mapinfo/doom2.txt"
-	Compatibility = "Shorttex"
+	BannerColors = "a8 00 00", "a8 a8 a8"
 }
-
+	
 
 Names
 {	
@@ -614,7 +600,6 @@ Names
 	"delaweare.wad"
 	"rotwb.wad"
 	"sigil_v1_21.wad"
-	"nerve.wad"
 }
 
 Order	// Order in the IWAD selection box
@@ -622,7 +607,6 @@ Order	// Order in the IWAD selection box
 	"DOOM: Complete: WadSmoosh"
 	"DOOM 2: Hell on Earth"
 	"DOOM 2: L'Enfer sur Terre"
-	"DOOM 2: No Rest for the Living"
 	"Final Doom: Plutonia Experiment"
 	"Final Doom: TNT - Evilution"
 	"The Ultimate DOOM"

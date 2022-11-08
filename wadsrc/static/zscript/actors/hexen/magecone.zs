@@ -6,6 +6,7 @@ class MWeapFrost : MageWeapon
 	Default
 	{
 		+BLOODSPLATTER
+		+WEAPON.TWOHANDED
 		Weapon.SelectionOrder 1700;
 		Weapon.AmmoUse1 3;
 		Weapon.AmmoGive1 25;
@@ -60,19 +61,23 @@ class MWeapFrost : MageWeapon
 			return;
 		}
 
-		Weapon weapon = player.ReadyWeapon;
+		int alflags = 0;
+		int snd_channel = CHAN_WEAPON;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon != null)
 		{
+			snd_channel = weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
 				return;
 		}
-		A_StartSound ("MageShardsFire", CHAN_WEAPON);
+		A_StartSound ("MageShardsFire", snd_channel);
 
 		int damage = random[MageCone](90, 105);
 		for (int i = 0; i < 16; i++)
 		{
 			double ang = angle + i*(45./16);
-			double slope = AimLineAttack (ang, DEFMELEERANGE, t, 0., ALF_CHECK3D);
+			double slope = AimLineAttack (ang, DEFMELEERANGE, t, 0., ALF_CHECK3D | alflags);
 			if (t.linetarget)
 			{
 				t.linetarget.DamageMobj (self, self, damage, 'Ice', DMG_USEANGLE, t.angleFromSource);
@@ -84,7 +89,7 @@ class MWeapFrost : MageWeapon
 		// didn't find any creatures, so fire projectiles
 		if (!conedone)
 		{
-			Actor mo = SpawnPlayerMissile ("FrostMissile");
+			Actor mo = SpawnPlayerMissile ("FrostMissile", aimflags: alflags);
 			if (mo)
 			{
 				mo.special1 = FrostMissile.SHARDSPAWN_LEFT|FrostMissile.SHARDSPAWN_DOWN|FrostMissile.SHARDSPAWN_UP|FrostMissile.SHARDSPAWN_RIGHT;

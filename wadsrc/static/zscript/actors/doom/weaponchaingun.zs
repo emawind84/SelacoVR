@@ -56,21 +56,24 @@ extend class StateProvider
 		{
 			return;
 		}
-
-		Weapon weap = player.ReadyWeapon;
+		int hand = 0;
+		int alflags = 0;
+		int snd_channel = CHAN_WEAPON;
+		Weapon weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
+			hand = weap.bOffhandWeapon ? 1 : 0;
+			alflags |= hand ? ALF_ISOFFHAND : 0;
+			snd_channel = weap.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
 			if (!weap.DepleteAmmo (weap.bAltFire, true, 1))
 				return;
-
-			A_StartSound ("weapons/chngun", CHAN_WEAPON);
 
 			State flash = weap.FindState('Flash');
 			if (flash != null)
 			{
 				// Removed most of the mess that was here in the C++ code because SetSafeFlash already does some thorough validation.
 				State atk = weap.FindState('Fire');
-				let psp = player.GetPSprite(PSP_WEAPON);
+				let psp = player.GetPSprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON);
 				if (psp) 
 				{
 					State cur = psp.CurState;
@@ -80,7 +83,7 @@ extend class StateProvider
 			}
 		}
 		player.mo.PlayAttacking2 ();
-
-		GunShot (!player.refire, "BulletPuff", BulletSlope ());
+		A_StartSound ("weapons/chngun", snd_channel);
+		GunShot (!player.refire, "BulletPuff", BulletSlope (aimflags: alflags));
 	}
 }

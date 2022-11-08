@@ -41,11 +41,11 @@ const char *GetVersionString();
 
 /** Lots of different version numbers **/
 
-#define VERSIONSTR "QuestZDoom-1.4.0 (LZDoom 3.88a)"
+#define VERSIONSTR "QuestZDoom-1.4.0 (LZDoom 3.88b)"
 
 // The version as seen in the Windows resource
-#define RC_FILEVERSION 3,88,1
-#define RC_PRODUCTVERSION 3,88,1
+#define RC_FILEVERSION 3,88,2
+#define RC_PRODUCTVERSION 3,88,2
 #define RC_PRODUCTVERSION2 VERSIONSTR
 // These are for content versioning.
 #define VER_MAJOR 4
@@ -60,7 +60,7 @@ const char *GetVersionString();
 // Version stored in the ini's [LastRun] section.
 // Bump it if you made some configuration change that you want to
 // be able to migrate in FGameConfigFile::DoGlobalSetup().
-#define LASTRUNVERSION "224"
+#define LASTRUNVERSION "225"
 
 // Protocol version used in demos.
 // Bump it if you change existing DEM_ commands or add new ones.
@@ -83,7 +83,7 @@ const char *GetVersionString();
 
 // Use 4500 as the base git save version, since it's higher than the
 // SVN revision ever got.
-#define SAVEVER 4557
+#define SAVEVER 4558
 
 // This is so that derivates can use the same savegame versions without worrying about engine compatibility
 #define GAMESIG "LZDOOM"

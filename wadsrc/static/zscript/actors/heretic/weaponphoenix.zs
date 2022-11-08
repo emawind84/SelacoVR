@@ -51,13 +51,15 @@ class PhoenixRod : Weapon
 			return;
 		}
 
-		Weapon weapon = player.ReadyWeapon;
+		int alflags = 0;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon != null)
 		{
+			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
 				return;
 		}
-		SpawnPlayerMissile ("PhoenixFX1");
+		SpawnPlayerMissile ("PhoenixFX1", aimflags: alflags);
 		Thrust(4, angle + 180);
 	}
 
@@ -96,8 +98,17 @@ class PhoenixRodPowered : PhoenixRod
 		DepleteAmmo (bAltFire);
 		Owner.player.refire = 0;
 		Owner.A_StopSound (CHAN_WEAPON);
-		Owner.player.ReadyWeapon = SisterWeapon;
-		Owner.player.SetPsprite(PSP_WEAPON, SisterWeapon.GetReadyState());
+		SisterWeapon.bOffhandWeapon = self.bOffhandWeapon;
+		if (SisterWeapon.bOffhandWeapon)
+		{
+			Owner.player.OffhandWeapon = SisterWeapon;
+			Owner.player.SetPsprite(PSP_OFFHANDWEAPON, SisterWeapon.GetReadyState());
+		}
+		else
+		{
+			Owner.player.ReadyWeapon = SisterWeapon;
+			Owner.player.SetPsprite(PSP_WEAPON, SisterWeapon.GetReadyState());
+		}
 	}
 
 	//----------------------------------------------------------------------------
@@ -110,7 +121,12 @@ class PhoenixRodPowered : PhoenixRod
 	{
 		if (player != null)
 		{
-			PhoenixRodPowered flamethrower = PhoenixRodPowered(player.ReadyWeapon);
+			Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weapon == null)
+			{
+				return;
+			}
+			PhoenixRodPowered flamethrower = PhoenixRodPowered(weapon);
 			if (flamethrower != null)
 			{
 				flamethrower.FlameCount = FLAME_THROWER_TICS;
@@ -133,13 +149,21 @@ class PhoenixRodPowered : PhoenixRod
 			return;
 		}
 
-		PhoenixRodPowered flamethrower = PhoenixRodPowered(player.ReadyWeapon);
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == null)
+		{
+			return;
+		}
+
+		int hand = weapon.bOffhandWeapon ? 1 : 0;
+		int snd_channel = weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+		PhoenixRodPowered flamethrower = PhoenixRodPowered(weapon);
 		
 		if (flamethrower == null || --flamethrower.FlameCount == 0)
 		{ // Out of flame
-			player.SetPsprite(PSP_WEAPON, flamethrower.FindState("Powerdown"));
+			player.SetPsprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON, flamethrower.FindState("Powerdown"));
 			player.refire = 0;
-			A_StopSound (CHAN_WEAPON);
+			A_StopSound (snd_channel);
 			return;
 		}
 
@@ -152,10 +176,20 @@ class PhoenixRodPowered : PhoenixRod
 		let directionPitch = pitch;
 		if (player.mo.OverrideAttackPosDir)
 		{
-			spawnpos = player.mo.AttackPos;
-			let dir = player.mo.AttackDir(self, angle, pitch);
-			directionAngle = dir.x;
-			directionPitch = dir.y;
+			if (hand == 1)
+			{
+				spawnpos = player.mo.OffhandPos;
+				let dir = player.mo.OffhandDir(self, angle, pitch);
+				directionAngle = dir.x;
+				directionPitch = dir.y;
+			}
+			else
+			{
+				spawnpos = player.mo.AttackPos;
+				let dir = player.mo.AttackDir(self, angle, pitch);
+				directionAngle = dir.x;
+				directionPitch = dir.y;
+			}
 			spawnpos.X += xo;
 			spawnpos.Y += yo;
 			slope = -clamp(tan(directionPitch), -5, 5);
@@ -173,7 +207,7 @@ class PhoenixRodPowered : PhoenixRod
 		}
 		if (!player.refire)
 		{
-			A_StartSound("weapons/phoenixpowshoot", CHAN_WEAPON, CHANF_LOOPING);
+			A_StartSound("weapons/phoenixpowshoot", snd_channel, CHANF_LOOPING);
 		}	
 	}
 
@@ -189,12 +223,14 @@ class PhoenixRodPowered : PhoenixRod
 		{
 			return;
 		}
-		A_StopSound (CHAN_WEAPON);
-		Weapon weapon = player.ReadyWeapon;
+		int snd_channel = CHAN_WEAPON;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon != null)
 		{
+			snd_channel = weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
 			weapon.DepleteAmmo (weapon.bAltFire);
 		}
+		A_StopSound (snd_channel);
 	}
 
 	

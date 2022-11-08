@@ -209,7 +209,8 @@ FButtonStatus Button_Mlook, Button_Klook, Button_Use, Button_AltAttack,
 	Button_Zoom, Button_Reload,
 	Button_User1, Button_User2, Button_User3, Button_User4,
 	Button_AM_PanLeft, Button_AM_PanRight, Button_AM_PanDown, Button_AM_PanUp,
-	Button_AM_ZoomIn, Button_AM_ZoomOut;
+	Button_AM_ZoomIn, Button_AM_ZoomOut,
+	Button_OH_Attack, Button_OH_AltAttack;
 
 bool ParsingKeyConf, UnsafeExecutionContext;
 
@@ -228,6 +229,7 @@ FActionMap ActionMaps[] =
 	{ &Button_Right,		0x201f1c55, "right" },
 	{ &Button_Zoom,			0x20ccc4d5, "zoom" },
 	{ &Button_Back,			0x23a99cd7, "back" },
+	{ &Button_OH_Attack,	0x37abf1cf, "oh_attack" },
 	{ &Button_AM_ZoomIn,	0x41df90c2, "am_zoomin"},
 	{ &Button_Reload,		0x426b69e7, "reload" },
 	{ &Button_LookDown,		0x4463f43a, "lookdown" },
@@ -246,6 +248,7 @@ FActionMap ActionMaps[] =
 	{ &Button_Mlook,		0xa2b62d8b, "mlook" },
 	{ &Button_Crouch,		0xab2c3e71, "crouch" },
 	{ &Button_Left,			0xb000b483, "left" },
+	{ &Button_OH_AltAttack,	0xb418e099, "oh_altatk" },
 	{ &Button_LookUp,		0xb62b1e49, "lookup" },
 	{ &Button_User3,		0xb6f8fe92, "user3" },
 	{ &Button_Strafe,		0xb7e6a54b, "strafe" },

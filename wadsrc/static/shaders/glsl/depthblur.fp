@@ -28,7 +28,7 @@ void ProcessSample(float ao, float z, float r, float centerDepth, inout float to
 
 void ProcessRadius(vec2 deltaUV, float centerDepth, inout float totalAO, inout float totalW)
 {
-	for (float r = 1; r <= KERNEL_RADIUS; r += 1.0)
+	for (float r = 1.0; r <= KERNEL_RADIUS; r += 1.0)
 	{
 		vec2 uv = r * deltaUV + TexCoord;
 		vec2 aoZ = texture(AODepthTexture, uv).xy;

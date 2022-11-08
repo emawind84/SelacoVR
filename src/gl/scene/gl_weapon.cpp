@@ -50,6 +50,8 @@
 #include "gl/renderer/gl_quaddrawer.h"
 #include "gl/stereo3d/gl_stereo3d.h"
 
+#include <QzDoom/VrCommon.h>
+
 EXTERN_CVAR (Bool, r_drawplayersprites)
 EXTERN_CVAR(Float, transsouls)
 EXTERN_CVAR(Int, gl_fuzztype)
@@ -124,7 +126,6 @@ void GLSceneDrawer::DrawPSprite (player_t * player,DPSprite *psp, float sx, floa
 	// killough 12/98: fix psprite positioning problem
 	ftexturemid = 100.f - sy - r.top - psp->GetYAdjust(screenblocks >= 11);
 
-	AActor * wi=player->ReadyWeapon;
 	scale = (SCREENHEIGHT*vw) / (SCREENWIDTH * 200.0f);
 	y1 = viewwindowy + vh / 2 - (ftexturemid * scale);
 	y2 = y1 + (r.height * scale) + 1;
@@ -246,12 +247,12 @@ void GLSceneDrawer::DrawPSprite (player_t * player,DPSprite *psp, float sx, floa
 		qd.Render(GL_TRIANGLE_STRIP);
 	}
 
-	if (psp->GetID() == PSP_WEAPON && s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesCrossed())
+	if ((psp->GetID() == PSP_WEAPON || psp->GetID() == PSP_OFFHANDWEAPON) && s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesCrossed())
 	{
 		if (r_PlayerSprites3DMode == BACK_ONLY)
 			return;
 
-		FState* spawn = wi->FindState(NAME_Spawn);
+		FState* spawn = psp->GetCaller()->FindState(NAME_Spawn);
 
 		lump = sprites[spawn->sprite].GetSpriteFrame(0, 0, 0., &mirror);
 		if (!lump.isValid()) return;
@@ -375,13 +376,10 @@ void GLSceneDrawer::SetupWeaponLight()
 		if (psp->GetState() != nullptr)
 		{
 			// set the lighting parameters
-			if (gl_lights && GLRenderer->mLightCount && FixedColormap == CM_DEFAULT && gl_light_sprites)
+			if (gl_lights && GLRenderer->mLightCount && FixedColormap == CM_DEFAULT && gl_light_weapons)
 			{
-				FSpriteModelFrame *smf = playermo->player->ReadyWeapon ? FindModelFrame(playermo->player->ReadyWeapon->GetClass(), psp->GetState()->sprite, psp->GetState()->GetFrame(), false) : nullptr;
-				if (smf)
-				{
-					weapondynlightindex[psp] = gl_SetDynModelLight(playermo, -1);
-				}
+				FSpriteModelFrame *smf = psp->GetCaller() ? FindModelFrame(psp->GetCaller()->GetClass(), psp->GetSprite(), psp->GetFrame(), false) : nullptr;
+				weapondynlightindex[psp] = smf ? gl_SetDynModelLight(playermo, -1) : 0;
 			}
 		}
 	}
@@ -393,7 +391,7 @@ void GLSceneDrawer::SetupWeaponLight()
 //
 //==========================================================================
 
-void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
+void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector)
 {
 	bool brightflash = false;
 	unsigned int i;
@@ -414,35 +412,9 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 		viewsector == nullptr)
 		return;
 
-	if (!hudModelStep)
-	{
-		s3d::Stereo3DMode::getCurrentMode().AdjustPlayerSprites();
-	}
-
 	float bobx, boby, wx, wy;
-	DPSprite *weapon;
 
 	P_BobWeapon(camera->player, &bobx, &boby, r_viewpoint.TicFrac);
-
-	// Interpolate the main weapon layer once so as to be able to add it to other layers.
-	if ((weapon = camera->player->FindPSprite(PSP_WEAPON)) != nullptr)
-	{
-		if (weapon->firstTic)
-		{
-			wx = weapon->x;
-			wy = weapon->y;
-		}
-		else
-		{
-			wx = weapon->oldx + (weapon->x - weapon->oldx) * r_viewpoint.TicFrac;
-			wy = weapon->oldy + (weapon->y - weapon->oldy) * r_viewpoint.TicFrac;
-		}
-	}
-	else
-	{
-		wx = 0;
-		wy = 0;
-	}
 
 	if (FixedColormap) 
 	{
@@ -522,8 +494,15 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 	int oldlightmode = glset.lightmode;
 	if (glset.lightmode >= 8) glset.lightmode = 2;
 
+	DPSprite *readyWeaponPsp = camera->player->FindPSprite(PSP_WEAPON);
+	DPSprite *offhandWeaponPsp = camera->player->FindPSprite(PSP_OFFHANDWEAPON);
+
 	for(DPSprite *psp = player->psprites; psp != nullptr && psp->GetID() < PSP_TARGETCENTER; psp = psp->GetNext())
 	{
+		if (weaponStabilised && psp->GetCaller() == player->OffhandWeapon)
+		{
+			continue;
+		}
 		auto rs = psp->GetRenderStyle(playermo->RenderStyle, playermo->Alpha);
 
 		visstyle_t vis;
@@ -626,9 +605,9 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 			}
 			else
 			{
-				if (gl_lights && GLRenderer->mLightCount && FixedColormap == CM_DEFAULT && gl_light_sprites)
+				if (gl_lights && GLRenderer->mLightCount && FixedColormap == CM_DEFAULT && gl_light_weapons)
 				{
-					FSpriteModelFrame *smf = playermo->player->ReadyWeapon ? FindModelFrame(playermo->player->ReadyWeapon->GetClass(), psp->GetSprite(), psp->GetState()->GetFrame(), false) : nullptr;
+					FSpriteModelFrame *smf = psp->GetCaller() ? FindModelFrame(psp->GetCaller()->GetClass(), psp->GetSprite(), psp->GetState()->GetFrame(), false) : nullptr;
 					if (smf)
 						gl_SetDynModelLight(playermo, weapondynlightindex[psp]);
 					else
@@ -660,27 +639,44 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 				sy += boby;
 			}
 
-			if (psp->Flags & PSPF_ADDWEAPON && psp->GetID() != PSP_WEAPON)
+			if (psp->Flags & PSPF_ADDWEAPON && !(psp->GetID() == PSP_WEAPON || psp->GetID() == PSP_OFFHANDWEAPON))
 			{
+				// Interpolate the main weapon layer once so as to be able to add it to other layers.
+				DPSprite *weapon = psp->GetCaller() == player->ReadyWeapon ? readyWeaponPsp : offhandWeaponPsp;
+				if (weapon != nullptr)
+				{
+					if (weapon->firstTic)
+					{
+						wx = weapon->x;
+						wy = weapon->y;
+					}
+					else
+					{
+						wx = weapon->oldx + (weapon->x - weapon->oldx) * r_viewpoint.TicFrac;
+						wy = weapon->oldy + (weapon->y - weapon->oldy) * r_viewpoint.TicFrac;
+					}
+				}
+				else
+				{
+					wx = 0.0001f;
+					wy = 0.0001f;
+				}
 				sx += wx;
 				sy += wy;
 			}
 
-
+			auto *smf = psp->GetCaller() ? FindModelFrame(psp->GetCaller()->GetClass(), psp->GetSprite(), psp->GetFrame(), false) : nullptr;
+			bool hudModelStep = smf != nullptr;
+			if (!hudModelStep) s3d::Stereo3DMode::getCurrentMode().AdjustPlayerSprites(psp->GetCaller() == player->OffhandWeapon);
 			DrawPSprite(player, psp, sx, sy, hudModelStep, OverrideShader, !!(RenderStyle.Flags & STYLEF_RedIsAlpha), r_viewpoint.TicFrac);
+			if (!hudModelStep) s3d::Stereo3DMode::getCurrentMode().UnAdjustPlayerSprites();
 		}
 	}
-
 	gl_RenderState.SetObjectColor(0xffffffff);
 	gl_RenderState.SetAddColor(0);
 	gl_RenderState.SetDynLight(0, 0, 0);
 	gl_RenderState.EnableBrightmap(false);
 	glset.lightmode = oldlightmode;
-
-	if (!hudModelStep)
-	{
-		s3d::Stereo3DMode::getCurrentMode().UnAdjustPlayerSprites();
-	}
 }
 
 //==========================================================================

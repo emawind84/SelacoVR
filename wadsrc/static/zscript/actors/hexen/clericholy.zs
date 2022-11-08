@@ -156,20 +156,24 @@ class CWeapWraithverge : ClericWeapon
 		{
 			return;
 		}
-		Weapon weapon = player.ReadyWeapon;
+		int alflags = 0;
+		int snd_channel = CHAN_WEAPON;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon != null)
 		{
+			snd_channel = weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
 				return;
 		}
-		Actor missile = SpawnPlayerMissile ("HolyMissile", angle, pLineTarget:t);
+		Actor missile = SpawnPlayerMissile ("HolyMissile", angle, pLineTarget:t, aimflags: alflags);
 		if (missile != null && !t.unlinked)
 		{
 			missile.tracer = t.linetarget;
 		}
 
 		invoker.CHolyCount = 3;
-		A_StartSound ("HolySymbolFire", CHAN_WEAPON);
+		A_StartSound ("HolySymbolFire", snd_channel);
 	}
 
 	//============================================================================

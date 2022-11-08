@@ -47,6 +47,7 @@
 #include "vm.h"
 #include "sbar.h"
 
+#include <QzDoom/VrCommon.h>
 
 // MACROS ------------------------------------------------------------------
 
@@ -256,10 +257,10 @@ DEFINE_ACTION_FUNCTION(_PlayerInfo, FindPSprite)	// the underscore is needed to 
 //
 //------------------------------------------------------------------------
 
-void P_SetPsprite(player_t *player, PSPLayers id, FState *state, bool pending)
+void P_SetPsprite(player_t *player, PSPLayers id, FState *state, bool pending, AActor *newcaller)
 {
 	if (player == nullptr) return;
-	auto psp = player->GetPSprite(id);
+	auto psp = player->GetPSprite(id, newcaller);
 	if (psp) psp->SetState(state, pending);
 }
 
@@ -269,16 +270,17 @@ DEFINE_ACTION_FUNCTION(_PlayerInfo, SetPSprite)	// the underscore is needed to g
 	PARAM_INT(id);
 	PARAM_POINTER(state, FState);
 	PARAM_BOOL(pending);
-	P_SetPsprite(self, (PSPLayers)id, state, pending);
+	PARAM_POINTER(newcaller, AActor);
+	P_SetPsprite(self, (PSPLayers)id, state, pending, newcaller);
 	return 0;
 }
 
-DPSprite *player_t::GetPSprite(PSPLayers layer)
+DPSprite *player_t::GetPSprite(PSPLayers layer, AActor *newcaller)
 {
 	AActor *oldcaller = nullptr;
-	AActor *newcaller = nullptr;
 
-	if (layer >= PSP_TARGETCENTER)
+	if (newcaller != nullptr) {}
+	else if (layer >= PSP_TARGETCENTER)
 	{
 		if (mo != nullptr)
 		{
@@ -289,13 +291,17 @@ DPSprite *player_t::GetPSprite(PSPLayers layer)
 	{
 		newcaller = mo;
 	}
+	else if (layer == PSP_OFFHANDWEAPON)
+	{
+		newcaller = OffhandWeapon;
+	}
 	else
 	{
 		newcaller = ReadyWeapon;
 	}
 
-	if (newcaller == nullptr) return nullptr; // Error case was not handled properly. This function cannot give a guarantee to always succeed!
-
+	if (newcaller == nullptr || layer == PSP_CALLERID) return nullptr; // Error case was not handled properly. This function cannot give a guarantee to always succeed!
+	
 	DPSprite *pspr = FindPSprite(layer);
 	if (pspr == nullptr)
 	{
@@ -456,7 +462,17 @@ void DPSprite::SetState(FState *newstate, bool pending)
 	if (ID == PSP_WEAPON)
 	{ // A_WeaponReady will re-set these as needed
 		Owner->WeaponState &= ~(WF_WEAPONREADY | WF_WEAPONREADYALT | WF_WEAPONBOBBING | WF_WEAPONSWITCHOK | WF_WEAPONRELOADOK | WF_WEAPONZOOMOK |
-								WF_USER1OK | WF_USER2OK | WF_USER3OK | WF_USER4OK);
+								WF_USER1OK | WF_USER2OK | WF_USER3OK | WF_USER4OK | WF_TWOHANDSTABILIZED);
+	}
+	if (ID == PSP_OFFHANDWEAPON)
+	{
+		Owner->WeaponState &= ~(WF_OFFHANDREADY | WF_OFFHANDREADYALT | WF_OFFHANDBOBBING | WF_OFFHANDSWITCHOK | WF_WEAPONRELOADOK | WF_WEAPONZOOMOK |
+								WF_USER1OK | WF_USER2OK | WF_USER3OK | WF_USER4OK | WF_TWOHANDSTABILIZED);
+	}
+
+	if (weaponStabilised)
+	{
+		Owner->WeaponState |= WF_TWOHANDSTABILIZED;
 	}
 
 	processPending = pending;
@@ -505,7 +521,7 @@ void DPSprite::SetState(FState *newstate, bool pending)
 
 		if (Flags & PSPF_CVARFAST)
 		{
-			if (sv_fastweapons == 2 && ID == PSP_WEAPON)
+			if (sv_fastweapons == 2 && (ID == PSP_WEAPON || ID == PSP_OFFHANDWEAPON))
 				Tics = newstate->ActionFunc == nullptr ? 0 : 1;
 			else if (sv_fastweapons == 3)
 				Tics = (newstate->GetTics() != 0);
@@ -606,16 +622,16 @@ void P_BringUpWeapon (player_t *player)
 
 void P_BobWeapon (player_t *player, float *x, float *y, double ticfrac)
 {
-	IFVIRTUALPTRNAME(player->mo, NAME_PlayerPawn, BobWeapon)
-	{
-		VMValue param[] = { player->mo, ticfrac };
-		DVector2 result;
-		VMReturn ret(&result);
-		VMCall(func, param, 2, &ret, 1);
-		*x = (float)result.X;
-		*y = (float)result.Y;
-		return;
-	}
+	// IFVIRTUALPTRNAME(player->mo, NAME_PlayerPawn, BobWeapon)
+	// {
+	// 	VMValue param[] = { player->mo, ticfrac };
+	// 	DVector2 result;
+	// 	VMReturn ret(&result);
+	// 	VMCall(func, param, 2, &ret, 1);
+	// 	*x = (float)result.X;
+	// 	*y = (float)result.Y;
+	// 	return;
+	// }
 	*x = *y = 0;
 }
 
@@ -627,14 +643,18 @@ void P_BobWeapon (player_t *player, float *x, float *y, double ticfrac)
 //
 //---------------------------------------------------------------------------
 
-static void P_CheckWeaponButtons (player_t *player)
+static void P_CheckWeaponButtons (player_t *player, int hand = 0)
 {
 	if (player->Bot == nullptr && bot_observer)
 	{
 		return;
 	}
-	auto weapon = player->ReadyWeapon;
+	auto weapon = hand ? player->OffhandWeapon : player->ReadyWeapon;
 	if (weapon == nullptr)
+	{
+		return;
+	}
+	if (hand == 1 && player->WeaponState & WF_TWOHANDSTABILIZED)
 	{
 		return;
 	}
@@ -651,7 +671,7 @@ static void P_CheckWeaponButtons (player_t *player)
 			// state, the weapon won't disappear. ;)
 			if (state != nullptr)
 			{
-				P_SetPsprite(player, PSP_WEAPON, state);
+				P_SetPsprite(player, hand ? PSP_OFFHANDWEAPON : PSP_WEAPON, state);
 				return;
 			}
 		}
@@ -661,7 +681,8 @@ static void P_CheckWeaponButtons (player_t *player)
 DEFINE_ACTION_FUNCTION(APlayerPawn, CheckWeaponButtons)
 {
 	PARAM_SELF_PROLOGUE(AActor);
-	P_CheckWeaponButtons(self->player);
+	PARAM_INT(hand)
+	P_CheckWeaponButtons(self->player, hand);
 	return 0;
 }
 
@@ -863,11 +884,15 @@ DEFINE_ACTION_FUNCTION(AActor, A_OverlayOffset)
 
 DEFINE_ACTION_FUNCTION(AActor, A_WeaponOffset)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_FLOAT(wx)	
 	PARAM_FLOAT(wy)	
 	PARAM_INT(flags)
-	A_OverlayOffset(self, PSP_WEAPON, wx, wy, flags);
+
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		A_OverlayOffset(self, stateinfo->mPSPIndex, wx, wy, flags);
+	}
 	return 0;
 }
 
@@ -1151,7 +1176,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_ClearOverlays)
 		{
 			if (id >= PSP_TARGETCENTER)
 				break;
-			else if (id == PSP_STRIFEHANDS || id == PSP_WEAPON || id == PSP_FLASH)
+			else if (id == PSP_STRIFEHANDS || id == PSP_WEAPON || id == PSP_OFFHANDWEAPON || id == PSP_FLASH)
 				continue;
 		}
 
@@ -1221,8 +1246,18 @@ void P_SetupPsprites(player_t *player, bool startweaponup)
 	player->DestroyPSprites();
 
 	// Spawn the ready weapon
-	player->PendingWeapon = !startweaponup ? player->ReadyWeapon : WP_NOCHANGE;
-	P_BringUpWeapon (player);
+	if (player->ReadyWeapon != nullptr)
+	{
+		player->PendingWeapon = !startweaponup ? player->ReadyWeapon : WP_NOCHANGE;
+		P_BringUpWeapon (player);
+	}
+
+	// Spawn the offhand weapon
+	if (player->OffhandWeapon != nullptr)
+	{
+		player->PendingWeapon = !startweaponup ? player->OffhandWeapon : WP_NOCHANGE;
+		P_BringUpWeapon (player);
+	}
 }
 
 //------------------------------------------------------------------------
@@ -1301,13 +1336,13 @@ void P_SetSafeFlash(AActor *weapon, player_t *player, FState *flashstate, int in
 				if (cls->OwnsState(flashstate + index))
 				{
 					// we're ok so set the state
-					P_SetPsprite(player, PSP_FLASH, flashstate + index, true);
+					P_SetPsprite(player, PSP_FLASH, flashstate + index, true, weapon);
 					return;
 				}
 				else
 				{
 					// oh, no! The state is beyond the end of the state table so use the original flash state.
-					P_SetPsprite(player, PSP_FLASH, flashstate, true);
+					P_SetPsprite(player, PSP_FLASH, flashstate, true, weapon);
 					return;
 				}
 			}
@@ -1324,7 +1359,7 @@ void P_SetSafeFlash(AActor *weapon, player_t *player, FState *flashstate, int in
 			index = 0;
 		}
 	}
-	P_SetPsprite(player, PSP_FLASH, flashstate + index, true);
+	P_SetPsprite(player, PSP_FLASH, flashstate + index, true, weapon);
 }
 
 DEFINE_ACTION_FUNCTION(_PlayerInfo, SetSafeFlash)

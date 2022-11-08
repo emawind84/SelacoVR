@@ -66,24 +66,28 @@ extend class StateProvider
 		{
 			ang += Random2[GunShot]() * (5.625 / 256);
 		}
-
-		LineAttack(ang, PLAYERMISSILERANGE, pitch, damage, 'Hitscan', pufftype);
+		int laflags = invoker == player.OffhandWeapon ? LAF_ISOFFHAND : 0;
+		LineAttack(ang, PLAYERMISSILERANGE, pitch, damage, 'Hitscan', pufftype, laflags);
 	}
 	
 	//===========================================================================
 	action void A_FirePistol()
 	{
 		bool accurate;
+		int alflags = 0;
+		int snd_channel = CHAN_WEAPON;
 
 		if (player != null)
 		{
-			Weapon weap = player.ReadyWeapon;
+			Weapon weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 			if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 			{
+				snd_channel = weap.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+				alflags |= weap.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 				if (!weap.DepleteAmmo (weap.bAltFire, true, 1))
 					return;
 
-				player.SetPsprite(PSP_FLASH, weap.FindState('Flash'), true);
+				player.SetPsprite(PSP_FLASH, weap.FindState('Flash'), true, weap);
 			}
 			player.mo.PlayAttacking2 ();
 
@@ -94,7 +98,7 @@ extend class StateProvider
 			accurate = true;
 		}
 
-		A_StartSound ("weapons/pistol", CHAN_WEAPON);
-		GunShot (accurate, "BulletPuff", BulletSlope ());
+		A_StartSound ("weapons/pistol", snd_channel);
+		GunShot (accurate, "BulletPuff", BulletSlope (aimflags: alflags));
 	}
 }

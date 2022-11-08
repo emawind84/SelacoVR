@@ -18,24 +18,8 @@ mwheelright invnext
 enter invuse
 - sizedown
 = sizeup
-ctrl +attack
-alt +strafe
-shift +speed
+rthumb +speed
 space +use
-rightarrow +right
-leftarrow +left
-uparrow +forward
-downarrow +back
-, +moveleft
-. +moveright
-w +forward
-s +back
-a +moveleft
-d +moveright
-mouse1 +attack
-mouse2 +strafe
-mouse3 +forward
-mouse4 +speed
 capslock "toggle cl_run"
 f1 menu_help
 f2 menu_save
@@ -56,6 +40,12 @@ t messagemode
 f12 spynext
 mwheeldown weapnext
 mwheelup weapprev
+axis8plus "weapprev 1"
+axis8minus "weapnext 1"
+axis7plus "switchhand 0"
+axis7minus "switchhand 1"
+alt +oh_altatk
+shift +oh_attack
 
 // Originally just for Heretic, Hexen, and Strife.
 // I can't see why they shouldn't be for Doom or Chex either.
@@ -66,19 +56,11 @@ ins +lookup
 del +lookdown
 end centerview
 
-// Generic joystick buttons
-joy1 +attack
-joy2 +strafe
-joy3 +speed
-joy4 +use
-
 // Xbox 360 / PS2 controllers
 pad_a +use
 pad_b +jump
 rtrigger +attack
 ltrigger +altattack
-lshoulder weapprev
-rshoulder weapnext
 dpadleft invprev
 dpadright invnext
 dpaddown invuse

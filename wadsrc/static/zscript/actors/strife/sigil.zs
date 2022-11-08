@@ -134,7 +134,8 @@ class Sigil : Weapon
 				Icon = item.Icon;
 				// If the player is holding the Sigil right now, drop it and bring
 				// it back with the new piece(s) in view.
-				if (Owner.player != null && Owner.player.ReadyWeapon == self)
+				if ((Owner.player != null) && 
+					(Owner.player.ReadyWeapon == self || Owner.player.OffhandWeapon == self))
 				{
 					DownPieces = health;
 					Owner.player.PendingWeapon = self;
@@ -201,7 +202,13 @@ class Sigil : Weapon
 		{
 			return;
 		}
-		PSprite pspr = player.GetPSprite(PSP_WEAPON);
+		int hand = 0;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon != null)
+		{
+			hand = weapon.bOffhandWeapon ? 1 : 0;
+		}
+		PSprite pspr = player.GetPSprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON);
 		if (pspr) pspr.SetState(pspr.CurState + invoker.health);
 		invoker.downpieces = 0;
 	}
@@ -222,7 +229,13 @@ class Sigil : Weapon
 		{
 			return;
 		}
-		PSprite pspr = player.GetPSprite(PSP_WEAPON);
+		int hand = 0;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon != null)
+		{
+			hand = weapon.bOffhandWeapon ? 1 : 0;
+		}
+		PSprite pspr = player.GetPSprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON);
 		int pieces = invoker.downpieces;
 		if (pieces < 1 || pieces > 5) pieces = invoker.health;
 		if (pspr) pspr.SetState(pspr.CurState + pieces);
@@ -242,7 +255,14 @@ class Sigil : Weapon
 		{
 			return;
 		}
-		PSprite pspr = player.GetPSprite(PSP_WEAPON);
+		int hand = 0;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon != null)
+		{
+			hand = weapon.bOffhandWeapon ? 1 : 0;
+		}
+
+		PSprite pspr = player.GetPSprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON);
 		if (pspr) pspr.SetState(pspr.CurState + (4 * invoker.health - 3));
 	}
 
@@ -254,11 +274,17 @@ class Sigil : Weapon
 
 	action void A_SigilCharge ()
 	{
-		A_StartSound ("weapons/sigilcharge", CHAN_WEAPON);
+		int snd_channel = CHAN_WEAPON;
 		if (player != null)
 		{
 			player.extralight = 2;
+			Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weapon != null)
+			{
+				snd_channel = weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+			}
 		}
+		A_StartSound ("weapons/sigilcharge", snd_channel);
 	}
 
 	//============================================================================
@@ -272,13 +298,18 @@ class Sigil : Weapon
 		Actor spot = null;
 		FTranslatedLineTarget t;
 
-		if (player == null || player.ReadyWeapon == null)
+		if (player == null)
+			return;
+
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == null)
 			return;
 
 		DamageMobj (self, null, 1*4, 'Sigil', DMG_NO_ARMOR);
-		A_StartSound ("weapons/sigilcharge", CHAN_WEAPON);
+		A_StartSound ("weapons/sigilcharge", weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON);
 
-		BulletSlope (t, ALF_PORTALRESTRICT);
+		int alflags = ALF_PORTALRESTRICT | (weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0);
+		BulletSlope (t, alflags);
 		if (t.linetarget != null)
 		{
 			spot = Spawn("SpectralLightningSpot", (t.linetarget.pos.xy, t.linetarget.floorz), ALLOW_REPLACE);
@@ -310,12 +341,18 @@ class Sigil : Weapon
 
 	action void A_FireSigil2 ()
 	{
-		if (player == null || player.ReadyWeapon == null)
+		if (player == null)
+			return;
+
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == null)
 			return;
 
 		DamageMobj (self, null, 2*4, 'Sigil', DMG_NO_ARMOR);
-		A_StartSound ("weapons/sigilcharge", CHAN_WEAPON);
-		SpawnPlayerMissile ("SpectralLightningH1");
+		A_StartSound ("weapons/sigilcharge", weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON);
+
+		int alflags = weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
+		SpawnPlayerMissile ("SpectralLightningH1", aimflags: alflags);
 	}
 
 	//============================================================================
@@ -326,11 +363,15 @@ class Sigil : Weapon
 
 	action void A_FireSigil3 ()
 	{
-		if (player == null || player.ReadyWeapon == null)
+		if (player == null)
+			return;
+
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == null)
 			return;
 
 		DamageMobj (self, null, 3*4, 'Sigil', DMG_NO_ARMOR);
-		A_StartSound ("weapons/sigilcharge", CHAN_WEAPON);
+		A_StartSound ("weapons/sigilcharge", weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON);
 
 		angle -= 90.;
 		for (int i = 0; i < 20; ++i)
@@ -355,16 +396,21 @@ class Sigil : Weapon
 	{
 		FTranslatedLineTarget t;
 		
-		if (player == null || player.ReadyWeapon == null)
+		if (player == null)
+			return;
+
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == null)
 			return;
 
 		DamageMobj (self, null, 4*4, 'Sigil', DMG_NO_ARMOR);
-		A_StartSound ("weapons/sigilcharge", CHAN_WEAPON);
+		A_StartSound ("weapons/sigilcharge", weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON);
 
-		BulletSlope (t, ALF_PORTALRESTRICT);
+		int alflags = ALF_PORTALRESTRICT | (weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0);
+		BulletSlope (t, alflags);
 		if (t.linetarget != null)
 		{
-			Actor spot = SpawnPlayerMissile ("SpectralLightningBigV1", angle, pLineTarget: t, aimFlags: ALF_PORTALRESTRICT);
+			Actor spot = SpawnPlayerMissile ("SpectralLightningBigV1", angle, pLineTarget: t, aimFlags: alflags);
 			if (spot != null)
 			{
 				spot.tracer = t.linetarget;
@@ -372,7 +418,7 @@ class Sigil : Weapon
 		}
 		else
 		{
-			Actor spot = SpawnPlayerMissile ("SpectralLightningBigV1");
+			Actor spot = SpawnPlayerMissile ("SpectralLightningBigV1", aimFlags: alflags);
 			if (spot != null)
 			{
 				spot.VelFromAngle(spot.Speed, angle);
@@ -388,13 +434,18 @@ class Sigil : Weapon
 
 	action void A_FireSigil5 ()
 	{
-		if (player == null || player.ReadyWeapon == null)
+		if (player == null)
+			return;
+		
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == null)
 			return;
 
 		DamageMobj (self, null, 5*4, 'Sigil', DMG_NO_ARMOR);
-		A_StartSound ("weapons/sigilcharge", CHAN_WEAPON);
+		A_StartSound ("weapons/sigilcharge", weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON);
 
-		SpawnPlayerMissile ("SpectralLightningBigBall1");
+		int alflags = weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
+		SpawnPlayerMissile ("SpectralLightningBigBall1", aimflags: alflags);
 	}
 
 	//============================================================================
@@ -451,7 +502,8 @@ class Sigil : Weapon
 			};
 			sigl.Icon = GetDefaultByType(sigils[clamp(sigl.health, 1, 5)-1]).Icon;
 			// If the player has the Sigil out, drop it and bring it back up.
-			if (sigl.Owner.player != null && sigl.Owner.player.ReadyWeapon == sigl)
+			if ((sigl.Owner.player != null) && 
+				(sigl.Owner.player.ReadyWeapon == sigl || sigl.Owner.player.OffhandWeapon == sigl))
 			{
 				sigl.Owner.player.PendingWeapon = sigl;
 				sigl.DownPieces = sigl.health - 1;

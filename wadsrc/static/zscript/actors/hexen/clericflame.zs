@@ -55,14 +55,18 @@ class CWeapFlame : ClericWeapon
 			return;
 		}
 
-		Weapon weapon = player.ReadyWeapon;
+		int alflags = 0;
+		int snd_channel = CHAN_WEAPON;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon != null)
 		{
+			snd_channel = weapon.bOffhandWeapon ? CHAN_OFFWEAPON : CHAN_WEAPON;
+			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
 				return;
 		}
-		SpawnPlayerMissile ("CFlameMissile");
-		A_StartSound ("ClericFlameFire", CHAN_WEAPON);
+		SpawnPlayerMissile ("CFlameMissile", aimflags: alflags);
+		A_StartSound ("ClericFlameFire", snd_channel);
 	}
 }
 

@@ -51,10 +51,13 @@ class MiniMissileLauncher : StrifeWeapon
 		{
 			return;
 		}
-
-		Weapon weapon = player.ReadyWeapon;
+		int hand = 0;
+		int alflags = 0;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon != null)
 		{
+			hand = weapon.bOffhandWeapon ? 1 : 0;
+			alflags |= hand ? ALF_ISOFFHAND : 0;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
 				return;
 		}
@@ -62,7 +65,7 @@ class MiniMissileLauncher : StrifeWeapon
 		double savedangle = angle;
 		angle += Random2[MiniMissile]() * (11.25 / 256) * AccuracyFactor();
 		player.mo.PlayAttacking2 ();
-		SpawnPlayerMissile ("MiniMissile");
+		SpawnPlayerMissile ("MiniMissile", aimflags: alflags);
 		angle = savedangle;
 	}
 }

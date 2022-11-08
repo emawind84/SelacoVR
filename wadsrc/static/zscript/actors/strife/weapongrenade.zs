@@ -57,19 +57,21 @@ class StrifeGrenadeLauncher : StrifeWeapon
 			return;
 		}
 
-		Weapon weapon = player.ReadyWeapon;
+		int alflags = 0;
+		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon != null)
 		{
+			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
 				return;
 
-			player.SetPsprite (PSP_FLASH, weapon.FindState(flash), true);
+			player.SetPsprite (PSP_FLASH, weapon.FindState(flash), true, weapon);
 		}
 
 		if (grenadetype != null)
 		{
 			AddZ(32);
-			Actor grenade = SpawnSubMissile (grenadetype, self);
+			Actor grenade = SpawnSubMissile (grenadetype, self, alflags);
 			AddZ(-32);
 			if (grenade == null)
 				return;

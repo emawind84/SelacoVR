@@ -126,13 +126,15 @@ extend class StateProvider
 
 	action void A_FirePlasma()
 	{
+		int hand = 0;
 		if (player == null)
 		{
 			return;
 		}
-		Weapon weap = player.ReadyWeapon;
+		Weapon weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
+			hand = weap.bOffhandWeapon ? 1 : 0;
 			if (!weap.DepleteAmmo (weap.bAltFire, true, 1))
 				return;
 			
@@ -144,6 +146,6 @@ extend class StateProvider
 			
 		}
 		
-		SpawnPlayerMissile ("PlasmaBall");
+		SpawnPlayerMissile ("PlasmaBall", aimflags:hand ? ALF_ISOFFHAND : 0);
 	}
 }
