@@ -118,7 +118,6 @@ void GLSkyInfo::init(int sky1, PalEntry FadeColor)
 
 void GLWall::SkyPlane(sector_t *sector, int plane, bool allowreflect)
 {
-	if (gl_global_fade) return;
 	int ptype = -1;
 
 	FSectorPortal *sportal = sector->ValidatePortal(plane);
@@ -172,7 +171,8 @@ void GLWall::SkyPlane(sector_t *sector, int plane, bool allowreflect)
 		ptype = PORTALTYPE_PLANEMIRROR;
 		planemirror = plane == sector_t::ceiling ? &sector->ceilingplane : &sector->floorplane;
 	}
-	if (ptype != -1 && gl_skydome)
+	if (ptype != -1
+	&& (ptype > PORTALTYPE_SKYBOX || (gl_skydome && !gl_global_fade))) 
 	{
 		PutPortal(ptype);
 	}
