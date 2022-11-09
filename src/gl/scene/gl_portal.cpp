@@ -787,7 +787,7 @@ void GLPlaneMirrorPortal::DrawContents()
 	int old_pm = PlaneMirrorMode;
 
 	// the player is always visible in a mirror.
-	r_viewpoint.showviewer = true;
+	r_viewpoint.showviewer = gl_mirror_player;
 
 	double planez = origin->ZatPoint(r_viewpoint.Pos);
 	r_viewpoint.Pos.Z = 2 * planez - r_viewpoint.Pos.Z;
@@ -911,7 +911,7 @@ void GLMirrorPortal::DrawContents()
 	vertex_t *v2 = linedef->v2;
 
 	// the player is always visible in a mirror.
-	r_viewpoint.showviewer = true;
+	r_viewpoint.showviewer = gl_mirror_player;
 	// Reflect the current view behind the mirror.
 	if (linedef->Delta().X == 0)
 	{
