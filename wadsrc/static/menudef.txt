@@ -2704,8 +2704,6 @@ OptionMenu "OpenGLOptions" protected
 	Option "$GLPREFMNU_FOGMODE",				gl_fogmode,						"FogMode"
 	Option "$GLPREFMNU_FOGFORCEFULLBRIGHT",		gl_brightfog,					"YesNo"
 	Slider "$GLPREFMNU_WPNLIGHTSTR",			gl_weaponlight,					0,32, 2
-	Option "$GLPREFMNU_MIRRORS",				gl_mirrors,						"OnOff"
-	Option "$GLPREFMNU_ENVIRONMENTMAPMIRROR",	gl_mirror_envmap,				"OnOff"
 	Option "$GLPREFMNU_ENV",					gl_enhanced_nightvision,		"OnOff"
 	Option "$GLPREFMNU_ENVSTEALTH",				gl_enhanced_nv_stealth,			"EnhancedStealth"
 	Option "$GLPREFMNU_SPRCLIP",				gl_spriteclip,					"SpriteclipModes"
@@ -2722,10 +2720,17 @@ OptionMenu "OpenGLOptions" protected
 	Command "$DSPLYMNU_DISABLERENDERCULL",	"disablerendercull"
 	SafeCommand "$DSPLYMNU_RESETRENDERCULL",	"resetcvar gl_sprite_distance_cull gl_line_distance_cull"
 	StaticText " "
+	StaticText "Global Fade Options", gold
 	Option "Global fade",						gl_global_fade, "OnOff"
 	Slider "Global fade density",				gl_global_fade_density, 0.0001, 0.005, 0.0001, 4
 	Slider "Global fade gradient",				gl_global_fade_gradient, 0.1, 2, 0.1, 1
 	ColorPicker "Global fade color",			gl_global_fade_color
+	StaticText " "
+	StaticText "Mirrors Options", gold
+	Option "$GLPREFMNU_MIRRORS",				gl_mirrors,						"OnOff"
+	Option "$GLPREFMNU_ENVIRONMENTMAPMIRROR",	gl_mirror_envmap,				"OnOff"
+	Option "$GLPREFMNU_MIRRORPLAYER",			gl_mirror_player,				"OnOff"
+	Slider "$GLPREFMNU_MIRRORRECURSIONS",		r_mirror_recursions, 0, 10, 1, 0
 	StaticText " "
 	Slider "$GLPREFMNU_MENUBLUR",				gl_menu_blur, 0, 5.0, 0.5, 2
 	StaticText " "
