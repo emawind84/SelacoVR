@@ -91,6 +91,9 @@ CUSTOM_CVAR (Bool, gl_lights, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOI
 CVAR(Float, gl_light_max_intensity, 1000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR(Float, gl_light_distance_cull, 4000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR(Int, gl_light_max_collected_subsectors, 1000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_light_flat_max_lights, 1000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_light_wall_max_lights, 1000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_light_range_limit, 64, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
 //==========================================================================
 //
@@ -592,6 +595,9 @@ void FDynamicLight::CollectWithinRadius(const DVector3 &opos, subsector_t *subSe
 
 		for (unsigned int j = 0; j < subSec->numlines; ++j)
 		{
+			if (collected_ss.Size() >= (unsigned int)gl_light_max_collected_subsectors)
+				break;
+
 			auto &pos = collected_ss[i].pos;
 			seg_t *seg = subSec->firstline + j;
 
@@ -636,11 +642,8 @@ void FDynamicLight::CollectWithinRadius(const DVector3 &opos, subsector_t *subSe
 					subsector_t *sub = partner->Subsector;
 					if (sub != NULL && sub->validcount != ::validcount)
 					{
-						if (collected_ss.Size() < (unsigned int)gl_light_max_collected_subsectors)
-						{
-							sub->validcount = ::validcount;
-							collected_ss.Push({ sub, pos });
-						}
+						sub->validcount = ::validcount;
+						collected_ss.Push({ sub, pos });
 					}
 				}
 			}

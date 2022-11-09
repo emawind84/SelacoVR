@@ -762,6 +762,7 @@ void D_Display ()
 			// Reload crosshair if transitioned to a different size
 			ST_LoadCrosshair (true);
 			AM_NewResolution ();
+			AActor::RecreateAllAttachedLights();
 			// Reset the mouse cursor in case the bit depth changed
 			vid_cursor.Callback();
 		}
