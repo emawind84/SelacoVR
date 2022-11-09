@@ -892,6 +892,10 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal, bool is
 				sprangle = 0.;
 				rot = 0;
 			}
+			if (thing == camera && GLPortal::GetRecursion() > 0)
+			{
+				rot = 0;
+			}
 			patch = sprites[spritenum].GetSpriteFrame(thing->frame, rot, sprangle, &mirror, !!(thing->renderflags & RF_SPRITEFLIP));
 		}
 
