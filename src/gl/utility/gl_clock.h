@@ -25,14 +25,14 @@ public:
 		// Not using QueryPerformanceCounter directly, so we don't need
 		// to pull in the Windows headers for every single file that
 		// wants to do some profiling.
-		int64_t time = (gl_benching? I_nsTime() : 0);
-		Counter -= time;
+		// int64_t time = (gl_benching? I_nsTime() : 0);
+		// Counter -= time;
 	}
 	
 	__forceinline void Unclock()
 	{
-		int64_t time = (gl_benching? I_nsTime() : 0);
-		Counter += time;
+		// int64_t time = (gl_benching? I_nsTime() : 0);
+		// Counter += time;
 	}
 	
 	double Time()
