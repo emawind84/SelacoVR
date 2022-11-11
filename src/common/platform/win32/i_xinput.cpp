@@ -178,6 +178,7 @@ protected:
 
 	static void ProcessThumbstick(int value1, AxisInfo *axis1, int value2, AxisInfo *axis2, int base);
 	static void ProcessTrigger(int value, AxisInfo *axis, int base);
+	static void ProcessAcceleration(AxisInfo *axis, float val);
 };
 
 class FXInputManager : public FJoystickCollection
@@ -307,6 +308,18 @@ void FXInputController::ProcessInput()
 
 	UpdateFeedback();
 
+	// We run these every frame now, even if they have not changed
+	// This is necessary to run joytick acceleration properly
+
+	// Convert axes to floating point and cancel out deadzones.
+	// XInput's Y axes are reversed compared to DirectInput.
+	ProcessThumbstick(state.Gamepad.sThumbLX, &Axes[AXIS_ThumbLX],
+					 -state.Gamepad.sThumbLY, &Axes[AXIS_ThumbLY], KEY_PAD_LTHUMB_RIGHT);
+	ProcessThumbstick(state.Gamepad.sThumbRX, &Axes[AXIS_ThumbRX],
+					 -state.Gamepad.sThumbRY, &Axes[AXIS_ThumbRY], KEY_PAD_RTHUMB_RIGHT);
+	ProcessTrigger(state.Gamepad.bLeftTrigger, &Axes[AXIS_LeftTrigger], KEY_PAD_LTRIGGER);
+	ProcessTrigger(state.Gamepad.bRightTrigger, &Axes[AXIS_RightTrigger], KEY_PAD_RTRIGGER);
+
 
 	if (state.dwPacketNumber == LastPacketNumber)
 	{ // Nothing has changed since last time.
@@ -318,15 +331,6 @@ void FXInputController::ProcessInput()
 	// and their state is undefined," so we clear them to make sure they're not set.
 	// Our keymapping uses these two slots for the triggers as buttons.
 	state.Gamepad.wButtons &= 0xF3FF;
-
-	// Convert axes to floating point and cancel out deadzones.
-	// XInput's Y axes are reversed compared to DirectInput.
-	ProcessThumbstick(state.Gamepad.sThumbLX, &Axes[AXIS_ThumbLX],
-					 -state.Gamepad.sThumbLY, &Axes[AXIS_ThumbLY], KEY_PAD_LTHUMB_RIGHT);
-	ProcessThumbstick(state.Gamepad.sThumbRX, &Axes[AXIS_ThumbRX],
-					 -state.Gamepad.sThumbRY, &Axes[AXIS_ThumbRY], KEY_PAD_RTHUMB_RIGHT);
-	ProcessTrigger(state.Gamepad.bLeftTrigger, &Axes[AXIS_LeftTrigger], KEY_PAD_LTRIGGER);
-	ProcessTrigger(state.Gamepad.bRightTrigger, &Axes[AXIS_RightTrigger], KEY_PAD_RTRIGGER);
 
 	// Generate events for buttons that have changed.
 	Joy_GenerateButtonEvents(LastButtons, state.Gamepad.wButtons, 16, KEY_PAD_DPAD_UP);
@@ -382,17 +386,15 @@ bool FXInputController::InternalSetVibration(float l, float r) {
 //
 //==========================================================================
 
-static inline void ProcessAcceleration(AxisInfo *axis, double val) {
-	// Add val to input history
-	axis->Inputs.add(val);
+void FXInputController::ProcessAcceleration(AxisInfo *axis, float val) {
+	// Curve value - Circular
+	//float cv = (1 - sqrt(1.0f - pow(abs(val), 2.0f))) * (val > 0 ? 1.0f : -1.0f);
 
-	// Allow only outward scaling, reverse movements are instant
-	double avg = axis->Inputs.getScaledAverage(joy_sdl_queuesize, axis->Acceleration);
-	if(avg > 0 && val > 0 && avg > val) avg = val;
-	if(avg < 0 && val < 0 && avg < val) avg = val;
-	if(val == 0) avg = val;
+	// Curve value, Quint
+	float cv = (val * val * val * val * val);
 
-	axis->Value = avg;
+	// Return a lerp of the actual value and the curve value
+	axis->Value = clamp(cv + ((1.0f - axis->Acceleration) * (val - cv)), -1.0f, 1.0f);
 }
 
 void FXInputController::ProcessThumbstick(int value1, AxisInfo *axis1,
@@ -407,8 +409,8 @@ void FXInputController::ProcessThumbstick(int value1, AxisInfo *axis1,
 	axisval2 = Joy_RemoveDeadZone(axisval2, axis2->DeadZone, NULL);
 
 	// Add to the queue
-	ProcessAcceleration(axis1, axisval1);
-	ProcessAcceleration(axis2, axisval2);
+	ProcessAcceleration(axis1, (float)axisval1);
+	ProcessAcceleration(axis2, (float)axisval2);
 
 	// We store all four buttons in the first axis and ignore the second.
 	buttonstate = Joy_XYAxesToButtons(axis1->Value, axis2->Value);
@@ -431,7 +433,7 @@ void FXInputController::ProcessTrigger(int value, AxisInfo *axis, int base)
 	float axisval = value / 256.0f;
 
 	// Seems silly to bother with axis scaling here, but I'm going to @Cockatrice
-	axisval = (float)Joy_RemoveDeadZone((double)axis->Value, axis->DeadZone, &buttonstate);
+	axisval = (float)Joy_RemoveDeadZone((double)axisval, axis->DeadZone, &buttonstate);
 	ProcessAcceleration(axis, axisval);
 
 	Joy_GenerateButtonEvents(axis->ButtonValue, buttonstate, 1, base);

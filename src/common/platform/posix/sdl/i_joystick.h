@@ -128,16 +128,14 @@ protected:
 
 
     static inline void ProcessAcceleration(AxisInfo *axis, double val) {
-        // Add val to input history
-        axis->Inputs.add(val);
+		// Curve value - Circular
+		//float cv = (1 - sqrt(1.0f - pow(abs(val), 2.0f))) * (val > 0 ? 1.0f : -1.0f);
 
-        // Allow only outward scaling, reverse movements are instant
-        double avg = axis->Inputs.getScaledAverage(joy_sdl_queuesize, axis->Acceleration);
-        if(avg > 0 && val > 0 && avg > val) avg = val;
-        if(avg < 0 && val < 0 && avg < val) avg = val;
-        if(val == 0) avg = val;
+		// Curve value, Quint
+		double cv = (val * val * val * val * val);
 
-        axis->Value = avg;
+		// Return a lerp of the actual value and the curve value
+		axis->Value = clamp(cv + ((1.0 - (double)axis->Acceleration) * (val - cv)), -1.0, 1.0);
 	}
 };
 
