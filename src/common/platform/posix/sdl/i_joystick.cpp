@@ -44,7 +44,6 @@
 EXTERN_CVAR(Bool, joy_feedback)
 EXTERN_CVAR(Float, joy_feedback_scale)
 
-
 CUSTOM_CVAR(Int, joy_sdl_queuesize, 5, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
 	if (self > 10) self = 10;
 	if (self < 1) self = 1;
@@ -197,17 +196,7 @@ public:
 			double axisval = SDL_JoystickGetAxis(Device, i)/32767.0;
 			axisval = Joy_RemoveDeadZone(axisval, Axes[i].DeadZone, &buttonstate);
 
-			// Add to the queue
-			Axes[i].Inputs.add(axisval);
-
-			// Get the scaled average
-			Axes[i].Value = axisval == 0 ? 0 : Axes[i].Inputs.getScaledAverage(joy_sdl_queuesize, Axes[i].Acceleration);
-
-			// Check if we are accelerating from avg. Decelerating should be instant
-			if ((Axes[i].Value > 0 && Axes[i].Value > axisval) || (Axes[i].Value < 0 && Axes[i].Value < axisval)) {
-				Axes[i].Value = axisval;
-				Axes[i].Inputs.reset();
-			}
+			ProcessAcceleration(&Axes[i], axisval);
 
 			// Map button to axis
 			// X and Y are handled differently so if we have 2 or more axes then we'll use that code instead.
@@ -433,6 +422,7 @@ public:
 
 		SDL_GameControllerClose(Device);
 		Device = NULL;
+		
 	}
 
 	void Attached() override {
@@ -453,13 +443,13 @@ public:
 	{
 		uint8_t buttonstate;
 
-		bool con = SDL_GameControllerGetAttached(Device);
+		/*bool con = SDL_GameControllerGetAttached(Device);
 		if((!con && Connected) || !Device) {
 			// We have disconnected
 			Detached();
 		} else if(con && !Connected) {
 			Attached();
-		}
+		}*/
 
 		if(!Connected) {
 			return;
@@ -484,17 +474,9 @@ public:
 		axisval1 = Joy_RemoveDeadZone(value1, axis1->DeadZone, NULL);
 		axisval2 = Joy_RemoveDeadZone(value2, axis2->DeadZone, NULL);
 
-		// Add to the queue
-		axis1->Inputs.add((float)axisval1);
-		axis2->Inputs.add((float)axisval2);
-
-		// Get the scaled average
-		axis1->Value = axisval1 == 0 ? 0 : axis1->Inputs.getScaledAverage(5, axis1->Acceleration);
-		axis2->Value = axisval2 == 0 ? 0 : axis2->Inputs.getScaledAverage(5, axis2->Acceleration);
-
-		// Check if we are accelerating from avg. Decelerating should be instant
-		if ((axis1->Value > 0 && axis1->Value > axisval1) || (axis1->Value < 0 && axis1->Value < axisval1)) axis1->Value = (float)axisval1;
-		if ((axis2->Value > 0 && axis2->Value > axisval2) || (axis2->Value < 0 && axis2->Value < axisval2)) axis2->Value = (float)axisval2;
+		// Calculate acceleration
+		ProcessAcceleration(axis1, axisval1);
+		ProcessAcceleration(axis2, axisval2);
 
 		// We store all four buttons in the first axis and ignore the second.
 		buttonstate = Joy_XYAxesToButtons(axis1->Value, axis2->Value);
@@ -505,14 +487,10 @@ public:
 
 	static void ProcessTrigger(double value, AxisInfo *axis, int base) {
 		uint8_t buttonstate;
-		float axisval = value;
+		double axisval = value;
 
-		// Seems silly to bother with axis scaling here, but I'm going to @Cockatrice
-		axis->Inputs.add(axisval);
-		axis->Value = axisval == 0 ? 0 : axis->Inputs.getScaledAverage(5, axis->Acceleration);
-		if ((axis->Value > 0 && axis->Value > axisval) || (axis->Value < 0 && axis->Value < axisval)) axis->Value = axisval;
-
-		axis->Value = (float)Joy_RemoveDeadZone((double)axis->Value, axis->DeadZone, &buttonstate);
+		axisval = (float)Joy_RemoveDeadZone(axisval, axis->DeadZone, &buttonstate);
+		ProcessAcceleration(axis, axisval);
 
 		Joy_GenerateButtonEvents(axis->ButtonValue, buttonstate, 1, base);
 		axis->ButtonValue = buttonstate;
@@ -584,6 +562,10 @@ SDLInputJoystickManager::SDLInputJoystickManager() {
 }
 
 SDLInputJoystickManager::~SDLInputJoystickManager() {
+	for(uint x = 0; x < Joysticks.Size(); x++) {
+		M_SaveJoystickConfig(Joysticks[x]);
+	}
+
 	Joysticks.Clear();
 }
 
@@ -647,6 +629,7 @@ void SDLInputJoystickManager::DeviceRemoved(int joyInstanceID) {
 		auto joy = Joysticks[x];
 
 		if(joy->GetDeviceID() == joyInstanceID) {
+			M_SaveJoystickConfig(joy);
 			joy->Detached();
 			delete Joysticks[x];
 			Joysticks.Delete(x);

@@ -6,6 +6,8 @@
 // Very small deadzone so that floating point magic doesn't happen
 #define MIN_DEADZONE 0.000001f
 
+EXTERN_CVAR(Int, joy_sdl_queuesize)
+
 class SDLInputJoystickBase: public IJoystickConfig {
 public:
 
@@ -123,6 +125,20 @@ protected:
 	TArray<AxisInfo>	Axes;
 	int					NumAxes;
 	bool				Connected;
+
+
+    static inline void ProcessAcceleration(AxisInfo *axis, double val) {
+        // Add val to input history
+        axis->Inputs.add(val);
+
+        // Allow only outward scaling, reverse movements are instant
+        double avg = axis->Inputs.getScaledAverage(joy_sdl_queuesize, axis->Acceleration);
+        if(avg > 0 && val > 0 && avg > val) avg = val;
+        if(avg < 0 && val < 0 && avg < val) avg = val;
+        if(val == 0) avg = val;
+
+        axis->Value = avg;
+	}
 };
 
 class SDLInputJoystickManager {

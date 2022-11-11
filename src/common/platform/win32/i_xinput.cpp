@@ -382,6 +382,19 @@ bool FXInputController::InternalSetVibration(float l, float r) {
 //
 //==========================================================================
 
+static inline void ProcessAcceleration(AxisInfo *axis, double val) {
+	// Add val to input history
+	axis->Inputs.add(val);
+
+	// Allow only outward scaling, reverse movements are instant
+	double avg = axis->Inputs.getScaledAverage(joy_sdl_queuesize, axis->Acceleration);
+	if(avg > 0 && val > 0 && avg > val) avg = val;
+	if(avg < 0 && val < 0 && avg < val) avg = val;
+	if(val == 0) avg = val;
+
+	axis->Value = avg;
+}
+
 void FXInputController::ProcessThumbstick(int value1, AxisInfo *axis1,
 	int value2, AxisInfo *axis2, int base)
 {
@@ -394,16 +407,8 @@ void FXInputController::ProcessThumbstick(int value1, AxisInfo *axis1,
 	axisval2 = Joy_RemoveDeadZone(axisval2, axis2->DeadZone, NULL);
 
 	// Add to the queue
-	axis1->Inputs.add((float)axisval1);
-	axis2->Inputs.add((float)axisval2);
-
-	// Get the scaled average
-	axis1->Value = axisval1 == 0 ? 0 : axis1->Inputs.getScaledAverage(joy_xinput_queuesize, axis1->Acceleration);
-	axis2->Value = axisval2 == 0 ? 0 : axis2->Inputs.getScaledAverage(joy_xinput_queuesize, axis2->Acceleration);
-
-	// Check if we are accelerating from avg. Decelerating should be instant
-	if ((axis1->Value > 0 && axis1->Value > axisval1) || (axis1->Value < 0 && axis1->Value < axisval1)) axis1->Value = (float)axisval1;
-	if ((axis2->Value > 0 && axis2->Value > axisval2) || (axis2->Value < 0 && axis2->Value < axisval2)) axis2->Value = (float)axisval2;
+	ProcessAcceleration(axis1, axisval1);
+	ProcessAcceleration(axis2, axisval2);
 
 	// We store all four buttons in the first axis and ignore the second.
 	buttonstate = Joy_XYAxesToButtons(axis1->Value, axis2->Value);
@@ -426,11 +431,8 @@ void FXInputController::ProcessTrigger(int value, AxisInfo *axis, int base)
 	float axisval = value / 256.0f;
 
 	// Seems silly to bother with axis scaling here, but I'm going to @Cockatrice
-	axis->Inputs.add(axisval);
-	axis->Value = axisval == 0 ? 0 : axis->Inputs.getScaledAverage(joy_xinput_queuesize, axis->Acceleration);
-	if ((axis->Value > 0 && axis->Value > axisval) || (axis->Value < 0 && axis->Value < axisval)) axis->Value = axisval;
-
-	axis->Value = (float)Joy_RemoveDeadZone((double)axis->Value, axis->DeadZone, &buttonstate);
+	axisval = (float)Joy_RemoveDeadZone((double)axis->Value, axis->DeadZone, &buttonstate);
+	ProcessAcceleration(axis, axisval);
 
 	Joy_GenerateButtonEvents(axis->ButtonValue, buttonstate, 1, base);
 	axis->ButtonValue = buttonstate;
