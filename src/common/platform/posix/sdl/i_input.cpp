@@ -45,6 +45,9 @@
 #include "i_interface.h"
 #include "engineerrors.h"
 #include "i_interface.h"
+#include "m_joy.h"
+#include "i_joystick.h"
+#include "printf.h"
 
 
 static void I_CheckGUICapture ();
@@ -225,6 +228,31 @@ static void I_CheckNativeMouse ()
 
 void MessagePump (const SDL_Event &sev)
 {
+	// @Cockatrice - Translate XINPUT style gamepad controller buttons
+	static const int controller_translation[21] = {
+		KEY_PAD_A,		// SDL_CONTROLLER_BUTTON_A
+		KEY_PAD_B,		// SDL_CONTROLLER_BUTTON_B
+		KEY_PAD_X,  	// SDL_CONTROLLER_BUTTON_X
+		KEY_PAD_Y,		// SDL_CONTROLLER_BUTTON_Y
+		KEY_PAD_BACK, 	// SDL_CONTROLLER_BACK
+		KEY_JOY15,		// SDL_CONTROLLER_GUIDE
+		KEY_PAD_START, 	// SDL_CONTROLLER_START
+		KEY_PAD_LTHUMB, // SDL_CONTROLLER_LEFTSTICK
+		KEY_PAD_RTHUMB, // SDL_CONTROLLER_RIGHTSTICK
+		KEY_PAD_LSHOULDER, 	// SDL_CONTROLLER_LEFTSHOULDER
+		KEY_PAD_RSHOULDER, 	// SDL_CONTROLLER_RIGHTSHOULDER
+		KEY_PAD_DPAD_UP,	// SDL_CONTROLLER_DPAD_UP 
+		KEY_PAD_DPAD_DOWN,	// SDL_CONTROLLER_DPAD_DOWN
+		KEY_PAD_DPAD_LEFT,	// SDL_CONTROLLER_DPAD_LEFT
+		KEY_PAD_DPAD_RIGHT,	// SDL_CONTROLLER_DPAD_RIGHT
+		KEY_JOY14,		// SDL_CONTROLLER_MISC1
+		KEY_JOY1,		// SDL_CONTROLLER_BUTTON_PADDLE1
+		KEY_JOY2,		// SDL_CONTROLLER_BUTTON_PADDLE2
+		KEY_JOY3,		// SDL_CONTROLLER_BUTTON_PADDLE3
+		KEY_JOY4,		// SDL_CONTROLLER_BUTTON_PADDLE4
+		KEY_JOY5		// SDL_CONTROLLER_BUTTON_TOUCHPAD
+	};
+
 	static int lastx = 0, lasty = 0;
 	int x, y;
 	event_t event = { 0,0,0,0,0,0,0 };
@@ -490,10 +518,45 @@ void MessagePump (const SDL_Event &sev)
 
 	case SDL_JOYBUTTONDOWN:
 	case SDL_JOYBUTTONUP:
-		event.type = sev.type == SDL_JOYBUTTONDOWN ? EV_KeyDown : EV_KeyUp;
-		event.data1 = KEY_FIRSTJOYBUTTON + sev.jbutton.button;
-		if(event.data1 != 0)
-			D_PostEvent(&event);
+		{
+			// Verify that this is a joystick and now a gamepad, since SDL sends events for both
+			IJoystickConfig *joy = JoystickManager->GetDeviceFromID(sev.jbutton.which);
+			if(joy != NULL && joy->IsGamepad()) break;
+
+			event.type = sev.type == SDL_JOYBUTTONDOWN ? EV_KeyDown : EV_KeyUp;
+			event.data1 = KEY_FIRSTJOYBUTTON + sev.jbutton.button;
+			if(event.data1 != 0)
+				D_PostEvent(&event);
+			break;
+		}
+	case SDL_CONTROLLERBUTTONDOWN:
+	case SDL_CONTROLLERBUTTONUP: 
+		{
+			// Verify that this is a gamepad and not a joystick, since SDL sends events for both
+			IJoystickConfig *joy = JoystickManager->GetDeviceFromID(sev.cbutton.which);
+			if(joy != NULL && !joy->IsGamepad()) break;
+
+			event.type = sev.type == SDL_CONTROLLERBUTTONDOWN ? EV_KeyDown : EV_KeyUp;
+			event.data1 = sev.cbutton.button < 21 ? controller_translation[sev.cbutton.button] : 0;
+			if(event.data1 != 0)
+				D_PostEvent(&event);
+			break;
+		}
+	case SDL_JOYDEVICEREMOVED:
+		Printf(TEXTCOLOR_YELLOW"SDL: Joystick Removed %d\n", sev.jdevice.which);
+		JoystickManager->DeviceRemoved(sev.jdevice.which);
+		break;
+	case SDL_JOYDEVICEADDED:
+		Printf(TEXTCOLOR_YELLOW"SDL: New Joystick Detected %d\n", sev.jdevice.which);
+		JoystickManager->DeviceAdded(sev.jdevice.which);
+		break;
+	case SDL_CONTROLLERDEVICEREMOVED:
+		Printf(TEXTCOLOR_YELLOW"SDL: Gamepad Removed %d\n", sev.cdevice.which);
+		JoystickManager->DeviceRemoved(sev.cdevice.which);
+		break;
+	case SDL_CONTROLLERDEVICEADDED:
+		Printf(TEXTCOLOR_YELLOW"SDL: New Gamepad Detected %d\n", sev.cdevice.which);
+		JoystickManager->DeviceAdded(sev.cdevice.which);
 		break;
 	}
 }

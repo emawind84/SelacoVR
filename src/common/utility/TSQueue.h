@@ -72,6 +72,7 @@ template <typename IP, typename OP>
 class ResourceLoader {
 public:
 	ResourceLoader() {}
+	virtual ~ResourceLoader() { stop(); }
 
 	void start() {
 		if (mThread.get_id() == std::thread::id()) {

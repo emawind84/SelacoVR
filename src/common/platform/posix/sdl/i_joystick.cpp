@@ -36,10 +36,10 @@
 #include "cmdlib.h"
 
 #include "m_joy.h"
+#include "i_joystick.h"
 #include "keydef.h"
+#include "d_event.h"
 
-// Very small deadzone so that floating point magic doesn't happen
-#define MIN_DEADZONE 0.000001f
 
 EXTERN_CVAR(Bool, joy_feedback)
 EXTERN_CVAR(Float, joy_feedback_scale)
@@ -50,19 +50,31 @@ CUSTOM_CVAR(Int, joy_sdl_queuesize, 5, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
 	if (self < 1) self = 1;
 }
 
+void PostDeviceChangeEvent() {
+	event_t event = { EV_DeviceChange };
+	D_PostEvent(&event);
+}
 
-class SDLInputJoystick: public IJoystickConfig
+
+
+class SDLInputJoystick: public SDLInputJoystickBase
 {
 public:
-	SDLInputJoystick(int DeviceIndex) : DeviceIndex(DeviceIndex), Multiplier(1.0f)
+	SDLInputJoystick(int DeviceIndex)
 	{
+		this->DeviceIndex = DeviceIndex;
+		this->Multiplier = 1.0f;
+
 		Device = SDL_JoystickOpen(DeviceIndex);
 		if(Device != NULL)
 		{
 			NumAxes = SDL_JoystickNumAxes(Device);
 			NumHats = SDL_JoystickNumHats(Device);
-
+			
 			SetDefaultConfig();
+
+			Connected = true;
+			DeviceID = SDL_JoystickGetDeviceInstanceID(DeviceIndex);
 		}
 	}
 	~SDLInputJoystick()
@@ -81,55 +93,10 @@ public:
 	{
 		return SDL_JoystickName(Device);
 	}
-	float GetSensitivity()
-	{
-		return Multiplier;
-	}
-	void SetSensitivity(float scale)
-	{
-		Multiplier = scale;
-	}
-
-	int GetNumAxes()
+	
+	int GetNumAxes() override
 	{
 		return NumAxes + NumHats*2;
-	}
-	float GetAxisDeadZone(int axis)
-	{
-		return Axes[axis].DeadZone;
-	}
-	EJoyAxis GetAxisMap(int axis)
-	{
-		return Axes[axis].GameAxis;
-	}
-	const char *GetAxisName(int axis)
-	{
-		return Axes[axis].Name.GetChars();
-	}
-	float GetAxisScale(int axis)
-	{
-		return Axes[axis].Multiplier;
-	}
-	float GetAxisAcceleration(int axis) override
-	{
-		return Axes[axis].Acceleration;
-	}
-
-	void SetAxisDeadZone(int axis, float zone)
-	{
-		Axes[axis].DeadZone = clamp(zone, MIN_DEADZONE, 1.f);
-	}
-	void SetAxisMap(int axis, EJoyAxis gameaxis)
-	{
-		Axes[axis].GameAxis = gameaxis;
-	}
-	void SetAxisScale(int axis, float scale)
-	{
-		Axes[axis].Multiplier = scale;
-	}
-	void SetAxisAcceleration(int axis, float acceleration) override
-	{
-		Axes[axis].Acceleration = acceleration;
 	}
 
 	// Used by the saver to not save properties that are at their defaults.
@@ -139,57 +106,59 @@ public:
 	}
 	bool IsAxisDeadZoneDefault(int axis)
 	{
-		return Axes[axis].DeadZone <= MIN_DEADZONE;
+		if(axis >= 5)
+			return Axes[axis].DeadZone == 0.1f;
+		return Axes[axis].DeadZone == DefaultAxes[axis].DeadZone;
 	}
 	bool IsAxisMapDefault(int axis)
 	{
 		if(axis >= 5)
 			return Axes[axis].GameAxis == JOYAXIS_None;
-		return Axes[axis].GameAxis == DefaultAxes[axis];
+		return Axes[axis].GameAxis == DefaultAxes[axis].GameAxis;
 	}
 	bool IsAxisScaleDefault(int axis)
 	{
-		return Axes[axis].Multiplier == (Axes[axis].GameAxis == JOYAXIS_Pitch ? 0.55f : 1.0f);
+		if(axis >= 5)
+			return Axes[axis].Multiplier == 1.0f;
+		return Axes[axis].Multiplier == DefaultAxes[axis].Multiplier;
 	}
 	bool IsAxisAccelerationDefault(int axis) override
 	{
-		
 		if (axis >= 5) return Axes[axis].Acceleration == 0.0f;
-		return Axes[axis].Acceleration == (Axes[axis].GameAxis == JOYAXIS_Side || Axes[axis].GameAxis == JOYAXIS_Forward ? 0.25f : 0.5f);
+		return Axes[axis].Acceleration == DefaultAxes[axis].Acceleration;
 	}
 
 
 	void SetDefaultConfig()
 	{
-		for(int i = 0;i < GetNumAxes();i++)
-		{
+		// Remove existing axis information
+		Axes.Clear();
+
+		// Create the axes
+		for(int i = 0; i < GetNumAxes(); i++) {
 			AxisInfo info;
 			if(i < NumAxes)
 				info.Name.Format("Axis %d", i+1);
 			else
 				info.Name.Format("Hat %d (%c)", (i-NumAxes)/2 + 1, (i-NumAxes)%2 == 0 ? 'x' : 'y');
-			info.DeadZone = MIN_DEADZONE;
+
+			//info.DeadZone = MIN_DEADZONE;
 			info.Value = 0.0;
 			info.ButtonValue = 0;
 			if (i >= 5) {
 				info.GameAxis = JOYAXIS_None;
 				info.Acceleration = 0.0f;
-			} 
-			else {
-				info.GameAxis = DefaultAxes[i];
-				info.Acceleration = (info.GameAxis == JOYAXIS_Side || info.GameAxis == JOYAXIS_Forward ? 0.25f : 0.5f);
+				info.DeadZone = 0.1;
+				info.Multiplier = 1.0f;
+			} else {
+				info.GameAxis = DefaultAxes[i].GameAxis;
+				info.Acceleration = DefaultAxes[i].Acceleration;
+				info.DeadZone = DefaultAxes[i].DeadZone;
+				info.Multiplier = DefaultAxes[i].Multiplier;
 			}
-
-			info.Multiplier = info.GameAxis == JOYAXIS_Pitch ? 0.55f : 1.0f;
 
 			Axes.Push(info);
 		}
-	}
-	FString GetIdentifier()
-	{
-		char id[16];
-		snprintf(id, countof(id), "JS:%d", DeviceIndex);
-		return id;
 	}
 
 	void AddAxes(float axes[NUM_JOYAXIS])
@@ -206,6 +175,19 @@ public:
 	{
 		uint8_t buttonstate;
 
+		bool con = SDL_JoystickGetAttached(Device);
+		if(!con && Connected) {
+			// We have disconnected
+			// TODO: Process this event and disable the gamepad
+			Connected = false;
+		} else if(con && !Connected) {
+			Connected = true;
+		}
+
+		if(!Connected) {
+			return;
+		}
+		
 		UpdateFeedback();
 
 		for (int i = 0; i < NumAxes; ++i)
@@ -222,7 +204,10 @@ public:
 			Axes[i].Value = axisval == 0 ? 0 : Axes[i].Inputs.getScaledAverage(joy_sdl_queuesize, Axes[i].Acceleration);
 
 			// Check if we are accelerating from avg. Decelerating should be instant
-			if ((Axes[i].Value > 0 && Axes[i].Value > axisval) || (Axes[i].Value < 0 && Axes[i].Value < axisval)) Axes[i].Value = axisval;
+			if ((Axes[i].Value > 0 && Axes[i].Value > axisval) || (Axes[i].Value < 0 && Axes[i].Value < axisval)) {
+				Axes[i].Value = axisval;
+				Axes[i].Inputs.reset();
+			}
 
 			// Map button to axis
 			// X and Y are handled differently so if we have 2 or more axes then we'll use that code instead.
@@ -275,32 +260,17 @@ public:
 	}
 
 protected:
-	struct AxisInfo
-	{
-		FString Name;
-		float DeadZone;
-		float Multiplier;
-		float Acceleration;
-		EJoyAxis GameAxis;
-		double Value;
-		uint8_t ButtonValue;
-		InputQueue<double, 10> Inputs;
-	};
-	static const EJoyAxis DefaultAxes[5];
+	static const DefaultAxisConfig DefaultAxes[5];
 
-	int					DeviceIndex;
 	SDL_Joystick		*Device;
-
-	float				Multiplier;
-	TArray<AxisInfo>	Axes;
-	int					NumAxes;
 	int					NumHats;
+	
 
 	bool InternalSetVibration(float l, float r) override {
 		if (Device) {
 			if (!joy_feedback) {
 				if (lFeed != 0.0f || rFeed != 0.0f) {
-					rFeed = rFeed = 0.0f;
+					rFeed = lFeed = 0.0f;
 
 					SDL_JoystickRumble(Device, 0, 0, 100);
 				}
@@ -317,18 +287,293 @@ protected:
 				50
 			) == 0;
 		}
-		
+		return false;
 	}
 };
-const EJoyAxis SDLInputJoystick::DefaultAxes[5] = {JOYAXIS_Side, JOYAXIS_Forward, JOYAXIS_Pitch, JOYAXIS_Yaw, JOYAXIS_Up};
 
-class SDLInputJoystickManager
+const SDLInputJoystickBase::DefaultAxisConfig SDLInputJoystick::DefaultAxes[5] = {
+	{ 0.234f, JOYAXIS_Side,		1,		0.25f },
+	{ 0.234f, JOYAXIS_Forward,	1,		0.25f },
+	{ 0.117f, JOYAXIS_None,		1,		0.0f  },
+	{ 0.265f, JOYAXIS_Yaw,		1,		0.25f },
+	{ 0.265f, JOYAXIS_Pitch,	0.51,	0.25f }
+};
+
+
+
+// Gamepad version - Geared more towards standard/modern gamepad layouts akin to XInput ==
+// =======================================================================================
+
+static const char *AxisNames[] =
+{
+	"Left Thumb X Axis",
+	"Left Thumb Y Axis",
+	"Right Thumb X Axis",
+	"Right Thumb Y Axis",
+	"Left Trigger",
+	"Right Trigger"
+};
+
+class SDLInputGamepad: public SDLInputJoystickBase
 {
 public:
-	SDLInputJoystickManager()
+	SDLInputGamepad(int DeviceIndex)
 	{
-		for(int i = 0;i < SDL_NumJoysticks();i++)
+		this->DeviceIndex = DeviceIndex;
+		this->Multiplier = 1.0f;
+
+		Device = SDL_GameControllerOpen(DeviceIndex);
+		if(Device != NULL)
 		{
+			NumAxes = 6;
+			DeviceID = SDL_JoystickGetDeviceInstanceID(DeviceIndex);
+			Name = SDL_GameControllerName(Device);
+			M_LoadJoystickConfig(this);
+		} else {
+			Name = "Invalid Device";
+		}
+	}
+	~SDLInputGamepad()
+	{
+		if(Device != NULL)
+			M_SaveJoystickConfig(this);
+		SDL_GameControllerClose(Device);
+	}
+
+	bool IsValid() const
+	{
+		return Device != NULL;
+	}
+
+	FString GetName()
+	{
+		FString nam;
+		nam.Format("Gamepad: %s", Name.GetChars());
+		return nam;
+	}
+
+	FString GetIdentifier() override {
+		return "GM:" + DeviceIndex;
+	}
+	
+	int GetNumAxes() override
+	{
+		return NumAxes;
+	}
+
+	// Used by the saver to not save properties that are at their defaults.
+	bool IsSensitivityDefault() {
+		return Multiplier == 1.0f;
+	}
+
+	bool IsAxisDeadZoneDefault(int axis) {
+		return Axes[axis].DeadZone == DefaultAxes[axis].DeadZone;
+	}
+
+	bool IsAxisMapDefault(int axis) {
+		return Axes[axis].GameAxis == DefaultAxes[axis].GameAxis;
+	}
+
+	bool IsAxisScaleDefault(int axis) {
+		return Axes[axis].Multiplier == DefaultAxes[axis].Multiplier;
+	}
+
+	bool IsAxisAccelerationDefault(int axis) override {
+		return Axes[axis].Acceleration == DefaultAxes[axis].Acceleration;
+	}
+
+	bool IsGamepad() override { return true; }
+
+
+	void SetDefaultConfig()
+	{
+		// Remove existing axis information
+		Axes.Clear();
+
+		// Create the axes
+		for(int i = 0; i < GetNumAxes(); i++) {
+			AxisInfo info;
+			info.Name = AxisNames[i];
+
+			info.Value = 0.0;
+			info.ButtonValue = 0;
+			info.GameAxis = DefaultAxes[i].GameAxis;
+			info.Acceleration = DefaultAxes[i].Acceleration;
+			info.DeadZone = DefaultAxes[i].DeadZone;
+			info.Multiplier = DefaultAxes[i].Multiplier;
+
+			Axes.Push(info);
+		}
+	}
+
+	void AddAxes(float axes[NUM_JOYAXIS])
+	{
+		// Add to game axes.
+		for (int i = 0; i < GetNumAxes(); ++i)
+		{
+			if(Axes[i].GameAxis != JOYAXIS_None)
+				axes[Axes[i].GameAxis] -= float(Axes[i].Value * Multiplier * Axes[i].Multiplier);
+		}
+	}
+
+	void Detached() override {
+		int i;
+
+		Connected = false;
+		
+		for (i = 0; i < 4; i += 2)
+		{
+			ProcessThumbstick(0, &Axes[i], 0, &Axes[i+1], KEY_PAD_LTHUMB_RIGHT + i*2);
+		}
+
+		for (i = 0; i < 2; ++i)
+		{
+			ProcessTrigger(0, &Axes[4+i], KEY_PAD_LTRIGGER + i);
+		}
+
+		SDL_GameControllerClose(Device);
+		Device = NULL;
+	}
+
+	void Attached() override {
+		SDLInputJoystickBase::Attached();
+
+		// Re-establish the device object
+		if(Device) {
+			SDL_GameControllerClose(Device);
+		}
+
+		Device = SDL_GameControllerOpen(DeviceIndex);
+		DeviceID = SDL_JoystickGetDeviceInstanceID(DeviceIndex);
+		Name = SDL_GameControllerName(Device);
+		M_LoadJoystickConfig(this);
+	}
+
+	void ProcessInput()
+	{
+		uint8_t buttonstate;
+
+		bool con = SDL_GameControllerGetAttached(Device);
+		if((!con && Connected) || !Device) {
+			// We have disconnected
+			Detached();
+		} else if(con && !Connected) {
+			Attached();
+		}
+
+		if(!Connected) {
+			return;
+		}
+
+		UpdateFeedback();
+
+		ProcessThumbstick(SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_LEFTX)/32767.0, &Axes[SDL_CONTROLLER_AXIS_LEFTX],
+					 	  SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_LEFTY)/32767.0, &Axes[SDL_CONTROLLER_AXIS_LEFTY], KEY_PAD_LTHUMB_RIGHT);
+		ProcessThumbstick(SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_RIGHTX)/32767.0, &Axes[SDL_CONTROLLER_AXIS_RIGHTX],
+						  SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_RIGHTY)/32767.0, &Axes[SDL_CONTROLLER_AXIS_RIGHTY], KEY_PAD_RTHUMB_RIGHT);
+		
+		ProcessTrigger(SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_TRIGGERLEFT)/32767.0, &Axes[SDL_CONTROLLER_AXIS_TRIGGERLEFT], KEY_PAD_LTRIGGER);
+		ProcessTrigger(SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_TRIGGERRIGHT)/32767.0, &Axes[SDL_CONTROLLER_AXIS_TRIGGERRIGHT], KEY_PAD_RTRIGGER);
+	}
+
+
+	static void ProcessThumbstick(double value1, AxisInfo *axis1, double value2, AxisInfo *axis2, int base) {
+		uint8_t buttonstate;
+		double axisval1, axisval2;
+
+		axisval1 = Joy_RemoveDeadZone(value1, axis1->DeadZone, NULL);
+		axisval2 = Joy_RemoveDeadZone(value2, axis2->DeadZone, NULL);
+
+		// Add to the queue
+		axis1->Inputs.add((float)axisval1);
+		axis2->Inputs.add((float)axisval2);
+
+		// Get the scaled average
+		axis1->Value = axisval1 == 0 ? 0 : axis1->Inputs.getScaledAverage(5, axis1->Acceleration);
+		axis2->Value = axisval2 == 0 ? 0 : axis2->Inputs.getScaledAverage(5, axis2->Acceleration);
+
+		// Check if we are accelerating from avg. Decelerating should be instant
+		if ((axis1->Value > 0 && axis1->Value > axisval1) || (axis1->Value < 0 && axis1->Value < axisval1)) axis1->Value = (float)axisval1;
+		if ((axis2->Value > 0 && axis2->Value > axisval2) || (axis2->Value < 0 && axis2->Value < axisval2)) axis2->Value = (float)axisval2;
+
+		// We store all four buttons in the first axis and ignore the second.
+		buttonstate = Joy_XYAxesToButtons(axis1->Value, axis2->Value);
+		Joy_GenerateButtonEvents(axis1->ButtonValue, buttonstate, 4, base);
+		axis1->ButtonValue = buttonstate;
+	}
+
+
+	static void ProcessTrigger(double value, AxisInfo *axis, int base) {
+		uint8_t buttonstate;
+		float axisval = value;
+
+		// Seems silly to bother with axis scaling here, but I'm going to @Cockatrice
+		axis->Inputs.add(axisval);
+		axis->Value = axisval == 0 ? 0 : axis->Inputs.getScaledAverage(5, axis->Acceleration);
+		if ((axis->Value > 0 && axis->Value > axisval) || (axis->Value < 0 && axis->Value < axisval)) axis->Value = axisval;
+
+		axis->Value = (float)Joy_RemoveDeadZone((double)axis->Value, axis->DeadZone, &buttonstate);
+
+		Joy_GenerateButtonEvents(axis->ButtonValue, buttonstate, 1, base);
+		axis->ButtonValue = buttonstate;
+	}
+
+
+protected:
+	static const DefaultAxisConfig DefaultAxes[6];
+
+	SDL_GameController		*Device;
+	FString 				Name;
+
+	bool InternalSetVibration(float l, float r) override {
+		if (Device) {
+			if (!joy_feedback) {
+				if (lFeed != 0.0f || rFeed != 0.0f) {
+					rFeed = lFeed = 0.0f;
+
+					SDL_GameControllerRumble(Device, 0, 0, 100);
+				}
+				return false;
+			}
+
+			lFeed = clamp(l, 0.0f, 1.0f);
+			rFeed = clamp(r, 0.0f, 1.0f);
+
+			return SDL_GameControllerRumble(
+				Device,
+				(Uint16)round(clamp(lFeed * joy_feedback_scale, 0.0f, 1.0f) * 65535.0),
+				(Uint16)round(clamp(rFeed * joy_feedback_scale, 0.0f, 1.0f) * 65535.0),
+				50
+			) == 0;
+		}
+		return false;
+	}
+};
+
+const SDLInputJoystickBase::DefaultAxisConfig SDLInputGamepad::DefaultAxes[6] = {
+	// Dead zone, game axis, multiplier, acceleration
+	{ 0.234f,		JOYAXIS_Side,		1,		0.25f },	// ThumbLX
+	{ 0.234f,		JOYAXIS_Forward,	1,		0.25f },	// ThumbLY
+	{ 0.265f,		JOYAXIS_Yaw,		1,		0.5f },		// ThumbRX
+	{ 0.265f,		JOYAXIS_Pitch,		0.51f,	0.5f },		// ThumbRY
+	{ 0.117,		JOYAXIS_None,		0,		0 },		// LeftTrigger
+	{ 0.117,		JOYAXIS_None,		0,		0 }			// RightTrigger
+};
+
+
+
+SDLInputJoystickManager::SDLInputJoystickManager() {
+	SDL_GameControllerEventState(SDL_ENABLE);	// Enable events from the game controller interface
+
+	for(int i = 0;i < SDL_NumJoysticks();i++) {
+		// Check each joystick to see if it's a recognized gamepad, or use a generic joystick interface instead
+		if(SDL_IsGameController(i)) {
+			SDLInputGamepad *device = new SDLInputGamepad(i);
+			if(device->IsValid())
+				Joysticks.Push(device);
+			else
+				delete device;
+		} else {
 			SDLInputJoystick *device = new SDLInputJoystick(i);
 			if(device->IsValid())
 				Joysticks.Push(device);
@@ -336,41 +581,145 @@ public:
 				delete device;
 		}
 	}
-	~SDLInputJoystickManager()
-	{
-		for(unsigned int i = 0;i < Joysticks.Size();i++)
-			delete Joysticks[i];
-	}
+}
 
-	void AddAxes(float axes[NUM_JOYAXIS])
+SDLInputJoystickManager::~SDLInputJoystickManager() {
+	Joysticks.Clear();
+}
+
+void SDLInputJoystickManager::AddAxes(float axes[NUM_JOYAXIS]) {
+	for(unsigned int i = 0;i < Joysticks.Size();i++)
+		Joysticks[i]->AddAxes(axes);
+}
+
+void SDLInputJoystickManager::GetDevices(TArray<IJoystickConfig *> &sticks)
+{
+	for(unsigned int i = 0;i < Joysticks.Size();i++)
 	{
-		for(unsigned int i = 0;i < Joysticks.Size();i++)
-			Joysticks[i]->AddAxes(axes);
+		//M_LoadJoystickConfig(Joysticks[i]);
+		sticks.Push(Joysticks[i]);
 	}
-	void GetDevices(TArray<IJoystickConfig *> &sticks)
+}
+
+IJoystickConfig *SDLInputJoystickManager::GetDevice(int joyID) {
+	for(unsigned int i = 0; i < Joysticks.Size(); i++)
 	{
-		for(unsigned int i = 0;i < Joysticks.Size();i++)
-		{
-			M_LoadJoystickConfig(Joysticks[i]);
-			sticks.Push(Joysticks[i]);
+		if(Joysticks[i]->GetDeviceIndex() == joyID) {
+			return Joysticks[i];
 		}
 	}
 
-	void ProcessInput() const
+	return NULL;
+}
+
+IJoystickConfig *SDLInputJoystickManager::GetDeviceFromID(int joyDeviceID) {
+	for(unsigned int i = 0; i < Joysticks.Size(); i++)
 	{
-		for(unsigned int i = 0;i < Joysticks.Size();++i)
-			Joysticks[i]->ProcessInput();
+		if(Joysticks[i]->GetDeviceID() == joyDeviceID) {
+			return Joysticks[i];
+		}
 	}
-protected:
-	TArray<SDLInputJoystick *> Joysticks;
-};
-static SDLInputJoystickManager *JoystickManager;
+
+	return NULL;
+}
+
+SDLInputJoystickBase *SDLInputJoystickManager::InternalGetDevice(int joyIndex) {
+	for(unsigned int i = 0; i < Joysticks.Size(); i++) {
+		if(Joysticks[i]->GetDeviceIndex() == joyIndex) {
+			return (SDLInputJoystickBase*)Joysticks[i];
+		}
+	}
+
+	return NULL;
+}
+
+void SDLInputJoystickManager::ProcessInput() const
+{
+	for(unsigned int i = 0;i < Joysticks.Size();++i)
+		Joysticks[i]->ProcessInput();
+}
+
+void SDLInputJoystickManager::DeviceRemoved(int joyInstanceID) {
+	// We need to delete the device because the next device at the same slot *COULD* 
+	// end up being a gamepad where it was previously a joystick
+	bool hasDeleted = false;
+	for(int x = Joysticks.Size() - 1; x >= 0; x--) {
+		auto joy = Joysticks[x];
+
+		if(joy->GetDeviceID() == joyInstanceID) {
+			joy->Detached();
+			delete Joysticks[x];
+			Joysticks.Delete(x);
+			hasDeleted = true;
+		}
+	}
+
+
+	if(hasDeleted) PostDeviceChangeEvent();//UpdateJoystickMenu(NULL);
+}
+
+void SDLInputJoystickManager::DeviceAdded(int joyIndex) {
+	// Check existing joysticks with the same ID to see if they match
+	// the same type. If not, delete it!
+	bool newJoyIsGamepad = SDL_IsGameController(joyIndex);
+	bool hasDeleted = false;
+
+	for(int x = Joysticks.Size() - 1; x >= 0; x--) {
+		auto joy = Joysticks[x];
+
+		if(joy->GetDeviceIndex() == joyIndex) {
+			if(newJoyIsGamepad != joy->IsGamepad()) {
+				if(joy->IsConnected()) joy->Detached();
+				delete Joysticks[x];
+				Joysticks.Delete(x);
+				Printf("Deleting mismatched joystick entry: %d\n", joyIndex);
+				hasDeleted = true;
+			}
+		}
+	}
+
+	auto device = InternalGetDevice(joyIndex);
+	if(device) {
+		if(!device->IsConnected()) device->Attached();
+		return;
+	} else {
+		if(SDL_IsGameController(joyIndex)) {
+			SDLInputGamepad *device = new SDLInputGamepad(joyIndex);
+			if(device->IsValid()) {
+				Joysticks.Push(device);
+				PostDeviceChangeEvent();
+				return;
+			} else {
+				delete device;
+			}
+		} else {
+			SDLInputJoystick *device = new SDLInputJoystick(joyIndex);
+			if(device->IsValid()) {
+				Joysticks.Push(device);
+				PostDeviceChangeEvent();
+				return;
+			} else {
+				delete device;
+			}
+		}
+	}
+
+	if(hasDeleted) {
+		PostDeviceChangeEvent();
+	}
+}
+
+
+SDLInputJoystickManager *JoystickManager;
+
 
 void I_StartupJoysticks()
 {
 #ifndef NO_SDL_JOYSTICK
-	if(SDL_InitSubSystem(SDL_INIT_JOYSTICK) >= 0)
+	if(SDL_InitSubSystem(SDL_INIT_JOYSTICK) >= 0) {
+		SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
 		JoystickManager = new SDLInputJoystickManager();
+	}
 #endif
 }
 void I_ShutdownInput()
@@ -379,6 +728,7 @@ void I_ShutdownInput()
 	{
 		delete JoystickManager;
 		SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+		SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 	}
 }
 
@@ -389,6 +739,7 @@ void I_GetJoysticks(TArray<IJoystickConfig *> &sticks)
 	if (JoystickManager)
 		JoystickManager->GetDevices(sticks);
 }
+
 
 void I_GetAxes(float axes[NUM_JOYAXIS])
 {

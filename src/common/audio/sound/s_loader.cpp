@@ -8,6 +8,7 @@
 #include "file_directory.h"
 
 AudioLoaderQueue *AudioLoaderQueue::Instance = new AudioLoaderQueue();
+const int AudioLoaderQueue::MAX_THREADS;
 
 CVAR(Int, audio_loader_threads, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 

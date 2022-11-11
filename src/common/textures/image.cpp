@@ -409,7 +409,7 @@ FImageSource * FImageSource::GetImage(int lumpnum, bool isflat)
 // TODO: Move this to a unique file
 // Image Loader ====================================================
 ImageLoaderQueue *ImageLoaderQueue::Instance = new ImageLoaderQueue();
-
+const int ImageLoaderQueue::MAX_THREADS;
 
 bool ImageLoadThread::loadResource(ImageLoadIn &input, ImageLoadOut &output) {
 	currentImageID.store(input.imgSource->GetId());

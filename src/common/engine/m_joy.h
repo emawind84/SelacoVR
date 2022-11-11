@@ -52,6 +52,7 @@ struct NOVTABLE IJoystickConfig
 
 	virtual void SetDefaultConfig() = 0;
 	virtual FString GetIdentifier() = 0;
+	virtual bool IsGamepad() { return false; }
 
 	// @Cockatrice - Can't find a terribly appropriate place to add this functionality, so it goes here
 	virtual bool AddVibration(float l, float r) { return SetVibration(lFeed + l, rFeed + r); }
@@ -138,6 +139,10 @@ struct InputQueue {
 
 		T avg = getAverage(numInputs);
 		return avg + (amount * ((*this)[0] - avg));
+	}
+
+	void reset() {
+		pos = -1;
 	}
 };
 
