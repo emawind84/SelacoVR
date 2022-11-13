@@ -85,6 +85,11 @@ CUSTOM_CVAR(Int, joy_xinput_queuesize, 5, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
 	if (self < 1) self = 1;
 }
 
+CUSTOM_CVAR(Int, joy_xinput_squaremove, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
+	if (self > 2) self = 2;
+	if (self < 0) self = 0;
+}
+
 // TYPES -------------------------------------------------------------------
 
 typedef DWORD (WINAPI *XInputGetStateType)(DWORD index, XINPUT_STATE *state);
@@ -319,6 +324,43 @@ void FXInputController::ProcessInput()
 					 -state.Gamepad.sThumbRY, &Axes[AXIS_ThumbRY], KEY_PAD_RTHUMB_RIGHT);
 	ProcessTrigger(state.Gamepad.bLeftTrigger, &Axes[AXIS_LeftTrigger], KEY_PAD_LTRIGGER);
 	ProcessTrigger(state.Gamepad.bRightTrigger, &Axes[AXIS_RightTrigger], KEY_PAD_RTRIGGER);
+
+
+	// Find the two axes for directional movement
+	if (joy_xinput_squaremove > 0) {
+		AxisInfo *moveSide = NULL, *moveForward = NULL;
+		int axisSide = -1, axisForward = -1;
+		for (int x = 0; x < NUM_AXES; x++) {
+			if (Axes[x].GameAxis == JOYAXIS_Forward) {
+				moveForward = &Axes[x];
+				axisForward = x;
+			}
+			else if (Axes[x].GameAxis == JOYAXIS_Side) {
+				moveSide = &Axes[x];
+				axisSide = x;
+			}
+		}
+
+		// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squaremove
+		if (moveSide && moveForward && (
+			joy_xinput_squaremove > 1 || 
+			((axisSide == AXIS_ThumbLX || axisSide == AXIS_ThumbLY) && (axisForward == AXIS_ThumbLX || axisForward == AXIS_ThumbLY)) ||
+			((axisSide == AXIS_ThumbRX || axisSide == AXIS_ThumbRY) && (axisForward == AXIS_ThumbRX || axisForward == AXIS_ThumbRY))
+			)) {
+
+			// We share a physical stick, so let's un-circularize the inputs
+			float x = moveSide->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
+			float y = moveForward->Value * 1.15f;
+			float r = sqrt(x*x + y*y);
+			float maxMove = max(abs(x), abs(y));
+			if (maxMove > 0) {
+				moveForward->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
+				moveSide->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
+			}
+		}
+	}
+	
+	
 
 
 	if (state.dwPacketNumber == LastPacketNumber)
