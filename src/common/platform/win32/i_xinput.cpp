@@ -550,7 +550,13 @@ void FXInputController::AddAxes(float axes[NUM_JOYAXIS])
 	// Add to game axes.
 	for (int i = 0; i < NUM_AXES; ++i)
 	{
-		axes[Axes[i].GameAxis] -= float(Axes[i].Value * Multiplier * Axes[i].Multiplier);
+		// Do not scale the movement axes by the global multiplier
+		if (Axes[i].GameAxis == JOYAXIS_Forward || Axes[i].GameAxis == JOYAXIS_Side) {
+			axes[Axes[i].GameAxis] -= float(Axes[i].Value * Axes[i].Multiplier);
+		}
+		else {
+			axes[Axes[i].GameAxis] -= float(Axes[i].Value * Multiplier * Axes[i].Multiplier);
+		}
 	}
 }
 

@@ -170,8 +170,14 @@ public:
 		// Add to game axes.
 		for (int i = 0; i < GetNumAxes(); ++i)
 		{
-			if(Axes[i].GameAxis != JOYAXIS_None)
-				axes[Axes[i].GameAxis] -= float(Axes[i].Value * Multiplier * Axes[i].Multiplier);
+			if (Axes[i].GameAxis != JOYAXIS_None) {
+				if (Axes[i].GameAxis == JOYAXIS_Forward || Axes[i].GameAxis == JOYAXIS_Side) {
+					axes[Axes[i].GameAxis] -= float(Axes[i].Value * Axes[i].Multiplier);
+				}
+				else {
+					axes[Axes[i].GameAxis] -= float(Axes[i].Value * Multiplier * Axes[i].Multiplier);
+				}
+			}
 		}
 	}
 
