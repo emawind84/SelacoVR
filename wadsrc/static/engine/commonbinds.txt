@@ -67,19 +67,22 @@ del +lookdown
 end centerview
 
 // Xbox 360 / PS2 controllers
-pad_a +use
-pad_y +jump
+pad_a +jump
+pad_x +usereload
+pad_b Toggle_Flashlight
+pad_y usemeds
 rtrigger +attack
 ltrigger +altattack
-lshoulder weapprev
-rshoulder weapnext
-dpadleft invprev
-dpadright invnext
-dpaddown invuse
+lshoulder +DashMode
+rshoulder useGadget
+dpadleft weapprev
+dpadright weapnext
+dpaddown printObjectives
 dpadup togglemap
-pad_start pause
-pad_back menu_main
+pad_start menu_main
+pad_back codex
 lthumb crouch
+rthumb meleeButton
 
 
 /* Default automap bindings */
