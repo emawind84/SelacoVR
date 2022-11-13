@@ -1241,6 +1241,9 @@ void D_DoomLoop ()
 				Printf (PRINT_BOLD, "\n%s\n", error.GetMessage());
 			}
 			D_ErrorCleanup ();
+
+			// @Cockatrice - Clearing the net-game was not updating the lasttic variable, which means joystick input stops working
+			lasttic = gametic;
 		}
 		catch (CVMAbortException &error)
 		{
