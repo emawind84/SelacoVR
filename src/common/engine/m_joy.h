@@ -98,7 +98,7 @@ extern void UpdateJoystickMenu(IJoystickConfig *);
 
 
 // @Cockatrice - Simple ring buffer for holding inputs for averaging
-// This is a super basic implementation for axis acceleration
+// This is a super basic implementation for axis averaging
 // Averaging seems to work better than damping acceleration so  this is
 // how I'm going to do it.
 // Queue items must be stored only when input is consumed at a fixed rate 
