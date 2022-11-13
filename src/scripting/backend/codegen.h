@@ -247,6 +247,7 @@ enum EFxType
 	EFX_Conditional,
 	EFX_Abs,
 	EFX_ATan2,
+	EFX_ATan2Vec,
 	EFX_New,
 	EFX_MinMax,
 	EFX_Random,
@@ -1210,6 +1211,18 @@ public:
 
 private:
 	ExpEmit ToReg(VMFunctionBuilder *build, FxExpression *val);
+};
+
+class FxATan2Vec : public FxExpression
+{
+	FxExpression* vval;
+
+public:
+
+	FxATan2Vec(FxExpression* y, const FScriptPosition& pos);
+	~FxATan2Vec();
+	FxExpression* Resolve(FCompileContext&);
+	ExpEmit Emit(VMFunctionBuilder* build);
 };
 
 //==========================================================================

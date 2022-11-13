@@ -5068,6 +5068,23 @@ FxExpression *FxATan2::Resolve(FCompileContext &ctx)
 
 //==========================================================================
 //
+// The atan2 opcode only takes registers as parameters, so any constants
+// must be loaded into registers first.
+//
+//==========================================================================
+ExpEmit FxATan2::ToReg(VMFunctionBuilder* build, FxExpression* val)
+{
+	if (val->isConstant())
+	{
+		ExpEmit reg(build, REGT_FLOAT);
+		build->Emit(OP_LKF, reg.RegNum, build->GetConstantFloat(static_cast<FxConstant*>(val)->GetValue().GetFloat()));
+		return reg;
+	}
+	return val->Emit(build);
+}
+
+//==========================================================================
+//
 //
 //
 //==========================================================================
@@ -5079,6 +5096,61 @@ ExpEmit FxATan2::Emit(VMFunctionBuilder *build)
 	xreg.Free(build);
 	ExpEmit out(build, REGT_FLOAT);
 	build->Emit(OP_ATAN2, out.RegNum, yreg.RegNum, xreg.RegNum);
+	return out;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+FxATan2Vec::FxATan2Vec(FxExpression* v, const FScriptPosition& pos)
+	: FxExpression(EFX_ATan2Vec, pos)
+{
+	vval = v;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+FxATan2Vec::~FxATan2Vec()
+{
+	SAFE_DELETE(vval);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+FxExpression* FxATan2Vec::Resolve(FCompileContext& ctx)
+{
+	CHECKRESOLVED();
+	SAFE_RESOLVE(vval, ctx);
+
+	if (!vval->IsVector())
+	{
+		ScriptPosition.Message(MSG_ERROR, "vector value expected for parameter");
+		delete this;
+		return nullptr;
+	}
+	ValueType = TypeFloat64;
+	return this;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+ExpEmit FxATan2Vec::Emit(VMFunctionBuilder* build)
+{
+	ExpEmit vreg = vval->Emit(build);
+	vreg.Free(build);
+	ExpEmit out(build, REGT_FLOAT);
+	build->Emit(OP_ATAN2, out.RegNum, vreg.RegNum + 1, vreg.RegNum);
 	return out;
 }
 
@@ -5233,23 +5305,6 @@ ExpEmit FxNew::Emit(VMFunctionBuilder *build)
 	emitters.AddParameterIntConst(1);	// Todo: 1 only if version < 4.0.0
 	emitters.AddReturn(REGT_POINTER);
 	return emitters.EmitCall(build);
-}
-
-//==========================================================================
-//
-// The atan2 opcode only takes registers as parameters, so any constants
-// must be loaded into registers first.
-//
-//==========================================================================
-ExpEmit FxATan2::ToReg(VMFunctionBuilder *build, FxExpression *val)
-{
-	if (val->isConstant())
-	{
-		ExpEmit reg(build, REGT_FLOAT);
-		build->Emit(OP_LKF, reg.RegNum, build->GetConstantFloat(static_cast<FxConstant*>(val)->GetValue().GetFloat()));
-		return reg;
-	}
-	return val->Emit(build);
 }
 
 //==========================================================================
@@ -8015,10 +8070,18 @@ FxExpression *FxFunctionCall::Resolve(FCompileContext& ctx)
 
 	case NAME_ATan2:
 	case NAME_VectorAngle:
-		if (CheckArgSize(MethodName, ArgList, 2, 2, ScriptPosition))
+		if (CheckArgSize(MethodName, ArgList, 1, 2, ScriptPosition))
 		{
-			func = MethodName == NAME_ATan2 ? new FxATan2(ArgList[0], ArgList[1], ScriptPosition) : new FxATan2(ArgList[1], ArgList[0], ScriptPosition);
-			ArgList[0] = ArgList[1] = nullptr;
+			if (ArgList.Size() == 2)
+			{
+				func = MethodName == NAME_ATan2 ? new FxATan2(ArgList[0], ArgList[1], ScriptPosition) : new FxATan2(ArgList[1], ArgList[0], ScriptPosition);
+				ArgList[0] = ArgList[1] = nullptr;
+			}
+			else
+			{
+				func = new FxATan2Vec(ArgList[0], ScriptPosition);
+				ArgList[0] = nullptr;
+			}
 		}
 		break;
 
@@ -8249,7 +8312,7 @@ FxExpression *FxMemberFunctionCall::Resolve(FCompileContext& ctx)
 	else if (Self->IsVector())
 	{
 		// handle builtins: Vectors got 2: Length and Unit.
-		if (MethodName == NAME_Length || MethodName == NAME_Unit)
+		if (MethodName == NAME_Length || MethodName == NAME_LengthSquared || MethodName == NAME_Unit || MethodName == NAME_Angle)
 		{
 			if (ArgList.Size() > 0)
 			{
@@ -9450,7 +9513,23 @@ FxExpression *FxVectorBuiltin::Resolve(FCompileContext &ctx)
 {
 	SAFE_RESOLVE(Self, ctx);
 	assert(Self->IsVector());	// should never be created for anything else.
-	ValueType = Function == NAME_Length ? TypeFloat64 : Self->ValueType;
+	switch (Function.GetIndex())
+	{
+	case NAME_Length:
+	case NAME_LengthSquared:
+	case NAME_Angle:
+		ValueType = TypeFloat64;
+		break;
+
+	case NAME_Unit:
+		ValueType = Self->ValueType;
+		break;
+
+	default:
+		ValueType = TypeError;
+		assert(false);
+		break;
+	}
 	return this;
 }
 
@@ -9462,12 +9541,20 @@ ExpEmit FxVectorBuiltin::Emit(VMFunctionBuilder *build)
 	{
 		build->Emit(Self->ValueType == TypeVector2 ? OP_LENV2 : OP_LENV3, to.RegNum, op.RegNum);
 	}
-	else
+	else if (Function == NAME_LengthSquared)
+	{
+		build->Emit(Self->ValueType == TypeVector2 ? OP_DOTV2_RR : OP_DOTV3_RR, to.RegNum, op.RegNum, op.RegNum);
+	}
+	else if (Function == NAME_Unit)
 	{
 		ExpEmit len(build, REGT_FLOAT);
 		build->Emit(Self->ValueType == TypeVector2 ? OP_LENV2 : OP_LENV3, len.RegNum, op.RegNum);
 		build->Emit(Self->ValueType == TypeVector2 ? OP_DIVVF2_RR : OP_DIVVF3_RR, to.RegNum, op.RegNum, len.RegNum);
 		len.Free(build);
+	}
+	else if (Function == NAME_Angle)
+	{
+		build->Emit(OP_ATAN2, to.RegNum, op.RegNum + 1, op.RegNum);
 	}
 	op.Free(build);
 	return to;
