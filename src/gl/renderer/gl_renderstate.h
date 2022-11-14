@@ -41,6 +41,7 @@ extern TArray<VSMatrix> gl_MatrixStack;
 EXTERN_CVAR(Bool, gl_direct_state_change)
 EXTERN_CVAR(Bool, gl_global_fade)
 EXTERN_CVAR(Color, gl_global_fade_color)
+EXTERN_CVAR(Bool, gl_enhanced_nightvision)
 
 struct FStateVec4
 {
@@ -468,13 +469,22 @@ public:
 
 	void InitSceneClearColor()
 	{
+		float r, g, b;
 		if (gl_global_fade)
 		{
 			mSceneColor = mFadeColor;
 		}
-		GLRenderer->mSceneClearColor[0] = mSceneColor.r / 255.f;
-		GLRenderer->mSceneClearColor[1] = mSceneColor.g / 255.f;
-		GLRenderer->mSceneClearColor[2] = mSceneColor.b / 255.f;
+		if (gl_enhanced_nightvision && mColormapState == CM_LITE)
+		{
+			r = 0.375f, g = 1.0f, b = 0.375f;
+		}
+		else
+		{
+			r = g = b = 1.f;
+		}
+		GLRenderer->mSceneClearColor[0] = mSceneColor.r * r / 255.f;
+		GLRenderer->mSceneClearColor[1] = mSceneColor.g * g / 255.f;
+		GLRenderer->mSceneClearColor[2] = mSceneColor.b * b / 255.f;
 	}
 
 	void ResetFadeColor()
