@@ -649,9 +649,7 @@ void GLSkyboxPortal::DrawContents()
 	SaveMapSection();
 	currentmapsection[mapsection >> 3] |= 1 << (mapsection & 7);
 
-	int oldFadeMode = gl_RenderState.SetGlobalFadeMode(3);
 	drawer->DrawScene(DM_SKYPORTAL);
-	gl_RenderState.SetGlobalFadeMode(oldFadeMode);
 	portal->mFlags &= ~PORTSF_INSKYBOX;
 	inskybox = false;
 	gl_RenderState.SetDepthClamp(oldclamp);
