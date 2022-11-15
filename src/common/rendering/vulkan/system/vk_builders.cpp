@@ -1317,7 +1317,7 @@ QueueSubmit& QueueSubmit::AddSignal(VulkanSemaphore* semaphore)
 
 void QueueSubmit::Execute(VulkanDevice* device, VkQueue queue, VulkanFence* fence)
 {
-	VkResult result = vkQueueSubmit(device->graphicsQueue, 1, &submitInfo, fence ? fence->fence : VK_NULL_HANDLE);
+	VkResult result = vkQueueSubmit(queue, 1, &submitInfo, fence ? fence->fence : VK_NULL_HANDLE);
 	CheckVulkanError(result, "Could not submit command buffer");
 }
 
