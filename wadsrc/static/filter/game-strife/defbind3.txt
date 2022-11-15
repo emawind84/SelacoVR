@@ -1,5 +1,1 @@
 /* Default keybindings for Strife */
-
-w "showpop 1"
-s "showpop 2"
-

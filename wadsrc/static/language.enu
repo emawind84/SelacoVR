@@ -2933,10 +2933,10 @@ OPTVAL_HIGH					= "High";
 OPTVAL_EXTREME				= "Extreme";
 OPTVAL_OBVERSEFIRST			= "Obverse";
 OPTVAL_REVERSEFIRST			= "Reverse";
-OPTVAL_CLASSICZ				= "Classic ZDoom";
-OPTVAL_MODERN				= "Modern (WASD)";
-OPTVAL_MODERN2				= "Modern (ESDF)";
-OPTVAL_MODERN3				= "Modern (OKL;)";
+OPTVAL_CLASSICZ				= "QZD Pre 1.3.0";
+OPTVAL_MODERN				= "QZD Dual Wield";
+OPTVAL_MODERN2				= "QZD Classic";
+OPTVAL_MODERN3				= "-";
 OPTVAL_UBO					= "UBO (better performance)";
 OPTVAL_SSBO					= "SSBO (better stability)";
 

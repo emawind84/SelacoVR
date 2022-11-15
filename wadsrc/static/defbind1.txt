@@ -1,1 +1,10 @@
 /* Default keybindings for all games */
+/* with dualwield support */
+
+axis8plus "weapprev 1"
+axis8minus "weapnext 1"
+axis7plus "switchhand 0"
+axis7minus "switchhand 1"
+alt +oh_altatk
+shift +oh_attack
+rthumb +speed
