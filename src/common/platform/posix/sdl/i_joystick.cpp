@@ -49,6 +49,11 @@ CUSTOM_CVAR(Int, joy_sdl_queuesize, 5, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
 	if (self < 1) self = 1;
 }
 
+CUSTOM_CVAR(Int, joy_sdl_squaremove, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
+	if (self > 2) self = 2;
+	if (self < 0) self = 0;
+}
+
 void PostDeviceChangeEvent() {
 	event_t event = { EV_DeviceChange };
 	D_PostEvent(&event);
@@ -165,8 +170,14 @@ public:
 		// Add to game axes.
 		for (int i = 0; i < GetNumAxes(); ++i)
 		{
-			if(Axes[i].GameAxis != JOYAXIS_None)
-				axes[Axes[i].GameAxis] -= float(Axes[i].Value * Multiplier * Axes[i].Multiplier);
+			if (Axes[i].GameAxis != JOYAXIS_None) {
+				if (Axes[i].GameAxis == JOYAXIS_Forward || Axes[i].GameAxis == JOYAXIS_Side) {
+					axes[Axes[i].GameAxis] -= float(Axes[i].Value * Axes[i].Multiplier);
+				}
+				else {
+					axes[Axes[i].GameAxis] -= float(Axes[i].Value * Multiplier * Axes[i].Multiplier);
+				}
+			}
 		}
 	}
 
@@ -244,6 +255,33 @@ public:
 			{
 				Joy_GenerateButtonEvents(x.ButtonValue, buttonstate, 4, KEY_JOYPOV1_UP + i*4);
 				x.ButtonValue = buttonstate;
+			}
+		}
+
+		// Find the two axes for directional movement
+		if (joy_sdl_squaremove > 1) {
+			AxisInfo *moveSide = NULL, *moveForward = NULL;
+			for (int x = 0; x < NumAxes; x++) {
+				if (Axes[x].GameAxis == JOYAXIS_Forward) {
+					moveForward = &Axes[x];
+				}
+				else if (Axes[x].GameAxis == JOYAXIS_Side) {
+					moveSide = &Axes[x];
+				}
+			}
+
+			// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squaremove
+			if (moveSide && moveForward) {
+
+				// We share a physical stick, so let's un-circularize the inputs
+				float x = moveSide->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
+				float y = moveForward->Value * 1.15f;
+				float r = sqrt(x*x + y * y);
+				float maxMove = max(abs(x), abs(y));
+				if (maxMove > 0) {
+					moveForward->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
+					moveSide->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
+				}
 			}
 		}
 	}
@@ -400,8 +438,16 @@ public:
 		// Add to game axes.
 		for (int i = 0; i < GetNumAxes(); ++i)
 		{
-			if(Axes[i].GameAxis != JOYAXIS_None)
-				axes[Axes[i].GameAxis] -= float(Axes[i].Value * Multiplier * Axes[i].Multiplier);
+			if (Axes[i].GameAxis != JOYAXIS_None) {
+				if (Axes[i].GameAxis != JOYAXIS_None) {
+					if (Axes[i].GameAxis == JOYAXIS_Forward || Axes[i].GameAxis == JOYAXIS_Side) {
+						axes[Axes[i].GameAxis] -= float(Axes[i].Value * Axes[i].Multiplier);
+					}
+					else {
+						axes[Axes[i].GameAxis] -= float(Axes[i].Value * Multiplier * Axes[i].Multiplier);
+					}
+				}
+			}
 		}
 	}
 
@@ -464,6 +510,40 @@ public:
 		
 		ProcessTrigger(SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_TRIGGERLEFT)/32767.0, &Axes[SDL_CONTROLLER_AXIS_TRIGGERLEFT], KEY_PAD_LTRIGGER);
 		ProcessTrigger(SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_TRIGGERRIGHT)/32767.0, &Axes[SDL_CONTROLLER_AXIS_TRIGGERRIGHT], KEY_PAD_RTRIGGER);
+
+		// Find the two axes for directional movement
+		if (joy_sdl_squaremove > 0) {
+			AxisInfo *moveSide = NULL, *moveForward = NULL;
+			int axisSide = -1, axisForward = -1;
+			for (int x = 0; x < NumAxes; x++) {
+				if (Axes[x].GameAxis == JOYAXIS_Forward) {
+					moveForward = &Axes[x];
+					axisForward = x;
+				}
+				else if (Axes[x].GameAxis == JOYAXIS_Side) {
+					moveSide = &Axes[x];
+					axisSide = x;
+				}
+			}
+
+			// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squaremove
+			if (moveSide && moveForward && (
+				joy_sdl_squaremove > 1 ||
+				((axisSide == SDL_CONTROLLER_AXIS_LEFTX || axisSide == SDL_CONTROLLER_AXIS_LEFTY) && (axisForward == SDL_CONTROLLER_AXIS_LEFTX || axisForward == SDL_CONTROLLER_AXIS_LEFTY)) ||
+				((axisSide == SDL_CONTROLLER_AXIS_RIGHTX || axisSide == SDL_CONTROLLER_AXIS_RIGHTY) && (axisForward == SDL_CONTROLLER_AXIS_RIGHTX || axisForward == SDL_CONTROLLER_AXIS_RIGHTY))
+				)) {
+
+				// We share a physical stick, so let's un-circularize the inputs
+				float x = moveSide->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
+				float y = moveForward->Value * 1.15f;
+				float r = sqrt(x*x + y * y);
+				float maxMove = max(abs(x), abs(y));
+				if (maxMove > 0) {
+					moveForward->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
+					moveSide->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
+				}
+			}
+		}
 	}
 
 

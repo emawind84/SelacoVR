@@ -98,9 +98,9 @@ const char *GetVersionString();
 #define VR3D_ENABLED
 
 // More stuff that needs to be different for derivatives.
-#define GAMENAME "Selaco-Demo"
-#define WGAMENAME L"Selaco Demo"
-#define GAMENAMELOWERCASE "selaco-demo"
+#define GAMENAME "Selaco-TestLab"
+#define WGAMENAME L"Selaco Test Labs"
+#define GAMENAMELOWERCASE "selaco-testlab"
 #define FORUM_URL "http://forum.zdoom.org/"
 #define BUGS_FORUM_URL	"http://forum.zdoom.org/viewforum.php?f=2"
 
