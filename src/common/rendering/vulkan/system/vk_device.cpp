@@ -146,6 +146,18 @@ void VulkanDevice::SelectPhysicalDevice()
 			}
 		}
 
+		// @Cockatrice - Check for a transfer specific queue type, or at least find a queue that is not dedicated to graphics and pick that for upload
+		// If nothing is found, we'll set upload to the same queue family as graphics
+		for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
+		{
+			const auto &queueFamily = info.QueueFamilies[i];
+			if (queueFamily.queueCount > 0 && ((queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) || !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)))
+			{
+				dev.uploadFamily = i;
+				break;
+			}
+		}
+
 		// The vulkan spec states that graphics and compute queues can always do transfer.
 		// Furthermore the spec states that graphics queues always can do compute.
 		// Last, the spec makes it OPTIONAL whether the VK_QUEUE_TRANSFER_BIT is set for such queues, but they MUST support transfer.
@@ -158,6 +170,9 @@ void VulkanDevice::SelectPhysicalDevice()
 			{
 				dev.graphicsFamily = i;
 				dev.graphicsTimeQueries = queueFamily.timestampValidBits != 0;
+				if (dev.uploadFamily < 0) {
+					dev.uploadFamily = i;
+				}
 				break;
 			}
 		}
@@ -205,6 +220,7 @@ void VulkanDevice::SelectPhysicalDevice()
 	PhysicalDevice = *SupportedDevices[selected].device;
 	graphicsFamily = SupportedDevices[selected].graphicsFamily;
 	presentFamily = SupportedDevices[selected].presentFamily;
+	uploadFamily = SupportedDevices[selected].uploadFamily;
 	graphicsTimeQueries = SupportedDevices[selected].graphicsTimeQueries;
 }
 
@@ -229,6 +245,26 @@ void VulkanDevice::CreateAllocator()
 		VulkanError("Unable to create allocator");
 }
 
+
+static int CreateOrModifyQueueInfo(std::vector<VkDeviceQueueCreateInfo> &infos, int family, float *priority) {
+	for (VkDeviceQueueCreateInfo &info : infos) {
+		if (info.queueFamilyIndex == family) {
+			info.queueCount++;
+			return info.queueCount - 1;
+		}
+	}
+
+	VkDeviceQueueCreateInfo queueCreateInfo = {};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = family;
+	queueCreateInfo.queueCount = 1;
+	queueCreateInfo.pQueuePriorities = priority;
+	infos.push_back(queueCreateInfo);
+
+	return 0;
+}
+
+
 void VulkanDevice::CreateDevice()
 {
 	float queuePriority = 1.0f;
@@ -237,16 +273,20 @@ void VulkanDevice::CreateDevice()
 	std::set<int> neededFamilies;
 	neededFamilies.insert(graphicsFamily);
 	neededFamilies.insert(presentFamily);
+	neededFamilies.insert(uploadFamily);
 
-	for (int index : neededFamilies)
-	{
-		VkDeviceQueueCreateInfo queueCreateInfo = {};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = index;
-		queueCreateInfo.queueCount = 1;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
-		queueCreateInfos.push_back(queueCreateInfo);
-	}
+	int graphicsFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, graphicsFamily, &queuePriority);
+	int presentFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, presentFamily, &queuePriority);
+	int uploadFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, uploadFamily, &queuePriority);
+
+	// Graphics Queue
+	/*VkDeviceQueueCreateInfo queueCreateInfo = {};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = graphicsFamily;
+	queueCreateInfo.queueCount = 1;
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+	queueCreateInfos.push_back(queueCreateInfo);*/
+
 
 	VkDeviceCreateInfo deviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 	VkPhysicalDeviceFeatures2 deviceFeatures2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
@@ -295,8 +335,11 @@ void VulkanDevice::CreateDevice()
 
 	volkLoadDevice(device);
 
-	vkGetDeviceQueue(device, graphicsFamily, 0, &graphicsQueue);
-	vkGetDeviceQueue(device, presentFamily, 0, &presentQueue);
+	vkGetDeviceQueue(device, graphicsFamily, graphicsFamilySlot, &graphicsQueue);
+	vkGetDeviceQueue(device, presentFamily, presentFamilySlot, &presentQueue);
+	vkGetDeviceQueue(device, uploadFamily, uploadFamilySlot, &uploadQueue);
+
+	Printf(TEXTCOLOR_WHITE "VK Graphics Queue: %p\nVK Upload Queue: %p\n", graphicsQueue, uploadQueue);
 }
 
 void VulkanDevice::CreateSurface()
