@@ -8,7 +8,7 @@ class VulkanFrameBuffer;
 class VkCommandBufferManager
 {
 public:
-	VkCommandBufferManager(VulkanFrameBuffer* fb);
+	VkCommandBufferManager(VulkanFrameBuffer* fb, bool uploadOnly = false);
 	~VkCommandBufferManager();
 
 	void BeginFrame();
@@ -61,12 +61,13 @@ public:
 	uint32_t presentImageIndex = 0xffffffff;
 
 private:
-	void FlushCommands(VulkanCommandBuffer** commands, size_t count, bool finish, bool lastsubmit);
+	void FlushCommands(VulkanCommandBuffer** commands, size_t count, VkQueue *queue, bool finish, bool lastsubmit);
 
 	VulkanFrameBuffer* fb = nullptr;
+	VkQueue* fbQueue = nullptr;
+	bool mIsUploadOnly;
 
 	std::unique_ptr<VulkanCommandPool> mCommandPool;
-
 	std::unique_ptr<VulkanCommandBuffer> mTransferCommands;
 	std::unique_ptr<VulkanCommandBuffer> mDrawCommands;
 

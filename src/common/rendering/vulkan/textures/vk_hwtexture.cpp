@@ -171,6 +171,7 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 
 void VkHardwareTexture::CreateTexture(int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap) {
 	CreateTexture(fb->GetCommands(), mImage.get(), w, h, pixelsize, format, pixels, mipmap);
+	hwState = READY;
 }
 
 void VkHardwareTexture::BackgroundCreateTexture(int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap) {
@@ -181,7 +182,10 @@ void VkHardwareTexture::BackgroundCreateTexture(int w, int h, int pixelsize, VkF
 	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap);
 
 	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
-	if(bufManager->TransferDeleteList->TotalSize > 1) bufManager->WaitForCommands(false, true);
+	if (bufManager->TransferDeleteList->TotalSize > 1) {
+		bufManager->WaitForCommands(false, true);
+		hwState = READY;
+	}
 }
 
 void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkTextureImage *img, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap)
@@ -231,10 +235,10 @@ void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkText
 
 	// If we queued more than 64 MB of data already: wait until the uploads finish before continuing
 	bufManager->TransferDeleteList->Add(std::move(stagingBuffer));
-	if (bufManager->TransferDeleteList->TotalSize > 64 * 1024 * 1024)
+	if (bufManager->TransferDeleteList->TotalSize > 64 * 1024 * 1024) {
 		bufManager->WaitForCommands(false, true);
-
-	hwState = READY;
+		hwState = READY;
+	}
 }
 
 int VkHardwareTexture::GetMipLevels(int w, int h)

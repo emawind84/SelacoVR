@@ -296,7 +296,7 @@ void VulkanFrameBuffer::InitializeState()
 	maxuniformblock = device->PhysicalDevice.Properties.limits.maxUniformBufferRange;
 
 	mCommands.reset(new VkCommandBufferManager(this));
-	mBGTransferCommands.reset(new VkCommandBufferManager(this));
+	mBGTransferCommands.reset(new VkCommandBufferManager(this, true));
 
 	mSamplerManager.reset(new VkSamplerManager(this));
 	mTextureManager.reset(new VkTextureManager(this));
