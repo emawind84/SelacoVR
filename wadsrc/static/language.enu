@@ -1780,7 +1780,7 @@ MNU_MULTIPLAYER					= "Multiplayer";
 CNTRLMNU_WEAPONS_TITLE				= "Customize Weapon Controls";
 CNTRLMNU_INVENTORY_TITLE			= "Customize Inventory Controls";
 CNTRLMNU_OTHER_TITLE				= "Customize Other Controls";
-CNTRLMNU_POPUPS_TITLE				= "Strife Popup Screens Controls";
+CNTRLMNU_POPUPS_TITLE				= "Popup Screens Controls";
 CNTRLMNU_PAUSE					= "Pause";
 CNTRLMNU_DISPLAY_INC				= "Increase Display Size";
 CNTRLMNU_DISPLAY_DEC				= "Decrease Display Size";
@@ -1830,6 +1830,7 @@ CNTRLMNU_MISSION				= "Mission objectives";
 CNTRLMNU_KEYS					= "Keys list";
 CNTRLMNU_STATS					= "Weapons/ammo/stats";
 CNTRLMNU_LAYOUT					= "Default Control Layout";
+CNTRLMNU_USEFLECHETTE			= "Use flechette";
 
 // Mouse Menu
 
