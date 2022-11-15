@@ -4,6 +4,9 @@
 #include <functional>
 #include <mutex>
 #include <atomic>
+#ifdef __linux__
+#include <condition_variable>
+#endif
 #include <chrono>
 #include "stats.h"
 #include "tarray.h"
@@ -71,9 +74,7 @@ template <typename IP, typename OP>
 class ResourceLoader {
 public:
 	ResourceLoader() {}
-	~ResourceLoader() {
-		stop();
-	}
+	virtual ~ResourceLoader() { stop(); }
 
 	void start() {
 		if (mThread.get_id() == std::thread::id()) {

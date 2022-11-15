@@ -120,7 +120,7 @@ PalettedPixels FImageSource::GetCachedPalettedPixels(int conversion)
 		if (!info || info->second <= 1 || conversion != normal)
 		{
 			// This is either the only copy needed or some access outside the caching block. In these cases create a new one and directly return it.
-			Printf("returning fresh copy of %s\n", name.GetChars());
+			//Printf("returning fresh copy of %s\n", name.GetChars());
 			ret.PixelStore = CreatePalettedPixels(conversion);
 			ret.Pixels.Set(ret.PixelStore.Data(), ret.PixelStore.Size());
 		}
@@ -409,7 +409,7 @@ FImageSource * FImageSource::GetImage(int lumpnum, bool isflat)
 // TODO: Move this to a unique file
 // Image Loader ====================================================
 ImageLoaderQueue *ImageLoaderQueue::Instance = new ImageLoaderQueue();
-
+const int ImageLoaderQueue::MAX_THREADS;
 
 bool ImageLoadThread::loadResource(ImageLoadIn &input, ImageLoadOut &output) {
 	currentImageID.store(input.imgSource->GetId());

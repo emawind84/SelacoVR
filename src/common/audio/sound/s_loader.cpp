@@ -8,6 +8,7 @@
 #include "file_directory.h"
 
 AudioLoaderQueue *AudioLoaderQueue::Instance = new AudioLoaderQueue();
+const int AudioLoaderQueue::MAX_THREADS;
 
 CVAR(Int, audio_loader_threads, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
@@ -380,7 +381,7 @@ void AudioLoaderQueue::relinkSound(int sourcetype, const void *from, const void 
 
 bool AudioLoaderQueue::relinkSound(AudioQueuePlayInfo &item, FSoundID sndID, int sourcetype, const void *from, const void *to, const FVector3 *optpos) {
 	if (item.type == sourcetype && item.source == from) {
-		Printf(TEXTCOLOR_BRICK"Relinking an instance of : %s\n", soundEngine->GetSfx(sndID)->name.GetChars());	// TODO: Remove this debug
+		//Printf(TEXTCOLOR_BRICK"Relinking an instance of : %s\n", soundEngine->GetSfx(sndID)->name.GetChars());	// TODO: Remove this debug
 
 		item.source = to;
 
@@ -391,7 +392,7 @@ bool AudioLoaderQueue::relinkSound(AudioQueuePlayInfo &item, FSoundID sndID, int
 			}
 			else {
 				// Delete the play instruction, we can't do a looped sound with no source
-				Printf("Cancelling play of looped sound because it no longer has a source: %s\n", soundEngine->GetSfx(sndID)->name.GetChars());
+				//Printf("Cancelling play of looped sound because it no longer has a source: %s\n", soundEngine->GetSfx(sndID)->name.GetChars());
 				return false;
 			}
 		}
@@ -420,7 +421,7 @@ void AudioLoaderQueue::stopSound(FSoundID soundID) {
 
 	auto search = mPlayQueue.find((int)soundID);
 	if (search != mPlayQueue.end()) {
-		Printf("Stopping play of sound in queue by request: %s\n", soundEngine->GetSfx(soundID)->name.GetChars());	// TODO: Remove debug
+		//Printf("Stopping play of sound in queue by request: %s\n", soundEngine->GetSfx(soundID)->name.GetChars());	// TODO: Remove debug
 		search->second.Clear();
 	}
 }
@@ -460,7 +461,7 @@ void AudioLoaderQueue::stopSound(int channel, FSoundID soundID) {
 			if (info.type == SOURCE_None &&
 				(pair.first == soundID || soundID == -1) &&
 				(channel == CHAN_AUTO || channel == info.channel)) {
-				Printf("Stopping play of sound in queue by chan request: %s\n", soundEngine->GetSfx(pair.first)->name.GetChars());
+				//Printf("Stopping play of sound in queue by chan request: %s\n", soundEngine->GetSfx(pair.first)->name.GetChars());
 				pair.second.Delete(x);
 				x--;
 			}
@@ -507,7 +508,7 @@ void AudioLoaderQueue::stopSound(int sourcetype, const void* actor, int channel,
 				info.type == sourcetype &&
 				(soundID == -1 ? (info.channel == channel || channel < 0) : (pair.first == soundID))) {
 				AActor *a = sourcetype == SOURCE_Actor ? (AActor *)actor : NULL;
-				Printf(TEXTCOLOR_RED"Stopping play of sound in queue by actor:chan request: %s (%s)\n", soundEngine->GetSfx(pair.first)->name.GetChars(), a ? a->GetCharacterName() : "<None>");
+				//Printf(TEXTCOLOR_RED"Stopping play of sound in queue by actor:chan request: %s (%s)\n", soundEngine->GetSfx(pair.first)->name.GetChars(), a ? a->GetCharacterName() : "<None>");
 				pair.second.Delete(x);
 				x--;
 			}
@@ -558,7 +559,7 @@ void AudioLoaderQueue::stopActorSounds(int sourcetype, const void* actor, int ch
 				info.type == sourcetype &&
 				(all || (info.channel >= chanmin && info.channel <= chanmax))) {
 				AActor *a = (AActor *)actor;
-				Printf(TEXTCOLOR_RED"Stopping play of sound in queue by all actor request: %s (%s)\n", soundEngine->GetSfx(pair.first)->name.GetChars(), a ? a->GetCharacterName() : "<None>");
+				//Printf(TEXTCOLOR_RED"Stopping play of sound in queue by all actor request: %s (%s)\n", soundEngine->GetSfx(pair.first)->name.GetChars(), a ? a->GetCharacterName() : "<None>");
 				pair.second.Delete(x);
 				x--;
 			}
@@ -674,11 +675,11 @@ void AudioLoaderQueue::update() {
 			// Move audio data references
 			if (loaded.sfx && !loaded.sfx->data.isValid()) {
 				if (loaded.loadedSnd.isValid()) {
-					Printf("Moving loaded audio for : %s\n", loaded.sfx->name.GetChars());
+					//Printf("Moving loaded audio for : %s\n", loaded.sfx->name.GetChars());
 					loaded.sfx->data = loaded.loadedSnd;
 				} else {
 					loaded.sfx->lumpnum = sfx_empty;
-					Printf("Invalid audio data loaded, marking sound : %s\n", loaded.sfx->name.GetChars());
+					//Printf("Invalid audio data loaded, marking sound : %s\n", loaded.sfx->name.GetChars());
 				}
 			}
 
@@ -694,7 +695,7 @@ void AudioLoaderQueue::update() {
 				if (search != mPlayQueue.end()) {
 					auto& playlist = search->second;
 
-					Printf("Finished loading; now playing : %s (%d copies)\n", loaded.sfx->name.GetChars(), playlist.Size());
+					//Printf("Finished loading; now playing : %s (%d copies)\n", loaded.sfx->name.GetChars(), playlist.Size());
 
 					cycle_t playTime;
 					playTime.Clock();
@@ -729,9 +730,9 @@ void AudioLoaderQueue::update() {
 
 	updateCycles.Unclock();
 
-	if (updateCycles.TimeMS() > 1.0) {
+	/*if (updateCycles.TimeMS() > 1.0) {
 		Printf(TEXTCOLOR_YELLOW"AudioLoaderQueue::Warning Update() took more than 1ms (%0.6fms). Played %d sounds at %0.6fms \n", updateCycles.TimeMS(), numPlayed, playMS);
-	}
+	}*/
 }
 
 
