@@ -400,7 +400,7 @@ extend class Actor
 	// Enhanced spawning function
 	//
 	//===========================================================================
-	bool, Actor A_SpawnItemEx(class<Actor> missile, double xofs = 0, double yofs = 0, double zofs = 0, double xvel = 0, double yvel = 0, double zvel = 0, double angle = 0, int flags = 0, int failchance = 0, int tid=0)
+	action bool, Actor A_SpawnItemEx(class<Actor> missile, double xofs = 0, double yofs = 0, double zofs = 0, double xvel = 0, double yvel = 0, double zvel = 0, double angle = 0, int flags = 0, int failchance = 0, int tid=0)
 	{
 		if (missile == NULL) 
 		{
@@ -417,24 +417,49 @@ extend class Actor
 		}
 
 		Vector2 pos;
+		Vector3 spawnpos = (self.pos.XY, self.pos.Z - Floorclip + GetBobOffset() + zofs);
+		let directionAngle = angle;
+		let directionPitch = pitch;
+		let velxy = Vel.XY / 2;
 
 		if (!(flags & SXF_ABSOLUTEANGLE))
 		{
-			angle += self.Angle;
+			directionAngle += self.Angle;
 		}
-		double s = sin(angle);
-		double c = cos(angle);
 
-		if (flags & SXF_ABSOLUTEPOSITION)
+		if (player != null)
 		{
-			pos = Vec2Offset(xofs, yofs);
+			Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
+			{
+				Vector3 dir;
+				if (weapon.bOffhandWeapon)
+				{
+					spawnpos = player.mo.OffhandPos;
+					dir = player.mo.OffhandDir(self, self.Angle, pitch);
+				}
+				else
+				{
+					spawnpos = player.mo.AttackPos;
+					dir = player.mo.AttackDir(self, self.Angle, pitch);
+				}
+				directionAngle = angle;
+				if (!(flags & SXF_ABSOLUTEANGLE))
+				{
+					directionAngle += dir.x;
+				}
+				directionPitch = dir.y;
+				
+				//velxy = (0, 0);
+				zvel = -clamp(tan(directionPitch), -5, 5);
+				xvel = 1;
+				yvel = 0;
+				flags |= SXF_MULTIPLYSPEED;
+			}
 		}
-		else
-		{
-			// in relative mode negative y values mean 'left' and positive ones mean 'right'
-			// This is the inverse orientation of the absolute mode!
-			pos = Vec2Offset(xofs * c + yofs * s, xofs * s - yofs*c);
-		}
+
+		double s = sin(directionAngle);
+		double c = cos(directionAngle);
 
 		if (!(flags & SXF_ABSOLUTEVELOCITY))
 		{
@@ -444,7 +469,7 @@ extend class Actor
 			xvel = newxvel;
 		}
 
-		let mo = Spawn(missile, (pos, self.pos.Z - Floorclip + GetBobOffset() + zofs), ALLOW_REPLACE);
+		let mo = Spawn(missile, spawnpos, ALLOW_REPLACE);
 		bool res = InitSpawnedItem(mo, flags);
 		if (res)
 		{
@@ -452,12 +477,26 @@ extend class Actor
 			{
 				mo.ChangeTid(tid);
 			}
+
+			Vector2 pos;
+			if (flags & SXF_ABSOLUTEPOSITION)
+			{
+				pos = mo.Vec2Offset(xofs, yofs);
+			}
+			else
+			{
+				// in relative mode negative y values mean 'left' and positive ones mean 'right'
+				// This is the inverse orientation of the absolute mode!
+				pos = mo.Vec2Offset(xofs * c + yofs * s, xofs * s - yofs*c);
+			}
+			mo.SetXYZ((pos, mo.pos.z));
 			mo.Vel = (xvel, yvel, zvel);
+			mo.Vel.XY += velxy;
 			if (flags & SXF_MULTIPLYSPEED)
 			{
 				mo.Vel *= mo.Speed;
 			}
-			mo.Angle = angle;
+			mo.Angle = directionAngle;
 		}
 		return res, mo;
 	}
@@ -472,6 +511,7 @@ extend class Actor
 	//===========================================================================
 	action bool, Actor A_ThrowGrenade(class<Actor> missile, double zheight = 0, double xyvel = 0, double zvel = 0, bool useammo = true)
 	{
+// need fix
 		if (missile == NULL)
 		{
 			return false, null;
