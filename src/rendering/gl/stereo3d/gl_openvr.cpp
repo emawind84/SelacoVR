@@ -277,17 +277,17 @@ namespace s3d
 		}
 
 		// Controller models don't have frames so always return 0
-		virtual int FindFrame(const char* name) override {
+		virtual int FindFrame(const char* name, bool nodefault) override {
 			return 0;
 		}
 
-		virtual void RenderFrame(FModelRenderer* renderer, FGameTexture* skin, int frame, int frame2, double inter, int translation = 0)  override
+		virtual void RenderFrame(FModelRenderer* renderer, FGameTexture* skin, int frame, int frame2, double inter, int translation, const FTextureID* surfaceskinids, const TArray<VSMatrix>& boneData, int boneStartPosition) override
 		{
 			if (!isLoaded())
 				return;
 			FMaterial* tex = FMaterial::ValidateTexture(pFTex, false, false);
 			auto vbuf = GetVertexBuffer(renderer->GetType());
-			renderer->SetupFrame(this, 0, 0, 0);
+			renderer->SetupFrame(this, 0, 0, 0, {}, -1);
 			renderer->SetMaterial(pFTex, CLAMP_NONE, translation);
 			renderer->DrawElements(pModel->unTriangleCount * 3, 0);
 		}
@@ -328,7 +328,7 @@ namespace s3d
 			SetVertexBuffer(renderer->GetType(), vbuf);
 		}
 
-		virtual void AddSkins(uint8_t* hitlist) override
+		virtual void AddSkins(uint8_t* hitlist, const FTextureID* surfaceskinids)  override
 		{
 
 		}
@@ -574,7 +574,7 @@ namespace s3d
 		while (deltaYawDegrees < -180)
 			deltaYawDegrees += 360;
 
-		openvr_to_doom_angle = DAngle(-deltaYawDegrees);
+		openvr_to_doom_angle = DAngle::fromDeg(-deltaYawDegrees);
 
 		// extract rotation component from hmd transform
 		LSMatrix44 openvr_X_hmd(hmdPose);
@@ -744,7 +744,7 @@ namespace s3d
 		VSMatrix new_projection;
 		new_projection.loadIdentity();
 
-		float stereo_separation = (vr_ipd * 0.5) * vr_vunits_per_meter * getHUDValue<FFloatCVar>(vr_automap_stereo, vr_hud_stereo) * (eye == 1 ? -1.0 : 1.0);
+		float stereo_separation = (vr_ipd * 0.5) * vr_vunits_per_meter * getHUDValue<FFloatCVarRef>(vr_automap_stereo, vr_hud_stereo) * (eye == 1 ? -1.0 : 1.0);
 		new_projection.translate(stereo_separation, 0, 0);
 
 		// doom_units from meters
@@ -764,15 +764,15 @@ namespace s3d
 		// Follow HMD orientation, EXCEPT for roll angle (keep weapon upright)
 		if (activeEye->currentPose) {
 
-			if (getHUDValue<FBoolCVar>(vr_automap_fixed_roll, vr_hud_fixed_roll))
+			if (getHUDValue<FBoolCVarRef>(vr_automap_fixed_roll, vr_hud_fixed_roll))
 			{
 				float openVrRollDegrees = RAD2DEG(-eulerAnglesFromMatrix(this->currentPose->mDeviceToAbsoluteTracking).v[2]);
 				new_projection.rotate(-openVrRollDegrees, 0, 0, 1);
 			}
 
-			new_projection.rotate(getHUDValue<FFloatCVar>(vr_automap_rotate, vr_hud_rotate), 1, 0, 0);
+			new_projection.rotate(getHUDValue<FFloatCVarRef>(vr_automap_rotate, vr_hud_rotate), 1, 0, 0);
 
-			if (getHUDValue<FBoolCVar>(vr_automap_fixed_pitch, vr_hud_fixed_pitch))
+			if (getHUDValue<FBoolCVarRef>(vr_automap_fixed_pitch, vr_hud_fixed_pitch))
 			{
 				float openVrPitchDegrees = RAD2DEG(-eulerAnglesFromMatrix(this->currentPose->mDeviceToAbsoluteTracking).v[1]);
 				new_projection.rotate(-openVrPitchDegrees, 1, 0, 0);
@@ -782,9 +782,9 @@ namespace s3d
 		// hmd coordinates (meters) from ndc coordinates
 		// const float weapon_distance_meters = 0.55f;
 		// const float weapon_width_meters = 0.3f;
-		double distance = getHUDValue<FFloatCVar>(vr_automap_distance, vr_hud_distance);
+		double distance = getHUDValue<FFloatCVarRef>(vr_automap_distance, vr_hud_distance);
 		new_projection.translate(0.0, 0.0, distance);
-		double vr_scale = getHUDValue<FFloatCVar>(vr_automap_scale, vr_hud_scale);
+		double vr_scale = getHUDValue<FFloatCVarRef>(vr_automap_scale, vr_hud_scale);
 		new_projection.scale(
 			-vr_scale,
 			vr_scale,
@@ -960,7 +960,7 @@ namespace s3d
 			{
 				state.EnableModelMatrix(true);
 
-				controllers[i].model->RenderFrame(&renderer, 0, 0, 0, 0);
+				controllers[i].model->RenderFrame(&renderer, 0, 0, 0, 0, 0, nullptr, {}, 0);
 				state.SetVertexBuffer(screen->mVertexData);
 
 				state.EnableModelMatrix(false);
@@ -1030,7 +1030,7 @@ namespace s3d
 
 		//ignore specified pitch(would need to compensate for auto aimand no(vanilla) Doom weapon varies this)
 		//pitch -= actor->Angles.Pitch;
-		pitch.Degrees = 0;
+		pitch = pitch.fromDeg(0);
 				
 		pc = pitch.Cos();
 
@@ -1121,20 +1121,20 @@ namespace s3d
 
 		// Roll can be local, because it doesn't affect gameplay.
 		if (doTrackHmdRoll)
-			vp.HWAngles.Roll = RAD2DEG(-hmdroll);
+			vp.HWAngles.Roll = FAngle::fromDeg(RAD2DEG(-hmdroll));
 		
 		// Late-schedule update to renderer angles directly, too
 		if (doLateScheduledRotationTracking) {
 			if (doTrackHmdPitch) {
-				vp.HWAngles.Pitch = RAD2DEG(-hmdpitch);
+				vp.HWAngles.Pitch = FAngle::fromDeg(RAD2DEG(-hmdpitch));
 			}
 			if (doTrackHmdYaw) {
-				double viewYaw = vp.Angles.Yaw.Degrees + RAD2DEG(hmdYawDelta);
+				double viewYaw = vp.Angles.Yaw.Degrees() + RAD2DEG(hmdYawDelta);
 				while (viewYaw <= -180.0)
 					viewYaw += 360.0;
 				while (viewYaw > 180.0)
 					viewYaw -= 360.0;
-				vp.Angles.Yaw = viewYaw;
+				vp.Angles.Yaw = DAngle::fromDeg(viewYaw);
 			}
 		}
 	}
@@ -1435,11 +1435,11 @@ namespace s3d
 				}
 				if (GetHandTransform(openvr_rightHanded ? 0 : 1, &mat) && openvr_moveFollowsOffHand)
 				{
-					player->mo->ThrustAngleOffset = DAngle(RAD2DEG(atan2f(-mat[2][2], -mat[2][0]))) - player->mo->Angles.Yaw;
+					player->mo->ThrustAngleOffset = DAngle::fromDeg(RAD2DEG(atan2f(-mat[2][2], -mat[2][0]))) - player->mo->Angles.Yaw;
 				}
 				else
 				{
-					player->mo->ThrustAngleOffset = 0.0f;
+					player->mo->ThrustAngleOffset = nullAngle;
 				}
 				auto vel = player->mo->Vel;
 				player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) * vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);

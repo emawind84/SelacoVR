@@ -59,7 +59,7 @@ CVAR(Float, vr_floor_offset, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
 CVAR(Bool, openvr_rightHanded, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, openvr_moveFollowsOffHand, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, openvr_drawControllers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Float, openvr_weaponRotate, -40, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, openvr_weaponRotate, -40.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, openvr_weaponScale, 0.3f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 CVAR(Bool, vr_enable_haptics, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)

@@ -41,6 +41,7 @@
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hw_renderstate.h"
 #include "hwrenderer/scene/hw_portal.h"
+#include "hw_bonebuffer.h"
 #include "hw_models.h"
 #include "hw_cvars.h"
 #include "hwrenderer/data/hw_vrmodes.h"
@@ -80,7 +81,7 @@ void FHWModelRenderer::PrepareRenderHUDModel(FSpriteModelFrame* smf, float ofsX,
 			AActor* playermo = players[consoleplayer].camera;
 			DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
 			gl_RenderState.mModelMatrix.translate(pos.X, pos.Z + 40, pos.Y);
-			gl_RenderState.mModelMatrix.rotate(-playermo->Angles.Yaw.Degrees - 90, 0, 1, 0);
+			gl_RenderState.mModelMatrix.rotate(-playermo->Angles.Yaw.Degrees() - 90, 0, 1, 0);
 		}
 
 
@@ -130,6 +131,7 @@ void FHWModelRenderer::BeginDrawModel(FRenderStyle style, FSpriteModelFrame *smf
 
 void FHWModelRenderer::EndDrawModel(FRenderStyle style, FSpriteModelFrame *smf)
 {
+	state.SetBoneIndexBase(-1);
 	state.EnableModelMatrix(false);
 	state.SetDepthFunc(DF_Less);
 	if (!(style == DefaultRenderStyle()) && !(smf->flags & MDL_DONTCULLBACKFACES))
@@ -154,6 +156,7 @@ void FHWModelRenderer::BeginDrawHUDModel(FRenderStyle style, const VSMatrix &obj
 
 void FHWModelRenderer::EndDrawHUDModel(FRenderStyle style)
 {
+	state.SetBoneIndexBase(-1);
 	state.EnableModelMatrix(false);
 
 	state.SetDepthFunc(DF_Less);
@@ -193,10 +196,16 @@ void FHWModelRenderer::DrawElements(int numIndices, size_t offset)
 //
 //===========================================================================
 
-void FHWModelRenderer::SetupFrame(FModel *model, unsigned int frame1, unsigned int frame2, unsigned int size)
+int FHWModelRenderer::SetupFrame(FModel *model, unsigned int frame1, unsigned int frame2, unsigned int size, const TArray<VSMatrix>& bones, int boneStartIndex)
 {
 	auto mdbuff = static_cast<FModelVertexBuffer*>(model->GetVertexBuffer(GetType()));
-	state.SetVertexBuffer(mdbuff->vertexBuffer(), frame1, frame2);
-	if (mdbuff->indexBuffer()) state.SetIndexBuffer(mdbuff->indexBuffer());
+	boneIndexBase = boneStartIndex >= 0 ? boneStartIndex : screen->mBones->UploadBones(bones);
+	state.SetBoneIndexBase(boneIndexBase);
+	if (mdbuff)
+	{
+		state.SetVertexBuffer(mdbuff->vertexBuffer(), frame1, frame2);
+		if (mdbuff->indexBuffer()) state.SetIndexBuffer(mdbuff->indexBuffer());
+	}
+	return boneIndexBase;
 }
 

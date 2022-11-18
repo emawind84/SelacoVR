@@ -41,6 +41,7 @@
 #include "flatvertices.h"
 #include "hwrenderer/data/shaderuniforms.h"
 #include "hw_lightbuffer.h"
+#include "hw_bonebuffer.h"
 
 #include "vk_framebuffer.h"
 #include "vk_hwbuffer.h"
@@ -100,6 +101,7 @@ VulkanFrameBuffer::~VulkanFrameBuffer()
 	delete mSkyData;
 	delete mViewpoints;
 	delete mLights;
+	delete mBones;
 	mShadowMap.Reset();
 
 	if (mDescriptorSetManager)
@@ -157,6 +159,7 @@ void VulkanFrameBuffer::InitializeState()
 	mSkyData = new FSkyVertexBuffer;
 	mViewpoints = new HWViewpointBuffer;
 	mLights = new FLightBuffer();
+	mBones = new BoneBuffer();
 
 	mShaderManager.reset(new VkShaderManager(this));
 	mDescriptorSetManager->Init();
@@ -205,7 +208,7 @@ void VulkanFrameBuffer::RenderTextureView(FCanvasTexture* tex, std::function<voi
 	mRenderState->EndRenderPass();
 
 	VkImageTransition()
-		.AddImage(image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, true)
+		.AddImage(image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false)
 		.Execute(mCommands->GetDrawCommands());
 
 	mRenderState->SetRenderTarget(image, depthStencil->View.get(), image->Image->width, image->Image->height, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT);
@@ -421,6 +424,7 @@ TArray<uint8_t> VulkanFrameBuffer::GetScreenshotBuffer(int &pitch, ESSType &colo
 void VulkanFrameBuffer::BeginFrame()
 {
 	SetViewportRects(nullptr);
+	mViewpoints->Clear();
 	mCommands->BeginFrame();
 	mTextureManager->BeginFrame();
 	mScreenBuffers->BeginFrame(screen->mScreenViewport.width, screen->mScreenViewport.height, screen->mSceneViewport.width, screen->mSceneViewport.height);

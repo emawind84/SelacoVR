@@ -52,19 +52,28 @@
 
 CVAR(Bool, gl_aalines, false, CVAR_ARCHIVE) 
 
-void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
+
+void Draw2D(F2DDrawer* drawer, FRenderState& state, bool outside2D)
+{
+	const auto& mScreenViewport = screen->mScreenViewport;
+	Draw2D(drawer, state, mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height, outside2D);
+}
+
+void Draw2D(F2DDrawer* drawer, FRenderState& state, int x, int y, int width, int height, bool outside2D)
 {
 	twoD.Clock();
 
-	auto vrmode = VRMode::GetVRMode(true);
+    auto vrmode = VRMode::GetVRMode(true);
 	//In vr mode viewport setting and color swaping is already done in FGLRenderer::Flush()
 	if (vrmode->mEyeCount == 1)
 	{
-		const auto &mScreenViewport = screen->mScreenViewport;
-		state.SetViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
-		screen->mViewpoints->Set2D(state, twod->GetWidth(), twod->GetHeight());
-	}
+        state.SetViewport(x, y, width, height);
+        screen->mViewpoints->Set2D(state, drawer->GetWidth(), drawer->GetHeight());
+    }
 
+	state.EnableStencil(false);
+	state.SetStencil(0, SOP_Keep, SF_AllOn);
+	state.Clear(CT_Stencil);
 	state.EnableDepthTest(false);
 	state.EnableMultisampling(false);
 	state.EnableLineSmooth(gl_aalines);
@@ -94,6 +103,22 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 
 	for(auto &cmd : commands)
 	{
+		if (cmd.isSpecial != SpecialDrawCommand::NotSpecial)
+		{
+			if (cmd.isSpecial == SpecialDrawCommand::EnableStencil)
+			{
+				state.EnableStencil(cmd.stencilOn);
+			}
+			else if (cmd.isSpecial == SpecialDrawCommand::SetStencil)
+			{
+				state.SetStencil(cmd.stencilOffs, cmd.stencilOp, cmd.stencilFlags);
+			}
+			else if (cmd.isSpecial == SpecialDrawCommand::ClearStencil)
+			{
+				state.Clear(CT_Stencil);
+			}
+			continue;
+		}
 
 		if (vrmode->IsVR())
 		{
@@ -142,7 +167,7 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 		if (cmd.mFlags & F2DDrawer::DTF_Indexed) state.SetSoftLightLevel(cmd.mLightLevel);
 		state.SetLightParms(0, 0);
 
-		state.AlphaFunc(Alpha_GEqual, 0.f);
+		state.AlphaFunc(Alpha_Greater, 0.f);
 
 		if (cmd.useTransform)
 		{
@@ -241,6 +266,8 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 
 	state.SetRenderStyle(STYLE_Translucent);
 	state.SetVertexBuffer(screen->mVertexData);
+	state.EnableStencil(false);
+	state.SetStencil(0, SOP_Keep, SF_AllOn);
 	state.EnableTexture(true);
 	state.EnableBrightmap(true);
 	state.SetTextureMode(TM_NORMAL);
