@@ -5276,12 +5276,30 @@ void P_RailAttack(FRailParams *p)
 			start = source->player->mo->AttackPos;
 			direction = source->player->mo->AttackDir(source, angle, pitch);
 		}
+		DVector2 xy = (direction.Angle() - 90.).ToVector(p->offset_xy);
+		start += DVector3(xy.X, xy.Y, 0);
 	}
 	else
 	{
 		DVector2 xy = source->Vec2Angle(p->offset_xy, angle - 90.);
 		start = DVector3(xy.X, xy.Y, shootz);
 		direction = vec;
+	}
+
+	if (source->player != NULL)
+	{
+		if (p->damage > 0) {
+			//Haptics
+			long rightHanded = vr_control_scheme < 10;
+			rightHanded = (p->flags & RAF_ISOFFHAND) ? 1 - rightHanded : rightHanded;
+			QzDoom_Vibrate(150, rightHanded ? 1 : 0, 0.8);
+			QzDoom_HapticEvent("fire_weapon", rightHanded ? 2 : 1, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
+
+			if (weaponStabilised) {
+				QzDoom_Vibrate(150, rightHanded ? 0 : 1, 0.6);
+				QzDoom_HapticEvent("fire_weapon", rightHanded ? 1 : 2, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
+			}
+		}
 	}
 
 	RailData rail_data;

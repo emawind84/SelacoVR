@@ -511,7 +511,6 @@ extend class Actor
 	//===========================================================================
 	action bool, Actor A_ThrowGrenade(class<Actor> missile, double zheight = 0, double xyvel = 0, double zvel = 0, bool useammo = true)
 	{
-// need fix
 		if (missile == NULL)
 		{
 			return false, null;

@@ -109,6 +109,21 @@ class StateProvider : Inventory
 			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 			A_StartSound(weapon.AttackSound, CHAN_WEAPON);
 		}
+
+		let directionAngle = self.Angle;
+		if (weapon && player.mo.OverrideAttackPosDir)
+		{
+			if (weapon.bOffhandWeapon)
+			{
+				let dir = player.mo.OffhandDir(self, self.Angle, self.Pitch);
+				directionAngle = dir.x;
+			}
+			else
+			{
+				let dir = player.mo.AttackDir(self, self.Angle, self.Pitch);
+				directionAngle = dir.x;
+			}
+		}
 		
 		if (range == 0)	range = PLAYERMISSILERANGE;
 
@@ -131,7 +146,7 @@ class StateProvider : Inventory
 			if (missile != null)
 			{
 				bool temp = false;
-				double ang = Angle - 90;
+				double ang = directionAngle - 90;
 				Vector2 ofs = AngleToVector(ang, Spawnofs_xy);
 				Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight, aimflags: alflags);
 				if (proj)
@@ -175,7 +190,7 @@ class StateProvider : Inventory
 				if (missile != null)
 				{
 					bool temp = false;
-					double ang = Angle - 90;
+					double ang = directionAngle - 90;
 					Vector2 ofs = AngleToVector(ang, Spawnofs_xy);
 					Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight, aimflags: alflags);
 					if (proj)
@@ -221,7 +236,22 @@ class StateProvider : Inventory
 
 		if (missiletype) 
 		{
-			double ang = self.Angle - 90;
+			let directionAngle = self.Angle;
+			if (weapon && player.mo.OverrideAttackPosDir)
+			{
+				if (weapon.bOffhandWeapon)
+				{
+					let dir = player.mo.OffhandDir(self, self.Angle, self.Pitch);
+					directionAngle = dir.x;
+				}
+				else
+				{
+					let dir = player.mo.AttackDir(self, self.Angle, self.Pitch);
+					directionAngle = dir.x;
+				}
+			}
+
+			double ang = directionAngle - 90;
 			Vector2 ofs = AngleToVector(ang, spawnofs_xy);
 			double shootangle = self.Angle;
 
