@@ -60,7 +60,7 @@ extend class Actor
 	//
 	//===========================================================================
 
-	void A_ChangeVelocity(double x = 0, double y = 0, double z = 0, int flags = 0, int ptr = AAPTR_DEFAULT)
+	action void A_ChangeVelocity(double x = 0, double y = 0, double z = 0, int flags = 0, int ptr = AAPTR_DEFAULT)
 	{
 		let ref = GetPointer(ptr);
 
@@ -69,11 +69,30 @@ extend class Actor
 			return;
 		}
 
+		let directionAngle = ref.Angle;
+		if (player != NULL && player.mo == ref)
+		{
+			let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
+			{
+				if (weapon.bOffhandWeapon)
+				{
+					let dir = player.mo.OffhandDir(self, self.Angle, self.Pitch);
+					directionAngle = dir.x;
+				}
+				else
+				{
+					let dir = player.mo.AttackDir(self, self.Angle, self.Pitch);
+					directionAngle = dir.x;
+				}
+			}
+		}
+
 		bool was_moving = ref.Vel != (0, 0, 0);
 
 		let newvel = (x, y, z);
-		double sina = sin(ref.Angle);
-		double cosa = cos(ref.Angle);
+		double sina = sin(directionAngle);
+		double cosa = cos(directionAngle);
 
 		if (flags & 1)	// relative axes - make x, y relative to actor's current angle
 		{
