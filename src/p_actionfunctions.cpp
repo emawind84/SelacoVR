@@ -1304,7 +1304,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_CustomRailgun)
 //===========================================================================
 DEFINE_ACTION_FUNCTION(AActor, A_Recoil)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_FLOAT(xyvel);
 
 	//We don't want to adjust the player's camera - that could make them sick
@@ -1314,7 +1314,26 @@ DEFINE_ACTION_FUNCTION(AActor, A_Recoil)
 		return 0;
 	}
 
-	self->Thrust(self->Angles.Yaw + 180., xyvel);
+	DAngle directionAngle = self->Angles.Yaw;
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
+		if (pspr != nullptr && player->mo->OverrideAttackPosDir)
+		{
+			if (pspr->GetID() == PSP_OFFHANDWEAPON)
+			{
+				DVector3 dir = player->mo->OffhandDir(self, self->Angles.Yaw, self->Angles.Pitch);
+				directionAngle = dir.Angle();
+			}
+			else
+			{
+				DVector3 dir = player->mo->AttackDir(self, self->Angles.Yaw, self->Angles.Pitch);
+				directionAngle = dir.Angle();
+			}
+		}
+	}
+
+	self->Thrust(directionAngle + 180., xyvel);
 	return 0;
 }
 
