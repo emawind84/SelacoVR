@@ -11,6 +11,55 @@
 #include "stats.h"
 #include "tarray.h"
 
+
+// @Cockatrice - Simple ring buffer with averaging
+template <typename T, int IN_NUM>
+struct RingBuffer {
+	const int length = IN_NUM;
+	T input[IN_NUM];
+	long pos = -1;
+
+	void add(T v) {
+		pos++;
+		if (pos < 0) pos = 0;
+		(*this)[0] = v;
+	}
+
+	T& operator[] (int index) {
+		assert(index >= 0 && index <= pos);
+		return input[(pos - index) % IN_NUM];
+	}
+
+	T getAverage(int numInputs) {
+		assert(pos >= 0);
+
+		T avg = (*this)[0];
+		numInputs = std::min(numInputs, IN_NUM);
+		numInputs = (int)std::min((long)numInputs, pos);
+
+		for (int x = 1; x < numInputs; x++) {
+			avg += (*this)[x];
+		}
+
+		return avg / (float)numInputs;
+	}
+
+	T getScaledAverage(int numInputs, float amount) {
+		assert(pos >= 0);
+
+		amount = std::clamp(1.0f - amount, 0.0f, 1.0f);
+
+		T avg = getAverage(numInputs);
+		return avg + (amount * ((*this)[0] - avg));
+	}
+
+	void reset() {
+		pos = -1;
+	}
+};
+
+
+
 // @Cockatrice: Queue wrapper
 // Funcs added as are necessary
 template <typename T>

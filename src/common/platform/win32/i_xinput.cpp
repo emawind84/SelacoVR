@@ -47,6 +47,7 @@
 #include "keydef.h"
 
 #include "i_time.h"
+#include "TSQueue.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -148,7 +149,7 @@ protected:
 		float Acceleration;
 		EJoyAxis GameAxis;
 		uint8_t ButtonValue;
-		InputQueue<float, 10> Inputs;
+		RingBuffer<float, 10> Inputs;
 	};
 	struct DefaultAxisConfig
 	{
