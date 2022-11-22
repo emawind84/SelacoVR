@@ -178,16 +178,14 @@ class PhoenixRodPowered : PhoenixRod
 			if (hand == 1)
 			{
 				spawnpos = player.mo.OffhandPos;
-				let dir = player.mo.OffhandDir(self, angle, pitch);
-				directionAngle = dir.x;
-				directionPitch = dir.y;
+				directionAngle = player.mo.OffhandAngle + 90;
+				directionPitch = -player.mo.OffhandPitch;
 			}
 			else
 			{
 				spawnpos = player.mo.AttackPos;
-				let dir = player.mo.AttackDir(self, angle, pitch);
-				directionAngle = dir.x;
-				directionPitch = dir.y;
+				directionAngle = player.mo.AttackAngle + 90;
+				directionPitch = -player.mo.AttackPitch;
 			}
 			spawnpos.X += xo;
 			spawnpos.Y += yo;

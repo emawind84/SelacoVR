@@ -78,13 +78,11 @@ extend class Actor
 			{
 				if (weapon.bOffhandWeapon)
 				{
-					let dir = player.mo.OffhandDir(self, self.Angle, self.Pitch);
-					directionAngle = dir.x;
+					directionAngle = player.mo.OffhandAngle + 90;
 				}
 				else
 				{
-					let dir = player.mo.AttackDir(self, self.Angle, self.Pitch);
-					directionAngle = dir.x;
+					directionAngle = player.mo.AttackAngle + 90;
 				}
 			}
 		}
