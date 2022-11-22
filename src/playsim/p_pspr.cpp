@@ -461,6 +461,11 @@ void DPSprite::NewTick()
 				pspr->processPending = true;
 				pspr->ResetInterpolation();
 
+				// @Cockatrice - Add the current visible frame to the frame list, so the renderer can look backwards
+				// while waiting for frames to load in the background
+				FTextureID lump = sprites[pspr->GetSprite()].GetSpriteFrame(pspr->GetFrame(), 0, 0., nullptr);
+				pspr->LastPatches.add(lump.GetIndex());
+
 				pspr = pspr->Next;
 			}
 		}

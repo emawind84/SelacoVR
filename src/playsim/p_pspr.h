@@ -31,6 +31,7 @@
 #define __P_PSPR_H__
 
 #include "renderstyle.h"
+#include "TSQueue.h"
 
 // Basic data types.
 // Needs fixed point, and BAM angles.
@@ -130,6 +131,11 @@ public:
 	uint32_t Translation;
 	int Flags;
 	FRenderStyle Renderstyle;
+
+	// @Cockatrice - Kind of hacky, but we are going to store the last successfully rendered frame when using threaded loading
+	// That way we know what to display until the next frame is ready. Never serialize this or store it!
+	RingBuffer<int, 5> LastPatches;
+	FTextureID LastPatch;
 
 private:
 	DPSprite () {}
