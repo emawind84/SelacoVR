@@ -72,6 +72,7 @@ extend class Actor
 		let directionAngle = ref.Angle;
 		if (player != NULL && player.mo == ref)
 		{
+			player.keepmomentum = true;
 			let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
 			{

@@ -364,6 +364,7 @@ public:
 	int			chickenPeck = 0;			// chicken peck countdown
 	int			jumpTics = 0;				// delay the next jump for a moment
 	bool		onground = 0;				// Identifies if this player is on the ground or other object
+	bool		keepmomentum = 0;			// keep momentum until velocity reach 0, override vr_momentum
 
 	int			respawn_time = 0;			// [RH] delay respawning until this tic
 	TObjPtr<AActor*>	camera = nullptr;			// [RH] Whose eyes this player sees through

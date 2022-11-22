@@ -1333,7 +1333,9 @@ class PlayerPawn : Actor
 		[friction, movefactor] = GetFriction();
 		CVar vr_momentum = CVar.FindCVar("vr_momentum");
 		//Taken from the Wolf-3D TC - Prevent player having momentum/acceleration to avoid puking
-		if ((!vr_momentum || !vr_momentum.GetInt()) && player.onground && friction == ORIG_FRICTION)
+		if ((!vr_momentum || !vr_momentum.GetInt()) 
+		&& !player.keepmomentum 
+		&& player.onground && friction == ORIG_FRICTION)
 		{
 			vel *= 0.0001;
 			Speed = Default.Speed * 8;
@@ -1341,6 +1343,11 @@ class PlayerPawn : Actor
 		else
 		{
 			Speed = Default.Speed;
+		}
+
+		if (vel.x < 1 && vel.y < 1)
+		{
+			player.keepmomentum = false;
 		}
 
 		// killough 10/98:
@@ -2913,6 +2920,7 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native int chickenPeck;
 	native int jumpTics;
 	native bool onground;
+	native bool keepmomentum;
 	native int respawn_time;
 	native Actor camera;
 	native int air_finished;
