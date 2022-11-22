@@ -1334,10 +1334,10 @@ class PlayerPawn : Actor
 		CVar vr_momentum = CVar.FindCVar("vr_momentum");
 		//Taken from the Wolf-3D TC - Prevent player having momentum/acceleration to avoid puking
 		if ((!vr_momentum || !vr_momentum.GetInt()) 
-		&& !player.keepmomentum 
-		&& player.onground && friction == ORIG_FRICTION)
+		&& player.onground && friction == ORIG_FRICTION
+		&& !player.keepmomentum)
 		{
-			vel *= 0.0001;
+			vel.XY *= 0.0001;
 			Speed = Default.Speed * 8;
 		}
 		else
@@ -1345,7 +1345,7 @@ class PlayerPawn : Actor
 			Speed = Default.Speed;
 		}
 
-		if (vel.x < 1 && vel.y < 1)
+		if (abs(vel.x) < 1 && abs(vel.y) < 1)
 		{
 			player.keepmomentum = false;
 		}
