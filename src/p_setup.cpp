@@ -150,6 +150,8 @@ static void AddToList(uint8_t *hitlist, FTextureID texid, int bitmask)
 	}
 }
 
+EXTERN_CVAR(Bool, gl_precache_actors)
+
 static void PrecacheLevel(FLevelLocals *Level)
 {
 	if (demoplayback)
@@ -159,7 +161,7 @@ static void PrecacheLevel(FLevelLocals *Level)
 	TMap<PClassActor *, bool> actorhitlist;
 	int cnt = TexMan.NumTextures();
 	TArray<uint8_t> hitlist(cnt, true);
-	bool precacheActors = gamestate != GS_TITLELEVEL;
+	bool precacheActors = gamestate != GS_TITLELEVEL && gamestate != GS_STARTUP;
 
 	memset(hitlist.Data(), 0, cnt);
 
@@ -172,17 +174,19 @@ static void PrecacheLevel(FLevelLocals *Level)
 	}
 
 	if (precacheActors) {
-		for (auto n : gameinfo.PrecachedClasses)
-		{
-			PClassActor *cls = PClass::FindActor(n);
-			if (cls != nullptr) actorhitlist[cls] = true;
-		}
+		if (gl_precache_actors) {
+			for (auto n : gameinfo.PrecachedClasses)
+			{
+				PClassActor *cls = PClass::FindActor(n);
+				if (cls != nullptr) actorhitlist[cls] = true;
+			}
 
-		for (unsigned i = 0; i < Level->info->PrecacheClasses.Size(); i++)
-		{
-			// Level->info can only store names, no class pointers.
-			PClassActor *cls = PClass::FindActor(Level->info->PrecacheClasses[i]);
-			if (cls != nullptr) actorhitlist[cls] = true;
+			for (unsigned i = 0; i < Level->info->PrecacheClasses.Size(); i++)
+			{
+				// Level->info can only store names, no class pointers.
+				PClassActor *cls = PClass::FindActor(Level->info->PrecacheClasses[i]);
+				if (cls != nullptr) actorhitlist[cls] = true;
+			}
 		}
 
 		// @Cockatrice - Also check the actor classes themselves to see if they are marked for precache

@@ -927,11 +927,16 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		int type = thing->renderflags & RF_SPRITETYPEMASK;
 		auto tex = TexMan.GetGameTexture(patch, false);
 		if (!tex || !tex->isValid()) return;
-		
+
+
 		// @Cockatrice - If this texture is not loaded, and we are able to BG load it, try to render this sprites last frame instead
 		// Also load the texture
 		FTextureID lastPatch = thing->LastPatch;
-		if (patch != lastPatch && gl_texture_thread && screen->SupportsBackgroundCache()) {
+		if ( gametic - primaryLevel->starttime > 2 &&	// On the first tic or so, do not use the background loader to avoid pop-in
+			 patch != lastPatch &&						// only if this is a new frame
+			 gl_texture_thread &&
+			 screen->SupportsBackgroundCache()) {
+
 			int scaleflags = CTF_Expand;
 			if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
 

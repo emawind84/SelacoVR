@@ -406,6 +406,29 @@ bool HUDSprite::GetWeaponRenderStyle(DPSprite *psp, AActor *playermo, sector_t *
 //
 //==========================================================================
 
+EXTERN_CVAR(Bool, gl_texture_thread);
+
+static inline FGameTexture *GetNextStateTexture(FState **state, int sprite) {
+	if (!state || !*state) return nullptr;
+
+	FState *nextState = (*state)->GetNextState();
+	for(int x = 0; x < 8 && nextState && nextState->GetTics() <= 0; x++) nextState->GetNextState();	// Try to skip non-rendering frames
+	
+	*state = nextState;
+
+	if (nextState && nextState->GetTics() > 0) {
+		FTextureID lump2 = sprites[sprite].GetSpriteFrame(nextState->GetFrame(), 0, 0., nullptr);
+		if (lump2.isValid()) {
+			auto tex2 = TexMan.GetGameTexture(lump2, false);
+			if (tex2 && tex2->isValid()) {
+				return tex2;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
 bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy, player_t *player, double ticfrac)
 {
 	float			tx;
@@ -421,6 +444,78 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 
 	auto tex = TexMan.GetGameTexture(lump, false);
 	if (!tex || !tex->isValid()) return false;
+
+	// @Cockatrice - If this texture is not loaded, and we are able to BG load it, try to render this sprites last frame instead
+	// Also load the texture
+	FTextureID lastPatch = psp->LastPatch;
+	if (gametic - primaryLevel->starttime > 2 &&	// On the first tic or so, do not use the background loader to avoid pop-in
+		lump != lastPatch &&						// only if this is a new frame
+		gl_texture_thread &&
+		screen->SupportsBackgroundCache()) {
+
+		int scaleflags = CTF_Expand;
+		if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
+
+		// Also make an attempt to find the next 5 state frames and load that too!
+		// We have to do this first so it doesn't get cancelled if the current frame is already loaded
+		// Since the textures added here won't start loading until the next frame we don't have to worry about putting them in front of the right-now texture
+		// TODO: We are adding 5 checks to the list every frame that needs to be cleared out at the global level, somehow we need to check for loaded and skip
+		FState *nextState = psp->GetState();
+		for (int x = 0; x < 5; x++) {
+			if (!nextState) break;
+
+			auto tex2 = GetNextStateTexture(&nextState, psp->GetSprite());
+			if (tex2) {
+				int scaleflags2 = CTF_Expand;
+				if (shouldUpscale(tex2, UF_Sprite)) scaleflags2 |= CTF_Upscale;
+				screen->BackgroundCacheTextureMaterial(tex2, psp->Translation, scaleflags2);
+			}
+		}
+
+		FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
+		if (!gltex || !gltex->IsHardwareCached(psp->Translation)) {
+			if (gltex) {
+				screen->BackgroundCacheMaterial(gltex, psp->Translation);  // TODO: Prevent calling this every time the sprite wants to render, it's incredibly wasteful
+			}
+			else {
+				screen->BackgroundCacheTextureMaterial(tex, psp->Translation, scaleflags);
+			}
+
+			bool foundNewer = false;
+				
+			// We need something to render, go through the last few patches and see if anything is loaded yet that we can grab
+			for (int x = 0; x < min((long)psp->LastPatches.length, psp->LastPatches.pos); x++) {
+				FTextureID lump2;
+				lump2.SetIndex(psp->LastPatches[x]);
+				auto tex2 = TexMan.GetGameTexture(lump2, false);
+				FMaterial *gltex2 = FMaterial::ValidateTexture(tex2, scaleflags, false);
+
+				if (gltex2 && gltex2->IsHardwareCached(psp->Translation)) {
+					lump = lump2;
+					tex = tex2;
+					foundNewer = true;
+					break;
+				}
+			}
+
+			// Last ditch, grab the last rendered patch from this sprite
+			if (!foundNewer && lastPatch.isValid()) {
+				lump = lastPatch;
+				tex = TexMan.GetGameTexture(lump, false);
+				if (!tex || !tex->isValid()) return false;
+			}
+			else if(!foundNewer) {
+				return false;
+			}
+		}
+
+		// If the bg cache func fails, we can't bg load the patch so just move on to the normal render path and load in the main thread
+	}
+
+	psp->LastPatch = lump;
+
+	// @Cockatrice - TODO: Get the sprite positioning data in the bg load function
+	// This function will cause an HDD load and thus cause stuttering
 	auto& spi = tex->GetSpritePositioning(1);
 
 	float vw = (float)viewwidth;
