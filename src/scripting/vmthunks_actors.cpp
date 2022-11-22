@@ -138,7 +138,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_StopSound)
 	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_INT(slot);
 	
-	if (self->player != nullptr && stateinfo != nullptr)
+	if (ACTION_CALL_FROM_PSPRITE())
 	{
 		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
 		if (pspr != nullptr && pspr->GetID() == PSP_OFFHANDWEAPON && slot == CHAN_WEAPON)
@@ -189,7 +189,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_PlaySound)
 	PARAM_BOOL(local);
 	PARAM_FLOAT(pitch);
 
-	if (self->player != nullptr && stateinfo != nullptr)
+	if (ACTION_CALL_FROM_PSPRITE())
 	{
 		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
 		if (pspr != nullptr && pspr->GetID() == PSP_OFFHANDWEAPON && (channel & 7) == CHAN_WEAPON)
@@ -214,7 +214,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_StartSound)
 	PARAM_FLOAT(pitch);
 	PARAM_FLOAT(startTime);
 
-	if (self->player != nullptr && stateinfo != nullptr)
+	if (ACTION_CALL_FROM_PSPRITE())
 	{
 		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
 		if (pspr != nullptr && pspr->GetID() == PSP_OFFHANDWEAPON && channel == CHAN_WEAPON)
