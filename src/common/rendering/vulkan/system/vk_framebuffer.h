@@ -6,6 +6,7 @@
 #include "TSQueue.h"
 #include "bitmap.h"
 #include "printf.h"
+#include "image.h"
 
 struct FRenderViewpoint;
 class VkSamplerManager;
@@ -26,8 +27,10 @@ class SWSceneDrawer;
 
 struct VkTexLoadIn {
 	FImageSource *imgSource;
-	FileReader *readerCopy;		// Needs a unique copy of a file reader
+	/*FileReader *readerCopy;		// Needs a unique copy of a file reader
 	int conversion, translation;
+	FRemapTable *translationRemap;*/
+	FImageLoadParams *params;
 
 	VkHardwareTexture *tex;		// We can create the texture on the main thread
 };

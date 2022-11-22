@@ -41,6 +41,20 @@ struct TexPartBuild
 };
 
 
+class FMultiPatchParams : public FImageLoadParams {
+public:
+	// Provide a reader for every sub-patch
+	int numPatches = 0;
+	FImageLoadParams **params = nullptr;
+
+	virtual ~FMultiPatchParams() {
+		if (params) {
+			for (int x = 0; x < numPatches; x++) delete params[x];
+			delete params;
+		}
+	}
+};
+
 
 //==========================================================================
 //
@@ -67,6 +81,9 @@ public:
 		return nullptr;
 	}
 
+	FImageLoadParams *NewLoaderParams(int conversion, int translation, FRemapTable *remap) override;
+
+
 protected:
 	int NumParts;
 	bool bComplex;
@@ -75,6 +92,7 @@ protected:
 
 	// The getters must optionally redirect if it's a simple one-patch texture.
 	int CopyPixels(FBitmap *bmp, int conversion) override;
+	int ReadPixels(FImageLoadParams *params, FBitmap *bmp) override;
 	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
 	void CopyToBlock(uint8_t *dest, int dwidth, int dheight, FImageSource *source, int xpos, int ypos, int rotate, const uint8_t *translation, int style);
 	void CollectForPrecache(PrecacheInfo &info, bool requiretruecolor) override;

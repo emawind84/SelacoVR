@@ -189,16 +189,46 @@ int FImageSource::CopyTranslatedPixels(FBitmap *bmp, const PalEntry *remap)
 }
 
 // @Cockatrice: Thread safe(ish) version of CopyPixels. 
-// Requires a pointer to a unique copy of a file reader pointing to this lump's data
 // Default does not do much
-int FImageSource::ReadPixels(FileReader *reader, FBitmap *bmp, int conversion)
+int FImageSource::ReadPixels(FImageLoadParams *params, FBitmap *bmp)
 {
-	if (conversion == luminance) conversion = normal;	// luminance images have no use as an RGB source.
+	/*if (conversion == luminance) conversion = normal;	// luminance images have no use as an RGB source.
 	PalEntry *palette = GPalette.BaseColors;
 	auto ppix = CreatePalettedPixels(conversion);
-	bmp->CopyPixelData(0, 0, ppix.Data(), Width, Height, Height, 1, 0, palette, nullptr);
+	bmp->CopyPixelData(0, 0, ppix.Data(), Width, Height, Height, 1, 0, palette, nullptr);*/
+
 	return 0;
 }
+
+int FImageSource::ReadPixels(FileReader *reader, FBitmap *bmp, int conversion) {
+	return 0;
+}
+
+// @Cockatrice: Thread safe(ish) version of CopyTranslatedPixels
+int FImageSource::ReadTranslatedPixels(FileReader *reader, FBitmap *bmp, const PalEntry *remap)
+{
+	// TODO: It
+	return 0;
+}
+
+// Call this on the main thread to prepare params for a background thread load
+// convoluted I know, but some formats require more information than others
+// Default version should work for some formats like PNG
+FImageLoadParams *FImageSource::NewLoaderParams(int conversion, int translation, FRemapTable *remap) {
+	FResourceLump *rLump = SourceLump >= 0 ? fileSystem.GetFileAt(SourceLump) : nullptr;
+	FileReader *reader = rLump ? rLump->Owner->GetReader() : nullptr;
+
+	if (!rLump) { return nullptr; }
+
+	FImageLoadParams *il = new FImageLoadParams();
+	il->reader = reader ? reader->CopyNew() : rLump->NewReader().CopyNew();
+	il->conversion = conversion;
+	il->translation = translation;
+	il->remap = remap;
+
+	return il;
+}
+
 
 //==========================================================================
 //
@@ -408,7 +438,7 @@ FImageSource * FImageSource::GetImage(int lumpnum, bool isflat)
 
 // TODO: Move this to a unique file
 // Image Loader ====================================================
-ImageLoaderQueue *ImageLoaderQueue::Instance = new ImageLoaderQueue();
+/*ImageLoaderQueue *ImageLoaderQueue::Instance = new ImageLoaderQueue();
 const int ImageLoaderQueue::MAX_THREADS;
 
 bool ImageLoadThread::loadResource(ImageLoadIn &input, ImageLoadOut &output) {
@@ -497,10 +527,10 @@ void ImageLoaderQueue::clear() {
 		mRunning.Delete(x - 1);
 	}
 
-	/*for (unsigned int x = mRunning.Size() - 1; x >= 0; x--) {
-		delete mRunning[x];
-		mRunning.Delete(x);
-	}*/
+	//for (unsigned int x = mRunning.Size() - 1; x >= 0; x--) {
+	//	delete mRunning[x];
+	//	mRunning.Delete(x);
+	//}
 }
 
 
@@ -513,4 +543,4 @@ void ImageLoaderQueue::update() {
 
 		}
 	}
-}
+}*/

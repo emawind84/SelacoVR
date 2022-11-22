@@ -20,7 +20,7 @@ extern FMemArena ImageArena;
 #include <map>
 #include "stats.h"
 #include "TSQueue.h"
-
+#include "palettecontainer.h"
 
 
 
@@ -50,6 +50,21 @@ private:
 
 class ImageLoadThread;
 
+
+// @Cockatrice - Image sources must prepare the information they will need to load in the background thread
+// in the main thread. These params or a subclass will be passed to the loader and then back to the image source
+class FImageLoadParams {
+public:
+	FileReader *reader;
+	int translation, conversion;
+	FRemapTable *remap;
+
+	virtual ~FImageLoadParams() {
+		if (reader) delete reader;
+	}
+};
+
+
 // This represents a naked image. It has no high level logic attached to it.
 // All it can do is provide raw image data to its users.
 class FImageSource
@@ -73,9 +88,7 @@ protected:
 	// so that all code can benefit from future improvements to that.
 
 	virtual TArray<uint8_t> CreatePalettedPixels(int conversion);
-	virtual int CopyPixels(FBitmap *bmp, int conversion);						// This will always ignore 'luminance'.
-	virtual int ReadPixels(FileReader *reader, FBitmap *bmp, int conversion);	// Thread safe(ish) version
-
+	virtual int CopyPixels(FBitmap *bmp, int conversion);						// This will always ignore 'luminance'
 	int CopyTranslatedPixels(FBitmap *bmp, const PalEntry *remap);
 
 
@@ -95,6 +108,12 @@ public:
 	// Images are statically allocated and freed in bulk. None of the subclasses may hold any destructible data.
 	void *operator new(size_t block) { return ImageArena.Alloc(block); }
 	void operator delete(void *block) {}
+
+	// @Cockatrice - Create params for a background load op
+	virtual FImageLoadParams *NewLoaderParams(int conversion, int translation, FRemapTable *remap);
+	virtual int ReadPixels(FImageLoadParams *params, FBitmap *bmp);									// Thread safe(ish) version
+	virtual int ReadPixels(FileReader *reader, FBitmap *bmp, int conversion);						// Direct read pixels, must be implemented for things like multipatch to work properly
+	virtual int ReadTranslatedPixels(FileReader *reader, FBitmap *bmp, const PalEntry *remap);		// Thread safe(ish) version
 
 	bool bMasked = true;						// Image (might) have holes (Assume true unless proven otherwise!)
 	int8_t bTranslucent = -1;					// Image has pixels with a non-0/1 value. (-1 means the user needs to do a real check)
@@ -199,7 +218,7 @@ FTexture* CreateImageTexture(FImageSource* img) noexcept;
 
 
 // Image loader =============================================
-
+/*
 struct ImageLoadIn {
 	FImageSource *imgSource;
 	FileReader *readerCopy;		// Needs a unique copy of a file reader
@@ -289,6 +308,6 @@ public:
 	
 
 	static ImageLoaderQueue *Instance;
-};
+};*/
 
 // End Image Loader =========================================

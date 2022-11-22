@@ -140,9 +140,11 @@ void VulkanFrameBuffer::ResetBGStats() {
 bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	currentImageID.store(input.imgSource->GetId());
 
-	output.conversion = input.conversion;
+	FImageLoadParams *params = input.params;
+
+	output.conversion = params->conversion;
 	output.imgSource = input.imgSource;
-	output.translation = input.translation;
+	output.translation = params->translation;
 	output.tex = input.tex;
 
 	// Load pixels directly with the reader we copied on the main thread
@@ -150,9 +152,16 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	FBitmap pixels;
 	pixels.Create(src->GetWidth(), src->GetHeight());	// TODO: Error checking
 
-	auto trans = src->ReadPixels(input.readerCopy, &pixels, input.conversion);
+	auto trans = src->ReadPixels(params, &pixels);
+	//src->ReadPixels(input.readerCopy, &pixels, input.conversion);
+	
+	/*if (input.translationRemap) {
 
-	delete input.readerCopy;
+	} else if (IsLuminosityTranslation(input.translation)) {
+		V_ApplyLuminosityTranslation(input.translation, pixels.GetPixels(), src->GetWidth() * src->GetHeight());
+	}*/
+
+	delete input.params;
 
 	// We have the image now, let's upload it through the channel created exclusively for background ops
 	// If we really wanted to be efficient, we would do the disk loading in one thread and the texture upload in another
@@ -162,58 +171,10 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
 	output.tex->BackgroundCreateTexture(pixels.GetWidth(), pixels.GetHeight(), indexed ? 1 : 4, indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM, pixels.GetPixels(), !indexed);
 
-	// This is mostly copied and pasted from CreateTexture for now, since we need an image and a view but we will apply it to the texture
-	// in the main thread to avoid collisions
-	/*VkCommandBufferManager *bufManager = input.tex->fb->GetBGCommands();
-	int w = pixels.GetWidth();
-	int h = pixels.GetHeight();
-	int totalSize = w * h * (indexed ? 1 : 4);
-	
-	auto stagingBuffer = BufferBuilder()
-		.Size(totalSize)
-		.Usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY)
-		.DebugName("VkHardwareTexture.mStagingBuffer")
-		.Create(input.tex->fb->device);
-
-	uint8_t *data = (uint8_t*)stagingBuffer->Map(0, totalSize);
-	memcpy(data, pixels.GetPixels(), totalSize);
-	stagingBuffer->Unmap();
-
-	output.image.Image = ImageBuilder()
-		.Format(fmt)
-		.Size(w, h, !mipmap ? 1 : VkHardwareTexture::GetMipLevels(w, h))
-		.Usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
-		.DebugName("VkHardwareTexture.mImage")
-		.Create(input.tex->fb->device);
-
-	output.image.View = ImageViewBuilder()
-		.Image(output.image.Image.get(), fmt)
-		.DebugName("VkHardwareTexture.mImageView")
-		.Create(input.tex->fb->device);
-
-	auto cmdBuffer = bufManager->GetTransferCommands();
-
-	VkImageTransition()
-		.AddImage(&output.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, true)
-		.Execute(cmdBuffer);
-
-	VkBufferImageCopy region = {};
-	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	region.imageSubresource.layerCount = 1;
-	region.imageExtent.depth = 1;
-	region.imageExtent.width = w;
-	region.imageExtent.height = h;
-	cmdBuffer->copyBufferToImage(stagingBuffer->buffer, output.image.Image->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-	if (mipmap) output.image.GenerateMipmaps(cmdBuffer);
-
-	// If we queued more than 64 MB of data already: wait until the uploads finish before continuing
-	bufManager->TransferDeleteList->Add(std::move(stagingBuffer));
-	if (bufManager->TransferDeleteList->TotalSize > 64 * 1024 * 1024)
-		bufManager->WaitForCommands(false, true);*/
-
 	// Always return true, because failed images need to be marked as unloadable
 	// TODO: Mark failed images as unloadable so they don't keep coming back to the queue
+	// TODO: Load indexed images properly
+	// TODO: Properly support remapping/translation
 	return true;
 }
 
@@ -448,37 +409,55 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation)
 	MaterialLayerInfo* layer;
 
 	auto systex = static_cast<VkHardwareTexture*>(mat->GetLayer(0, translation, &layer));
-	
+	auto remap = translation <= 0 || IsLuminosityTranslation(translation) ? nullptr : GPalette.TranslationToTable(translation);
+	if (remap && remap->Inactive) remap = nullptr;
+
 	//systex->GetImage(layer->layerTexture, translation, layer->scaleFlags);
 	
 	// Submit each layer to the background loader
 	int lump = layer->layerTexture->GetSourceLump();
 	FResourceLump *rLump = lump >= 0 ? fileSystem.GetFileAt(lump) : nullptr;
-	FileReader *reader;
+	//FileReader *reader;
+	FImageLoadParams *params;
 
 	if (rLump && systex->GetState() == IHardwareTexture::HardwareState::NONE) {
 		systex->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
-		reader = rLump->Owner->GetReader();
+		//reader = rLump->Owner->GetReader();
 		
 		FImageTexture *fLayerTexture = dynamic_cast<FImageTexture*>(layer->layerTexture);
-		
-		VkTexLoadIn in = {
-			layer->layerTexture->GetImage(),
-			reader ? reader->CopyNew() : rLump->NewReader().CopyNew(),
+		params = layer->layerTexture->GetImage()->NewLoaderParams(
 			fLayerTexture ? (fLayerTexture->GetNoRemap0() ? FImageSource::noremap0 : FImageSource::normal) : FImageSource::normal,
 			translation,
-			systex
-		};
+			remap
+		);
 
-		// TODO: In the case of self-generated textures we need to submit a set of pixels instead of a readable resource
-		// So for now ignore anything that can't be read as a file
-		if (in.readerCopy && in.readerCopy->isOpen()) {
+		if(params) {
+			VkTexLoadIn in = {
+				layer->layerTexture->GetImage(),
+				params,
+				/*reader ? reader->CopyNew() : rLump->NewReader().CopyNew(),
+				fLayerTexture ? (fLayerTexture->GetNoRemap0() ? FImageSource::noremap0 : FImageSource::normal) : FImageSource::normal,
+				translation,
+				remap,*/
+				systex
+			};
+
 			bgTransferThread->queue(in);
 		}
 		else {
 			systex->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
 			return false;
 		}
+
+		// TODO: In the case of self-generated textures we need to submit a set of pixels instead of a readable resource
+		// So for now ignore anything that can't be read as a file
+		/*if (in.readerCopy && in.readerCopy->isOpen()) {
+			bgTransferThread->queue(in);
+		}
+		else {
+			systex->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
+			return false;
+		}*/
 	}
 	
 
@@ -491,15 +470,34 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation)
 
 		if (rLump && syslayer->GetState() == IHardwareTexture::HardwareState::NONE) {
 			syslayer->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
-			reader = rLump->Owner->GetReader();
+			//reader = rLump->Owner->GetReader();
 			
 			FImageTexture *fLayerTexture = dynamic_cast<FImageTexture*>(layer->layerTexture);
+			params = layer->layerTexture->GetImage()->NewLoaderParams(
+				fLayerTexture ? (fLayerTexture->GetNoRemap0() ? FImageSource::noremap0 : FImageSource::normal) : FImageSource::normal,
+				translation,
+				remap
+			);
+			
+			if (params) {
+				VkTexLoadIn in = {
+					layer->layerTexture->GetImage(),
+					params,
+					syslayer
+				};
 
-			VkTexLoadIn in = {
+				bgTransferThread->queue(in);
+			}
+			else {
+				syslayer->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
+			}
+
+			/*VkTexLoadIn in = {
 				layer->layerTexture->GetImage(),
 				reader ? reader->CopyNew() : rLump->NewReader().CopyNew(),
 				fLayerTexture ? (fLayerTexture->GetNoRemap0() ? FImageSource::noremap0 : FImageSource::normal) : FImageSource::normal,
 				translation,
+				remap,
 				syslayer
 			};
 			
@@ -509,7 +507,7 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation)
 			else {
 				syslayer->SetHardwareState(IHardwareTexture::HardwareState::READY);	// TODO: Set state to a special "unloadable" state
 				return false;
-			}
+			}*/
 		}
 	}
 

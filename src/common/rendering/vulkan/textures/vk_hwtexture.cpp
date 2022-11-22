@@ -176,7 +176,9 @@ void VkHardwareTexture::CreateTexture(int w, int h, int pixelsize, VkFormat form
 
 void VkHardwareTexture::BackgroundCreateTexture(int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap) {
 	if (!mLoadedImage) mLoadedImage.reset(new VkTextureImage());
-	else mLoadedImage->Reset(fb);
+	else {
+		mLoadedImage->Reset(fb);
+	}
 
 	auto bufManager = fb->GetBGCommands();
 	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap);
