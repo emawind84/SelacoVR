@@ -2257,7 +2257,7 @@ explode:
 		return Oldfloorz;
 	}
 
-	if (mo->Z() > mo->floorz && !(mo->flags2 & MF2_ONMOBJ) &&
+	if (mo->Z() > mo->floorz + 2 && !(mo->flags2 & MF2_ONMOBJ) &&
 		!mo->IsNoClip2() &&
 		(!(mo->flags2 & MF2_FLY) || !(mo->flags & MF_NOGRAVITY)) &&
 		!mo->waterlevel)
@@ -2416,7 +2416,7 @@ void P_ZMovement (AActor *mo, double oldfloorz)
 //
 // apply gravity
 //
-	if (mo->Z() > mo->floorz && !(mo->flags & MF_NOGRAVITY))
+	if (mo->Z() > mo->floorz + 2 && !(mo->flags & MF_NOGRAVITY))
 	{
 		double startvelz = mo->Vel.Z;
 
@@ -2517,7 +2517,7 @@ void P_ZMovement (AActor *mo, double oldfloorz)
 				mo->AddZ(mo->FloatSpeed);
 		}
 	}
-	if (mo->player && (mo->flags & MF_NOGRAVITY) && (mo->Z() > mo->floorz))
+	if (mo->player && (mo->flags & MF_NOGRAVITY) && (mo->Z() > mo->floorz + 2))
 	{
 		if (!mo->IsNoClip2())
 		{
@@ -2555,7 +2555,7 @@ void P_ZMovement (AActor *mo, double oldfloorz)
 //
 // clip movement
 //
-	if (mo->Z() <= mo->floorz)
+	if (mo->Z() <= mo->floorz + 2)
 	{	// Hit the floor
 		if ((!mo->player || !(mo->player->cheats & CF_PREDICTING)) &&
 			mo->Sector->SecActTarget != NULL &&
@@ -2566,7 +2566,7 @@ void P_ZMovement (AActor *mo, double oldfloorz)
 		P_CheckFor3DFloorHit(mo, mo->floorz, true);
 		// [RH] Need to recheck this because the sector action might have
 		// teleported the actor so it is no longer below the floor.
-		if (mo->Z() <= mo->floorz)
+		if (mo->Z() <= mo->floorz + 2)
 		{
 			mo->BlockingFloor = mo->Sector;
 			if ((mo->flags & MF_MISSILE) && !(mo->flags & MF_NOCLIP))
