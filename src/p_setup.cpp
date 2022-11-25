@@ -161,7 +161,7 @@ static void PrecacheLevel(FLevelLocals *Level)
 	TMap<PClassActor *, bool> actorhitlist;
 	int cnt = TexMan.NumTextures();
 	TArray<uint8_t> hitlist(cnt, true);
-	bool precacheActors = gamestate != GS_TITLELEVEL && gamestate != GS_STARTUP;
+	bool precacheActors = gamestate != GS_TITLELEVEL;
 
 	memset(hitlist.Data(), 0, cnt);
 
