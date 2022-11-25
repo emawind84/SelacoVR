@@ -95,7 +95,7 @@ static void PrecacheSprite(FGameTexture *tex, SpriteHits &hits)
 	FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags);
 	if (gltex) PrecacheList(gltex, hits);
 
-	/*auto useType = tex->GetUseType();
+	auto useType = tex->GetUseType();
 	if (useType == ETextureType::Any ||
 		useType == ETextureType::Sprite ||
 		useType == ETextureType::Decal ||
@@ -103,7 +103,7 @@ static void PrecacheSprite(FGameTexture *tex, SpriteHits &hits)
 		tex->GetSpritePositioning(1);		// @Cockatrice Precalc sprite positioning so we aren't loading images at play time as often
 		// TODO: Improve this, since we end up reading the texture from disk multiple times!! Maybe generate the necessary data the first time the image is actually loaded from disk
 		// Currently this is noticably increasing load times because of the double-disk reads for texture data
-	}*/
+	}
 }
 
 

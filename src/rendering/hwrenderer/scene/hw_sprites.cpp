@@ -941,31 +941,25 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
 
 			FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
-			if (gltex && !gltex->IsHardwareCached(thing->Translation)) {
-				if (screen->BackgroundCacheMaterial(gltex, thing->Translation)) {	// TODO: Prevent calling this every time the sprite wants to render, it's incredibly wasteful
-					// Get the last rendered patch from this sprite
-					if (lastPatch.isValid()) {
-						patch = lastPatch;
-						auto tex = TexMan.GetGameTexture(patch, false);
-						if (!tex || !tex->isValid()) return;
-					}
-					else {
+			if (!gltex || !gltex->IsHardwareCached(thing->Translation)) {
+				if (gltex) {
+					screen->BackgroundCacheMaterial(gltex, thing->Translation, true);
+				}
+				else {
+					screen->BackgroundCacheTextureMaterial(tex, thing->Translation, scaleflags, true);
+				}
+
+				if (lastPatch.isValid()) {
+					auto lt = patch;
+					FString lpn = tex->GetName();
+					patch = lastPatch;
+					auto tex = TexMan.GetGameTexture(patch, false);
+					if (!tex || !tex->isValid()) {
 						return;
 					}
 				}
-			}
-			else if(!gltex) {
-				// Store the patch for future collection and loading after the BSP traversal
-				if (screen->BackgroundCacheTextureMaterial(tex, thing->Translation, scaleflags)) {
-					// Get the last rendered patch from this sprite
-					if (lastPatch.isValid()) {
-						patch = lastPatch;
-						auto tex = TexMan.GetGameTexture(patch, false);
-						if (!tex || !tex->isValid()) return;
-					}
-					else {
-						return;
-					}
+				else {
+					return;
 				}
 			}
 

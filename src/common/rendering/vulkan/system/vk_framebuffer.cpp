@@ -146,14 +146,15 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	output.imgSource = input.imgSource;
 	output.translation = params->translation;
 	output.tex = input.tex;
+	output.spi = input.spi;
+	output.gtex = input.gtex;
 
 	// Load pixels directly with the reader we copied on the main thread
 	auto *src = input.imgSource;
 	FBitmap pixels;
 	pixels.Create(src->GetWidth(), src->GetHeight());	// TODO: Error checking
 
-	auto trans = src->ReadPixels(params, &pixels);
-	//src->ReadPixels(input.readerCopy, &pixels, input.conversion);
+	output.isTranslucent = src->ReadPixels(params, &pixels);
 	
 	/*if (input.translationRemap) {
 
@@ -170,6 +171,13 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	bool mipmap = !indexed;
 	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
 	output.tex->BackgroundCreateTexture(pixels.GetWidth(), pixels.GetHeight(), indexed ? 1 : 4, indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM, pixels.GetPixels(), !indexed);
+
+	// If we need sprite positioning info, generate it here and assign it in the main thread later
+	if (input.spi.generateSpi && input.spi.info) {
+		FGameTexture::GenerateInitialSpriteData(input.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+	}
+
+
 
 	// Always return true, because failed images need to be marked as unloadable
 	// TODO: Mark failed images as unloadable so they don't keep coming back to the queue
@@ -190,6 +198,13 @@ void VulkanFrameBuffer::UpdateBackgroundCache() {
 	while (bgTransferThread->popFinished(loaded)) {
 		loaded.tex->SwapToLoadedImage();
 		loaded.tex->SetHardwareState(IHardwareTexture::HardwareState::READY);
+		if(loaded.gtex) loaded.gtex->SetTranslucent(loaded.isTranslucent);
+
+		// Set the sprite positioning info if generated
+		if (loaded.spi.generateSpi && loaded.spi.info && loaded.gtex) {
+			Printf(TEXTCOLOR_ICE"Applying SPI to %s : %p\n", loaded.gtex->GetName(), loaded.gtex);
+			loaded.gtex->SetSpriteRect(loaded.spi.info);
+		}
 	}
 
 	// Submit all of the patches that need to be loaded
@@ -197,7 +212,7 @@ void VulkanFrameBuffer::UpdateBackgroundCache() {
 	while (patchQueue.dequeue(qp)) {
 		FMaterial * gltex = FMaterial::ValidateTexture(qp.tex, qp.scaleFlags, true);
 		if (gltex && !gltex->IsHardwareCached(qp.translation)) {
-			BackgroundCacheMaterial(gltex, qp.translation);
+			BackgroundCacheMaterial(gltex, qp.translation, qp.generateSPI);
 		}
 	}
 }
@@ -388,11 +403,11 @@ void VulkanFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 
 
 // @Cockatrice - Cache a texture material, intended for use outside of the main thread
-bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags) {
+bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI) {
 	if (!tex || !tex->isValid()) return false;
 
 	QueuedPatch qp = {
-		tex, translation, scaleFlags
+		tex, translation, scaleFlags, makeSPI
 	};
 
 	patchQueue.queue(qp);
@@ -403,7 +418,7 @@ bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int tr
 
 // @Cockatrice - Submit each texture in the material to the background loader
 // Call from main thread only
-bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation) {
+bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI) {
 	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return false;
 
 	MaterialLayerInfo* layer;
@@ -412,18 +427,17 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation)
 	auto remap = translation <= 0 || IsLuminosityTranslation(translation) ? nullptr : GPalette.TranslationToTable(translation);
 	if (remap && remap->Inactive) remap = nullptr;
 
-	//systex->GetImage(layer->layerTexture, translation, layer->scaleFlags);
-	
 	// Submit each layer to the background loader
 	int lump = layer->layerTexture->GetSourceLump();
 	FResourceLump *rLump = lump >= 0 ? fileSystem.GetFileAt(lump) : nullptr;
-	//FileReader *reader;
 	FImageLoadParams *params;
+	VkTexLoadSpi spi;
+
+	Printf("Requesting load of %s [%d] : %p\n", mat->sourcetex->GetName(), makeSPI, mat->Source());
 
 	if (rLump && systex->GetState() == IHardwareTexture::HardwareState::NONE) {
 		systex->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
-		//reader = rLump->Owner->GetReader();
-		
+
 		FImageTexture *fLayerTexture = dynamic_cast<FImageTexture*>(layer->layerTexture);
 		params = layer->layerTexture->GetImage()->NewLoaderParams(
 			fLayerTexture ? (fLayerTexture->GetNoRemap0() ? FImageSource::noremap0 : FImageSource::normal) : FImageSource::normal,
@@ -432,14 +446,32 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation)
 		);
 
 		if(params) {
+			if (makeSPI) {
+				// Only generate SPI if it's not already there
+				if (!mat->sourcetex->HasSpritePositioning()) {
+					spi.generateSpi = true;
+					spi.notrimming = mat->sourcetex->GetNoTrimming();
+					spi.shouldExpand = mat->sourcetex->ShouldExpandSprite();
+					// TODO: Be careful with this, if a texture load fails and returns to the queue over and over, it will eat up all available memory in the arena
+					spi.info = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
+				}
+				else {
+					Printf("%s already has SPI so skipping it!\n", mat->sourcetex->GetName(), mat->Source());
+					spi.generateSpi = false;
+					spi.info = nullptr;
+				}
+			}
+			else {
+				spi.generateSpi = false;
+				spi.info = nullptr;
+			}
+
 			VkTexLoadIn in = {
 				layer->layerTexture->GetImage(),
 				params,
-				/*reader ? reader->CopyNew() : rLump->NewReader().CopyNew(),
-				fLayerTexture ? (fLayerTexture->GetNoRemap0() ? FImageSource::noremap0 : FImageSource::normal) : FImageSource::normal,
-				translation,
-				remap,*/
-				systex
+				spi,
+				systex,
+				mat->sourcetex
 			};
 
 			bgTransferThread->queue(in);
@@ -448,16 +480,6 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation)
 			systex->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
 			return false;
 		}
-
-		// TODO: In the case of self-generated textures we need to submit a set of pixels instead of a readable resource
-		// So for now ignore anything that can't be read as a file
-		/*if (in.readerCopy && in.readerCopy->isOpen()) {
-			bgTransferThread->queue(in);
-		}
-		else {
-			systex->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
-			return false;
-		}*/
 	}
 	
 
@@ -470,7 +492,6 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation)
 
 		if (rLump && syslayer->GetState() == IHardwareTexture::HardwareState::NONE) {
 			syslayer->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
-			//reader = rLump->Owner->GetReader();
 			
 			FImageTexture *fLayerTexture = dynamic_cast<FImageTexture*>(layer->layerTexture);
 			params = layer->layerTexture->GetImage()->NewLoaderParams(
@@ -483,6 +504,9 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation)
 				VkTexLoadIn in = {
 					layer->layerTexture->GetImage(),
 					params,
+					{
+						false, false, false, nullptr
+					},
 					syslayer
 				};
 
@@ -491,23 +515,6 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation)
 			else {
 				syslayer->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
 			}
-
-			/*VkTexLoadIn in = {
-				layer->layerTexture->GetImage(),
-				reader ? reader->CopyNew() : rLump->NewReader().CopyNew(),
-				fLayerTexture ? (fLayerTexture->GetNoRemap0() ? FImageSource::noremap0 : FImageSource::normal) : FImageSource::normal,
-				translation,
-				remap,
-				syslayer
-			};
-			
-			if (in.readerCopy && in.readerCopy->isOpen()) {
-				bgTransferThread->queue(in);
-			}
-			else {
-				syslayer->SetHardwareState(IHardwareTexture::HardwareState::READY);	// TODO: Set state to a special "unloadable" state
-				return false;
-			}*/
 		}
 	}
 

@@ -468,17 +468,17 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 			if (tex2) {
 				int scaleflags2 = CTF_Expand;
 				if (shouldUpscale(tex2, UF_Sprite)) scaleflags2 |= CTF_Upscale;
-				screen->BackgroundCacheTextureMaterial(tex2, psp->Translation, scaleflags2);
+				screen->BackgroundCacheTextureMaterial(tex2, psp->Translation, scaleflags2, true);
 			}
 		}
 
 		FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
 		if (!gltex || !gltex->IsHardwareCached(psp->Translation)) {
 			if (gltex) {
-				screen->BackgroundCacheMaterial(gltex, psp->Translation);  // TODO: Prevent calling this every time the sprite wants to render, it's incredibly wasteful
+				screen->BackgroundCacheMaterial(gltex, psp->Translation, true);  // TODO: Prevent calling this every time the sprite wants to render, it's incredibly wasteful
 			}
 			else {
-				screen->BackgroundCacheTextureMaterial(tex, psp->Translation, scaleflags);
+				screen->BackgroundCacheTextureMaterial(tex, psp->Translation, scaleflags, true);
 			}
 
 			bool foundNewer = false;

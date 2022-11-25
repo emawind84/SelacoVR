@@ -25,20 +25,25 @@ class VkRenderBuffers;
 class VkPostprocess;
 class SWSceneDrawer;
 
+struct VkTexLoadSpi {
+	bool generateSpi, shouldExpand, notrimming;
+	SpritePositioningInfo *info;
+};
+
 struct VkTexLoadIn {
 	FImageSource *imgSource;
-	/*FileReader *readerCopy;		// Needs a unique copy of a file reader
-	int conversion, translation;
-	FRemapTable *translationRemap;*/
 	FImageLoadParams *params;
-
+	VkTexLoadSpi spi;
 	VkHardwareTexture *tex;		// We can create the texture on the main thread
+	FGameTexture *gtex;
 };
 
 struct VkTexLoadOut {
 	VkHardwareTexture *tex;
-	//VkTextureImage image;
+	FGameTexture *gtex;
+	VkTexLoadSpi spi;
 	int conversion, translation;
+	bool isTranslucent;
 	FImageSource *imgSource;
 };
 
@@ -92,8 +97,8 @@ public:
 	void InitializeState() override;
 	bool CompileNextShader() override;
 	void PrecacheMaterial(FMaterial *mat, int translation) override;
-	bool BackgroundCacheMaterial(FMaterial *mat, int translation) override;
-	bool BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags) override;
+	bool BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI = false) override;
+	bool BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI = false) override;
 	bool CachingActive() override { return bgTransferThread->isActive(); }
 	bool SupportsBackgroundCache() override { return true; }
 	float CacheProgress() override { return float(bgTransferThread->numQueued()); }	// TODO: Change this to report the actual progress once we have a way to mark the total number of objects to load
@@ -149,6 +154,7 @@ private:
 	struct QueuedPatch {
 		FGameTexture *tex;
 		int translation, scaleFlags;
+		bool generateSPI;
 	};
 
 	TSQueue<QueuedPatch> patchQueue;									// @Cockatrice - Thread safe queue of textures to create materials for and submit to the bg thread
