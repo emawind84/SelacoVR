@@ -302,24 +302,26 @@ class StateProvider : Inventory
 		if (!norandom)
 			damage *= random[cwpunch](1, 8);
 
+		if (pufftype == NULL)
+			pufftype = 'BulletPuff';
+		int puffFlags = LAF_ISMELEEATTACK | ((flags & CPF_NORANDOMPUFFZ) ? LAF_NORANDOMPUFFZ : 0);
+		int alflags = 0;
+
+		if (weapon != NULL && weapon == invoker)
+		{
+			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
+			puffFlags |= weapon.bOffhandWeapon ? LAF_ISOFFHAND : 0;
+		}
+
 		angle = self.Angle + random2[cwpunch]() * (5.625 / 256);
 		if (range == 0) range = DEFMELEERANGE;
-		pitch = AimLineAttack (angle, range, t, 0., ALF_CHECK3D);
+		pitch = AimLineAttack (angle, range, t, 0., ALF_CHECK3D | alflags);
 
 		// only use ammo when actually hitting something!
 		if ((flags & CPF_USEAMMO) && t.linetarget && weapon && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
 			if (!weapon.DepleteAmmo(weapon.bAltFire, true))
 				return;	// out of ammo
-		}
-
-		if (pufftype == NULL)
-			pufftype = 'BulletPuff';
-		int puffFlags = LAF_ISMELEEATTACK | ((flags & CPF_NORANDOMPUFFZ) ? LAF_NORANDOMPUFFZ : 0);
-
-		if (weapon != NULL)
-		{
-			puffFlags |= weapon.bOffhandWeapon ? LAF_ISOFFHAND : 0;
 		}
 
 		Actor puff;

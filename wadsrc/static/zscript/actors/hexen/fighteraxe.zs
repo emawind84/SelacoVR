@@ -280,7 +280,7 @@ class FWeapAxe : FighterWeapon
 		// didn't find any creatures, so try to strike any walls
 		self.weaponspecial = 0;
 
-		double slope = AimLineAttack (angle, DEFMELEERANGE, null, 0., ALF_CHECK3D);
+		double slope = AimLineAttack (angle, DEFMELEERANGE, null, 0., ALF_CHECK3D | alflags);
 		LineAttack (angle, DEFMELEERANGE, slope, damage, 'Melee', pufftype, laflags);
 	}
 }

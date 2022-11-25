@@ -68,8 +68,9 @@ extend class StateProvider
 			range = SAWRANGE;
 		}
 
+		int alflags = invoker == player.OffhandWeapon ? ALF_ISOFFHAND : 0;
 		double ang = angle + spread_xy * (Random2[Saw]() / 255.);
-		double slope = AimLineAttack (ang, range, t) + spread_z * (Random2[Saw]() / 255.);
+		double slope = AimLineAttack (ang, range, t, flags: alflags) + spread_z * (Random2[Saw]() / 255.);
 
 		Weapon weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weap != null && !(flags & SF_NOUSEAMMO) && !(!t.linetarget && (flags & SF_NOUSEAMMOMISS)) && !weap.bDehAmmo &&

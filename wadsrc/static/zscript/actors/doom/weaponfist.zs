@@ -49,6 +49,7 @@ extend class Actor
 	action void A_Punch()
 	{
 		int laflags = LAF_ISMELEEATTACK;
+		int alflags = 0;
 		FTranslatedLineTarget t;
 
 		if (player != null)
@@ -56,6 +57,7 @@ extend class Actor
 			Weapon weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 			if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 			{
+				alflags |= weap.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 				laflags |= weap.bOffhandWeapon ? LAF_ISOFFHAND : 0;
 				if (!weap.bDehAmmo && !weap.DepleteAmmo (weap.bAltFire))
 					return;
@@ -68,7 +70,7 @@ extend class Actor
 			damage *= 10;
 
 		double ang = angle + Random2[Punch]() * (5.625 / 256);
-		double pitch = AimLineAttack (ang, DEFMELEERANGE, null, 0., ALF_CHECK3D);
+		double pitch = AimLineAttack (ang, DEFMELEERANGE, null, 0., ALF_CHECK3D | alflags);
 
 		LineAttack (ang, DEFMELEERANGE, pitch, damage, 'Melee', "BulletPuff", laflags, t);
 
