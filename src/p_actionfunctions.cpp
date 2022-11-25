@@ -1323,13 +1323,11 @@ DEFINE_ACTION_FUNCTION(AActor, A_Recoil)
 		{
 			if (pspr->GetID() == PSP_OFFHANDWEAPON)
 			{
-				DVector3 dir = player->mo->OffhandDir(self, self->Angles.Yaw, self->Angles.Pitch);
-				directionAngle = dir.Angle();
+				directionAngle = player->mo->OffhandAngle + 90;
 			}
 			else
 			{
-				DVector3 dir = player->mo->AttackDir(self, self->Angles.Yaw, self->Angles.Pitch);
-				directionAngle = dir.Angle();
+				directionAngle = player->mo->AttackAngle + 90;
 			}
 		}
 	}
