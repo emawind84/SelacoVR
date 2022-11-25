@@ -491,11 +491,11 @@ extend class Actor
 			}
 			mo.SetXYZ((pos, mo.pos.z));
 			mo.Vel = (xvel, yvel, zvel);
-			mo.Vel.XY += velxy;
 			if (flags & SXF_MULTIPLYSPEED)
 			{
 				mo.Vel *= mo.Speed;
 			}
+			mo.Vel.XY += velxy;
 			mo.Angle = directionAngle;
 		}
 		return res, mo;
