@@ -6790,7 +6790,7 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnMissileZAimed)
 //---------------------------------------------------------------------------
 
 AActor *P_SpawnMissileAngleZSpeed (AActor *source, double z,
-	PClassActor *type, DAngle angle, double vz, double speed, AActor *owner, bool checkspawn, int aimflags)
+	PClassActor *type, DAngle angle, double vz, double speed, AActor *owner, bool checkspawn)
 {
 	if (source == nullptr || type == nullptr)
 	{
@@ -6803,36 +6803,13 @@ AActor *P_SpawnMissileAngleZSpeed (AActor *source, double z,
 		z -= source->Floorclip;
 	}
 
-	DAngle an = angle;
-	DAngle pitch = source->Angles.Pitch;
-	DVector3 pos = source->PosAtZ(z);
-	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
-	{
-		if (aimflags & ALF_ISOFFHAND)
-		{
-			pos = source->player->mo->OffhandPos;
-			DVector3 dir = source->player->mo->OffhandDir(source, an, pitch);
-			an = dir.Angle();
-			pitch = dir.Pitch();
-		}
-		else
-		{
-			pos = source->player->mo->AttackPos;
-			DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
-			an = dir.Angle();
-			pitch = dir.Pitch();
-		}
-		double slope = -clamp(pitch.Tan(), -5., 5.);
-		vz = speed * slope;
-	}
-
-	mo = Spawn (type, pos, ALLOW_REPLACE);
+	mo = Spawn (type, source->PosAtZ(z), ALLOW_REPLACE);
 
 	if (mo == nullptr) return nullptr;
 	P_PlaySpawnSound(mo, source);
 	if (owner == nullptr) owner = source;
 	mo->target = owner;
-	mo->Angles.Yaw = an;
+	mo->Angles.Yaw = angle;
 	mo->VelFromAngle(speed);
 	mo->Vel.Z = vz;
 
@@ -6854,8 +6831,7 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnMissileAngleZSpeed)
 	PARAM_FLOAT(speed);
 	PARAM_OBJECT(owner, AActor);
 	PARAM_BOOL(checkspawn);
-	PARAM_INT(aimflags);
-	ACTION_RETURN_OBJECT(P_SpawnMissileAngleZSpeed(self, z, type, angle, vz, speed, owner, checkspawn, aimflags));
+	ACTION_RETURN_OBJECT(P_SpawnMissileAngleZSpeed(self, z, type, angle, vz, speed, owner, checkspawn));
 }
 
 

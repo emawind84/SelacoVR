@@ -877,14 +877,14 @@ class Actor : Thinker native
 	//
 	//---------------------------------------------------------------------------
 
-	Actor SpawnMissileAngle (class<Actor> type, double angle, double vz, int aimflags = 0)
+	Actor SpawnMissileAngle (class<Actor> type, double angle, double vz)
 	{
-		return SpawnMissileAngleZSpeed (pos.z + 32 + GetBobOffset(), type, angle, vz, GetDefaultSpeed (type), aimflags: aimflags);
+		return SpawnMissileAngleZSpeed (pos.z + 32 + GetBobOffset(), type, angle, vz, GetDefaultSpeed (type));
 	}
 
-	Actor SpawnMissileAngleZ (double z, class<Actor> type, double angle, double vz, Actor owner = null, int aimflags = 0)
+	Actor SpawnMissileAngleZ (double z, class<Actor> type, double angle, double vz, Actor owner = null)
 	{
-		return SpawnMissileAngleZSpeed (z, type, angle, vz, GetDefaultSpeed (type), owner, aimflags: aimflags);
+		return SpawnMissileAngleZSpeed (z, type, angle, vz, GetDefaultSpeed (type), owner);
 	}
 	
 
