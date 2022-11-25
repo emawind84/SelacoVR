@@ -52,7 +52,7 @@ class Mace : HereticWeapon
 		int alflags = 0;
 		int hand = 0;
 		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
-		if (weapon != null)
+		if (weapon != null && weapon == invoker)
 		{
 			hand = weapon.bOffhandWeapon ? 1 : 0;
 			alflags |= hand ? ALF_ISOFFHAND : 0;
@@ -60,14 +60,33 @@ class Mace : HereticWeapon
 				return;
 		}
 
+		Vector3 spawnpos = Pos + (0, 0, 28 - Floorclip);
+		let directionAngle = angle;
+		let directionPitch = pitch;
+		if (player.mo.OverrideAttackPosDir)
+		{
+			if (hand == 1)
+			{
+				spawnpos = player.mo.OffhandPos;
+				directionAngle = player.mo.OffhandAngle + 90;
+				directionPitch = -player.mo.OffhandPitch;
+			}
+			else
+			{
+				spawnpos = player.mo.AttackPos;
+				directionAngle = player.mo.AttackAngle + 90;
+				directionPitch = -player.mo.AttackPitch;
+			}
+		}
+
 		if (random[MaceAtk]() < 28)
 		{
-			Actor ball = Spawn("MaceFX2", Pos + (0, 0, 28 - Floorclip), ALLOW_REPLACE);
+			Actor ball = Spawn("MaceFX2", spawnpos, ALLOW_REPLACE);
 			if (ball != null)
 			{
-				ball.Vel.Z = 2 - clamp(tan(pitch), -5, 5);
+				ball.Vel.Z = 2 - clamp(tan(directionPitch), -5, 5);
 				ball.target = self;
-				ball.angle = self.angle;
+				ball.angle = directionAngle;
 				ball.AddZ(ball.Vel.Z);
 				ball.VelFromAngle();
 				ball.Vel += Vel.xy / 2;
@@ -130,18 +149,34 @@ class MacePowered : Mace
 		}
 
 		int alflags = 0;
+		int hand = 0;
 		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
-		if (weapon != null)
+		if (weapon != null && weapon == invoker)
 		{
+			hand = weapon.bOffhandWeapon ? 1 : 0;
 			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
 				return;
 		}
+
+		let directionPitch = pitch;
+		if (player.mo.OverrideAttackPosDir)
+		{
+			if (hand == 1)
+			{
+				directionPitch = -player.mo.OffhandPitch;
+			}
+			else
+			{
+				directionPitch = -player.mo.AttackPitch;
+			}
+		}
+
 		Actor mo = SpawnPlayerMissile ("MaceFX4", angle, pLineTarget:t, aimflags: alflags);
 		if (mo)
 		{
 			mo.Vel.xy += Vel.xy;
-			mo.Vel.Z = 2 - clamp(tan(pitch), -5, 5);
+			mo.Vel.Z = 2 - clamp(tan(directionPitch), -5, 5);
 			if (t.linetarget && !t.unlinked)
 			{
 				mo.tracer = t.linetarget;
