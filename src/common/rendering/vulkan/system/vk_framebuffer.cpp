@@ -404,7 +404,7 @@ void VulkanFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 
 // @Cockatrice - Cache a texture material, intended for use outside of the main thread
 bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI) {
-	if (!tex || !tex->isValid()) return false;
+	if (!tex || !tex->isValid() || tex->GetID().GetIndex() == 0) return false;
 
 	QueuedPatch qp = {
 		tex, translation, scaleFlags, makeSPI
