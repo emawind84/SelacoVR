@@ -60,7 +60,7 @@ static void PrecacheTexture(FGameTexture *tex, int cache)
 
 		FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags);
 		//if (gltex) screen->BackgroundCacheMaterial(gltex, 0);
-		if(gltex && gltex->Source()) Printf("Precaching texture: %s\n", gltex->Source()->GetName().GetChars());
+		//if(gltex && gltex->Source()) Printf("Precaching texture: %s\n", gltex->Source()->GetName().GetChars());
 		if (gltex) screen->PrecacheMaterial(gltex, 0);
 	}
 }
@@ -76,7 +76,7 @@ static void PrecacheList(FMaterial *gltex, SpriteHits& translations)
 	SpriteHits::Pair* pair;
 	//while (it.NextPair(pair)) screen->BackgroundCacheMaterial(gltex, pair->Key);
 	while (it.NextPair(pair)) {
-		if (gltex && gltex->Source()) Printf("Precaching sprite tex: %s\n", gltex->Source()->GetName().GetChars());
+		//if (gltex && gltex->Source()) Printf("Precaching sprite tex: %s\n", gltex->Source()->GetName().GetChars());
 		screen->PrecacheMaterial(gltex, pair->Key);
 	}
 }

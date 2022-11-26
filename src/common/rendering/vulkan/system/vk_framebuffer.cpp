@@ -202,7 +202,7 @@ void VulkanFrameBuffer::UpdateBackgroundCache() {
 
 		// Set the sprite positioning info if generated
 		if (loaded.spi.generateSpi && loaded.spi.info && loaded.gtex) {
-			Printf(TEXTCOLOR_ICE"Applying SPI to %s : %p\n", loaded.gtex->GetName(), loaded.gtex);
+			//Printf(TEXTCOLOR_ICE"Applying SPI to %s : %p\n", loaded.gtex->GetName(), loaded.gtex);
 			loaded.gtex->SetSpriteRect(loaded.spi.info);
 		}
 	}
@@ -433,7 +433,7 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 	FImageLoadParams *params;
 	VkTexLoadSpi spi;
 
-	Printf("Requesting load of %s [%d] : %p\n", mat->sourcetex->GetName(), makeSPI, mat->Source());
+	//Printf("Requesting load of %s [%d] : %p\n", mat->sourcetex->GetName(), makeSPI, mat->Source());
 
 	if (rLump && systex->GetState() == IHardwareTexture::HardwareState::NONE) {
 		systex->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
@@ -456,7 +456,7 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 					spi.info = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
 				}
 				else {
-					Printf("%s already has SPI so skipping it!\n", mat->sourcetex->GetName(), mat->Source());
+					//Printf("%s already has SPI so skipping it!\n", mat->sourcetex->GetName(), mat->Source());
 					spi.generateSpi = false;
 					spi.info = nullptr;
 				}

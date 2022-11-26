@@ -300,7 +300,7 @@ void FGameTexture::SetupSpriteData()
 {
 	// Since this is only needed for real sprites it gets allocated on demand.
 	// It also allocates from the image memory arena because it has the same lifetime and to reduce maintenance.
-	Printf(TEXTCOLOR_CYAN"Generated sprite positioning %sfor: %s : %p", spi != nullptr ? "AGAIN " : " ", GetName(), this);
+	//Printf(TEXTCOLOR_CYAN"Generated sprite positioning %sfor: %s : %p", spi != nullptr ? "AGAIN " : " ", GetName(), this);
 	if (spi == nullptr) spi = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
 	for (int i = 0; i < 2; i++)
 	{
@@ -315,10 +315,10 @@ void FGameTexture::SetupSpriteData()
 			spi.mTrimResult = Base->TrimBorders(spi.trim) && !GetNoTrimming();	// get the trim size before adding the empty frame
 			spi.spriteWidth += 2;
 			spi.spriteHeight += 2;
-			Printf(" TRIMMED ");
+			//Printf(" TRIMMED ");
 		}
 	}
-	Printf("\n");
+	//Printf("\n");
 	SetSpriteRect();
 }
 
