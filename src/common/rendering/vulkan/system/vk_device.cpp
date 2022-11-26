@@ -151,15 +151,20 @@ void VulkanDevice::SelectPhysicalDevice()
 		for (int i = 0; i < (int)info.QueueFamilies.size(); i++) {
 			const auto &queueFamily = info.QueueFamilies[i];
 			if (i != dev.graphicsFamily && queueFamily.queueCount > 0 && !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-				dev.uploadFamily = i;
-				break;
+				// We have LOTS of misalignments in our textures, so we NEED a granularity of 1.
+				if (queueFamily.minImageTransferGranularity.width == 1 && queueFamily.minImageTransferGranularity.depth == 1) {
+					dev.uploadFamily = i;
+					break;
+				}
 			}
 		}
 
 		// If we didn't find one, loosen the restrictions. Can be the same as graphics family but must have room
 		for (int i = 0; i < (int)info.QueueFamilies.size(); i++) {
 			const auto &queueFamily = info.QueueFamilies[i];
-			if ( i != dev.graphicsFamily || (i == dev.graphicsFamily && queueFamily.queueCount > 1) && queueFamily.queueCount > 0) {
+			if ( (i != dev.graphicsFamily || queueFamily.queueCount > 1) 
+				 && queueFamily.queueCount > 0) {
+				// Graphics queue families SHOULD have a granularity of 1, so not checking here. This might be dumb.
 				dev.uploadFamily = i;
 				break;
 			}
@@ -172,7 +177,7 @@ void VulkanDevice::SelectPhysicalDevice()
 			VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(info.Device, i, surface, &presentSupport);
 			if (result == VK_SUCCESS && queueFamily.queueCount > 0 && presentSupport) {
 				// Make sure there is enough room in this queue
-				int requiredCount = 1;
+				uint32_t requiredCount = 1;
 				if (i == dev.graphicsFamily) requiredCount++;
 				if (i == dev.uploadFamily) requiredCount++;
 				if (requiredCount > queueFamily.queueCount) continue;
