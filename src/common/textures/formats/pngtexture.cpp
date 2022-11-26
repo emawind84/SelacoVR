@@ -904,7 +904,21 @@ int FPNGTexture::CopyPixels(FBitmap *bmp, int conversion)
 int FPNGTexture::ReadPixels(FImageLoadParams *params, FBitmap *bmp) {
 	// TODO: Read remapped/translated version here when necessary!
 	if (params->reader) {
-		return ReadPixels(params->reader, bmp, params->conversion);
+		// Create a memory reader with the contents of the file
+		auto rl = fileSystem.GetFileAt(SourceLump);		// These values do not change at runtime until after teardown
+
+		if (!rl || rl->LumpSize <= 0) {
+			return 0;
+		}
+
+		char *data = new char[rl->LumpSize];
+		rl->ReadData(*params->reader, data);
+
+		// Create a file wrapper for the data
+		FileReader memReader(new MemoryReader(data, rl->LumpSize));
+		int trans = ReadPixels(&memReader, bmp, params->conversion);
+		delete data;
+		return trans;
 	}
 	return 0;
 }

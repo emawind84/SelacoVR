@@ -41,7 +41,7 @@
 #include "cmdlib.h"
 #include "palettecontainer.h"
 #include "printf.h"
-
+#include "files.h"
 
 FMemArena ImageArena(32768);
 TArray<FImageSource *>FImageSource::ImageForLump;
@@ -220,11 +220,17 @@ FImageLoadParams *FImageSource::NewLoaderParams(int conversion, int translation,
 
 	if (!rLump) { return nullptr; }
 
+	
+
 	FImageLoadParams *il = new FImageLoadParams();
 	il->reader = reader ? reader->CopyNew() : rLump->NewReader().CopyNew();
 	il->conversion = conversion;
 	il->translation = translation;
 	il->remap = remap;
+
+	if (il->reader) {
+		il->reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);
+	}
 
 	return il;
 }

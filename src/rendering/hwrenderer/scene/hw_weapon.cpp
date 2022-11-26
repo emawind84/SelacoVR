@@ -485,8 +485,12 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 				
 			// We need something to render, go through the last few patches and see if anything is loaded yet that we can grab
 			for (int x = 0; x < min((long)psp->LastPatches.length, psp->LastPatches.pos); x++) {
+				if (psp->LastPatches[x] == 0) continue;
+
 				FTextureID lump2;
 				lump2.SetIndex(psp->LastPatches[x]);
+				if (!lump2.isValid()) continue;
+
 				auto tex2 = TexMan.GetGameTexture(lump2, false);
 				FMaterial *gltex2 = FMaterial::ValidateTexture(tex2, scaleflags, false);
 
