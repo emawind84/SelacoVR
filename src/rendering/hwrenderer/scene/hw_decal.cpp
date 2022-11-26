@@ -223,7 +223,7 @@ void HWWall::ProcessDecal(HWDrawInfo *di, DBaseDecal *decal, const FVector3 &nor
 
 	// @Cockatrice - If this texture is not loaded, and we are able to BG load it, try to render this sprites last frame instead
 	// Also load the texture
-	FTextureID lastPatch = decal->LastPatch;
+	/*FTextureID lastPatch = decal->LastPatch;
 	if (gametic - primaryLevel->starttime > 2 &&	// On the first tic or so, do not use the background loader to avoid pop-in
 		decalTile != lastPatch &&						// only if this is a new frame
 		gl_texture_thread &&
@@ -242,7 +242,7 @@ void HWWall::ProcessDecal(HWDrawInfo *di, DBaseDecal *decal, const FVector3 &nor
 			}
 
 			// Last ditch, grab the last rendered patch from this sprite
-			if (!lastPatch.isValid()) {
+			if (lastPatch.isValid()) {
 				decalTile = lastPatch;
 				texture = TexMan.GetGameTexture(decalTile, false);
 				if (!texture || !texture->isValid()) return;
@@ -254,6 +254,8 @@ void HWWall::ProcessDecal(HWDrawInfo *di, DBaseDecal *decal, const FVector3 &nor
 
 		// If the bg cache func fails, we can't bg load the patch so just move on to the normal render path and load in the main thread
 	}
+
+	decal->LastPatch = decalTile;*/
 
 	
 	// the sectors are only used for their texture origin coordinates
