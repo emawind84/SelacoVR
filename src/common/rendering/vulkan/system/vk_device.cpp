@@ -134,21 +134,66 @@ void VulkanDevice::SelectPhysicalDevice()
 		VulkanCompatibleDevice dev;
 		dev.device = &AvailableDevices[idx];
 
-		// Figure out what can present
-		for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
-		{
+		// @Cockatrice - The old way was broken, using the first graphics queue was a huge problem and only worked because
+		// the code that actually requested the queue only ever actually found 1 and reused it for both Graphics and Present
+		// So, lets Find our graphics queue family first, this should be the easiest one
+		for (int i = 0; i < (int)info.QueueFamilies.size(); i++) {
+			const auto &queueFamily = info.QueueFamilies[i];
+			if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+				dev.graphicsFamily = i;
+				dev.graphicsTimeQueries = queueFamily.timestampValidBits != 0;
+				break;
+			}
+		}
+
+		// Find a transfer queue family. This can be a graphics family if necessary, but make sure there is enough
+		// room. First, let's try to find a different family from the graphics one. Every queue should support transfer according to spec
+		for (int i = 0; i < (int)info.QueueFamilies.size(); i++) {
+			const auto &queueFamily = info.QueueFamilies[i];
+			if (i != dev.graphicsFamily && queueFamily.queueCount > 0 && !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+				dev.uploadFamily = i;
+				break;
+			}
+		}
+
+		// If we didn't find one, loosen the restrictions. Can be the same as graphics family but must have room
+		for (int i = 0; i < (int)info.QueueFamilies.size(); i++) {
+			const auto &queueFamily = info.QueueFamilies[i];
+			if ( i != dev.graphicsFamily || (i == dev.graphicsFamily && queueFamily.queueCount > 1) && queueFamily.queueCount > 0) {
+				dev.uploadFamily = i;
+				break;
+			}
+		}
+
+		// Now find a Present family. In the end the Present and Graphics queue CAN be the same queue, but we need to treat that specially
+		for (int i = 0; i < (int)info.QueueFamilies.size(); i++) {
+			const auto &queueFamily = info.QueueFamilies[i];
 			VkBool32 presentSupport = false;
 			VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(info.Device, i, surface, &presentSupport);
-			if (result == VK_SUCCESS && info.QueueFamilies[i].queueCount > 0 && presentSupport)
-			{
+			if (result == VK_SUCCESS && queueFamily.queueCount > 0 && presentSupport) {
+				// Make sure there is enough room in this queue
+				int requiredCount = 1;
+				if (i == dev.graphicsFamily) requiredCount++;
+				if (i == dev.uploadFamily) requiredCount++;
+				if (requiredCount > queueFamily.queueCount) continue;
+
 				dev.presentFamily = i;
 				break;
 			}
 		}
 
-		// @Cockatrice - Check for a transfer specific queue type, or at least find a queue that is not dedicated to graphics and pick that for upload
-		// If nothing is found, we'll set upload to the same queue family as graphics
-		for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
+		// If we didn't find a present family with enough room, let's make sure the graphics queue family supports it
+		if (dev.presentFamily < 0 && dev.graphicsFamily >= 0) {
+			VkBool32 presentSupport = false;
+			VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(info.Device, dev.graphicsFamily, surface, &presentSupport);
+			if (result == VK_SUCCESS && presentSupport) {
+				dev.presentFamily = -2;
+			}
+		}
+
+
+		// OLD CODE
+		/*for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
 		{
 			const auto &queueFamily = info.QueueFamilies[i];
 			if (queueFamily.queueCount > 0 && ((queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) || !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)))
@@ -156,14 +201,14 @@ void VulkanDevice::SelectPhysicalDevice()
 				dev.uploadFamily = i;
 				break;
 			}
-		}
+		}*/
 
 		// The vulkan spec states that graphics and compute queues can always do transfer.
 		// Furthermore the spec states that graphics queues always can do compute.
 		// Last, the spec makes it OPTIONAL whether the VK_QUEUE_TRANSFER_BIT is set for such queues, but they MUST support transfer.
 		//
 		// In short: pick the first graphics queue family for everything.
-		for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
+		/*for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
 		{
 			const auto &queueFamily = info.QueueFamilies[i];
 			if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
@@ -173,11 +218,14 @@ void VulkanDevice::SelectPhysicalDevice()
 				if (dev.uploadFamily < 0) {
 					dev.uploadFamily = i;
 				}
+				if (dev.presentFamily < 0) {
+					dev.uploadFamily = i;
+				}
 				break;
 			}
-		}
+		}*/
 
-		if (dev.graphicsFamily != -1 && dev.presentFamily != -1)
+		if (dev.graphicsFamily != -1 && dev.uploadFamily != -1 && dev.presentFamily != -1)
 		{
 			SupportedDevices.push_back(dev);
 		}
@@ -272,11 +320,11 @@ void VulkanDevice::CreateDevice()
 
 	std::set<int> neededFamilies;
 	neededFamilies.insert(graphicsFamily);
-	neededFamilies.insert(presentFamily);
+	if(presentFamily != -2) neededFamilies.insert(presentFamily);
 	neededFamilies.insert(uploadFamily);
 
 	int graphicsFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, graphicsFamily, &queuePriority);
-	int presentFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, presentFamily, &queuePriority);
+	int presentFamilySlot = presentFamily == -2 ? -1 : CreateOrModifyQueueInfo(queueCreateInfos, presentFamily, &queuePriority);
 	int uploadFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, uploadFamily, &queuePriority);
 
 	// Graphics Queue
@@ -336,10 +384,10 @@ void VulkanDevice::CreateDevice()
 	volkLoadDevice(device);
 
 	vkGetDeviceQueue(device, graphicsFamily, graphicsFamilySlot, &graphicsQueue);
-	vkGetDeviceQueue(device, presentFamily, presentFamilySlot, &presentQueue);
+	vkGetDeviceQueue(device, presentFamily, presentFamilySlot != -1 ? presentFamilySlot : graphicsFamilySlot, &presentQueue);
 	vkGetDeviceQueue(device, uploadFamily, uploadFamilySlot, &uploadQueue);
 
-	Printf(TEXTCOLOR_WHITE "VK Graphics Queue: %p\nVK Upload Queue: %p\n", graphicsQueue, uploadQueue);
+	Printf(TEXTCOLOR_WHITE "VK Graphics Queue: %p\nVK Upload Queue: %p \nVK Present Queue: %p\n", graphicsQueue, uploadQueue, presentQueue);
 }
 
 void VulkanDevice::CreateSurface()
