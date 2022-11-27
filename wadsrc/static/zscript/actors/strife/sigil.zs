@@ -367,17 +367,17 @@ class Sigil : Weapon
 		DamageMobj (self, null, 3*4, 'Sigil', DMG_NO_ARMOR);
 		A_StartSound ("weapons/sigilcharge", CHAN_WEAPON);
 
-		angle -= 90.;
+		int aimflags = weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
+		double angle = -90.;
 		for (int i = 0; i < 20; ++i)
 		{
 			angle += 9.;
-			Actor spot = SpawnSubMissile ("SpectralLightningBall1", self);
-			if (spot != null)
-			{
-				spot.SetZ(pos.z + 32);
-			}
+			Actor spot = SpawnSubMissile ("SpectralLightningBall1", self, aimflags, self.Angle + angle);
+			// if (spot != null)
+			// {
+			// 	spot.SetZ(pos.z + 32);
+			// }
 		}
-		angle -= 90.;
 	}
 
 	//============================================================================

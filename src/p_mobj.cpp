@@ -6835,14 +6835,14 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnMissileAngleZSpeed)
 }
 
 
-AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target, int aimflags)
+AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target, DAngle angle, int aimflags)
 {
 	if (source == nullptr || type == nullptr)
 	{
 		return nullptr;
 	}
 
-	DAngle an = source->Angles.Yaw;
+	DAngle an = angle;
 	DAngle pitch = source->Angles.Pitch;
 	DVector3 pos = source->Pos();
 	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
@@ -6888,7 +6888,10 @@ AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target, int
 
 	if (P_CheckMissileSpawn(other, source->radius))
 	{
-		DAngle pitch = P_AimLineAttack(source, an, 1024., NULL, 0., aimflags);
+		if (source->player == NULL || !source->player->mo->OverrideAttackPosDir)
+		{
+			pitch = P_AimLineAttack(source, angle, 1024., NULL, 0., aimflags);
+		}
 		other->Vel.Z = -other->Speed * pitch.Sin();
 		return other;
 	}
@@ -6901,7 +6904,9 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnSubMissile)
 	PARAM_CLASS(cls, AActor);
 	PARAM_OBJECT_NOT_NULL(target, AActor);
 	PARAM_INT(aimflags);
-	ACTION_RETURN_OBJECT(P_SpawnSubMissile(self, cls, target, aimflags));
+	PARAM_ANGLE(angle);
+	if (angle == 1e37) angle = self->Angles.Yaw;
+	ACTION_RETURN_OBJECT(P_SpawnSubMissile(self, cls, target, angle, aimflags));
 }
 /*
 ================
