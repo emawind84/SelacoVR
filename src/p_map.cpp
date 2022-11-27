@@ -4319,6 +4319,11 @@ struct aim_t
 DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLineTarget *pLineTarget, DAngle vrange,
 	int flags, AActor *target, AActor *friender)
 {
+	if (pLineTarget == NULL && t1->player != NULL)
+	{
+		return t1->Angles.Pitch;
+	}
+
 	double shootz = t1->Center() - t1->Floorclip + t1->AttackOffset();
 
 	// can't shoot outside view angles
@@ -4347,19 +4352,40 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 		}
 	}
 
+	DVector3 startPos = t1->Pos();
+	DAngle aimPitch = t1->Angles.Pitch;
+	DAngle aimAngle = angle;
+	if (t1->player != NULL && t1->player->mo->OverrideAttackPosDir && !(flags & ALF_CHECKCONVERSATION))
+	{
+		if (flags & ALF_ISOFFHAND)
+		{
+			startPos = t1->player->mo->OffhandPos;
+			DVector3 direction = t1->player->mo->OffhandDir(t1, angle, t1->Angles.Pitch);
+			aimPitch = direction.Pitch();
+			aimAngle = direction.Angle();
+		}
+		else 
+		{
+			startPos = t1->player->mo->AttackPos;
+			DVector3 direction = t1->player->mo->AttackDir(t1, angle, t1->Angles.Pitch);
+			aimPitch = direction.Pitch();
+			aimAngle = direction.Angle();
+		}
+	}
+
 	aim_t aim;
 
 	aim.flags = flags;
 	aim.shootthing = t1;
 	aim.friender = (friender == nullptr) ? t1 : friender;
 	aim.aimdir = aim_t::aim_up | aim_t::aim_down;
-	aim.startpos = t1->Pos();
-	aim.aimtrace = angle.ToVector(distance);
+	aim.startpos = startPos;
+	aim.aimtrace = aimAngle.ToVector(distance);
 	aim.limitz = aim.shootz = shootz;
-	aim.toppitch = t1->Angles.Pitch - vrange;
-	aim.bottompitch = t1->Angles.Pitch + vrange;
+	aim.toppitch = aimPitch - vrange;
+	aim.bottompitch = aimPitch + vrange;
 	aim.attackrange = distance;
-	aim.aimpitch = t1->Angles.Pitch;
+	aim.aimpitch = aimPitch;
 	aim.lastsector = t1->Sector;
 	aim.startfrac = 0;
 	aim.unlinked = false;
@@ -4373,7 +4399,7 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 	{
 		*pLineTarget = *result;
 	}
-	return result->linetarget ? result->pitch : t1->Angles.Pitch;
+	return (result->linetarget && t1->player == NULL) ? result->pitch : t1->Angles.Pitch;
 }
 
 //==========================================================================
