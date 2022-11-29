@@ -5318,18 +5318,34 @@ void P_RailAttack(FRailParams *p)
 
 	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
 	{
+		DVector3 offsetxyDir;
+		DVector3 offsetzDir;
 		if (p->flags & RAF_ISOFFHAND)
 		{
 			start = source->player->mo->OffhandPos;
 			direction = source->player->mo->OffhandDir(source, angle, pitch);
+			offsetxyDir = source->player->mo->OffhandDir(source, source->Angles.Yaw - 90, source->Angles.Pitch );
+			offsetzDir = source->player->mo->OffhandDir(source, source->Angles.Yaw, source->Angles.Pitch + 90);
 		}
 		else 
 		{
 			start = source->player->mo->AttackPos;
 			direction = source->player->mo->AttackDir(source, angle, pitch);
+			offsetxyDir = source->player->mo->AttackDir(source, source->Angles.Yaw - 90, source->Angles.Pitch);
+			offsetzDir = source->player->mo->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch + 90);
 		}
-		DVector2 xy = (direction.Angle() - 90.).ToVector(p->offset_xy);
-		start += DVector3(xy.X, xy.Y, 0);
+
+		start += DVector3(
+			p->offset_xy * offsetxyDir.Angle().Cos() * offsetxyDir.Pitch().Cos(),
+			p->offset_xy * offsetxyDir.Angle().Sin() * offsetxyDir.Pitch().Cos(),
+			p->offset_xy * -offsetxyDir.Pitch().Sin()
+		);
+
+		start += DVector3(
+			p->offset_z * offsetzDir.Pitch().Cos() * offsetzDir.Angle().Cos(), 
+			p->offset_z * offsetzDir.Pitch().Cos() * offsetzDir.Angle().Sin(),
+			p->offset_z * -offsetzDir.Pitch().Sin()
+		);
 	}
 	else
 	{
