@@ -59,7 +59,7 @@ class StrifeGrenadeLauncher : StrifeWeapon
 
 		int alflags = 0;
 		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
-		if (weapon != null)
+		if (weapon != null && weapon == invoker)
 		{
 			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
 			if (!weapon.DepleteAmmo (weapon.bAltFire))
@@ -87,6 +87,59 @@ class StrifeGrenadeLauncher : StrifeWeapon
 			double an = Angle + angleofs;
 			offset += AngleToVector(an, 15);
 			grenade.SetOrigin(grenade.Vec3Offset(offset.X, offset.Y, 0.), false);
+
+			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
+			{
+				Vector3 dir;
+				Vector3 offsetDir;
+				Vector3 zoffsetDir;
+				if (weapon.bOffhandWeapon)
+				{
+					dir = player.mo.OffhandDir(self, Angle, pitch);
+					offsetDir = player.mo.OffhandDir(self, Angle + angleofs, pitch);
+					zoffsetDir = player.mo.OffhandDir(self, Angle, pitch + 90);
+				}
+				else
+				{
+					dir = player.mo.AttackDir(self, Angle, pitch);
+					offsetDir = player.mo.AttackDir(self, Angle + angleofs, pitch);
+					zoffsetDir = player.mo.AttackDir(self, Angle, pitch + 90);
+				}
+				
+				Vector3 spawnoffset = (0, 0, 0);
+				let xofs = radius + grenade.radius;
+				spawnoffset += (
+					xofs * cos(dir.x) * cos(dir.y),
+					xofs * sin(dir.x) * cos(dir.y),
+					xofs * -sin(dir.y)
+				);
+
+				let yofs = 15;
+				spawnoffset += (
+					yofs * cos(offsetDir.x) * cos(offsetDir.y),
+					yofs * sin(offsetDir.x) * cos(offsetDir.y),
+					yofs * -sin(offsetDir.y)
+				);
+				grenade.SetOrigin(grenade.Vec3Offset(spawnoffset.X, spawnoffset.Y, spawnoffset.Z), false);
+
+				// added actor velocity (not default behaviour)
+				let yspeed = grenade.Speed;
+				Vector3 gvel = (self.Vel.XY, 0);
+				gvel += (
+					yspeed * cos(dir.x) * cos(dir.y),
+					yspeed * sin(dir.x) * cos(dir.y),
+					yspeed * -sin(dir.y)
+				);
+
+				let zspeed = 8;
+				gvel += (
+					zspeed * cos(zoffsetDir.y) * cos(zoffsetDir.x), 
+					zspeed * cos(zoffsetDir.y) * sin(zoffsetDir.x),
+					zspeed * -sin(zoffsetDir.y)
+				);
+
+				grenade.Vel = gvel;
+			}
 		}
 	}
 }
