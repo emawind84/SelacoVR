@@ -97,6 +97,13 @@ class StateProvider : Inventory
 		int laflags = (flags & FBF_NORANDOMPUFFZ)? LAF_NORANDOMPUFFZ : 0;
 		int alflags = 0;
 
+		Vector2 ofs = (0, Spawnofs_xy);
+		if (!player.mo.OverrideAttackPosDir)
+		{
+			double ang = Angle - 90;
+			ofs = AngleToVector(ang, Spawnofs_xy);
+		}
+
 		if ((flags & FBF_USEAMMO) && weapon &&  stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
 			if (!weapon.DepleteAmmo(weapon.bAltFire, true))
@@ -110,19 +117,6 @@ class StateProvider : Inventory
 			A_StartSound(weapon.AttackSound, CHAN_WEAPON);
 		}
 
-		let directionAngle = self.Angle;
-		if (weapon && player.mo.OverrideAttackPosDir)
-		{
-			if (weapon.bOffhandWeapon)
-			{
-				directionAngle = player.mo.OffhandAngle + 90;
-			}
-			else
-			{
-				directionAngle = player.mo.AttackAngle + 90;
-			}
-		}
-		
 		if (range == 0)	range = PLAYERMISSILERANGE;
 
 		if (!(flags & FBF_NOFLASH)) pawn.PlayAttacking2 ();
@@ -144,8 +138,6 @@ class StateProvider : Inventory
 			if (missile != null)
 			{
 				bool temp = false;
-				double ang = directionAngle - 90;
-				Vector2 ofs = AngleToVector(ang, Spawnofs_xy);
 				Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight, aimflags: alflags);
 				if (proj)
 				{
@@ -188,8 +180,6 @@ class StateProvider : Inventory
 				if (missile != null)
 				{
 					bool temp = false;
-					double ang = directionAngle - 90;
-					Vector2 ofs = AngleToVector(ang, Spawnofs_xy);
 					Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight, aimflags: alflags);
 					if (proj)
 					{
@@ -234,30 +224,17 @@ class StateProvider : Inventory
 
 		if (missiletype) 
 		{
-			let directionAngle = self.Angle;
-			if (weapon && player.mo.OverrideAttackPosDir)
+			Vector2 ofs = (0, Spawnofs_xy);
+			if (!player.mo.OverrideAttackPosDir)
 			{
-				if (weapon.bOffhandWeapon)
-				{
-					directionAngle = player.mo.OffhandAngle + 90;
-				}
-				else
-				{
-					directionAngle = player.mo.AttackAngle + 90;
-				}
+				double ang = self.Angle - 90;
+				ofs = AngleToVector(ang, Spawnofs_xy);
 			}
-
-			double ang = directionAngle - 90;
-			Vector2 ofs = AngleToVector(ang, spawnofs_xy);
 			double shootangle = self.Angle;
 
 			if (flags & FPF_AIMATANGLE) shootangle += angle;
 
-			// Temporarily adjusts the pitch
-			double saved_player_pitch = self.Pitch;
-			self.Pitch += pitch;
-			let misl = SpawnPlayerMissile (missiletype, shootangle, ofs.X, ofs.Y, spawnheight, t, false, (flags & FPF_NOAUTOAIM) != 0, alflags);
-			self.Pitch = saved_player_pitch;
+			let misl = SpawnPlayerMissile (missiletype, shootangle, ofs.X, ofs.Y, spawnheight, t, false, (flags & FPF_NOAUTOAIM) != 0, alflags, self.Pitch + pitch);
 
 			// automatic handling of seeker missiles
 			if (misl)
