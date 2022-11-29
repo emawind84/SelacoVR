@@ -417,56 +417,106 @@ extend class Actor
 		}
 
 		Vector2 pos;
-		Vector3 spawnpos = (self.pos.XY, self.pos.Z - Floorclip + GetBobOffset() + zofs);
+		Vector3 spawnvel = (xvel, yvel, zvel);
 		let directionAngle = angle;
-		let directionPitch = pitch;
+		let directionPitch = self.Pitch;
+		let directionRoll = self.Roll;
 		let velxy = Vel.XY / 2;
 
 		if (!(flags & SXF_ABSOLUTEANGLE))
 		{
 			directionAngle += self.Angle;
 		}
-
-		if (player != null)
-		{
-			Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
-			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
-			{
-				Vector3 dir;
-				if (weapon.bOffhandWeapon)
-				{
-					spawnpos = player.mo.OffhandPos;
-					dir = player.mo.OffhandDir(self, self.Angle, pitch);
-				}
-				else
-				{
-					spawnpos = player.mo.AttackPos;
-					dir = player.mo.AttackDir(self, self.Angle, pitch);
-				}
-				directionAngle = angle;
-				if (!(flags & SXF_ABSOLUTEANGLE))
-				{
-					directionAngle += dir.x;
-				}
-				directionPitch = dir.y;
-				
-				//velxy = (0, 0);
-				zvel = -clamp(tan(directionPitch), -5, 5);
-				xvel = 1;
-				yvel = 0;
-				flags |= SXF_MULTIPLYSPEED;
-			}
-		}
-
 		double s = sin(directionAngle);
 		double c = cos(directionAngle);
+
+		if (flags & SXF_ABSOLUTEPOSITION)
+		{
+			// applies the spawn offsets according to the absolute XY axes of the map, 
+			// rather than relative to the direction the calling actor is facing.
+			pos = Vec2Offset(xofs, yofs);
+		}
+		else
+		{
+			// in relative mode negative y values mean 'left' and positive ones mean 'right'
+			// This is the inverse orientation of the absolute mode!
+			pos = Vec2Offset(xofs * c + yofs * s, xofs * s - yofs*c);
+		}
+		Vector3 spawnpos = (pos, self.pos.Z - Floorclip + GetBobOffset() + zofs);
 
 		if (!(flags & SXF_ABSOLUTEVELOCITY))
 		{
 			// Same orientation issue here!
-			double newxvel = xvel * c + yvel * s;
-			yvel = xvel * s - yvel * c;
-			xvel = newxvel;
+			spawnvel.x = xvel * c + yvel * s;
+			spawnvel.y = xvel * s - yvel * c;
+		}
+
+		if (player != null && (flags & SXF_RELATIVETOWEAPON))
+		{
+			directionAngle = self.Angle + angle;
+			Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
+			{
+				Vector3 dir;
+				Vector3 yoffsetDir;
+				Vector3 zoffsetDir;
+				if (weapon.bOffhandWeapon)
+				{
+					spawnpos = player.mo.OffhandPos;
+					directionRoll = -player.mo.OffhandRoll;
+					dir = player.mo.OffhandDir(self, directionAngle, pitch);
+					yoffsetDir = player.mo.OffhandDir(self, directionAngle - 90, pitch);
+					zoffsetDir = player.mo.OffhandDir(self, directionAngle, pitch + 90);
+				}
+				else
+				{
+					spawnpos = player.mo.AttackPos;
+					directionRoll = -player.mo.AttackRoll;
+					dir = player.mo.AttackDir(self, directionAngle, pitch);
+					yoffsetDir = player.mo.AttackDir(self, directionAngle - 90, pitch);
+					zoffsetDir = player.mo.AttackDir(self, directionAngle, pitch + 90);
+				}
+
+				directionAngle = dir.x;
+				directionPitch = dir.y;
+				
+				spawnpos += (
+					xofs * cos(dir.x) * cos(dir.y),
+					xofs * sin(dir.x) * cos(dir.y),
+					xofs * -sin(dir.y)
+				);
+				
+				spawnpos += (
+					yofs * cos(yoffsetDir.x) * cos(yoffsetDir.y),
+					yofs * sin(yoffsetDir.x) * cos(yoffsetDir.y),
+					yofs * -sin(yoffsetDir.y)
+				);
+				
+				spawnpos += (
+					zofs * cos(zoffsetDir.y) * cos(zoffsetDir.x), 
+					zofs * cos(zoffsetDir.y) * sin(zoffsetDir.x),
+					zofs * -sin(zoffsetDir.y)
+				);
+
+				spawnvel = (velxy, 0);
+				spawnvel += (
+					xvel * cos(dir.x) * cos(dir.y),
+					xvel * sin(dir.x) * cos(dir.y),
+					xvel * -sin(dir.y)
+				);
+
+				spawnvel += (
+					yvel * cos(yoffsetDir.x) * cos(yoffsetDir.y),
+					yvel * sin(yoffsetDir.x) * cos(yoffsetDir.y),
+					yvel * -sin(yoffsetDir.y)
+				);
+
+				spawnvel += (
+					zvel * cos(zoffsetDir.y) * cos(zoffsetDir.x), 
+					zvel * cos(zoffsetDir.y) * sin(zoffsetDir.x),
+					zvel * -sin(zoffsetDir.y)
+				);
+			}
 		}
 
 		let mo = Spawn(missile, spawnpos, ALLOW_REPLACE);
@@ -477,26 +527,20 @@ extend class Actor
 			{
 				mo.ChangeTid(tid);
 			}
-
-			Vector2 pos;
-			if (flags & SXF_ABSOLUTEPOSITION)
-			{
-				pos = mo.Vec2Offset(xofs, yofs);
-			}
-			else
-			{
-				// in relative mode negative y values mean 'left' and positive ones mean 'right'
-				// This is the inverse orientation of the absolute mode!
-				pos = mo.Vec2Offset(xofs * c + yofs * s, xofs * s - yofs*c);
-			}
-			mo.SetXYZ((pos, mo.pos.z));
-			mo.Vel = (xvel, yvel, zvel);
+			mo.Vel = spawnvel;
 			if (flags & SXF_MULTIPLYSPEED)
 			{
 				mo.Vel *= mo.Speed;
 			}
-			mo.Vel.XY += velxy;
 			mo.Angle = directionAngle;
+			if (flags & SXF_TRANSFERPITCH)
+			{
+				mo.Pitch = directionPitch;
+			}
+			if (flags & SXF_TRANSFERROLL)
+			{
+				mo.Roll = directionRoll;
+			}
 		}
 		return res, mo;
 	}

@@ -127,6 +127,7 @@ enum ESpawnItemFlags
 	SXF_ISTARGET				=	1 << 26,
 	SXF_ISMASTER				=	1 << 27,
 	SXF_ISTRACER				=	1 << 28,
+	SXF_RELATIVETOWEAPON		=	1 << 29,
 };
 
 // Flags for A_Chase
