@@ -6920,7 +6920,7 @@ EXTERN_CVAR(Int, vr_control_scheme)
 extern bool weaponStabilised;
 
 AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
-							  PClassActor *type, DAngle angle, FTranslatedLineTarget *pLineTarget, AActor **pMissileActor,
+							  PClassActor *type, DAngle angle, DAngle p, FTranslatedLineTarget *pLineTarget, AActor **pMissileActor,
 							  bool nofreeaim, bool noautoaim, int aimflags)
 {
 	if (source == nullptr || type == nullptr)
@@ -6930,7 +6930,7 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 
 	static const double angdiff[3] = { -5.625, 5.625, 0 };
 	DAngle an = angle;
-	DAngle pitch;
+	DAngle pitch = p;
 	FTranslatedLineTarget scratch;
 	AActor *defaultobject = GetDefaultByType(type);
 	DAngle vrange = nofreeaim ? 35. : 0.;
@@ -7063,9 +7063,11 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnPlayerMissile)
 	PARAM_BOOL(nofreeaim);
 	PARAM_BOOL(noautoaim);
 	PARAM_INT(aimflags);
+	PARAM_ANGLE(pitch);
 	AActor *missileactor;
 	if (angle == 1e37) angle = self->Angles.Yaw;
-	AActor *misl = P_SpawnPlayerMissile(self, x, y, z, type, angle, lt, &missileactor, nofreeaim, noautoaim, aimflags);
+	if (pitch == 1e37) pitch = self->Angles.Pitch;
+	AActor *misl = P_SpawnPlayerMissile(self, x, y, z, type, angle, pitch, lt, &missileactor, nofreeaim, noautoaim, aimflags);
 	if (numret > 0) ret[0].SetObject(misl);
 	if (numret > 1) ret[1].SetObject(missileactor), numret = 2;
 	return numret;

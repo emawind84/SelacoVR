@@ -676,7 +676,7 @@ class Actor : Thinker native
 	native Actor SpawnMissileAngleZSpeed (double z, class<Actor> type, double angle, double vz, double speed, Actor owner = null, bool checkspawn = true, int aimflags = 0);
 	native Actor SpawnMissileZAimed (double z, Actor dest, Class<Actor> type);
 	native Actor SpawnSubMissile(Class<Actor> type, Actor target, int aimflags = 0, double angle = 1e37);
-	native Actor, Actor SpawnPlayerMissile(class<Actor> type, double angle = 1e37, double x = 0, double y = 0, double z = 0, out FTranslatedLineTarget pLineTarget = null, bool nofreeaim = false, bool noautoaim = false, int aimflags = 0);
+	native Actor, Actor SpawnPlayerMissile(class<Actor> type, double angle = 1e37, double x = 0, double y = 0, double z = 0, out FTranslatedLineTarget pLineTarget = null, bool nofreeaim = false, bool noautoaim = false, int aimflags = 0, double pitch = 1e37);
 	native void SpawnTeleportFog(Vector3 pos, bool beforeTele, bool setTarget);
 	native Actor RoughMonsterSearch(int distance, bool onlyseekable = false, bool frontonly = false);
 	native int ApplyDamageFactor(Name damagetype, int damage);
