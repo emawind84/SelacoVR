@@ -189,6 +189,7 @@ enum EChangeVelocityFlags
 {
 	CVF_RELATIVE = 1,
 	CVF_REPLACE = 2,
+	CVF_RELATIVETOWEAPON = 4,
 };
 
 // Flags for A_WeaponReady
