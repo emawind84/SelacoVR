@@ -4469,6 +4469,8 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	bool nointeract = !!(flags & LAF_NOINTERACT);
 	DVector3 fromPos;
 	DVector3 direction;
+	DVector3 yoffsetDir;
+	DVector3 zoffsetDir;
 	double shootz;
 	FTraceResults trace;
 	Origin TData;
@@ -4527,11 +4529,15 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 		{
 			fromPos = t1->player->mo->OffhandPos;
 			direction = t1->player->mo->OffhandDir(t1, angle, pitch);
+			yoffsetDir = t1->player->mo->OffhandDir(t1, angle - 90, pitch);
+			zoffsetDir = t1->player->mo->OffhandDir(t1, angle, pitch + 90);
 		}
 		else 
 		{
 			fromPos = t1->player->mo->AttackPos;
 			direction = t1->player->mo->AttackDir(t1, angle, pitch);
+			yoffsetDir = t1->player->mo->AttackDir(t1, angle - 90, pitch);
+			zoffsetDir = t1->player->mo->AttackDir(t1, angle, pitch + 90);
 		}
 	}
 	else
@@ -4608,17 +4614,37 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	DVector3 tempos;
 
 	if (flags & LAF_ABSPOSITION)
-	{
+	{  // the offset parameters below are treated as absolute coordinates
 		tempos = DVector3(offsetforward, offsetside, sz);
 	}
 	else if (flags & LAF_ABSOFFSET)
-	{
+	{  // angle is used as an absolute angle instead of a relative one to the calling actor's angle
 		tempos = t1->Vec2OffsetZ(offsetforward, offsetside, shootz);
 	}
 	else if (0.0 == offsetforward && 0.0 == offsetside)
 	{
 		// Default case so exact comparison is enough
 		tempos = fromPos;
+	}
+	else if (t1->player != NULL && t1->player->mo->OverrideAttackPosDir)
+	{
+		tempos += DVector3(
+			offsetforward * direction.Angle().Cos() * direction.Pitch().Cos(),
+			offsetforward * direction.Angle().Sin() * direction.Pitch().Cos(),
+			offsetforward * -direction.Pitch().Sin()
+		);
+
+		tempos += DVector3(
+			offsetside * yoffsetDir.Angle().Cos() * yoffsetDir.Pitch().Cos(),
+			offsetside * yoffsetDir.Angle().Sin() * yoffsetDir.Pitch().Cos(),
+			offsetside * -yoffsetDir.Pitch().Sin()
+		);
+
+		tempos += DVector3(
+			sz * zoffsetDir.Pitch().Cos() * zoffsetDir.Angle().Cos(), 
+			sz * zoffsetDir.Pitch().Cos() * zoffsetDir.Angle().Sin(),
+			sz * -zoffsetDir.Pitch().Sin()
+		);
 	}
 	else
 	{
