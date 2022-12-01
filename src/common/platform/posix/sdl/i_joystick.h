@@ -2,6 +2,8 @@
 #define __POSIX_SDL_I_JOYSTICK__
 
 #include "m_joy.h"
+#include "SDL_joystick.h"
+#include "TSQueue.h"
 
 // Very small deadzone so that floating point magic doesn't happen
 #define MIN_DEADZONE 0.000001f
@@ -108,7 +110,7 @@ protected:
 		EJoyAxis GameAxis;
 		double Value;
 		uint8_t ButtonValue;
-		InputQueue<double, 10> Inputs;
+        RingBuffer<double, 10> Inputs;
 	};
 
 	struct DefaultAxisConfig
