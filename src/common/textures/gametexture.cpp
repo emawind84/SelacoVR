@@ -412,7 +412,7 @@ void FGameTexture::SetSpriteRect(SpritePositioningInfo *spi)
 	// I expect this to occur very little, since there should be few occurences of a texture that is loaded both in
 	// the main thread AND in the background thread in Selaco
 	if(this->spi != nullptr)
-		Printf(TEXTCOLOR_YELLOW"Cockatrice wasted some memory on SPI info! Image: %s\n", GetName());
+		Printf(TEXTCOLOR_YELLOW"Cockatrice wasted some memory on SPI info! Image: %s\n", GetName().GetChars());
 
 	this->spi = spi;
 	SetSpriteRect();

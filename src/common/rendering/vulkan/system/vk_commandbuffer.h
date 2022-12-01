@@ -15,6 +15,7 @@ public:
 
 	VulkanCommandBuffer* GetTransferCommands();
 	VulkanCommandBuffer* GetDrawCommands();
+	std::unique_ptr<VulkanCommandBuffer> CreateUnmanagedCommands();
 
 	void FlushCommands(bool finish, bool lastsubmit = false, bool uploadOnly = false);
 
@@ -24,6 +25,8 @@ public:
 	void PushGroup(const FString& name);
 	void PopGroup();
 	void UpdateGpuStats();
+
+	VulkanFrameBuffer *GetFrameBuffer() { return fb; }
 
 	class DeleteList
 	{

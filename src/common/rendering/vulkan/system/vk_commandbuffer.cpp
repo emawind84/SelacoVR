@@ -40,7 +40,7 @@ VkCommandBufferManager::VkCommandBufferManager(VulkanFrameBuffer* fb, bool uploa
 {
 	mIsUploadOnly = uploadOnly;
 	fbQueue = uploadOnly ? &fb->device->uploadQueue : &fb->device->graphicsQueue;
-	mCommandPool.reset(new VulkanCommandPool(fb->device, fb->device->graphicsFamily));
+	mCommandPool.reset(new VulkanCommandPool(fb->device, uploadOnly ? fb->device->uploadFamily : fb->device->graphicsFamily));
 
 	if (!mIsUploadOnly) {
 		swapChain = std::make_unique<VulkanSwapChain>(fb->device);
@@ -92,6 +92,14 @@ VulkanCommandBuffer* VkCommandBufferManager::GetDrawCommands()
 		mDrawCommands->begin();
 	}
 	return mDrawCommands.get();
+}
+
+std::unique_ptr<VulkanCommandBuffer> VkCommandBufferManager::CreateUnmanagedCommands() {
+	std::unique_ptr<VulkanCommandBuffer> cmds = mCommandPool->createBuffer();
+	cmds->SetDebugName("VulkanFrameBuffer.arbitraryCommands");
+	cmds->begin();
+
+	return cmds;
 }
 
 void VkCommandBufferManager::BeginFrame()
@@ -190,7 +198,7 @@ void VkCommandBufferManager::WaitForCommands(bool finish, bool uploadOnly)
 
 	if (numWaitFences > 0)
 	{
-		vkWaitForFences(fb->device->device, numWaitFences, mSubmitWaitFences, VK_TRUE, std::numeric_limits<uint64_t>::max());
+		auto res = vkWaitForFences(fb->device->device, numWaitFences, mSubmitWaitFences, VK_TRUE, std::numeric_limits<uint64_t>::max());
 		vkResetFences(fb->device->device, numWaitFences, mSubmitWaitFences);
 	}
 

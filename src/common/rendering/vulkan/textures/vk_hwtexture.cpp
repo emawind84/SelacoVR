@@ -177,11 +177,13 @@ void VkHardwareTexture::CreateTexture(int w, int h, int pixelsize, VkFormat form
 void VkHardwareTexture::BackgroundCreateTexture(int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap) {
 	if (!mLoadedImage) mLoadedImage.reset(new VkTextureImage());
 	else {
-		mLoadedImage->Reset(fb);
+		//mLoadedImage->Reset(fb);
+		assert(mLoadedImage != nullptr);
+		return; // We cannot reset the loaded image on a different thread
 	}
 
 	auto bufManager = fb->GetBGCommands();
-	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap);
+	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, fb->device->uploadFamilySupportsGraphics);
 
 	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
 	if (bufManager->TransferDeleteList->TotalSize > 1) {
@@ -190,7 +192,7 @@ void VkHardwareTexture::BackgroundCreateTexture(int w, int h, int pixelsize, VkF
 	}
 }
 
-void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkTextureImage *img, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap)
+void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkTextureImage *img, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap, bool generateMipmaps)
 {
 	if (w <= 0 || h <= 0)
 		throw CVulkanError("Trying to create zero size texture");
@@ -233,7 +235,7 @@ void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkText
 	region.imageExtent.height = h;
 	cmdBuffer->copyBufferToImage(stagingBuffer->buffer, img->Image->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-	if (mipmap) img->GenerateMipmaps(cmdBuffer);
+	if (generateMipmaps && mipmap) img->GenerateMipmaps(cmdBuffer);
 
 	// If we queued more than 64 MB of data already: wait until the uploads finish before continuing
 	bufManager->TransferDeleteList->Add(std::move(stagingBuffer));
@@ -241,6 +243,42 @@ void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkText
 		bufManager->WaitForCommands(false, true);
 		hwState = READY;
 	}
+}
+
+void VkHardwareTexture::ReleaseLoadedFromQueue(VulkanCommandBuffer *cmd, int fromQueueFamily, int toQueueFamily) {
+	assert(mLoadedImage.get());
+
+	PipelineBarrier().AddQueueTransfer(
+		fb->device->uploadFamily,
+		fb->device->graphicsFamily,
+		mLoadedImage->Image.get(),
+		mLoadedImage->Layout,
+		VK_IMAGE_ASPECT_COLOR_BIT, 
+		0,
+		mLoadedImage->Image->mipLevels
+	).Execute(
+		cmd,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT	// TODO: Could we be more loose here? 
+	);
+}
+
+void VkHardwareTexture::AcquireLoadedFromQueue(VulkanCommandBuffer *cmd, int fromQueueFamily, int toQueueFamily) {
+	assert(mLoadedImage.get());
+
+	PipelineBarrier().AddQueueTransfer(
+		fb->device->uploadFamily,
+		fb->device->graphicsFamily,
+		mLoadedImage->Image.get(),
+		mLoadedImage->Layout,
+		VK_IMAGE_ASPECT_COLOR_BIT, 
+		0,
+		mLoadedImage->Image->mipLevels
+	).Execute(
+		cmd,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT
+	);
 }
 
 int VkHardwareTexture::GetMipLevels(int w, int h)

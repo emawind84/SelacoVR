@@ -39,6 +39,9 @@ public:
 	unsigned int CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, const char *name) override;
 	void BackgroundCreateTexture(int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap);
 
+	void ReleaseLoadedFromQueue(VulkanCommandBuffer *cmd, int fromQueueFamily, int toQueueFamily);
+	void AcquireLoadedFromQueue(VulkanCommandBuffer *cmd, int fromQueueFamily, int toQueueFamily);
+
 	// Wipe screen
 	void CreateWipeTexture(int w, int h, const char *name);
 
@@ -57,7 +60,7 @@ private:
 	void CreateImage(FTexture *tex, int translation, int flags);
 
 	void CreateTexture(int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap);
-	void CreateTexture(VkCommandBufferManager *bufManager, VkTextureImage *img, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap);
+	void CreateTexture(VkCommandBufferManager *bufManager, VkTextureImage *img, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap, bool generateMipmaps = true);
 	void SwapToLoadedImage();
 
 	std::unique_ptr<VkTextureImage> mImage, mLoadedImage;

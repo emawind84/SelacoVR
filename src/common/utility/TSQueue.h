@@ -155,6 +155,10 @@ public:
 		return mInputQ.size();
 	}
 
+	int numFinished() {
+		return mOutputQ.size();
+	}
+
 	bool isActive() {
 		return mActive.load() && (mRunning.load() || mInputQ.size() > 0);
 	}

@@ -148,6 +148,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	output.tex = input.tex;
 	output.spi = input.spi;
 	output.gtex = input.gtex;
+	output.releaseSemaphore = nullptr;
 
 	// Load pixels directly with the reader we copied on the main thread
 	auto *src = input.imgSource;
@@ -167,14 +168,30 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	// We have the image now, let's upload it through the channel created exclusively for background ops
 	// If we really wanted to be efficient, we would do the disk loading in one thread and the texture upload in another
 	// But for now this approach should yield reasonable results
+	VulkanDevice* device = cmd->GetFrameBuffer()->device;
 	bool indexed = false;	// TODO: Determine this properly
 	bool mipmap = !indexed;
 	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
 	output.tex->BackgroundCreateTexture(pixels.GetWidth(), pixels.GetHeight(), indexed ? 1 : 4, indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM, pixels.GetPixels(), !indexed);
-
+	output.createMipmaps = mipmap && !device->uploadFamilySupportsGraphics;
+	
 	// If we need sprite positioning info, generate it here and assign it in the main thread later
 	if (input.spi.generateSpi && input.spi.info) {
 		FGameTexture::GenerateInitialSpriteData(input.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+	}
+
+	// If we created the texture on a different family than the graphics family, we need to release access 
+	// to the image on this queue
+	if(device->graphicsFamily != device->uploadFamily) {
+		auto cmds = cmd->CreateUnmanagedCommands();
+		output.releaseSemaphore = new VulkanSemaphore(device);
+		output.tex->ReleaseLoadedFromQueue(cmds.get(), device->uploadFamily, device->graphicsFamily);
+		cmds->end();
+
+		QueueSubmit submit;
+		submit.AddCommandBuffer(cmds.get());
+		submit.AddSignal(output.releaseSemaphore);
+		submit.Execute(device, device->uploadQueue);
 	}
 
 
@@ -194,16 +211,55 @@ void VkTexLoadThread::completeLoad() { currentImageID.store(0); }
 void VulkanFrameBuffer::UpdateBackgroundCache() {
 	// Check for completed cache items and link textures to the data
 	VkTexLoadOut loaded;
+	
+	if (bgTransferThread->numFinished() > 0) {
+		QueueSubmit submit;
+		std::unique_ptr<VulkanCommandBuffer> cmds = device->uploadFamily != device->graphicsFamily ? mCommands->CreateUnmanagedCommands() : nullptr;
+		std::list<VulkanSemaphore*> releaseSemaphores;
 
-	while (bgTransferThread->popFinished(loaded)) {
-		loaded.tex->SwapToLoadedImage();
-		loaded.tex->SetHardwareState(IHardwareTexture::HardwareState::READY);
-		if(loaded.gtex) loaded.gtex->SetTranslucent(loaded.isTranslucent);
+		while (bgTransferThread->popFinished(loaded)) {
+			// If this image was created in a different queue family, it now needs to be moved over to
+			// the graphics queue faimly
+			if (device->uploadFamily != device->graphicsFamily) {
+				loaded.tex->AcquireLoadedFromQueue(cmds.get(), device->uploadFamily, device->graphicsFamily);
 
-		// Set the sprite positioning info if generated
-		if (loaded.spi.generateSpi && loaded.spi.info && loaded.gtex) {
-			//Printf(TEXTCOLOR_ICE"Applying SPI to %s : %p\n", loaded.gtex->GetName(), loaded.gtex);
-			loaded.gtex->SetSpriteRect(loaded.spi.info);
+				// If we cannot create mipmaps in the background, tell the GPU to create them now
+				if (loaded.createMipmaps && loaded.tex->mLoadedImage) {
+					loaded.tex->mLoadedImage.get()->GenerateMipmaps(cmds.get());
+				}
+
+				if (loaded.releaseSemaphore) {
+					releaseSemaphores.push_back(loaded.releaseSemaphore);
+					submit.AddWait(VK_PIPELINE_STAGE_TRANSFER_BIT, loaded.releaseSemaphore);
+				}
+			}
+
+			loaded.tex->SwapToLoadedImage();
+			loaded.tex->SetHardwareState(IHardwareTexture::HardwareState::READY);
+			if (loaded.gtex) loaded.gtex->SetTranslucent(loaded.isTranslucent);
+
+			// Set the sprite positioning info if generated
+			if (loaded.spi.generateSpi && loaded.spi.info && loaded.gtex) {
+				//Printf(TEXTCOLOR_ICE"Applying SPI to %s : %p\n", loaded.gtex->GetName(), loaded.gtex);
+				loaded.gtex->SetSpriteRect(loaded.spi.info);
+			}
+		}
+
+		// We only need to run commands on the GPU if transfer/mipmaps were needed
+		if (cmds) {
+			// Just in case no mipmaps were created, but we transferred ownership
+			PipelineBarrier().AddMemory(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT).Execute(
+				cmds.get(),
+				VK_PIPELINE_STAGE_TRANSFER_BIT,
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			);
+
+			cmds->end();
+
+			submit.AddCommandBuffer(cmds.get());
+			submit.Execute(device, device->graphicsQueue);
+
+			for (VulkanSemaphore* sm4 : releaseSemaphores) delete sm4;
 		}
 	}
 

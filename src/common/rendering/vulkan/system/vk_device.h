@@ -33,6 +33,7 @@ public:
 	int presentFamily = -1;
 	int uploadFamily = -1;
 	bool graphicsTimeQueries = false;
+	bool uploadFamilySupportsGraphics = false;
 };
 
 class VulkanDevice
@@ -93,6 +94,7 @@ public:
 	int presentFamily = -1;
 	int uploadFamily = -1;
 	bool graphicsTimeQueries = false;
+	bool uploadFamilySupportsGraphics = false;
 
 	bool SupportsDeviceExtension(const char* ext) const;
 

@@ -43,8 +43,9 @@ struct VkTexLoadOut {
 	FGameTexture *gtex;
 	VkTexLoadSpi spi;
 	int conversion, translation;
-	bool isTranslucent;
+	bool isTranslucent, createMipmaps;
 	FImageSource *imgSource;
+	VulkanSemaphore *releaseSemaphore;
 };
 
 // @Cockatrice - Background loader thread to handle transfer of texture data
