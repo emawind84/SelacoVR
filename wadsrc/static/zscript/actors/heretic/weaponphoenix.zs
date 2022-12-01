@@ -173,24 +173,37 @@ class PhoenixRodPowered : PhoenixRod
 		let velxy = Vel.XY;
 		let directionAngle = angle;
 		let directionPitch = pitch;
-		if (player.mo.OverrideAttackPosDir)
+		if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
 		{
-			if (hand == 1)
+			Vector3 dir;
+			Vector3 yoffsetDir;
+			if (weapon.bOffhandWeapon)
 			{
 				spawnpos = player.mo.OffhandPos;
-				directionAngle = player.mo.OffhandAngle + 90;
-				directionPitch = -player.mo.OffhandPitch;
+				dir = player.mo.OffhandDir(self, angle, pitch);
+				yoffsetDir = player.mo.OffhandDir(self, angle - 90, pitch);
 			}
 			else
 			{
 				spawnpos = player.mo.AttackPos;
-				directionAngle = player.mo.AttackAngle + 90;
-				directionPitch = -player.mo.AttackPitch;
+				dir = player.mo.AttackDir(self, angle, pitch);
+				yoffsetDir = player.mo.AttackDir(self, angle - 90, pitch);
 			}
-			spawnpos.X += xo;
-			spawnpos.Y += yo;
+			directionAngle = dir.x;
+			directionPitch = dir.y;
+
+			spawnpos += (
+				xo * cos(dir.x) * cos(dir.y),
+				xo * sin(dir.x) * cos(dir.y),
+				xo * -sin(dir.y)
+			);
+			spawnpos += (
+				yo * cos(yoffsetDir.x) * cos(yoffsetDir.y),
+				yo * sin(yoffsetDir.x) * cos(yoffsetDir.y),
+				yo * -sin(yoffsetDir.y)
+			);
+			
 			slope = -clamp(tan(directionPitch), -5, 5);
-			velxy = (0, 0);
 		}
 		Actor mo = Spawn("PhoenixFX2", spawnpos, ALLOW_REPLACE);
 		if (mo != null)
