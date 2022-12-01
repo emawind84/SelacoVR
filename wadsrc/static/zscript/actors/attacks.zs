@@ -559,27 +559,55 @@ extend class Actor
 		{
 			return false, null;
 		}
+		Weapon weapon;
+		Vector3 dir;
+		Vector3 zoffsetDir;
+		Vector3 spawnpos = pos + (0, 0, (-Floorclip + GetBobOffset() + zheight + 35 + (player? player.crouchoffset : 0.)));
+		double directionAngle = self.Angle + (random[grenade](-4, 3) * (360./256.));
 		if (stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
 			let player = self.player;
 			if (player == null) return false, null;
-			let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 			// Used from a weapon, so use some ammo
 
 			if (weapon == NULL || (useammo && !weapon.DepleteAmmo(weapon.bAltFire)))
 			{
 				return true, null;
 			}
+
+			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
+			{
+				if (weapon.bOffhandWeapon)
+				{
+					spawnpos = player.mo.OffhandPos;
+					dir = player.mo.OffhandDir(self, directionAngle, self.Pitch);
+					zoffsetDir = player.mo.OffhandDir(self, directionAngle, self.Pitch + 90);
+				}
+				else
+				{
+					spawnpos = player.mo.AttackPos;
+					dir = player.mo.AttackDir(self, directionAngle, self.Pitch);
+					zoffsetDir = player.mo.AttackDir(self, directionAngle, self.Pitch + 90);
+				}
+
+				directionAngle = dir.x;
+				spawnpos += (
+					zheight * cos(zoffsetDir.y) * cos(zoffsetDir.x), 
+					zheight * cos(zoffsetDir.y) * sin(zoffsetDir.x),
+					zheight * -sin(zoffsetDir.y)
+				);
+
+			}
 		}
 
-		let bo = Spawn(missile, pos + (0, 0, (-Floorclip + GetBobOffset() + zheight + 35 + (player? player.crouchoffset : 0.))), ALLOW_REPLACE);
+		let bo = Spawn(missile, spawnpos, ALLOW_REPLACE);
 		if (bo)
 		{
 			self.PlaySpawnSound(bo);
 			if (xyvel != 0)
 				bo.Speed = xyvel;
-			bo.Angle = Angle + (random[grenade](-4, 3) * (360./256.));
-
+			bo.Angle = directionAngle;
 			let pitch = -self.Pitch;
 			let angle = bo.Angle;
 
@@ -601,6 +629,22 @@ extend class Actor
 			bo.Vel.X = xy_velx + z_velx + Vel.X / 2;
 			bo.Vel.Y = xy_vely + z_vely + Vel.Y / 2;
 			bo.Vel.Z = xy_velz + z_velz;
+
+			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
+			{
+				let newvel = (Vel.XY * .5, 0);
+				newvel += (
+					bo.Speed * cos(dir.x) * cos(dir.y),
+					bo.Speed * sin(dir.x) * cos(dir.y),
+					bo.Speed * -sin(dir.y)
+				);
+				newvel += (
+					zvel * cos(zoffsetDir.y) * cos(zoffsetDir.x), 
+					zvel * cos(zoffsetDir.y) * sin(zoffsetDir.x),
+					zvel * -sin(zoffsetDir.y)
+				);
+				bo.Vel = newvel;
+			}
 
 			bo.target = self;
 			if (!bo.CheckMissileSpawn(radius)) bo = null;
