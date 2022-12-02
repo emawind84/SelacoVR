@@ -1212,7 +1212,10 @@ OptionMenu "MiscOptions" protected
 	{
 		Option "$MISCMNU_MACFULLSCREENTOGGLE",	"k_allowfullscreentoggle", "OnOff"
 	}
-	Option "$MISCMNU_QUERYIWAD",				"queryiwad", "OnOff"
+	//Option "$MISCMNU_QUERYIWAD",				"queryiwad", "OnOff"
+	Option "$MISCMNU_DISABLEAUTOLOAD",			"disableautoload", "OnOff"
+	Option "$MISCMNU_LOADLIGHTS",				"autoloadlights", "OnOff"
+	Option "$MISCMNU_LOADBRIGHTMAPS",			"autoloadbrightmaps", "OnOff"
 	StaticText " "
 	Option "$MISCMNU_NOCHEATS",					"nocheats", "OnOff"
 	Option "$MISCMNU_ALLCHEATS",				"allcheats", "OnOff"

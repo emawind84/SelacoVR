@@ -2028,6 +2028,9 @@ MISCMNU_ALWAYSTALLY				= "Show Tally Screen On Level Exit";
 MISCMNU_SETSLOTSTRICT			= "Strict KEYCONF Weapons/Players";
 MISCMNU_HIDEEXTREME				= "Hide extreme skill level";
 MISCMNU_PISTOLSTART				= "Pistol start (Doom)";
+MISCMNU_DISABLEAUTOLOAD			= "Disable autoload";
+MISCMNU_LOADLIGHTS				= "Load light definitions";
+MISCMNU_BRIGHTMAPS				= "Load brightmap definitions";
 
 // Automap Options
 AUTOMAPMNU_TITLE				= "AUTOMAP OPTIONS";
