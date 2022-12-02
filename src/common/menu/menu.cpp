@@ -598,6 +598,8 @@ DEFINE_ACTION_FUNCTION(DMenu, SetMenu)
 	PARAM_PROLOGUE;
 	PARAM_NAME(menu);
 	PARAM_INT(mparam);
+	// @Cockatrice - Not starting control panel, whatever that is, was causing inputs to stick between menus
+	M_StartControlPanel(false);
 	M_SetMenu(menu, mparam);
 	return 0;
 }
