@@ -495,6 +495,16 @@ void M_ActivateMenu(DMenu *menu)
 DEFINE_ACTION_FUNCTION(DMenu, ActivateMenu)
 {
 	PARAM_SELF_PROLOGUE(DMenu);
+	
+	// @Cockatrice - Clear menu keys if there was no menu showing
+	if (CurrentMenu == nullptr) {
+		buttonMap.ResetButtonStates();
+		for (int i = 0; i < NUM_MKEYS; ++i)
+		{
+			MenuButtons[i].ReleaseKey(0);
+		}
+	}
+
 	M_ActivateMenu(self);
 	return 0;
 }
@@ -598,8 +608,16 @@ DEFINE_ACTION_FUNCTION(DMenu, SetMenu)
 	PARAM_PROLOGUE;
 	PARAM_NAME(menu);
 	PARAM_INT(mparam);
-	// @Cockatrice - Not starting control panel, whatever that is, was causing inputs to stick between menus
-	M_StartControlPanel(false);
+
+	// @Cockatrice - Clear menu buttons if there wasn't already a menu showing
+	if (CurrentMenu == nullptr) {
+		buttonMap.ResetButtonStates();
+		for (int i = 0; i < NUM_MKEYS; ++i)
+		{
+			MenuButtons[i].ReleaseKey(0);
+		}
+	}
+
 	M_SetMenu(menu, mparam);
 	return 0;
 }
