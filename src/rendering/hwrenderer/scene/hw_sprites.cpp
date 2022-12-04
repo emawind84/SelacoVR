@@ -896,6 +896,8 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 					else
 						rot = (sprang - (thing->Angles.Yaw + thing->SpriteRotation) + (45.0 / 2 * 9 - 180.0 / 16)).BAMs() >> 28;
 				}
+				// @Cockatrice - This code does not look correct, I'm not 100% sure what it is supposed to do but this picnum value is ignored
+				// and the mirror value is set but the patch is just set to the thing->picnum no matter what :shrug:
 				auto picnum = sprframe->Texture[rot];
 				if (sprframe->Flip & (1 << rot))
 				{
@@ -903,6 +905,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				}
 			}
 
+			
 			patch =  tex->GetID();
 		}
 		else
@@ -937,7 +940,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			 gl_texture_thread &&
 			 screen->SupportsBackgroundCache()) {
 
-			int scaleflags = CTF_Expand;
+			int scaleflags = (type == RF_FACESPRITE) ? CTF_Expand : 0;
 			if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
 
 			FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
@@ -950,10 +953,10 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				}
 
 				if (lastPatch.isValid()) {
-					auto lt = patch;
-					FString lpn = tex->GetName();
+					//auto lt = patch;
+					//FString lpn = tex->GetName();
 					patch = lastPatch;
-					auto tex = TexMan.GetGameTexture(patch, false);
+					tex = TexMan.GetGameTexture(patch, false);
 					if (!tex || !tex->isValid()) {
 						return;
 					}

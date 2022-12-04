@@ -188,7 +188,7 @@ void VkHardwareTexture::BackgroundCreateTexture(int w, int h, int pixelsize, VkF
 	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
 	if (bufManager->TransferDeleteList->TotalSize > 1) {
 		bufManager->WaitForCommands(false, true);
-		hwState = READY;
+		//hwState = READY;
 	}
 }
 

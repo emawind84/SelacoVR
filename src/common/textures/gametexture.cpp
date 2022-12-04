@@ -315,10 +315,9 @@ void FGameTexture::SetupSpriteData()
 			spi.mTrimResult = Base->TrimBorders(spi.trim) && !GetNoTrimming();	// get the trim size before adding the empty frame
 			spi.spriteWidth += 2;
 			spi.spriteHeight += 2;
-			//Printf(" TRIMMED ");
 		}
 	}
-	//Printf("\n");
+
 	SetSpriteRect();
 }
 

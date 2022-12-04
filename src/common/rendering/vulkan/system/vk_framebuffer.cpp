@@ -267,7 +267,6 @@ void VulkanFrameBuffer::UpdateBackgroundCache() {
 
 			// Set the sprite positioning info if generated
 			if (loaded.spi.generateSpi && loaded.spi.info && loaded.gtex) {
-				//Printf(TEXTCOLOR_ICE"Applying SPI to %s : %p\n", loaded.gtex->GetName(), loaded.gtex);
 				loaded.gtex->SetSpriteRect(loaded.spi.info);
 			}
 		}
@@ -566,7 +565,7 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 	}
 	
 
-	int numLayers = mat->NumLayers();
+	const int numLayers = mat->NumLayers();
 	for (int i = 1; i < numLayers; i++)
 	{
 		auto syslayer = static_cast<VkHardwareTexture*>(mat->GetLayer(i, 0, &layer));
@@ -579,8 +578,8 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 			FImageTexture *fLayerTexture = dynamic_cast<FImageTexture*>(layer->layerTexture);
 			params = layer->layerTexture->GetImage()->NewLoaderParams(
 				fLayerTexture ? (fLayerTexture->GetNoRemap0() ? FImageSource::noremap0 : FImageSource::normal) : FImageSource::normal,
-				translation,
-				remap
+				0, // translation
+				nullptr// remap
 			);
 			
 			if (params) {
@@ -590,7 +589,8 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 					{
 						false, false, false, nullptr
 					},
-					syslayer
+					syslayer,
+					nullptr
 				};
 
 				bgTransferThread->queue(in);
@@ -831,6 +831,7 @@ void VulkanFrameBuffer::PrintStartupLog()
 	Printf("Max. texture size: %d\n", limits.maxImageDimension2D);
 	Printf("Max. uniform buffer range: %d\n", limits.maxUniformBufferRange);
 	Printf("Min. uniform buffer offset alignment: %" PRIu64 "\n", limits.minUniformBufferOffsetAlignment);
+	Printf("Graphics Queue Family: #%d\nPresent Queue Family:  #%d\nUpload Queue Family:   #%d\nUpload Queue Supports Graphics: %s\n", device->graphicsFamily, device->presentFamily, device->uploadFamily, device->uploadFamilySupportsGraphics ? "Yes" : "No");
 }
 
 void VulkanFrameBuffer::SetLevelMesh(hwrenderer::LevelMesh* mesh)
