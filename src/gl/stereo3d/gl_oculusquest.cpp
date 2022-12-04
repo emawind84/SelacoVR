@@ -64,6 +64,9 @@ EXTERN_CVAR(Float, vr_height_adjust)
 EXTERN_CVAR(Int, vr_control_scheme)
 EXTERN_CVAR(Bool, vr_move_use_offhand)
 EXTERN_CVAR(Float, vr_weaponRotate);
+EXTERN_CVAR(Float, vr_weaponOffsetX);
+EXTERN_CVAR(Float, vr_weaponOffsetY);
+EXTERN_CVAR(Float, vr_weaponOffsetZ);
 EXTERN_CVAR(Float, vr_snapTurn);
 EXTERN_CVAR(Float, vr_ipd);
 EXTERN_CVAR(Float, vr_weaponScale);
@@ -499,6 +502,9 @@ namespace s3d
         //Set up stuff used in the tracking code - getting the CVARS in the C code would be a faff, so just
         //set some variables - lazy, should do it properly..
         vr_weapon_pitchadjust = vr_weaponRotate;
+        vr_weapon_offset_x = vr_weaponOffsetX;
+        vr_weapon_offset_y = vr_weaponOffsetY;
+        vr_weapon_offset_z = vr_weaponOffsetZ;
         vr_snapturn_angle = vr_snapTurn;
         vr_switchsticks = vr_switch_sticks;
         vr_moveuseoffhand = vr_move_use_offhand;

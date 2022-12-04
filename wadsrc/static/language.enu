@@ -1936,6 +1936,9 @@ DSPLYMNU_CUSTOMINVERTC2			= "Custom Inverse Color Light";
 DSPLYMNU_WEAPHPOS				= "Weapon horizontal position";
 DSPLYMNU_WEAPVPOS				= "Weapon vertical position";
 DSPLYMNU_WEAPSCALE				= "Weapon scale";
+DSPLYMNU_WEAPOFSX				= "Weapon position left/right";
+DSPLYMNU_WEAPOFSY				= "Weapon position up/down";
+DSPLYMNU_WEAPOFSZ				= "Weapon position forward/backward";
 
 // HUD Options
 HUDMNU_TITLE					= "HUD Options";
