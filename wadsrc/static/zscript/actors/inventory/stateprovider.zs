@@ -98,7 +98,7 @@ class StateProvider : Inventory
 		int alflags = 0;
 
 		Vector2 ofs = (0, Spawnofs_xy);
-		if (!player.mo.OverrideAttackPosDir)
+		if (!weapon || !player.mo.OverrideAttackPosDir)
 		{
 			double ang = Angle - 90;
 			ofs = AngleToVector(ang, Spawnofs_xy);
@@ -225,7 +225,7 @@ class StateProvider : Inventory
 		if (missiletype) 
 		{
 			Vector2 ofs = (0, Spawnofs_xy);
-			if (!player.mo.OverrideAttackPosDir)
+			if (!weapon || !player.mo.OverrideAttackPosDir)
 			{
 				double ang = self.Angle - 90;
 				ofs = AngleToVector(ang, Spawnofs_xy);
@@ -247,8 +247,25 @@ class StateProvider : Inventory
 				{
 					// This original implementation is to aim straight ahead and then offset
 					// the angle from the resulting direction. 
-					misl.Angle += angle;
-					misl.VelFromAngle(misl.Vel.XY.Length());
+					if (weapon && player.mo.OverrideAttackPosDir)
+					{
+						Vector3 dir;
+						if (weapon.bOffhandWeapon)
+						{
+							dir = player.mo.OffhandDir(misl, misl.Angle + angle, misl.Pitch);
+						}
+						else
+						{
+							dir = player.mo.AttackDir(misl, misl.Angle + angle, misl.Pitch);
+						}
+						misl.Angle = dir.x;
+						misl.Vel3DFromAngle(misl.Speed, misl.Angle, dir.y);
+					}
+					else
+					{
+						misl.Angle += angle;
+						misl.VelFromAngle(misl.Vel.XY.Length());
+					}
 				}
 			}
 			return misl;
