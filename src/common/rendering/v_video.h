@@ -221,6 +221,8 @@ public:
 	virtual float CacheProgress() { return 0; }																		// Current progress of background cache op
 	virtual bool SupportsBackgroundCache() { return false; }
 	virtual void UpdateBackgroundCache() { }
+	// Wait for all background loads to finish, then update background cache
+	virtual void FlushBackground() { }	
 	
 	virtual FMaterial* CreateMaterial(FGameTexture* tex, int scaleflags);
 	virtual void BeginFrame() {}

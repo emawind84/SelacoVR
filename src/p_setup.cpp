@@ -565,6 +565,11 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	// [RH] Remove all particles
 	P_ClearParticles(Level);
 
+	// @Cockatrice - Flush any background texture loads
+	if (screen->SupportsBackgroundCache()) {
+		screen->FlushBackground();
+	}
+
 	// preload graphics and sounds
 	if (precache)
 	{
