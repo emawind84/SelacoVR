@@ -72,11 +72,12 @@ extend class Actor
 		bool was_moving = ref.Vel != (0, 0, 0);
 		let newvel = (x, y, z);
 
-		if (player != NULL && player.mo == ref && flags & CVF_RELATIVETOWEAPON)
+		if (player != NULL && player.mo == ref)
 		{
+			if (!vr_recoil) return;
 			player.keepmomentum = true;
 			let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
-			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
+			if (weapon && weapon == invoker && flags & CVF_RELATIVETOWEAPON && player.mo.OverrideAttackPosDir)
 			{
 				Vector3 dir;
 				Vector3 yoffsetDir;
