@@ -6520,24 +6520,24 @@ DEFINE_ACTION_FUNCTION(AActor, CheckMissileSpawn)
 //
 //---------------------------------------------------------------------------
 
-void P_PlaySpawnSound(AActor *missile, AActor *spawner)
+void P_PlaySpawnSound(AActor *missile, AActor *spawner, int channel, EChanFlags flags)
 {
 	if (missile->SeeSound != 0)
 	{
 		if (!(missile->flags & MF_SPAWNSOUNDSOURCE))
 		{
-			S_Sound (missile, CHAN_VOICE, 0, missile->SeeSound, 1, ATTN_NORM);
+			S_Sound (missile, channel, flags, missile->SeeSound, 1, ATTN_NORM);
 		}
 		else if (spawner != NULL)
 		{
-			S_Sound (spawner, CHAN_WEAPON, 0, missile->SeeSound, 1, ATTN_NORM);
+			S_Sound (spawner, channel, flags, missile->SeeSound, 1, ATTN_NORM);
 		}
 		else
 		{
 			// If there is no spawner use the spawn position.
 			// But not in a silenced sector.
 			if (!(missile->Sector->Flags & SECF_SILENT))
-				S_Sound (missile->Pos(), CHAN_WEAPON, 0, missile->SeeSound, 1, ATTN_NORM);
+				S_Sound (missile->Pos(), channel, flags, missile->SeeSound, 1, ATTN_NORM);
 		}
 	}
 }
@@ -7039,7 +7039,7 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 
 	if (MissileActor == nullptr) return nullptr;
 	if (pMissileActor) *pMissileActor = MissileActor;
-	P_PlaySpawnSound(MissileActor, source);
+	P_PlaySpawnSound(MissileActor, source, !!(aimflags & ALF_ISOFFHAND) ? CHAN_OFFWEAPON : CHAN_WEAPON, CHANF_OVERLAP);
 	MissileActor->target = source;
 	MissileActor->Angles.Yaw = an;
 	if (MissileActor->flags3 & (MF3_FLOORHUGGER | MF3_CEILINGHUGGER))

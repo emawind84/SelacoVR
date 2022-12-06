@@ -35,6 +35,7 @@
 #include "doomtype.h"
 #include "vectors.h"
 #include "dobject.h"
+#include "s_sound.h"
 
 const double NO_VALUE = FLT_MAX;
 
@@ -404,7 +405,7 @@ enum	// P_RailAttack / A_RailAttack / A_CustomRailgun / P_DrawRailTrail flags
 
 bool	P_CheckMissileSpawn(AActor *missile, double maxdist);
 
-void	P_PlaySpawnSound(AActor *missile, AActor *spawner);
+void	P_PlaySpawnSound(AActor *missile, AActor *spawner, int channel = 0, EChanFlags flags = 0);
 
 // [RH] Position the chasecam
 void	P_AimCamera (AActor *t1, DVector3 &, DAngle &, sector_t *&sec, bool &unlinked);
