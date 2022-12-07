@@ -211,8 +211,7 @@ void VkTexLoadThread::completeLoad() { currentImageID.store(0); }
 void VulkanFrameBuffer::FlushBackground() {
 	int nq = bgTransferThread->numQueued();
 
-	if (nq == 0 && patchQueue.size() == 0) return; // Nothing to do here
-	Printf(TEXTCOLOR_GREEN"VulkanFrameBuffer: Flushing [%d + %d] = %d texture load ops\n", nq, patchQueue.size(), nq + patchQueue.size());
+	Printf(TEXTCOLOR_GREEN"VulkanFrameBuffer[%s]: Flushing [%d + %d] = %d texture load ops\n", bgTransferThread->isActive() ? "active" : "inactive", nq, patchQueue.size(), nq + patchQueue.size());
 
 	// Finish anything queued, and send anything that needs to be loaded from the patch queue
 	UpdateBackgroundCache();	
@@ -220,13 +219,13 @@ void VulkanFrameBuffer::FlushBackground() {
 	// Wait for everything to load, kinda cheating here but this shouldn't be called in the game loop only at teardown
 	cycle_t check;
 	check.Clock();
-	while (bgTransferThread->numQueued()) {
+	while (bgTransferThread->isActive()) {
 		std::this_thread::sleep_for(std::chrono::nanoseconds(50000));
 
 		check.Unclock();
-		if (check.TimeMS() > 10) {
+		if (check.TimeMS() > 100) {
 			check.Reset();
-			Printf(TEXTCOLOR_GOLD"VulkanFrameBuffer::FlushBackground() Is taking a while to finish load ops...\n");
+			Printf(TEXTCOLOR_GOLD"VulkanFrameBuffer::FlushBackground() Is taking a while to finish load ops (100ms+)...\n");
 			check.Clock();
 		}
 	}
