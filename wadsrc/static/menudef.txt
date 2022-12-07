@@ -2497,7 +2497,7 @@ OptionMenu VROptionsMenu protected
 
 	StaticText " "
 	StaticText "Weapon (sprite only)", gold
-	StaticText "Only valid for the current session.", "Brown"
+	StaticText "Options retained only for the current session.", "Brown"
 	Slider "$DSPLYMNU_WEAPHPOS",			"r_weaphpos", 0, 100, 1, 0
 	Slider "$DSPLYMNU_WEAPVPOS",			"r_weapvpos", 0, 100, 1, 0
 	Slider "$DSPLYMNU_WEAPSCALE",			"r_weapscale", 0, 2.0, 0.1, 1
