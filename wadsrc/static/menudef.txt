@@ -338,8 +338,9 @@ DefaultOptionMenu
 OptionMenu "OptionsMenu" protected
 {
 	Title "$OPTMNU_TITLE"
-	Submenu "QuestZDoom Quick Menu",			    "QZDOptionsMenu"
-	Submenu "VR Options",			    "VROptionsMenu"
+	Submenu "QuestZDoom Info & Credits", "questZdoomInfo"
+	Submenu "QuestZDoom Quick Menu",	"QZDOptionsMenu"
+	Submenu "VR Options",				"VROptionsMenu"
 	StaticText " "
 	Submenu "$OPTMNU_CONTROLS",			"CustomizeControls"
 	StaticText " "
@@ -3062,4 +3063,113 @@ OptionMenu QZDOptionsMenu protected
 	Option "$GMPLYMNU_ALLOWJUMP", "sv_jump", "JumpCrouchFreeLook"
 	StaticText "Gameplay option only intended", "Brown"
 	StaticText "for a specific session/playthrough.", "Brown"
+}
+
+OptionMenu "questZdoomInfo"
+{ 
+	Title		"QUESTZDOOM INFO AND CREDITS"
+	StaticText	""
+	Submenu    	"INFORMATION AND INSTRUCTIONS", "questZdoomInst"
+	Submenu   	"CREDITS", "questZdoomCredits"
+}
+
+//-------------------------------------------------------------------------------------------
+//
+//----> QUESTZDOOM
+//
+//-------------------------------------------------------------------------------------------
+//
+//	INFORMATION AND INSTRUCTIONS FOR QUESTZDOOM
+//
+//-------------------------------------------------------------------------------------------
+
+OptionMenu "questZdoomInst"
+{ 
+	Title		"QUESTZDOOM INFO AND CREDITS"
+	StaticText	""
+	StaticText	"===== INFORMATION AND INSTRUCTIONS ====="
+	StaticText	""
+	StaticText	"QUESTZDOOM IS AN ENGINE PORT OF THE POPULAR LZDOOM/GZDOOM", "White"
+	StaticText	"ENGINE FOR THE OCULUS QUEST VIRTUAL REALITY HEADSET.", "White"
+	StaticText	""
+	StaticText	"WE RECOMMEND USING THE QUESTZDOOM LAUNCHER TO GET"
+	StaticText	"THE BEST EXPERIENCE POSSIBLE. THE LAUNCHER CAN ALSO"
+	StaticText	"BE DOWNLOADED FROM SIDEQUEST."
+	StaticText	""
+	StaticText	"1. INSTALL QUESTZDOOM FROM SIDEQUEST", "White"
+	StaticText	"2. INSTALL QUESTZDOOM LAUCHNER FROM SIDEQUEST", "White"
+	StaticText	"3. START THE QUESTZDOOM LAUNCHER", "White"
+	StaticText	""
+	StaticText	"ON FIRST RUN YOU WILL NEED TO ACCEPT THE PERMISSIONS"
+	StaticText	"FOR BOTH APPLICATIONS TO ACCESS THE LOCAL FILE SYSTEM."
+	StaticText	""
+	StaticText	"YOU CAN NOW START TO DOWNLOAD AND USE GAMES AND MODS", "White"
+	StaticText	"DIRECTLY FROM THE QUESTZDOOM LAUNCHER.", "White"
+	StaticText	""
+	StaticText	"CLICK ON DOWNLOAD CORE GAMES AND CHOOSE THE GAME YOU WANT.", "White"
+	StaticText	"THEN CLICK DOWNLOAD MODS AND DOWNLOAD SOME MODS IF YOU WANT.", "White"
+	StaticText	"AFTER SELECTION, CLICK ON LAUNCH GAME.", "White"
+	StaticText	""
+	StaticText	"FOR BEGINNERS WE RECOMMEND THE GAME FREEDOOM2", "White"
+	StaticText	"WITH THE MODS BRUTAL DOOM AND VR WEAPONS", "White"
+	StaticText	""
+	StaticText	"NEVERTHELESS FOR THE BEST EXPERIENCE WE SUGGEST TO INSTALL"
+	StaticText	"THE ORIGINAL DOOM AND DOOM2 WAD FILE. YOU CAN FIND FURTHER"
+	StaticText	"INSTRUCTIONS IN THE LAUNCHER AND ON REDDIT R/QUESTZDOOM"
+	StaticText	""
+}
+
+//-------------------------------------------------------------------------------------------
+//
+//	CREDITS FOR QUESTZDOOM
+//
+//-------------------------------------------------------------------------------------------
+
+OptionMenu "questZdoomCredits"
+{ 
+	Title		"QUESTZDOOM INFO AND CREDITS"
+	StaticText	""
+	StaticText	"===== CREDITS ====="
+	StaticText	""
+	StaticText	"DRBEEF"
+	StaticText	"QUESTZDOOM", "White"
+	StaticText	""
+	StaticText	"EMANUELE DISCO"
+	StaticText	"QUESTZDOOM", "White"
+	StaticText	""
+	StaticText	"BAGGYG"
+	StaticText	"QUESTZDOOM LAUNCHER", "White"
+	StaticText	""
+	StaticText	"VR_BUMMSER"
+	StaticText	"MOD AND WAD TESTING, COMMUNITY DUDE", "White"
+	StaticText	""
+	StaticText	"DANIEL TEICH"
+	StaticText	"GRAPHICS, ARTWORK, ULTIMATE CHEAT MENU MOD", "White"
+	StaticText	""
+	StaticText	"AJANTAJU"
+	StaticText	"VR WEAPON MODEL PACKS", "White"
+	StaticText	""
+	StaticText	"CHRIS COLLINS"
+	StaticText	"GENERALUSERGS SOUNDFONT", "White"
+	StaticText	""
+	StaticText	"EMILE BELANGER"
+	StaticText	"LZDOOM ANDROID PORT", "White"
+	StaticText	""
+	StaticText	"M8F (MMAULWURFF)"
+	StaticText	"LASER SIGHT MOD", "White"
+	StaticText	""
+	StaticText	"FREEDOOM / FRAGGLE"
+	StaticText	"FREEDOOM DOWNLOAD ACCESS", "White"
+	StaticText	""
+	StaticText	"THE ZDOOM TEAMS"
+	StaticText	"FOR THE AWESOME ENGINE!", "White"
+	StaticText	""
+	StaticText	"All GZ3DOOM PC VR PROJECT PARTICIPANTS"
+	StaticText	"6DOF WEAPON LOGIC, MODEL AND SPRITE RENDERING", "White"
+	StaticText	""
+	StaticText	"THE SIDEQUEST TEAM"
+	StaticText	"FOR SIDEQUEST!", "White"
+	StaticText	""
+	StaticText	"ALSO WE WANT TO THANK ALL DEDICATED"
+	StaticText	"CLOSED BETA TESTERS!"
 }
