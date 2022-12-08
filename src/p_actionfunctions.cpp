@@ -2855,7 +2855,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_SetAngle)
 	AActor *ref = COPY_AAPTR(self, ptr);
 
 	//We don't want to adjust the player's camera - that could make them sick
-	player_t* player = players[consoleplayer].camera ? players[consoleplayer].camera->player : nullptr;
+	player_t *player = self->player;
 	if (player != nullptr && ref != nullptr && player->mo == ref)
 	{
 		return 0;
@@ -2886,7 +2886,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_SetPitch)
 	AActor *ref = COPY_AAPTR(self, ptr);
 
 	//We don't want to adjust the player's camera - that could make them sick
-	player_t* player = players[consoleplayer].camera ? players[consoleplayer].camera->player : nullptr;
+	player_t *player = self->player;
 	if (player != nullptr && ref != nullptr && player->mo == ref)
 	{
 		return 0;
@@ -2916,8 +2916,8 @@ DEFINE_ACTION_FUNCTION(AActor, A_SetRoll)
 	AActor *ref = COPY_AAPTR(self, ptr);
 
 	//We don't want to adjust the player's camera - that could make them sick
-	player_t* player = players[consoleplayer].camera ? players[consoleplayer].camera->player : nullptr;
-	if (!vr_recoil && player != nullptr && ref != nullptr && player->mo == ref)
+	player_t *player = self->player;
+	if (player != nullptr && ref != nullptr && player->mo == ref)
 	{
 		return 0;
 	}
