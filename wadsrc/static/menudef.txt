@@ -338,8 +338,8 @@ DefaultOptionMenu
 OptionMenu "OptionsMenu" protected
 {
 	Title "$OPTMNU_TITLE"
-	Submenu "QuestZDoom Info & Credits", "questZdoomInfo"
-	Submenu "QuestZDoom Quick Menu",	"QZDOptionsMenu"
+	Submenu "Info & Credits", 			"questZdoomInfo"
+	Submenu "Quick Menu",				"QZDOptionsMenu"
 	Submenu "VR Options",				"VROptionsMenu"
 	StaticText " "
 	Submenu "$OPTMNU_CONTROLS",			"CustomizeControls"
@@ -2455,7 +2455,7 @@ OptionMenu VROptionsMenu protected
 	StaticText "VR Controls", gold
 	Option "Control Scheme",		    "vr_control_scheme", "ControlScheme"
 	Option "Switch Thumbsticks",		    "vr_switch_sticks", "OnOff"
-	Option "Allow Secondary Button Mappings",	"vr_secondary_button_mappings", "OnOff"
+	Option "Secondary Button Mappings",	"vr_secondary_button_mappings", "OnOff"
 	Option "Two Handed Weapons",	    "vr_two_handed_weapons", "OnOff"
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_control_scheme vr_switch_sticks vr_secondary_button_mappings vr_two_handed_weapons"
@@ -2464,7 +2464,7 @@ OptionMenu VROptionsMenu protected
 	StaticText "Locomotion", gold
 	Option "Off-hand Move Direction",	"vr_move_use_offhand", "OnOff"
 	Option "Use Teleport",		        "vr_teleport", "OnOff"
-	Option "Allow slidey movement (Momentum)",	    "vr_momentum", "OnOff"
+	Option "Slidey movement (Momentum)","vr_momentum", "OnOff"
 	Option "Crouch using button",       "vr_crouch_use_button", "OnOff"
 	Slider "Walking Speed",		        "vr_move_speed", 5, 50, 1, 2
 	Slider "Run Multiplier",	        "vr_run_multiplier", 0.0, 5.0, 0.1, 2
@@ -2484,11 +2484,11 @@ OptionMenu VROptionsMenu protected
 
 	StaticText ""
 	StaticText "Weapon", gold
-	Option "Weapon Recoil",		        "vr_recoil", "OnOff"
-	Slider "Weapon Pitch Adjust",		"vr_weaponRotate", -45, 45, 5, 2
-	Slider "Weapon Sprite/Model Scale",	"vr_weaponScale", 0.1, 3.0, 0.1, 2
-	Option "Weapon Sprite 3D",			"r_PlayerSprites3DMode", "Sprites3DMode"
-	Slider "Weapon Fat Item Width",		"gl_fatItemWidth", 0.1, 1.0, 0.1, 2
+	Option "Recoil",		        "vr_recoil", "OnOff"
+	Slider "Pitch Adjust",		"vr_weaponRotate", -45, 45, 5, 2
+	Slider "Sprite/Model Scale",	"vr_weaponScale", 0.1, 3.0, 0.1, 2
+	Option "Sprite 3D",			"r_PlayerSprites3DMode", "Sprites3DMode"
+	Slider "Fat Item Width",		"gl_fatItemWidth", 0.1, 1.0, 0.1, 2
 	Slider "$DSPLYMNU_WEAPOFSX",		"vr_weaponOffsetX", -1, 1, 0.01, 2
 	Slider "$DSPLYMNU_WEAPOFSY",		"vr_weaponOffsetY", -1, 1, 0.01, 2
 	Slider "$DSPLYMNU_WEAPOFSZ",		"vr_weaponOffsetZ", -1, 1, 0.01, 2
@@ -2497,7 +2497,7 @@ OptionMenu VROptionsMenu protected
 
 	StaticText " "
 	StaticText "Weapon (sprite only)", gold
-	StaticText "Options retained only for the current session.", "Brown"
+	StaticText "Options retained only for the current session", "Brown"
 	Slider "$DSPLYMNU_WEAPHPOS",			"r_weaphpos", 0, 100, 1, 0
 	Slider "$DSPLYMNU_WEAPVPOS",			"r_weapvpos", 0, 100, 1, 0
 	Slider "$DSPLYMNU_WEAPSCALE",			"r_weapscale", 0, 2.0, 0.1, 1

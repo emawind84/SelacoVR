@@ -1933,12 +1933,12 @@ DSPLYMNU_GPUSWITCH				= "Notebook Switchable GPU";
 DSPLYMNU_CUSTOMINVERTMAP		= "Custom Inverse Map";
 DSPLYMNU_CUSTOMINVERTC1			= "Custom Inverse Color Dark";
 DSPLYMNU_CUSTOMINVERTC2			= "Custom Inverse Color Light";
-DSPLYMNU_WEAPHPOS				= "Weapon horizontal position";
-DSPLYMNU_WEAPVPOS				= "Weapon vertical position";
-DSPLYMNU_WEAPSCALE				= "Weapon scale";
-DSPLYMNU_WEAPOFSX				= "Weapon position left/right";
-DSPLYMNU_WEAPOFSY				= "Weapon position up/down";
-DSPLYMNU_WEAPOFSZ				= "Weapon position forward/backward";
+DSPLYMNU_WEAPHPOS				= "Horizontal position";
+DSPLYMNU_WEAPVPOS				= "Vertical position";
+DSPLYMNU_WEAPSCALE				= "Scale";
+DSPLYMNU_WEAPOFSX				= "Position left/right";
+DSPLYMNU_WEAPOFSY				= "Position up/down";
+DSPLYMNU_WEAPOFSZ				= "Position forward/backward";
 
 // HUD Options
 HUDMNU_TITLE					= "HUD Options";
