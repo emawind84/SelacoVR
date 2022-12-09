@@ -108,6 +108,8 @@ CVAR(Bool, cl_bloodsplats, true, CVAR_ARCHIVE)
 CVAR(Int, sv_smartaim, 0, CVAR_ARCHIVE | CVAR_SERVERINFO)
 CVAR(Bool, cl_doautoaim, false, CVAR_ARCHIVE)
 
+EXTERN_CVAR (Bool, use_action_spawn_yzoffset)
+
 static void CheckForPushSpecial(line_t *line, int side, AActor *mobj, DVector2 * posforwindowcheck = NULL);
 static void SpawnShootDecal(AActor *t1, AActor *defaults, const FTraceResults &trace, int hand = 0);
 static void SpawnDeepSplash(AActor *t1, const FTraceResults &trace, AActor *puff);
@@ -4634,6 +4636,9 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 			offsetforward * -direction.Pitch().Sin()
 		);
 
+		if (!use_action_spawn_yzoffset)
+			offsetside = sz = 0;
+
 		tempos += DVector3(
 			offsetside * yoffsetDir.Angle().Cos() * yoffsetDir.Pitch().Cos(),
 			offsetside * yoffsetDir.Angle().Sin() * yoffsetDir.Pitch().Cos(),
@@ -5334,6 +5339,9 @@ void P_RailAttack(FRailParams *p)
 			offsetxyDir = source->player->mo->AttackDir(source, source->Angles.Yaw - 90, source->Angles.Pitch);
 			offsetzDir = source->player->mo->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch + 90);
 		}
+
+		if (!use_action_spawn_yzoffset)
+			p->offset_xy = p->offset_z = 0;
 
 		start += DVector3(
 			p->offset_xy * offsetxyDir.Angle().Cos() * offsetxyDir.Pitch().Cos(),

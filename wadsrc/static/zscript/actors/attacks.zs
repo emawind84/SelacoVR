@@ -479,6 +479,9 @@ extend class Actor
 
 				directionAngle = dir.x;
 				directionPitch = dir.y;
+
+				if (!use_action_spawn_yzoffset)
+					yofs = zofs = 0;
 				
 				spawnpos += (
 					xofs * cos(dir.x) * cos(dir.y),

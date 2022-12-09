@@ -130,6 +130,7 @@ static void PlayerLandedOnThing (AActor *mo, AActor *onmobj);
 
 extern int BotWTG;
 EXTERN_CVAR (Int,  cl_rockettrails)
+EXTERN_CVAR (Bool, use_action_spawn_yzoffset)
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
@@ -7016,6 +7017,9 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 			an = dir.Angle();
 			pitch = dir.Pitch();
 		}
+
+		if (!use_action_spawn_yzoffset)
+			y = z = 0;
 
 		pos += DVector3(
 			x * xoffsetDir.Angle().Cos() * xoffsetDir.Pitch().Cos(),
