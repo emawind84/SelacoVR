@@ -246,11 +246,11 @@ void VulkanFrameBuffer::UpdateBackgroundCache() {
 		while (bgTransferThread->popFinished(loaded)) {
 			// If this image was created in a different queue family, it now needs to be moved over to
 			// the graphics queue faimly
-			if (device->uploadFamily != device->graphicsFamily) {
+			if (device->uploadFamily != device->graphicsFamily && loaded.tex->mLoadedImage) {
 				loaded.tex->AcquireLoadedFromQueue(cmds.get(), device->uploadFamily, device->graphicsFamily);
 
 				// If we cannot create mipmaps in the background, tell the GPU to create them now
-				if (loaded.createMipmaps && loaded.tex->mLoadedImage) {
+				if (loaded.createMipmaps) {
 					loaded.tex->mLoadedImage.get()->GenerateMipmaps(cmds.get());
 				}
 
