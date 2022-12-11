@@ -1025,6 +1025,13 @@ void I_StartupXInput()
 			if (joys->GetDevice())
 			{
 				JoyDevices[INPUT_XInput] = joys;
+				
+				// See if there is at least one joystick connected
+				TArray<IJoystickConfig*> joycon;
+				joys->GetDevices(joycon);
+				if (joycon.Size() > 0) {
+					UpdateJoystickMenu(joycon[0]);
+				}
 			}
 			else
 			{
