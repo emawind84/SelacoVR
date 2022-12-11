@@ -105,12 +105,12 @@ CUSTOM_CVAR(Float, r_quakeintensity, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 	else if (self > 1.f) self = 1.f;
 }
 
-CUSTOM_CVARD(Int, r_actorspriteshadow, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "render actor sprite shadows. 0 = off, 1 = default, 2 = always on")
+CUSTOM_CVARD(Int, r_shadowquality, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "render light effect shadows and sprite shadows. 1 = low, 2 = medium, 3 = high")
 {
-	if (self < 0)
-		self = 0;
-	else if (self > 2)
-		self = 2;
+	if (self < 1)
+		self = 1;
+	else if (self > 3)
+		self = 3;
 }
 CUSTOM_CVARD(Float, r_actorspriteshadowdist, 1500.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "how far sprite shadows should be rendered")
 {
@@ -119,6 +119,7 @@ CUSTOM_CVARD(Float, r_actorspriteshadowdist, 1500.0, CVAR_ARCHIVE | CVAR_GLOBALC
 	else if (self > 8192.f)
 		self = 8192.f;
 }
+EXTERN_CVAR(Bool, gl_light_shadowmap);
 
 int 			viewwindowx;
 int 			viewwindowy;
@@ -1152,18 +1153,21 @@ CUSTOM_CVAR(Float, maxviewpitch, 90.f, CVAR_ARCHIVE | CVAR_SERVERINFO)
 
 bool R_ShouldDrawSpriteShadow(AActor *thing)
 {
+	//@Cockatrice - Hate me for this, but for Selaco we want to unify shadow settings and this was the easiest way to do it
+	if (!gl_light_shadowmap) return false;
+
 	int rf = thing->renderflags;
 	// for wall and flat sprites the shadow math does not work so these must be unconditionally skipped.
 	if (rf & (RF_FLATSPRITE | RF_WALLSPRITE)) return false;	
 
 	bool doit = false;
-	switch (r_actorspriteshadow)
+	switch (r_shadowquality)
 	{
-	case 1:
+	case 2:
 		doit = (rf & RF_CASTSPRITESHADOW);
 		break;
 
-	case 2:
+	case 3:
 		doit = (rf & RF_CASTSPRITESHADOW) || (!(rf & RF_NOSPRITESHADOW) && ((thing->flags3 & MF3_ISMONSTER) || thing->player != nullptr));
 		break;
 
