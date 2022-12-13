@@ -271,6 +271,19 @@ struct TVector2
 		return *this;
 	}
 
+	TVector2 Resized(double len) const
+	{
+		double vlen = Length();
+		if (vlen != 0.)
+		{
+			double scale = len / vlen;
+			return{ vec_t(X * scale), vec_t(Y * scale) };
+		}
+		else
+		{
+			return *this;
+		}
+	}
 
 	// Dot product
 	vec_t operator | (const TVector2 &other) const
@@ -644,7 +657,7 @@ struct TVector3
 		return *this;
 	}
 
-	TVector3 Resized(double len)
+	TVector3 Resized(double len) const
 	{
 		double vlen = Length();
 		if (vlen != 0.)
@@ -708,6 +721,11 @@ struct TVector4
 
 	TVector4(const Vector3 &xyz, vec_t w)
 		: X(xyz.X), Y(xyz.Y), Z(xyz.Z), W(w)
+	{
+	}
+
+	TVector4(const vec_t v[4])
+		: TVector4(v[0], v[1], v[2], v[3])
 	{
 	}
 
@@ -833,25 +851,6 @@ struct TVector4
 		return TVector4(v.X * scalar, v.Y * scalar, v.Z * scalar, v.W * scalar);
 	}
 
-	// Multiply as Quaternion
-	TVector4& operator*= (const TVector4& v)
-	{
-		X = v.W * X + v.X * W + v.Y * Z - v.Z * Y;
-		Y = v.W * Y + v.Y * W + v.Z * X - v.X * Z;
-		Z = v.W * Z + v.Z * W + v.X * Y - v.Y * X;
-		W = v.W * W - v.X * X - v.Y * Y - v.Z * Z;
-		return *this;
-	}
-
-	friend TVector4 operator* (const TVector4& v1, const TVector4& v2)
-	{
-		return TVector4(v2.W * v1.X + v2.X * v1.W + v2.Y * v1.Z - v1.Z * v1.Y,
-			v2.W * v1.Y + v2.Y * v1.W + v2.Z * v1.X - v2.X * v1.Z,
-			v2.W * v1.Z + v2.Z * v1.W + v2.X * v1.Y - v2.Y * v1.X,
-			v2.W * v1.W - v2.X * v1.X - v2.Y * v1.Y - v2.Z * v1.Z
-		);
-	}
-
 	// Scalar division
 	TVector4 &operator/= (vec_t scalar)
 	{
@@ -974,7 +973,7 @@ struct TVector4
 		return *this;
 	}
 
-	TVector4 Resized(double len)
+	TVector4 Resized(double len) const 
 	{
 		double vlen = Length();
 		if (vlen != 0.)
@@ -990,6 +989,11 @@ struct TVector4
 
 	// Dot product
 	vec_t operator | (const TVector4 &other) const
+	{
+		return X*other.X + Y*other.Y + Z*other.Z + W*other.W;
+	}
+
+	vec_t dot(const TVector4 &other) const
 	{
 		return X*other.X + Y*other.Y + Z*other.Z + W*other.W;
 	}
@@ -1287,12 +1291,7 @@ public:
 		return TAngle(f * (90. / 0x40000000));
 	}
 
-	static constexpr TAngle fromBuild(int bang)
-	{
-		return TAngle(bang * (90. / 512));
-	}
-
-	static constexpr TAngle fromBuildf(double bang)
+	static constexpr TAngle fromBuild(double bang)
 	{
 		return TAngle(bang * (90. / 512));
 	}
@@ -1347,6 +1346,11 @@ public:
 	constexpr TAngle operator* (vec_t other) const
 	{
 		return Degrees_ * other;
+	}
+
+	constexpr TAngle operator* (TAngle other) const
+	{
+		return Degrees_ * other.Degrees_;
 	}
 
 	constexpr TAngle operator/ (vec_t other) const
@@ -1543,6 +1547,16 @@ inline TAngle<T> interpolatedvalue(const TAngle<T> &oang, const TAngle<T> &ang, 
 	return oang + (deltaangle(oang, ang) * interpfrac);
 }
 
+template<class T>
+inline TRotator<T> interpolatedvalue(const TRotator<T> &oang, const TRotator<T> &ang, const double interpfrac)
+{
+	return TRotator<T>(
+		interpolatedvalue(oang.Pitch, ang.Pitch, interpfrac),
+		interpolatedvalue(oang.Yaw, ang.Yaw, interpfrac),
+		interpolatedvalue(oang.Roll, ang.Roll, interpfrac)
+	);
+}
+
 template <class T>
 inline T interpolatedvalue(const T& oval, const T& val, const double interpfrac)
 {
@@ -1716,7 +1730,6 @@ inline TMatrix3x3<T>::TMatrix3x3(const TVector3<T> &axis, TAngle<T> degrees)
 	Cells[2][2] = T(     (t-txx-tyy) + c  );
 }
 
-
 typedef TVector2<float>		FVector2;
 typedef TVector3<float>		FVector3;
 typedef TVector4<float>		FVector4;
@@ -1736,6 +1749,7 @@ constexpr DAngle minAngle = DAngle::fromDeg(1. / 65536.);
 constexpr FAngle nullFAngle = FAngle::fromDeg(0.);
 
 constexpr DAngle DAngle1 = DAngle::fromDeg(1);
+constexpr DAngle DAngle15 = DAngle::fromDeg(15);
 constexpr DAngle DAngle22_5 = DAngle::fromDeg(22.5);
 constexpr DAngle DAngle45 = DAngle::fromDeg(45);
 constexpr DAngle DAngle60 = DAngle::fromDeg(60);
@@ -1791,6 +1805,5 @@ protected:
 	FVector3 m_normal;
 	float m_d;
 };
-
 
 #endif

@@ -222,6 +222,8 @@ bool FOBJModel::Load(const char* fn, int lumpnum, const char* buffer, int length
 	curSurface->faceStart = aggSurfFaceCount;
 	surfaces.Push(*curSurface);
 	delete curSurface;
+	hasSurfaces = surfaces.Size() > 1;
+
 
 	if (uvs.Size() == 0)
 	{ // Needed so that OBJs without UVs can work
@@ -542,7 +544,7 @@ inline FVector3 FOBJModel::RealignVector(FVector3 vecToRealign)
  */
 inline FVector2 FOBJModel::FixUV(FVector2 vecToRealign)
 {
-	vecToRealign.Y *= -1;
+	vecToRealign.Y = 1-vecToRealign.Y;
 	return vecToRealign;
 }
 

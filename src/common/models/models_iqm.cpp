@@ -5,7 +5,11 @@
 #include "texturemanager.h"
 #include "modelrenderer.h"
 #include "engineerrors.h"
-#include "r_utility.h"
+#include "dobject.h"
+#include "bonecomponents.h"
+
+IMPLEMENT_CLASS(DBoneComponents, false, false);
+
 
 IQMModel::IQMModel()
 {
@@ -430,10 +434,19 @@ void IQMModel::UnloadGeometry()
 
 int IQMModel::FindFrame(const char* name, bool nodefault)
 {
-	// This doesn't really mean all that much for IQM
+	// [MK] allow looking up frames by animation name plus offset (using a colon as separator)
+	const char* colon = strrchr(name,':');
+	size_t nlen = (colon==nullptr)?strlen(name):(colon-name);
 	for (unsigned i = 0; i < Anims.Size(); i++)
 	{
-		if (!stricmp(name, Anims[i].Name.GetChars())) return i;
+		if (!strnicmp(name, Anims[i].Name.GetChars(), nlen))
+		{
+			// if no offset is given, return the first frame
+			if (colon == nullptr) return Anims[i].FirstFrame;
+			unsigned offset = atoi(colon+1);
+			if (offset >= Anims[i].NumFrames) return FErr_NotFound;
+			return Anims[i].FirstFrame+offset;
+		}
 	}
 	return FErr_NotFound;
 }
@@ -510,17 +523,17 @@ const TArray<TRS>* IQMModel::AttachAnimationData()
 	return &TRSData;
 }
 
-const TArray<VSMatrix> IQMModel::CalculateBones(int frame1, int frame2, double inter, const TArray<TRS>& animationData, AActor* actor, int index)
+const TArray<VSMatrix> IQMModel::CalculateBones(int frame1, int frame2, double inter, const TArray<TRS>* animationData, DBoneComponents* boneComponentData, int index)
 {
-	const TArray<TRS>& animationFrames = &animationData ? animationData : TRSData;
+	const TArray<TRS>& animationFrames = animationData ? *animationData : TRSData;
 	if (Joints.Size() > 0)
 	{
 		int numbones = Joints.Size();
 
-		if (actor->boneComponentData->trscomponents[index].Size() != numbones)
-			actor->boneComponentData->trscomponents[index].Resize(numbones);
-		if (actor->boneComponentData->trsmatrix[index].Size() != numbones)
-			actor->boneComponentData->trsmatrix[index].Resize(numbones);
+		if (boneComponentData->trscomponents[index].Size() != numbones)
+			boneComponentData->trscomponents[index].Resize(numbones);
+		if (boneComponentData->trsmatrix[index].Size() != numbones)
+			boneComponentData->trsmatrix[index].Resize(numbones);
 
 		frame1 = clamp(frame1, 0, ((int)animationFrames.Size() - 1) / numbones);
 		frame2 = clamp(frame2, 0, ((int)animationFrames.Size() - 1) / numbones);
@@ -556,18 +569,18 @@ const TArray<VSMatrix> IQMModel::CalculateBones(int frame1, int frame2, double i
 
 			if (Joints[i].Parent >= 0 && modifiedBone[Joints[i].Parent])
 			{
-				actor->boneComponentData->trscomponents[index][i] = bone;
+				boneComponentData->trscomponents[index][i] = bone;
 				modifiedBone[i] = true;
 			}
-			else if (actor->boneComponentData->trscomponents[index][i].Equals(bone))
+			else if (boneComponentData->trscomponents[index][i].Equals(bone))
 			{
-				bones[i] = actor->boneComponentData->trsmatrix[index][i];
+				bones[i] = boneComponentData->trsmatrix[index][i];
 				modifiedBone[i] = false;
 				continue;
 			}
 			else
 			{
-				actor->boneComponentData->trscomponents[index][i] = bone;
+				boneComponentData->trscomponents[index][i] = bone;
 				modifiedBone[i] = true;
 			}
 
@@ -595,7 +608,7 @@ const TArray<VSMatrix> IQMModel::CalculateBones(int frame1, int frame2, double i
 			result.multMatrix(swapYZ);
 		}
 
-		actor->boneComponentData->trsmatrix[index] = bones;
+		boneComponentData->trsmatrix[index] = bones;
 
 		return bones;
 	}

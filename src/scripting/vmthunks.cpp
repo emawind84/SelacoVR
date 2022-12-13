@@ -2419,6 +2419,29 @@ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, Vec3Diff, Vec3Diff)
 	ACTION_RETURN_VEC3(VecDiff(self, DVector3(x1, y1, z1), DVector3(x2, y2, z2)));
 }
 
+DEFINE_ACTION_FUNCTION(FLevelLocals, GetDisplacement)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	PARAM_INT(pg1);
+	PARAM_INT(pg2);
+
+	DVector2 ofs(0, 0);
+	if (pg1 != pg2)
+	{
+		int i = pg1 + self->Displacements.size * pg2;
+		if (i < self->Displacements.data.Size())
+			ofs = self->Displacements.data[i].pos;
+	}
+
+	ACTION_RETURN_VEC2(ofs);
+}
+
+DEFINE_ACTION_FUNCTION(FLevelLocals, GetPortalGroupCount)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	ACTION_RETURN_INT(self->Displacements.size);
+}
+
 void SphericalCoords(FLevelLocals *self, double vpX, double vpY, double vpZ, double tX, double tY, double tZ, double viewYaw, double viewPitch, int absolute, DVector3 *result)
 {
 	
@@ -2450,6 +2473,19 @@ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, SphericalCoords, SphericalCoords)
 	ACTION_RETURN_VEC3(result);
 }
 
+static void LookupString(FLevelLocals *level, uint32_t index, FString *res)
+{
+	*res = level->Behaviors.LookupString(index);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, LookupString, LookupString)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	PARAM_UINT(index);
+	FString res;
+	LookupString(self, index, &res);
+	ACTION_RETURN_STRING(res);
+}
 
 static int isFrozen(FLevelLocals *self)
 {

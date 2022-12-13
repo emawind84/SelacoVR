@@ -343,6 +343,7 @@ static FFlagDef ActorFlagDefs[]=
 	DEFINE_FLAG(MF8, CROSSLINECHECK, AActor, flags8),
 	DEFINE_FLAG(MF8, MASTERNOSEE, AActor, flags8),
 	DEFINE_FLAG(MF8, ADDLIGHTLEVEL, AActor, flags8),
+	DEFINE_FLAG(MF8, ONLYSLAMSOLID, AActor, flags8),
 
 	// Effect flags
 	DEFINE_FLAG(FX, VISIBILITYPULSE, AActor, effects),
@@ -781,6 +782,10 @@ void InitThingdef()
 	auto fltd = NewStruct("FLineTraceData", nullptr);
 	fltd->Size = sizeof(FLineTraceData);
 	fltd->Align = alignof(FLineTraceData);
+
+	auto fspp = NewStruct("FSpawnParticleParams", nullptr);
+	fspp->Size = sizeof(FSpawnParticleParams);
+	fspp->Align = alignof(FSpawnParticleParams);
 }
 
 void SynthesizeFlagFields()

@@ -47,8 +47,7 @@
 #include "g_level.h"
 #include "tflags.h"
 #include "portal.h"
-#include "matrix.h"
-#include "TRS.h"
+#include "bonecomponents.h"
 
 struct subsector_t;
 struct FBlockNode;
@@ -430,6 +429,7 @@ enum ActorFlag8
 	MF8_CROSSLINECHECK	= 0x10000000,	// [MC]Enables CanCrossLine virtual
 	MF8_MASTERNOSEE		= 0x20000000,	// Don't show object in first person if their master is the current camera.
 	MF8_ADDLIGHTLEVEL	= 0x40000000,	// [MC] Actor light level is additive with sector.
+	MF8_ONLYSLAMSOLID	= 0x80000000,	// [B] Things with skullfly will ignore non-solid Actors.
 };
 
 // --- mobj.renderflags ---
@@ -691,16 +691,6 @@ public:
 	virtual void Serialize(FSerializer& arc) override;
 };
 
-class DBoneComponents : public DObject
-{
-	DECLARE_CLASS(DBoneComponents, DObject);
-public:
-	TArray<TArray<TRS>>			trscomponents;
-	TArray<TArray<VSMatrix>>	trsmatrix;
-
-	DBoneComponents() = default;
-};
-
 class DViewPosition : public DObject
 {
 	DECLARE_CLASS(DViewPosition, DObject);
@@ -820,6 +810,9 @@ public:
 	// plays bouncing sound
 	void PlayBounceSound(bool onfloor);
 
+	// plays pushing sound
+	void PlayPushSound();
+
 	// Called when an actor with MF_MISSILE and MF2_FLOORBOUNCE hits the floor
 	bool FloorBounceMissile (secplane_t &plane);
 
@@ -930,6 +923,8 @@ public:
 	void SetPitch(DAngle p, int fflags);
 	void SetAngle(DAngle ang, int fflags);
 	void SetRoll(DAngle roll, int fflags);
+
+	// These also set CF_INTERPVIEWANGLES for players.
 	void SetViewPitch(DAngle p, int fflags);
 	void SetViewAngle(DAngle ang, int fflags);
 	void SetViewRoll(DAngle roll, int fflags);
@@ -1239,15 +1234,15 @@ public:
 	uint32_t BloodTranslation;
 
 	// [RH] Stuff that used to be part of an Actor Info
-	FSoundIDNoInit SeeSound;
-	FSoundIDNoInit AttackSound;
-	FSoundIDNoInit PainSound;
-	FSoundIDNoInit DeathSound;
-	FSoundIDNoInit ActiveSound;
-	FSoundIDNoInit UseSound;		// [RH] Sound to play when an actor is used.
-	FSoundIDNoInit BounceSound;
-	FSoundIDNoInit WallBounceSound;
-	FSoundIDNoInit CrushPainSound;
+	FSoundID SeeSound;
+	FSoundID AttackSound;
+	FSoundID PainSound;
+	FSoundID DeathSound;
+	FSoundID ActiveSound;
+	FSoundID UseSound;		// [RH] Sound to play when an actor is used.
+	FSoundID BounceSound;
+	FSoundID WallBounceSound;
+	FSoundID CrushPainSound;
 
 	double MaxDropOffHeight;
 	double MaxStepHeight;
