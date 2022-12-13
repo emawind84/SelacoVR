@@ -323,7 +323,7 @@ const SDLInputJoystickBase::DefaultAxisConfig SDLInputJoystick::DefaultAxes[5] =
 	{ 0.234f, JOYAXIS_Forward,	1,		0.25f },
 	{ 0.117f, JOYAXIS_None,		1,		0.0f  },
 	{ 0.265f, JOYAXIS_Yaw,		1,		0.25f },
-	{ 0.265f, JOYAXIS_Pitch,	0.51,	0.25f }
+	{ 0.265f, JOYAXIS_Pitch,	0.4,	0.25f }
 };
 
 

@@ -91,6 +91,11 @@ CUSTOM_CVAR(Int, joy_xinput_squaremove, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
 	if (self < 0) self = 0;
 }
 
+CUSTOM_CVAR(Int, joy_xinput_squarelook, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
+	if (self > 2) self = 2;
+	if (self < 0) self = 0;
+}
+
 // TYPES -------------------------------------------------------------------
 
 typedef DWORD (WINAPI *XInputGetStateType)(DWORD index, XINPUT_STATE *state);
@@ -246,7 +251,7 @@ FXInputController::DefaultAxisConfig FXInputController::DefaultAxes[NUM_AXES] =
 	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f,		JOYAXIS_Side,		1,		0.25f },	// ThumbLX
 	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f,		JOYAXIS_Forward,	1,		0.25f },	// ThumbLY
 	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Yaw,		1,		0.5f },		// ThumbRX
-	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Pitch,		0.55f,	0.5f },		// ThumbRY
+	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Pitch,		0.4f,	0.5f },		// ThumbRY
 	{ XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 256.f,			JOYAXIS_None,		0,		0 },		// LeftTrigger
 	{ XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 256.f,			JOYAXIS_None,		0,		0 }			// RightTrigger
 };
@@ -360,9 +365,41 @@ void FXInputController::ProcessInput()
 			}
 		}
 	}
-	
-	
 
+	// Find the two axis for looking
+	if (joy_xinput_squarelook > 0) {
+		AxisInfo *lookYaw = NULL, *lookPitch = NULL;
+		int axisPitch = -1, axisYaw = -1;
+		for (int x = 0; x < NUM_AXES; x++) {
+			if (Axes[x].GameAxis == JOYAXIS_Yaw) {
+				lookYaw = &Axes[x];
+				axisYaw = x;
+			}
+			else if (Axes[x].GameAxis == JOYAXIS_Pitch) {
+				lookPitch = &Axes[x];
+				axisPitch = x;
+			}
+		}
+
+		// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squarelook
+		if (lookPitch && lookYaw && (
+			joy_xinput_squaremove > 1 ||
+			((axisPitch == AXIS_ThumbLX || axisPitch == AXIS_ThumbLY) && (axisYaw == AXIS_ThumbLX || axisYaw == AXIS_ThumbLY)) ||
+			((axisPitch == AXIS_ThumbRX || axisPitch == AXIS_ThumbRY) && (axisYaw == AXIS_ThumbRX || axisYaw == AXIS_ThumbRY))
+			)) {
+
+			// We share a physical stick, so let's un-circularize the inputs
+			float x = lookYaw->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
+			float y = lookPitch->Value * 1.15f;
+			float r = sqrt(x*x + y * y);
+			float maxMove = max(abs(x), abs(y));
+			if (maxMove > 0) {
+				lookPitch->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
+				lookYaw->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
+			}
+		}
+	}
+	
 
 	if (state.dwPacketNumber == LastPacketNumber)
 	{ // Nothing has changed since last time.
@@ -451,7 +488,6 @@ void FXInputController::ProcessThumbstick(int value1, AxisInfo *axis1,
 	axisval1 = Joy_RemoveDeadZone(axisval1, axis1->DeadZone, NULL);
 	axisval2 = Joy_RemoveDeadZone(axisval2, axis2->DeadZone, NULL);
 
-	// Add to the queue
 	ProcessAcceleration(axis1, (float)axisval1);
 	ProcessAcceleration(axis2, (float)axisval2);
 
