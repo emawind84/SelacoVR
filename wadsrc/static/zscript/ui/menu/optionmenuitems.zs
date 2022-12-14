@@ -105,16 +105,21 @@ class OptionMenuItem : MenuItemBase
 class OptionMenuItemSubmenu : OptionMenuItem
 {
 	int mParam;
-	OptionMenuItemSubmenu Init(String label, Name command, int param = 0, bool centered = false)
+	int mColor;
+
+	OptionMenuItemSubmenu Init(String label, Name command, int param = 0, bool centered = false, int cr = -1)
 	{
 		Super.init(label, command, centered);
 		mParam = param;
+		mColor = OptionMenuSettings.mFontColorMore;
+		if ((cr & 0xffff0000) == 0x12340000) mColor = cr & 0xffff;
+		else if (cr > 0) mColor = OptionMenuSettings.mFontColorHeader;
 		return self;
 	}
 
 	override int Draw(OptionMenuDescriptor desc, int y, int indent, bool selected)
 	{
-		int x = drawLabel(indent, y, selected? OptionMenuSettings.mFontColorSelection : OptionMenuSettings.mFontColorMore);
+		int x = drawLabel(indent, y, selected? OptionMenuSettings.mFontColorSelection : mColor);
 		if (mCentered) 
 		{
 			return x - 16*CleanXfac_1;
