@@ -153,6 +153,7 @@ FGameConfigFile::FGameConfigFile ()
 	if (!SetSection ("FileSearch.Directories"))
 	{
 		SetSection ("FileSearch.Directories", true);
+		SetValueForKey ("Path", ".", true);
 #ifdef __APPLE__
 		SetValueForKey ("Path", user_docs, true);
 		SetValueForKey ("Path", user_app_support, true);
@@ -810,10 +811,13 @@ FString FGameConfigFile::GetConfigPath (bool tryProg)
 {
 	const char *pathval;
 
-	pathval = Args->CheckValue ("-config");
-	if (pathval != NULL)
+	if (Args != NULL)
 	{
-		return FString(pathval);
+		pathval = Args->CheckValue ("-config");
+		if (pathval != NULL)
+		{
+			return FString(pathval);
+		}
 	}
 	return M_GetConfigPath(tryProg);
 }
