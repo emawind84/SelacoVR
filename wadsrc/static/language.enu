@@ -1731,6 +1731,7 @@ OPTMNU_UPDATEMISSING		= "Update missing defaults";
 OPTMNU_RESETTOSAVED			= "Reset to last saved";
 OPTMNU_CONSOLE				= "Go to console";
 OPTMNU_REVERB				= "Reverb environment editor";
+OPTMNU_EXPERIMENTAL			= "Experimental Options";
 OS_TITLE					= "Option Search";
 OS_ANY						= "Search for any term";
 OS_ALL						= "Search for all terms";
@@ -2035,6 +2036,7 @@ MISCMNU_PISTOLSTART				= "Pistol start (Doom)";
 MISCMNU_DISABLEAUTOLOAD			= "Disable autoload";
 MISCMNU_LOADLIGHTS				= "Load light definitions";
 MISCMNU_LOADBRIGHTMAPS			= "Load brightmap definitions";
+MISCMNU_SHOWEXPERIMENTAL		= "Show experimental options";
 
 // Automap Options
 AUTOMAPMNU_TITLE				= "AUTOMAP OPTIONS";

@@ -362,6 +362,10 @@ OptionMenu "OptionsMenu" protected
 	SafeCommand "$OPTMNU_DEFAULTS",	    "reset2defaults"
 	SafeCommand	"$OPTMNU_RESETTOSAVED",	"reset2saved"
 	Command "$OPTMNU_CONSOLE",			"menuconsole"
+	IfOption(Experimental)
+	{
+		Submenu "$OPTMNU_EXPERIMENTAL",	"ExperimentalMenu"
+	}
 	StaticText " "
 	LabeledSubmenu "Profile", "cmdlineprofile", "CommandLineProfileMenu"
 	SafeCommand "Apply profile", "qzd_restart"
@@ -1257,6 +1261,7 @@ OptionMenu "MiscOptions" protected
 		Option	"$DSPLYMNU_SHOWENDOOM",			"showendoom", "Endoom"
 	}
 	Option "$MISCMNU_HIDEEXTREME",				"menu_hideextreme", "OnOff"
+	Option "$MISCMNU_SHOWEXPERIMENTAL",			"menu_showexperimental", "OnOff"
 	StaticText " "
 	Option "$MISCMNU_ALWAYSTALLY",				"sv_alwaystally", "AlwaysTally"
 	StaticText " "
@@ -3193,4 +3198,11 @@ OptionMenu "QuestZDoomCredits"
 	StaticText	""
 	StaticText	"ALSO WE WANT TO THANK ALL DEDICATED"
 	StaticText	"CLOSED BETA TESTERS!"
+}
+
+OptionMenu "ExperimentalMenu"
+{
+	Title "Experimental"
+	StaticText "Features in development", "Brown"
+	StaticText ""
 }
