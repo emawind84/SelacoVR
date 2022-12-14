@@ -62,8 +62,15 @@
 
 
 CVAR(Bool, menu_hideextreme, false, CVAR_ARCHIVE)
-CVAR(Bool, menu_showexperimental, false, CVAR_ARCHIVE)
 CVAR(String, cmdlineprofile, "", CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CUSTOM_CVAR(Bool, menu_showexperimental, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
+{
+	DeinitMenus();
+	M_Init();
+	M_StartControlPanel (true);
+	M_SetMenu(NAME_Optionsmenu, -1);
+	Printf("Experimental menu has been %s\n", self ? "enabled" : "disabled");
+}
 
 void ClearSaveGames();
 

@@ -353,6 +353,7 @@ void M_RefreshModesList ();
 void M_InitVideoModesMenu ();
 void M_MarkMenus();
 void M_ResetButtonStates();
+void DeinitMenus();
 
 
 struct IJoystickConfig;
