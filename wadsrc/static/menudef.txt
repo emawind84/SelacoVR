@@ -338,16 +338,16 @@ DefaultOptionMenu
 OptionMenu CommandLineProfileMenu protected
 {
 	Title "Select profile"
-	StaticText "To add a profile to the list"
-	StaticText "create a new file named"
-	StaticText "commandline_<profile name>.txt", gold
-	StaticText "place it in your QuestZDoom folder"
-	StaticText "alongside the wads and mods folders."
+	StaticText "To add a profile to the list", brown
+	StaticText "create a new file named", brown
+	StaticText "commandline_<profile name>.txt", cream
+	StaticText "place it in your QuestZDoom folder", brown
+	StaticText "alongside the wads and mods folders.", brown
 	StaticText ""
-	StaticText "You can replace the displayed name"
-	StaticText "with a custom title by adding a line"
-	StaticText "at the top of the file defined as:"
-	StaticText "#TITLE My custom profile", gold
+	StaticText "You can replace the displayed name", brown
+	StaticText "with a custom title by adding a line", brown
+	StaticText "at the top of the file defined as:", brown
+	StaticText "#TITLE My custom profile", cream
 	StaticText ""
 }
 
@@ -369,14 +369,14 @@ OptionMenu "OptionsMenu" protected
 	Submenu "$OPTMNU_NETWORK",			"NetworkOptions"
 	Submenu "$OPTMNU_SOUND",			"SoundOptions"
 	Submenu "$OPTMNU_DISPLAY",			"VideoOptions"
+	IfOption(Experimental)
+	{
+		Submenu "$OPTMNU_EXPERIMENTAL",	"ExperimentalMenu", 0, 0, Gold
+	}
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS",	    "reset2defaults"
 	SafeCommand	"$OPTMNU_RESETTOSAVED",	"reset2saved"
 	Command "$OPTMNU_CONSOLE",			"menuconsole"
-	IfOption(Experimental)
-	{
-		Submenu "$OPTMNU_EXPERIMENTAL",	"ExperimentalMenu"
-	}
 	StaticText " "
 }
 
@@ -3208,7 +3208,7 @@ OptionMenu "QuestZDoomCredits"
 OptionMenu "ExperimentalMenu"
 {
 	Title "Experimental"
-	StaticText "Features in development", "Brown"
+	StaticText "Features in development", "Gold"
 	StaticText ""
 	LabeledSubmenu "Active profile", "cmdlineprofile", "CommandLineProfileMenu"
 	SafeCommand "Apply profile", "qzd_restart"
