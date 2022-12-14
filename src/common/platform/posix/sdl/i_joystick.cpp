@@ -54,6 +54,11 @@ CUSTOM_CVAR(Int, joy_sdl_squaremove, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
 	if (self < 0) self = 0;
 }
 
+CUSTOM_CVAR(Int, joy_sdl_squarelook, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
+	if (self > 2) self = 2;
+	if (self < 0) self = 0;
+}
+
 void PostDeviceChangeEvent() {
 	event_t event = { EV_DeviceChange };
 	D_PostEvent(&event);
@@ -181,6 +186,34 @@ public:
 		}
 	}
 
+
+	inline void SquareStick(EJoyAxis axisX, EJoyAxis axisY) {
+		// Find the two axes for directional movement
+		AxisInfo *axisXInfo = NULL, *axisYInfo = NULL;
+		for (int x = 0; x < NumAxes; x++) {
+			if (Axes[x].GameAxis == axisY) {
+				axisYInfo = &Axes[x];
+			}
+			else if (Axes[x].GameAxis == axisX) {
+				axisXInfo = &Axes[x];
+			}
+		}
+
+		if (axisXInfo && axisYInfo) {
+			
+			// Assume for now we share a physical stick, so let's un-circularize the inputs
+			float x = axisXInfo->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
+			float y = axisYInfo->Value * 1.15f;
+			float r = sqrt(x*x + y * y);
+			float maxMove = max(abs(x), abs(y));
+			if (maxMove > 0) {
+				axisYInfo->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
+				axisXInfo->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
+			}
+		}
+	}
+
+
 	void ProcessInput()
 	{
 		uint8_t buttonstate;
@@ -258,31 +291,13 @@ public:
 			}
 		}
 
-		// Find the two axes for directional movement
-		if (joy_sdl_squaremove > 1) {
-			AxisInfo *moveSide = NULL, *moveForward = NULL;
-			for (int x = 0; x < NumAxes; x++) {
-				if (Axes[x].GameAxis == JOYAXIS_Forward) {
-					moveForward = &Axes[x];
-				}
-				else if (Axes[x].GameAxis == JOYAXIS_Side) {
-					moveSide = &Axes[x];
-				}
-			}
+		// Square inputs if desired
+		if(joy_sdl_squarelook > 0) {
+			SquareStick(JOYAXIS_Yaw, JOYAXIS_Pitch);
+		}
 
-			// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squaremove
-			if (moveSide && moveForward) {
-
-				// We share a physical stick, so let's un-circularize the inputs
-				float x = moveSide->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
-				float y = moveForward->Value * 1.15f;
-				float r = sqrt(x*x + y * y);
-				float maxMove = max(abs(x), abs(y));
-				if (maxMove > 0) {
-					moveForward->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
-					moveSide->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
-				}
-			}
+		if(joy_sdl_squaremove > 0) {
+			SquareStick(JOYAXIS_Side, JOYAXIS_Forward);
 		}
 	}
 
@@ -485,6 +500,39 @@ public:
 		M_LoadJoystickConfig(this);
 	}
 
+	inline void SquareStick(EJoyAxis axisX, EJoyAxis axisY, int cv) {
+		AxisInfo *axisYInfo = NULL, *axisXInfo = NULL;
+		int axisSide = -1, axisForward = -1;
+		for (int x = 0; x < NumAxes; x++) {
+			if (Axes[x].GameAxis == axisY) {
+				axisXInfo = &Axes[x];
+				axisForward = x;
+			}
+			else if (Axes[x].GameAxis == axisX) {
+				axisYInfo = &Axes[x];
+				axisSide = x;
+			}
+		}
+
+		// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squaremove
+		if (axisYInfo && axisXInfo && (
+			cv > 1 ||
+			((axisSide == SDL_CONTROLLER_AXIS_LEFTX || axisSide == SDL_CONTROLLER_AXIS_LEFTY) && (axisForward == SDL_CONTROLLER_AXIS_LEFTX || axisForward == SDL_CONTROLLER_AXIS_LEFTY)) ||
+			((axisSide == SDL_CONTROLLER_AXIS_RIGHTX || axisSide == SDL_CONTROLLER_AXIS_RIGHTY) && (axisForward == SDL_CONTROLLER_AXIS_RIGHTX || axisForward == SDL_CONTROLLER_AXIS_RIGHTY))
+			)) {
+
+			// We share a physical stick, so let's un-circularize the inputs
+			float x = axisYInfo->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
+			float y = axisXInfo->Value * 1.15f;
+			float r = sqrt(x*x + y * y);
+			float maxMove = max(abs(x), abs(y));
+			if (maxMove > 0) {
+				axisXInfo->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
+				axisYInfo->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
+			}
+		}
+	}
+
 	void ProcessInput()
 	{
 		uint8_t buttonstate;
@@ -511,38 +559,12 @@ public:
 		ProcessTrigger(SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_TRIGGERLEFT)/32767.0, &Axes[SDL_CONTROLLER_AXIS_TRIGGERLEFT], KEY_PAD_LTRIGGER);
 		ProcessTrigger(SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_TRIGGERRIGHT)/32767.0, &Axes[SDL_CONTROLLER_AXIS_TRIGGERRIGHT], KEY_PAD_RTRIGGER);
 
-		// Find the two axes for directional movement
-		if (joy_sdl_squaremove > 0) {
-			AxisInfo *moveSide = NULL, *moveForward = NULL;
-			int axisSide = -1, axisForward = -1;
-			for (int x = 0; x < NumAxes; x++) {
-				if (Axes[x].GameAxis == JOYAXIS_Forward) {
-					moveForward = &Axes[x];
-					axisForward = x;
-				}
-				else if (Axes[x].GameAxis == JOYAXIS_Side) {
-					moveSide = &Axes[x];
-					axisSide = x;
-				}
-			}
+		if(joy_sdl_squarelook > 0) {
+			SquareStick(JOYAXIS_Yaw, JOYAXIS_Pitch, joy_sdl_squarelook);
+		}
 
-			// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squaremove
-			if (moveSide && moveForward && (
-				joy_sdl_squaremove > 1 ||
-				((axisSide == SDL_CONTROLLER_AXIS_LEFTX || axisSide == SDL_CONTROLLER_AXIS_LEFTY) && (axisForward == SDL_CONTROLLER_AXIS_LEFTX || axisForward == SDL_CONTROLLER_AXIS_LEFTY)) ||
-				((axisSide == SDL_CONTROLLER_AXIS_RIGHTX || axisSide == SDL_CONTROLLER_AXIS_RIGHTY) && (axisForward == SDL_CONTROLLER_AXIS_RIGHTX || axisForward == SDL_CONTROLLER_AXIS_RIGHTY))
-				)) {
-
-				// We share a physical stick, so let's un-circularize the inputs
-				float x = moveSide->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
-				float y = moveForward->Value * 1.15f;
-				float r = sqrt(x*x + y * y);
-				float maxMove = max(abs(x), abs(y));
-				if (maxMove > 0) {
-					moveForward->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
-					moveSide->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
-				}
-			}
+		if(joy_sdl_squaremove > 0) {
+			SquareStick(JOYAXIS_Side, JOYAXIS_Forward, joy_sdl_squaremove);
 		}
 	}
 
