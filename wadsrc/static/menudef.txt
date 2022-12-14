@@ -338,8 +338,8 @@ DefaultOptionMenu
 OptionMenu "OptionsMenu" protected
 {
 	Title "$OPTMNU_TITLE"
-	Submenu "Info & Credits", 			"questZdoomInfo"
-	Submenu "Quick Menu",				"QZDOptionsMenu"
+	Submenu "Info & Credits", 			"InfoAndCreditsMenu"
+	Submenu "Quick Menu",				"QuickMenu"
 	Submenu "VR Options",				"VROptionsMenu"
 	StaticText " "
 	Submenu "$OPTMNU_CONTROLS",			"CustomizeControls"
@@ -3043,7 +3043,8 @@ OptionValue "os_isanyof_values"
  * QZD Quick Menu
  *
  *=======================================*/
-OptionMenu QZDOptionsMenu protected
+
+OptionMenu QuickMenu protected
 {
 	Title "QUESTZDOOM Quick Menu"
 
@@ -3085,7 +3086,13 @@ OptionMenu QZDOptionsMenu protected
 	StaticText "for a specific session/playthrough.", "Brown"
 }
 
-OptionMenu "questZdoomInfo"
+/*=======================================
+ *
+ * QZD Info and credits
+ *
+ *=======================================*/
+
+ OptionMenu "InfoAndCreditsMenu"
 { 
 	//Title		"QUESTZDOOM INFO AND CREDITS"
 	StaticPatch 52, 4, "QZDOOM"
@@ -3094,17 +3101,7 @@ OptionMenu "questZdoomInfo"
 	Submenu		"CREDITS", "QuestZDoomCredits", 0, 1
 }
 
-//-------------------------------------------------------------------------------------------
-//
-//----> QUESTZDOOM
-//
-//-------------------------------------------------------------------------------------------
-//
-//	INFORMATION AND INSTRUCTIONS FOR QUESTZDOOM
-//
-//-------------------------------------------------------------------------------------------
-
-OptionMenu "questZdoomInst"
+OptionMenu "QuestZDoomInstructions"
 { 
 	//Title		"QUESTZDOOM INFO AND CREDITS"
 	StaticPatch 52, 4, "QZDOOM"
@@ -3141,13 +3138,7 @@ OptionMenu "questZdoomInst"
 	StaticText	""
 }
 
-//-------------------------------------------------------------------------------------------
-//
-//	CREDITS FOR QUESTZDOOM
-//
-//-------------------------------------------------------------------------------------------
-
-OptionMenu "questZdoomCredits"
+OptionMenu "QuestZDoomCredits"
 { 
 	//Title		"QUESTZDOOM INFO AND CREDITS"
 	StaticPatch 52, 4, "QZDOOM"
