@@ -338,6 +338,17 @@ DefaultOptionMenu
 OptionMenu CommandLineProfileMenu protected
 {
 	Title "Select profile"
+	StaticText "To add a profile to the list"
+	StaticText "create a new file named"
+	StaticText "commandline_<profile name>.txt", gold
+	StaticText "place it in your QuestZDoom folder"
+	StaticText "alongside the wads and mods folders."
+	StaticText ""
+	StaticText "You can replace the displayed name"
+	StaticText "with a custom title by adding a line"
+	StaticText "at the top of the file defined as:"
+	StaticText "#TITLE My custom profile", gold
+	StaticText ""
 }
 
 OptionMenu "OptionsMenu" protected
@@ -367,8 +378,6 @@ OptionMenu "OptionsMenu" protected
 		Submenu "$OPTMNU_EXPERIMENTAL",	"ExperimentalMenu"
 	}
 	StaticText " "
-	LabeledSubmenu "Profile", "cmdlineprofile", "CommandLineProfileMenu"
-	SafeCommand "Apply profile", "qzd_restart"
 }
 
 // Fake simplified menu
@@ -1264,10 +1273,6 @@ OptionMenu "MiscOptions" protected
 	Option "$MISCMNU_SHOWEXPERIMENTAL",			"menu_showexperimental", "OnOff"
 	StaticText " "
 	Option "$MISCMNU_ALWAYSTALLY",				"sv_alwaystally", "AlwaysTally"
-	StaticText " "
-	Option "Use action spawn offset", "use_action_spawn_yzoffset", "YesNo"
-	StaticText "Use horizontal and vertical spawn offset", "Brown"
-	StaticText "for projectile, missile and hitscan attacks.", "Brown"
 	StaticText ""
 	Option "Show FPS on HUD",		                "vid_fps", "OnOff"
 	Option "Lock FrameRate (IF LOW PERF.)",         "cl_capfps", "OnOff"
@@ -3205,4 +3210,10 @@ OptionMenu "ExperimentalMenu"
 	Title "Experimental"
 	StaticText "Features in development", "Brown"
 	StaticText ""
+	LabeledSubmenu "Active profile", "cmdlineprofile", "CommandLineProfileMenu"
+	SafeCommand "Apply profile", "qzd_restart"
+	StaticText " "
+	Option "Use action spawn offset", "use_action_spawn_yzoffset", "YesNo"
+	StaticText "Use horizontal and vertical spawn offset", "Brown"
+	StaticText "for projectile, missile and hitscan attacks.", "Brown"
 }
