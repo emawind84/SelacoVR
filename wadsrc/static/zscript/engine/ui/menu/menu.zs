@@ -152,6 +152,7 @@ class Menu : Object native ui version("2.4")
 	native bool DontBlur;
 	native float BlurAmount;	// -1 = Ignored, > 0 = Force this much blur regardless of settings
 	native bool AnimatedTransition;
+	native bool ReceiveAllInputEvents;
 	native bool Animated;
 
 	native static int MenuTime();
@@ -177,6 +178,7 @@ class Menu : Object native ui version("2.4")
 		DontBlur = false;
 		BlurAmount = -1;
 		AnimatedTransition = false;
+		ReceiveAllInputEvents = false;
 		Animated = false;
 	}
 
