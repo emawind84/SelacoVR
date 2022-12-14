@@ -105,6 +105,8 @@
 #include "s_music.h"
 #include "swrenderer/r_swcolormaps.h"
 
+#include <QzDoom/VrCommon.h>
+
 EXTERN_CVAR(Bool, hud_althud)
 EXTERN_CVAR(Bool, cl_customizeinvulmap)
 void DrawHUD();
@@ -3143,6 +3145,13 @@ UNSAFE_CCMD(restart)
 
 	wantToRestart = true;
 }
+
+CCMD(qzd_restart)
+{
+	D_Cleanup();
+	QzDoom_Restart();
+}
+
 
 //==========================================================================
 //
