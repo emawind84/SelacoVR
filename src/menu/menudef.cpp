@@ -62,6 +62,7 @@
 
 
 CVAR(Bool, menu_hideextreme, false, CVAR_ARCHIVE)
+CVAR(Bool, menu_showexperimental, false, CVAR_ARCHIVE)
 CVAR(String, cmdlineprofile, "", CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 void ClearSaveGames();
@@ -234,6 +235,7 @@ static bool CheckSkipOptionBlock(FScanner &sc)
 		sc.MustGetString();
 		if (sc.Compare("ReadThis")) filter |= gameinfo.drawreadthis;
 		else if (sc.Compare("Swapmenu")) filter |= gameinfo.swapmenu;
+		else if (sc.Compare("Experimental")) filter |= menu_showexperimental;
 		else if (sc.Compare("Windows"))
 		{
 			#ifdef _WIN32
