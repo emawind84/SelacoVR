@@ -635,7 +635,7 @@ const SDLInputJoystickBase::DefaultAxisConfig SDLInputGamepad::DefaultAxes[6] = 
 	{ 0.234f,		JOYAXIS_Side,		1,		0.25f },	// ThumbLX
 	{ 0.234f,		JOYAXIS_Forward,	1,		0.25f },	// ThumbLY
 	{ 0.265f,		JOYAXIS_Yaw,		1,		0.5f },		// ThumbRX
-	{ 0.265f,		JOYAXIS_Pitch,		0.51f,	0.5f },		// ThumbRY
+	{ 0.265f,		JOYAXIS_Pitch,		0.4f,	0.5f },		// ThumbRY
 	{ 0.117,		JOYAXIS_None,		0,		0 },		// LeftTrigger
 	{ 0.117,		JOYAXIS_None,		0,		0 }			// RightTrigger
 };
