@@ -135,7 +135,7 @@ CVAR(Float, am_linealpha, 1.0f, CVAR_ARCHIVE)
 CVAR(Int, am_linethickness, 1, CVAR_ARCHIVE)
 CVAR(Bool, am_thingrenderstyles, true, CVAR_ARCHIVE)
 CVAR(Int, am_showsubsector, -1, 0);
-CVAR(Float, am_playerScale, 0.25, CVAR_ARCHIVE)
+CVAR(Float, am_playerScale, 0.5, CVAR_ARCHIVE)
 
 CUSTOM_CVAR(Int, am_showalllines, -1, CVAR_NOINITCALL)	// This is a cheat so don't save it.
 {
@@ -964,7 +964,7 @@ class DAutomap :public DAutomapBase
 	mpoint_t markpoints[AM_NUMMARKPOINTS]; // where the points are
 	int markpointnum = 0; // next point to be assigned
 
-	FTextureID playerIcon; // The player icon
+	FTextureID playerIcon, playerIconOuter; // The player icon
 	FTextureID mapback;	// the automap background
 	double mapystart = 0; // y-value for the start of the map bitmap...used in the parallax stuff.
 	double mapxstart = 0; //x-value for the bitmap.
@@ -1366,11 +1366,12 @@ void DAutomap::LevelInit ()
 	}
 
 	playerIcon = TexMan.CheckForTexture("PLYRZ0", ETextureType::Any);
+	playerIconOuter = TexMan.CheckForTexture("PLYRZ1", ETextureType::Any);
 
 	clearMarks();
 
 	findMinMaxBoundaries();
-	scale_mtof = max_scale_mtof * 0.9;
+	scale_mtof = max_scale_mtof * 0.2;
 	if (scale_mtof > max_scale_mtof)
 		scale_mtof = min_scale_mtof;
 	scale_ftom = 1 / scale_mtof;
@@ -2783,9 +2784,12 @@ void DAutomap::drawPlayers ()
 		}
 		drawLineCharacter(arrow, numarrowlines, 0, angle, AMColors[AMColors.YourColor], pt.x, pt.y);*/
 		auto tex = TexMan.GetGameTexture(playerIcon, true);
+		auto tex2 = TexMan.GetGameTexture(playerIconOuter, true);
 		const double spriteXScale = am_playerScale * (10. / 16.) * scale_mtof;
 		const double spriteYScale = am_playerScale * (10. / 16.) * scale_mtof;
-		DrawMarkerRotated(tex, pos.X, pos.Y, angle.Degrees - 90.0, 0, false, spriteXScale, spriteYScale, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
+
+		DrawMarkerRotated(tex, pos.X, pos.Y, 0, 0, false, spriteXScale, spriteYScale, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
+		DrawMarkerRotated(tex2, pos.X, pos.Y, angle.Degrees - 90.0, 0, false, spriteXScale, spriteYScale, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
 
 		return;
 	}
