@@ -819,6 +819,7 @@ static TArray<mline_t> MapArrow;
 static TArray<mline_t> CheatMapArrow;
 static TArray<mline_t> CheatKey;
 static TArray<mline_t> EasyKey;
+static FTextureID AutomapPlayerIcon, AutomapPlayerIconOuter;	// The player icons, outer will be rotated around inner
 
 static std::array<mline_t, 3> thintriangle_guy = { {
 	{{-.5,-.7}, {1,0}},
@@ -884,6 +885,9 @@ void AM_StaticInit()
 		mysnprintf(namebuf, countof(namebuf), "AMMNUM%d", i);
 		marknums[i] = TexMan.CheckForTexture(namebuf, ETextureType::MiscPatch);
 	}
+
+	AutomapPlayerIcon = TexMan.CheckForTexture("PLYRZ0", ETextureType::Any);
+	AutomapPlayerIconOuter = TexMan.CheckForTexture("PLYRZ1", ETextureType::Any);
 }
 
 
@@ -964,7 +968,6 @@ class DAutomap :public DAutomapBase
 	mpoint_t markpoints[AM_NUMMARKPOINTS]; // where the points are
 	int markpointnum = 0; // next point to be assigned
 
-	FTextureID playerIcon, playerIconOuter; // The player icon
 	FTextureID mapback;	// the automap background
 	double mapystart = 0; // y-value for the start of the map bitmap...used in the parallax stuff.
 	double mapxstart = 0; //x-value for the bitmap.
@@ -1364,9 +1367,6 @@ void DAutomap::LevelInit ()
 	{
 		mapback = TexMan.CheckForTexture(Level->info->MapBackground, ETextureType::MiscPatch);
 	}
-
-	playerIcon = TexMan.CheckForTexture("PLYRZ0", ETextureType::Any);
-	playerIconOuter = TexMan.CheckForTexture("PLYRZ1", ETextureType::Any);
 
 	clearMarks();
 
@@ -2783,8 +2783,8 @@ void DAutomap::drawPlayers ()
 			numarrowlines = MapArrow.Size();
 		}
 		drawLineCharacter(arrow, numarrowlines, 0, angle, AMColors[AMColors.YourColor], pt.x, pt.y);*/
-		auto tex = TexMan.GetGameTexture(playerIcon, true);
-		auto tex2 = TexMan.GetGameTexture(playerIconOuter, true);
+		auto tex = TexMan.GetGameTexture(AutomapPlayerIcon, true);
+		auto tex2 = TexMan.GetGameTexture(AutomapPlayerIconOuter, true);
 		const double spriteXScale = am_playerScale * (10. / 16.) * scale_mtof;
 		const double spriteYScale = am_playerScale * (10. / 16.) * scale_mtof;
 
