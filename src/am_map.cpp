@@ -135,7 +135,7 @@ CVAR(Float, am_linealpha, 1.0f, CVAR_ARCHIVE)
 CVAR(Int, am_linethickness, 1, CVAR_ARCHIVE)
 CVAR(Bool, am_thingrenderstyles, true, CVAR_ARCHIVE)
 CVAR(Int, am_showsubsector, -1, 0);
-
+CVAR(Float, am_playerScale, 0.25, CVAR_ARCHIVE)
 
 CUSTOM_CVAR(Int, am_showalllines, -1, CVAR_NOINITCALL)	// This is a cheat so don't save it.
 {
@@ -964,6 +964,7 @@ class DAutomap :public DAutomapBase
 	mpoint_t markpoints[AM_NUMMARKPOINTS]; // where the points are
 	int markpointnum = 0; // next point to be assigned
 
+	FTextureID playerIcon; // The player icon
 	FTextureID mapback;	// the automap background
 	double mapystart = 0; // y-value for the start of the map bitmap...used in the parallax stuff.
 	double mapxstart = 0; //x-value for the bitmap.
@@ -995,6 +996,8 @@ class DAutomap :public DAutomapBase
 	void calcMinMaxMtoF();
 
 	void DrawMarker(FGameTexture *tex, double x, double y, int yadjust,
+		INTBOOL flip, double xscale, double yscale, int translation, double alpha, uint32_t fillcolor, FRenderStyle renderstyle);
+	void DrawMarkerRotated(FGameTexture *tex, double x, double y, double angle, int yadjust,
 		INTBOOL flip, double xscale, double yscale, int translation, double alpha, uint32_t fillcolor, FRenderStyle renderstyle);
 
 	void rotatePoint(double *x, double *y);
@@ -1178,8 +1181,8 @@ void DAutomap::findMinMaxBoundaries ()
 	max_w = max_x - min_x;
 	max_h = max_y - min_y;
 
-	min_w = 2*PLAYERRADIUS; // const? never changed?
-	min_h = 2*PLAYERRADIUS;
+	min_w = 512;//2*PLAYERRADIUS; // const? never changed?
+	min_h = 512;//2*PLAYERRADIUS;
 
 	calcMinMaxMtoF();
 }
@@ -1197,7 +1200,7 @@ void DAutomap::calcMinMaxMtoF()
 	double b = safe_frame * (StatusBar->GetTopOfStatusbar() / max_h);
 
 	min_scale_mtof = a < b ? a : b;
-	max_scale_mtof = twod->GetHeight() / (2*PLAYERRADIUS);
+	max_scale_mtof = twod->GetHeight() / 512.0;//(2*PLAYERRADIUS);
 }
 
 //=============================================================================
@@ -1362,10 +1365,12 @@ void DAutomap::LevelInit ()
 		mapback = TexMan.CheckForTexture(Level->info->MapBackground, ETextureType::MiscPatch);
 	}
 
+	playerIcon = TexMan.CheckForTexture("PLYRZ0", ETextureType::Any);
+
 	clearMarks();
 
 	findMinMaxBoundaries();
-	scale_mtof = min_scale_mtof / 0.7;
+	scale_mtof = max_scale_mtof * 0.9;
 	if (scale_mtof > max_scale_mtof)
 		scale_mtof = min_scale_mtof;
 	scale_ftom = 1 / scale_mtof;
@@ -2749,24 +2754,24 @@ void DAutomap::drawPlayers ()
 
 	if (!multiplayer)
 	{
-		mline_t *arrow;
-		int numarrowlines;
+		//mline_t *arrow;
+		//int numarrowlines;
 
 		double vh = players[consoleplayer].viewheight;
 		DVector2 pos = players[consoleplayer].camera->InterpolatedPosition(r_viewpoint.TicFrac);
-		pt.x = pos.X;
-		pt.y = pos.Y;
+		/*pt.x = pos.X;
+		pt.y = pos.Y;*/
 		if (am_rotate == 1 || (am_rotate == 2 && viewactive))
 		{
 			angle = 90.;
-			rotatePoint (&pt.x, &pt.y);
+			//rotatePoint (&pt.x, &pt.y);
 		}
 		else
 		{
 			angle = players[consoleplayer].camera->InterpolatedAngles(r_viewpoint.TicFrac).Yaw;
 		}
 		
-		if (am_cheat != 0 && CheatMapArrow.Size() > 0)
+		/*if (am_cheat != 0 && CheatMapArrow.Size() > 0)
 		{
 			arrow = &CheatMapArrow[0];
 			numarrowlines = CheatMapArrow.Size();
@@ -2776,7 +2781,12 @@ void DAutomap::drawPlayers ()
 			arrow = &MapArrow[0];
 			numarrowlines = MapArrow.Size();
 		}
-		drawLineCharacter(arrow, numarrowlines, 0, angle, AMColors[AMColors.YourColor], pt.x, pt.y);
+		drawLineCharacter(arrow, numarrowlines, 0, angle, AMColors[AMColors.YourColor], pt.x, pt.y);*/
+		auto tex = TexMan.GetGameTexture(playerIcon, true);
+		const double spriteXScale = am_playerScale * (10. / 16.) * scale_mtof;
+		const double spriteYScale = am_playerScale * (10. / 16.) * scale_mtof;
+		DrawMarkerRotated(tex, pos.X, pos.Y, angle.Degrees - 90.0, 0, false, spriteXScale, spriteYScale, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
+
 		return;
 	}
 
@@ -3047,6 +3057,41 @@ void DAutomap::DrawMarker (FGameTexture *tex, double x, double y, int yadjust,
 		DTA_FillColor, fillcolor,
 		DTA_RenderStyle, renderstyle.AsDWORD,
 		DTA_BilinearFilter, true,
+		TAG_DONE);
+}
+
+
+void DAutomap::DrawMarkerRotated(FGameTexture *tex, double x, double y, double angle, int yadjust,
+	INTBOOL flip, double xscale, double yscale, int translation, double alpha, uint32_t fillcolor, FRenderStyle renderstyle)
+{
+	if (tex == nullptr || !tex->isValid())
+	{
+		return;
+	}
+	if (xscale < 0)
+	{
+		flip = !flip;
+		xscale = -xscale;
+	}
+	if (am_rotate == 1 || (am_rotate == 2 && viewactive))
+	{
+		rotatePoint(&x, &y);
+	}
+
+	DrawTexture(twod, tex, CXMTOF(x) + f_x, CYMTOF(y) + yadjust + f_y,
+		DTA_DestWidthF, tex->GetDisplayWidth() * CleanXfac * xscale,
+		DTA_DestHeightF, tex->GetDisplayHeight() * CleanYfac * yscale,
+		DTA_ClipTop, f_y,
+		DTA_ClipBottom, f_y + f_h,
+		DTA_ClipLeft, f_x,
+		DTA_ClipRight, f_x + f_w,
+		DTA_FlipX, flip,
+		DTA_TranslationIndex, translation,
+		DTA_Alpha, alpha,
+		DTA_FillColor, fillcolor,
+		DTA_RenderStyle, renderstyle.AsDWORD,
+		DTA_BilinearFilter, true,
+		DTA_Rotate, angle,
 		TAG_DONE);
 }
 
