@@ -3087,10 +3087,11 @@ OptionMenu QZDOptionsMenu protected
 
 OptionMenu "questZdoomInfo"
 { 
-	Title		"QUESTZDOOM INFO AND CREDITS"
-	StaticText	""
-	Submenu    	"INFORMATION AND INSTRUCTIONS", "questZdoomInst"
-	Submenu   	"CREDITS", "questZdoomCredits"
+	//Title		"QUESTZDOOM INFO AND CREDITS"
+	StaticPatch 52, 4, "QZDOOM"
+	Position 50
+	Submenu		"INFORMATION AND INSTRUCTIONS", "QuestZDoomInstructions", 0, 1
+	Submenu		"CREDITS", "QuestZDoomCredits", 0, 1
 }
 
 //-------------------------------------------------------------------------------------------
@@ -3105,8 +3106,9 @@ OptionMenu "questZdoomInfo"
 
 OptionMenu "questZdoomInst"
 { 
-	Title		"QUESTZDOOM INFO AND CREDITS"
-	StaticText	""
+	//Title		"QUESTZDOOM INFO AND CREDITS"
+	StaticPatch 52, 4, "QZDOOM"
+	Position 50
 	StaticText	"===== INFORMATION AND INSTRUCTIONS ====="
 	StaticText	""
 	StaticText	"QUESTZDOOM IS AN ENGINE PORT OF THE POPULAR LZDOOM/GZDOOM", "White"
@@ -3147,8 +3149,9 @@ OptionMenu "questZdoomInst"
 
 OptionMenu "questZdoomCredits"
 { 
-	Title		"QUESTZDOOM INFO AND CREDITS"
-	StaticText	""
+	//Title		"QUESTZDOOM INFO AND CREDITS"
+	StaticPatch 52, 4, "QZDOOM"
+	Position 50
 	StaticText	"===== CREDITS ====="
 	StaticText	""
 	StaticText	"DRBEEF"
