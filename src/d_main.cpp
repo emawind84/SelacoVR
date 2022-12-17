@@ -3037,7 +3037,6 @@ FArgs *Args;
 
 void VR_DoomMain(int argc, char** argv)
 {
-    progdir = "/sdcard/QuestZDoom/";
     Args = new FArgs(argc, argv);
     D_DoomMain ();
 }

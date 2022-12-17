@@ -341,6 +341,30 @@ void M_LoadDefaults ()
 	GameConfig->DoGlobalSetup ();
 }
 
+extern "C" const char *M_GetActiveProfile ()
+{
+	FGameConfigFile *configfile;
+	if (GameConfig != nullptr)
+	{
+		configfile = GameConfig;
+	}
+	else
+	{
+		configfile = new FGameConfigFile;
+	}
+	if(configfile->SetSection("GlobalSettings"))
+	{
+		return configfile->GetValueForKey("cmdlineprofile");
+	}
+	return "";
+}
+
+extern "C" void PrepareEnvironment(const char* path)
+{
+	progdir = path;
+	chdir(path);
+}
+
 
 //
 // SCREEN SHOTS
