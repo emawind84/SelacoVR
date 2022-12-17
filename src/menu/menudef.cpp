@@ -1655,6 +1655,41 @@ struct FCommandLineInfo
 	FString mTitle;
 };
 
+void ProcessOneProfileFile(FString name, TArray<FCommandLineInfo> &cmdlineProfiles)
+{
+	const long titleMaxLength = 50;
+	FString titleTag = "#TITLE";
+	auto fb = ExtractFileBase(name, false);
+	long clidx = fb.IndexOf("commandline_", 0);
+	if (clidx == 0)
+	{
+		fb.Remove(clidx, 12);
+		auto fbe = ExtractFileBase(name, true);
+		for (auto &profile : cmdlineProfiles)
+		{
+			// We already got a profile with this name. Do not add again.
+			if (!profile.mName.CompareNoCase(fb)) return;
+		}
+		FileReader fr;
+		if (fr.OpenFile(name))
+		{
+			char head[100] = { 0};
+			fr.Read(head, 100);
+			if (!memcmp(head, titleTag, titleTag.Len()))
+			{
+				FString title = FString(&head[7], std::min<size_t>(strcspn(&head[7], "\r\n"), titleMaxLength));
+				FCommandLineInfo sft = { fb, title };
+				cmdlineProfiles.Push(sft);
+			}
+			else
+			{
+				FCommandLineInfo sft = { fb, fb };
+				cmdlineProfiles.Push(sft);
+			}
+		}
+	}
+}
+
 static void InitCommandLineProfileMenu()
 {
 	findstate_t c_file;
@@ -1703,30 +1738,7 @@ static void InitCommandLineProfileMenu()
 				if (!(I_FindAttr(&c_file) & FA_DIREC))
 				{
 					FStringf name("%s%s", dir.GetChars(), I_FindName(&c_file));
-					auto fb = ExtractFileBase(name, false);
-					long clidx = fb.IndexOf("commandline_", 0);
-					if (clidx == 0)
-					{
-						fb.Remove(clidx, 12);
-						auto fbe = ExtractFileBase(name, true);
-						FileReader fr;
-						if (fr.OpenFile(name))
-						{
-							char head[50] = { 0};
-							fr.Read(head, 50);
-							if (!memcmp(head, "#TITLE", 6))
-							{
-								FString title = FString(&head[7], strcspn(&head[7], "\n"));
-								FCommandLineInfo sft = { fb, title };
-								cmdlineProfiles.Push(sft);
-							}
-							else
-							{
-								FCommandLineInfo sft = { fb, fb };
-								cmdlineProfiles.Push(sft);
-							}
-						}
-					}
+					ProcessOneProfileFile(name, cmdlineProfiles);
 				}
 			} while (I_FindNext(file, &c_file) == 0);
 			I_FindClose(file);
