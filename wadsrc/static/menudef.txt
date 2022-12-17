@@ -496,7 +496,10 @@ OptionMenu "CustomizeControls" protected
 	Submenu    "$CNTRLMNU_INVENTORY"   , "InventoryControlsMenu"
 	Submenu    "$MAPCNTRLMNU_CONTROLS" , "MapControlsMenu"
 	Submenu    "$CNTRLMNU_OTHER"       , "OtherControlsMenu"
-	Submenu    "$CNTRLMNU_POPUPS"      , "StrifeControlsMenu"
+	IfGame(Strife)
+	{
+		Submenu    "$CNTRLMNU_POPUPS"      , "StrifeControlsMenu"
+	}
 	Submenu    "$MNU_MULTIPLAYER"      , "ChatControlsMenu"
 	StaticText " "
 	Option "$CNTRLMNU_LAYOUT",			"k_modern", "Layouts"
@@ -624,6 +627,12 @@ OptionMenu "InventoryControlsMenu" protected
 	StaticText ""
 	Control    "$CNTRLMNU_DROPWEAPON"   , "weapdrop"
 	Control    "$CNTRLMNU_DROPOFFHANDWEAPON"   , "weapdrop 1"
+
+	IfGame(Hexen)
+	{
+		StaticText ""
+		Control    "$CNTRLMNU_USEFLECHETTE", "useflechette"
+	}
 }
 
 OptionMenu "OtherControlsMenu" protected
@@ -1607,7 +1616,7 @@ OptionMenu GameplayOptions protected
 	Submenu "$GMPLYMNU_COOPERATIVE",			"CoopOptions"
 	StaticText " "
 	Option "$GMPLYMNU_TEAMPLAY",				"teamplay",	"OnOff"
-	Slider	"$GMPLYMNU_TEAMDAMAGE",	"teamdamage", 0, 1, 0.05,2
+	Slider	"$GMPLYMNU_TEAMDAMAGE",				"teamdamage", 0, 1, 0.05,2
 	StaticText " "
 	Option "$GMPLYMNU_SMARTAUTOAIM",			"sv_smartaim", "SmartAim"
 	StaticText " "
@@ -1639,9 +1648,10 @@ OptionMenu GameplayOptions protected
 	Option "$GMPLYMNU_DONTCHECKAMMO",			"sv_dontcheckammo", "NoYes"
 	Option "$GMPLYMNU_KILLBOSSSPAWNS",			"sv_killbossmonst", "YesNo"
 	Option "$GMPLYMNU_NOCOUNTENDMONSTER",		"sv_nocountendmonst", "NoYes"
+	Option "$GMPLYMNU_ALWAYSSPAWNMULTI",		"sv_alwaysspawnmulti", "YesNo"
 	Option "$GMPLYMNU_DOUBLESPAWN",				"sv_doublespawn", "YesNo"
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar teamplay teamdamage sv_smartaim sv_fallingdamage sv_weapondrop sv_doubleammo sv_infiniteammo sv_infiniteinventory sv_nomonsters sv_killallmonsters sv_monsterrespawn sv_norespawn sv_itemrespawn sv_respawnsuper sv_fastmonsters sv_instantreaction sv_degeneration sv_noautoaim sv_disallowsuicide sv_jump sv_crouch sv_freelook sv_nofov sv_nobfgaim sv_noautomap sv_noautomapallies sv_disallowspying sv_chasecam sv_dontcheckammo sv_killbossmonst sv_nocountendmonst sv_doublespawn"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar teamplay teamdamage sv_smartaim sv_fallingdamage sv_weapondrop sv_doubleammo sv_infiniteammo sv_infiniteinventory sv_nomonsters sv_killallmonsters sv_monsterrespawn sv_norespawn sv_itemrespawn sv_respawnsuper sv_fastmonsters sv_instantreaction sv_degeneration sv_noautoaim sv_disallowsuicide sv_jump sv_crouch sv_freelook sv_nofov sv_nobfgaim sv_noautomap sv_noautomapallies sv_disallowspying sv_chasecam sv_dontcheckammo sv_killbossmonst sv_nocountendmonst sv_alwaysspawnmulti sv_doublespawn"
 	Class "GameplayMenu"
 }
 
