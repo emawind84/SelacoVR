@@ -62,6 +62,7 @@
 
 
 CVAR(Bool, menu_hideextreme, false, CVAR_ARCHIVE)
+CVAR(String, cmdlineprofile, "", CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 void ClearSaveGames();
 
@@ -1639,6 +1640,106 @@ static void InitKeySections()
 	}
 }
 
+struct FCommandLineInfo
+{
+    FString mName;
+	FString mTitle;
+};
+
+static void InitCommandLineProfileMenu()
+{
+	findstate_t c_file;
+	void *file;
+
+	TArray<FString> mSearchPaths;
+	TArray<FCommandLineInfo> cmdlineProfiles;
+	cmdlineProfiles.Push({"", "No profile"});
+
+	if (GameConfig != NULL && GameConfig->SetSection ("FileSearch.Directories"))
+	{
+		const char *key;
+		const char *value;
+
+		while (GameConfig->NextInSection (key, value))
+		{
+			if (stricmp (key, "Path") == 0)
+			{
+				FString dir = NicePath(value);
+				if (dir.Len() > 0) mSearchPaths.Push(dir);
+			}
+		}
+	}
+	
+	// Add program root folder to the search paths
+	FString dir = NicePath("$PROGDIR");
+	if (dir.Len() > 0) mSearchPaths.Push(dir);
+	mSearchPaths.Push(dir);
+
+	// Unify and remove trailing slashes
+	for (auto &str : mSearchPaths)
+	{
+		FixPathSeperator(str);
+		if (str.Back() == '/') str.Truncate(str.Len() - 1);
+	}
+
+	// Collect all profiles in the search path
+	for (auto &dir : mSearchPaths)
+	{
+		if (dir.Back() != '/') dir += '/';
+		FString mask = dir + '*';
+		if ((file = I_FindFirst(mask, &c_file)) != ((void *)(-1)))
+		{
+			do
+			{
+				if (!(I_FindAttr(&c_file) & FA_DIREC))
+				{
+					FStringf name("%s%s", dir.GetChars(), I_FindName(&c_file));
+					auto fb = ExtractFileBase(name, false);
+					long clidx = fb.IndexOf("commandline_", 0);
+					if (clidx == 0)
+					{
+						fb.Remove(clidx, 12);
+						auto fbe = ExtractFileBase(name, true);
+						FileReader fr;
+						if (fr.OpenFile(name))
+						{
+							char head[50] = { 0};
+							fr.Read(head, 50);
+							if (!memcmp(head, "#TITLE", 6))
+							{
+								FString title = FString(&head[7], strcspn(&head[7], "\n"));
+								FCommandLineInfo sft = { fb, title };
+								cmdlineProfiles.Push(sft);
+							}
+							else
+							{
+								FCommandLineInfo sft = { fb, fb };
+								cmdlineProfiles.Push(sft);
+							}
+						}
+					}
+				}
+			} while (I_FindNext(file, &c_file) == 0);
+			I_FindClose(file);
+		}
+	}
+
+	DMenuDescriptor **menu = MenuDescriptors.CheckKey("CommandLineProfileMenu");
+
+	if (menu != nullptr)
+	{
+		if (cmdlineProfiles.Size() > 0)
+		{
+			for (FCommandLineInfo &entry : cmdlineProfiles)
+			{
+				auto it = CreateOptionMenuItemCommand(entry.mTitle, FStringf("%s \"%s\"", "cmdlineprofile", entry.mName.GetChars()), true);
+				static_cast<DOptionMenuDescriptor*>(*menu)->mItems.Push(it);
+				GC::WriteBarrier(*menu, it);
+			}
+		}
+	}
+}
+
 //=============================================================================
 //
 // Special menus will be created once all engine data is loaded
@@ -1652,6 +1753,7 @@ void M_CreateMenus()
 	InitCrosshairsList();
 	InitMusicMenus();
 	InitKeySections();
+	InitCommandLineProfileMenu();
 
 	FOptionValues **opt = OptionValues.CheckKey(NAME_Mididevices);
 	if (opt != nullptr) 
