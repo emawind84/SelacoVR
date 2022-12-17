@@ -335,6 +335,11 @@ DefaultOptionMenu
 	}
 }
 
+OptionMenu CommandLineProfileMenu protected
+{
+	Title "Select profile"
+}
+
 OptionMenu "OptionsMenu" protected
 {
 	Title "$OPTMNU_TITLE"
@@ -358,6 +363,8 @@ OptionMenu "OptionsMenu" protected
 	SafeCommand	"$OPTMNU_RESETTOSAVED",	"reset2saved"
 	Command "$OPTMNU_CONSOLE",			"menuconsole"
 	StaticText " "
+	LabeledSubmenu "Profile", "cmdlineprofile", "CommandLineProfileMenu"
+	SafeCommand "Apply profile", "qzd_restart"
 }
 
 // Fake simplified menu
