@@ -4321,11 +4321,6 @@ struct aim_t
 DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLineTarget *pLineTarget, DAngle vrange,
 	int flags, AActor *target, AActor *friender)
 {
-	if (pLineTarget == NULL && t1->player != NULL)
-	{
-		return t1->Angles.Pitch;
-	}
-
 	double shootz = t1->Center() - t1->Floorclip + t1->AttackOffset();
 
 	// can't shoot outside view angles
@@ -4401,7 +4396,13 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 	{
 		*pLineTarget = *result;
 	}
-	return (result->linetarget && t1->player == NULL) ? result->pitch : t1->Angles.Pitch;
+
+	aimPitch = t1->Angles.Pitch;
+	if (result->linetarget && (t1->player == NULL || !t1->player->mo->OverrideAttackPosDir))
+	{
+		aimPitch = result->pitch;
+	}
+	return aimPitch;
 }
 
 //==========================================================================

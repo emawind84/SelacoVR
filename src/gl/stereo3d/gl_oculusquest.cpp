@@ -52,6 +52,7 @@
 #include "LSMatrix.h"
 
 
+EXTERN_CVAR(Bool, puristmode);
 EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Float, movebob);
 EXTERN_CVAR(Float, r_weapscale);
@@ -302,12 +303,12 @@ namespace s3d
 
     void OculusQuestMode::AdjustPlayerSprites(int hand) const
     {
-        GetWeaponTransform(&gl_RenderState.mModelMatrix, hand);
-
-        float scale = 0.000625f * vr_weaponScale * r_weapscale;
-        gl_RenderState.mModelMatrix.scale(scale, -scale, scale);
-        gl_RenderState.mModelMatrix.translate(-viewwidth / 2, -viewheight * 3 / 4, 0.0f); // What dis?!
-
+        if (GetWeaponTransform(&gl_RenderState.mModelMatrix, hand))
+        {
+            float scale = 0.000625f * vr_weaponScale * r_weapscale;
+            gl_RenderState.mModelMatrix.scale(scale, -scale, scale);
+            gl_RenderState.mModelMatrix.translate(-viewwidth / 2, -viewheight * 3 / 4, 0.0f); // What dis?!
+        }
         gl_RenderState.EnableModelMatrix(true);
     }
 
@@ -544,7 +545,7 @@ namespace s3d
 
                 //Weapon firing tracking - Thanks Fishbiter for the inspiration of how/where to use this!
                 {
-                    player->mo->OverrideAttackPosDir = true;
+                    player->mo->OverrideAttackPosDir = !puristmode;
 
                     player->mo->AttackPitch = cinemamode ? -weaponangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees
                             : -weaponangles[PITCH];
