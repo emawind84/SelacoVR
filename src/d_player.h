@@ -187,7 +187,20 @@ struct userinfo_t : TMap<FName,FBaseCVar *>
 
 	double GetAimDist() const
 	{
-		return 0;
+		if (dmflags2 & DF2_NOAUTOAIM)
+		{
+			return 0;
+		}
+
+		float aim = *static_cast<FFloatCVar *>(*CheckKey(NAME_Autoaim));
+		if (aim > 35 || aim < 0)
+		{
+			return 35.;
+		}
+		else
+		{
+			return aim;
+		}
 	}
 	// Same but unfiltered.
 	double GetAutoaim() const
