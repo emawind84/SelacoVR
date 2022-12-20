@@ -17,6 +17,7 @@ struct Material
 {
 	vec4 Base;
 	vec4 Bright;
+	vec4 Glow;
 	vec3 Normal;
 	vec3 Specular;
 	float Glossiness;
@@ -28,9 +29,14 @@ struct Material
 
 vec4 Process(vec4 color);
 vec4 ProcessTexel();
-Material ProcessMaterial();
+Material ProcessMaterial(); // note that this is deprecated. Use SetupMaterial!
+void SetupMaterial(inout Material mat);
 vec4 ProcessLight(Material mat, vec4 color);
 vec3 ProcessMaterialLight(Material material, vec3 color);
+vec2 GetTexCoord();
+
+// These get Or'ed into uTextureMode because it only uses its 3 lowermost bits.
+const int TEXF_Brightmap = 0x10000;
 
 //===========================================================================
 //
@@ -64,7 +70,7 @@ vec4 getTexel(vec2 st)
 	//
 	// Apply texture modes
 	//
-	switch (uTextureMode)
+	switch (uTextureMode & 0xffff)
 	{
 		case 1:	// TM_MASK
 			texel.rgb = vec3(1.0,1.0,1.0);
@@ -413,6 +419,21 @@ vec3 ApplyNormalMap(vec2 texcoord)
 
 //===========================================================================
 //
+// Sets the common material properties.
+//
+//===========================================================================
+
+void SetMaterialProps(inout Material material, vec2 texCoord)
+{
+	material.Base = getTexel(texCoord.st); 
+	material.Normal = ApplyNormalMap(texCoord.st);
+
+	if ((uTextureMode & TEXF_Brightmap) != 0)
+		material.Bright = texture(brighttexture, texCoord.st);
+}
+
+//===========================================================================
+//
 // Calculate light
 //
 // It is important to note that the light color is not desaturated
@@ -552,7 +573,23 @@ vec4 ApplyFadeColor(vec4 frag)
 
 void main()
 {
+#ifndef LEGACY_USER_SHADER
+	Material material;
+	
+	material.Base = vec4(0.0);
+	material.Bright = vec4(0.0);
+	material.Glow = vec4(0.0);
+	material.Normal = vec3(0.0);
+	material.Specular = vec3(0.0);
+	material.Glossiness = 0.0;
+	material.SpecularLevel = 0.0;
+	material.Metallic = 0.0;
+	material.Roughness = 0.0;
+	material.AO = 0.0;
+	SetupMaterial(material);
+#else
 	Material material = ProcessMaterial();
+#endif
 	vec4 frag = material.Base;
 	
 #ifndef NO_ALPHATEST

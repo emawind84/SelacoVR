@@ -381,12 +381,7 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 	mShaderIndex = SHADER_Default;
 	tex = tx;
 
-	if (tx->bWarped)
-	{
-		mShaderIndex = tx->bWarped; // This picks SHADER_Warp1 or SHADER_Warp2
-		tx->gl_info.shaderspeed = static_cast<FWarpTexture*>(tx)->GetSpeed();
-	}
-	else if (tx->bHasCanvas)
+	if (tx->bHasCanvas)
 	{
 		if (tx->gl_info.shaderindex >= FIRST_USER_SHADER)
 		{
@@ -396,7 +391,12 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 	}
 	else
 	{
-		if (tx->gl_info.Normal && tx->gl_info.Specular)
+		if (tx->bWarped)
+		{
+			mShaderIndex = tx->bWarped; // This picks SHADER_Warp1 or SHADER_Warp2
+			tx->gl_info.shaderspeed = static_cast<FWarpTexture*>(tx)->GetSpeed();
+		}
+		else if (tx->gl_info.Normal && tx->gl_info.Specular)
 		{
 			for (auto &texture : { tx->gl_info.Normal, tx->gl_info.Specular })
 			{
@@ -419,13 +419,13 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 		if (tx->gl_info.Brightmap)
 		{
 			ValidateSysTexture(tx->gl_info.Brightmap, expanded);
-			mTextureLayers.Push({ tx->gl_info.Brightmap, false} );
-			if (mShaderIndex == SHADER_Specular)
-				mShaderIndex = SHADER_SpecularBrightmap;
-			else if (mShaderIndex == SHADER_PBR)
-				mShaderIndex = SHADER_PBRBrightmap;
-			else
-				mShaderIndex = SHADER_Brightmap;
+			mTextureLayers.Push({ tx->gl_info.Brightmap, false });
+			mLayerFlags |= TEXF_Brightmap;
+		}
+		else	
+		{ 
+			ValidateSysTexture(TexMan.ByIndex(1), expanded);
+			mTextureLayers.Push({ TexMan.ByIndex(1), false });
 		}
 
 		if (tx->gl_info.shaderindex >= FIRST_USER_SHADER)
@@ -772,7 +772,7 @@ again:
 		{
 			if (expand)
 			{
-				if (tex->bWarped || tex->bHasCanvas || tex->gl_info.shaderindex >= FIRST_USER_SHADER)
+				if (tex->bWarped || tex->bHasCanvas || tex->gl_info.shaderindex >= FIRST_USER_SHADER || tex->gl_info.shaderindex == SHADER_Specular || tex->gl_info.shaderindex == SHADER_PBR)
 				{
 					tex->gl_info.bNoExpand = true;
 					goto again;

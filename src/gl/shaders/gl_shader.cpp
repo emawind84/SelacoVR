@@ -500,22 +500,33 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 			if (pp_lump == -1) I_Error("Unable to load '%s'", proc_prog_lump);
 			FMemLump pp_data = Wads.ReadLump(pp_lump);
 
-			if (pp_data.GetString().IndexOf("ProcessMaterial") < 0)
+			if (pp_data.GetString().IndexOf("ProcessMaterial") < 0 && pp_data.GetString().IndexOf("SetupMaterial") < 0)
 			{
 				// this looks like an old custom hardware shader.
 
 				// add ProcessMaterial function that calls the older ProcessTexel function
-				int pl_lump = Wads.CheckNumForFullName("shaders/glsl/func_defaultmat.fp");
-				if (pl_lump == -1) I_Error("Unable to load '%s'", "shaders/glsl/func_defaultmat.fp");
-				FMemLump pl_data = Wads.ReadLump(pl_lump);
-				fp_comb << "\n" << pl_data.GetString().GetChars();
 
-				if (pp_data.GetString().IndexOf("ProcessTexel") < 0)
+				if (pp_data.GetString().IndexOf("GetTexCoord") >= 0)
 				{
-					// this looks like an even older custom hardware shader.
-					// We need to replace the ProcessTexel call to make it work.
+					int pl_lump = Wads.CheckNumForFullName("shaders/glsl/func_defaultmat2.fp");
+					if (pl_lump == -1) I_Error("Unable to load '%s'", "shaders/glsl/func_defaultmat2.fp");
+					FMemLump pl_data = Wads.ReadLump(pl_lump);
+					fp_comb << "\n" << pl_data.GetString().GetChars();
+				}
+				else
+				{
+					int pl_lump = Wads.CheckNumForFullName("shaders/glsl/func_defaultmat.fp");
+					if (pl_lump == -1) I_Error("Unable to load '%s'", "shaders/glsl/func_defaultmat.fp");
+					FMemLump pl_data = Wads.ReadLump(pl_lump);
+					fp_comb << "\n" << pl_data.GetString().GetChars();
 
-					fp_comb.Substitute("material.Base = ProcessTexel();", "material.Base = Process(vec4(1.0));");
+					if (pp_data.GetString().IndexOf("ProcessTexel") < 0)
+					{
+						// this looks like an even older custom hardware shader.
+						// We need to replace the ProcessTexel call to make it work.
+
+						fp_comb.Substitute("material.Base = ProcessTexel();", "material.Base = Process(vec4(1.0));");
+					}
 				}
 
 				if (pp_data.GetString().IndexOf("ProcessLight") >= 0)
@@ -536,6 +547,14 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 				FMemLump pl_data = Wads.ReadLump(pl_lump);
 				fp_comb << "\n" << pl_data.GetString().GetChars();
 			}
+
+			// ProcessMaterial must be considered broken because it requires the user to fill in data they possibly cannot know all about.
+			if (pp_data.GetString().IndexOf("ProcessMaterial") >= 0 && pp_data.GetString().IndexOf("SetupMaterial") < 0)
+			{
+				// This reactivates the old logic and disables all features that cannot be supported with that method.
+				fp_comb.Insert(fp_comb.IndexOf("\n") + 1, "#define LEGACY_USER_SHADER\n");
+			}
+
 		}
 		else
 		{
@@ -823,11 +842,8 @@ static const FDefaultShader defaultshaders[]=
 	{"Default",	"shaders/glsl/func_normal.fp", "shaders/glsl/material_normal.fp", ""},
 	{"Warp 1",	"shaders/glsl/func_warp1.fp", "shaders/glsl/material_normal.fp", ""},
 	{"Warp 2",	"shaders/glsl/func_warp2.fp", "shaders/glsl/material_normal.fp", ""},
-	{"Brightmap","shaders/glsl/func_brightmap.fp", "shaders/glsl/material_normal.fp", "#define BRIGHTMAP\n"},
 	{"Specular", "shaders/glsl/func_spec.fp", "shaders/glsl/material_specular.fp", "#define SPECULAR\n#define NORMALMAP\n"},
-	{"SpecularBrightmap", "shaders/glsl/func_spec.fp", "shaders/glsl/material_specular.fp", "#define SPECULAR\n#define NORMALMAP\n#define BRIGHTMAP\n"},
 	{"PBR","shaders/glsl/func_pbr.fp", "shaders/glsl/material_pbr.fp", "#define PBR\n#define NORMALMAP\n"},
-	{"PBRBrightmap","shaders/glsl/func_pbr.fp", "shaders/glsl/material_pbr.fp", "#define PBR\n#define NORMALMAP\n#define BRIGHTMAP\n"},
 	{"No Texture", "shaders/glsl/func_notexture.fp", "shaders/glsl/material_normal.fp", ""},
 	{"Basic Fuzz", "shaders/glsl/fuzz_standard.fp", "shaders/glsl/material_normal.fp", ""},
 	{"Smooth Fuzz", "shaders/glsl/fuzz_smooth.fp", "shaders/glsl/material_normal.fp", ""},
