@@ -282,6 +282,7 @@ class FShader
 	FUniform4f muGradientTopPlane;
 	FUniform4f muSplitBottomPlane;
 	FUniform4f muSplitTopPlane;
+	FUniform4f muDetailParms;
 	FUniform4f muClipLine;
 	FBufferedUniform1f muInterpolationFactor;
 	FBufferedUniform1f muClipHeight;

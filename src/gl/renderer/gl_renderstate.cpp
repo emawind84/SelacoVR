@@ -93,6 +93,7 @@ void FRenderState::Reset()
 	currentColorMask[0] = currentColorMask[1] = currentColorMask[2] = currentColorMask[3] = true;
 	mFogColor.d = -1;
 	mTextureMode = -1;
+	mTextureModeFlags = 0;
 	mLightIndex = -1;
 	mDesaturation = 0;
 	mSrcBlend = GL_SRC_ALPHA;
@@ -136,6 +137,7 @@ void FRenderState::Reset()
 	mSplitBottomPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
 	mClipLine.Set(0.0f, 0.0f, 0.0f, 0.0f);
 	mDynColor.Set(0.0f, 0.0f, 0.0f, 0.0f);
+	mDetailParms.Set(0.0f, 0.0f, 0.0f, 0.0f);
 	mEffectState = 0;
 	activeShader = nullptr;
 	mProjectionMatrix.loadIdentity();
@@ -195,7 +197,10 @@ bool FRenderState::ApplyShader()
 	activeShader->muFogEnabled.Set(fogset);
 	activeShader->muPalLightLevels.Set(static_cast<int>(gl_bandedswlight) | (static_cast<int>(gl_fogmode) << 8) | (static_cast<int>(gl_lightmode) << 16));
 	activeShader->muGlobVis.Set(GLRenderer->mGlobVis / 32.0f);
-	activeShader->muTextureMode.Set(mTextureMode == TM_MODULATE && mTempTM == TM_OPAQUE ? TM_OPAQUE : mTextureMode);
+
+	int f = mTextureModeFlags;
+	if (!mBrightmapEnabled) f &= TEXF_Detailmap;
+	activeShader->muTextureMode.Set((mTextureMode == TM_MODULATE && mTempTM == TM_OPAQUE ? TM_OPAQUE : mTextureMode) | f);
 	activeShader->muCameraPos.Set(mCameraPos.vec);
 	activeShader->muLightParms.Set(mLightParms);
 	activeShader->muFogColor.Set(mFogColor);
@@ -212,6 +217,7 @@ bool FRenderState::ApplyShader()
 	activeShader->muViewHeight.Set(viewheight);
 	activeShader->muSpecularMaterial.Set(mGlossiness, mSpecularLevel);
 	activeShader->muAddColor.Set(mAddColor); // Can this be done without a shader?
+	activeShader->muDetailParms.Set(mDetailParms.vec);
 	activeShader->muGlobalFadeMode.Set(mGlobalFadeMode);
 	activeShader->muGlobalFade.Set(gl_global_fade ? 1 : 0);
 	activeShader->muGlobalFadeDensity.Set(gl_global_fade_density);

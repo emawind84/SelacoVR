@@ -339,6 +339,8 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	i_data += "uniform vec4 uSplitTopPlane;\n";
 	i_data += "uniform vec4 uSplitBottomPlane;\n";
 
+	i_data += "uniform vec4 uDetailParms;\n";
+
 	// Lighting + Fog
 	i_data += "uniform vec4 uLightAttr;\n";
 	i_data += "#define uLightLevel uLightAttr.a\n";
@@ -414,14 +416,20 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	i_data += "#define normaltexture texture2\n";
 	i_data += "#define speculartexture texture3\n";
 	i_data += "#define brighttexture texture4\n";
+	i_data += "#define detailtexture texture5\n";
+	i_data += "#define glowtexture texture6\n";
 	i_data += "#elif defined(PBR)\n";
 	i_data += "#define normaltexture texture2\n";
 	i_data += "#define metallictexture texture3\n";
 	i_data += "#define roughnesstexture texture4\n";
 	i_data += "#define aotexture texture5\n";
 	i_data += "#define brighttexture texture6\n";
+	i_data += "#define detailtexture texture7\n";
+	i_data += "#define glowtexture texture8\n";
 	i_data += "#else\n";
 	i_data += "#define brighttexture texture2\n";
+	i_data += "#define detailtexture texture3\n";
+	i_data += "#define glowtexture texture4\n";
 	i_data += "#endif\n";
 
 	int vp_lump = Wads.CheckNumForFullName(vert_prog_lump, 0);
@@ -693,6 +701,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	muGradientTopPlane.Init(hShader, "uGradientTopPlane");
 	muSplitBottomPlane.Init(hShader, "uSplitBottomPlane");
 	muSplitTopPlane.Init(hShader, "uSplitTopPlane");
+	muDetailParms.Init(hShader, "uDetailParms");
 	muClipLine.Init(hShader, "uClipLine");
 	muFixedColormap.Init(hShader, "uFixedColormap");
 	muInterpolationFactor.Init(hShader, "uInterpolationFactor");

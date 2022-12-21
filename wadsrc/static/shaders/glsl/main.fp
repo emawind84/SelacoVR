@@ -37,6 +37,8 @@ vec2 GetTexCoord();
 
 // These get Or'ed into uTextureMode because it only uses its 3 lowermost bits.
 const int TEXF_Brightmap = 0x10000;
+const int TEXF_Detailmap = 0x20000;
+const int TEXF_Glowmap = 0x40000;
 
 //===========================================================================
 //
@@ -430,6 +432,15 @@ void SetMaterialProps(inout Material material, vec2 texCoord)
 
 	if ((uTextureMode & TEXF_Brightmap) != 0)
 		material.Bright = texture(brighttexture, texCoord.st);
+
+	if ((uTextureMode & TEXF_Detailmap) != 0)
+	{
+		vec4 Detail = texture(detailtexture, texCoord.st * uDetailParms.xy) * uDetailParms.z;
+		material.Base *= Detail;
+	}
+	
+	if ((uTextureMode & TEXF_Glowmap) != 0)
+		material.Glow = texture(glowtexture, texCoord.st);
 }
 
 //===========================================================================
@@ -487,8 +498,21 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 	//
 	color = ProcessLight(material, color);
 
+	// these cannot be safely applied by the legacy format where the implementation cannot guarantee that the values are set.
+#ifndef LEGACY_USER_SHADER
 	//
-	// apply dynamic lights
+	// apply glow 
+	//
+	color.rgb = mix(color.rgb, material.Glow.rgb, material.Glow.a);
+
+	//
+	// apply brightmaps 
+	//
+	color.rgb = min(color.rgb + material.Bright.rgb, 1.0);
+#endif
+	
+	//
+	// apply other light manipulation by custom shaders, default is a NOP.
 	//
 	return vec4(ProcessMaterialLight(material, color.rgb), material.Base.a * vColor.a);
 }

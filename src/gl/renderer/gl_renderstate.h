@@ -89,6 +89,7 @@ class FRenderState
 	int mLightIndex;
 	int mSpecialEffect;
 	int mTextureMode;
+	int mTextureModeFlags;
 	int mDesaturation;
 	int mSoftLight;
 	int mGlobalFadeMode;
@@ -120,6 +121,7 @@ class FRenderState
 	PalEntry mObjectColor2;
 	PalEntry mSceneColor;
 	FStateVec4 mDynColor;
+	FStateVec4 mDetailParms;
 	float mClipSplit[2];
 
 	int mEffectState;
@@ -170,6 +172,7 @@ public:
 		mShaderTimer = mat->tex->gl_info.shaderspeed;
 		SetSpecular(mat->tex->gl_info.Glossiness, mat->tex->gl_info.SpecularLevel);
 		mat->Bind(clampmode, translation);
+		mTextureModeFlags = mat->GetLayerFlags();
 	}
 
 	void Apply();
@@ -399,6 +402,11 @@ public:
 		auto &bn = bottom.Normal();
 		mSplitTopPlane.Set((float)tn.X, (float)tn.Y, (float)top.negiC, (float)top.fD());
 		mSplitBottomPlane.Set((float)bn.X, (float)bn.Y, (float)bottom.negiC, (float)bottom.fD());
+	}
+
+	void SetDetailParms(float xscale, float yscale, float bias)
+	{
+		mDetailParms.Set(xscale, yscale, bias, 0);
 	}
 
 	void SetDynLight(float r, float g, float b)

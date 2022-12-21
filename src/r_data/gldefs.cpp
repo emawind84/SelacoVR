@@ -1381,17 +1381,17 @@ class GLDefsParser
 			if (tex->gl_info.Normal && tex->gl_info.Specular)
 			{
 				usershader.shaderType = SHADER_Specular;
-				firstUserTexture = 5;
+				firstUserTexture = 7;
 			}
 			else if (tex->gl_info.Normal && tex->gl_info.Metallic && tex->gl_info.Roughness && tex->gl_info.AmbientOcclusion)
 			{
 				usershader.shaderType = SHADER_PBR;
-				firstUserTexture = 7;
+				firstUserTexture = 9;
 			}
 			else
 			{
 				usershader.shaderType = SHADER_Default;
-				firstUserTexture = 3;
+				firstUserTexture = 5;
 			}
 
 			for (unsigned int i = 0; i < texNameList.Size(); i++)

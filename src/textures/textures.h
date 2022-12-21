@@ -454,6 +454,8 @@ public:
 		FMaterial *Material[2];
 		FGLTexture *SystemTexture[2];
 		FTexture *Brightmap;
+		FTexture* Detailmap = nullptr;
+		FTexture* Glowmap = nullptr;
 		FTexture *Normal;						// Normal map texture
 		FTexture *Specular;						// Specular light texture for the diffuse+normal+specular light model
 		FTexture *Metallic;						// Metalness texture for the physically based rendering (PBR) light model
