@@ -90,6 +90,7 @@ EXTERN_CVAR (Bool, gl_legacy_mode)
 EXTERN_CVAR (Bool, r_drawvoxels)
 
 extern bool NoInterpolateView;
+extern bool vid_hdr_active;
 
 area_t			in_area;
 TArray<uint8_t> currentmapsection;
@@ -1007,47 +1008,58 @@ uint8_t * gles_convertRGB(uint8_t * data, int width, int height)
 
 void GLSceneDrawer::WriteSavePic (player_t *player, FileWriter *file, int width, int height)
 {
-	GL_IRECT bounds;
+	const auto &viewport = GLRenderer->mOutputLetterbox;
+	
+	int sceneTop = viewport.top;
+	int sceneLeft = viewport.left;
+	int sceneWidth = viewport.width;
+	int sceneHeight = viewport.height;
 
-	gl_ClearFakeFlat();
-	P_FindParticleSubsectors();	// make sure that all recently spawned particles have a valid subsector.
-	bounds.left=0;
-	bounds.top=0;
-	bounds.width=width;
-	bounds.height=height;
-	glFlush();
-	SetFixedColormap(player);
-	gl_RenderState.SetVertexBuffer(GLRenderer->mVBO);
-	GLRenderer->mVBO->Reset();
-	if (!gl.legacyMode) GLRenderer->mLights->Clear();
+	if (width > sceneWidth) width = sceneWidth;
+	if (height > sceneHeight) height = sceneHeight;
 
-	// Check if there's some lights. If not some code can be skipped.
-	GLRenderer->mLightCount = !!level.lights;
-
-	sector_t *viewsector = RenderViewpoint(players[consoleplayer].camera, &bounds,
-								r_viewpoint.FieldOfView().Degrees, 1.6f, 1.6f, true, false);
-	glDisable(GL_STENCIL_TEST);
-	gl_RenderState.SetFixedColormap(CM_DEFAULT);
-	gl_RenderState.SetSoftLightLevel(-1);
-	screen->Begin2D(false);
-	if (!FGLRenderBuffers::IsEnabled())
-	{
-		DrawBlend(viewsector);
-	}
-	GLRenderer->CopyToBackbuffer(&bounds, false);
-	glFlush();
-
-#ifdef __MOBILE__ //Some androids do not like GL_RGB
-	uint8_t * scr = (uint8_t *)M_Malloc(width * height * 4);
-	glReadPixels(0,0,width, height,GL_RGBA,GL_UNSIGNED_BYTE,scr);
-	gles_convertRGB(scr,width,height);
-    M_CreatePNG (file, scr + ((height-1) * width * 3), NULL, SS_RGB, width, height, -width * 3, Gamma);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+#ifdef __ANDROID__ //Some androids do not like GL_RGB
+	uint8_t * sceneBuffer = new uint8_t[sceneWidth * sceneHeight * 4];
+	glReadPixels(sceneLeft, sceneTop, sceneWidth, sceneHeight, GL_RGBA, GL_UNSIGNED_BYTE, sceneBuffer);
+	gles_convertRGB(sceneBuffer, sceneWidth, sceneHeight);
 #else
-	uint8_t * scr = (uint8_t *)M_Malloc(width * height * 3);
-	glReadPixels(0,0,width, height,GL_RGB,GL_UNSIGNED_BYTE,scr);
-	M_CreatePNG (file, scr + ((height-1) * width * 3), NULL, SS_RGB, width, height, -width * 3, Gamma);
+	uint8_t * sceneBuffer = new uint8_t[sceneWidth * sceneHeight * 3];
+	glReadPixels(sceneLeft, sceneTop, sceneWidth, sceneHeight, GL_RGB, GL_UNSIGNED_BYTE, sceneBuffer);
 #endif
-	M_Free(scr);
+	glPixelStorei(GL_PACK_ALIGNMENT, 4);
+
+	uint8_t * imageBuffer = new uint8_t[width * height * 3];
+	float rcpWidth = 1.0f / width;
+	float rcpHeight = 1.0f / height;
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			float u = (x + 0.5f) * rcpWidth;
+			float v = (y + 0.5f) * rcpHeight;
+			int sx = u * sceneWidth;
+			int sy = v * sceneHeight;
+			int sindex = (sx + sy * sceneWidth) * 3;
+			int dindex = (x + y * width) * 3;
+			imageBuffer[dindex] = sceneBuffer[sindex];
+			imageBuffer[dindex + 1] = sceneBuffer[sindex + 1];
+			imageBuffer[dindex + 2] = sceneBuffer[sindex + 2];
+		}
+	}
+	int pitch = -width*3;
+	ESSType color_type = SS_RGB;
+	// Screenshot should not use gamma correction if it was already applied to rendered image
+	EXTERN_CVAR(Bool, fullscreen);
+	EXTERN_CVAR(Int, vid_hwgamma);
+	float gamma = 1 == vid_hwgamma || (2 == vid_hwgamma && !fullscreen) ? 1.0f : Gamma;
+	if (vid_hdr_active && fullscreen)
+		gamma *= 2.2f;
+
+	M_CreatePNG (file, imageBuffer + width * 3 * (height - 1), NULL, color_type, width, height, pitch, gamma);
+
+	delete [] imageBuffer;
+	delete [] sceneBuffer;
 }
 
 

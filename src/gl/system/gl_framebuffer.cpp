@@ -515,6 +515,10 @@ void OpenGLFrameBuffer::FillSimplePoly(FTexture *texture, FVector2 *points, int 
 //
 //===========================================================================
 
+#ifdef __ANDROID__
+extern uint8_t * gles_convertRGB(uint8_t * data, int width, int height);
+#endif
+
 void OpenGLFrameBuffer::GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, ESSType &color_type, float &gamma)
 {
 	const auto &viewport = GLRenderer->mOutputLetterbox;
@@ -522,9 +526,15 @@ void OpenGLFrameBuffer::GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, 
 	// Grab what is in the back buffer.
 	// We cannot rely on SCREENWIDTH/HEIGHT here because the output may have been scaled.
 	TArray<uint8_t> pixels;
-	pixels.Resize(viewport.width * viewport.height * 3);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+#ifdef __ANDROID__ //Some androids do not like GL_RGB
+	pixels.Resize(viewport.width * viewport.height * 4);
+	glReadPixels(viewport.left, viewport.top, viewport.width, viewport.height, GL_RGBA, GL_UNSIGNED_BYTE, &pixels[0]);
+	gles_convertRGB(&pixels[0], viewport.width, viewport.height);
+#else
+	pixels.Resize(viewport.width * viewport.height * 3);
 	glReadPixels(viewport.left, viewport.top, viewport.width, viewport.height, GL_RGB, GL_UNSIGNED_BYTE, &pixels[0]);
+#endif
 	glPixelStorei(GL_PACK_ALIGNMENT, 4);
 
 	// Copy to screenshot buffer:
