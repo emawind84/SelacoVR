@@ -20,12 +20,12 @@
 //--------------------------------------------------------------------------
 //
 /*
-** gl_oculusquest.cpp
-** Stereoscopic virtual reality mode for the Oculus Quest HMD
+** gl_openxrdevice.cpp
+** Stereoscopic virtual reality mode for OpenXR Support
 **
 */
 
-#include "gl_oculusquest.h"
+#include "gl_openxrdevice.h"
 
 #include <string>
 #include <map>

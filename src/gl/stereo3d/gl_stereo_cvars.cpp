@@ -31,7 +31,7 @@
 #include "gl/stereo3d/gl_quadstereo.h"
 #include "gl/stereo3d/gl_sidebyside3d.h"
 #include "gl/stereo3d/gl_interleaved3d.h"
-#include "gl/stereo3d/gl_oculusquest.h"
+#include "gl/stereo3d/gl_openxrdevice.h"
 #include "gl/system/gl_cvars.h"
 #include "menu/menu.h"
 #include "version.h"
