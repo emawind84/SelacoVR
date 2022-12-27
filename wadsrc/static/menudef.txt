@@ -3222,4 +3222,8 @@ OptionMenu "ExperimentalMenu"
 	Option "Use action spawn offset", "use_action_spawn_yzoffset", "YesNo"
 	StaticText "Use horizontal and vertical spawn offset", "Brown"
 	StaticText "for projectile, missile and hitscan attacks.", "Brown"
+	StaticText " "
+	Option "Store save picture", "storesavepic", "OnOff"
+	StaticText "A screenshot is taken just before saving", "Brown"
+	StaticText "and stored inside the savegame.", "Brown"
 }
