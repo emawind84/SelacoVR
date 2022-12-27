@@ -115,6 +115,7 @@ uint8_t *FVoxelTexture::MakeTexture (FRenderStyle style)
 			Pixels[i] = (uint8_t)i;
 		}
 	}  
+	FTexture::FlipSquareBlock(Pixels, Width, Height);
 	return Pixels;
 }
 
