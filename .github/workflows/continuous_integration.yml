@@ -2,6 +2,8 @@ name: Continuous Integration
 
 on:
   push:
+    branches:
+      - g3.3mgw*
   pull_request:
     branches:
       - g3.3mgw*
