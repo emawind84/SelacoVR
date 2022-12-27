@@ -365,7 +365,7 @@ void GLSceneDrawer::SetupWeaponLight()
 	AActor * playermo = players[consoleplayer].camera;
 	player_t * player = playermo->player;
 
-	// this is the same as in DrawPlayerSprites below
+	// this is the same as in DrawPlayerSprites below (i.e. no weapon being drawn.)
 	if (!player ||
 		!r_drawplayersprites ||
 		!camera->player ||
@@ -373,16 +373,16 @@ void GLSceneDrawer::SetupWeaponLight()
 		(r_deathcamera && camera->health <= 0))
 		return;
 
+	// Check if lighting can be used on this item.
+	if (camera->RenderStyle.BlendOp == STYLEOP_Shadow || !gl_lights || !gl_light_weapons || !GLRenderer->mLightCount || FixedColormap != CM_DEFAULT || gl.legacyMode)
+		return;
+
 	for (DPSprite *psp = player->psprites; psp != nullptr && psp->GetID() < PSP_TARGETCENTER; psp = psp->GetNext())
 	{
 		if (psp->GetState() != nullptr)
 		{
-			// set the lighting parameters
-			if (gl_lights && GLRenderer->mLightCount && FixedColormap == CM_DEFAULT && gl_light_weapons)
-			{
-				FSpriteModelFrame *smf = psp->GetCaller() ? FindModelFrame(psp->GetCaller()->GetClass(), psp->GetSprite(), psp->GetFrame(), false) : nullptr;
-				weapondynlightindex[psp] = smf ? gl_SetDynModelLight(playermo, -1) : 0;
-			}
+			FSpriteModelFrame *smf = psp->GetCaller() ? FindModelFrame(psp->GetCaller()->GetClass(), psp->GetSprite(), psp->GetFrame(), false) : nullptr;
+			weapondynlightindex[psp] = smf ? gl_SetDynModelLight(playermo, -1) : 0;
 		}
 	}
 }
@@ -610,10 +610,10 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector)
 				if (gl_lights && GLRenderer->mLightCount && FixedColormap == CM_DEFAULT && gl_light_weapons)
 				{
 					FSpriteModelFrame *smf = psp->GetCaller() ? FindModelFrame(psp->GetCaller()->GetClass(), psp->GetSprite(), psp->GetState()->GetFrame(), false) : nullptr;
-					if (smf)
-						gl_SetDynModelLight(playermo, weapondynlightindex[psp]);
-					else
+					if (!smf || gl.legacyMode)	// For models with per-pixel lighting this was done in a previous pass.
+					{
 						gl_SetDynSpriteLight(playermo, NULL);
+					}
 				}
 				SetColor(ll, 0, cmc, trans, true);
 			}

@@ -994,8 +994,8 @@ void FTextureManager::SortTexturesByType(int start, int end)
 // FTextureManager :: Init
 //
 //==========================================================================
-FTexture *GetBackdropTexture();
 FTexture *CreateShaderTexture(bool, bool);
+FTexture* CreateEmptyTexture();
 
 void FTextureManager::Init()
 {
@@ -1006,6 +1006,8 @@ void FTextureManager::Init()
 
 	// Texture 0 is a dummy texture used to indicate "no texture"
 	AddTexture (new FDummyTexture);
+	// This is for binding to unused texture units, because accessing an unbound texture unit is undefined. It's a one pixel empty texture.
+	AddTexture(CreateEmptyTexture());
 	// some special textures used in the game.
 	AddTexture(CreateShaderTexture(false, false));
 	AddTexture(CreateShaderTexture(false, true));

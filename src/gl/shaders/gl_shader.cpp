@@ -348,6 +348,8 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	i_data += "uniform vec4 uSplitTopPlane;\n";
 	i_data += "uniform vec4 uSplitBottomPlane;\n";
 
+	i_data += "uniform vec4 uDetailParms;\n";
+
 	// Lighting + Fog
 	i_data += "uniform vec4 uLightAttr;\n";
 	i_data += "#define uLightLevel uLightAttr.a\n";
@@ -423,14 +425,20 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	i_data += "#define normaltexture texture2\n";
 	i_data += "#define speculartexture texture3\n";
 	i_data += "#define brighttexture texture4\n";
+	i_data += "#define detailtexture texture5\n";
+	i_data += "#define glowtexture texture6\n";
 	i_data += "#elif defined(PBR)\n";
 	i_data += "#define normaltexture texture2\n";
 	i_data += "#define metallictexture texture3\n";
 	i_data += "#define roughnesstexture texture4\n";
 	i_data += "#define aotexture texture5\n";
 	i_data += "#define brighttexture texture6\n";
+	i_data += "#define detailtexture texture7\n";
+	i_data += "#define glowtexture texture8\n";
 	i_data += "#else\n";
 	i_data += "#define brighttexture texture2\n";
+	i_data += "#define detailtexture texture3\n";
+	i_data += "#define glowtexture texture4\n";
 	i_data += "#endif\n";
 
 	int vp_lump = Wads.CheckNumForFullName(vert_prog_lump, 0);
@@ -509,22 +517,33 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 			if (pp_lump == -1) I_Error("Unable to load '%s'", proc_prog_lump);
 			FMemLump pp_data = Wads.ReadLump(pp_lump);
 
-			if (pp_data.GetString().IndexOf("ProcessMaterial") < 0)
+			if (pp_data.GetString().IndexOf("ProcessMaterial") < 0 && pp_data.GetString().IndexOf("SetupMaterial") < 0)
 			{
 				// this looks like an old custom hardware shader.
 
 				// add ProcessMaterial function that calls the older ProcessTexel function
-				int pl_lump = Wads.CheckNumForFullName("shaders/glsl/func_defaultmat.fp");
-				if (pl_lump == -1) I_Error("Unable to load '%s'", "shaders/glsl/func_defaultmat.fp");
-				FMemLump pl_data = Wads.ReadLump(pl_lump);
-				fp_comb << "\n" << pl_data.GetString().GetChars();
 
-				if (pp_data.GetString().IndexOf("ProcessTexel") < 0)
+				if (pp_data.GetString().IndexOf("GetTexCoord") >= 0)
 				{
-					// this looks like an even older custom hardware shader.
-					// We need to replace the ProcessTexel call to make it work.
+					int pl_lump = Wads.CheckNumForFullName("shaders/glsl/func_defaultmat2.fp");
+					if (pl_lump == -1) I_Error("Unable to load '%s'", "shaders/glsl/func_defaultmat2.fp");
+					FMemLump pl_data = Wads.ReadLump(pl_lump);
+					fp_comb << "\n" << pl_data.GetString().GetChars();
+				}
+				else
+				{
+					int pl_lump = Wads.CheckNumForFullName("shaders/glsl/func_defaultmat.fp");
+					if (pl_lump == -1) I_Error("Unable to load '%s'", "shaders/glsl/func_defaultmat.fp");
+					FMemLump pl_data = Wads.ReadLump(pl_lump);
+					fp_comb << "\n" << pl_data.GetString().GetChars();
 
-					fp_comb.Substitute("material.Base = ProcessTexel();", "material.Base = Process(vec4(1.0));");
+					if (pp_data.GetString().IndexOf("ProcessTexel") < 0)
+					{
+						// this looks like an even older custom hardware shader.
+						// We need to replace the ProcessTexel call to make it work.
+
+						fp_comb.Substitute("material.Base = ProcessTexel();", "material.Base = Process(vec4(1.0));");
+					}
 				}
 
 				if (pp_data.GetString().IndexOf("ProcessLight") >= 0)
@@ -545,6 +564,14 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 				FMemLump pl_data = Wads.ReadLump(pl_lump);
 				fp_comb << "\n" << pl_data.GetString().GetChars();
 			}
+
+			// ProcessMaterial must be considered broken because it requires the user to fill in data they possibly cannot know all about.
+			if (pp_data.GetString().IndexOf("ProcessMaterial") >= 0 && pp_data.GetString().IndexOf("SetupMaterial") < 0)
+			{
+				// This reactivates the old logic and disables all features that cannot be supported with that method.
+				fp_comb.Insert(fp_comb.IndexOf("\n") + 1, "#define LEGACY_USER_SHADER\n");
+			}
+
 		}
 		else
 		{
@@ -678,6 +705,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	muGradientTopPlane.Init(hShader, "uGradientTopPlane");
 	muSplitBottomPlane.Init(hShader, "uSplitBottomPlane");
 	muSplitTopPlane.Init(hShader, "uSplitTopPlane");
+	muDetailParms.Init(hShader, "uDetailParms");
 	muClipLine.Init(hShader, "uClipLine");
 	muFixedColormap.Init(hShader, "uFixedColormap");
 	muInterpolationFactor.Init(hShader, "uInterpolationFactor");
@@ -834,11 +862,8 @@ static const FDefaultShader defaultshaders[]=
 	{"Default",	"shaders/glsl/func_normal.fp", "shaders/glsl/material_normal.fp", ""},
 	{"Warp 1",	"shaders/glsl/func_warp1.fp", "shaders/glsl/material_normal.fp", ""},
 	{"Warp 2",	"shaders/glsl/func_warp2.fp", "shaders/glsl/material_normal.fp", ""},
-	{"Brightmap","shaders/glsl/func_brightmap.fp", "shaders/glsl/material_normal.fp", "#define BRIGHTMAP\n"},
 	{"Specular", "shaders/glsl/func_spec.fp", "shaders/glsl/material_specular.fp", "#define SPECULAR\n#define NORMALMAP\n"},
-	{"SpecularBrightmap", "shaders/glsl/func_spec.fp", "shaders/glsl/material_specular.fp", "#define SPECULAR\n#define NORMALMAP\n#define BRIGHTMAP\n"},
 	{"PBR","shaders/glsl/func_pbr.fp", "shaders/glsl/material_pbr.fp", "#define PBR\n#define NORMALMAP\n"},
-	{"PBRBrightmap","shaders/glsl/func_pbr.fp", "shaders/glsl/material_pbr.fp", "#define PBR\n#define NORMALMAP\n#define BRIGHTMAP\n"},
 	{"No Texture", "shaders/glsl/func_notexture.fp", "shaders/glsl/material_normal.fp", ""},
 	{"Basic Fuzz", "shaders/glsl/fuzz_standard.fp", "shaders/glsl/material_normal.fp", ""},
 	{"Smooth Fuzz", "shaders/glsl/fuzz_smooth.fp", "shaders/glsl/material_normal.fp", ""},

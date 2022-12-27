@@ -282,6 +282,7 @@ class FShader
 	FUniform4f muGradientTopPlane;
 	FUniform4f muSplitBottomPlane;
 	FUniform4f muSplitTopPlane;
+	FUniform4f muDetailParms;
 	FUniform4f muClipLine;
 	FBufferedUniform1f muInterpolationFactor;
 	FBufferedUniform1f muClipHeight;
@@ -397,8 +398,8 @@ public:
 
 	FShader *Get(unsigned int eff, bool alphateston)
 	{
-		// indices 0-2 match the warping modes, 3 is brightmap, 4 no texture, the following are custom
-		if (!alphateston && eff <= 3)
+		// indices 0-2 match the warping modes, 3 no texture, the following are custom
+		if (!alphateston && eff <= 2)
 		{
 			return mMaterialShadersNAT[eff];	// Non-alphatest shaders are only created for default, warp1+2 and brightmap. The rest won't get used anyway
 		}

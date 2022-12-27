@@ -72,15 +72,14 @@ TDeletingArray<FVoxelDef *> VoxelDefs;
 
 struct VoxelOptions
 {
-	VoxelOptions()
-	: DroppedSpin(0), PlacedSpin(0), Scale(1.), AngleOffset(90.), OverridePalette(false)
-	{}
-
-	int			DroppedSpin;
-	int			PlacedSpin;
-	double		Scale;
-	DAngle		AngleOffset;
-	bool		OverridePalette;
+	int			DroppedSpin = 0;
+	int			PlacedSpin = 0;
+	double		Scale = 1;
+	DAngle		AngleOffset = 90.;
+	bool		OverridePalette = false;
+	bool		PitchFromMomentum = false;
+	bool		UseActorPitch = false;
+	bool		UseActorRoll = false;
 };
 
 //==========================================================================
@@ -347,6 +346,7 @@ FVoxelDef *R_LoadVoxelDef(int lumpnum, int spin)
 	else
 	{
 		FVoxelDef *voxdef = new FVoxelDef;
+		*voxdef = {};
 		voxdef->Voxel = vox;
 		voxdef->Scale = 1.;
 		voxdef->DroppedSpin = voxdef->PlacedSpin = spin;
@@ -588,6 +588,18 @@ static void VOX_ReadOptions(FScanner &sc, VoxelOptions &opts)
 		{
 			opts.OverridePalette = true;
 		}
+		else if (sc.Compare("pitchfrommomentum"))
+		{
+			opts.PitchFromMomentum = true;
+		}
+		else if (sc.Compare("useactorpitch"))
+		{
+			opts.UseActorPitch = true;
+		}
+		else if (sc.Compare("useactorroll"))
+		{
+			opts.UseActorRoll = true;
+		}
 		else
 		{
 			sc.ScriptMessage("Unknown voxel option '%s'\n", sc.String);
@@ -684,6 +696,9 @@ void R_InitVoxels()
 				def->DroppedSpin = opts.DroppedSpin;
 				def->PlacedSpin = opts.PlacedSpin;
 				def->AngleOffset = opts.AngleOffset;
+				def->PitchFromMomentum = opts.PitchFromMomentum;
+				def->UseActorPitch = opts.UseActorPitch;
+				def->UseActorRoll = opts.UseActorRoll;
 				VoxelDefs.Push(def);
 
 				for (unsigned i = 0; i < vsprites.Size(); ++i)

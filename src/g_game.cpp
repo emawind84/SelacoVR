@@ -1740,7 +1740,7 @@ void G_DoReborn (int playernum, bool freshbot)
 		!G_SkillProperty(SKILLP_PlayerRespawn))
 	{
 		if (BackupSaveName.Len() > 0 && FileExists (BackupSaveName.GetChars())
-			&& (ishub || !pistolstart || !gameinfo.gametype == GAME_Doom))
+			&& (ishub || !pistolstart || !(gameinfo.gametype == GAME_Doom)))
 		{ // Load game from the last point it was saved
 			savename = BackupSaveName;
 			gameaction = ga_autoloadgame;

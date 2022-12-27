@@ -52,11 +52,8 @@ enum MaterialShaderIndex
 	SHADER_Default,
 	SHADER_Warp1,
 	SHADER_Warp2,
-	SHADER_Brightmap,
 	SHADER_Specular,
-	SHADER_SpecularBrightmap,
 	SHADER_PBR,
-	SHADER_PBRBrightmap,
 	SHADER_NoTexture,
 	SHADER_BasicFuzz,
 	SHADER_SmoothFuzz,
@@ -69,12 +66,30 @@ enum MaterialShaderIndex
 	FIRST_USER_SHADER
 };
 
+enum texflags
+{
+	// These get Or'ed into uTextureMode because it only uses its 3 lowermost bits.
+	TEXF_Brightmap = 0x10000,
+	TEXF_Detailmap = 0x20000,
+	TEXF_Glowmap = 0x40000,
+};
+
+
+
+enum
+{
+	SFlag_Brightmap = 1,
+	SFlag_Detailmap = 2,
+	SFlag_Glowmap = 4,
+};
+
 struct UserShaderDesc
 {
 	FString shader;
 	MaterialShaderIndex shaderType;
 	FString defines;
 	bool disablealphatest = false;
+	uint8_t shaderFlags = 0;
 };
 
 extern TArray<UserShaderDesc> usershaders;
@@ -439,6 +454,8 @@ public:
 		FMaterial *Material[2];
 		FGLTexture *SystemTexture[2];
 		FTexture *Brightmap;
+		FTexture* Detailmap = nullptr;
+		FTexture* Glowmap = nullptr;
 		FTexture *Normal;						// Normal map texture
 		FTexture *Specular;						// Specular light texture for the diffuse+normal+specular light model
 		FTexture *Metallic;						// Metalness texture for the physically based rendering (PBR) light model

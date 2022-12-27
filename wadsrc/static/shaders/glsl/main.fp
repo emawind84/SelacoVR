@@ -17,6 +17,7 @@ struct Material
 {
 	vec4 Base;
 	vec4 Bright;
+	vec4 Glow;
 	vec3 Normal;
 	vec3 Specular;
 	float Glossiness;
@@ -28,9 +29,16 @@ struct Material
 
 vec4 Process(vec4 color);
 vec4 ProcessTexel();
-Material ProcessMaterial();
+Material ProcessMaterial(); // note that this is deprecated. Use SetupMaterial!
+void SetupMaterial(inout Material mat);
 vec4 ProcessLight(Material mat, vec4 color);
 vec3 ProcessMaterialLight(Material material, vec3 color);
+vec2 GetTexCoord();
+
+// These get Or'ed into uTextureMode because it only uses its 3 lowermost bits.
+const int TEXF_Brightmap = 0x10000;
+const int TEXF_Detailmap = 0x20000;
+const int TEXF_Glowmap = 0x40000;
 
 //===========================================================================
 //
@@ -64,7 +72,7 @@ vec4 getTexel(vec2 st)
 	//
 	// Apply texture modes
 	//
-	switch (uTextureMode)
+	switch (uTextureMode & 0xffff)
 	{
 		case 1:	// TM_MASK
 			texel.rgb = vec3(1.0,1.0,1.0);
@@ -413,6 +421,30 @@ vec3 ApplyNormalMap(vec2 texcoord)
 
 //===========================================================================
 //
+// Sets the common material properties.
+//
+//===========================================================================
+
+void SetMaterialProps(inout Material material, vec2 texCoord)
+{
+	material.Base = getTexel(texCoord.st); 
+	material.Normal = ApplyNormalMap(texCoord.st);
+
+	if ((uTextureMode & TEXF_Brightmap) != 0)
+		material.Bright = desaturate(texture(brighttexture, texCoord.st));
+		
+	if ((uTextureMode & TEXF_Detailmap) != 0)
+	{
+		vec4 Detail = texture(detailtexture, texCoord.st * uDetailParms.xy) * uDetailParms.z;
+		material.Base *= Detail;
+	}
+	
+	if ((uTextureMode & TEXF_Glowmap) != 0)
+		material.Glow = desaturate(texture(glowtexture, texCoord.st));
+}
+
+//===========================================================================
+//
 // Calculate light
 //
 // It is important to note that the light color is not desaturated
@@ -466,8 +498,21 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 	//
 	color = ProcessLight(material, color);
 
+	// these cannot be safely applied by the legacy format where the implementation cannot guarantee that the values are set.
+#ifndef LEGACY_USER_SHADER
 	//
-	// apply dynamic lights
+	// apply glow 
+	//
+	color.rgb = mix(color.rgb, material.Glow.rgb, material.Glow.a);
+
+	//
+	// apply brightmaps 
+	//
+	color.rgb = min(color.rgb + material.Bright.rgb, 1.0);
+#endif
+	
+	//
+	// apply other light manipulation by custom shaders, default is a NOP.
 	//
 	return vec4(ProcessMaterialLight(material, color.rgb), material.Base.a * vColor.a);
 }
@@ -552,7 +597,23 @@ vec4 ApplyFadeColor(vec4 frag)
 
 void main()
 {
+#ifndef LEGACY_USER_SHADER
+	Material material;
+	
+	material.Base = vec4(0.0);
+	material.Bright = vec4(0.0);
+	material.Glow = vec4(0.0);
+	material.Normal = vec3(0.0);
+	material.Specular = vec3(0.0);
+	material.Glossiness = 0.0;
+	material.SpecularLevel = 0.0;
+	material.Metallic = 0.0;
+	material.Roughness = 0.0;
+	material.AO = 0.0;
+	SetupMaterial(material);
+#else
 	Material material = ProcessMaterial();
+#endif
 	vec4 frag = material.Base;
 	
 #ifndef NO_ALPHATEST

@@ -71,6 +71,11 @@ FTexture *EmptyTexture_TryCreate(FileReader & file, int lumpnum)
 	return new FEmptyTexture(lumpnum);
 }
 
+FTexture* CreateEmptyTexture()
+{
+	return new FEmptyTexture(0);
+}
+
 //==========================================================================
 //
 //

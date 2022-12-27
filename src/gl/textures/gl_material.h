@@ -91,6 +91,7 @@ class FMaterial
 	FGLTexture *mBaseLayer;	
 	TArray<FTextureLayer> mTextureLayers;
 	int mShaderIndex;
+	int mLayerFlags = 0;
 
 	short mLeftOffset;
 	short mTopOffset;
@@ -111,6 +112,7 @@ public:
 	
 	FMaterial(FTexture *tex, bool forceexpand);
 	~FMaterial();
+	int GetLayerFlags() const { return mLayerFlags; }
 	void Precache();
 	void PrecacheList(SpriteHits &translations);
 	bool isMasked() const

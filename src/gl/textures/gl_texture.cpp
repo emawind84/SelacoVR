@@ -233,8 +233,7 @@ void FTexture::CreateDefaultBrightmap()
 		// Check for brightmaps
 		if (UseBasePalette() && HasGlobalBrightmap &&
 			UseType != ETextureType::Decal && UseType != ETextureType::MiscPatch && UseType != ETextureType::FontChar &&
-			gl_info.Brightmap == NULL && bWarped == 0
-			) 
+			gl_info.Brightmap == NULL) 
 		{
 			// May have one - let's check when we use this texture
 			const uint8_t *texbuf = GetPixels(DefaultRenderStyle());
