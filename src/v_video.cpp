@@ -42,7 +42,6 @@
 
 #include <stdio.h>
 #include <gl/system/gl_framebuffer.h>
-#include <QzDoom/VrCommon.h>
 
 #include "i_system.h"
 #include "x86.h"

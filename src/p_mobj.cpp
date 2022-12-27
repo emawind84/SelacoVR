@@ -934,7 +934,7 @@ bool P_GiveBody(AActor *actor, int num, int max)
 					QzDoom_Vibrate(100, 0, level); // left
 					QzDoom_Vibrate(100, 1, level); // right
 
-					QzDoom_HapticEvent("healstation", 0, 100 * level * C_GetExternalHapticLevelValue("healstation"), 0, 0);
+					VR_HapticEvent("healstation", 0, 100 * level * C_GetExternalHapticLevelValue("healstation"), 0, 0);
 				}
 
 				actor->health = player->health;
@@ -5048,7 +5048,7 @@ DEFINE_ACTION_FUNCTION(AActor, AdjustFloorClip)
 EXTERN_CVAR (Bool, chasedemo)
 EXTERN_CVAR(Bool, sv_singleplayerrespawn)
 
-extern "C" float QzDoom_GetFOV();
+float QzDoom_GetFOV();
 
 extern bool demonew;
 
@@ -6936,7 +6936,6 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnSubMissile)
 ================
 */
 EXTERN_CVAR(Int, vr_control_scheme)
-extern bool weaponStabilised;
 
 AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 							  PClassActor *type, DAngle angle, FTranslatedLineTarget *pLineTarget, AActor **pMissileActor,
@@ -7058,11 +7057,11 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 			long rightHanded = vr_control_scheme < 10;
 			rightHanded = (aimflags & ALF_ISOFFHAND) ? 1 - rightHanded : rightHanded;
 			QzDoom_Vibrate(150, rightHanded ? 1 : 0, 0.8);
-			QzDoom_HapticEvent("fire_weapon", rightHanded ? 2 : 1, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
+			VR_HapticEvent("fire_weapon", rightHanded ? 2 : 1, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
 			if (weaponStabilised)
 			{
 				QzDoom_Vibrate(150, rightHanded ? 0 : 1, 0.6);
-				QzDoom_HapticEvent("fire_weapon", rightHanded ? 1 : 2, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
+				VR_HapticEvent("fire_weapon", rightHanded ? 1 : 2, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
 			}
 		}
 

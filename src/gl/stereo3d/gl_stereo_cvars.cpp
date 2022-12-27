@@ -36,8 +36,6 @@
 #include "menu/menu.h"
 #include "version.h"
 
-#include <QzDoom/VrCommon.h>
-
 // Set up 3D-specific console variables:
 CVAR(Int, vr_mode, 15, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
 
@@ -112,7 +110,7 @@ void Stereo3DMode::setCurrentMode(const Stereo3DMode& mode) {
 /* static */
 const Stereo3DMode& Stereo3DMode::getCurrentMode() 
 {
-	setCurrentMode(OculusQuestMode::getInstance());
+	setCurrentMode(OpenXRDeviceMode::getInstance());
 	return *currentStereo3DMode;
 }
 
