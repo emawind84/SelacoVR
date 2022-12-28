@@ -2706,7 +2706,7 @@ OptionMenu "GLLightOptions" protected
 	ScaleSlider "$GLLIGHTMNU_MAXFLATLIGHTS",	gl_light_flat_max_lights, 0, 10000, 100, "Limit disabled"
 	ScaleSlider "$GLLIGHTMNU_LIGHTRANGELIMIT",	gl_light_range_limit, 0, 128, 4, "Limit disabled"
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS",				"resetcvar r_dynlights gl_lights gl_lights_checkside gl_light_sprites gl_light_particles gl_light_shadowmap gl_shadowmap_quality gl_shadowmap_filter gl_light_distance_cull gl_light_max_intensity gl_light_max_collected_subsectors gl_light_max_wall_lights gl_light_max_sprite_lights" 
+	SafeCommand "$OPTMNU_DEFAULTS",				"resetcvar r_dynlights gl_lights gl_lights_checkside gl_light_sprites gl_light_particles gl_light_shadowmap gl_shadowmap_quality gl_shadowmap_filter gl_light_distance_cull gl_light_max_intensity gl_light_max_collected_subsectors gl_light_wall_max_lights gl_light_flat_max_lights gl_light_range_limit" 
 }
 
 OptionMenu "OpenGLOptions" protected
