@@ -542,6 +542,15 @@ void FGameConfigFile::DoGlobalSetup ()
 				var = FindCVar("midi_config", NULL);
 				if (var != NULL) var->ResetToDefault();
 			}
+			if (last < 226)
+			{
+				FBaseCVar *var = FindCVar("gl_billboard_faces_camera", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("storesavepic", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("gl_max_lights", NULL);
+				if (var != NULL) var->ResetToDefault();
+			}
 		}
 	}
 }
