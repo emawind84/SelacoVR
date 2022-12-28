@@ -34,7 +34,7 @@
 #include "gl/system/gl_interface.h"
 #include "gl/utility//gl_clock.h"
 
-CVAR(Int, gl_max_lights, 10000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_max_lights, 40000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CUSTOM_CVAR (Int, gl_light_buffer_type, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	Printf("You must restart " GAMENAME " to switch the light buffer\n");
