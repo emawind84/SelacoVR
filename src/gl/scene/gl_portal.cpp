@@ -798,12 +798,19 @@ void GLPlaneMirrorPortal::DrawContents()
 	drawer->SetupView(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, r_viewpoint.Angles.Yaw, !!(MirrorFlag & 1), !!(PlaneMirrorFlag & 1));
 	ClearClipper();
 
+	int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
+
+	SaveMapSection();
+	currentmapsection[mapsection >> 3] |= 1 << (mapsection & 7);
+
 	gl_RenderState.SetClipHeight(planez, PlaneMirrorMode < 0 ? -1.f : 1.f);
 	drawer->DrawScene(DM_PORTAL);
 	gl_RenderState.SetClipHeight(0.f, 0.f);
 	PlaneMirrorFlag--;
 	PlaneMirrorMode = old_pm;
 	std::swap(instack[sector_t::floor], instack[sector_t::ceiling]);
+
+	RestoreMapSection();
 }
 
 void GLPlaneMirrorPortal::PushState()
@@ -903,6 +910,11 @@ void GLMirrorPortal::DrawContents()
 		return;
 	}
 
+	int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
+
+	SaveMapSection();
+	currentmapsection[mapsection >> 3] |= 1 << (mapsection & 7);
+
 	GLRenderer->mClipPortal = this;
 	DAngle StartAngle = r_viewpoint.Angles.Yaw;
 	DVector3 StartPos = r_viewpoint.Pos;
@@ -976,6 +988,7 @@ void GLMirrorPortal::DrawContents()
 	gl_RenderState.EnableClipLine(true);
 	drawer->DrawScene(DM_PORTAL);
 	gl_RenderState.EnableClipLine(false);
+	RestoreMapSection();
 
 	MirrorFlag--;
 }
