@@ -31,6 +31,7 @@ LOCAL_C_INCLUDES := \
  $(TOP_DIR)/ \
  $(TOP_DIR)/../../../../../OpenXR/Include \
  $(TOP_DIR)/../../../../../3rdParty/khronos/openxr/OpenXR-SDK/include \
+ $(TOP_DIR)/../../../../../3rdParty/khronos/openxr/OpenXR-SDK/src/common \
  $(GZDOOM_TOP_PATH)/src/  \
  $(GZDOOM_TOP_PATH)/mobile/src/extrafiles  \
  $(GZDOOM_TOP_PATH)/game-music-emu/ \
