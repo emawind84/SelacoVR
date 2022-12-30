@@ -308,6 +308,7 @@ namespace s3d
     OpenXRDeviceMode::OpenXRDeviceMode()
             : leftEyeView(0)
             , rightEyeView(1)
+            , isSetup(false)
             , sceneWidth(0), sceneHeight(0), cachedScreenBlocks(0)
     {
         eye_ptrs.Push(&leftEyeView);
@@ -424,10 +425,17 @@ namespace s3d
 /* virtual */
     void OpenXRDeviceMode::Present() const {
 
+        if (!isSetup)
+        {
+            return;
+        }
+
         leftEyeView.submitFrame();
         rightEyeView.submitFrame();
 
         TBXR_submitFrame();
+
+        isSetup = false;
     }
 
     static int mAngleFromRadians(double radians)
@@ -654,6 +662,8 @@ namespace s3d
             }
             updateHmdPose();
         }
+
+        isSetup = true;
     }
 
     void OpenXRDeviceMode::updateHmdPose() const

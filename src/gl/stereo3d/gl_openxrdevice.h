@@ -88,6 +88,8 @@ protected:
 
 	mutable int cachedScreenBlocks;
 
+	mutable bool isSetup;
+
 private:
 	typedef Stereo3DMode super;
 	uint32_t sceneWidth, sceneHeight;

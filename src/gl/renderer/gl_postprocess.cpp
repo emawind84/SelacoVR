@@ -791,7 +791,7 @@ void FGLRenderer::ApplyFXAA()
 //
 //-----------------------------------------------------------------------------
 
-extern float cinemamode;
+extern bool cinemamode;
 
 void FGLRenderer::Flush()
 {
