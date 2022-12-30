@@ -43,7 +43,7 @@ LOCAL_C_INCLUDES := \
  $(GZDOOM_TOP_PATH)/src/scripting \
  $(GZDOOM_TOP_PATH)/src/scripting/vm \
  $(GZDOOM_TOP_PATH)/src/posix \
- $(GZDOOM_TOP_PATH)/src/posix\nosdl \
+ $(GZDOOM_TOP_PATH)/src/posix/nosdl \
  $(GZDOOM_TOP_PATH)/src/../libraries/gdtoa \
  $(GZDOOM_TOP_PATH)/src/../libraries/bzip2 \
  $(GZDOOM_TOP_PATH)/src/../libraries/game-music-emu/ \
