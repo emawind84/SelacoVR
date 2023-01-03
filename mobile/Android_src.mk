@@ -5,10 +5,16 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := qzdoom
 
-LOCAL_CFLAGS   :=  -D__MOBILE__ -DNO_PIX_BUFF -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
+
+# Uncomment for the correct headset - slight changes required in OpenXR implementation
+OPENXR_HMD = -DMETA_QUEST
+#OPENXR_HMD = -DPICO_XR
 
 
-LOCAL_CPPFLAGS := -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++14 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security  -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
+LOCAL_CFLAGS   :=  $(OPENXR_HMD) -D__MOBILE__ -DNO_PIX_BUFF -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
+
+
+LOCAL_CPPFLAGS := $(OPENXR_HMD) -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++14 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security  -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
 
 LOCAL_CFLAGS  += -DNO_SEND_STATS
 
@@ -23,6 +29,8 @@ endif
 	
 LOCAL_C_INCLUDES := \
  $(TOP_DIR)/ \
+ $(TOP_DIR)/../../../../../OpenXR/Include \
+ $(TOP_DIR)/../../../../../3rdParty/khronos/openxr/OpenXR-SDK/include \
  $(GZDOOM_TOP_PATH)/src/  \
  $(GZDOOM_TOP_PATH)/mobile/src/extrafiles  \
  $(GZDOOM_TOP_PATH)/game-music-emu/ \
@@ -329,7 +337,7 @@ PCH_SOURCES = \
 	gl/stereo3d/gl_quadstereo.cpp \
 	gl/stereo3d/gl_sidebyside3d.cpp \
 	gl/stereo3d/gl_interleaved3d.cpp \
-	gl/stereo3d/gl_oculusquest.cpp \
+	gl/stereo3d/gl_openxrdevice.cpp \
 	gl/system/gl_interface.cpp \
 	gl/system/gl_framebuffer.cpp \
 	gl/system/gl_swframebuffer.cpp \
@@ -445,10 +453,12 @@ PCH_SOURCES = \
 	
 
 QZDOOM_SRC = \
-   ../../QzDoom/QzDoom_SurfaceView.c \
-   ../../QzDoom/VrCompositor.c \
-   ../../QzDoom/VrInputCommon.c \
-   ../../QzDoom/VrInputDefault.c \
+   ../../QzDoom/TBXR_Common.cpp \
+   ../../QzDoom/QzDoom_OpenXR.cpp \
+   ../../QzDoom/OpenXrInput_PicoXR.cpp \
+   ../../QzDoom/OpenXrInput_MetaQuest.cpp \
+   ../../QzDoom/VrInputCommon.cpp \
+   ../../QzDoom/VrInputDefault.cpp \
    ../../QzDoom/mathlib.c \
    ../../QzDoom/matrixlib.c \
    ../../QzDoom/argtable3.c
@@ -499,12 +509,12 @@ LOCAL_LDLIBS +=  -lEGL
 #LOCAL_LDLIBS += -Wl,--no-warn-shared-textrel
 
 LOCAL_STATIC_LIBRARIES :=  sndfile mpg123 fluidsynth-static libjpeg zlib_lz lzma_lz gdtoa_lz dumb_lz gme_lz bzip2_lz zmusic_lz
-LOCAL_SHARED_LIBRARIES :=  openal vrapi
+LOCAL_SHARED_LIBRARIES :=  openal openxr_loader
 
 LOCAL_STATIC_LIBRARIES +=
 
 include $(BUILD_SHARED_LIBRARY)
 
-$(call import-module,VrApi/Projects/AndroidPrebuilt/jni)
+$(call import-module,OpenXR/Projects/AndroidPrebuilt/jni)
 
 
