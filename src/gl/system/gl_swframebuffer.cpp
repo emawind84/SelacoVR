@@ -364,7 +364,7 @@ std::unique_ptr<OpenGLSWFrameBuffer::HWPixelShader> OpenGLSWFrameBuffer::CreateP
 	
 	FString prefix;
 #ifdef __MOBILE__
-    prefix.AppendFormat(ES_VERSION_STR"\n%s\n#line 0\n", shaderVersion, defines.GetChars());
+    prefix.AppendFormat(ES_VERSION_STR"\n%s\n#line 0\n", defines.GetChars());
 #else
 	prefix.AppendFormat("#version %d\n%s\n#line 0\n", shaderVersion, defines.GetChars());
 #endif

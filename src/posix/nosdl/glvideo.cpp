@@ -210,7 +210,7 @@ bool NoSDLGLVideo::SetResolution (int width, int height, int bits)
 //
 //==========================================================================
 #ifdef __MOBILE__
-extern "C" extern int glesLoad;
+extern "C" int glesLoad;
 #endif
 
 void NoSDLGLVideo::SetupPixelFormat(bool allowsoftware, int multisample, const int *glver)
