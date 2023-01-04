@@ -782,7 +782,7 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal, bool is
 	}
 
 	// Too close to the camera. This doesn't look good if it is a sprite.
-	if (fabs(thingpos.X - r_viewpoint.CenterEyePos.X) < 2 && fabs(thingpos.Y - r_viewpoint.CenterEyePos.Y) < 2)
+	if (thing != camera && fabs(thingpos.X - r_viewpoint.CenterEyePos.X) < 2 && fabs(thingpos.Y - r_viewpoint.CenterEyePos.Y) < 2)
 	{
 		if (r_viewpoint.CenterEyePos.Z >= thingpos.Z - 2 && r_viewpoint.CenterEyePos.Z <= thingpos.Z + thing->Height + 2)
 		{
