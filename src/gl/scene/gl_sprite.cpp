@@ -763,18 +763,9 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal, bool is
             sprscale *= 1.2;
         }
 
-		if (!r_viewpoint.showviewer) {
-			if (thruportal == 1)
-				thingorigin += Displacements.getOffset(thing->Sector->PortalGroup,
-													   sector->PortalGroup);
-
-			if (fabs(thingorigin.X - r_viewpoint.ActorPos.X) < 2 &&
-				fabs(thingorigin.Y - r_viewpoint.ActorPos.Y) < 2) {
-				return;
-			}
-		}
+		if (thruportal == 1) thingorigin += Displacements.getOffset(thing->Sector->PortalGroup, sector->PortalGroup);
+		if (fabs(thingorigin.X - r_viewpoint.ActorPos.X) < 2 && fabs(thingorigin.Y - r_viewpoint.ActorPos.Y) < 2) return;
 	}
-
 	// Thing is invisible if close to the camera.
 	if (thing->renderflags & RF_MAYBEINVISIBLE)
 	{
