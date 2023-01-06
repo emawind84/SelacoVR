@@ -67,7 +67,6 @@ void ProfileManager::CollectProfiles()
 	// Add program root folder to the search paths
 	FString dir = NicePath("$PROGDIR");
 	if (dir.Len() > 0) mSearchPaths.Push(dir);
-	mSearchPaths.Push(dir);
 
 	// Unify and remove trailing slashes
 	for (auto &str : mSearchPaths)
