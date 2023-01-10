@@ -626,6 +626,15 @@ class OptionMenuItemMapControl : OptionMenuItemControlBase
 	}
 }
 
+class OptionMenuItemDoubleControl : OptionMenuItemControlBase
+{
+	OptionMenuItemDoubleControl Init(String label, Name command)
+	{
+		Super.Init(label, command, DoubleBindings);
+		return self;
+	}
+}
+
 //=============================================================================
 //
 //
