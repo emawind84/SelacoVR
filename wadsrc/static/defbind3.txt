@@ -1,1 +1,64 @@
-/* Default keybindings for all games */
+/* Alternative keybindings for all games */
+/* thanks to President_Koopa for the keybindings */
+
+// LTrigger - Offhand Fire
+shift +oh_attack
+// RTrigger - Main Fire
+rtrigger +attack
+
+// Y - Offhand Next Weapon
+pad_y "weapnext 1"
+// Y^- Assign Weapon to Offhand from Main
+doublebind pad_y "switchhand 1"
+// X - Use Inventory Item
+pad_x invuse
+// X^- Next Map
+doublebind pad_x nextmap
+
+// B - Mainhand Next Weapon
+pad_b weapnext
+// B^- Assign Weapon to Mainhand from Off
+doublebind pad_b "switchhand 0"
+
+// A - Use / Activate
+pad_a +use
+// A^- Slot 3 / Quick Shotgun
+doublebind pad_a "slot 3"
+
+// L Grip - Stabilize Main Weapon + Run
+rthumb +speed
+
+// R Grip + R Joy Up - Toggle Map
+axis8plus togglemap
+// R Grip + R Joy Down - Reload
+axis8minus +reload
+// R Grip + R Trigger - Main Hand Alt Fire
+ltrigger +altattack
+// R Grip + L Trigger - OffHand Alt Fire
+alt +oh_altatk
+// R Grip + Y - Next Inventory Item
+pgup invnext
+// R Grip + X - Previous Inventory Item
+pgdn invprev
+// R Grip + L Joy Click - ??
+
+// R Grip + R Joy Click - Jump
+tab +jump
+// R Grip + A - DarkDoomFlashlight
+//lthumb ddz_toggleflashlight
+// R Grip + B - Toggle Crouch
+backspace crouch
+
+
+// R Joy Up - N/A
+mwheelup +reload
+// R Joy Down - N/A
+mwheeldown +crouch
+// L Joy Click
+
+// L Joy Click^
+doublebind space togglemap
+// R Joy Click
+enter +use
+// R Joy Click^
+doublebind enter +jump

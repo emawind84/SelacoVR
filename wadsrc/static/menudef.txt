@@ -503,10 +503,10 @@ ListMenu "PlayerMenu"
 
 OptionValue "Layouts"
 {
-	0, "$OPTVAL_CLASSICZ"
-	1, "$OPTVAL_MODERN"
-	2, "$OPTVAL_MODERN2"
-	3, "$OPTVAL_MODERN3"
+	0, "QZD Pre 1.3.0"
+	1, "QZD Dual Wield"
+	2, "QZD Classic"
+	3, "QZD Koopa"
 }
 
 OptionMenu "CustomizeControls" protected
