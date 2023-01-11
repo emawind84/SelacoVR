@@ -553,17 +553,6 @@ OptionMenu "ActionControlsMenu" protected
 	Control    "$CNTRLMNU_USE"              , "+use"
 
 	StaticText ""
-	Control    "$CNTRLMNU_FORWARD"          , "+forward"
-	Control    "$CNTRLMNU_BACK"             , "+back"
-	Control    "$CNTRLMNU_MOVELEFT"         , "+moveleft"
-	Control    "$CNTRLMNU_MOVERIGHT"        , "+moveright"
-
-	StaticText ""
-	Control    "$CNTRLMNU_TURNLEFT"         , "+left"
-	Control    "$CNTRLMNU_TURNRIGHT"        , "+right"
-	Control    "$CNTRLMNU_TURN180"          , "turn180"
-
-	StaticText ""
 	Control    "$CNTRLMNU_JUMP"             , "+jump"
 	Control    "$CNTRLMNU_CROUCH"           , "+crouch"
 	Control    "$CNTRLMNU_TOGGLECROUCH"     , "crouch"
@@ -572,13 +561,6 @@ OptionMenu "ActionControlsMenu" protected
 	Control    "$CNTRLMNU_MOVEUP"           , "+moveup"
 	Control    "$CNTRLMNU_MOVEDOWN"         , "+movedown"
 	Control    "$CNTRLMNU_LAND"             , "land"
-
-	StaticText ""
-	Control    "$CNTRLMNU_MOUSELOOK"        , "+mlook"
-	Control    "$CNTRLMNU_KEYBOARDLOOK"     , "+klook"
-	Control    "$CNTRLMNU_LOOKUP"           , "+lookup"
-	Control    "$CNTRLMNU_LOOKDOWN"         , "+lookdown"
-	Control    "$CNTRLMNU_CENTERVIEW"       , "centerview"
 
 	StaticText ""
 	Control    "$CNTRLMNU_RUN"              , "+speed"
@@ -605,17 +587,6 @@ OptionMenu "ActionDoubleControlsMenu" protected
 	DoubleControl    "$CNTRLMNU_USE"              , "+use"
 
 	StaticText ""
-	DoubleControl    "$CNTRLMNU_FORWARD"          , "+forward"
-	DoubleControl    "$CNTRLMNU_BACK"             , "+back"
-	DoubleControl    "$CNTRLMNU_MOVELEFT"         , "+moveleft"
-	DoubleControl    "$CNTRLMNU_MOVERIGHT"        , "+moveright"
-
-	StaticText ""
-	DoubleControl    "$CNTRLMNU_TURNLEFT"         , "+left"
-	DoubleControl    "$CNTRLMNU_TURNRIGHT"        , "+right"
-	DoubleControl    "$CNTRLMNU_TURN180"          , "turn180"
-
-	StaticText ""
 	DoubleControl    "$CNTRLMNU_JUMP"             , "+jump"
 	DoubleControl    "$CNTRLMNU_CROUCH"           , "+crouch"
 	DoubleControl    "$CNTRLMNU_TOGGLECROUCH"     , "crouch"
@@ -624,13 +595,6 @@ OptionMenu "ActionDoubleControlsMenu" protected
 	DoubleControl    "$CNTRLMNU_MOVEUP"           , "+moveup"
 	DoubleControl    "$CNTRLMNU_MOVEDOWN"         , "+movedown"
 	DoubleControl    "$CNTRLMNU_LAND"             , "land"
-
-	StaticText ""
-	Control    "$CNTRLMNU_MOUSELOOK"        , "+mlook"
-	Control    "$CNTRLMNU_KEYBOARDLOOK"     , "+klook"
-	Control    "$CNTRLMNU_LOOKUP"           , "+lookup"
-	Control    "$CNTRLMNU_LOOKDOWN"         , "+lookdown"
-	Control    "$CNTRLMNU_CENTERVIEW"       , "centerview"
 
 	StaticText ""
 	DoubleControl    "$CNTRLMNU_RUN"              , "+speed"
@@ -816,13 +780,6 @@ OptionMenu "OtherControlsMenu" protected
 	StaticText ""
 	Control    "$CNTRLMNU_QUICKSAVE"       , "quicksave"
 	Control    "$CNTRLMNU_QUICKLOAD"       , "quickload"
-
-	StaticText ""
-	Control    "Toggle global fade"        , "fade_toggle"
-	Control    "Increase fade density"     , "fade_density_up"
-	Control    "Decrease fade density"     , "fade_density_down"
-	Control    "Increase fade gradient"    , "fade_gradient_up"
-	Control    "Decrease fade gradient"    , "fade_gradient_down"
 }
 
 OptionMenu "OtherDoubleControlsMenu" protected
@@ -865,13 +822,6 @@ OptionMenu "OtherDoubleControlsMenu" protected
 	StaticText ""
 	DoubleControl    "$CNTRLMNU_QUICKSAVE"       , "quicksave"
 	DoubleControl    "$CNTRLMNU_QUICKLOAD"       , "quickload"
-
-	StaticText ""
-	DoubleControl    "Toggle global fade"        , "fade_toggle"
-	DoubleControl    "Increase fade density"     , "fade_density_up"
-	DoubleControl    "Decrease fade density"     , "fade_density_down"
-	DoubleControl    "Increase fade gradient"    , "fade_gradient_up"
-	DoubleControl    "Decrease fade gradient"    , "fade_gradient_down"
 }
 
 OptionMenu "StrifeControlsMenu" protected
