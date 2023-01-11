@@ -4,6 +4,8 @@
 
 extern int GameTicRate;
 
+void I_InitTime();
+
 // Called by D_DoomLoop, sets the time for the current frame
 void I_SetFrameTime();
 
