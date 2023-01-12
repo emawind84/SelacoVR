@@ -374,6 +374,8 @@ OptionMenu "OptionsMenu" protected
 		Submenu "$OPTMNU_EXPERIMENTAL",	"ExperimentalMenu", 0, 0, Gold
 	}
 	StaticText " "
+	Submenu "$OS_TITLE", "os_Menu"
+	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS",	    "reset2defaults"
 	SafeCommand	"$OPTMNU_RESETTOSAVED",	"reset2saved"
 	Command "$OPTMNU_CONSOLE",			"menuconsole"
