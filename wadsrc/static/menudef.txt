@@ -664,6 +664,10 @@ OptionMenu "WeaponsDoubleControlMenu" protected
 	StaticText ""
 	DoubleControl    "$CNTRLMNU_NEXTWEAPON"     , "weapnext"
 	DoubleControl    "$CNTRLMNU_PREVIOUSWEAPON" , "weapprev"
+	DoubleControl    "$CNTRLMNU_OFFHAND_NEXTWEAPON"     , "weapnext 1"
+	DoubleControl    "$CNTRLMNU_OFFHAND_PREVIOUSWEAPON" , "weapprev 1"
+	DoubleControl    "$CNTRLMNU_SWITCH_TO_OFFHAND", "switchhand 1"
+	DoubleControl    "$CNTRLMNU_SWITCH_TO_MAINHAND", "switchhand 0"
 
 	StaticText ""
 	DoubleControl    "$CNTRLMNU_SLOT1"          , "slot 1"
