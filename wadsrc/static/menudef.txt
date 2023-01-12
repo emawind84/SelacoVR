@@ -3346,4 +3346,8 @@ OptionMenu "ExperimentalMenu"
 	Option "Store save picture", "storesavepic", "OnOff"
 	StaticText "A screenshot is taken just before saving", "Brown"
 	StaticText "and stored inside the savegame.", "Brown"
+	StaticText " "
+	CommandInput "Type in console"
+	StaticText "Use the character input grid to type in console.", "Brown"
+	StaticText "We can finally type in console without a keyboard!", "Brown"
 }
