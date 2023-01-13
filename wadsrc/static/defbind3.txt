@@ -13,7 +13,7 @@ doublebind pad_y "switchhand 1"
 // X - Use Inventory Item
 pad_x invuse
 // X^- Next Map
-doublebind pad_x nextmap
+//doublebind pad_x nextmap
 
 // B - Mainhand Next Weapon
 pad_b weapnext
@@ -28,37 +28,47 @@ doublebind pad_a "slot 3"
 // L Grip - Stabilize Main Weapon + Run
 rthumb +speed
 
-// R Grip + R Joy Up - Toggle Map
-axis8plus togglemap
+// R Grip + R Joy Up - Jump
+axis8plus +jump
+
 // R Grip + R Joy Down - Reload
 axis8minus +reload
+
 // R Grip + R Trigger - Main Hand Alt Fire
 ltrigger +altattack
+
 // R Grip + L Trigger - OffHand Alt Fire
 alt +oh_altatk
+
 // R Grip + Y - Next Inventory Item
 pgup invnext
+
 // R Grip + X - Previous Inventory Item
 pgdn invprev
-// R Grip + L Joy Click - ??
 
-// R Grip + R Joy Click - Jump
-tab +jump
+// R Grip + L Joy Click - BrutalDoom Roll Left
+home roleft
+
+// R Grip + R Joy Click - BrutalDoom Roll Right
+tab roright
+
 // R Grip + A - DarkDoomFlashlight
 //lthumb ddz_toggleflashlight
+lthumb flashlightswitch
+
 // R Grip + B - Toggle Crouch
 backspace crouch
 
 
 // R Joy Up - N/A
-mwheelup +reload
+//mwheelup +reload
 // R Joy Down - N/A
 mwheeldown +crouch
 // L Joy Click
-
+space "toggle cl_run"
 // L Joy Click^
-doublebind space togglemap
+//doublebind space togglemap
 // R Joy Click
-enter +use
+enter kickem
 // R Joy Click^
-doublebind enter +jump
+//doublebind enter +jump
