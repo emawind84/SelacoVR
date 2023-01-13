@@ -555,6 +555,17 @@ OptionMenu "ActionControlsMenu" protected
 	Control    "$CNTRLMNU_USE"              , "+use"
 
 	StaticText ""
+	Control    "$CNTRLMNU_FORWARD"          , "+forward"
+	Control    "$CNTRLMNU_BACK"             , "+back"
+	Control    "$CNTRLMNU_MOVELEFT"         , "+moveleft"
+	Control    "$CNTRLMNU_MOVERIGHT"        , "+moveright"
+
+	StaticText ""
+	Control    "$CNTRLMNU_TURNLEFT"         , "+left"
+	Control    "$CNTRLMNU_TURNRIGHT"        , "+right"
+	Control    "$CNTRLMNU_TURN180"          , "turn180"
+
+	StaticText ""
 	Control    "$CNTRLMNU_JUMP"             , "+jump"
 	Control    "$CNTRLMNU_CROUCH"           , "+crouch"
 	Control    "$CNTRLMNU_TOGGLECROUCH"     , "crouch"
@@ -563,6 +574,13 @@ OptionMenu "ActionControlsMenu" protected
 	Control    "$CNTRLMNU_MOVEUP"           , "+moveup"
 	Control    "$CNTRLMNU_MOVEDOWN"         , "+movedown"
 	Control    "$CNTRLMNU_LAND"             , "land"
+
+	StaticText ""
+	Control    "$CNTRLMNU_MOUSELOOK"        , "+mlook"
+	Control    "$CNTRLMNU_KEYBOARDLOOK"     , "+klook"
+	Control    "$CNTRLMNU_LOOKUP"           , "+lookup"
+	Control    "$CNTRLMNU_LOOKDOWN"         , "+lookdown"
+	Control    "$CNTRLMNU_CENTERVIEW"       , "centerview"
 
 	StaticText ""
 	Control    "$CNTRLMNU_RUN"              , "+speed"
@@ -589,6 +607,17 @@ OptionMenu "ActionDoubleControlsMenu" protected
 	DoubleControl    "$CNTRLMNU_USE"              , "+use"
 
 	StaticText ""
+	DoubleControl    "$CNTRLMNU_FORWARD"          , "+forward"
+	DoubleControl    "$CNTRLMNU_BACK"             , "+back"
+	DoubleControl    "$CNTRLMNU_MOVELEFT"         , "+moveleft"
+	DoubleControl    "$CNTRLMNU_MOVERIGHT"        , "+moveright"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_TURNLEFT"         , "+left"
+	DoubleControl    "$CNTRLMNU_TURNRIGHT"        , "+right"
+	DoubleControl    "$CNTRLMNU_TURN180"          , "turn180"
+
+	StaticText ""
 	DoubleControl    "$CNTRLMNU_JUMP"             , "+jump"
 	DoubleControl    "$CNTRLMNU_CROUCH"           , "+crouch"
 	DoubleControl    "$CNTRLMNU_TOGGLECROUCH"     , "crouch"
@@ -597,6 +626,13 @@ OptionMenu "ActionDoubleControlsMenu" protected
 	DoubleControl    "$CNTRLMNU_MOVEUP"           , "+moveup"
 	DoubleControl    "$CNTRLMNU_MOVEDOWN"         , "+movedown"
 	DoubleControl    "$CNTRLMNU_LAND"             , "land"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_MOUSELOOK"        , "+mlook"
+	DoubleControl    "$CNTRLMNU_KEYBOARDLOOK"     , "+klook"
+	DoubleControl    "$CNTRLMNU_LOOKUP"           , "+lookup"
+	DoubleControl    "$CNTRLMNU_LOOKDOWN"         , "+lookdown"
+	DoubleControl    "$CNTRLMNU_CENTERVIEW"       , "centerview"
 
 	StaticText ""
 	DoubleControl    "$CNTRLMNU_RUN"              , "+speed"
