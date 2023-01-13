@@ -500,10 +500,7 @@ OptionMenu "CustomizeControls" protected
 	Submenu    "$CNTRLMNU_INVENTORY"   , "InventoryControlsMenu"
 	Submenu    "$MAPCNTRLMNU_CONTROLS" , "MapControlsMenu"
 	Submenu    "$CNTRLMNU_OTHER"       , "OtherControlsMenu"
-	IfGame(Strife)
-	{
-		Submenu    "$CNTRLMNU_POPUPS"      , "StrifeControlsMenu"
-	}
+	Submenu    "$CNTRLMNU_POPUPS"      , "PopupControlsMenu"
 	Submenu    "$MNU_MULTIPLAYER"      , "ChatControlsMenu"
 	StaticText " "
 	Option "$CNTRLMNU_LAYOUT",			"k_modern", "Layouts"
@@ -677,7 +674,7 @@ OptionMenu "OtherControlsMenu" protected
 	Control    "Decrease fade gradient"    , "fade_gradient_down"
 }
 
-OptionMenu "StrifeControlsMenu" protected
+OptionMenu "PopupControlsMenu" protected
 {
 	Title "$CNTRLMNU_POPUPS_TITLE"
 	ScrollTop 2
