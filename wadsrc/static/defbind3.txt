@@ -1,5 +1,5 @@
 /* Alternative keybindings for all games */
-/* thanks to President_Koopa for the keybindings */
+/* thanks to President_Koopa for providing the layout */
 
 // LTrigger - Offhand Fire
 shift +oh_attack
@@ -25,50 +25,60 @@ pad_a +use
 // A^- Slot 3 / Quick Shotgun
 doublebind pad_a "slot 3"
 
-// L Grip - Stabilize Main Weapon + Run
-rthumb +speed
+// L Grip - Stabilize Main Weapon
+//rthumb
 
-// R Grip + R Joy Up - Jump
-axis8plus +jump
-
+// R Grip + R Joy Up - Togglemap
+//axis8plus +jump
+axis8plus togglemap
 // R Grip + R Joy Down - Reload
 axis8minus +reload
 
 // R Grip + R Trigger - Main Hand Alt Fire
 ltrigger +altattack
-
 // R Grip + L Trigger - OffHand Alt Fire
 alt +oh_altatk
 
 // R Grip + Y - Next Inventory Item
 pgup invnext
-
 // R Grip + X - Previous Inventory Item
 pgdn invprev
 
-// R Grip + L Joy Click - BrutalDoom Roll Left
-home roleft
+// R Grip + L Joy Click - Toggle laser sight
+home toggle_laser_sight
+// R Grip + R Joy Click - Toggle weapon menu (gearbox mod)
+tab +gb_toggle_weapon_menu
 
-// R Grip + R Joy Click - BrutalDoom Roll Right
-tab roright
-
-// R Grip + A - DarkDoomFlashlight
-//lthumb ddz_toggleflashlight
-lthumb flashlightswitch
-
+// R Grip + A - Throw Grenade
+lthumb grenadetoss
 // R Grip + B - Toggle Crouch
 backspace crouch
 
 
-// R Joy Up - N/A
-//mwheelup +reload
-// R Joy Down - N/A
+// R Joy Up - Jump
+mwheelup +jump
+// R Joy Up^ - Move Up
+doublebind mwheelup +moveup
+// R Joy Down - Crouch
 mwheeldown +crouch
-// L Joy Click
-space "toggle cl_run"
-// L Joy Click^
-//doublebind space togglemap
-// R Joy Click
+// R Joy Down^ - Land
+doublebind mwheeldown land
+
+// L Joy Click - Run
+space +speed
+// L Joy Click^ - Flashlight
+doublebind space flashlightswitch
+// R Joy Click - BD Kick
 enter kickem
-// R Joy Click^
-//doublebind enter +jump
+// R Joy Click^ - BD Dual
+doublebind enter dual
+
+// R Grip + R Joy Left
+Axis7Plus = weapnext
+// R Grip + R Joy Right
+Axis7Minus = weapprev
+
+//RGrip + LJoyUp = brutaltaunt
+//RGrip + LJoyDown = wave2
+//RGrip + LJoyLeft = oneliner
+//RGrip + LJoyRight = advtaunt
