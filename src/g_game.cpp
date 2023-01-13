@@ -704,21 +704,21 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 		if (turnheld < SLOWTURNTICS)
 			tspeed += 2;		// slow turn
 		
-		if (Button_Right.bDown)
+		if (false && Button_Right.bDown)
 		{
 			G_AddViewAngle (*angleturn[tspeed]);
 		}
-		if (Button_Left.bDown)
+		if (false && Button_Left.bDown)
 		{
 			G_AddViewAngle (-*angleturn[tspeed]);
 		}
 	}
 
-	if (Button_LookUp.bDown)
+	if (false && Button_LookUp.bDown)
 	{
 		G_AddViewPitch (lookspeed[speed]);
 	}
-	if (Button_LookDown.bDown)
+	if (false && Button_LookDown.bDown)
 	{
 		G_AddViewPitch (-lookspeed[speed]);
 	}
@@ -730,9 +730,9 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 
 	if (Button_Klook.bDown)
 	{
-		if (Button_Forward.bDown)
+		if (false && Button_Forward.bDown)
 			G_AddViewPitch (lookspeed[speed]);
-		if (Button_Back.bDown)
+		if (false && Button_Back.bDown)
 			G_AddViewPitch (-lookspeed[speed]);
 	}
 	else
@@ -784,8 +784,12 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 		float joyside=0;
 		float dummy=0;
 		VR_GetMove(&joyforward, &joyside, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy);
-		side += joyint(joyside * (vr_move_speed * (speed ? vr_run_multiplier : 1.0)));
-		forward += joyint(joyforward * (vr_move_speed * (speed ? vr_run_multiplier : 1.0)));
+		side = joyint(joyside * (vr_move_speed * (speed ? vr_run_multiplier : 1.0)));
+		forward = joyint(joyforward * (vr_move_speed * (speed ? vr_run_multiplier : 1.0)));
+	}
+	else
+	{
+		side = forward = 0;
 	}
 
 	cmd->ucmd.pitch = LocalViewPitch >> 16;
@@ -819,11 +823,11 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	LocalViewPitch = 0;
 
 	// special buttons
-	if (sendturn180)
-	{
-		sendturn180 = false;
-		cmd->ucmd.buttons |= BT_TURN180;
-	}
+	// if (sendturn180)
+	// {
+	// 	sendturn180 = false;
+	// 	cmd->ucmd.buttons |= BT_TURN180;
+	// }
 	if (sendpause)
 	{
 		sendpause = false;
