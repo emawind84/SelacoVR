@@ -686,7 +686,7 @@ void C_DoCommand (const char *cmd, int keynum)
 		}
 		else
 		{ // We don't know how to handle this command
-			Printf ("Unknown command \"%.*s\"\n", (int)len, beg);
+			DPrintf(DMSG_WARNING, "Unknown command \"%.*s\"\n", (int)len, beg);
 		}
 	}
 }
