@@ -24,6 +24,10 @@ pad_start pause
 pad_back menu_main
 lthumb crouch
 
+axis1plus +moveright
+axis1minus +moveleft
+axis2plus +forward
+axis2minus +back
 
 /* Default automap bindings */
 mapbind mwheelup "am_zoom 1.2"
