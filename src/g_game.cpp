@@ -352,10 +352,13 @@ CCMD (switchhand)
 	{
 		int hand = atoi (argv[1]);
 		auto mo = players[consoleplayer].mo;
-		IFVIRTUALPTRNAME(mo, NAME_PlayerPawn, SwitchWeaponHand)
+		if (mo)
 		{
-			VMValue param[] = { mo, hand };
-			VMCall(func, param, 2, nullptr, 0);
+			IFVIRTUALPTRNAME(mo, NAME_PlayerPawn, SwitchWeaponHand)
+			{
+				VMValue param[] = { mo, hand };
+				VMCall(func, param, 2, nullptr, 0);
+			}
 		}
 	}
 }
@@ -563,10 +566,14 @@ CCMD (invuse)
 
 CCMD(invquery)
 {
-	AActor *inv = players[consoleplayer].mo->PointerVar<AActor>(NAME_InvSel);
-	if (inv != NULL)
+	auto mo = players[consoleplayer].mo;
+	if (mo)
 	{
-		Printf(PRINT_HIGH, "%s (%dx)\n", inv->GetTag(), inv->IntVar(NAME_Amount));
+		AActor *inv = mo->PointerVar<AActor>(NAME_InvSel);
+		if (inv != NULL)
+		{
+			Printf(PRINT_HIGH, "%s (%dx)\n", inv->GetTag(), inv->IntVar(NAME_Amount));
+		}
 	}
 }
 
