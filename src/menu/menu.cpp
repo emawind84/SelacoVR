@@ -1223,12 +1223,12 @@ DMenuItemBase * CreateOptionMenuItemJoyConfigMenu(const char *label, IJoystickCo
 	return (DMenuItemBase*)p;
 }
 
-DMenuItemBase * CreateOptionMenuItemSubmenu(const char *label, FName cmd, int center)
+DMenuItemBase * CreateOptionMenuItemSubmenu(const char *label, FName cmd, int center, int v)
 {
 	auto c = PClass::FindClass("OptionMenuItemSubmenu");
 	auto p = c->CreateNew();
 	FString namestr = label;
-	VMValue params[] = { p, &namestr, cmd.GetIndex(), center, false };
+	VMValue params[] = { p, &namestr, cmd.GetIndex(), center, false, v };
 	auto f = dyn_cast<PFunction>(c->FindSymbol("Init", false));
 	VMCall(f->Variants[0].Implementation, params, countof(params), nullptr, 0);
 	return (DMenuItemBase*)p;

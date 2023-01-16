@@ -358,7 +358,7 @@ void DeinitMenus();
 
 struct IJoystickConfig;
 DMenuItemBase * CreateOptionMenuItemStaticText(const char *name, int v = -1);
-DMenuItemBase * CreateOptionMenuItemSubmenu(const char *label, FName cmd, int center);
+DMenuItemBase * CreateOptionMenuItemSubmenu(const char *label, FName cmd, int center, int v = CR_UNDEFINED);
 DMenuItemBase * CreateOptionMenuItemControl(const char *label, FName cmd, FKeyBindings *bindings);
 DMenuItemBase * CreateOptionMenuItemJoyConfigMenu(const char *label, IJoystickConfig *joy);
 DMenuItemBase * CreateListMenuItemPatch(double x, double y, int height, int hotkey, FTextureID tex, FName command, int param);
