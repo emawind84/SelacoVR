@@ -1219,6 +1219,10 @@ FUNC(LS_Teleport_Line)
 
 static void ThrustThingHelper(AActor *it, DAngle angle, double force, INTBOOL nolimit)
 {
+	if (it->player)
+	{
+		it->player->keepmomentum = true;
+	}
 	it->Thrust(angle, force);
 	if (!nolimit)
 	{
