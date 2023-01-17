@@ -97,7 +97,8 @@ void FSavegameManager::ReadSaveStrings()
 						FString engine = arc.GetString("Engine");
 						FString iwad = arc.GetString("Game WAD");
 						FString title = arc.GetString("Title");
-
+						int date = 0;
+						arc("Save Date", date);
 
 						if (engine.Compare(GAMESIG) != 0 || savever > SAVEVER)
 						{
@@ -126,6 +127,7 @@ void FSavegameManager::ReadSaveStrings()
 						node->bOldVersion = oldVer;
 						node->bMissingWads = missing;
 						node->SaveTitle = title;
+						node->saveDate = date;
 						InsertSaveNode(node);
 					}
 
@@ -199,6 +201,7 @@ void FSavegameManager::ReadSaveStrings()
 							node->bOldVersion = true;
 							node->bMissingWads = false;
 							node->SaveTitle = title;
+							node->saveDate = 0;
 							InsertSaveNode(node);
 						}
 					}
@@ -239,15 +242,15 @@ void FSavegameManager::PerformSaveGame(const char *fn, const char *savegamestrin
 
 FString FSavegameManager::ExtractSaveComment(FSerializer &arc)
 {
-	FString comment;
+	//FString comment;
 
-	FString time = arc.GetString("Creation Time");
+	//FString time = arc.GetString("Creation Time");
 	FString pcomment = arc.GetString("Comment");
 
-	comment = time;
-	if (time.Len() > 0) comment += "\n";
-	comment += pcomment;
-	return comment;
+	//comment = time;
+	//if (time.Len() > 0) comment += "\n";
+	//comment += pcomment;
+	return pcomment;
 }
 
 FString FSavegameManager::BuildSaveName(const char* prefix, int slot)

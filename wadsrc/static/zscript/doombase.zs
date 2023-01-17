@@ -464,6 +464,7 @@ struct LevelLocals native
 	native void StartSlideshow(Name whichone = 'none');
 	native static void MakeScreenShot();
 	native static void MakeAutoSave();
+	native static bool MakeQuickSave();
 	native void WorldDone();
 	deprecated("3.8", "This function does nothing") static void RemoveAllBots(bool fromlist) { /* intentionally left as no-op. */ }
 	native ui Vector2 GetAutomapPosition();

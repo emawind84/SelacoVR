@@ -2206,13 +2206,16 @@ CUSTOM_CVAR (Int, quicksaverotationcount, 4, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 		self = 1;
 }
 
+
+extern time_t epochoffset;
+
 void G_DoAutoSave ()
 {
 	FString description;
 	FString file;
 	// Keep up to four autosaves at a time
 	UCVarValue num;
-	const char *readableTime;
+	char readableTime[64];
 	int count = autosavecount != 0 ? autosavecount : 1;
 	
 	if (nextautosave == -1) 
@@ -2236,8 +2239,13 @@ void G_DoAutoSave ()
 		primaryLevel->flags2 &= ~LEVEL2_NOAUTOSAVEHINT;
 	}
 
-	readableTime = myasctime ();
-	description.Format("Autosave %s", readableTime);
+	//readableTime = myasctime ();
+	time_t now;
+	time(&now);
+	now += epochoffset;
+	struct tm* nowInfo = localtime(&now);
+	strftime(readableTime, 64, "%H:%M:%S - %d/%m/%Y", nowInfo);
+	description.Format("Autosave: %s", readableTime);
 	G_DoSaveGame (false, false, file, description);
 }
 
@@ -2247,7 +2255,7 @@ void G_DoQuickSave ()
 	FString file;
 	// Keeps a rotating set of quicksaves
 	UCVarValue num;
-	const char *readableTime;
+	char readableTime[64];
 	int count = quicksaverotationcount != 0 ? quicksaverotationcount : 1;
 	
 	if (quicksavenum < 0) 
@@ -2264,10 +2272,16 @@ void G_DoQuickSave ()
 
 	file = G_BuildSaveName ("quick", lastquicksave);
 
-	readableTime = myasctime ();
-	description.Format("Quicksave %s", readableTime);
+	//readableTime = myasctime ();
+	time_t now;
+	time(&now);
+	now += epochoffset;
+	struct tm* nowInfo = localtime(&now);
+	strftime(readableTime, 64, "%H:%M:%S - %d/%m/%Y", nowInfo);
+	description.Format("Quicksave: %s", readableTime);
 	G_DoSaveGame (true, true, file, description);
 }
+
 
 
 static void PutSaveWads (FSerializer &arc)
@@ -2290,17 +2304,21 @@ static void PutSaveComment (FSerializer &arc)
 {
 	int levelTime;
 
-	FString comment = myasctime();
+	FString comment;// = myasctime();
 
-	arc.AddString("Creation Time", comment);
+	arc.AddString("Creation Time", myasctime());
 
-	// Get level name
-	comment.Format("%s - %s\n", primaryLevel->MapName.GetChars(), primaryLevel->LevelName.GetChars());
+	comment = staticEventManager.GetSavegameComments();
 
-	// Append elapsed time
-	const char *const time = GStrings("SAVECOMMENT_TIME");
-	levelTime = primaryLevel->time / TICRATE;
-	comment.AppendFormat("%s: %02d:%02d:%02d", time, levelTime/3600, (levelTime%3600)/60, levelTime%60);
+	if (comment.IsEmpty()) {
+		// Get level name
+		comment.Format("%s - %s\n", primaryLevel->MapName.GetChars(), primaryLevel->LevelName.GetChars());
+
+		// Append elapsed time
+		const char *const time = GStrings("SAVECOMMENT_TIME");
+		levelTime = primaryLevel->time / TICRATE;
+		comment.AppendFormat("%s: %02d:%02d:%02d", time, levelTime / 3600, (levelTime % 3600) / 60, levelTime % 60);
+	}
 
 	// Write out the comment
 	arc.AddString("Comment", comment);
@@ -2395,6 +2413,12 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 	PutSaveWads (savegameinfo);
 	PutSaveComment (savegameinfo);
 
+	// @Cockatrice - Add date value so we can sort entries by date saved
+	time_t cdate;
+	time(&cdate);
+	int cdatei = (int)cdate;
+	savegameinfo("Save Date", cdatei);
+
 	// Intermission stats for hubs
 	G_SerializeHub(savegameglobals);
 	C_SerializeCVars(savegameglobals, "servercvars", CVAR_SERVERINFO);
@@ -2446,7 +2470,7 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 
 	if (succeeded)
 	{
-		savegameManager.NotifyNewSave(filename, description, okForQuicksave, forceQuicksave);
+		savegameManager.NotifyNewSave(filename, description, cdatei, okForQuicksave, forceQuicksave);
 		BackupSaveName = filename;
 
 		if (longsavemessages) Printf("%s (%s)\n", GStrings("GGSAVED"), filename.GetChars());
@@ -3124,6 +3148,43 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, MakeAutoSave)
 {
 	G_MakeAutoSave();
 	return 0;
+}
+
+// Similar to CCMD(quicksave) but with additional checks
+// Returns true if savegame was PERMITTED, but does not guarantee that save was created
+DEFINE_ACTION_FUNCTION(FLevelLocals, MakeQuickSave)
+{
+	if (!usergame || (players[consoleplayer].health <= 0 && !multiplayer))
+	{
+		S_Sound(CHAN_VOICE, CHANF_UI, "menu/invalid", snd_menuvolume, ATTN_NONE);
+		ACTION_RETURN_BOOL(false);
+	}
+
+	if (gamestate != GS_LEVEL)
+		ACTION_RETURN_BOOL(false);
+
+	// If the quick save rotation is enabled, it handles the save slot.
+	if (quicksaverotation)
+	{
+		G_DoQuickSave();
+		ACTION_RETURN_BOOL(true);
+	}
+
+	if (savegameManager.quickSaveSlot == NULL || savegameManager.quickSaveSlot == (FSaveGameNode*)1)
+	{
+		FString description;
+		FString file;
+		lastquicksave = 0;
+		file = G_BuildSaveName("quick", lastquicksave);
+
+		FString readableTime = myasctime();
+		description.Format("Quicksave %s", readableTime);
+		G_DoSaveGame(true, true, file, description);
+		ACTION_RETURN_BOOL(true);
+	}
+
+	G_SaveGame(savegameManager.quickSaveSlot->Filename.GetChars(), savegameManager.quickSaveSlot->SaveTitle.GetChars());
+	ACTION_RETURN_BOOL(true);
 }
 
 DEFINE_GLOBAL(players)

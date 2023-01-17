@@ -302,6 +302,37 @@ void EventManager::WorldUnloaded(const FString& nextmap)
 	}
 }
 
+FString EventManager::GetSavegameComments()
+{
+	struct Comment {
+		FString txt;
+		int order;
+	};
+
+	FString comments = "";
+	TArray<Comment> allComments(20);
+
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
+	{
+		if (!handler->IsStatic()) continue;
+		int order;
+		FString res = handler->GetSavegameComment(order);
+		if (!res.IsEmpty()) {
+			int index = 0;
+			for (unsigned int x = 0; x < allComments.Size(); x++) { if (order > allComments[x].order) index++; }
+			allComments.Insert(index, { res, order });
+		}
+	}
+
+	if (allComments.Size()) {
+		for (unsigned int x = 0; x < allComments.Size(); x++) {
+			comments.AppendFormat("%s%s", comments.IsEmpty() ? "\n" : "", allComments[x].txt);
+		}
+	}
+
+	return comments;
+}
+
 bool EventManager::ShouldCallStatic(bool forplay)
 {
 	return this != &staticEventManager && Level == primaryLevel;
@@ -971,6 +1002,25 @@ void DStaticEventHandler::WorldTick()
 		VMValue params[1] = { (DStaticEventHandler*)this };
 		VMCall(func, params, 1, nullptr, 0);
 	}
+}
+
+
+FString DStaticEventHandler::GetSavegameComment(int &order)
+{
+	IFVIRTUAL(DStaticEventHandler, GetSavegameComment)
+	{
+		FString retString;
+
+		// don't create excessive DObjects if not going to be processed anyway
+		if (isEmpty(func)) return "";
+		VMValue params[1] = { (DStaticEventHandler*)this };
+		VMReturn ret[2]; ret[0].StringAt(&retString); ret[1].IntAt(&order);
+		VMCall(func, params, 1, ret, 2);
+
+		return retString;
+	}
+
+	return "";
 }
 
 FRenderEvent EventManager::SetupRenderEvent()
