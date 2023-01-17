@@ -1,7 +1,7 @@
 // Selaco Specific
 shift +DashMode
 M printObjectives
-F toggleFlashlight
+F Toggle_Flashlight
 G useGadget
 H switchGadget
 C +crouch

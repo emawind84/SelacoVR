@@ -6,8 +6,8 @@ s +moveleft
 f +moveright
 space +jump
 ctrl crouch
-z crouch
+z +crouch
 w +use
 mouse2 +altattack
 h usemeds
-a toggleFlashlight
+a Toggle_Flashlight
