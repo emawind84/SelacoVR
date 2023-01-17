@@ -2432,6 +2432,11 @@ class PlayerPawn : Actor
 		return p1 * (1. - ticfrac) + p2 * ticfrac;
 	}
 	
+	// @Cockatrice - Per-frame camera offsets
+	virtual Vector3, Vector3 CameraOffsets(double ticfrac) {
+		return (0, 0, 0), (0,0,0);
+	}
+
 	//----------------------------------------------------------------------------
 	//
 	// 

@@ -166,6 +166,9 @@ int			freelookviewheight;
 DVector3a view;
 DAngle viewpitch;
 
+DVector3	FrameAngleOffsets;	// cache each frame for look offsets
+DVector3	FramePosOffset;		// cache each frame for look offsets
+
 DEFINE_GLOBAL(LocalViewPitch);
 
 // CODE --------------------------------------------------------------------
@@ -416,6 +419,7 @@ void R_Shutdown ()
 	if (SWRenderer != nullptr) delete SWRenderer;
 	SWRenderer = nullptr;
 }
+
 
 //==========================================================================
 //
@@ -750,6 +754,28 @@ static double QuakePower(double factor, double intensity, double offset)
 //
 //==========================================================================
 
+
+void R_SetupViewOffsets(player_t *player, double ticFrac, DVector3 &angleOffsets, DVector3 &posOffset) {
+	// @Cockatrice - Allow the player class to supply per-frame view adjustments
+	// This will be used for things like strafe-tilt. We don't use the look interpolation
+	// because it also interpolates mouse-look, which we absolutely do not want
+	angleOffsets = { 0,0,0 };
+	posOffset = { 0,0,0 };
+	
+	if (player != NULL && player->mo != NULL) {
+		IFVIRTUALPTRNAME(player->mo, NAME_PlayerPawn, CameraOffsets)
+		{
+			VMValue param[] = { player->mo, ticFrac };
+			VMReturn ret[2];
+			ret[0].Location = &angleOffsets;
+			ret[1].Location = &posOffset;
+			ret[0].RegType = REGT_FLOAT | REGT_MULTIREG3;
+			ret[1].RegType = REGT_FLOAT | REGT_MULTIREG3;
+			VMCall(func, param, 2, ret, 2);
+		}
+	}
+}
+
 void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor *actor)
 {
 	if (actor == NULL)
@@ -789,11 +815,27 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 		iview->otic = nowtic;
 		iview->Old = iview->New;
 	}
+
+	viewpoint.TicFrac = I_GetTimeFrac();
+	if (cl_capfps || r_NoInterpolate)
+	{
+		viewpoint.TicFrac = 1.;
+	}
+	
+	R_SetupViewOffsets(player, viewpoint.TicFrac, FrameAngleOffsets, FramePosOffset);
+	
 	//==============================================================================================
 	// Handles offsetting the camera with ChaseCam and/or viewpos.
 	{
 		AActor *mo = viewpoint.camera;
 		DViewPosition *VP = mo->ViewPos;
+		if (VP) {
+			VP->Offset += FramePosOffset;
+		}
+		else {
+			// TODO: Supply a temporary viewposition if there is an offset
+		}
+
 		const DVector3 orig = { mo->Pos().XY(), mo->player ? mo->player->viewz : mo->Z() + mo->GetCameraHeight() };
 		viewpoint.ActorPos = orig;
 
@@ -920,13 +962,14 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 		iview->otic = nowtic;
 	}
 
-	viewpoint.TicFrac = I_GetTimeFrac ();
-	if (cl_capfps || r_NoInterpolate)
-	{
-		viewpoint.TicFrac = 1.;
-	}
+	
 	R_InterpolateView (viewpoint, player, viewpoint.TicFrac, iview);
 
+	// Add angle offsets from script, if any
+	viewpoint.Angles.Yaw += FrameAngleOffsets.X;
+	viewpoint.Angles.Pitch += FrameAngleOffsets.Y;
+	viewpoint.Angles.Roll += FrameAngleOffsets.Z;
+	
 	viewpoint.SetViewAngle (viewwindow);
 
 	// Keep the view within the sector's floor and ceiling

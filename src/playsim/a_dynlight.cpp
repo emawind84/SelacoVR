@@ -396,6 +396,23 @@ void FDynamicLight::UpdateLocation()
 
 		// Offset is calculated in relation to the owning actor.
 		DAngle angle = target->Angles.Yaw;
+		DAngle pitch = pPitch != nullptr ? *pPitch : target->Angles.Pitch;
+		
+		// @Cockatrice - Hack alert, this is a special case for spotlights attached to actors parented to the player
+		// This is to prevent "laggy" flashlights that don't follow the camera perfectly
+		// companion code in hw_dynlightdata.cpp for frame-perfect implementation
+		if(target->master && target->master->player == &players[consoleplayer]) {
+			angle = target->master->Angles.Yaw;
+			pitch = target->master->Angles.Pitch;
+			// TODO: Add view offsets to these angles
+			// In the future if we add significant rotational offsets, the spotlight sector/linedef links might not be correct enough
+			// to avoid obvious cutoffs
+		}
+		
+		bool angleChanged = IsSpot() && (LastAngle != angle || LastPitch != *pPitch);
+		LastAngle = angle;
+		LastPitch = pitch;
+
 		double s = angle.Sin();
 		double c = angle.Cos();
 
@@ -430,7 +447,7 @@ void FDynamicLight::UpdateLocation()
 		radius = intensity * 2.0f;
 		if (radius < m_currentRadius * 2) radius = m_currentRadius * 2;
 
-		if (X() != oldx || Y() != oldy || radius != oldradius)
+		if (X() != oldx || Y() != oldy || radius != oldradius || angleChanged)
 		{
 			//Update the light lists
 			LinkLight();
