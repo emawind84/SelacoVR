@@ -113,7 +113,7 @@ extern bool resetDoomYaw;
 extern bool resetPreviousPitch;
 extern float previousPitch;
 
-void TBXR_FrameSetup();
+bool TBXR_FrameSetup();
 void TBXR_prepareEyeBuffer(int eye );
 void TBXR_finishEyeBuffer(int eye );
 void TBXR_submitFrame();
