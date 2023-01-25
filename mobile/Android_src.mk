@@ -11,16 +11,14 @@ OPENXR_HMD = -DMETA_QUEST
 #OPENXR_HMD = -DPICO_XR
 
 
-LOCAL_CFLAGS   :=  $(OPENXR_HMD) -D__MOBILE__ -DNO_PIX_BUFF -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
+LOCAL_CFLAGS   :=  $(OPENXR_HMD) -O3 -D__MOBILE__ -DNO_PIX_BUFF -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
 
-
-LOCAL_CPPFLAGS := $(OPENXR_HMD) -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++14 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security  -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
+LOCAL_CPPFLAGS := $(OPENXR_HMD) -O3 -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++14 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security  -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
 
 LOCAL_CFLAGS  += -DNO_SEND_STATS
 
 LOCAL_CFLAGS  += -DOPNMIDI_USE_LEGACY_EMULATOR
 LOCAL_CFLAGS  += -DADLMIDI_DISABLE_MUS_SUPPORT -DADLMIDI_DISABLE_XMI_SUPPORT -DADLMIDI_DISABLE_MIDI_SEQUENCER
-LOCAL_CFLAGS  += -DOPNMIDI_DISABLE_MUS_SUPPORT -DOPNMIDI_DISABLE_XMI_SUPPORT -DOPNMIDI_DISABLE_MIDI_SEQUENCER
 
 ifeq ($(BUILD_SERIAL),1)
 LOCAL_CPPFLAGS += -DANTI_HACK 
@@ -31,6 +29,7 @@ LOCAL_C_INCLUDES := \
  $(TOP_DIR)/ \
  $(TOP_DIR)/../../../../../OpenXR/Include \
  $(TOP_DIR)/../../../../../3rdParty/khronos/openxr/OpenXR-SDK/include \
+ $(TOP_DIR)/../../../../../3rdParty/khronos/openxr/OpenXR-SDK/src/common \
  $(GZDOOM_TOP_PATH)/src/  \
  $(GZDOOM_TOP_PATH)/mobile/src/extrafiles  \
  $(GZDOOM_TOP_PATH)/game-music-emu/ \
@@ -454,8 +453,7 @@ PCH_SOURCES = \
 QZDOOM_SRC = \
    ../../QzDoom/TBXR_Common.cpp \
    ../../QzDoom/QzDoom_OpenXR.cpp \
-   ../../QzDoom/OpenXrInput_PicoXR.cpp \
-   ../../QzDoom/OpenXrInput_MetaQuest.cpp \
+   ../../QzDoom/OpenXrInput.cpp \
    ../../QzDoom/VrInputCommon.cpp \
    ../../QzDoom/VrInputDefault.cpp \
    ../../QzDoom/mathlib.c \
