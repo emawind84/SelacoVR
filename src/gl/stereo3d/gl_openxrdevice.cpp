@@ -544,6 +544,7 @@ namespace s3d
         if (getGameState() != GS_LEVEL || getMenuState() != MENU_Off 
         || ConsoleState == c_down || ConsoleState == c_falling 
         || (player && player->playerstate == PST_DEAD)
+        || (player && player->resetDoomYaw)
         || paused 
         )
         {
