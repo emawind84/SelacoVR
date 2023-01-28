@@ -7,13 +7,14 @@ LOCAL_MODULE    := qzdoom
 
 
 # Uncomment for the correct headset - slight changes required in OpenXR implementation
-OPENXR_HMD = -DMETA_QUEST
-#OPENXR_HMD = -DPICO_XR
+#OPENXR_HMD := META_QUEST
+OPENXR_HMD := PICO_XR
 
 
-LOCAL_CFLAGS   :=  $(OPENXR_HMD) -D__MOBILE__ -DNO_PIX_BUFF -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
+LOCAL_CFLAGS   :=  -D$(OPENXR_HMD) -D__MOBILE__ -DNO_PIX_BUFF -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
 
-LOCAL_CPPFLAGS := $(OPENXR_HMD) -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++14 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security  -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
+LOCAL_CPPFLAGS := -D$(OPENXR_HMD) -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++14 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security \
+    -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
 
 LOCAL_CFLAGS  += -DNO_SEND_STATS
 
@@ -513,6 +514,6 @@ LOCAL_STATIC_LIBRARIES +=
 
 include $(BUILD_SHARED_LIBRARY)
 
-$(call import-module,OpenXR/Projects/AndroidPrebuilt/jni)
+$(call import-module,AndroidPrebuilt/jni)
 
 
