@@ -631,12 +631,11 @@ void FOBJModel::RenderFrame(FModelRenderer *renderer, FTexture * skin, int frame
 		OBJSurface *surf = &surfaces[i];
 
 		FTexture *userSkin = skin;
-		if (!userSkin && curSpriteMDLFrame)
+		if (!userSkin)
 		{
-			int ssIndex = i + curMDLIndex * MD3_MAX_SURFACES;
-			if (i < MD3_MAX_SURFACES && curSpriteMDLFrame->surfaceskinIDs[ssIndex].isValid())
+			if (i < MD3_MAX_SURFACES && curSpriteMDLFrame->surfaceskinIDs[curMDLIndex][i].isValid())
 			{
-				userSkin = TexMan(curSpriteMDLFrame->surfaceskinIDs[ssIndex]);
+				userSkin = TexMan(curSpriteMDLFrame->surfaceskinIDs[curMDLIndex][i]);
 			}
 			else if (surf->skin.isValid())
 			{
@@ -665,14 +664,13 @@ void FOBJModel::AddSkins(uint8_t* hitlist)
 {
 	for (size_t i = 0; i < surfaces.Size(); i++)
 	{
-		size_t ssIndex = i + curMDLIndex * MD3_MAX_SURFACES;
-		if (curSpriteMDLFrame && i < MD3_MAX_SURFACES && curSpriteMDLFrame->surfaceskinIDs[ssIndex].isValid())
+		if (i < MD3_MAX_SURFACES && curSpriteMDLFrame->surfaceskinIDs[curMDLIndex][i].isValid())
 		{
 			// Precache skins manually reassigned by the user.
 			// On OBJs with lots of skins, such as Doom map OBJs exported from GZDB,
 			// there may be too many skins for the user to manually change, unless
 			// the limit is bumped or surfaceskinIDs is changed to a TArray<FTextureID>.
-			hitlist[curSpriteMDLFrame->surfaceskinIDs[ssIndex].GetIndex()] |= FTextureManager::HIT_Flat;
+			hitlist[curSpriteMDLFrame->surfaceskinIDs[curMDLIndex][i].GetIndex()] |= FTextureManager::HIT_Flat;
 			return; // No need to precache skin that was replaced
 		}
 
