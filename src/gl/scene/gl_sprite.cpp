@@ -761,14 +761,14 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal, bool is
 	{
 		DVector3 vieworigin = viewmaster->Pos();
 
-        //If we get here, then we want to override the location of the camera actor
-        if (s3d::Stereo3DMode::getCurrentMode().GetTeleportLocation(thingpos))
-        {
-            thingorigin = thingpos;
+		//If we get here, then we want to override the location of the camera actor
+		if (s3d::Stereo3DMode::getCurrentMode().GetTeleportLocation(thingpos))
+		{
+			vieworigin = thingpos;
 
-            //Scale Doom Guy up a bit
-            sprscale *= 1.2;
-        }
+			//Scale Doom Guy up a bit
+			sprscale *= 1.2;
+		}
 
 		if (thruportal == 1) vieworigin += Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
 		if (fabs(vieworigin.X - vp.ActorPos.X) < 2 && fabs(vieworigin.Y - vp.ActorPos.Y) < 2) return;
