@@ -5,15 +5,9 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := qzdoom
 
+LOCAL_CFLAGS   :=  -D__MOBILE__ -DNO_PIX_BUFF -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
 
-# Uncomment for the correct headset - slight changes required in OpenXR implementation
-#OPENXR_HMD := META_QUEST
-OPENXR_HMD := PICO_XR
-
-
-LOCAL_CFLAGS   :=  -D$(OPENXR_HMD) -D__MOBILE__ -DNO_PIX_BUFF -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
-
-LOCAL_CPPFLAGS := -D$(OPENXR_HMD) -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++14 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security \
+LOCAL_CPPFLAGS := -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++14 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security \
     -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
 
 LOCAL_CFLAGS  += -DNO_SEND_STATS
@@ -28,9 +22,8 @@ endif
 	
 LOCAL_C_INCLUDES := \
  $(TOP_DIR)/ \
- $(TOP_DIR)/../../../../../OpenXR/Include \
- $(TOP_DIR)/../../../../../3rdParty/khronos/openxr/OpenXR-SDK/include \
- $(TOP_DIR)/../../../../../3rdParty/khronos/openxr/OpenXR-SDK/src/common \
+ ${TOP_DIR}/OpenXR-SDK/include \
+ ${TOP_DIR}/OpenXR-SDK/src/common \
  $(GZDOOM_TOP_PATH)/src/  \
  $(GZDOOM_TOP_PATH)/mobile/src/extrafiles  \
  $(GZDOOM_TOP_PATH)/game-music-emu/ \
