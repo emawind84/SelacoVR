@@ -991,7 +991,7 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 		}
 	}
 
-	if (!paused)
+	if (!paused && menuactive != MENU_On && menuactive != MENU_WaitKey)
 	{
 		FQuakeJiggers jiggers;
 
