@@ -134,6 +134,13 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 						sc.MustGetString();
 						AltFontName = sc.String;
 					}
+					else if (sc.Compare("Cursor"))
+					{
+						sc.MustGetString();
+						if (sc.StringLen > 0) {
+							SetCursor(sc.String[0]);
+						}
+					}
 					else if (sc.Compare("Scale"))
 					{
 						sc.MustGetValue(true);
