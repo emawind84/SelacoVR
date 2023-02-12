@@ -46,8 +46,8 @@ mouse2 +altattack
 0 "slot 0"
 mouse1 +attack
 f1 menu_help
-f2 menu_save
-f3 menu_load
+f2 save_menu
+f3 load_menu
 f4 menu_options
 f5 chase
 f6 quicksaveselaco
