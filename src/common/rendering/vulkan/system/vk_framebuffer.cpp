@@ -514,8 +514,6 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 	FImageLoadParams *params;
 	VkTexLoadSpi spi;
 
-	//Printf("Requesting load of %s [%d] : %p\n", mat->sourcetex->GetName(), makeSPI, mat->Source());
-
 	if (rLump && systex->GetState() == IHardwareTexture::HardwareState::NONE) {
 		systex->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
 

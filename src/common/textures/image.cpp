@@ -205,7 +205,7 @@ int FImageSource::ReadPixels(FileReader *reader, FBitmap *bmp, int conversion) {
 }
 
 // @Cockatrice: Thread safe(ish) version of CopyTranslatedPixels
-int FImageSource::ReadTranslatedPixels(FileReader *reader, FBitmap *bmp, const PalEntry *remap)
+int FImageSource::ReadTranslatedPixels(FileReader *reader, FBitmap *bmp, const PalEntry *remap, int conversion)
 {
 	// TODO: It
 	return 0;
