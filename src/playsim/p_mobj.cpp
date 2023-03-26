@@ -3107,10 +3107,20 @@ CCMD(utid)
 //
 //==========================================================================
 
+DEFINE_ACTION_FUNCTION(AActor, CalculateMissileDamage)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	ACTION_RETURN_INT(self->DamageVal);
+}
+
 int AActor::GetMissileDamage (int mask, int add)
 {
 	if (DamageVal >= 0)
 	{
+		if (flags8 & MF8_ABSDAMAGE) {
+			return DamageVal;
+		}
+		else
 		if (mask == 0)
 		{
 			return add * DamageVal;
