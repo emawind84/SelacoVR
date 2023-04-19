@@ -256,7 +256,7 @@ void A_StartSoundIfNotSame(AActor *self, int soundid, int checksoundid, int chan
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_StartSoundIfNotSame, A_StartSoundIfNotSame)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_SOUND(soundid);
 	PARAM_SOUND(checksoundid);
 	PARAM_INT(channel);
@@ -265,6 +265,16 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_StartSoundIfNotSame, A_StartSoundIfNotSa
 	PARAM_FLOAT(attenuation);
 	PARAM_FLOAT(pitch);
 	PARAM_FLOAT(startTime);
+
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
+		if (pspr != nullptr && pspr->GetID() == PSP_OFFHANDWEAPON && channel == CHAN_WEAPON)
+		{
+			channel = CHAN_OFFWEAPON;
+		}
+	}
+	
 	A_StartSoundIfNotSame(self, soundid, checksoundid, channel, flags, volume, attenuation, pitch, startTime);
 	return 0;
 }
