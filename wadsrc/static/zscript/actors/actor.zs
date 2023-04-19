@@ -158,6 +158,7 @@ class Actor : Thinker native
 	native readonly int TID;
 	native readonly int TIDtoHate;
 	native readonly int WaterLevel;
+	native readonly double WaterDepth;
 	native int Score;
 	native int Accuracy;
 	native int Stamina;
@@ -476,6 +477,7 @@ class Actor : Thinker native
 	virtual native void Die(Actor source, Actor inflictor, int dmgflags = 0, Name MeansOfDeath = 'none');
 	virtual native bool Slam(Actor victim);
 	virtual native void Touch(Actor toucher);
+	virtual native void FallAndSink(double grav, double oldfloorz);
 	private native void Substitute(Actor replacement);
 	native ui void DisplayNameTag();
 
@@ -1083,6 +1085,7 @@ class Actor : Thinker native
 	native void A_WolfAttack(int flags = 0, sound whattoplay = "weapons/pistol", double snipe = 1.0, int maxdamage = 64, int blocksize = 128, int pointblank = 2, int longrange = 4, double runspeed = 160.0, class<Actor> pufftype = "BulletPuff");
 	deprecated("4.3", "Use A_StartSound() instead") action native clearscope void A_PlaySound(sound whattoplay = "weapons/pistol", int slot = CHAN_BODY, double volume = 1.0, bool looping = false, double attenuation = ATTN_NORM, bool local = false, double pitch = 0.0);
 	action native clearscope void A_StartSound(sound whattoplay, int slot = CHAN_BODY, int flags = 0, double volume = 1.0, double attenuation = ATTN_NORM, double pitch = 0.0, double startTime = 0.0);
+	native clearscope void A_StartSoundIfNotSame(sound whattoplay, sound checkagainst, int slot = CHAN_BODY, int flags = 0, double volume = 1.0, double attenuation = ATTN_NORM, double pitch = 0.0, double startTime = 0.0);
 	action native void A_SoundVolume(int slot, double volume);
 	action native void A_SoundPitch(int slot, double pitch);
 	deprecated("2.3", "Use A_StartSound(<sound>, CHAN_WEAPON) instead") void A_PlayWeaponSound(sound whattoplay, bool fullvol = false) { A_StartSound(whattoplay, CHAN_WEAPON, 0, 1, fullvol? ATTN_NONE : ATTN_NORM); }
@@ -1280,6 +1283,35 @@ class Actor : Thinker native
 		}
 	}
 	
+	virtual void PlayerLandedMakeGruntSound(actor onmobj)
+	{
+		bool grunted;
+
+		// [RH] only make noise if alive
+		if (self.health > 0 && !self.player.morphTics)
+		{
+			grunted = false;
+			// Why should this number vary by gravity?
+			if (self.Vel.Z < -self.player.mo.GruntSpeed)
+			{
+				A_StartSound("*grunt", CHAN_VOICE);
+				grunted = true;
+			}
+			bool isliquid = (pos.Z <= floorz) && HitFloor ();
+			if (onmobj != NULL || !isliquid)
+			{
+				if (!grunted)
+				{
+					A_StartSound("*land", CHAN_AUTO);
+				}
+				else
+				{
+					A_StartSoundIfNotSame("*land", "*grunt", CHAN_AUTO);
+				}
+			}
+		}
+	}
+
 	//----------------------------------------------------------------------------
 	//
 	// PROC A_CheckSkullDone

@@ -756,6 +756,17 @@ void GLSprite::Process(AActor* thing, sector_t * sector, int thruportal, bool is
 		viewmaster = thing->master;
 	}
 
+	// [Nash] filter visibility in mirrors
+	bool isInMirror = GLRenderer->mCurrentPortal && (GLRenderer->mCurrentPortal->GetMirrorFlag() > 0 || GLRenderer->mCurrentPortal->GetPlaneMirrorFlag() > 0);
+	if (thing->renderflags2 & RF2_INVISIBLEINMIRRORS && isInMirror)
+	{
+		return;
+	}
+	else if (thing->renderflags2 & RF2_ONLYVISIBLEINMIRRORS && !isInMirror)
+	{
+		return;
+	}
+
 	// Some added checks if the camera actor is not supposed to be seen. It can happen that some portal setup has this actor in view in which case it may not be skipped here
 	if (viewmaster == camera && !vp.showviewer)
 	{
