@@ -2253,7 +2253,7 @@ class PlayerPawn : Actor
 
 		let player = self.player;
 		int Size = player.weapons.SlotSize(slot);
-		let cur_weapon = (hand & 0) ? player.ReadyWeapon : player.OffhandWeapon;
+		let cur_weapon = (hand == 1) ? player.OffhandWeapon : player.ReadyWeapon;
 		// Does this slot even have any weapons?
 		if (Size == 0)
 		{
