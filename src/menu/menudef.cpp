@@ -63,7 +63,6 @@
 
 
 CVAR(Bool, menu_hideextreme, false, CVAR_ARCHIVE)
-CVAR(String, cmdlineprofile, "", CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CUSTOM_CVAR(Bool, menu_showexperimental, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
 	DeinitMenus();

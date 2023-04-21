@@ -1,7 +1,10 @@
 #include "cmdlib.h"
 #include "i_system.h"
 #include "gameconfigfile.h"
+#include "c_cvars.h"
 #include "profiledef.h"
+
+CVAR(String, cmdlineprofile, "", CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 ProfileManager profileManager;
 
