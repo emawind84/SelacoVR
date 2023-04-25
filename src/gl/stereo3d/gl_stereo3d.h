@@ -56,8 +56,12 @@ public:
 	virtual VSMatrix GetProjection(float fov, float aspectRatio, float fovRatio) const;
 	virtual Viewport GetViewport(const Viewport& fullViewport) const;
 	virtual void GetViewShift(float yaw, float outViewShift[3]) const;
-	virtual void SetUp() const {};
+	virtual void SetUp() const;
 	virtual void TearDown() const {};
+
+	static int flatVerticesPerEye;
+	static int wallVerticesPerEye;
+	static int portalsPerEye;
 };
 
 
