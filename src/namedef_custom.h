@@ -369,6 +369,8 @@ xx(Burn)
 //xx(Ice)			// already defined above
 xx(Disintegrate)
 xx(Smash)
+xx(Splash)
+xx(HitThrough)
 
 // Weapon animator names.
 xx(Select)

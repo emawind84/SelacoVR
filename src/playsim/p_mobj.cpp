@@ -99,6 +99,7 @@
 #include "actorinlines.h"
 #include "a_dynlight.h"
 #include "fragglescript/t_fs.h"
+#include "p_linetracedata.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -5828,7 +5829,14 @@ AActor *P_SpawnPuff (AActor *source, PClassActor *pufftype, const DVector3 &pos1
 	// it will enter the crash state. This is used by the StrifeSpark
 	// and BlasterPuff.
 	FState *crashstate;
-	if ((flags & PF_HITSKY) && (crashstate = puff->FindState(NAME_Death, NAME_Sky, true)) != NULL)
+	if ((flags & PF_SPLASHING) && (crashstate = puff->FindState(NAME_Splash)) != NULL) {
+		puff->SetState(crashstate);
+	}
+	else if ((flags & PF_HITTHRU) && (crashstate = puff->FindState(NAME_HitThrough)) != NULL)
+	{
+		puff->SetState(crashstate);
+	}
+	else if ((flags & PF_HITSKY) && (crashstate = puff->FindState(NAME_Death, NAME_Sky, true)) != NULL)
 	{
 		puff->SetState (crashstate);
 	}
@@ -5881,6 +5889,44 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnPuff)
 	PARAM_INT(flags);
 	PARAM_OBJECT(victim, AActor);
 	ACTION_RETURN_OBJECT(P_SpawnPuff(self, pufftype, DVector3(x, y, z), hitdir, particledir, updown, flags, victim));
+}
+
+// Defaults do nothing
+DEFINE_ACTION_FUNCTION(AActor, PuffSplash)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_FLOAT(x);
+	PARAM_FLOAT(y);
+	PARAM_FLOAT(z);
+	PARAM_FLOAT(dx);
+	PARAM_FLOAT(dy);
+	PARAM_FLOAT(dz);
+	PARAM_POINTER(sect, sector_t);
+	PARAM_POINTER(flr, F3DFloor);
+
+	return 0;
+}
+// Defaults do nothing
+DEFINE_ACTION_FUNCTION(AActor, PuffThrough)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT(victim, AActor);
+	PARAM_FLOAT(x);
+	PARAM_FLOAT(y);
+	PARAM_FLOAT(z);
+	PARAM_FLOAT(dx);
+	PARAM_FLOAT(dy);
+	PARAM_FLOAT(dz);
+
+	return 0;
+}
+// Defaults do nothing
+DEFINE_ACTION_FUNCTION(AActor, PuffHit)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_POINTER(trace_res, FLineTraceData);
+	
+	return 0;
 }
 
 //---------------------------------------------------------------------------
@@ -6011,6 +6057,7 @@ void P_BloodSplatter (const DVector3 &pos, AActor *originator, DAngle hitangle)
 		AActor *mo;
 
 		mo = Spawn(originator->Level, bloodcls, pos, NO_REPLACE); // GetBloodType already performed the replacement
+		mo->SetAngle(hitangle, 0);	// @Cockatrice - Why was the angle of blood splatters never set?
 		mo->target = originator;
 		mo->Vel.X = pr_splatter.Random2 () / 64.;
 		mo->Vel.Y = pr_splatter.Random2() / 64.;
