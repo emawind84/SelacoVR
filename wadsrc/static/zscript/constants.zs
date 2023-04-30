@@ -682,6 +682,7 @@ enum EQuakeFlags
 	QF_MAX =			1 << 3,
 	QF_FULLINTENSITY =	1 << 4,
 	QF_WAVE =			1 << 5,
+	QF_3D =				1 << 6,
 };
 
 // A_CheckProximity flags
@@ -725,6 +726,7 @@ enum EParticleFlags
 	SPF_RELACCEL =		1 << 3,
 	SPF_RELANG =		1 << 4,
 	SPF_NOTIMEFREEZE =	1 << 5,
+	SPF_ROLL =			1 << 6,
 
 	SPF_RELATIVE =	SPF_RELPOS|SPF_RELVEL|SPF_RELACCEL|SPF_RELANG
 };

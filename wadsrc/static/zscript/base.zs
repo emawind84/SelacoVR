@@ -54,6 +54,7 @@ struct _ native	// These are the global variables, the struct is only here to av
 	native readonly @MusPlayingInfo musplaying;
 	native readonly bool generic_ui;
 	native readonly int GameTicRate;
+	native readonly double NotifyFontScale;
 	native readonly int paused;
 }
 
@@ -192,6 +193,8 @@ enum DrawTextureTags
 
 	DTA_CleanTop,			// Like DTA_Clean but aligns to the top of the screen instead of the center.
 
+	DTA_ScaleX,
+	DTA_ScaleY,
 };
 
 class Shape2DTransform : Object native
@@ -458,6 +461,7 @@ class Object native
 	native static uint BAM(double angle);
 	native static void SetMusicVolume(float vol);
 	native static uint MSTime();
+	native static double MSTimeF();
 	native vararg static void ThrowAbortException(String fmt, ...);
 
 	native virtualscope void Destroy();
