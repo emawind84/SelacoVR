@@ -550,8 +550,9 @@ namespace s3d
         {
             resetDoomYaw = true;
         }
-        else if (getGameState() == GS_LEVEL && resetDoomYaw) {
-            doomYaw = (float)r_viewpoint.Angles.Yaw.Degrees;
+        else if (getGameState() == GS_LEVEL && resetDoomYaw && r_viewpoint.camera != nullptr)
+        {
+            doomYaw = (float)r_viewpoint.camera->Angles.Yaw.Degrees;
             resetDoomYaw = false;
         }
 

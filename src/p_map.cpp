@@ -57,6 +57,7 @@
 **
 */
 
+#include <QzDoom/VrCommon.h>
 #include <stdlib.h>
 #include <math.h>
 #include <algorithm>
@@ -101,7 +102,6 @@
 #include "r_sky.h"
 #include "g_levellocals.h"
 #include "actorinlines.h"
-#include "gl/stereo3d/gl_stereo3d.h"
 
 CVAR(Bool, cl_bloodsplats, true, CVAR_ARCHIVE)
 CVAR(Int, sv_smartaim, 0, CVAR_ARCHIVE | CVAR_SERVERINFO)
@@ -2568,6 +2568,7 @@ bool P_TryMove(AActor *thing, const DVector2 &pos,
 					P_TranslatePortalAngle(ld, hit.angle);
 				}
 				R_AddInterpolationPoint(hit);
+				resetDoomYaw = true;
 			}
 			if (port->mType == PORTT_LINKED)
 			{
