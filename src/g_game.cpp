@@ -99,7 +99,7 @@
 #include "events.h"
 #include "d_main.h"
 
-#include <QzDoom/VrInput.h>
+#include <QzDoom/VrCommon.h>
 #include <cmath>
 
 
