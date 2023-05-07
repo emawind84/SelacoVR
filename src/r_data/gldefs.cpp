@@ -1691,10 +1691,35 @@ class GLDefsParser
 			sc.MustGetString();
 			FTextureID no = TexMan.CheckForTexture(sc.String, type);
 			auto tex = TexMan.GetGameTexture(no);
-			if (tex) tex->AddAutoMaterials();
+			
+			bool skipOpeningBrace = false;
+			if (!tex) {
+				sc.ScriptMessage("GLDefs defined hardware shader for non-existent texture %s\n", sc.String);
+			}
+			else {
+				// @Cockatrice - Check for a second texture name so we can copy and redefine this texture, leaving the original alone
+				// This allows us to define shaders for textures and still use the original without a shader
+				// This has limited use of course, since you can't use these generated textures in an editor as they don't exist outside the game
+				// But will work great for automatic replacement of certain textures that need shaders in some conditions without breaking the original texture
+				if (sc.GetString()) {
+					if (sc.Compare("{")) {
+						skipOpeningBrace = true;
+					}
+					else {
+						//Printf("Duplicating texture, making new tex with name: %s\n", sc.String);
+						auto orig = tex->GetTexture();
+						auto newTex = MakeGameTexture(orig, sc.String, type);
+						tex->CopySize(tex, true);
+						TexMan.AddGameTexture(newTex);
+						tex = newTex;
+					}
+				}
+
+				tex->AddAutoMaterials();
+			}
 			MaterialLayers mlay = { -1000, -1000 };
 
-			sc.MustGetToken('{');
+			if(!skipOpeningBrace) sc.MustGetToken('{');
 			while (!sc.CheckToken('}'))
 			{
 				sc.MustGetString();
