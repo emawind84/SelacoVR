@@ -2102,6 +2102,7 @@ enum CLOF_flags
 	CLOFF_SETTARGET =			0x00800000,
 	CLOFF_SETMASTER =			0x01000000,
 	CLOFF_SETTRACER =			0x02000000,
+	CLOFF_BLOCKLOF_ALWAYS =  	0x04000000,	// @Cockatrice - Always stop on BLOCKLOF flag, regardless of other flags
 };
 
 struct LOFData
@@ -2133,6 +2134,13 @@ ETraceStatus CheckLOFTraceFunc(FTraceResults &trace, void *userdata)
 		}
 		return TRACE_Stop;
 	}
+
+	// @Cockatrice - CLOFF_BLOCKLOF_ALWAYS will always stop if it hits a BLOCKLOF actor
+	if ((flags & CLOFF_BLOCKLOF_ALWAYS) && (trace.Actor->flags8 & MF8_BLOCKLOF)) {
+		Printf("Blocked(always) by a BLOCKLOF object! Name(%s)\n", trace.Actor->GetClass()->GetDisplayName().GetChars());
+		return TRACE_Stop;
+	}
+
 	if (flags & CLOFF_MUSTBESHOOTABLE)
 	{ // all shootability checks go here
 		if (!(trace.Actor->flags & MF_SHOOTABLE))
@@ -2174,12 +2182,19 @@ ETraceStatus CheckLOFTraceFunc(FTraceResults &trace, void *userdata)
 	if (
 			((flags & CLOFF_SKIPENEMY) && data->Self->IsHostile(trace.Actor)) ||
 			((flags & CLOFF_SKIPFRIEND) && data->Self->IsFriend(trace.Actor)) ||
-			((flags & CLOFF_SKIPOBJECT) && !(trace.Actor->flags3 & MF3_ISMONSTER)) ||
+			((flags & CLOFF_SKIPOBJECT) && !(trace.Actor->flags3 & MF3_ISMONSTER) && !(trace.Actor->flags8 & MF8_BLOCKLOF)) ||
 			((flags & CLOFF_SKIPNONHOSTILE) && (trace.Actor->flags3 & MF3_ISMONSTER) && !data->Self->IsHostile(trace.Actor))
 		)
 	{
 		return TRACE_Skip;
 	}
+
+	// @Cocktrice - If all checks pass, blocking actors will always return positive
+	if ((trace.Actor->flags8 & MF8_BLOCKLOF)) {
+		Printf("Blocked by a BLOCKLOF object! Name(%s)\n", trace.Actor->GetClass()->GetDisplayName().GetChars());
+		return TRACE_Stop;
+	}
+
 	data->BadActor = true;
 	return TRACE_Abort;
 }
@@ -2191,7 +2206,6 @@ DEFINE_ACTION_FUNCTION(AActor, CheckLOF)
 	/*
 		Not accounted for / I don't know how it works: FLOORCLIP
 	*/
-
 	AActor *target;
 	DVector3 pos;
 	DVector3 vel;
@@ -2330,6 +2344,7 @@ DEFINE_ACTION_FUNCTION(AActor, CheckLOF)
 	if (trace.HitType == TRACE_HitActor ||
 		((flags & CLOFF_JUMP_ON_MISS) && !lof_data.BadActor && trace.HitType != TRACE_HitNone))
 	{
+		
 		if (minrange > 0 && trace.Distance < minrange)
 		{
 			ACTION_RETURN_BOOL(false);
@@ -2340,9 +2355,11 @@ DEFINE_ACTION_FUNCTION(AActor, CheckLOF)
 			if (flags & (CLOFF_SETMASTER))	self->master = trace.Actor;
 			if (flags & (CLOFF_SETTRACER))	self->tracer = trace.Actor;
 		}
-		ACTION_RETURN_BOOL(true);
+
+		// Only success if we hit our target
+		ACTION_RETURN_BOOL((trace.HitType == TRACE_HitActor && trace.Actor == target) || (flags & CLOFF_JUMP_ON_MISS));
 	}
-	ACTION_RETURN_BOOL(false);
+	ACTION_RETURN_BOOL(trace.HitType == TRACE_HitNone);
 }
 
 //==========================================================================

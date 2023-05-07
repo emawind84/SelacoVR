@@ -556,6 +556,7 @@ enum ELOFFlags
 	CLOFF_SETTARGET =			0x800000,
 	CLOFF_SETMASTER =			0x1000000,
 	CLOFF_SETTRACER =			0x2000000,
+	CLOFF_BLOCKLOF_ALWAYS =  	0x4000000,	// @Cockatrice - Always stop on BLOCKLOF flag, regardless of other flags
 
 	CLOFF_SKIPOBSTACLES = CLOFF_SKIPENEMY|CLOFF_SKIPFRIEND|CLOFF_SKIPOBJECT|CLOFF_SKIPNONHOSTILE,
 	CLOFF_NOAIM = CLOFF_NOAIM_VERT|CLOFF_NOAIM_HORZ
@@ -1355,6 +1356,7 @@ enum ELevelFlags
 	LEVEL3_AVOIDMELEE			= 0x00020000,	// global flag needed for proper MBF support.
 	LEVEL3_NOJUMPDOWN			= 0x00040000,	// only for MBF21. Inverse of MBF's dog_jumping flag.
 	LEVEL3_LIGHTCREATED			= 0x00080000,	// a light had been created in the last frame
+	LEVEL3_RAINYMAP				= 0x00100000,	// @Cockatrice - Indicates map should draw rain effects under F_SKY
 };
 
 // [RH] Compatibility flags.
