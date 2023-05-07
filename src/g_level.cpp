@@ -1888,6 +1888,7 @@ void FLevelLocals::Init()
 
 	cluster_info_t *clus = FindClusterInfo (info->cluster);
 
+	invasiontier = info->invasiontier;
 	partime = info->partime;
 	sucktime = info->sucktime;
 	cluster = info->cluster;

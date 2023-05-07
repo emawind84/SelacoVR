@@ -265,6 +265,7 @@ enum ELevelFlags : unsigned int
 	LEVEL3_AVOIDMELEE			= 0x00020000,	// global flag needed for proper MBF support.
 	LEVEL3_NOJUMPDOWN			= 0x00040000,	// only for MBF21. Inverse of MBF's dog_jumping flag.
 	LEVEL3_LIGHTCREATED			= 0x00080000,	// a light had been created in the last frame
+	LEVEL3_RAINYMAP				= 0x00100000	// @Cockatrice - Indicates map should draw rain effects under F_SKY
 };
 
 
@@ -334,6 +335,7 @@ struct level_info_t
 	int			cluster;
 	int			partime;
 	int			sucktime;
+	int			invasiontier;
 	int32_t		flags;
 	uint32_t	flags2;
 	uint32_t	flags3;

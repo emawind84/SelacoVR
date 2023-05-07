@@ -523,6 +523,7 @@ public:
 	uint32_t	spawnindex;
 
 	level_info_t *info;
+	int			invasiontier;
 	int			cluster;
 	int			clusterflags;
 	int			levelnum;

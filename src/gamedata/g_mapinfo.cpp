@@ -241,6 +241,7 @@ void level_info_t::Reset()
 	NextMap = "";
 	NextSecretMap = "";
 	SkyPic1 = SkyPic2 = "-NOFLAT-";
+	invasiontier = 0;
 	cluster = 0;
 	partime = 0;
 	sucktime = 0;
@@ -1077,6 +1078,13 @@ DEFINE_MAP_OPTION(titlepatch, true)
 	}
 }
 
+DEFINE_MAP_OPTION(invasiontier, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetNumber();
+	info->invasiontier = parse.sc.Number;
+}
+
 DEFINE_MAP_OPTION(partime, true)
 {
 	parse.ParseAssign();
@@ -1711,6 +1719,7 @@ MapFlagHandlers[] =
 	{ "disableskyboxao",				MITYPE_CLRFLAG3,	LEVEL3_SKYBOXAO, 0 },
 	{ "avoidmelee",						MITYPE_SETFLAG3,	LEVEL3_AVOIDMELEE, 0 },
 	{ "attenuatelights",				MITYPE_SETFLAG3,	LEVEL3_ATTENUATE, 0 },
+	{ "rainymap",						MITYPE_SETFLAG3,	LEVEL3_RAINYMAP, 0 },
 	{ "nobotnodes",						MITYPE_IGNORE,	0, 0 },		// Skulltag option: nobotnodes
 	{ "compat_shorttex",				MITYPE_COMPATFLAG, COMPATF_SHORTTEX, 0 },
 	{ "compat_stairs",					MITYPE_COMPATFLAG, COMPATF_STAIRINDEX, 0 },
