@@ -343,6 +343,7 @@ struct LevelInfo native
 	native readonly int cluster;
 	native readonly int partime;
 	native readonly int sucktime;
+	native readonly int invasiontier;
 	native readonly int flags;
 	native readonly int flags2;
 	native readonly int flags3;
@@ -403,6 +404,7 @@ struct LevelLocals native
 	native readonly int starttime;
 	native readonly int partime;
 	native readonly int sucktime;
+	
 	native readonly int cluster;
 	native readonly int clusterflags;
 	native readonly int levelnum;
@@ -425,6 +427,7 @@ struct LevelLocals native
 	native int found_items;
 	native int total_monsters;
 	native int killed_monsters;
+	native int invasiontier;
 	native play double gravity;
 	native play double aircontrol;
 	native play double airfriction;
@@ -441,6 +444,7 @@ struct LevelLocals native
 	native readonly bool polygrind;
 	native readonly bool nomonsters;
 	native readonly bool allowrespawn;
+	native readonly bool rainymap;
 	deprecated("3.8", "Use Level.isFrozen() instead") native bool frozen;
 	native readonly bool infinite_flight;
 	native readonly bool no_dlg_freeze;
