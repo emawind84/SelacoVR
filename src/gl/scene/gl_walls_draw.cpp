@@ -201,7 +201,7 @@ void GLWall::RenderWall(int textured)
 	gl_RenderState.Apply();
 	gl_RenderState.ApplyLightIndex(dynlightindex);
 
-	if (s3d::EyePose::wallVerticesPerEye >= gl_max_vertices) {
+	if (gl_max_vertices > 0 && s3d::EyePose::wallVerticesPerEye >= gl_max_vertices) {
 		return;
 	}
 

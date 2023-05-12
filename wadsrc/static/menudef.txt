@@ -2947,8 +2947,8 @@ OptionMenu "OpenGLOptions" protected
 	Command "$DSPLYMNU_DISABLERENDERCULL",		"disablerendercull"
 	SafeCommand "$DSPLYMNU_RESETRENDERCULL",	"resetcvar gl_sprite_distance_cull gl_line_distance_cull"
 	StaticText " "
-	Slider "Max rendered vertices",				gl_max_vertices, 0, 80000, 1000, 0
-	Slider "Max rendered portals",				gl_max_portals, 0, 40, 1, 0
+	ScaleSlider "Max rendered vertices",		gl_max_vertices, 0, 40000, 1000, "Limit disabled"
+	ScaleSlider "Max rendered portals",			gl_max_portals, -1, 20, 1, "Portals disabled", "Limit disabled"
 	StaticText " "
 	Option "$GLPREFMNU_MIRRORS",				gl_mirrors,						"OnOff"
 	Option "$GLPREFMNU_ENVIRONMENTMAPMIRROR",	gl_mirror_envmap,				"OnOff"

@@ -68,7 +68,7 @@
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-CVAR(Int, gl_max_portals, 20, CVAR_ARCHIVE);
+CVAR(Int, gl_max_portals, -1, CVAR_ARCHIVE);
 
 EXTERN_CVAR(Bool, gl_portals)
 EXTERN_CVAR(Bool, gl_noquery)
@@ -181,7 +181,7 @@ void GLPortal::DrawPortalStencil(int pass)
 
 bool GLPortal::Start(bool usestencil, bool doquery)
 {
-	if (s3d::EyePose::portalsPerEye >= gl_max_portals && !this->IsSky())
+	if (gl_max_portals > -1 && s3d::EyePose::portalsPerEye >= gl_max_portals)
 	{
 		return false;
 	}

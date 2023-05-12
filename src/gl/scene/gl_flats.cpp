@@ -61,7 +61,7 @@
 CVAR(Int, gl_breaksec, -1, 0)
 #endif
 
-CVAR(Int, gl_max_vertices, 40000, CVAR_ARCHIVE)
+CVAR(Int, gl_max_vertices, 0, CVAR_ARCHIVE)
 
 //==========================================================================
 //
@@ -170,7 +170,7 @@ void GLFlat::SetupSubsectorLights(int pass, subsector_t * sub, int *dli)
 
 void GLFlat::DrawSubsector(subsector_t * sub)
 {
-	if (s3d::EyePose::flatVerticesPerEye + sub->numlines >= gl_max_vertices)
+	if (gl_max_vertices > 0 && s3d::EyePose::flatVerticesPerEye + sub->numlines >= gl_max_vertices)
 	{
 		return;
 	}
@@ -272,7 +272,7 @@ void GLFlat::DrawSubsectors(int pass, bool processlights, bool istrans)
 		for (int i=0; i<sector->subsectorcount; i++)
 		{
 			subsector_t * sub = sector->subsectors[i];
-			if (s3d::EyePose::flatVerticesPerEye + sub->numlines >= gl_max_vertices)
+			if (gl_max_vertices > 0 && s3d::EyePose::flatVerticesPerEye + sub->numlines >= gl_max_vertices)
 			{
 				continue;
 			}
@@ -333,7 +333,7 @@ void GLFlat::DrawSubsectors(int pass, bool processlights, bool istrans)
 
 void GLFlat::DrawSkyboxSector(int pass, bool processlights)
 {
-	if (s3d::EyePose::flatVerticesPerEye + 4 >= gl_max_vertices)
+	if (gl_max_vertices > 0 && s3d::EyePose::flatVerticesPerEye + 4 >= gl_max_vertices)
 	{
 		return;
 	}
