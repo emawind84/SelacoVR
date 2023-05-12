@@ -3,6 +3,7 @@
 #include "gameconfigfile.h"
 #include "c_cvars.h"
 #include "profiledef.h"
+#include <algorithm>
 
 CVAR(String, cmdlineprofile, "", CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
@@ -10,7 +11,7 @@ ProfileManager profileManager;
 
 void ProfileManager::ProcessOneProfileFile(const FString &name)
 {
-    const long titleMaxLength = 50;
+	const long titleMaxLength = 50;
 	FString titleTag = "#TITLE";
 	auto fb = ExtractFileBase(name, false);
 	long clidx = fb.IndexOf("commandline_", 0);
@@ -45,11 +46,11 @@ void ProfileManager::ProcessOneProfileFile(const FString &name)
 
 void ProfileManager::CollectProfiles()
 {
-    findstate_t c_file;
+	findstate_t c_file;
 	void *file;
 
 	TArray<FString> mSearchPaths;
-    cmdlineProfiles.Clear();
+	cmdlineProfiles.Clear();
 	cmdlineProfiles.Push({"", "No profile"});
 
 	if (GameConfig != NULL && GameConfig->SetSection ("FileSearch.Directories"))
@@ -96,6 +97,11 @@ void ProfileManager::CollectProfiles()
 			I_FindClose(file);
 		}
 	}
+
+	std::sort(cmdlineProfiles.begin(), cmdlineProfiles.end(), 
+	[](const FCommandLineInfo left, const FCommandLineInfo right){
+		return std::tolower(*left.mTitle.GetChars()) < std::tolower(*right.mTitle.GetChars());
+	});
 }
 
 void I_InitProfiles()
