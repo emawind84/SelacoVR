@@ -26,6 +26,7 @@
 #include "gl/gl_functions.h"
 #include "vectors.h"
 #include "w_wad.h"
+#include "m_argv.h"
 #include "gl/system/gl_interface.h"
 #include "gl/system/gl_framebuffer.h"
 #include "gl/system/gl_debug.h"
@@ -56,7 +57,7 @@ FCustomPostProcessShaders::~FCustomPostProcessShaders()
 
 void FCustomPostProcessShaders::Run(FString target)
 {
-	if (!gl_custompost)
+	if (!gl_custompost || Args->CheckParm("-nocustompost"))
 		return;
 
 	for (auto &shader : mShaders)
