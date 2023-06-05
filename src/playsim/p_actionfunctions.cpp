@@ -2103,6 +2103,9 @@ enum CLOF_flags
 	CLOFF_SETMASTER =			0x01000000,
 	CLOFF_SETTRACER =			0x02000000,
 	CLOFF_BLOCKLOF_ALWAYS =  	0x04000000,	// @Cockatrice - Always stop on BLOCKLOF flag, regardless of other flags
+	CLOFF_JUMPMONSTER =			0x10000000, // Jump when any MONSTER is in the way
+	CLOFF_SKIPMONSTER =			0x20000000, // Skip any MONSTER 
+	CLOFF_SKIPWORLD =			0x40000000, // Skip terrain/wall/floor etc
 };
 
 struct LOFData
@@ -2120,7 +2123,7 @@ ETraceStatus CheckLOFTraceFunc(FTraceResults &trace, void *userdata)
 
 	if (trace.HitType != TRACE_HitActor)
 	{
-		return TRACE_Stop;
+		return (flags & CLOFF_SKIPWORLD) ? TRACE_Skip : TRACE_Stop;
 	}
 	if (trace.Actor == data->Target)
 	{
@@ -2137,7 +2140,6 @@ ETraceStatus CheckLOFTraceFunc(FTraceResults &trace, void *userdata)
 
 	// @Cockatrice - CLOFF_BLOCKLOF_ALWAYS will always stop if it hits a BLOCKLOF actor
 	if ((flags & CLOFF_BLOCKLOF_ALWAYS) && (trace.Actor->flags8 & MF8_BLOCKLOF)) {
-		Printf("Blocked(always) by a BLOCKLOF object! Name(%s)\n", trace.Actor->GetClass()->GetDisplayName().GetChars());
 		return TRACE_Stop;
 	}
 
@@ -2171,6 +2173,7 @@ ETraceStatus CheckLOFTraceFunc(FTraceResults &trace, void *userdata)
 		}
 	}
 	if (
+			((flags & CLOFF_JUMPMONSTER) && (trace.Actor->flags3 & MF3_ISMONSTER)) ||
 			((flags & CLOFF_JUMPENEMY) && data->Self->IsHostile(trace.Actor)) ||
 			((flags & CLOFF_JUMPFRIEND) && data->Self->IsFriend(trace.Actor)) ||
 			((flags & CLOFF_JUMPOBJECT) && !(trace.Actor->flags3 & MF3_ISMONSTER)) ||
@@ -2180,6 +2183,7 @@ ETraceStatus CheckLOFTraceFunc(FTraceResults &trace, void *userdata)
 		return TRACE_Stop;
 	}
 	if (
+			((flags & CLOFF_SKIPMONSTER) && (trace.Actor->flags3 & MF3_ISMONSTER)) ||
 			((flags & CLOFF_SKIPENEMY) && data->Self->IsHostile(trace.Actor)) ||
 			((flags & CLOFF_SKIPFRIEND) && data->Self->IsFriend(trace.Actor)) ||
 			((flags & CLOFF_SKIPOBJECT) && !(trace.Actor->flags3 & MF3_ISMONSTER) && !(trace.Actor->flags8 & MF8_BLOCKLOF)) ||
@@ -2191,7 +2195,6 @@ ETraceStatus CheckLOFTraceFunc(FTraceResults &trace, void *userdata)
 
 	// @Cocktrice - If all checks pass, blocking actors will always return positive
 	if ((trace.Actor->flags8 & MF8_BLOCKLOF)) {
-		Printf("Blocked by a BLOCKLOF object! Name(%s)\n", trace.Actor->GetClass()->GetDisplayName().GetChars());
 		return TRACE_Stop;
 	}
 
@@ -2338,13 +2341,12 @@ DEFINE_ACTION_FUNCTION(AActor, CheckLOF)
 	lof_data.Flags = flags;
 	lof_data.BadActor = false;
 
-	Trace(pos, sec, vel, range, ActorFlags::FromInt(0xFFFFFFFF), ML_BLOCKEVERYTHING, self, trace, TRACE_PortalRestrict,
+	Trace(pos, sec, vel, range, ActorFlags::FromInt(0xFFFFFFFF), (flags & CLOFF_SKIPWORLD) ? 0 : ML_BLOCKEVERYTHING, self, trace, TRACE_PortalRestrict,
 		CheckLOFTraceFunc, &lof_data);
 
 	if (trace.HitType == TRACE_HitActor ||
 		((flags & CLOFF_JUMP_ON_MISS) && !lof_data.BadActor && trace.HitType != TRACE_HitNone))
 	{
-		
 		if (minrange > 0 && trace.Distance < minrange)
 		{
 			ACTION_RETURN_BOOL(false);
@@ -2359,7 +2361,7 @@ DEFINE_ACTION_FUNCTION(AActor, CheckLOF)
 		// Only success if we hit our target
 		ACTION_RETURN_BOOL((trace.HitType == TRACE_HitActor && trace.Actor == target) || (flags & CLOFF_JUMP_ON_MISS));
 	}
-	ACTION_RETURN_BOOL(trace.HitType == TRACE_HitNone);
+	ACTION_RETURN_BOOL((flags & CLOFF_SKIPWORLD) ? true : trace.HitType == TRACE_HitNone);
 }
 
 //==========================================================================
