@@ -242,6 +242,7 @@ void level_info_t::Reset()
 	NextSecretMap = "";
 	SkyPic1 = SkyPic2 = "-NOFLAT-";
 	invasiontier = 0;
+	tilt = tiltAngle = 0.0;
 	cluster = 0;
 	partime = 0;
 	sucktime = 0;
@@ -1083,6 +1084,20 @@ DEFINE_MAP_OPTION(invasiontier, true)
 	parse.ParseAssign();
 	parse.sc.MustGetNumber();
 	info->invasiontier = parse.sc.Number;
+}
+
+DEFINE_MAP_OPTION(tilt, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetFloat();
+	info->tilt = parse.sc.Float;
+}
+
+DEFINE_MAP_OPTION(tiltAngle, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetFloat();
+	info->tiltAngle = parse.sc.Float;
 }
 
 DEFINE_MAP_OPTION(partime, true)

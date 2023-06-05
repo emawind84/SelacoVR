@@ -2652,6 +2652,8 @@ DEFINE_FIELD_X(LevelInfo, level_info_t, SkyPic1)
 DEFINE_FIELD_X(LevelInfo, level_info_t, SkyPic2)
 DEFINE_FIELD_X(LevelInfo, level_info_t, F1Pic)
 DEFINE_FIELD_X(LevelInfo, level_info_t, invasiontier)
+DEFINE_FIELD_X(LevelInfo, level_info_t, tilt)
+DEFINE_FIELD_X(LevelInfo, level_info_t, tiltAngle)
 DEFINE_FIELD_X(LevelInfo, level_info_t, cluster)
 DEFINE_FIELD_X(LevelInfo, level_info_t, partime)
 DEFINE_FIELD_X(LevelInfo, level_info_t, sucktime)
@@ -2692,6 +2694,8 @@ DEFINE_FIELD(FLevelLocals, starttime)
 DEFINE_FIELD(FLevelLocals, partime)
 DEFINE_FIELD(FLevelLocals, sucktime)
 DEFINE_FIELD(FLevelLocals, invasiontier) // @Cockatrice - Selaco specific setting
+DEFINE_FIELD(FLevelLocals, tilt)		 // @Cockatrice - Simulated tilt in degrees
+DEFINE_FIELD(FLevelLocals, tiltAngle)	 // Angle that the tilt is applied at
 DEFINE_FIELD(FLevelLocals, cluster)
 DEFINE_FIELD(FLevelLocals, clusterflags)
 DEFINE_FIELD(FLevelLocals, levelnum)

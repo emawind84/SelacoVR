@@ -753,13 +753,13 @@ static double QuakePower(double factor, double intensity, double offset)
 // R_SetupFrame
 //
 //==========================================================================
-
+EXTERN_CVAR(Bool, g_leveltilting)
 
 void R_SetupViewOffsets(player_t *player, double ticFrac, DVector3 &angleOffsets, DVector3 &posOffset) {
 	// @Cockatrice - Allow the player class to supply per-frame view adjustments
 	// This will be used for things like strafe-tilt. We don't use the look interpolation
 	// because it also interpolates mouse-look, which we absolutely do not want
-	angleOffsets = { 0,0,0 };
+	/*angleOffsets = { 0,0,0 };
 	posOffset = { 0,0,0 };
 	
 	if (player != NULL && player->mo != NULL) {
@@ -773,7 +773,8 @@ void R_SetupViewOffsets(player_t *player, double ticFrac, DVector3 &angleOffsets
 			ret[1].RegType = REGT_FLOAT | REGT_MULTIREG3;
 			VMCall(func, param, 2, ret, 2);
 		}
-	}
+	}*/
+	P_GetCameraOffsets(player, angleOffsets, posOffset, ticFrac, false);
 }
 
 void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor *actor)
@@ -969,6 +970,14 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 	viewpoint.Angles.Yaw += FrameAngleOffsets.X;
 	viewpoint.Angles.Pitch += FrameAngleOffsets.Y;
 	viewpoint.Angles.Roll += FrameAngleOffsets.Z;
+
+	// Add world tilt
+	if (g_leveltilting) {
+		auto wyaw = viewpoint.Angles.Yaw + level.tiltAngle;
+		viewpoint.Angles.Roll += wyaw.Cos() * level.tilt;
+		viewpoint.Angles.Pitch += -wyaw.Sin() * level.tilt;
+	}
+
 	
 	viewpoint.SetViewAngle (viewwindow);
 

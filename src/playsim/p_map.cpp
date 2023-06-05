@@ -4366,6 +4366,15 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 {
 	double shootz = t1->Center() - t1->Floorclip + t1->AttackOffset();
 
+	DAngle t1Pitch = t1->Angles.Pitch;
+	
+	// // @Cockatrice - Add camera offset pitch
+	if (t1->player && t1->IsKindOf(NAME_PlayerPawn)) {
+		DVector3 angOff, posOff;
+		P_GetCameraOffsets(t1->player, angOff, posOff);
+		t1Pitch += angOff.Y;
+	}
+
 	// can't shoot outside view angles
 	if (vrange == 0)
 	{
@@ -4401,10 +4410,10 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 	aim.startpos = t1->Pos();
 	aim.aimtrace = angle.ToVector(distance);
 	aim.limitz = aim.shootz = shootz;
-	aim.toppitch = t1->Angles.Pitch - vrange;
-	aim.bottompitch = t1->Angles.Pitch + vrange;
+	aim.toppitch = t1Pitch - vrange;
+	aim.bottompitch = t1Pitch + vrange;
 	aim.attackrange = distance;
-	aim.aimpitch = t1->Angles.Pitch;
+	aim.aimpitch = t1Pitch;
 	aim.lastsector = t1->Sector;
 	aim.startfrac = 0;
 	aim.unlinked = false;
@@ -4418,7 +4427,12 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 	{
 		*pLineTarget = *result;
 	}
-	return result->linetarget ? result->pitch : t1->Angles.Pitch;
+
+	if (result->linetarget) {
+		return result->pitch;
+	}
+
+	return t1Pitch;
 }
 
 //==========================================================================

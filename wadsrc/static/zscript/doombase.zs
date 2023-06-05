@@ -344,6 +344,7 @@ struct LevelInfo native
 	native readonly int partime;
 	native readonly int sucktime;
 	native readonly int invasiontier;
+	native readonly double tilt, tiltAngle;
 	native readonly int flags;
 	native readonly int flags2;
 	native readonly int flags3;
@@ -428,6 +429,7 @@ struct LevelLocals native
 	native int total_monsters;
 	native int killed_monsters;
 	native int invasiontier;
+	native double tilt, tiltAngle;
 	native play double gravity;
 	native play double aircontrol;
 	native play double airfriction;

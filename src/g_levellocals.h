@@ -524,6 +524,7 @@ public:
 
 	level_info_t *info;
 	int			invasiontier;
+	double		tilt, tiltAngle;
 	int			cluster;
 	int			clusterflags;
 	int			levelnum;
