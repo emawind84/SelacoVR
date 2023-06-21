@@ -4844,7 +4844,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 			}
 
 			// Callback to puff with hit information if exists
-			if (puff && trace.HitType != TRACE_HitSky && trace.HitType != TRACE_HitNone) {
+			if (puff && trace.HitType != TRACE_HasHitSky && trace.HitType != TRACE_HitNone) {
 				IFVIRTUALPTR(puff, AActor, PuffHit)
 				{
 					FLineTraceData data = {
@@ -4999,7 +4999,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 		if (trace.Crossed3DWater) {
 			IFVIRTUALPTR(tPuff, AActor, PuffSplash)
 			{
-				VMValue params[] = { tPuff, trace.Crossed3DWaterPos.X, trace.Crossed3DWaterPos.Y, trace.Crossed3DWaterPos.Z, direction.X, direction.Y, direction.Z, NULL, trace.Crossed3DWater };
+				VMValue params[] = { tPuff, trace.Crossed3DWaterPos.X, trace.Crossed3DWaterPos.Y, trace.Crossed3DWaterPos.Z, direction.X, direction.Y, direction.Z, (sector_t*)nullptr, trace.Crossed3DWater };
 				int ret;
 				VMReturn vret(&ret);
 				VMCall(func, params, countof(params), &vret, 1);
@@ -5014,7 +5014,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 		if (trace.CrossedWater) {
 			IFVIRTUALPTR(tPuff, AActor, PuffSplash)
 			{
-				VMValue params[] = { tPuff, trace.CrossedWaterPos.X, trace.CrossedWaterPos.Y, trace.CrossedWaterPos.Z, direction.X, direction.Y, direction.Z, trace.CrossedWater, NULL };
+				VMValue params[] = { tPuff, trace.CrossedWaterPos.X, trace.CrossedWaterPos.Y, trace.CrossedWaterPos.Z, direction.X, direction.Y, direction.Z, trace.CrossedWater, (sector_t*)nullptr };
 				int ret;
 				VMReturn vret(&ret);
 				VMCall(func, params, countof(params), &vret, 1);
