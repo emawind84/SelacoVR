@@ -220,7 +220,7 @@ public:
 	virtual bool CachingActive() { return false; }																	// Is background cache currently running?
 	virtual float CacheProgress() { return 0; }																		// Current progress of background cache op
 	virtual bool SupportsBackgroundCache() { return false; }
-	virtual void UpdateBackgroundCache() { }
+	virtual void UpdateBackgroundCache(bool flush = false) { }
 	// Wait for all background loads to finish, then update background cache
 	virtual void FlushBackground() { }	
 	
