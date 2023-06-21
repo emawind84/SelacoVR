@@ -198,6 +198,7 @@ void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkText
 		throw CVulkanError("Trying to create zero size texture");
 
 	int totalSize = w * h * pixelsize;
+	int mipLevels = !mipmap ? 1 : GetMipLevels(w, h);
 
 	auto stagingBuffer = BufferBuilder()
 		.Size(totalSize)
@@ -211,7 +212,7 @@ void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkText
 
 	img->Image = ImageBuilder()
 		.Format(format)
-		.Size(w, h, !mipmap ? 1 : GetMipLevels(w, h))
+		.Size(w, h, mipLevels)
 		.Usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
 		.DebugName("VkHardwareTexture.mImage")
 		.Create(fb->device);
@@ -224,7 +225,7 @@ void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkText
 	auto cmdBuffer = bufManager->GetTransferCommands();
 
 	VkImageTransition()
-		.AddImage(img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, true)
+		.AddImage(img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, true, 0, mipLevels)
 		.Execute(cmdBuffer);
 
 	VkBufferImageCopy region = {};
