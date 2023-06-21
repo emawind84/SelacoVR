@@ -437,7 +437,13 @@ void VulkanDevice::CreateInstance()
 	EnabledExtensions = GetPlatformExtensions();
 
 	std::string debugLayer = "VK_LAYER_KHRONOS_validation";
+// @Cockatrice - Force validation layers in debug build
+#ifdef NDEBUG
 	bool wantDebugLayer = vk_debug;
+#else
+	bool wantDebugLayer = true;
+#endif
+
 	bool debugLayerFound = false;
 	if (wantDebugLayer)
 	{
@@ -451,6 +457,10 @@ void VulkanDevice::CreateInstance()
 				break;
 			}
 		}
+	}
+
+	if(!debugLayerFound && wantDebugLayer) {
+		Printf(TEXTCOLOR_RED "Vulkan Error: Debug layers were requested but not available!");
 	}
 
 	// Enable optional instance extensions we are interested in
