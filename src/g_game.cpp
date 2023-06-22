@@ -3178,7 +3178,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, MakeQuickSave)
 		file = G_BuildSaveName("quick", lastquicksave);
 
 		FString readableTime = myasctime();
-		description.Format("Quicksave %s", readableTime);
+		description.Format("Quicksave %s", readableTime.GetChars());
 		G_DoSaveGame(true, true, file, description);
 		ACTION_RETURN_BOOL(true);
 	}

@@ -48,14 +48,33 @@ struct VkTexLoadOut {
 	VulkanSemaphore *releaseSemaphore;
 };
 
+
 // @Cockatrice - Background loader thread to handle transfer of texture data
 class VkTexLoadThread : public ResourceLoader<VkTexLoadIn, VkTexLoadOut> {
 public:
-	VkTexLoadThread(VkCommandBufferManager *bgCmd) { cmd = bgCmd; }
+	VkTexLoadThread(VkCommandBufferManager *bgCmd, VulkanDevice *device) { 
+		cmd = bgCmd;
+		submits = 0;
+		for (auto& fence : submitFences)
+			fence.reset(new VulkanFence(device));
+
+		for (int i = 0; i < 8; i++)
+			submitWaitFences[i] = submitFences[i]->fence;
+	}
+
+	~VkTexLoadThread() override;
+
 	int getCurrentImageID() { return currentImageID.load(); }
 
 protected:
 	VkCommandBufferManager *cmd;
+	
+	std::vector<std::unique_ptr<VulkanCommandBuffer>> deleteList;
+	std::unique_ptr<VulkanFence> submitFences[8];
+	VkFence submitWaitFences[8];
+
+	int submits;
+
 	std::atomic<int> currentImageID;
 	std::atomic<int> maxQueue;
 
@@ -104,7 +123,7 @@ public:
 	bool SupportsBackgroundCache() override { return true; }
 	void FlushBackground() override;
 	float CacheProgress() override { return float(bgTransferThread->numQueued()); }	// TODO: Change this to report the actual progress once we have a way to mark the total number of objects to load
-	void UpdateBackgroundCache() override;
+	void UpdateBackgroundCache(bool flush = false) override;
 	void UpdatePalette() override;
 	const char* DeviceName() const override;
 	int Backend() override { return 1; }
@@ -159,8 +178,14 @@ private:
 		bool generateSPI;
 	};
 
+	// BG Thread management
+	// TODO: Move these into their own manager object
 	TSQueue<QueuedPatch> patchQueue;									// @Cockatrice - Thread safe queue of textures to create materials for and submit to the bg thread
 	std::unique_ptr<VkTexLoadThread> bgTransferThread;					// @Cockatrice - Thread that handles the background transfers
+	std::unique_ptr<VulkanFence> bgtFence;								// @Cockatrice - Used to block for tranferring resources between queues
+	std::vector<std::unique_ptr<VulkanSemaphore>> bgtSm4List;			// Semaphores to release after queue resource transfers
+	std::unique_ptr<VulkanCommandBuffer> bgtCmds;
+	bool bgtHasFence;
 
 	std::unique_ptr<VkCommandBufferManager> mCommands;
 	std::unique_ptr<VkCommandBufferManager> mBGTransferCommands;		// @Cockatrice - Command pool for submitting background transfers

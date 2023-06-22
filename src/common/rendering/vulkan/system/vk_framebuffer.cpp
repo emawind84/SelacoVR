@@ -137,6 +137,17 @@ void VulkanFrameBuffer::ResetBGStats() {
 
 // @Cockatrice - Background Loader Stuff ===========================================
 // =================================================================================
+VkTexLoadThread::~VkTexLoadThread() {
+	VulkanDevice* device = cmd->GetFrameBuffer()->device;
+
+	// Finish up anything that was running so we can destroy the resources
+	if(submits > 0) {
+		vkWaitForFences(device->device, submits, submitWaitFences, VK_TRUE, std::numeric_limits<uint64_t>::max());
+		vkResetFences(device->device, submits, submitWaitFences);
+		deleteList.clear();
+	}
+}
+
 bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	currentImageID.store(input.imgSource->GetId());
 
@@ -184,6 +195,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	// to the image on this queue
 	if(device->graphicsFamily != device->uploadFamily) {
 		auto cmds = cmd->CreateUnmanagedCommands();
+		cmds->SetDebugName("BGThread::QueueMoveCMDS");
 		output.releaseSemaphore = new VulkanSemaphore(device);
 		output.tex->ReleaseLoadedFromQueue(cmds.get(), device->uploadFamily, device->graphicsFamily);
 		cmds->end();
@@ -191,7 +203,22 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 		QueueSubmit submit;
 		submit.AddCommandBuffer(cmds.get());
 		submit.AddSignal(output.releaseSemaphore);
-		submit.Execute(device, device->uploadQueue);
+		
+		deleteList.push_back(std::move(cmds));
+
+		//if(++submits == 8) {
+			// TODO: We have to wait for each submit right now, because for some reason we can't rely on sempaphores
+			// being used by the time we get back to the main thread and move resources to the main graphics queue.
+			// I believe this is incorrect, we should be able to move on here without having to wait.
+			submits = 1;
+			submit.Execute(device, device->uploadQueue, submitFences[submits - 1].get());
+			vkWaitForFences(device->device, submits, submitWaitFences, VK_TRUE, std::numeric_limits<uint64_t>::max());
+			vkResetFences(device->device, submits, submitWaitFences);
+			deleteList.clear();
+			submits = 0;
+		//} else {
+		//	submit.Execute(device, device->uploadQueue, submitFences[submits - 1].get());
+		//}
 	}
 
 
@@ -199,7 +226,6 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	// Always return true, because failed images need to be marked as unloadable
 	// TODO: Mark failed images as unloadable so they don't keep coming back to the queue
 	// TODO: Load indexed images properly
-	// TODO: Properly support remapping/translation
 	return true;
 }
 
@@ -214,7 +240,7 @@ void VulkanFrameBuffer::FlushBackground() {
 	Printf(TEXTCOLOR_GREEN"VulkanFrameBuffer[%s]: Flushing [%d + %d] = %d texture load ops\n", bgTransferThread->isActive() ? "active" : "inactive", nq, patchQueue.size(), nq + patchQueue.size());
 
 	// Finish anything queued, and send anything that needs to be loaded from the patch queue
-	UpdateBackgroundCache();	
+	UpdateBackgroundCache(true);
 		
 	// Wait for everything to load, kinda cheating here but this shouldn't be called in the game loop only at teardown
 	cycle_t check;
@@ -231,17 +257,28 @@ void VulkanFrameBuffer::FlushBackground() {
 	}
 
 	// Finish anything that was loaded
-	UpdateBackgroundCache();
+	UpdateBackgroundCache(true);
 }
 
-void VulkanFrameBuffer::UpdateBackgroundCache() {
+void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 	// Check for completed cache items and link textures to the data
 	VkTexLoadOut loaded;
 	
+	// If we have previously made a submit, make sure it has finished and release resources
+	if(bgtFence.get() && bgtHasFence) {
+		bgtHasFence = false;
+		vkWaitForFences(device->device, 1, &bgtFence->fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+		vkResetFences(device->device, 1, &bgtFence->fence);
+		bgtCmds.release();
+		bgtSm4List.clear();
+	}
+
+	// Start processing finished resource loads
 	if (bgTransferThread->numFinished() > 0) {
-		QueueSubmit submit;
 		std::unique_ptr<VulkanCommandBuffer> cmds = device->uploadFamily != device->graphicsFamily ? mCommands->CreateUnmanagedCommands() : nullptr;
-		std::list<VulkanSemaphore*> releaseSemaphores;
+		if(cmds.get()) cmds->SetDebugName("MainThread::QueueMoveCMDS");
+
+		int sm4StartIndex = bgtSm4List.size() - 1;
 
 		while (bgTransferThread->popFinished(loaded)) {
 			// If this image was created in a different queue family, it now needs to be moved over to
@@ -255,9 +292,11 @@ void VulkanFrameBuffer::UpdateBackgroundCache() {
 				}
 
 				if (loaded.releaseSemaphore) {
-					releaseSemaphores.push_back(loaded.releaseSemaphore);
-					submit.AddWait(VK_PIPELINE_STAGE_TRANSFER_BIT, loaded.releaseSemaphore);
+					loaded.releaseSemaphore->SetDebugName("BGT::RlsA");
+					bgtSm4List.push_back(std::unique_ptr<VulkanSemaphore>(loaded.releaseSemaphore));
 				}
+
+				//Printf(" moving: %d\n", loaded.imgSource->GetId());
 			}
 
 			loaded.tex->SwapToLoadedImage();
@@ -271,8 +310,10 @@ void VulkanFrameBuffer::UpdateBackgroundCache() {
 		}
 
 		// We only need to run commands on the GPU if transfer/mipmaps were needed
-		if (cmds) {
+		if (cmds != nullptr) {
+			QueueSubmit submit;
 			// Just in case no mipmaps were created, but we transferred ownership
+			// Make sure fragment shaders don't process before our transfers are done
 			PipelineBarrier().AddMemory(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT).Execute(
 				cmds.get(),
 				VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -282,9 +323,25 @@ void VulkanFrameBuffer::UpdateBackgroundCache() {
 			cmds->end();
 
 			submit.AddCommandBuffer(cmds.get());
-			submit.Execute(device, device->graphicsQueue);
 
-			for (VulkanSemaphore* sm4 : releaseSemaphores) delete sm4;
+			for(unsigned int x = sm4StartIndex; x < bgtSm4List.size(); x++) {
+				submit.AddWait(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, bgtSm4List[x].get());
+			}
+			
+			if(!bgtFence.get()) bgtFence.reset(new VulkanFence(device));
+			
+			submit.Execute(device, device->graphicsQueue, bgtFence.get());
+
+			if(flush) {
+				// Wait if flushing
+				bgtHasFence = false;
+				vkWaitForFences(device->device, 1, &bgtFence->fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+				vkResetFences(device->device, 1, &bgtFence->fence);
+				bgtSm4List.clear();
+			} else {
+				bgtHasFence = true;
+				bgtCmds = std::move(cmds);
+			}
 		}
 	}
 
@@ -383,7 +440,7 @@ void VulkanFrameBuffer::InitializeState()
 #endif
 
 	// @Cockatrice - Init the background loader
-	bgTransferThread.reset(new VkTexLoadThread(mBGTransferCommands.get()));
+	bgTransferThread.reset(new VkTexLoadThread(mBGTransferCommands.get(), device));
 	bgTransferThread->start();
 }
 
@@ -462,6 +519,7 @@ const char* VulkanFrameBuffer::DeviceName() const
 
 void VulkanFrameBuffer::SetVSync(bool vsync)
 {
+	Printf("Vsync changed to: %d", vsync);
 	mVSync = vsync;
 }
 
@@ -760,14 +818,15 @@ TArray<uint8_t> VulkanFrameBuffer::GetScreenshotBuffer(int &pitch, ESSType &colo
 void VulkanFrameBuffer::BeginFrame()
 {
 	SetViewportRects(nullptr);
+	
+	UpdateBackgroundCache();
+
 	mCommands->BeginFrame();
 	mTextureManager->BeginFrame();
 	mScreenBuffers->BeginFrame(screen->mScreenViewport.width, screen->mScreenViewport.height, screen->mSceneViewport.width, screen->mSceneViewport.height);
 	mSaveBuffers->BeginFrame(SAVEPICWIDTH, SAVEPICHEIGHT, SAVEPICWIDTH, SAVEPICHEIGHT);
 	mRenderState->BeginFrame();
 	mDescriptorSetManager->BeginFrame();
-
-	UpdateBackgroundCache();
 }
 
 void VulkanFrameBuffer::InitLightmap(int LMTextureSize, int LMTextureCount, TArray<uint16_t>& LMTextureData)
