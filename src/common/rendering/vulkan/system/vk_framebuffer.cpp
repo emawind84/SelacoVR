@@ -278,14 +278,14 @@ void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 		std::unique_ptr<VulkanCommandBuffer> cmds = device->uploadFamily != device->graphicsFamily ? mCommands->CreateUnmanagedCommands() : nullptr;
 		if(cmds.get()) cmds->SetDebugName("MainThread::QueueMoveCMDS");
 
-		int sm4StartIndex = bgtSm4List.size() - 1;
+		unsigned int sm4StartIndex = (unsigned int)bgtSm4List.size() - 1;
 
 		while (bgTransferThread->popFinished(loaded)) {
 			// If this image was created in a different queue family, it now needs to be moved over to
 			// the graphics queue faimly
 			if (device->uploadFamily != device->graphicsFamily && loaded.tex->mLoadedImage) {
 				loaded.tex->AcquireLoadedFromQueue(cmds.get(), device->uploadFamily, device->graphicsFamily);
-
+				
 				// If we cannot create mipmaps in the background, tell the GPU to create them now
 				if (loaded.createMipmaps) {
 					loaded.tex->mLoadedImage.get()->GenerateMipmaps(cmds.get());
