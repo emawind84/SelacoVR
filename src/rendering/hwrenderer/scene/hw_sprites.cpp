@@ -198,7 +198,7 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 			}
 			
 			state.SetAddColor(addCol);*/
-
+			
 			state.SetAddColor(cursec->AdditiveColors[sector_t::sprites] | 0xff000000);
 		}
 		/*else if (actor && actor->selfLighting != 0) {
@@ -206,8 +206,8 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 		}*/
 
 		// (@Cockatrice) Add bonus luminence based on the selfLighting field color
-		int lightBonus = !actor || !gl_selflighting ? 0 : actor->selfLighting.Luminance() * 3;
-		di->SetColor(state, lightlevel + lightBonus, rel, di->isFullbrightScene(), Colormap, trans);
+		//int lightBonus = !actor || !gl_selflighting ? 0 : actor->selfLighting.Luminance() * 3;
+		di->SetColor(state, lightlevel/* + lightBonus*/, rel, di->isFullbrightScene(), Colormap, trans);
 	}
 
 
@@ -244,7 +244,7 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 	uint32_t spritetype = actor? uint32_t(actor->renderflags & RF_SPRITETYPEMASK) : 0;
 	if (texture) state.SetMaterial(texture, UF_Sprite, (spritetype == RF_FACESPRITE) ? CTF_Expand : 0, CLAMP_XY, translation, OverrideShader);
 	else if (!modelframe) state.EnableTexture(false);
-
+	
 	//SetColor(lightlevel, rel, Colormap, trans);
 
 	unsigned int iter = lightlist ? lightlist->Size() : 1;
@@ -261,10 +261,11 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 	{
 		if (lightlist)
 		{
+			
 			// set up the light slice
 			secplane_t *topplane = i == 0 ? &topp : &(*lightlist)[i].plane;
 			secplane_t *lowplane = i == (*lightlist).Size() - 1 ? &bottomp : &(*lightlist)[i + 1].plane;
-			int thislight = (*lightlist)[i].caster != nullptr ? hw_ClampLight(*(*lightlist)[i].p_lightlevel) : lightlevel;
+			int thislight = (*lightlist)[i].caster != nullptr ? hw_ClampLight(*(*lightlist)[i].p_lightlevel + (!actor || !gl_selflighting ? 0 : actor->selfLighting.Luminance() * 3)) : lightlevel;
 			int thisll = actor == nullptr ? thislight : (uint8_t)actor->Sector->CheckSpriteGlow(thislight, actor->InterpolatedPosition(vp.TicFrac));
 
 			FColormap thiscm;
@@ -273,6 +274,15 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 			if (di->Level->flags3 & LEVEL3_NOCOLOREDSPRITELIGHTING)
 			{
 				thiscm.Decolorize();
+			}
+
+			// Boost color from self lighting
+			if (gl_selflighting && actor && actor->selfLighting != 0) {
+				PalEntry actBoost = actor->selfLighting;
+				thiscm.LightColor = PalEntry(thiscm.LightColor.a,
+					clamp(thiscm.LightColor.r + actBoost.r, 0, 255),
+					clamp(thiscm.LightColor.g + actBoost.g, 0, 255),
+					clamp(thiscm.LightColor.b + actBoost.b, 0, 255));
 			}
 
 			di->SetColor(state, thisll, rel, di->isFullbrightScene(), thiscm, trans);
