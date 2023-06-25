@@ -149,6 +149,19 @@ VkTexLoadThread::~VkTexLoadThread() {
 	}
 }
 
+bool VkTexLoadThread::moveToMainQueue(VkHardwareTexture *tex) {
+	// Find and requeue
+	VkTexLoadIn in;
+	if(mInputSecondaryQ.dequeueSearch(in, tex,
+		[](void *a, VkTexLoadIn &b)
+		{ return (VkHardwareTexture*)a == b.tex; })) {
+		tex->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
+		queue(in);
+		return true;
+	}
+	return false;
+}
+
 bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	currentImageID.store(input.imgSource->GetId());
 
@@ -158,7 +171,9 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	output.imgSource = input.imgSource;
 	output.translation = params->translation;
 	output.tex = input.tex;
-	output.spi = input.spi;
+	output.spi.generateSpi = input.spi.generateSpi;
+	output.spi.notrimming = input.spi.notrimming;
+	output.spi.shouldExpand = input.spi.shouldExpand;
 	output.gtex = input.gtex;
 	output.releaseSemaphore = nullptr;
 
@@ -188,8 +203,8 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	output.createMipmaps = mipmap && !device->uploadFamilySupportsGraphics;
 	
 	// If we need sprite positioning info, generate it here and assign it in the main thread later
-	if (input.spi.generateSpi && input.spi.info) {
-		FGameTexture::GenerateInitialSpriteData(input.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+	if (input.spi.generateSpi) {
+		FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
 	}
 
 	// If we created the texture on a different family than the graphics family, we need to release access 
@@ -282,6 +297,21 @@ void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 		unsigned int sm4StartIndex = (unsigned int)bgtSm4List.size() - 1;
 
 		while (bgTransferThread->popFinished(loaded)) {
+			if(loaded.tex->hwState == IHardwareTexture::HardwareState::READY) {
+				//Printf("Background proc Loaded an already-loaded image: %s What a farting mistake!\n", loaded.gtex ? loaded.gtex->GetName().GetChars() : "UNKNOWN");
+				
+				// Set the sprite positioning if we loaded it and it hasn't already been applied
+				if(loaded.spi.generateSpi && loaded.gtex && !loaded.gtex->HasSpritePositioning()) {
+					//Printf("Setting SPI even though we rejected the texture.\n");
+					SpritePositioningInfo *spi = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
+					memcpy(spi, loaded.spi.info, 2 * sizeof(SpritePositioningInfo));
+					loaded.gtex->SetSpriteRect(spi);
+				}
+
+				// TODO: Release resources now, instead of automatically doing it later
+				continue;
+			}
+
 			// If this image was created in a different queue family, it now needs to be moved over to
 			// the graphics queue faimly
 			if (device->uploadFamily != device->graphicsFamily && loaded.tex->mLoadedImage) {
@@ -305,8 +335,12 @@ void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 			if (loaded.gtex) loaded.gtex->SetTranslucent(loaded.isTranslucent);
 
 			// Set the sprite positioning info if generated
-			if (loaded.spi.generateSpi && loaded.spi.info && loaded.gtex) {
-				loaded.gtex->SetSpriteRect(loaded.spi.info);
+			if (loaded.spi.generateSpi && loaded.gtex) {
+				if(!loaded.gtex->HasSpritePositioning()) {
+					SpritePositioningInfo *spi = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
+					memcpy(spi, loaded.spi.info, 2 * sizeof(SpritePositioningInfo));
+					loaded.gtex->SetSpriteRect(spi);
+				}
 			}
 		}
 
@@ -578,8 +612,11 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 	FImageLoadParams *params;
 	VkTexLoadSpi spi;
 
-	if (rLump && systex->GetState() == IHardwareTexture::HardwareState::NONE) {
-		systex->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
+	// If the texture is already submitted to the cache, find it and move it to the normal queue to reprioritize it
+	if (rLump && systex->GetState() == IHardwareTexture::HardwareState::CACHING) {
+		bgTransferThread->moveToMainQueue(systex);
+	} else if (rLump && systex->GetState() == IHardwareTexture::HardwareState::NONE) {
+		systex->SetHardwareState(secondary ? IHardwareTexture::HardwareState::CACHING : IHardwareTexture::HardwareState::LOADING);
 
 		FImageTexture *fLayerTexture = dynamic_cast<FImageTexture*>(layer->layerTexture);
 		params = layer->layerTexture->GetImage()->NewLoaderParams(
@@ -596,17 +633,17 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 					spi.notrimming = mat->sourcetex->GetNoTrimming();
 					spi.shouldExpand = mat->sourcetex->ShouldExpandSprite();
 					// TODO: Be careful with this, if a texture load fails and returns to the queue over and over, it will eat up all available memory in the arena
-					spi.info = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
+					//spi.info = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
 				}
 				else {
 					//Printf("%s already has SPI so skipping it!\n", mat->sourcetex->GetName(), mat->Source());
 					spi.generateSpi = false;
-					spi.info = nullptr;
+					//spi.info = nullptr;
 				}
 			}
 			else {
 				spi.generateSpi = false;
-				spi.info = nullptr;
+				//spi.info = nullptr;
 			}
 
 			VkTexLoadIn in = {
@@ -634,8 +671,10 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 		lump = layer->layerTexture->GetSourceLump();
 		rLump = lump >= 0 ? fileSystem.GetFileAt(lump) : nullptr;
 
-		if (rLump && syslayer->GetState() == IHardwareTexture::HardwareState::NONE) {
-			syslayer->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
+		if (rLump && syslayer->GetState() == IHardwareTexture::HardwareState::CACHING) {
+			bgTransferThread->moveToMainQueue(syslayer);
+		} else if (rLump && syslayer->GetState() == IHardwareTexture::HardwareState::NONE) {
+			syslayer->SetHardwareState(secondary ? IHardwareTexture::HardwareState::CACHING : IHardwareTexture::HardwareState::LOADING);
 			
 			FImageTexture *fLayerTexture = dynamic_cast<FImageTexture*>(layer->layerTexture);
 			params = layer->layerTexture->GetImage()->NewLoaderParams(
@@ -649,7 +688,7 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 					layer->layerTexture->GetImage(),
 					params,
 					{
-						false, false, false, nullptr
+						false, false, false//, nullptr
 					},
 					syslayer,
 					nullptr

@@ -25,9 +25,14 @@ class VkRenderBuffers;
 class VkPostprocess;
 class SWSceneDrawer;
 
+struct VkTexLoadSpiFull {
+	bool generateSpi, shouldExpand, notrimming;
+	SpritePositioningInfo info[2];
+};
+
+
 struct VkTexLoadSpi {
 	bool generateSpi, shouldExpand, notrimming;
-	SpritePositioningInfo *info;
 };
 
 struct VkTexLoadIn {
@@ -41,7 +46,7 @@ struct VkTexLoadIn {
 struct VkTexLoadOut {
 	VkHardwareTexture *tex;
 	FGameTexture *gtex;
-	VkTexLoadSpi spi;
+	VkTexLoadSpiFull spi;
 	int conversion, translation;
 	bool isTranslucent, createMipmaps;
 	FImageSource *imgSource;
@@ -65,6 +70,7 @@ public:
 	~VkTexLoadThread() override;
 
 	int getCurrentImageID() { return currentImageID.load(); }
+	bool moveToMainQueue(VkHardwareTexture *tex);
 
 protected:
 	VkCommandBufferManager *cmd;

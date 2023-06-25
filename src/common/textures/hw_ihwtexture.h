@@ -18,8 +18,9 @@ public:
 	{
 		NONE		= 0,	// Uninitialized
 		LOADING		= 1,	// Waiting on texture load op
-		UPLOADING	= 2,	// Waiting on transfer op
-		READY		= 3		// Fully ready to render
+		CACHING		= 2,	// Loading with low priority
+		UPLOADING	= 3,	// Waiting on transfer op
+		READY		= 4		// Fully ready to render
 	};
 
 	IHardwareTexture() = default;

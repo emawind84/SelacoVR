@@ -106,6 +106,18 @@ public:
 		for (unsigned int x = 0; x < mQueue.Size(); x++) { func(mQueue[x]); }
 	}
 
+	bool dequeueSearch(T &item, void *cmp, const std::function <bool(void *a,T&)>func) {
+		std::lock_guard lock(mQLock);
+		for (int x = (int)mQueue.Size() - 1; x >= 0; x--) { 
+			if(func(cmp,mQueue[x])) {
+				mQueue.Pop(item);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	int size() {
 		std::lock_guard lock(mQLock);
 		return mQueue.Size();
@@ -122,7 +134,7 @@ protected:
 template <typename IP, typename OP>
 class ResourceLoader {
 public:
-	ResourceLoader() {}
+	ResourceLoader() { }
 	virtual ~ResourceLoader() { stop(); }
 
 	void start() {
@@ -145,13 +157,13 @@ public:
 	}
 
 
-	void queue(IP input) {
+	virtual void queue(IP input) {
 		mInputQ.queue(input);
 		mMaxQueue = std::max(mMaxQueue.load(), mInputQ.size());
 		mWake.notify_all();
 	}
 
-	void queueSecondary(IP input) {
+	virtual void queueSecondary(IP input) {
 		mInputSecondaryQ.queue(input);
 		mMaxQueueSecondary = std::max(mMaxQueueSecondary.load(), mInputSecondaryQ.size());
 		mWake.notify_all();
