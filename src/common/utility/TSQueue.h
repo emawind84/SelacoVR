@@ -106,6 +106,18 @@ public:
 		for (unsigned int x = 0; x < mQueue.Size(); x++) { func(mQueue[x]); }
 	}
 
+	bool dequeueSearch(T &item, void *cmp, const std::function <bool(void *a,T&)>func) {
+		std::lock_guard lock(mQLock);
+		for (int x = (int)mQueue.Size() - 1; x >= 0; x--) { 
+			if(func(cmp,mQueue[x])) {
+				mQueue.Pop(item);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	int size() {
 		std::lock_guard lock(mQLock);
 		return mQueue.Size();
@@ -122,7 +134,7 @@ protected:
 template <typename IP, typename OP>
 class ResourceLoader {
 public:
-	ResourceLoader() {}
+	ResourceLoader() { }
 	virtual ~ResourceLoader() { stop(); }
 
 	void start() {
@@ -145,14 +157,28 @@ public:
 	}
 
 
-	void queue(IP input) {
+	virtual void queue(IP input) {
 		mInputQ.queue(input);
 		mMaxQueue = std::max(mMaxQueue.load(), mInputQ.size());
 		mWake.notify_all();
 	}
 
+	virtual void queueSecondary(IP input) {
+		mInputSecondaryQ.queue(input);
+		mMaxQueueSecondary = std::max(mMaxQueueSecondary.load(), mInputSecondaryQ.size());
+		mWake.notify_all();
+	}
+
 	int numQueued() {
 		return mInputQ.size();
+	}
+
+	int numQueuedTotal() {
+		return mInputQ.size() + mInputSecondaryQ.size();
+	}
+
+	int numQueuedSecondary() {
+		return mInputSecondaryQ.size();
 	}
 
 	int numFinished() {
@@ -170,6 +196,7 @@ public:
 	void resetStats() {
 		// TODO: Block stat updates
 		mMaxQueue = 0;
+		mMaxQueueSecondary = 0;
 		mStatLoadTime = 0;
 		mStatLoadCount = 0;
 		mStatTotalLoaded = 0;
@@ -179,6 +206,10 @@ public:
 
 	int statMaxQueued() {
 		return mMaxQueue.load();
+	}
+
+	int statMaxSecondaryQueued() {
+		return mMaxQueueSecondary.load();
 	}
 
 	double statAvgLoadTime() {
@@ -206,8 +237,8 @@ protected:
 
 	std::atomic<bool> mActive{ true };
 	std::atomic<bool> mRunning{ false };
-	std::atomic<int> mMaxQueue{ 0 }, mStatTotalLoaded{ 0 };
-	std::atomic<double> mStatAvgTime{ 0 }, mStatMinTime{ 0 }, mStatMaxTime{ 0 };
+	std::atomic<int> mMaxQueue{ 0 }, mStatTotalLoaded{ 0 }, mMaxQueueSecondary{ 0 };
+	std::atomic<double> mStatAvgTime{ 0 }, mStatMinTime{ 999999 }, mStatMaxTime{ 0 };
 
 	double mStatLoadTime = 0, mStatLoadCount = 0;
 
@@ -216,6 +247,7 @@ protected:
 	std::condition_variable mWake;
 
 	TSQueue<IP> mInputQ;
+	TSQueue<IP> mInputSecondaryQ;
 	TSQueue<OP> mOutputQ;
 
 
@@ -228,7 +260,7 @@ private:
 
 			// Process the queue
 			while (true) {
-				if (mInputQ.size() > 0) {
+				if (mInputQ.size() > 0 || mInputSecondaryQ.size() > 0) {
 					mRunning.store(true);
 
 					cycle_t lTime;
@@ -239,8 +271,11 @@ private:
 
 					IP input;
 					if (!mInputQ.dequeue(input)) {
-						cancelLoad();
-						break;
+						// Always load from secondary queue only if the primary queue has items
+						if(!mInputSecondaryQ.dequeue(input)) {
+							cancelLoad();
+							break;
+						}
 					}
 
 					OP output;

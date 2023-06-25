@@ -25,3 +25,6 @@
 /build2
 /build_vc2019-64
 /build_vc2019-32
+.vscode/settings.json
+.vscode/launch.json
+.vscode/c_cpp_properties.json

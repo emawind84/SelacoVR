@@ -77,7 +77,12 @@ static void PrecacheList(FMaterial *gltex, SpriteHits& translations)
 	//while (it.NextPair(pair)) screen->BackgroundCacheMaterial(gltex, pair->Key);
 	while (it.NextPair(pair)) {
 		//if (gltex && gltex->Source()) Printf("Precaching sprite tex: %s\n", gltex->Source()->GetName().GetChars());
-		screen->PrecacheMaterial(gltex, pair->Key);
+		//screen->PrecacheMaterial(gltex, pair->Key);
+		if(screen->SupportsBackgroundCache()) {
+			screen->PrequeueMaterial(gltex, pair->Key);
+		} else {
+			screen->PrecacheMaterial(gltex, pair->Key);
+		}
 	}
 }
 
@@ -100,7 +105,7 @@ static void PrecacheSprite(FGameTexture *tex, SpriteHits &hits)
 		useType == ETextureType::Sprite ||
 		useType == ETextureType::Decal ||
 		useType == ETextureType::SkinSprite) {
-		tex->GetSpritePositioning(1);		// @Cockatrice Precalc sprite positioning so we aren't loading images at play time as often
+		//tex->GetSpritePositioning(1);		// @Cockatrice Precalc sprite positioning so we aren't loading images at play time as often
 		// TODO: Improve this, since we end up reading the texture from disk multiple times!! Maybe generate the necessary data the first time the image is actually loaded from disk
 		// Currently this is noticably increasing load times because of the double-disk reads for texture data
 	}
