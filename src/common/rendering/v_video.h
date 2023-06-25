@@ -214,8 +214,9 @@ public:
 	virtual void SetTextureFilterMode() {}
 	virtual IHardwareTexture *CreateHardwareTexture(int numchannels) { return nullptr; }
 	virtual void PrecacheMaterial(FMaterial *mat, int translation) {}
-	
-	virtual bool BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI = false) { PrecacheMaterial(mat, translation); return true; }	// @Cockatrice - Default implementation for now. DOES NOT BG CACHE 
+	virtual void PrequeueMaterial(FMaterial *mat, int translation) {}
+
+	virtual bool BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI = false, bool secondary = false) { PrecacheMaterial(mat, translation); return true; }	// @Cockatrice - Default implementation for now. DOES NOT BG CACHE 
 	virtual bool BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI = false) { return false; }
 	virtual bool CachingActive() { return false; }																	// Is background cache currently running?
 	virtual float CacheProgress() { return 0; }																		// Current progress of background cache op

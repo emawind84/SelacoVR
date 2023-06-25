@@ -77,7 +77,12 @@ static void PrecacheList(FMaterial *gltex, SpriteHits& translations)
 	//while (it.NextPair(pair)) screen->BackgroundCacheMaterial(gltex, pair->Key);
 	while (it.NextPair(pair)) {
 		//if (gltex && gltex->Source()) Printf("Precaching sprite tex: %s\n", gltex->Source()->GetName().GetChars());
-		screen->PrecacheMaterial(gltex, pair->Key);
+		//screen->PrecacheMaterial(gltex, pair->Key);
+		if(screen->SupportsBackgroundCache()) {
+			screen->PrequeueMaterial(gltex, pair->Key);
+		} else {
+			screen->PrecacheMaterial(gltex, pair->Key);
+		}
 	}
 }
 

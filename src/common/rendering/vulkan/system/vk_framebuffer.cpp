@@ -90,22 +90,22 @@ CVAR(Bool, vk_raytrace, false, 0/*CVAR_ARCHIVE | CVAR_GLOBALCONFIG*/)	// @Cockat
 
 ADD_STAT(vkloader)
 {
-	static int maxQueue = 0, queue, total;
+	static int maxQueue = 0, maxSecondaryQueue = 0, queue, total;
 	static double minLoad = 0, maxLoad = 0, avgLoad = 0;
 
 	auto sc = dynamic_cast<VulkanFrameBuffer *>(screen);
 
 	if (sc) {
-		sc->GetBGQueueSize(queue, maxQueue, total);
+		sc->GetBGQueueSize(queue, maxQueue, maxSecondaryQueue, total);
 		sc->GetBGStats(minLoad, maxLoad, avgLoad);
 
 		FString out;
 		out.AppendFormat(
-			"Queued: %3.3d Max: %3.3d Tot: %d\n"
+			"Queued: %3.3d Max: %3.3d Max Sec: %3.3d Tot: %d\n"
 			"Min: %.3fms\n"
 			"Max: %.3fms\n"
 			"Avg: %.3fms\n",
-			queue, maxQueue, total, minLoad, maxLoad, avgLoad
+			queue, maxQueue, maxSecondaryQueue, total, minLoad, maxLoad, avgLoad
 		);
 		return out;
 	}
@@ -118,9 +118,10 @@ CCMD(vk_rstbgstats) {
 	if (sc) sc->ResetBGStats();
 }
 
-void VulkanFrameBuffer::GetBGQueueSize(int &current, int &max, int &total) {
+void VulkanFrameBuffer::GetBGQueueSize(int &current, int &max, int &maxSec, int &total) {
 	current = bgTransferThread->numQueued();
 	max = bgTransferThread->statMaxQueued();
+	maxSec = bgTransferThread->statMaxSecondaryQueued();
 	total = bgTransferThread->statTotalLoaded();
 }
 
@@ -243,7 +244,7 @@ void VulkanFrameBuffer::FlushBackground() {
 	UpdateBackgroundCache(true);
 		
 	// Wait for everything to load, kinda cheating here but this shouldn't be called in the game loop only at teardown
-	cycle_t check;
+	cycle_t check = cycle_t();
 	check.Clock();
 	while (bgTransferThread->isActive()) {
 		std::this_thread::sleep_for(std::chrono::nanoseconds(50000));
@@ -540,6 +541,11 @@ void VulkanFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 	}
 }
 
+void VulkanFrameBuffer::PrequeueMaterial(FMaterial *mat, int translation) 
+{
+	BackgroundCacheMaterial(mat, translation, true, true);	
+}
+
 
 // @Cockatrice - Cache a texture material, intended for use outside of the main thread
 bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI) {
@@ -557,7 +563,7 @@ bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int tr
 
 // @Cockatrice - Submit each texture in the material to the background loader
 // Call from main thread only
-bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI) {
+bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI, bool secondary) {
 	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return false;
 
 	MaterialLayerInfo* layer;
@@ -611,7 +617,8 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 				mat->sourcetex
 			};
 
-			bgTransferThread->queue(in);
+			if(secondary) bgTransferThread->queueSecondary(in);
+			else bgTransferThread->queue(in);
 		}
 		else {
 			systex->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
@@ -648,7 +655,8 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 					nullptr
 				};
 
-				bgTransferThread->queue(in);
+				if(secondary) bgTransferThread->queueSecondary(in);
+				else bgTransferThread->queue(in);
 			}
 			else {
 				syslayer->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state

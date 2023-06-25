@@ -117,7 +117,8 @@ public:
 	void InitializeState() override;
 	bool CompileNextShader() override;
 	void PrecacheMaterial(FMaterial *mat, int translation) override;
-	bool BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI = false) override;
+	void PrequeueMaterial(FMaterial *mat, int translation) override;
+	bool BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI = false, bool secondary = false) override;
 	bool BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI = false) override;
 	bool CachingActive() override { return bgTransferThread->isActive(); }
 	bool SupportsBackgroundCache() override { return true; }
@@ -163,7 +164,7 @@ public:
 	bool RaytracingEnabled();
 
 	// Cache stats helpers
-	void GetBGQueueSize(int &current, int &max, int &total);
+	void GetBGQueueSize(int &current, int &max, int &maxSec, int &total);
 	void GetBGStats(double &min, double &max, double &avg);
 	void ResetBGStats();
 
