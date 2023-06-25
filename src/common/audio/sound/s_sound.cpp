@@ -750,7 +750,7 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 {
 	// Return NULL if the sound isn't loaded
 	if (!sfx->data.isValid()) { 
-		Printf(TEXTCOLOR_YELLOW"SoundEngine::StartSoundER() Tried to play an unloaded sound: %s\n", sfx->name);
+		Printf(TEXTCOLOR_YELLOW"SoundEngine::StartSoundER() Tried to play an unloaded sound: %s\n", sfx->name.GetChars());
 		return NULL;
 	}
 
@@ -897,7 +897,7 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 
 		sndTimer.Unclock();
 		if (sndTimer.TimeMS() > 0.5) {
-			Printf(TEXTCOLOR_RED"Starting a sound (%s) cost %0.4f!!!\n", sfx->name.GetChars(), sndTimer.TimeMS(), sndTimer.TimeMS());
+			Printf(TEXTCOLOR_RED"Starting a sound (%s) cost %0.4f!!!\n", sfx->name.GetChars(), sndTimer.TimeMS());
 		}
 	}
 	if (chan == NULL && (chanflags & CHANF_LOOP))

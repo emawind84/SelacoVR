@@ -927,7 +927,7 @@ int FPNGTexture::ReadPixels(FImageLoadParams *params, FBitmap *bmp) {
 			trans = ReadPixels(&memReader, bmp, params->conversion);
 		}
 		
-		delete data;
+		delete []data;
 		return trans;
 	}
 	return 0;
