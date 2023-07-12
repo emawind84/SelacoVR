@@ -139,14 +139,14 @@ void VulkanFrameBuffer::ResetBGStats() {
 // @Cockatrice - Background Loader Stuff ===========================================
 // =================================================================================
 VkTexLoadThread::~VkTexLoadThread() {
-	VulkanDevice* device = cmd->GetFrameBuffer()->device;
+	/*VulkanDevice* device = cmd->GetFrameBuffer()->device;
 
 	// Finish up anything that was running so we can destroy the resources
 	if(submits > 0) {
 		vkWaitForFences(device->device, submits, submitWaitFences, VK_TRUE, std::numeric_limits<uint64_t>::max());
 		vkResetFences(device->device, submits, submitWaitFences);
 		deleteList.clear();
-	}
+	}*/
 }
 
 bool VkTexLoadThread::moveToMainQueue(VkHardwareTexture *tex) {
