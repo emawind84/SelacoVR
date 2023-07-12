@@ -5631,6 +5631,14 @@ void P_RailAttack(FRailParams *p)
 			P_SpawnBlood(hitpos, hitangle, newdam > 0 ? newdam : p->damage, hitactor);
 			P_TraceBleed(newdam > 0 ? newdam : p->damage, hitpos, hitactor, hitangle, pitch);
 		}
+
+		if (thepuff != NULL) {
+			IFVIRTUALPTR(thepuff, AActor, PuffThrough)
+			{
+				VMValue params[] = { thepuff, hitactor, hitpos.X, hitpos.Y, hitpos.Z, vec.X, vec.Y, vec.Z };
+				VMCall(func, params, countof(params), nullptr, 0);
+			}
+		}
 	}
 
 	P_GeometryLineAttack(trace, p->source, p->damage, damagetype);
@@ -5668,14 +5676,94 @@ void P_RailAttack(FRailParams *p)
 	}
 	if (thepuff != NULL)
 	{
-		if (trace.Crossed3DWater || trace.CrossedWater)
-		{
-			SpawnDeepSplash(source, trace, thepuff);
+		
+		// Try calling PuffSplash first, if it returns false we can spawn engine-default splashes
+		bool splashHandled = false;
+
+		if (trace.Crossed3DWater) {
+			IFVIRTUALPTR(thepuff, AActor, PuffSplash)
+			{
+				VMValue params[] = { thepuff, trace.Crossed3DWaterPos.X, trace.Crossed3DWaterPos.Y, trace.Crossed3DWaterPos.Z, vec.X, vec.Y, vec.Z, (sector_t*)nullptr, trace.Crossed3DWater };
+				int ret;
+				VMReturn vret(&ret);
+				VMCall(func, params, countof(params), &vret, 1);
+				splashHandled = ret;
+			}
 		}
-		else if (trace.HitType == TRACE_HitFloor && trace.Sector->heightsec == NULL)
-		{
-			P_HitWater(thepuff, trace.Sector, trace.HitPos);
+
+		if (trace.CrossedWater) {
+			IFVIRTUALPTR(thepuff, AActor, PuffSplash)
+			{
+				VMValue params[] = { thepuff, trace.CrossedWaterPos.X, trace.CrossedWaterPos.Y, trace.CrossedWaterPos.Z, vec.X, vec.Y, vec.Z, trace.CrossedWater, (sector_t*)nullptr };
+				int ret;
+				VMReturn vret(&ret);
+				VMCall(func, params, countof(params), &vret, 1);
+				splashHandled = splashHandled || ret;
+			}
 		}
+
+		if (!splashHandled) {
+			if (trace.Crossed3DWater || trace.CrossedWater)
+			{
+				SpawnDeepSplash(source, trace, thepuff);
+			}
+			else if (trace.HitType == TRACE_HitFloor && trace.Sector->heightsec == NULL)
+			{
+				P_HitWater(thepuff, trace.Sector, trace.HitPos);
+			}
+		}
+
+		// Callback to puff with hit information if exists
+		if (thepuff && trace.HitType != TRACE_HasHitSky && (trace.HitType == TRACE_HitWall || trace.HitType == TRACE_HitFloor || trace.HitType == TRACE_HitCeiling)) {
+			IFVIRTUALPTR(thepuff, AActor, PuffHit)
+			{
+				FLineTraceData data = {
+					nullptr,
+					trace.Line,
+					trace.Sector,
+					trace.ffloor,
+					trace.HitTexture,
+					trace.HitPos,
+					trace.HitVector,
+					trace.Distance,
+					0,	// TODO: Count portals crossed
+					trace.Side,
+					trace.Tier,
+					(trace.HitType == TRACE_HitCeiling) ? 1 : 0,
+					trace.HitType
+				};
+
+				// Reuse processing expected by ZScript trace functions
+				if (trace.HitType == TRACE_HitWall)
+				{
+					int txpart;
+					switch (trace.Tier)
+					{
+					case TIER_Middle:
+						data.LinePart = 1;
+						data.HitTexture = trace.Line->sidedef[trace.Side]->textures[1].texture;
+						break;
+					case TIER_Upper:
+						data.LinePart = 0;
+						data.HitTexture = trace.Line->sidedef[trace.Side]->textures[0].texture;
+						break;
+					case TIER_Lower:
+						data.LinePart = 2;
+						data.HitTexture = trace.Line->sidedef[trace.Side]->textures[2].texture;
+						break;
+					case TIER_FFloor:
+						data.LinePart = 1;	// act as if middle was hit
+						txpart = (trace.ffloor->flags & FF_UPPERTEXTURE) ? 0 : (trace.ffloor->flags & FF_LOWERTEXTURE) ? 2 : 1;
+						data.HitTexture = trace.ffloor->master->sidedef[0]->textures[txpart].texture;
+						break;
+					}
+				}
+
+				VMValue params[] = { thepuff, &data };
+				VMCall(func, params, countof(params), nullptr, 0);
+			}
+		}
+
 		thepuff->Destroy();
 	}
 
