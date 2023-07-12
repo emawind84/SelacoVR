@@ -1709,7 +1709,7 @@ class GLDefsParser
 						//Printf("Duplicating texture, making new tex with name: %s\n", sc.String);
 						auto orig = tex->GetTexture();
 						auto newTex = MakeGameTexture(orig, sc.String, type);
-						tex->CopySize(tex, true);
+						tex->CopySize(tex, false);
 						TexMan.AddGameTexture(newTex);
 						tex = newTex;
 					}

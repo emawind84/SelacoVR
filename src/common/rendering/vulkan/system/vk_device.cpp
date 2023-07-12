@@ -481,7 +481,7 @@ void VulkanDevice::CreateInstance()
 	{
 		VkApplicationInfo appInfo = {};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		appInfo.pApplicationName = "GZDoom";
+		appInfo.pApplicationName = "Selaco";
 		appInfo.applicationVersion = VK_MAKE_VERSION(VER_MAJOR, VER_MINOR, VER_REVISION);
 		appInfo.pEngineName = "GZDoom";
 		appInfo.engineVersion = VK_MAKE_VERSION(ENG_MAJOR, ENG_MINOR, ENG_REVISION);
