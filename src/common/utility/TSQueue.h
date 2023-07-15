@@ -147,6 +147,10 @@ public:
 		mInputQ.clear();
 	}
 
+	void clearSecondaryInputQueue() {
+		mInputSecondaryQ.clear();
+	}
+
 	void stop() {
 		// Kill and finish the thread
 		if (mThread.joinable()) {

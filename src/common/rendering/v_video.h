@@ -222,6 +222,7 @@ public:
 	virtual float CacheProgress() { return 0; }																		// Current progress of background cache op
 	virtual bool SupportsBackgroundCache() { return false; }
 	virtual void UpdateBackgroundCache(bool flush = false) { }
+	virtual void StopBackgroundCache() { }
 	// Wait for all background loads to finish, then update background cache
 	virtual void FlushBackground() { }	
 	

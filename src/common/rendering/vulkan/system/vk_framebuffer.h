@@ -128,6 +128,7 @@ public:
 	bool BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI = false) override;
 	bool CachingActive() override { return bgTransferThread->isActive(); }
 	bool SupportsBackgroundCache() override { return true; }
+	void StopBackgroundCache() override;
 	void FlushBackground() override;
 	float CacheProgress() override { return float(bgTransferThread->numQueued()); }	// TODO: Change this to report the actual progress once we have a way to mark the total number of objects to load
 	void UpdateBackgroundCache(bool flush = false) override;

@@ -3739,6 +3739,9 @@ void D_Cleanup()
 	S_UnloadReverbDef();
 	G_ClearMapinfo();
 
+	// @Cockatrice - Stop any renderer threads
+	screen->StopBackgroundCache();
+
 	M_ClearMenus();					// close menu if open
 	AM_ClearColorsets();
 	DeinitSWColorMaps();

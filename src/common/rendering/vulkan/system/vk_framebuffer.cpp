@@ -421,6 +421,14 @@ VulkanFrameBuffer::~VulkanFrameBuffer()
 	mBGTransferCommands->DeleteFrameObjects();
 }
 
+void VulkanFrameBuffer::StopBackgroundCache() {
+	if (bgTransferThread.get()) {
+		bgTransferThread->clearInputQueue();
+		bgTransferThread->clearSecondaryInputQueue();
+		bgTransferThread->stop();
+	}
+}
+
 void VulkanFrameBuffer::InitializeState()
 {
 	static bool first = true;
