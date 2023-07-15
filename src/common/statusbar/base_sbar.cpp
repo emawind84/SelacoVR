@@ -116,7 +116,7 @@ void ST_UnloadCrosshair()
 
 void ST_DrawCrosshair(int phealth, double xpos, double ypos, double scale)
 {
-	uint32_t color;
+	uint32_t color = crosshaircolor;
 	double size;
 	int w, h;
 
@@ -128,7 +128,8 @@ void ST_DrawCrosshair(int phealth, double xpos, double ypos, double scale)
 
 	if (crosshairscale > 0.0f)
 	{
-		size = twod->GetHeight() * crosshairscale * 0.005;
+		// @Cockatrice - HACK ALERT, but we are going to base our crosshair scaling off a 1920x1080 screen
+		size = (twod->GetHeight() / 1080.0) * crosshairscale;
 	}
 	else
 	{
@@ -143,7 +144,7 @@ void ST_DrawCrosshair(int phealth, double xpos, double ypos, double scale)
 	w = int(CrosshairImage->GetDisplayWidth() * size);
 	h = int(CrosshairImage->GetDisplayHeight() * size);
 
-	if (crosshairhealth == 1)
+	/*if (crosshairhealth == 1)
 	{
 		// "Standard" crosshair health (green-red)
 		int health = phealth;
@@ -191,7 +192,7 @@ void ST_DrawCrosshair(int phealth, double xpos, double ypos, double scale)
 	else
 	{
 		color = crosshaircolor;
-	}
+	}*/
 
 	DrawTexture(twod, CrosshairImage,
 		xpos, ypos,
