@@ -3740,7 +3740,7 @@ void D_Cleanup()
 	G_ClearMapinfo();
 
 	// @Cockatrice - Stop any renderer threads
-	screen->StopBackgroundCache();
+	if(screen) screen->StopBackgroundCache();
 
 	M_ClearMenus();					// close menu if open
 	AM_ClearColorsets();
