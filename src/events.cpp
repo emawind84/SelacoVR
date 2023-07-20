@@ -326,7 +326,7 @@ FString EventManager::GetSavegameComments()
 
 	if (allComments.Size()) {
 		for (unsigned int x = 0; x < allComments.Size(); x++) {
-			comments.AppendFormat("%s%s", comments.IsEmpty() ? "\n" : "", allComments[x].txt);
+			comments.AppendFormat("%s%s", comments.IsEmpty() ? "\n" : "", allComments[x].txt.GetChars());
 		}
 	}
 
