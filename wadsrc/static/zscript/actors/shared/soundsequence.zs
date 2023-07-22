@@ -61,6 +61,8 @@
 class AmbientSound : Actor
 {
 	bool activatedOnce;
+	bool alwaysPlay;
+	int inRangeCounter;
 
 	default
 	{
@@ -90,9 +92,19 @@ class AmbientSound : Actor
 	override void Tick() {
 		Super.Tick();
 
-		if(!activatedOnce && !bDormant && level.maptime > 5) {
+		// Check range to players
+		bool inRange = alwaysPlay || (--inRangeCounter > 0 || !CheckRange(args[3] + 128, true));
+
+		if(inRange && !activatedOnce && !bDormant && level.maptime > 5) {
 			Activate(NULL);
 			activatedOnce = true;
+		}
+
+		if(!inRange && special2) {
+			Deactivate(NULL);
+		} else if(inRange && !special2) {
+			inRangeCounter = 10;
+			Activate(NULL);
 		}
 
 		AmbientTick();
