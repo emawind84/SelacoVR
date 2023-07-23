@@ -348,6 +348,14 @@ class OptionMenuItemOptionBase : OptionMenuItem
 	{
 		return !isGrayed();
 	}
+
+	virtual string getItem(int item) {
+        return StringTable.Localize(OptionValues.GetText(mValues, item));
+    }
+
+    virtual int numItems() {
+        return OptionValues.GetCount(mValues);
+    }
 }
 
 //=============================================================================
