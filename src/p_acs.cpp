@@ -10592,7 +10592,7 @@ int P_StartScript (AActor *who, line_t *where, int script, const char *map, cons
 		{
 			if (!(flags & ACS_NET) || (who && who->player == &players[consoleplayer]))
 			{
-				Printf("P_StartScript: Unknown %s\n", ScriptPresentation(script).GetChars());
+				DPrintf(DMSG_WARNING, "P_StartScript: Unknown %s\n", ScriptPresentation(script).GetChars());
 			}
 		}
 	}
