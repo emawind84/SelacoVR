@@ -147,9 +147,10 @@
 #define ZCC_RETURN                         147
 #define ZCC_DO                             148
 #define ZCC_FOR                            149
-#define ZCC_WHILE                          150
-#define ZCC_UNTIL                          151
-#define ZCC_IF                             152
-#define ZCC_ELSE                           153
-#define ZCC_SWITCH                         154
-#define ZCC_CASE                           155
+#define ZCC_FOREACH                        150
+#define ZCC_WHILE                          151
+#define ZCC_UNTIL                          152
+#define ZCC_IF                             153
+#define ZCC_ELSE                           154
+#define ZCC_SWITCH                         155
+#define ZCC_CASE                           156
