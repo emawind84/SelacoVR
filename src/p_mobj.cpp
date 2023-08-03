@@ -387,6 +387,7 @@ void AActor::Serialize(FSerializer &arc)
 		A("friction", Friction)
 		A("SpriteOffset", SpriteOffset)
 		A("userlights", UserLights)
+		A("WorldOffset", WorldOffset)
 		A("modelData", modelData);
 }
 

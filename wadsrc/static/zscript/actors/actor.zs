@@ -92,6 +92,7 @@ class Actor : Thinker native
 	native vector3 Prev;
 	native uint ThruBits;
 	native vector2 SpriteOffset;
+	native vector3 WorldOffset;
 	native double spriteAngle;
 	native double spriteRotation;
 	native float VisibleStartAngle;
@@ -788,6 +789,20 @@ class Actor : Thinker native
 	native clearscope double GetCameraHeight() const;
 	native clearscope double GetGravity() const;
 	native void DoMissileDamage(Actor target);
+
+	clearscope double PitchTo(Actor target, double zOfs = 0, double targZOfs = 0, bool absolute = false) const
+	{
+		Vector3 origin = (pos.xy, pos.z - floorClip + zOfs);
+		Vector3 dest = (target.pos.xy, target.pos.z - target.floorClip + targZOfs);
+
+		Vector3 diff;
+		if (!absolute)
+			diff = level.Vec3Diff(origin, dest);
+		else
+			diff = dest - origin;
+
+		return -atan2(diff.z, diff.xy.Length());
+	}
 
 	//==========================================================================
 	//

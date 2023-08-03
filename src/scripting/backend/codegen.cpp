@@ -5068,6 +5068,23 @@ FxExpression *FxATan2::Resolve(FCompileContext &ctx)
 
 //==========================================================================
 //
+// The atan2 opcode only takes registers as parameters, so any constants
+// must be loaded into registers first.
+//
+//==========================================================================
+ExpEmit FxATan2::ToReg(VMFunctionBuilder* build, FxExpression* val)
+{
+	if (val->isConstant())
+	{
+		ExpEmit reg(build, REGT_FLOAT);
+		build->Emit(OP_LKF, reg.RegNum, build->GetConstantFloat(static_cast<FxConstant*>(val)->GetValue().GetFloat()));
+		return reg;
+	}
+	return val->Emit(build);
+}
+
+//==========================================================================
+//
 //
 //
 //==========================================================================
@@ -5079,6 +5096,61 @@ ExpEmit FxATan2::Emit(VMFunctionBuilder *build)
 	xreg.Free(build);
 	ExpEmit out(build, REGT_FLOAT);
 	build->Emit(OP_ATAN2, out.RegNum, yreg.RegNum, xreg.RegNum);
+	return out;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+FxATan2Vec::FxATan2Vec(FxExpression* v, const FScriptPosition& pos)
+	: FxExpression(EFX_ATan2Vec, pos)
+{
+	vval = v;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+FxATan2Vec::~FxATan2Vec()
+{
+	SAFE_DELETE(vval);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+FxExpression* FxATan2Vec::Resolve(FCompileContext& ctx)
+{
+	CHECKRESOLVED();
+	SAFE_RESOLVE(vval, ctx);
+
+	if (!vval->IsVector())
+	{
+		ScriptPosition.Message(MSG_ERROR, "vector value expected for parameter");
+		delete this;
+		return nullptr;
+	}
+	ValueType = TypeFloat64;
+	return this;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+ExpEmit FxATan2Vec::Emit(VMFunctionBuilder* build)
+{
+	ExpEmit vreg = vval->Emit(build);
+	vreg.Free(build);
+	ExpEmit out(build, REGT_FLOAT);
+	build->Emit(OP_ATAN2, out.RegNum, vreg.RegNum + 1, vreg.RegNum);
 	return out;
 }
 
@@ -5233,23 +5305,6 @@ ExpEmit FxNew::Emit(VMFunctionBuilder *build)
 	emitters.AddParameterIntConst(1);	// Todo: 1 only if version < 4.0.0
 	emitters.AddReturn(REGT_POINTER);
 	return emitters.EmitCall(build);
-}
-
-//==========================================================================
-//
-// The atan2 opcode only takes registers as parameters, so any constants
-// must be loaded into registers first.
-//
-//==========================================================================
-ExpEmit FxATan2::ToReg(VMFunctionBuilder *build, FxExpression *val)
-{
-	if (val->isConstant())
-	{
-		ExpEmit reg(build, REGT_FLOAT);
-		build->Emit(OP_LKF, reg.RegNum, build->GetConstantFloat(static_cast<FxConstant*>(val)->GetValue().GetFloat()));
-		return reg;
-	}
-	return val->Emit(build);
 }
 
 //==========================================================================
@@ -7259,8 +7314,8 @@ FxClassMember::FxClassMember(FxExpression *x, PField* mem, const FScriptPosition
 //
 //==========================================================================
 
-FxArrayElement::FxArrayElement(FxExpression *base, FxExpression *_index)
-:FxExpression(EFX_ArrayElement, base->ScriptPosition)
+FxArrayElement::FxArrayElement(FxExpression *base, FxExpression *_index, bool nob)
+:FxExpression(EFX_ArrayElement, base->ScriptPosition), noboundscheck(nob)
 {
 	Array=base;
 	index = _index;
@@ -7543,18 +7598,21 @@ ExpEmit FxArrayElement::Emit(VMFunctionBuilder *build)
 	else
 	{
 		ExpEmit indexv(index->Emit(build));
-		if (SizeAddr != ~0u || nestedarray)
+		if (!noboundscheck) // this is 'foreach' which is known to be inside the bounds.
 		{
-			build->Emit(OP_BOUND_R, indexv.RegNum, bound.RegNum);
-			bound.Free(build);
-		}
-		else if (arraytype->ElementCount > 65535)
-		{
-			build->Emit(OP_BOUND_K, indexv.RegNum, build->GetConstantInt(arraytype->ElementCount));
-		}
-		else
-		{
-			build->Emit(OP_BOUND, indexv.RegNum, arraytype->ElementCount);
+			if (SizeAddr != ~0u || nestedarray)
+			{
+				build->Emit(OP_BOUND_R, indexv.RegNum, bound.RegNum);
+				bound.Free(build);
+			}
+			else if (arraytype->ElementCount > 65535)
+			{
+				build->Emit(OP_BOUND_K, indexv.RegNum, build->GetConstantInt(arraytype->ElementCount));
+			}
+			else
+			{
+				build->Emit(OP_BOUND, indexv.RegNum, arraytype->ElementCount);
+			}
 		}
 
 		if (!start.Konst)
@@ -8015,10 +8073,18 @@ FxExpression *FxFunctionCall::Resolve(FCompileContext& ctx)
 
 	case NAME_ATan2:
 	case NAME_VectorAngle:
-		if (CheckArgSize(MethodName, ArgList, 2, 2, ScriptPosition))
+		if (CheckArgSize(MethodName, ArgList, 1, 2, ScriptPosition))
 		{
-			func = MethodName == NAME_ATan2 ? new FxATan2(ArgList[0], ArgList[1], ScriptPosition) : new FxATan2(ArgList[1], ArgList[0], ScriptPosition);
-			ArgList[0] = ArgList[1] = nullptr;
+			if (ArgList.Size() == 2)
+			{
+				func = MethodName == NAME_ATan2 ? new FxATan2(ArgList[0], ArgList[1], ScriptPosition) : new FxATan2(ArgList[1], ArgList[0], ScriptPosition);
+				ArgList[0] = ArgList[1] = nullptr;
+			}
+			else
+			{
+				func = new FxATan2Vec(ArgList[0], ScriptPosition);
+				ArgList[0] = nullptr;
+			}
 		}
 		break;
 
@@ -8249,7 +8315,7 @@ FxExpression *FxMemberFunctionCall::Resolve(FCompileContext& ctx)
 	else if (Self->IsVector())
 	{
 		// handle builtins: Vectors got 2: Length and Unit.
-		if (MethodName == NAME_Length || MethodName == NAME_Unit)
+		if (MethodName == NAME_Length || MethodName == NAME_LengthSquared || MethodName == NAME_Sum || MethodName == NAME_Unit || MethodName == NAME_Angle)
 		{
 			if (ArgList.Size() > 0)
 			{
@@ -9452,7 +9518,25 @@ FxExpression *FxVectorBuiltin::Resolve(FCompileContext &ctx)
 {
 	SAFE_RESOLVE(Self, ctx);
 	assert(Self->IsVector());	// should never be created for anything else.
-	ValueType = Function == NAME_Length ? TypeFloat64 : Self->ValueType;
+	switch (Function.GetIndex())
+	{
+	case NAME_Angle:
+		assert(Self->IsVector());
+	case NAME_Length:
+	case NAME_LengthSquared:
+	case NAME_Sum:
+		ValueType = TypeFloat64;
+		break;
+
+	case NAME_Unit:
+		ValueType = Self->ValueType;
+		break;
+
+	default:
+		ValueType = TypeError;
+		assert(false);
+		break;
+	}
 	return this;
 }
 
@@ -9464,12 +9548,37 @@ ExpEmit FxVectorBuiltin::Emit(VMFunctionBuilder *build)
 	{
 		build->Emit(Self->ValueType == TypeVector2 ? OP_LENV2 : OP_LENV3, to.RegNum, op.RegNum);
 	}
-	else
+	else if (Function == NAME_LengthSquared)
+	{
+		build->Emit(Self->ValueType == TypeVector2 ? OP_DOTV2_RR : OP_DOTV3_RR, to.RegNum, op.RegNum, op.RegNum);
+	}
+	else if (Function == NAME_Sum)
+	{
+		ExpEmit temp(build, ValueType->GetRegType(), 1);
+		build->Emit(OP_FLOP, to.RegNum, op.RegNum, FLOP_ABS);
+		build->Emit(OP_FLOP, temp.RegNum, op.RegNum + 1, FLOP_ABS);
+		build->Emit(OP_ADDF_RR, to.RegNum, to.RegNum, temp.RegNum);
+		if (Self->ValueType == TypeVector2)
+		{
+			build->Emit(OP_FLOP, temp.RegNum, op.RegNum + 2, FLOP_ABS);
+			build->Emit(OP_ADDF_RR, to.RegNum, to.RegNum, temp.RegNum);
+		}
+		if (Self->ValueType == TypeVector3)
+		{
+			build->Emit(OP_FLOP, temp.RegNum, op.RegNum + 3, FLOP_ABS);
+			build->Emit(OP_ADDF_RR, to.RegNum, to.RegNum, temp.RegNum);
+		}
+	}
+	else if (Function == NAME_Unit)
 	{
 		ExpEmit len(build, REGT_FLOAT);
 		build->Emit(Self->ValueType == TypeVector2 ? OP_LENV2 : OP_LENV3, len.RegNum, op.RegNum);
 		build->Emit(Self->ValueType == TypeVector2 ? OP_DIVVF2_RR : OP_DIVVF3_RR, to.RegNum, op.RegNum, len.RegNum);
 		len.Free(build);
+	}
+	else if (Function == NAME_Angle)
+	{
+		build->Emit(OP_ATAN2, to.RegNum, op.RegNum + 1, op.RegNum);
 	}
 	op.Free(build);
 	return to;
@@ -10695,6 +10804,77 @@ ExpEmit FxForLoop::Emit(VMFunctionBuilder *build)
 
 //==========================================================================
 //
+// FxForLoop
+//
+//==========================================================================
+
+FxForEachLoop::FxForEachLoop(FName vn, FxExpression* arrayvar, FxExpression* arrayvar2, FxExpression* code, const FScriptPosition& pos)
+	: FxLoopStatement(EFX_ForEachLoop, pos), loopVarName(vn), Array(arrayvar), Array2(arrayvar2), Code(code)
+{
+	ValueType = TypeVoid;
+	if (Array != nullptr) Array->NeedResult = false;
+	if (Array2 != nullptr) Array2->NeedResult = false;
+	if (Code != nullptr) Code->NeedResult = false;
+}
+
+FxForEachLoop::~FxForEachLoop()
+{
+	SAFE_DELETE(Array);
+	SAFE_DELETE(Array2);
+	SAFE_DELETE(Code);
+}
+
+FxExpression* FxForEachLoop::DoResolve(FCompileContext& ctx)
+{
+	CHECKRESOLVED();
+	SAFE_RESOLVE(Array, ctx);
+	SAFE_RESOLVE(Array2, ctx);
+
+	// Instead of writing a new code generator for this, convert this into
+	//
+	// int @size = array.Size();
+	// for(int @i = 0; @i < @size; @i++)
+	// {
+	//    let var = array[i];
+	//    body
+	// }
+	// and let the existing 'for' loop code sort out the rest.
+
+	FName sizevar = "@size";
+	FName itvar = "@i";
+	FArgumentList al;
+	auto block = new FxCompoundStatement(ScriptPosition);
+	auto arraysize = new FxMemberFunctionCall(Array, NAME_Size, al, ScriptPosition);
+	auto size = new FxLocalVariableDeclaration(TypeSInt32, sizevar, arraysize, 0, ScriptPosition);
+	auto it = new FxLocalVariableDeclaration(TypeSInt32, itvar, new FxConstant(0, ScriptPosition), 0, ScriptPosition);
+	block->Add(size);
+	block->Add(it);
+
+	auto cit = new FxLocalVariable(it, ScriptPosition);
+	auto csiz = new FxLocalVariable(size, ScriptPosition);
+	auto comp = new FxCompareRel('<', cit, csiz); // new FxIdentifier(itvar, ScriptPosition), new FxIdentifier(sizevar, ScriptPosition));
+
+	auto iit = new FxLocalVariable(it, ScriptPosition);
+	auto bump = new FxPreIncrDecr(iit, TK_Incr);
+
+	auto ait = new FxLocalVariable(it, ScriptPosition);
+	auto access = new FxArrayElement(Array2, ait, true); // Note: Array must be a separate copy because these nodes cannot share the same element.
+
+	auto assign = new FxLocalVariableDeclaration(TypeAuto, loopVarName, access, 0, ScriptPosition);
+	auto body = new FxCompoundStatement(ScriptPosition);
+	body->Add(assign);
+	body->Add(Code);
+	auto forloop = new FxForLoop(nullptr, comp, bump, body, ScriptPosition);
+	block->Add(forloop);
+	Array2 = Array = nullptr;
+	Code = nullptr;
+	delete this;
+	return block->Resolve(ctx);
+}
+
+
+//==========================================================================
+//
 // FxJumpStatement
 //
 //==========================================================================
@@ -11458,14 +11638,23 @@ FxExpression *FxLocalVariableDeclaration::Resolve(FCompileContext &ctx)
 			delete this;
 			return nullptr;
 		}
-		SAFE_RESOLVE_OPT(Init, ctx);
-		if (Init->ValueType->RegType == REGT_NIL)
-		{
-			ScriptPosition.Message(MSG_ERROR, "Cannot initialize non-scalar variable %s here", Name.GetChars());
-			delete this;
-			return nullptr;
-		}
+		SAFE_RESOLVE(Init, ctx);
 		ValueType = Init->ValueType;
+		if (ValueType->RegType == REGT_NIL)
+		{
+			if (Init->IsStruct())
+			{
+				ValueType = NewPointer(ValueType);
+				Init = new FxTypeCast(Init, ValueType, false);
+				SAFE_RESOLVE(Init, ctx);
+			}
+			else
+			{
+				ScriptPosition.Message(MSG_ERROR, "Cannot initialize non-scalar variable %s here", Name.GetChars());
+				delete this;
+				return nullptr;
+			}
+		}
 		// check for undersized ints and floats. These are not allowed as local variables.
 		if (IsInteger() && ValueType->Align < sizeof(int)) ValueType = TypeSInt32;
 		else if (IsFloat() && ValueType->Align < sizeof(double)) ValueType = TypeFloat64;
