@@ -16,14 +16,11 @@ ProfileManager profileManager;
 
 void ProfileManager::ProcessOneProfileFile(const FString &name)
 {
-	const long titleMaxLength = 50;
-	FString titleTag = "#TITLE";
 	auto fb = ExtractFileBase(name, false);
 	long clidx = fb.IndexOf("commandline_", 0);
 	if (clidx == 0)
 	{
 		fb.Remove(clidx, 12);
-		auto fbe = ExtractFileBase(name, true);
 		for (auto &profile : cmdlineProfiles)
 		{
 			// We already got a profile with this name. Do not add again.
@@ -34,8 +31,10 @@ void ProfileManager::ProcessOneProfileFile(const FString &name)
 		{
 			char head[100] = { 0};
 			fr.Read(head, 100);
+			FString titleTag = "#TITLE";
 			if (!memcmp(head, titleTag, titleTag.Len()))
 			{
+				const long titleMaxLength = 50;
 				FString title = FString(&head[7], std::min<size_t>(strcspn(&head[7], "\r\n"), titleMaxLength));
 				FCommandLineInfo sft = { fb, title };
 				cmdlineProfiles.Push(sft);
