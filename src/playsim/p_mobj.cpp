@@ -2429,7 +2429,8 @@ void P_ZMovement (AActor *mo, double oldfloorz)
 	}
 	if (mo->player && (mo->flags & MF_NOGRAVITY) && (mo->Z() > mo->floorz))
 	{
-		if (!mo->IsNoClip2())
+		// @Cockatrice - Removed up/down flight motion when no gravity applied. We can readd this in script if necessary
+		if (!mo->IsNoClip2() && !mo->player)
 		{
 			mo->AddZ(DAngle(360 / 80.f * mo->Level->maptime).Sin() / 8);
 		}
