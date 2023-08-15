@@ -93,13 +93,19 @@ class AmbientSound : Actor
 		Super.Tick();
 		
 		// Check range to players
-		bool inRange = user_alwaysPlay || (--inRangeCounter > 0 || !CheckRange(args[3] + 128, true));
+		// This code has been moved into AmbientTick() because we cannot get the ambient attenuation setting for when Args[3] is not present
+		/*bool inRange = user_alwaysPlay || (--inRangeCounter > 0 || !CheckRange(args[3] + 128, true));
 
 		if(!inRange && special2) {
 			Deactivate(NULL);
 		} else if(inRange && !special2 && !bDormant && level.maptime > 5) {
 			inRangeCounter = 10;
 			Activate(NULL);
+		}*/
+
+		if(!activatedOnce && !bDormant && level.maptime > 5) {
+			Activate(NULL);
+			activatedOnce = true;
 		}
 
 		AmbientTick();
