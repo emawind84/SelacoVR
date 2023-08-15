@@ -49,7 +49,7 @@
 #include "findfile.h"
 #include "i_interface.h"
 
-CVAR (Bool, queryiwad, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
+CVAR (Bool, queryiwad, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 CVAR (String, defaultiwad, "", CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 
 //==========================================================================

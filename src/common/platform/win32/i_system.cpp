@@ -121,7 +121,7 @@ extern bool NativeMouse;
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
-CVAR (String, queryiwad_key, "shift", CVAR_GLOBALCONFIG|CVAR_ARCHIVE);
+CVAR (String, queryiwad_key, "none", CVAR_GLOBALCONFIG|CVAR_ARCHIVE);
 CVAR (Bool, con_debugoutput, false, 0);
 
 double PerfToSec, PerfToMillisec;
