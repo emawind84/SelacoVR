@@ -76,6 +76,9 @@ void ProfileManager::CollectProfiles()
 	FString dir = NicePath("$PROGDIR");
 	if (dir.Len() > 0) mSearchPaths.Push(dir);
 
+	dir = NicePath("./profiles/");
+	mSearchPaths.Push(dir);
+
 	// Unify and remove trailing slashes
 	for (auto &str : mSearchPaths)
 	{
