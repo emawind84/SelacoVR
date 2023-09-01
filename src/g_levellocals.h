@@ -527,7 +527,7 @@ public:
 	double		tilt, tiltAngle;
 	int			cluster;
 	int			clusterflags;
-	int			levelnum;
+	int			levelnum, levelgroup;
 	int			lumpnum;
 	FString		LevelName;
 	FString		MapName;			// the lump name (E1M1, MAP01, etc)

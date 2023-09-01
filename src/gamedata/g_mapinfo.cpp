@@ -237,6 +237,7 @@ void level_info_t::Reset()
 	MapName = "";
 	MapBackground = "";
 	levelnum = 0;
+	levelgroup = 0;
 	PName = "";
 	NextMap = "";
 	NextSecretMap = "";
@@ -958,6 +959,13 @@ void FMapInfoParser::ParseNextMap(FString &mapname)
 // Map options
 //
 //==========================================================================
+
+DEFINE_MAP_OPTION(levelgroup, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetNumber();
+	info->levelgroup = parse.sc.Number;
+}
 
 DEFINE_MAP_OPTION(levelnum, true)
 {

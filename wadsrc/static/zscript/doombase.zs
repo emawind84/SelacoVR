@@ -334,6 +334,7 @@ struct DropItem native
 struct LevelInfo native
 {
 	native readonly int levelnum;
+	native readonly int levelgroup;
 	native readonly String MapName;
 	native readonly String NextMap;
 	native readonly String NextSecretMap;
@@ -409,6 +410,7 @@ struct LevelLocals native
 	native readonly int cluster;
 	native readonly int clusterflags;
 	native readonly int levelnum;
+	native readonly int levelgroup;
 	native readonly String LevelName;
 	native readonly String MapName;
 	native String NextMap;

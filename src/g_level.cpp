@@ -1899,6 +1899,7 @@ void FLevelLocals::Init()
 	flags2 |= info->flags2;
 	flags3 |= info->flags3;
 	levelnum = info->levelnum;
+	levelgroup = info->levelgroup;
 	Music = info->Music;
 	musicorder = info->musicorder;
 	MusicVolume = 1.f;
