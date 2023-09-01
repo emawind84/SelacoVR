@@ -130,6 +130,20 @@ DEFINE_ACTION_FUNCTION(IJoystickConfig, GetAxisName)
 	ACTION_RETURN_STRING(self->GetAxisName(axis));
 }
 
+DEFINE_ACTION_FUNCTION(IJoystickConfig, GetAxis)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	PARAM_INT(axis);
+	ACTION_RETURN_FLOAT(self->GetAxis(axis));
+}
+
+DEFINE_ACTION_FUNCTION(IJoystickConfig, GetRawAxis)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	PARAM_INT(axis);
+	ACTION_RETURN_FLOAT(self->GetRawAxis(axis));
+}
+
 DEFINE_ACTION_FUNCTION(IJoystickConfig, GetNumAxes)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);

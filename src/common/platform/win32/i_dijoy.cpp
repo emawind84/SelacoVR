@@ -171,6 +171,9 @@ public:
 	const char *GetAxisName(int axis);
 	float GetAxisScale(int axis);
 
+	float GetAxis(int axis);
+	float GetRawAxis(int axis);
+
 	void SetAxisDeadZone(int axis, float deadzone);
 	void SetAxisMap(int axis, EJoyAxis gameaxis);
 	void SetAxisScale(int axis, float scale);
@@ -444,6 +447,7 @@ void FDInputJoystick::ProcessInput()
 		// Cancel out dead zone
 		axisval = Joy_RemoveDeadZone(axisval, info->DeadZone, &buttonstate);
 		info->Value = float(axisval);
+		
 		if (i < NUM_JOYAXISBUTTONS && (i > 2 || Axes.Size() == 1))
 		{
 			Joy_GenerateButtonEvents(info->ButtonValue, buttonstate, 2, KEY_JOYAXIS1PLUS + i*2);
@@ -911,6 +915,27 @@ float FDInputJoystick::GetAxisScale(int axis)
 	}
 	return Axes[axis].Multiplier;
 }
+
+float FDInputJoystick::GetAxis(int axis) {
+	if (unsigned(axis) >= Axes.Size())
+	{
+		return 0;
+	}
+
+	return Axes[axis].Value;
+}
+
+
+
+float FDInputJoystick::GetRawAxis(int axis) {
+	if (unsigned(axis) >= Axes.Size())
+	{
+		return 0;
+	}
+
+	return Axes[axis].Value;
+}
+
 
 //===========================================================================
 //

@@ -59,6 +59,14 @@ public:
 	float GetAxisAcceleration(int axis) override {
 		return Axes[axis].Acceleration;
 	}
+
+	float GetAxis(int axis) override {
+		return Axes[axis].Value;
+	}
+
+	float GetRawAxis(int axis) override {
+		return Axes[axis].RawValue;
+	}
 	
 
 	// Setters
@@ -87,6 +95,7 @@ public:
         for (int i = 0; i < GetNumAxes(); ++i)
         {
             Axes[i].Value = 0;
+			Axes[i].RawValue = 0;
             Axes[i].ButtonValue = 0;
             Axes[i].Inputs.pos = -1;
         }
@@ -109,6 +118,7 @@ protected:
 		float Acceleration;
 		EJoyAxis GameAxis;
 		double Value;
+		double RawValue;
 		uint8_t ButtonValue;
         RingBuffer<double, 10> Inputs;
 	};

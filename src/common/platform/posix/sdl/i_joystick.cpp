@@ -153,6 +153,7 @@ public:
 
 			//info.DeadZone = MIN_DEADZONE;
 			info.Value = 0.0;
+			info.RawValue = 0.0;
 			info.ButtonValue = 0;
 			if (i >= 5) {
 				info.GameAxis = JOYAXIS_None;
@@ -238,9 +239,11 @@ public:
 			buttonstate = 0;
 
 			double axisval = SDL_JoystickGetAxis(Device, i)/32767.0;
-			axisval = Joy_RemoveDeadZone(axisval, Axes[i].DeadZone, &buttonstate);
 
-			ProcessAcceleration(&Axes[i], axisval);
+			Axes[i].RawValue = axisval;
+
+			axisval = Joy_RemoveDeadZone(axisval, Axes[i].DeadZone, &buttonstate);
+			ProcessAcceleration(&Axes[i], axisval);			
 
 			// Map button to axis
 			// X and Y are handled differently so if we have 2 or more axes then we'll use that code instead.
@@ -573,6 +576,9 @@ public:
 		uint8_t buttonstate;
 		double axisval1, axisval2;
 
+		axis1->RawValue = value1;
+		axis2->RawValue = value2;
+
 		axisval1 = Joy_RemoveDeadZone(value1, axis1->DeadZone, NULL);
 		axisval2 = Joy_RemoveDeadZone(value2, axis2->DeadZone, NULL);
 
@@ -590,8 +596,11 @@ public:
 	static void ProcessTrigger(double value, AxisInfo *axis, int base) {
 		uint8_t buttonstate;
 		double axisval = value;
+		
+		axis->RawValue = value;
 
 		axisval = (float)Joy_RemoveDeadZone(axisval, axis->DeadZone, &buttonstate);
+
 		ProcessAcceleration(axis, axisval);
 
 		Joy_GenerateButtonEvents(axis->ButtonValue, buttonstate, 1, base);

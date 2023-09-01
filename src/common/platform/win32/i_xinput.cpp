@@ -127,6 +127,8 @@ public:
 	const char *GetAxisName(int axis);
 	float GetAxisScale(int axis);
 	float GetAxisAcceleration(int axis) override;
+	float GetAxis(int axis) override;
+	float GetRawAxis(int axis) override;
 
 	void SetAxisDeadZone(int axis, float deadzone);
 	void SetAxisMap(int axis, EJoyAxis gameaxis);
@@ -149,6 +151,7 @@ protected:
 	struct AxisInfo
 	{
 		float Value;
+		float RawValue;
 		float DeadZone;
 		float Multiplier;
 		float Acceleration;
@@ -383,7 +386,7 @@ void FXInputController::ProcessInput()
 
 		// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squarelook
 		if (lookPitch && lookYaw && (
-			joy_xinput_squaremove > 1 ||
+			joy_xinput_squarelook > 1 ||
 			((axisPitch == AXIS_ThumbLX || axisPitch == AXIS_ThumbLY) && (axisYaw == AXIS_ThumbLX || axisYaw == AXIS_ThumbLY)) ||
 			((axisPitch == AXIS_ThumbRX || axisPitch == AXIS_ThumbRY) && (axisYaw == AXIS_ThumbRX || axisYaw == AXIS_ThumbRY))
 			)) {
@@ -485,6 +488,10 @@ void FXInputController::ProcessThumbstick(int value1, AxisInfo *axis1,
 
 	axisval1 = (value1 - SHRT_MIN) * 2.0 / 65536 - 1.0;
 	axisval2 = (value2 - SHRT_MIN) * 2.0 / 65536 - 1.0;
+
+	axis1->RawValue = (float)axisval1;
+	axis2->RawValue = (float)axisval2;
+
 	axisval1 = Joy_RemoveDeadZone(axisval1, axis1->DeadZone, NULL);
 	axisval2 = Joy_RemoveDeadZone(axisval2, axis2->DeadZone, NULL);
 
@@ -510,10 +517,13 @@ void FXInputController::ProcessTrigger(int value, AxisInfo *axis, int base)
 {
 	uint8_t buttonstate;
 	float axisval = value / 256.0f;
+	
+	axis->RawValue = axisval;
 
 	// Seems silly to bother with axis scaling here, but I'm going to @Cockatrice
 	axisval = (float)Joy_RemoveDeadZone((double)axisval, axis->DeadZone, &buttonstate);
 	ProcessAcceleration(axis, axisval);
+	
 
 	Joy_GenerateButtonEvents(axis->ButtonValue, buttonstate, 1, base);
 	axis->ButtonValue = buttonstate;
@@ -538,6 +548,7 @@ void FXInputController::Attached()
 	for (i = 0; i < NUM_AXES; ++i)
 	{
 		Axes[i].Value = 0;
+		Axes[i].RawValue = 0;
 		Axes[i].ButtonValue = 0;
 		Axes[i].Inputs.pos = -1;
 	}
@@ -755,6 +766,24 @@ float FXInputController::GetAxisAcceleration(int axis)
 	if (unsigned(axis) < NUM_AXES)
 	{
 		return Axes[axis].Acceleration;
+	}
+	return 0;
+}
+
+
+float FXInputController::GetAxis(int axis) {
+	if (unsigned(axis) < NUM_AXES)
+	{
+		return Axes[axis].Value;
+	}
+	return 0;
+}
+
+
+float FXInputController::GetRawAxis(int axis) {
+	if (unsigned(axis) < NUM_AXES)
+	{
+		return Axes[axis].RawValue;
 	}
 	return 0;
 }

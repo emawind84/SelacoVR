@@ -37,6 +37,8 @@ struct NOVTABLE IJoystickConfig
 	virtual const char *GetAxisName(int axis) = 0;
 	virtual float GetAxisScale(int axis) = 0;
 	virtual float GetAxisAcceleration(int axis) { return 0; }
+	virtual float GetAxis(int axis) { return 0; }
+	virtual float GetRawAxis(int axis) { return 0; }
 
 	virtual void SetAxisDeadZone(int axis, float zone) = 0;
 	virtual void SetAxisMap(int axis, EJoyAxis gameaxis) = 0;
