@@ -87,6 +87,9 @@ struct JoystickConfig native version("2.4")
 	native int GetNumAxes();
 	native String GetAxisName(int axis);
 
+	native float GetAxis(int axis);		// @Cockatrice - Get current value of axis
+	native float GetRawAxis(int axis);	// Get axis value that has not been squared or processed with deadzone
+
 	native void RestoreDefaults();
 	native bool AddVibration(float l, float r);
 	native bool SetVibration(float l, float r);
