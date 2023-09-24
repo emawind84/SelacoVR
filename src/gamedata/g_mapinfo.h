@@ -333,7 +333,7 @@ struct level_info_t
 	TMap<FName, FExitText> ExitMapTexts;
 
 	int			cluster;
-	int			levelgroup;
+	int			levelgroup, areaNum;
 	int			partime;
 	int			sucktime;
 	int			invasiontier;

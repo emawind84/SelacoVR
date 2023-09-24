@@ -1900,6 +1900,7 @@ void FLevelLocals::Init()
 	flags3 |= info->flags3;
 	levelnum = info->levelnum;
 	levelgroup = info->levelgroup;
+	areaNum = info->areaNum;
 	Music = info->Music;
 	musicorder = info->musicorder;
 	MusicVolume = 1.f;

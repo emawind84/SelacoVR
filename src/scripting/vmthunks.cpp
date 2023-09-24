@@ -2645,6 +2645,7 @@ DEFINE_ACTION_FUNCTION(_LevelInfo, MapChecksum)
 //
 //==========================================================================
 DEFINE_FIELD_X(LevelInfo, level_info_t, levelgroup)
+DEFINE_FIELD_X(LevelInfo, level_info_t, areaNum)
 DEFINE_FIELD_X(LevelInfo, level_info_t, levelnum)
 DEFINE_FIELD_X(LevelInfo, level_info_t, MapName)
 DEFINE_FIELD_X(LevelInfo, level_info_t, NextMap)
@@ -2700,6 +2701,7 @@ DEFINE_FIELD(FLevelLocals, tiltAngle)	 // Angle that the tilt is applied at
 DEFINE_FIELD(FLevelLocals, cluster)
 DEFINE_FIELD(FLevelLocals, clusterflags)
 DEFINE_FIELD(FLevelLocals, levelnum)
+DEFINE_FIELD(FLevelLocals, areaNum)
 DEFINE_FIELD(FLevelLocals, levelgroup)
 DEFINE_FIELD(FLevelLocals, LevelName)
 DEFINE_FIELD(FLevelLocals, MapName)

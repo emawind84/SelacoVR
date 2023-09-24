@@ -238,6 +238,7 @@ void level_info_t::Reset()
 	MapBackground = "";
 	levelnum = 0;
 	levelgroup = 0;
+	areaNum = 0;
 	PName = "";
 	NextMap = "";
 	NextSecretMap = "";
@@ -965,6 +966,13 @@ DEFINE_MAP_OPTION(levelgroup, true)
 	parse.ParseAssign();
 	parse.sc.MustGetNumber();
 	info->levelgroup = parse.sc.Number;
+}
+
+DEFINE_MAP_OPTION(areaNum, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetNumber();
+	info->areaNum = parse.sc.Number;
 }
 
 DEFINE_MAP_OPTION(levelnum, true)
