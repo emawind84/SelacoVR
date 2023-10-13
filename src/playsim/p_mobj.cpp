@@ -99,6 +99,7 @@
 #include "actorinlines.h"
 #include "a_dynlight.h"
 #include "fragglescript/t_fs.h"
+#include "p_linetracedata.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -2428,7 +2429,8 @@ void P_ZMovement (AActor *mo, double oldfloorz)
 	}
 	if (mo->player && (mo->flags & MF_NOGRAVITY) && (mo->Z() > mo->floorz))
 	{
-		if (!mo->IsNoClip2())
+		// @Cockatrice - Removed up/down flight motion when no gravity applied. We can readd this in script if necessary
+		if (!mo->IsNoClip2() && !mo->player)
 		{
 			mo->AddZ(DAngle(360 / 80.f * mo->Level->maptime).Sin() / 8);
 		}
@@ -3107,10 +3109,20 @@ CCMD(utid)
 //
 //==========================================================================
 
+DEFINE_ACTION_FUNCTION(AActor, CalculateMissileDamage)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	ACTION_RETURN_INT(self->DamageVal);
+}
+
 int AActor::GetMissileDamage (int mask, int add)
 {
 	if (DamageVal >= 0)
 	{
+		if (flags8 & MF8_ABSDAMAGE) {
+			return DamageVal;
+		}
+		else
 		if (mask == 0)
 		{
 			return add * DamageVal;
@@ -5818,7 +5830,14 @@ AActor *P_SpawnPuff (AActor *source, PClassActor *pufftype, const DVector3 &pos1
 	// it will enter the crash state. This is used by the StrifeSpark
 	// and BlasterPuff.
 	FState *crashstate;
-	if ((flags & PF_HITSKY) && (crashstate = puff->FindState(NAME_Death, NAME_Sky, true)) != NULL)
+	if ((flags & PF_SPLASHING) && (crashstate = puff->FindState(NAME_Splash)) != NULL) {
+		puff->SetState(crashstate);
+	}
+	else if ((flags & PF_HITTHRU) && (crashstate = puff->FindState(NAME_HitThrough)) != NULL)
+	{
+		puff->SetState(crashstate);
+	}
+	else if ((flags & PF_HITSKY) && (crashstate = puff->FindState(NAME_Death, NAME_Sky, true)) != NULL)
 	{
 		puff->SetState (crashstate);
 	}
@@ -5871,6 +5890,44 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnPuff)
 	PARAM_INT(flags);
 	PARAM_OBJECT(victim, AActor);
 	ACTION_RETURN_OBJECT(P_SpawnPuff(self, pufftype, DVector3(x, y, z), hitdir, particledir, updown, flags, victim));
+}
+
+// Defaults do nothing
+DEFINE_ACTION_FUNCTION(AActor, PuffSplash)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_FLOAT(x);
+	PARAM_FLOAT(y);
+	PARAM_FLOAT(z);
+	PARAM_FLOAT(dx);
+	PARAM_FLOAT(dy);
+	PARAM_FLOAT(dz);
+	PARAM_POINTER(sect, sector_t);
+	PARAM_POINTER(flr, F3DFloor);
+
+	return 0;
+}
+// Defaults do nothing
+DEFINE_ACTION_FUNCTION(AActor, PuffThrough)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT(victim, AActor);
+	PARAM_FLOAT(x);
+	PARAM_FLOAT(y);
+	PARAM_FLOAT(z);
+	PARAM_FLOAT(dx);
+	PARAM_FLOAT(dy);
+	PARAM_FLOAT(dz);
+
+	return 0;
+}
+// Defaults do nothing
+DEFINE_ACTION_FUNCTION(AActor, PuffHit)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_POINTER(trace_res, FLineTraceData);
+	
+	return 0;
 }
 
 //---------------------------------------------------------------------------
@@ -6001,6 +6058,7 @@ void P_BloodSplatter (const DVector3 &pos, AActor *originator, DAngle hitangle)
 		AActor *mo;
 
 		mo = Spawn(originator->Level, bloodcls, pos, NO_REPLACE); // GetBloodType already performed the replacement
+		mo->SetAngle(hitangle, 0);	// @Cockatrice - Why was the angle of blood splatters never set?
 		mo->target = originator;
 		mo->Vel.X = pr_splatter.Random2 () / 64.;
 		mo->Vel.Y = pr_splatter.Random2() / 64.;
@@ -6863,6 +6921,13 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 		an = angle;
 		pitch = source->Angles.Pitch;
 		pLineTarget->linetarget = NULL;
+
+		// @Cockatrice - Add camera offset pitch
+		if (source->player && source->IsKindOf(NAME_PlayerPawn)) {
+			DVector3 angOff, posOff;
+			P_GetCameraOffsets(source->player, angOff, posOff);
+			pitch += angOff.Y;
+		}
 	}
 	else // see which target is to be aimed at
 	{

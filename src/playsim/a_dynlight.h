@@ -269,6 +269,9 @@ public:
 	DVector3 LastPos;
 	DVector3 Pos;
 	DVector3 m_off;
+	
+	// @Cockatrice - These values are used only for spotlights and only to detect changes in angle between frames
+	DAngle LastAngle, LastPitch;
 
 	// This date can either come from the owning actor or from a light definition
 	// To avoid having to copy these around every tic, these are pointers to the source data.

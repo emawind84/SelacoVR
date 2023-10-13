@@ -66,7 +66,7 @@ const float LARGE_VALUE = 1e19f;
 
 EXTERN_CVAR(Bool, r_debug_disable_vis_filter)
 EXTERN_CVAR(Float, transsouls)
-
+EXTERN_CVAR(Bool, gl_texture_thread)
 
 //==========================================================================
 //
@@ -198,7 +198,7 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 			}
 			
 			state.SetAddColor(addCol);*/
-
+			
 			state.SetAddColor(cursec->AdditiveColors[sector_t::sprites] | 0xff000000);
 		}
 		/*else if (actor && actor->selfLighting != 0) {
@@ -206,8 +206,8 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 		}*/
 
 		// (@Cockatrice) Add bonus luminence based on the selfLighting field color
-		int lightBonus = !actor || !gl_selflighting ? 0 : actor->selfLighting.Luminance() * 3;
-		di->SetColor(state, lightlevel + lightBonus, rel, di->isFullbrightScene(), Colormap, trans);
+		//int lightBonus = !actor || !gl_selflighting ? 0 : actor->selfLighting.Luminance() * 3;
+		di->SetColor(state, lightlevel/* + lightBonus*/, rel, di->isFullbrightScene(), Colormap, trans);
 	}
 
 
@@ -244,7 +244,7 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 	uint32_t spritetype = actor? uint32_t(actor->renderflags & RF_SPRITETYPEMASK) : 0;
 	if (texture) state.SetMaterial(texture, UF_Sprite, (spritetype == RF_FACESPRITE) ? CTF_Expand : 0, CLAMP_XY, translation, OverrideShader);
 	else if (!modelframe) state.EnableTexture(false);
-
+	
 	//SetColor(lightlevel, rel, Colormap, trans);
 
 	unsigned int iter = lightlist ? lightlist->Size() : 1;
@@ -261,10 +261,11 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 	{
 		if (lightlist)
 		{
+			
 			// set up the light slice
 			secplane_t *topplane = i == 0 ? &topp : &(*lightlist)[i].plane;
 			secplane_t *lowplane = i == (*lightlist).Size() - 1 ? &bottomp : &(*lightlist)[i + 1].plane;
-			int thislight = (*lightlist)[i].caster != nullptr ? hw_ClampLight(*(*lightlist)[i].p_lightlevel) : lightlevel;
+			int thislight = (*lightlist)[i].caster != nullptr ? hw_ClampLight(*(*lightlist)[i].p_lightlevel + (!actor || !gl_selflighting ? 0 : actor->selfLighting.Luminance() * 3)) : lightlevel;
 			int thisll = actor == nullptr ? thislight : (uint8_t)actor->Sector->CheckSpriteGlow(thislight, actor->InterpolatedPosition(vp.TicFrac));
 
 			FColormap thiscm;
@@ -273,6 +274,15 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 			if (di->Level->flags3 & LEVEL3_NOCOLOREDSPRITELIGHTING)
 			{
 				thiscm.Decolorize();
+			}
+
+			// Boost color from self lighting
+			if (gl_selflighting && actor && actor->selfLighting != 0) {
+				PalEntry actBoost = actor->selfLighting;
+				thiscm.LightColor = PalEntry(thiscm.LightColor.a,
+					clamp(thiscm.LightColor.r + actBoost.r, 0, 255),
+					clamp(thiscm.LightColor.g + actBoost.g, 0, 255),
+					clamp(thiscm.LightColor.b + actBoost.b, 0, 255));
 			}
 
 			di->SetColor(state, thisll, rel, di->isFullbrightScene(), thiscm, trans);
@@ -896,6 +906,8 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 					else
 						rot = (sprang - (thing->Angles.Yaw + thing->SpriteRotation) + (45.0 / 2 * 9 - 180.0 / 16)).BAMs() >> 28;
 				}
+				// @Cockatrice - This code does not look correct, I'm not 100% sure what it is supposed to do but this picnum value is ignored
+				// and the mirror value is set but the patch is just set to the thing->picnum no matter what :shrug:
 				auto picnum = sprframe->Texture[rot];
 				if (sprframe->Flip & (1 << rot))
 				{
@@ -903,6 +915,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				}
 			}
 
+			
 			patch =  tex->GetID();
 		}
 		else
@@ -927,6 +940,47 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		int type = thing->renderflags & RF_SPRITETYPEMASK;
 		auto tex = TexMan.GetGameTexture(patch, false);
 		if (!tex || !tex->isValid()) return;
+
+
+		// @Cockatrice - If this texture is not loaded, and we are able to BG load it, try to render this sprites last frame instead
+		// Also load the texture
+		FTextureID lastPatch = thing->LastPatch;
+		if ( gametic - primaryLevel->starttime > 2 &&	// On the first tic or so, do not use the background loader to avoid pop-in
+			 patch != lastPatch &&						// only if this is a new frame
+			 gl_texture_thread &&
+			 screen->SupportsBackgroundCache()) {
+
+			int scaleflags = (type == RF_FACESPRITE) ? CTF_Expand : 0;
+			if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
+
+			FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
+			if (!gltex || !gltex->IsHardwareCached(thing->Translation)) {
+				if (gltex) {
+					screen->BackgroundCacheMaterial(gltex, thing->Translation, true);
+				}
+				else {
+					screen->BackgroundCacheTextureMaterial(tex, thing->Translation, scaleflags, true);
+				}
+
+				if (lastPatch.isValid()) {
+					//auto lt = patch;
+					//FString lpn = tex->GetName();
+					patch = lastPatch;
+					tex = TexMan.GetGameTexture(patch, false);
+					if (!tex || !tex->isValid()) {
+						return;
+					}
+				}
+				else {
+					return;
+				}
+			}
+
+			// If the bg cache func fails, we can't bg load the patch so just move on to the normal render path and load in the main thread
+		}
+
+		thing->LastPatch = patch;
+		
 		auto& spi = tex->GetSpritePositioning(type == RF_FACESPRITE);
 
 		vt = spi.GetSpriteVT();
@@ -951,7 +1005,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			ur = spi.GetSpriteUL();
 		}
 
-		texture = TexMan.GetGameTexture(patch, false);
+		texture = TexMan.GetGameTexture(patch, false);	// @Cockatrice - Why was this being done twice? Not sure.
 		if (!texture || !texture->isValid())
 			return;
 

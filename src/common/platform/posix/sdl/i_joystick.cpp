@@ -54,6 +54,11 @@ CUSTOM_CVAR(Int, joy_sdl_squaremove, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
 	if (self < 0) self = 0;
 }
 
+CUSTOM_CVAR(Int, joy_sdl_squarelook, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
+	if (self > 2) self = 2;
+	if (self < 0) self = 0;
+}
+
 void PostDeviceChangeEvent() {
 	event_t event = { EV_DeviceChange };
 	D_PostEvent(&event);
@@ -148,6 +153,7 @@ public:
 
 			//info.DeadZone = MIN_DEADZONE;
 			info.Value = 0.0;
+			info.RawValue = 0.0;
 			info.ButtonValue = 0;
 			if (i >= 5) {
 				info.GameAxis = JOYAXIS_None;
@@ -181,6 +187,34 @@ public:
 		}
 	}
 
+
+	inline void SquareStick(EJoyAxis axisX, EJoyAxis axisY) {
+		// Find the two axes for directional movement
+		AxisInfo *axisXInfo = NULL, *axisYInfo = NULL;
+		for (int x = 0; x < NumAxes; x++) {
+			if (Axes[x].GameAxis == axisY) {
+				axisYInfo = &Axes[x];
+			}
+			else if (Axes[x].GameAxis == axisX) {
+				axisXInfo = &Axes[x];
+			}
+		}
+
+		if (axisXInfo && axisYInfo) {
+			
+			// Assume for now we share a physical stick, so let's un-circularize the inputs
+			float x = axisXInfo->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
+			float y = axisYInfo->Value * 1.15f;
+			float r = sqrt(x*x + y * y);
+			float maxMove = max(abs(x), abs(y));
+			if (maxMove > 0) {
+				axisYInfo->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
+				axisXInfo->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
+			}
+		}
+	}
+
+
 	void ProcessInput()
 	{
 		uint8_t buttonstate;
@@ -205,9 +239,11 @@ public:
 			buttonstate = 0;
 
 			double axisval = SDL_JoystickGetAxis(Device, i)/32767.0;
-			axisval = Joy_RemoveDeadZone(axisval, Axes[i].DeadZone, &buttonstate);
 
-			ProcessAcceleration(&Axes[i], axisval);
+			Axes[i].RawValue = axisval;
+
+			axisval = Joy_RemoveDeadZone(axisval, Axes[i].DeadZone, &buttonstate);
+			ProcessAcceleration(&Axes[i], axisval);			
 
 			// Map button to axis
 			// X and Y are handled differently so if we have 2 or more axes then we'll use that code instead.
@@ -258,31 +294,13 @@ public:
 			}
 		}
 
-		// Find the two axes for directional movement
-		if (joy_sdl_squaremove > 1) {
-			AxisInfo *moveSide = NULL, *moveForward = NULL;
-			for (int x = 0; x < NumAxes; x++) {
-				if (Axes[x].GameAxis == JOYAXIS_Forward) {
-					moveForward = &Axes[x];
-				}
-				else if (Axes[x].GameAxis == JOYAXIS_Side) {
-					moveSide = &Axes[x];
-				}
-			}
+		// Square inputs if desired
+		if(joy_sdl_squarelook > 0) {
+			SquareStick(JOYAXIS_Yaw, JOYAXIS_Pitch);
+		}
 
-			// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squaremove
-			if (moveSide && moveForward) {
-
-				// We share a physical stick, so let's un-circularize the inputs
-				float x = moveSide->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
-				float y = moveForward->Value * 1.15f;
-				float r = sqrt(x*x + y * y);
-				float maxMove = max(abs(x), abs(y));
-				if (maxMove > 0) {
-					moveForward->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
-					moveSide->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
-				}
-			}
+		if(joy_sdl_squaremove > 0) {
+			SquareStick(JOYAXIS_Side, JOYAXIS_Forward);
 		}
 	}
 
@@ -323,7 +341,7 @@ const SDLInputJoystickBase::DefaultAxisConfig SDLInputJoystick::DefaultAxes[5] =
 	{ 0.234f, JOYAXIS_Forward,	1,		0.25f },
 	{ 0.117f, JOYAXIS_None,		1,		0.0f  },
 	{ 0.265f, JOYAXIS_Yaw,		1,		0.25f },
-	{ 0.265f, JOYAXIS_Pitch,	0.51,	0.25f }
+	{ 0.265f, JOYAXIS_Pitch,	0.4,	0.25f }
 };
 
 
@@ -485,6 +503,39 @@ public:
 		M_LoadJoystickConfig(this);
 	}
 
+	inline void SquareStick(EJoyAxis axisX, EJoyAxis axisY, int cv) {
+		AxisInfo *axisYInfo = NULL, *axisXInfo = NULL;
+		int axisSide = -1, axisForward = -1;
+		for (int x = 0; x < NumAxes; x++) {
+			if (Axes[x].GameAxis == axisY) {
+				axisXInfo = &Axes[x];
+				axisForward = x;
+			}
+			else if (Axes[x].GameAxis == axisX) {
+				axisYInfo = &Axes[x];
+				axisSide = x;
+			}
+		}
+
+		// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squaremove
+		if (axisYInfo && axisXInfo && (
+			cv > 1 ||
+			((axisSide == SDL_CONTROLLER_AXIS_LEFTX || axisSide == SDL_CONTROLLER_AXIS_LEFTY) && (axisForward == SDL_CONTROLLER_AXIS_LEFTX || axisForward == SDL_CONTROLLER_AXIS_LEFTY)) ||
+			((axisSide == SDL_CONTROLLER_AXIS_RIGHTX || axisSide == SDL_CONTROLLER_AXIS_RIGHTY) && (axisForward == SDL_CONTROLLER_AXIS_RIGHTX || axisForward == SDL_CONTROLLER_AXIS_RIGHTY))
+			)) {
+
+			// We share a physical stick, so let's un-circularize the inputs
+			float x = axisYInfo->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
+			float y = axisXInfo->Value * 1.15f;
+			float r = sqrt(x*x + y * y);
+			float maxMove = max(abs(x), abs(y));
+			if (maxMove > 0) {
+				axisXInfo->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
+				axisYInfo->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
+			}
+		}
+	}
+
 	void ProcessInput()
 	{
 		uint8_t buttonstate;
@@ -511,38 +562,12 @@ public:
 		ProcessTrigger(SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_TRIGGERLEFT)/32767.0, &Axes[SDL_CONTROLLER_AXIS_TRIGGERLEFT], KEY_PAD_LTRIGGER);
 		ProcessTrigger(SDL_GameControllerGetAxis(Device, SDL_CONTROLLER_AXIS_TRIGGERRIGHT)/32767.0, &Axes[SDL_CONTROLLER_AXIS_TRIGGERRIGHT], KEY_PAD_RTRIGGER);
 
-		// Find the two axes for directional movement
-		if (joy_sdl_squaremove > 0) {
-			AxisInfo *moveSide = NULL, *moveForward = NULL;
-			int axisSide = -1, axisForward = -1;
-			for (int x = 0; x < NumAxes; x++) {
-				if (Axes[x].GameAxis == JOYAXIS_Forward) {
-					moveForward = &Axes[x];
-					axisForward = x;
-				}
-				else if (Axes[x].GameAxis == JOYAXIS_Side) {
-					moveSide = &Axes[x];
-					axisSide = x;
-				}
-			}
+		if(joy_sdl_squarelook > 0) {
+			SquareStick(JOYAXIS_Yaw, JOYAXIS_Pitch, joy_sdl_squarelook);
+		}
 
-			// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squaremove
-			if (moveSide && moveForward && (
-				joy_sdl_squaremove > 1 ||
-				((axisSide == SDL_CONTROLLER_AXIS_LEFTX || axisSide == SDL_CONTROLLER_AXIS_LEFTY) && (axisForward == SDL_CONTROLLER_AXIS_LEFTX || axisForward == SDL_CONTROLLER_AXIS_LEFTY)) ||
-				((axisSide == SDL_CONTROLLER_AXIS_RIGHTX || axisSide == SDL_CONTROLLER_AXIS_RIGHTY) && (axisForward == SDL_CONTROLLER_AXIS_RIGHTX || axisForward == SDL_CONTROLLER_AXIS_RIGHTY))
-				)) {
-
-				// We share a physical stick, so let's un-circularize the inputs
-				float x = moveSide->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
-				float y = moveForward->Value * 1.15f;
-				float r = sqrt(x*x + y * y);
-				float maxMove = max(abs(x), abs(y));
-				if (maxMove > 0) {
-					moveForward->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
-					moveSide->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
-				}
-			}
+		if(joy_sdl_squaremove > 0) {
+			SquareStick(JOYAXIS_Side, JOYAXIS_Forward, joy_sdl_squaremove);
 		}
 	}
 
@@ -550,6 +575,9 @@ public:
 	static void ProcessThumbstick(double value1, AxisInfo *axis1, double value2, AxisInfo *axis2, int base) {
 		uint8_t buttonstate;
 		double axisval1, axisval2;
+
+		axis1->RawValue = value1;
+		axis2->RawValue = value2;
 
 		axisval1 = Joy_RemoveDeadZone(value1, axis1->DeadZone, NULL);
 		axisval2 = Joy_RemoveDeadZone(value2, axis2->DeadZone, NULL);
@@ -568,8 +596,11 @@ public:
 	static void ProcessTrigger(double value, AxisInfo *axis, int base) {
 		uint8_t buttonstate;
 		double axisval = value;
+		
+		axis->RawValue = value;
 
 		axisval = (float)Joy_RemoveDeadZone(axisval, axis->DeadZone, &buttonstate);
+
 		ProcessAcceleration(axis, axisval);
 
 		Joy_GenerateButtonEvents(axis->ButtonValue, buttonstate, 1, base);
@@ -613,7 +644,7 @@ const SDLInputJoystickBase::DefaultAxisConfig SDLInputGamepad::DefaultAxes[6] = 
 	{ 0.234f,		JOYAXIS_Side,		1,		0.25f },	// ThumbLX
 	{ 0.234f,		JOYAXIS_Forward,	1,		0.25f },	// ThumbLY
 	{ 0.265f,		JOYAXIS_Yaw,		1,		0.5f },		// ThumbRX
-	{ 0.265f,		JOYAXIS_Pitch,		0.51f,	0.5f },		// ThumbRY
+	{ 0.265f,		JOYAXIS_Pitch,		0.4f,	0.5f },		// ThumbRY
 	{ 0.117,		JOYAXIS_None,		0,		0 },		// LeftTrigger
 	{ 0.117,		JOYAXIS_None,		0,		0 }			// RightTrigger
 };

@@ -31,6 +31,7 @@
 #include"hw_cvars.h"
 #include "v_video.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
+#include "r_utility.h"	// For R_GetLookYaw/Pitch()
 
 // If we want to share the array to avoid constant allocations it needs to be thread local unless it'd be littered with expensive synchronization.
 thread_local FDynLightData lightdata;
@@ -128,12 +129,29 @@ void AddLightToList(FDynLightData &dld, int group, FDynamicLight * light, bool f
 		spotInnerAngle = (float)light->pSpotInnerAngle->Cos();
 		spotOuterAngle = (float)light->pSpotOuterAngle->Cos();
 
-		DAngle Angle = light->target->PrevAngles.Yaw + deltaangle(light->target->PrevAngles.Yaw, light->target->Angles.Yaw) * ticFrac;
-		// @Cockatrice - Interpolate pitch if the pitch is the same as the actors
-		// This could sometimes result in a jitter if the sprite is rotating and passes through the exact explicit value that is set
-		// but frequency should be rare
-		DAngle negPitch = *light->pPitch == light->target->Angles.Pitch ? -(light->target->PrevAngles.Pitch + deltaangle(light->target->PrevAngles.Pitch, light->target->Angles.Pitch) * ticFrac)
-							: (-*light->pPitch);
+		DAngle Angle;
+		DAngle negPitch;
+
+		// @Cockatrice - If this light is attached to the current player, instead of interpolating the light we will use the direct view values of the player
+		if (light->target->player && light->target->player == &players[consoleplayer]) {
+			Angle = r_viewpoint.Angles.Yaw;
+			negPitch = -r_viewpoint.Angles.Pitch;
+		}
+		// @Cockatrice - Hack alert, this is a special case for spotlights attached to actors parented to the player
+		// This is to prevent "laggy" flashlights that don't follow the camera perfectly
+		else if (light->target->master && light->target->master->player == &players[consoleplayer]) {
+			Angle = r_viewpoint.Angles.Yaw;
+			negPitch = -r_viewpoint.Angles.Pitch;
+		}
+		else {
+			Angle = light->target->PrevAngles.Yaw + deltaangle(light->target->PrevAngles.Yaw, light->target->Angles.Yaw) * ticFrac;
+			// @Cockatrice - Interpolate pitch if the pitch is the same as the actors
+			// This could sometimes result in a jitter if the sprite is rotating and passes through the exact explicit value that is set
+			// but frequency should be rare
+			negPitch = *light->pPitch == light->target->Angles.Pitch ? -(light->target->PrevAngles.Pitch + deltaangle(light->target->PrevAngles.Pitch, light->target->Angles.Pitch) * ticFrac)
+				: (-*light->pPitch);
+		}
+
 		//DAngle Angle = light->target->Angles.Yaw;
 		double xzLen = negPitch.Cos();
 		spotDirX = float(-Angle.Cos() * xzLen);

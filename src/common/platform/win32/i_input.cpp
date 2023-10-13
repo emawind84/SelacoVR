@@ -140,6 +140,10 @@ static void I_CheckGUICapture ()
 		{
 			Keyboard->AllKeysUp();
 		}
+
+		if (wantCapt) {
+			buttonMap.ResetButtonStates();
+		}
 	}
 }
 

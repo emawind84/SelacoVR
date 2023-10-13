@@ -515,7 +515,7 @@ public:
 
 	uint8_t		md5[16];			// for savegame validation. If the MD5 does not match the savegame won't be loaded.
 	int			time;			// time in the hub
-	int			maptime;			// time in the map
+	int			maptime;		// time in the map
 	int			totaltime;		// time in the game
 	int			starttime;
 	int			partime;
@@ -523,9 +523,11 @@ public:
 	uint32_t	spawnindex;
 
 	level_info_t *info;
+	int			invasiontier;
+	double		tilt, tiltAngle;
 	int			cluster;
 	int			clusterflags;
-	int			levelnum;
+	int			levelnum, levelgroup, areaNum;
 	int			lumpnum;
 	FString		LevelName;
 	FString		MapName;			// the lump name (E1M1, MAP01, etc)

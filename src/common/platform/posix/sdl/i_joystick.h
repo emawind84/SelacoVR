@@ -2,6 +2,8 @@
 #define __POSIX_SDL_I_JOYSTICK__
 
 #include "m_joy.h"
+#include "SDL_joystick.h"
+#include "TSQueue.h"
 
 // Very small deadzone so that floating point magic doesn't happen
 #define MIN_DEADZONE 0.000001f
@@ -57,6 +59,14 @@ public:
 	float GetAxisAcceleration(int axis) override {
 		return Axes[axis].Acceleration;
 	}
+
+	float GetAxis(int axis) override {
+		return Axes[axis].Value;
+	}
+
+	float GetRawAxis(int axis) override {
+		return Axes[axis].RawValue;
+	}
 	
 
 	// Setters
@@ -85,6 +95,7 @@ public:
         for (int i = 0; i < GetNumAxes(); ++i)
         {
             Axes[i].Value = 0;
+			Axes[i].RawValue = 0;
             Axes[i].ButtonValue = 0;
             Axes[i].Inputs.pos = -1;
         }
@@ -107,8 +118,9 @@ protected:
 		float Acceleration;
 		EJoyAxis GameAxis;
 		double Value;
+		double RawValue;
 		uint8_t ButtonValue;
-		InputQueue<double, 10> Inputs;
+        RingBuffer<double, 10> Inputs;
 	};
 
 	struct DefaultAxisConfig

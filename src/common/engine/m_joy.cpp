@@ -68,7 +68,8 @@ CUSTOM_CVARD(Bool, use_joystick, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINI
 }
 
 CVAR(Bool, joy_feedback, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
-CVAR(Float, joy_feedback_scale, 1.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Float, joy_feedback_scale, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Float, joy_menu_deadzone, 0.05f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
@@ -280,10 +281,17 @@ double Joy_RemoveDeadZone(double axisval, double deadzone, uint8_t *buttons)
 
 int Joy_XYAxesToButtons(double x, double y)
 {
+	// @Cockatrice - Some gamepads were wigging out in menus because they needed more deadzone
+	if (fabs(x) < joy_menu_deadzone) x = 0;
+	if (fabs(y) < joy_menu_deadzone) y = 0;
+
 	if (x == 0 && y == 0)
 	{
 		return 0;
 	}
+
+	
+
 	double rad = atan2(y, x);
 	if (rad < 0)
 	{

@@ -272,6 +272,7 @@ public:
 		Height = h;
 	}
 
+	static bool TrimBorders(uint16_t* rect, uint8_t *Buffer, int w, int h);
 	bool TrimBorders(uint16_t* rect);
 	int GetAreas(FloatRect** pAreas) const;
 
@@ -371,6 +372,7 @@ public:
 		SetFromImage();
 	}
 	void SetNoRemap0() { bNoRemap0 = true; }
+	bool GetNoRemap0() { return bNoRemap0; }
 
 	FImageSource* GetImage() const override { return mImage; }
 	FBitmap GetBgraBitmap(const PalEntry* p, int* trans) override;

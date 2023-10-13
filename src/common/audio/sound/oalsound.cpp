@@ -2034,12 +2034,8 @@ void OpenALSoundRenderer::StopChannel(FISoundChannel *chan)
 			FlushPlayQueue();
 			UpdatePlayedSounds();
 
-			// TODO: Remove this
-			Printf(TEXTCOLOR_BRICK"Flushed play queue to stop channel!\n");
-
 			// Now the state may have changed, stop the sound if necessary
 			if (status->state != AL_INITIAL) {
-				Printf(TEXTCOLOR_BRICK"Turns out this was actually necessary and the sound has been stopped!\n");
 				alSourceRewind(source);
 				alSourcei(source, AL_BUFFER, 0);
 				getALError();

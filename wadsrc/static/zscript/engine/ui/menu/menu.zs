@@ -87,6 +87,9 @@ struct JoystickConfig native version("2.4")
 	native int GetNumAxes();
 	native String GetAxisName(int axis);
 
+	native float GetAxis(int axis);		// @Cockatrice - Get current value of axis
+	native float GetRawAxis(int axis);	// Get axis value that has not been squared or processed with deadzone
+
 	native void RestoreDefaults();
 	native bool AddVibration(float l, float r);
 	native bool SetVibration(float l, float r);
@@ -152,6 +155,7 @@ class Menu : Object native ui version("2.4")
 	native bool DontBlur;
 	native float BlurAmount;	// -1 = Ignored, > 0 = Force this much blur regardless of settings
 	native bool AnimatedTransition;
+	native bool ReceiveAllInputEvents;
 	native bool Animated;
 
 	native static int MenuTime();
@@ -177,6 +181,7 @@ class Menu : Object native ui version("2.4")
 		DontBlur = false;
 		BlurAmount = -1;
 		AnimatedTransition = false;
+		ReceiveAllInputEvents = false;
 		Animated = false;
 	}
 

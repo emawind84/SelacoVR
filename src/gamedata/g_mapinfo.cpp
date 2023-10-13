@@ -237,10 +237,14 @@ void level_info_t::Reset()
 	MapName = "";
 	MapBackground = "";
 	levelnum = 0;
+	levelgroup = 0;
+	areaNum = 0;
 	PName = "";
 	NextMap = "";
 	NextSecretMap = "";
 	SkyPic1 = SkyPic2 = "-NOFLAT-";
+	invasiontier = 0;
+	tilt = tiltAngle = 0.0;
 	cluster = 0;
 	partime = 0;
 	sucktime = 0;
@@ -957,6 +961,20 @@ void FMapInfoParser::ParseNextMap(FString &mapname)
 //
 //==========================================================================
 
+DEFINE_MAP_OPTION(levelgroup, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetNumber();
+	info->levelgroup = parse.sc.Number;
+}
+
+DEFINE_MAP_OPTION(areaNum, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetNumber();
+	info->areaNum = parse.sc.Number;
+}
+
 DEFINE_MAP_OPTION(levelnum, true)
 {
 	parse.ParseAssign();
@@ -1075,6 +1093,27 @@ DEFINE_MAP_OPTION(titlepatch, true)
 			else info->flags3 &= ~LEVEL3_HIDEAUTHORNAME;
 		}
 	}
+}
+
+DEFINE_MAP_OPTION(invasiontier, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetNumber();
+	info->invasiontier = parse.sc.Number;
+}
+
+DEFINE_MAP_OPTION(tilt, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetFloat();
+	info->tilt = parse.sc.Float;
+}
+
+DEFINE_MAP_OPTION(tiltAngle, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetFloat();
+	info->tiltAngle = parse.sc.Float;
 }
 
 DEFINE_MAP_OPTION(partime, true)
@@ -1711,6 +1750,7 @@ MapFlagHandlers[] =
 	{ "disableskyboxao",				MITYPE_CLRFLAG3,	LEVEL3_SKYBOXAO, 0 },
 	{ "avoidmelee",						MITYPE_SETFLAG3,	LEVEL3_AVOIDMELEE, 0 },
 	{ "attenuatelights",				MITYPE_SETFLAG3,	LEVEL3_ATTENUATE, 0 },
+	{ "rainymap",						MITYPE_SETFLAG3,	LEVEL3_RAINYMAP, 0 },
 	{ "nobotnodes",						MITYPE_IGNORE,	0, 0 },		// Skulltag option: nobotnodes
 	{ "compat_shorttex",				MITYPE_COMPATFLAG, COMPATF_SHORTTEX, 0 },
 	{ "compat_stairs",					MITYPE_COMPATFLAG, COMPATF_STAIRINDEX, 0 },

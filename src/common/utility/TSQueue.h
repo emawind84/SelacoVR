@@ -7,7 +7,58 @@
 #ifdef __linux__
 #include <condition_variable>
 #endif
+#include <chrono>
+#include "stats.h"
 #include "tarray.h"
+
+
+// @Cockatrice - Simple ring buffer with averaging
+template <typename T, int IN_NUM>
+struct RingBuffer {
+	const int length = IN_NUM;
+	T input[IN_NUM];
+	long pos = -1;
+
+	void add(T v) {
+		pos++;
+		if (pos < 0) pos = 0;
+		(*this)[0] = v;
+	}
+
+	T& operator[] (int index) {
+		assert(index >= 0 && index <= pos);
+		return input[(pos - index) % IN_NUM];
+	}
+
+	T getAverage(int numInputs) {
+		assert(pos >= 0);
+
+		T avg = (*this)[0];
+		numInputs = std::min(numInputs, IN_NUM);
+		numInputs = (int)std::min((long)numInputs, pos);
+
+		for (int x = 1; x < numInputs; x++) {
+			avg += (*this)[x];
+		}
+
+		return avg / (float)numInputs;
+	}
+
+	T getScaledAverage(int numInputs, float amount) {
+		assert(pos >= 0);
+
+		amount = std::clamp(1.0f - amount, 0.0f, 1.0f);
+
+		T avg = getAverage(numInputs);
+		return avg + (amount * ((*this)[0] - avg));
+	}
+
+	void reset() {
+		pos = -1;
+	}
+};
+
+
 
 // @Cockatrice: Queue wrapper
 // Funcs added as are necessary
@@ -55,6 +106,18 @@ public:
 		for (unsigned int x = 0; x < mQueue.Size(); x++) { func(mQueue[x]); }
 	}
 
+	bool dequeueSearch(T &item, void *cmp, const std::function <bool(void *a,T&)>func) {
+		std::lock_guard lock(mQLock);
+		for (int x = (int)mQueue.Size() - 1; x >= 0; x--) { 
+			if(func(cmp,mQueue[x])) {
+				mQueue.Pop(item);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	int size() {
 		std::lock_guard lock(mQLock);
 		return mQueue.Size();
@@ -71,7 +134,7 @@ protected:
 template <typename IP, typename OP>
 class ResourceLoader {
 public:
-	ResourceLoader() {}
+	ResourceLoader() { }
 	virtual ~ResourceLoader() { stop(); }
 
 	void start() {
@@ -84,6 +147,10 @@ public:
 		mInputQ.clear();
 	}
 
+	void clearSecondaryInputQueue() {
+		mInputSecondaryQ.clear();
+	}
+
 	void stop() {
 		// Kill and finish the thread
 		if (mThread.joinable()) {
@@ -94,8 +161,15 @@ public:
 	}
 
 
-	void queue(IP input) {
+	virtual void queue(IP input) {
 		mInputQ.queue(input);
+		mMaxQueue = std::max(mMaxQueue.load(), mInputQ.size());
+		mWake.notify_all();
+	}
+
+	virtual void queueSecondary(IP input) {
+		mInputSecondaryQ.queue(input);
+		mMaxQueueSecondary = std::max(mMaxQueueSecondary.load(), mInputSecondaryQ.size());
 		mWake.notify_all();
 	}
 
@@ -103,8 +177,59 @@ public:
 		return mInputQ.size();
 	}
 
+	int numQueuedTotal() {
+		return mInputQ.size() + mInputSecondaryQ.size();
+	}
+
+	int numQueuedSecondary() {
+		return mInputSecondaryQ.size();
+	}
+
+	int numFinished() {
+		return mOutputQ.size();
+	}
+
+	bool isActive() {
+		return mActive.load() && (mRunning.load() || mInputQ.size() > 0);
+	}
+
 	bool popFinished(OP &output) {
 		return mOutputQ.dequeue(output);
+	}
+
+	void resetStats() {
+		// TODO: Block stat updates
+		mMaxQueue = 0;
+		mMaxQueueSecondary = 0;
+		mStatLoadTime = 0;
+		mStatLoadCount = 0;
+		mStatTotalLoaded = 0;
+		mStatMinTime = 99999.0;
+		mStatMaxTime = 0;
+	}
+
+	int statMaxQueued() {
+		return mMaxQueue.load();
+	}
+
+	int statMaxSecondaryQueued() {
+		return mMaxQueueSecondary.load();
+	}
+
+	double statAvgLoadTime() {
+		return mStatAvgTime;
+	}
+
+	double statMinLoadTime() {
+		return std::min(99999.0, mStatMinTime.load());
+	}
+
+	double statMaxLoadTime() {
+		return mStatMaxTime.load();
+	}
+
+	int statTotalLoaded() {
+		return mStatTotalLoaded.load();
 	}
 
 protected:
@@ -115,11 +240,18 @@ protected:
 	virtual void cancelLoad() {}		// Load was cancelled
 
 	std::atomic<bool> mActive{ true };
+	std::atomic<bool> mRunning{ false };
+	std::atomic<int> mMaxQueue{ 0 }, mStatTotalLoaded{ 0 }, mMaxQueueSecondary{ 0 };
+	std::atomic<double> mStatAvgTime{ 0 }, mStatMinTime{ 999999 }, mStatMaxTime{ 0 };
+
+	double mStatLoadTime = 0, mStatLoadCount = 0;
+
 	std::thread mThread;
-	std::mutex mWakeLock;
+	std::mutex mWakeLock, mStatsLock;
 	std::condition_variable mWake;
 
 	TSQueue<IP> mInputQ;
+	TSQueue<IP> mInputSecondaryQ;
 	TSQueue<OP> mOutputQ;
 
 
@@ -132,24 +264,47 @@ private:
 
 			// Process the queue
 			while (true) {
-				if (mInputQ.size() > 0) {
-					prepareLoad();
-				}
+				if (mInputQ.size() > 0 || mInputSecondaryQ.size() > 0) {
+					mRunning.store(true);
 
-				IP input;
-				if (!mInputQ.dequeue(input)) {
-					cancelLoad();
+					cycle_t lTime;
+					lTime.Reset();
+					lTime.Clock();
+
+					prepareLoad();
+
+					IP input;
+					if (!mInputQ.dequeue(input)) {
+						// Always load from secondary queue only if the primary queue has items
+						if(!mInputSecondaryQ.dequeue(input)) {
+							cancelLoad();
+							break;
+						}
+					}
+
+					OP output;
+					if (loadResource(input, output)) {
+						mOutputQ.queue(output);
+					}
+					processed = true;
+
+					completeLoad();
+
+					// Update load stats
+					lTime.Unclock();
+					mStatLoadTime += lTime.TimeMS();
+					mStatLoadCount += 1;
+					mStatAvgTime = mStatLoadTime / mStatLoadCount;
+					mStatMinTime = std::min(mStatMinTime.load(), lTime.TimeMS());
+					mStatMaxTime = std::max(mStatMaxTime.load(), lTime.TimeMS());
+					mStatTotalLoaded++;
+				}
+				else {
 					break;
 				}
-
-				OP output;
-				if (loadResource(input, output)) {
-					mOutputQ.queue(output);
-				}
-				processed = true;
-
-				completeLoad();
 			}
+
+			mRunning.store(false);
 
 			if (!processed) {
 				mWake.wait_for(lock, std::chrono::milliseconds(5));

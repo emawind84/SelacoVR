@@ -135,7 +135,9 @@ public:
 	void AddAutoMaterials();
 	bool ShouldExpandSprite();
 	void SetupSpriteData();
+	static void GenerateInitialSpriteData(SpritePositioningInfo *info, FBitmap *bmp, bool expandSprite = false, bool noTrimming = false);	// @Cockatrice - Generate the data with an already-loaded image in a thread
 	void SetSpriteRect();
+	void SetSpriteRect(SpritePositioningInfo *spi);																							// @Cockatrice - Use this after loading spi in a thread
 
 	ETextureType GetUseType() const { return UseType; }
 	void SetUpscaleFlag(int what, bool manual = false) 
@@ -173,6 +175,11 @@ public:
 	bool isMasked() { return Base->Masked; }
 	bool isHardwareCanvas() const { return Base->isHardwareCanvas(); }	// There's two here so that this can deal with software canvases in the hardware renderer later.
 	bool isSoftwareCanvas() const { return Base->isCanvas(); }
+
+	// @Cockatrice - Supply some way for the rest of the engine to tell if all images are loaded for this texture
+	bool isHardwareCached() {
+		return false;
+	}
 
 	void SetTranslucent(bool on) { Base->bTranslucent = on; }
 	void SetUseType(ETextureType type) { UseType = type; }
@@ -286,6 +293,7 @@ public:
 		DisplayHeight = TexelHeight / y;
 	}
 
+	bool HasSpritePositioning() { return spi != nullptr; }
 	const SpritePositioningInfo& GetSpritePositioning(int which) { if (spi == nullptr) SetupSpriteData(); return spi[which]; }
 	int GetAreas(FloatRect** pAreas) const;
 

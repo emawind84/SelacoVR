@@ -3506,6 +3506,8 @@ static int D_DoomMain_Internal (void)
 	const char *v;
 	const char *wad;
 	FIWadManager *iwad_man;
+	cycle_t startupClock;
+	startupClock.Clock();
 
 	GC::AddMarkerFunc(GC_MarkGameRoots);
 	VM_CastSpriteIDToString = Doom_CastSpriteIDToString;
@@ -3653,6 +3655,9 @@ static int D_DoomMain_Internal (void)
 		iwad_man = NULL;
 		if (ret != 0) return ret;
 
+		startupClock.Unclock();
+		Printf(TEXTCOLOR_YELLOW "Full startup in %.2fms\n", startupClock.TimeMS());
+
 		D_DoAnonStats();
 		I_UpdateWindowTitle();
 		D_DoomLoop ();		// this only returns if a 'restart' CCMD is given.
@@ -3733,6 +3738,9 @@ void D_Cleanup()
 	S_ClearSoundData();
 	S_UnloadReverbDef();
 	G_ClearMapinfo();
+
+	// @Cockatrice - Stop any renderer threads
+	if(screen) screen->StopBackgroundCache();
 
 	M_ClearMenus();					// close menu if open
 	AM_ClearColorsets();

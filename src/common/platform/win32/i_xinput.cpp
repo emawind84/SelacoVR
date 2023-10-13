@@ -47,6 +47,7 @@
 #include "keydef.h"
 
 #include "i_time.h"
+#include "TSQueue.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -90,6 +91,11 @@ CUSTOM_CVAR(Int, joy_xinput_squaremove, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
 	if (self < 0) self = 0;
 }
 
+CUSTOM_CVAR(Int, joy_xinput_squarelook, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) {
+	if (self > 2) self = 2;
+	if (self < 0) self = 0;
+}
+
 // TYPES -------------------------------------------------------------------
 
 typedef DWORD (WINAPI *XInputGetStateType)(DWORD index, XINPUT_STATE *state);
@@ -121,6 +127,8 @@ public:
 	const char *GetAxisName(int axis);
 	float GetAxisScale(int axis);
 	float GetAxisAcceleration(int axis) override;
+	float GetAxis(int axis) override;
+	float GetRawAxis(int axis) override;
 
 	void SetAxisDeadZone(int axis, float deadzone);
 	void SetAxisMap(int axis, EJoyAxis gameaxis);
@@ -143,12 +151,13 @@ protected:
 	struct AxisInfo
 	{
 		float Value;
+		float RawValue;
 		float DeadZone;
 		float Multiplier;
 		float Acceleration;
 		EJoyAxis GameAxis;
 		uint8_t ButtonValue;
-		InputQueue<float, 10> Inputs;
+		RingBuffer<float, 10> Inputs;
 	};
 	struct DefaultAxisConfig
 	{
@@ -245,7 +254,7 @@ FXInputController::DefaultAxisConfig FXInputController::DefaultAxes[NUM_AXES] =
 	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f,		JOYAXIS_Side,		1,		0.25f },	// ThumbLX
 	{ XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32768.f,		JOYAXIS_Forward,	1,		0.25f },	// ThumbLY
 	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Yaw,		1,		0.5f },		// ThumbRX
-	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Pitch,		0.55f,	0.5f },		// ThumbRY
+	{ XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE / 32768.f,	JOYAXIS_Pitch,		0.4f,	0.5f },		// ThumbRY
 	{ XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 256.f,			JOYAXIS_None,		0,		0 },		// LeftTrigger
 	{ XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 256.f,			JOYAXIS_None,		0,		0 }			// RightTrigger
 };
@@ -359,9 +368,41 @@ void FXInputController::ProcessInput()
 			}
 		}
 	}
-	
-	
 
+	// Find the two axis for looking
+	if (joy_xinput_squarelook > 0) {
+		AxisInfo *lookYaw = NULL, *lookPitch = NULL;
+		int axisPitch = -1, axisYaw = -1;
+		for (int x = 0; x < NUM_AXES; x++) {
+			if (Axes[x].GameAxis == JOYAXIS_Yaw) {
+				lookYaw = &Axes[x];
+				axisYaw = x;
+			}
+			else if (Axes[x].GameAxis == JOYAXIS_Pitch) {
+				lookPitch = &Axes[x];
+				axisPitch = x;
+			}
+		}
+
+		// Make sure they are on the same physical stick, or let it be forced with joy_xinput_squarelook
+		if (lookPitch && lookYaw && (
+			joy_xinput_squarelook > 1 ||
+			((axisPitch == AXIS_ThumbLX || axisPitch == AXIS_ThumbLY) && (axisYaw == AXIS_ThumbLX || axisYaw == AXIS_ThumbLY)) ||
+			((axisPitch == AXIS_ThumbRX || axisPitch == AXIS_ThumbRY) && (axisYaw == AXIS_ThumbRX || axisYaw == AXIS_ThumbRY))
+			)) {
+
+			// We share a physical stick, so let's un-circularize the inputs
+			float x = lookYaw->Value * 1.15f;	// Add a slightly arbitrary bonus value to make up for many sticks that don't fully commit a proper circle
+			float y = lookPitch->Value * 1.15f;
+			float r = sqrt(x*x + y * y);
+			float maxMove = max(abs(x), abs(y));
+			if (maxMove > 0) {
+				lookPitch->Value = clamp(y * (r / maxMove), -1.0f, 1.0f);
+				lookYaw->Value = clamp(x * (r / maxMove), -1.0f, 1.0f);
+			}
+		}
+	}
+	
 
 	if (state.dwPacketNumber == LastPacketNumber)
 	{ // Nothing has changed since last time.
@@ -447,10 +488,13 @@ void FXInputController::ProcessThumbstick(int value1, AxisInfo *axis1,
 
 	axisval1 = (value1 - SHRT_MIN) * 2.0 / 65536 - 1.0;
 	axisval2 = (value2 - SHRT_MIN) * 2.0 / 65536 - 1.0;
+
+	axis1->RawValue = (float)axisval1;
+	axis2->RawValue = (float)axisval2;
+
 	axisval1 = Joy_RemoveDeadZone(axisval1, axis1->DeadZone, NULL);
 	axisval2 = Joy_RemoveDeadZone(axisval2, axis2->DeadZone, NULL);
 
-	// Add to the queue
 	ProcessAcceleration(axis1, (float)axisval1);
 	ProcessAcceleration(axis2, (float)axisval2);
 
@@ -473,10 +517,13 @@ void FXInputController::ProcessTrigger(int value, AxisInfo *axis, int base)
 {
 	uint8_t buttonstate;
 	float axisval = value / 256.0f;
+	
+	axis->RawValue = axisval;
 
 	// Seems silly to bother with axis scaling here, but I'm going to @Cockatrice
 	axisval = (float)Joy_RemoveDeadZone((double)axisval, axis->DeadZone, &buttonstate);
 	ProcessAcceleration(axis, axisval);
+	
 
 	Joy_GenerateButtonEvents(axis->ButtonValue, buttonstate, 1, base);
 	axis->ButtonValue = buttonstate;
@@ -501,6 +548,7 @@ void FXInputController::Attached()
 	for (i = 0; i < NUM_AXES; ++i)
 	{
 		Axes[i].Value = 0;
+		Axes[i].RawValue = 0;
 		Axes[i].ButtonValue = 0;
 		Axes[i].Inputs.pos = -1;
 	}
@@ -718,6 +766,24 @@ float FXInputController::GetAxisAcceleration(int axis)
 	if (unsigned(axis) < NUM_AXES)
 	{
 		return Axes[axis].Acceleration;
+	}
+	return 0;
+}
+
+
+float FXInputController::GetAxis(int axis) {
+	if (unsigned(axis) < NUM_AXES)
+	{
+		return Axes[axis].Value;
+	}
+	return 0;
+}
+
+
+float FXInputController::GetRawAxis(int axis) {
+	if (unsigned(axis) < NUM_AXES)
+	{
+		return Axes[axis].RawValue;
 	}
 	return 0;
 }
@@ -1024,6 +1090,13 @@ void I_StartupXInput()
 			if (joys->GetDevice())
 			{
 				JoyDevices[INPUT_XInput] = joys;
+				
+				// See if there is at least one joystick connected
+				TArray<IJoystickConfig*> joycon;
+				joys->GetDevices(joycon);
+				if (joycon.Size() > 0) {
+					UpdateJoystickMenu(joycon[0]);
+				}
 			}
 			else
 			{

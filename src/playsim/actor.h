@@ -412,6 +412,9 @@ enum ActorFlag8
 	MF8_STOPRAILS		= 0x00000200,	// [MC] Prevent rails from going further if an actor has this flag.
 	MF8_ABSVIEWANGLES	= 0x00000400,	// [MC] By default view angle/pitch/roll is an offset. This will make it absolute instead.
 	MF8_FALLDAMAGE		= 0x00000800,	// Monster will take fall damage regardless of map settings.
+	MF8_ABSDAMAGE		= 0x00001000,	// @Cockatrice - Damage value ignores dice roll
+	MF8_HITSCANTHRU		= 0x00002000,	// @Cockatrice - Allow hitscans to pass through, but also damage this actor
+	MF8_BLOCKLOF		= 0x00004000,	// @Cockatrice - Blocks LOF in CHECKLOF
 	MF8_ALLOWTHRUBITS	= 0x00008000,	// [MC] Enable ThruBits property
 	MF8_FULLVOLSEE		= 0x00010000,	// Play see sound at full volume
 	MF8_E1M8BOSS		= 0x00020000,	// MBF21 boss death.
@@ -1044,6 +1047,7 @@ public:
 	FTextureID		picnum;				// Draw this instead of sprite if valid
 	uint32_t		fillcolor;			// Color to draw when STYLE_Shaded
 	uint32_t		Translation;
+	FTextureID		LastPatch;			// @Cockatrice - Used by the hardware renderer to determine the last rendered patch
 
 	uint32_t		RenderRequired;		// current renderer must have this feature set
 	uint32_t		RenderHidden;		// current renderer must *not* have any of these features

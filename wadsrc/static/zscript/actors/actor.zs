@@ -495,6 +495,21 @@ class Actor : Thinker native
 	private native void Substitute(Actor replacement);
 	native ui void DisplayNameTag();
 
+	// @Cockatrice - Called on puffs that pass through or hit water so they can react accordingly
+	// return TRUE(1) to indicate we took care of the splash (the engine will not create splashes based on terrain as usual)
+	// Note that the puff that this is called on may be temporary and could be deleted immediately after this call, do not rely
+	// on the puff still existing after this call.
+	// Calling the native function does nothing
+	virtual native bool PuffSplash(Vector3 position, Vector3 direction, Sector sect, F3DFloor floor3D);
+
+	// @Cockatrice - Called on puffs when they hit a solid surface, not an actor
+	// Calling the native function does nothing
+	virtual native void PuffHit(FLineTraceData trace);
+
+	// @Cockatrice - Called on puffs when they hit an actor that is tagged as a passthru. Often these puffs are temporary.
+	// Calling the native function does nothing
+	virtual native void PuffThrough(Actor victim, Vector3 pos, Vector3 dir);
+
 	// Called by inventory items to see if this actor is capable of touching them.
 	// If true, the item will attempt to be picked up. Useful for things like
 	// allowing morphs to pick up limited items such as keys while preventing

@@ -301,7 +301,7 @@ struct TraceResults native
 
 	native Sector CrossedWater;		// For Boom-style, Transfer_Heights-based deep water
 	native vector3 CrossedWaterPos;	// remember the position so that we can use it for spawning the splash
-	native Sector Crossed3DWater;		// For 3D floor-based deep water
+	native F3DFloor Crossed3DWater;		// For 3D floor-based deep water
 	native vector3 Crossed3DWaterPos;
 }
 
@@ -334,6 +334,7 @@ struct DropItem native
 struct LevelInfo native
 {
 	native readonly int levelnum;
+	native readonly int levelgroup, areaNum;
 	native readonly String MapName;
 	native readonly String NextMap;
 	native readonly String NextSecretMap;
@@ -343,6 +344,8 @@ struct LevelInfo native
 	native readonly int cluster;
 	native readonly int partime;
 	native readonly int sucktime;
+	native readonly int invasiontier;
+	native readonly double tilt, tiltAngle;
 	native readonly int flags;
 	native readonly int flags2;
 	native readonly int flags3;
@@ -403,9 +406,11 @@ struct LevelLocals native
 	native readonly int starttime;
 	native readonly int partime;
 	native readonly int sucktime;
+	
 	native readonly int cluster;
 	native readonly int clusterflags;
 	native readonly int levelnum;
+	native readonly int levelgroup, areaNum;
 	native readonly String LevelName;
 	native readonly String MapName;
 	native String NextMap;
@@ -425,6 +430,8 @@ struct LevelLocals native
 	native int found_items;
 	native int total_monsters;
 	native int killed_monsters;
+	native int invasiontier;
+	native double tilt, tiltAngle;
 	native play double gravity;
 	native play double aircontrol;
 	native play double airfriction;
@@ -441,6 +448,7 @@ struct LevelLocals native
 	native readonly bool polygrind;
 	native readonly bool nomonsters;
 	native readonly bool allowrespawn;
+	native readonly bool rainymap;
 	deprecated("3.8", "Use Level.isFrozen() instead") native bool frozen;
 	native readonly bool infinite_flight;
 	native readonly bool no_dlg_freeze;
@@ -464,6 +472,7 @@ struct LevelLocals native
 	native void StartSlideshow(Name whichone = 'none');
 	native static void MakeScreenShot();
 	native static void MakeAutoSave();
+	native static bool MakeQuickSave();
 	native void WorldDone();
 	deprecated("3.8", "This function does nothing") static void RemoveAllBots(bool fromlist) { /* intentionally left as no-op. */ }
 	native ui Vector2 GetAutomapPosition();

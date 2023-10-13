@@ -1888,6 +1888,9 @@ void FLevelLocals::Init()
 
 	cluster_info_t *clus = FindClusterInfo (info->cluster);
 
+	invasiontier = info->invasiontier;
+	tilt = info->tilt;
+	tiltAngle = info->tiltAngle;
 	partime = info->partime;
 	sucktime = info->sucktime;
 	cluster = info->cluster;
@@ -1896,6 +1899,8 @@ void FLevelLocals::Init()
 	flags2 |= info->flags2;
 	flags3 |= info->flags3;
 	levelnum = info->levelnum;
+	levelgroup = info->levelgroup;
+	areaNum = info->areaNum;
 	Music = info->Music;
 	musicorder = info->musicorder;
 	MusicVolume = 1.f;
