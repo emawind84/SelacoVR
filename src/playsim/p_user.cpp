@@ -422,7 +422,7 @@ void player_t::SetLogText (const char *text)
 	if (mo && mo->CheckLocalView())
 	{
 		// Print log text to console
-		Printf(PRINT_NONOTIFY, TEXTCOLOR_GOLD "%s\n", LogText[0] == '$' ? GStrings(text + 1) : text);
+		Printf(PRINT_HIGH | PRINT_NONOTIFY, TEXTCOLOR_GOLD "%s\n", LogText[0] == '$' ? GStrings(text + 1) : text);
 	}
 }
 
@@ -796,6 +796,12 @@ DEFINE_ACTION_FUNCTION(_PlayerInfo, GetMoveBob)
 	ACTION_RETURN_FLOAT(self->userinfo.GetMoveBob());
 }
 
+DEFINE_ACTION_FUNCTION(_PlayerInfo, GetFViewBob)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(player_t);
+	ACTION_RETURN_BOOL(self->userinfo.GetFViewBob());
+}
+
 DEFINE_ACTION_FUNCTION(_PlayerInfo, GetStillBob)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(player_t);
@@ -822,16 +828,16 @@ static int SetupCrouchSprite(AActor *self, int crouchsprite)
 		FString normspritename = sprites[self->SpawnState->sprite].name;
 		FString crouchspritename = sprites[crouchsprite].name;
 
-		int spritenorm = fileSystem.CheckNumForName(normspritename + "A1", ns_sprites);
+		int spritenorm = fileSystem.CheckNumForName(normspritename + "A1", FileSys::ns_sprites);
 		if (spritenorm == -1)
 		{
-			spritenorm = fileSystem.CheckNumForName(normspritename + "A0", ns_sprites);
+			spritenorm = fileSystem.CheckNumForName(normspritename + "A0", FileSys::ns_sprites);
 		}
 
-		int spritecrouch = fileSystem.CheckNumForName(crouchspritename + "A1", ns_sprites);
+		int spritecrouch = fileSystem.CheckNumForName(crouchspritename + "A1", FileSys::ns_sprites);
 		if (spritecrouch == -1)
 		{
-			spritecrouch = fileSystem.CheckNumForName(crouchspritename + "A0", ns_sprites);
+			spritecrouch = fileSystem.CheckNumForName(crouchspritename + "A0", FileSys::ns_sprites);
 		}
 
 		if (spritenorm == -1 || spritecrouch == -1)
@@ -1260,6 +1266,7 @@ void P_PlayerThink (player_t *player)
 	player->cheats &= ~CF_INTERPVIEW;
 	player->cheats &= ~CF_INTERPVIEWANGLES;
 	player->cheats &= ~CF_SCALEDNOLERP;
+	player->cheats &= ~CF_NOFOVINTERP;
 	player->mo->FloatVar("prevBob") = player->bob;
 
 	IFVIRTUALPTRNAME(player->mo, NAME_PlayerPawn, PlayerThink)

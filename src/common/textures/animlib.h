@@ -24,6 +24,7 @@ Prepared for public release: 03/21/2003 - Charlie Wiederhold, 3D Realms
 Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 */
 //-------------------------------------------------------------------------
+#pragma once
 
 #include <stdint.h>
 /////////////////////////////////////////////////////////////////////////////
@@ -91,7 +92,7 @@ struct anim_t
 	lp_descriptor * curlp;        // header of large page currently in memory
 	uint16_t * thepage;     // buffer where current large page is loaded
 	uint8_t imagebuffer[IMAGEBUFFERSIZE]; // buffer where anim frame is decoded
-	uint8_t * buffer;
+	const uint8_t * buffer;
 	uint8_t pal[768];
 	int32_t currentframe;
 };
@@ -104,7 +105,7 @@ struct anim_t
 //
 //****************************************************************************
 
-int32_t ANIM_LoadAnim(anim_t *anim, uint8_t *buffer, int32_t length);
+int32_t ANIM_LoadAnim(anim_t *anim, const uint8_t *buffer, size_t length);
 
 //****************************************************************************
 //

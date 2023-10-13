@@ -63,6 +63,7 @@ CVAR (Int,		team,					TEAM_NONE,	CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (String,	gender,					"male",		CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (Bool,		neverswitchonpickup,	false,		CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (Float,	movebob,				0.25f,		CVAR_USERINFO | CVAR_ARCHIVE);
+CVAR (Bool,		fviewbob,               true,       CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (Float,	stillbob,				0.f,		CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (Float,	wbobspeed,				1.f,		CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (Float,	wbobfire,				0.f,		CVAR_USERINFO | CVAR_ARCHIVE);
@@ -80,6 +81,7 @@ enum
 	INFO_Gender,
 	INFO_NeverSwitchOnPickup,
 	INFO_MoveBob,
+	INFO_FViewBob,
 	INFO_StillBob,
 	INFO_WBobSpeed,
 	INFO_WBobFire,
@@ -456,8 +458,17 @@ void userinfo_t::Reset()
 			case NAME_PlayerClass:	type = CVAR_Int; break;
 			default:				type = cvar->GetRealType(); break;
 			}
-			newcvar = C_CreateCVar(NULL, type, cvar->GetFlags() & CVAR_MOD);
+			
+			int flags = cvar->GetFlags();
+			
+			newcvar = C_CreateCVar(NULL, type, (flags & CVAR_MOD) | ((flags & CVAR_ZS_CUSTOM) << 1) );
 			newcvar->SetGenericRepDefault(cvar->GetGenericRepDefault(CVAR_String), CVAR_String);
+
+			if(flags & CVAR_ZS_CUSTOM)
+			{
+				newcvar->SetExtraDataPointer(cvar); // store backing cvar
+			}
+
 			Insert(cvarname, newcvar);
 		}
 	}
@@ -727,67 +738,65 @@ static int namesortfunc(const void *a, const void *b)
 	return stricmp(name1->GetChars(), name2->GetChars());
 }
 
-void D_WriteUserInfoStrings (int pnum, uint8_t **stream, bool compact)
+FString D_GetUserInfoStrings(int pnum, bool compact)
 {
-	if (pnum >= MAXPLAYERS)
+	FString result;
+	if (pnum >= 0 && pnum < MAXPLAYERS)
 	{
-		WriteByte (0, stream);
-		return;
-	}
+		userinfo_t* info = &players[pnum].userinfo;
+		TArray<TMap<FName, FBaseCVar*>::Pair*> userinfo_pairs(info->CountUsed());
+		TMap<FName, FBaseCVar*>::Iterator it(*info);
+		TMap<FName, FBaseCVar*>::Pair* pair;
+		UCVarValue cval;
 
-	userinfo_t *info = &players[pnum].userinfo;
-	TArray<TMap<FName, FBaseCVar *>::Pair *> userinfo_pairs(info->CountUsed());
-	TMap<FName, FBaseCVar *>::Iterator it(*info);
-	TMap<FName, FBaseCVar *>::Pair *pair;
-	UCVarValue cval;
-
-	// Create a simple array of all userinfo cvars
-	while (it.NextPair(pair))
-	{
-		userinfo_pairs.Push(pair);
-	}
-	// For compact mode, these need to be sorted. Verbose mode doesn't matter.
-	if (compact)
-	{
-		qsort(&userinfo_pairs[0], userinfo_pairs.Size(), sizeof(pair), userinfosortfunc);
-		// Compact mode is signified by starting the string with two backslash characters.
-		// We output one now. The second will be output as part of the first value.
-		*(*stream)++ = '\\';
-	}
-	for (unsigned int i = 0; i < userinfo_pairs.Size(); ++i)
-	{
-		pair = userinfo_pairs[i];
-
-		if (!compact)
-		{ // In verbose mode, prepend the cvar's name
-			*stream += sprintf(*((char **)stream), "\\%s", pair->Key.GetChars());
-		}
-		// A few of these need special handling for compatibility reasons.
-		switch (pair->Key.GetIndex())
+		// Create a simple array of all userinfo cvars
+		while (it.NextPair(pair))
 		{
-		case NAME_Gender:
-			*stream += sprintf(*((char **)stream), "\\%s",
-				*static_cast<FIntCVar *>(pair->Value) == GENDER_FEMALE ? "female" :
-				*static_cast<FIntCVar *>(pair->Value) == GENDER_NEUTER ? "neutral" :
-				*static_cast<FIntCVar *>(pair->Value) == GENDER_OBJECT ? "other" : "male");
-			break;
+			userinfo_pairs.Push(pair);
+		}
+		// For compact mode, these need to be sorted. Verbose mode doesn't matter.
+		if (compact)
+		{
+			qsort(&userinfo_pairs[0], userinfo_pairs.Size(), sizeof(pair), userinfosortfunc);
+			// Compact mode is signified by starting the string with two backslash characters.
+			// We output one now. The second will be output as part of the first value.
+			result += '\\';
+		}
+		for (unsigned int i = 0; i < userinfo_pairs.Size(); ++i)
+		{
+			pair = userinfo_pairs[i];
 
-		case NAME_PlayerClass:
-			*stream += sprintf(*((char **)stream), "\\%s", info->GetPlayerClassNum() == -1 ? "Random" :
-				D_EscapeUserInfo(info->GetPlayerClassType()->GetDisplayName().GetChars()).GetChars());
-			break;
+			if (!compact)
+			{ // In verbose mode, prepend the cvar's name
+				result.AppendFormat("\\%s", pair->Key.GetChars());
+			}
+			// A few of these need special handling for compatibility reasons.
+			switch (pair->Key.GetIndex())
+			{
+			case NAME_Gender:
+				result.AppendFormat("\\%s",
+					*static_cast<FIntCVar*>(pair->Value) == GENDER_FEMALE ? "female" :
+					*static_cast<FIntCVar*>(pair->Value) == GENDER_NEUTER ? "neutral" :
+					*static_cast<FIntCVar*>(pair->Value) == GENDER_OBJECT ? "other" : "male");
+				break;
 
-		case NAME_Skin:
-			*stream += sprintf(*((char **)stream), "\\%s", D_EscapeUserInfo(Skins[info->GetSkin()].Name).GetChars());
-			break;
+			case NAME_PlayerClass:
+				result.AppendFormat("\\%s", info->GetPlayerClassNum() == -1 ? "Random" :
+					D_EscapeUserInfo(info->GetPlayerClassType()->GetDisplayName().GetChars()).GetChars());
+				break;
 
-		default:
-			cval = pair->Value->GetGenericRep(CVAR_String);
-			*stream += sprintf(*((char **)stream), "\\%s", cval.String);
-			break;
+			case NAME_Skin:
+				result.AppendFormat("\\%s", D_EscapeUserInfo(Skins[info->GetSkin()].Name).GetChars());
+				break;
+
+			default:
+				cval = pair->Value->GetGenericRep(CVAR_String);
+				result.AppendFormat("\\%s", cval.String);
+				break;
+			}
 		}
 	}
-	*(*stream)++ = '\0';
+	return result;
 }
 
 void D_ReadUserInfoStrings (int pnum, uint8_t **stream, bool update)

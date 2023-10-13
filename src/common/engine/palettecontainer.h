@@ -3,8 +3,7 @@
 #include <stdint.h>
 #include "memarena.h"
 #include "palentry.h"
-
-class FileReader;
+#include "files.h"
 
 enum
 {
@@ -19,7 +18,7 @@ struct FRemapTable
 	FRemapTable(const FRemapTable& o) = default;
 	FRemapTable& operator=(const FRemapTable& o) = default;
 
-	bool operator==(const FRemapTable& o);
+	bool operator==(const FRemapTable& o) const;
 	void MakeIdentity();
 	bool IsIdentity() const;
 	bool AddIndexRange(int start, int end, int pal1, int pal2);

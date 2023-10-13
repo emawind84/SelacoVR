@@ -824,6 +824,10 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 					assert(b < f->NumRegF);
 					::new(param) VMValue(&reg.f[b]);
 					break;
+				case REGT_FLOAT | REGT_MULTIREG2 | REGT_ADDROF:
+				case REGT_FLOAT | REGT_MULTIREG3 | REGT_ADDROF:
+				case REGT_FLOAT | REGT_MULTIREG4 | REGT_ADDROF:
+					I_Error("REGT_ADDROF not implemented for vectors\n");
 				case REGT_FLOAT | REGT_KONST:
 					assert(b < sfunc->NumKonstF);
 					::new(param) VMValue(konstf[b]);
@@ -845,6 +849,7 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 				return 0;
 			}
 			auto p = o->GetClass();
+			if(p->Virtuals.Size() <= 0) ThrowAbortException(X_OTHER,"Attempted to call an invalid virtual function in class %s",p->TypeName.GetChars());
 			assert(C < p->Virtuals.Size());
 			reg.a[a] = p->Virtuals[C];
 		}
@@ -890,7 +895,7 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 				catch (CVMAbortException &err)
 				{
 					err.MaybePrintMessage();
-					err.stacktrace.AppendFormat("Called from %s\n", call->PrintableName.GetChars());
+					err.stacktrace.AppendFormat("Called from %s\n", call->PrintableName);
 					// PrintParameters(reg.param + f->NumParam - B, B);
 					throw;
 				}
@@ -1995,7 +2000,7 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 	catch (CVMAbortException &err)
 	{
 		err.MaybePrintMessage();
-		err.stacktrace.AppendFormat("Called from %s at %s, line %d\n", sfunc->PrintableName.GetChars(), sfunc->SourceFileName.GetChars(), sfunc->PCToLine(pc));
+		err.stacktrace.AppendFormat("Called from %s at %s, line %d\n", sfunc->PrintableName, sfunc->SourceFileName.GetChars(), sfunc->PCToLine(pc));
 		// PrintParameters(reg.param + f->NumParam - B, B);
 		throw;
 	}

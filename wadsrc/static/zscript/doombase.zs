@@ -292,14 +292,14 @@ struct TraceResults native
 
 	native Sector CrossedWater;		// For Boom-style, Transfer_Heights-based deep water
 	native vector3 CrossedWaterPos;	// remember the position so that we can use it for spawning the splash
-	native Sector Crossed3DWater;		// For 3D floor-based deep water
+	native F3DFloor Crossed3DWater;	// For 3D floor-based deep water
 	native vector3 Crossed3DWaterPos;
 }
 
 class LineTracer : Object native
 {
 	native @TraceResults Results;
-	native bool Trace(vector3 start, Sector sec, vector3 direction, double maxDist, ETraceFlags traceFlags);
+	native bool Trace(vector3 start, Sector sec, vector3 direction, double maxDist, ETraceFlags traceFlags, /* Line::ELineFlags */ uint wallMask = 0xFFFFFFFF, bool ignoreAllActors = false, Actor ignore = null);
 
 	virtual ETraceStatus TraceCallback()
 	{
@@ -409,6 +409,7 @@ struct LevelLocals native
 	native Array<@Line> Lines;
 	native Array<@Side> Sides;
 	native readonly Array<@Vertex> Vertexes;
+	native readonly Array<@LinePortal> LinePortals;
 	native internal Array<@SectorPortal> SectorPortals;
 	
 	native readonly int time;
@@ -516,6 +517,9 @@ struct LevelLocals native
 	native clearscope vector3 Vec3Offset(vector3 pos, vector3 dir, bool absolute = false) const;
 	native clearscope Vector2 GetDisplacement(int pg1, int pg2) const;
 	native clearscope int GetPortalGroupCount() const;
+	native clearscope int PointOnLineSide(Vector2 pos, Line l, bool precise = false) const;
+	native clearscope int ActorOnLineSide(Actor mo, Line l) const;
+	native clearscope int BoxOnLineSide(Vector2 pos, double radius, Line l) const;
 
 	native String GetChecksum() const;
 

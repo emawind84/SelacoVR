@@ -73,6 +73,7 @@ static int TranslationMapCompare (const void *a, const void *b);
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
 extern int PrintColors[];
+extern TArray<FBitmap> sheetBitmaps;
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 FFont* SmallFont, * SmallFont2, * BigFont, * BigUpper, * ConFont, * IntermissionFont, * NewConsoleFont, * NewSmallFont, 
@@ -108,7 +109,7 @@ FFont *V_GetFont(const char *name, const char *fontlumpname)
 		int lump = -1;
 		int folderfile = -1;
 
-		TArray<FolderEntry> folderdata;
+		std::vector<FileSys::FolderEntry> folderdata;
 		FStringf path("fonts/%s/", name);
 
 		// Use a folder-based font only if it comes from a later file than the single lump version.
@@ -137,10 +138,10 @@ FFont *V_GetFont(const char *name, const char *fontlumpname)
 				return font;
 			}
 		}
-		FTextureID picnum = TexMan.CheckForTexture (name, ETextureType::Any);
-		if (picnum.isValid())
+		FTextureID texid = TexMan.CheckForTexture (name, ETextureType::Any);
+		if (texid.isValid())
 		{
-			auto tex = TexMan.GetGameTexture(picnum);
+			auto tex = TexMan.GetGameTexture(texid);
 			if (tex && tex->GetSourceLump() >= folderfile)
 			{
 				FFont *CreateSinglePicFont(const char *name);
@@ -148,7 +149,7 @@ FFont *V_GetFont(const char *name, const char *fontlumpname)
 				return font;
 			}
 		}
-		if (folderdata.Size() > 0)
+		if (folderdata.size() > 0)
 		{
 			font = new FFont(name, nullptr, name, 0, 0, 1, -1);
 			if (translationsLoaded) font->LoadTranslations();
@@ -863,6 +864,7 @@ EColorRange V_ParseFontColor (const uint8_t *&color_value, int normalcolor, int 
 
 void V_InitFonts()
 {
+	sheetBitmaps.Clear();
 	CreateLuminosityTranslationRanges();
 	V_InitCustomFonts();
 
@@ -929,6 +931,7 @@ void V_ClearFonts()
 	}
 	FFont::FirstFont = nullptr;
 	AlternativeSmallFont = OriginalSmallFont = CurrentConsoleFont = NewSmallFont = NewConsoleFont = SmallFont = SmallFont2 = BigFont = ConFont = IntermissionFont = nullptr;
+	sheetBitmaps.Clear();
 }
 
 //==========================================================================

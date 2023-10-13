@@ -407,6 +407,8 @@ PNamespace *ParseOneScript(const int baselump, ZCCParseState &state)
 	int lumpnum = baselump;
 	auto fileno = fileSystem.GetFileContainer(lumpnum);
 
+	state.FileNo = fileno;
+
 	if (TokenMap.CountUsed() == 0)
 	{
 		InitTokenMap();
@@ -499,7 +501,7 @@ PNamespace *ParseOneScript(const int baselump, ZCCParseState &state)
 	// If the parser fails, there is no point starting the compiler, because it'd only flood the output with endless errors.
 	if (FScriptPosition::ErrorCounter > 0)
 	{
-		I_Error("%d errors while parsing %s", FScriptPosition::ErrorCounter, fileSystem.GetFileFullPath(baselump).GetChars());
+		I_Error("%d errors while parsing %s", FScriptPosition::ErrorCounter, fileSystem.GetFileFullPath(baselump).c_str());
 	}
 
 #ifndef NDEBUG
@@ -513,7 +515,7 @@ PNamespace *ParseOneScript(const int baselump, ZCCParseState &state)
 	if (Args->CheckParm("-dumpast"))
 	{
 		FString ast = ZCC_PrintAST(state.TopNode);
-		FString filename = fileSystem.GetFileFullPath(baselump);
+		FString filename = fileSystem.GetFileFullPath(baselump).c_str();
 		filename.ReplaceChars(":\\/?|", '.');
 		filename << ".ast";
 		FileWriter *ff = FileWriter::Open(filename);
@@ -1189,6 +1191,18 @@ ZCC_TreeNode *TreeNodeDeepCopy_Internal(ZCC_AST *ast, ZCC_TreeNode *orig, bool c
 
 		// ZCC_AssignStmt
 		copy->Dests = static_cast<ZCC_Expression *>(TreeNodeDeepCopy_Internal(ast, origCasted->Dests, true, copiedNodesList));
+		copy->Sources = static_cast<ZCC_Expression *>(TreeNodeDeepCopy_Internal(ast, origCasted->Sources, true, copiedNodesList));
+		copy->AssignOp = origCasted->AssignOp;
+
+		break;
+	}
+
+	case AST_AssignDeclStmt:
+	{
+		TreeNodeDeepCopy_Start(AssignDeclStmt);
+
+		// ZCC_AssignDeclStmt
+		copy->Dests = static_cast<ZCC_Identifier *>(TreeNodeDeepCopy_Internal(ast, origCasted->Dests, true, copiedNodesList));
 		copy->Sources = static_cast<ZCC_Expression *>(TreeNodeDeepCopy_Internal(ast, origCasted->Sources, true, copiedNodesList));
 		copy->AssignOp = origCasted->AssignOp;
 

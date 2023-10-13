@@ -40,11 +40,12 @@
 #include "i_system.h"
 #include "filereadermusicinterface.h"
 #include <zmusic.h>
-#include "resourcefile.h"
+#include "fs_filesystem.h"
 #include "version.h"
-#include "findfile.h"
+#include "fs_findfile.h"
 #include "i_interface.h"
 #include "configfile.h"
+#include "printf.h"
 
 //==========================================================================
 //
@@ -196,7 +197,7 @@ FileReader FSF2Reader::OpenFile(const char *name)
 FZipPatReader::FZipPatReader(const char *filename)
 {
 	mAllowAbsolutePaths = true;
-	resf = FResourceFile::OpenResourceFile(filename, true);
+	resf = FResourceFile::OpenResourceFile(filename);
 }
 
 FZipPatReader::~FZipPatReader()
@@ -330,7 +331,7 @@ FileReader FLumpPatchSetReader::OpenFile(const char *name)
 //
 //==========================================================================
 
-void FSoundFontManager::ProcessOneFile(const FString &fn)
+void FSoundFontManager::ProcessOneFile(const char* fn)
 {
 	auto fb = ExtractFileBase(fn, false);
 	auto fbe = ExtractFileBase(fn, true);
@@ -390,9 +391,6 @@ void FSoundFontManager::ProcessOneFile(const FString &fn)
 
 void FSoundFontManager::CollectSoundfonts()
 {
-	findstate_t c_file;
-	void *file;
-
 	FConfigFile* GameConfig = sysCallbacks.GetConfig ? sysCallbacks.GetConfig() : nullptr;
 	if (GameConfig != NULL && GameConfig->SetSection ("SoundfontSearch.Directories"))
 	{
@@ -403,25 +401,23 @@ void FSoundFontManager::CollectSoundfonts()
 		{
 			if (stricmp (key, "Path") == 0)
 			{
+				FileSys::FileList list;
+
 				FString dir;
 
 				dir = NicePath(value);
 				FixPathSeperator(dir);
 				if (dir.IsNotEmpty())
 				{
-					if (dir.Back() != '/') dir += '/';
-					FString mask = dir + '*';
-					if ((file = I_FindFirst(mask, &c_file)) != ((void *)(-1)))
+					if (FileSys::ScanDirectory(list, dir.GetChars(), "*", true))
 					{
-						do
+						for(auto& entry : list)
 						{
-							if (!(I_FindAttr(&c_file) & FA_DIREC))
+							if (!entry.isDirectory)
 							{
-								FStringf name("%s%s", dir.GetChars(), I_FindName(&c_file));
-								ProcessOneFile(name);
+								ProcessOneFile(entry.FilePath.c_str());
 							}
-						} while (I_FindNext(file, &c_file) == 0);
-						I_FindClose(file);
+						}
 					}
 				}
 			}
@@ -447,6 +443,7 @@ const FSoundFontInfo *FSoundFontManager::FindSoundFont(const char *name, int all
 		// an empty name will pick the first one in a compatible format.
 		if (allowed & sfi.type && (name == nullptr || *name == 0 || !sfi.mName.CompareNoCase(name) || !sfi.mNameExt.CompareNoCase(name)))
 		{
+			DPrintf(DMSG_NOTIFY, "Found compatible soundfont %s\n", sfi.mNameExt.GetChars());
 			return &sfi;
 		}
 	}
@@ -455,6 +452,7 @@ const FSoundFontInfo *FSoundFontManager::FindSoundFont(const char *name, int all
 	{
 		if (allowed & sfi.type)
 		{
+			DPrintf(DMSG_NOTIFY, "Unable to find %s soundfont. Falling back to %s\n", name, sfi.mNameExt.GetChars());
 			return &sfi;
 		}
 	}

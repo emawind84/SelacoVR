@@ -34,7 +34,7 @@
 **
 */
 
-#include "vectors.h" // RAD2DEG
+#include "vectors.h"
 #include "hw_cvars.h"
 #include "hw_vrmodes.h"
 #include "v_video.h"
@@ -96,6 +96,16 @@ VRMode::VRMode(int eyeCount, float horizontalViewportScale,
 	mEyes[0] = &eyes[0];
 	mEyes[1] = &eyes[1];
 
+}
+
+static float DEG2RAD(float deg)
+{
+	return deg * float(M_PI / 180.0);
+}
+
+static float RAD2DEG(float rad)
+{
+	return rad * float(180. / M_PI);
 }
 
 const VRMode *VRMode::GetVRMode(bool toscreen)

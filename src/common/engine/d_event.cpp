@@ -44,14 +44,14 @@
 #include "gamestate.h"
 #include "i_interface.h"
 
-bool G_Responder(event_t* ev);
-
 int eventhead;
 int eventtail;
 event_t events[MAXEVENTS];
 
-CVAR(Float, m_sensitivity_x, 4.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, m_sensitivity_x, 2.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, m_sensitivity_y, 2.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, invertmouse, false, CVAR_GLOBALCONFIG | CVAR_ARCHIVE);  // Invert mouse look down/up?
+CVAR(Bool, invertmousex, false,	CVAR_GLOBALCONFIG | CVAR_ARCHIVE);  // Invert mouse look left/right?
 
 
 //==========================================================================
@@ -86,12 +86,16 @@ void D_ProcessEvents (void)
 		if (ev->type == EV_DeviceChange)
 			UpdateJoystickMenu(I_UpdateDeviceList());
 
-		if (gamestate != GS_INTRO) // GS_INTRO blocks the UI.
+		// allow the game to intercept Escape before dispatching it.
+		if (ev->type != EV_KeyDown || ev->data1 != KEY_ESCAPE || !sysCallbacks.WantEscape || !sysCallbacks.WantEscape())
 		{
-			if (C_Responder(ev))
-				continue;				// console ate the event
-			if (M_Responder(ev))
-				continue;				// menu ate the event
+			if (gamestate != GS_INTRO) // GS_INTRO blocks the UI.
+			{
+				if (C_Responder(ev))
+					continue;				// console ate the event
+				if (M_Responder(ev))
+					continue;				// menu ate the event
+			}
 		}
 
 		if (sysCallbacks.G_Responder(ev) && ev->type == EV_KeyDown) keywasdown.Set(ev->data1);
@@ -168,6 +172,9 @@ void PostMouseMove(int xx, int yy)
 
 	ev.x = float(xx) * m_sensitivity_x;
 	ev.y = -float(yy) * m_sensitivity_y;
+
+	if (invertmousex) ev.x = -ev.x;
+	if (invertmouse) ev.y = -ev.y;
 
 	if (ev.x || ev.y)
 	{

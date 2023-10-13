@@ -272,6 +272,13 @@ dottable_id(X) ::= IDENTIFIER(A).
 	id->Id = A.Name();
 	X = id;
 }
+// this is needed for defining properties named 'action'.
+dottable_id(X) ::= ACTION(A).
+{
+	NEW_AST_NODE(Identifier,id,A);
+	id->Id = NAME_Action;
+	X = id;
+}
 dottable_id(X) ::= dottable_id(A) DOT IDENTIFIER(B).
 {
 	NEW_AST_NODE(Identifier,id2,A);
@@ -1840,6 +1847,7 @@ statement(X) ::= iteration_statement(X).
 statement(X) ::= array_iteration_statement(X).
 statement(X) ::= jump_statement(X).
 statement(X) ::= assign_statement(A) SEMICOLON.		{ X = A; /*X-overwrites-A*/ }
+statement(X) ::= assign_decl_statement(A) SEMICOLON.{ X = A; /*X-overwrites-A*/ }
 statement(X) ::= local_var(A) SEMICOLON.			{ X = A; /*X-overwrites-A*/ }
 statement(X) ::= error SEMICOLON.					{ X = NULL; }
 statement(X) ::= staticarray_statement(A).			{ X = A; /*X-overwrites-A*/ }
@@ -2092,6 +2100,17 @@ labeled_statement(X) ::= DEFAULT(T) COLON.
 assign_statement(X) ::= LBRACKET expr_list(A) RBRACKET EQ expr(B). [EQ]
 {
 	NEW_AST_NODE(AssignStmt,stmt,A);
+	stmt->AssignOp = ZCC_EQ;
+	stmt->Dests = A;
+	stmt->Sources = B;
+	X = stmt;
+}
+
+%type assign_decl_statement{ZCC_AssignDeclStmt *}
+
+assign_decl_statement(X) ::= LET LBRACKET identifier_list(A) RBRACKET EQ expr(B). [EQ]
+{
+	NEW_AST_NODE(AssignDeclStmt,stmt,A);
 	stmt->AssignOp = ZCC_EQ;
 	stmt->Dests = A;
 	stmt->Sources = B;

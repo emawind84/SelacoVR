@@ -58,7 +58,7 @@ VSMatrix FHWModelRenderer::GetViewToWorldMatrix()
 	return objectToWorldMatrix;
 }
 
-void FHWModelRenderer::PrepareRenderHUDModel(FSpriteModelFrame* smf, float ofsX, float ofsY, VSMatrix &objectToWorldMatrix)
+void FHWModelRenderer::PrepareRenderHUDModel(FSpriteModelFrame* smf, FVector3 translation, FVector3 rotation, FVector3 rotation_pivot, VSMatrix &objectToWorldMatrix)
 {
 	auto vrmode = VRMode::GetVRMode(true);
 	if (vrmode->mEyeCount > 1)
@@ -90,10 +90,9 @@ void FHWModelRenderer::PrepareRenderHUDModel(FSpriteModelFrame* smf, float ofsX,
 
 		// Aplying model offsets (model offsets do not depend on model scalings).
 		gl_RenderState.mModelMatrix.translate(smf->xoffset / smf->xscale, smf->zoffset / smf->zscale, smf->yoffset / smf->yscale);
-
 		// [BB] Weapon bob, very similar to the normal Doom weapon bob.
-		gl_RenderState.mModelMatrix.rotate(ofsX / 4, 0, 1, 0);
-		gl_RenderState.mModelMatrix.rotate((ofsY - WEAPONTOP) / -4., 1, 0, 0);
+		//gl_RenderState.mModelMatrix.rotate(ofsX / 4, 0, 1, 0);
+		//gl_RenderState.mModelMatrix.rotate((ofsY - WEAPONTOP) / -4., 1, 0, 0);
 
 		// [BB] For some reason the jDoom models need to be rotated.
 		gl_RenderState.mModelMatrix.rotate(90.f, 0, 1, 0);
@@ -108,7 +107,7 @@ void FHWModelRenderer::PrepareRenderHUDModel(FSpriteModelFrame* smf, float ofsX,
 	}
 	else
 	{
-		FModelRenderer::PrepareRenderHUDModel(smf, ofsX, ofsY, objectToWorldMatrix);
+		FModelRenderer::PrepareRenderHUDModel(smf, translation, rotation, rotation_pivot, objectToWorldMatrix);
 	}
 }
 
@@ -141,6 +140,7 @@ void FHWModelRenderer::EndDrawModel(FRenderStyle style, FSpriteModelFrame *smf)
 void FHWModelRenderer::BeginDrawHUDModel(FRenderStyle style, const VSMatrix &objectToWorldMatrix, bool mirrored)
 {
 	state.SetDepthFunc(DF_LEqual);
+	state.SetDepthClamp(true);
 
 	// [BB] In case the model should be rendered translucent, do back face culling.
 	// This solves a few of the problems caused by the lack of depth sorting.
@@ -199,7 +199,9 @@ void FHWModelRenderer::DrawElements(int numIndices, size_t offset)
 int FHWModelRenderer::SetupFrame(FModel *model, unsigned int frame1, unsigned int frame2, unsigned int size, const TArray<VSMatrix>& bones, int boneStartIndex)
 {
 	auto mdbuff = static_cast<FModelVertexBuffer*>(model->GetVertexBuffer(GetType()));
+	screen->mBones->Map();
 	boneIndexBase = boneStartIndex >= 0 ? boneStartIndex : screen->mBones->UploadBones(bones);
+	screen->mBones->Unmap();
 	state.SetBoneIndexBase(boneIndexBase);
 	if (mdbuff)
 	{

@@ -39,6 +39,8 @@
 #include <stddef.h>
 #include <string>
 #include "tarray.h"
+#include "utf8.h"
+#include "filesystem.h"
 
 #ifdef __GNUC__
 #define PRINTFISH(x) __attribute__((format(printf, 2, x)))
@@ -55,10 +57,6 @@
 #else
 #define IGNORE_FORMAT_PRE
 #define IGNORE_FORMAT_POST
-#endif
-
-#ifdef _WIN32
-std::wstring WideString(const char *);
 #endif
 
 struct FStringData
@@ -147,9 +145,6 @@ public:
 	FString (const char *head, const FString &tail);
 	FString (const char *head, const char *tail);
 	FString (char head, const FString &tail);
-
-	// Other constructors
-	FString (ELumpNum);	// Create from a lump
 
 	~FString ();
 
@@ -364,7 +359,7 @@ protected:
 	void AllocBuffer (size_t len);
 	void ReallocBuffer (size_t newlen);
 
-	static int FormatHelper (void *data, const char *str, int len);
+	static char* FormatHelper (const char *str, void* data, int len);
 	static void StrCopy (char *to, const char *from, size_t len);
 	static void StrCopy (char *to, const FString &from);
 
@@ -431,6 +426,7 @@ public:
 };
 
 
+/*
 namespace StringFormat
 {
 	enum
@@ -461,6 +457,7 @@ namespace StringFormat
 	int VWorker (OutputFunc output, void *outputData, const char *fmt, va_list arglist);
 	int Worker (OutputFunc output, void *outputData, const char *fmt, ...);
 };
+*/
 
 #undef PRINTFISH
 

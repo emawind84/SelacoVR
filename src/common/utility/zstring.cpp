@@ -37,8 +37,10 @@
 #include <string.h>
 #include <new>		// for bad_alloc
 
+
 #include "zstring.h"
 #include "utf8.h"
+#include "stb_sprintf.h"
 
 extern uint16_t lowerforupper[65536];
 extern uint16_t upperforlower[65536];
@@ -274,25 +276,28 @@ void FString::Format (const char *fmt, ...)
 
 void FString::AppendFormat (const char *fmt, ...)
 {
+	char workbuf[STB_SPRINTF_MIN];
 	va_list arglist;
 	va_start (arglist, fmt);
-	StringFormat::VWorker (FormatHelper, this, fmt, arglist);
+	stbsp_vsprintfcb(FormatHelper, this, workbuf, fmt, arglist);
 	va_end (arglist);
 }
 
 void FString::VFormat (const char *fmt, va_list arglist)
 {
+	char workbuf[STB_SPRINTF_MIN];
 	Data()->Release();
 	Chars = (char *)(FStringData::Alloc(128) + 1);
-	StringFormat::VWorker (FormatHelper, this, fmt, arglist);
+	stbsp_vsprintfcb(FormatHelper, this, workbuf, fmt, arglist);
 }
 
 void FString::VAppendFormat (const char *fmt, va_list arglist)
 {
-	StringFormat::VWorker (FormatHelper, this, fmt, arglist);
+	char workbuf[STB_SPRINTF_MIN];
+	stbsp_vsprintfcb(FormatHelper, this, workbuf, fmt, arglist);
 }
 
-int FString::FormatHelper (void *data, const char *cstr, int len)
+char* FString::FormatHelper (const char *cstr, void* data, int len)
 {
 	FString *str = (FString *)data;
 	size_t len1 = str->Len();
@@ -302,7 +307,7 @@ int FString::FormatHelper (void *data, const char *cstr, int len)
 	}
 	StrCopy (str->Chars + len1, cstr, len);
 	str->Data()->Len = (unsigned int)(len1 + len);
-	return len;
+	return (char*)cstr;
 }
 
 FString FString::operator + (const FString &tail) const
@@ -843,7 +848,7 @@ void FString::StripLeftRight ()
 	}
 	for (j = max - 1; j >= i; --j)
 	{
-		if (Chars[i] < 0 || !isspace((unsigned char)Chars[j]))
+		if (Chars[j] < 0 || !isspace((unsigned char)Chars[j]))
 			break;
 	}
 	if (i == 0 && j == max - 1)
@@ -863,7 +868,7 @@ void FString::StripLeftRight ()
 	{
 		FStringData *old = Data();
 		AllocBuffer(j - i + 1);
-		StrCopy(Chars, old->Chars(), j - i + 1);
+		StrCopy(Chars, old->Chars() + i, j - i + 1);
 		old->Release();
 	}
 }
@@ -899,8 +904,8 @@ void FString::StripLeftRight (const char *charset)
 	else
 	{
 		FStringData *old = Data();
-		AllocBuffer (j - i);
-		StrCopy (Chars, old->Chars(), j - i);
+		AllocBuffer (j - i + 1);
+		StrCopy (Chars, old->Chars() + i, j - i + 1);
 		old->Release();
 	}
 }
@@ -1320,19 +1325,6 @@ FString &FString::operator=(const wchar_t *copyStr)
 		Chars[size_needed] = 0;
 	}
 	return *this;
-}
-
-std::wstring WideString(const char *cin)
-{
-	if (!cin) return L"";
-	const uint8_t *in = (const uint8_t*)cin;
-	// This is a bit tricky because we need to support both UTF-8 and legacy content in ISO-8859-1
-	// and thanks to user-side string manipulation it can be that a text mixes both.
-	// To convert the string this uses the same function as all text printing in the engine.
-	TArray<wchar_t> buildbuffer;
-	while (*in) buildbuffer.Push((wchar_t)GetCharFromString(in));
-	buildbuffer.Push(0);
-	return std::wstring(buildbuffer.Data());
 }
 
 static HANDLE StringHeap;

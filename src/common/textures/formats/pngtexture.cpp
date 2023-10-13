@@ -43,6 +43,7 @@
 #include "printf.h"
 #include "texturemanager.h"
 #include "filesystem.h"
+#include "m_swap.h"
 
 //==========================================================================
 //
@@ -55,8 +56,8 @@ class FPNGTexture : public FImageSource
 public:
 	FPNGTexture (FileReader &lump, int lumpnum, int width, int height, uint8_t bitdepth, uint8_t colortype, uint8_t interlace);
 
-	int CopyPixels(FBitmap *bmp, int conversion) override;
-	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
+	int CopyPixels(FBitmap *bmp, int conversion, int frame = 0) override;
+	PalettedPixels CreatePalettedPixels(int conversion, int frame = 0) override;
 
 protected:
 	void ReadAlphaRemap(FileReader *lump, uint8_t *alpharemap);
@@ -411,7 +412,7 @@ void FPNGTexture::ReadAlphaRemap(FileReader *lump, uint8_t *alpharemap)
 //
 //==========================================================================
 
-TArray<uint8_t> FPNGTexture::CreatePalettedPixels(int conversion)
+PalettedPixels FPNGTexture::CreatePalettedPixels(int conversion, int frame)
 {
 	FileReader *lump;
 	FileReader lfr;
@@ -419,7 +420,7 @@ TArray<uint8_t> FPNGTexture::CreatePalettedPixels(int conversion)
 	lfr = fileSystem.OpenFileReader(SourceLump);
 	lump = &lfr;
 
-	TArray<uint8_t> Pixels(Width*Height, true);
+	PalettedPixels Pixels(Width*Height);
 	if (StartOfIDAT == 0)
 	{
 		memset (Pixels.Data(), 0x99, Width*Height);
@@ -456,7 +457,7 @@ TArray<uint8_t> FPNGTexture::CreatePalettedPixels(int conversion)
 			}
 			else
 			{
-				TArray<uint8_t> newpix(Width*Height, true);
+				PalettedPixels newpix(Width*Height);
 				if (conversion != luminance)
 				{
 					if (!PaletteMap) SetupPalette(lfr);
@@ -552,7 +553,7 @@ TArray<uint8_t> FPNGTexture::CreatePalettedPixels(int conversion)
 //
 //===========================================================================
 
-int FPNGTexture::CopyPixels(FBitmap *bmp, int conversion)
+int FPNGTexture::CopyPixels(FBitmap *bmp, int conversion, int frame)
 {
 	// Parse pre-IDAT chunks. I skip the CRCs. Is that bad?
 	PalEntry pe[256];

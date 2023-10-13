@@ -239,6 +239,15 @@ public:
 		}
 	}
 
+	bool GetEnabled()
+	{
+		return true;
+	}
+
+	void SetEnabled(bool enabled)
+	{
+	}
+
 	FString GetIdentifier()
 	{
 		return "OpenVR";

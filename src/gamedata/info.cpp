@@ -54,6 +54,7 @@
 #include "g_levellocals.h"
 #include "texturemanager.h"
 #include "d_main.h"
+#include "maps.h"
 
 extern void LoadActors ();
 extern void InitBotStuff();
@@ -64,6 +65,7 @@ FRandom FState::pr_statetics("StateTics");
 
 cycle_t ActionCycles;
 
+void InitServices();
 
 //==========================================================================
 //
@@ -130,16 +132,16 @@ void FState::CheckCallerType(AActor *self, AActor *stateowner)
 		// This should really never happen. Any valid action function must have actor pointers here.
 		if (!requiredType->isObjectPointer())
 		{
-			ThrowAbortException(X_OTHER, "Bad function prototype in function call to %s", ActionFunc->PrintableName.GetChars());
+			ThrowAbortException(X_OTHER, "Bad function prototype in function call to %s", ActionFunc->PrintableName);
 		}
 		auto cls = static_cast<PObjectPointer*>(requiredType)->PointedClass();
 		if (check == nullptr)
 		{
-			ThrowAbortException(X_OTHER, "%s called without valid caller. %s expected", ActionFunc->PrintableName.GetChars(), cls->TypeName.GetChars());
+			ThrowAbortException(X_OTHER, "%s called without valid caller. %s expected", ActionFunc->PrintableName, cls->TypeName.GetChars());
 		}
 		if (!(StateFlags & STF_DEHACKED) && !check->IsKindOf(cls))
 		{
-			ThrowAbortException(X_OTHER, "Invalid class %s in function call to %s. %s expected", check->GetClass()->TypeName.GetChars(), ActionFunc->PrintableName.GetChars(), cls->TypeName.GetChars());
+			ThrowAbortException(X_OTHER, "Invalid class %s in function call to %s. %s expected", check->GetClass()->TypeName.GetChars(), ActionFunc->PrintableName, cls->TypeName.GetChars());
 		}
 	};
 	
@@ -367,6 +369,7 @@ static void LoadAltHudStuff()
 // PClassActor :: StaticInit										STATIC
 //
 //==========================================================================
+void InitServices();
 
 void PClassActor::StaticInit()
 {
@@ -393,6 +396,8 @@ void PClassActor::StaticInit()
 	if (!batchrun) Printf ("LoadActors: Load actor definitions.\n");
 	ClearStrifeTypes();
 	LoadActors ();
+	InitServices();
+
 
 	for (auto cls : AllClasses)
 	{

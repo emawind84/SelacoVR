@@ -44,22 +44,31 @@
 #include <math.h>
 #include <float.h>
 #include <string.h>
+
+// this is needed to properly normalize angles. We cannot do that with compiler provided conversions because they differ too much
 #include "xs_Float.h"
-#include "math/cmath.h"
-#include "basics.h"
-#include "cmdlib.h"
-
-
-#define EQUAL_EPSILON (1/65536.)
 
 // make this a local inline function to avoid any dependencies on other headers and not pollute the global namespace
 namespace pi
 {
 	inline constexpr double pi() { return 3.14159265358979323846; }
-	inline constexpr double pif() { return 3.14159265358979323846f; }
+	inline constexpr float pif() { return 3.14159265358979323846f; }
 }
 
+// optionally use reliable math routines if reproducability across hardware is important, but let this still compile without them.
+#if __has_include("math/cmath.h")
+#include "math/cmath.h"
+#else
+double g_cosdeg(double v) { return cos(v * (pi::pi() / 180.)); }
+double g_sindeg(double v) { return sin(v * (pi::pi() / 180.)); }
+double g_cos(double v) { return cos(v); }
+double g_sin(double v) { return sin(v); }
+double g_sqrt(double v) { return sqrt(v); }
+double g_atan2(double v, double w) { return atan2(v, w); }
+#endif
 
+
+#define EQUAL_EPSILON (1/65536.)
 
 template<class vec_t> struct TVector3;
 template<class vec_t> struct TRotator;
@@ -87,6 +96,11 @@ struct TVector2
 	TVector2(vec_t *o)
 		: X(o[0]), Y(o[1])
 	{
+	}
+
+	template<typename U>
+	explicit operator TVector2<U> () const noexcept {
+		return TVector2<U>(static_cast<U>(X), static_cast<U>(Y));
 	}
 
 	void Zero()
@@ -230,7 +244,7 @@ struct TVector2
 	// Vector length
 	vec_t Length() const
 	{
-		return (vec_t)g_sqrt (X*X + Y*Y);
+		return (vec_t)g_sqrt (LengthSquared());
 	}
 
 	vec_t LengthSquared() const
@@ -366,6 +380,11 @@ struct TVector3
 	}
 
 	TVector3 (const TRotator<vec_t> &rot);
+	
+	template<typename U>
+	explicit operator TVector3<U> () const noexcept {
+		return TVector3<U>(static_cast<U>(X), static_cast<U>(Y), static_cast<U>(Z));
+	}
 
 	void Zero()
 	{
@@ -561,7 +580,7 @@ struct TVector3
 	void GetRightUp(TVector3 &right, TVector3 &up)
 	{
 		TVector3 n(X, Y, Z);
-		TVector3 fn(fabs(n.X), fabs(n.Y), fabs(n.Z));
+		TVector3 fn((vec_t)fabs(n.X), (vec_t)fabs(n.Y), (vec_t)fabs(n.Z));
 		int major = 0;
 
 		if (fn[1] > fn[major]) major = 1;
@@ -613,7 +632,7 @@ struct TVector3
 	// Vector length
 	double Length() const
 	{
-		return g_sqrt (X*X + Y*Y + Z*Z);
+		return g_sqrt (LengthSquared());
 	}
 
 	double LengthSquared() const
@@ -727,6 +746,11 @@ struct TVector4
 	TVector4(const vec_t v[4])
 		: TVector4(v[0], v[1], v[2], v[3])
 	{
+	}
+
+	template<typename U>
+	explicit operator TVector4<U> () const noexcept {
+		return TVector4<U>(static_cast<U>(X), static_cast<U>(Y), static_cast<U>(Z), static_cast<U>(W));
 	}
 
 	void Zero()
@@ -928,7 +952,7 @@ struct TVector4
 	// Vector length
 	double Length() const
 	{
-		return g_sqrt(X*X + Y*Y + Z*Z + W*W);
+		return g_sqrt(LengthSquared());
 	}
 
 	double LengthSquared() const
@@ -1019,44 +1043,9 @@ struct TMatrix3x3
 
 	// Construct a rotation matrix about an arbitrary axis.
 	// (The axis vector must be normalized.)
-	TMatrix3x3(const Vector3 &axis, double radians)
+	TMatrix3x3(const Vector3 &axis, double degrees)
+		: TMatrix3x3(axis, g_sindeg(degrees), g_cosdeg(degrees))
 	{
-		double c = g_cos(radians), s = g_sin(radians), t = 1 - c;
-/* In comments: A more readable version of the matrix setup.
-This was found in Diana Gruber's article "The Mathematics of the
-3D Rotation Matrix" at <http://www.makegames.com/3drotation/> and is
-attributed to Graphics Gems (Glassner, Academic Press, 1990).
-
-		Cells[0][0] = t*axis.X*axis.X + c;
-		Cells[0][1] = t*axis.X*axis.Y - s*axis.Z;
-		Cells[0][2] = t*axis.X*axis.Z + s*axis.Y;
-
-		Cells[1][0] = t*axis.Y*axis.X + s*axis.Z;
-		Cells[1][1] = t*axis.Y*axis.Y + c;
-		Cells[1][2] = t*axis.Y*axis.Z - s*axis.X;
-
-		Cells[2][0] = t*axis.Z*axis.X - s*axis.Y;
-		Cells[2][1] = t*axis.Z*axis.Y + s*axis.X;
-		Cells[2][2] = t*axis.Z*axis.Z + c;
-
-Outside comments: A faster version with only 10 (not 24) multiplies.
-*/
-		double sx = s*axis.X, sy = s*axis.Y, sz = s*axis.Z;
-		double tx, ty, txx, tyy, u, v;
-
-		tx = t*axis.X;
-		Cells[0][0] = vec_t( (txx=tx*axis.X) + c );
-		Cells[0][1] = vec_t(   (u=tx*axis.Y) - sz);
-		Cells[0][2] = vec_t(   (v=tx*axis.Z) + sy);
-
-		ty = t*axis.Y;
-		Cells[1][0] = vec_t(              u  + sz);
-		Cells[1][1] = vec_t( (tyy=ty*axis.Y) + c );
-		Cells[1][2] = vec_t(   (u=ty*axis.Z) - sx);
-
-		Cells[2][0] = vec_t(              v  - sy);
-		Cells[2][1] = vec_t(              u  + sx);
-		Cells[2][2] = vec_t(     (t-txx-tyy) + c );
 	}
 
 	TMatrix3x3(const Vector3 &axis, double c/*cosine*/, double s/*sine*/)
@@ -1082,10 +1071,10 @@ Outside comments: A faster version with only 10 (not 24) multiplies.
 
 	TMatrix3x3(const Vector3 &axis, TAngle<vec_t> degrees);
 
-	static TMatrix3x3 Rotate2D(double radians)
+	static TMatrix3x3 Rotate2D(double degrees)
 	{
-		double c = g_cos(radians);
-		double s = g_sin(radians);
+		double c = g_cosdeg(degrees);
+		double s = g_sindeg(degrees);
 		TMatrix3x3 ret;
 		ret.Cells[0][0] = c; ret.Cells[0][1] = -s; ret.Cells[0][2] = 0;
 		ret.Cells[1][0] = s; ret.Cells[1][1] =  c; ret.Cells[1][2] = 0;
@@ -1428,11 +1417,6 @@ public:
 		return int(Degrees_ * (512 / 90.0));
 	}
 
-	constexpr double Buildfang() const
-	{
-		return Degrees_ * (512 / 90.0);
-	}
-
 	constexpr int Q16() const
 	{
 		return int(Degrees_ * (16384 / 90.0));
@@ -1455,7 +1439,13 @@ public:
 
 	double Tan() const
 	{
-		return vec_t(g_tan(Radians()));
+		// use an optimized approach if we have a sine table. If not just call the CRT's tan function.
+#if __has_include("math/cmath.h")
+		const auto bam = BAMs();
+		return g_sinbam(bam) / g_cosbam(bam);
+#else
+		return vec_t(tan(Radians()));
+#endif
 	}
 
 	// This is for calculating vertical velocity. For high pitches the tangent will become too large to be useful.
@@ -1464,9 +1454,11 @@ public:
 		return clamp(Tan(), -max, max);
 	}
 
+	// returns sign of the NORMALIZED angle.
 	int Sgn() const
 	{
-		return ::Sgn(int(BAMs()));
+		auto val = int(BAMs());
+		return (val > 0) - (val < 0);
 	}
 };
 
@@ -1491,13 +1483,7 @@ inline TAngle<T> deltaangle(const TAngle<T> &a1, const TAngle<T> &a2)
 template<class T>
 inline TAngle<T> absangle(const TAngle<T> &a1, const TAngle<T> &a2)
 {
-	return fabs((a1 - a2).Normalized180());
-}
-
-template<class T>
-inline TAngle<T> clamp(const TAngle<T> &angle, const TAngle<T> &min, const TAngle<T> &max)
-{
-	return TAngle<T>::fromDeg(clamp(angle.Degrees(), min.Degrees(), max.Degrees()));
+	return fabs(deltaangle(a2, a1));
 }
 
 inline TAngle<double> VecToAngle(double x, double y)
@@ -1532,7 +1518,7 @@ TAngle<T> TVector3<T>::Angle() const
 template<class T>
 TAngle<T> TVector3<T>::Pitch() const
 {
-	return -VecToAngle(TVector2<T>(X, Y).Length(), Z);
+	return -VecToAngle(XY().Length(), Z);
 }
 
 template<class T>
@@ -1698,13 +1684,10 @@ struct TRotator
 };
 
 // Create a forward vector from a rotation (ignoring roll)
-
 template<class T>
 inline TVector3<T>::TVector3 (const TRotator<T> &rot)
 {
-	double pcos = rot.Pitch.Cos();
-	X = pcos * rot.Yaw.Cos();
-	Y = pcos * rot.Yaw.Sin();
+	XY() = rot.Pitch.Cos() * rot.Yaw.ToVector();
 	Z = rot.Pitch.Sin();
 }
 

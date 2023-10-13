@@ -1,6 +1,7 @@
 #ifndef __SC_MAN_H__
 #define __SC_MAN_H__
 
+#include <vector>
 #include "zstring.h"
 #include "tarray.h"
 #include "name.h"
@@ -54,16 +55,18 @@ public:
 		double Float;
 	};
 
+	using SymbolMap = TMap<FName, Symbol>;
 
-	TMap<FName, Symbol> symbols;
+	SymbolMap mysymbols;
+	SymbolMap& symbols;
+	TMap<FName, Symbol>& GetSymbols() { return symbols; }
 
 	// Methods ------------------------------------------------------
-	FScanner();
-	FScanner(const FScanner &other);
-	FScanner(int lumpnum);
-	~FScanner();
-
-	FScanner &operator=(const FScanner &other);
+	FScanner(TMap<FName, Symbol>* extsymbols = nullptr);
+	FScanner(const FScanner& other) = delete;
+	FScanner& operator=(const FScanner& other) = delete;
+	FScanner(int lumpnum, TMap<FName, Symbol>* extsymbols = nullptr);
+	~FScanner() = default;
 
 	void Open(const char *lumpname);
 	bool OpenFile(const char *filename);
@@ -71,6 +74,10 @@ public:
 	void OpenMem(const char *name, const TArray<uint8_t> &buffer)
 	{
 		OpenMem(name, (const char*)buffer.Data(), buffer.Size());
+	}
+	void OpenMem(const char* name, const std::vector<uint8_t>& buffer)
+	{
+		OpenMem(name, (const char*)buffer.data(), (int)buffer.size());
 	}
 	void OpenString(const char *name, FString buffer);
 	void OpenLumpNum(int lump);
@@ -115,6 +122,13 @@ public:
 	void MustGetNumber(bool evaluate = false);
 	bool CheckNumber(bool evaluate = false);
 
+	bool GetNumber(int16_t& var, bool evaluate = false)
+	{
+		if (!GetNumber(evaluate)) return false;
+		var = Number;
+		return true;
+	}
+
 	bool GetNumber(int& var, bool evaluate = false)
 	{
 		if (!GetNumber(evaluate)) return false;
@@ -155,9 +169,9 @@ public:
 	void MustGetFloat(bool evaluate = false);
 	bool CheckFloat(bool evaluate = false);
 
-	double *LookupConstant(FName name)
+	Symbol *LookupSymbol(FName name)
 	{
-		return constants.CheckKey(name);
+		return symbols.CheckKey(name);
 	}
 
 	// Token based variant

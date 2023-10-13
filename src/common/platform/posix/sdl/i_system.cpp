@@ -51,7 +51,6 @@
 #include <asm/unistd.h>
 #include <linux/perf_event.h>
 #include <sys/mman.h>
-#include "printf.h"
 #endif
 
 #include <SDL.h>
@@ -65,11 +64,12 @@
 #include "c_cvars.h"
 #include "palutil.h"
 #include "st_start.h"
+#include "printf.h"
 
 
 #ifndef NO_GTK
 bool I_GtkAvailable ();
-int I_PickIWad_Gtk (WadStuff *wads, int numwads, bool showwin, int defaultiwad);
+int I_PickIWad_Gtk (WadStuff *wads, int numwads, bool showwin, int defaultiwad, int& autoloadflags);
 void I_ShowFatalError_Gtk(const char* errortext);
 #elif defined(__APPLE__)
 int I_PickIWad_Cocoa (WadStuff *wads, int numwads, bool showwin, int defaultiwad);
@@ -297,7 +297,7 @@ void I_PrintStr(const char *cp)
 	if (StartWindow) RedrawProgressBar(ProgressBarCurPos,ProgressBarMaxPos);
 }
 
-int I_PickIWad (WadStuff *wads, int numwads, bool showwin, int defaultiwad, int&)
+int I_PickIWad (WadStuff *wads, int numwads, bool showwin, int defaultiwad, int& autoloadflags)
 {
 	int i;
 
@@ -361,7 +361,7 @@ int I_PickIWad (WadStuff *wads, int numwads, bool showwin, int defaultiwad, int&
 #ifndef NO_GTK
 	if (I_GtkAvailable())
 	{
-		return I_PickIWad_Gtk (wads, numwads, showwin, defaultiwad);
+		return I_PickIWad_Gtk (wads, numwads, showwin, defaultiwad, autoloadflags);
 	}
 #endif
 
@@ -408,7 +408,7 @@ FString I_GetFromClipboard (bool use_primary_selection)
 
 FString I_GetCWD()
 {
-	char* curdir = get_current_dir_name();
+	char* curdir = getcwd(NULL,0);
 	if (!curdir) 
 	{
 		return "";
@@ -447,7 +447,7 @@ unsigned int I_MakeRNGSeed()
 
 void I_OpenShellFolder(const char* infolder)
 {
-	char* curdir = get_current_dir_name();
+	char* curdir = getcwd(NULL,0);
 
 	if (!chdir(infolder))
 	{

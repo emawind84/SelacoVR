@@ -287,6 +287,7 @@ void WriteSavePic(player_t* player, FileWriter* file, int width, int height)
 		screen->SetSaveBuffers(true);
 		screen->ImageTransitionScene(true);
 
+		hw_postprocess.SetTonemapMode(level.info ? level.info->tonemap : ETonemapMode::None);
 		hw_ClearFakeFlat();
 		screen->mVertexData->Reset();
 		RenderState.SetVertexBuffer(screen->mVertexData);
@@ -331,6 +332,7 @@ sector_t* RenderView(player_t* player)
 	auto RenderState = screen->RenderState();
 	RenderState->SetVertexBuffer(screen->mVertexData);
 	screen->mVertexData->Reset();
+	hw_postprocess.SetTonemapMode(level.info ? level.info->tonemap : ETonemapMode::None);
 
 	sector_t* retsec;
 	if (!V_IsHardwareRenderer())

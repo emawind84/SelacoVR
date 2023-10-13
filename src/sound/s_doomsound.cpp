@@ -66,6 +66,7 @@
 #include "g_game.h"
 #include "s_music.h"
 #include "v_draw.h"
+#include "m_argv.h"
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
@@ -80,7 +81,7 @@ class DoomSoundEngine : public SoundEngine
 
 	void CalcPosVel(int type, const void* source, const float pt[3], int channum, int chanflags, FSoundID soundid, FVector3* pos, FVector3* vel, FSoundChan *) override;
 	bool ValidatePosVel(int sourcetype, const void* source, const FVector3& pos, const FVector3& vel);
-	TArray<uint8_t> ReadSound(int lumpnum);
+	std::vector<uint8_t> ReadSound(int lumpnum);
 	FSoundID PickReplacement(FSoundID refid);
 	FSoundID ResolveSound(const void *ent, int type, FSoundID soundid, float &attenuation) override;
 	void CacheSound(sfxinfo_t* sfx) override;
@@ -190,7 +191,7 @@ static FileReader OpenMusic(const char* musicname)
 	{
 		int lumpnum;
 		lumpnum = fileSystem.CheckNumForFullName(musicname);
-		if (lumpnum == -1) lumpnum = fileSystem.CheckNumForName(musicname, ns_music);
+		if (lumpnum == -1) lumpnum = fileSystem.CheckNumForName(musicname, FileSys::ns_music);
 		if (lumpnum == -1)
 		{
 			Printf("Music \"%s\" not found\n", musicname);
@@ -229,14 +230,15 @@ void S_Init()
 	}
 
 	I_InitSound();
-	I_InitMusic();
+	I_InitMusic(Args->CheckParm("-nomusic") || Args->CheckParm("-nosound"));
 
 	// Heretic and Hexen have sound curve lookup tables. Doom does not.
 	int curvelump = fileSystem.CheckNumForName("SNDCURVE");
 	TArray<uint8_t> curve;
 	if (curvelump >= 0)
 	{
-		curve = fileSystem.GetFileData(curvelump);
+		curve.Resize(fileSystem.FileLength(curvelump));
+		fileSystem.ReadFile(curvelump, curve.Data());
 	}
 	soundEngine->Init(curve);
 }
@@ -841,6 +843,8 @@ static FSerializer &Serialize(FSerializer &arc, const char *key, FSoundChan &cha
 			("rolloffmax", chan.Rolloff.MaxDistance)
 			("limitrange", chan.LimitRange);
 
+		if (SaveVersion < 4560) chan.Pitch /= 128.f;
+
 		switch (chan.SourceType)
 		{
 		case SOURCE_None:										break;
@@ -1162,7 +1166,7 @@ bool DoomSoundEngine::ValidatePosVel(int sourcetype, const void* source, const F
 // 
 //==========================================================================
 
-TArray<uint8_t> DoomSoundEngine::ReadSound(int lumpnum)
+std::vector<uint8_t> DoomSoundEngine::ReadSound(int lumpnum)
 {
 	auto wlump = fileSystem.OpenFileReader(lumpnum);
 	return wlump.Read();
@@ -1238,9 +1242,8 @@ void DoomSoundEngine::NoiseDebug()
 		color = (chan->ChanFlags & CHANF_LOOP) ? CR_BROWN : CR_GREY;
 
 		// Name
-		fileSystem.GetFileShortName(temp, S_sfx[chan->SoundID.index()].lumpnum);
-		temp[8] = 0;
-		DrawText(twod, NewConsoleFont, color, 0, y, temp, TAG_DONE);
+		auto tname = fileSystem.GetFileShortName(S_sfx[chan->SoundID.index()].lumpnum);
+		DrawText(twod, NewConsoleFont, color, 0, y, tname, TAG_DONE);
 
 		if (!(chan->ChanFlags & CHANF_IS3D))
 		{
@@ -1333,16 +1336,14 @@ ADD_STAT(sounddebug)
 
 void DoomSoundEngine::PrintSoundList()
 {
-	char lumpname[9];
 	unsigned int i;
 
-	lumpname[8] = 0;
 	for (i = 0; i < soundEngine->GetNumSounds(); i++)
 	{
 		const sfxinfo_t* sfx = soundEngine->GetSfx(FSoundID::fromInt(i));
 		if (sfx->bRandomHeader)
 		{
-			Printf("%3d. %s -> #%d {", i, sfx->name.GetChars(), sfx->link);
+			Printf("%3d. %s -> #%d {", i, sfx->name.GetChars(), sfx->link.index());
 			const FRandomSoundList* list = &S_rnd[sfx->link.index()];
 			for (auto& me : list->Choices)
 			{
@@ -1352,12 +1353,11 @@ void DoomSoundEngine::PrintSoundList()
 		}
 		else if (sfx->UserData[0] & SND_PlayerReserve)
 		{
-			Printf("%3d. %s <<player sound %d>>\n", i, sfx->name.GetChars(), sfx->link);
+			Printf("%3d. %s <<player sound %d>>\n", i, sfx->name.GetChars(), sfx->link.index());
 		}
 		else if (S_sfx[i].lumpnum != -1)
 		{
-			fileSystem.GetFileShortName(lumpname, sfx->lumpnum);
-			Printf("%3d. %s (%s)\n", i, sfx->name.GetChars(), lumpname);
+			Printf("%3d. %s (%s)\n", i, sfx->name.GetChars(), fileSystem.GetFileShortName(sfx->lumpnum));
 		}
 		else if (S_sfx[i].link != sfxinfo_t::NO_LINK)
 		{

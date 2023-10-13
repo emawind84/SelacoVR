@@ -37,6 +37,14 @@ class Weapon : StateProvider
 											// AmmoUse1 will be set to the first attack's ammo use so that checking for empty weapons still works
 	meta int SlotNumber;
 	meta double SlotPriority;
+
+	Vector3 BobPivot3D;	// Pivot used for BobWeapon3D
+
+	virtual ui Vector2 ModifyBobLayer(Vector2 Bob, int layer, double ticfrac) { return Bob; }
+
+	virtual ui Vector3, Vector3 ModifyBobLayer3D(Vector3 Translation, Vector3 Rotation, int layer, double ticfrac) { return Translation, Rotation; }
+
+	virtual ui Vector3 ModifyBobPivotLayer3D(int layer, double ticfrac) { return BobPivot3D; }
 	
 	property AmmoGive: AmmoGive1;
 	property AmmoGive1: AmmoGive1;
@@ -63,6 +71,7 @@ class Weapon : StateProvider
 	property SlotNumber: SlotNumber;
 	property SlotPriority: SlotPriority;
 	property LookScale: LookScale;
+	property BobPivot3D : BobPivot3D;
 
 	flagdef NoAutoFire: WeaponFlags, 0;			// weapon does not autofire
 	flagdef ReadySndHalf: WeaponFlags, 1;		// ready sound is played ~1/2 the time
@@ -102,6 +111,7 @@ class Weapon : StateProvider
 		Weapon.WeaponScaleY 1.2;
 		Weapon.SlotNumber -1;
 		Weapon.SlotPriority 32767;
+		Weapon.BobPivot3D (0.0, 0.0, 0.0);
 		+WEAPONSPAWN
 		DefaultStateUsage SUF_ACTOR|SUF_OVERLAY|SUF_WEAPON;
 	}
@@ -460,6 +470,7 @@ class Weapon : StateProvider
 			if (flags & 1)
 			{ // Make the zoom instant.
 				player.FOV = player.DesiredFOV * zoom;
+				player.cheats |= CF_NOFOVINTERP;
 			}
 			if (flags & 2)
 			{ // Disable pitch/yaw scaling.
@@ -927,6 +938,7 @@ class Weapon : StateProvider
 		int count1, count2;
 		int enough, enoughmask;
 		int lAmmoUse1;
+        int lAmmoUse2 = AmmoUse2;
 
 		if (sv_infiniteammo || (Owner.FindInventory ('PowerInfiniteAmmo', true) != null))
 		{
@@ -952,20 +964,21 @@ class Weapon : StateProvider
 		count1 = (Ammo1 != null) ? Ammo1.Amount : 0;
 		count2 = (Ammo2 != null) ? Ammo2.Amount : 0;
 
-		if (bDehAmmo && Ammo1 == null)
-		{
-			lAmmoUse1 = 0;
-		}
-		else if (ammocount >= 0 && bDehAmmo)
+		if (ammocount >= 0)
 		{
 			lAmmoUse1 = ammocount;
+			lAmmoUse2 = ammocount;
+		}
+		else if (bDehAmmo && Ammo1 == null)
+		{
+			lAmmoUse1 = 0;
 		}
 		else
 		{
 			lAmmoUse1 = AmmoUse1;
 		}
 
-		enough = (count1 >= lAmmoUse1) | ((count2 >= AmmoUse2) << 1);
+		enough = (count1 >= lAmmoUse1) | ((count2 >= lAmmoUse2) << 1);
 		if (useboth)
 		{
 			enoughmask = 3;

@@ -755,7 +755,6 @@ public:
 
 			case NAME_lm_suncolor:
 			case NAME_lm_sampledistance:
-			case NAME_lm_gridsize:
 				CHECK_N(Zd | Zdt)
 					break;
 
@@ -1129,9 +1128,6 @@ public:
 				ld->healthgroup = CheckInt(key);
 				break;
 
-			case NAME_lm_lightcolorline:
-			case NAME_lm_lightintensityline:
-			case NAME_lm_lightdistanceline:
 			case NAME_lm_sampledist_line:
 			case NAME_lm_sampledist_top:
 			case NAME_lm_sampledist_mid:
@@ -1480,6 +1476,13 @@ public:
 				if (Flag(sd->textures[side_t::bottom].flags, side_t::part::UseOwnAdditiveColor, key))
 					sd->Flags |= WALLF_EXTCOLOR;
 				break;
+
+			case NAME_lm_sampledist_line:
+			case NAME_lm_sampledist_top:
+			case NAME_lm_sampledist_mid:
+			case NAME_lm_sampledist_bot:
+				CHECK_N(Zd | Zdt)
+					break;
 
 			default:
 				if (strnicmp("user_", key.GetChars(), 5))
@@ -1989,12 +1992,6 @@ public:
 					sec->health3dgroup = CheckInt(key);
 					break;
 
-				case NAME_lm_lightcolorfloor:
-				case NAME_lm_lightintensityfloor:
-				case NAME_lm_lightdistancefloor:
-				case NAME_lm_lightcolorceiling:
-				case NAME_lm_lightintensityceiling:
-				case NAME_lm_lightdistanceceiling:
 				case NAME_lm_sampledist_floor:
 				case NAME_lm_sampledist_ceiling:
 					CHECK_N(Zd | Zdt)
@@ -2063,6 +2060,7 @@ public:
 			DVector3 n = DVector3(cp[0], cp[1], cp[2]).Unit();
 			sec->ceilingplane.set(n.X, n.Y, n.Z, cp[3]);
 		}
+		sec->CheckOverlap();
 
 		if (lightcolor == ~0u && fadecolor == ~0u && desaturation == -1 && fogdensity == -1)
 		{

@@ -90,6 +90,7 @@
 #include "doommenu.h"
 #include "screenjob.h"
 #include "i_interface.h"
+#include "fs_findfile.h"
 
 
 static FRandom pr_dmspawn ("DMSpawn");
@@ -111,7 +112,6 @@ void	G_DoAutoSave ();
 void	G_DoQuickSave ();
 
 void STAT_Serialize(FSerializer &file);
-bool WriteZip(const char *filename, TArray<FString> &filenames, TArray<FCompressedBuffer> &content);
 
 CVARD_NAMED(Int, gameskill, skill, 2, CVAR_SERVERINFO|CVAR_LATCH, "sets the skill for the next newly started game")
 CVAR(Bool, save_formatted, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)	// use formatted JSON for saves (more readable but a larger files and a bit slower.
@@ -202,8 +202,6 @@ int				lookspeed[2] = {450, 512};
 #define SLOWTURNTICS	6 
 
 CVAR (Bool,		cl_run,			false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always run?
-CVAR (Bool,		invertmouse,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Invert mouse look down/up?
-CVAR (Bool,		invertmousex,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Invert mouse look left/right?
 CVAR (Bool,		freelook,		true,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always mlook?
 CVAR (Bool,		lookstrafe,		false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always strafe with mouse?
 CVAR (Float,	m_forward,		1.f,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
@@ -319,7 +317,8 @@ CCMD (slot)
 		}
 
 		// [Nash] Option to display the name of the weapon being switched to.
-		if ((paused || pauseext) || players[consoleplayer].playerstate != PST_LIVE) return;
+		if ((paused || pauseext) || players[consoleplayer].playerstate != PST_LIVE)
+			return;
 		if (SendItemUse != players[consoleplayer].ReadyWeapon && (displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
 		{
 			StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(nullptr, SendItemUse->GetTag(),
@@ -330,6 +329,8 @@ CCMD (slot)
 
 CCMD (centerview)
 {
+	if ((players[consoleplayer].cheats & CF_TOTALLYFROZEN))
+		return;
 	Net_WriteByte (DEM_CENTERVIEW);
 }
 
@@ -1974,13 +1975,13 @@ void G_DoLoadGame ()
 	hidecon = gameaction == ga_loadgamehidecon;
 	gameaction = ga_nothing;
 
-	std::unique_ptr<FResourceFile> resfile(FResourceFile::OpenResourceFile(savename.GetChars(), true, true));
+	std::unique_ptr<FResourceFile> resfile(FResourceFile::OpenResourceFile(savename.GetChars(), true));
 	if (resfile == nullptr)
 	{
 		LoadGameError("TXT_COULDNOTREAD");
 		return;
 	}
-	FResourceLump *info = resfile->FindLump("info.json");
+	auto info = resfile->FindLump("info.json");
 	if (info == nullptr)
 	{
 		LoadGameError("TXT_NOINFOJSON");
@@ -2015,7 +2016,7 @@ void G_DoLoadGame ()
 		}
 		else
 		{
-			LoadGameError("TXT_IOTHERENGINESG", engine.GetChars());
+			LoadGameError("TXT_OTHERENGINESG", engine.GetChars());
 		}
 		return;
 	}
@@ -2250,7 +2251,7 @@ void G_DoQuickSave ()
 	num.Int = lastquicksave;
 	quicksavenum->ForceSet (num, CVAR_Int);
 
-	file = G_BuildSaveName(FStringf("quick%02d", nextautosave));
+	file = G_BuildSaveName(FStringf("quick%02d", lastquicksave));
 
 	readableTime = myasctime ();
 	description.Format("Quicksave %s", readableTime);
@@ -2407,7 +2408,7 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 	}
 
 	auto picdata = savepic.GetBuffer();
-	FCompressedBuffer bufpng = { picdata->Size(), picdata->Size(), METHOD_STORED, 0, static_cast<unsigned int>(crc32(0, &(*picdata)[0], picdata->Size())), (char*)&(*picdata)[0] };
+	FCompressedBuffer bufpng = { picdata->Size(), picdata->Size(), FileSys::METHOD_STORED, 0, static_cast<unsigned int>(crc32(0, &(*picdata)[0], picdata->Size())), (char*)&(*picdata)[0] };
 
 	savegame_content.Push(bufpng);
 	savegame_filenames.Push("savepic.png");
@@ -2415,13 +2416,14 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 	savegame_filenames.Push("info.json");
 	savegame_content.Push(savegameglobals.GetCompressedOutput());
 	savegame_filenames.Push("globals.json");
-
 	G_WriteSnapshots (savegame_filenames, savegame_content);
 	
+	for (unsigned i = 0; i < savegame_content.Size(); i++)
+		savegame_content[i].filename = savegame_filenames[i].GetChars();
 
 	bool succeeded = false;
 
-	if (WriteZip(filename, savegame_filenames, savegame_content))
+	if (WriteZip(filename, savegame_content.Data(), savegame_content.Size()))
 	{
 		// Check whether the file is ok by trying to open it.
 		FResourceFile *test = FResourceFile::OpenResourceFile(filename, true);
@@ -2618,10 +2620,12 @@ void G_BeginRecording (const char *startmap)
 	{
 		if (playeringame[i])
 		{
-			StartChunk (UINF_ID, &demo_p);
-			WriteByte ((uint8_t)i, &demo_p);
-			D_WriteUserInfoStrings (i, &demo_p);
-			FinishChunk (&demo_p);
+			StartChunk(UINF_ID, &demo_p);
+			WriteByte((uint8_t)i, &demo_p);
+			auto str = D_GetUserInfoStrings(i);
+			memcpy(demo_p, str.GetChars(), str.Len() + 1);
+			demo_p += str.Len();
+			FinishChunk(&demo_p);
 		}
 	}
 

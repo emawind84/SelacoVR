@@ -1139,6 +1139,29 @@ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, SetXOffset, SetXOffset)
 	 ACTION_RETURN_INT(self->e->XFloor.attached.Size());
  }
 
+ static int CountSectorTags(const sector_t *self)
+ {
+	 return level.tagManager.CountSectorTags(self);
+ }
+
+ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, CountTags, CountSectorTags)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(sector_t);
+	 ACTION_RETURN_INT(level.tagManager.CountSectorTags(self));
+ }
+
+ static int GetSectorTag(const sector_t *self, int index)
+ {
+	 return level.tagManager.GetSectorTag(self, index);
+ }
+
+ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, GetTag, GetSectorTag)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(sector_t);
+	 PARAM_INT(index);
+	 ACTION_RETURN_INT(level.tagManager.GetSectorTag(self, index));
+ }
+
  static int Get3DFloorTexture(F3DFloor *self, int pos)
  {
  	 if ( pos )
@@ -1199,10 +1222,34 @@ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, SetXOffset, SetXOffset)
 	 return self->getPortalAlignment();
  }
 
+ DEFINE_ACTION_FUNCTION(_Line, getPortalFlags)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(line_t);
+	 ACTION_RETURN_INT(self->getPortalFlags());
+ }
+
  DEFINE_ACTION_FUNCTION_NATIVE(_Line, getPortalAlignment, getPortalAlignment)
  {
 	 PARAM_SELF_STRUCT_PROLOGUE(line_t);
 	 ACTION_RETURN_INT(self->getPortalAlignment());
+ }
+
+ DEFINE_ACTION_FUNCTION(_Line, getPortalType)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(line_t);
+	 ACTION_RETURN_INT(self->getPortalType());
+ }
+
+ DEFINE_ACTION_FUNCTION(_Line, getPortalDisplacement)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(line_t);
+	 ACTION_RETURN_VEC2(self->getPortalDisplacement());
+ }
+
+ DEFINE_ACTION_FUNCTION(_Line, getPortalAngleDiff)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(line_t);
+	 ACTION_RETURN_FLOAT(self->getPortalAngleDiff().Degrees());
  }
 
  static int LineIndex(line_t *self)
@@ -1214,6 +1261,29 @@ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, SetXOffset, SetXOffset)
  {
 	 PARAM_SELF_STRUCT_PROLOGUE(line_t);
 	 ACTION_RETURN_INT(LineIndex(self));
+ }
+
+ static int CountLineIDs(const line_t *self)
+ {
+	 return level.tagManager.CountLineIDs(self);
+ }
+
+ DEFINE_ACTION_FUNCTION_NATIVE(_Line, CountIDs, CountLineIDs)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(line_t);
+	 ACTION_RETURN_INT(level.tagManager.CountLineIDs(self));
+ }
+
+ static int GetLineID(const line_t *self, int index)
+ {
+	 return level.tagManager.GetLineID(self, index);
+ }
+
+ DEFINE_ACTION_FUNCTION_NATIVE(_Line, GetID, GetLineID)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(line_t);
+	 PARAM_INT(index);
+	 ACTION_RETURN_INT(level.tagManager.GetLineID(self, index));
  }
 
  //===========================================================================
@@ -2271,7 +2341,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, GetChecksum)
 
 	for (int j = 0; j < 16; ++j)
 	{
-		sprintf(md5string + j * 2, "%02x", self->md5[j]);
+		snprintf(md5string + j * 2, 3, "%02x", self->md5[j]);
 	}
 
 	ACTION_RETURN_STRING((const char*)md5string);
@@ -2428,7 +2498,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, GetDisplacement)
 	DVector2 ofs(0, 0);
 	if (pg1 != pg2)
 	{
-		int i = pg1 + self->Displacements.size * pg2;
+		unsigned i = pg1 + self->Displacements.size * pg2;
 		if (i < self->Displacements.data.Size())
 			ofs = self->Displacements.data[i].pos;
 	}
@@ -2668,7 +2738,7 @@ DEFINE_ACTION_FUNCTION(_LevelInfo, MapChecksum)
 		map->GetChecksum(cksum);
 		for (int j = 0; j < 16; ++j)
 		{
-			sprintf(md5string + j * 2, "%02x", cksum[j]);
+			snprintf(md5string + j * 2, 3, "%02x", cksum[j]);
 		}
 		delete map;
 	}
@@ -2719,6 +2789,7 @@ DEFINE_FIELD(FLevelLocals, sectors)
 DEFINE_FIELD(FLevelLocals, lines)
 DEFINE_FIELD(FLevelLocals, sides)
 DEFINE_FIELD(FLevelLocals, vertexes)
+DEFINE_FIELD(FLevelLocals, linePortals)
 DEFINE_FIELD(FLevelLocals, sectorPortals)
 DEFINE_FIELD(FLevelLocals, time)
 DEFINE_FIELD(FLevelLocals, maptime)

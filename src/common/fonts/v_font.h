@@ -167,6 +167,7 @@ public:
 		forceremap = other.forceremap;
 		Chars = other.Chars;
 		Translations = other.Translations;
+		lowercaselatinonly = other.lowercaselatinonly;
 		Lump = other.Lump;
 	}
 
@@ -174,7 +175,7 @@ protected:
 
 	void FixXMoves();
 
-	void ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height, const DVector2 &Scale);
+	void ReadSheetFont(std::vector<FileSys::FolderEntry> &folderdata, int width, int height, const DVector2 &Scale);
 
 	EFontType Type = EFontType::Unknown;
 	FName AltFontName = NAME_None;
@@ -189,6 +190,7 @@ protected:
 	bool noTranslate = false;
 	bool MixedCase = false;
 	bool forceremap = false;
+	bool lowercaselatinonly = false;
 	struct CharData
 	{
 		FGameTexture *OriginalPic = nullptr;
@@ -207,7 +209,6 @@ protected:
 	friend void V_ClearFonts();
 	friend void V_InitFonts();
 };
-
 
 extern FFont *SmallFont, *SmallFont2, *BigFont, *BigUpper, *ConFont, *IntermissionFont, *NewConsoleFont, *NewSmallFont, *CurrentConsoleFont, *OriginalSmallFont, *AlternativeSmallFont, *OriginalBigFont, *AlternativeBigFont;
 

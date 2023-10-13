@@ -63,12 +63,6 @@ bool IQMModel::Load(const char* path, int lumpnum, const char* buffer, int lengt
 		uint32_t num_extensions = reader.ReadUInt32();
 		uint32_t ofs_extensions = reader.ReadUInt32();
 
-		/*if (num_joints <= 0)
-		{
-			Printf("Invalid model: \"%s%s\", no joint data is present\n", path, fileSystem.GetLongName(mLumpNum).GetChars());
-			return false;
-		}*/
-
 		if (num_text == 0)
 			return false;
 
@@ -276,7 +270,7 @@ void IQMModel::LoadGeometry()
 {
 	try
 	{
-		FileData lumpdata = fileSystem.ReadFile(mLumpNum);
+		auto lumpdata = fileSystem.ReadFile(mLumpNum);
 		IQMFileReader reader(lumpdata.GetMem(), (int)lumpdata.GetSize());
 
 		Vertices.Resize(NumVertices);
@@ -528,15 +522,15 @@ const TArray<VSMatrix> IQMModel::CalculateBones(int frame1, int frame2, double i
 	const TArray<TRS>& animationFrames = animationData ? *animationData : TRSData;
 	if (Joints.Size() > 0)
 	{
-		int numbones = Joints.Size();
+		int numbones = Joints.SSize();
 
-		if (boneComponentData->trscomponents[index].Size() != numbones)
+		if (boneComponentData->trscomponents[index].SSize() != numbones)
 			boneComponentData->trscomponents[index].Resize(numbones);
-		if (boneComponentData->trsmatrix[index].Size() != numbones)
+		if (boneComponentData->trsmatrix[index].SSize() != numbones)
 			boneComponentData->trsmatrix[index].Resize(numbones);
 
-		frame1 = clamp(frame1, 0, ((int)animationFrames.Size() - 1) / numbones);
-		frame2 = clamp(frame2, 0, ((int)animationFrames.Size() - 1) / numbones);
+		frame1 = clamp(frame1, 0, (animationFrames.SSize() - 1) / numbones);
+		frame2 = clamp(frame2, 0, (animationFrames.SSize() - 1) / numbones);
 
 		int offset1 = frame1 * numbones;
 		int offset2 = frame2 * numbones;

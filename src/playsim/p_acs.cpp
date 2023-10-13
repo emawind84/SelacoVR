@@ -535,6 +535,7 @@
 		PLAYERINFO_PLAYERCLASS,
 		PLAYERINFO_FOV,
 		PLAYERINFO_DESIREDFOV,
+		PLAYERINFO_FVIEWBOB,
 	};
 
 
@@ -747,7 +748,7 @@ protected:
 	int DoSpawnSpot(int type, int spot, int tid, int angle, bool forced);
 	int DoSpawnSpotFacing(int type, int spot, int tid, bool forced);
 	int DoClassifyActor(int tid);
-	int CallFunction(int argCount, int funcIndex, int32_t *args);
+	int CallFunction(int argCount, int funcIndex, int32_t *args, int &needCount);
 
 	void DoFadeTo(int r, int g, int b, int a, int time);
 	void DoFadeRange(int r1, int g1, int b1, int a1, int r2, int g2, int b2, int a2, int time);
@@ -1929,7 +1930,7 @@ void FBehaviorContainer::LoadDefaultModules ()
 		FScanner sc(lump);
 		while (sc.GetString())
 		{
-			int acslump = fileSystem.CheckNumForName (sc.String, ns_acslibrary);
+			int acslump = fileSystem.CheckNumForName (sc.String, FileSys::ns_acslibrary);
 			if (acslump >= 0)
 			{
 				LoadModule (acslump);
@@ -2276,8 +2277,7 @@ bool FBehavior::Init(FLevelLocals *Level, int lumpnum, FileReader * fr, int len,
 
 	if (fr == NULL)
 	{
-		fileSystem.GetFileShortName (ModuleName, lumpnum);
-		ModuleName[8] = 0;
+		strcpy(ModuleName, fileSystem.GetFileShortName (lumpnum));
 	}
 	else
 	{
@@ -2567,7 +2567,7 @@ bool FBehavior::Init(FLevelLocals *Level, int lumpnum, FileReader * fr, int len,
 				if (parse[i])
 				{
 					FBehavior *module = NULL;
-					int lump = fileSystem.CheckNumForName (&parse[i], ns_acslibrary);
+					int lump = fileSystem.CheckNumForName (&parse[i], FileSys::ns_acslibrary);
 					if (lump < 0)
 					{
 						Printf (TEXTCOLOR_RED "Could not find ACS library %s.\n", &parse[i]);
@@ -3997,55 +3997,56 @@ int DoGetMasterTID (AActor *self)
 
 enum
 {
-	APROP_Health		= 0,
-	APROP_Speed			= 1,
-	APROP_Damage		= 2,
-	APROP_Alpha			= 3,
-	APROP_RenderStyle	= 4,
-	APROP_SeeSound		= 5,	// Sounds can only be set, not gotten
-	APROP_AttackSound	= 6,
-	APROP_PainSound		= 7,
-	APROP_DeathSound	= 8,
-	APROP_ActiveSound	= 9,
-	APROP_Ambush		= 10,
-	APROP_Invulnerable	= 11,
-	APROP_JumpZ			= 12,	// [GRB]
-	APROP_ChaseGoal		= 13,
-	APROP_Frightened	= 14,
-	APROP_Gravity		= 15,
-	APROP_Friendly		= 16,
-	APROP_SpawnHealth   = 17,
-	APROP_Dropped		= 18,
-	APROP_Notarget		= 19,
-	APROP_Species		= 20,
-	APROP_NameTag		= 21,
-	APROP_Score			= 22,
-	APROP_Notrigger		= 23,
-	APROP_DamageFactor	= 24,
-	APROP_MasterTID     = 25,
-	APROP_TargetTID		= 26,
-	APROP_TracerTID		= 27,
-	APROP_WaterLevel	= 28,
-	APROP_ScaleX        = 29,
-	APROP_ScaleY        = 30,
-	APROP_Dormant		= 31,
-	APROP_Mass			= 32,
-	APROP_Accuracy      = 33,
-	APROP_Stamina       = 34,
-	APROP_Height		= 35,
-	APROP_Radius		= 36,
-	APROP_ReactionTime  = 37,
-	APROP_MeleeRange	= 38,
-	APROP_ViewHeight	= 39,
-	APROP_AttackZOffset	= 40,
-	APROP_StencilColor	= 41,
-	APROP_Friction		= 42,
-	APROP_DamageMultiplier=43,
-	APROP_MaxStepHeight	= 44,
-	APROP_MaxDropOffHeight= 45,
-	APROP_DamageType	= 46,
-	APROP_SoundClass	= 47,
-	APROP_FriendlySeeBlocks= 48,
+	APROP_Health				= 0,
+	APROP_Speed					= 1,
+	APROP_Damage				= 2,
+	APROP_Alpha					= 3,
+	APROP_RenderStyle			= 4,
+	APROP_SeeSound				= 5,	// Sounds can only be set, not gotten
+	APROP_AttackSound			= 6,
+	APROP_PainSound				= 7,
+	APROP_DeathSound			= 8,
+	APROP_ActiveSound			= 9,
+	APROP_Ambush				= 10,
+	APROP_Invulnerable			= 11,
+	APROP_JumpZ					= 12,	// [GRB]
+	APROP_ChaseGoal				= 13,
+	APROP_Frightened			= 14,
+	APROP_Gravity				= 15,
+	APROP_Friendly				= 16,
+	APROP_SpawnHealth			= 17,
+	APROP_Dropped				= 18,
+	APROP_Notarget				= 19,
+	APROP_Species				= 20,
+	APROP_NameTag				= 21,
+	APROP_Score					= 22,
+	APROP_Notrigger				= 23,
+	APROP_DamageFactor			= 24,
+	APROP_MasterTID				= 25,
+	APROP_TargetTID				= 26,
+	APROP_TracerTID				= 27,
+	APROP_WaterLevel			= 28,
+	APROP_ScaleX				= 29,
+	APROP_ScaleY				= 30,
+	APROP_Dormant				= 31,
+	APROP_Mass					= 32,
+	APROP_Accuracy				= 33,
+	APROP_Stamina				= 34,
+	APROP_Height				= 35,
+	APROP_Radius				= 36,
+	APROP_ReactionTime			= 37,
+	APROP_MeleeRange			= 38,
+	APROP_ViewHeight			= 39,
+	APROP_AttackZOffset			= 40,
+	APROP_StencilColor			= 41,
+	APROP_Friction				= 42,
+	APROP_DamageMultiplier		= 43,
+	APROP_MaxStepHeight			= 44,
+	APROP_MaxDropOffHeight		= 45,
+	APROP_DamageType			= 46,
+	APROP_SoundClass			= 47,
+	APROP_FriendlySeeBlocks		= 48,
+	APROP_WaterDepth			= 49,
 };
 
 // These are needed for ACS's APROP_RenderStyle
@@ -4421,6 +4422,7 @@ int DLevelScript::GetActorProperty (int tid, int property)
 	case APROP_DamageType:	return GlobalACSStrings.AddString(actor->DamageType.GetChars());
 	case APROP_SoundClass:	return GlobalACSStrings.AddString(S_GetSoundClass(actor));
 	case APROP_FriendlySeeBlocks: return actor->friendlyseeblocks;
+	case APROP_WaterDepth: return DoubleToACS(actor->waterdepth);
 
 	default:				return 0;
 	}
@@ -4471,6 +4473,7 @@ int DLevelScript::CheckActorProperty (int tid, int property, int value)
 		case APROP_MaxDropOffHeight:
 		case APROP_StencilColor:
 		case APROP_FriendlySeeBlocks:
+		case APROP_WaterDepth:
 			return (GetActorProperty(tid, property) == value);
 
 		// Boolean values need to compare to a binary version of value
@@ -5319,46 +5322,60 @@ int DLevelScript::SwapActorTeleFog(AActor *activator, int tid)
 	return retval;
 }
 
-int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
+// Macro for CallFunction. Checks passed number of arguments with minimum required. Sets needCount and returns if not enough.
+#define MIN_ARG_COUNT(minCount) do { if (argCount < minCount) { needCount = minCount; return 0; } } while(0)
+
+int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args, int &needCount)
 {
 	AActor *actor;
 	switch(funcIndex)
 	{
 		case ACSF_GetLineUDMFInt:
+			MIN_ARG_COUNT(2);
 			return GetUDMFInt(Level, UDMF_Line, LineFromID(args[0]), Level->Behaviors.LookupString(args[1]));
 
 		case ACSF_GetLineUDMFFixed:
+			MIN_ARG_COUNT(2);
 			return DoubleToACS(GetUDMFFloat(Level, UDMF_Line, LineFromID(args[0]), Level->Behaviors.LookupString(args[1])));
 
 		case ACSF_GetThingUDMFInt:
 		case ACSF_GetThingUDMFFixed:
+			MIN_ARG_COUNT(2);
 			return 0;	// Not implemented yet
 
 		case ACSF_GetSectorUDMFInt:
+			MIN_ARG_COUNT(2);
 			return GetUDMFInt(Level, UDMF_Sector, Level->FindFirstSectorFromTag(args[0]), Level->Behaviors.LookupString(args[1]));
 
 		case ACSF_GetSectorUDMFFixed:
+			MIN_ARG_COUNT(2);
 			return DoubleToACS(GetUDMFFloat(Level, UDMF_Sector, Level->FindFirstSectorFromTag(args[0]), Level->Behaviors.LookupString(args[1])));
 
 		case ACSF_GetSideUDMFInt:
+			MIN_ARG_COUNT(3);
 			return GetUDMFInt(Level, UDMF_Side, SideFromID(args[0], args[1]), Level->Behaviors.LookupString(args[2]));
 
 		case ACSF_GetSideUDMFFixed:
+			MIN_ARG_COUNT(3);
 			return DoubleToACS(GetUDMFFloat(Level, UDMF_Side, SideFromID(args[0], args[1]), Level->Behaviors.LookupString(args[2])));
 
 		case ACSF_GetActorVelX:
+			MIN_ARG_COUNT(1);
 			actor = Level->SingleActorFromTID(args[0], activator);
 			return actor != NULL? DoubleToACS(actor->Vel.X) : 0;
 
 		case ACSF_GetActorVelY:
+			MIN_ARG_COUNT(1);
 			actor = Level->SingleActorFromTID(args[0], activator);
 			return actor != NULL? DoubleToACS(actor->Vel.Y) : 0;
 
 		case ACSF_GetActorVelZ:
+			MIN_ARG_COUNT(1);
 			actor = Level->SingleActorFromTID(args[0], activator);
 			return actor != NULL? DoubleToACS(actor->Vel.Z) : 0;
 
 		case ACSF_SetPointer:
+			MIN_ARG_COUNT(2);
 			if (activator)
 			{
 				AActor *ptr = Level->SingleActorFromTID(args[1], activator);
@@ -5373,6 +5390,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 			return 0;
 
 		case ACSF_SetActivator:
+			MIN_ARG_COUNT(1);
 			if (argCount > 1 && args[1] != AAPTR_DEFAULT) // condition (x != AAPTR_DEFAULT) is essentially condition (x).
 			{
 				activator = COPY_AAPTREX(Level, Level->SingleActorFromTID(args[0], activator), args[1]);
@@ -5384,6 +5402,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 			return activator != NULL;
 		
 		case ACSF_SetActivatorToTarget:
+			MIN_ARG_COUNT(1);
 			// [KS] I revised this a little bit
 			actor = Level->SingleActorFromTID(args[0], activator);
 			if (actor != NULL)
@@ -5407,6 +5426,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 			return 0;
 
 		case ACSF_GetActorViewHeight:
+			MIN_ARG_COUNT(1);
 			actor = Level->SingleActorFromTID(args[0], activator);
 			if (actor != NULL)
 			{
@@ -5422,6 +5442,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 			else return 0;
 
 		case ACSF_GetChar:
+			MIN_ARG_COUNT(2);
 		{
 			const char *p = Level->Behaviors.LookupString(args[0]);
 			if (p != NULL && args[1] >= 0 && args[1] < int(strlen(p)))
@@ -5435,6 +5456,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 
 		case ACSF_GetAirSupply:
+			MIN_ARG_COUNT(1);
 		{
 			if (args[0] < 0 || args[0] >= MAXPLAYERS || !Level->PlayerInGame(args[0]))
 			{
@@ -5447,6 +5469,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 
 		case ACSF_SetAirSupply:
+			MIN_ARG_COUNT(2);
 		{
 			if (args[0] < 0 || args[0] >= MAXPLAYERS || !Level->PlayerInGame(args[0]))
 			{
@@ -5460,6 +5483,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 
 		case ACSF_SetSkyScrollSpeed:
+			MIN_ARG_COUNT(2);
 		{
 			if (args[0] == 1) Level->skyspeed1 = ACSToFloat(args[1]);
 			else if (args[0] == 2) Level->skyspeed2 = ACSToFloat(args[1]);
@@ -5467,6 +5491,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 
 		case ACSF_GetArmorType:
+			MIN_ARG_COUNT(2);
 		{
 			if (args[1] < 0 || args[1] >= MAXPLAYERS || !Level->PlayerInGame(args[1]))
 			{
@@ -5482,6 +5507,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 
 		case ACSF_GetArmorInfo:
+			MIN_ARG_COUNT(1);
 		{
 			if (activator == NULL || activator->player == NULL) return 0;
 
@@ -5517,15 +5543,19 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 
 		case ACSF_SpawnSpotForced:
+			MIN_ARG_COUNT(4);
 			return DoSpawnSpot(args[0], args[1], args[2], args[3], true);
 
 		case ACSF_SpawnSpotFacingForced:
+			MIN_ARG_COUNT(3);
 			return DoSpawnSpotFacing(args[0], args[1], args[2], true);
 
 		case ACSF_CheckActorProperty:
+			MIN_ARG_COUNT(3);
 			return (CheckActorProperty(args[0], args[1], args[2]));
         
         case ACSF_SetActorVelocity:
+			MIN_ARG_COUNT(6);
 		{
 			DVector3 vel(ACSToDouble(args[1]), ACSToDouble(args[2]), ACSToDouble(args[3]));
 			if (args[0] == 0)
@@ -5545,6 +5575,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 
 		case ACSF_SetUserVariable:
+			MIN_ARG_COUNT(3);
 		{
 			int cnt = 0;
 			FName varname(Level->Behaviors.LookupString(args[1]), true);
@@ -5573,6 +5604,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 		
 		case ACSF_GetUserVariable:
+			MIN_ARG_COUNT(2);
 		{
 			FName varname(Level->Behaviors.LookupString(args[1]), true);
 			if (varname != NAME_None)
@@ -5584,6 +5616,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 
 		case ACSF_SetUserArray:
+			MIN_ARG_COUNT(4);
 		{
 			int cnt = 0;
 			FName varname(Level->Behaviors.LookupString(args[1]), true);
@@ -5612,6 +5645,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 		
 		case ACSF_GetUserArray:
+			MIN_ARG_COUNT(3);
 		{
 			FName varname(Level->Behaviors.LookupString(args[1]), true);
 			if (varname != NAME_None)
@@ -5623,22 +5657,26 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 
 		case ACSF_Radius_Quake2:
-			P_StartQuake(Level, activator, args[0], args[1], args[2], args[3], args[4], S_FindSound(Level->Behaviors.LookupString(args[5])));
+			MIN_ARG_COUNT(6);
+			P_StartQuake(Level, activator, args[0], (double)args[1], args[2], args[3], args[4], S_FindSound(Level->Behaviors.LookupString(args[5])));
 			break;
 
 		case ACSF_CheckActorClass:
+			MIN_ARG_COUNT(2);
 		{
 			AActor *a = Level->SingleActorFromTID(args[0], activator);
 			return a == NULL ? false : a->GetClass()->TypeName == FName(Level->Behaviors.LookupString(args[1]));
 		}
 
 		case ACSF_GetActorClass:
+			MIN_ARG_COUNT(1);
 		{
 			AActor *a = Level->SingleActorFromTID(args[0], activator);
 			return GlobalACSStrings.AddString(a == NULL ? "None" : a->GetClass()->TypeName.GetChars());
 		}
 
 		case ACSF_SoundSequenceOnActor:
+			MIN_ARG_COUNT(2);
 			{
 				const char *seqname = Level->Behaviors.LookupString(args[1]);
 				if (seqname != NULL)
@@ -5665,6 +5703,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 			break;
 
 		case ACSF_SoundSequenceOnSector:
+			MIN_ARG_COUNT(3);
 			{
 				const char *seqname = Level->Behaviors.LookupString(args[1]);
 				int space = args[2] < CHAN_FLOOR || args[2] > CHAN_INTERIOR ? CHAN_FULLHEIGHT : args[2];
@@ -5681,6 +5720,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 			break;
 
 		case ACSF_SoundSequenceOnPolyobj:
+			MIN_ARG_COUNT(2);
 			{
 				const char *seqname = Level->Behaviors.LookupString(args[1]);
 				if (seqname != NULL)
@@ -5695,6 +5735,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 			break;
 
 		case ACSF_GetPolyobjX:
+			MIN_ARG_COUNT(1);
 			{
 				FPolyObj *poly = Level->GetPolyobj(args[0]);
 				if (poly != NULL)
@@ -5705,6 +5746,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 			return FIXED_MAX;
 
 		case ACSF_GetPolyobjY:
+			MIN_ARG_COUNT(1);
 			{
 				FPolyObj *poly = Level->GetPolyobj(args[0]);
 				if (poly != NULL)
@@ -5715,6 +5757,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 			return FIXED_MAX;
         
         case ACSF_CheckSight:
+			MIN_ARG_COUNT(3);
         {
 			AActor *source;
 			AActor *dest;
@@ -5760,7 +5803,8 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
         }
 
 		case ACSF_SpawnForced:
-			return DoSpawn(args[0], args[1], args[2], args[3], args[4], args[5], true);
+			MIN_ARG_COUNT(4);
+			return DoSpawn(args[0], args[1], args[2], args[3], argCount > 4 ? args[4] : 0, argCount > 5 ? args[5] : 0, true);
 
 		case ACSF_ACS_NamedExecute:
 		case ACSF_ACS_NamedSuspend:
@@ -5769,6 +5813,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		case ACSF_ACS_NamedLockedExecuteDoor:
 		case ACSF_ACS_NamedExecuteWithResult:
 		case ACSF_ACS_NamedExecuteAlways:
+			MIN_ARG_COUNT(1);
 			{
 				int scriptnum = -FName(Level->Behaviors.LookupString(args[0])).GetIndex();
 				int arg1 = argCount > 1 ? args[1] : 0;
@@ -5785,15 +5830,19 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 			return Level->FindUniqueTID(argCount > 0 ? args[0] : 0, (argCount > 1 && args[1] >= 0) ? args[1] : 0);
 
 		case ACSF_IsTIDUsed:
+			MIN_ARG_COUNT(1);
 			return Level->IsTIDUsed(args[0]);
 
 		case ACSF_Sqrt:
+			MIN_ARG_COUNT(1);
 			return xs_FloorToInt(g_sqrt(double(args[0])));
 
 		case ACSF_FixedSqrt:
+			MIN_ARG_COUNT(1);
 			return DoubleToACS(g_sqrt(ACSToDouble(args[0])));
 
 		case ACSF_VectorLength:
+			MIN_ARG_COUNT(2);
 			return DoubleToACS(DVector2(ACSToDouble(args[0]), ACSToDouble(args[1])).Length());
 
 		case ACSF_SetHUDClipRect:
@@ -5810,56 +5859,36 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 			break;
 
 		case ACSF_GetCVarString:
-			if (argCount == 1)
-			{
-				return DoGetCVar(GetCVar(activator && activator->player ? int(activator->player - players) : -1, Level->Behaviors.LookupString(args[0])), true);
-			}
-			break;
+			MIN_ARG_COUNT(1);
+			return DoGetCVar(GetCVar(activator && activator->player ? int(activator->player - players) : -1, Level->Behaviors.LookupString(args[0])), true);
 
 		case ACSF_SetCVar:
-			if (argCount == 2)
-			{
-				return SetCVar(activator, Level->Behaviors.LookupString(args[0]), args[1], false);
-			}
-			break;
+			MIN_ARG_COUNT(2);
+			return SetCVar(activator, Level->Behaviors.LookupString(args[0]), args[1], false);
 
 		case ACSF_SetCVarString:
-			if (argCount == 2)
-			{
-				return SetCVar(activator, Level->Behaviors.LookupString(args[0]), args[1], true);
-			}
-			break;
+			MIN_ARG_COUNT(2);
+			return SetCVar(activator, Level->Behaviors.LookupString(args[0]), args[1], true);
 
 		case ACSF_GetUserCVar:
-			if (argCount == 2)
-			{
-				return DoGetCVar(G_GetUserCVar(args[0], Level->Behaviors.LookupString(args[1])), false);
-			}
-			break;
+			MIN_ARG_COUNT(2);
+			return DoGetCVar(G_GetUserCVar(args[0], Level->Behaviors.LookupString(args[1])), false);
 
 		case ACSF_GetUserCVarString:
-			if (argCount == 2)
-			{
-				return DoGetCVar(G_GetUserCVar(args[0], Level->Behaviors.LookupString(args[1])), true);
-			}
-			break;
+			MIN_ARG_COUNT(2);
+			return DoGetCVar(G_GetUserCVar(args[0], Level->Behaviors.LookupString(args[1])), true);
 
 		case ACSF_SetUserCVar:
-			if (argCount == 3)
-			{
-				return SetUserCVar(args[0], Level->Behaviors.LookupString(args[1]), args[2], false);
-			}
-			break;
+			MIN_ARG_COUNT(3);
+			return SetUserCVar(args[0], Level->Behaviors.LookupString(args[1]), args[2], false);
 
 		case ACSF_SetUserCVarString:
-			if (argCount == 3)
-			{
-				return SetUserCVar(args[0], Level->Behaviors.LookupString(args[1]), args[2], true);
-			}
-			break;
+			MIN_ARG_COUNT(3);
+			return SetUserCVar(args[0], Level->Behaviors.LookupString(args[1]), args[2], true);
 
 		//[RC] A bullet firing function for ACS. Thanks to DavidPH.
 		case ACSF_LineAttack:
+			MIN_ARG_COUNT(4);
 			{
 				DAngle angle		= ACSToAngle(args[1]);
 				DAngle pitch		= ACSToAngle(args[2]);
@@ -5902,6 +5931,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		case ACSF_PlaySound:
 		case ACSF_PlayActorSound:
 			// PlaySound(tid, "SoundName", channel, volume, looping, attenuation, local)
+			MIN_ARG_COUNT(2);
 			{
 				FSoundID sid = NO_SOUND;
 
@@ -5948,6 +5978,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			break;
 
 		case ACSF_StopSound:
+			MIN_ARG_COUNT(1);
 			{
 				int chan = argCount > 1 ? args[1] : CHAN_BODY;
 
@@ -5970,6 +6001,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 
 		case ACSF_SoundVolume:
 			// SoundVolume(int tid, int channel, fixed volume)
+			MIN_ARG_COUNT(3);
 			{
 				int chan = args[1];
 				double volume = ACSToDouble(args[2]);
@@ -5993,7 +6025,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 
 		case ACSF_strcmp:
 		case ACSF_stricmp:
-			if (argCount >= 2)
+			MIN_ARG_COUNT(2);
 			{
 				const char *a, *b;
 				// If the string indicies are the same, then they are the same string.
@@ -6022,7 +6054,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 
 		case ACSF_StrLeft:
 		case ACSF_StrRight:
-			if (argCount >= 2)
+			MIN_ARG_COUNT(2);
 			{
 				const char *oldstr = Level->Behaviors.LookupString(args[0]);
 				if (oldstr == NULL || *oldstr == '\0')
@@ -6042,7 +6074,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			break;
 
 		case ACSF_StrMid:
-			if (argCount >= 3)
+			MIN_ARG_COUNT(3);
 			{
 				const char *oldstr = Level->Behaviors.LookupString(args[0]);
 				if (oldstr == NULL || *oldstr == '\0')
@@ -6079,6 +6111,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		case ACSF_SpawnDecal:
 			// int SpawnDecal(int tid, str decalname, int flags, fixed angle, int|fixed zoffset, int|fixed distance)
 			// Returns number of decals spawned (not including spreading)
+			MIN_ARG_COUNT(2);
 			{
 				int count = 0;
 				const FDecalTemplate *tpl = DecalLibrary.GetDecalByName(Level->Behaviors.LookupString(args[1]));
@@ -6113,9 +6146,11 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 
 		case ACSF_CheckFont:
 			// bool CheckFont(str fontname)
+			MIN_ARG_COUNT(1);
 			return V_GetFont(Level->Behaviors.LookupString(args[0])) != NULL;
 
 		case ACSF_DropItem:
+			MIN_ARG_COUNT(2);
 		{
 			const char *type = Level->Behaviors.LookupString(args[1]);
 			int amount = argCount >= 3? args[2] : -1;
@@ -6149,6 +6184,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_DropInventory:
+			MIN_ARG_COUNT(2);
 		{
 			const char *type = Level->Behaviors.LookupString(args[1]);
 			AActor *inv;
@@ -6185,6 +6221,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_CheckFlag:
+			MIN_ARG_COUNT(2);
 		{
 			AActor *actor = Level->SingleActorFromTID(args[0], activator);
 			if (actor != NULL)
@@ -6195,6 +6232,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_QuakeEx:
+			MIN_ARG_COUNT(8);
 		{
 			return P_StartQuakeXYZ(Level, activator, args[0], args[1], args[2], args[3], args[4], args[5], args[6], S_FindSound(Level->Behaviors.LookupString(args[7])),
 				argCount > 8 ? args[8] : 0,
@@ -6204,15 +6242,18 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 				argCount > 12 ? args[12] : 0,
 				argCount > 13 ? args[13] : 0,
 				argCount > 14 ? ACSToDouble(args[14]) : 0,
-				argCount > 15 ? ACSToDouble(args[15]) : 0);
+				argCount > 15 ? ACSToDouble(args[15]) : 0,
+				argCount > 16 ? ACSToDouble(args[16]) : 1.0,
+				argCount > 17 ? ACSToDouble(args[17]) : 0.5,
+				argCount > 18 ? args[18] : 0);
 		}
 
 		case ACSF_SetLineActivation:
-			if (argCount >= 2)
+			MIN_ARG_COUNT(2);
 			{
 				int line;
 				auto itr = Level->GetLineIdIterator(args[0]);
-				int repeat = argCount > 2? args[2] : -1;
+				int repeat = argCount > 2 ? args[2] : -1;
 				while ((line = itr.Next()) >= 0)
 				{
 					Level->lines[line].activation = args[1];
@@ -6223,7 +6264,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			break;
 
 		case ACSF_GetLineActivation:
-			if (argCount > 0)
+			MIN_ARG_COUNT(1);
 			{
 				int line = Level->FindFirstLineFromID(args[0]);
 				return line >= 0 ? Level->lines[line].activation : 0;
@@ -6231,7 +6272,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			break;
 
 		case ACSF_GetActorPowerupTics:
-			if (argCount >= 2)
+			MIN_ARG_COUNT(2);
 			{
 				PClassActor *powerupclass = PClass::FindActor(Level->Behaviors.LookupString(args[1]));
 				if (powerupclass == NULL || !powerupclass->IsDescendantOf(NAME_Powerup))
@@ -6252,32 +6293,26 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			break;
 
 		case ACSF_ChangeActorAngle:
-			if (argCount >= 2)
-			{
-				SetActorAngle(activator, args[0], args[1], argCount > 2 ? !!args[2] : false);
-			}
+			MIN_ARG_COUNT(2);
+			SetActorAngle(activator, args[0], args[1], argCount > 2 ? !!args[2] : false);
 			break;
 
 		case ACSF_ChangeActorPitch:
-			if (argCount >= 2)
-			{
-				SetActorPitch(activator, args[0], args[1], argCount > 2 ? !!args[2] : false);
-			}
+			MIN_ARG_COUNT(2);
+			SetActorPitch(activator, args[0], args[1], argCount > 2 ? !!args[2] : false);
 			break;
+
 		case ACSF_SetActorTeleFog:
-			if (argCount >= 3)
-			{
-				SetActorTeleFog(activator, args[0], Level->Behaviors.LookupString(args[1]), Level->Behaviors.LookupString(args[2]));
-			}
+			MIN_ARG_COUNT(3);
+			SetActorTeleFog(activator, args[0], Level->Behaviors.LookupString(args[1]), Level->Behaviors.LookupString(args[2]));
 			break;
+
 		case ACSF_SwapActorTeleFog:
-			if (argCount >= 1)
-			{
-				return SwapActorTeleFog(activator, args[0]);
-			}
-			break;
+			MIN_ARG_COUNT(1);
+			return SwapActorTeleFog(activator, args[0]);
+
 		case ACSF_PickActor:
-			if (argCount >= 5)
+			MIN_ARG_COUNT(5);
 			{
 				actor = Level->SingleActorFromTID(args[0], activator);
 				if (actor == NULL)
@@ -6322,6 +6357,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			break;
 
 		case ACSF_IsPointerEqual:
+			MIN_ARG_COUNT(2);
 			{
 				int tid1 = 0, tid2 = 0;
 				switch (argCount)
@@ -6338,7 +6374,8 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			break;
 
 		case ACSF_CanRaiseActor:
-			if (argCount >= 1) {
+			MIN_ARG_COUNT(1);
+			{
 				if (args[0] == 0) {
 					actor = Level->SingleActorFromTID(args[0], activator);
 					if (actor != NULL) {
@@ -6350,7 +6387,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 				bool canraiseall = true;
 				while ((actor = iterator.Next()))
 				{
-					canraiseall = P_Thing_CanRaise(actor) & canraiseall;
+					canraiseall &= P_Thing_CanRaise(actor);
 				}
 				
 				return canraiseall;
@@ -6359,22 +6396,23 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 
 		// [Nash] Actor roll functions. Let's roll!
 		case ACSF_SetActorRoll:
+			MIN_ARG_COUNT(2);
 			SetActorRoll(activator, args[0], args[1], false);
-			return 0;
+			break;
 
 		case ACSF_ChangeActorRoll:
-			if (argCount >= 2)
-			{
-				SetActorRoll(activator, args[0], args[1], argCount > 2 ? !!args[2] : false);
-			}
+			MIN_ARG_COUNT(2);
+			SetActorRoll(activator, args[0], args[1], argCount > 2 ? !!args[2] : false);
 			break;
 
 		case ACSF_GetActorRoll:
+			MIN_ARG_COUNT(1);
 			actor = Level->SingleActorFromTID(args[0], activator);
 			return actor != NULL? AngleToACS(actor->Angles.Roll) : 0;
 		
 		// [ZK] A_Warp in ACS
 		case ACSF_Warp:
+			MIN_ARG_COUNT(6);
 		{
 			if (nullptr == activator)
 			{
@@ -6426,6 +6464,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			return true;
 		}
 		case ACSF_GetMaxInventory:
+			MIN_ARG_COUNT(2);
 			actor = Level->SingleActorFromTID(args[0], activator);
 			if (actor != NULL)
 			{
@@ -6434,7 +6473,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			break;
 
 		case ACSF_SetSectorDamage:
-			if (argCount >= 2)
+			MIN_ARG_COUNT(2);
 			{
 				auto it = Level->GetSectorTagIterator(args[0]);
 				int s;
@@ -6451,7 +6490,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			break;
 
 		case ACSF_SetSectorTerrain:
-			if (argCount >= 3)
+			MIN_ARG_COUNT(3);
 			{
 				if (args[1] == sector_t::floor || args[1] == sector_t::ceiling)
 				{
@@ -6467,6 +6506,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			break;
 		
 		case ACSF_SpawnParticle:
+			MIN_ARG_COUNT(1);
 		{
 			PalEntry color = args[0];
 			bool fullbright = argCount > 1 ? !!args[1] : false;
@@ -6499,10 +6539,12 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		break;
 
 		case ACSF_SetMusicVolume:
+			MIN_ARG_COUNT(1);
 			Level->SetMusicVolume(ACSToFloat(args[0]));
 			break;
 
 		case ACSF_CheckProximity:
+			MIN_ARG_COUNT(3);
 		{
 			// [zombie] ACS version of A_CheckProximity
 			actor = Level->SingleActorFromTID(args[0], activator);
@@ -6515,6 +6557,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_CheckActorState:
+			MIN_ARG_COUNT(2);
 		{
 			actor = Level->SingleActorFromTID(args[0], activator);
 			const char *statename = Level->Behaviors.LookupString(args[1]);
@@ -6527,12 +6570,14 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_CheckClass:
+			MIN_ARG_COUNT(1);
 		{
 			const char *clsname = Level->Behaviors.LookupString(args[0]);
 			return !!PClass::FindActor(clsname);
 		}
 		
 		case ACSF_DamageActor: // [arookas] wrapper around P_DamageMobj
+			MIN_ARG_COUNT(6);
 		{
 			// (target, ptr_select1, inflictor, ptr_select2, amount, damagetype)
 			AActor* target = COPY_AAPTREX(Level, Level->SingleActorFromTID(args[0], activator), args[1]);
@@ -6542,6 +6587,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_SetActorFlag:
+			MIN_ARG_COUNT(3);
 		{
 			int tid = args[0];
 			FString flagname = Level->Behaviors.LookupString(args[1]);
@@ -6570,6 +6616,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_SetTranslation:
+			MIN_ARG_COUNT(2);
 		{
 			int tid = args[0];
 			const char *trname = Level->Behaviors.LookupString(args[1]);
@@ -6591,6 +6638,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 
 		// OpenGL exclusive functions
 		case ACSF_SetSectorGlow:
+			MIN_ARG_COUNT(6);
 		{
 			int which = !!args[1];
 			PalEntry color(args[2], args[3], args[4]);
@@ -6608,6 +6656,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_SetFogDensity:
+			MIN_ARG_COUNT(2);
 		{
 			auto it = Level->GetSectorTagIterator(args[0]);
 			int s;
@@ -6620,6 +6669,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_GetActorFloorTexture:
+			MIN_ARG_COUNT(1);
 		{
 			auto a = Level->SingleActorFromTID(args[0], activator);
 			if (a != nullptr)
@@ -6634,6 +6684,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_GetActorFloorTerrain:
+			MIN_ARG_COUNT(1);
 		{
 			auto a = Level->SingleActorFromTID(args[0], activator);
 			if (a != nullptr)
@@ -6648,25 +6699,32 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_StrArg:
+			MIN_ARG_COUNT(1);
 			return -FName(Level->Behaviors.LookupString(args[0])).GetIndex();
 
 		case ACSF_Floor:
+			MIN_ARG_COUNT(1);
 			return args[0] & ~0xffff;
 
 		case ACSF_Ceil:
+			MIN_ARG_COUNT(1);
 			return (args[0] & ~0xffff) + 0x10000;
 
 		case ACSF_Round:
+			MIN_ARG_COUNT(1);
 			return (args[0] + 32768) & ~0xffff;
 
 		case ACSF_ScriptCall:
+			MIN_ARG_COUNT(1);
 			return ScriptCall(activator, argCount, args);
 
 		case ACSF_StartSlideshow:
+			MIN_ARG_COUNT(1);
 			G_StartSlideshow(Level, FName(Level->Behaviors.LookupString(args[0])));
 			break;
 
 		case ACSF_GetSectorHealth:
+			MIN_ARG_COUNT(2);
 		{
 			int part = args[1];
 			auto it = Level->GetSectorTagIterator(args[0]);
@@ -6694,6 +6752,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_GetLineHealth:
+			MIN_ARG_COUNT(1);
 		{
 			auto it = Level->GetLineIdIterator(args[0]);
 			int l = it.Next();
@@ -6711,6 +6770,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 
 		case ACSF_GetLineX:
 		case ACSF_GetLineY:
+			MIN_ARG_COUNT(3);
 		{
 			auto it = Level->GetLineIdIterator(args[0]);
 			int lineno = it.Next();
@@ -6726,22 +6786,20 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		}
 
 		case ACSF_SetSubtitleNumber:
-			if (argCount >= 2)
+			MIN_ARG_COUNT(2);
+			// only players allowed as activator
+			if (activator != nullptr && activator->player != nullptr)
 			{
-				// only players allowed as activator
-				if (activator != nullptr && activator->player != nullptr)
+				int logNum = args[0];
+				FSoundID sid = NO_SOUND;
+
+				const char* lookup = Level->Behaviors.LookupString(args[1]);
+				if (lookup != nullptr)
 				{
-					int logNum = args[0];
-					FSoundID sid = NO_SOUND;
-
-					const char* lookup = Level->Behaviors.LookupString(args[1]);
-					if (lookup != nullptr)
-					{
-						sid = S_FindSound(lookup);
-					}
-
-					activator->player->SetSubtitle(logNum, sid);
+					sid = S_FindSound(lookup);
 				}
+
+				activator->player->SetSubtitle(logNum, sid);
 			}
 			break;
 
@@ -6750,6 +6808,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 	}
 	return 0;
 }
+#undef MIN_ARG_COUNT
 
 enum
 {
@@ -7163,7 +7222,12 @@ int DLevelScript::RunScript()
 				int argCount = NEXTBYTE;
 				int funcIndex = NEXTSHORT;
 
-				int retval = CallFunction(argCount, funcIndex, &STACK(argCount));
+				int retval, minCount = 0;
+				retval = CallFunction(argCount, funcIndex, &STACK(argCount), minCount);
+				if (minCount != 0)
+				{
+					Printf("Called ACS function index %d with too few args: %d (need %d)\n", funcIndex, argCount, minCount);
+				}
 				sp -= argCount-1;
 				STACK(1) = retval;
 			}
@@ -8769,7 +8833,7 @@ scriptwait:
 					if (type & HUDMSG_LOG)
 					{
 						int consolecolor = color >= CR_BRICK && color < NUM_TEXT_COLORS && color != CR_UNTRANSLATED ? color + 'A' : '-';
-						Printf(PRINT_NONOTIFY, "\n" TEXTCOLOR_ESCAPESTR "%c%s\n%s\n%s\n", consolecolor, console_bar, work.GetChars(), console_bar);
+						Printf(PRINT_HIGH | PRINT_NONOTIFY, "\n" TEXTCOLOR_ESCAPESTR "%c%s\n%s\n%s\n", consolecolor, console_bar, work.GetChars(), console_bar);
 					}
 				}
 			}
@@ -9958,6 +10022,7 @@ scriptwait:
 				case PLAYERINFO_PLAYERCLASS:	STACK(2) = userinfo->GetPlayerClassNum(); break;
 				case PLAYERINFO_DESIREDFOV:		STACK(2) = (int)pl->DesiredFOV; break;
 				case PLAYERINFO_FOV:			STACK(2) = (int)pl->FOV; break;
+				case PLAYERINFO_FVIEWBOB:		STACK(2) = (bool)userinfo->GetFViewBob(); break;
 				default:						STACK(2) = 0; break;
 				}
 			}

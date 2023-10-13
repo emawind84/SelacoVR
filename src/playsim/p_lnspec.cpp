@@ -941,6 +941,13 @@ FUNC(LS_Generic_Crusher2)
 						 SPEED(arg2), 0, arg4, arg3 ? 2 : 0, 0, DCeiling::ECrushMode::crushHexen);
 }
 
+FUNC(LS_Generic_CrusherDist)
+// Generic_CrusherDist (tag, dnspeed, upspeed, silent, damage)
+{
+	return Level->EV_DoCeiling(DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1),
+		SPEED(arg2), 8, arg4, arg3 ? 2 : 0, 0, (arg1 <= 24 && arg2 <= 24) ? DCeiling::ECrushMode::crushSlowdown : DCeiling::ECrushMode::crushDoom);
+}
+
 FUNC(LS_Plat_PerpetualRaise)
 // Plat_PerpetualRaise (tag, speed, delay)
 {
@@ -2161,7 +2168,7 @@ FUNC(LS_Light_Stop)
 FUNC(LS_Radius_Quake)
 // Radius_Quake (intensity, duration, damrad, tremrad, tid)
 {
-	return P_StartQuake (Level, it, arg4, arg0, arg1, arg2*64, arg3*64, S_FindSound("world/quake"));
+	return P_StartQuake (Level, it, arg4, (double)arg0, arg1, arg2*64, arg3*64, S_FindSound("world/quake"));
 }
 
 FUNC(LS_UsePuzzleItem)
@@ -2914,7 +2921,14 @@ enum
 	PROP_UNUSED1,
 	PROP_UNUSED2,
 	PROP_SPEED,
+
 	PROP_BUDDHA,
+	PROP_BUDDHA2,
+	PROP_FRIGHTENING,
+	PROP_NOCLIP,
+	PROP_NOCLIP2,
+	PROP_GODMODE,
+	PROP_GODMODE2,
 };
 
 FUNC(LS_SetPlayerProperty)
@@ -3035,24 +3049,43 @@ FUNC(LS_SetPlayerProperty)
 	// Set or clear a flag
 	switch (arg2)
 	{
-	case PROP_BUDDHA:
-		mask = CF_BUDDHA;
-		break;
-	case PROP_FROZEN:
-		mask = CF_FROZEN;
-		break;
-	case PROP_NOTARGET:
-		mask = CF_NOTARGET;
-		break;
-	case PROP_INSTANTWEAPONSWITCH:
-		mask = CF_INSTANTWEAPSWITCH;
-		break;
-	case PROP_FLY:
-		//mask = CF_FLY;
-		break;
-	case PROP_TOTALLYFROZEN:
-		mask = CF_TOTALLYFROZEN;
-		break;
+		case PROP_BUDDHA:
+			mask = CF_BUDDHA;
+			break;
+		case PROP_BUDDHA2:
+			mask = CF_BUDDHA2;
+			break;
+		case PROP_FROZEN:
+			mask = CF_FROZEN;
+			break;
+		case PROP_NOTARGET:
+			mask = CF_NOTARGET;
+			break;
+		case PROP_INSTANTWEAPONSWITCH:
+			mask = CF_INSTANTWEAPSWITCH;
+			break;
+		//CF_FLY has special handling
+		case PROP_FLY:
+			//mask = CF_FLY;
+			break;
+		case PROP_TOTALLYFROZEN:
+			mask = CF_TOTALLYFROZEN;
+			break;
+		case PROP_FRIGHTENING:
+			mask = CF_FRIGHTENING;
+			break;
+		case PROP_NOCLIP:
+			mask = CF_NOCLIP;
+			break;
+		case PROP_NOCLIP2:
+			mask = CF_NOCLIP|CF_NOCLIP2; //Both must be on.
+			break;
+		case PROP_GODMODE:
+			mask = CF_GODMODE;
+			break;
+		case PROP_GODMODE2:
+			mask = CF_GODMODE2;
+			break;
 	}
 
 	if (arg0 == 0)
@@ -3837,6 +3870,7 @@ static lnSpecFunc LineSpecials[] =
 	/* 281 */ LS_Line_SetAutomapFlags,
 	/* 282 */ LS_Line_SetAutomapStyle,
 	/* 283 */ LS_Polyobj_StopSound,
+	/* 284 */ LS_Generic_CrusherDist
 };
 
 #define DEFINE_SPECIAL(name, num, min, max, mmax) {#name, num, min, max, mmax},

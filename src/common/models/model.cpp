@@ -25,6 +25,7 @@
 ** General model handling code
 **
 **/
+#include <stddef.h> // offsetof() macro.
 
 #include "filesystem.h"
 #include "cmdlib.h"
@@ -121,7 +122,7 @@ FTextureID LoadSkin(const char * path, const char * fn)
 
 	int texlump = FindGFXFile(buffer);
 	const char * const texname = texlump < 0 ? fn : fileSystem.GetFileFullName(texlump);
-	return TexMan.CheckForTexture(texname, ETextureType::Any, FTextureManager::TEXMAN_TryAny);
+	return TexMan.CheckForTexture(texname, ETextureType::Any, FTextureManager::TEXMAN_TryAny | FTextureManager::TEXMAN_ForceLookup);
 }
 
 //===========================================================================
@@ -132,17 +133,7 @@ FTextureID LoadSkin(const char * path, const char * fn)
 
 int ModelFrameHash(FSpriteModelFrame * smf)
 {
-	const uint32_t *table = GetCRCTable ();
-	uint32_t hash = 0xffffffff;
-
-	const char * s = (const char *)(&smf->type);	// this uses type, sprite and frame for hashing
-	const char * se= (const char *)(&smf->hashnext);
-
-	for (; s<se; s++)
-	{
-		hash = CRC1 (hash, *s, table);
-	}
-	return hash ^ 0xffffffff;
+	return crc32(0, (const unsigned char *)(&smf->type), offsetof(FSpriteModelFrame, hashnext) - offsetof(FSpriteModelFrame, type));
 }
 
 //===========================================================================
@@ -172,8 +163,8 @@ unsigned FindModel(const char * path, const char * modelfile, bool silent)
 	}
 
 	int len = fileSystem.FileLength(lump);
-	FileData lumpd = fileSystem.ReadFile(lump);
-	char * buffer = (char*)lumpd.GetMem();
+	auto lumpd = fileSystem.ReadFile(lump);
+	const char * buffer = lumpd.GetString();
 
 	if ( (size_t)fullname.LastIndexOf("_d.3d") == fullname.Len()-5 )
 	{

@@ -716,6 +716,13 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, ClearInterpolation, ClearInterpolation)
 	return 0;
 }
 
+DEFINE_ACTION_FUNCTION(AActor, ClearFOVInterpolation)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	self->ClearFOVInterpolation();
+	return 0;
+}
+
 static int ApplyDamageFactors(PClassActor *itemcls, int damagetype, int damage, int defdamage)
 {
 	DmgFactors &df = itemcls->ActorInfo()->DamageFactors;
@@ -1295,7 +1302,8 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, GetRadiusDamage, P_GetRadiusDamage)
 	PARAM_INT(distance);
 	PARAM_INT(fulldmgdistance);
 	PARAM_BOOL(oldradiusdmg);
-	ACTION_RETURN_INT(P_GetRadiusDamage(self, thing, damage, distance, fulldmgdistance, oldradiusdmg));
+	PARAM_BOOL(circular);
+	ACTION_RETURN_INT(P_GetRadiusDamage(self, thing, damage, distance, fulldmgdistance, oldradiusdmg, circular));
 }
 
 static int RadiusAttack(AActor *self, AActor *bombsource, int bombdamage, int bombdistance, int damagetype, int flags, int fulldamagedistance, int species)
@@ -1531,20 +1539,21 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, LookForPlayers, P_LookForPlayers)
 	ACTION_RETURN_BOOL(P_LookForPlayers(self, allaround, params));
 }
 
-static int CheckMonsterUseSpecials(AActor *self)
+static int CheckMonsterUseSpecials(AActor *self, line_t *blocking)
 {
 	spechit_t spec;
 	int good = 0;
 
 	if (!(self->flags6 & MF6_NOTRIGGER))
 	{
+		auto checkLine = blocking ? blocking : self->BlockingLine;
 		while (spechit.Pop (spec))
 		{
 			// [RH] let monsters push lines, as well as use them
 			if (((self->flags4 & MF4_CANUSEWALLS) && P_ActivateLine (spec.line, self, 0, SPAC_Use)) ||
 				((self->flags2 & MF2_PUSHWALL) && P_ActivateLine (spec.line, self, 0, SPAC_Push)))
 			{
-				good |= spec.line == self->BlockingLine ? 1 : 2;
+				good |= spec.line == checkLine ? 1 : 2;
 			}
 		}
 	}
@@ -1556,8 +1565,9 @@ static int CheckMonsterUseSpecials(AActor *self)
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, CheckMonsterUseSpecials, CheckMonsterUseSpecials)
 {
 	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_POINTER(blocking, line_t);
 
-	ACTION_RETURN_INT(CheckMonsterUseSpecials(self));
+	ACTION_RETURN_INT(CheckMonsterUseSpecials(self, blocking));
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_Wander, A_Wander)
@@ -1627,7 +1637,7 @@ int CheckForResurrection(AActor *self, FState* state, int sound)
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_CheckForResurrection, CheckForResurrection)
 {
 	PARAM_SELF_PROLOGUE(AActor);
-	PARAM_STATE(state);
+	PARAM_POINTER(state, FState);
 	PARAM_INT(sound);
 	ACTION_RETURN_BOOL(CheckForResurrection(self, state, sound));
 }
@@ -1742,6 +1752,27 @@ DEFINE_ACTION_FUNCTION_NATIVE(AInventory, PrintPickupMessage, PrintPickupMessage
 //
 //=====================================================================================
 
+DEFINE_ACTION_FUNCTION_NATIVE(AKey, IsLockDefined, P_IsLockDefined)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(locknum);
+	ACTION_RETURN_BOOL(P_IsLockDefined(locknum));
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AKey, GetMapColorForLock, P_GetMapColorForLock)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(locknum);
+	ACTION_RETURN_INT(P_GetMapColorForLock(locknum));
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AKey, GetMapColorForKey, P_GetMapColorForKey)
+{
+	PARAM_PROLOGUE;
+	PARAM_OBJECT(key, AActor);
+	ACTION_RETURN_INT(P_GetMapColorForKey(key));
+}
+
 DEFINE_ACTION_FUNCTION_NATIVE(AKey, GetKeyTypeCount, P_GetKeyTypeCount)
 {
 	PARAM_PROLOGUE;
@@ -1784,6 +1815,60 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, CheckFor3DCeilingHit, CheckFor3DCeilingHit
 	PARAM_BOOL(trigger);
 
 	ACTION_RETURN_BOOL(P_CheckFor3DCeilingHit(self, z, trigger));
+}
+
+//=====================================================================================
+//
+// Bounce exports
+//
+//=====================================================================================
+DEFINE_ACTION_FUNCTION(AActor, BounceActor)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT(blocking, AActor);
+	PARAM_BOOL(onTop);
+
+	ACTION_RETURN_BOOL(P_BounceActor(self, blocking, onTop));
+}
+
+DEFINE_ACTION_FUNCTION(AActor, BounceWall)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_POINTER(l, line_t);
+
+	auto cur = self->BlockingLine;
+	if (l)
+		self->BlockingLine = l;
+
+	bool res = P_BounceWall(self);
+	self->BlockingLine = cur;
+
+	ACTION_RETURN_BOOL(res);
+}
+
+DEFINE_ACTION_FUNCTION(AActor, BouncePlane)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_POINTER(plane, secplane_t);
+
+	ACTION_RETURN_BOOL(self->FloorBounceMissile(*plane));
+}
+
+DEFINE_ACTION_FUNCTION(AActor, PlayBounceSound)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_BOOL(onFloor);
+
+	self->PlayBounceSound(onFloor);
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(AActor, ReflectOffActor)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT(blocking, AActor);
+
+	ACTION_RETURN_BOOL(P_ReflectOffActor(self, blocking));
 }
 
 
@@ -1972,6 +2057,7 @@ DEFINE_FIELD(AActor, lastbump)
 DEFINE_FIELD(AActor, DesignatedTeam)
 DEFINE_FIELD(AActor, BlockingMobj)
 DEFINE_FIELD(AActor, BlockingLine)
+DEFINE_FIELD(AActor, MovementBlockingLine)
 DEFINE_FIELD(AActor, Blocking3DFloor)
 DEFINE_FIELD(AActor, BlockingCeiling)
 DEFINE_FIELD(AActor, BlockingFloor)
@@ -2035,6 +2121,8 @@ DEFINE_FIELD_NAMED(AActor, ViewAngles.Yaw, viewangle)
 DEFINE_FIELD_NAMED(AActor, ViewAngles.Pitch, viewpitch)
 DEFINE_FIELD_NAMED(AActor, ViewAngles.Roll, viewroll)
 DEFINE_FIELD(AActor, LightLevel)
+DEFINE_FIELD(AActor, ShadowAimFactor)
+DEFINE_FIELD(AActor, ShadowPenaltyFactor)
 
 DEFINE_FIELD_X(FCheckPosition, FCheckPosition, thing);
 DEFINE_FIELD_X(FCheckPosition, FCheckPosition, pos);

@@ -38,8 +38,9 @@
 #include "doomtype.h"
 #include "vectors.h"
 #include "sc_man.h"
-#include "file_zip.h"
 #include "screenjob.h"
+#include "hwrenderer/postprocessing/hw_postprocess.h"
+#include "hw_viewpointuniforms.h"
 
 struct level_info_t;
 struct cluster_info_t;
@@ -78,6 +79,10 @@ struct CutsceneDef;
 
 struct FMapInfoParser
 {
+	FMapInfoParser(FScanner* parent)
+		: sc(parent ? &parent->GetSymbols() : nullptr)
+	{
+	}
 	enum EFormatType
 	{
 		FMT_Unknown,
@@ -343,7 +348,7 @@ struct level_info_t
 	FString		AuthorName;
 	int8_t		WallVertLight, WallHorizLight;
 	int			musicorder;
-	FCompressedBuffer	Snapshot;
+	FileSys::FCompressedBuffer	Snapshot;
 	TArray<acsdefered_t> deferred;
 	float		skyspeed1;
 	float		skyspeed2;
@@ -373,6 +378,11 @@ struct level_info_t
 	// you go to the RedirectMap instead of this one.
 	FName		RedirectType;
 	FString		RedirectMapName;
+
+	// CVAR Redirection: If the CVAR Bool returns true, then
+	// you go to the RedirectMap instead of this one.
+	FName		RedirectCVAR;
+	FString		RedirectCVARMapName;
 
 	FString		EnterPic;
 	FString		ExitPic;
@@ -405,6 +415,8 @@ struct level_info_t
 	FString		EDName;
 	FString		acsName;
 	bool		fs_nocheckposition;
+	ELightBlendMode lightblendmode;
+	ETonemapMode tonemap;
 	
 	CutsceneDef intro, outro;
 

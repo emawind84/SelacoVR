@@ -47,7 +47,7 @@
 #include "c_cvars.h"
 #include "cmdlib.h"
 #include "LSMatrix.h"
-#include "common/filesystem/filesystem.h"
+//#include "common/filesystem/filesystem.h"
 #include "m_joy.h"
 #include "d_gui.h"
 #include "d_event.h"
@@ -62,6 +62,15 @@
 
 using namespace openvr;
 
+float RAD2DEG(float rad)
+{
+	return rad * float(180. / M_PI);
+}
+
+float DEG2RAD(float deg)
+{
+	return deg * float(M_PI / 180.0);
+}
 
 namespace openvr {
 #include "openvr.h"

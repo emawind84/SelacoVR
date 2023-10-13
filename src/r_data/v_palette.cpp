@@ -44,6 +44,8 @@
 #include "m_png.h"
 #include "v_colortables.h"
 
+using namespace FileSys;
+
 /* Current color blending values */
 int		BlendR, BlendG, BlendB, BlendA;
 
@@ -63,11 +65,13 @@ void InitPalette ()
 	if (lump != -1)
 	{
 		FileData cmap = fileSystem.ReadFile(lump);
-		const unsigned char* cmapdata = (const unsigned char*)cmap.GetMem();
+		auto cmapdata = cmap.GetBytes();
 		GPalette.GenerateGlobalBrightmapFromColormap(cmapdata, 32);
+		MakeGoodRemap((uint32_t*)GPalette.BaseColors, GPalette.Remap, cmapdata + 7936);	// last entry in colormap
 	}
+	else
+		MakeGoodRemap ((uint32_t*)GPalette.BaseColors, GPalette.Remap);
 
-	MakeGoodRemap ((uint32_t*)GPalette.BaseColors, GPalette.Remap);
 	ColorMatcher.SetPalette ((uint32_t *)GPalette.BaseColors);
 
 	if (GPalette.Remap[0] == 0)

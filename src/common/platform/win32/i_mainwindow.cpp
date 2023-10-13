@@ -17,6 +17,8 @@
 
 #ifdef _M_X64
 #define X64 " 64-bit"
+#elif _M_ARM64
+#define X64 " ARM-64"
 #else
 #define X64 ""
 #endif
@@ -333,7 +335,7 @@ void MainWindow::SetNetStartProgress(int pos)
 	if (NetStartPane != 0 && NetStartMaxPos > 1)
 	{
 		char buf[16];
-		mysnprintf(buf, countof(buf), "%d/%d", pos, NetStartMaxPos);
+		mysnprintf(buf, sizeof(buf), "%d/%d", pos, NetStartMaxPos);
 		SetDlgItemTextA(NetStartPane, IDC_NETSTARTCOUNT, buf);
 		SendDlgItemMessage(NetStartPane, IDC_NETSTARTPROGRESS, PBM_SETPOS, min(pos, NetStartMaxPos), 0);
 	}

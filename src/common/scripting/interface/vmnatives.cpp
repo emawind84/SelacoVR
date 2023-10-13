@@ -53,6 +53,42 @@
 #include "s_soundinternal.h"
 #include "i_time.h"
 
+#include "maps.h"
+
+static ZSMap<FName, DObject*> AllServices;
+
+static void MarkServices()
+{
+	ZSMap<FName, DObject*>::Iterator it(AllServices);
+	ZSMap<FName, DObject*>::Pair* pair;
+	while (it.NextPair(pair))
+	{
+		GC::Mark<DObject>(pair->Value);
+	}
+}
+
+void InitServices()
+{
+	PClass* cls = PClass::FindClass("Service");
+	for (PClass* clss : PClass::AllClasses)
+	{
+		if (clss != cls && cls->IsAncestorOf(clss))
+		{
+			DObject* obj = clss->CreateNew();
+			obj->ObjectFlags |= OF_Transient;
+			AllServices.Insert(clss->TypeName, obj);
+		}
+	}
+	GC::AddMarkerFunc(&MarkServices);
+}
+
+void ClearServices()
+{
+	AllServices.Clear();
+}
+
+
+
 //==========================================================================
 //
 // status bar exports
@@ -388,7 +424,7 @@ DEFINE_ACTION_FUNCTION(_TexMan, GetName)
 		{
 			// Textures for full path names do not have their own name, they merely link to the source lump.
 			auto lump = tex->GetSourceLump();
-			if (fileSystem.GetLinkedTexture(lump) == tex)
+			if (TexMan.GetLinkedTexture(lump) == tex)
 				retval = fileSystem.GetFileFullName(lump);
 		}
 	}
@@ -631,9 +667,9 @@ DEFINE_ACTION_FUNCTION_NATIVE(FFont, GetBottomAlignOffset, GetBottomAlignOffset)
 	ACTION_RETURN_FLOAT(GetBottomAlignOffset(self, code));
 }
 
-static int StringWidth(FFont *font, const FString &str)
+static int StringWidth(FFont *font, const FString &str, bool localize)
 {
-	const char *txt = str[0] == '$' ? GStrings(&str[1]) : str.GetChars();
+	const char *txt = (localize && str[0] == '$') ? GStrings(&str[1]) : str.GetChars();
 	return font->StringWidth(txt);
 }
 
@@ -641,12 +677,13 @@ DEFINE_ACTION_FUNCTION_NATIVE(FFont, StringWidth, StringWidth)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(FFont);
 	PARAM_STRING(str);
-	ACTION_RETURN_INT(StringWidth(self, str));
+	PARAM_BOOL(localize);
+	ACTION_RETURN_INT(StringWidth(self, str, localize));
 }
 
-static int GetMaxAscender(FFont* font, const FString& str)
+static int GetMaxAscender(FFont* font, const FString& str, bool localize)
 {
-	const char* txt = str[0] == '$' ? GStrings(&str[1]) : str.GetChars();
+	const char* txt = (localize && str[0] == '$') ? GStrings(&str[1]) : str.GetChars();
 	return font->GetMaxAscender(txt);
 }
 
@@ -654,12 +691,13 @@ DEFINE_ACTION_FUNCTION_NATIVE(FFont, GetMaxAscender, GetMaxAscender)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(FFont);
 	PARAM_STRING(str);
-	ACTION_RETURN_INT(GetMaxAscender(self, str));
+	PARAM_BOOL(localize);
+	ACTION_RETURN_INT(GetMaxAscender(self, str, localize));
 }
 
-static int CanPrint(FFont *font, const FString &str)
+static int CanPrint(FFont *font, const FString &str, bool localize)
 {
-	const char *txt = str[0] == '$' ? GStrings(&str[1]) : str.GetChars();
+	const char *txt = (localize && str[0] == '$') ? GStrings(&str[1]) : str.GetChars();
 	return font->CanPrint(txt);
 }
 
@@ -667,7 +705,8 @@ DEFINE_ACTION_FUNCTION_NATIVE(FFont, CanPrint, CanPrint)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(FFont);
 	PARAM_STRING(str);
-	ACTION_RETURN_INT(CanPrint(self, str));
+	PARAM_BOOL(localize);
+	ACTION_RETURN_INT(CanPrint(self, str, localize));
 }
 
 static int FindFontColor(int name)
@@ -783,9 +822,7 @@ DEFINE_ACTION_FUNCTION(_Wads, GetLumpName)
 {
 	PARAM_PROLOGUE;
 	PARAM_INT(lump);
-	FString lumpname;
-	fileSystem.GetFileShortName(lumpname, lump);
-	ACTION_RETURN_STRING(lumpname);
+	ACTION_RETURN_STRING(fileSystem.GetFileShortName(lump));
 }
 
 DEFINE_ACTION_FUNCTION(_Wads, GetLumpFullName)
@@ -807,7 +844,7 @@ DEFINE_ACTION_FUNCTION(_Wads, ReadLump)
 	PARAM_PROLOGUE;
 	PARAM_INT(lump);
 	const bool isLumpValid = lump >= 0 && lump < fileSystem.GetNumEntries();
-	ACTION_RETURN_STRING(isLumpValid ? fileSystem.ReadFile(lump).GetString() : FString());
+	ACTION_RETURN_STRING(isLumpValid ? GetStringFromLump(lump, false) : FString());
 }
 
 //==========================================================================
@@ -852,7 +889,22 @@ DEFINE_ACTION_FUNCTION(_CVar, SetInt)
 	PARAM_INT(val);
 	UCVarValue v;
 	v.Int = val;
-	self->SetGenericRep(v, CVAR_Int);
+
+	if(self->GetFlags() & CVAR_ZS_CUSTOM_CLONE)
+	{
+		auto realCVar = (FBaseCVar*)(self->GetExtraDataPointer());
+		assert(realCVar->GetFlags() & CVAR_ZS_CUSTOM);
+		
+		v = realCVar->GenericZSCVarCallback(v, CVAR_Int);
+		self->SetGenericRep(v, realCVar->GetRealType());
+
+		if(realCVar->GetRealType() == CVAR_String) delete[] v.String;
+	}
+	else
+	{
+		self->SetGenericRep(v, CVAR_Int);
+	}
+
 	return 0;
 }
 
@@ -870,7 +922,22 @@ DEFINE_ACTION_FUNCTION(_CVar, SetFloat)
 	PARAM_FLOAT(val);
 	UCVarValue v;
 	v.Float = (float)val;
-	self->SetGenericRep(v, CVAR_Float);
+
+	if(self->GetFlags() & CVAR_ZS_CUSTOM_CLONE)
+	{
+		auto realCVar = (FBaseCVar*)(self->GetExtraDataPointer());
+		assert(realCVar->GetFlags() & CVAR_ZS_CUSTOM);
+
+		v = realCVar->GenericZSCVarCallback(v, CVAR_Float);
+		self->SetGenericRep(v, realCVar->GetRealType());
+
+		if(realCVar->GetRealType() == CVAR_String) delete[] v.String;
+	}
+	else
+	{
+		self->SetGenericRep(v, CVAR_Float);
+	}
+
 	return 0;
 }
 
@@ -889,7 +956,22 @@ DEFINE_ACTION_FUNCTION(_CVar, SetString)
 	PARAM_STRING(val);
 	UCVarValue v;
 	v.String = val.GetChars();
-	self->SetGenericRep(v, CVAR_String);
+
+	if(self->GetFlags() & CVAR_ZS_CUSTOM_CLONE)
+	{
+		auto realCVar = (FBaseCVar*)(self->GetExtraDataPointer());
+		assert(realCVar->GetFlags() & CVAR_ZS_CUSTOM);
+
+		v = realCVar->GenericZSCVarCallback(v, CVAR_String);
+		self->SetGenericRep(v, realCVar->GetRealType());
+
+		if(realCVar->GetRealType() == CVAR_String) delete[] v.String;
+	}
+	else
+	{
+		self->SetGenericRep(v, CVAR_String);
+	}
+
 	return 0;
 }
 
@@ -959,7 +1041,8 @@ DEFINE_ACTION_FUNCTION(FKeyBindings, NameAllKeys)
 {
 	PARAM_PROLOGUE;
 	PARAM_POINTER(array, TArray<int>);
-	auto buffer = C_NameKeys(array->Data(), array->Size(), true);
+	PARAM_BOOL(color);
+	auto buffer = C_NameKeys(array->Data(), array->Size(), color);
 	ACTION_RETURN_STRING(buffer);
 }
 
@@ -1115,6 +1198,9 @@ DEFINE_FIELD_X(MusPlayingInfo, MusPlayingInfo, loop);
 DEFINE_FIELD_X(MusPlayingInfo, MusPlayingInfo, handle);
 
 DEFINE_GLOBAL_NAMED(PClass::AllClasses, AllClasses)
+
+DEFINE_GLOBAL(AllServices)
+
 DEFINE_GLOBAL(Bindings)
 DEFINE_GLOBAL(AutomapBindings)
 DEFINE_GLOBAL(generic_ui)

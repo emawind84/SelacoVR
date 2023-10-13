@@ -146,17 +146,29 @@ CUSTOM_CVAR(Bool, gl_notexturefill, false, CVAR_NOINITCALL)
 	}
 }
 
-CUSTOM_CVAR(Int, gl_lightmode, 3, CVAR_ARCHIVE | CVAR_NOINITCALL)
+CUSTOM_CVAR(Int, gl_maplightmode, -1, CVAR_NOINITCALL) // this is just for testing. -1 means 'inactive'
 {
-	int newself = self;
-	if (newself > 8) newself = 16;	// use 8 and 16 for software lighting to avoid conflicts with the bit mask ( in hindsight a bad idea.)
-	else if (newself > 5) newself = 8;
-	else if (newself < 0) newself = 0;
-	if (self != newself) self = newself;
-	else for (auto Level : AllLevels())
-	{
-		if ((Level->info == nullptr || Level->info->lightmode == ELightMode::NotSet)) Level->lightMode = (ELightMode)*self;
-	}
+	if (self > 5 || self < -1) self = -1;
+}
+
+CUSTOM_CVARD(Int, gl_lightmode, 1, CVAR_ARCHIVE, "Select lighting mode. 2 is vanilla accurate, 1 is accurate to the ZDoom software renderer and 0 is a less demanding non-shader implementation")
+{
+	if (self < 0 || self > 2) self = 1;
+}
+
+ELightMode getRealLightmode(FLevelLocals* Level, bool for3d)
+{
+	// The rules are:
+	// 1) if the map sets a proper light mode, it is taken unconditionally.
+	if (Level->info->lightmode != ELightMode::NotSet) return Level->info->lightmode;
+	// 2) if the user sets gl_maplightmode, this is being used.
+	if (gl_maplightmode != -1) return (ELightMode)*gl_maplightmode;
+	// 3) if not for 3D use lightmode Doom. This is for the automap where the software light modes do not work
+	if (!for3d) return ELightMode::Doom;
+	// otherwise use lightmode Doom or software lighting based on user preferences.
+	if (gl_lightmode == 1) return ELightMode::ZDoomSoftware;
+	else if (gl_lightmode == 2) return ELightMode::DoomSoftware;
+	return ELightMode::Doom;
 }
 
 CVAR(Int, sv_alwaystally, 0, CVAR_SERVERINFO)
@@ -258,7 +270,7 @@ void G_DeferedInitNew (const char *mapname, int newskill)
 
 void G_DeferedInitNew (FNewGameStartup *gs)
 {
-	if (gs->PlayerClass != NULL) playerclass = gs->PlayerClass;
+	if (gs->hasPlayerClass) playerclass = gs->PlayerClass;
 	d_mapname = AllEpisodes[gs->Episode].mEpisodeMap;
 	d_skill = gs->Skill;
 	CheckWarpTransMap (d_mapname, true);
@@ -548,6 +560,7 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 	if (primaryLevel->info != nullptr)
 		staticEventManager.WorldUnloaded(FString());	// [MK] don't pass the new map, as it's not a level transition
 
+	UnlatchCVars ();
 	if (!savegamerestore)
 	{
 		G_ClearHubInfo();
@@ -557,9 +570,14 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 		// [RH] Mark all levels as not visited
 		for (unsigned int i = 0; i < wadlevelinfos.Size(); i++)
 			wadlevelinfos[i].flags = wadlevelinfos[i].flags & ~LEVEL_VISITED;
+
+		auto redirectmap = FindLevelInfo(mapname);
+		if (redirectmap->RedirectCVAR != NAME_None)
+			redirectmap = redirectmap->CheckLevelRedirect();
+		if (redirectmap && redirectmap->MapName.GetChars()[0])
+				mapname = redirectmap->MapName;
 	}
 
-	UnlatchCVars ();
 	G_VerifySkill();
 	UnlatchCVars ();
 	globalfreeze = globalchangefreeze = 0;
@@ -1385,7 +1403,7 @@ void FLevelLocals::DoLoadLevel(const FString &nextmapname, int position, bool au
 	{
 		FString mapname = nextmapname;
 		mapname.ToUpper();
-		Printf(PRINT_NONOTIFY, "\n" TEXTCOLOR_NORMAL "%s\n\n" TEXTCOLOR_BOLD "%s - %s\n\n", console_bar, mapname.GetChars(), LevelName.GetChars());
+		Printf(PRINT_HIGH | PRINT_NONOTIFY, "\n" TEXTCOLOR_NORMAL "%s\n\n" TEXTCOLOR_BOLD "%s - %s\n\n", console_bar, mapname.GetChars(), LevelName.GetChars());
 	}
 
 	// Set the sky map.
@@ -1702,6 +1720,7 @@ int FLevelLocals::FinishTravel ()
 		}
 		pawn->LinkToWorld (nullptr);
 		pawn->ClearInterpolation();
+		pawn->ClearFOVInterpolation();
 		const int tid = pawn->tid;	// Save TID (actor isn't linked into the hash chain yet)
 		pawn->tid = 0;				// Reset TID
 		pawn->SetTID(tid);			// Set TID (and link actor into the hash chain)
@@ -1857,7 +1876,6 @@ void FLevelLocals::Init()
 
 	DefaultEnvironment = info->DefaultEnvironment;
 
-	lightMode = info->lightmode == ELightMode::NotSet? (ELightMode)*gl_lightmode : info->lightmode;
 	brightfog = info->brightfog < 0? gl_brightfog : !!info->brightfog;
 	lightadditivesurfaces = info->lightadditivesurfaces < 0 ? gl_lightadditivesurfaces : !!info->lightadditivesurfaces;
 	notexturefill = info->notexturefill < 0 ? gl_notexturefill : !!info->notexturefill;
@@ -1985,7 +2003,7 @@ void G_ReadSnapshots(FResourceFile *resf)
 
 	for (unsigned j = 0; j < resf->LumpCount(); j++)
 	{
-		FResourceLump * resl = resf->GetLump(j);
+		auto resl = resf->GetLump(j);
 		if (resl != nullptr)
 		{
 			auto name = resl->getName();

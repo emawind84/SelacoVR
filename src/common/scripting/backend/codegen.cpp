@@ -177,12 +177,9 @@ void FCompileContext::CheckReturn(PPrototype *proto, FScriptPosition &pos)
 	}
 }
 
-// [ZZ] I find it really dumb that something called CheckReadOnly returns false for readonly. renamed.
-bool FCompileContext::CheckWritable(int flags)
+bool FCompileContext::IsWritable(int flags, int checkFileNo)
 {
-	if (!(flags & VARF_ReadOnly)) return false;
-	if (!(flags & VARF_InternalAccess)) return true;
-	return fileSystem.GetFileContainer(Lump) != 0;
+	return !(flags & VARF_ReadOnly) || ((flags & VARF_InternalAccess) && fileSystem.GetFileContainer(Lump) == checkFileNo);
 }
 
 FxLocalVariableDeclaration *FCompileContext::FindLocalVariable(FName name)
@@ -280,7 +277,8 @@ bool AreCompatiblePointerTypes(PType *dest, PType *source, bool forcompare)
 		// null pointers can be assigned to everything, everything can be assigned to void pointers.
 		if (fromtype == nullptr || totype == TypeVoidPtr) return true;
 		// when comparing const-ness does not matter.
-		if (!forcompare && totype->IsConst != fromtype->IsConst) return false;
+		// If not comparing, then we should not allow const to be cast away.
+		if (!forcompare && fromtype->IsConst && !totype->IsConst) return false;
 		// A type is always compatible to itself.
 		if (fromtype == totype) return true;
 		// Pointers to different types are only compatible if both point to an object and the source type is a child of the destination type.
@@ -2571,7 +2569,15 @@ ExpEmit FxAssign::Emit(VMFunctionBuilder *build)
 	}
 
 	pointer.Free(build);
-	return result;
+
+	if(intconst)
+	{	//fix int constant return for assignment
+		return Right->Emit(build);
+	}
+	else
+	{
+		return result;
+	}
 }
 
 //==========================================================================
@@ -2600,7 +2606,6 @@ FxExpression *FxAssignSelf::Resolve(FCompileContext &ctx)
 
 ExpEmit FxAssignSelf::Emit(VMFunctionBuilder *build)
 {
-	assert(ValueType == Assignment->ValueType);
 	ExpEmit pointer = Assignment->Address; // FxAssign should have already emitted it
 	if (!pointer.Target)
 	{
@@ -2717,6 +2722,75 @@ ExpEmit FxMultiAssign::Emit(VMFunctionBuilder *build)
 	static_cast<FxVMFunctionCall *>(Right)->ReturnRegs.ShrinkToFit();
 	return LocalVarContainer->Emit(build);
 }
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxMultiAssignDecl::FxMultiAssignDecl(FArgumentList &base, FxExpression *right, const FScriptPosition &pos)
+	:FxExpression(EFX_MultiAssignDecl, pos)
+{
+	Base = std::move(base);
+	Right = right;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxMultiAssignDecl::~FxMultiAssignDecl()
+{
+	SAFE_DELETE(Right);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FxMultiAssignDecl::Resolve(FCompileContext &ctx)
+{
+	CHECKRESOLVED();
+	SAFE_RESOLVE(Right, ctx);
+	if (Right->ExprType != EFX_VMFunctionCall)
+	{
+		Right->ScriptPosition.Message(MSG_ERROR, "Function call expected on right side of multi-assigment");
+		delete this;
+		return nullptr;
+	}
+	auto VMRight = static_cast<FxVMFunctionCall *>(Right);
+	auto rets = VMRight->GetReturnTypes();
+	if (Base.Size() == 1)
+	{
+		Right->ScriptPosition.Message(MSG_ERROR, "Multi-assignment with only one element in function %s", VMRight->Function->SymbolName.GetChars());
+		delete this;
+		return nullptr;
+	}
+	if (rets.Size() < Base.Size())
+	{
+		Right->ScriptPosition.Message(MSG_ERROR, "Insufficient returns in function %s", VMRight->Function->SymbolName.GetChars());
+		delete this;
+		return nullptr;
+	}
+	FxSequence * DeclAndAssign = new FxSequence(ScriptPosition);
+	const unsigned int n = Base.Size();
+	for (unsigned int i = 0; i < n; i++)
+	{
+		assert(Base[i]->ExprType == EFX_Identifier);
+		DeclAndAssign->Add(new FxLocalVariableDeclaration(rets[i], ((FxIdentifier*)Base[i])->Identifier, nullptr, 0, Base[i]->ScriptPosition));
+	}
+	DeclAndAssign->Add(new FxMultiAssign(Base, Right, ScriptPosition));
+	Right = nullptr;
+	delete this;
+	return DeclAndAssign->Resolve(ctx);
+}
+
 
 //==========================================================================
 //
@@ -4719,7 +4793,7 @@ FxExpression *FxTypeCheck::Resolve(FCompileContext& ctx)
 	}
 	else
 	{
-		left = new FxTypeCast(left, NewPointer(RUNTIME_CLASS(DObject)), false);
+		left = new FxTypeCast(left, NewPointer(RUNTIME_CLASS(DObject), true), false);
 		ClassCheck = false;
 	}
 	right = new FxClassTypeCast(NewClassPointer(RUNTIME_CLASS(DObject)), right, false);
@@ -6661,7 +6735,7 @@ FxExpression *FxLocalVariable::Resolve(FCompileContext &ctx)
 bool FxLocalVariable::RequestAddress(FCompileContext &ctx, bool *writable)
 {
 	AddressRequested = true;
-	if (writable != nullptr) *writable = !ctx.CheckWritable(Variable->VarFlags);
+	if (writable != nullptr) *writable = ctx.IsWritable(Variable->VarFlags);
 	return true;
 }
 
@@ -6816,7 +6890,7 @@ FxGlobalVariable::FxGlobalVariable(PField* mem, const FScriptPosition &pos)
 bool FxGlobalVariable::RequestAddress(FCompileContext &ctx, bool *writable)
 {
 	AddressRequested = true;
-	if (writable != nullptr) *writable = AddressWritable && !ctx.CheckWritable(membervar->Flags);
+	if (writable != nullptr) *writable = AddressWritable && ctx.IsWritable(membervar->Flags, membervar->mDefFileNo);
 	return true;
 }
 
@@ -7009,7 +7083,7 @@ FxStackVariable::~FxStackVariable()
 bool FxStackVariable::RequestAddress(FCompileContext &ctx, bool *writable)
 {
 	AddressRequested = true;
-	if (writable != nullptr) *writable = AddressWritable && !ctx.CheckWritable(membervar->Flags);
+	if (writable != nullptr) *writable = AddressWritable && ctx.IsWritable(membervar->Flags, membervar->mDefFileNo);
 	return true;
 }
 
@@ -7111,7 +7185,7 @@ bool FxStructMember::RequestAddress(FCompileContext &ctx, bool *writable)
 	else if (writable != nullptr)
 	{
 		// [ZZ] original check.
-		bool bWritable = (AddressWritable && !ctx.CheckWritable(membervar->Flags) &&
+		bool bWritable = (AddressWritable && ctx.IsWritable(membervar->Flags, membervar->mDefFileNo) &&
 			(!classx->ValueType->isPointer() || !classx->ValueType->toPointer()->IsConst));
 		// [ZZ] implement write barrier between different scopes
 		if (bWritable)
@@ -8439,6 +8513,11 @@ FxExpression *FxMemberFunctionCall::Resolve(FCompileContext& ctx)
 		}
 		else
 		{
+			if (PFunction **Override; ctx.Version >= MakeVersion(4, 11, 0) && (Override = static_cast<PDynArray*>(Self->ValueType)->FnOverrides.CheckKey(MethodName)))
+			{
+				afd_override = *Override;
+			}
+
 			auto elementType = static_cast<PDynArray*>(Self->ValueType)->ElementType;
 			Self->ValueType = static_cast<PDynArray*>(Self->ValueType)->BackingType;
 			bool isDynArrayObj = elementType->isObjectPointer();
@@ -8779,7 +8858,7 @@ FxExpression *FxMemberFunctionCall::Resolve(FCompileContext& ctx)
 		}
 	}
 
-	if (Self->ValueType->isRealPointer())
+	if (Self->ValueType->isRealPointer() && Self->ValueType->toPointer()->PointedType)
 	{
 		auto ptype = Self->ValueType->toPointer()->PointedType;
 		cls = ptype->toContainer();
@@ -9072,7 +9151,7 @@ FxExpression *FxVMFunctionCall::Resolve(FCompileContext& ctx)
 	// [Player701] Catch attempts to call abstract functions directly at compile time
 	if (NoVirtual && Function->Variants[0].Implementation->VarFlags & VARF_Abstract)
 	{
-		ScriptPosition.Message(MSG_ERROR, "Cannot call abstract function %s", Function->Variants[0].Implementation->PrintableName.GetChars());
+		ScriptPosition.Message(MSG_ERROR, "Cannot call abstract function %s", Function->Variants[0].Implementation->PrintableName);
 		delete this;
 		return nullptr;
 	}

@@ -25,9 +25,9 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 */
 //-------------------------------------------------------------------------
 
+#include <string.h>
 #include "animlib.h"
 #include "m_swap.h"
-#include "m_alloc.h"
 
 //****************************************************************************
 //
@@ -217,7 +217,7 @@ static inline void drawframe(anim_t *anim, uint16_t framenumber)
 }
 
 // <length> is the file size, for consistency checking.
-int32_t ANIM_LoadAnim(anim_t *anim, uint8_t *buffer, int32_t length)
+int32_t ANIM_LoadAnim(anim_t *anim, const uint8_t *buffer, size_t length)
 {
 	if (memcmp(buffer, "LPF ", 4)) return -1;
 

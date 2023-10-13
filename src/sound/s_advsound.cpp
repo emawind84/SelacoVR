@@ -50,6 +50,8 @@
 #include "i_system.h"
 #include "s_music.h"
 
+using namespace FileSys;
+
 // MACROS ------------------------------------------------------------------
 
 #define RANDOM		1
@@ -170,6 +172,7 @@ struct FSavedPlayerSoundInfo
 
 // This specifies whether Timidity or Windows playback is preferred for a certain song (only useful for Windows.)
 MusicAliasMap MusicAliases;
+static bool sndinfo_locked;
 
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
@@ -492,7 +495,7 @@ FSoundID S_AddPlayerSound (const char *pclass, int gender, FSoundID refid, int l
 	fakename += '"';
 	fakename += '0' + gender;
 	fakename += '"';
-	fakename += sfx->name;
+	fakename += sfx->name.GetChars();
 
 	id = soundEngine->AddSoundLump (fakename, lumpnum, CurrentPitchMask);
 	int classnum = S_AddPlayerClass (pclass);
@@ -579,7 +582,10 @@ void S_ParseSndInfo (bool redefine)
 {
 	int lump;
 
-	if (!redefine) SavedPlayerSounds.Clear();	// clear skin sounds only for initial parsing.
+	if (redefine && sndinfo_locked) return;
+
+	SavedPlayerSounds.Clear();	// clear skin sounds only for initial parsing.
+
 	S_ClearSoundData();	// remove old sound data first!
 
 	CurrentPitchMask = 0;
@@ -608,6 +614,11 @@ void S_ParseSndInfo (bool redefine)
 	S_CheckIntegrity();
 }
 
+void S_LockLocalSndinfo()
+{
+	sndinfo_locked = true;
+}
+
 //==========================================================================
 //
 // Adds a level specific SNDINFO lump
@@ -616,6 +627,11 @@ void S_ParseSndInfo (bool redefine)
 
 void S_AddLocalSndInfo(int lump)
 {
+	if (sndinfo_locked)
+	{
+		Printf("Local SNDINFO cannot be combined with DSDHacked sounds!");
+		return;
+	}
 	S_AddSNDINFO(lump);
 	soundEngine->HashSounds ();
 
@@ -1124,7 +1140,7 @@ static void S_AddSNDINFO (int lump)
 static void S_AddStrifeVoice (int lumpnum)
 {
 	char name[16] = "svox/";
-	fileSystem.GetFileShortName (name+5, lumpnum);
+	strcpy(name + 5, fileSystem.GetFileShortName (lumpnum));
 	S_AddSound (name, lumpnum);
 }
 
@@ -1593,7 +1609,7 @@ CCMD (playersounds)
 		if (sfx->UserData[0] & SND_PlayerReserve)
 		{
 			++j;
-			reserveNames[sfx->link.index()] = sfx->name;
+			reserveNames[sfx->link.index()] = sfx->name.GetChars();
 		}
 	}
 

@@ -150,13 +150,13 @@ void DeinitMenus()
 			pair->Value = nullptr;
 		}
 	}
-	MenuDescriptors.Clear();
-	OptionValues.Clear();
 	if (menuDelegate)
 	{
 		menuDelegate->Destroy();
 		menuDelegate = nullptr;
 	}
+	MenuDescriptors.Clear();
+	OptionValues.Clear();
 }
 
 FTextureID GetMenuTexture(const char* const name)
@@ -1519,7 +1519,7 @@ void M_ParseMenuDefs()
 	DefaultOptionMenuSettings->Reset();
 	OptionSettings.mLinespacing = 17;
 
-	int IWADMenu = fileSystem.CheckNumForName("MENUDEF", ns_global, fileSystem.GetIwadNum());
+	int IWADMenu = fileSystem.CheckNumForName("MENUDEF", FileSys::ns_global, fileSystem.GetIwadNum());
 
 	while ((lump = fileSystem.FindLump ("MENUDEF", &lastlump)) != -1)
 	{
@@ -1662,6 +1662,7 @@ static void InitMusicMenus()
 // Special menus will be created once all engine data is loaded
 //
 //=============================================================================
+void I_BuildMIDIMenuList(FOptionValues*);
 
 void M_CreateMenus()
 {

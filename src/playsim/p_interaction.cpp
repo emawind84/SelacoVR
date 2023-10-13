@@ -1336,13 +1336,24 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 			}
 		}
 
+		bool compat_voodoo_zombie = target->Level->i_compatflags2 & COMPATF2_VOODOO_ZOMBIES;
+
 		player->health -= damage;		// mirror mobj health here for Dave
-		// [RH] Make voodoo dolls and real players record the same health
-		target->health = player->mo->health -= damage;
+		if(compat_voodoo_zombie)
+		{ // [RL0] To allow voodoo zombies, don't set the voodoo doll to the player mobj's health and don't change the player mobj's health on damage
+			target->health -= damage;
+		}
+		else
+		{ // [RH] Make voodoo dolls and real players record the same health
+			target->health = player->mo->health -= damage;
+		}
 		if (player->health < 50 && !deathmatch && !(flags & DMG_FORCED))
 		{
 			P_AutoUseStrifeHealth (player);
-			player->mo->health = player->health;
+			if(!compat_voodoo_zombie)
+			{ // [RL0] To match vanilla behavior, don't set the player mo's health to 0 if voodoo zombies compat is enabled
+				player->mo->health = player->health;
+			}
 		}
 		if (player->health <= 0)
 		{
@@ -1608,6 +1619,9 @@ DEFINE_ACTION_FUNCTION(AActor, PoisonMobj)
 
 bool AActor::OkayToSwitchTarget(AActor *other)
 {
+	if (other == nullptr)
+		return false;
+
 	if (other == this)
 		return false;		// [RH] Don't hate self (can happen when shooting barrels)
 

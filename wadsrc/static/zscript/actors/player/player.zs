@@ -46,7 +46,10 @@ class PlayerPawn : Actor
 	double		AirCapacity;			// Multiplier for air supply underwater.
 	Class<Inventory> FlechetteType;
 	color 		DamageFade;				// [CW] Fades for when you are being damaged.
+	double		FlyBob;					// [B] Fly bobbing mulitplier
 	double		ViewBob;				// [SP] ViewBob Multiplier
+	double		ViewBobSpeed;			// [AA] ViewBob speed multiplier
+	double		WaterClimbSpeed;		// [B] Speed when climbing up walls in water
 	double		FullHeight;
 	double		curBob;
 	double		prevBob;
@@ -75,12 +78,20 @@ class PlayerPawn : Actor
 	property FlechetteType: FlechetteType;
 	property Portrait: Portrait;
 	property TeleportFreezeTime: TeleportFreezeTime;
+	property FlyBob: FlyBob;
 	property ViewBob: ViewBob;
+	property ViewBobSpeed: ViewBobSpeed;
+	property WaterClimbSpeed : WaterClimbSpeed;
 	
 	flagdef NoThrustWhenInvul: PlayerFlags, 0;
 	flagdef CanSuperMorph: PlayerFlags, 1;
 	flagdef CrouchableMorph: PlayerFlags, 2;
 	flagdef WeaponLevel2Ended: PlayerFlags, 3;
+
+	enum EPrivatePlayerFlags
+	{
+		PF_VOODOO_ZOMBIE = 1<<4,
+	}
 	
 	Default
 	{
@@ -117,7 +128,10 @@ class PlayerPawn : Actor
 		Player.MugShotMaxHealth 0;
 		Player.FlechetteType "ArtiPoisonBag3";
 		Player.AirCapacity 1;
+		Player.FlyBob 1;
 		Player.ViewBob 1;
+		Player.ViewBobSpeed 20;
+		Player.WaterClimbSpeed 3.5;
 		Player.TeleportFreezeTime 18;
 		Obituary "$OB_MPDEFAULT";
 	}
@@ -560,7 +574,7 @@ class PlayerPawn : Actor
 		}
 		else if (bNoGravity && !player.onground)
 		{
-			player.bob = 0.5;
+			player.bob = min(abs(0.5 * FlyBob), MAXBOB);
 		}
 		else
 		{
@@ -590,7 +604,11 @@ class PlayerPawn : Actor
 			return;
 		}
 
-		if (still)
+		if (bFly && !GetCVar("FViewBob"))
+		{
+			bob = 0;
+		}
+		else if (still)
 		{
 			if (player.health > 0)
 			{
@@ -604,7 +622,7 @@ class PlayerPawn : Actor
 		}
 		else
 		{
-			angle = Level.maptime / (20 * TICRATE / 35.) * 360.;
+			angle = Level.maptime / (ViewBobSpeed * TICRATE / 35.) * 360.;
 			bob = player.bob * sin(angle) * (waterlevel > 1 ? 0.25f : 0.5f);
 		}
 
@@ -638,6 +656,7 @@ class PlayerPawn : Actor
 			bob = 0;
 		}
 		player.viewz = pos.Z + player.viewheight + (bob * clamp(ViewBob, 0. , 1.5)); // [SP] Allow DECORATE changes to view bobbing speed.
+
 		if (Floorclip && player.playerstate != PST_DEAD
 			&& pos.Z <= floorz)
 		{
@@ -766,14 +785,16 @@ class PlayerPawn : Actor
 		Super.Die (source, inflictor, dmgflags, MeansOfDeath);
 
 		if (player != NULL && player.mo == self) player.bonuscount = 0;
-
-		if (player != NULL && player.mo != self)
+		
+		// [RL0] To allow voodoo zombies, don't kill the player together with voodoo dolls if the compat flag is enabled
+		if (player != NULL && player.mo != self && !(Level.compatflags2 & COMPATF2_VOODOO_ZOMBIES))
 		{ // Make the real player die, too
 			player.mo.Die (source, inflictor, dmgflags, MeansOfDeath);
 		}
 		else
 		{
-			if (player != NULL && sv_weapondrop)
+			// [RL0] player.mo == self will always be true if COMPATF2_VOODOO_ZOMBIES is false, so there's no need to check the compatflag here too, just self
+			if (player != NULL && sv_weapondrop && player.mo == self)
 			{ // Voodoo dolls don't drop weapons
 				let weap = player.ReadyWeapon;
 				if (weap != NULL)
@@ -1598,6 +1619,12 @@ class PlayerPawn : Actor
 	{
 		let player = self.player;
 		UserCmd cmd = player.cmd;
+
+		// [RL0] Mark players that became zombies (this stays even if they 'revive' by healing, until a level change)
+		if((Level.compatflags2 & COMPATF2_VOODOO_ZOMBIES) && player.health <= 0 && player.mo.health > 0)
+		{
+			PlayerFlags |= PF_VOODOO_ZOMBIE;
+		}
 		
 		CheckFOV();
 
@@ -1681,6 +1708,9 @@ class PlayerPawn : Actor
 
 	void BringUpWeapon ()
 	{
+		// [RL0] Don't bring up weapon when in a voodoo zombie state
+		if(PlayerFlags & PF_VOODOO_ZOMBIE) return;
+
 		let player = self.player;
 		if (player.PendingWeapon == WP_NOCHANGE)
 		{
@@ -1996,6 +2026,19 @@ class PlayerPawn : Actor
 
 	void PlayerFinishLevel (int mode, int flags)
 	{
+		// [RL0] Handle player exit behavior for voodoo zombies
+		if(PlayerFlags & PF_VOODOO_ZOMBIE)
+		{
+			if(player.health > 0)
+			{
+				PlayerFlags &= ~PF_VOODOO_ZOMBIE;
+			}
+			else
+			{
+				bShootable = false;
+				bKilled = true;
+			}
+		}
 		Inventory item, next;
 		let p = player;
 
@@ -2071,7 +2114,7 @@ class PlayerPawn : Actor
 				let it = toDelete[i];
 				if (!it.bDestroyed)
 				{
-					item.DepleteOrDestroy();
+					it.DepleteOrDestroy();
 				}
 			}
 		}
@@ -2437,6 +2480,12 @@ class PlayerPawn : Actor
 		}
 		return p1 * (1. - ticfrac) + p2 * ticfrac;
 	}
+
+	virtual Vector3 /*translation*/ , Vector3 /*rotation*/ BobWeapon3D (double ticfrac)
+	{
+		Vector2 oldBob = BobWeapon(ticfrac);
+		return (0, 0, 0) , ( oldBob.x / 4, oldBob.y / -4, 0);
+	}
 	
 	//----------------------------------------------------------------------------
 	//
@@ -2794,6 +2843,7 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native double GetWBobSpeed() const;
 	native double GetWBobFire() const;
 	native double GetMoveBob() const;
+	native bool GetFViewBob() const;
 	native double GetStillBob() const;
 	native void SetFOV(float fov);
 	native clearscope bool GetClassicFlight() const;

@@ -181,6 +181,7 @@ struct Vector3
 struct _ native	// These are the global variables, the struct is only here to avoid extending the parser for this.
 {
 	native readonly Array<class> AllClasses;
+    native internal readonly Map<Name , Service> AllServices;
 	native readonly bool multiplayer;
 	native @KeyBindings Bindings;
 	native @KeyBindings AutomapBindings;
@@ -461,6 +462,7 @@ enum DrawTextureTags
 	DTA_Indexed,			// Use an indexed texture combined with the given translation.
 	DTA_CleanTop,			// Like DTA_Clean but aligns to the top of the screen instead of the center.
 	DTA_NoOffset,			// Ignore 2D drawer's offset.
+	DTA_Localize,		// localize drawn string, for DrawText only
 
 };
 
@@ -640,9 +642,9 @@ struct Font native
 	// native Font(const Name name);
 
 	native int GetCharWidth(int code);
-	native int StringWidth(String code);
-	native int GetMaxAscender(String code);
-	native bool CanPrint(String code);
+	native int StringWidth(String code, bool localize = true);
+	native int GetMaxAscender(String code, bool localize = true);
+	native bool CanPrint(String code, bool localize = true);
 	native int GetHeight();
 	native int GetDisplacement();
 	native String GetCursor();
@@ -686,6 +688,31 @@ struct CVar native
 	native void SetString(String s);
 	native int GetRealType();
 	native int ResetToDefault();
+}
+
+class CustomIntCVar abstract
+{
+    abstract int ModifyValue(Name CVarName, int val);
+}
+
+class CustomFloatCVar abstract
+{
+    abstract double ModifyValue(Name CVarName, double val);
+}
+
+class CustomStringCVar abstract
+{
+    abstract String ModifyValue(Name CVarName, String val);
+}
+
+class CustomBoolCVar abstract
+{
+    abstract bool ModifyValue(Name CVarName, bool val);
+}
+
+class CustomColorCVar abstract
+{
+    abstract Color ModifyValue(Name CVarName, Color val);
 }
 
 struct GIFont version("2.4")
@@ -881,7 +908,9 @@ struct StringStruct native
 	native int CodePointCount() const;
 	native int, int GetNextCodePoint(int position) const;
 	native void Substitute(String str, String replace);
+	native void StripLeft(String junk = "");
 	native void StripRight(String junk = "");
+	native void StripLeftRight(String junk = "");
 }
 
 struct Translation version("2.4")

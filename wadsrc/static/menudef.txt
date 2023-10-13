@@ -739,8 +739,8 @@ OptionMenu "MouseOptions" protected
 	}
 	Option "$MOUSEMNU_CURSOR",			"vid_cursor", "Cursors"
 	StaticText 	""
-	Slider "$MOUSEMNU_SENSITIVITY_X",	"m_sensitivity_x", 0.5, 8, 0.25
-	Slider "$MOUSEMNU_SENSITIVITY_Y",	"m_sensitivity_y", 0.5, 8, 0.25
+	Slider "$MOUSEMNU_SENSITIVITY_X",	"m_sensitivity_x", 0.1, 8, 0.05
+	Slider "$MOUSEMNU_SENSITIVITY_Y",	"m_sensitivity_y", 0.1, 8, 0.05
 	StaticText 	""
 	Slider "$MOUSEMNU_TURNSPEED",		"m_yaw", 0, 2.5, 0.1
 	Slider "$MOUSEMNU_MOUSELOOKSPEED",	"m_pitch", 0, 2.5, 0.1
@@ -885,13 +885,6 @@ OptionValue VanillaTrans
 	1.0, "$OPTVAL_VTFVANILLA"
 	2.0, "$OPTVAL_VTAZDOOM"
 	3.0, "$OPTVAL_VTAVANILLA"
-}
-
-OptionValue GPUSwitch
-{
-	0.0, "$OPTVAL_DEFAULT"
-	1.0, "$OPTVAL_DEDICATED"
-	2.0, "$OPTVAL_INTEGRATED"
 }
 
 OptionValue PreferBackend
@@ -1222,6 +1215,7 @@ OptionMenu "MiscOptions" protected
 	}
 	Option "$MISCMNU_QUERYIWAD",				"queryiwad", "OnOff"
 	StaticText " "
+	Option "$MISCMNU_FVIEWBOB",            "fviewbob", "OnOff"
 	Option "$MISCMNU_NOCHEATS",					"nocheats", "OnOff"
 	Option "$MISCMNU_ALLCHEATS",				"allcheats", "OnOff"
 	Option "$MISCMNU_ENABLEAUTOSAVES",			"disableautosave", "Autosave"
@@ -1347,6 +1341,7 @@ OptionMenu AutomapOptions protected
 	Option "$AUTOMAPMNU_TEXTURED",				"am_textured", "OnOff"
 	Slider "$AUTOMAPMNU_LINEALPHA",				"am_linealpha", 0.1, 1.0, 0.1, 1
 	Slider "$AUTOMAPMNU_LINETHICKNESS",			"am_linethickness", 1, 8, 1, 0
+	Option "$AUTOMAPMNU_LINEANTIALIASING",		"am_lineantialiasing", "OnOff"
 
 	StaticText ""
 	Option "$AUTOMAPMNU_SHOWITEMS",				"am_showitems", "OnOff"
@@ -1468,6 +1463,7 @@ OptionMenu MapColorMenuOverlay protected
 	ColorPicker "$MAPCOLORMNU_INTRALEVELCOLOR",			"am_ovtelecolor"
 	ColorPicker "$MAPCOLORMNU_INTERLEVELCOLOR",			"am_ovinterlevelcolor"
 	ColorPicker "$MAPCOLORMNU_SECRETSECTORCOLOR",		"am_ovsecretsectorcolor"
+	ColorPicker "$MAPCOLORMNU_UNEXPLOREDSECRETCOLOR",	"am_ovunexploredsecretcolor"
 	ColorPicker "$MAPCOLORMNU_SPECIALWALLCOLOR",		"am_ovspecialwallcolor"
 	ColorPicker "$MAPCOLORMNU_PORTAL",					"am_ovportalcolor"
 }
@@ -1702,6 +1698,7 @@ OptionMenu CoopOptions protected
 	Option "$GMPLYMNU_KEEPAMMO",				"sv_cooploseammo", "NoYes"
 	Option "$GMPLYMNU_LOSEHALFAMMO",			"sv_coophalveammo", "YesNo"
 	Option "$GMPLYMNU_SPAWNWHEREDIED",			"sv_samespawnspot", "YesNo"
+	Option "$GMPLYMNU_NOPLAYERCLIP",			"sv_noplayerclip", "YesNo"
 	Class "GameplayMenu"
 }
 
@@ -2282,10 +2279,6 @@ OptionMenu VideoModeMenu protected
 	{
 		Option "$VIDMNU_HIDPI",			"vid_hidpi", "YesNo"
 	}
-	IfOption(Windows)
-	{
-		Option "$DSPLYMNU_GPUSWITCH",			vid_gpuswitch, "GPUSwitch"
-	}
 
 	Option "$VIDMNU_FORCEASPECT",		"vid_aspect", "ForceRatios"
 	Option "$VIDMNU_CROPASPECT",		"vid_cropaspect", "CropAspect"
@@ -2294,7 +2287,7 @@ OptionMenu VideoModeMenu protected
 
 	StaticText " "
 	Option "$DSPLYMNU_VSYNC",					"vid_vsync", "OnOff"
-	Option "$VIDMNU_MAXFPS",					"vid_maxfps", "MaxFps"
+	Slider "$VIDMNU_MAXFPS",					"vid_maxfps", 35, 500, 1
 	Option "$DSPLYMNU_CAPFPS",					"cl_capfps", "OffOn"
 	
 	StaticText ""
@@ -2459,14 +2452,9 @@ OptionValue "Colormaps"
 
 OptionValue "LightingModes"
 {
-	0, "$OPTVAL_STANDARD"
-	1, "$OPTVAL_BRIGHT"
-	2, "$OPTVAL_DOOM"
-	3, "$OPTVAL_DARK"
-	4, "$OPTVAL_LEGACY"
-	5, "$OPTVAL_BUILD"
-	8, "$OPTVAL_SOFTWARE"
-	16, "$OPTVAL_VANILLA"
+	0, "$OPTVAL_CLASSIC"
+	1, "$OPTVAL_SOFTWARE"
+	2, "$OPTVAL_VANILLA"
 }
 
 OptionValue "Precision"
@@ -2855,6 +2843,7 @@ OptionString "LanguageOptions"
 	"default", "English (US)"
 	"eng", "English (UK)"
 	"cs", "Česky (Czech)"
+	"da", "Dansk (Danish)"
 	"de", "Deutsch (German)"
 	"es", "Español (España) (Castilian Spanish)"
 	"esm", "Español (Latino) (Latin American Spanish)"
@@ -2866,12 +2855,14 @@ OptionString "LanguageOptions"
 	"jp", "日本語 (Japanese)"
 	"ko", "한국어 (Korean)"
 	"nl", "Nederlands (Dutch)"
+	"no", "Norsk Bokmål (Norwegian)"
 	"pl", "Polski (Polish)"
 	"ptg", "Português (European Portuguese)"
 	"pt", "Português do Brasil (Brazilian Portuguese)"
 	"ro", "Română (Romanian)"
 	"ru", "Русский (Russian)"
 	"sr", "Српски (Serbian)"
+	"tr", "Türkçe (Turkish)"
 }
 
 /*=======================================

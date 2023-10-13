@@ -67,7 +67,8 @@ const float LARGE_VALUE = 1e19f;
 
 EXTERN_CVAR(Bool, r_debug_disable_vis_filter)
 EXTERN_CVAR(Float, transsouls)
-
+EXTERN_CVAR(Float, r_actorspriteshadowalpha)
+EXTERN_CVAR(Float, r_actorspriteshadowfadeheight)
 
 //==========================================================================
 //
@@ -422,7 +423,7 @@ bool HWSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 			// which is nicer in VR
 			float xrel = xcenter - vp->X;
 			float yrel = ycenter - vp->Y;
-			float absAngleDeg = RAD2DEG(atan2(-yrel, xrel));
+			float absAngleDeg = atan2(-yrel, xrel) * (180 / M_PI);
 			float counterRotationDeg = 270. - HWAngles.Yaw.Degrees(); // counteracts existing sprite rotation
 			float relAngleDeg = counterRotationDeg + absAngleDeg;
 
@@ -1174,7 +1175,12 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	{
 		RenderStyle = STYLE_Stencil;
 		ThingColor = MAKEARGB(255, 0, 0, 0);
-		trans *= 0.5f;
+		// fade shadow progressively as the thing moves higher away from the floor
+		if (r_actorspriteshadowfadeheight > 0.0) {
+			trans *= clamp(0.0f, float(r_actorspriteshadowalpha - (thingpos.Z - thing->floorz) * (1.0 / r_actorspriteshadowfadeheight)), float(r_actorspriteshadowalpha));
+		} else {
+			trans *= r_actorspriteshadowalpha;
+		}
 		hw_styleflags = STYLEHW_NoAlphaTest;
 	}
 

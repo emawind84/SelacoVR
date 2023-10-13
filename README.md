@@ -20,7 +20,7 @@ https://www.moddb.com/downloads/doom-neural-upscale-2x texture upscale mod
 https://forum.zdoom.org/download/file.php?id=30459&sid=df63736751c12c3ebb76230d1dc86543 blood color fixer mod
 
 #
-Copyright (c) 1998-2020 ZDoom + GZDoom teams, and contributors
+Copyright (c) 1998-2023 ZDoom + GZDoom teams, and contributors
 
 Doom Source (c) 1997 id Software, Raven Software, and contributors
 
@@ -32,3 +32,9 @@ Please see license files for individual contributor licenses
 
 
 
+# Resources
+- https://zdoom.org/ - Home Page
+- https://forum.zdoom.org/ - Forum
+- https://zdoom.org/wiki/ - Wiki
+- https://dsc.gg/zdoom - Discord Server
+- https://docs.google.com/spreadsheets/d/1pvwXEgytkor9SClCiDn4j5AH7FedyXS-ocCbsuQIXDU/edit?usp=sharing - Translation sheet (Google Docs)

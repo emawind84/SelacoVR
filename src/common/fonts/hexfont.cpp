@@ -58,7 +58,7 @@ struct HexDataSource
 	//
 	//==========================================================================
 
-	void ParseDefinition(FResourceLump* font)
+	void ParseDefinition(FileSys::FResourceLump* font)
 	{
 		FScanner sc;
 
@@ -109,8 +109,8 @@ class FHexFontChar : public FImageSource
 public:
 	FHexFontChar(uint8_t *sourcedata, int swidth, int width, int height);
 
-	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
-	int CopyPixels(FBitmap* bmp, int conversion);
+	PalettedPixels CreatePalettedPixels(int conversion, int frame = 0) override;
+	int CopyPixels(FBitmap* bmp, int conversion, int frame = 0) override;
 
 protected:
 	int SourceWidth;
@@ -144,10 +144,10 @@ FHexFontChar::FHexFontChar (uint8_t *sourcedata, int swidth, int width, int heig
 //
 //==========================================================================
 
-TArray<uint8_t> FHexFontChar::CreatePalettedPixels(int)
+PalettedPixels FHexFontChar::CreatePalettedPixels(int, int)
 {
 	int destSize = Width * Height;
-	TArray<uint8_t> Pixels(destSize, true);
+	PalettedPixels Pixels(destSize);
 	uint8_t *dest_p = Pixels.Data();
 	const uint8_t *src_p = SourceData;
 
@@ -175,7 +175,7 @@ TArray<uint8_t> FHexFontChar::CreatePalettedPixels(int)
 	return Pixels;
 }
 
-int FHexFontChar::CopyPixels(FBitmap* bmp, int conversion)
+int FHexFontChar::CopyPixels(FBitmap* bmp, int conversion, int frame)
 {
 	if (conversion == luminance) conversion = normal;	// luminance images have no use as an RGB source.
 	PalEntry* palette = hexdata.ConsolePal;
@@ -190,8 +190,8 @@ class FHexFontChar2 : public FHexFontChar
 public:
 	FHexFontChar2(uint8_t *sourcedata, int swidth, int width, int height);
 
-	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
-	int CopyPixels(FBitmap* bmp, int conversion);
+	PalettedPixels CreatePalettedPixels(int conversion, int frame = 0) override;
+	int CopyPixels(FBitmap* bmp, int conversion, int frame = 0) override;
 };
 
 
@@ -216,10 +216,10 @@ FHexFontChar2::FHexFontChar2(uint8_t *sourcedata, int swidth, int width, int hei
 //
 //==========================================================================
 
-TArray<uint8_t> FHexFontChar2::CreatePalettedPixels(int)
+PalettedPixels FHexFontChar2::CreatePalettedPixels(int, int)
 {
 	int destSize = Width * Height;
-	TArray<uint8_t> Pixels(destSize, true);
+	PalettedPixels Pixels(destSize);
 	uint8_t *dest_p = Pixels.Data();
 
 	assert(SourceData);
@@ -255,7 +255,7 @@ TArray<uint8_t> FHexFontChar2::CreatePalettedPixels(int)
 	return Pixels;
 }
 
-int FHexFontChar2::CopyPixels(FBitmap* bmp, int conversion)
+int FHexFontChar2::CopyPixels(FBitmap* bmp, int conversion, int frame)
 {
 	if (conversion == luminance) conversion = normal;	// luminance images have no use as an RGB source.
 	PalEntry* palette = hexdata.SmallPal;

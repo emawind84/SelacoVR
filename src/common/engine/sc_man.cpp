@@ -99,32 +99,9 @@ void VersionInfo::operator=(const char *string)
 //
 //==========================================================================
 
-FScanner::FScanner()
+FScanner::FScanner(TMap<FName, Symbol>* extsymbols) : symbols(extsymbols? *extsymbols : mysymbols)
 {
 	ScriptOpen = false;
-}
-
-//==========================================================================
-//
-// FScanner Destructor
-//
-//==========================================================================
-
-FScanner::~FScanner()
-{
-	// Humm... Nothing to do in here.
-}
-
-//==========================================================================
-//
-// FScanner Copy Constructor
-//
-//==========================================================================
-
-FScanner::FScanner(const FScanner &other)
-{
-	ScriptOpen = false;
-	*this = other;
 }
 
 //==========================================================================
@@ -133,70 +110,10 @@ FScanner::FScanner(const FScanner &other)
 //
 //==========================================================================
 
-FScanner::FScanner(int lumpnum)
+FScanner::FScanner(int lumpnum, TMap<FName, Symbol>* extsymbols) : symbols(extsymbols ? *extsymbols : mysymbols)
 {
 	ScriptOpen = false;
 	OpenLumpNum(lumpnum);
-}
-
-//==========================================================================
-//
-// FScanner :: operator =
-//
-//==========================================================================
-
-FScanner &FScanner::operator=(const FScanner &other)
-{
-	if (this == &other)
-	{
-		return *this;
-	}
-	if (!other.ScriptOpen)
-	{
-		Close();
-		return *this;
-	}
-
-	// Copy protected members
-	ScriptOpen = true;
-	ScriptName = other.ScriptName;
-	ScriptBuffer = other.ScriptBuffer;
-	ScriptPtr = other.ScriptPtr;
-	ScriptEndPtr = other.ScriptEndPtr;
-	AlreadyGot = other.AlreadyGot;
-	AlreadyGotLine = other.AlreadyGotLine;
-	LastGotToken = other.LastGotToken;
-	LastGotPtr = other.LastGotPtr;
-	LastGotLine = other.LastGotLine;
-	CMode = other.CMode;
-	Escape = other.Escape;
-	StateMode = other.StateMode;
-	StateOptions = other.StateOptions;
-
-	// Copy public members
-	if (other.String == other.StringBuffer)
-	{
-		memcpy(StringBuffer, other.StringBuffer, sizeof(StringBuffer));
-		BigStringBuffer = "";
-		String = StringBuffer;
-	}
-	else
-	{
-		// Past practice means the string buffer must be writeable, which
-		// removes some of the benefit from using an FString to store
-		// the big string buffer.
-		BigStringBuffer = other.BigStringBuffer;
-		String = BigStringBuffer.LockBuffer();
-	}
-	StringLen = other.StringLen;
-	TokenType = other.TokenType;
-	Number = other.Number;
-	Float = other.Float;
-	Line = other.Line;
-	End = other.End;
-	Crossed = other.Crossed;
-
-	return *this;
 }
 
 //==========================================================================
@@ -219,7 +136,7 @@ void FScanner::Open (const char *name)
 //
 // FScanner :: OpenFile
 //
-// Loads a script from a file. Uses new/delete for memory allocation.
+// Loads a script from a file.
 //
 //==========================================================================
 
@@ -231,9 +148,9 @@ bool FScanner::OpenFile (const char *name)
 	if (!fr.OpenFile(name)) return false;
 	auto filesize = fr.GetLength();
 	auto filebuff = fr.Read();
-	if (filebuff.Size() == 0 && filesize > 0) return false;
+	if (filebuff.size() == 0 && filesize > 0) return false;
 
-	ScriptBuffer = FString((const char *)filebuff.Data(), filesize);
+	ScriptBuffer = FString((const char *)filebuff.data(), filesize);
 	ScriptName = name;	// This is used for error messages so the full file name is preferable
 	LumpNum = -1;
 	PrepareScript ();
@@ -283,10 +200,13 @@ void FScanner :: OpenLumpNum (int lump)
 {
 	Close ();
 	{
-		FileData mem = fileSystem.ReadFile(lump);
-		ScriptBuffer = mem.GetString();
+		auto mem = fileSystem.OpenFileReader(lump);
+		auto buff = ScriptBuffer.LockNewBuffer(mem.GetLength());
+		mem.Read(buff, mem.GetLength());
+		buff[mem.GetLength()] = 0;
+		ScriptBuffer.UnlockBuffer();
 	}
-	ScriptName = fileSystem.GetFileFullPath(lump);
+	ScriptName = fileSystem.GetFileFullPath(lump).c_str();
 	LumpNum = lump;
 	PrepareScript ();
 }
@@ -1229,7 +1149,7 @@ void FScanner::AddSymbol(const char *name, int64_t value)
 {
 	Symbol sym;
 	sym.tokenType = TK_IntConst;
-	sym.Number = int(value);
+	sym.Number = value;
 	sym.Float = double(value);
 	symbols.Insert(name, sym);
 }

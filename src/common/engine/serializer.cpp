@@ -37,7 +37,7 @@
 #define RAPIDJSON_HAS_CXX11_RANGE_FOR 1
 #define RAPIDJSON_PARSE_DEFAULT_FLAGS kParseFullPrecisionFlag
 
-#include <zlib.h>
+#include <miniz.h>
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/prettywriter.h"
@@ -55,6 +55,9 @@
 #include "textures.h"
 #include "texturemanager.h"
 #include "base64.h"
+#include "vm.h"
+
+using namespace FileSys;
 
 extern DObject *WP_NOCHANGE;
 bool save_full = false;	// for testing. Should be removed afterward.
@@ -601,6 +604,8 @@ void FSerializer::WriteObjects()
 		{
 			auto obj = w->mDObjects[i];
 
+			if(obj->ObjectFlags & OF_Transient) continue;
+
 			BeginObject(nullptr);
 			w->Key("classtype");
 			w->String(obj->GetClass()->TypeName.GetChars());
@@ -683,7 +688,7 @@ void FSerializer::ReadObjects(bool hubtravel)
 							{
 								r->mObjects.Clamp(size);	// close all inner objects.
 								// In case something in here throws an error, let's continue and deal with it later.
-								Printf(PRINT_NONOTIFY, TEXTCOLOR_RED "'%s'\n while restoring %s\n", err.GetMessage(), obj ? obj->GetClass()->TypeName.GetChars() : "invalid object");
+								Printf(PRINT_NONOTIFY | PRINT_BOLD, TEXTCOLOR_RED "'%s'\n while restoring %s\n", err.GetMessage(), obj ? obj->GetClass()->TypeName.GetChars() : "invalid object");
 								mErrors++;
 							}
 						}
@@ -693,7 +698,6 @@ void FSerializer::ReadObjects(bool hubtravel)
 			}
 			EndArray();
 
-			assert(!founderrors);
 			if (founderrors)
 			{
 				Printf(TEXTCOLOR_RED "Failed to restore all objects in savegame\n");
@@ -746,6 +750,7 @@ FCompressedBuffer FSerializer::GetCompressedOutput()
 	FCompressedBuffer buff;
 	WriteObjects();
 	EndObject();
+	buff.filename = nullptr;
 	buff.mSize = (unsigned)w->mOutString.GetSize();
 	buff.mZipFlags = 0;
 	buff.mCRC32 = crc32(0, (const Bytef*)w->mOutString.GetString(), buff.mSize);
@@ -1134,7 +1139,7 @@ FSerializer &Serialize(FSerializer &arc, const char *key, FTextureID &value, FTe
 			const char *name;
 			auto lump = pic->GetSourceLump();
 
-			if (fileSystem.GetLinkedTexture(lump) == pic)
+			if (TexMan.GetLinkedTexture(lump) == pic)
 			{
 				name = fileSystem.GetFileFullName(lump);
 			}
@@ -1563,6 +1568,35 @@ template<> FSerializer &Serialize(FSerializer &arc, const char *key, Dictionary 
 		dict = DictionaryFromString(contents);
 		return arc;
 	}
+}
+
+template<> FSerializer& Serialize(FSerializer& arc, const char* key, VMFunction*& func, VMFunction**)
+{
+	if (arc.isWriting())
+	{
+		arc.WriteKey(key);
+		if (func) arc.w->String(func->QualifiedName);
+		else arc.w->Null();
+	}
+	else
+	{
+		func = nullptr;
+
+		auto val = arc.r->FindKey(key);
+		if (val != nullptr && val->IsString())
+		{
+			auto qname = val->GetString();
+			size_t p = strcspn(qname, ".");
+			if (p != 0)
+			{
+				FName clsname(qname, p, true);
+				FName funcname(qname + p + 1, true);
+				func = PClass::FindFunction(clsname, funcname);
+			}
+		}
+
+	}
+	return arc;
 }
 
 //==========================================================================

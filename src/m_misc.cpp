@@ -74,7 +74,7 @@ CVAR(String, screenshot_type, "png", CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 CVAR(String, screenshot_dir, "", CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 EXTERN_CVAR(Bool, longsavemessages);
 
-static long ParseCommandLine (const char *args, int *argc, char **argv);
+static size_t ParseCommandLine (const char *args, int *argc, char **argv);
 
 
 //---------------------------------------------------------------------------
@@ -98,10 +98,10 @@ void M_FindResponseFile (void)
 		else
 		{
 			char	**argv;
-			TArray<uint8_t> file;
+			std::vector<uint8_t> file;
 			int		argc = 0;
 			int 	size;
-			long	argsize = 0;
+			size_t	argsize = 0;
 			int 	index;
 
 			// Any more response files after the limit will be removed from the
@@ -119,8 +119,8 @@ void M_FindResponseFile (void)
 					Printf ("Found response file %s!\n", Args->GetArg(i) + 1);
 					size = (int)fr.GetLength();
 					file = fr.Read (size);
-					file[size] = 0;
-					argsize = ParseCommandLine ((char*)file.Data(), &argc, NULL);
+					file.push_back(0);
+					argsize = ParseCommandLine ((char*)file.data(), &argc, NULL);
 				}
 			}
 			else
@@ -132,7 +132,7 @@ void M_FindResponseFile (void)
 			{
 				argv = (char **)M_Malloc (argc*sizeof(char *) + argsize);
 				argv[0] = (char *)argv + argc*sizeof(char *);
-				ParseCommandLine ((char*)file.Data(), NULL, argv);
+				ParseCommandLine ((char*)file.data(), NULL, argv);
 
 				// Create a new argument vector
 				FArgs *newargs = new FArgs;
@@ -179,17 +179,19 @@ void M_FindResponseFile (void)
 // This is just like the version in c_dispatch.cpp, except it does not
 // do cvar expansion.
 
-static long ParseCommandLine (const char *args, int *argc, char **argv)
+static size_t ParseCommandLine (const char *args, int *argc, char **argv)
 {
 	int count;
+	char* buffstart;
 	char *buffplace;
 
 	count = 0;
-	buffplace = NULL;
+	buffstart = NULL;
 	if (argv != NULL)
 	{
-		buffplace = argv[0];
+		buffstart = argv[0];
 	}
+	buffplace = buffstart;
 
 	for (;;)
 	{
@@ -257,7 +259,7 @@ static long ParseCommandLine (const char *args, int *argc, char **argv)
 	{
 		*argc = count;
 	}
-	return (long)(buffplace - (char *)0);
+	return (buffplace - buffstart);
 }
 
 

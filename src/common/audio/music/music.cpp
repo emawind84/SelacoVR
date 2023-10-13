@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdexcept>
+#include <memory>
 
 #include "i_sound.h"
 #include "i_music.h"
@@ -53,9 +54,12 @@
 #include "gain_analysis.h"
 #include "i_specialpaths.h"
 #include "configfile.h"
+#include "c_cvars.h"
+#include "md5.h"
 
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
+extern int nomusic;
 extern float S_GetMusicVolume (const char *music);
 
 static void S_ActivatePlayList(bool goBack);
@@ -81,6 +85,8 @@ static MusicCallbacks mus_cb = { nullptr, DefaultOpenMusic };
 
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
+EXTERN_CVAR(Bool, mus_enabled)
+EXTERN_CVAR(Float, snd_musicvolume)
 EXTERN_CVAR(Int, snd_mididevice)
 EXTERN_CVAR(Float, mod_dumb_mastervolume)
 EXTERN_CVAR(Float, fluid_gain)
@@ -410,7 +416,7 @@ static FString ReplayGainHash(ZMusicCustomReader* reader, int flength, int playe
 
 	for (size_t j = 0; j < sizeof(digest); ++j)
 	{
-		sprintf(digestout + (j * 2), "%02X", digest[j]);
+		snprintf(digestout + (j * 2), 3, "%02X", digest[j]);
 	}
 	digestout[32] = 0;
 
