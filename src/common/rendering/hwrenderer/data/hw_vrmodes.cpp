@@ -108,16 +108,6 @@ static float RAD2DEG(float rad)
 	return rad * float(180. / M_PI);
 }
 
-static float DEG2RAD(float deg)
-{
-	return deg * float(M_PI / 180.0);
-}
-
-static float RAD2DEG(float rad)
-{
-	return rad * float(180. / M_PI);
-}
-
 const VRMode *VRMode::GetVRMode(bool toscreen)
 {
 	static VREyeInfo vrmi_mono_eyes[2] = { VREyeInfo(0.f, 1.f), VREyeInfo(0.f, 0.f) };
