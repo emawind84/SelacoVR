@@ -91,8 +91,15 @@ void FHWModelRenderer::PrepareRenderHUDModel(FSpriteModelFrame* smf, FVector3 tr
 		// Aplying model offsets (model offsets do not depend on model scalings).
 		gl_RenderState.mModelMatrix.translate(smf->xoffset / smf->xscale, smf->zoffset / smf->zscale, smf->yoffset / smf->yscale);
 		// [BB] Weapon bob, very similar to the normal Doom weapon bob.
-		//gl_RenderState.mModelMatrix.rotate(ofsX / 4, 0, 1, 0);
-		//gl_RenderState.mModelMatrix.rotate((ofsY - WEAPONTOP) / -4., 1, 0, 0);
+		gl_RenderState.mModelMatrix.translate(rotation_pivot.X, rotation_pivot.Y, rotation_pivot.Z);
+
+		gl_RenderState.mModelMatrix.rotate(rotation.X, 0, 1, 0);
+		gl_RenderState.mModelMatrix.rotate(rotation.Y, 1, 0, 0);
+		gl_RenderState.mModelMatrix.rotate(rotation.Z, 0, 0, 1);
+
+		gl_RenderState.mModelMatrix.translate(-rotation_pivot.X, -rotation_pivot.Y, -rotation_pivot.Z);
+
+		gl_RenderState.mModelMatrix.translate(translation.X, translation.Y, translation.Z);
 
 		// [BB] For some reason the jDoom models need to be rotated.
 		gl_RenderState.mModelMatrix.rotate(90.f, 0, 1, 0);
