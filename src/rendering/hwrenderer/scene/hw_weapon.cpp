@@ -53,6 +53,8 @@
 
 #include "vm.h"
 
+#include "vm.h"
+
 EXTERN_CVAR(Float, transsouls)
 EXTERN_CVAR(Int, gl_fuzztype)
 EXTERN_CVAR(Bool, r_deathcamera)
@@ -1032,57 +1034,6 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 	
 	if(hudModelStep)
 	{
-		// if (!psp->GetState()) continue;
-		// FSpriteModelFrame *smf = psp->Caller != nullptr ? FindModelFrame(psp->Caller->modelData != nullptr ? psp->Caller->modelData->modelDef != NAME_None ? PClass::FindActor(psp->Caller->modelData->modelDef) : psp->Caller->GetClass() : psp->Caller->GetClass(), psp->GetSprite(), psp->GetFrame(), false) : nullptr;
-		// // This is an 'either-or' proposition. This maybe needs some work to allow overlays with weapon models but as originally implemented this just won't work.
-		// if (smf && !hudModelStep) continue;
-		// if (!smf && hudModelStep) continue;
-
-		// HUDSprite hudsprite;
-		// hudsprite.owner = playermo;
-		// hudsprite.mframe = smf;
-		// hudsprite.weapon = psp;
-
-		// if (!hudsprite.GetWeaponRenderStyle(psp, camera, viewsector, light)) continue;
-
-		// FVector2 spos = BobWeapon(weap, psp, vp.TicFrac);
-
-		// hudsprite.dynrgb[0] = hudsprite.dynrgb[1] = hudsprite.dynrgb[2] = 0;
-		// hudsprite.lightindex = -1;
-		// // set the lighting parameters
-		// if (hudsprite.RenderStyle.BlendOp != STYLEOP_Shadow && Level->HasDynamicLights && !isFullbrightScene() && gl_light_sprites)
-		// {
-		// 	if (!hudModelStep)
-		// 	{
-		// 		GetDynSpriteLight(playermo, nullptr, hudsprite.dynrgb);
-		// 	}
-		// 	else
-		// 	{
-		// 		hw_GetDynModelLight(playermo, lightdata);
-		// 		hudsprite.lightindex = screen->mLights->UploadLights(lightdata);
-		// 		LightProbe* probe = FindLightProbe(playermo->Level, playermo->X(), playermo->Y(), playermo->Center());
-		// 		if (probe)
-		// 		{
-		// 			hudsprite.dynrgb[0] = probe->Red;
-		// 			hudsprite.dynrgb[1] = probe->Green;
-		// 			hudsprite.dynrgb[2] = probe->Blue;
-		// 		}
-		// 	}
-		// }
-		
-		// // [BB] In the HUD model step we just render the model and break out. 
-		// if (hudModelStep)
-		// {
-		// 	hudsprite.mx = spos.X;
-		// 	hudsprite.my = spos.Y;
-		// }
-		// else
-		// {
-		// 	hudsprite.weapon = psp;
-		// 	hudsprite.player = player;
-		// 	if (!hudsprite.GetWeaponRect(this, psp, spos.X, spos.Y, player, vp.TicFrac)) continue;
-		// }
-		// hudsprites.Push(hudsprite);
 		PreparePlayerSprites3D(viewsector,in_area);
 	}
 	else
