@@ -112,10 +112,14 @@ public:
 	void AddHiresTextures (int wadnum);
 	void LoadTextureDefs(int wadnum, const char *lumpname, FMultipatchTextureBuilder &build);
 	void ParseColorization(FScanner& sc);
+	int ParseBatchTextureDef(int lump, int wadnum);
 	void ParseTextureDef(int remapLump, FMultipatchTextureBuilder &build);
 	void SortTexturesByType(int start, int end);
 	bool AreTexturesCompatible (FTextureID picnum1, FTextureID picnum2);
 	void AddLocalizedVariants();
+	int LoadTextureDefsForWad(int wadnum);
+	void WriteCache();
+	void WriteCacheForWad(int wadnum);
 
 	FTextureID CreateTexture (int lumpnum, ETextureType usetype=ETextureType::Any);	// Also calls AddTexture
 	FTextureID AddGameTexture(FGameTexture* texture, bool addtohash = true);

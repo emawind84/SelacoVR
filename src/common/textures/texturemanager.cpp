@@ -48,6 +48,8 @@
 #include "animtexture.h"
 #include "formats/multipatchtexture.h"
 
+#include "m_argv.h"
+
 FTextureManager TexMan;
 
 
@@ -926,122 +928,298 @@ void FTextureManager::LoadTextureX(int wadnum, FMultipatchTextureBuilder &build)
 	build.AddTexturesLumps (texlump1, texlump2, pnames);
 }
 
+
+int FTextureManager::ParseBatchTextureDef(int lump, int wadnum) {
+	int total = 0;
+
+	auto reader = fileSystem.OpenFileReader(lump);
+	char buf[1800];
+
+	while (reader.Gets(buf, 1800)) {
+		// Every line is a definition
+		int type, fileType;
+		char id[9], path[1024];
+		path[0] = '\0';
+
+		int count = sscanf(buf,
+			"%d:%8[^:]:%1023[^:]:%d",
+			&fileType, id, path, &type
+		);
+
+
+		if (count == 4) {
+			int lumpnum = -1;
+			if(strnlen_s(path, 1023) > 1) lumpnum = fileSystem.CheckNumForFullName(path, wadnum);
+			else lumpnum = fileSystem.CheckNumForName(path, wadnum);
+
+			if (lumpnum >= 0)
+			{
+				auto image = FImageSource::CreateImageFromDef(buf, fileType, lumpnum);
+				if (image == nullptr) continue;
+
+				auto newtex = MakeGameTexture(new FImageTexture(image), id, (ETextureType)type);
+
+				if (newtex != NULL)
+				{
+					// Replace the entire texture and adjust the scaling and offset factors.
+					newtex->SetWorldPanning(true);
+					newtex->SetDisplaySize((float)image->GetWidth(), (float)image->GetHeight());
+
+					FTextureID oldtex = TexMan.CheckForTexture(id, (ETextureType)type);
+					if (oldtex.isValid())
+					{
+						ReplaceTexture(oldtex, newtex, true);
+						newtex->SetUseType(ETextureType::Override);
+					}
+					else {
+						AddGameTexture(newtex);
+					}
+					progressFunc();
+					total++;
+				}
+			}
+		}
+		else {
+			Printf("Bad line in TEXTURDEF: %s", buf);
+		}
+	}
+
+	return total;
+}
+
+// @Cockatrice - Load a TEXTURDEF file, containing all textures for a WAD so we can skip the scanning phase
+int FTextureManager::LoadTextureDefsForWad(int wadnum) {
+	int remapLump, lastLump;
+
+	lastLump = 0;
+
+	int total = 0;
+
+	while ((remapLump = fileSystem.FindLump("TEXTURDEF", &lastLump)) != -1)
+	{
+		if (fileSystem.GetFileContainer(remapLump) == wadnum)
+		{
+			total += ParseBatchTextureDef(remapLump, wadnum);
+		}
+	}
+
+	return total;
+}
+
+
 //==========================================================================
 //
 // FTextureManager :: AddTexturesForWad
 //
 //==========================================================================
 
-void FTextureManager::AddTexturesForWad(int wadnum, FMultipatchTextureBuilder &build)
+void FTextureManager::AddTexturesForWad(int wadnum, FMultipatchTextureBuilder& build)
 {
 	int firsttexture = Textures.Size();
 	bool iwad = wadnum >= fileSystem.GetIwadNum() && wadnum <= fileSystem.GetMaxIwadNum();
 
 	FirstTextureForFile.Push(firsttexture);
 
-	// First step: Load sprites
-	AddGroup(wadnum, ns_sprites, ETextureType::Sprite);
+	bool defsLoaded = LoadTextureDefsForWad(wadnum) > 0;
 
-	// When loading a Zip, all graphics in the patches/ directory should be
-	// added as well.
-	AddGroup(wadnum, ns_patches, ETextureType::WallPatch);
+	// Check if the wad has pre-defined textures
+	if (!defsLoaded) {
 
-	// Second step: TEXTUREx lumps
-	LoadTextureX(wadnum, build);
+		// First step: Load sprites
+		AddGroup(wadnum, ns_sprites, ETextureType::Sprite);
 
-	// Third step: Flats
-	AddGroup(wadnum, ns_flats, ETextureType::Flat);
+		// When loading a Zip, all graphics in the patches/ directory should be
+		// added as well.
+		AddGroup(wadnum, ns_patches, ETextureType::WallPatch);
 
-	// Fourth step: Textures (TX_)
-	AddGroup(wadnum, ns_newtextures, ETextureType::Override);
+		// Second step: TEXTUREx lumps
+		LoadTextureX(wadnum, build);
 
-	// Sixth step: Try to find any lump in the WAD that may be a texture and load as a TEX_MiscPatch
-	int firsttx = fileSystem.GetFirstEntry(wadnum);
-	int lasttx = fileSystem.GetLastEntry(wadnum);
+		// Third step: Flats
+		AddGroup(wadnum, ns_flats, ETextureType::Flat);
 
-	for (int i= firsttx; i <= lasttx; i++)
-	{
-		bool skin = false;
-		FString Name;
-		fileSystem.GetFileShortName(Name, i);
+		// Fourth step: Textures (TX_)
+		AddGroup(wadnum, ns_newtextures, ETextureType::Override);
 
-		// Ignore anything not in the global namespace
-		int ns = fileSystem.GetFileNamespace(i);
-		if (ns == ns_global)
+		// Sixth step: Try to find any lump in the WAD that may be a texture and load as a TEX_MiscPatch
+		int firsttx = fileSystem.GetFirstEntry(wadnum);
+		int lasttx = fileSystem.GetLastEntry(wadnum);
+
+		for (int i = firsttx; i <= lasttx; i++)
 		{
-			// In Zips all graphics must be in a separate namespace.
-			if (fileSystem.GetFileFlags(i) & LUMPF_FULLPATH) continue;
+			bool skin = false;
+			FString Name;
+			fileSystem.GetFileShortName(Name, i);
 
-			// Ignore lumps with empty names.
-			if (fileSystem.CheckFileName(i, "")) continue;
-
-			// Ignore anything belonging to a map
-			if (fileSystem.CheckFileName(i, "THINGS")) continue;
-			if (fileSystem.CheckFileName(i, "LINEDEFS")) continue;
-			if (fileSystem.CheckFileName(i, "SIDEDEFS")) continue;
-			if (fileSystem.CheckFileName(i, "VERTEXES")) continue;
-			if (fileSystem.CheckFileName(i, "SEGS")) continue;
-			if (fileSystem.CheckFileName(i, "SSECTORS")) continue;
-			if (fileSystem.CheckFileName(i, "NODES")) continue;
-			if (fileSystem.CheckFileName(i, "SECTORS")) continue;
-			if (fileSystem.CheckFileName(i, "REJECT")) continue;
-			if (fileSystem.CheckFileName(i, "BLOCKMAP")) continue;
-			if (fileSystem.CheckFileName(i, "BEHAVIOR")) continue;
-
-			bool force = false;
-			// Don't bother looking at this lump if something later overrides it.
-			if (fileSystem.CheckNumForName(Name, ns_graphics) != i)
+			// Ignore anything not in the global namespace
+			int ns = fileSystem.GetFileNamespace(i);
+			if (ns == ns_global)
 			{
-				if (iwad)
-				{ 
-					// We need to make an exception for font characters of the SmallFont coming from the IWAD to be able to construct the original font.
-					if (Name.IndexOf("STCFN") != 0 && Name.IndexOf("FONTA") != 0) continue;
-					force = true;
-				}
-				else continue;
-			}
+				// In Zips all graphics must be in a separate namespace.
+				if (fileSystem.GetFileFlags(i) & LUMPF_FULLPATH) continue;
 
-			// skip this if it has already been added as a wall patch.
-			if (!force && CheckForTexture(Name, ETextureType::WallPatch, 0).Exists()) continue;
-		}
-		else if (ns == ns_graphics)
-		{
-			if (fileSystem.CheckNumForName(Name, ns_graphics) != i)
-			{
-				if (iwad)
+				// Ignore lumps with empty names.
+				if (fileSystem.CheckFileName(i, "")) continue;
+
+				// Ignore anything belonging to a map
+				if (fileSystem.CheckFileName(i, "THINGS")) continue;
+				if (fileSystem.CheckFileName(i, "LINEDEFS")) continue;
+				if (fileSystem.CheckFileName(i, "SIDEDEFS")) continue;
+				if (fileSystem.CheckFileName(i, "VERTEXES")) continue;
+				if (fileSystem.CheckFileName(i, "SEGS")) continue;
+				if (fileSystem.CheckFileName(i, "SSECTORS")) continue;
+				if (fileSystem.CheckFileName(i, "NODES")) continue;
+				if (fileSystem.CheckFileName(i, "SECTORS")) continue;
+				if (fileSystem.CheckFileName(i, "REJECT")) continue;
+				if (fileSystem.CheckFileName(i, "BLOCKMAP")) continue;
+				if (fileSystem.CheckFileName(i, "BEHAVIOR")) continue;
+
+				bool force = false;
+				// Don't bother looking at this lump if something later overrides it.
+				if (fileSystem.CheckNumForName(Name, ns_graphics) != i)
 				{
-					// We need to make an exception for font characters of the SmallFont coming from the IWAD to be able to construct the original font.
-					if (Name.IndexOf("STCFN") != 0 && Name.IndexOf("FONTA") != 0) continue;
+					if (iwad)
+					{
+						// We need to make an exception for font characters of the SmallFont coming from the IWAD to be able to construct the original font.
+						if (Name.IndexOf("STCFN") != 0 && Name.IndexOf("FONTA") != 0) continue;
+						force = true;
+					}
+					else continue;
 				}
-				else continue;
+
+				// skip this if it has already been added as a wall patch.
+				if (!force && CheckForTexture(Name, ETextureType::WallPatch, 0).Exists()) continue;
+			}
+			else if (ns == ns_graphics)
+			{
+				if (fileSystem.CheckNumForName(Name, ns_graphics) != i)
+				{
+					if (iwad)
+					{
+						// We need to make an exception for font characters of the SmallFont coming from the IWAD to be able to construct the original font.
+						if (Name.IndexOf("STCFN") != 0 && Name.IndexOf("FONTA") != 0) continue;
+					}
+					else continue;
+				}
+			}
+			else if (ns >= ns_firstskin)
+			{
+				// Don't bother looking this lump if something later overrides it.
+				if (fileSystem.CheckNumForName(Name, ns) != i) continue;
+				skin = true;
+			}
+			else continue;
+
+			// Try to create a texture from this lump and add it.
+			// Unfortunately we have to look at everything that comes through here...
+			auto out = MakeGameTexture(CreateTextureFromLump(i), Name, skin ? ETextureType::SkinGraphic : ETextureType::MiscPatch);
+
+			if (out != NULL)
+			{
+				AddGameTexture(out);
 			}
 		}
-		else if (ns >= ns_firstskin)
-		{
-			// Don't bother looking this lump if something later overrides it.
-			if (fileSystem.CheckNumForName(Name, ns) != i) continue;
-			skin = true;
-		}
-		else continue;
 
-		// Try to create a texture from this lump and add it.
-		// Unfortunately we have to look at everything that comes through here...
-		auto out = MakeGameTexture(CreateTextureFromLump(i), Name, skin ? ETextureType::SkinGraphic : ETextureType::MiscPatch);
+	}	// End check for predefined textures
 
-		if (out != NULL) 
-		{
-			AddGameTexture (out);
-		}
-	}
+	// Seventh step: Check for hires replacements.
+	AddHiresTextures(wadnum);
 
 	// Check for text based texture definitions
 	LoadTextureDefs(wadnum, "TEXTURES", build);
 	LoadTextureDefs(wadnum, "HIRESTEX", build);
 
-	// Seventh step: Check for hires replacements.
-	AddHiresTextures(wadnum);
-
 	SortTexturesByType(firsttexture, Textures.Size());
+
+	Printf(TEXTCOLOR_GOLD"Added %d textures for file %d\n", Textures.Size() - firsttexture, wadnum);
+
+	if(!defsLoaded && Args->CheckParm("-writetexturecache")) WriteCacheForWad(wadnum);
+}
+
+
+void FTextureManager::WriteCacheForWad(int wadnum) {
+	// @Cockatrice - Save a temporary file with the deets
+	FString fs;
+	FString fn = fileSystem.GetResourceFileName(wadnum);
+	if (fn.IndexOf("/") >= 0 || fn.IndexOf("\\") >= 0) {
+		fn.Format("%d", wadnum);
+	}
+	fs.AppendFormat("TEXTURDEF.%s.txt", fn.GetChars());
+
+	FILE* f = fopen(fs.GetChars(), "w");
+
+	const char* nms[] =
+	{
+		"Any",
+		"Wall",
+		"Flat",
+		"Sprite",
+		"WallPatch",
+		"Build",		// no longer used but needs to remain for ZScript
+		"SkinSprite",
+		"Decal",
+		"MiscPatch",
+		"FontChar",
+		"Override",	// For patches between TX_START/TX_END
+		"Autopage",	// Automap background - used to enable the use of FAutomapTexture
+		"SkinGraphic",
+		"Null",
+		"FirstDefined",
+		"Special",
+		"SWCanvas",
+	};
+
+	int firsttexture = FirstTextureForFile[wadnum];
+	int lasttexture = FirstTextureForFile.Size() > wadnum + 1 ? FirstTextureForFile[wadnum + 1] : Textures.Size();
+
+	for (int x = firsttexture; x < lasttexture; x++) {
+		TextureHash& txh = Textures[x];
+		FGameTexture* tx = Textures[x].Texture;
+
+		if (tx->GetName().CompareNoCase("WILTEKA") == 0) {
+			Printf("Found WILTEKA\n");
+		}
+
+		if (tx->GetName().Len() < 1 || !tx->GetTexture()) {
+			//fprintf(f, "NO FILE FOR: %s", tx->GetName().GetChars());
+			continue;
+		}
+
+		FImageTexture* img = dynamic_cast<FImageTexture*>(tx->GetTexture());
+
+
+		int lump = tx->GetSourceLump();
+		int useType = (int)tx->GetUseType();
+		if (useType >= countof(nms) || useType < 0) useType = 8;
+		const char* fullName = NULL;
+
+		if (lump < 0 || img == nullptr || img->GetImage() == nullptr)
+			continue;
+
+		fullName = fileSystem.GetFileFullName(lump, false);
+
+		if (fullName == NULL) continue;
+
+		//fprintf(f, "Texture: [%d] %s - %s\n\t\"%s\"\n", tx->GetID().GetIndex(), tx->GetName().GetChars(), nms[useType], fullName != NULL ? fullName : "");
+		//fprintf(f, "\t%d %d %d\n", txh.FrontSkyLayer, txh.Paletted, txh.RawTexture);
+
+		//fprintf(f, "%s:%s:%d:%dx%d:%dx%d\n", tx->GetName().GetChars(), fullName != NULL ? fullName : "-", useType, tx->GetTexelWidth(), tx->GetTexelHeight(), tx->GetTexelLeftOffset(), tx->GetTexelTopOffset());
+
+		// Get image source, serialize image from image source
+		FString name = tx->GetName();
+		img->GetImage()->SerializeForTextureDef(f, name, useType);
+	}
+
+	fclose(f);
+}
+
+
+void FTextureManager::WriteCache() {
+	int wadcnt = fileSystem.GetNumWads();
+
+	for (int wadnum = 0; wadnum < wadcnt; wadnum++) {
+		WriteCacheForWad(wadnum);
+	}
 }
 
 //==========================================================================
@@ -1215,6 +1393,9 @@ void FTextureManager::Init()
 
 void FTextureManager::AddTextures(void (*progressFunc_)(), void (*checkForHacks)(BuildInfo&))
 {
+	cycle_t texture_time = cycle_t();
+	texture_time.Clock();
+
 	progressFunc = progressFunc_;
 	//if (BuildTileFiles.Size() == 0) CountBuildTiles ();
 
@@ -1258,6 +1439,8 @@ void FTextureManager::AddTextures(void (*progressFunc_)(), void (*checkForHacks)
 		Textures[i].Texture->SetID(i);
 	}
 
+	texture_time.Unclock();
+	Printf(TEXTCOLOR_GOLD"Texture Indexing: %.2fms\n", texture_time.TimeMS());
 }
 
 //==========================================================================

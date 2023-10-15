@@ -183,9 +183,17 @@ class FJPEGTexture : public FImageSource
 {
 public:
 	FJPEGTexture (int lumpnum, int width, int height);
+	FJPEGTexture(int lumpnum);
 
 	int CopyPixels(FBitmap *bmp, int conversion) override;
 	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
+
+
+	bool SerializeForTextureDef(FILE* fp, FString& name, int useType) override {
+		const char* fullName = fileSystem.GetFileFullName(SourceLump);
+		fprintf(fp, "%d:%s:%s:%d:%dx%d:%dx%d\n", 1, name.GetChars(), fullName != NULL ? fullName : "-", useType, Width, Height, LeftOffset, TopOffset);
+		return true;
+	}
 };
 
 //==========================================================================
@@ -193,6 +201,16 @@ public:
 //
 //
 //==========================================================================
+
+FImageSource* JPEGImage_TryMake(const char* str, int lumpnum) {
+	auto img = new FJPEGTexture(lumpnum);
+	if (!img->DeSerializeFromTextureDef(str)) {
+		delete img;
+		return nullptr;
+	}
+	return img;
+}
+
 
 FImageSource *JPEGImage_TryCreate(FileReader & data, int lumpnum)
 {
@@ -243,6 +261,14 @@ FImageSource *JPEGImage_TryCreate(FileReader & data, int lumpnum)
 //
 //
 //==========================================================================
+
+FJPEGTexture::FJPEGTexture(int lumpnum) : FImageSource(lumpnum) {
+	bMasked = false;
+
+	Width = 0;
+	Height = 0;
+}
+
 
 FJPEGTexture::FJPEGTexture (int lumpnum, int width, int height)
 : FImageSource(lumpnum)

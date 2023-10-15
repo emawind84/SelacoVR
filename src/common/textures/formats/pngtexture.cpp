@@ -54,6 +54,7 @@ class FPNGTexture : public FImageSource
 {
 public:
 	FPNGTexture (FileReader &lump, int lumpnum, int width, int height, uint8_t bitdepth, uint8_t colortype, uint8_t interlace);
+	FPNGTexture(int lumpnum);
 
 	int CopyPixels(FBitmap *bmp, int conversion) override;
 	int ReadPixels(FImageLoadParams *params, FBitmap *bmp) override;
@@ -63,15 +64,53 @@ public:
 	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
 	TArray<uint8_t> ReadPalettedPixels(FileReader *lump, int conversion);
 
+	bool SerializeForTextureDef(FILE *fp, FString &name, int useType)  override {
+		const char* fullName = fileSystem.GetFileFullName(SourceLump);
+		fprintf(fp, "%d:%s:%s:%d:%dx%d:%dx%d:%hhu:%d:%d:%d:%hu:%hu:%hu:%d:%u:%u:%d\n", 0, name.GetChars(), fullName != NULL ? fullName : "-", useType, Width, Height, LeftOffset, TopOffset, BitDepth, ColorType, Interlace, (int)HaveTrans, NonPaletteTrans[0], NonPaletteTrans[1], NonPaletteTrans[2], PaletteSize, StartOfIDAT, StartOfPalette, (int)bMasked);
+		return true;
+	}
+
+	bool DeSerializeFromTextureDef(const char *str) override {
+		int fileType = 0, useType = 0, haveTrans = 0, colorType = 0, interlace = 0, bitDepth = 0;
+		int npt0 = 0, npt1 = 0, npt2 = 0, masked = 0;
+
+		char id[9], path[1024];
+		id[0] = '\0';
+		path[0] = '\0';
+
+		int count = sscanf(str,
+			"%d:%8[^:]:%1023[^:]:%d:%dx%d:%dx%d:%d:%d:%d:%d:%d:%d:%d:%d:%u:%u:%d%*s",
+			&fileType, id, path, &useType, &Width, &Height, &LeftOffset, &TopOffset, &bitDepth, &colorType, &interlace, &haveTrans, &npt0, &npt1, &npt2, &PaletteSize, &StartOfIDAT, &StartOfPalette, &masked
+		);
+
+		BitDepth = bitDepth;
+		HaveTrans = haveTrans > 0;
+		ColorType = colorType;
+		Interlace = interlace;
+		bMasked = masked;
+		NonPaletteTrans[0] = npt0;
+		NonPaletteTrans[1] = npt1;
+		NonPaletteTrans[2] = npt2;
+
+		if (ColorType == 0 && !(ColorType == 0 && HaveTrans && NonPaletteTrans[0] < 256)) {
+			PaletteMap = GPalette.GrayMap;
+		}
+
+		if (count != 19) {
+			Printf("Failed to parse PNG Texture: %s\n", id);
+		}
+		return count == 19;
+	}
+
 protected:
 	void ReadAlphaRemap(FileReader *lump, uint8_t *alpharemap);
 	void SetupPalette(FileReader &lump);
 	int ReadPalette(FileReader &lump, uint8_t *pMap);		// @Cockatrice - Reads palette without modifying internal vars, for threaded reads
 
-	uint8_t BitDepth;
-	uint8_t ColorType;
-	uint8_t Interlace;
-	bool HaveTrans;
+	uint8_t BitDepth = 0;
+	uint8_t ColorType = 0;
+	uint8_t Interlace = 0;
+	bool HaveTrans = false;
 	uint16_t NonPaletteTrans[3];
 
 	uint8_t *PaletteMap = nullptr;
@@ -87,6 +126,16 @@ FImageSource* StbImage_TryCreate(FileReader& file, int lumpnum);
 //
 //
 //==========================================================================
+
+FImageSource *PNGImage_TryMake(const char* str, int lumpnum) {
+	auto img = new FPNGTexture(lumpnum);
+	if (!img->DeSerializeFromTextureDef(str)) {
+		delete img;
+		return nullptr;
+	}
+	return img;
+}
+
 
 FImageSource *PNGImage_TryCreate(FileReader & data, int lumpnum)
 {
@@ -198,6 +247,17 @@ FImageSource *PNGImage_TryCreate(FileReader & data, int lumpnum)
 //
 //
 //==========================================================================
+
+FPNGTexture::FPNGTexture(int lumpnum) : FImageSource(lumpnum) {
+	Width = Height = 0;
+	bMasked = false;
+	BitDepth = 0;
+	ColorType = 0;
+	Interlace = 0;
+	HaveTrans = false;
+	NonPaletteTrans[0] = NonPaletteTrans[1] = NonPaletteTrans[2] = 0;
+}
+
 
 FPNGTexture::FPNGTexture (FileReader &lump, int lumpnum, int width, int height,
 						  uint8_t depth, uint8_t colortype, uint8_t interlace)
@@ -636,7 +696,7 @@ TArray<uint8_t> FPNGTexture::CreatePalettedPixels(int conversion)
 
 
 
-#define CHECKPMAP if(pMap == nullptr) readPalMap.Reserve(PaletteSize); ReadPalette(*lump, readPalMap.Data()); pMap = readPalMap.Data();
+#define CHECKPMAP if(pMap == nullptr) { readPalMap.Reserve(PaletteSize); ReadPalette(*lump, readPalMap.Data()); pMap = readPalMap.Data(); }
 TArray<uint8_t> FPNGTexture::ReadPalettedPixels(FileReader *lump, int conversion)
 {
 	TArray<uint8_t> Pixels(Width*Height, true);
