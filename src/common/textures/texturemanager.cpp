@@ -1020,7 +1020,8 @@ void FTextureManager::AddTexturesForWad(int wadnum, FMultipatchTextureBuilder& b
 
 	FirstTextureForFile.Push(firsttexture);
 
-	bool defsLoaded = LoadTextureDefsForWad(wadnum) > 0;
+	bool writeCache = Args->CheckParm("-writetexturecache");
+	bool defsLoaded = !writeCache && LoadTextureDefsForWad(wadnum) > 0;
 
 	// Check if the wad has pre-defined textures
 	if (!defsLoaded) {
@@ -1122,18 +1123,18 @@ void FTextureManager::AddTexturesForWad(int wadnum, FMultipatchTextureBuilder& b
 
 	}	// End check for predefined textures
 
-	// Seventh step: Check for hires replacements.
-	AddHiresTextures(wadnum);
-
 	// Check for text based texture definitions
 	LoadTextureDefs(wadnum, "TEXTURES", build);
 	LoadTextureDefs(wadnum, "HIRESTEX", build);
+
+	// Seventh step: Check for hires replacements.
+	AddHiresTextures(wadnum);
 
 	SortTexturesByType(firsttexture, Textures.Size());
 
 	Printf(TEXTCOLOR_GOLD"Added %d textures for file %d\n", Textures.Size() - firsttexture, wadnum);
 
-	if(!defsLoaded && Args->CheckParm("-writetexturecache")) WriteCacheForWad(wadnum);
+	if(!defsLoaded && writeCache) WriteCacheForWad(wadnum);
 }
 
 
@@ -1146,7 +1147,7 @@ void FTextureManager::WriteCacheForWad(int wadnum) {
 	}
 	fs.AppendFormat("TEXTURDEF.%s.txt", fn.GetChars());
 
-	FILE* f = fopen(fs.GetChars(), "w");
+	
 
 	const char* nms[] =
 	{
@@ -1172,13 +1173,14 @@ void FTextureManager::WriteCacheForWad(int wadnum) {
 	int firsttexture = FirstTextureForFile[wadnum];
 	int lasttexture = FirstTextureForFile.Size() > wadnum + 1 ? FirstTextureForFile[wadnum + 1] : Textures.Size();
 
+	if (firsttexture >= lasttexture) return;	// No textures, skip
+	if (fn.CompareNoCase("game_support.pk3") == 0 || fn.CompareNoCase("gzdoom.pk3") == 0) return; // Skip known useless files
+
+	FILE* f = fopen(fs.GetChars(), "w");
+
 	for (int x = firsttexture; x < lasttexture; x++) {
 		TextureHash& txh = Textures[x];
 		FGameTexture* tx = Textures[x].Texture;
-
-		if (tx->GetName().CompareNoCase("WILTEKA") == 0) {
-			Printf("Found WILTEKA\n");
-		}
 
 		if (tx->GetName().Len() < 1 || !tx->GetTexture()) {
 			//fprintf(f, "NO FILE FOR: %s", tx->GetName().GetChars());
