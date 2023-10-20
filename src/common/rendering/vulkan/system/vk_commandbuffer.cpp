@@ -36,11 +36,11 @@ extern bool gpuStatActive;
 extern bool keepGpuStatActive;
 extern FString gpuStatOutput;
 
-VkCommandBufferManager::VkCommandBufferManager(VulkanFrameBuffer* fb, bool uploadOnly) : fb(fb)
+VkCommandBufferManager::VkCommandBufferManager(VulkanFrameBuffer* fb, VkQueue *queue, int queueFamily, bool uploadOnly) : fb(fb)
 {
 	mIsUploadOnly = uploadOnly;
-	fbQueue = uploadOnly ? &fb->device->uploadQueue : &fb->device->graphicsQueue;
-	mCommandPool.reset(new VulkanCommandPool(fb->device, uploadOnly ? fb->device->uploadFamily : fb->device->graphicsFamily));
+	fbQueue = queue;
+	mCommandPool.reset(new VulkanCommandPool(fb->device, queueFamily));
 
 	if (!mIsUploadOnly) {
 		swapChain = std::make_unique<VulkanSwapChain>(fb->device);

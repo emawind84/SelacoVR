@@ -174,7 +174,7 @@ void VkHardwareTexture::CreateTexture(int w, int h, int pixelsize, VkFormat form
 	hwState = READY;
 }
 
-void VkHardwareTexture::BackgroundCreateTexture(int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap) {
+void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManager, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap) {
 	if (!mLoadedImage) mLoadedImage.reset(new VkTextureImage());
 	else {
 		//mLoadedImage->Reset(fb);
@@ -182,7 +182,7 @@ void VkHardwareTexture::BackgroundCreateTexture(int w, int h, int pixelsize, VkF
 		return; // We cannot reset the loaded image on a different thread
 	}
 
-	auto bufManager = fb->GetBGCommands();
+	//auto bufManager = fb->GetBGCommands();
 	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, fb->device->uploadFamilySupportsGraphics);
 
 	// Flush commands as they come in, since we don't have a steady frame loop in the background thread

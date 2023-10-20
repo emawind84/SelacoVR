@@ -1171,7 +1171,7 @@ void FTextureManager::WriteCacheForWad(int wadnum) {
 	};
 
 	int firsttexture = FirstTextureForFile[wadnum];
-	int lasttexture = FirstTextureForFile.Size() > wadnum + 1 ? FirstTextureForFile[wadnum + 1] : Textures.Size();
+	int lasttexture = (int)FirstTextureForFile.Size() > wadnum + 1 ? FirstTextureForFile[wadnum + 1] : Textures.Size();
 
 	if (firsttexture >= lasttexture) return;	// No textures, skip
 	if (fn.CompareNoCase("game_support.pk3") == 0 || fn.CompareNoCase("gzdoom.pk3") == 0) return; // Skip known useless files
