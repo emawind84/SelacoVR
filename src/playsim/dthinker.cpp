@@ -1070,7 +1070,7 @@ void DThinker::Wake() {
 void DThinker::Sleep(int tics) {
 	//ChangeStatNum(STAT_SLEEP);
 	// Only sleep if we are not going to be destroyed
-	if (ObjectFlags & OF_EuthanizeMe) { return; }
+	if ((ObjectFlags & OF_EuthanizeMe) || tics <= 0) { return; }
 
 	Remove();
 	sleepInterval = tics;
