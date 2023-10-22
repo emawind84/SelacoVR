@@ -402,19 +402,19 @@ void FGameTexture::SetSpriteRect()
 }
 
 
-void FGameTexture::SetSpriteRect(SpritePositioningInfo *spi)
+void FGameTexture::SetSpriteRect(SpritePositioningInfo *spi, bool raw)
 {
-	if (!spi) return;
+	if (spi == nullptr) return;
 
 	// @Cockatrice - Unfortunately, if we already allocated space for this data, the memory is wasted. 
 	// As far as I know there is no way to free a single block of memory allocated from the arena
 	// I expect this to occur very little, since there should be few occurences of a texture that is loaded both in
 	// the main thread AND in the background thread in Selaco
-	if(this->spi != nullptr)
+	if(this->spi != nullptr && this->spi != spi)
 		Printf(TEXTCOLOR_YELLOW"Cockatrice wasted some memory on SPI info! Image: %s\n", GetName().GetChars());
 
 	this->spi = spi;
-	SetSpriteRect();
+	if(!raw) SetSpriteRect();
 }
 
 //===========================================================================

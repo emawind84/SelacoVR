@@ -236,22 +236,27 @@ FImageLoadParams *FImageSource::NewLoaderParams(int conversion, int translation,
 }
 
 
-bool FImageSource::SerializeForTextureDef(FILE* fp, FString& name, int useType) {
+bool FImageSource::SerializeForTextureDef(FILE* fp, FString& name, int useType, FGameTexture* gameTex) {
 	const char* fullName = fileSystem.GetFileFullName(SourceLump, false);
 	fprintf(fp, "%d:%s:%s:%d:%dx%d:%dx%d\n", 999, name.GetChars(), fullName != NULL ? fullName : "-", useType, Width, Height, LeftOffset, TopOffset);
 	return true;
 }
 
-bool FImageSource::DeSerializeFromTextureDef(const char* str) {
+int FImageSource::DeSerializeFromTextureDef(FileReader &fr) {
 	int fileType = 0, useType = 0;
 	char id[9], path[1024];
+	char str[1800];
 
-	int count = sscanf(str,
-		"%d:%8[^:]:%1023[^:]:%d:%dx%d:%dx%d",
-		&fileType, id, path, &useType, &Width, &Height, &LeftOffset, &TopOffset
-	);
+	if (fr.Gets(str, 1800)) {
+		int count = sscanf(str,
+			"%d:%8[^:]:%1023[^:]:%d:%dx%d:%dx%d",
+			&fileType, id, path, &useType, &Width, &Height, &LeftOffset, &TopOffset
+		);
 
-	return count == 8;
+		return (int)(count == 8);
+	}
+
+	return 0;
 }
 
 
@@ -384,7 +389,7 @@ void FImageSource::RegisterForPrecache(FImageSource *img, bool requiretruecolor)
 //==========================================================================
 
 typedef FImageSource* (*CreateFunc)(FileReader & file, int lumpnum);
-typedef FImageSource* (*MakeFunc)(const char* str, int lumpnum);
+typedef FImageSource* (*MakeFunc)(FileReader& fr, int lumpnum, bool* hasExtraInfo);
 
 struct TexCreateInfo
 {
@@ -408,8 +413,8 @@ FImageSource *AutomapImage_TryCreate(FileReader &, int lumpnum);
 FImageSource *StartupPageImage_TryCreate(FileReader &, int lumpnum);
 
 
-FImageSource* PNGImage_TryMake(const char* str, int lumpnum);
-FImageSource* JPEGImage_TryMake(const char* str, int lumpnum);
+FImageSource* PNGImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
+FImageSource* JPEGImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
 //FImageSource* DDSImage_TryMake(const char* str, int lumpnum);
 //FImageSource* PCXImage_TryMake(const char* str, int lumpnum);
 //FImageSource* TGAImage_TryMake(const char* str, int lumpnum);
@@ -473,7 +478,7 @@ FImageSource * FImageSource::GetImage(int lumpnum, bool isflat)
 }
 
 
-FImageSource* FImageSource::CreateImageFromDef(const char *str, int filetype, int lumpnum)
+FImageSource* FImageSource::CreateImageFromDef(FileReader& fr, int filetype, int lumpnum, bool *hasExtraInfo)
 {
 	static MakeFunc MakeInfo[] = {
 		//IMGZImage_TryCreate
@@ -501,11 +506,17 @@ FImageSource* FImageSource::CreateImageFromDef(const char *str, int filetype, in
 		ImageForLump.Resize(lumpnum + 1);
 		for (; size < ImageForLump.Size(); size++) ImageForLump[size] = nullptr;
 	}
+
 	// An image for this lump already exists. We do not need another one.
-	if (ImageForLump[lumpnum] != nullptr) return ImageForLump[lumpnum];
+	if (ImageForLump[lumpnum] != nullptr) {
+		// Skip the next line
+		char buf[1800];
+		fr.Gets(buf, 1800);	// Ignore results
+		return ImageForLump[lumpnum];
+	}
 
 	// Use the specified type to create an empty image of that type
-	auto image = MakeInfo[filetype](str, lumpnum);
+	auto image = MakeInfo[filetype](fr, lumpnum, hasExtraInfo);
 
 	if (image != nullptr) {
 		ImageForLump[lumpnum] = image;

@@ -864,6 +864,113 @@ void FTextureManager::ParseTextureDef(int lump, FMultipatchTextureBuilder &build
 				ParseTextureDef(includelump, build);
 			}
 		}
+		else if (sc.Compare("weaponsprite")) // @Cockatrice - Shortcut for defining offsets and scale for a weapon sprite. Probably Selaco specific
+		{
+			sc.SetCMode(true);
+			sc.MustGetString();
+			
+			FString name(sc.String);
+			name.ToUpper();
+
+			int width = -1, height = -1;
+
+			if (sc.CheckString(",")) {
+				sc.MustGetNumber();
+				width = sc.Number;
+				sc.MustGetStringName(",");
+				sc.MustGetNumber();
+				height = sc.Number;
+			}
+
+			// Confirm that we have a valid texture name here
+			FTextureID texID = TexMan.CheckForTexture(name, ETextureType::Sprite);
+			FGameTexture *tex = TexMan.GetGameTexture(texID, false);
+			
+
+			if (!texID.isValid() || tex == nullptr) {
+				sc.ScriptMessage("Warning: Unknown sprite: %s",  name.GetChars());
+			}
+
+			double scalex = 3.0, scaley = 3.0;
+			bool bWorldPanning = false, bNoTrim = false;
+			bool offset2set = false;
+			int LeftOffset[2] = { 0,0 };
+			int TopOffset[2] = { 0,0 };
+
+			if (sc.CheckString("{"))
+			{
+				while (!sc.CheckString("}"))
+				{
+					sc.MustGetString();
+					if (sc.Compare("Scale"))
+					{
+						sc.MustGetFloat();
+						scalex = sc.Float;
+						sc.MustGetStringName(",");
+						scaley = sc.Float;
+						if (scalex == 0 || scaley == 0) sc.ScriptError("Texture %s is defined with null scale\n", name.GetChars());
+					}
+					else if (sc.Compare("XScale"))
+					{
+						sc.MustGetFloat();
+						scalex = sc.Float;
+						if (scalex == 0) sc.ScriptError("Texture %s is defined with null x-scale\n", name.GetChars());
+					}
+					else if (sc.Compare("YScale"))
+					{
+						sc.MustGetFloat();
+						scaley = sc.Float;
+						if (scaley == 0) sc.ScriptError("Texture %s is defined with null y-scale\n", name.GetChars());
+					}
+					else if (sc.Compare("WorldPanning"))
+					{
+						bWorldPanning = true;
+					}
+					else if (sc.Compare("NoTrim"))
+					{
+						bNoTrim = true;
+					}
+					else if (sc.Compare("Offset"))
+					{
+						sc.MustGetNumber();
+						LeftOffset[0] = sc.Number;
+						sc.MustGetStringName(",");
+						sc.MustGetNumber();
+						TopOffset[0] = sc.Number;
+						if (!offset2set)
+						{
+							LeftOffset[1] = LeftOffset[0];
+							TopOffset[1] = TopOffset[0];
+						}
+					}
+					else if (sc.Compare("Offset2"))
+					{
+						sc.MustGetNumber();
+						LeftOffset[1] = sc.Number;
+						sc.MustGetStringName(",");
+						sc.MustGetNumber();
+						TopOffset[1] = sc.Number;
+						offset2set = true;
+					}
+					else
+					{
+						sc.ScriptError("Unknown WeaponSprite property '%s'", sc.String);
+					}
+				}
+			}
+
+			if (tex != nullptr) {
+				if (width > 0 && height > 0) tex->SetSize(width, height);
+				tex->SetOffsets(0, LeftOffset[0], TopOffset[0]);
+				tex->SetOffsets(1, LeftOffset[1], TopOffset[1]);
+				tex->SetScale((float)scalex, (float)scaley);
+				tex->SetWorldPanning(bWorldPanning);
+				tex->SetNoTrimming(bNoTrim);
+			}
+			
+
+			sc.SetCMode(false);
+		}
 		else
 		{
 			sc.ScriptError("Texture definition expected, found '%s'", sc.String);
@@ -935,9 +1042,10 @@ int FTextureManager::ParseBatchTextureDef(int lump, int wadnum) {
 	auto reader = fileSystem.OpenFileReader(lump);
 	char buf[1800];
 
+	auto lastPos = reader.Tell();
 	while (reader.Gets(buf, 1800)) {
 		// Every line is a definition
-		int type, fileType;
+		int type = 0, fileType = -1;
 		char id[9], path[1024];
 		path[0] = '\0';
 
@@ -946,15 +1054,18 @@ int FTextureManager::ParseBatchTextureDef(int lump, int wadnum) {
 			&fileType, id, path, &type
 		);
 
-
-		if (count == 4) {
+		if (count == 4 && fileType >= 0) {
 			int lumpnum = -1;
 			if(strnlen_s(path, 1023) > 1) lumpnum = fileSystem.CheckNumForFullName(path, wadnum);
 			else lumpnum = fileSystem.CheckNumForName(path, wadnum);
 
 			if (lumpnum >= 0)
 			{
-				auto image = FImageSource::CreateImageFromDef(buf, fileType, lumpnum);
+				// Rewind so this line can be read again by the image reader
+				reader.Seek(lastPos, FileReader::ESeek::SeekSet);
+
+				bool hasMoreInfo = false;
+				auto image = FImageSource::CreateImageFromDef(reader, fileType, lumpnum, &hasMoreInfo);
 				if (image == nullptr) continue;
 
 				auto newtex = MakeGameTexture(new FImageTexture(image), id, (ETextureType)type);
@@ -974,6 +1085,13 @@ int FTextureManager::ParseBatchTextureDef(int lump, int wadnum) {
 					else {
 						AddGameTexture(newtex);
 					}
+
+					// Now that we have created a texture, we can read more info from the stream if necessary
+					// Probably just SPI info for now
+					if (hasMoreInfo) {
+						image->DeSerializeExtraDataFromTextureDef(reader, newtex);
+					}
+
 					progressFunc();
 					total++;
 				}
@@ -982,6 +1100,8 @@ int FTextureManager::ParseBatchTextureDef(int lump, int wadnum) {
 		else {
 			Printf("Bad line in TEXTURDEF: %s", buf);
 		}
+
+		lastPos = reader.Tell();
 	}
 
 	return total;
@@ -1121,7 +1241,10 @@ void FTextureManager::AddTexturesForWad(int wadnum, FMultipatchTextureBuilder& b
 			}
 		}
 
-	}	// End check for predefined textures
+	}
+	else {
+		build.skipRedefines = true;
+	} // End check for predefined textures
 
 	// Check for text based texture definitions
 	LoadTextureDefs(wadnum, "TEXTURES", build);
@@ -1147,7 +1270,6 @@ void FTextureManager::WriteCacheForWad(int wadnum) {
 	}
 	fs.AppendFormat("TEXTURDEF.%s.txt", fn.GetChars());
 
-	
 
 	const char* nms[] =
 	{
@@ -1202,14 +1324,10 @@ void FTextureManager::WriteCacheForWad(int wadnum) {
 
 		if (fullName == NULL) continue;
 
-		//fprintf(f, "Texture: [%d] %s - %s\n\t\"%s\"\n", tx->GetID().GetIndex(), tx->GetName().GetChars(), nms[useType], fullName != NULL ? fullName : "");
-		//fprintf(f, "\t%d %d %d\n", txh.FrontSkyLayer, txh.Paletted, txh.RawTexture);
-
-		//fprintf(f, "%s:%s:%d:%dx%d:%dx%d\n", tx->GetName().GetChars(), fullName != NULL ? fullName : "-", useType, tx->GetTexelWidth(), tx->GetTexelHeight(), tx->GetTexelLeftOffset(), tx->GetTexelTopOffset());
-
 		// Get image source, serialize image from image source
 		FString name = tx->GetName();
-		img->GetImage()->SerializeForTextureDef(f, name, useType);
+		img->GetImage()->SerializeForTextureDef(f, name, useType, tx);
+		progressFunc();
 	}
 
 	fclose(f);

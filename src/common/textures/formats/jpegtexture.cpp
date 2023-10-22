@@ -189,7 +189,7 @@ public:
 	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
 
 
-	bool SerializeForTextureDef(FILE* fp, FString& name, int useType) override {
+	bool SerializeForTextureDef(FILE* fp, FString& name, int useType, FGameTexture* gameTex) override {
 		const char* fullName = fileSystem.GetFileFullName(SourceLump);
 		fprintf(fp, "%d:%s:%s:%d:%dx%d:%dx%d\n", 1, name.GetChars(), fullName != NULL ? fullName : "-", useType, Width, Height, LeftOffset, TopOffset);
 		return true;
@@ -202,12 +202,14 @@ public:
 //
 //==========================================================================
 
-FImageSource* JPEGImage_TryMake(const char* str, int lumpnum) {
+FImageSource* JPEGImage_TryMake(FileReader &fr, int lumpnum, bool *hasExtraInfo = nullptr) {
 	auto img = new FJPEGTexture(lumpnum);
-	if (!img->DeSerializeFromTextureDef(str)) {
+	int res = img->DeSerializeFromTextureDef(fr);
+	if (res <= 0) {
 		delete img;
 		return nullptr;
 	}
+	if (res > 1 && hasExtraInfo != nullptr) *hasExtraInfo = true;
 	return img;
 }
 

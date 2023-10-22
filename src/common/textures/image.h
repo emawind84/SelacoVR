@@ -49,7 +49,7 @@ private:
 };
 
 class ImageLoadThread;
-
+class FGameTexture;
 
 // @Cockatrice - Image sources must prepare the information they will need to load in the background thread
 // in the main thread. These params or a subclass will be passed to the loader and then back to the image source
@@ -134,7 +134,7 @@ public:
 
 	static void ClearImages() { ImageArena.FreeAll(); ImageForLump.Clear(); NextID = 0; }
 	static FImageSource* GetImage(int lumpnum, bool checkflat);
-	static FImageSource* CreateImageFromDef(const char* str, int filetype, int lumpnum);
+	static FImageSource* CreateImageFromDef(FileReader& fr, int filetype, int lumpnum, bool* hasExtraInfo = nullptr);
 
 
 	// Conversion option
@@ -148,8 +148,9 @@ public:
 	FImageSource(int sourcelump = -1) : SourceLump(sourcelump) { ImageID = ++NextID; }
 	virtual ~FImageSource() {}
 
-	virtual bool SerializeForTextureDef(FILE* fp, FString& name, int useType);
-	virtual bool DeSerializeFromTextureDef(const char* str);
+	virtual bool SerializeForTextureDef(FILE* fp, FString& name, int useType, FGameTexture* gameTex);
+	virtual int DeSerializeFromTextureDef(FileReader &fr);
+	virtual bool DeSerializeExtraDataFromTextureDef(FileReader& fr, FGameTexture* gameTex) { return true; }
 
 	int GetWidth() const
 	{
