@@ -124,20 +124,23 @@ void VulkanFrameBuffer::GetBGQueueSize(int &current, int &max, int &maxSec, int 
 	
 	for (auto& tfr : bgTransferThreads) {
 		current += tfr->numQueued();
-		max		+= tfr->statMaxQueued();
-		maxSec	+= tfr->statMaxSecondaryQueued();
+		max		= std::max(tfr->statMaxQueued(), max);
+		maxSec	= std::max(tfr->statMaxSecondaryQueued(), maxSec);
 		total	+= tfr->statTotalLoaded();
 	}
 }
 
 void VulkanFrameBuffer::GetBGStats(double &min, double &max, double &avg) {
-	min = max = avg = 0;
+	min = 99999998;
+	max = avg = 0;
 
 	for (auto& tfr : bgTransferThreads) {
-		min += tfr->statMinLoadTime();
-		max += tfr->statMaxLoadTime();
+		min = std::min(tfr->statMinLoadTime(), min);
+		max = std::max(tfr->statMaxLoadTime(), max);
 		avg += tfr->statAvgLoadTime();
 	}
+
+	avg /= (double)bgTransferThreads.size();
 }
 
 void VulkanFrameBuffer::ResetBGStats() {
