@@ -1037,7 +1037,7 @@ void FTextureManager::LoadTextureX(int wadnum, FMultipatchTextureBuilder &build)
 
 
 int FTextureManager::ParseBatchTextureDef(int lump, int wadnum) {
-	int total = 0;
+	int total = 0, lineCnt = 0;
 
 	auto reader = fileSystem.OpenFileReader(lump);
 	char buf[1800];
@@ -1054,6 +1054,8 @@ int FTextureManager::ParseBatchTextureDef(int lump, int wadnum) {
 			&fileType, id, path, &type
 		);
 
+		lineCnt++;
+
 		if (count == 4 && fileType >= 0) {
 			int lumpnum = -1;
 			if(strnlen_s(path, 1023) > 1) lumpnum = fileSystem.CheckNumForFullName(path, wadnum);
@@ -1066,14 +1068,12 @@ int FTextureManager::ParseBatchTextureDef(int lump, int wadnum) {
 
 				bool hasMoreInfo = false;
 				auto image = FImageSource::CreateImageFromDef(reader, fileType, lumpnum, &hasMoreInfo);
-				if (image == nullptr) continue;
-
-				auto newtex = MakeGameTexture(new FImageTexture(image), id, (ETextureType)type);
+				auto newtex = image == nullptr ? nullptr : MakeGameTexture(new FImageTexture(image), id, (ETextureType)type);
 
 				if (newtex != NULL)
 				{
 					// Replace the entire texture and adjust the scaling and offset factors.
-					newtex->SetWorldPanning(true);
+					//newtex->SetWorldPanning(true);
 					newtex->SetDisplaySize((float)image->GetWidth(), (float)image->GetHeight());
 
 					FTextureID oldtex = TexMan.CheckForTexture(id, (ETextureType)type);
@@ -1086,19 +1086,27 @@ int FTextureManager::ParseBatchTextureDef(int lump, int wadnum) {
 						AddGameTexture(newtex);
 					}
 
-					// Now that we have created a texture, we can read more info from the stream if necessary
-					// Probably just SPI info for now
-					if (hasMoreInfo) {
-						image->DeSerializeExtraDataFromTextureDef(reader, newtex);
-					}
-
 					progressFunc();
 					total++;
 				}
+				else {
+					Printf("Failed to create texture for %s (%s)\n", id, path);
+				}
+
+				
+				// Always read extra info to keep the stream intact, even if we couldn't create the texture
+				if (hasMoreInfo) {
+					image->DeSerializeExtraDataFromTextureDef(reader, newtex);
+					lineCnt += 2;	// Cheating, we don't know for sure the extra info is 2 lines because it could be anything, but currently it's always 2 lines
+				}
+			}
+			else {
+				Printf("Texture can no longer be found: %s (%s)\n", id, path);
 			}
 		}
 		else {
-			Printf("Bad line in TEXTURDEF: %s", buf);
+			if(fileType != -1)	// -1 is either SPI data or deliberate ignore line, so don't error on that
+				Printf("Bad line in TEXTURDEF at line %d: %s", lineCnt, buf);
 		}
 
 		lastPos = reader.Tell();

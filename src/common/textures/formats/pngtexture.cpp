@@ -141,7 +141,7 @@ public:
 
 
 	bool DeSerializeExtraDataFromTextureDef(FileReader& fr, FGameTexture* gameTex) override {
-		SpritePositioningInfo* spi = gameTex->HasSpritePositioning() ? (SpritePositioningInfo *)&gameTex->GetSpritePositioning(0) : (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
+		SpritePositioningInfo spi[2];
 		char str[1800];
 
 		// Read the next two lines into the sprite positioning info
@@ -166,12 +166,16 @@ public:
 			}
 		}
 
-		// Assign SPI
-		gameTex->SetSpriteRect(spi, true);	// Make sure to keep values as they are exported
+		// Assign SPI if possible
+		if (gameTex != nullptr) {
+			SpritePositioningInfo* spir = gameTex->HasSpritePositioning() ? (SpritePositioningInfo*)&gameTex->GetSpritePositioning(0) : (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
 
-		if (gameTex->GetName().Compare("DAD1V0") == 0) {
-			Printf("Loaded Spi for DAD1V0 maybe?\n");
+			// Copy spi into correct location
+			memcpy(spir, spi, sizeof(SpritePositioningInfo) * 2);
+
+			gameTex->SetSpriteRect(spir, true);	// Make sure to keep values as they are exported
 		}
+		
 
 		return true;
 	}

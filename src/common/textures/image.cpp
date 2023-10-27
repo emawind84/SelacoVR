@@ -497,7 +497,8 @@ FImageSource* FImageSource::CreateImageFromDef(FileReader& fr, int filetype, int
 		//AutomapImage_TryMake
 	};
 
-	if (lumpnum == -1) return nullptr;
+	if (lumpnum == -1) 
+		return nullptr;
 
 	unsigned size = ImageForLump.Size();
 	if (size <= (unsigned)lumpnum)
