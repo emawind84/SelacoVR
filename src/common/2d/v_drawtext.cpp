@@ -243,6 +243,7 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawChar)
 //
 //==========================================================================
 
+
 // This is only needed as a dummy. The code using wide strings does not need color control.
 EColorRange V_ParseFontColor(const char32_t *&color_value, int normalcolor, int boldcolor) { return CR_UNTRANSLATED; } 
 
@@ -257,7 +258,7 @@ void DrawTextCommon(F2DDrawer *drawer, FFont *font, int normalcolor, double x, d
 	int			boldcolor;
 	int			trans = -1;
 	int			kerning;
-	FGameTexture *pic;
+	//FGameTexture *pic;
 
 	double scalex = parms.scalex * parms.patchscalex;
 	double scaley = parms.scaley * parms.patchscaley;
@@ -314,25 +315,55 @@ void DrawTextCommon(F2DDrawer *drawer, FFont *font, int normalcolor, double x, d
 			continue;
 		}
 
-		if (NULL != (pic = font->GetChar(c, currentcolor, &w)))
+		FFont::CharData chr = font->GetChar(c, currentcolor);
+		w = chr.XMove;
+		if (w == INT_MIN) w = font->GetSpaceWidth();
+
+		auto pic = chr.OriginalPic;
+		if (NULL != pic)
 		{
 			// if palette translation is used, font colors will be ignored.
 			if (!palettetrans) parms.TranslationId = trans;
-			SetTextureParms(drawer, &parms, pic, cx, cy);
+
+			double chWidth = 0, chHeight = 0;
+			if (chr.tCharW > -1) {
+				const double delta = 0.000015;
+				double tw = pic->GetTexelWidth();
+				double th = pic->GetTexelHeight();
+				// TODO: The sizing calculations here are same for every texture, which means the same for almost every 
+				// character. Cache this in the font somewhere. 
+				parms.srcx = (chr.tCharX / tw);// +(1.0 / tw * 0.35);
+				parms.srcy = (chr.tCharY / th);// +(1.0 / th * 0.35);
+				parms.srcwidth = (chr.tCharW / tw);// -(1.0 / tw * 0.35);
+				parms.srcheight = (chr.tCharH / th);// -(1.0 / th * 0.35);
+				chWidth = chr.tCharW / pic->GetScaleX();
+				chHeight = chr.tCharH / pic->GetScaleY();
+			}
+
+			SetTextureParms(drawer, &parms, chr.OriginalPic, cx, cy, chWidth, chHeight);
+			
+			
 			if (parms.cellx)
 			{
 				w = parms.cellx;
 				parms.destwidth = parms.cellx;
 				parms.destheight = parms.celly;
 			}
-			if (parms.monospace == EMonospacing::CellLeft)
+			
+			/*if (parms.monospace == EMonospacing::CellLeft)
 				parms.left = 0;
 			else if (parms.monospace == EMonospacing::CellCenter)
 				parms.left = w / 2.;
 			else if (parms.monospace == EMonospacing::CellRight)
-				parms.left = w;
+				parms.left = w;*/
+			
+			// @Cocaktrice - Offsets don't seem to work with extra parms, so just change the position of the draw
+			if (parms.monospace == EMonospacing::CellCenter)
+				parms.x -= w / 2.;
+			else if (parms.monospace == EMonospacing::CellRight)
+				parms.x -= w;
 
-			drawer->AddTexture(pic, parms);
+			drawer->AddTexture(chr.OriginalPic, parms);
 		}
 		if (parms.monospace == EMonospacing::Off)
 		{
@@ -419,4 +450,3 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawText)
 	DrawText(twod, font, cr, x, y, txt, args);
 	return 0;
 }
-
