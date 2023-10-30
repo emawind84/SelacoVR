@@ -1226,6 +1226,7 @@ void D_DoomLoop ()
 			}
 			// Update display, next frame, with current state.
 			I_StartTic ();
+			D_ProcessEvents();
 			D_Display ();
 			S_UpdateMusic();
 			if (wantToRestart)
@@ -3015,8 +3016,13 @@ static FILE* D_GetHashFile()
 //
 //==========================================================================
 
+#define CLOCK_START  timer.Reset(); timer.Clock(); 
+#define CLOCK_END(_D_)  timer.Unclock(); Printf(TEXTCOLOR_GOLD"%s: %.2fms\n", _D_, timer.TimeMS()); 
+
 static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArray<FString>& pwads)
 {
+	cycle_t timer = cycle_t();
+
 	gameinfo.gametype = iwad_info->gametype;
 	gameinfo.flags = iwad_info->flags;
 	gameinfo.nokeyboardcheats = iwad_info->nokeyboardcheats;
@@ -3104,10 +3110,14 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	D_GrabCVarDefaults(); //parse DEFCVARS
 	InitPalette();
 
+	CLOCK_START
 	if (!batchrun) Printf("S_Init: Setting up sound.\n");
 	S_Init();
-
+	CLOCK_END("Sound Startup")
+	
+	bool writeCache = Args->CheckParm("-writetexturecache");
 	int max_progress = TexMan.GuesstimateNumTextures();
+	if (writeCache) max_progress *= 2;	// If we are writing textures, we need to double the estimated time so we get actual progress
 	int per_shader_progress = 0;//screen->GetShaderCount()? (max_progress / 10 / screen->GetShaderCount()) : 0;
 	bool nostartscreen = batchrun || restart || Args->CheckParm("-join") || Args->CheckParm("-host") || Args->CheckParm("-norun");
 
@@ -3136,8 +3146,10 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 		exec = NULL;
 	}
 
+	CLOCK_START
 	// [RH] Initialize localizable strings.
 	GStrings.LoadStrings (language);
+	CLOCK_END("Loaded Strings")
 
 	V_InitFontColors ();
 
@@ -3217,6 +3229,7 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	// MUSINFO must be parsed after MAPINFO
 	S_ParseMusInfo();
 
+	CLOCK_START
 	if (!batchrun) Printf ("Texman.Init: Init texture manager.\n");
 	UpdateUpscaleMask();
 	SpriteFrames.Clear();
@@ -3230,11 +3243,15 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	C_InitConback(TexMan.CheckForTexture(gameinfo.BorderFlat, ETextureType::Flat), true, 0.25);
 
 	FixWideStatusBar();
-
+	CLOCK_END("Textures Startup Total")
+	
 	StartWindow->Progress(); 
 	if (StartScreen) StartScreen->Progress(1);
+	
+	CLOCK_START
 	V_InitFonts();
 	InitDoomFonts();
+	CLOCK_END("Font Startup")
 	V_LoadTranslations();
 	UpdateGenericUI(false);
 
@@ -3329,6 +3346,7 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	if (!batchrun) Printf ("P_Init: Init Playloop state.\n");
 	if (StartScreen) StartScreen->LoadingStatus ("Init game engine", 0x3f);
 	AM_StaticInit();
+	
 	P_Init ();
 
 	P_SetupWeapons_ntohton();
@@ -3409,10 +3427,12 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 			StartScreen = NULL;
 		}
 
+		CLOCK_START
 		while(!screen->CompileNextShader())
 		{
 			// here we can do some visual updates later
 		}
+		CLOCK_END("Compiling Shaders")
 		twod->fullscreenautoaspect = gameinfo.fullscreenautoaspect;
 		// Initialize the size of the 2D drawer so that an attempt to access it outside the draw code won't crash.
 		twod->Begin(screen->GetWidth(), screen->GetHeight());
