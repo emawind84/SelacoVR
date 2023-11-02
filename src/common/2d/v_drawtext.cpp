@@ -350,18 +350,12 @@ void DrawTextCommon(F2DDrawer *drawer, FFont *font, int normalcolor, double x, d
 				parms.destheight = parms.celly;
 			}
 			
-			/*if (parms.monospace == EMonospacing::CellLeft)
+			if (parms.monospace == EMonospacing::CellLeft)
 				parms.left = 0;
 			else if (parms.monospace == EMonospacing::CellCenter)
 				parms.left = w / 2.;
 			else if (parms.monospace == EMonospacing::CellRight)
-				parms.left = w;*/
-			
-			// @Cocaktrice - Offsets don't seem to work with extra parms, so just change the position of the draw
-			if (parms.monospace == EMonospacing::CellCenter)
-				parms.x -= w / 2.;
-			else if (parms.monospace == EMonospacing::CellRight)
-				parms.x -= w;
+				parms.left = w;
 
 			drawer->AddTexture(chr.OriginalPic, parms);
 		}
