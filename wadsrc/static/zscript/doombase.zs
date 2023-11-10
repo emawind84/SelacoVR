@@ -190,7 +190,7 @@ class Thinker : Object native play
 	virtual native void Sleep(int tics);
 	virtual native bool ShouldWake();
 	virtual native void Wake();
-	native void SleepIndefinite();
+	virtual native void SleepIndefinite();
 
 	static clearscope int Tics2Seconds(int tics)
 	{
