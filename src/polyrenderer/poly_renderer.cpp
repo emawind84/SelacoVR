@@ -103,8 +103,6 @@ void PolyRenderer::RenderViewToCanvas(AActor *actor, DCanvas *canvas, int x, int
 	RenderActorView(actor, dontmaplines);
 	Threads.MainThread()->FlushDrawQueue();
 	DrawerThreads::WaitForWorkers();
-
-	canvas->Unlock();
 	
 	RenderTarget = screen;
 	R_ExecuteSetViewSize(Viewpoint, Viewwindow);
