@@ -120,6 +120,7 @@ bool FUniquePalette::Update()
 	PalData pd;
 
 	memset(pd.pe, 0, sizeof(pd.pe));
+	if (remap == NULL || remap->Palette == NULL) return false;
 	memcpy(pd.pe, remap->Palette, remap->NumEntries * sizeof(*remap->Palette));
 	pd.crc32 = CalcCRC32((uint8_t*)pd.pe, sizeof(pd.pe));
 	for (unsigned int i = 0; i< AllPalettes.Size(); i++)
