@@ -1349,6 +1349,45 @@ protected:
 };
 
 
+
+//==========================================================================
+//
+// an array to hold a small number of unique entries
+//
+//==========================================================================
+
+template<class T> class UniqueList
+{
+	TArray<T*> Array;
+
+public:
+
+	T * Get(T * t)
+	{
+		for (unsigned i = 0; i<Array.Size(); i++)
+		{
+			if (!memcmp(t, Array[i], sizeof(T))) return Array[i];
+		}
+		T * newo = new T;
+
+		*newo = *t;
+		Array.Push(newo);
+		return newo;
+	}
+
+	void Clear()
+	{
+		for (unsigned i = 0; i<Array.Size(); i++) delete Array[i];
+		Array.Clear();
+	}
+
+	~UniqueList()
+	{
+		Clear();
+	}
+};
+
+
 class BitArray
 {
 	TArray<uint8_t> bytes;
@@ -1539,42 +1578,4 @@ public:
 private:
 	T *Array;
 	unsigned int Count;
-};
-
-
-//==========================================================================
-//
-// an array to hold a small number of unique entries
-//
-//==========================================================================
-
-template<class T> class UniqueList
-{
-	TArray<T*> Array;
-
-public:
-
-	T * Get(T * t)
-	{
-		for (unsigned i = 0; i<Array.Size(); i++)
-		{
-			if (!memcmp(t, Array[i], sizeof(T))) return Array[i];
-		}
-		T * newo = new T;
-
-		*newo = *t;
-		Array.Push(newo);
-		return newo;
-	}
-
-	void Clear()
-	{
-		for (unsigned i = 0; i<Array.Size(); i++) delete Array[i];
-		Array.Clear();
-	}
-
-	~UniqueList()
-	{
-		Clear();
-	}
 };
