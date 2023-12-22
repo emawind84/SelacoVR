@@ -824,7 +824,7 @@ void GLPlaneMirrorPortal::DrawContents()
 	int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
 
 	SaveMapSection();
-	currentmapsection[mapsection >> 3] |= 1 << (mapsection & 7);
+	drawer->CurrentMapSections.Set(mapsection);
 
 	gl_RenderState.SetClipHeight(planez, PlaneMirrorMode < 0 ? -1.f : 1.f);
 	drawer->DrawScene(DM_PORTAL);
@@ -936,7 +936,7 @@ void GLMirrorPortal::DrawContents()
 	int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
 
 	SaveMapSection();
-	currentmapsection[mapsection >> 3] |= 1 << (mapsection & 7);
+	drawer->CurrentMapSections.Set(mapsection);
 
 	GLRenderer->mClipPortal = this;
 	DAngle StartAngle = r_viewpoint.Angles.Yaw;
