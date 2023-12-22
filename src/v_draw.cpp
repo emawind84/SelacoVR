@@ -298,11 +298,11 @@ void DFrameBuffer::DrawTextureParms(FTexture *img, DrawParms &parms)
 //
 //==========================================================================
 
-void DCanvas::DrawShape(FTexture *img, DShape2D *shape, int tags_first, ...)
+void DrawShape(FTexture *img, DShape2D *shape, int tags_first, ...)
 {
 }
 
-void DCanvas::DrawShape(FTexture *img, DShape2D *shape, VMVa_List &args)
+void DrawShape(FTexture *img, DShape2D *shape, VMVa_List &args)
 {
 }
 
@@ -380,7 +380,7 @@ DEFINE_ACTION_FUNCTION(_Screen, GetViewWindow)
 	return MIN(numret, 4);
 }
 
-void DCanvas::CalcFullscreenScale(double srcwidth, double srcheight, int autoaspect, DoubleRect &rect) const
+void DFrameBuffer::CalcFullscreenScale(double srcwidth, double srcheight, int autoaspect, DoubleRect &rect) const
 {
 	double aspect;
 
@@ -1291,7 +1291,7 @@ void DFrameBuffer::FillBorder (FTexture *img)
 //
 //==========================================================================
 
-void DFrameBuffer::DrawLine(int x0, int y0, int x1, int y1, int palColor, uint32_t realcolor)
+void DFrameBuffer::DrawLine(int x0, int y0, int x1, int y1, int palColor, uint32_t realcolor, uint8_t alpha)
 {
 }
 
@@ -1309,10 +1309,8 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawLine)
 	return 0;
 }
 
-void DCanvas::DrawThickLine(int x0, int y0, int x1, int y1, double thickness, uint32_t realcolor, uint8_t alpha) {
-#ifndef NO_SWRENDER
-	SWCanvas::DrawLine(this, x0, y0, x1, y1, -1, realcolor, alpha);
-#endif
+void DFrameBuffer::DrawThickLine(int x0, int y0, int x1, int y1, double thickness, uint32_t realcolor, uint8_t alpha) {
+
 }
 
 DEFINE_ACTION_FUNCTION(_Screen, DrawThickLine)

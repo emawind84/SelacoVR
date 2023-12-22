@@ -507,6 +507,7 @@ public:
 	// Draws a single pixel
 	virtual void DrawPixel(int x, int y, int palcolor, uint32_t rgbcolor);
 
+	void CalcFullscreenScale(double srcwidth, double srcheight, int autoaspect, DoubleRect &rect) const;
 	bool SetTextureParms(DrawParms *parms, FTexture *img, double x, double y) const;
 	void DrawTexture(FTexture *img, double x, double y, int tags, ...);
 	void DrawTexture(FTexture *img, double x, double y, VMVa_List &);
