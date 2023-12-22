@@ -957,7 +957,7 @@ void DoomSoundEngine::CalcPosVel(int type, const void* source, const float pt[3]
 		if (type == SOURCE_Unattached)
 		{
 			sector_t* sec = P_PointInSector(pt[0], pt[2]);
-			DVector2 disp = Displacements.getOffset(pgroup, sec->PortalGroup);
+			DVector2 disp = level.Displacements.getOffset(pgroup, sec->PortalGroup);
 			pos->X = pt[0] - (float)disp.X;
 			pos->Y = !(chanflags & CHANF_LISTENERZ) ? pt[1] : (float)listenpos.Z;
 			pos->Z = pt[2] - (float)disp.Y;
@@ -976,7 +976,7 @@ void DoomSoundEngine::CalcPosVel(int type, const void* source, const float pt[3]
 				//assert(actor != nullptr);
 				if (actor != nullptr)
 				{
-					DVector2 disp = Displacements.getOffset(pgroup, actor->Sector->PortalGroup);
+					DVector2 disp = level.Displacements.getOffset(pgroup, actor->Sector->PortalGroup);
 					DVector3 posi = actor->Pos() - disp;
 					*pos = { (float)posi.X, (float)posi.Z, (float)posi.Y };
 					if (vel)
@@ -995,7 +995,7 @@ void DoomSoundEngine::CalcPosVel(int type, const void* source, const float pt[3]
 				assert(sector != nullptr);
 				if (sector != nullptr)
 				{
-					DVector2 disp = Displacements.getOffset(pgroup, sector->PortalGroup);
+					DVector2 disp = level.Displacements.getOffset(pgroup, sector->PortalGroup);
 					if (chanflags & CHANF_AREA)
 					{
 						// listener must be reversely offset to calculate the proper sound origin.
@@ -1020,7 +1020,7 @@ void DoomSoundEngine::CalcPosVel(int type, const void* source, const float pt[3]
 				assert(poly != nullptr);
 				if (poly != nullptr)
 				{
-					DVector2 disp = Displacements.getOffset(pgroup, poly->CenterSubsector->sector->PortalGroup);
+					DVector2 disp = level.Displacements.getOffset(pgroup, poly->CenterSubsector->sector->PortalGroup);
 					CalcPolyobjSoundOrg(listenpos + disp, poly, *pos);
 					pos->X -= (float)disp.X;
 					pos->Z -= (float)disp.Y;

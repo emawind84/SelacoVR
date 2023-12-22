@@ -195,7 +195,7 @@ struct FDynamicLight
 
 	inline DVector3 PosRelative(int portalgroup) const
 	{
-		return Pos + Displacements.getOffset(Sector->PortalGroup, portalgroup);
+		return Pos + level.Displacements.getOffset(Sector->PortalGroup, portalgroup);
 	}
 
 	bool ShouldLightActor(AActor *check)
