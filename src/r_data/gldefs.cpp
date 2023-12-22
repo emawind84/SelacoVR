@@ -1173,7 +1173,7 @@ class GLDefsParser
 			*/
 
 			bmtex->bMasked = false;
-			tex->gl_info.Brightmap = bmtex;
+			tex->Brightmap = bmtex;
 		}	
 		tex->gl_info.bDisableFullbright = disable_fullbright;
 	}
@@ -1356,12 +1356,12 @@ class GLDefsParser
 
 		FTexture **bindings[6] =
 		{
-			&tex->gl_info.Brightmap,
-			&tex->gl_info.Normal,
-			&tex->gl_info.Specular,
-			&tex->gl_info.Metallic,
-			&tex->gl_info.Roughness,
-			&tex->gl_info.AmbientOcclusion
+			&tex->Brightmap,
+			&tex->Normal,
+			&tex->Specular,
+			&tex->Metallic,
+			&tex->Roughness,
+			&tex->AmbientOcclusion
 		};
 		for (int i = 0; keywords[i] != nullptr; i++)
 		{
@@ -1378,12 +1378,12 @@ class GLDefsParser
 		if (usershader.shader.IsNotEmpty())
 		{
 			int firstUserTexture;
-			if (tex->gl_info.Normal && tex->gl_info.Specular)
+			if (tex->Normal && tex->Specular)
 			{
 				usershader.shaderType = SHADER_Specular;
 				firstUserTexture = 7;
 			}
-			else if (tex->gl_info.Normal && tex->gl_info.Metallic && tex->gl_info.Roughness && tex->gl_info.AmbientOcclusion)
+			else if (tex->Normal && tex->Metallic && tex->Roughness && tex->AmbientOcclusion)
 			{
 				usershader.shaderType = SHADER_PBR;
 				firstUserTexture = 9;

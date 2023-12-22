@@ -407,18 +407,18 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 			mShaderIndex = tx->bWarped; // This picks SHADER_Warp1 or SHADER_Warp2
 			tx->gl_info.shaderspeed = static_cast<FWarpTexture*>(tx)->GetSpeed();
 		}
-		else if (tx->gl_info.Normal && tx->gl_info.Specular)
+		else if (tx->Normal && tx->Specular)
 		{
-			for (auto &texture : { tx->gl_info.Normal, tx->gl_info.Specular })
+			for (auto &texture : { tx->Normal, tx->Specular })
 			{
 				ValidateSysTexture(texture, expanded);
 				mTextureLayers.Push({ texture, false });
 			}
 			mShaderIndex = SHADER_Specular;
 		}
-		else if (tx->gl_info.Normal && tx->gl_info.Metallic && tx->gl_info.Roughness && tx->gl_info.AmbientOcclusion)
+		else if (tx->Normal && tx->Metallic && tx->Roughness && tx->AmbientOcclusion)
 		{
-			for (auto &texture : { tx->gl_info.Normal, tx->gl_info.Metallic, tx->gl_info.Roughness, tx->gl_info.AmbientOcclusion })
+			for (auto &texture : { tx->Normal, tx->Metallic, tx->Roughness, tx->AmbientOcclusion })
 			{
 				ValidateSysTexture(texture, expanded);
 				mTextureLayers.Push({ texture, false });
@@ -427,10 +427,10 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 		}
 
 		tx->CreateDefaultBrightmap();
-		if (tx->gl_info.Brightmap)
+		if (tx->Brightmap)
 		{
-			ValidateSysTexture(tx->gl_info.Brightmap, expanded);
-			mTextureLayers.Push({ tx->gl_info.Brightmap, false });
+			ValidateSysTexture(tx->Brightmap, expanded);
+			mTextureLayers.Push({ tx->Brightmap, false });
 			mLayerFlags |= TEXF_Brightmap;
 		}
 		else	
@@ -438,10 +438,10 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 			ValidateSysTexture(TexMan.ByIndex(1), expanded);
 			mTextureLayers.Push({ TexMan.ByIndex(1), false });
 		}
-		if (tx->gl_info.Detailmap)
+		if (tx->Detailmap)
 		{
-			ValidateSysTexture(tx->gl_info.Detailmap, expanded);
-			mTextureLayers.Push({ tx->gl_info.Detailmap, false });
+			ValidateSysTexture(tx->Detailmap, expanded);
+			mTextureLayers.Push({ tx->Detailmap, false });
 			mLayerFlags |= TEXF_Detailmap;
 		}
 		else
@@ -449,10 +449,10 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 			ValidateSysTexture(TexMan.ByIndex(1), expanded);
 			mTextureLayers.Push({ TexMan.ByIndex(1), false });
 		}
-		if (tx->gl_info.Glowmap)
+		if (tx->Glowmap)
 		{
-			ValidateSysTexture(tx->gl_info.Glowmap, expanded);
-			mTextureLayers.Push({ tx->gl_info.Glowmap, false });
+			ValidateSysTexture(tx->Glowmap, expanded);
+			mTextureLayers.Push({ tx->Glowmap, false });
 			mLayerFlags |= TEXF_Glowmap;
 		}
 		else
