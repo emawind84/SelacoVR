@@ -1183,7 +1183,7 @@ class GLDefsParser
 		auto desc = usershaders[index - FIRST_USER_SHADER];
 		if (desc.disablealphatest)
 		{
-			tex->gl_info.mIsTransparent = 1;
+			tex->bTranslucent = true;
 		}
 		tex->gl_info.shaderindex = index;
 	}
