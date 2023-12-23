@@ -44,7 +44,6 @@ RenderContext gl;
 static double realglversion;	// this is public so the statistics code can access it.
 
 EXTERN_CVAR(Bool, gl_legacy_mode)
-EXTERN_CVAR(Int, vid_renderer);
 CVAR(Bool, gl_riskymodernpath, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 //==========================================================================
@@ -196,8 +195,7 @@ void gl_LoadExtensions()
 		// Don't even start if it's lower than 2.0 or no framebuffers are available (The framebuffer extension is needed for glGenerateMipmapsEXT!)
 		if ((gl_version < 2.0f || !CheckExtension("GL_EXT_framebuffer_object")) && gl_version < 3.0f)
 		{
-			vid_renderer = 0;
-			I_FatalError("Unsupported OpenGL version.\nAt least OpenGL 2.0 with framebuffer support is required to run " GAMENAME ".\nFalling back to software renderer.\n");
+			I_FatalError("Unsupported OpenGL version.\nAt least OpenGL 2.0 with framebuffer support is required to run " GAMENAME ".\n");
 		}
 
 		gl.es = false;
