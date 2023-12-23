@@ -25,6 +25,7 @@
 
 #include "c_cvars.h"
 #include "a_dynlight.h"
+#include "r_utility.h"
 
 
 struct FDynLightData
