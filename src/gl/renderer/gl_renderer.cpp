@@ -441,7 +441,7 @@ void FGLRenderer::RenderView(player_t* player)
 	}
 	else
 	{
-		checkBenchActive();
+		CheckBenchActive();
 
 		// reset statistics counters
 		ResetProfilingData();
@@ -473,9 +473,6 @@ void FGLRenderer::RenderView(player_t* player)
 		{
 			fovratio = ratio;
 		}
-		// Check if there's some lights. If not some code can be skipped.
-		TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
-		mLightCount = ((it.Next()) != NULL);
 
 		// Check if there's some lights. If not some code can be skipped.
 		mLightCount = !!level.lights;
