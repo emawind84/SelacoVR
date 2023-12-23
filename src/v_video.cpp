@@ -125,8 +125,6 @@ FRenderer *SWRenderer;
 
 EXTERN_CVAR (Bool, fullscreen)
 
-CVAR(Int, vid_rendermode, 4, 0)	// for some stupid mods which threw caution out of the window...
-
 #define DBGBREAK assert(0)
 
 class DDummyFrameBuffer : public DFrameBuffer

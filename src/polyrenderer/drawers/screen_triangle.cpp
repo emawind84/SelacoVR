@@ -1118,7 +1118,7 @@ void TriangleBlock::DepthWrite(const TriDrawTriangleArgs *args)
 #endif
 
 
-void ScreenTriangle::Draw(const TriDrawTriangleArgs *args, WorkerThreadData *thread)
+void ScreenTriangle::Draw(const TriDrawTriangleArgs *args, PolyTriangleThreadData *thread)
 {
 	if (V_IsPolyRenderer())
 	{

@@ -39,7 +39,6 @@
 #define NUMSCALEMODES 7
 
 extern bool setsizeneeded;
-extern int currentrenderer;
 #ifdef _WIN32
 extern int currentcanvas;
 #else
@@ -119,10 +118,6 @@ namespace
 	{
 		return (x < 0 || x >= NUMSCALEMODES || vScaleTable[x].isValid == false);
 	}
-	bool isClassicSoftware()
-	{
-		return (currentrenderer == 0 && currentcanvas == 0);
-	}
 }
 
 void R_ShowCurrentScaling();
@@ -160,11 +155,6 @@ bool ViewportLinearScale()
 
 int ViewportScaledWidth(int width, int height)
 {
-	if (isClassicSoftware())
-	{
-		vid_scalemode = 0;
-		vid_scalefactor = 1.0;
-	}
 	if (isOutOfBounds(vid_scalemode))
 		vid_scalemode = 0;
 	if (vid_cropaspect && height > 0)
@@ -174,11 +164,6 @@ int ViewportScaledWidth(int width, int height)
 
 int ViewportScaledHeight(int width, int height)
 {
-	if (isClassicSoftware())
-	{
-		vid_scalemode = 0;
-		vid_scalefactor = 1.0;
-	}
 	if (isOutOfBounds(vid_scalemode))
 		vid_scalemode = 0;
 	if (vid_cropaspect && height > 0)
@@ -188,8 +173,6 @@ int ViewportScaledHeight(int width, int height)
 
 bool ViewportIsScaled43()
 {
-	if (isClassicSoftware())
-		vid_scalemode = 0;
 	if (isOutOfBounds(vid_scalemode))
 		vid_scalemode = 0;
 	// hack - use custom scaling if in "custom" mode
@@ -200,11 +183,6 @@ bool ViewportIsScaled43()
 
 void R_ShowCurrentScaling()
 {
-	if (isClassicSoftware())
-	{
-		Printf("This command is not available for the classic software renderer.\n");
-		return;
-	}
 	int x1 = screen->GetClientWidth(), y1 = screen->GetClientHeight(), x2 = ViewportScaledWidth(x1, y1), y2 = ViewportScaledHeight(x1, y1);
 	Printf("Current vid_scalefactor: %f\n", (float)(vid_scalefactor));
 	Printf("Real resolution: %i x %i\nEmulated resolution: %i x %i\n", x1, y1, x2, y2);
@@ -212,11 +190,6 @@ void R_ShowCurrentScaling()
 
 bool R_CalcsShouldBeBlocked()
 {
-	if (isClassicSoftware())
-	{
-		Printf("This command is not available for the classic software renderer.\n");
-		return true;
-	}
 	if (vid_scalemode < 0 || vid_scalemode > 1)
 	{
 		Printf("vid_scalemode should be 0 or 1 before using this command.\n");
