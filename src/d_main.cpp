@@ -134,7 +134,6 @@ void I_ShutdownInput();
 #ifdef _WIN32
 void StopFPSLimit();
 #endif
-void I_DeleteRenderer();
 
 const FIWADInfo *D_FindIWAD(TArray<FString> &wadfiles, const char *iwad, const char *basewad);
 
@@ -2986,7 +2985,6 @@ int D_DoomMain()
 	C_DeinitConsole();
 	R_DeinitColormaps();
 	R_Shutdown();
-	I_DeleteRenderer();
 	I_ShutdownGraphics();
 	I_ShutdownInput();
 	M_SaveDefaultsFinal();

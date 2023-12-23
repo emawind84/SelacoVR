@@ -422,8 +422,9 @@ void FGLRenderer::EndOffscreen()
 
 void FGLRenderer::RenderView(player_t* player)
 {
-	// Todo: This needs to call the software renderer and process the returned image, if so desired.
-	checkBenchActive();
+	gl_ClearFakeFlat();
+
+	CheckBenchActive();
 
 	gl_RenderState.SetVertexBuffer(mVBO);
 	mVBO->Reset();
@@ -463,8 +464,7 @@ void FGLRenderer::RenderView(player_t* player)
 	drawer.SetFixedColormap(player);
 
 	// Check if there's some lights. If not some code can be skipped.
-	TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
-	mLightCount = ((it.Next()) != NULL);
+	mLightCount = !!level.lights;
 
 	mShadowMap.Update();
 	sector_t * viewsector = drawer.RenderViewpoint(player->camera, NULL, r_viewpoint.FieldOfView.Degrees, ratio, fovratio, true, true);
@@ -480,6 +480,7 @@ void FGLRenderer::RenderView(player_t* player)
 
 void FGLRenderer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV)
 {
+	// This doesn't need to clear the fake flat cache. It can be shared between camera textures and the main view of a scene.
 	FMaterial * gltex = FMaterial::ValidateTexture(tex, false);
 
 	int width = gltex->TextureWidth();

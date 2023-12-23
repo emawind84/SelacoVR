@@ -46,7 +46,6 @@ static double realglversion;	// this is public so the statistics code can access
 EXTERN_CVAR(Bool, gl_legacy_mode)
 extern int currentrenderer;
 EXTERN_CVAR(Int, vid_renderer);
-EXTERN_CVAR(Bool, vid_glswfb);
 CVAR(Bool, gl_riskymodernpath, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 //==========================================================================
@@ -199,7 +198,6 @@ void gl_LoadExtensions()
 		if ((gl_version < 2.0f || !CheckExtension("GL_EXT_framebuffer_object")) && gl_version < 3.0f)
 		{
 			vid_renderer = 0;
-			vid_glswfb = 0;
 			I_FatalError("Unsupported OpenGL version.\nAt least OpenGL 2.0 with framebuffer support is required to run " GAMENAME ".\nFalling back to software renderer.\n");
 		}
 

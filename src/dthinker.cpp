@@ -630,7 +630,7 @@ void DThinker::RunThinkers ()
 		// Set dynamic lights at the end of the tick, so that this catches all changes being made through the last frame.
 		while (auto ac = it.Next())
 		{
-			if (ac->flags8 & MF8_RECREATELIGHTS && Renderer != nullptr)
+			if (ac->flags8 & MF8_RECREATELIGHTS)
 			{
 				ac->flags8 &= ~MF8_RECREATELIGHTS;
 				if (dolights) ac->SetDynamicLights();
