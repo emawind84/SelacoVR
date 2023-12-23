@@ -312,9 +312,9 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 			mTextureLayers.Push({ TexMan.ByIndex(1), false });
 		}
 
-		if (tx->gl_info.shaderindex >= FIRST_USER_SHADER)
+		if (tx->shaderindex >= FIRST_USER_SHADER)
 		{
-			const UserShaderDesc &usershader = usershaders[tx->gl_info.shaderindex - FIRST_USER_SHADER];
+			const UserShaderDesc &usershader = usershaders[tx->shaderindex - FIRST_USER_SHADER];
 			if (usershader.shaderType == mShaderIndex) // Only apply user shader if it matches the expected material
 			{
 				for (auto &texture : tx->CustomShaderTextures)
@@ -323,7 +323,7 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 					ValidateSysTexture(texture, expanded);
 					mTextureLayers.Push({ texture, false });
 				}
-				mShaderIndex = tx->gl_info.shaderindex;
+				mShaderIndex = tx->shaderindex;
 			}
 		}
 	}
@@ -555,7 +555,7 @@ void FMaterial::InitGlobalState()
 void FMaterial::Bind(int clampmode, int translation)
 {
 	if (tex->bHasCanvas) clampmode = CLAMP_CAMTEX;
-	else if ((tex->bWarped || tex->gl_info.shaderindex >= FIRST_USER_SHADER) && clampmode <= CLAMP_XY) clampmode = CLAMP_NONE;
+	else if ((tex->bWarped || tex->shaderindex >= FIRST_USER_SHADER) && clampmode <= CLAMP_XY) clampmode = CLAMP_NONE;
 	
 	// avoid rebinding the same texture multiple times.
 	if (this == last && lastclamp == clampmode && translation == lasttrans) return;

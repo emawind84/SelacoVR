@@ -1185,7 +1185,7 @@ class GLDefsParser
 		{
 			tex->bTranslucent = true;
 		}
-		tex->gl_info.shaderindex = index;
+		tex->shaderindex = index;
 	}
 
 	//==========================================================================
