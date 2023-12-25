@@ -42,7 +42,7 @@
 #include "i_input.h"
 #include "i_system.h"
 #include "d_event.h"
-#include "win32iface.h"
+#include "hardware.h"
 
 
 // MACROS ------------------------------------------------------------------

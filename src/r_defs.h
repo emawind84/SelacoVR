@@ -45,7 +45,7 @@
 struct FLightNode;
 struct FGLSection;
 class FSerializer;
-struct FPortal;
+struct FSectorPortalGroup;
 struct FSectorPortal;
 struct FLinePortal;
 struct seg_t;
@@ -138,6 +138,7 @@ struct vertex_t
 	}
 
 	int Index() const;
+	void RecalcVertexHeights();
 
 
 	angle_t viewangle;	// precalculated angle for clipping
@@ -651,6 +652,9 @@ public:
 	FSectorPortal *ValidatePortal(int which);
 	void CheckPortalPlane(int plane);
 
+	int CheckSpriteGlow(int lightlevel, const DVector3 &pos);
+	bool GetWallGlow(float *topglowcolor, float *bottomglowcolor);
+
 
 	enum
 	{
@@ -1083,7 +1087,7 @@ public:
 	int							subsectorcount;		// list of subsectors
 	double						transdoorheight;	// for transparent door hacks
 	subsector_t **				subsectors;
-	FPortal *					portals[2];			// floor and ceiling portals
+	FSectorPortalGroup *					portals[2];			// floor and ceiling portals
 
 	enum
 	{
@@ -1100,7 +1104,7 @@ public:
 	#define VBOHeightcheck(X) VBOHeightcheck(GLRenderer->VtxBuff,X)
 	#define vboheight _vboheight[GLRenderer->VtxBuff]
 
-	FPortal *GetGLPortal(int plane) { return portals[plane]; }
+	FSectorPortalGroup *GetPortalGroup(int plane) { return portals[plane]; }
 
 	enum
 	{
@@ -1533,6 +1537,8 @@ struct FPortalCoverage
 	uint32_t *		subsectors;
 	int			sscount;
 };
+
+void BuildPortalCoverage(FPortalCoverage *coverage, subsector_t *subsector, const DVector2 &displacement);
 
 struct subsector_t
 {

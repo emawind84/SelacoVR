@@ -40,14 +40,12 @@
 #include "swrenderer/viewport/r_viewport.h"
 #include "swrenderer/r_swcolormaps.h"
 
-EXTERN_CVAR(Bool, r_shadercolormaps)
 EXTERN_CVAR(Int, screenblocks)
 EXTERN_CVAR(Float, r_visibility)
 EXTERN_CVAR(Bool, r_models)
 
 extern bool r_modelscene;
 
-void InitGLRMapinfoData();
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -61,59 +59,55 @@ PolyRenderer::PolyRenderer()
 {
 }
 
-void PolyRenderer::RenderView(player_t *player)
+void PolyRenderer::RenderView(player_t *player, DCanvas *target)
 {
 	using namespace swrenderer;
 	
-	RenderTarget = screen;
-
-	int width = SCREENWIDTH;
-	int height = SCREENHEIGHT;
-	float trueratio;
-	ActiveRatio(width, height, &trueratio);
-	//viewport->SetViewport(&Thread, width, height, trueratio);
+	RenderTarget = target;
+	RenderToCanvas = false;
 
 	RenderActorView(player->mo, false);
 
-	// Apply special colormap if the target cannot do it
-	CameraLight *cameraLight = CameraLight::Instance();
-	if (cameraLight->ShaderColormap() && RenderTarget->IsBgra() && !(r_shadercolormaps && screen->Accel2D))
-	{
-		Threads.MainThread()->DrawQueue->Push<ApplySpecialColormapRGBACommand>(cameraLight->ShaderColormap(), screen);
-	}
-
 	Threads.MainThread()->FlushDrawQueue();
-	PolyDrawerWaitCycles.Clock();
 	DrawerThreads::WaitForWorkers();
-	PolyDrawerWaitCycles.Unclock();
 }
 
 void PolyRenderer::RenderViewToCanvas(AActor *actor, DCanvas *canvas, int x, int y, int width, int height, bool dontmaplines)
 {
-	const bool savedviewactive = viewactive;
+	// Save a bunch of silly globals:
+	auto savedViewpoint = Viewpoint;
+	auto savedViewwindow = Viewwindow;
+	auto savedviewwindowx = viewwindowx;
+	auto savedviewwindowy = viewwindowy;
+	auto savedviewwidth = viewwidth;
+	auto savedviewheight = viewheight;
+	auto savedviewactive = viewactive;
+	auto savedRenderTarget = RenderTarget;
 
-	viewwidth = width;
+	// Setup the view:
 	RenderTarget = canvas;
+	RenderToCanvas = true;
 	R_SetWindow(Viewpoint, Viewwindow, 12, width, height, height, true);
-	//viewport->SetViewport(&Thread, width, height, Viewwindow.WidescreenRatio);
 	viewwindowx = x;
 	viewwindowy = y;
 	viewactive = true;
 	
-	canvas->Lock(true);
-	
+	// Render:
 	RenderActorView(actor, dontmaplines);
 	Threads.MainThread()->FlushDrawQueue();
 	DrawerThreads::WaitForWorkers();
 
-	canvas->Unlock();
-	
-	RenderTarget = screen;
-	R_ExecuteSetViewSize(Viewpoint, Viewwindow);
-	float trueratio;
-	ActiveRatio(width, height, &trueratio);
-	//viewport->SetViewport(&Thread, width, height, viewport->viewwindow.WidescreenRatio);
+	RenderToCanvas = false;
+
+	// Restore silly globals:
+	Viewpoint = savedViewpoint;
+	Viewwindow = savedViewwindow;
+	viewwindowx = savedviewwindowx;
+	viewwindowy = savedviewwindowy;
+	viewwidth = savedviewwidth;
+	viewheight = savedviewheight;
 	viewactive = savedviewactive;
+	RenderTarget = savedRenderTarget;
 }
 
 void PolyRenderer::RenderActorView(AActor *actor, bool dontmaplines)
@@ -198,7 +192,7 @@ void PolyRenderer::SetSceneViewport()
 {
 	using namespace swrenderer;
 	
-	if (RenderTarget == screen) // Rendering to screen
+	if (!RenderToCanvas) // Rendering to screen
 	{
 		int height;
 		if (screenblocks >= 10)
@@ -221,7 +215,6 @@ PolyPortalViewpoint PolyRenderer::SetupPerspectiveMatrix(bool mirror)
 
 	if (!bDidSetup)
 	{
-		InitGLRMapinfoData();
 		bDidSetup = true;
 	}
 

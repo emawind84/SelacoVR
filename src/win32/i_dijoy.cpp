@@ -53,7 +53,7 @@
 #include "doomdef.h"
 #include "doomstat.h"
 #include "version.h"
-#include "win32iface.h"
+#include "hardware.h"
 #include "templates.h"
 #include "gameconfigfile.h"
 #include "cmdlib.h"

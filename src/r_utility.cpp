@@ -289,7 +289,6 @@ void R_SetWindow (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, int wind
 void R_ExecuteSetViewSize (FRenderViewpoint &viewpoint, FViewWindow &viewwindow)
 {
 	setsizeneeded = false;
-	V_SetBorderNeedRefresh();
 
 	R_SetWindow (viewpoint, viewwindow, setblocks, SCREENWIDTH, SCREENHEIGHT, StatusBar->GetTopOfStatusbar());
 
@@ -418,6 +417,15 @@ subsector_t *R_PointInSubsector (fixed_t x, fixed_t y)
 
 //==========================================================================
 //
+//
+//
+//==========================================================================
+
+FRenderer *CreateSWRenderer();
+
+
+//==========================================================================
+//
 // R_Init
 //
 //==========================================================================
@@ -425,13 +433,15 @@ subsector_t *R_PointInSubsector (fixed_t x, fixed_t y)
 void R_Init ()
 {
 	StartScreen->Progress();
-	// Colormap init moved back to InitPalette()
-	//R_InitColormaps ();
-	//StartScreen->Progress();
-
 	R_InitTranslationTables ();
 	R_SetViewSize (screenblocks);
-	Renderer->Init();
+
+	if (SWRenderer == NULL)
+	{
+		SWRenderer = CreateSWRenderer();
+	}
+
+	SWRenderer->Init();
 }
 
 //==========================================================================
@@ -442,6 +452,8 @@ void R_Init ()
 
 void R_Shutdown ()
 {
+	if (SWRenderer != nullptr) delete SWRenderer;
+	SWRenderer = nullptr;
 	FCanvasTextureInfo::EmptyList();
 }
 
@@ -530,7 +542,7 @@ void R_InterpolateView (FRenderViewpoint &viewpoint, player_t *player, double Fr
 		}
 		else
 		{
-			DVector2 disp = Displacements.getOffset(oldgroup, newgroup);
+			DVector2 disp = level.Displacements.getOffset(oldgroup, newgroup);
 			viewpoint.Pos = iview->Old.Pos + (iview->New.Pos - iview->Old.Pos - disp) * Frac;
 			viewpoint.Path[0] = viewpoint.Path[1] = iview->New.Pos;
 		}
@@ -1052,7 +1064,8 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 		{
 			color = pr_hom();
 		}
-		Renderer->SetClearColor(color);
+		screen->SetClearColor(color);
+		SWRenderer->SetClearColor(color);
 	}
 }
 
@@ -1148,7 +1161,7 @@ void FCanvasTextureInfo::UpdateAll ()
 	{
 		if (probe->Viewpoint != NULL && probe->Texture->bNeedsUpdate)
 		{
-			Renderer->RenderTextureView(probe->Texture, probe->Viewpoint, probe->FOV);
+			screen->RenderTextureView(probe->Texture, probe->Viewpoint, probe->FOV);
 		}
 	}
 }

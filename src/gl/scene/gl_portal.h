@@ -37,12 +37,10 @@
 #define __GL_PORTAL_H
 
 #include "tarray.h"
-//#include "gl/gl_intern.h"
+#include "actor.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/scene/gl_drawinfo.h"
-#include "gl/utility/gl_templates.h"
 #include "gl/utility/gl_clock.h"
-#include "gl/data/gl_data.h"
 
 struct GLHorizonInfo
 {
@@ -77,7 +75,6 @@ struct GLSkyInfo
 extern UniqueList<GLSkyInfo> UniqueSkies;
 extern UniqueList<GLHorizonInfo> UniqueHorizons;
 extern UniqueList<secplane_t> UniquePlaneMirrors;
-extern UniqueList<FGLLinePortal> UniqueLineToLines;
 struct GLEEHorizonPortal;
 class GLSceneDrawer;
 
@@ -120,7 +117,7 @@ private:
 	ActorRenderFlags savedvisibility;
 	GLPortal *PrevPortal;
 	GLPortal *PrevClipPortal;
-	TArray<uint8_t> savedmapsection;
+	BitArray SavedMapSection;
 	TArray<unsigned int> mPrimIndices;
 
 protected:
@@ -213,7 +210,7 @@ struct GLLinePortal : public GLPortal
 		CalcDelta();
 	}
 
-	GLLinePortal(FGLLinePortal *line)
+	GLLinePortal(FLinePortalSpan *line)
 	{
 		if (line->lines[0]->mType != PORTT_LINKED || line->v1 == nullptr)
 		{
@@ -273,7 +270,7 @@ public:
 
 struct GLLineToLinePortal : public GLLinePortal
 {
-	FGLLinePortal *glport;
+	FLinePortalSpan *glport;
 protected:
 	virtual void DrawContents();
 	virtual void * GetSource() const { return glport; }
@@ -283,7 +280,7 @@ protected:
 
 public:
 	
-	GLLineToLinePortal(FGLLinePortal *ll)
+	GLLineToLinePortal(FLinePortalSpan *ll)
 		: GLLinePortal(ll)
 	{
 		glport = ll;
@@ -346,11 +343,11 @@ protected:
 	virtual void * GetSource() const { return origin; }
 	virtual bool IsSky() { return true; }	// although this isn't a real sky it can be handled as one.
 	virtual const char *GetName();
-	FPortal *origin;
+	FSectorPortalGroup *origin;
 
 public:
 	
-	GLSectorStackPortal(FPortal *pt) 
+	GLSectorStackPortal(FSectorPortalGroup *pt) 
 	{
 		origin=pt;
 	}

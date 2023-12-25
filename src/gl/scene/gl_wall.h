@@ -20,9 +20,9 @@ class FMaterial;
 struct GLDrawList;
 struct GLSkyInfo;
 struct FTexCoordInfo;
-struct FPortal;
+struct FSectorPortalGroup;
 struct FFlatVertex;
-struct FGLLinePortal;
+struct FLinePortalSpan;
 class GLSceneDrawer;
 
 enum
@@ -106,10 +106,13 @@ struct GLSectorPlane
 	}
 };
 
+struct FDrawInfo;
 
 class GLWall
 {
+	friend struct FDrawInfo;
 public:
+	static const char passflag[];
 
 	enum
 	{
@@ -144,19 +147,20 @@ public:
 	friend class GLPortal;
 
 	GLSceneDrawer *mDrawer;
-	GLSeg glseg;
 	vertex_t * vertexes[2];				// required for polygon splitting
+	FMaterial *gltexture;
+	TArray<lightlist_t> *lightlist;
+
+	GLSeg glseg;
 	float ztop[2],zbottom[2];
 	texcoord tcs[4];
 	float alpha;
-	FMaterial *gltexture;
 
 	FColormap Colormap;
 	ERenderStyle RenderStyle;
 	
 	float ViewDistance;
 
-	TArray<lightlist_t> *lightlist;
 	short lightlevel;
 	uint16_t flags;
 	uint8_t type;
@@ -173,9 +177,9 @@ public:
 		FSectorPortal *secportal;	// sector portal (formerly skybox)
 		GLSkyInfo * sky;			// for normal sky
 		GLHorizonInfo * horizon;	// for horizon information
-		FPortal * portal;			// stacked sector portals
+		FSectorPortalGroup * portal;			// stacked sector portals
 		secplane_t * planemirror;	// for plane mirrors
-		FGLLinePortal *lineportal;	// line-to-line portals
+		FLinePortalSpan *lineportal;	// line-to-line portals
 	};
 
 
@@ -273,6 +277,17 @@ public:
 		mDrawer = drawer;
 	}
 
+	GLWall(const GLWall &other)
+	{
+		memcpy(this, &other, sizeof(GLWall));
+	}
+
+	GLWall & operator=(const GLWall &other)
+	{
+		memcpy(this, &other, sizeof(GLWall));
+		return *this;
+	}
+
 	void Process(seg_t *seg, sector_t *frontsector, sector_t *backsector, bool isculled = false);
 	void ProcessLowerMiniseg(seg_t *seg, sector_t *frontsector, sector_t *backsector);
 	void Draw(int pass);
@@ -347,6 +362,18 @@ public:
 	void SetFrom3DFloor(F3DFloor *rover, bool top, bool underside);
 	void ProcessSector(sector_t * frontsector);
 	void Draw(int pass, bool trans);
+
+	GLFlat(const GLFlat &other)
+	{
+		memcpy(this, &other, sizeof(GLFlat));
+	}
+
+	GLFlat & operator=(const GLFlat &other)
+	{
+		memcpy(this, &other, sizeof(GLFlat));
+		return *this;
+	}
+
 };
 
 
@@ -416,6 +443,18 @@ public:
 
 	// Lines start-end and fdiv must intersect.
 	double CalcIntersectionVertex(GLWall * w2);
+
+	GLSprite(const GLSprite &other)
+	{
+		memcpy(this, &other, sizeof(GLSprite));
+	}
+
+	GLSprite & operator=(const GLSprite &other)
+	{
+		memcpy(this, &other, sizeof(GLSprite));
+		return *this;
+	}
+
 };
 
 inline float Dist2(float x1,float y1,float x2,float y2)

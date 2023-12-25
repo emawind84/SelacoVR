@@ -136,7 +136,6 @@ void R_Shutdown();
 #ifdef _WIN32
 void StopFPSLimit();
 #endif
-void I_DeleteRenderer();
 
 const FIWADInfo *D_FindIWAD(TArray<FString> &wadfiles, const char *iwad, const char *basewad);
 
@@ -706,7 +705,6 @@ float QzDoom_GetFOV();
 void D_Display ()
 {
 	bool wipe;
-	bool hw2d;
 
 	if (nodrawers || screen == NULL)
 		return; 				// for comparative timing / profiling
@@ -722,7 +720,7 @@ void D_Display ()
 	cycles.Clock();
 
 	r_UseVanillaTransparency = UseVanillaTransparency(); // [SP] Cache UseVanillaTransparency() call
-	r_renderercaps = Renderer->GetCaps(); // [SP] Get the current capabilities of the renderer
+	r_renderercaps = screen->GetCaps(); // [SP] Get the current capabilities of the renderer
 
 	if (players[consoleplayer].camera == NULL)
 	{
@@ -745,13 +743,6 @@ void D_Display ()
 	// [RH] change the screen mode if needed
 	if (setmodeneeded)
 	{
-		int oldrenderer;
-		extern int currentrenderer;
-		EXTERN_CVAR(Int, vid_renderer)
-		oldrenderer = vid_renderer; // [SP] Save pending vid_renderer setting (hack)
-		if (currentrenderer != vid_renderer)
-			vid_renderer = currentrenderer;
-
 		// Change screen mode.
 		if (Video->SetResolution (NewWidth, NewHeight, NewBits))
 		{
@@ -771,7 +762,6 @@ void D_Display ()
 			// Reset the mouse cursor in case the bit depth changed
 			vid_cursor.Callback();
 		}
-		vid_renderer = oldrenderer; // [SP] Restore pending vid_renderer setting
 	}
 
 	// change the view size if needed
@@ -781,22 +771,15 @@ void D_Display ()
 	}
 	setmodeneeded = false;
 
-	if (screen->Lock (false))
-	{
-		V_SetBorderNeedRefresh();
-	}
-
 	// [RH] Allow temporarily disabling wipes
 	if (NoWipe)
 	{
-		V_SetBorderNeedRefresh();
 		NoWipe--;
 		wipe = false;
 		wipegamestate = gamestate;
 	}
 	else if (gamestate != wipegamestate && gamestate != GS_FULLCONSOLE && gamestate != GS_TITLELEVEL)
 	{ // save the current screen if about to wipe
-		V_SetBorderNeedRefresh();
 		switch (wipegamestate)
 		{
 		default:
@@ -822,9 +805,6 @@ void D_Display ()
 		wipe = false;
 	}
 
-	hw2d = false;
-
-
 	{
 		screen->FrameTime = I_msTimeFS();
 		TexMan.UpdateAnimations(screen->FrameTime);
@@ -833,8 +813,8 @@ void D_Display ()
 		{
 		case GS_FULLCONSOLE:
 			screen->SetBlendingRect(0,0,0,0);
-			hw2d = screen->Begin2D(false);
-			C_DrawConsole (false);
+			screen->Begin2D(false);
+			C_DrawConsole ();
 			M_Drawer ();
 			screen->Update ();
 			return;
@@ -843,40 +823,22 @@ void D_Display ()
 		case GS_TITLELEVEL:
 			if (!gametic)
 			{
-				if (!screen->HasBegun2D())
-				{
-					screen->Begin2D(false);
-				}
+				screen->Begin2D(false);
 				break;
 			}
-
-			if (StatusBar != NULL)
-			{
-				float blend[4] = { 0, 0, 0, 0 };
-				StatusBar->BlendView (blend);
-			}
-			screen->SetBlendingRect(viewwindowx, viewwindowy,
-				viewwindowx + viewwidth, viewwindowy + viewheight);
 
 			// [ZZ] execute event hook that we just started the frame
 			//E_RenderFrame();
 			//
-			Renderer->RenderView(&players[consoleplayer]);
-
-			if ((hw2d = screen->Begin2D(viewactive)))
-			{
-				// Redraw everything every frame when using 2D accel
-				V_SetBorderNeedRefresh();
-			}
-			Renderer->DrawRemainingPlayerSprites();
-			screen->DrawBlendingRect();
+			screen->RenderView(&players[consoleplayer]);
+			// returns with 2S mode set.
 			if (automapactive)
 			{
 				AM_Drawer (hud_althud? viewheight : StatusBar->GetTopOfStatusbar());
 			}
 			if (!automapactive || viewactive)
 			{
-				V_RefreshViewBorder ();
+				screen->RefreshViewBorder ();
 			}
 
 			// for timing the statusbar code.
@@ -915,21 +877,21 @@ void D_Display ()
 
 		case GS_INTERMISSION:
 			screen->SetBlendingRect(0,0,0,0);
-			hw2d = screen->Begin2D(false);
+			screen->Begin2D(false);
 			WI_Drawer ();
 			CT_Drawer ();
 			break;
 
 		case GS_FINALE:
 			screen->SetBlendingRect(0,0,0,0);
-			hw2d = screen->Begin2D(false);
+			screen->Begin2D(false);
 			F_Drawer ();
 			CT_Drawer ();
 			break;
 
 		case GS_DEMOSCREEN:
 			screen->SetBlendingRect(0,0,0,0);
-			hw2d = screen->Begin2D(false);
+			screen->Begin2D(false);
 			D_PageDrawer ();
 			CT_Drawer ();
 			break;
@@ -958,7 +920,7 @@ void D_Display ()
 
 			tex = TexMan(gameinfo.PauseSign);
 			x = (SCREENWIDTH - tex->GetScaledWidth() * CleanXfac)/2 +
-				tex->GetScaledLeftOffset() * CleanXfac;
+				tex->GetScaledLeftOffset(0) * CleanXfac;
 			screen->DrawTexture (tex, x, 4, DTA_CleanNoMove, true, TAG_DONE);
 			if (paused && multiplayer)
 			{
@@ -996,7 +958,7 @@ void D_Display ()
 		NetUpdate ();			// send out any new accumulation
 		// normal update
 		// draw ZScript UI stuff
-		C_DrawConsole (hw2d);	// draw console
+		C_DrawConsole ();	// draw console
 		M_Drawer ();			// menu is drawn even on top of everything
 		FStat::PrintStat ();
 		screen->Update ();		// page flip or blit buffer
@@ -1024,7 +986,7 @@ void D_Display ()
 			} while (diff < 1);
 			wipestart = nowtime;
 			done = screen->WipeDo (1);
-			C_DrawConsole (hw2d);	// console and
+			C_DrawConsole ();	// console and
 			M_Drawer ();			// menu are drawn even on top of wipes
 			screen->Update ();		// page flip or blit buffer
 			NetUpdate ();			// [RH] not sure this is needed anymore
@@ -1050,8 +1012,6 @@ void D_ErrorCleanup ()
 	bool aux;
 
 	savegamerestore = false;
-	if (screen)
-		screen->Unlock ();
 	bglobal.RemoveAllBots (true);
 	D_QuitNetGame ();
 	if (demorecording || demoplayback)
@@ -1399,7 +1359,6 @@ void D_DoAdvanceDemo (void)
 		Advisory = NULL;
 		if (!M_DemoNoPlay)
 		{
-			V_SetBorderNeedRefresh();
 			democount++;
 			mysnprintf (demoname + 4, countof(demoname) - 4, "%d", democount);
 			if (Wads.CheckNumForName (demoname) < 0)
@@ -2500,7 +2459,6 @@ static void InitShutdown()
 	C_DeinitConsole();
 	R_DeinitColormaps();
 	R_Shutdown();
-	I_DeleteRenderer();
 	I_ShutdownGraphics();
 	//I_ShutdownInput();
 	M_SaveDefaultsFinal();
@@ -2721,7 +2679,6 @@ static int D_DoomMain_Internal (void)
 		{
 			if (!batchrun) Printf ("I_Init: Setting up machine state.\n");
 			I_Init ();
-			I_CreateRenderer();
 		}
 
 		if (!batchrun) Printf ("V_Init: allocate screen.\n");
@@ -2994,7 +2951,6 @@ static int D_DoomMain_Internal (void)
 			// These calls from inside V_Init2 are still necessary
 			C_NewModeAdjust();
 			M_InitVideoModesMenu();
-			Renderer->RemapVoxels();
 			D_StartTitle ();				// start up intro loop
 			setmodeneeded = false;			// This may be set to true here, but isn't needed for a restart
 		}
@@ -3013,6 +2969,7 @@ static int D_DoomMain_Internal (void)
 	}
 	while (1);
 }
+
 
 int D_DoomMain()
 {
@@ -3084,6 +3041,7 @@ void D_Cleanup()
 	M_SaveDefaults(NULL);			// save config before the restart
 
 	// delete all data that cannot be left until reinitialization
+	if (screen) screen->CleanForRestart();
 	V_ClearFonts();					// must clear global font pointers
 	ColorSets.Clear();
 	PainFlashes.Clear();

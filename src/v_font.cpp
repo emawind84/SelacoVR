@@ -1287,7 +1287,7 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 			if (pic != nullptr)
 			{
 				int height = pic->GetScaledHeight();
-				int yoffs = pic->GetScaledTopOffset();
+				int yoffs = pic->GetScaledTopOffset(0);
 
 				if (yoffs > maxyoffs)
 				{
@@ -1770,8 +1770,8 @@ double GetBottomAlignOffset(FFont *font, int c)
 	FTexture *tex_zero = font->GetChar('0', &w);
 	FTexture *texc = font->GetChar(c, &w);
 	double offset = 0;
-	if (texc) offset += texc->GetScaledTopOffsetDouble();
-	if (tex_zero) offset += -tex_zero->GetScaledTopOffsetDouble() + tex_zero->GetScaledHeightDouble();
+	if (texc) offset += texc->GetScaledTopOffsetDouble(0);
+	if (tex_zero) offset += -tex_zero->GetScaledTopOffsetDouble(0) + tex_zero->GetScaledHeightDouble();
 	return offset;
 }
 
@@ -1862,7 +1862,7 @@ int FFont::GetMaxAscender(const uint8_t* string) const
 			auto ctex = GetChar(chr, nullptr);
 			if (ctex)
 			{
-				auto offs = int(ctex->GetScaledTopOffset());
+				auto offs = int(ctex->GetScaledTopOffset(0));
 				if (offs > retval) retval = offs;
 			}
 		}
@@ -1905,54 +1905,6 @@ void FFont::LoadTranslations()
 	BuildTranslations (luminosity, identity, &TranslationParms[0][0], ActiveColors, NULL);
 
 	delete[] luminosity;
-}
-
-//==========================================================================
-//
-// FFont :: Preload
-//
-// Loads most of the 7-bit ASCII characters. In the case of D3DFB, this
-// means all the characters of a font have a better chance of being packed
-// into the same hardware texture.
-//
-// (Note that this is a rather dumb implementation. The atlasing should
-// occur at a higher level, independently of the renderer being used.)
-//
-//==========================================================================
-
-void FFont::Preload() const
-{
-	// First and last char are the same? Wait until it's actually needed
-	// since nothing is gained by preloading now.
-	if (FirstChar == LastChar)
-	{
-		return;
-	}
-	for (int i = MAX(FirstChar, 0x21); i < MIN(LastChar, 0x7e); ++i)
-	{
-		int foo;
-		FTexture *pic = GetChar(i, &foo);
-		if (pic != NULL)
-		{
-			pic->GetNative(pic->GetFormat(), false);
-		}
-	}
-}
-
-//==========================================================================
-//
-// FFont :: StaticPreloadFonts
-//
-// Preloads all the defined fonts.
-//
-//==========================================================================
-
-void FFont::StaticPreloadFonts()
-{
-	for (FFont *font = FirstFont; font != NULL; font = font->Next)
-	{
-		font->Preload();
-	}
 }
 
 //==========================================================================
@@ -2716,8 +2668,8 @@ FFontChar2::FFontChar2 (int sourcelump, int sourcepos, int width, int height, in
 	UseType = ETextureType::FontChar;
 	Width = width;
 	Height = height;
-	LeftOffset = leftofs;
-	TopOffset = topofs;
+	_LeftOffset[1] = _LeftOffset[0] = leftofs;
+	_TopOffset[1] = _TopOffset[0] = topofs;
 	CalcBitSize ();
 }
 
@@ -2967,7 +2919,7 @@ FSpecialFont::FSpecialFont (const char *name, int first, int count, FTexture **l
 		if (pic != NULL)
 		{
 			int height = pic->GetScaledHeight();
-			int yoffs = pic->GetScaledTopOffset();
+			int yoffs = pic->GetScaledTopOffset(0);
 
 			if (yoffs > maxyoffs)
 			{

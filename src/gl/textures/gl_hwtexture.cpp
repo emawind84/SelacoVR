@@ -85,7 +85,7 @@ static void ResampleBoxPrecalc(TArray<BoxPrecalc>& boxes, int oldDim)
 	}
 }
 
-void FHardwareTexture::Resize(int width, int height, unsigned char *src_data, unsigned char *dst_data)
+void FHardwareTexture::Resize(int swidth, int sheight, int width, int height, unsigned char *src_data, unsigned char *dst_data)
 {
 
 	// This function implements a simple pre-blur/box averaging method for
@@ -96,8 +96,8 @@ void FHardwareTexture::Resize(int width, int height, unsigned char *src_data, un
 	TArray<BoxPrecalc> vPrecalcs(height, true);
 	TArray<BoxPrecalc> hPrecalcs(width, true);
 
-	ResampleBoxPrecalc(vPrecalcs, texheight);
-	ResampleBoxPrecalc(hPrecalcs, texwidth);
+	ResampleBoxPrecalc(vPrecalcs, sheight);
+	ResampleBoxPrecalc(hPrecalcs, swidth);
 
 	int averaged_pixels, averaged_alpha, src_pixel_index;
 	double sum_r, sum_g, sum_b, sum_a;
@@ -122,7 +122,7 @@ void FHardwareTexture::Resize(int width, int height, unsigned char *src_data, un
 				for (int i = hPrecalc.boxStart; i <= hPrecalc.boxEnd; ++i)
 				{
 					// Calculate the actual index in our source pixels
-					src_pixel_index = j * texwidth + i;
+					src_pixel_index = j * swidth + i;
 
 					int a = src_data[src_pixel_index * 4 + 3];
 					if (a > 0)	// do not use color from fully transparent pixels
@@ -217,7 +217,7 @@ static void GL_ResampleTexture (uint32_t *in, uint32_t inwidth, uint32_t inheigh
 //
 //===========================================================================
 
-unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, int translation, const FString &name, bool material)
+unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, int translation,  const char *name, bool material)
 {
 	int rh,rw;
 	int texformat=TexFormat[gl_texture_format];
@@ -234,13 +234,15 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	FGLDebug::LabelObject(GL_TEXTURE, glTex->glTexID, name);
 	lastbound[texunit] = glTex->glTexID;
 
-	if (!buffer)
+	rw = GetTexDimension(w);
+	rh = GetTexDimension(h);
+	if (glBufferID > 0)
 	{
-		w=texwidth;
-		h=abs(texheight);
-		rw = GetTexDimension (w);
-		rh = GetTexDimension (h);
-
+		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+		buffer = nullptr;
+	}
+	else if (!buffer)
+	{
 		// The texture must at least be initialized if no data is present.
 		glTex->mipmapped = false;
 		buffer=(unsigned char *)calloc(4,rw * (rh+1));
@@ -249,9 +251,6 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	}
 	else
 	{
-		rw = GetTexDimension (w);
-		rh = GetTexDimension (h);
-
 		if (rw == w && rh == h) // Same size, do nothing
 		{
 		}
@@ -261,7 +260,7 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 			unsigned char * scaledbuffer=(unsigned char *)calloc(4,rw * (rh+1));
 			if (scaledbuffer)
 			{
-				Resize(rw, rh, buffer, scaledbuffer);
+				Resize(w, h, rw, rh, buffer, scaledbuffer);
 				deletebuffer=true;
 				buffer=scaledbuffer;
 			}
@@ -287,11 +286,43 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
             buffer=(unsigned char *)scaledbuffer;
         }
 	}
+	// store the physical size.
 
-	BGRAtoRGBA( buffer, rw * rh );
-	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	int sourcetype;
+	if (glTextureBytes > 0)
+	{
+		if (glTextureBytes < 4) glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		if (gl.legacyMode)
+		{
+			// Do not use 2 and 3 here. They won't do anything useful!!!
+			static const int ITypes[] = { GL_LUMINANCE8, GL_LUMINANCE8_ALPHA8, GL_RGB8, GL_RGBA8 };
+			static const int STypes[] = { GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_BGR, GL_BGRA };
 
-	if (deletebuffer) free(buffer);
+			texformat = ITypes[glTextureBytes - 1];
+			sourcetype = STypes[glTextureBytes - 1];
+		}
+		else
+		{
+			static const int ITypes[] = { GL_R8, GL_RG8, GL_RGB8, GL_RGBA8 };
+			static const int STypes[] = { GL_RED, GL_RG, GL_BGR, GL_BGRA };
+
+			texformat = ITypes[glTextureBytes - 1];
+			sourcetype = STypes[glTextureBytes - 1];
+		}
+	}
+	else
+	{
+		sourcetype = GL_BGRA;
+	}
+	
+	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, sourcetype, GL_UNSIGNED_BYTE, buffer);
+
+	if (deletebuffer && buffer) free(buffer);
+	else if (glBufferID)
+	{
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+	}
 
 	if (mipmap && TexFilter[gl_texture_filter].mipmapping)
 	{
@@ -306,14 +337,39 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 
 //===========================================================================
 // 
+//
+//
+//===========================================================================
+void FHardwareTexture::AllocateBuffer(int w, int h, int texelsize)
+{
+	int rw = GetTexDimension(w);
+	int rh = GetTexDimension(h);
+	if (texelsize < 1 || texelsize > 4) texelsize = 4;
+	glTextureBytes = texelsize;
+	if (rw == w || rh == h)
+	{
+		glGenBuffers(1, &glBufferID);
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, glBufferID);
+		glBufferData(GL_PIXEL_UNPACK_BUFFER, w*h*texelsize, nullptr, GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+	}
+}
+
+
+uint8_t *FHardwareTexture::MapBuffer()
+{
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, glBufferID);
+	return (uint8_t*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_WRITE);
+}
+
+//===========================================================================
+// 
 //	Creates a texture
 //
 //===========================================================================
-FHardwareTexture::FHardwareTexture(int _width, int _height, bool nocompression) 
+FHardwareTexture::FHardwareTexture(bool nocompression) 
 {
 	forcenocompression = nocompression;
-	texwidth=_width;
-	texheight=_height;
 
 	glDefTex.glTexID = 0;
 	glDefTex.translation = 0;
@@ -397,6 +453,7 @@ void FHardwareTexture::CleanUnused(SpriteHits &usedtranslations)
 FHardwareTexture::~FHardwareTexture() 
 { 
 	Clean(true); 
+	glDeleteBuffers(1, &glBufferID);
 }
 
 
@@ -489,14 +546,14 @@ void FHardwareTexture::UnbindAll()
 //
 //===========================================================================
 
-int FHardwareTexture::GetDepthBuffer()
+int FHardwareTexture::GetDepthBuffer(int width, int height)
 {
 	if (glDepthID == 0)
 	{
 		glGenRenderbuffers(1, &glDepthID);
 		glBindRenderbuffer(GL_RENDERBUFFER, glDepthID);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 
-			GetTexDimension(texwidth), GetTexDimension(texheight));
+			GetTexDimension(width), GetTexDimension(height));
 		glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	}
 	return glDepthID;
@@ -509,10 +566,12 @@ int FHardwareTexture::GetDepthBuffer()
 //
 //===========================================================================
 
-void FHardwareTexture::BindToFrameBuffer()
+void FHardwareTexture::BindToFrameBuffer(int width, int height)
 {
+	width = GetTexDimension(width);
+	height = GetTexDimension(height);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glDefTex.glTexID, 0);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, GetDepthBuffer());
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, GetDepthBuffer());
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, GetDepthBuffer(width, height));
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, GetDepthBuffer(width, height));
 }
 

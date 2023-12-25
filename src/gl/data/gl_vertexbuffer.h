@@ -27,6 +27,7 @@
 #include "gl/utility/gl_clock.h"
 #include "gl/system/gl_interface.h"
 #include "r_data/models/models.h"
+#include "hwrenderer/data/flatvertices.h"
 
 EXTERN_CVAR(Int, gl_buffer_size);
 
@@ -56,22 +57,6 @@ public:
 	virtual ~FVertexBuffer();
 	virtual void BindVBO() = 0;
 	void EnableBufferArrays(int enable, int disable);
-};
-
-struct FFlatVertex
-{
-	float x,z,y;	// world position
-	float u,v;		// texture coordinates
-
-	void SetFlatVertex(vertex_t *vt, const secplane_t &plane);
-	void Set(float xx, float zz, float yy, float uu, float vv)
-	{
-		x = xx;
-		z = zz;
-		y = yy;
-		u = uu;
-		v = vv;
-	}
 };
 
 struct FSimpleVertex
@@ -106,14 +91,13 @@ public:
 	void EnableColorArray(bool on);
 };
 
-class FFlatVertexBuffer : public FVertexBuffer
+class FFlatVertexBuffer : public FVertexBuffer, public FFlatVertexGenerator
 {
 	FFlatVertex *map;
 	unsigned int mIndex;
 	unsigned int mCurIndex;
 	unsigned int mNumReserved;
 
-	void CheckPlanes(sector_t *sector);
 
 public:
 	enum
@@ -127,8 +111,6 @@ public:
 		NUM_RESERVED = 20
 	};
 
-	TArray<FFlatVertex> vbo_shadowdata;	// this is kept around for updating the actual (non-readable) buffer and as stand-in for pre GL 4.x
-
 	FFlatVertexBuffer(int width, int height);
 	~FFlatVertexBuffer();
 
@@ -137,7 +119,6 @@ public:
 	void BindVBO();
 
 	void CreateVBO();
-	void CheckUpdate(sector_t *sector);
 
 	FFlatVertex *GetBuffer()
 	{
@@ -189,6 +170,17 @@ public:
 	}
 
 #endif
+
+	void CheckPlanes(sector_t *sector)
+	{
+		FFlatVertexGenerator::CheckPlanes(sector, map);
+	}
+
+	void CheckUpdate(sector_t *sector)
+	{
+		FFlatVertexGenerator::CheckUpdate(sector, map);
+	}
+
 	void Reset()
 	{
 		mCurIndex = mIndex;
@@ -196,14 +188,6 @@ public:
 
 	void Map();
 	void Unmap();
-
-private:
-	int CreateSubsectorVertices(subsector_t *sub, const secplane_t &plane, int floor);
-	int CreateSectorVertices(sector_t *sec, const secplane_t &plane, int floor);
-	int CreateVertices(int h, sector_t *sec, const secplane_t &plane, int floor);
-	void CreateFlatVBO();
-	void UpdatePlaneVertices(sector_t *sec, int plane);
-
 };
 
 

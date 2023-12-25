@@ -26,13 +26,13 @@
 #include <string.h>
 #include "gl/system/gl_interface.h"
 #include "gl/renderer/gl_renderer.h"
-#include "gl/data/gl_data.h"
 #include "r_data/matrix.h"
 #include "gl/textures/gl_material.h"
 #include "c_cvars.h"
 #include "r_defs.h"
 #include "r_data/r_translate.h"
 #include "v_palette.h"
+#include "g_levellocals.h"
 
 class FVertexBuffer;
 class FShader;
@@ -64,6 +64,7 @@ enum EEffect
 	EFF_SPHEREMAP,
 	EFF_BURN,
 	EFF_STENCIL,
+	EFF_SWQUAD,
 
 	MAX_EFFECTS
 };
@@ -77,6 +78,7 @@ enum EPassType
 
 class FRenderState
 {
+	friend void gl_SetTextureMode(int type);
 	bool mTextureEnabled;
 	bool mFogEnabled;
 	bool mGlowEnabled;
@@ -86,7 +88,6 @@ class FRenderState
 	bool mBrightmapEnabled;
 	bool mColorMask[4];
 	bool currentColorMask[4];
-	int mLightIndex;
 	int mSpecialEffect;
 	int mTextureMode;
 	int mTextureModeFlags;
@@ -120,6 +121,7 @@ class FRenderState
 	PalEntry mObjectColor;
 	PalEntry mObjectColor2;
 	PalEntry mSceneColor;
+	PalEntry m2DColors[2];	// in the shader these will reuse the colormap ramp uniforms.
 	FStateVec4 mDynColor;
 	FStateVec4 mDetailParms;
 	float mClipSplit[2];
@@ -157,8 +159,8 @@ public:
 
 	void SetMaterial(FMaterial *mat, int clampmode, int translation, int overrideshader, bool alphatexture)
 	{
-		// alpha textures need special treatment in the legacy renderer because withouz shaders they need a different texture.
-		if (alphatexture &&  gl.legacyMode) translation = INT_MAX;
+		// alpha textures need special treatment in the legacy renderer because without shaders they need a different texture. This will also override all other translations.
+		if (alphatexture &&  gl.legacyMode) translation = -STRange_AlphaTexture;
 		
 		if (mat->tex->bHasCanvas)
 		{
@@ -169,8 +171,8 @@ public:
 			mTempTM = TM_MODULATE;
 		}
 		mEffectState = overrideshader >= 0? overrideshader : mat->mShaderIndex;
-		mShaderTimer = mat->tex->gl_info.shaderspeed;
-		SetSpecular(mat->tex->gl_info.Glossiness, mat->tex->gl_info.SpecularLevel);
+		mShaderTimer = mat->tex->shaderspeed;
+		SetSpecular(mat->tex->Glossiness, mat->tex->SpecularLevel);
 		mat->Bind(clampmode, translation);
 		mTextureModeFlags = mat->GetLayerFlags();
 	}
@@ -343,11 +345,6 @@ public:
 		}
 	}
 
-	void SetLightIndex(int n)
-	{
-		mLightIndex = n;
-	}
-
 	void EnableBrightmap(bool on)
 	{
 		mBrightmapEnabled = on;
@@ -374,9 +371,9 @@ public:
 		mGlowBottom.Set(b[0], b[1], b[2], b[3]);
 	}
 
-	void SetSoftLightLevel(int level, int blendfactor = 0)
+	void SetSoftLightLevel(int llevel, int blendfactor = 0)
 	{
-		if (glset.lightmode >= 8 && blendfactor == 0) mLightParms[3] = level / 255.f;
+		if (level.lightmode == 8 && blendfactor == 0) mLightParms[3] = llevel / 255.f;
 		else mLightParms[3] = -1.f;
 	}
 
@@ -434,6 +431,11 @@ public:
 	void SetAddColor(PalEntry pe)
 	{
 		mAddColor = pe;
+	}
+
+	void Set2DOverlayColor(PalEntry pe)
+	{
+		m2DColors[0] = pe;
 	}
 
 	void SetSpecular(float glossiness, float specularLevel)

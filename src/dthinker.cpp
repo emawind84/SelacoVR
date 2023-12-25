@@ -55,7 +55,6 @@ extern cycle_t BotSupportCycles;
 extern cycle_t ActionCycles;
 extern int BotWTG;
 
-extern int currentrenderer;
 EXTERN_CVAR (Bool, gl_lights)
 EXTERN_CVAR (Bool, r_dynlights)
 
@@ -613,7 +612,7 @@ void DThinker::RunThinkers ()
 	ThinkCycles.Clock();
 
 	bool dolights;
-	if ((gl_lights && currentrenderer == 1) || (r_dynlights && currentrenderer == 0))
+	if ((gl_lights && vid_rendermode == 4) || (r_dynlights && vid_rendermode != 4))
 	{
 		dolights = level.lights || (level.flags3 & LEVEL3_LIGHTCREATED);
 	}
@@ -630,7 +629,7 @@ void DThinker::RunThinkers ()
 		// Set dynamic lights at the end of the tick, so that this catches all changes being made through the last frame.
 		while (auto ac = it.Next())
 		{
-			if (ac->flags8 & MF8_RECREATELIGHTS && Renderer != nullptr)
+			if (ac->flags8 & MF8_RECREATELIGHTS)
 			{
 				ac->flags8 &= ~MF8_RECREATELIGHTS;
 				if (dolights) ac->SetDynamicLights();

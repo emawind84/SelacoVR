@@ -1117,10 +1117,18 @@ void TriangleBlock::DepthWrite(const TriDrawTriangleArgs *args)
 
 #endif
 
+
 void ScreenTriangle::Draw(const TriDrawTriangleArgs *args, PolyTriangleThreadData *thread)
 {
-	TriangleBlock block(args, thread);
-	block.Render();
+	if (V_IsPolyRenderer())
+	{
+		TriangleBlock block(args, thread);
+		block.Render();
+	}
+	else
+	{
+		DrawSWRender(args, thread);
+	}
 }
 
 static void SortVertices(const TriDrawTriangleArgs *args, ShadedTriVertex **sortedVertices)

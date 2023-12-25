@@ -25,7 +25,7 @@
 
 #include "c_cvars.h"
 #include "a_dynlight.h"
-#include "gl/utility/gl_geometric.h"
+#include "r_utility.h"
 
 
 struct FDynLightData
@@ -54,13 +54,11 @@ struct FDynLightData
 		if (siz[1] > max) siz[1] = max;
 		if (siz[2] > max) siz[2] = max;
 	}
+    
+    bool GetLight(int group, Plane & p, FDynamicLight * light, bool checkside);
+    void AddLightToList(int group, FDynamicLight * light);
+
 };
-
-
-
-bool gl_GetLight(int group, Plane & p, FDynamicLight * light, bool checkside, FDynLightData &data);
-void gl_AddLightToList(int group, FDynamicLight * light, FDynLightData &ldata);
-void gl_UploadLights(FDynLightData &data);
 
 inline bool gl_IsDistanceCulled(FDynamicLight *light)
 {

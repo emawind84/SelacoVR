@@ -43,16 +43,6 @@ static TArray<FString>  m_Extensions;
 RenderContext gl;
 static double realglversion;	// this is public so the statistics code can access it.
 
-EXTERN_CVAR(Bool, gl_legacy_mode)
-extern int currentrenderer;
-EXTERN_CVAR(Int, vid_renderer);
-EXTERN_CVAR(Bool, vid_glswfb);
-CVAR(Bool, gl_riskymodernpath, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-
-#ifdef __MOBILE__
-    CVAR(Bool, force_uint_idx, false, 0)
-#endif
-
 //==========================================================================
 //
 // 
@@ -202,9 +192,7 @@ void gl_LoadExtensions()
 		// Don't even start if it's lower than 2.0 or no framebuffers are available (The framebuffer extension is needed for glGenerateMipmapsEXT!)
 		if ((gl_version < 2.0f || !CheckExtension("GL_EXT_framebuffer_object")) && gl_version < 3.0f)
 		{
-			vid_renderer = 0;
-			vid_glswfb = 0;
-			I_FatalError("Unsupported OpenGL version.\nAt least OpenGL 2.0 with framebuffer support is required to run " GAMENAME ".\nFalling back to software renderer.\n");
+			I_FatalError("Unsupported OpenGL version.\nAt least OpenGL 2.0 with framebuffer support is required to run " GAMENAME ".\n");
 		}
 
 		gl.es = false;
@@ -225,11 +213,7 @@ void gl_LoadExtensions()
 	
 		// The minimum requirement for the modern render path is GL 3.3.
 		// Although some GL 3.1 or 3.2 solutions may theoretically work they are usually too broken or too slow.
-		// unless, of course, we're simply using this as a software backend...
-		float minmodernpath = 3.3f;
-		if (gl_riskymodernpath)
-			minmodernpath = 3.1f;
-		if ((gl_version < minmodernpath && (currentrenderer==1)) || gl_version < 3.0f)
+		if (gl_version < 3.3f)
 		{
 			gl.legacyMode = true;
 			gl.lightmethod = LM_LEGACY;
@@ -347,7 +331,6 @@ void gl_LoadExtensions()
 
 	UCVarValue value;
 	value.Bool = gl.legacyMode;
-	gl_legacy_mode.ForceSet (value, CVAR_Bool);
 }
 
 //==========================================================================
@@ -394,18 +377,6 @@ void gl_PrintStartupLog()
 		glGetIntegerv(GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS, &v);
 		Printf("Max. vertex shader storage blocks: %d\n", v);
 	}
-
-	// For shader-less, the special alphatexture translation must be changed to actually set the alpha, because it won't get translated by a shader.
-	if (gl.legacyMode)
-	{
-		FRemapTable *remap = translationtables[TRANSLATION_Standard][8];
-		for (int i = 0; i < 256; i++)
-		{
-			remap->Remap[i] = i;
-			remap->Palette[i] = PalEntry(i, 255, 255, 255);
-		}
-	}
-
 }
 
 std::pair<double, bool> gl_getInfo()

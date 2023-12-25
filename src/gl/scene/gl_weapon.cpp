@@ -39,9 +39,7 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_lightdata.h"
 #include "gl/renderer/gl_renderstate.h"
-#include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
-#include "gl/dynlights/gl_glow.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/scene/gl_scenedrawer.h"
 #include "gl/models/gl_models.h"
@@ -85,7 +83,7 @@ void GLSceneDrawer::DrawPSprite (player_t * player,DPSprite *psp, float sx, floa
 	// [BB] In the HUD model step we just render the model and break out. 
 	if ( hudModelStep )
 	{
-		gl_RenderHUDModel(psp, sx, sy);
+		gl_RenderHUDModel(psp, sx, sy, weapondynlightindex[psp]);
 		return;
 	}
 
@@ -229,7 +227,7 @@ void GLSceneDrawer::DrawPSprite (player_t * player,DPSprite *psp, float sx, floa
 		Vert.v[i] = t;
 	}
 
-	if ((tex->GetTransparent() || OverrideShader != -1) && !s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesCrossed())
+	if ((tex->tex->GetTranslucency() || OverrideShader != -1) && !s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesCrossed())
 	{
 		gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
 	}
@@ -346,7 +344,7 @@ static bool isBright(DPSprite *psp)
 		{
 			FMaterial * tex = FMaterial::ValidateTexture(lump, false, false);
 			if (tex)
-				disablefullbright = tex->tex->gl_info.bDisableFullbright;
+				disablefullbright = tex->tex->bDisableFullbright;
 		}
 		return psp->GetState()->GetFullbright() && !disablefullbright;
 	}
@@ -460,7 +458,7 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector)
 
 		lightlevel = gl_CalcLightLevel(lightlevel, getExtraLight(), true, 0);
 
-		if (glset.lightmode >= 8 || lightlevel < 92)
+		if (level.lightmode == 8 || lightlevel < 92)
 		{
 			// Korshun: the way based on max possible light level for sector like in software renderer.
 			float min_L = 36.0 / 31.0 - ((lightlevel / 255.0) * (63.0 / 31.0)); // Lightlevel in range 0-63
@@ -475,12 +473,12 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector)
 		{
 			lightlevel = (2 * lightlevel + 255) / 3;
 		}
-		lightlevel = gl_CheckSpriteGlow(viewsector, lightlevel, playermo->Pos());
+		lightlevel = viewsector->CheckSpriteGlow(lightlevel, playermo->Pos());
 
 	}
 	
 	// Korshun: fullbright fog in opengl, render weapon sprites fullbright (but don't cancel out the light color!)
-	if (glset.brightfog && ((level.flags&LEVEL_HASFADETABLE) || cm.FadeColor != 0))
+	if (level.brightfog && ((level.flags&LEVEL_HASFADETABLE) || cm.FadeColor != 0))
 	{
 		lightlevel = 255;
 	}
@@ -489,8 +487,8 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector)
 
 	// hack alert! Rather than changing everything in the underlying lighting code let's just temporarily change
 	// light mode here to draw the weapon sprite.
-	int oldlightmode = glset.lightmode;
-	if (glset.lightmode >= 8) glset.lightmode = 2;
+	int oldlightmode = level.lightmode;
+	if (level.lightmode == 8) level.lightmode = 2;
 
 	DPSprite *readyWeaponPsp = camera->player->FindPSprite(PSP_WEAPON);
 	DPSprite *offhandWeaponPsp = camera->player->FindPSprite(PSP_OFFHANDWEAPON);
@@ -674,7 +672,7 @@ void GLSceneDrawer::DrawPlayerSprites(sector_t * viewsector)
 	gl_RenderState.SetAddColor(0);
 	gl_RenderState.SetDynLight(0, 0, 0);
 	gl_RenderState.EnableBrightmap(false);
-	glset.lightmode = oldlightmode;
+	level.lightmode = oldlightmode;
 }
 
 //==========================================================================

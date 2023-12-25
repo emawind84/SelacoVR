@@ -32,21 +32,17 @@
 **
 */
 
-//#include "gl/system/gl_system.h"
-
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <GL/gl.h>
 #include "wglext.h"
 
-#include "win32iface.h"
-#include "win32gliface.h"
-//#include "gl/gl_intern.h"
+#include "gl_sysfb.h"
+#include "hardware.h"
 #include "x86.h"
 #include "templates.h"
 #include "version.h"
 #include "c_console.h"
-#include "hardware.h"
 #include "v_video.h"
 #include "i_input.h"
 #include "i_system.h"
@@ -59,7 +55,6 @@
 
 #include "gl/renderer/gl_renderer.h"
 #include "gl/system/gl_framebuffer.h"
-#include "gl/system/gl_swframebuffer.h"
 
 extern HWND			Window;
 EXTERN_CVAR(Bool, vid_hdr)
@@ -69,7 +64,6 @@ extern "C" {
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;	
 }
 
-void gl_CalculateCPUSpeed();
 extern int NewWidth, NewHeight, NewBits, DisplayBits;
 extern bool vid_hdr_active;
 
@@ -87,6 +81,9 @@ CUSTOM_CVAR(Bool, gl_debug, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINI
 
 EXTERN_CVAR(Bool, vr_enable_quadbuffered)
 EXTERN_CVAR(Int, vid_refreshrate)
+EXTERN_CVAR(Int, vid_defwidth)
+EXTERN_CVAR(Int, vid_defheight)
+EXTERN_CVAR(Int, vid_adapter)
 
 
 //==========================================================================
@@ -167,9 +164,6 @@ public:
 
 Win32GLVideo::Win32GLVideo(int parm) : m_Modes(NULL), m_IsFullscreen(false)
 {
-	#ifdef _WIN32
-		 gl_CalculateCPUSpeed();
-	#endif
 	I_SetWndProc();
 	m_DisplayWidth = vid_defwidth;
 	m_DisplayHeight = vid_defheight;
@@ -469,7 +463,7 @@ bool Win32GLVideo::GoFullscreen(bool yes)
 
 DFrameBuffer *Win32GLVideo::CreateFrameBuffer(int width, int height, bool bgra, bool fs, DFrameBuffer *old)
 {
-	Win32GLFrameBuffer *fb;
+	SystemFrameBuffer *fb;
 
 	if (fs)
 	{
@@ -498,7 +492,7 @@ DFrameBuffer *Win32GLVideo::CreateFrameBuffer(int width, int height, bool bgra, 
 
 	if (old != NULL)
 	{ // Reuse the old framebuffer if its attributes are the same
-		fb = static_cast<Win32GLFrameBuffer *> (old);
+		fb = static_cast<SystemFrameBuffer *> (old);
 		if (fb->m_Width == m_DisplayWidth &&
 			fb->m_Height == m_DisplayHeight &&
 			fb->m_Bits == m_DisplayBits &&
@@ -511,10 +505,7 @@ DFrameBuffer *Win32GLVideo::CreateFrameBuffer(int width, int height, bool bgra, 
 		//old->GetFlash(flashColor, flashAmount);
 		delete old;
 	}
-	if (vid_renderer == 1)
-		fb = new OpenGLFrameBuffer(m_hMonitor, m_DisplayWidth, m_DisplayHeight, m_DisplayBits, m_DisplayHz, fs);
-	else
-		fb = new OpenGLSWFrameBuffer(m_hMonitor, m_DisplayWidth, m_DisplayHeight, m_DisplayBits, m_DisplayHz, fs, bgra);
+	fb = new OpenGLFrameBuffer(m_hMonitor, m_DisplayWidth, m_DisplayHeight, m_DisplayBits, m_DisplayHz, fs);
 	return fb;
 }
 
@@ -877,17 +868,14 @@ bool Win32GLVideo::SetupPixelFormat(int multisample)
 
 		if (pfd.dwFlags & PFD_GENERIC_FORMAT)
 		{
-			vid_renderer = 0;
-			I_Error("R_OPENGL: OpenGL driver not accelerated! Falling back to software renderer. Get a driver from your manufacturer.\n"
-				"For some Intel cards run " GAMENAME " in Windows 8 compatibility mode or use the wtfi tool.\n");
+			I_Error("R_OPENGL: OpenGL driver not accelerated!");
 			return false;
 		}
 	}
 
 	if (!::SetPixelFormat(m_hDC, pixelFormat, NULL))
 	{
-		vid_renderer = 0;
-		I_Error("R_OPENGL: Couldn't set pixel format. Reverting to software mode...\n");
+		I_Error("R_OPENGL: Couldn't set pixel format.\n");
 		return false;
 	}
 	return true;
@@ -943,8 +931,7 @@ bool Win32GLVideo::InitHardware (HWND Window, int multisample)
 			m_hRC = wglCreateContext(m_hDC);
 			if (m_hRC == NULL)
 			{
-				vid_renderer = 0;
-				I_Error("R_OPENGL: Unable to create an OpenGL render context. Reverting to software mode...\n");
+				I_Error("R_OPENGL: Unable to create an OpenGL render context.\n");
 				return false;
 			}
 		}
@@ -956,8 +943,7 @@ bool Win32GLVideo::InitHardware (HWND Window, int multisample)
 		}
 	}
 	// We get here if the driver doesn't support the modern context creation API which always means an old driver.
-	vid_renderer = 0;
-	I_Error ("R_OPENGL: Unable to create an OpenGL render context. Insufficient driver support for context creation. Reverting to software mode...\n");
+	I_Error ("R_OPENGL: Unable to create an OpenGL render context. Insufficient driver support for context creation\n");
 	return false;
 }
 
@@ -1022,7 +1008,7 @@ bool Win32GLVideo::SetFullscreen(const char *devicename, int w, int h, int bits,
 //
 //==========================================================================
 
-Win32GLFrameBuffer::Win32GLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen, bool bgra) : BaseWinFB(width, height, bgra) 
+SystemFrameBuffer::SystemFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen, bool bgra) : DFrameBuffer(width, height, bgra)
 {
 	m_Width = width;
 	m_Height = height;
@@ -1030,7 +1016,6 @@ Win32GLFrameBuffer::Win32GLFrameBuffer(void *hMonitor, int width, int height, in
 	m_RefreshHz = refreshHz;
 	m_Fullscreen = fullscreen;
 	m_Bgra = bgra;
-	m_Lock=0;
 
 	RECT r;
 	LONG style, exStyle;
@@ -1093,7 +1078,7 @@ Win32GLFrameBuffer::Win32GLFrameBuffer(void *hMonitor, int width, int height, in
 
 	if (!static_cast<Win32GLVideo *>(Video)->InitHardware(Window, 0))
 	{
-		vid_renderer = 0;
+		I_FatalError("Unable to initialize OpenGL");
 		return;
 	}
 	HDC hDC = GetDC(Window);
@@ -1132,7 +1117,7 @@ Win32GLFrameBuffer::Win32GLFrameBuffer(void *hMonitor, int width, int height, in
 //
 //==========================================================================
 
-Win32GLFrameBuffer::~Win32GLFrameBuffer()
+SystemFrameBuffer::~SystemFrameBuffer()
 {
 	ResetGammaTable();
 	I_SaveWindowedPos();
@@ -1155,7 +1140,7 @@ Win32GLFrameBuffer::~Win32GLFrameBuffer()
 //
 //==========================================================================
 
-void Win32GLFrameBuffer::InitializeState()
+void SystemFrameBuffer::InitializeState()
 {
 }
 
@@ -1165,7 +1150,7 @@ void Win32GLFrameBuffer::InitializeState()
 //
 //==========================================================================
 
-void Win32GLFrameBuffer::ResetGammaTable()
+void SystemFrameBuffer::ResetGammaTable()
 {
 	if (m_supportsGamma)
 	{
@@ -1175,7 +1160,7 @@ void Win32GLFrameBuffer::ResetGammaTable()
 	}
 }
 
-void Win32GLFrameBuffer::SetGammaTable(uint16_t *tbl)
+void SystemFrameBuffer::SetGammaTable(uint16_t *tbl)
 {
 	if (m_supportsGamma)
 	{
@@ -1191,69 +1176,9 @@ void Win32GLFrameBuffer::SetGammaTable(uint16_t *tbl)
 //
 //==========================================================================
 
-bool Win32GLFrameBuffer::Lock(bool buffered)
-{
-	m_Lock++;
-	Buffer = MemBuffer;
-	return true;
-}
-
-bool Win32GLFrameBuffer::Lock () 
-{ 	
-	return Lock(false); 
-}
-
-void Win32GLFrameBuffer::Unlock () 	
-{ 
-	m_Lock--;
-}
-
-bool Win32GLFrameBuffer::IsLocked () 
-{ 
-	return m_Lock > 0;
-}
-
-//==========================================================================
-//
-// 
-//
-//==========================================================================
-
-bool Win32GLFrameBuffer::IsFullscreen()
+bool SystemFrameBuffer::IsFullscreen()
 {
 	return m_Fullscreen;
-}
-
-void Win32GLFrameBuffer::PaletteChanged()
-{
-}
-
-int Win32GLFrameBuffer::QueryNewPalette()
-{
-	return 0;
-}
-
-HRESULT Win32GLFrameBuffer::GetHR() 
-{ 
-	return 0; 
-}
-
-void Win32GLFrameBuffer::Blank () 
-{
-}
-
-bool Win32GLFrameBuffer::PaintToWindow () 
-{ 
-	return false; 
-}
-
-bool Win32GLFrameBuffer::CreateResources () 
-{ 
-	return false; 
-}
-
-void Win32GLFrameBuffer::ReleaseResources () 
-{
 }
 
 //==========================================================================
@@ -1267,12 +1192,12 @@ CUSTOM_CVAR(Bool, gl_control_tear, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 	vid_vsync.Callback();
 }
 
-void Win32GLFrameBuffer::SetVSync (bool vsync)
+void SystemFrameBuffer::SetVSync (bool vsync)
 {
 	if (myWglSwapIntervalExtProc != NULL) myWglSwapIntervalExtProc(vsync ? (gl_control_tear? SwapInterval : 1) : 0);
 }
 
-void Win32GLFrameBuffer::SwapBuffers()
+void SystemFrameBuffer::SwapBuffers()
 {
 	// Limiting the frame rate is as simple as waiting for the timer to signal this event.
 	I_FPSLimit();
@@ -1285,7 +1210,7 @@ void Win32GLFrameBuffer::SwapBuffers()
 //
 //==========================================================================
 
-void Win32GLFrameBuffer::NewRefreshRate ()
+void SystemFrameBuffer::NewRefreshRate ()
 {
 	if (m_Fullscreen)
 	{
@@ -1296,21 +1221,21 @@ void Win32GLFrameBuffer::NewRefreshRate ()
 	}
 }
 
-int Win32GLFrameBuffer::GetClientWidth()
+int SystemFrameBuffer::GetClientWidth()
 {
 	RECT rect = { 0 };
 	GetClientRect(Window, &rect);
 	return rect.right - rect.left;
 }
 
-int Win32GLFrameBuffer::GetClientHeight()
+int SystemFrameBuffer::GetClientHeight()
 {
 	RECT rect = { 0 };
 	GetClientRect(Window, &rect);
 	return rect.bottom - rect.top;
 }
 
-int Win32GLFrameBuffer::GetTrueHeight() 
+int SystemFrameBuffer::GetTrueHeight()
 { 
 	return static_cast<Win32GLVideo *>(Video)->GetTrueHeight(); 
 }

@@ -798,7 +798,6 @@ static int	f_y;
 // size of window on screen
 static int	f_w;
 static int	f_h;
-static int	f_p;				// [RH] # of bytes from start of a line to start of next
 
 static int	amclock;
 
@@ -1416,7 +1415,6 @@ void AM_Stop ()
 {
 	automapactive = false;
 	stopped = true;
-	V_SetBorderNeedRefresh();
 	viewactive = true;
 }
 
@@ -2174,7 +2172,7 @@ void AM_drawSubsectors()
 			{
 				F3DFloor *rover = sec->e->XFloor.ffloors[i];
 				if (!(rover->flags & FF_EXISTS)) continue;
-				if (rover->flags & FF_FOG) continue;
+				if (rover->flags & (FF_FOG|FF_THISINSIDE)) continue;
 				if (!(rover->flags & FF_RENDERPLANES)) continue;
 				if (rover->alpha == 0) continue;
 				double roverz = rover->top.plane->ZatPoint(secx, secy);
@@ -2231,6 +2229,11 @@ void AM_drawSubsectors()
 				(colormap.LightColor.g + 200) / 2,
 				(colormap.LightColor.b + 160) / 2);
 			colormap.Desaturation = 255 - (255 - colormap.Desaturation) / 4;
+		}
+		// make table based fog visible on the automap as well.
+		if (level.flags & LEVEL_HASFADETABLE)
+		{
+			colormap.FadeColor = PalEntry(0, 128, 128, 128);
 		}
 
 		// Draw the polygon.
@@ -2376,6 +2379,7 @@ bool AM_Check3DFloors(line_t *line)
 	for(unsigned i=0;i<ff_front.Size();i++)
 	{
 		F3DFloor *rover = ff_front[i];
+		if (rover->flags & FF_THISINSIDE) continue;
 		if (!(rover->flags & FF_EXISTS)) continue;
 		if (rover->alpha == 0) continue;
 		realfrontcount++;
@@ -2384,6 +2388,7 @@ bool AM_Check3DFloors(line_t *line)
 	for(unsigned i=0;i<ff_back.Size();i++)
 	{
 		F3DFloor *rover = ff_back[i];
+		if (rover->flags & FF_THISINSIDE) continue;
 		if (!(rover->flags & FF_EXISTS)) continue;
 		if (rover->alpha == 0) continue;
 		realbackcount++;
@@ -2394,6 +2399,7 @@ bool AM_Check3DFloors(line_t *line)
 	for(unsigned i=0;i<ff_front.Size();i++)
 	{
 		F3DFloor *rover = ff_front[i];
+		if (rover->flags & FF_THISINSIDE) continue;	// only relevant for software rendering.
 		if (!(rover->flags & FF_EXISTS)) continue;
 		if (rover->alpha == 0) continue;
 
@@ -2401,6 +2407,7 @@ bool AM_Check3DFloors(line_t *line)
 		for(unsigned j=0;j<ff_back.Size();j++)
 		{
 			F3DFloor *rover2 = ff_back[j];
+			if (rover2->flags & FF_THISINSIDE) continue;	// only relevant for software rendering.
 			if (!(rover2->flags & FF_EXISTS)) continue;
 			if (rover2->alpha == 0) continue;
 			if (rover->model == rover2->model && rover->flags == rover2->flags) 
@@ -2576,7 +2583,7 @@ void AM_drawWalls (bool allmap)
 	static mline_t l;
 	int lock, color;
 
-	int numportalgroups = am_portaloverlay ? Displacements.size : 0;
+	int numportalgroups = am_portaloverlay ? level.Displacements.size : 0;
 
 	for (int p = numportalgroups - 1; p >= -1; p--)
 	{
@@ -2600,7 +2607,7 @@ void AM_drawWalls (bool allmap)
 			bool portalmode = numportalgroups > 0 &&  pg != MapPortalGroup;
 			if (pg == p)
 			{
-				offset = Displacements.getOffset(pg, MapPortalGroup);
+				offset = level.Displacements.getOffset(pg, MapPortalGroup);
 			}
 			else if (p == -1 && (pg == MapPortalGroup || !am_portaloverlay))
 			{
@@ -3304,7 +3311,6 @@ void AM_Drawer (int bottom)
 		f_x = f_y = 0;
 		f_w = screen->GetWidth ();
 		f_h = bottom;
-		f_p = screen->GetPitch ();
 
 		AM_clearFB(AMColors[AMColors.Background]);
 	}
@@ -3314,7 +3320,6 @@ void AM_Drawer (int bottom)
 		f_y = viewwindowy;
 		f_w = viewwidth;
 		f_h = viewheight;
-		f_p = screen->GetPitch ();
 	}
 	AM_activateNewScale();
 

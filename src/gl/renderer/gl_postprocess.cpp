@@ -40,7 +40,6 @@
 #include "r_utility.h"
 #include "p_local.h"
 #include "colormatcher.h"
-#include "gl/gl_functions.h"
 #include "gl/system/gl_interface.h"
 #include "gl/system/gl_framebuffer.h"
 #include "gl/system/gl_cvars.h"
@@ -50,7 +49,6 @@
 #include "gl/renderer/gl_renderbuffers.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_postprocessstate.h"
-#include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "gl/shaders/gl_ambientshader.h"
 #include "gl/shaders/gl_bloomshader.h"
@@ -62,7 +60,6 @@
 #include "gl/shaders/gl_presentshader.h"
 #include "gl/shaders/gl_postprocessshader.h"
 #include "gl/shaders/gl_postprocessshaderinstance.h"
-#include "gl/renderer/gl_2ddrawer.h"
 #include "gl/stereo3d/gl_stereo3d.h"
 #include "r_videoscale.h"
 
@@ -636,7 +633,7 @@ void FGLRenderer::CreateTonemapPalette()
 			}
 		}
 
-		mTonemapPalette = new FHardwareTexture(512, 512, true);
+		mTonemapPalette = new FHardwareTexture(true);
 		mTonemapPalette->CreateTexture(&lut[0], 512, 512, 0, false, 0, "mTonemapPalette");
 	}
 }
@@ -817,10 +814,10 @@ void FGLRenderer::Flush()
 			//Only adjust HUD if we are 3D and not showing menu (otherwise we are rendering to a cylinder compositor layer)
 			if (!is2D && !getMenuState())	stereo3dMode.getEyePose(eye_ix)->AdjustHud();
 
-			m2DDrawer->Draw();
+			screen->Draw();
 			FGLDebug::PopGroup();
 		}
-		m2DDrawer->Clear();
+		screen->Clear2D();
 
 		FGLPostProcessState savedState;
 		FGLDebug::PushGroup("PresentEyes");
@@ -838,8 +835,8 @@ void FGLRenderer::Flush()
 
 void FGLRenderer::CopyToBackbuffer(const GL_IRECT *bounds, bool applyGamma)
 {
-	m2DDrawer->Draw();	// draw all pending 2D stuff before copying the buffer
-	m2DDrawer->Clear();
+	screen->Draw2D();	// draw all pending 2D stuff before copying the buffer
+	screen->Clear2D();
 
 	mCustomPostProcessShaders->Run("screen");
 

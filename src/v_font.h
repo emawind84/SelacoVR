@@ -105,11 +105,9 @@ public:
 	int GetMaxAscender(const char* text) const { return GetMaxAscender((uint8_t*)text); }
 	int GetMaxAscender(const FString &text) const { return GetMaxAscender((uint8_t*)text.GetChars()); }
 	virtual void LoadTranslations();
-	void Preload() const;
 	FName GetName() const { return FontName; }
 
 	static FFont *FindFont(FName fontname);
-	static void StaticPreloadFonts();
 
 	// Return width of string in pixels (unscaled)
 	int StringWidth (const uint8_t *str, int spacing = 0) const;

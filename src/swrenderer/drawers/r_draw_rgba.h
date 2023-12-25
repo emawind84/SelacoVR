@@ -169,6 +169,7 @@ namespace swrenderer
 		void Execute(DrawerThread *thread) override;
 	};
 
+#if 0
 	class ApplySpecialColormapRGBACommand : public DrawerCommand
 	{
 		uint8_t *buffer;
@@ -186,6 +187,7 @@ namespace swrenderer
 		ApplySpecialColormapRGBACommand(FSpecialColormap *colormap, DFrameBuffer *screen);
 		void Execute(DrawerThread *thread) override;
 	};
+#endif
 
 	template<typename CommandType, typename BlendMode>
 	class DrawerBlendCommand : public CommandType
