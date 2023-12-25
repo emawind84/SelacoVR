@@ -560,7 +560,7 @@ void FGLRenderer::RenderView(player_t* player)
 		drawer.SetFixedColormap(player);
 
 		mShadowMap.Update();
-		sector_t * viewsector = drawer.RenderViewpoint(player->camera, NULL, r_viewpoint.FieldOfView.Degrees, ratio, fovratio, true, true);
+		sector_t * viewsector = drawer.RenderViewpoint(player->camera, NULL, r_viewpoint.FieldOfView(), ratio, fovratio, true, true);
 	}
 
 	All.Unclock();

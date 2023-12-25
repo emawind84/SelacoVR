@@ -263,6 +263,7 @@ FString FShaderProgram::PatchShader(ShaderType type, const FString &code, const 
 #else
 	int shaderVersion = MIN((int)round(gl.glslversion * 10) * 10, maxGlslVersion);
 	if (gl.es)
+		//prefix.AppendFormat(ES_VERSION_STR"\n");
 		patchedCode.AppendFormat("#version %d es\n", shaderVersion);
 	else
 		patchedCode.AppendFormat("#version %d\n", shaderVersion);
