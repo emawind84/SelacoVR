@@ -33,6 +33,7 @@
 #include "r_data/models/models.h"
 #include "textures/skyboxtexture.h"
 #include "hwrenderer/textures/hw_material.h"
+#include "stats.h"
 
 
 //==========================================================================
@@ -119,10 +120,10 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 		{
 			auto &state = cls->GetStates()[i];
 			spritelist[state.sprite].Insert(gltrans, true);
-			FSpriteModelFrame * smf = gl_FindModelFrame(cls, state.sprite, state.Frame, false);
+			FSpriteModelFrame * smf = FindModelFrame(cls, state.sprite, state.Frame, false);
 			if (smf != NULL)
 			{
-				for (int i = 0; i < MAX_MODELS_PER_FRAME; i++)
+				for (int i = 0; i < smf->modelsAmount; i++)
 				{
 					if (smf->skinIDs[i].isValid())
 					{
@@ -130,8 +131,7 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 					}
 					else if (smf->modelIDs[i] != -1)
 					{
-						Models[smf->modelIDs[i]]->PushSpriteMDLFrame(smf, i);
-						Models[smf->modelIDs[i]]->AddSkins(texhitlist);
+						Models[smf->modelIDs[i]]->AddSkins(texhitlist, (unsigned)(i * MD3_MAX_SURFACES) < smf->surfaceskinIDs.Size()? &smf->surfaceskinIDs[i * MD3_MAX_SURFACES] : nullptr);
 					}
 					if (smf->modelIDs[i] != -1)
 					{
@@ -192,6 +192,10 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 
 	if (gl_precache)
 	{
+		cycle_t precache;
+		precache.Reset();
+		precache.Clock();
+
 		// cache all used textures
 		for (int i = cnt - 1; i >= 0; i--)
 		{
@@ -214,6 +218,9 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 				Models[i]->BuildVertexBuffer(renderer);
 		}
 		delete renderer;
+
+		precache.Unclock();
+		Printf(DMSG_NOTIFY, "Textures precached in %.3f ms\n", precache.TimeMS());
 	}
 
 	delete[] spritehitlist;
