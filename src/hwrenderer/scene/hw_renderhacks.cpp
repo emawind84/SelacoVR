@@ -32,9 +32,7 @@
 
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "gl/utility/gl_clock.h"
-
-sector_t * gl_FakeFlat(sector_t * sec, sector_t * dest, area_t in_area, bool back);
-
+#include "hw_fakeflat.h"
 
 // This is for debugging maps.
 
