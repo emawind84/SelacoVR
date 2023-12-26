@@ -30,69 +30,6 @@
 
 EXTERN_CVAR(Bool, gl_texture_usehires)
 
-//===========================================================================
-//
-//
-//
-//===========================================================================
-
-float FTexCoordInfo::RowOffset(float rowoffset) const
-{
-	float tscale = fabs(mTempScale.Y);
-	float scale = fabs(mScale.Y);
-
-	if (tscale == 1.f)
-	{
-		if (scale == 1.f || mWorldPanning) return rowoffset;
-		else return rowoffset / scale;
-	}
-	else
-	{
-		if (mWorldPanning) return rowoffset / tscale;
-		else return rowoffset / scale;
-	}
-}
-
-//===========================================================================
-//
-//
-//
-//===========================================================================
-
-float FTexCoordInfo::TextureOffset(float textureoffset) const
-{
-	float tscale = fabs(mTempScale.X);
-	float scale = fabs(mScale.X);
-	if (tscale == 1.f)
-	{
-		if (scale == 1.f || mWorldPanning) return textureoffset;
-		else return textureoffset / scale;
-	}
-	else
-	{
-		if (mWorldPanning) return textureoffset / tscale;
-		else return textureoffset / scale;
-	}
-}
-
-//===========================================================================
-//
-// Returns the size for which texture offset coordinates are used.
-//
-//===========================================================================
-
-float FTexCoordInfo::TextureAdjustWidth() const
-{
-	if (mWorldPanning) 
-	{
-		float tscale = fabs(mTempScale.X);
-		if (tscale == 1.f) return (float)mRenderWidth;
-		else return mWidth / fabs(tscale);
-	}
-	else return (float)mWidth;
-}
-
-
 
 //===========================================================================
 //

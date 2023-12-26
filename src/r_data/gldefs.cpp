@@ -45,7 +45,7 @@
 #include "a_dynlight.h"
 #include "textures/skyboxtexture.h"
 #include "gl/shaders/gl_postprocessshader.h"
-#include "gl/textures/gl_material.h"
+#include "hwrenderer/textures/hw_material.h"
 
 void AddLightDefaults(FLightDefaults *defaults, double attnFactor);
 void AddLightAssociation(const char *actor, const char *frame, const char *light);
