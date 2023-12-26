@@ -47,16 +47,14 @@
 
 #include "videomodes.h"
 #include "glvideo.h"
-#include "video.h"
+#include "gl_sysfb.h"
 #include "gl/system/gl_system.h"
 #include "r_defs.h"
-#include "gl/gl_functions.h"
 //#include "gl/gl_intern.h"
 
 #include "gl/renderer/gl_renderer.h"
 #include "gl/system/gl_framebuffer.h"
 #include "gl/shaders/gl_shader.h"
-#include "gl/utility/gl_templates.h"
 #include "gl/textures/gl_material.h"
 #include "gl/system/gl_cvars.h"
 
@@ -94,19 +92,11 @@ CUSTOM_CVAR(Bool, gl_debug, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINI
 	Printf("This won't take effect until " GAMENAME " is restarted.\n");
 }
 #ifdef __arm__
-CUSTOM_CVAR(Bool, vid_glswfb, false, CVAR_NOINITCALL)
-{
-	Printf("This won't take effect until " GAMENAME " is restarted.\n");
-}
 CUSTOM_CVAR(Bool, gl_es, false, CVAR_NOINITCALL)
 {
 	Printf("This won't take effect until " GAMENAME " is restarted.\n");
 }
 #else
-CUSTOM_CVAR(Bool, vid_glswfb, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
-{
-	Printf("This won't take effect until " GAMENAME " is restarted.\n");
-}
 CUSTOM_CVAR(Bool, gl_es, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	Printf("This won't take effect until " GAMENAME " is restarted.\n");
@@ -168,7 +158,7 @@ DFrameBuffer *NoSDLGLVideo::CreateFrameBuffer (int width, int height, bool bgra,
 //		flashAmount = 0;
 	}
 	
-	NoSDLBaseFB *fb;
+	SystemFrameBuffer *fb;
 
     Printf("HW buffers = %d\n", (int)gl_hardware_buffers);
     fb = new OpenGLFrameBuffer(0, width, height, 32, TBXR_GetRefresh(), true);
@@ -244,81 +234,60 @@ void NoSDLGLVideo::SetupPixelFormat(bool allowsoftware, int multisample, const i
 }
 
 
+IVideo *gl_CreateVideo()
+{
+	return new NoSDLGLVideo(0);
+}
+
+
 // FrameBuffer implementation -----------------------------------------------
 
-NoSDLGLFB::NoSDLGLFB (void *, int width, int height, int, int, bool fullscreen, bool bgra)
-	: NoSDLBaseFB (width, height, bgra)
+SystemFrameBuffer::SystemFrameBuffer (void *, int width, int height, int, int, bool fullscreen, bool bgra)
+	: DFrameBuffer (width, height, bgra)
 {
 }
 
-NoSDLGLFB::~NoSDLGLFB ()
+SystemFrameBuffer::~SystemFrameBuffer ()
 {
 }
 
 
-void NoSDLGLFB::InitializeState() 
+void SystemFrameBuffer::InitializeState() 
 {
 }
 
-void NoSDLGLFB::SetGammaTable(uint16_t *tbl)
+void SystemFrameBuffer::SetGammaTable(uint16_t *tbl)
 {
 }
 
-void NoSDLGLFB::ResetGammaTable()
+void SystemFrameBuffer::ResetGammaTable()
 {
 }
 
-bool NoSDLGLFB::Lock(bool buffered)
-{
-	m_Lock++;
-	return true;
-}
-
-bool NoSDLGLFB::Lock () 
-{ 	
-	return Lock(false); 
-}
-
-void NoSDLGLFB::Unlock () 	
-{ 
-	--m_Lock;
-}
-
-bool NoSDLGLFB::IsLocked () 
-{ 
-	return m_Lock>0;// true;
-}
-
-bool NoSDLGLFB::IsFullscreen ()
+bool SystemFrameBuffer::IsFullscreen ()
 {
 	return true;
 }
 
-
-bool NoSDLGLFB::IsValid ()
-{
-	return DFrameBuffer::IsValid();
-}
-
-void NoSDLGLFB::SetVSync( bool vsync )
+void SystemFrameBuffer::SetVSync( bool vsync )
 {
 }
 
 int QzDoom_SetRefreshRate(int refreshRate);
 
-void NoSDLGLFB::NewRefreshRate ()
+void SystemFrameBuffer::NewRefreshRate ()
 {
 	if (QzDoom_SetRefreshRate(vid_refreshrate) != 0) {
 		Printf("Failed to set refresh rate to %dHz.\n", *vid_refreshrate);
 	}
 }
 
-void NoSDLGLFB::SwapBuffers()
+void SystemFrameBuffer::SwapBuffers()
 {
 	//No swapping required
 }
 
-int NoSDLGLFB::GetClientWidth()
+int SystemFrameBuffer::GetClientWidth()
 {
 	uint32_t w, h;
     QzDoom_GetScreenRes(&w, &h);
@@ -326,7 +295,7 @@ int NoSDLGLFB::GetClientWidth()
 	return width;
 }
 
-int NoSDLGLFB::GetClientHeight()
+int SystemFrameBuffer::GetClientHeight()
 {
 	uint32_t w, h;
     QzDoom_GetScreenRes(&w, &h);
@@ -334,37 +303,9 @@ int NoSDLGLFB::GetClientHeight()
 	return height;
 }
 
-void NoSDLGLFB::ScaleCoordsFromWindow(int16_t &x, int16_t &y)
-{
-	uint32_t w, h;
-    QzDoom_GetScreenRes(&w, &h);
 
-	// Detect if we're doing scaling in the Window and adjust the mouse
-	// coordinates accordingly. This could be more efficent, but I
-	// don't think performance is an issue in the menus.
-	if(IsFullscreen())
-	{
-		int realw = w, realh = h;
-		ScaleWithAspect (realw, realh, SCREENWIDTH, SCREENHEIGHT);
-		if (realw != SCREENWIDTH || realh != SCREENHEIGHT)
-		{
-			double xratio = (double)SCREENWIDTH/realw;
-			double yratio = (double)SCREENHEIGHT/realh;
-			if (realw < w)
-			{
-				x = (x - (w - realw)/2)*xratio;
-				y *= yratio;
-			}
-			else
-			{
-				y = (y - (h - realh)/2)*yratio;
-				x *= xratio;
-			}
-		}
-	}
-	else
-	{
-		x = (int16_t)(x*Width/w);
-		y = (int16_t)(y*Height/h);
-	}
+// each platform has its own specific version of this function.
+void I_SetWindowTitle(const char* caption)
+{
 }
+

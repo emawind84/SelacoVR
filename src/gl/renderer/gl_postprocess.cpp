@@ -814,7 +814,7 @@ void FGLRenderer::Flush()
 			//Only adjust HUD if we are 3D and not showing menu (otherwise we are rendering to a cylinder compositor layer)
 			if (!is2D && !getMenuState())	stereo3dMode.getEyePose(eye_ix)->AdjustHud();
 
-			screen->Draw();
+			screen->Draw2D();
 			FGLDebug::PopGroup();
 		}
 		screen->Clear2D();

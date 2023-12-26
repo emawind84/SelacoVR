@@ -457,7 +457,7 @@ void OpenGLFrameBuffer::InitForLevel()
 {
 	if (GLRenderer != NULL)
 	{
-		GLRenderer->SetupLevel();
+		GLRenderer->SetupLevel(true);
 	}
 }
 

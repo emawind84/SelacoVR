@@ -144,7 +144,8 @@ NoSDLFB::~NoSDLFB ()
 
 bool NoSDLFB::IsValid ()
 {
-	return DFrameBuffer::IsValid();
+	//return DFrameBuffer::IsValid();
+	return false;
 }
 
 int NoSDLFB::GetPageCount ()
@@ -154,17 +155,19 @@ int NoSDLFB::GetPageCount ()
 
 bool NoSDLFB::Lock (bool buffered)
 {
-	return DSimpleCanvas::Lock ();
+	//return DSimpleCanvas::Lock ();
+	return false;
 }
 
 bool NoSDLFB::Relock ()
 {
-	return DSimpleCanvas::Lock ();
+	//return DSimpleCanvas::Lock ();
+	return false;
 }
 
 void NoSDLFB::Unlock ()
 {
-	--LockCount;
+	//--LockCount;
 }
 
 void NoSDLFB::Update ()

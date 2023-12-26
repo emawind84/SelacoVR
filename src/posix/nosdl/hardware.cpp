@@ -61,32 +61,6 @@ extern int NewWidth, NewHeight, NewBits, DisplayBits;
 bool V_DoModeSetup (int width, int height, int bits);
 void I_RestartRenderer();
 
-int currentrenderer;
-
-// [ZDoomGL]
-CUSTOM_CVAR (Int, vid_renderer, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
-{
-	// 0: Software renderer
-	// 1: OpenGL renderer
-
-	if (self != currentrenderer)
-	{
-		switch (self)
-		{
-		case 0:
-			Printf("Switching to software renderer...\n");
-			break;
-		case 1:
-			Printf("Switching to OpenGL renderer...\n");
-			break;
-		default:
-			Printf("Unknown renderer (%d).  Falling back to software renderer...\n", (int) vid_renderer);
-			self = 0; // make sure to actually switch to the software renderer
-			break;
-		}
-		Printf("You must restart " GAMENAME " to switch the renderer\n");
-	}
-}
 
 void I_ShutdownGraphics ()
 {
@@ -107,8 +81,8 @@ void I_InitGraphics ()
 	val.Bool = !!Args->CheckParm ("-devparm");
 	ticker.SetGenericRepDefault (val, CVAR_Bool);
 	
-	//currentrenderer = vid_renderer;
-	Video = new NoSDLGLVideo(0);
+	extern IVideo *gl_CreateVideo();
+	Video = gl_CreateVideo();
 	
 	if (Video == NULL)
 		I_FatalError ("Failed to initialize display");
@@ -116,29 +90,13 @@ void I_InitGraphics ()
 	Video->SetWindowedScale (vid_winscale);
 }
 
-void I_DeleteRenderer()
-{
-	if (Renderer != NULL) delete Renderer;
-}
-
-void I_CreateRenderer()
-{
-	currentrenderer = vid_renderer;
-	if (Renderer == NULL)
-	{
-		if (currentrenderer==1) Renderer = gl_CreateInterface();
-		else Renderer = new FSoftwareRenderer;
-	}
-}
-
-
 /** Remaining code is common to Win32 and Linux **/
 
 // VIDEO WRAPPERS ---------------------------------------------------------
 
 DFrameBuffer *I_SetMode (int &width, int &height, DFrameBuffer *old)
 {
-	return Video->CreateFrameBuffer (width, height, swtruecolor, true, old);
+	return Video->CreateFrameBuffer (width, height, false, true, old);
 }
 
 bool I_CheckResolution (int width, int height, int bits)
@@ -185,36 +143,7 @@ void I_SetFPSLimit(int limit)
 }
 #endif
 
-CUSTOM_CVAR (Int, vid_maxfps, 200, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-{
-	if (vid_maxfps < TICRATE && vid_maxfps != 0)
-	{
-		vid_maxfps = TICRATE;
-	}
-	else if (vid_maxfps > 1000)
-	{
-		vid_maxfps = 1000;
-	}
-	else if (cl_capfps == 0)
-	{
-		I_SetFPSLimit(vid_maxfps);
-	}
-}
-
 extern int NewWidth, NewHeight, NewBits, DisplayBits;
-
-CUSTOM_CVAR(Bool, swtruecolor, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
-{
-	// Strictly speaking this doesn't require a mode switch, but it is the easiest
-	// way to force a CreateFramebuffer call without a lot of refactoring.
-	if (currentrenderer == 0)
-	{
-		NewWidth = screen->VideoWidth;
-		NewHeight = screen->VideoHeight;
-		NewBits = DisplayBits;
-		setmodeneeded = true;
-	}
-}
 
 CUSTOM_CVAR (Bool, fullscreen, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 {
