@@ -46,6 +46,7 @@
 #include "codegen.h"
 #include "v_text.h"
 #include "w_wad.h"
+#include "doomstat.h"
 #include "utf8.h"
 
 extern FRandom pr_exrandom;

@@ -48,6 +48,7 @@
 
 #include "menu/menu.h"
 #include "vm.h"
+#include "v_text.h"
 
 #include "w_wad.h"
 #include "version.h"
