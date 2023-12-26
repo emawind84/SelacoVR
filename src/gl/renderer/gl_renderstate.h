@@ -24,6 +24,7 @@
 #define __GL_RENDERSTATE_H
 
 #include <string.h>
+#include "gl/system/gl_system.h"
 #include "gl/system/gl_interface.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_colormap.h"

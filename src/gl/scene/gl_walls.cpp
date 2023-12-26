@@ -1575,14 +1575,14 @@ void GLWall::Process(HWDrawInfo *di, seg_t *seg, sector_t * frontsector, sector_
 	{
 		if (frontsector->GetTexture(sector_t::ceiling) == skyflatnum)
 		{
-			SkyNormal(frontsector, v1, v2);
+			SkyNormal(di, frontsector, v1, v2);
 		}
 		else
 		{
 			gltexture = FMaterial::ValidateTexture(frontsector->GetTexture(sector_t::ceiling), false, true);
 			if (gltexture)
 			{
-				DoTexture(RENDERWALL_TOP, seg, true,
+				DoTexture(di, RENDERWALL_TOP, seg, true,
 					crefz, frefz,
 					fch1, fch2, ffh1, ffh2, 0);
 			}

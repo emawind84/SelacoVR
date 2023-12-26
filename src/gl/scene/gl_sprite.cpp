@@ -1418,15 +1418,15 @@ void FDrawInfo::ProcessActorsInPortal(FLinePortalSpan *glport)
 					th->SetXYZ(newpos);
 					th->Prev += newpos - savedpos;
 
-					GLSprite spr(this);
+					GLSprite spr(mDrawer);
 
 					// [Nash] draw sprite shadow
 					if (R_ShouldDrawSpriteShadow(th))
 					{
-						spr.Process(th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), 2, true);
+						spr.Process(th, hw_FakeFlat(th->Sector, mDrawer->in_area, false, &fakesector), 2, true);
 					}
 
-					spr.Process(th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), 2);
+					spr.Process(th, hw_FakeFlat(th->Sector, mDrawer->in_area, false, &fakesector), 2);
 					th->Angles.Yaw = savedangle;
 					th->SetXYZ(savedpos);
 					th->Prev -= newpos - savedpos;
