@@ -139,9 +139,9 @@ public:
 		if (index + num >= (gl_buffer_size - 500))
 		{
 			std::lock_guard<std::mutex> lock(mBufferMutex);
-			if (mCurIndex >= (gl_buffer_size - 500))	// retest condition, in case another thread got here first
+			if (mCurIndex >= (unsigned)(gl_buffer_size - 500))	// retest condition, in case another thread got here first
 			{
-				DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
+				DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%u\n", mCurIndex.load());
 				mCurIndex = mIndex;
 			}
 
@@ -156,9 +156,9 @@ public:
 		unsigned int diff = newofs - mCurIndex;
 		*poffset = mCurIndex;
 		mCurIndex = newofs;
-		if (mCurIndex >= (gl_buffer_size - 500))
+		if (mCurIndex >= (unsigned)(gl_buffer_size - 500))
 		{
-			DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
+			DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%u\n", mCurIndex.load());
 			mCurIndex = mIndex;
 		}
 		vertexbuffer_curindex = mCurIndex;

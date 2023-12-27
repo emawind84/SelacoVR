@@ -130,7 +130,7 @@ FFlatVertexBuffer::FFlatVertexBuffer(int width, int height)
 	{
 	case BM_PERSISTENT:
 	{
-		unsigned int bytesize = BUFFER_SIZE * sizeof(FFlatVertex);
+		unsigned int bytesize = gl_buffer_size * sizeof(FFlatVertex);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 		glBufferStorage(GL_ARRAY_BUFFER, bytesize, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 		map = (FFlatVertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, bytesize, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
@@ -140,7 +140,7 @@ FFlatVertexBuffer::FFlatVertexBuffer(int width, int height)
 
 	case BM_DEFERRED:
 	{
-		unsigned int bytesize = BUFFER_SIZE * sizeof(FFlatVertex);
+		unsigned int bytesize = gl_buffer_size * sizeof(FFlatVertex);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 		glBufferData(GL_ARRAY_BUFFER, bytesize, NULL, GL_STREAM_DRAW);
 		map = nullptr;
@@ -150,7 +150,7 @@ FFlatVertexBuffer::FFlatVertexBuffer(int width, int height)
 
 	default:
 	{
-		map = new FFlatVertex[BUFFER_SIZE];
+		map = new FFlatVertex[gl_buffer_size];
 		DPrintf(DMSG_NOTIFY, "Using client array buffer\n");
 		break;
 	}
@@ -217,7 +217,7 @@ void FFlatVertexBuffer::Map()
 {
 	if (gl.buffermethod == BM_DEFERRED)
 	{
-		unsigned int bytesize = BUFFER_SIZE * sizeof(FFlatVertex);
+		unsigned int bytesize = gl_buffer_size * sizeof(FFlatVertex);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 		gl_RenderState.ResetVertexBuffer();
 		map = (FFlatVertex*)glMapBufferRange(GL_ARRAY_BUFFER, 0, bytesize, GL_MAP_WRITE_BIT|GL_MAP_UNSYNCHRONIZED_BIT);
@@ -228,7 +228,7 @@ void FFlatVertexBuffer::Unmap()
 {
 	if (gl.buffermethod == BM_DEFERRED)
 	{
-		unsigned int bytesize = BUFFER_SIZE * sizeof(FFlatVertex);
+		unsigned int bytesize = gl_buffer_size * sizeof(FFlatVertex);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 		gl_RenderState.ResetVertexBuffer();
 		glUnmapBuffer(GL_ARRAY_BUFFER);
