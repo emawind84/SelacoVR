@@ -112,7 +112,8 @@ public:
 		GLWF_NOSPLITUPPER=16,
 		GLWF_NOSPLITLOWER=32,
 		GLWF_NOSPLIT=64,
-		GLWF_TRANSLUCENT = 128
+		GLWF_TRANSLUCENT = 128, // unused
+		GLWF_NOSLICE = 256
 	};
 
 	enum
@@ -148,9 +149,9 @@ public:
 	
 	float ViewDistance;
 
-	int lightlevel;
+	short lightlevel;
+	uint16_t flags;
 	uint8_t type;
-	uint8_t flags;
 	short rellight;
 
 	float topglowcolor[4];
@@ -182,6 +183,7 @@ public:
 public:
 	seg_t * seg;			// this gives the easiest access to all other structs involved
 	subsector_t * sub;		// For polyobjects
+	sector_t *frontsector, *backsector;
 //private:
 
 	void PutWall(HWDrawInfo *di, bool translucent);

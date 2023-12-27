@@ -118,6 +118,26 @@ struct FloatRect
 	}
 };
 
+struct DoubleRect
+{
+	double left, top;
+	double width, height;
+
+
+	void Offset(double xofs, double yofs)
+	{
+		left += xofs;
+		top += yofs;
+	}
+	void Scale(double xfac, double yfac)
+	{
+		left *= xfac;
+		width *= xfac;
+		top *= yfac;
+		height *= yfac;
+	}
+};
+
 // Special translation values for CreateTexBuffer
 enum ESpecialTranslations : int32_t
 {
