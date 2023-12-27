@@ -105,7 +105,7 @@ static void xbrzApplyOptions()
 		}
 		else
 		{
-			GLRenderer->FlushTextures();
+			screen->FlushTextures();
 		}
 	}
 }

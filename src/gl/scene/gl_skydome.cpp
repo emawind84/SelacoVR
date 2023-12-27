@@ -60,9 +60,9 @@
 #include "r_state.h"
 #include "r_utility.h"
 #include "g_levellocals.h"
+#include "c_cvars.h"
 #include "textures/skyboxtexture.h"
 
-#include "gl/system/gl_cvars.h"
 #include "gl/system/gl_interface.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "gl/renderer/gl_lightdata.h"
