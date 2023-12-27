@@ -27,7 +27,7 @@
 
 #include "gl/system/gl_system.h"
 #include "actorinlines.h"
-#include "gl/system/gl_cvars.h"
+#include "hwrenderer/utility/hw_cvars.h"
 #include "hw_dynlightdata.h"
 
 
