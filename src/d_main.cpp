@@ -1972,6 +1972,49 @@ static void D_DoomInit()
 	M_LoadDefaults ();			// load before initing other systems
 }
 
+
+//==========================================================================
+//
+// AddModFiles
+//
+// Adds all files found in the subdirectory /Mods
+//==========================================================================
+
+
+static void AddModFiles(TArray<FString>& allwads) {
+	if (!(gameinfo.flags & GI_SHAREWARE) && !Args->CheckParm("-noautoload") && !disableautoload) {
+		Printf("Finding Mods...\n");
+
+		const char* modFolder = "Mods";
+		void* handle;
+		findstate_t findstate;
+		FStringf slasheddir("%s/%s/", progdir.GetChars(), modFolder);
+		FString findmask = slasheddir + "*.*";
+		if ((handle = I_FindFirst(findmask, &findstate)) != (void*)-1)
+		{
+			do
+			{
+				if (!(I_FindAttr(&findstate) & FA_DIREC))
+				{
+					auto FindName = I_FindName(&findstate);
+					auto p = strrchr(FindName, '.');
+					if (p != nullptr)
+					{
+						// Only valid extensions
+						if (!stricmp(p, ".wad") || !stricmp(p, ".pk3") || !stricmp(p, ".pk7"))
+						{
+							Printf("\tFound %s!\n", FindName);
+							D_AddFile(allwads, slasheddir + FindName, false, -1, GameConfig);
+						}
+					}
+				}
+			} while (I_FindNext(handle, &findstate) == 0);
+			I_FindClose(handle);
+		}
+	}
+}
+
+
 //==========================================================================
 //
 // AddAutoloadFiles
@@ -3099,6 +3142,8 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 		FindStrifeTeaserVoices(fileSystem);
 	};
 	allwads.Append(std::move(pwads));
+
+	AddModFiles(allwads);
 
 	bool allowduplicates = Args->CheckParm("-allowduplicates");
 	auto hashfile = D_GetHashFile();
