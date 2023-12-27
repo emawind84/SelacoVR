@@ -217,7 +217,7 @@ static void GL_ResampleTexture (uint32_t *in, uint32_t inwidth, uint32_t inheigh
 //
 //===========================================================================
 
-unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, int translation,  const char *name, bool material)
+unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, int translation, const char *name, bool material)
 {
 	int rh,rw;
 	int texformat=TexFormat[gl_texture_format];
@@ -251,10 +251,7 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	}
 	else
 	{
-		if (rw == w && rh == h) // Same size, do nothing
-		{
-		}
-		else if (rw < w || rh < h)
+		if (rw < w || rh < h)
 		{
 			// The texture is larger than what the hardware can handle so scale it down.
 			unsigned char * scaledbuffer=(unsigned char *)calloc(4,rw * (rh+1));
@@ -288,6 +285,7 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	}
 	// store the physical size.
 
+#ifndef __MOBILE__
 	int sourcetype;
 	if (glTextureBytes > 0)
 	{
@@ -315,10 +313,11 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 		sourcetype = GL_BGRA;
 	}
 	
-	//added for mobile
-	//BGRAtoRGBA( buffer, rw * rh );
-	//glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, sourcetype, GL_UNSIGNED_BYTE, buffer);
+#else
+	BGRAtoRGBA( buffer, rw * rh );
+	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+#endif
 
 	if (deletebuffer && buffer) free(buffer);
 	else if (glBufferID)

@@ -79,6 +79,7 @@ CUSTOM_CVAR(Int, vid_hwgamma, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITC
 //
 //
 //==========================================================================
+
 OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen) :
 	Super(hMonitor, width, height, bits, refreshHz, fullscreen, false)
 {
