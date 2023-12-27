@@ -83,13 +83,13 @@ bool GLWall::SetupLights(FDynLightData &lightdata)
 	else node = NULL;
 
 	// Iterate through all dynamic lights which touch this wall and render them
-	while (node)
+	while (node && (!gl_light_wall_max_lights || iter_dlight < gl_light_wall_max_lights))
 	{
-		if (!(node->lightsource->flags2&MF2_DORMANT))
+		if (node->lightsource->IsActive() && !gl_IsDistanceCulled(node->lightsource))
 		{
 			iter_dlight++;
 
-			DVector3 posrel = node->lightsource->PosRelative(seg->frontsector);
+			DVector3 posrel = node->lightsource->PosRelative(seg->frontsector->PortalGroup);
 			float x = posrel.X;
 			float y = posrel.Y;
 			float z = posrel.Z;
