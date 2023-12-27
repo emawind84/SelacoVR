@@ -154,7 +154,7 @@ bool GLWall::SetupLights(FDynLightData &lightdata)
 
 void FDrawInfo::RenderWall(GLWall *wall, int textured)
 {
-	assert(vertcount > 0);
+	assert(wall->vertcount > 0);
 	gl_RenderState.Apply();
 	gl_RenderState.ApplyLightIndex(wall->dynlightindex);
 	
@@ -164,7 +164,7 @@ void FDrawInfo::RenderWall(GLWall *wall, int textured)
 
 	GLRenderer->mVBO->RenderArray(GL_TRIANGLE_FAN, wall->vertindex, wall->vertcount);
 	vertexcount += wall->vertcount;
-	s3d::EyePose::wallVerticesPerEye += vertcount;
+	s3d::EyePose::wallVerticesPerEye += wall->vertcount;
 }
 
 //==========================================================================
@@ -289,11 +289,11 @@ void FDrawInfo::RenderTexturedWall(GLWall *wall, int rflags)
 	{
 		gl_RenderState.EnableGlow(true);
 		gl_RenderState.SetGlowParams(wall->topglowcolor, wall->bottomglowcolor);
-		gl_RenderState.SetGlowPlanes(frontsector->ceilingplane, frontsector->floorplane);
+		gl_RenderState.SetGlowPlanes(wall->frontsector->ceilingplane, wall->frontsector->floorplane);
 	}
-	gl_RenderState.SetMaterial(gltexture, flags & 3, 0, -1, false);
+	gl_RenderState.SetMaterial(wall->gltexture, wall->flags & 3, 0, -1, false);
 
-	if (wall->flags & GLWF_CLAMPY && (wall->type == RENDERWALL_M2S || wall->type == RENDERWALL_M2SNF))
+	if (wall->flags & wall->GLWF_CLAMPY && (wall->type == RENDERWALL_M2S || wall->type == RENDERWALL_M2SNF))
 	{
 		if (tmode == TM_MODULATE) gl_RenderState.SetTextureMode(TM_CLAMPY);
 	}
@@ -302,39 +302,39 @@ void FDrawInfo::RenderTexturedWall(GLWall *wall, int rflags)
 	{
 		mDrawer->SetFog(255, 0, NULL, false);
 	}
-	if (wall->type != RENDERWALL_COLOR && seg->sidedef != nullptr)
+	if (wall->type != RENDERWALL_COLOR && wall->seg->sidedef != nullptr)
 	{
-		auto side = seg->sidedef;
-		auto tierndx = renderwalltotier[type];
+		auto side = wall->seg->sidedef;
+		auto tierndx = renderwalltotier[wall->type];
 		auto &tier = side->textures[tierndx];
-		PalEntry color1 = side->GetSpecialColor(tierndx, side_t::walltop, frontsector);
-		PalEntry color2 = side->GetSpecialColor(tierndx, side_t::wallbottom, frontsector);
+		PalEntry color1 = side->GetSpecialColor(tierndx, side_t::walltop, wall->frontsector);
+		PalEntry color2 = side->GetSpecialColor(tierndx, side_t::wallbottom, wall->frontsector);
 		gl_RenderState.SetObjectColor(color1);
 		gl_RenderState.SetObjectColor2(color2);
-		gl_RenderState.SetAddColor(side->GetAdditiveColor(tierndx, frontsector));
+		gl_RenderState.SetAddColor(side->GetAdditiveColor(tierndx, wall->frontsector));
 		if (color1 != color2)
 		{
 			// Do gradient setup only if there actually is a gradient.
 
 			gl_RenderState.EnableGradient(true);
-			if ((tier.flags & side_t::part::ClampGradient) && backsector)
+			if ((tier.flags & side_t::part::ClampGradient) && wall->backsector)
 			{
 				if (tierndx == side_t::top)
 				{
-					gl_RenderState.SetGradientPlanes(frontsector->ceilingplane, backsector->ceilingplane);
+					gl_RenderState.SetGradientPlanes(wall->frontsector->ceilingplane, wall->backsector->ceilingplane);
 				}
 				else if (tierndx == side_t::mid)
 				{
-					gl_RenderState.SetGradientPlanes(backsector->ceilingplane, backsector->floorplane);
+					gl_RenderState.SetGradientPlanes(wall->backsector->ceilingplane, wall->backsector->floorplane);
 				}
 				else // side_t::bottom:
 				{
-					gl_RenderState.SetGradientPlanes(backsector->floorplane, frontsector->floorplane);
+					gl_RenderState.SetGradientPlanes(wall->backsector->floorplane, wall->frontsector->floorplane);
 				}
 			}
 			else
 			{
-				gl_RenderState.SetGradientPlanes(frontsector->ceilingplane, frontsector->floorplane);
+				gl_RenderState.SetGradientPlanes(wall->frontsector->ceilingplane, wall->frontsector->floorplane);
 			}
 		}
 	}
@@ -352,14 +352,14 @@ void FDrawInfo::RenderTexturedWall(GLWall *wall, int rflags)
 
 		for (unsigned i = 0; i < wall->lightlist->Size(); i++)
 		{
-			secplane_t &lowplane = i == (*wall->lightlist).Size() - 1 ? frontsector->floorplane : (*wall->lightlist)[i + 1].plane;
+			secplane_t &lowplane = i == (*wall->lightlist).Size() - 1 ? wall->frontsector->floorplane : (*wall->lightlist)[i + 1].plane;
 			// this must use the exact same calculation method as GLWall::Process etc.
 			float low1 = lowplane.ZatPoint(wall->vertexes[0]);
 			float low2 = lowplane.ZatPoint(wall->vertexes[1]);
 
 			if (low1 < wall->ztop[0] || low2 < wall->ztop[1])
 			{
-				int thisll = (*wall->lightlist)[i].caster != nullptr ? hl_ClampLight(*(*wall->lightlist)[i].p_lightlevel) : wall->lightlevel;
+				int thisll = (*wall->lightlist)[i].caster != nullptr ? hw_ClampLight(*(*wall->lightlist)[i].p_lightlevel) : wall->lightlevel;
 				FColormap thiscm;
 				thiscm.FadeColor = wall->Colormap.FadeColor;
 				thiscm.FogDensity = wall->Colormap.FogDensity;

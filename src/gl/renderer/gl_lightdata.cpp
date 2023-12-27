@@ -103,7 +103,7 @@ void gl_SetColor(int sectorlightlevel, int rellight, bool fullbright, const FCol
 	}
 	else
 	{
-		int hwlightlevel = hw_CalcLightLevel(sectorlightlevel, rellight, weapon);
+		int hwlightlevel = hw_CalcLightLevel(sectorlightlevel, rellight, weapon, cm.BlendFactor);
 		PalEntry pe = hw_CalcLightColor(hwlightlevel, cm.LightColor, cm.BlendFactor);
 		gl_RenderState.SetColorAlpha(pe, alpha, cm.Desaturation);
 		gl_RenderState.SetSoftLightLevel(hw_ClampLight(sectorlightlevel + rellight));

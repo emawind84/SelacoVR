@@ -136,7 +136,7 @@ void GLSceneDrawer::AddLine (seg_t *seg, bool portalclip)
 
 	if (IsDistanceCulled(seg))
 	{
-		GLWall wall(this);
+		GLWall wall;
 		wall.sub = currentsubsector;
 		wall.Process(gl_drawinfo, seg, seg->frontsector, seg->backsector, true);
 		clipper.SafeAddClipRange(startAngle, endAngle);

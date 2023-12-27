@@ -177,7 +177,7 @@ PalEntry hw_CalcLightColor(int light, PalEntry pe, int blendfactor)
 //
 //==========================================================================
 
-float hw_GetFogDensity(int lightlevel, PalEntry fogcolor, int sectorfogdensity)
+float hw_GetFogDensity(int lightlevel, PalEntry fogcolor, int sectorfogdensity, int blendfactor)
 {
 	float density;
 
