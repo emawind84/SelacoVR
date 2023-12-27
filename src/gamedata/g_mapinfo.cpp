@@ -1751,6 +1751,7 @@ MapFlagHandlers[] =
 	{ "avoidmelee",						MITYPE_SETFLAG3,	LEVEL3_AVOIDMELEE, 0 },
 	{ "attenuatelights",				MITYPE_SETFLAG3,	LEVEL3_ATTENUATE, 0 },
 	{ "rainymap",						MITYPE_SETFLAG3,	LEVEL3_RAINYMAP, 0 },
+	{ "saferoom",						MITYPE_SETFLAG3,	LEVEL3_SAFEROOM, 0 },
 	{ "nobotnodes",						MITYPE_IGNORE,	0, 0 },		// Skulltag option: nobotnodes
 	{ "compat_shorttex",				MITYPE_COMPATFLAG, COMPATF_SHORTTEX, 0 },
 	{ "compat_stairs",					MITYPE_COMPATFLAG, COMPATF_STAIRINDEX, 0 },
