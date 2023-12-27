@@ -716,6 +716,21 @@ DEFINE_ACTION_FUNCTION_NATIVE(FFont, GetDefaultKerning, GetDefaultKerning)
 //
 //==========================================================================
 
+DEFINE_ACTION_FUNCTION(_Wads, GetNumWads)
+{
+	PARAM_PROLOGUE;
+	ACTION_RETURN_INT(fileSystem.GetNumWads());
+}
+
+
+DEFINE_ACTION_FUNCTION(_Wads, GetWadName)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(wadnum);
+	ACTION_RETURN_STRING(fileSystem.GetWadName(wadnum));
+}
+
+
 DEFINE_ACTION_FUNCTION(_Wads, GetNumLumps)
 {
 	PARAM_PROLOGUE;

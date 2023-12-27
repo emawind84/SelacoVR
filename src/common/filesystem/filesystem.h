@@ -183,6 +183,21 @@ public:
 		return Files.Size();
 	}
 
+	FString GetWadName(int wadnum) const
+	{
+		FString name = Files[wadnum]->FileName;
+		
+		// Remove the path
+		/*auto rindex = name.LastIndexOf('/');
+		auto pindex = name.LastIndexOf('.');
+
+		if (pindex > rindex) name.Truncate(pindex);
+		if (rindex >=0) name = name.Mid(rindex);
+		*/
+		
+		return name;
+	}
+
 	void AddLump(FResourceLump* lump);
 	int AddExternalFile(const char *filename);
 	int AddFromBuffer(const char* name, const char* type, char* data, int size, int id, int flags);

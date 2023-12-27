@@ -778,6 +778,9 @@ struct Wads	// todo: make FileSystem an alias to 'Wads'
 	native static string GetLumpName(int lump);
 	native static string GetLumpFullName(int lump);
 	native static int GetLumpNamespace(int lump);
+
+	native static int GetNumWads();
+	native static string GetWadName(int wadnum);
 }
 
 enum EmptyTokenType
