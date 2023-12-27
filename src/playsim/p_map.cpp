@@ -6772,7 +6772,7 @@ int P_PushUp(AActor *thing, FChangePosition *cpos)
 			continue;
 
 		if (!(intersect->flags2 & MF2_PASSMOBJ) ||
-			(!(intersect->flags3 & MF3_ISMONSTER) && intersect->Mass > mymass) ||
+			/*(!(intersect->flags3 & MF3_ISMONSTER) && intersect->Mass > mymass) ||*/	// @Cockatrice - Removed mass requirement, since we use mass differently. This will be handled in Grind()
 			(intersect->flags4 & MF4_ACTLIKEBRIDGE)
 			)
 		{
