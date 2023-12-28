@@ -55,8 +55,6 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/system/gl_framebuffer.h"
 #include "gl/shaders/gl_shader.h"
-#include "gl/textures/gl_material.h"
-#include "gl/system/gl_cvars.h"
 
 //#include <QzDoom/VrCommon.h>
 

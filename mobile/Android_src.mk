@@ -89,7 +89,6 @@ FASTMATH_SOURCES = \
 	polyrenderer/poly_all.cpp \
 	sound/music/music_midi_base.cpp \
 	sound/backend/oalsound.cpp \
-	gl/utility/gl_clock.cpp \
 	textures/hires/hqnx/init.cpp \
 	textures/hires/hqnx/hq2x.cpp \
 	textures/hires/hqnx/hq3x.cpp \
@@ -97,26 +96,28 @@ FASTMATH_SOURCES = \
 	textures/hires/xbr/xbrz.cpp \
 	textures/hires/xbr/xbrz_old.cpp \
 	gl/scene/gl_bsp.cpp \
-	gl/scene/gl_fakeflat.cpp \
-	gl/scene/gl_clipper.cpp \
-	gl/scene/gl_decal.cpp \
 	gl/scene/gl_drawinfo.cpp \
 	gl/scene/gl_flats.cpp \
-	gl/scene/gl_walls.cpp \
 	gl/scene/gl_sprite.cpp \
 	gl/scene/gl_skydome.cpp \
-	gl/scene/gl_renderhacks.cpp \
 	gl/scene/gl_weapon.cpp \
 	gl/scene/gl_scene.cpp \
 	gl/scene/gl_swscene.cpp \
-	gl/scene/gl_sky.cpp \
 	gl/scene/gl_portal.cpp \
 	gl/scene/gl_walls_draw.cpp \
-	gl/scene/gl_vertex.cpp \
-	gl/scene/gl_spritelight.cpp \
-	gl/dynlights/gl_dynlight1.cpp \
 	gl_load/gl_load.c \
-	gl/models/gl_models.cpp \
+	hwrenderer/dynlights/hw_dynlightdata.cpp \
+	hwrenderer/scene/hw_fakeflat.cpp \
+	hwrenderer/scene/hw_decal.cpp \
+	hwrenderer/scene/hw_drawlist.cpp \
+	hwrenderer/scene/hw_clipper.cpp \
+	hwrenderer/scene/hw_flats.cpp \
+	hwrenderer/scene/hw_renderhacks.cpp \
+	hwrenderer/scene/hw_sky.cpp \
+	hwrenderer/scene/hw_sprites.cpp \
+	hwrenderer/scene/hw_spritelight.cpp \
+	hwrenderer/scene/hw_walls.cpp \
+	hwrenderer/scene/hw_walls_vertex.cpp \
 	r_data/models/models.cpp \
 	r_data/matrix.cpp \
 
@@ -177,7 +178,6 @@ PCH_SOURCES = \
 	i_time.cpp \
 	info.cpp \
 	keysections.cpp \
-	lumpconfigfile.cpp \
 	m_alloc.cpp \
 	m_argv.cpp \
 	m_bbox.cpp \
@@ -296,6 +296,7 @@ PCH_SOURCES = \
 	gl/data/gl_vertexbuffer.cpp \
 	gl/dynlights/gl_lightbuffer.cpp \
 	gl/dynlights/gl_shadowmap.cpp \
+	gl/models/gl_models.cpp \
 	gl/renderer/gl_quaddrawer.cpp \
 	gl/renderer/gl_renderer.cpp \
 	gl/renderer/gl_renderstate.cpp \
@@ -328,14 +329,18 @@ PCH_SOURCES = \
 	gl/system/gl_interface.cpp \
 	gl/system/gl_framebuffer.cpp \
 	gl/system/gl_debug.cpp \
-	gl/system/gl_menu.cpp \
 	gl/system/gl_wipe.cpp \
 	gl/textures/gl_hwtexture.cpp \
-	gl/textures/gl_texture.cpp \
-	gl/textures/gl_material.cpp \
 	gl/textures/gl_samplers.cpp \
 	hwrenderer/data/flatvertices.cpp \
 	hwrenderer/dynlights/hw_aabbtree.cpp \
+	hwrenderer/dynlights/hw_shadowmap.cpp \
+	hwrenderer/scene/hw_skydome.cpp \
+	hwrenderer/textures/hw_material.cpp \
+	hwrenderer/textures/hw_precache.cpp \
+	hwrenderer/utility/hw_clock.cpp \
+	hwrenderer/utility/hw_cvars.cpp \
+	hwrenderer/utility/hw_lighting.cpp \
 	menu/joystickmenu.cpp \
 	menu/loadsavemenu.cpp \
 	menu/menu.cpp \
@@ -439,8 +444,6 @@ PCH_SOURCES = \
 	sound/backend/i_sound.cpp \
 	sound/music/music_config.cpp \
 	events.cpp \
-	GuillotineBinPack.cpp \
-	SkylineBinPack.cpp \
 	
 
 QZDOOM_SRC = \

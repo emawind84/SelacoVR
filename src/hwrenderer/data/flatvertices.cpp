@@ -31,7 +31,6 @@
 #include "c_cvars.h"
 #include "g_levellocals.h"
 #include "flatvertices.h"
-#include "gl/renderer/gl_renderer.h"
 
 
 //==========================================================================
