@@ -1428,10 +1428,10 @@ void HWDrawInfo::ProcessActorsInPortal(FLinePortalSpan *glport, area_t in_area)
 					// [Nash] draw sprite shadow
 					if (R_ShouldDrawSpriteShadow(th))
 					{
-						spr.Process(this, th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), 2, true);
+						spr.Process(this, th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), in_area, 2, true);
 					}
 
-					spr.Process(this, th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), 2);
+					spr.Process(this, th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), in_area, 2);
 					th->Angles.Yaw = savedangle;
 					th->SetXYZ(savedpos);
 					th->Prev -= newpos - savedpos;
