@@ -360,8 +360,8 @@ void FDrawInfo::AddSprite(GLSprite *sprite, bool translucent)
 	// That's a lot of checks...
 	if (sprite->modelframe && sprite->RenderStyle.BlendOp != STYLEOP_Shadow && gl_lights && gl_light_sprites && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !sprite->fullbright && !gl.legacyMode)
 	{
-		//hw_GetDynModelLight(sprite->actor, lightdata);
-		//sprite->dynlightindex = GLRenderer->mLights->UploadLights(lightdata);
+		hw_GetDynModelLight(sprite->actor, lightdata);
+		sprite->dynlightindex = GLRenderer->mLights->UploadLights(lightdata);
 	}
 	else
 		sprite->dynlightindex = -1;
