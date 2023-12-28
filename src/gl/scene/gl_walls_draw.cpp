@@ -586,7 +586,7 @@ void FDrawInfo::DrawDecal(GLDecal *gldecal)
 
 		for (unsigned k = 0; k < lightlist.Size(); k++)
 		{
-			secplane_t &lowplane = k == lightlist.Size() - 1 ? wall->bottomplane : lightlist[k + 1].plane;
+			secplane_t &lowplane = k == lightlist.Size() - 1 ? wall->frontsector->floorplane : lightlist[k + 1].plane;
 
 			DecalVertex *dv = gldecal->dv;
 			float low1 = lowplane.ZatPoint(dv[1].x, dv[1].y);
