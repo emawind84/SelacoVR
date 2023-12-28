@@ -646,7 +646,7 @@ bool FHardwareTexture::BindOrCreate(FTexture *tex, int texunit, int clampmode, i
 			w = tex->GetWidth();
 			h = tex->GetHeight();
 		}
-		if (!CreateTexture(buffer, w, h, texunit, needmipmap, translation, "FHardwareTexture.BindOrCreate"))
+		if (!CreateTexture(buffer, w, h, texunit, needmipmap, translation, "FHardwareTexture.BindOrCreate"), true)
 		{
 			// could not create texture
 			delete[] buffer;

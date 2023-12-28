@@ -33,7 +33,7 @@
 // externally settable lighting properties
 static float distfogtable[2][256];	// light to fog conversion table for black fog
 
-CVAR(Int, gl_weaponlight, 8, CVAR_ARCHIVE);
+CVAR(Int, gl_weaponlight, 0, CVAR_ARCHIVE); // Default to 0 for VR
 CUSTOM_CVAR(Bool, gl_enhanced_nightvision, false, CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
 	// The fixed colormap state needs to be reset because if this happens when

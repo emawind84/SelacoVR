@@ -379,7 +379,7 @@ void GLSprite::PerformSpriteClipAdjustment(AActor *thing, const DVector2 &thingp
 //
 //==========================================================================
 
-CVAR(Float, gl_sprite_distance_cull, 4000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, gl_sprite_distance_cull, 2000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 inline bool IsDistanceCulled(AActor* thing)
 {
@@ -461,6 +461,16 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	if (viewmaster == camera && !vp.showviewer)
 	{
 		DVector3 vieworigin = viewmaster->Pos();
+
+		//If we get here, then we want to override the location of the camera actor
+		if (s3d::Stereo3DMode::getCurrentMode().GetTeleportLocation(thingpos))
+		{
+			vieworigin = thingpos;
+
+			//Scale Doom Guy up a bit
+			sprscale *= 1.2;
+		}
+
 		if (thruportal == 1) vieworigin += level.Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
 		if (fabs(vieworigin.X - vp.ActorPos.X) < 2 && fabs(vieworigin.Y - vp.ActorPos.Y) < 2) return;
 	}
@@ -469,13 +479,13 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	{
 		DVector3 viewpos = viewmaster->InterpolatedPosition(vp.TicFrac);
 		if (thruportal == 1) viewpos += level.Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
-		if (fabs(viewpos.X - vp.Pos.X) < 32 && fabs(viewpos.Y - vp.Pos.Y) < 32) return;
+		if (fabs(viewpos.X - vp.CenterEyePos.X) < 32 && fabs(viewpos.Y - vp.CenterEyePos.Y) < 32) return;
 	}
 
 	// Too close to the camera. This doesn't look good if it is a sprite.
-	if (fabs(thingpos.X - r_viewpoint.Pos.X) < 2 && fabs(thingpos.Y - r_viewpoint.Pos.Y) < 2)
+	if (thing != camera && fabs(thingpos.X - r_viewpoint.CenterEyePos.X) < 2 && fabs(thingpos.Y - r_viewpoint.CenterEyePos.Y) < 2)
 	{
-		if (r_viewpoint.Pos.Z >= thingpos.Z - 2 && r_viewpoint.Pos.Z <= thingpos.Z + thing->Height + 2)
+		if (r_viewpoint.CenterEyePos.Z >= thingpos.Z - 2 && r_viewpoint.CenterEyePos.Z <= thingpos.Z + thing->Height + 2)
 		{
 			// exclude vertically moving objects from this check.
 			if (!thing->Vel.isZero())
@@ -497,7 +507,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			if (speed >= thing->target->radius / 2)
 			{
 				double clipdist = clamp(thing->Speed, thing->target->radius, thing->target->radius * 2);
-				if ((thingpos - r_viewpoint.Pos).LengthSquared() < clipdist * clipdist) return;
+				if ((thingpos - r_viewpoint.CenterEyePos).LengthSquared() < clipdist * clipdist) return;
 			}
 		}
 		thing->flags7 |= MF7_FLYCHEAT;	// do this only once for the very first frame, but not if it gets into range again.
@@ -559,7 +569,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	if (!modelframe)
 	{
 		bool mirror;
-		DAngle ang = (thingpos - r_viewpoint.Pos).Angle();
+		DAngle ang = (thingpos - r_viewpoint.CenterEyePos).Angle();
 		FTextureID patch;
 		// [ZZ] add direct picnum override
 		if (isPicnumOverride)
@@ -583,6 +593,10 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			{
 				// Flat sprites cannot rotate in a predictable manner.
 				sprangle = 0.;
+				rot = 0;
+			}
+			if (thing == camera && GLPortal::GetRecursion() > 0)
+			{
 				rot = 0;
 			}
 			patch = sprites[spritenum].GetSpriteFrame(thing->frame, rot, sprangle, &mirror, !!(thing->renderflags & RF_SPRITEFLIP));
@@ -685,7 +699,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		gltexture = nullptr;
 	}
 
-	depth = (float)((x - r_viewpoint.Pos.X) * r_viewpoint.TanCos + (y - r_viewpoint.Pos.Y) * r_viewpoint.TanSin);
+	depth = (float)((x - r_viewpoint.CenterEyePos.X) * r_viewpoint.TanCos + (y - r_viewpoint.CenterEyePos.Y) * r_viewpoint.TanSin);
 	if (isSpriteShadow) depth += 1.f/65536.f; // always sort shadows behind the sprite.
 
 	// light calculation
@@ -1045,7 +1059,7 @@ void GLSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	z1=z-scalefac;
 	z2=z+scalefac;
 
-	depth = (float)((x - r_viewpoint.Pos.X) * r_viewpoint.TanCos + (y - r_viewpoint.Pos.Y) * r_viewpoint.TanSin);
+	depth = FloatToFixed((x - r_viewpoint.CenterEyePos.X) * r_viewpoint.TanCos + (y - r_viewpoint.CenterEyePos.Y) * r_viewpoint.TanSin);
 
 	actor=nullptr;
 	this->particle=particle;
