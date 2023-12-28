@@ -51,6 +51,8 @@
 #include "hwrenderer/utility/hw_lighting.h"
 #include "hwrenderer/textures/hw_material.h"
 
+#include "gl/scene/gl_portal.h"
+
 extern TArray<spritedef_t> sprites;
 extern TArray<spriteframe_t> SpriteFrames;
 extern uint32_t r_renderercaps;
@@ -117,6 +119,8 @@ bool GLSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v)
 	// [Nash] has +ROLLSPRITE
 	const bool drawRollSpriteActor = (actor != nullptr && actor->renderflags & RF_ROLLSPRITE);
 
+	const bool drawRollParticle = (particle != nullptr && particle->doRoll);
+
 
 	// [fgsfds] check sprite type mask
 	uint32_t spritetype = (uint32_t)-1;
@@ -157,7 +161,7 @@ bool GLSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v)
 		// [fgsfds] calculate yaw vectors
 		float yawvecX = 0, yawvecY = 0, rollDegrees = 0;
 		float angleRad = (270. - di->mAngles.Yaw).Radians();
-		if (actor)	rollDegrees = Angles.Roll.Degrees;
+		if (actor || drawRollParticle)	rollDegrees = Angles.Roll.Degrees;
 		if (isFlatSprite)
 		{
 			yawvecX = Angles.Yaw.Cos();
@@ -175,7 +179,7 @@ bool GLSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v)
 				if (useOffsets) mat.Translate(-xx, -zz, -yy);
 			}
 		}
-		else if (drawRollSpriteActor)
+		else if (drawRollSpriteActor || drawRollParticle)
 		{
 			if (useOffsets) mat.Translate(xx, zz, yy);
 			if (drawWithXYBillboard)
@@ -278,9 +282,9 @@ void GLSprite::SplitSprite(HWDrawInfo *di, sector_t * frontsector, bool transluc
 void GLSprite::PerformSpriteClipAdjustment(AActor *thing, const DVector2 &thingpos, float spriteheight)
 {
 	const float NO_VAL = 100000000.0f;
-	bool clipthing = (thing->player || thing->flags3&MF3_ISMONSTER || thing->IsKindOf(RUNTIME_CLASS(AInventory))) && (thing->flags&MF_ICECORPSE || !(thing->flags&MF_CORPSE));
+	bool clipthing = (thing->player || thing->flags3&MF3_ISMONSTER || thing->IsKindOf(NAME_Inventory)) && (thing->flags&MF_ICECORPSE || !(thing->flags&MF_CORPSE));
 	bool smarterclip = !clipthing && gl_spriteclip == 3;
-	if (clipthing || gl_spriteclip > 1)
+	if ((clipthing || gl_spriteclip > 1) && !(thing->flags2 & MF2_FLOATBOB))
 	{
 
 		float btm = NO_VAL;
@@ -309,7 +313,7 @@ void GLSprite::PerformSpriteClipAdjustment(AActor *thing, const DVector2 &thingp
 				}
 			}
 		}
-		else if (thing->Sector->heightsec && !(thing->Sector->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
+		else if (thing->Sector->GetHeightSec())
 		{
 			if (thing->flags2&MF2_ONMOBJ && thing->floorz ==
 				thing->Sector->heightsec->floorplane.ZatPoint(thingpos))
@@ -375,12 +379,31 @@ void GLSprite::PerformSpriteClipAdjustment(AActor *thing, const DVector2 &thingp
 //
 //==========================================================================
 
-void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t in_area, int thruportal)
+CVAR(Float, gl_sprite_distance_cull, 4000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+inline bool IsDistanceCulled(AActor* thing)
+{
+	double culldist = gl_sprite_distance_cull * gl_sprite_distance_cull;
+	if (culldist <= 0.0)
+		return false;
+
+	double dist = (thing->Pos() - r_viewpoint.Pos).LengthSquared();
+
+	if (dist > culldist)
+		return true;
+	return false;
+}
+
+void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t in_area, int thruportal, bool isSpriteShadow)
 {
 	sector_t rs;
 	sector_t * rendersector;
+	auto vp = r_viewpoint;
 
 	if (thing == nullptr)
+		return;
+
+	if (IsDistanceCulled(thing)) 
 		return;
 
 	// [ZZ] allow CustomSprite-style direct picnum specification
@@ -417,17 +440,36 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	DVector3 thingpos = thing->InterpolatedPosition(r_viewpoint.TicFrac);
 	if (thruportal == 1) thingpos += level.Displacements.getOffset(thing->Sector->PortalGroup, sector->PortalGroup);
 
-	// Some added checks if the camera actor is not supposed to be seen. It can happen that some portal setup has this actor in view in which case it may not be skipped here
-	if (thing == camera && !r_viewpoint.showviewer)
+	AActor *viewmaster = thing;
+	if ((thing->flags8 & MF8_MASTERNOSEE) && thing->master != nullptr)
 	{
-		DVector3 thingorigin = thing->Pos();
-		if (thruportal == 1) thingorigin += level.Displacements.getOffset(thing->Sector->PortalGroup, sector->PortalGroup);
-		if (fabs(thingorigin.X - r_viewpoint.ActorPos.X) < 2 && fabs(thingorigin.Y - r_viewpoint.ActorPos.Y) < 2) return;
+		viewmaster = thing->master;
+	}
+
+	// [Nash] filter visibility in mirrors
+	bool isInMirror = GLRenderer->mCurrentPortal && (GLRenderer->mCurrentPortal->GetMirrorFlag() > 0 || GLRenderer->mCurrentPortal->GetPlaneMirrorFlag() > 0);
+	if (thing->renderflags2 & RF2_INVISIBLEINMIRRORS && isInMirror)
+	{
+		return;
+	}
+	else if (thing->renderflags2 & RF2_ONLYVISIBLEINMIRRORS && !isInMirror)
+	{
+		return;
+	}
+
+	// Some added checks if the camera actor is not supposed to be seen. It can happen that some portal setup has this actor in view in which case it may not be skipped here
+	if (viewmaster == camera && !vp.showviewer)
+	{
+		DVector3 vieworigin = viewmaster->Pos();
+		if (thruportal == 1) vieworigin += level.Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
+		if (fabs(vieworigin.X - vp.ActorPos.X) < 2 && fabs(vieworigin.Y - vp.ActorPos.Y) < 2) return;
 	}
 	// Thing is invisible if close to the camera.
-	if (thing->renderflags & RF_MAYBEINVISIBLE)
+	if (viewmaster->renderflags & RF_MAYBEINVISIBLE)
 	{
-		if (fabs(thingpos.X - r_viewpoint.Pos.X) < 32 && fabs(thingpos.Y - r_viewpoint.Pos.Y) < 32) return;
+		DVector3 viewpos = viewmaster->InterpolatedPosition(vp.TicFrac);
+		if (thruportal == 1) viewpos += level.Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
+		if (fabs(viewpos.X - vp.Pos.X) < 32 && fabs(viewpos.Y - vp.Pos.Y) < 32) return;
 	}
 
 	// Too close to the camera. This doesn't look good if it is a sprite.
@@ -438,7 +480,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			// exclude vertically moving objects from this check.
 			if (!thing->Vel.isZero())
 			{
-				if (!gl_FindModelFrame(thing->GetClass(), spritenum, thing->frame, false))
+				if (!FindModelFrame(thing->GetClass(), spritenum, thing->frame, false))
 				{
 					return;
 				}
@@ -477,7 +519,9 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 
 	if (sector->sectornum != thing->Sector->sectornum && !thruportal)
 	{
-		rendersector = hw_FakeFlat(thing->Sector, &rs, in_area, false);
+		// This cannot create a copy in the fake sector cache because it'd interfere with the main thread, so provide a local buffer for the copy.
+		// Adding synchronization for this one case would cost more than it might save if the result here could be cached.
+		rendersector = hw_FakeFlat(thing->Sector, in_area, false, &rs);
 	}
 	else
 	{
@@ -487,19 +531,31 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	bottomclip = rendersector->PortalBlocksMovement(sector_t::floor) ? -LARGE_VALUE : rendersector->GetPortalPlaneZ(sector_t::floor);
 
 	uint32_t spritetype = (thing->renderflags & RF_SPRITETYPEMASK);
-	x = thingpos.X;
-	z = thingpos.Z;
-	y = thingpos.Y;
+	x = thingpos.X + thing->WorldOffset.X;
+	z = thingpos.Z + thing->WorldOffset.Z;
+	y = thingpos.Y + thing->WorldOffset.Y;
 	if (spritetype == RF_FACESPRITE) z -= thing->Floorclip; // wall and flat sprites are to be considered level geometry so this may not apply.
 
+	// snap shadow Z to the floor
+	if (isSpriteShadow)
+	{
+		z = thing->floorz;
+	}
 	// [RH] Make floatbobbing a renderer-only effect.
-	if (thing->flags2 & MF2_FLOATBOB)
+	else if (thing->flags2 & MF2_FLOATBOB)
 	{
 		float fz = thing->GetBobOffset(r_viewpoint.TicFrac);
 		z += fz;
 	}
 
-	modelframe = isPicnumOverride ? nullptr : gl_FindModelFrame(thing->GetClass(), spritenum, thing->frame, !!(thing->flags & MF_DROPPED));
+	modelframe = isPicnumOverride ? nullptr : FindModelFrame(thing->modelData != nullptr ? thing->modelData->modelDef != NAME_None ? PClass::FindActor(thing->modelData->modelDef) : thing->GetClass() : thing->GetClass(), spritenum, thing->frame, !!(thing->flags & MF_DROPPED));
+
+	// don't bother drawing sprite shadows if this is a model (it will never look right)
+	if (modelframe && isSpriteShadow)
+	{
+		return;
+	}
+
 	if (!modelframe)
 	{
 		bool mirror;
@@ -563,13 +619,12 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		if (thing->renderflags & RF_SPRITEFLIP) // [SP] Flip back
 			thing->renderflags ^= RF_XFLIP;
 
-		r.Scale(sprscale.X, sprscale.Y);
+		r.Scale(sprscale.X, isSpriteShadow ? sprscale.Y * 0.15 : sprscale.Y);
 
-		float rightfac = -r.left;
+		float SpriteOffY = thing->SpriteOffset.Y;
+		float rightfac = -r.left - thing->SpriteOffset.X;
 		float leftfac = rightfac - r.width;
-		float bottomfac = -r.top;
-		float topfac = bottomfac - r.height;
-		z1 = z - r.top;
+		z1 = z - r.top - SpriteOffY;
 		z2 = z1 - r.height;
 
 		float spriteheight = sprscale.Y * r.height;
@@ -580,37 +635,46 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			PerformSpriteClipAdjustment(thing, thingpos, spriteheight);
 		}
 
-		float viewvecX;
-		float viewvecY;
 		switch (spritetype)
 		{
 		case RF_FACESPRITE:
-			viewvecX = di->mViewVector.X;
-			viewvecY = di->mViewVector.Y;
+		{
+			float viewvecX = GLRenderer->mViewVector.X;
+			float viewvecY = GLRenderer->mViewVector.Y;
 
 			x1 = x - viewvecY*leftfac;
 			x2 = x - viewvecY*rightfac;
 			y1 = y + viewvecX*leftfac;
 			y2 = y + viewvecX*rightfac;
 			break;
-
+		}
 		case RF_FLATSPRITE:
 		{
+			float bottomfac = -r.top - SpriteOffY;
+			float topfac = bottomfac - r.height;
+
 			x1 = x + leftfac;
 			x2 = x + rightfac;
 			y1 = y - topfac;
 			y2 = y - bottomfac;
+			// [MC] Counteract in case of any potential problems. Tests so far haven't
+			// shown any outstanding issues but that doesn't mean they won't appear later
+			// when more features are added.
+			z1 += SpriteOffY;
+			z2 += SpriteOffY;
+			break;
 		}
-		break;
 		case RF_WALLSPRITE:
-			viewvecX = Angles.Yaw.Cos();
-			viewvecY = Angles.Yaw.Sin();
+		{
+			float viewvecX = Angles.Yaw.Cos();
+			float viewvecY = Angles.Yaw.Sin();
 
 			x1 = x + viewvecY*leftfac;
 			x2 = x + viewvecY*rightfac;
 			y1 = y - viewvecX*leftfac;
 			y2 = y - viewvecX*rightfac;
 			break;
+		}
 		}
 	}
 	else
@@ -621,7 +685,8 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		gltexture = nullptr;
 	}
 
-	depth = FloatToFixed((x - r_viewpoint.Pos.X) * r_viewpoint.TanCos + (y - r_viewpoint.Pos.Y) * r_viewpoint.TanSin);
+	depth = (float)((x - r_viewpoint.Pos.X) * r_viewpoint.TanCos + (y - r_viewpoint.Pos.Y) * r_viewpoint.TanSin);
+	if (isSpriteShadow) depth += 1.f/65536.f; // always sort shadows behind the sprite.
 
 	// light calculation
 
@@ -656,7 +721,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		if (di->FixedColormap == CM_LITE)
 		{
 			if (gl_enhanced_nightvision &&
-				(thing->IsKindOf(RUNTIME_CLASS(AInventory)) || thing->flags3&MF3_ISMONSTER || thing->flags&MF_MISSILE || thing->flags&MF_CORPSE))
+				(thing->IsKindOf(NAME_Inventory) || thing->flags3&MF3_ISMONSTER || thing->flags&MF_MISSILE || thing->flags&MF_CORPSE))
 			{
 				RenderStyle.Flags |= STYLEF_InvertSource;
 			}
@@ -753,7 +818,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			RenderStyle.DestAlpha = STYLEALPHA_InvSrc;
 		}
 	}
-	if ((gltexture && gltexture->tex->GetTranslucency()) || (RenderStyle.Flags & STYLEF_RedIsAlpha))
+	if ((gltexture && gltexture->tex->GetTranslucency()) || (RenderStyle.Flags & STYLEF_RedIsAlpha) || (modelframe && thing->RenderStyle != DefaultRenderStyle()))
 	{
 		if (hw_styleflags == STYLEHW_Solid)
 		{
@@ -780,12 +845,29 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		}
 	}
 
+	// for sprite shadow, use a translucent stencil renderstyle
+	if (isSpriteShadow)
+	{
+		RenderStyle = STYLE_Stencil;
+		ThingColor = MAKEARGB(255, 0, 0, 0);
+		trans *= 0.5f;
+		hw_styleflags = STYLEHW_NoAlphaTest;
+	}
+
 	if (trans == 0.0f) return;
 
 	// end of light calculation
 
 	actor = thing;
-	index = di->spriteindex++;	// this assumes that sprites from the same sector are added sequentially, i.e. by the same thread.
+	index = thing->SpawnOrder;
+
+	// sprite shadows should have a fixed index of -1 (ensuring they're drawn behind particles which have index 0)
+	// sorting should be irrelevant since they're always translucent
+	if (isSpriteShadow)
+	{
+		index = -1;
+	}
+
 	particle = nullptr;
 
 	const bool drawWithXYBillboard = (!(actor->renderflags & RF_FORCEYBILLBOARD)
@@ -877,7 +959,16 @@ void GLSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	}
 
 	trans=particle->alpha;
-	RenderStyle = STYLE_Translucent;
+	
+	if(particle->style != STYLE_None)
+	{
+		RenderStyle = particle->style;
+	}
+	else
+	{
+		RenderStyle = STYLE_Translucent;
+	}
+
 	OverrideShader = 0;
 
 	ThingColor = particle->color;
@@ -887,18 +978,23 @@ void GLSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	gltexture=nullptr;
 	topclip = LARGE_VALUE;
 	bottomclip = -LARGE_VALUE;
+	index = 0;
+
+	bool has_texture = !particle->texture.isNull();
+
+	int particle_style = has_texture ? 2 : gl_particles_style; // Treat custom texture the same as smooth particles
 
 	// [BB] Load the texture for round or smooth particles
-	if (gl_particles_style)
+	if (particle_style)
 	{
 		FTextureID lump;
-		if (gl_particles_style == 1)
+		if (particle_style == 1)
 		{
 			lump = TexMan.glPart2;
 		}
-		else if (gl_particles_style == 2)
+		else if (particle_style == 2)
 		{
-			lump = TexMan.glPart;
+			lump = has_texture ? particle -> texture : TexMan.glPart;
 		}
 		else lump.SetNull();
 
@@ -917,7 +1013,7 @@ void GLSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	}
 
 	double timefrac = r_viewpoint.TicFrac;
-	if (paused || bglobal.freeze || (level.flags2 & LEVEL2_FROZEN))
+	if (paused || level.isFrozen())
 		timefrac = 0.;
 	float xvf = (particle->Vel.X) * timefrac;
 	float yvf = (particle->Vel.Y) * timefrac;
@@ -926,10 +1022,16 @@ void GLSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	x = float(particle->Pos.X) + xvf;
 	y = float(particle->Pos.Y) + yvf;
 	z = float(particle->Pos.Z) + zvf;
-	
+
+	if(particle->doRoll)
+	{
+		float rvf = (particle->RollVel) * timefrac;
+		Angles.Roll = particle->Roll + rvf;
+	}
+
 	float factor;
-	if (gl_particles_style == 1) factor = 1.3f / 7.f;
-	else if (gl_particles_style == 2) factor = 2.5f / 7.f;
+	if (particle_style == 1) factor = 1.3f / 7.f;
+	else if (particle_style == 2) factor = 2.5f / 7.f;
 	else factor = 1 / 7.f;
 	float scalefac=particle->size * factor;
 
@@ -943,14 +1045,14 @@ void GLSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	z1=z-scalefac;
 	z2=z+scalefac;
 
-	depth = FloatToFixed((x - r_viewpoint.Pos.X) * r_viewpoint.TanCos + (y - r_viewpoint.Pos.Y) * r_viewpoint.TanSin);
+	depth = (float)((x - r_viewpoint.Pos.X) * r_viewpoint.TanCos + (y - r_viewpoint.Pos.Y) * r_viewpoint.TanSin);
 
 	actor=nullptr;
 	this->particle=particle;
 	fullbright = !!particle->bright;
 	
 	// [BB] Translucent particles have to be rendered without the alpha test.
-	if (gl_particles_style != 2 && trans>=1.0f-FLT_EPSILON) hw_styleflags = STYLEHW_Solid;
+	if (particle_style != 2 && trans>=1.0f-FLT_EPSILON) hw_styleflags = STYLEHW_Solid;
 	else hw_styleflags = STYLEHW_NoAlphaTest;
 
 	if (sector->e->XFloor.lightlist.Size() != 0 && di->FixedColormap == CM_DEFAULT && !fullbright)
@@ -1011,7 +1113,14 @@ void HWDrawInfo::ProcessActorsInPortal(FLinePortalSpan *glport, area_t in_area)
 					th->Prev += newpos - savedpos;
 
 					GLSprite spr;
-					spr.Process(this, th, hw_FakeFlat(th->Sector, &fakesector, in_area, false), in_area, 2);
+
+					// [Nash] draw sprite shadow
+					if (R_ShouldDrawSpriteShadow(th))
+					{
+						spr.Process(this, th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), in_area, 2, true);
+					}
+
+					spr.Process(this, th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), in_area, 2);
 					th->Angles.Yaw = savedangle;
 					th->SetXYZ(savedpos);
 					th->Prev -= newpos - savedpos;

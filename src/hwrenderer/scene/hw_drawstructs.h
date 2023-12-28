@@ -358,7 +358,7 @@ public:
 
 	int translation;
 	int index;
-	int depth;
+	float depth;
 
 	float topclip;
 	float bottomclip;
@@ -369,6 +369,7 @@ public:
 	float vt,vb;
 	float x1,y1,z1;
 	float x2,y2,z2;
+	int dynlightindex;
 
 	FMaterial *gltexture;
 	float trans;
@@ -377,7 +378,6 @@ public:
 	TArray<lightlist_t> *lightlist;
 	DRotator Angles;
 
-	int dynlightindex;
 
 	void SplitSprite(HWDrawInfo *di, sector_t * frontsector, bool translucent);
 	void PerformSpriteClipAdjustment(AActor *thing, const DVector2 &thingpos, float spriteheight);
@@ -387,7 +387,7 @@ public:
 
 	GLSprite() {}
 	void PutSprite(HWDrawInfo *di, bool translucent);
-	void Process(HWDrawInfo *di, AActor* thing,sector_t * sector, area_t in_area, int thruportal = false);
+	void Process(HWDrawInfo *di, AActor* thing,sector_t * sector, area_t in_area, int thruportal = false, bool isSpriteShadow = false);
 	void ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *sector);//, int shade, int fakeside)
 
 	GLSprite(const GLSprite &other)

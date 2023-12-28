@@ -72,6 +72,8 @@ void FDrawInfo::DrawSprite(GLSprite *sprite, int pass)
 {
 	if (pass == GLPASS_DECALS || pass == GLPASS_LIGHTSONLY) return;
 
+	auto RenderStyle = sprite->RenderStyle;
+
 	bool additivefog = false;
 	bool foglayer = false;
 	int rel = sprite->fullbright? 0 : getExtraLight();
@@ -95,7 +97,7 @@ void FDrawInfo::DrawSprite(GLSprite *sprite, int pass)
 		{
 			gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
 		}
-		else if (!gltexture || !gltexture->tex->GetTranslucency()) gl_RenderState.AlphaFunc(GL_GEQUAL, gl_mask_sprite_threshold);
+		else if (!sprite->gltexture || !sprite->gltexture->tex->GetTranslucency()) gl_RenderState.AlphaFunc(GL_GEQUAL, gl_mask_sprite_threshold);
 		else gl_RenderState.AlphaFunc(GL_GREATER, 0.f);
 
 		if (RenderStyle.BlendOp == STYLEOP_Shadow)
@@ -310,26 +312,6 @@ void FDrawInfo::DrawSprite(GLSprite *sprite, int pass)
 //==========================================================================
 void FDrawInfo::AddSprite(GLSprite *sprite, bool translucent)
 {
-	if (modelframe && !modelframe->isVoxel && !(modelframe->flags & MDL_NOPERPIXELLIGHTING) && !gl.legacyMode)
-	{
-		if (RenderStyle.BlendOp != STYLEOP_Shadow)
-		{
-			if (gl_lights && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !fullbright)
-			{
-				if (!particle)
-				{
-					dynlightindex = gl_SetDynModelLight(gl_light_sprites ? actor : nullptr, -1);
-				}
-				else
-				{
-					DPrintf(DMSG_SPAMMY, "BHUAAAAAAAAAAAAAAAA!!!!");
-				}
-			}
-		}
-	}
-	else
-		dynlightindex = -1;
-
 	int list;
 	// [BB] Allow models to be drawn in the GLDL_TRANSLUCENT pass.
 	if (translucent || sprite->actor == nullptr || (!sprite->modelframe && (sprite->actor->renderflags & RF_SPRITETYPEMASK) != RF_WALLSPRITE))
@@ -340,6 +322,16 @@ void FDrawInfo::AddSprite(GLSprite *sprite, bool translucent)
 	{
 		list = GLDL_MODELS;
 	}
+	
+	// That's a lot of checks...
+	if (sprite->modelframe && sprite->RenderStyle.BlendOp != STYLEOP_Shadow && gl_lights && gl_light_sprites && GLRenderer->mLightCount && mDrawer->FixedColormap == CM_DEFAULT && !sprite->fullbright && !gl.legacyMode)
+	{
+		//hw_GetDynModelLight(sprite->actor, lightdata);
+		//sprite->dynlightindex = GLRenderer->mLights->UploadLights(lightdata);
+	}
+	else
+		sprite->dynlightindex = -1;
+	
 	auto newsprt = gl_drawinfo->drawlists[list].NewSprite();
 	*newsprt = *sprite;
 }
