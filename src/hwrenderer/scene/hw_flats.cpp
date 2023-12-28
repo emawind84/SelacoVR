@@ -47,6 +47,7 @@
 #ifdef _DEBUG
 CVAR(Int, gl_breaksec, -1, 0)
 #endif
+
 //==========================================================================
 //
 // Sets the texture matrix according to the plane's texture positioning
@@ -102,11 +103,11 @@ bool GLFlat::SetupSubsectorLights(int pass, subsector_t * sub)
 
 	lightdata.Clear();
 	FLightNode * node = sub->lighthead;
-	while (node)
+	while (node && (!gl_light_flat_max_lights || iter_dlightf < gl_light_flat_max_lights))
 	{
-		ADynamicLight * light = node->lightsource;
+		FDynamicLight * light = node->lightsource;
 
-		if (light->flags2&MF2_DORMANT)
+		if (!light->IsActive() || gl_IsDistanceCulled(light))
 		{
 			node = node->nextLight;
 			continue;
@@ -115,7 +116,7 @@ bool GLFlat::SetupSubsectorLights(int pass, subsector_t * sub)
 
 		// we must do the side check here because gl_GetLight needs the correct plane orientation
 		// which we don't have for Legacy-style 3D-floors
-		double planeh = plane.plane.ZatPoint(light);
+		double planeh = plane.plane.ZatPoint(light->Pos);
 		if ((planeh<light->Z() && ceiling) || (planeh>light->Z() && !ceiling))
 		{
 			node = node->nextLight;
@@ -210,11 +211,13 @@ void GLFlat::SetFrom3DFloor(F3DFloor *rover, bool top, bool underside)
 	{
 		Colormap.LightColor = light->extra_colormap.FadeColor;
 		FlatColor = 0xffffffff;
+		AddColor = 0;
 	}
 	else
 	{
 		Colormap.CopyFrom3DLight(light);
 		FlatColor = *plane.flatcolor;
+		// AddColor = sector->SpecialColors[sector_t::add];
 	}
 
 
@@ -273,6 +276,7 @@ void GLFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector)
 		lightlevel = hw_ClampLight(frontsector->GetFloorLight());
 		Colormap = frontsector->Colormap;
 		FlatColor = frontsector->SpecialColors[sector_t::floor];
+		AddColor = frontsector->AdditiveColors[sector_t::floor];
 		port = frontsector->ValidatePortal(sector_t::floor);
 		if ((stack = (port != NULL)))
 		{
@@ -333,6 +337,7 @@ void GLFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector)
 		lightlevel = hw_ClampLight(frontsector->GetCeilingLight());
 		Colormap = frontsector->Colormap;
 		FlatColor = frontsector->SpecialColors[sector_t::ceiling];
+		AddColor = frontsector->AdditiveColors[sector_t::ceiling];
 		port = frontsector->ValidatePortal(sector_t::ceiling);
 		if ((stack = (port != NULL)))
 		{
