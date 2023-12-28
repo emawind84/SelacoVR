@@ -639,8 +639,8 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		{
 		case RF_FACESPRITE:
 		{
-			float viewvecX = GLRenderer->mViewVector.X;
-			float viewvecY = GLRenderer->mViewVector.Y;
+			float viewvecX = di->mViewVector.X;
+			float viewvecY = di->mViewVector.Y;
 
 			x1 = x - viewvecY*leftfac;
 			x2 = x - viewvecY*rightfac;
