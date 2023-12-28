@@ -21,21 +21,16 @@
 //
 
 #include "gl/system/gl_system.h"
-#include "m_swap.h"
 #include "v_video.h"
-#include "vectors.h"
 #include "w_wad.h"
 #include "m_argv.h"
 #include "gl/system/gl_interface.h"
-#include "gl/system/gl_framebuffer.h"
 #include "gl/system/gl_debug.h"
-#include "gl/system/gl_cvars.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_postprocessstate.h"
 #include "gl/renderer/gl_renderbuffers.h"
 #include "gl/shaders/gl_postprocessshader.h"
 #include "gl/shaders/gl_postprocessshaderinstance.h"
-#include "textures/textures.h"
 #include "textures/bitmap.h"
 
 CVAR(Bool, gl_custompost, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)

@@ -45,9 +45,10 @@
 #include "c_dispatch.h"
 #include "v_video.h"
 #include "m_fixed.h"
-#include "textures/textures.h"
-#include "v_palette.h"
 #include "g_levellocals.h"
+#include "textures/warpbuffer.h"
+#include "hwrenderer/textures/hw_material.h"
+#include "hwrenderer/textures/hw_ihwtexture.h"
 
 FTexture *CreateBrightmapTexture(FTexture*);
 
@@ -190,6 +191,7 @@ FTexture::FTexture (const char *name, int lumpnum)
 	bDisableFullbright = false;
 	bSkybox = false;
 	bNoCompress = false;
+	bNoExpand = false;
 	bTranslucent = -1;
 
 
@@ -216,6 +218,16 @@ FTexture::~FTexture ()
 	if (link == this) Wads.SetLinkedTexture(SourceLump, nullptr);
 	if (areas != nullptr) delete[] areas;
 	areas = nullptr;
+
+	for (int i = 0; i < 2; i++)
+	{
+		if (Material[i] != nullptr) delete Material[i];
+		Material[i] = nullptr;
+
+		if (SystemTexture[i] != nullptr) delete SystemTexture[i];
+		SystemTexture[i] = nullptr;
+	}
+
 }
 
 void FTexture::Unload()
@@ -892,7 +904,7 @@ bool FTexture::UseBasePalette()
 	return true; 
 }
 
-FTexture *FTexture::GetRedirect(bool wantwarped)
+FTexture *FTexture::GetRedirect()
 {
 	return this;
 }
@@ -1080,7 +1092,8 @@ void FTexture::CreateDefaultBrightmap()
 		// Check for brightmaps
 		if (UseBasePalette() && TexMan.HasGlobalBrightmap &&
 			UseType != ETextureType::Decal && UseType != ETextureType::MiscPatch && UseType != ETextureType::FontChar &&
-			Brightmap == NULL && bWarped == 0
+			Brightmap == NULL && bWarped == 0 &&
+			GetPixels(DefaultRenderStyle())
 			)
 		{
 			// May have one - let's check when we use this texture
@@ -1354,7 +1367,7 @@ bool FTexture::ProcessData(unsigned char * buffer, int w, int h, bool ispatch)
 
 unsigned char * FTexture::CreateTexBuffer(int translation, int & w, int & h, int flags)
 {
-	unsigned char * buffer;
+	unsigned char * buffer = nullptr;
 	int W, H;
 	int isTransparent = -1;
 
@@ -1362,10 +1375,8 @@ unsigned char * FTexture::CreateTexBuffer(int translation, int & w, int & h, int
 	if ((flags & CTF_CheckHires) && translation != STRange_AlphaTexture)
 	{
 		buffer = LoadHiresTexture(&w, &h);
-		if (buffer)
-		{
+		if (buffer != nullptr)
 			return buffer;
-		}
 	}
 
 	int exx = !!(flags & CTF_Expand);
@@ -1422,11 +1433,25 @@ unsigned char * FTexture::CreateTexBuffer(int translation, int & w, int & h, int
 
 	// [BB] The hqnx upsampling (not the scaleN one) destroys partial transparency, don't upsamle textures using it.
 	// [BB] Potentially upsample the buffer.
-	if (flags & CTF_ProcessData)
+	if ((flags & CTF_MaybeWarped) && bWarped && w*h <= 256 * 256)	// do not software-warp larger textures, especially on the old systems that still need this fallback.
 	{
-		buffer = CreateUpsampledTextureBuffer(buffer, W, H, w, h, !!isTransparent);
-		ProcessData(buffer, w, h, false);
+		// need to do software warping
+		FWarpTexture *wt = static_cast<FWarpTexture*>(this);
+		unsigned char *warpbuffer = new unsigned char[w*h * 4];
+		WarpBuffer((uint32_t*)warpbuffer, (const uint32_t*)buffer, w, h, wt->WidthOffsetMultiplier, wt->HeightOffsetMultiplier, screen->FrameTime, wt->Speed, bWarped);
+		delete[] buffer;
+		buffer = warpbuffer;
+		wt->GenTime[0] = screen->FrameTime;
 	}
+	else 
+	{
+		if (flags & CTF_ProcessData) 
+			buffer = CreateUpsampledTextureBuffer(buffer, W, H, w, h, !!isTransparent);
+	}
+
+	if (flags & CTF_ProcessData)
+		ProcessData(buffer, w, h, false);
+
 	return buffer;
 }
 
@@ -1452,6 +1477,21 @@ bool FTexture::GetTranslucency()
 		}
 	}
 	return !!bTranslucent;
+}
+
+//===========================================================================
+// 
+// Sprite adjust has changed.
+// This needs to alter the material's sprite rect.
+//
+//===========================================================================
+
+void FTexture::SetSpriteAdjust()
+{
+	for (auto mat : Material)
+	{
+		if (mat != nullptr) mat->SetSpriteRect();
+	}
 }
 
 //===========================================================================

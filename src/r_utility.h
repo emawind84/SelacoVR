@@ -23,6 +23,7 @@ struct FRenderViewpoint
 	DVector3		CenterEyePos;	// Camera position without view shift
 	DVector3		ActorPos;		// Camera actor's position
 	DRotator		Angles;			// Camera angles
+
 	DVector3		Path[2];		// View path for portal calculations
 	double			Cos;			// cos(Angles.Yaw)
 	double			Sin;			// sin(Angles.Yaw)

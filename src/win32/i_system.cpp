@@ -80,9 +80,7 @@
 #include "v_font.h"
 #include "g_level.h"
 #include "doomstat.h"
-#include "v_palette.h"
 #include "textures/bitmap.h"
-#include "textures/textures.h"
 
 #include "optwin32.h"
 

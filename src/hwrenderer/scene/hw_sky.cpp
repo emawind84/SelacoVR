@@ -20,21 +20,20 @@
 //--------------------------------------------------------------------------
 //
 
-#include "gl/system/gl_system.h"
 #include "a_sharedglobal.h"
-#include "g_level.h"
 #include "r_sky.h"
 #include "r_state.h"
 #include "r_utility.h"
 #include "doomdata.h"
-#include "portal.h"
 #include "g_levellocals.h"
+#include "p_lnspec.h"
+#include "hwrenderer/scene/hw_drawinfo.h"
+#include "hwrenderer/scene/hw_drawstructs.h"
+#include "hwrenderer/scene/hw_portal.h"
+#include "hwrenderer/utility/hw_lighting.h"
+#include "hwrenderer/textures/hw_material.h"
 
-#include "gl/renderer/gl_lightdata.h"
 #include "gl/renderer/gl_renderstate.h"
-#include "gl/scene/gl_drawinfo.h"
-#include "gl/scene/gl_portal.h"
-#include "gl/textures/gl_material.h"
 
 CVAR(Bool,gl_noskyboxes, false, 0)
 CUSTOM_CVAR(Bool, gl_skydome, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
@@ -79,7 +78,7 @@ void GLSkyInfo::init(int sky1, PalEntry FadeColor)
 		if (level.flags&LEVEL_DOUBLESKY)
 		{
 			texture[1] = FMaterial::ValidateTexture(sky1texture, false, true);
-			x_offset[1] = GLRenderer->mSky1Pos;
+			x_offset[1] = hw_sky1pos;
 			doublesky = true;
 		}
 
@@ -89,13 +88,13 @@ void GLSkyInfo::init(int sky1, PalEntry FadeColor)
 			texture[0] = FMaterial::ValidateTexture(sky2texture, false, true);
 			skytexno1 = sky2texture;
 			sky2 = true;
-			x_offset[0] = GLRenderer->mSky2Pos;
+			x_offset[0] = hw_sky2pos;
 		}
 		else if (!doublesky)
 		{
 			texture[0] = FMaterial::ValidateTexture(sky1texture, false, true);
 			skytexno1 = sky1texture;
-			x_offset[0] = GLRenderer->mSky1Pos;
+			x_offset[0] = hw_sky1pos;
 		}
 	}
 	if (level.skyfog > 0)
@@ -114,7 +113,7 @@ void GLSkyInfo::init(int sky1, PalEntry FadeColor)
 //
 //==========================================================================
 
-void GLWall::SkyPlane(sector_t *sector, int plane, bool allowreflect)
+void GLWall::SkyPlane(HWDrawInfo *di, sector_t *sector, int plane, bool allowreflect)
 {
 	int ptype = -1;
 
@@ -132,7 +131,8 @@ void GLWall::SkyPlane(sector_t *sector, int plane, bool allowreflect)
 			gl_RenderState.SetSceneColor(pe);
 		}
 		ptype = PORTALTYPE_SKY;
-		sky = UniqueSkies.Get(&skyinfo);
+		sky = &skyinfo;
+		PutPortal(di, ptype);
 	}
 	else if (sportal != nullptr)
 	{
@@ -147,7 +147,7 @@ void GLWall::SkyPlane(sector_t *sector, int plane, bool allowreflect)
 			{
 				if (sector->PortalBlocksView(plane)) return;
 
-				if (GLPortal::instack[1 - plane]) return;
+				if (screen->instack[1 - plane]) return;
 				ptype = PORTALTYPE_SECTORSTACK;
 				portal = glport;
 			}
@@ -172,7 +172,7 @@ void GLWall::SkyPlane(sector_t *sector, int plane, bool allowreflect)
 	if (ptype != -1
 	&& (ptype > PORTALTYPE_SKYBOX || (gl_skydome && !gl_global_fade))) 
 	{
-		PutPortal(ptype);
+		PutPortal(di, ptype);
 	}
 }
 
@@ -183,7 +183,7 @@ void GLWall::SkyPlane(sector_t *sector, int plane, bool allowreflect)
 //
 //==========================================================================
 
-void GLWall::SkyLine(sector_t *fs, line_t *line)
+void GLWall::SkyLine(HWDrawInfo *di, sector_t *fs, line_t *line)
 {
 	FSectorPortal *secport = line->GetTransferredPortal();
 	GLSkyInfo skyinfo;
@@ -201,13 +201,13 @@ void GLWall::SkyLine(sector_t *fs, line_t *line)
 	{
 		skyinfo.init(fs->sky, Colormap.FadeColor);
 		ptype = PORTALTYPE_SKY;
-		sky = UniqueSkies.Get(&skyinfo);
+		sky = &skyinfo;
 	}
 	ztop[0] = zceil[0];
 	ztop[1] = zceil[1];
 	zbottom[0] = zfloor[0];
 	zbottom[1] = zfloor[1];
-	PutPortal(ptype);
+	PutPortal(di, ptype);
 }
 
 
@@ -217,17 +217,17 @@ void GLWall::SkyLine(sector_t *fs, line_t *line)
 //
 //==========================================================================
 
-void GLWall::SkyNormal(sector_t * fs,vertex_t * v1,vertex_t * v2)
+void GLWall::SkyNormal(HWDrawInfo *di, sector_t * fs,vertex_t * v1,vertex_t * v2)
 {
 	ztop[0]=ztop[1]=32768.0f;
 	zbottom[0]=zceil[0];
 	zbottom[1]=zceil[1];
-	SkyPlane(fs, sector_t::ceiling, true);
+	SkyPlane(di, fs, sector_t::ceiling, true);
 
 	ztop[0]=zfloor[0];
 	ztop[1]=zfloor[1];
 	zbottom[0]=zbottom[1]=-32768.0f;
-	SkyPlane(fs, sector_t::floor, true);
+	SkyPlane(di, fs, sector_t::floor, true);
 }
 
 //==========================================================================
@@ -236,7 +236,7 @@ void GLWall::SkyNormal(sector_t * fs,vertex_t * v1,vertex_t * v2)
 //
 //==========================================================================
 
-void GLWall::SkyTop(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex_t * v2)
+void GLWall::SkyTop(HWDrawInfo *di, seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex_t * v2)
 {
 	if (fs->GetTexture(sector_t::ceiling)==skyflatnum)
 	{
@@ -266,7 +266,7 @@ void GLWall::SkyTop(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex
 						ztop[0]=ztop[1]=32768.0f;
 						zbottom[0]=zbottom[1]= 
 							bs->ceilingplane.ZatPoint(v2) + seg->sidedef->GetTextureYOffset(side_t::mid);
-						SkyPlane(fs, sector_t::ceiling, false);
+						SkyPlane(di, fs, sector_t::ceiling, false);
 						return;
 					}
 				}
@@ -320,7 +320,7 @@ void GLWall::SkyTop(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex
 
 	}
 
-	SkyPlane(fs, sector_t::ceiling, true);
+	SkyPlane(di, fs, sector_t::ceiling, true);
 }
 
 
@@ -330,7 +330,7 @@ void GLWall::SkyTop(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex
 //
 //==========================================================================
 
-void GLWall::SkyBottom(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex_t * v2)
+void GLWall::SkyBottom(HWDrawInfo *di, seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex_t * v2)
 {
 	if (fs->GetTexture(sector_t::floor)==skyflatnum)
 	{
@@ -398,6 +398,6 @@ void GLWall::SkyBottom(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,ver
 		ztop[1] = fs->floorplane.ZatPoint(v2);
 	}
 
-	SkyPlane(fs, sector_t::floor, true);
+	SkyPlane(di, fs, sector_t::floor, true);
 }
 

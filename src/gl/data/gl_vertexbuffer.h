@@ -23,11 +23,15 @@
 #ifndef __VERTEXBUFFER_H
 #define __VERTEXBUFFER_H
 
+#include <atomic>
+#include <thread>
+#include <mutex>
 #include "tarray.h"
-#include "gl/utility/gl_clock.h"
+#include "hwrenderer/utility/hw_clock.h"
 #include "gl/system/gl_interface.h"
 #include "r_data/models/models.h"
 #include "hwrenderer/data/flatvertices.h"
+#include "hwrenderer/scene/hw_skydome.h"
 
 EXTERN_CVAR(Int, gl_buffer_size);
 
@@ -95,7 +99,8 @@ class FFlatVertexBuffer : public FVertexBuffer, public FFlatVertexGenerator
 {
 	FFlatVertex *map;
 	unsigned int mIndex;
-	unsigned int mCurIndex;
+	std::atomic<unsigned int> mCurIndex;
+	std::mutex mBufferMutex;
 	unsigned int mNumReserved;
 
 
@@ -124,17 +129,25 @@ public:
 	{
 		return &map[mCurIndex];
 	}
-	FFlatVertex *Alloc(int num, int *poffset)
+
+	template<class T>
+	FFlatVertex *Alloc(int num, T *poffset)
 	{
+	again:
 		FFlatVertex *p = GetBuffer();
-		*poffset = mCurIndex;
-		mCurIndex += num;
-		if (mCurIndex >= (gl_buffer_size - 500))
+		auto index = mCurIndex.fetch_add(num);
+		*poffset = static_cast<T>(index);
+		if (index + num >= (gl_buffer_size - 500))
 		{
-			DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
-			mCurIndex = mIndex;
+			std::lock_guard<std::mutex> lock(mBufferMutex);
+			if (mCurIndex >= (unsigned)(gl_buffer_size - 500))	// retest condition, in case another thread got here first
+			{
+				DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%u\n", mCurIndex.load());
+				mCurIndex = mIndex;
+			}
+
+			if (index >= (gl_buffer_size - 500)) goto again;
 		}
-		vertexbuffer_curindex = mCurIndex;
 		return p;
 	}
 
@@ -144,9 +157,9 @@ public:
 		unsigned int diff = newofs - mCurIndex;
 		*poffset = mCurIndex;
 		mCurIndex = newofs;
-		if (mCurIndex >= (gl_buffer_size - 500))
+		if (mCurIndex >= (unsigned)(gl_buffer_size - 500))
 		{
-			DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%d\n", mCurIndex);
+			DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mCurIndex=%u\n", mCurIndex.load());
 			mCurIndex = mIndex;
 		}
 		vertexbuffer_curindex = mCurIndex;
@@ -191,73 +204,15 @@ public:
 };
 
 
-struct FSkyVertex
+class FSkyVertexBuffer : public FVertexBuffer, public FSkyDomeCreator
 {
-	float x, y, z, u, v;
-	PalEntry color;
-
-	void Set(float xx, float zz, float yy, float uu=0, float vv=0, PalEntry col=0xffffffff)
-	{
-		x = xx;
-		z = zz;
-		y = yy;
-		u = uu;
-		v = vv;
-		color = col;
-	}
-
-	void SetXYZ(float xx, float yy, float zz, float uu = 0, float vv = 0, PalEntry col = 0xffffffff)
-	{
-		x = xx;
-		y = yy;
-		z = zz;
-		u = uu;
-		v = vv;
-		color = col;
-	}
-
-};
-
-class FSkyVertexBuffer : public FVertexBuffer
-{
-public:
-	static const int SKYHEMI_UPPER = 1;
-	static const int SKYHEMI_LOWER = 2;
-
-	enum
-	{
-		SKYMODE_MAINLAYER = 0,
-		SKYMODE_SECONDLAYER = 1,
-		SKYMODE_FOGLAYER = 2
-	};
-
-private:
-	TArray<FSkyVertex> mVertices;
-	TArray<unsigned int> mPrimStart;
-
-	int mRows, mColumns;
-
-	// indices for sky cubemap faces
-	int mFaceStart[7];
-	int mSideStart;
-
-	void SkyVertex(int r, int c, bool yflip);
-	void CreateSkyHemisphere(int hemi);
-	void CreateDome();
 	void RenderRow(int prim, int row);
 
 public:
 
 	FSkyVertexBuffer();
-	virtual ~FSkyVertexBuffer();
 	void RenderDome(FMaterial *tex, int mode);
 	void BindVBO();
-	int FaceStart(int i)
-	{
-		if (i >= 0 && i < 7) return mFaceStart[i];
-		else return mSideStart;
-	}
-
 };
 
 class FModelVertexBuffer : public FVertexBuffer, public IModelVertexBuffer

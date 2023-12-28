@@ -27,32 +27,25 @@
 
 #include "gl/system/gl_system.h"
 #include "p_local.h"
-#include "vectors.h"
 #include "c_dispatch.h"
 #include "doomstat.h"
 #include "a_sharedglobal.h"
 #include "r_sky.h"
-#include "portal.h"
 #include "p_maputl.h"
 #include "d_player.h"
 #include "g_levellocals.h"
-#include "actorinlines.h"
 
 #include "gl/system/gl_interface.h"
-#include "gl/system/gl_framebuffer.h"
-#include "gl/system/gl_cvars.h"
 #include "gl/renderer/gl_lightdata.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/renderer/gl_quaddrawer.h"
-#include "gl/data/gl_vertexbuffer.h"
-#include "gl/scene/gl_clipper.h"
+#include "hwrenderer/scene/hw_clipper.h"
+#include "hwrenderer/utility/hw_cvars.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/scene/gl_portal.h"
 #include "gl/scene/gl_scenedrawer.h"
-#include "gl/shaders/gl_shader.h"
 #include "gl/stereo3d/scoped_color_mask.h"
-#include "gl/textures/gl_material.h"
 #include "gl/stereo3d/gl_stereo3d.h"
 
 //-----------------------------------------------------------------------------
@@ -81,7 +74,6 @@ int GLPortal::renderdepth;
 int GLPortal::PlaneMirrorMode;
 GLuint GLPortal::QueryObject;
 
-int		 GLPortal::instack[2];
 bool	 GLPortal::inskybox;
 
 UniqueList<GLSkyInfo> UniqueSkies;
@@ -147,7 +139,6 @@ void GLPortal::DrawPortalStencil(int pass)
 
 		for (unsigned int i = 0; i < lines.Size(); i++)
 		{
-			if (gl.buffermethod != BM_DEFERRED) lines[i].MakeVertices(false);
 			mPrimIndices[i * 2] = lines[i].vertindex;
 			mPrimIndices[i * 2 + 1] = lines[i].vertcount;
 		}
@@ -458,7 +449,7 @@ void GLPortal::StartFrame()
 	if (renderdepth==0)
 	{
 		inskybox=false;
-		instack[sector_t::floor]=instack[sector_t::ceiling]=0;
+		screen->instack[sector_t::floor] = screen->instack[sector_t::ceiling] = 0;
 	}
 	renderdepth++;
 }
@@ -759,7 +750,7 @@ void GLSectorStackPortal::DrawContents()
 	GLRenderer->mViewActor = NULL;
 
 	// avoid recursions!
-	if (origin->plane != -1) instack[origin->plane]++;
+	if (origin->plane != -1) screen->instack[origin->plane]++;
 
 	drawer->SetupView(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, r_viewpoint.Angles.Yaw, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 	SaveMapSection();
@@ -778,7 +769,7 @@ void GLSectorStackPortal::DrawContents()
 	drawer->DrawScene(DM_PORTAL);
 	RestoreMapSection();
 
-	if (origin->plane != -1) instack[origin->plane]--;
+	if (origin->plane != -1) screen->instack[origin->plane]--;
 }
 
 //-----------------------------------------------------------------------------
@@ -805,7 +796,7 @@ void GLPlaneMirrorPortal::DrawContents()
 		return;
 	}
 	// A plane mirror needs to flip the portal exclusion logic because inside the mirror, up is down and down is up.
-	std::swap(instack[sector_t::floor], instack[sector_t::ceiling]);
+	std::swap(screen->instack[sector_t::floor], screen->instack[sector_t::ceiling]);
 
 	int old_pm = PlaneMirrorMode;
 
@@ -831,7 +822,7 @@ void GLPlaneMirrorPortal::DrawContents()
 	gl_RenderState.SetClipHeight(0.f, 0.f);
 	PlaneMirrorFlag--;
 	PlaneMirrorMode = old_pm;
-	std::swap(instack[sector_t::floor], instack[sector_t::ceiling]);
+	std::swap(screen->instack[sector_t::floor], screen->instack[sector_t::ceiling]);
 
 	RestoreMapSection();
 }
@@ -1090,7 +1081,7 @@ void GLLineToLinePortal::DrawContents()
 
 void GLLineToLinePortal::RenderAttached()
 {
-	drawer->RenderActorsInPortal(glport);
+	gl_drawinfo->ProcessActorsInPortal(glport, gl_drawinfo->mDrawer->in_area);
 }
 
 //-----------------------------------------------------------------------------
@@ -1214,7 +1205,7 @@ void GLHorizonPortal::DrawContents()
 	gl_RenderState.SetMaterial(gltexture, CLAMP_NONE, 0, -1, false);
 	gl_RenderState.SetObjectColor(origin->specialcolor);
 
-	gl_SetPlaneTextureRotation(sp, gltexture);
+	gl_RenderState.SetPlaneTextureRotation(sp, gltexture);
 	gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
 	gl_RenderState.BlendFunc(GL_ONE,GL_ZERO);
 	gl_RenderState.Apply();
@@ -1266,7 +1257,7 @@ void GLEEHorizonPortal::DrawContents()
 	{
 		GLHorizonInfo horz;
 		horz.plane.GetFromSector(sector, sector_t::ceiling);
-		horz.lightlevel = gl_ClampLight(sector->GetCeilingLight());
+		horz.lightlevel = hw_ClampLight(sector->GetCeilingLight());
 		horz.colormap = sector->Colormap;
 		horz.specialcolor = 0xffffffff;
 		if (portal->mType == PORTS_PLANE)
@@ -1280,7 +1271,7 @@ void GLEEHorizonPortal::DrawContents()
 	{
 		GLHorizonInfo horz;
 		horz.plane.GetFromSector(sector, sector_t::floor);
-		horz.lightlevel = gl_ClampLight(sector->GetFloorLight());
+		horz.lightlevel = hw_ClampLight(sector->GetFloorLight());
 		horz.colormap = sector->Colormap;
 		horz.specialcolor = 0xffffffff;
 		if (portal->mType == PORTS_PLANE)

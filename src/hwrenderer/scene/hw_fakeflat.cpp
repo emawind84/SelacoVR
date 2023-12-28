@@ -30,8 +30,7 @@
 #include "g_levellocals.h"
 #include "a_sharedglobal.h"
 #include "r_sky.h"
-#include "gl/renderer/gl_renderer.h"
-#include "gl/scene/gl_scenedrawer.h"
+#include "hw_fakeflat.h"
 
 static sector_t **fakesectorbuffer;
 
@@ -40,9 +39,8 @@ static sector_t **fakesectorbuffer;
 // Check whether the player can look beyond this line
 //
 //==========================================================================
-CVAR(Bool, gltest_slopeopt, false, 0)
 
-bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsector)
+bool hw_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsector)
 {
 	line_t *linedef = sidedef->linedef;
 	double bs_floorheight1;
@@ -161,7 +159,7 @@ bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsecto
 //
 //==========================================================================
 
-area_t GLSceneDrawer::CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *frontsector, sector_t *backsector)
+area_t hw_CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *frontsector, sector_t *backsector)
 {
 	if (backsector->GetHeightSec() && !frontsector->GetHeightSec())
 	{
@@ -175,8 +173,6 @@ area_t GLSceneDrawer::CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *fronts
 		// allow some tolerance in case slopes are involved
 		if (cz1 <= fz1 + 1. / 100 && cz2 <= fz2 + 1. / 100)
 			return area_below;
-		else
-			return area_normal;
 	}
 	return area_default;
 }
@@ -207,7 +203,7 @@ static sector_t *allocateSector(sector_t *sec)
 //
 //==========================================================================
 
-sector_t * gl_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *localcopy)
+sector_t * hw_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *localcopy)
 {
 	if (!sec->GetHeightSec() || sec->heightsec==sec) 
 	{
@@ -410,7 +406,7 @@ sector_t * gl_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *loca
 }
 
 
-void gl_ClearFakeFlat()
+void hw_ClearFakeFlat()
 {
 	FakeSectorAllocator.FreeAll();
 	fakesectorbuffer = nullptr;

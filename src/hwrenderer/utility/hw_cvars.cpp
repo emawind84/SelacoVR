@@ -24,9 +24,7 @@
 #include "c_cvars.h"
 #include "c_dispatch.h"
 #include "v_video.h"
-#include "gl/system/gl_interface.h"
-#include "gl/system/gl_cvars.h"
-#include "gl/renderer/gl_renderer.h"
+#include "hw_cvars.h"
 #include "menu/menu.h"
 
 
@@ -62,7 +60,7 @@ CUSTOM_CVAR (Float, vid_brightness, 0.05f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 {
 	if (screen != NULL)
 	{
-		screen->SetGamma(Gamma); //Brightness (self);
+		screen->SetGamma();
 	}
 }
 
@@ -70,7 +68,7 @@ CUSTOM_CVAR (Float, vid_contrast, 1.1f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 {
 	if (screen != NULL)
 	{
-		screen->SetGamma(Gamma); //SetContrast (self);
+		screen->SetGamma();
 	}
 }
 
@@ -78,8 +76,58 @@ CUSTOM_CVAR (Float, vid_saturation, 1.2f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG) //Defa
 {
 	if (screen != NULL)
 	{
-		screen->SetGamma(Gamma);
+		screen->SetGamma();
 	}
 }
 
 CVAR(Int, gl_satformula, 1, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
+
+//==========================================================================
+//
+// Texture CVARs
+//
+//==========================================================================
+CUSTOM_CVAR(Float,gl_texture_filter_anisotropic,8.0f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+{
+	screen->TextureFilterChanged();
+}
+
+CCMD(gl_flush)
+{
+	screen->FlushTextures();
+}
+
+CUSTOM_CVAR(Int, gl_texture_filter, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+{
+	if (self < 0 || self > 6) self=4;
+	screen->TextureFilterChanged();
+}
+
+CUSTOM_CVAR(Bool, gl_texture_usehires, true, CVAR_ARCHIVE|CVAR_NOINITCALL)
+{
+	screen->FlushTextures();
+}
+
+CVAR(Bool, gl_precache, false, CVAR_ARCHIVE)
+
+//==========================================================================
+//
+// Sprite CVARs
+//
+//==========================================================================
+
+CVAR(Bool, gl_usecolorblending, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_spritebrightfog, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
+CVAR(Bool, gl_sprite_blend, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
+CVAR(Int, gl_spriteclip, 1, CVAR_ARCHIVE)
+CVAR(Float, gl_sclipthreshold, 10.0, CVAR_ARCHIVE)
+CVAR(Float, gl_sclipfactor, 1.8f, CVAR_ARCHIVE)
+CVAR(Int, gl_particles_style, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // 0 = square, 1 = round, 2 = smooth
+CVAR(Int, gl_billboard_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_billboard_faces_camera, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_billboard_particles, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, gl_enhanced_nv_stealth, 3, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CUSTOM_CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
+{
+	if (self < 0 || self > 8) self = 0;
+}

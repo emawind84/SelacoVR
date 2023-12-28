@@ -75,10 +75,8 @@ The FON2 header is followed by variable length data:
 // HEADER FILES ------------------------------------------------------------
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <ctype.h>
 
 #include "templates.h"
 #include "doomtype.h"
@@ -86,15 +84,10 @@ The FON2 header is followed by variable length data:
 #include "v_font.h"
 #include "v_video.h"
 #include "w_wad.h"
-#include "i_system.h"
 #include "gi.h"
 #include "cmdlib.h"
 #include "sc_man.h"
 #include "hu_stuff.h"
-#include "textures/textures.h"
-#include "r_data/r_translate.h"
-#include "colormatcher.h"
-#include "v_palette.h"
 #include "gstrings.h"
 #include "v_text.h"
 #include "vm.h"

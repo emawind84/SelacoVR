@@ -40,7 +40,6 @@
 #include <dinput.h>
 
 #include "i_input.h"
-#include "i_system.h"
 #include "d_event.h"
 #include "d_gui.h"
 #include "doomstat.h"

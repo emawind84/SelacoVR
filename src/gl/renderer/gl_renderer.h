@@ -11,6 +11,10 @@
 
 #include "gl/system/gl_system.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable:4244)
+#endif
+
 struct particle_t;
 class FCanvasTexture;
 class FFlatVertexBuffer;
@@ -50,37 +54,6 @@ class GLSceneDrawer;
 class SWSceneDrawer;
 
 EXTERN_CVAR(Int, gl_hardware_buffers)
-
-inline float DEG2RAD(float deg)
-{
-	return deg * float(M_PI / 180.0);
-}
-
-inline double DEG2RAD(double deg)
-{
-	return deg * (M_PI / 180.0);
-}
-
-inline float RAD2DEG(float deg)
-{
-	return deg * float(180. / M_PI);
-}
-
-inline double RAD2DEG(double deg)
-{
-	return deg * (180. / M_PI);
-}
-
-enum SectorRenderFlags
-{
-	// This is used to avoid creating too many drawinfos
-	SSRF_RENDERFLOOR = 1,
-	SSRF_RENDERCEILING = 2,
-	SSRF_RENDER3DPLANES = 4,
-	SSRF_RENDERALL = 7,
-	SSRF_PROCESSED = 8,
-	SSRF_SEEN = 16,
-};
 
 struct GL_IRECT
 {
@@ -140,7 +113,6 @@ public:
 	AActor *mViewActor;
 	FShaderManager *mShaderManager;
 	FSamplerManager *mSamplerManager;
-	int gl_spriteindex;
 	unsigned int mFBID;
 	unsigned int mVAOID;
 	int mOldFBID;
@@ -170,13 +142,6 @@ public:
 	FCustomPostProcessShaders *mCustomPostProcessShaders;
 
 	FShadowMap mShadowMap;
-
-	FTextureID glLight;
-	FTextureID glPart2;
-	FTextureID glPart;
-	FTextureID mirrorTexture;
-	
-	float mSky1Pos, mSky2Pos;
 
 	FRotator mAngles;
 	FVector2 mViewVector;
@@ -269,7 +234,6 @@ public:
 	void CopyToBackbuffer(const GL_IRECT *bounds, bool applyGamma);
 	void DrawPresentTexture(const GL_IRECT &box, bool applyGamma);
 	void Flush();
-	void GetSpecialTextures();
 	void Draw2D(F2DDrawer *data);
 	void RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV);
 	void WriteSavePic(player_t *player, FileWriter *file, int width, int height);
@@ -290,19 +254,7 @@ public:
 	static float GetZFar() { return 65536.f; }
 };
 
-enum area_t
-{
-	area_normal,
-	area_below,
-	area_above,
-	area_default
-};
-
-
-// Global functions. Make them members of GLRenderer later?
-bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsector);
-void gl_ClearFakeFlat();
-sector_t * gl_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *localcopy = nullptr);
+#include "hwrenderer/scene/hw_fakeflat.h"
 
 struct TexFilter_s
 {

@@ -29,18 +29,12 @@
 #include "p_local.h"
 #include "a_sharedglobal.h"
 #include "g_levellocals.h"
-#include "r_sky.h"
 #include "p_effect.h"
 #include "po_man.h"
-#include "doomdata.h"
-#include "g_levellocals.h"
 
 #include "gl/renderer/gl_renderer.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "gl/scene/gl_scenedrawer.h"
-#include "gl/scene/gl_portal.h"
-#include "gl/scene/gl_wall.h"
-#include "gl/utility/gl_clock.h"
 
 
 EXTERN_CVAR(Float, r_actorspriteshadowdist)
@@ -108,7 +102,7 @@ void GLSceneDrawer::AddLine (seg_t *seg, bool portalclip)
 	if (portalclip)
 	{
 		int clipres = GLRenderer->mClipPortal->ClipSeg(seg);
-		if (clipres == GLPortal::PClip_InFront) return;
+		if (clipres == PClip_InFront) return;
 	}
 
 	angle_t startAngle = clipper.GetClipAngle(seg->v2);
@@ -142,9 +136,9 @@ void GLSceneDrawer::AddLine (seg_t *seg, bool portalclip)
 
 	if (IsDistanceCulled(seg))
 	{
-		GLWall wall(this);
+		GLWall wall;
 		wall.sub = currentsubsector;
-		wall.Process(seg, seg->frontsector, seg->backsector, true);
+		wall.Process(gl_drawinfo, seg, seg->frontsector, seg->backsector, true);
 		clipper.SafeAddClipRange(startAngle, endAngle);
 		return;
 	}
@@ -172,11 +166,11 @@ void GLSceneDrawer::AddLine (seg_t *seg, bool portalclip)
  		else
 		{
 			// clipping checks are only needed when the backsector is not the same as the front sector
-			if (in_area == area_default) in_area = CheckViewArea(seg->v1, seg->v2, seg->frontsector, seg->backsector);
+			if (in_area == area_default) in_area = hw_CheckViewArea(seg->v1, seg->v2, seg->frontsector, seg->backsector);
 
-			backsector = gl_FakeFlat(seg->backsector, in_area, true);
+			backsector = hw_FakeFlat(seg->backsector, in_area, true);
 
-			if (gl_CheckClip(seg->sidedef, currentsector, backsector))
+			if (hw_CheckClip(seg->sidedef, currentsector, backsector))
 			{
 				clipper.SafeAddClipRange(startAngle, endAngle);
 			}
@@ -198,9 +192,9 @@ void GLSceneDrawer::AddLine (seg_t *seg, bool portalclip)
 		{
 			SetupWall.Clock();
 
-			GLWall wall(this);
+			GLWall wall;
 			wall.sub = currentsubsector;
-			wall.Process(seg, currentsector, backsector);
+			wall.Process(gl_drawinfo, seg, currentsector, backsector);
 			rendered_lines++;
 
 			SetupWall.Unclock();
@@ -395,21 +389,24 @@ void GLSceneDrawer::RenderThings(subsector_t * sub, sector_t * sector)
 				continue;
 			}
 		}
-
-		GLSprite sprite(this);
-
-		// [Nash] draw sprite shadow
-		if (R_ShouldDrawSpriteShadow(thing))
+		// If this thing is in a map section that's not in view it can't possibly be visible
+		if (CurrentMapSections[thing->subsector->mapsection])
 		{
-			double dist = (thing->Pos() - r_viewpoint.Pos).LengthSquared();
-			double check = r_actorspriteshadowdist;
-			if (dist <= check * check)
-			{
-				sprite.Process(thing, sector, false, true);
-			}
-		}
+			GLSprite sprite;
 
-		sprite.Process(thing, sector, false);
+			// [Nash] draw sprite shadow
+			if (R_ShouldDrawSpriteShadow(thing))
+			{
+				double dist = (thing->Pos() - r_viewpoint.Pos).LengthSquared();
+				double check = r_actorspriteshadowdist;
+				if (dist <= check * check)
+				{
+					sprite.Process(gl_drawinfo, thing, sector, in_area, false, true);
+				}
+			}
+
+			sprite.Process(gl_drawinfo, thing, sector, in_area, false);
+		}
 	}
 	
 	for (msecnode_t *node = sec->sectorportal_thinglist; node; node = node->m_snext)
@@ -426,20 +423,20 @@ void GLSceneDrawer::RenderThings(subsector_t * sub, sector_t * sector)
 			}
 		}
 
-		GLSprite sprite(this);
+		GLSprite sprite;
 
-	// [Nash] draw sprite shadow
-	if (R_ShouldDrawSpriteShadow(thing))
-	{
-		double dist = (thing->Pos() - r_viewpoint.Pos).LengthSquared();
-		double check = r_actorspriteshadowdist;
-		if (dist <= check * check)
+		// [Nash] draw sprite shadow
+		if (R_ShouldDrawSpriteShadow(thing))
 		{
-			sprite.Process(thing, sector, true, true);
+			double dist = (thing->Pos() - r_viewpoint.Pos).LengthSquared();
+			double check = r_actorspriteshadowdist;
+			if (dist <= check * check)
+			{
+				sprite.Process(gl_drawinfo, thing, sector, gl_drawinfo->mDrawer->in_area, true, true);
+			}
 		}
-	}
 
-		sprite.Process(thing, sector, true);
+		sprite.Process(gl_drawinfo, thing, sector, gl_drawinfo->mDrawer->in_area, true);
 	}
 	SetupSprite.Unclock();
 }
@@ -483,12 +480,12 @@ void GLSceneDrawer::DoSubsector(subsector_t * sub)
 	}
 	if (clipper.IsBlocked()) return;	// if we are inside a stacked sector portal which hasn't unclipped anything yet.
 
-	fakesector=gl_FakeFlat(sector, in_area, false);
+	fakesector=hw_FakeFlat(sector, in_area, false);
 
 	if (GLRenderer->mClipPortal)
 	{
 		int clipres = GLRenderer->mClipPortal->ClipSubsector(sub);
-		if (clipres == GLPortal::PClip_InFront)
+		if (clipres == PClip_InFront)
 		{
 			line_t *line = GLRenderer->mClipPortal->ClipLine();
 			// The subsector is out of range, but we still have to check lines that lie directly on the boundary and may expose their upper or lower parts.
@@ -510,8 +507,14 @@ void GLSceneDrawer::DoSubsector(subsector_t * sub)
 
 		for (i = ParticlesInSubsec[sub->Index()]; i != NO_PARTICLE; i = Particles[i].snext)
 		{
-			GLSprite sprite(this);
-			sprite.ProcessParticle(&Particles[i], fakesector);
+			if (GLRenderer->mClipPortal)
+			{
+				int clipres = GLRenderer->mClipPortal->ClipPoint(Particles[i].Pos);
+				if (clipres == PClip_InFront) continue;
+			}
+
+			GLSprite sprite;
+			sprite.ProcessParticle(gl_drawinfo, &Particles[i], fakesector);
 		}
 		SetupSprite.Unclock();
 	}
@@ -550,7 +553,7 @@ void GLSceneDrawer::DoSubsector(subsector_t * sub)
 					sector = sub->render_sector;
 					// the planes of this subsector are faked to belong to another sector
 					// This means we need the heightsec parts and light info of the render sector, not the actual one.
-					fakesector = gl_FakeFlat(sector, in_area, false);
+					fakesector = hw_FakeFlat(sector, in_area, false);
 				}
 
 				uint8_t &srf = gl_drawinfo->sectorrenderflags[sub->render_sector->sectornum];
@@ -559,8 +562,8 @@ void GLSceneDrawer::DoSubsector(subsector_t * sub)
 					srf |= SSRF_PROCESSED;
 
 					SetupFlat.Clock();
-					GLFlat flat(this);
-					flat.ProcessSector(fakesector);
+					GLFlat flat;
+					flat.ProcessSector(gl_drawinfo, fakesector);
 					SetupFlat.Unclock();
 				}
 				// mark subsector as processed - but mark for rendering only if it has an actual area.
