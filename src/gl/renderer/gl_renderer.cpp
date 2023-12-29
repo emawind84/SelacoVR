@@ -71,12 +71,6 @@ EXTERN_CVAR(Float, underwater_fade_scalar)
 CVAR(Bool, gl_scale_viewport, true, CVAR_ARCHIVE);
 extern bool NoInterpolateView;
 
-CVAR(Int, gl_client_wait_timeout_ms, 100, CVAR_ARCHIVE);
-CUSTOM_CVAR(Int, gl_hardware_buffers, 4, CVAR_ARCHIVE)
-{
-    if (self < 0 || self > MAX_HW_BUFFERS) self = MAX_HW_BUFFERS;
-}
-
 //===========================================================================
 // 
 // Renderer interface
@@ -127,30 +121,6 @@ FGLRenderer::FGLRenderer(OpenGLFrameBuffer *fb)
 	mFXAALumaShader = nullptr;
 	mShadowMapShader = nullptr;
 	mCustomPostProcessShaders = nullptr;
-
-	mVBOBuff = new FFlatVertexBuffer*[gl_hardware_buffers];
-	for(int n = 0; n < gl_hardware_buffers; n++)
-	{
-		mVBOBuff[n] = nullptr;
-	}
-
-	mSkyVBOBuff = new FSkyVertexBuffer*[gl_hardware_buffers];
-	for(int n = 0; n < gl_hardware_buffers; n++)
-	{
-		mSkyVBOBuff[n] = nullptr;
-	}
-
-	mLightsBuff = new FLightBuffer*[gl_hardware_buffers];
-	for(int n = 0; n < gl_hardware_buffers; n++)
-	{
-		mLightsBuff[n] = nullptr;
-	}
-
-	syncBuff = new GLsync[gl_hardware_buffers];
-    for(int n = 0; n < gl_hardware_buffers; n++)
-    {
-        syncBuff[n] = 0;
-    }
 }
 
 void FGLRenderer::Initialize(int width, int height)
@@ -193,22 +163,15 @@ void FGLRenderer::Initialize(int width, int height)
 	}
 	else mVAOID = 0;
 
-	for (int n = 0; n < gl_hardware_buffers; n++) {
-		mVBOBuff[n] = new FFlatVertexBuffer(width, height);
-		mSkyVBOBuff[n] = new FSkyVertexBuffer;
-		mLightsBuff[n] = new FLightBuffer;
-	}
-
-	//Set up the VBO pointer to the first buffer
-	NextVtxBuffer();
-	NextSkyBuffer();
-	NextLightBuffer();
-
+	mVBO = new FFlatVertexBuffer(width, height);
+	mSkyVBO = new FSkyVertexBuffer;
+	if (!gl.legacyMode) mLights = new FLightBuffer();
+	else mLights = NULL;
 	gl_RenderState.SetVertexBuffer(mVBO);
 	mFBID = 0;
 	mOldFBID = 0;
 
-	SetupLevel(false);
+	SetupLevel();
 	mShaderManager = new FShaderManager;
 	mSamplerManager = new FSamplerManager;
 
@@ -225,28 +188,9 @@ FGLRenderer::~FGLRenderer()
 	if (legacyShaders) delete legacyShaders;
 	if (mShaderManager != NULL) delete mShaderManager;
 	if (mSamplerManager != NULL) delete mSamplerManager;
-
-	for(int n = 0; n < gl_hardware_buffers; n++)
-    {
-        delete mVBOBuff[n];
-    }
-    if (mVBOBuff) delete []mVBOBuff;
-
-    for(int n = 0; n < gl_hardware_buffers; n++)
-    {
-        delete mSkyVBOBuff[n];
-    }
-	if (mSkyVBOBuff) delete []mSkyVBOBuff;
-
-    for(int n = 0; n < gl_hardware_buffers; n++)
-    {
-        delete mLightsBuff[n];
-    }
-	if (mLightsBuff) delete []mLightsBuff;
-
-
-	if (syncBuff) delete []syncBuff;
-
+	if (mVBO != NULL) delete mVBO;
+	if (mSkyVBO != NULL) delete mSkyVBO;
+	if (mLights != NULL) delete mLights;
 	if (mFBID != 0) glDeleteFramebuffers(1, &mFBID);
 	if (mVAOID != 0)
 	{
@@ -403,20 +347,9 @@ void FGLRenderer::ResetSWScene()
 	swdrawer = nullptr;
 }
 
-void FGLRenderer::SetupLevel(bool resetBufferIndices)
+void FGLRenderer::SetupLevel()
 {
-	if (resetBufferIndices) {
-		VtxBuff = 0;
-		NextVtxBuffer();
-		SkyBuff = 0;
-		NextSkyBuffer();
-		LightBuff = 0;
-		NextLightBuffer();
-	}
-
-	for (int n = 0; n < gl_hardware_buffers; n++) {
-		mVBOBuff[n]->CreateVBO();
-	}
+	mVBO->CreateVBO();
 }
 
 void FGLRenderer::Begin2D()
@@ -937,49 +870,4 @@ void FGLRenderer::Draw2D(F2DDrawer *drawer)
 	gl_RenderState.ResetColor();
 	gl_RenderState.Apply();
 	delete vb;
-}
-
-void FGLRenderer::GPUDropSync()
-{
-    if(gl_hardware_buffers > 1)
-    {
-        if (syncBuff[VtxBuff] != NULL)
-        {
-            glDeleteSync(syncBuff[VtxBuff]);
-        }
-
-        syncBuff[VtxBuff] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    }
-}
-
-double GetTimeInMilliSeconds()
-{
-	struct timespec now;
-	clock_gettime( CLOCK_MONOTONIC, &now );
-	return ( now.tv_sec * 1e9 + now.tv_nsec ) * (double)(1e-6);
-}
-
-void FGLRenderer::GPUWaitSync()
-{
-    if(gl_hardware_buffers > 1)
-    {
-        if( syncBuff[VtxBuff] )
-        {
-			GLenum status = glClientWaitSync(syncBuff[VtxBuff], GL_SYNC_FLUSH_COMMANDS_BIT,
-											 1000 * 1000 *
-											 gl_client_wait_timeout_ms);
-
-			if (status != GL_ALREADY_SIGNALED && status != GL_CONDITION_SATISFIED) {
-				if (status == GL_TIMEOUT_EXPIRED) {
-					double time = GetTimeInMilliSeconds();
-					Printf("Error on glClientWaitSync: BUFFER: %d   TIMEOUT_MS: %d    EXPIRED_TIME (ms): %.3f\n", VtxBuff, (int)gl_client_wait_timeout_ms, time);
-				} else {
-					Printf("Error on glClientWaitSync: %X\n", status);
-				}
-			}
-
-            glDeleteSync(syncBuff[VtxBuff]);
-            syncBuff[VtxBuff] = NULL;
-        }
-	}
 }

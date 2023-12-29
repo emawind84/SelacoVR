@@ -51,6 +51,7 @@
 #include "hwrenderer/utility/hw_lighting.h"
 #include "hwrenderer/textures/hw_material.h"
 
+#include "gl/stereo3d/gl_stereo3d.h"
 #include "gl/scene/gl_portal.h"
 
 extern TArray<spritedef_t> sprites;

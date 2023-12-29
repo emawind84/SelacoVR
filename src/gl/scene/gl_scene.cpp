@@ -62,7 +62,7 @@
 //
 // CVARs
 //
-//==========================================================================
+//===========NextLightBuffer===============================================================
 CVAR(Bool, gl_texture, true, 0)
 CVAR(Bool, gl_no_skyclear, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Float, gl_mask_threshold, 0.5f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)

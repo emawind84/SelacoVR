@@ -42,12 +42,7 @@
 #include "gl_debug.h"
 #include "r_videoscale.h"
 
-#ifdef __MOBILE__
-#include "gl/shaders/gl_shader.h"
-#endif
-
 EXTERN_CVAR (Bool, vid_vsync)
-EXTERN_CVAR (Int, gl_hardware_buffers)
 
 CVAR(Bool, gl_aalines, false, CVAR_ARCHIVE)
 
@@ -70,8 +65,8 @@ CUSTOM_CVAR(Int, vid_hwgamma, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITC
 //
 //==========================================================================
 
-OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen) :
-	Super(hMonitor, width, height, bits, refreshHz, fullscreen, false)
+OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int bits, int refreshHz, bool fullscreen) : 
+	Super(hMonitor, width, height, bits, refreshHz, fullscreen, false) 
 {
 	// SetVSync needs to be at the very top to workaround a bug in Nvidia's OpenGL driver.
 	// If wglSwapIntervalEXT is called after glBindFramebuffer in a frame the setting is not changed!
@@ -185,10 +180,7 @@ void OpenGLFrameBuffer::Update()
 		Width = clientWidth;
 		Height = clientHeight;
 		V_OutputResized(Width, Height);
-
-		for (int n = 0; n < gl_hardware_buffers; n++) {
-			GLRenderer->mVBOBuff[n]->OutputResized(Width, Height);
-		}
+		GLRenderer->mVBO->OutputResized(Width, Height);
 	}
 
 	GLRenderer->SetOutputViewport(nullptr);
@@ -287,32 +279,15 @@ uint32_t OpenGLFrameBuffer::GetCaps()
 //==========================================================================
 
 CVAR(Bool, gl_finishbeforeswap, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
-CVAR(Bool, gl_finish, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
-CVAR(Bool, gl_sync, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 
 void OpenGLFrameBuffer::Swap()
 {
 	bool swapbefore = gl_finishbeforeswap && camtexcount == 0;
 	Finish.Reset();
 	Finish.Clock();
-
-	if (gl_sync) {
-		GLRenderer->GPUDropSync();
-	}
-	else if (gl_finish && swapbefore)
-    {
-        glFinish(); // Don't appear to need this on the Quest 2
-    }
-
-    GLRenderer->NextVtxBuffer();
-    GLRenderer->NextSkyBuffer();
-	GLRenderer->NextLightBuffer();
-    GLRenderer->GPUWaitSync();
-
-	if (gl_finish && !swapbefore) glFinish();
-
-    gl_RenderState.SetVertexBuffer(NULL);
-
+	if (swapbefore) glFinish();
+	SwapBuffers();
+	if (!swapbefore) glFinish();
 	Finish.Unclock();
 	camtexcount = 0;
 	FHardwareTexture::UnbindAll();
@@ -453,7 +428,7 @@ void OpenGLFrameBuffer::InitForLevel()
 {
 	if (GLRenderer != NULL)
 	{
-		GLRenderer->SetupLevel(true);
+		GLRenderer->SetupLevel();
 	}
 }
 

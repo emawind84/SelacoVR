@@ -78,7 +78,6 @@ EXTERN_CVAR (Int, vid_renderer)
 EXTERN_CVAR (Int, vid_maxfps)
 EXTERN_CVAR (Int, vid_refreshrate)
 EXTERN_CVAR (Bool, cl_capfps)
-EXTERN_CVAR (Int, gl_hardware_buffers)
 
 
 DFrameBuffer *CreateGLSWFrameBuffer(int width, int height, bool bgra, bool fullscreen);
@@ -158,8 +157,7 @@ DFrameBuffer *NoSDLGLVideo::CreateFrameBuffer (int width, int height, bool bgra,
 	
 	SystemFrameBuffer *fb;
 
-    Printf("HW buffers = %d\n", (int)gl_hardware_buffers);
-    fb = new OpenGLFrameBuffer(0, width, height, 32, TBXR_GetRefresh(), true);
+	fb = new OpenGLFrameBuffer(0, width, height, 32, TBXR_GetRefresh(), true);
 
 	retry = 0;
 	return fb;

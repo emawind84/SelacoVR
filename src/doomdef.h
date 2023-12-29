@@ -552,6 +552,4 @@ enum
 
 #define BLINKTHRESHOLD (4*32)
 
-#define MAX_HW_BUFFERS 10
-
 #endif	// __DOOMDEF_H__

@@ -9,8 +9,6 @@
 #include "gl/dynlights/gl_shadowmap.h"
 #include <functional>
 
-#include "gl/system/gl_system.h"
-
 #ifdef _MSC_VER
 #pragma warning(disable:4244)
 #endif
@@ -52,8 +50,6 @@ class FShadowMapShader;
 class FCustomPostProcessShaders;
 class GLSceneDrawer;
 class SWSceneDrawer;
-
-EXTERN_CVAR(Int, gl_hardware_buffers)
 
 struct GL_IRECT
 {
@@ -146,50 +142,8 @@ public:
 	FRotator mAngles;
 	FVector2 mViewVector;
 
-	int LightBuff = 0;
-	int SkyBuff = 0;
-	int VtxBuff = 0;
-
-	FFlatVertexBuffer 	**mVBOBuff;
-	FSkyVertexBuffer 	**mSkyVBOBuff;
-	FLightBuffer 		**mLightsBuff;
-
-    // Used instead of GLsync
-    GLsync *syncBuff;
-
-    void GPUDropSync();
-    void GPUWaitSync();
-
-    void NextVtxBuffer()
-    {
-        mVBO = mVBOBuff[VtxBuff];
-        if (gl_hardware_buffers > 1) {
-			VtxBuff++;
-			VtxBuff %= (int)gl_hardware_buffers;
-		}
-    }
-
-    void NextSkyBuffer()
-    {
-        mSkyVBO = mSkyVBOBuff[SkyBuff];
-		if (gl_hardware_buffers > 1) {
-			SkyBuff++;
-			SkyBuff %= (int)gl_hardware_buffers;
-		}
-    }
-
-    void NextLightBuffer()
-	{
-		mLights = mLightsBuff[LightBuff];
-		if (gl_hardware_buffers > 1) {
-			LightBuff++;
-			LightBuff %= (int)gl_hardware_buffers;
-		}
-	}
-
 	FFlatVertexBuffer *mVBO;
 	FSkyVertexBuffer *mSkyVBO;
-
 	FLightBuffer *mLights;
 	SWSceneDrawer *swdrawer = nullptr;
 	LegacyShaderContainer *legacyShaders = nullptr;
@@ -216,7 +170,7 @@ public:
 	void ClearBorders();
 
 	void FlushTextures();
-	void SetupLevel(bool resetBufferIndices);
+	void SetupLevel();
 	void ResetSWScene();
 
 	void RenderScreenQuad();

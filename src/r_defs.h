@@ -1096,14 +1096,11 @@ public:
 	};
 
 	int				vboindex[4];	// VBO indices of the 4 planes this sector uses during rendering
-    double			_vboheight[MAX_HW_BUFFERS][2];	// Last calculated height for the 2 planes of this actual sector
+	double			vboheight[2];	// Last calculated height for the 2 planes of this actual sector
 	int				vbocount[2];	// Total count of vertices belonging to this sector's planes
 
 	float GetReflect(int pos) { return gl_plane_reflection_i? reflect[pos] : 0; }
-	bool VBOHeightcheck(int buffer,int pos) const { return _vboheight[buffer][pos] == GetPlaneTexZ(pos); }
-	#define VBOHeightcheck(X) VBOHeightcheck(GLRenderer->VtxBuff,X)
-	#define vboheight _vboheight[GLRenderer->VtxBuff]
-
+	bool VBOHeightcheck(int pos) const { return vboheight[pos] == GetPlaneTexZ(pos); }
 	FSectorPortalGroup *GetPortalGroup(int plane) { return portals[plane]; }
 
 	enum
