@@ -106,8 +106,7 @@ FVector2 BobWeapon(WeaponPosition &weap, DPSprite *psp)
 	if (psp->firstTic)
 	{ // Can't interpolate the first tic.
 		psp->firstTic = false;
-		psp->oldx = psp->x;
-		psp->oldy = psp->y;
+		psp->ResetInterpolation();
 	}
 
 	float sx = float(psp->oldx + (psp->x - psp->oldx) * r_viewpoint.TicFrac);
@@ -145,8 +144,7 @@ WeaponLighting GetWeaponLighting(sector_t *viewsector, const DVector3 &pos, int 
 	}
 	else
 	{
-		sector_t fs;
-		auto fakesec = hw_FakeFlat(viewsector, &fs, in_area, false);
+		auto fakesec = hw_FakeFlat(viewsector, in_area, false);
 
 		// calculate light level for weapon sprites
 		l.lightlevel = hw_ClampLight(fakesec->lightlevel);
@@ -182,9 +180,9 @@ WeaponLighting GetWeaponLighting(sector_t *viewsector, const DVector3 &pos, int 
 			if (level.flags3 & LEVEL3_NOCOLOREDSPRITELIGHTING) l.cm.ClearColor();
 		}
 
-		l.lightlevel = hw_CalcLightLevel(l.lightlevel, getExtraLight(), true);
+		l.lightlevel = hw_CalcLightLevel(l.lightlevel, getExtraLight(), true, 0);
 
-		if (level.lightmode == 8 || l.lightlevel < 92)
+		if (level.lightmode >= 8 || l.lightlevel < 92)
 		{
 			// Korshun: the way based on max possible light level for sector like in software renderer.
 			double min_L = 36.0 / 31.0 - ((l.lightlevel / 255.0) * (63.0 / 31.0)); // Lightlevel in range 0-63
