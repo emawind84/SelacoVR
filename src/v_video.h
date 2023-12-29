@@ -440,6 +440,9 @@ public:
 	virtual void ResetFixedColormap() {}
 	virtual void BeginFrame() {}
 
+	virtual int GetClientWidth() { return 320; };
+	virtual int GetClientHeight() { return 200; };
+
 	// Begin 2D drawing operations.
 	// Returns true if hardware-accelerated 2D has been entered, false if not.
 	void Begin2D(bool copy3d) { isIn2D = true; }
@@ -448,9 +451,6 @@ public:
 	// Returns true if Begin2D has been called and 2D drawing is now active
 	bool HasBegun2D() { return isIn2D; }
 
-
-	virtual int GetClientWidth();
-	virtual int GetClientHeight();
 	
 	// Report a game restart
 	virtual void GameRestart();
