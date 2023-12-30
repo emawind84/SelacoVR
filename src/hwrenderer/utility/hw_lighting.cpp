@@ -95,7 +95,7 @@ int hw_CalcLightLevel(int lightlevel, int rellight, bool weapon, int blendfactor
 
 	if (lightlevel <= 0) return 0;
 
-	bool darklightmode = (level.lightmode & 2) || (level.lightmode == 8 && blendfactor > 0);
+	bool darklightmode = (level.lightmode & 2) || (level.lightmode >= 8 && blendfactor > 0);
 
 	if (darklightmode && lightlevel < 192 && !weapon) 
 	{
@@ -182,7 +182,7 @@ float hw_GetFogDensity(int lightlevel, PalEntry fogcolor, int sectorfogdensity, 
 	float density;
 
 	int lightmode = level.lightmode;
-	if (lightmode == 8 && blendfactor > 0) lightmode = 2;	// The blendfactor feature does not work with software-style lighting.
+	if (lightmode >= 8 && blendfactor > 0) lightmode = 2;	// The blendfactor feature does not work with software-style lighting.
 
 	if (lightmode & 4)
 	{
