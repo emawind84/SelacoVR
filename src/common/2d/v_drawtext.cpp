@@ -327,15 +327,15 @@ void DrawTextCommon(F2DDrawer *drawer, FFont *font, int normalcolor, double x, d
 
 			double chWidth = 0, chHeight = 0;
 			if (chr.tCharW > -1) {
-				const double delta = 0.000015;
+				//const double delta = 0.000015;
 				double tw = pic->GetTexelWidth();
 				double th = pic->GetTexelHeight();
 				// TODO: The sizing calculations here are same for every texture, which means the same for almost every 
 				// character. Cache this in the font somewhere. 
-				parms.srcx = (chr.tCharX / tw);// +(1.0 / tw * 0.35);
-				parms.srcy = (chr.tCharY / th);// +(1.0 / th * 0.35);
-				parms.srcwidth = (chr.tCharW / tw);// -(1.0 / tw * 0.35);
-				parms.srcheight = (chr.tCharH / th);// -(1.0 / th * 0.35);
+				parms.srcx = (chr.tCharX / tw);
+				parms.srcy = (chr.tCharY / th);
+				parms.srcwidth = (chr.tCharW / tw);
+				parms.srcheight = (chr.tCharH / th);
 				chWidth = chr.tCharW / pic->GetScaleX();
 				chHeight = chr.tCharH / pic->GetScaleY();
 			}

@@ -228,7 +228,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	bool indexed = false;	// TODO: Determine this properly
 	bool mipmap = !indexed;
 	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
-	output.tex->BackgroundCreateTexture(cmd, pixels.GetWidth(), pixels.GetHeight(), indexed ? 1 : 4, indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM, pixels.GetPixels(), !indexed);
+	output.tex->BackgroundCreateTexture(cmd, pixels.GetWidth(), pixels.GetHeight(), indexed ? 1 : 4, fmt, pixels.GetPixels(), mipmap);
 	output.createMipmaps = mipmap && !uploadQueue.familySupportsGraphics;
 	
 	// If we need sprite positioning info, generate it here and assign it in the main thread later
