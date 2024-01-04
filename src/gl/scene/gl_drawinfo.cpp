@@ -32,6 +32,7 @@
 #include "r_utility.h"
 #include "doomstat.h"
 #include "g_levellocals.h"
+#include "tarray.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
 
 #include "gl/data/gl_vertexbuffer.h"
@@ -42,6 +43,7 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/stereo3d/scoped_color_mask.h"
 #include "gl/renderer/gl_quaddrawer.h"
+#include "gl/dynlights/gl_lightbuffer.h"
 
 FDrawInfo * gl_drawinfo;
 FDrawInfoList di_list;
@@ -219,6 +221,7 @@ void FDrawInfo::StartScene()
 	}
 	decals[0].Clear();
 	decals[1].Clear();
+	hudsprites.Clear();
 }
 
 //==========================================================================
@@ -520,4 +523,11 @@ GLDecal *FDrawInfo::AddDecal(bool onmirror)
 	decals[onmirror ? 1 : 0].Push(decal);
 	return decal;
 }
+
+int FDrawInfo::UploadLights(FDynLightData &data)
+{
+	return GLRenderer->mLights->UploadLights(data);
+}
+
+
 

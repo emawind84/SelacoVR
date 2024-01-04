@@ -50,6 +50,7 @@
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_lighting.h"
 #include "hwrenderer/textures/hw_material.h"
+#include "hwrenderer/dynlights/hw_dynlightdata.h"
 
 #include "gl/stereo3d/gl_stereo3d.h"
 #include "gl/scene/gl_portal.h"
@@ -222,6 +223,16 @@ bool GLSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v)
 
 inline void GLSprite::PutSprite(HWDrawInfo *di, bool translucent)
 {
+	// That's a lot of checks...
+	if (modelframe && RenderStyle.BlendOp != STYLEOP_Shadow && gl_light_sprites && level.HasDynamicLights && di->FixedColormap == CM_DEFAULT && !fullbright && !(screen->hwcaps & RFL_NO_SHADERS))
+	{
+		hw_GetDynModelLight(actor, lightdata);
+		dynlightindex = di->UploadLights(lightdata);
+	}
+	else
+		dynlightindex = -1;
+
+
 	di->AddSprite(this, translucent);
 }
 
@@ -654,8 +665,8 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		{
 		case RF_FACESPRITE:
 		{
-			float viewvecX = GLRenderer->mViewVector.X;
-			float viewvecY = GLRenderer->mViewVector.Y;
+			float viewvecX = di->mViewVector.X;
+			float viewvecY = di->mViewVector.Y;
 
 			x1 = x - viewvecY*leftfac;
 			x2 = x - viewvecY*rightfac;

@@ -138,7 +138,7 @@ void GLSceneDrawer::Reset3DViewport()
 
 void GLSceneDrawer::Set3DViewport(bool mainview)
 {
-	if (mainview && GLRenderer->mBuffers->Setup(GLRenderer->mScreenViewport.width, GLRenderer->mScreenViewport.height, GLRenderer->mSceneViewport.width, GLRenderer->mSceneViewport.height))
+	if (mainview && GLRenderer->buffersActive)
 	{
 		bool useSSAO = (gl_ssao != 0);
 		GLRenderer->mBuffers->BindSceneFB(useSSAO);
@@ -267,6 +267,8 @@ void GLSceneDrawer::CreateScene()
 	gl_drawinfo->mShadowMap = &GLRenderer->mShadowMap;
 
 	RenderBSPNode (level.HeadNode());
+	gl_drawinfo->PreparePlayerSprites(r_viewpoint.sector, in_area);
+
 	// Process all the sprites on the current portal's back side which touch the portal.
 	if (GLRenderer->mCurrentPortal != NULL) GLRenderer->mCurrentPortal->RenderAttached();
 	Bsp.Unclock();
@@ -278,7 +280,6 @@ void GLSceneDrawer::CreateScene()
 	gl_drawinfo->HandleMissingTextures(in_area);	// Missing upper/lower textures
 	gl_drawinfo->HandleHackedSubsectors();	// open sector hacks for deep water
 	gl_drawinfo->ProcessSectorStacks(in_area);		// merge visplanes of sector stacks
-	SetupWeaponLight();
 	GLRenderer->mLights->Finish();
 	GLRenderer->mVBO->Unmap();
 
@@ -318,15 +319,13 @@ void GLSceneDrawer::RenderScene(int recursion)
 
 	// if we don't have a persistently mapped buffer, we have to process all the dynamic lights up front,
 	// so that we don't have to do repeated map/unmap calls on the buffer.
-	bool haslights = GLRenderer->mLightCount > 0 && FixedColormap == CM_DEFAULT && gl_lights;
-	if (gl.lightmethod == LM_DEFERRED && haslights)
+	if (gl.lightmethod == LM_DEFERRED && level.HasDynamicLights && FixedColormap == CM_DEFAULT)
 	{
 		GLRenderer->mLights->Begin();
 		gl_drawinfo->drawlists[GLDL_PLAINFLATS].DrawFlats(gl_drawinfo, GLPASS_LIGHTSONLY);
 		gl_drawinfo->drawlists[GLDL_MASKEDFLATS].DrawFlats(gl_drawinfo, GLPASS_LIGHTSONLY);
 		gl_drawinfo->drawlists[GLDL_TRANSLUCENTBORDER].Draw(gl_drawinfo, GLPASS_LIGHTSONLY);
 		gl_drawinfo->drawlists[GLDL_TRANSLUCENT].Draw(gl_drawinfo, GLPASS_LIGHTSONLY, true);
-		gl_drawinfo->drawlists[GLDL_MODELS].Draw(gl_drawinfo, GLPASS_LIGHTSONLY);
 		GLRenderer->mLights->Finish();
 	}
 
@@ -337,21 +336,17 @@ void GLSceneDrawer::RenderScene(int recursion)
 
 	int pass;
 
-	if (!haslights || gl.lightmethod == LM_DEFERRED)
-	{
-		pass = GLPASS_PLAIN;
-	}
-	else if (gl.lightmethod == LM_DIRECT)
+	if (!level.HasDynamicLights || !gl.legacyMode)
 	{
 		pass = GLPASS_ALL;
 	}
 	else // GL 2.x legacy mode
 	{
 		// process everything that needs to handle textured dynamic lights.
-		if (haslights) RenderMultipassStuff();
+		if (level.HasDynamicLights) RenderMultipassStuff();
 
 		// The remaining lists which are unaffected by dynamic lights are just processed as normal.
-		pass = GLPASS_PLAIN;
+		pass = GLPASS_ALL;
 	}
 
 	gl_RenderState.EnableTexture(gl_texture);
@@ -528,21 +523,17 @@ void GLSceneDrawer::EndDrawScene(sector_t * viewsector)
 
 	if (!s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
 	{
-		// [BB] HUD models need to be rendered here. Make sure that
-		// DrawPlayerSprites is only called once. Either to draw
-		// HUD models or to draw the weapon sprites.
-		const bool renderHUDModel = IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
+		// [BB] HUD models need to be rendered here. 
+		const bool renderHUDModel = IsHUDModelForPlayerAvailable( players[consoleplayer].camera->player );
 		if ( renderHUDModel )
 		{
 			// [BB] The HUD model should be drawn over everything else already drawn.
 			glClear(GL_DEPTH_BUFFER_BIT);
-			DrawPlayerSprites(viewsector);
+			gl_drawinfo->DrawPlayerSprites(true);
 		}
 	}
 
 	glDisable(GL_STENCIL_TEST);
-
-	GLRenderer->framebuffer->Begin2D(false);
 
 	Reset3DViewport();
 
@@ -564,17 +555,18 @@ void GLSceneDrawer::EndDrawScene(sector_t * viewsector)
 void GLSceneDrawer::DrawEndScene2D(sector_t * viewsector)
 {
 
+	// This should be removed once all 2D stuff is really done through the 2D interface.
+	gl_RenderState.mViewMatrix.loadIdentity();
+	gl_RenderState.mProjectionMatrix.ortho(0, screen->GetWidth(), screen->GetHeight(), 0, -1.0f, 1.0f);
+	gl_RenderState.ApplyMatrices();
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_MULTISAMPLE);
+
 	if (!s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
 	{
-		const bool renderHUDModel = IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
-
-		// [BB] Only draw the sprites if we didn't render a HUD model before.
-		if (renderHUDModel == false)
-		{
-			DrawPlayerSprites(viewsector);
-		}
+ 		gl_drawinfo->DrawPlayerSprites(false);
 	}
-	
+
 	if (gl.legacyMode)
 	{
 		gl_RenderState.DrawColormapOverlay();
@@ -582,7 +574,6 @@ void GLSceneDrawer::DrawEndScene2D(sector_t * viewsector)
 
 	gl_RenderState.SetFixedColormap(CM_DEFAULT);
 	gl_RenderState.SetSoftLightLevel(-1);
-	DrawTargeterSprites();
 	if (!FGLRenderBuffers::IsEnabled())
 	{
 		DrawBlend(viewsector);
@@ -743,7 +734,6 @@ sector_t * GLSceneDrawer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, f
 		FDrawInfo::StartDrawInfo(this);
 		ProcessScene(toscreen, lviewsector);
 		if (mainview && toscreen) EndDrawScene(lviewsector); // do not call this for camera textures.
-		FDrawInfo::EndDrawInfo();
 
 		if (mainview)
 		{
@@ -770,6 +760,7 @@ sector_t * GLSceneDrawer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, f
 				DrawBlend(lviewsector);
 			}
 		}
+		FDrawInfo::EndDrawInfo();
 		GLRenderer->mDrawingScene2D = false;
 		if (!stereo3dMode.IsMono() && FGLRenderBuffers::IsEnabled())
 			GLRenderer->mBuffers->BlitToEyeTexture(eye_ix);

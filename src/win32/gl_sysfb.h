@@ -18,8 +18,8 @@ public:
 	void SwapBuffers();
 	void NewRefreshRate ();
 
-	int GetClientWidth() override;
-	int GetClientHeight() override;
+	int GetClientWidth();
+	int GetClientHeight();
 
 	int GetTrueHeight();
 

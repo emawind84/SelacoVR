@@ -78,6 +78,7 @@
 #include "cmdlib.h"
 #include "v_text.h"
 #include "gi.h"
+#include "a_dynlight.h"
 #include "gameconfigfile.h"
 #include "sbar.h"
 #include "decallib.h"
@@ -809,13 +810,15 @@ void D_Display ()
 		screen->FrameTime = I_msTimeFS();
 		TexMan.UpdateAnimations(screen->FrameTime);
 		R_UpdateSky(screen->FrameTime);
+		screen->BeginFrame();
+		screen->ClearClipRect();
 		switch (gamestate)
 		{
 		case GS_FULLCONSOLE:
-			screen->SetBlendingRect(0,0,0,0);
 			screen->Begin2D(false);
 			C_DrawConsole ();
 			M_Drawer ();
+			screen->End2D();
 			screen->Update ();
 			return;
 
@@ -830,7 +833,16 @@ void D_Display ()
 			// [ZZ] execute event hook that we just started the frame
 			//E_RenderFrame();
 			//
+
+			// Check for the presence of dynamic lights at the start of the frame once.
+			if (gl_lights)
+			{
+				level.HasDynamicLights = !!level.lights;
+			}
+			else level.HasDynamicLights = false;	// lights are off so effectively we have none.
+
 			screen->RenderView(&players[consoleplayer]);
+			screen->Begin2D(false);
 			// returns with 2S mode set.
 			if (automapactive)
 			{
@@ -876,21 +888,18 @@ void D_Display ()
 			break;
 
 		case GS_INTERMISSION:
-			screen->SetBlendingRect(0,0,0,0);
 			screen->Begin2D(false);
 			WI_Drawer ();
 			CT_Drawer ();
 			break;
 
 		case GS_FINALE:
-			screen->SetBlendingRect(0,0,0,0);
 			screen->Begin2D(false);
 			F_Drawer ();
 			CT_Drawer ();
 			break;
 
 		case GS_DEMOSCREEN:
-			screen->SetBlendingRect(0,0,0,0);
 			screen->Begin2D(false);
 			D_PageDrawer ();
 			CT_Drawer ();

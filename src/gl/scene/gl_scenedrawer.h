@@ -9,6 +9,8 @@
 #include "r_utility.h"
 #include "c_cvars.h"
 
+struct HUDSprite;
+
 class GLSceneDrawer
 {
 	fixed_t viewx, viewy;	// since the nodes are still fixed point, keeping the view position  also fixed point for node traversal is faster.
@@ -17,8 +19,6 @@ class GLSceneDrawer
 	sector_t *currentsector;
 
 	TMap<DPSprite*, int> weapondynlightindex;
-
-	void SetupWeaponLight();
 
 	void RenderMultipassStuff();
 	
@@ -68,10 +68,6 @@ public:
 	void RenderView(player_t *player);
 	void WriteSavePic(player_t *player, FileWriter *file, int width, int height);
 
-	void DrawPSprite(player_t * player, DPSprite *psp, float sx, float sy, bool hudModelStep, int OverrideShader, bool alphatexture, double ticfrac);
-	void DrawPlayerSprites(sector_t * viewsector);
-	void DrawTargeterSprites();
-	
 	void InitClipper(angle_t a1, angle_t a2)
 	{
 		clipper.Clear();
