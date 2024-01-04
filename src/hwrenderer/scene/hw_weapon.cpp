@@ -76,13 +76,17 @@ static bool isBright(DPSprite *psp)
 //
 //==========================================================================
 
-static WeaponPosition GetWeaponPosition(player_t *player)
+static WeaponPosition GetWeaponPosition(player_t *player, DPSprite *psp)
 {
 	WeaponPosition w;
 	P_BobWeapon(player, &w.bobx, &w.boby, r_viewpoint.TicFrac);
 
+	DPSprite *readyWeaponPsp = player->FindPSprite(PSP_WEAPON);
+	DPSprite *offhandWeaponPsp = player->FindPSprite(PSP_OFFHANDWEAPON);
+
 	// Interpolate the main weapon layer once so as to be able to add it to other layers.
-	if ((w.weapon = player->FindPSprite(PSP_WEAPON)) != nullptr)
+	w.weapon = psp->GetCaller() == player->ReadyWeapon ? readyWeaponPsp : offhandWeaponPsp;
+	if (w.weapon != nullptr)
 	{
 		if (w.weapon->firstTic)
 		{
@@ -410,7 +414,6 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 	bool brightflash = false;
 	AActor * playermo = players[consoleplayer].camera;
 	player_t * player = playermo->player;
-	const bool hudModelStep = IsHUDModelForPlayerAvailable(player);
 
 	AActor *camera = r_viewpoint.camera;
 
@@ -422,7 +425,6 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 		(r_deathcamera && camera->health <= 0))
 		return;
 
-	WeaponPosition weap = GetWeaponPosition(camera->player);
 	WeaponLighting light = GetWeaponLighting(viewsector, r_viewpoint.Pos, FixedColormap, in_area, camera->Pos());
 
 	// hack alert! Rather than changing everything in the underlying lighting code let's just temporarily change
@@ -430,13 +432,18 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 	int oldlightmode = level.lightmode;
 	if (level.lightmode == 8) level.lightmode = 2;
 
+	DPSprite *readyWeaponPsp = camera->player->FindPSprite(PSP_WEAPON);
+	DPSprite *offhandWeaponPsp = camera->player->FindPSprite(PSP_OFFHANDWEAPON);
+
 	for (DPSprite *psp = player->psprites; psp != nullptr && psp->GetID() < PSP_TARGETCENTER; psp = psp->GetNext())
 	{
+		if (weaponStabilised && psp->GetCaller() == player->OffhandWeapon)
+		{
+			continue;
+		}
 		if (!psp->GetState()) continue;
-		FSpriteModelFrame *smf = psp->Caller != nullptr ? FindModelFrame(psp->Caller->GetClass(), psp->GetState()->sprite, psp->GetState()->GetFrame(), false): nullptr;
-		// This is an 'either-or' proposition. This maybe needs some work to allow overlays with weapon models but as originally implemented this just won't work.
-		if (smf && !hudModelStep) continue;
-		if (!smf && hudModelStep) continue;
+		FSpriteModelFrame *smf = psp->GetCaller() != nullptr ? FindModelFrame(psp->GetCaller()->GetClass(), psp->GetSprite(), psp->GetFrame(), false): nullptr;
+		const bool hudModelStep = smf != nullptr;
 
 		HUDSprite hudsprite;
 		hudsprite.owner = playermo;
@@ -445,12 +452,13 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 
 		if (!hudsprite.GetWeaponRenderStyle(psp, camera, viewsector, light)) continue;
 
+		WeaponPosition weap = GetWeaponPosition(camera->player, psp);
 		FVector2 spos = BobWeapon(weap, psp);
 
 		hudsprite.dynrgb[0] = hudsprite.dynrgb[1] = hudsprite.dynrgb[2] = 0;
 		hudsprite.lightindex = -1;
 		// set the lighting parameters
-		if (hudsprite.RenderStyle.BlendOp != STYLEOP_Shadow && level.HasDynamicLights && FixedColormap == CM_DEFAULT && gl_light_sprites)
+		if (hudsprite.RenderStyle.BlendOp != STYLEOP_Shadow && level.HasDynamicLights && FixedColormap == CM_DEFAULT && gl_light_weapons)
 		{
 			if (!hudModelStep || (screen->hwcaps & RFL_NO_SHADERS))
 			{

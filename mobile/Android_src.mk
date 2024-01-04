@@ -118,6 +118,7 @@ FASTMATH_SOURCES = \
 	hwrenderer/scene/hw_spritelight.cpp \
 	hwrenderer/scene/hw_walls.cpp \
 	hwrenderer/scene/hw_walls_vertex.cpp \
+	hwrenderer/scene/hw_weapon.cpp \
 	r_data/models/models.cpp \
 	r_data/matrix.cpp \
 

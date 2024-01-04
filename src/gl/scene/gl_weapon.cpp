@@ -27,6 +27,7 @@
 
 #include "gl/system/gl_system.h"
 #include "r_utility.h"
+#include "d_player.h"
 #include "v_video.h"
 
 #include "gl/system/gl_interface.h"
@@ -104,12 +105,13 @@ void FDrawInfo::DrawPSprite (HUDSprite *huds)
 void FDrawInfo::DrawPlayerSprites(bool hudModelStep)
 {
 	int oldlightmode = level.lightmode;
-	if (!hudModelStep && level.lightmode == 8) level.lightmode = 2;	// Software lighting cannot handle 2D content so revert to lightmode 2 for that.
 	for(auto &hudsprite : hudsprites)
 	{
-		if (!hudsprite.mframe) s3d::Stereo3DMode::getCurrentMode().AdjustPlayerSprites(hudsprite.weapon->GetCaller() == player->OffhandWeapon);
+		bool hudModelStep = hudsprite.mframe != nullptr;
+		if (!hudModelStep && level.lightmode == 8) level.lightmode = 2;	// Software lighting cannot handle 2D content so revert to lightmode 2 for that.
+		if (!hudModelStep) s3d::Stereo3DMode::getCurrentMode().AdjustPlayerSprites(hudsprite.weapon->GetCaller() == hudsprite.owner->player->OffhandWeapon);
 		DrawPSprite(&hudsprite);
-		if (!hudsprite.mframe) s3d::Stereo3DMode::getCurrentMode().UnAdjustPlayerSprites();
+		if (!hudModelStep) s3d::Stereo3DMode::getCurrentMode().UnAdjustPlayerSprites();
 	}
 	level.lightmode = oldlightmode;
 }

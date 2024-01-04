@@ -489,7 +489,7 @@ void GLSceneDrawer::DrawScene(int drawmode, sector_t * viewsector)
 
 	if (s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
 	{
-		DrawPlayerSprites(viewsector);
+		gl_drawinfo->DrawPlayerSprites(viewsector);
 	}
 
 	if (applySSAO && gl_RenderState.GetPassType() == GBUFFER_PASS)

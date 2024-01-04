@@ -725,6 +725,7 @@ void FGLRenderer::Draw2D(F2DDrawer *drawer)
 
 	glDisable(GL_DEPTH_TEST);
 
+#ifndef __MOBILE__
 	// Korshun: ENABLE AUTOMAP ANTIALIASING!!!
 	if (gl_aalines)
 		glEnable(GL_LINE_SMOOTH);
@@ -734,6 +735,7 @@ void FGLRenderer::Draw2D(F2DDrawer *drawer)
 		glDisable(GL_LINE_SMOOTH);
 		glLineWidth(1.0);
 	}
+#endif
 
 
 	auto &vertices = drawer->mVertices;
