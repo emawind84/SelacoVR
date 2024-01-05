@@ -616,7 +616,7 @@ void GLSceneDrawer::SetFixedColormap (player_t *player)
 	FixedColormap=CM_DEFAULT;
 
 	// check for special colormaps
-	player_t * cplayer = player->camera->player;
+	player_t * cplayer = player ? player->camera->player : nullptr;
 	if (cplayer) 
 	{
 		if (cplayer->extralight == INT_MIN)

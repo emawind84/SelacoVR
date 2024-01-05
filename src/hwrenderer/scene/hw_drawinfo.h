@@ -146,7 +146,7 @@ public:
 	void GetDynSpriteLight(AActor *thing, particle_t *particle, float *out);
 
 	void PreparePlayerSprites(sector_t * viewsector, area_t in_area);
-	void PrepareTargeterSprites();
+	void PrepareTargeterSprites(double ticfrac);
 
 	virtual void DrawWall(GLWall *wall, int pass) = 0;
 	virtual void DrawFlat(GLFlat *flat, int pass, bool trans) = 0;
