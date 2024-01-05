@@ -713,15 +713,19 @@ CVAR(Bool, gl_aalines, false, CVAR_ARCHIVE)
 
 void FGLRenderer::Draw2D(F2DDrawer *drawer)
 {
-	if (buffersActive)
+	//In stereo mode vievport setting is already done in FGLRenderer::Flush()
+	if (s3d::Stereo3DMode::getCurrentMode().IsMono())
 	{
-		mBuffers->BindCurrentFB();
-	}
-	glViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
+		if (buffersActive)
+		{
+			mBuffers->BindCurrentFB();
+		}
+		glViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
 
-	gl_RenderState.mViewMatrix.loadIdentity();
-	gl_RenderState.mProjectionMatrix.ortho(0, screen->GetWidth(), screen->GetHeight(), 0, -1.0f, 1.0f);
-	gl_RenderState.ApplyMatrices();
+		gl_RenderState.mViewMatrix.loadIdentity();
+		gl_RenderState.mProjectionMatrix.ortho(0, screen->GetWidth(), screen->GetHeight(), 0, -1.0f, 1.0f);
+		gl_RenderState.ApplyMatrices();
+	}
 
 	glDisable(GL_DEPTH_TEST);
 
@@ -744,11 +748,6 @@ void FGLRenderer::Draw2D(F2DDrawer *drawer)
 
 	if (commands.Size() == 0) return;
 
-	for (auto &v : vertices)
-	{
-		// Change from BGRA to RGBA
-		std::swap(v.color0.r, v.color0.b);
-	}
 	auto vb = new F2DVertexBuffer;
 	vb->UploadData(&vertices[0], vertices.Size(), &indices[0], indices.Size());
 	gl_RenderState.SetVertexBuffer(vb);

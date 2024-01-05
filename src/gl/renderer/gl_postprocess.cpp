@@ -788,6 +788,8 @@ void FGLRenderer::Flush()
 	}
 	else
 	{
+		stereo3dMode.AdjustViewports();
+		
 		const bool is2D = (gamestate != GS_LEVEL) || cinemamode;
 		if (is2D) stereo3dMode.SetUp();
 

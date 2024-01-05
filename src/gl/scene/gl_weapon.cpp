@@ -87,7 +87,11 @@ void FDrawInfo::DrawPSprite (HUDSprite *huds)
 		gl_RenderState.AlphaFunc(GL_GEQUAL, thresh);
 		gl_RenderState.SetMaterial(huds->tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader, !!(huds->RenderStyle.Flags & STYLEF_RedIsAlpha));
 		gl_RenderState.Apply();
-		GLRenderer->mVBO->RenderArray(GL_TRIANGLE_STRIP, huds->mx, 4);
+
+		if (s3d::Stereo3DMode::getCurrentMode().IsMono() || (r_PlayerSprites3DMode != ITEM_ONLY && r_PlayerSprites3DMode != FAT_ITEM))
+		{
+			GLRenderer->mVBO->RenderArray(GL_TRIANGLE_STRIP, huds->mx, 4);
+		}
 	}
 
 	gl_RenderState.AlphaFunc(GL_GEQUAL, gl_mask_sprite_threshold);
