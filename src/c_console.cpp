@@ -564,7 +564,7 @@ CUSTOM_CVAR (Int, msgmidcolor2, 4, CVAR_ARCHIVE)
 
 FFont * C_GetDefaultHUDFont()
 {
-	return generic_ui? NewSmallFont : SmallFont;
+	return SmallFont;
 }
 
 struct TextQueue
