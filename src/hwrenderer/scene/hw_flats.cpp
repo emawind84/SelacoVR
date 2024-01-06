@@ -47,7 +47,6 @@
 #ifdef _DEBUG
 CVAR(Int, gl_breaksec, -1, 0)
 #endif
-
 //==========================================================================
 //
 // Sets the texture matrix according to the plane's texture positioning

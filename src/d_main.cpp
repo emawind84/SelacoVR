@@ -29,9 +29,6 @@
 
 #ifdef _WIN32
 #include <direct.h>
-#define mkdir(a,b) _mkdir (a)
-#else
-#include <sys/stat.h>
 #endif
 
 #ifdef HAVE_FPU_CONTROL
@@ -2356,6 +2353,7 @@ static void CheckCmdLine()
 		StartScreen->AppendStatusLine(temp);
 	}
 }
+
 
 //==========================================================================
 //

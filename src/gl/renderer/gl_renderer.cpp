@@ -398,10 +398,6 @@ void FGLRenderer::EndOffscreen()
 
 sector_t *FGLRenderer::RenderView(player_t* player)
 {
-	hw_ClearFakeFlat();
-
-	CheckBenchActive();
-
 	gl_RenderState.SetVertexBuffer(mVBO);
 	mVBO->Reset();
 	sector_t *retsec;
@@ -413,6 +409,8 @@ sector_t *FGLRenderer::RenderView(player_t* player)
 	}
 	else
 	{
+		hw_ClearFakeFlat();
+
 		CheckBenchActive();
 
 		// reset statistics counters

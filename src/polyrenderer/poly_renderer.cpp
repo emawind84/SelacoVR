@@ -63,13 +63,17 @@ void PolyRenderer::RenderView(player_t *player, DCanvas *target)
 {
 	using namespace swrenderer;
 	
+	R_ExecuteSetViewSize(Viewpoint, Viewwindow);
+
 	RenderTarget = target;
 	RenderToCanvas = false;
 
 	RenderActorView(player->mo, false);
 
 	Threads.MainThread()->FlushDrawQueue();
+	PolyDrawerWaitCycles.Clock();
 	DrawerThreads::WaitForWorkers();
+	PolyDrawerWaitCycles.Unclock();
 }
 
 void PolyRenderer::RenderViewToCanvas(AActor *actor, DCanvas *canvas, int x, int y, int width, int height, bool dontmaplines)
@@ -211,13 +215,6 @@ void PolyRenderer::SetSceneViewport()
 
 PolyPortalViewpoint PolyRenderer::SetupPerspectiveMatrix(bool mirror)
 {
-	static bool bDidSetup = false;
-
-	if (!bDidSetup)
-	{
-		bDidSetup = true;
-	}
-
 	// We have to scale the pitch to account for the pixel stretching, because the playsim doesn't know about this and treats it as 1:1.
 	double radPitch = Viewpoint.Angles.Pitch.Normalized180().Radians();
 	double angx = cos(radPitch);
