@@ -63,6 +63,21 @@ enum EHWCaps
 	RFL_NO_SHADERS = 256
 };
 
+struct IntRect
+{
+	int left, top;
+	int width, height;
+
+
+	void Offset(int xofs, int yofs)
+	{
+		left += xofs;
+		top += yofs;
+	}
+};
+
+
+
 
 
 extern int CleanWidth, CleanHeight, CleanXfac, CleanYfac;
@@ -385,9 +400,17 @@ protected:
 	bool Bgra = 0;
 	int clipleft = 0, cliptop = 0, clipwidth = -1, clipheight = -1;
 
+	PalEntry Flash;						// Only needed to support some cruft in the interface that only makes sense for the software renderer
+	PalEntry SourcePalette[256];		// This is where unpaletted textures get their palette from
+
 public:
 	int hwcaps = 0;
 	int instack[2] = { 0,0 };	// this is globally maintained state for portal recursion avoidance.
+	bool enable_quadbuffered = false;
+
+	IntRect mScreenViewport;
+	IntRect mSceneViewport;
+	IntRect mOutputLetterbox;
 
 public:
 	DFrameBuffer (int width, int height, bool bgra);
@@ -400,13 +423,13 @@ public:
 	virtual void Update () = 0;
 
 	// Return a pointer to 256 palette entries that can be written to.
-	virtual PalEntry *GetPalette () = 0;
+	PalEntry *GetPalette ();
 
 	// Stores the palette with flash blended in into 256 dwords
-	virtual void GetFlashedPalette (PalEntry palette[256]) = 0;
+	void GetFlashedPalette (PalEntry palette[256]);
 
 	// Mark the palette as changed. It will be updated on the next Update().
-	virtual void UpdatePalette () = 0;
+	virtual void UpdatePalette() {}
 
 	// Sets the gamma level. Returns false if the hardware does not support
 	// gamma changing. (Always true for now, since palettes can always be
@@ -417,10 +440,10 @@ public:
 	// being all flash and 0 being no flash. Returns false if the hardware
 	// does not support this. (Always true for now, since palettes can always
 	// be flashed.)
-	virtual bool SetFlash (PalEntry rgb, int amount) = 0;
+	bool SetFlash (PalEntry rgb, int amount);
 
 	// Converse of SetFlash
-	virtual void GetFlash (PalEntry &rgb, int &amount) = 0;
+	void GetFlash (PalEntry &rgb, int &amount);
 
 	// Returns true if running fullscreen.
 	virtual bool IsFullscreen () = 0;
@@ -442,8 +465,10 @@ public:
 	virtual void ResetFixedColormap() {}
 	virtual void BeginFrame() {}
 
-	virtual int GetClientWidth() { return 320; };
-	virtual int GetClientHeight() { return 200; };
+	virtual int GetClientWidth() = 0;
+	virtual int GetClientHeight() = 0;
+	virtual bool RenderBuffersEnabled() { return false; };
+	virtual void BlurScene(float amount) {}
 
 	// Begin 2D drawing operations.
 	// Returns true if hardware-accelerated 2D has been entered, false if not.
@@ -455,7 +480,7 @@ public:
 
 	
 	// Report a game restart
-	virtual void GameRestart();
+	void InitPalette();
 	virtual void InitForLevel() {}
 	virtual void SetClearColor(int color) {}
 	virtual uint32_t GetCaps();
@@ -469,7 +494,8 @@ public:
 	virtual bool WipeDo(int ticks);
 	virtual void WipeCleanup();
 
-	virtual void ScaleCoordsFromWindow(int16_t &x, int16_t &y) {}
+	virtual int GetTrueHeight() { return GetHeight(); }
+	void ScaleCoordsFromWindow(int16_t &x, int16_t &y);
 
 	uint64_t GetLastFPS() const { return LastCount; }
 
@@ -536,14 +562,15 @@ public:
 	// Calculate gamma table
 	void CalcGamma(float gamma, uint8_t gammalookup[256]);
 
+	virtual void SetViewportRects(IntRect *bounds);
+	int ScreenToWindowX(int x);
+	int ScreenToWindowY(int y);
+
 
 	// Retrieves a buffer containing image data for a screenshot.
 	// Hint: Pitch can be negative for upside-down images, in which case buffer
 	// points to the last row in the buffer, which will be the first row output.
 	virtual void GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, ESSType &color_type, float &gamma) {}
-
-	// Releases the screenshot buffer.
-	virtual void ReleaseScreenshotBuffer() {}
 
 	// The original size of the framebuffer as selected in the video menu.
 	int VideoWidth = 0;

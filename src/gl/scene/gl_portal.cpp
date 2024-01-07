@@ -25,7 +25,7 @@
 **
 */
 
-#include "gl/system/gl_system.h"
+#include "gl_load/gl_system.h"
 #include "p_local.h"
 #include "c_dispatch.h"
 #include "doomstat.h"
@@ -35,14 +35,13 @@
 #include "d_player.h"
 #include "g_levellocals.h"
 
-#include "gl/system/gl_interface.h"
+#include "gl_load/gl_interface.h"
 #include "gl/renderer/gl_lightdata.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "hwrenderer/scene/hw_clipper.h"
 #include "hwrenderer/utility/hw_cvars.h"
-#include "gl/scene/gl_drawinfo.h"
 #include "gl/scene/gl_portal.h"
 #include "gl/scene/gl_scenedrawer.h"
 #include "gl/stereo3d/scoped_color_mask.h"
@@ -167,14 +166,16 @@ void GLPortal::DrawPortalStencil(int pass)
 //
 //-----------------------------------------------------------------------------
 
-bool GLPortal::Start(bool usestencil, bool doquery)
+bool GLPortal::Start(bool usestencil, bool doquery, FDrawInfo **pDi)
 {
 	if (gl_max_portals > -1 && s3d::EyePose::portalsPerEye >= gl_max_portals)
 	{
 		return false;
 	}
+	*pDi = nullptr;
 	rendered_portals++;
 	s3d::EyePose::portalsPerEye++;
+	Clocker c(PortalAll);
 	if (usestencil)
 	{
 		if (!gl_portals) 
@@ -239,7 +240,7 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 						return false;
 					}
 				}
-				FDrawInfo::StartDrawInfo(drawer);
+				*pDi = FDrawInfo::StartDrawInfo(drawer);
 			}
 			else
 			{
@@ -267,7 +268,7 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 	{
 		if (NeedDepthBuffer())
 		{
-			FDrawInfo::StartDrawInfo(drawer);
+			*pDi = FDrawInfo::StartDrawInfo(drawer);
 		}
 		else
 		{
@@ -282,15 +283,12 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 	savedshowviewer = r_viewpoint.showviewer;
 	savedAngles = r_viewpoint.Angles;
 	savedviewactor=GLRenderer->mViewActor;
-	savedviewarea=drawer->in_area;
 	savedviewpath[0] = r_viewpoint.Path[0];
 	savedviewpath[1] = r_viewpoint.Path[1];
 	savedvisibility = r_viewpoint.camera ? r_viewpoint.camera->renderflags & RF_MAYBEINVISIBLE : ActorRenderFlags::FromInt(0);
 
 
 	PrevPortal = GLRenderer->mCurrentPortal;
-	PrevClipPortal = GLRenderer->mClipPortal;
-	GLRenderer->mClipPortal = NULL;	// Portals which need this have to set it themselves
 	GLRenderer->mCurrentPortal = this;
 
 	if (PrevPortal != NULL) PrevPortal->PushState();
@@ -298,14 +296,14 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 }
 
 
-inline void GLPortal::ClearClipper()
+inline void GLPortal::ClearClipper(FDrawInfo *di)
 {
 	DAngle angleOffset = deltaangle(savedAngles.Yaw, r_viewpoint.Angles.Yaw);
 
-	drawer->clipper.Clear();
+	di->mClipper->Clear();
 
 	// Set the clipper to the minimal visible area
-	drawer->clipper.SafeAddClipRange(0,0xffffffff);
+	di->mClipper->SafeAddClipRange(0,0xffffffff);
 	for (unsigned int i = 0; i < lines.Size(); i++)
 	{
 		DAngle startAngle = (DVector2(lines[i].glseg.x2, lines[i].glseg.y2) - savedViewPos).Angle() + angleOffset;
@@ -313,16 +311,16 @@ inline void GLPortal::ClearClipper()
 
 		if (deltaangle(endAngle, startAngle) < 0)
 		{
-			drawer->clipper.SafeRemoveClipRangeRealAngles(startAngle.BAMs(), endAngle.BAMs());
+			di->mClipper->SafeRemoveClipRangeRealAngles(startAngle.BAMs(), endAngle.BAMs());
 		}
 	}
 
 	// and finally clip it to the visible area
 	angle_t a1 = drawer->FrustumAngle();
-	if (a1 < ANGLE_180) drawer->clipper.SafeAddClipRangeRealAngles(r_viewpoint.Angles.Yaw.BAMs() + a1, r_viewpoint.Angles.Yaw.BAMs() - a1);
+	if (a1 < ANGLE_180) di->mClipper->SafeAddClipRangeRealAngles(r_viewpoint.Angles.Yaw.BAMs() + a1, r_viewpoint.Angles.Yaw.BAMs() - a1);
 
 	// lock the parts that have just been clipped out.
-	drawer->clipper.SetSilhouette();
+	di->mClipper->SetSilhouette();
 }
 
 //-----------------------------------------------------------------------------
@@ -334,9 +332,9 @@ void GLPortal::End(bool usestencil)
 {
 	bool needdepth = NeedDepthBuffer();
 
+	Clocker c(PortalAll);
 	if (PrevPortal != NULL) PrevPortal->PopState();
 	GLRenderer->mCurrentPortal = PrevPortal;
-	GLRenderer->mClipPortal = PrevClipPortal;
 
 	if (usestencil)
 	{
@@ -350,7 +348,6 @@ void GLPortal::End(bool usestencil)
 		r_viewpoint.ActorPos = savedViewActorPos;
 		r_viewpoint.Angles = savedAngles;
 		GLRenderer->mViewActor=savedviewactor;
-		drawer->in_area=savedviewarea;
 		if (r_viewpoint.camera != nullptr) r_viewpoint.camera->renderflags = (r_viewpoint.camera->renderflags & ~RF_MAYBEINVISIBLE) | savedvisibility;
 		drawer->SetupView(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, r_viewpoint.Angles.Yaw, !!(MirrorFlag & 1), !!(PlaneMirrorFlag & 1));
 
@@ -409,7 +406,6 @@ void GLPortal::End(bool usestencil)
 		r_viewpoint.Pos = savedViewPos;
 		r_viewpoint.Angles = savedAngles;
 		GLRenderer->mViewActor=savedviewactor;
-		drawer->in_area=savedviewarea;
 		if (r_viewpoint.camera != nullptr) r_viewpoint.camera->renderflags |= savedvisibility;
 		drawer->SetupView(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, r_viewpoint.Angles.Yaw, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 
@@ -442,11 +438,11 @@ void GLPortal::End(bool usestencil)
 //-----------------------------------------------------------------------------
 void GLPortal::StartFrame()
 {
-	GLPortal * p=NULL;
+	GLPortal * p = nullptr;
 	portals.Push(p);
-	if (renderdepth==0)
+	if (renderdepth == 0)
 	{
-		inskybox=false;
+		inskybox = false;
 		screen->instack[sector_t::floor] = screen->instack[sector_t::ceiling] = 0;
 	}
 	renderdepth++;
@@ -571,26 +567,6 @@ GLPortal * GLPortal::FindPortal(const void * src)
 
 
 //-----------------------------------------------------------------------------
-//
-// Save/RestoreMapSection
-//
-// saves CurrentMapSection for a recursive call of SceneDrawer::DrawScene
-//
-//-----------------------------------------------------------------------------
-
-void GLPortal::SaveMapSection()
-{
-	SavedMapSection = std::move(drawer->CurrentMapSections);
-	drawer->CurrentMapSections.Resize(SavedMapSection.Size());
-	drawer->CurrentMapSections.Zero();
-}
-
-void GLPortal::RestoreMapSection()
-{
-	drawer->CurrentMapSections = std::move(SavedMapSection);
-}
-
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //
 //
@@ -606,7 +582,7 @@ void GLPortal::RestoreMapSection()
 //
 //-----------------------------------------------------------------------------
 
-void GLSkyboxPortal::DrawContents()
+void GLSkyboxPortal::DrawContents(FDrawInfo *di)
 {
 	int old_pm = PlaneMirrorMode;
 	int saved_extralight = r_viewpoint.extralight;
@@ -639,15 +615,12 @@ void GLSkyboxPortal::DrawContents()
 
 	inskybox = true;
 	drawer->SetupView(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, r_viewpoint.Angles.Yaw, !!(MirrorFlag & 1), !!(PlaneMirrorFlag & 1));
-	drawer->SetViewArea();
-	ClearClipper();
+	di->SetViewArea();
+	ClearClipper(di);
 
-	int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
+	di->UpdateCurrentMapSection();
 
-	SaveMapSection();
-	drawer->CurrentMapSections.Set(mapsection);
-
-	drawer->DrawScene(DM_SKYPORTAL);
+	drawer->DrawScene(di, DM_SKYPORTAL);
 	portal->mFlags &= ~PORTSF_INSKYBOX;
 	inskybox = false;
 	gl_RenderState.SetDepthClamp(oldclamp);
@@ -655,8 +628,6 @@ void GLSkyboxPortal::DrawContents()
 
 	PlaneMirrorMode = old_pm;
 	r_viewpoint.extralight = saved_extralight;
-
-	RestoreMapSection();
 }
 
 //-----------------------------------------------------------------------------
@@ -698,7 +669,7 @@ GLSectorStackPortal::~GLSectorStackPortal()
 //
 //-----------------------------------------------------------------------------
 
-static uint8_t SetCoverage(void *node)
+static uint8_t SetCoverage(FDrawInfo *di, void *node)
 {
 	if (level.nodes.Size() == 0)
 	{
@@ -707,18 +678,18 @@ static uint8_t SetCoverage(void *node)
 	if (!((size_t)node & 1))  // Keep going until found a subsector
 	{
 		node_t *bsp = (node_t *)node;
-		uint8_t coverage = SetCoverage(bsp->children[0]) | SetCoverage(bsp->children[1]);
-		gl_drawinfo->no_renderflags[bsp->Index()] = coverage;
+		uint8_t coverage = SetCoverage(di, bsp->children[0]) | SetCoverage(di, bsp->children[1]);
+		di->no_renderflags[bsp->Index()] = coverage;
 		return coverage;
 	}
 	else
 	{
 		subsector_t *sub = (subsector_t *)((uint8_t *)node - 1);
-		return gl_drawinfo->ss_renderflags[sub->Index()] & SSRF_SEEN;
+		return di->ss_renderflags[sub->Index()] & SSRF_SEEN;
 	}
 }
 
-void GLSectorStackPortal::SetupCoverage()
+void GLSectorStackPortal::SetupCoverage(FDrawInfo *di)
 {
 	for(unsigned i=0; i<subsectors.Size(); i++)
 	{
@@ -727,11 +698,11 @@ void GLSectorStackPortal::SetupCoverage()
 		for(int j=0;j<sub->portalcoverage[plane].sscount; j++)
 		{
 			subsector_t *dsub = &::level.subsectors[sub->portalcoverage[plane].subsectors[j]];
-			drawer->CurrentMapSections.Set(dsub->mapsection);
-			gl_drawinfo->ss_renderflags[dsub->Index()] |= SSRF_SEEN;
+			di->CurrentMapSections.Set(dsub->mapsection);
+			di->ss_renderflags[dsub->Index()] |= SSRF_SEEN;
 		}
 	}
-	SetCoverage(::level.HeadNode());
+	SetCoverage(di, ::level.HeadNode());
 }
 
 //-----------------------------------------------------------------------------
@@ -739,7 +710,7 @@ void GLSectorStackPortal::SetupCoverage()
 // GLSectorStackPortal::DrawContents
 //
 //-----------------------------------------------------------------------------
-void GLSectorStackPortal::DrawContents()
+void GLSectorStackPortal::DrawContents(FDrawInfo *di)
 {
 	FSectorPortalGroup *portal = origin;
 
@@ -751,21 +722,19 @@ void GLSectorStackPortal::DrawContents()
 	if (origin->plane != -1) screen->instack[origin->plane]++;
 
 	drawer->SetupView(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, r_viewpoint.Angles.Yaw, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
-	SaveMapSection();
-	SetupCoverage();
-	ClearClipper();
+	SetupCoverage(di);
+	ClearClipper(di);
 	
 	// If the viewpoint is not within the portal, we need to invalidate the entire clip area.
 	// The portal will re-validate the necessary parts when its subsectors get traversed.
 	subsector_t *sub = R_PointInSubsector(r_viewpoint.Pos);
-	if (!(gl_drawinfo->ss_renderflags[sub->Index()] & SSRF_SEEN))
+	if (!(di->ss_renderflags[sub->Index()] & SSRF_SEEN))
 	{
-		drawer->clipper.SafeAddClipRange(0, ANGLE_MAX);
-		drawer->clipper.SetBlocked(true);
+		di->mClipper->SafeAddClipRange(0, ANGLE_MAX);
+		di->mClipper->SetBlocked(true);
 	}
 
-	drawer->DrawScene(DM_PORTAL);
-	RestoreMapSection();
+	drawer->DrawScene(di, DM_PORTAL);
 
 	if (origin->plane != -1) screen->instack[origin->plane]--;
 }
@@ -786,7 +755,7 @@ void GLSectorStackPortal::DrawContents()
 //
 //-----------------------------------------------------------------------------
 
-void GLPlaneMirrorPortal::DrawContents()
+void GLPlaneMirrorPortal::DrawContents(FDrawInfo *di)
 {
 	if (renderdepth > r_mirror_recursions)
 	{
@@ -808,7 +777,9 @@ void GLPlaneMirrorPortal::DrawContents()
 
 	PlaneMirrorFlag++;
 	drawer->SetupView(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, r_viewpoint.Angles.Yaw, !!(MirrorFlag & 1), !!(PlaneMirrorFlag & 1));
-	ClearClipper();
+	ClearClipper(di);
+
+	di->UpdateCurrentMapSection();
 
 	int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
 
@@ -816,7 +787,7 @@ void GLPlaneMirrorPortal::DrawContents()
 	drawer->CurrentMapSections.Set(mapsection);
 
 	gl_RenderState.SetClipHeight(planez, PlaneMirrorMode < 0 ? -1.f : 1.f);
-	drawer->DrawScene(DM_PORTAL);
+	drawer->DrawScene(di, DM_PORTAL);
 	gl_RenderState.SetClipHeight(0.f, 0.f);
 	PlaneMirrorFlag--;
 	PlaneMirrorMode = old_pm;
@@ -914,7 +885,7 @@ int GLLinePortal::ClipPoint(const DVector2 &pos)
 // R_EnterMirror
 //
 //-----------------------------------------------------------------------------
-void GLMirrorPortal::DrawContents()
+void GLMirrorPortal::DrawContents(FDrawInfo *di)
 {
 	if (renderdepth>r_mirror_recursions) 
 	{
@@ -922,12 +893,9 @@ void GLMirrorPortal::DrawContents()
 		return;
 	}
 
-	int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
+	di->UpdateCurrentMapSection();
 
-	SaveMapSection();
-	drawer->CurrentMapSections.Set(mapsection);
-
-	GLRenderer->mClipPortal = this;
+	di->mClipPortal = this;
 	DAngle StartAngle = r_viewpoint.Angles.Yaw;
 	DVector3 StartPos = r_viewpoint.Pos;
 
@@ -987,18 +955,18 @@ void GLMirrorPortal::DrawContents()
 	MirrorFlag++;
 	drawer->SetupView(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, r_viewpoint.Angles.Yaw, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 
-	drawer->clipper.Clear();
+	di->mClipper->Clear();
 
 	angle_t af = drawer->FrustumAngle();
-	if (af<ANGLE_180) drawer->clipper.SafeAddClipRangeRealAngles(r_viewpoint.Angles.Yaw.BAMs()+af, r_viewpoint.Angles.Yaw.BAMs()-af);
+	if (af<ANGLE_180) di->mClipper->SafeAddClipRangeRealAngles(r_viewpoint.Angles.Yaw.BAMs()+af, r_viewpoint.Angles.Yaw.BAMs()-af);
 
 	angle_t a2 = linedef->v1->GetClipAngle();
 	angle_t a1 = linedef->v2->GetClipAngle();
-	drawer->clipper.SafeAddClipRange(a1,a2);
+	di->mClipper->SafeAddClipRange(a1,a2);
 
 	gl_RenderState.SetClipLine(linedef);
 	gl_RenderState.EnableClipLine(true);
-	drawer->DrawScene(DM_PORTAL);
+	drawer->DrawScene(di, DM_PORTAL);
 	gl_RenderState.EnableClipLine(false);
 	RestoreMapSection();
 
@@ -1020,7 +988,7 @@ void GLMirrorPortal::DrawContents()
 //
 //
 //-----------------------------------------------------------------------------
-void GLLineToLinePortal::DrawContents()
+void GLLineToLinePortal::DrawContents(FDrawInfo *di)
 {
 	// TODO: Handle recursion more intelligently
 	if (renderdepth>r_mirror_recursions) 
@@ -1029,7 +997,7 @@ void GLLineToLinePortal::DrawContents()
 		return;
 	}
 
-	GLRenderer->mClipPortal = this;
+	di->mClipPortal = this;
 
 	line_t *origin = glport->lines[0]->mOrigin;
 	P_TranslatePortalXY(origin, r_viewpoint.Pos.X, r_viewpoint.Pos.Y);
@@ -1054,8 +1022,6 @@ void GLLineToLinePortal::DrawContents()
 	}
 
 
-	SaveMapSection();
-
 	for (unsigned i = 0; i < lines.Size(); i++)
 	{
 		line_t *line = lines[i].seg->linedef->getPortalDestination();
@@ -1063,23 +1029,22 @@ void GLLineToLinePortal::DrawContents()
 		if (line->sidedef[0]->Flags & WALLF_POLYOBJ) 
 			sub = R_PointInSubsector(line->v1->fixX(), line->v1->fixY());
 		else sub = line->frontsector->subsectors[0];
-		drawer->CurrentMapSections.Set(sub->mapsection);
+		di->CurrentMapSections.Set(sub->mapsection);
 	}
 
 	GLRenderer->mViewActor = nullptr;
 	drawer->SetupView(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, r_viewpoint.Angles.Yaw, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 
-	ClearClipper();
+	ClearClipper(di);
 	gl_RenderState.SetClipLine(glport->lines[0]->mDestination);
 	gl_RenderState.EnableClipLine(true);
-	drawer->DrawScene(DM_PORTAL);
+	drawer->DrawScene(di, DM_PORTAL);
 	gl_RenderState.EnableClipLine(false);
-	RestoreMapSection();
 }
 
-void GLLineToLinePortal::RenderAttached()
+void GLLineToLinePortal::RenderAttached(FDrawInfo *di)
 {
-	gl_drawinfo->ProcessActorsInPortal(glport, gl_drawinfo->mDrawer->in_area);
+	di->ProcessActorsInPortal(glport, di->in_area);
 }
 
 //-----------------------------------------------------------------------------
@@ -1170,8 +1135,10 @@ GLHorizonPortal::GLHorizonPortal(GLHorizonInfo * pt, bool local)
 // GLHorizonPortal::DrawContents
 //
 //-----------------------------------------------------------------------------
-void GLHorizonPortal::DrawContents()
+void GLHorizonPortal::DrawContents(FDrawInfo *di)
 {
+	Clocker c(PortalAll);
+
 	FMaterial * gltexture;
 	player_t * player=&players[consoleplayer];
 	GLSectorPlane * sp = &origin->plane;
@@ -1216,7 +1183,6 @@ void GLHorizonPortal::DrawContents()
 	GLRenderer->mVBO->RenderArray(GL_TRIANGLE_STRIP, voffset + vcount, 10);
 
 	gl_RenderState.EnableTextureMatrix(false);
-
 }
 
 
@@ -1240,7 +1206,7 @@ void GLHorizonPortal::DrawContents()
 //
 //-----------------------------------------------------------------------------
 
-void GLEEHorizonPortal::DrawContents()
+void GLEEHorizonPortal::DrawContents(FDrawInfo *di)
 {
 	sector_t *sector = portal->mOrigin;
 	if (sector->GetTexture(sector_t::floor) == skyflatnum ||
@@ -1249,7 +1215,7 @@ void GLEEHorizonPortal::DrawContents()
 		GLSkyInfo skyinfo;
 		skyinfo.init(sector->sky, 0);
 		GLSkyPortal sky(&skyinfo, true);
-		sky.DrawContents();
+		sky.DrawContents(di);
 	}
 	if (sector->GetTexture(sector_t::ceiling) != skyflatnum)
 	{
@@ -1263,7 +1229,7 @@ void GLEEHorizonPortal::DrawContents()
 			horz.plane.Texheight = r_viewpoint.Pos.Z + fabs(horz.plane.Texheight);
 		}
 		GLHorizonPortal ceil(&horz, true);
-		ceil.DrawContents();
+		ceil.DrawContents(di);
 	}
 	if (sector->GetTexture(sector_t::floor) != skyflatnum)
 	{
@@ -1277,11 +1243,8 @@ void GLEEHorizonPortal::DrawContents()
 			horz.plane.Texheight = r_viewpoint.Pos.Z - fabs(horz.plane.Texheight);
 		}
 		GLHorizonPortal floor(&horz, true);
-		floor.DrawContents();
+		floor.DrawContents(di);
 	}
-
-
-
 }
 
 void GLPortal::Initialize()
@@ -1308,3 +1271,9 @@ const char *GLLineToLinePortal::GetName() { return "LineToLine"; }
 const char *GLHorizonPortal::GetName() { return "Horizon"; }
 const char *GLEEHorizonPortal::GetName() { return "EEHorizon"; }
 
+// This needs to remain on the renderer side until the portal interface can be abstracted.
+void FSectorPortalGroup::AddSubsector(subsector_t *sub)
+{
+	GLSectorStackPortal *glportal = GetRenderState();
+	glportal->AddSubsector(sub);
+}

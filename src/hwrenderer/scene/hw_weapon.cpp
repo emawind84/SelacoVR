@@ -250,14 +250,13 @@ bool HUDSprite::GetWeaponRenderStyle(DPSprite *psp, AActor *playermo, sector_t *
 	auto rs = psp->GetRenderStyle(playermo->RenderStyle, playermo->Alpha);
 
 	visstyle_t vis;
-	float trans = 0.f;
 
 	vis.RenderStyle = STYLE_Count;
 	vis.Alpha = rs.second;
 	vis.Invert = false;
 	playermo->AlterWeaponSprite(&vis);
 
-	if (!(psp->Flags & PSPF_FORCEALPHA)) trans = vis.Alpha;
+	alpha = (psp->Flags & PSPF_FORCEALPHA) ? 0.f : vis.Alpha;
 
 	if (vis.RenderStyle != STYLE_Count && !(psp->Flags & PSPF_FORCESTYLE))
 	{
@@ -301,7 +300,7 @@ bool HUDSprite::GetWeaponRenderStyle(DPSprite *psp, AActor *playermo, sector_t *
 	{
 		alpha = 1.f;
 	}
-	else if (trans == 0.f)
+	else if (alpha == 0.f)
 	{
 		alpha = vis.Alpha;
 	}
@@ -619,9 +618,10 @@ void HWDrawInfo::PrepareTargeterSprites(double ticfrac)
 		if (psp->GetState() != nullptr && (psp->GetID() != PSP_TARGETCENTER || CrosshairImage == nullptr))
 		{
 			hudsprite.weapon = psp;
-			hudsprite.GetWeaponRect(this, psp, psp->x, psp->y, player, ticfrac);
-
-			AddHUDSprite(&hudsprite);
+			if (hudsprite.GetWeaponRect(this, psp, psp->x, psp->y, player, ticfrac))
+			{
+				AddHUDSprite(&hudsprite);
+			}
 		}
 	}
 }

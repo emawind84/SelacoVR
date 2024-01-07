@@ -28,7 +28,7 @@
 #include <mutex>
 #include "tarray.h"
 #include "hwrenderer/utility/hw_clock.h"
-#include "gl/system/gl_interface.h"
+#include "gl_load/gl_interface.h"
 #include "r_data/models/models.h"
 #include "hwrenderer/data/flatvertices.h"
 #include "hwrenderer/scene/hw_skydome.h"
@@ -97,6 +97,7 @@ public:
 
 class FFlatVertexBuffer : public FVertexBuffer, public FFlatVertexGenerator
 {
+	unsigned int ibo_id;
 	FFlatVertex *map;
 	unsigned int mIndex;
 	std::atomic<unsigned int> mCurIndex;
@@ -184,14 +185,9 @@ public:
 
 #endif
 
-	void CheckPlanes(sector_t *sector)
+	uint32_t *GetIndexPointer() const
 	{
-		FFlatVertexGenerator::CheckPlanes(sector, map);
-	}
-
-	void CheckUpdate(sector_t *sector)
-	{
-		FFlatVertexGenerator::CheckUpdate(sector, map);
+		return ibo_id == 0 ? &ibo_data[0] : nullptr;
 	}
 
 	void Reset()

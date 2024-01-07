@@ -40,7 +40,6 @@
 #include "r_utility.h"
 #include "r_data/models/models.h"
 #include "r_data/models/models_ue1.h"
-#include "r_data/models/models_obj.h"
 #include "i_time.h"
 
 #ifdef _MSC_VER

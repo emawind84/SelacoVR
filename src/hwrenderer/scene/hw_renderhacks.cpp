@@ -71,7 +71,26 @@ void HWDrawInfo::ClearBuffers()
 	HandledSubsectors.Clear();
 	spriteindex = 0;
 
+	CurrentMapSections.Resize(level.NumMapSections);
+	CurrentMapSections.Zero();
+
+	sectorrenderflags.Resize(level.sectors.Size());
+	ss_renderflags.Resize(level.subsectors.Size());
+	no_renderflags.Resize(level.subsectors.Size());
+
+	memset(&sectorrenderflags[0], 0, level.sectors.Size() * sizeof(sectorrenderflags[0]));
+	memset(&ss_renderflags[0], 0, level.subsectors.Size() * sizeof(ss_renderflags[0]));
+	memset(&no_renderflags[0], 0, level.nodes.Size() * sizeof(no_renderflags[0]));
+
+	mClipPortal = nullptr;
 }
+
+void HWDrawInfo::UpdateCurrentMapSection()
+{
+	const int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
+	CurrentMapSections.Set(mapsection);
+}
+
 //==========================================================================
 //
 // Adds a subsector plane to a sector's render list
@@ -1076,6 +1095,7 @@ void HWDrawInfo::ProcessSectorStacks(area_t in_area)
 				{				
 					subsector_t *sub = HandledSubsectors[j];
 					ss_renderflags[sub->Index()] &= ~SSRF_RENDERCEILING;
+					sub->sector->ibocount = -1;	// cannot render this sector in one go.
 
 					if (sub->portalcoverage[sector_t::ceiling].subsectors == NULL)
 					{
@@ -1121,6 +1141,7 @@ void HWDrawInfo::ProcessSectorStacks(area_t in_area)
 				{				
 					subsector_t *sub = HandledSubsectors[j];
 					ss_renderflags[sub->Index()] &= ~SSRF_RENDERFLOOR;
+					sub->sector->ibocount = -1;	// cannot render this sector in one go.
 
 					if (sub->portalcoverage[sector_t::floor].subsectors == NULL)
 					{

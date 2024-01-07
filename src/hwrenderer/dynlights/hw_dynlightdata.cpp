@@ -25,7 +25,6 @@
 **
 **/
 
-#include "gl/system/gl_system.h"
 #include "actorinlines.h"
 #include "hwrenderer/utility/hw_cvars.h"
 #include "hw_dynlightdata.h"
@@ -63,7 +62,7 @@ bool FDynLightData::GetLight(int group, Plane & p, FDynamicLight * light, bool c
 		return false;
 	}
 
-	AddLightToList(group, light);
+	AddLightToList(group, light, false);
 	return true;
 }
 
@@ -72,7 +71,7 @@ bool FDynLightData::GetLight(int group, Plane & p, FDynamicLight * light, bool c
 // Add one dynamic light to the light data list
 //
 //==========================================================================
-void FDynLightData::AddLightToList(int group, FDynamicLight * light)
+void FDynLightData::AddLightToList(int group, FDynamicLight * light, bool forceAttenuate)
 {
 	int i = 0;
 
@@ -112,7 +111,7 @@ void FDynLightData::AddLightToList(int group, FDynamicLight * light)
 	}
 	else shadowIndex = 1025.f;
 	// Store attenuate flag in the sign bit of the float.
-	if (light->IsAttenuated()) shadowIndex = -shadowIndex;
+	if (light->IsAttenuated() || forceAttenuate) shadowIndex = -shadowIndex;
 
 	float lightType = 0.0f;
 	float spotInnerAngle = 0.0f;

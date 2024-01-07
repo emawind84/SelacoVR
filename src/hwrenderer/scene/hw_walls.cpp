@@ -183,11 +183,14 @@ void GLWall::PutWall(HWDrawInfo *di, bool translucent)
     if (di->FixedColormap != CM_DEFAULT || (Colormap.LightColor.isWhite() && lightlevel == 255))
         flags &= ~GLWF_GLOW;
     
-	if (level.HasDynamicLights && di->FixedColormap == CM_DEFAULT && gltexture != nullptr && !(screen->hwcaps & RFL_NO_SHADERS))
+	if (!(screen->hwcaps & RFL_BUFFER_STORAGE))
 	{
-		SetupLights(di, lightdata);
+		if (level.HasDynamicLights && di->FixedColormap == CM_DEFAULT && gltexture != nullptr && !(screen->hwcaps & RFL_NO_SHADERS))
+		{
+			SetupLights(di, lightdata);
+		}
+		MakeVertices(di, translucent);
 	}
-	MakeVertices(di, translucent);
 
 
 	bool solid;
@@ -1524,6 +1527,7 @@ void GLWall::Process(HWDrawInfo *di, seg_t *seg, sector_t * frontsector, sector_
 		}
 		v1 = seg->v1;
 		v2 = seg->v2;
+		flags |= GLWF_NOSPLITUPPER | GLWF_NOSPLITLOWER;	// seg-splitting not needed for single segs.
 	}
 
 

@@ -26,12 +26,12 @@
 **
 */
 
-#include "gl/system/gl_system.h"
+#include "gl_load/gl_system.h"
 #include "v_video.h"
 #include "m_png.h"
 #include "templates.h"
 
-#include "gl/system/gl_interface.h"
+#include "gl_load/gl_interface.h"
 #include "gl/system/gl_framebuffer.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderbuffers.h"
@@ -39,6 +39,7 @@
 #include "hwrenderer/utility/hw_clock.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "gl/models/gl_models.h"
+#include "gl/stereo3d/gl_stereo3d.h"
 #include "gl_debug.h"
 #include "r_videoscale.h"
 
@@ -76,9 +77,7 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int 
 	gl_RenderState.Reset();
 
 	GLRenderer = new FGLRenderer(this);
-	memcpy (SourcePalette, GPalette.BaseColors, sizeof(PalEntry)*256);
-	UpdatePalette ();
-	ScreenshotBuffer = NULL;
+	InitPalette();
 
 	InitializeState();
 	mDebug = std::make_shared<FGLDebug>();
@@ -139,7 +138,7 @@ void OpenGLFrameBuffer::InitializeState()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	GLRenderer->Initialize(GetWidth(), GetHeight());
-	GLRenderer->SetOutputViewport(nullptr);
+	SetViewportRects(nullptr);
 }
 
 //==========================================================================
@@ -150,8 +149,13 @@ void OpenGLFrameBuffer::InitializeState()
 
 void OpenGLFrameBuffer::Update()
 {
+	twoD.Reset();
+	Flush3D.Reset();
+
 	DrawRateStuff();
+	Flush3D.Clock();
 	GLRenderer->Flush();
+	Flush3D.Unclock();
 
 	Swap();
 	CheckBench();
@@ -164,14 +168,11 @@ void OpenGLFrameBuffer::Update()
 	if (clientHeight < 100) clientHeight = 100;
 	if (clientWidth > 0 && clientHeight > 0 && (Width != clientWidth || Height != clientHeight))
 	{
-		// Do not call Resize here because it's only for software canvases
 		Width = clientWidth;
 		Height = clientHeight;
 		V_OutputResized(Width, Height);
 		GLRenderer->mVBO->OutputResized(Width, Height);
 	}
-
-	GLRenderer->SetOutputViewport(nullptr);
 }
 
 //===========================================================================
@@ -203,8 +204,7 @@ void OpenGLFrameBuffer::WriteSavePic(player_t *player, FileWriter *file, int wid
 {
 	if (!V_IsHardwareRenderer())
 		Super::WriteSavePic(player, file, width, height);
-
-	if (GLRenderer != nullptr)
+	else if (GLRenderer != nullptr)
 		GLRenderer->WriteSavePic(player, file, width, height);
 }
 
@@ -247,7 +247,7 @@ uint32_t OpenGLFrameBuffer::GetCaps()
 		// legacy mode always has truecolor because palette tonemap is not available
 		FlagSet |= RFF_TRUECOLOR;
 	}
-	else if (!(FGLRenderBuffers::IsEnabled()))
+	else if (!RenderBuffersEnabled())
 	{
 		// truecolor is always available when renderbuffers are unavailable because palette tonemap is not possible
 		FlagSet |= RFF_TRUECOLOR | RFF_MATSHADER | RFF_BRIGHTMAP;
@@ -383,35 +383,23 @@ void OpenGLFrameBuffer::ResetFixedColormap()
 	}
 }
 
-
-void OpenGLFrameBuffer::UpdatePalette()
+void OpenGLFrameBuffer::BlurScene(float amount)
 {
-	if (GLRenderer)
-		GLRenderer->ClearTonemapPalette();
+	GLRenderer->BlurScene(amount);
 }
 
-void OpenGLFrameBuffer::GetFlashedPalette (PalEntry pal[256])
+bool OpenGLFrameBuffer::RenderBuffersEnabled()
 {
-	memcpy(pal, SourcePalette, 256*sizeof(PalEntry));
+	return FGLRenderBuffers::IsEnabled();
 }
 
-PalEntry *OpenGLFrameBuffer::GetPalette ()
+void OpenGLFrameBuffer::SetViewportRects(IntRect *bounds)
 {
-	return SourcePalette;
+	Super::SetViewportRects(bounds);
+	if (!bounds)
+		s3d::Stereo3DMode::getCurrentMode().AdjustViewports();
 }
 
-bool OpenGLFrameBuffer::SetFlash(PalEntry rgb, int amount)
-{
-	Flash = PalEntry(amount, rgb.r, rgb.g, rgb.b);
-	return true;
-}
-
-void OpenGLFrameBuffer::GetFlash(PalEntry &rgb, int &amount)
-{
-	rgb = Flash;
-	rgb.a = 0;
-	amount = Flash.a;
-}
 
 void OpenGLFrameBuffer::InitForLevel()
 {
@@ -420,6 +408,13 @@ void OpenGLFrameBuffer::InitForLevel()
 		GLRenderer->SetupLevel();
 	}
 }
+
+void OpenGLFrameBuffer::UpdatePalette()
+{
+	if (GLRenderer)
+		GLRenderer->ClearTonemapPalette();
+}
+
 
 //===========================================================================
 //
@@ -438,6 +433,7 @@ void OpenGLFrameBuffer::SetClearColor(int color)
 
 void OpenGLFrameBuffer::BeginFrame()
 {
+	SetViewportRects(nullptr);
 	if (GLRenderer != nullptr)
 		GLRenderer->BeginFrame();
 }
@@ -450,7 +446,7 @@ void OpenGLFrameBuffer::BeginFrame()
 
 void OpenGLFrameBuffer::GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, ESSType &color_type, float &gamma)
 {
-	const auto &viewport = GLRenderer->mOutputLetterbox;
+	const auto &viewport = mOutputLetterbox;
 
 	// Grab what is in the back buffer.
 	// We cannot rely on SCREENWIDTH/HEIGHT here because the output may have been scaled.
@@ -464,8 +460,7 @@ void OpenGLFrameBuffer::GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, 
 	int w = SCREENWIDTH;
 	int h = SCREENHEIGHT;
 
-	ReleaseScreenshotBuffer();
-	ScreenshotBuffer = new uint8_t[w * h * 3];
+	auto ScreenshotBuffer = new uint8_t[w * h * 3];
 
 	float rcpWidth = 1.0f / w;
 	float rcpHeight = 1.0f / h;
@@ -478,58 +473,22 @@ void OpenGLFrameBuffer::GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, 
 			int sx = u * viewport.width;
 			int sy = v * viewport.height;
 			int sindex = (sx + sy * viewport.width) * 3;
-			int dindex = (x + y * w) * 3;
+			int dindex = (x + (h - y - 1) * w) * 3;
 			ScreenshotBuffer[dindex] = pixels[sindex];
 			ScreenshotBuffer[dindex + 1] = pixels[sindex + 1];
 			ScreenshotBuffer[dindex + 2] = pixels[sindex + 2];
 		}
 	}
 
-	pitch = -w*3;
+	pitch = w * 3;
 	color_type = SS_RGB;
-	buffer = ScreenshotBuffer + w * 3 * (h - 1);
+	buffer = ScreenshotBuffer;
 
 	// Screenshot should not use gamma correction if it was already applied to rendered image
 	EXTERN_CVAR(Bool, fullscreen);
 	gamma = 1 == vid_hwgamma || (2 == vid_hwgamma && !fullscreen) ? 1.0f : Gamma;
 	if (vid_hdr_active && fullscreen)
 		gamma *= 2.2f;
-}
-
-//===========================================================================
-// 
-// Releases the screenshot buffer.
-//
-//===========================================================================
-
-void OpenGLFrameBuffer::ReleaseScreenshotBuffer()
-{
-	if (ScreenshotBuffer != NULL) delete [] ScreenshotBuffer;
-	ScreenshotBuffer = NULL;
-}
-
-
-void OpenGLFrameBuffer::GameRestart()
-{
-	memcpy (SourcePalette, GPalette.BaseColors, sizeof(PalEntry)*256);
-	UpdatePalette ();
-	ScreenshotBuffer = NULL;
-}
-
-
-void OpenGLFrameBuffer::ScaleCoordsFromWindow(int16_t &x, int16_t &y)
-{
-	int letterboxX = GLRenderer->mOutputLetterbox.left;
-	int letterboxY = GLRenderer->mOutputLetterbox.top;
-	int letterboxWidth = GLRenderer->mOutputLetterbox.width;
-	int letterboxHeight = GLRenderer->mOutputLetterbox.height;
-
-	// Subtract the LB video mode letterboxing
-	if (IsFullscreen())
-		y -= (GetTrueHeight() - VideoHeight) / 2;
-
-	x = int16_t((x - letterboxX) * Width / letterboxWidth);
-	y = int16_t((y - letterboxY) * Height / letterboxHeight);
 }
 
 //===========================================================================

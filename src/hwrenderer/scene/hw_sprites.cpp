@@ -25,7 +25,6 @@
 **
 */
 
-#include "gl/system/gl_system.h"
 #include "p_local.h"
 #include "p_effect.h"
 #include "g_level.h"
@@ -46,6 +45,7 @@
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_fakeflat.h"
+#include "hwrenderer/scene/hw_portal.h"
 #include "hwrenderer/utility/hw_cvars.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_lighting.h"
@@ -514,9 +514,9 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		thing->flags7 |= MF7_FLYCHEAT;	// do this only once for the very first frame, but not if it gets into range again.
 	}
 
-	if (thruportal != 2 && di->clipPortal)
+	if (thruportal != 2 && di->mClipPortal != nullptr)
 	{
-		int clipres = di->ClipPoint(thingpos);
+		int clipres = di->mClipPortal->ClipPoint(thingpos);
 		if (clipres == PClip_InFront) return;
 	}
 	// disabled because almost none of the actual game code is even remotely prepared for this. If desired, use the INTERPOLATE flag.

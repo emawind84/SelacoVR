@@ -107,7 +107,7 @@ namespace swrenderer
 		if (r_models)
 			PolyTriangleDrawer::ClearBuffers(viewport->RenderTarget);
 
-		if (r_clearbuffer != 0)
+		if (r_clearbuffer != 0 || r_debug_draw != 0)
 		{
 			if (!viewport->RenderTarget->IsBgra())
 			{
@@ -122,6 +122,7 @@ namespace swrenderer
 				for (int i = 0; i < size; i++)
 					dest[i] = bgracolor.d;
 			}
+			DrawerThreads::ResetDebugDrawPos();
 		}
 
 		RenderActorView(player->mo);
@@ -269,7 +270,7 @@ namespace swrenderer
 		thread->OpaquePass->ResetFakingUnderwater(); // [RH] Hack to make windows into underwater areas possible
 		thread->Portal->SetMainPortal();
 
-		PolyTriangleDrawer::SetViewport(thread->DrawQueue, viewwindowx, viewwindowy, viewwidth, viewheight, thread->Viewport->RenderTarget, true);
+		PolyTriangleDrawer::SetViewport(thread->DrawQueue, viewwindowx, viewwindowy, viewwidth, viewheight, thread->Viewport->RenderTarget);
 
 		// Cull things outside the range seen by this thread
 		VisibleSegmentRenderer visitor;

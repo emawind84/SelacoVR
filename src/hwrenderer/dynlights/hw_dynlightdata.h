@@ -55,7 +55,7 @@ struct FDynLightData
 	}
     
     bool GetLight(int group, Plane & p, FDynamicLight * light, bool checkside);
-    void AddLightToList(int group, FDynamicLight * light);
+    void AddLightToList(int group, FDynamicLight * light, bool forceAttenuate);
 
 };
 
