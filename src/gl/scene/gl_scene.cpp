@@ -467,7 +467,7 @@ void GLSceneDrawer::DrawScene(FDrawInfo *di, int drawmode, sector_t * viewsector
 
 	if (s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
 	{
-		gl_drawinfo->DrawPlayerSprites(viewsector);
+		di->DrawPlayerSprites(viewsector);
 	}
 
 	if (applySSAO && gl_RenderState.GetPassType() == GBUFFER_PASS)
@@ -773,7 +773,7 @@ void GLSceneDrawer::WriteSavePic (player_t *player, FileWriter *file, int width,
 	GLRenderer->mVBO->Reset();
 	if (!gl.legacyMode) GLRenderer->mLights->Clear();
 
-	sector_t *viewsector = RenderViewpoint(players[consoleplayer].camera, &bounds, r_viewpoint.FieldOfView.Degrees, 1.6f, 1.6f, true, false);
+	sector_t *viewsector = RenderViewpoint(players[consoleplayer].camera, &bounds, r_viewpoint.FieldOfView().Degrees, 1.6f, 1.6f, true, false);
 	glDisable(GL_STENCIL_TEST);
 	gl_RenderState.SetFixedColormap(CM_DEFAULT);
 	gl_RenderState.SetSoftLightLevel(-1);

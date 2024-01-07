@@ -32,7 +32,7 @@
 #include <cmath>
 #include "p_trace.h"
 #include "p_linetracedata.h"
-#include "gl/system/gl_system.h"
+#include "gl_load/gl_system.h"
 #include "doomtype.h" // Printf
 #include "d_player.h"
 #include "g_game.h" // G_Add...
@@ -221,7 +221,7 @@ namespace s3d
         TBXR_prepareEyeBuffer(eye);
 
         GLRenderer->mBuffers->BindEyeTexture(eye, 0);
-        GL_IRECT box = {0, 0, GLRenderer->mSceneViewport.width, GLRenderer->mSceneViewport.height};
+        IntRect box = {0, 0, screen->mSceneViewport.width, screen->mSceneViewport.height};
         GLRenderer->DrawPresentTexture(box, true);
 
         TBXR_finishEyeBuffer(eye);
@@ -329,14 +329,16 @@ namespace s3d
 // AdjustViewports() is called from within FLGRenderer::SetOutputViewport(...)
     void OpenXRDeviceMode::AdjustViewports() const
     {
+        if (screen == nullptr)
+            return;
         // Draw the 3D scene into the entire framebuffer
-        GLRenderer->mSceneViewport.width = sceneWidth;
-        GLRenderer->mSceneViewport.height = sceneHeight;
-        GLRenderer->mSceneViewport.left = 0;
-        GLRenderer->mSceneViewport.top = 0;
+        screen->mSceneViewport.width = sceneWidth;
+        screen->mSceneViewport.height = sceneHeight;
+        screen->mSceneViewport.left = 0;
+        screen->mSceneViewport.top = 0;
 
-        GLRenderer->mScreenViewport.width = sceneWidth;
-        GLRenderer->mScreenViewport.height = sceneHeight;
+        screen->mScreenViewport.width = sceneWidth;
+        screen->mScreenViewport.height = sceneHeight;
     }
 
     void OpenXRDeviceMode::AdjustPlayerSprites(int hand) const

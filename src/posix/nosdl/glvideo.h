@@ -4,7 +4,7 @@
 #include "hardware.h"
 #include "v_video.h"
 
-#include "gl/system/gl_system.h"
+//#include "gl_load/gl_system.h"
 
 EXTERN_CVAR (Float, dimamount)
 EXTERN_CVAR (Color, dimcolor)
