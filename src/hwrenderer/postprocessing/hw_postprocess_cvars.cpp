@@ -106,5 +106,5 @@ CUSTOM_CVAR(Bool, gl_paltonemap_reverselookup, true, CVAR_ARCHIVE | CVAR_NOINITC
 	screen->UpdatePalette();
 }
 
-CVAR(Float, gl_menu_blur, -1.0f, CVAR_ARCHIVE)
+CVAR(Float, gl_menu_blur, 0.0f, CVAR_ARCHIVE)
 

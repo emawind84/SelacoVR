@@ -36,7 +36,7 @@
 #include "version.h"
 
 // Set up 3D-specific console variables:
-CVAR(Int, vr_mode, 15, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
+CVAR(Int, vr_mode, 15, 0)
 
 // switch left and right eye views
 CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
@@ -156,6 +156,9 @@ const Stereo3DMode& Stereo3DMode::getCurrentMode()
 		break;
 	case 14:
 		setCurrentMode(CheckerInterleaved3D::getInstance(vr_ipd));
+		break;
+	case 15:
+		setCurrentMode(OpenXRDeviceMode::getInstance());
 		break;
 	case 0:
 	default:
