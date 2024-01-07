@@ -25,7 +25,7 @@
 **
 */
 
-#include "gl/system/gl_system.h"
+#include "gl_load/gl_system.h"
 #include "a_sharedglobal.h"
 #include "r_defs.h"
 #include "r_sky.h"
@@ -37,7 +37,7 @@
 #include "p_lnspec.h"
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
 
-#include "gl/system/gl_interface.h"
+#include "gl_load/gl_interface.h"
 #include "hwrenderer/utility/hw_cvars.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_lightdata.h"
@@ -66,6 +66,34 @@ void FDrawInfo::SetupSubsectorLights(GLFlat *flat, int pass, subsector_t * sub, 
 		return;
 	}
 	if (flat->SetupSubsectorLights(pass, sub, lightdata))
+	{
+		int d = GLRenderer->mLights->UploadLights(lightdata);
+		if (pass == GLPASS_LIGHTSONLY)
+		{
+			GLRenderer->mLights->StoreIndex(d);
+		}
+		else
+		{
+			gl_RenderState.ApplyLightIndex(d);
+		}
+	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void FDrawInfo::SetupSectorLights(GLFlat *flat, int pass, int *dli)
+{
+	if (dli != NULL && *dli != -1)
+	{
+		gl_RenderState.ApplyLightIndex(GLRenderer->mLights->GetIndex(*dli));
+		(*dli)++;
+		return;
+	}
+	if (flat->SetupSectorLights(pass, flat->sector, lightdata))
 	{
 		int d = GLRenderer->mLights->UploadLights(lightdata);
 		if (pass == GLPASS_LIGHTSONLY)
@@ -145,23 +173,30 @@ void FDrawInfo::DrawSubsector(GLFlat *flat, subsector_t * sub)
 void FDrawInfo::ProcessLights(GLFlat *flat, bool istrans)
 {
 	flat->dynlightindex = GLRenderer->mLights->GetIndexPtr();
-
-	// Draw the subsectors belonging to this sector
-	for (int i=0; i< flat->sector->subsectorcount; i++)
+	
+	if (flat->sector->ibocount > 0 && !gl_RenderState.GetClipLineShouldBeActive())
 	{
-		subsector_t * sub = flat->sector->subsectors[i];
-		if (gl_drawinfo->ss_renderflags[sub->Index()]& flat->renderflags || istrans)
+		SetupSectorLights(flat, GLPASS_LIGHTSONLY, nullptr);
+	}
+	else
+	{
+		// Draw the subsectors belonging to this sector
+		for (int i = 0; i < flat->sector->subsectorcount; i++)
 		{
-			SetupSubsectorLights(flat, GLPASS_LIGHTSONLY, sub, nullptr);
+			subsector_t * sub = flat->sector->subsectors[i];
+			if (ss_renderflags[sub->Index()] & flat->renderflags || istrans)
+			{
+				SetupSubsectorLights(flat, GLPASS_LIGHTSONLY, sub, nullptr);
+			}
 		}
 	}
-
+	
 	// Draw the subsectors assigned to it due to missing textures
 	if (!(flat->renderflags&SSRF_RENDER3DPLANES))
 	{
 		gl_subsectorrendernode * node = (flat->renderflags&SSRF_RENDERFLOOR)?
-			gl_drawinfo->GetOtherFloorPlanes(flat->sector->sectornum) :
-			gl_drawinfo->GetOtherCeilingPlanes(flat->sector->sectornum);
+			GetOtherFloorPlanes(flat->sector->sectornum) :
+			GetOtherCeilingPlanes(flat->sector->sectornum);
 
 		while (node)
 		{
@@ -181,40 +216,60 @@ void FDrawInfo::ProcessLights(GLFlat *flat, bool istrans)
 void FDrawInfo::DrawSubsectors(GLFlat *flat, int pass, bool processlights, bool istrans)
 {
 	int dli = flat->dynlightindex;
+	auto vcount = flat->sector->ibocount;
 
 	gl_RenderState.Apply();
-	if (flat->vboindex >= 0)
+	auto iboindex = flat->iboindex;
+	if (gl.legacyMode)
 	{
-		int index = flat->vboindex;
-		for (int i=0; i<flat->sector->subsectorcount; i++)
+		processlights = false;
+		iboindex = -1;
+	}
+
+	if (iboindex >= 0)
+	{
+		if (vcount > 0 && !gl_RenderState.GetClipLineShouldBeActive())
 		{
-			subsector_t * sub = flat->sector->subsectors[i];
-			if (gl_max_vertices > 0 && s3d::EyePose::flatVerticesPerEye + sub->numlines >= gl_max_vertices)
+			if (processlights) SetupSectorLights(flat, GLPASS_ALL, &dli);
+			drawcalls.Clock();
+			glDrawElements(GL_TRIANGLES, vcount, GL_UNSIGNED_INT, GLRenderer->mVBO->GetIndexPointer() + iboindex);
+			drawcalls.Unclock();
+			flatvertices += vcount;
+			flatprimitives++;
+		}
+		else
+		{
+			int index = iboindex;
+			for (int i = 0; i < flat->sector->subsectorcount; i++)
 			{
-				continue;
+				subsector_t * sub = flat->sector->subsectors[i];
+				if (gl_max_vertices > 0 && s3d::EyePose::flatVerticesPerEye + sub->numlines >= gl_max_vertices)
+				{
+					continue;
+				}
+				if (sub->numlines <= 2) continue;
+
+				if (ss_renderflags[sub->Index()] & flat->renderflags || istrans)
+				{
+					if (processlights) SetupSubsectorLights(flat, GLPASS_ALL, sub, &dli);
+					drawcalls.Clock();
+					glDrawElements(GL_TRIANGLES, (sub->numlines - 2) * 3, GL_UNSIGNED_INT, GLRenderer->mVBO->GetIndexPointer() + index);
+					drawcalls.Unclock();
+					s3d::EyePose::flatVerticesPerEye += sub->numlines;
+					flatvertices += sub->numlines;
+					flatprimitives++;
+				}
+				index += (sub->numlines - 2) * 3;
 			}
-				
-			if (gl_drawinfo->ss_renderflags[sub->Index()]& flat->renderflags || istrans)
-			{
-				if (processlights) SetupSubsectorLights(flat, GLPASS_ALL, sub, &dli);
-				drawcalls.Clock();
-				glDrawArrays(GL_TRIANGLE_FAN, index, sub->numlines);
-				drawcalls.Unclock();
-				s3d::EyePose::flatVerticesPerEye += sub->numlines;
-				flatvertices += sub->numlines;
-				flatprimitives++;
-			}
-			index += sub->numlines;
 		}
 	}
 	else
 	{
 		// Draw the subsectors belonging to this sector
-		// (can this case even happen?)
 		for (int i=0; i<flat->sector->subsectorcount; i++)
 		{
 			subsector_t * sub = flat->sector->subsectors[i];
-			if (gl_drawinfo->ss_renderflags[sub->Index()]& flat->renderflags || istrans)
+			if (ss_renderflags[sub->Index()]& flat->renderflags || istrans)
 			{
 				if (processlights) SetupSubsectorLights(flat, GLPASS_ALL, sub, &dli);
 				DrawSubsector(flat, sub);
@@ -226,8 +281,8 @@ void FDrawInfo::DrawSubsectors(GLFlat *flat, int pass, bool processlights, bool 
 	if (!(flat->renderflags&SSRF_RENDER3DPLANES))
 	{
 		gl_subsectorrendernode * node = (flat->renderflags&SSRF_RENDERFLOOR)?
-			gl_drawinfo->GetOtherFloorPlanes(flat->sector->sectornum) :
-			gl_drawinfo->GetOtherCeilingPlanes(flat->sector->sectornum);
+			GetOtherFloorPlanes(flat->sector->sectornum) :
+			GetOtherCeilingPlanes(flat->sector->sectornum);
 
 		while (node)
 		{
@@ -419,7 +474,7 @@ void FDrawInfo::AddFlat(GLFlat *flat, bool fog)
 		bool masked = flat->gltexture->isMasked() && ((flat->renderflags&SSRF_RENDER3DPLANES) || flat->stack);
 		list = masked ? GLDL_MASKEDFLATS : GLDL_PLAINFLATS;
 	}
-	auto newflat = gl_drawinfo->drawlists[list].NewFlat();
+	auto newflat = drawlists[list].NewFlat();
 	*newflat = *flat;
 }
 

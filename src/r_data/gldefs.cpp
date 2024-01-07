@@ -44,7 +44,7 @@
 #include "g_levellocals.h"
 #include "a_dynlight.h"
 #include "textures/skyboxtexture.h"
-#include "gl/shaders/gl_postprocessshader.h"
+#include "hwrenderer/postprocessing/hw_postprocessshader.h"
 #include "hwrenderer/textures/hw_material.h"
 
 void AddLightDefaults(FLightDefaults *defaults, double attnFactor);
@@ -1009,11 +1009,11 @@ class GLDefsParser
 		TexMan.AddTexture(sb);
 	}
 
-//===========================================================================
-// 
-//	Reads glow definitions from GLDEFS
-//
-//===========================================================================
+	//===========================================================================
+	// 
+	//	Reads glow definitions from GLDEFS
+	//
+	//===========================================================================
 
 	void ParseGlow()
 	{

@@ -252,11 +252,14 @@ public:
     void ProcessDecal(HWDrawInfo *di, DBaseDecal *decal, const FVector3 &normal);
     void ProcessDecals(HWDrawInfo *di);
 
-	void CreateVertices(FFlatVertex *&ptr, bool nosplit);
+	int CreateVertices(FFlatVertex *&ptr, bool nosplit);
 	void SplitLeftEdge (FFlatVertex *&ptr);
 	void SplitRightEdge(FFlatVertex *&ptr);
 	void SplitUpperEdge(FFlatVertex *&ptr);
 	void SplitLowerEdge(FFlatVertex *&ptr);
+
+	void CountLeftEdge (unsigned &ptr);
+	void CountRightEdge(unsigned &ptr);
 
 	int CountVertices();
 
@@ -309,12 +312,14 @@ public:
 	bool stack;
 	bool ceiling;
 	uint8_t renderflags;
-	int vboindex;
+	int iboindex;
 	//int vboheight;
 
 	int dynlightindex;
 
+	bool SetupLights(int pass, FLightNode *head, FDynLightData &lightdata, int portalgroup);
 	bool SetupSubsectorLights(int pass, subsector_t * sub, FDynLightData &lightdata);
+	bool SetupSectorLights(int pass, sector_t * sec, FDynLightData &lightdata);
 
 	void PutFlat(HWDrawInfo *di, bool fog = false);
 	void Process(HWDrawInfo *di, sector_t * model, int whichplane, bool notexture);

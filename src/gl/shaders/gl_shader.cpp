@@ -26,24 +26,21 @@
 **
 */
 
-#include "gl/system/gl_system.h"
+#include "gl_load/gl_system.h"
 #include "c_cvars.h"
 #include "v_video.h"
 #include "w_wad.h"
 #include "doomerrors.h"
 #include "cmdlib.h"
-#include "vm.h"
-#include "d_player.h"
 #include "md5.h"
 #include "m_misc.h"
 
-#include "gl/system/gl_interface.h"
+#include "gl_load/gl_interface.h"
 #include "gl/system/gl_debug.h"
 #include "r_data/matrix.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/shaders/gl_shader.h"
-#include "gl/shaders/gl_postprocessshader.h"
 #include "gl/dynlights/gl_lightbuffer.h"
 #include <map>
 #include <memory>
@@ -1143,146 +1140,3 @@ void gl_DestroyUserShaders()
 	// todo
 }
 
-static bool IsConsolePlayer(player_t *player)
-{
-	AActor *activator = player ? player->mo : nullptr;
-	if (activator == nullptr || activator->player == nullptr)
-		return false;
-	return int(activator->player - players) == consoleplayer;
-}
-
-static void ShaderSetEnabled(player_t *player, const FString &shaderName, bool value)
-{
-	if (IsConsolePlayer(player))
-	{
-		for (unsigned int i = 0; i < PostProcessShaders.Size(); i++)
-		{
-			PostProcessShader &shader = PostProcessShaders[i];
-			if (shader.Name == shaderName)
-				shader.Enabled = value;
-		}
-	}
-}
-
-DEFINE_ACTION_FUNCTION_NATIVE(_Shader, SetEnabled, ShaderSetEnabled)
-{
-	PARAM_PROLOGUE;
-	PARAM_POINTER(player, player_t);
-	PARAM_STRING(shaderName);
-	PARAM_BOOL(value);
-	ShaderSetEnabled(player, shaderName, value);
-
-	return 0;
-}
-
-static void ShaderSetUniform1f(player_t *player, const FString &shaderName, const FString &uniformName, double value)
-{
-	if (IsConsolePlayer(player))
-	{
-		for (unsigned int i = 0; i < PostProcessShaders.Size(); i++)
-		{
-			PostProcessShader &shader = PostProcessShaders[i];
-			if (shader.Name == shaderName)
-			{
-				double *vec4 = shader.Uniforms[uniformName].Values;
-				vec4[0] = value;
-				vec4[1] = 0.0;
-				vec4[2] = 0.0;
-				vec4[3] = 1.0;
-			}
-		}
-	}
-}
-
-DEFINE_ACTION_FUNCTION_NATIVE(_Shader, SetUniform1f, ShaderSetUniform1f)
-{
-	PARAM_PROLOGUE;
-	PARAM_POINTER(player, player_t);
-	PARAM_STRING(shaderName);
-	PARAM_STRING(uniformName);
-	PARAM_FLOAT(value);
-	ShaderSetUniform1f(player, shaderName, uniformName, value);
-
-	return 0;
-}
-
-DEFINE_ACTION_FUNCTION(_Shader, SetUniform2f)
-{
-	PARAM_PROLOGUE;
-	PARAM_POINTER(player, player_t);
-	PARAM_STRING(shaderName);
-	PARAM_STRING(uniformName);
-	PARAM_FLOAT(x);
-	PARAM_FLOAT(y);
-
-	if (IsConsolePlayer(player))
-	{
-		for (unsigned int i = 0; i < PostProcessShaders.Size(); i++)
-		{
-			PostProcessShader &shader = PostProcessShaders[i];
-			if (shader.Name == shaderName)
-			{
-				double *vec4 = shader.Uniforms[uniformName].Values;
-				vec4[0] = x;
-				vec4[1] = y;
-				vec4[2] = 0.0;
-				vec4[3] = 1.0;
-			}
-		}
-	}
-	return 0;
-}
-
-DEFINE_ACTION_FUNCTION(_Shader, SetUniform3f)
-{
-	PARAM_PROLOGUE;
-	PARAM_POINTER(player, player_t);
-	PARAM_STRING(shaderName);
-	PARAM_STRING(uniformName);
-	PARAM_FLOAT(x);
-	PARAM_FLOAT(y);
-	PARAM_FLOAT(z);
-
-	if (IsConsolePlayer(player))
-	{
-		for (unsigned int i = 0; i < PostProcessShaders.Size(); i++)
-		{
-			PostProcessShader &shader = PostProcessShaders[i];
-			if (shader.Name == shaderName)
-			{
-				double *vec4 = shader.Uniforms[uniformName].Values;
-				vec4[0] = x;
-				vec4[1] = y;
-				vec4[2] = z;
-				vec4[3] = 1.0;
-			}
-		}
-	}
-	return 0;
-}
-
-DEFINE_ACTION_FUNCTION(_Shader, SetUniform1i)
-{
-	PARAM_PROLOGUE;
-	PARAM_POINTER(player, player_t);
-	PARAM_STRING(shaderName);
-	PARAM_STRING(uniformName);
-	PARAM_INT(value);
-
-	if (IsConsolePlayer(player))
-	{
-		for (unsigned int i = 0; i < PostProcessShaders.Size(); i++)
-		{
-			PostProcessShader &shader = PostProcessShaders[i];
-			if (shader.Name == shaderName)
-			{
-				double *vec4 = shader.Uniforms[uniformName].Values;
-				vec4[0] = (double)value;
-				vec4[1] = 0.0;
-				vec4[2] = 0.0;
-				vec4[3] = 1.0;
-			}
-		}
-	}
-	return 0;
-}

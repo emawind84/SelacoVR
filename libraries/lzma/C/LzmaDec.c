@@ -700,7 +700,6 @@ static int MY_FAST_CALL LzmaDec_DecodeReal2(CLzmaDec *p, SizeT limit, const Byte
 }
 
 
-
 typedef enum
 {
   DUMMY_INPUT_EOF, /* need more input data */

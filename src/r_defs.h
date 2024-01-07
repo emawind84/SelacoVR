@@ -972,6 +972,12 @@ public:
 	double		CenterFloor() const { return floorplane.ZatPoint(centerspot); }
 	double		CenterCeiling() const { return ceilingplane.ZatPoint(centerspot); }
 
+	void CopyColors(sector_t *other)
+	{
+		memcpy(SpecialColors, other->SpecialColors, sizeof(SpecialColors));
+		Colormap = other->Colormap;
+	}
+
 	// [RH] store floor and ceiling planes instead of heights
 	secplane_t	floorplane, ceilingplane;
 
@@ -979,26 +985,6 @@ public:
 	PalEntry SpecialColors[5];
 	PalEntry AdditiveColors[5];
 	FColormap Colormap;
-
-private:
-	FDynamicColormap *_ColorMap;	// [RH] Per-sector colormap
-
-public:
-	// just a helper for refactoring 
-	FDynamicColormap *GetColorMap()
-	{
-		return _ColorMap;
-	}
-
-	void CopyColors(sector_t *other)
-	{
-		memcpy(SpecialColors, other->SpecialColors, sizeof(SpecialColors));
-		Colormap = other->Colormap;
-
-		_ColorMap = other->_ColorMap;
-	}
-
-
 
 	TObjPtr<AActor*> SoundTarget;
 
@@ -1095,9 +1081,11 @@ public:
 		vbo_fakeceiling = ceiling+2,
 	};
 
-	int				vboindex[4];	// VBO indices of the 4 planes this sector uses during rendering
+	int				vboindex[4];	// VBO indices of the 4 planes this sector uses during rendering. This is only needed for updating plane heights.
+	int				iboindex[4];	// IBO indices of the 4 planes this sector uses during rendering
 	double			vboheight[2];	// Last calculated height for the 2 planes of this actual sector
-	int				vbocount[2];	// Total count of vertices belonging to this sector's planes
+	int				vbocount[2];	// Total count of vertices belonging to this sector's planes. This is used when a sector height changes and also contains all attached planes.
+	int				ibocount;		// number of indices per plane (identical for all planes.) If this is -1 the index buffer is not in use.
 
 	float GetReflect(int pos) { return gl_plane_reflection_i? reflect[pos] : 0; }
 	bool VBOHeightcheck(int pos) const { return vboheight[pos] == GetPlaneTexZ(pos); }

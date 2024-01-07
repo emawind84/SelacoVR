@@ -24,8 +24,8 @@
 #define __GL_RENDERSTATE_H
 
 #include <string.h>
-#include "gl/system/gl_system.h"
-#include "gl/system/gl_interface.h"
+#include "gl_load/gl_system.h"
+#include "gl_load/gl_interface.h"
 #include "gl/renderer/gl_renderer.h"
 #include "r_data/matrix.h"
 #include "hwrenderer/scene//hw_drawstructs.h"
@@ -88,6 +88,7 @@ class FRenderState
 	bool mGradientEnabled;
 	bool mSplitEnabled;
 	bool mClipLineEnabled;
+	bool mClipLineShouldBeActive;
 	bool mBrightmapEnabled;
 	bool mColorMask[4];
 	bool currentColorMask[4];
@@ -214,6 +215,11 @@ public:
 	bool GetClipLineState()
 	{
 		return mClipLineEnabled;
+	}
+
+	bool GetClipLineShouldBeActive()
+	{
+		return mClipLineShouldBeActive;
 	}
 
 	void SetClipHeight(float height, float direction);
@@ -345,6 +351,11 @@ public:
 			{
 				glDisable(GL_CLIP_DISTANCE0);
 			}
+		}
+		else
+		{
+			// this needs to be flagged because in this case per-sector plane rendering needs to be disabled if a clip plane is active.
+			mClipLineShouldBeActive = on;
 		}
 	}
 

@@ -20,21 +20,19 @@
 //--------------------------------------------------------------------------
 //
 /*
-** gl_swscene.cpp
-** common overlay code for software and hardware renderer
+** r_swscene.cpp
+** render the software scene through the hardware rendering backend
 **
 */
 
 #include "hwrenderer/textures/hw_ihwtexture.h"
 #include "hwrenderer/textures/hw_material.h"
 #include "r_renderer.h"
-#include "gl_swscene.h"
+#include "r_swscene.h"
 #include "w_wad.h"
 #include "d_player.h"
 #include "textures/bitmap.h"
 #include "swrenderer/scene/r_light.h"
-
-#include "gl/renderer/gl_renderer.h"
 
 // [RH] Base blending values (for e.g. underwater)
 int BaseBlendR, BaseBlendG, BaseBlendB;
@@ -97,7 +95,7 @@ SWSceneDrawer::~SWSceneDrawer()
 	if (FBTexture != nullptr) delete FBTexture;
 }
 
-void SWSceneDrawer::RenderView(player_t *player)
+sector_t *SWSceneDrawer::RenderView(player_t *player)
 {
 	DCanvas buffer(screen->GetWidth(), screen->GetHeight(), V_IsTrueColor());
 	if (FBTexture == nullptr || FBTexture->SystemTexture[0] == nullptr || 
@@ -121,5 +119,5 @@ void SWSceneDrawer::RenderView(player_t *player)
 	auto map = swrenderer::CameraLight::Instance()->ShaderColormap();
 	screen->DrawTexture(FBTexture, 0, 0, DTA_SpecialColormap, map, TAG_DONE);
 	SWRenderer->DrawRemainingPlayerSprites();
-	GLRenderer->DrawBlend(r_viewpoint.sector, !!map, V_IsTrueColor(), true);
+	return r_viewpoint.sector;
 }

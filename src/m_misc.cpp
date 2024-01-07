@@ -647,7 +647,7 @@ void M_ScreenShot (const char *filename)
 		if (file == NULL)
 		{
 			Printf ("Could not open %s\n", autoname.GetChars());
-			screen->ReleaseScreenshotBuffer();
+			delete[] buffer;
 			return;
 		}
 		if (writepcx)
@@ -661,7 +661,7 @@ void M_ScreenShot (const char *filename)
 				screen->GetWidth(), screen->GetHeight(), pitch, gamma);
 		}
 		delete file;
-		screen->ReleaseScreenshotBuffer();
+		delete[] buffer;
 
 		if (!screenshot_quiet)
 		{

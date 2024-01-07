@@ -25,12 +25,12 @@
 **
 */
 
-#include "gl/system/gl_system.h"
+#include "gl_load/gl_system.h"
 #include "r_utility.h"
 #include "d_player.h"
 #include "v_video.h"
 
-#include "gl/system/gl_interface.h"
+#include "gl_load/gl_interface.h"
 #include "hwrenderer/utility/hw_cvars.h"
 #include "hwrenderer/scene/hw_weapon.h"
 #include "gl/renderer/gl_renderer.h"

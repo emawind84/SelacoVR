@@ -1495,6 +1495,7 @@ public:
 		sec->sectornum = index;
 		sec->damageinterval = 32;
 		sec->terrainnum[sector_t::ceiling] = sec->terrainnum[sector_t::floor] = -1;
+		sec->ibocount = -1;
 		memset(sec->SpecialColors, -1, sizeof(sec->SpecialColors));
 		memset(sec->AdditiveColors, 0, sizeof(sec->AdditiveColors));
 		if (floordrop) sec->Flags = SECF_FLOORDROP;

@@ -29,9 +29,6 @@
 
 #ifdef _WIN32
 #include <direct.h>
-#define mkdir(a,b) _mkdir (a)
-#else
-#include <sys/stat.h>
 #endif
 
 #ifdef HAVE_FPU_CONTROL
@@ -706,6 +703,7 @@ float QzDoom_GetFOV();
 void D_Display ()
 {
 	bool wipe;
+	sector_t *viewsec;
 
 	if (nodrawers || screen == NULL)
 		return; 				// for comparative timing / profiling
@@ -841,8 +839,9 @@ void D_Display ()
 			}
 			else level.HasDynamicLights = false;	// lights are off so effectively we have none.
 
-			screen->RenderView(&players[consoleplayer]);
+			viewsec = screen->RenderView(&players[consoleplayer]);
 			screen->Begin2D(false);
+			screen->DrawBlend(viewsec);
 			// returns with 2S mode set.
 			if (automapactive)
 			{
@@ -2367,6 +2366,7 @@ static void CheckCmdLine()
 	}
 }
 
+
 //==========================================================================
 //
 // I_Error
@@ -2956,7 +2956,7 @@ static int D_DoomMain_Internal (void)
 		else
 		{
 			// let the renderer reinitialize some stuff if needed
-			screen->GameRestart();
+			screen->InitPalette();
 			// These calls from inside V_Init2 are still necessary
 			C_NewModeAdjust();
 			M_InitVideoModesMenu();

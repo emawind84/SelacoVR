@@ -28,8 +28,8 @@
 #include "templates.h"
 #include "doomstat.h"
 #include "r_data/colormaps.h"
-#include "gl/system/gl_system.h"
-#include "gl/system/gl_interface.h"
+#include "gl_load/gl_system.h"
+#include "gl_load/gl_interface.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "hwrenderer/utility/hw_cvars.h"
 #include "gl/shaders/gl_shader.h"
@@ -86,7 +86,7 @@ static void matrixToGL(const VSMatrix &mat, int loc)
 void FRenderState::Reset()
 {
 	mTextureEnabled = true;
-	mClipLineEnabled = mSplitEnabled = mGradientEnabled = mBrightmapEnabled = mFogEnabled = mGlowEnabled = false;
+	mClipLineShouldBeActive = mClipLineEnabled = mSplitEnabled = mGradientEnabled = mBrightmapEnabled = mFogEnabled = mGlowEnabled = false;
 	mColorMask[0] = mColorMask[1] = mColorMask[2] = mColorMask[3] = true;
 	currentColorMask[0] = currentColorMask[1] = currentColorMask[2] = currentColorMask[3] = true;
 	mFogColor.d = -1;

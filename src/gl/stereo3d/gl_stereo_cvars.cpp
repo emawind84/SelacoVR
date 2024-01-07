@@ -41,15 +41,6 @@ CVAR(Int, vr_mode, 15, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
 // switch left and right eye views
 CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
 
-// For broadest GL compatibility, require user to explicitly enable quad-buffered stereo mode.
-// Setting vr_enable_quadbuffered_stereo does not automatically invoke quad-buffered stereo,
-// but makes it possible for subsequent "vr_mode 7" to invoke quad-buffered stereo
-CUSTOM_CVAR(Bool, vr_enable_quadbuffered, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
-{
-    //Does nothing
-	//Printf("You must restart " GAMENAME " to switch quad stereo mode\n");
-}
-
 // intraocular distance in meters
 CVAR(Float, vr_ipd, 0.064f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG) // METERS
 
@@ -118,7 +109,59 @@ void Stereo3DMode::setCurrentMode(const Stereo3DMode& mode) {
 /* static */
 const Stereo3DMode& Stereo3DMode::getCurrentMode() 
 {
-	setCurrentMode(OpenXRDeviceMode::getInstance());
+	if (gl.legacyMode) vr_mode = 0;	// GL 2 does not support this feature.
+
+	// NOTE: Ensure that these vr_mode values correspond to the ones in wadsrc/static/menudef.z
+	switch (vr_mode)
+	{
+	case 1:
+		setCurrentMode(GreenMagenta::getInstance(vr_ipd));
+		break;
+	case 2:
+		setCurrentMode(RedCyan::getInstance(vr_ipd));
+		break;
+	case 3:
+		setCurrentMode(SideBySideFull::getInstance(vr_ipd));
+		break;
+	case 4:
+		setCurrentMode(SideBySideSquished::getInstance(vr_ipd));
+		break;
+	case 5:
+		setCurrentMode(LeftEyeView::getInstance(vr_ipd));
+		break;
+	case 6:
+		setCurrentMode(RightEyeView::getInstance(vr_ipd));
+		break;
+	case 7:
+		if (screen->enable_quadbuffered) {
+			setCurrentMode(QuadStereo::getInstance(vr_ipd));
+		}
+		else {
+			setCurrentMode(MonoView::getInstance());
+		}
+		break;
+	// TODO: 8: Oculus Rift
+	case 9:
+		setCurrentMode(AmberBlue::getInstance(vr_ipd));
+		break;	
+	// TODO: 10: HTC Vive/OpenVR
+	case 11:
+		setCurrentMode(TopBottom3D::getInstance(vr_ipd));
+		break;
+	case 12:
+		setCurrentMode(RowInterleaved3D::getInstance(vr_ipd));
+		break;
+	case 13:
+		setCurrentMode(ColumnInterleaved3D::getInstance(vr_ipd));
+		break;
+	case 14:
+		setCurrentMode(CheckerInterleaved3D::getInstance(vr_ipd));
+		break;
+	case 0:
+	default:
+		setCurrentMode(MonoView::getInstance());
+		break;
+	}
 	return *currentStereo3DMode;
 }
 
