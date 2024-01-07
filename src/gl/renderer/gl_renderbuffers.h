@@ -193,7 +193,7 @@ private:
 	PPFrameBuffer mShadowMapFB;
 	int mCurrentShadowMapSize = 0;
 
-	GLuint mDitherTexture = 0;
+	PPTexture mDitherTexture;
 
 	static bool FailedCreate;
 	static bool BuffersActive;

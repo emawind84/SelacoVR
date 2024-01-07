@@ -781,19 +781,12 @@ void GLPlaneMirrorPortal::DrawContents(FDrawInfo *di)
 
 	di->UpdateCurrentMapSection();
 
-	int mapsection = R_PointInSubsector(r_viewpoint.Pos)->mapsection;
-
-	SaveMapSection();
-	drawer->CurrentMapSections.Set(mapsection);
-
 	gl_RenderState.SetClipHeight(planez, PlaneMirrorMode < 0 ? -1.f : 1.f);
 	drawer->DrawScene(di, DM_PORTAL);
 	gl_RenderState.SetClipHeight(0.f, 0.f);
 	PlaneMirrorFlag--;
 	PlaneMirrorMode = old_pm;
 	std::swap(screen->instack[sector_t::floor], screen->instack[sector_t::ceiling]);
-
-	RestoreMapSection();
 }
 
 void GLPlaneMirrorPortal::PushState()
@@ -968,7 +961,6 @@ void GLMirrorPortal::DrawContents(FDrawInfo *di)
 	gl_RenderState.EnableClipLine(true);
 	drawer->DrawScene(di, DM_PORTAL);
 	gl_RenderState.EnableClipLine(false);
-	RestoreMapSection();
 
 	MirrorFlag--;
 }

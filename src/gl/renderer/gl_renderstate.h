@@ -24,7 +24,7 @@
 #define __GL_RENDERSTATE_H
 
 #include <string.h>
-#include "gl/system/gl_system.h"
+#include "gl_load/gl_system.h"
 #include "gl_load/gl_interface.h"
 #include "gl/renderer/gl_renderer.h"
 #include "r_data/matrix.h"

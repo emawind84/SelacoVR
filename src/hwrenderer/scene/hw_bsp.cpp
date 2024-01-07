@@ -144,7 +144,7 @@ void HWDrawInfo::AddLine (seg_t *seg, bool portalclip)
 	{
 		GLWall wall;
 		wall.sub = currentsubsector;
-		wall.Process(gl_drawinfo, seg, seg->frontsector, seg->backsector, true);
+		wall.Process(this, seg, seg->frontsector, seg->backsector, true);
 		clipper.SafeAddClipRange(startAngle, endAngle);
 		return;
 	}
