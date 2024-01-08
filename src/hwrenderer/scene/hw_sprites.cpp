@@ -409,7 +409,6 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 {
 	sector_t rs;
 	sector_t * rendersector;
-	auto vp = r_viewpoint;
 
 	if (thing == nullptr)
 		return;
@@ -651,8 +650,8 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		{
 		case RF_FACESPRITE:
 		{
-			float viewvecX = vp.mViewVector.X;
-			float viewvecY = vp.mViewVector.Y;
+			float viewvecX = vp.ViewVector.X;
+			float viewvecY = vp.ViewVector.Y;
 
 			x1 = x - viewvecY*leftfac;
 			x2 = x - viewvecY*rightfac;
