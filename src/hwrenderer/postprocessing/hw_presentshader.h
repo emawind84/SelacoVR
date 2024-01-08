@@ -18,6 +18,8 @@ public:
 		int GrayFormula;
 		int WindowPositionParity; // top-of-window might not be top-of-screen
 		FVector2 Scale;
+		float ColorScale;
+		int HdrMode;
 
 		static std::vector<UniformFieldDesc> Desc()
 		{
@@ -30,6 +32,8 @@ public:
 				{ "GrayFormula", UniformType::Int, offsetof(UniformBlock, GrayFormula) },
 				{ "WindowPositionParity", UniformType::Int, offsetof(UniformBlock, WindowPositionParity) },
 				{ "UVScale", UniformType::Vec2, offsetof(UniformBlock, Scale) },
+				{ "ColorScale", UniformType::Float, offsetof(UniformBlock, ColorScale) },
+				{ "HdrMode", UniformType::Int, offsetof(UniformBlock, HdrMode) },
 			};
 		}
 	};
