@@ -55,7 +55,7 @@
 #include "gl/scene/gl_scenedrawer.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/stereo3d/gl_stereo3d.h"
-#include "gl/stereo3d/scoped_view_shifter.h"
+#include "hwrenderer/utility/scoped_view_shifter.h"
 #include "vm.h"
 
 //==========================================================================
@@ -678,7 +678,7 @@ sector_t * GLSceneDrawer::RenderViewpoint (AActor * camera, IntRect * bounds, fl
 		SetViewAngle(r_viewpoint.Angles.Yaw);
 		// Stereo mode specific viewpoint adjustment - temporarily shifts global ViewPos
 		eye->GetViewShift(GLRenderer->mAngles.Yaw.Degrees, viewShift);
-		s3d::ScopedViewShifter viewShifter(viewShift);
+		ScopedViewShifter viewShifter(r_viewpoint.Pos, viewShift);
 		SetViewMatrix(r_viewpoint.Pos.X, r_viewpoint.Pos.Y, r_viewpoint.Pos.Z, false, false);
 		gl_RenderState.ApplyMatrices();
 

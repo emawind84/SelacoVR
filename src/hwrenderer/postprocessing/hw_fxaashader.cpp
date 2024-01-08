@@ -24,29 +24,26 @@
 // Fast approXimate Anti-Aliasing (FXAA) post-processing
 //
 
-#include "gl_load/gl_system.h"
-#include "gl/shaders/gl_fxaashader.h"
+#include "hw_fxaashader.h"
 
 EXTERN_CVAR(Int, gl_fxaa)
 
-void FFXAALumaShader::Bind()
+void FFXAALumaShader::Bind(IRenderQueue *q)
 {
 	if (!mShader)
 	{
-		mShader.Compile(FShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 330);
-		mShader.Compile(FShaderProgram::Fragment, "shaders/glsl/fxaa.fp", "#define FXAA_LUMA_PASS\n", 330);
-		mShader.SetFragDataLocation(0, "FragColor");
-		mShader.Link("shaders/glsl/fxaa");
-		mShader.SetAttribLocation(0, "PositionInProjection");
-		InputTexture.Init(mShader, "InputTexture");
+		mShader.reset(screen->CreateShaderProgram());
+		mShader->Compile(IShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 330);
+		mShader->Compile(IShaderProgram::Fragment, "shaders/glsl/fxaa.fp", "#define FXAA_LUMA_PASS\n", 330);
+		mShader->Link("shaders/glsl/fxaa");
 	}
 
-	mShader.Bind();
+	mShader->Bind(q);
 }
 
 static int GetMaxVersion()
 {
-	return gl.glslversion >= 4.f ? 400 : 330;
+	return screen->glslversion >= 4.f ? 400 : 330;
 }
 
 static FString GetDefines()
@@ -76,24 +73,23 @@ static FString GetDefines()
 	return result;
 }
 
-void FFXAAShader::Bind()
+void FFXAAShader::Bind(IRenderQueue *q)
 {
 	assert(gl_fxaa > 0 && gl_fxaa < Count);
-	FShaderProgram &shader = mShaders[gl_fxaa];
+	auto &shader = mShaders[gl_fxaa];
 
 	if (!shader)
 	{
-		const FString defines = GetDefines();
+		FString prolog = Uniforms.CreateDeclaration("Uniforms", UniformBlock::Desc()) + GetDefines();
 		const int maxVersion = GetMaxVersion();
 
-		shader.Compile(FShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 330);
-		shader.Compile(FShaderProgram::Fragment, "shaders/glsl/fxaa.fp", defines, maxVersion);
-		shader.SetFragDataLocation(0, "FragColor");
-		shader.Link("shaders/glsl/fxaa");
-		shader.SetAttribLocation(0, "PositionInProjection");
-		InputTexture.Init(shader, "InputTexture");
-		ReciprocalResolution.Init(shader, "ReciprocalResolution");
+		shader.reset(screen->CreateShaderProgram());
+		shader->Compile(IShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", maxVersion);
+		shader->Compile(IShaderProgram::Fragment, "shaders/glsl/fxaa.fp", prolog, maxVersion);
+		shader->Link("shaders/glsl/fxaa");
+		shader->SetUniformBufferLocation(Uniforms.BindingPoint(), "Uniforms");
+		Uniforms.Init();
 	}
 
-	shader.Bind();
+	shader->Bind(q);
 }

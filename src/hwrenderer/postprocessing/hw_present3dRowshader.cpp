@@ -27,40 +27,31 @@
 **
 */
 
-#include "gl_load/gl_system.h"
-#include "gl/shaders/gl_present3dRowshader.h"
+#include "hw_present3dRowshader.h"
 
-void FPresentStereoShaderBase::Init(const char * vtx_shader_name, const char * program_name)
-{
-	FPresentShaderBase::Init(vtx_shader_name, program_name);
-	LeftEyeTexture.Init(mShader, "LeftEyeTexture");
-	RightEyeTexture.Init(mShader, "RightEyeTexture");
-	WindowPositionParity.Init(mShader, "WindowPositionParity");
-}
-
-void FPresent3DCheckerShader::Bind()
+void FPresent3DCheckerShader::Bind(IRenderQueue *q)
 {
 	if (!mShader)
 	{
 		Init("shaders/glsl/present_checker3d.fp", "shaders/glsl/presentChecker3d");
 	}
-	mShader.Bind();
+	mShader->Bind(q);
 }
 
-void FPresent3DColumnShader::Bind()
+void FPresent3DColumnShader::Bind(IRenderQueue *q)
 {
 	if (!mShader)
 	{
 		Init("shaders/glsl/present_column3d.fp", "shaders/glsl/presentColumn3d");
 	}
-	mShader.Bind();
+	mShader->Bind(q);
 }
 
-void FPresent3DRowShader::Bind()
+void FPresent3DRowShader::Bind(IRenderQueue *q)
 {
 	if (!mShader)
 	{
 		Init("shaders/glsl/present_row3d.fp", "shaders/glsl/presentRow3d");
 	}
-	mShader.Bind();
+	mShader->Bind(q);
 }

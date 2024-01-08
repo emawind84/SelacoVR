@@ -25,35 +25,26 @@
 **
 */
 
-#include "gl_load/gl_system.h"
 #include "v_video.h"
-#include "gl/shaders/gl_presentshader.h"
+#include "hw_presentshader.h"
 
 void FPresentShaderBase::Init(const char * vtx_shader_name, const char * program_name)
 {
-	mShader.Compile(FShaderProgram::Vertex, "shaders/glsl/screenquadscale.vp", "", 330);
-	mShader.Compile(FShaderProgram::Fragment, vtx_shader_name, "", 330);
-	mShader.SetFragDataLocation(0, "FragColor");
-	mShader.Link(program_name);
-	mShader.SetAttribLocation(0, "PositionInProjection");
-	mShader.SetAttribLocation(1, "UV");
-	InvGamma.Init(mShader, "InvGamma");
-	Contrast.Init(mShader, "Contrast");
-	Brightness.Init(mShader, "Brightness");
-	Saturation.Init(mShader, "Saturation");
-	GrayFormula.Init(mShader, "GrayFormula");
-	Scale.Init(mShader, "UVScale");
-	ColorScale.Init(mShader, "ColorScale");
-	HdrMode.Init(mShader, "HdrMode");
+	FString prolog = Uniforms.CreateDeclaration("Uniforms", UniformBlock::Desc());
+
+	mShader.reset(screen->CreateShaderProgram());
+	mShader->Compile(IShaderProgram::Vertex, "shaders/glsl/screenquadscale.vp", prolog, 330);
+	mShader->Compile(IShaderProgram::Fragment, vtx_shader_name, prolog, 330);
+	mShader->Link(program_name);
+	mShader->SetUniformBufferLocation(Uniforms.BindingPoint(), "Uniforms");
+	Uniforms.Init();
 }
 
-void FPresentShader::Bind()
+void FPresentShader::Bind(IRenderQueue *q)
 {
 	if (!mShader)
 	{
 		Init("shaders/glsl/present.fp", "shaders/glsl/present");
-		InputTexture.Init(mShader, "InputTexture");
-		DitherTexture.Init(mShader, "DitherTexture");
 	}
-	mShader.Bind();
+	mShader->Bind(q);
 }

@@ -56,3 +56,4 @@
 /mapfiles_release/*.map
 .DS_Store
 /.vscode
+/build_vc2017-32

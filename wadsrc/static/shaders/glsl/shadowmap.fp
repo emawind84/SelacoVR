@@ -1,11 +1,6 @@
 
 in vec2 TexCoord;
-out vec4 FragColor;
-
-// This constant must match the same constant in gl_shadowmap.h
-// #define ShadowmapQuality 1024
-//#define ShadowmapQuality 128
-uniform float ShadowmapQuality;
+layout(location=0) out vec4 FragColor;
 
 // A node in an AABB binary tree with lines stored in the leaf nodes
 struct GPUNode

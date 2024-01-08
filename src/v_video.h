@@ -45,6 +45,7 @@
 #include "v_2ddrawer.h"
 
 struct sector_t;
+class IShaderProgram;
 
 enum EHWCaps
 {
@@ -117,6 +118,7 @@ struct FColormap;
 class FileWriter;
 enum FTextureFormat : uint32_t;
 class FModelRenderer;
+struct SamplerUniform;
 
 // TagItem definitions for DrawTexture. As far as I know, tag lists
 // originated on the Amiga.
@@ -376,6 +378,7 @@ public:
 class FUniquePalette;
 class IHardwareTexture;
 class FTexture;
+class IUniformBuffer;
 
 // A canvas that represents the actual display. The video code is responsible
 // for actually implementing this. Built on top of SimpleCanvas, because it
@@ -405,6 +408,7 @@ protected:
 
 public:
 	int hwcaps = 0;
+	float glslversion = 0;			// This is here so that the differences between old OpenGL and new OpenGL/Vulkan can be handled by platform independent code.
 	int instack[2] = { 0,0 };	// this is globally maintained state for portal recursion avoidance.
 	bool enable_quadbuffered = false;
 
@@ -469,6 +473,10 @@ public:
 	virtual int GetClientHeight() = 0;
 	virtual bool RenderBuffersEnabled() { return false; };
 	virtual void BlurScene(float amount) {}
+    
+    // Interface to hardware rendering resources
+    virtual IUniformBuffer *CreateUniformBuffer(size_t size, bool staticuse = false) { return nullptr; }
+	virtual IShaderProgram *CreateShaderProgram() { return nullptr; }
 
 	// Begin 2D drawing operations.
 	// Returns true if hardware-accelerated 2D has been entered, false if not.

@@ -27,31 +27,44 @@
 #ifndef __GL_FXAASHADER_H__
 #define __GL_FXAASHADER_H__
 
-#include "gl_shaderprogram.h"
+#include "hwrenderer/postprocessing/hw_shaderprogram.h"
 #include "hwrenderer/postprocessing/hw_postprocess_cvars.h"
 
 class FFXAALumaShader
 {
 public:
-	void Bind();
-
-	FBufferedUniform1i InputTexture;
+	void Bind(IRenderQueue *q);
 
 private:
-	FShaderProgram mShader;
+	std::unique_ptr<IShaderProgram> mShader;
 };
 
 
 class FFXAAShader : public IFXAAShader
 {
 public:
-	void Bind();
+	void Bind(IRenderQueue *q);
 
-	FBufferedUniform1i InputTexture;
-	FBufferedUniform2f ReciprocalResolution;
+	struct UniformBlock
+	{
+		FVector2 ReciprocalResolution;
+		float Padding0, Padding1;
+
+		static std::vector<UniformFieldDesc> Desc()
+		{
+			return
+			{
+				{ "ReciprocalResolution", UniformType::Vec2, offsetof(UniformBlock, ReciprocalResolution) },
+				{ "Padding0", UniformType::Float, offsetof(UniformBlock, Padding0) },
+				{ "Padding1", UniformType::Float, offsetof(UniformBlock, Padding1) }
+			};
+		}
+	};
+
+	ShaderUniforms<UniformBlock, POSTPROCESS_BINDINGPOINT> Uniforms;
 
 private:
-	FShaderProgram mShaders[Count];
+	std::unique_ptr<IShaderProgram> mShaders[Count];
 };
 
 #endif // __GL_FXAASHADER_H__

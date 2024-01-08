@@ -3752,8 +3752,8 @@ void P_SetupLevel(const char *lumpname, int position, bool newGame)
 	P_InitHealthGroups();
 
 	times[16].Clock();
-	if (reloop) P_LoopSidedefs(false);
-	PO_Init();				// Initialize the polyobjs
+	if (reloop) P_LoopSidedefs (false);
+	PO_Init ();				// Initialize the polyobjs
 	if (!level.IsReentering())
 		P_FinalizePortals();	// finalize line portals after polyobjects have been initialized. This info is needed for properly flagging them.
 	times[16].Unclock();

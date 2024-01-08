@@ -7,10 +7,10 @@ in vec4 vEyeNormal;
 in vec4 vTexCoord;
 in vec4 vColor;
 
-out vec4 FragColor;
+layout(location=0) out vec4 FragColor;
 #ifdef GBUFFER_PASS
-out vec4 FragFog;
-out vec4 FragNormal;
+layout(location=1) out vec4 FragFog;
+layout(location=2) out vec4 FragNormal;
 #endif
 
 struct Material
@@ -112,6 +112,9 @@ vec4 getTexel(vec2 st)
 		case 6: // TM_OPAQUEINVERSE
 			texel = vec4(1.0-texel.r, 1.0-texel.b, 1.0-texel.g, 1.0);
 			break;
+			
+		case 7: //TM_FOGLAYER 
+			return texel;
 	}
 
 	texel.rgb += uAddColor.rgb;
@@ -635,7 +638,27 @@ void main()
 	if (frag.a <= uAlphaThreshold) discard;
 #endif
 
-	switch (uFixedColormap)
+	if (uTextureMode == 7)
+	{
+		float fogdist;
+		float fogfactor;
+		
+		//
+		// calculate fog factor
+		//
+		if (uFogEnabled == -1) 
+		{
+			fogdist = pixelpos.w;
+		}
+		else 
+		{
+			fogdist = max(16.0, distance(pixelpos.xyz, uCameraPos.xyz));
+		}
+		fogfactor = exp2 (uFogDensity * fogdist);
+		
+		frag = vec4(uFogColor.rgb, (1.0 - fogfactor) * frag.a * 0.75 * vColor.a);
+	}
+	else switch (uFixedColormap)
 	{
 		case 0:	// in-game rendering.
 		{
@@ -687,32 +710,15 @@ void main()
 			break;
 		}
 
-		case 3:	// fog layer
+		case 3:	// unused
 		{
-			float fogdist;
-			float fogfactor;
-			
-			//
-			// calculate fog factor
-			//
-			if (uFogEnabled == -1) 
-			{
-				fogdist = pixelpos.w;
-			}
-			else 
-			{
-				fogdist = max(16.0, distance(pixelpos.xyz, uCameraPos.xyz));
-			}
-			fogfactor = exp2 (uFogDensity * fogdist);
-			
-			frag = vec4(uFogColor.rgb, (1.0 - fogfactor) * frag.a * 0.75 * vColor.a);
 			break;
 		}
 		
 		case 4:	// simple 2D (reuses a uniform for the special colormap for the color overlay.)
 		{
 			frag = frag * ProcessLight(material, vColor);
-			frag.rgb = frag.rgb + uFixedColormapStart.rgb;
+			frag.rgb = frag.rgb + uFogColor.rgb;
 			break;
 		}
 			

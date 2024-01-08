@@ -38,8 +38,10 @@
 #include "gl/textures/gl_samplers.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "gl/data/gl_vertexbuffer.h"
+#include "gl/data/gl_uniformbuffer.h"
 #include "gl/models/gl_models.h"
 #include "gl/stereo3d/gl_stereo3d.h"
+#include "gl/shaders/gl_shaderprogram.h"
 #include "gl_debug.h"
 #include "r_videoscale.h"
 
@@ -83,8 +85,11 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int 
 	mDebug = std::make_shared<FGLDebug>();
 	mDebug->Update();
 	SetGamma();
+
+	// Move some state to the framebuffer object for easier access.
 	hwcaps = gl.flags;
 	if (gl.legacyMode) hwcaps |= RFL_NO_SHADERS;
+	glslversion = gl.glslversion;
 }
 
 OpenGLFrameBuffer::~OpenGLFrameBuffer()
@@ -357,6 +362,16 @@ IHardwareTexture *OpenGLFrameBuffer::CreateHardwareTexture(FTexture *tex)
 FModelRenderer *OpenGLFrameBuffer::CreateModelRenderer(int mli) 
 {
 	return new FGLModelRenderer(mli);
+}
+
+IUniformBuffer *OpenGLFrameBuffer::CreateUniformBuffer(size_t size, bool staticuse)
+{
+    return new GLUniformBuffer(size, staticuse);
+}
+
+IShaderProgram *OpenGLFrameBuffer::CreateShaderProgram() 
+{ 
+	return new FShaderProgram; 
 }
 
 
