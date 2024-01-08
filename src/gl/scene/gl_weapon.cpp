@@ -106,7 +106,7 @@ void FDrawInfo::DrawPSprite (HUDSprite *huds)
 //
 //==========================================================================
 
-void FDrawInfo::DrawPlayerSprites(bool hudModelStep)
+void FDrawInfo::DrawPlayerSprites()
 {
 	int oldlightmode = level.lightmode;
 	for(auto &hudsprite : hudsprites)

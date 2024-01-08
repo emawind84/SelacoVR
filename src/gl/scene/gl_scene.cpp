@@ -67,7 +67,11 @@ CVAR(Bool, gl_texture, true, 0)
 CVAR(Bool, gl_no_skyclear, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Float, gl_mask_threshold, 0.5f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Float, gl_mask_sprite_threshold, 0.5f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+#ifdef __MOBILE__
+CVAR(Bool, gl_sort_textures, true, 0) // Always sort, a bit faster
+#else
 CVAR(Bool, gl_sort_textures, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+#endif
 
 EXTERN_CVAR (Bool, cl_capfps)
 EXTERN_CVAR (Bool, r_deathcamera)
@@ -137,9 +141,7 @@ void GLSceneDrawer::Set3DViewport(bool mainview)
 
 	glEnable(GL_SCISSOR_TEST);
 
-#ifndef __MOBILE__
 	glEnable(GL_MULTISAMPLE);
-#endif
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
 	glStencilFunc(GL_ALWAYS,0,~0);	// default stencil
@@ -467,7 +469,7 @@ void GLSceneDrawer::DrawScene(FDrawInfo *di, int drawmode, sector_t * viewsector
 
 	if (s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
 	{
-		di->DrawPlayerSprites(viewsector);
+		di->DrawPlayerSprites();
 	}
 
 	if (applySSAO && gl_RenderState.GetPassType() == GBUFFER_PASS)
@@ -507,7 +509,7 @@ void GLSceneDrawer::EndDrawScene(FDrawInfo *di, sector_t * viewsector)
 		{
 			// [BB] The HUD model should be drawn over everything else already drawn.
 			glClear(GL_DEPTH_BUFFER_BIT);
-			di->DrawPlayerSprites(true);
+			di->DrawPlayerSprites();
 		}
 	}
 
@@ -542,7 +544,13 @@ void GLSceneDrawer::DrawEndScene2D(FDrawInfo *di, sector_t * viewsector)
 
 	if (!s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
 	{
- 		di->DrawPlayerSprites(false);
+		const bool renderHUDModel = IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
+
+		// [BB] Only draw the sprites if we didn't render a HUD model before.
+		if (renderHUDModel == false)
+		{
+ 			di->DrawPlayerSprites();
+		}
 	}
 
 	if (gl.legacyMode)

@@ -236,7 +236,7 @@ static void GL_ResampleTexture (uint32_t *in, uint32_t inwidth, uint32_t inheigh
 //
 //===========================================================================
 
-unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, int translation, const char *name, bool material)
+unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, int translation, const char *name)
 {
 	int rh,rw;
 	int texformat = GL_RGBA8;// TexFormat[gl_texture_format];
@@ -272,6 +272,10 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	}
 	else
 	{
+#ifdef __MOBILE__
+		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, (mipmap && TexFilter[gl_texture_filter].mipmapping) );
+#endif
+
 		if (rw < w || rh < h)
 		{
 			// The texture is larger than what the hardware can handle so scale it down.
@@ -283,40 +287,24 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 				buffer=scaledbuffer;
 			}
 		}
-		// Need to find a way to work out if 3d texture
-		else if (material) // Need to make bigger by resampling, for 3d textures
-        {
-            unsigned int * scaledbuffer=(unsigned int *)calloc(4,rw * (rh+1));
-            GL_ResampleTexture((unsigned  *)buffer,w,h,(unsigned *)scaledbuffer,rw,rh);
-            deletebuffer=true;
-            buffer=(unsigned char *)scaledbuffer;
-        }
-
-        else // Need to put into bigger texture, but DONT resample, for 2d images. Works because coordinates are scaled when rendering
-        {
-            unsigned int * scaledbuffer=(unsigned int *)calloc(4,rw * (rh+1));
-            for(int y = 0; y < h; y++)
-                for( int x = 0; x < w; x++ )
-                {
-                    scaledbuffer[x + y * rw] = ((unsigned int *)buffer)[x + y * w];
-                }
-            deletebuffer=true;
-            buffer=(unsigned char *)scaledbuffer;
-        }
 	}
 	// store the physical size.
 
-#ifndef __MOBILE__
 	int sourcetype;
 	if (glTextureBytes > 0)
 	{
 		if (glTextureBytes < 4) glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		if (gl.legacyMode)
 		{
+#ifdef __MOBILE__
 			// Do not use 2 and 3 here. They won't do anything useful!!!
-			static const int ITypes[] = { GL_LUMINANCE8, GL_LUMINANCE8_ALPHA8, GL_RGB8, GL_RGBA8 };
-			static const int STypes[] = { GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_BGR, GL_BGRA };
+            static const int ITypes[] = { GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_BGR, GL_RGBA };
+            static const int STypes[] = { GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_BGR, GL_BGRA };
+#else
 
+            static const int ITypes[] = { GL_LUMINANCE8, GL_LUMINANCE8_ALPHA8, GL_RGB8, GL_RGBA8 };
+            static const int STypes[] = { GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_BGR, GL_BGRA };
+#endif
 			texformat = ITypes[glTextureBytes - 1];
 			sourcetype = STypes[glTextureBytes - 1];
 		}
@@ -333,12 +321,8 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	{
 		sourcetype = GL_BGRA;
 	}
-	
-	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, sourcetype, GL_UNSIGNED_BYTE, buffer);
-#else
-	BGRAtoRGBA( buffer, rw * rh );
-	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-#endif
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, rw, rh, 0, sourcetype, GL_UNSIGNED_BYTE, buffer);
 
 	if (deletebuffer && buffer) free(buffer);
 	else if (glBufferID)
@@ -646,7 +630,7 @@ bool FHardwareTexture::BindOrCreate(FTexture *tex, int texunit, int clampmode, i
 			w = tex->GetWidth();
 			h = tex->GetHeight();
 		}
-		if (!CreateTexture(buffer, w, h, texunit, needmipmap, translation, "FHardwareTexture.BindOrCreate"), true)
+		if (!CreateTexture(buffer, w, h, texunit, needmipmap, translation, "FHardwareTexture.BindOrCreate"))
 		{
 			// could not create texture
 			delete[] buffer;

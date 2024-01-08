@@ -126,7 +126,7 @@ struct FDrawInfo : public HWDrawInfo
 	// Sprite drawer
 	void DrawSprite(GLSprite *sprite, int pass);
 	void DrawPSprite(HUDSprite *huds);
-	void DrawPlayerSprites(bool hudModelStep);
+	void DrawPlayerSprites();
 
 	void DoDrawSorted(HWDrawList *dl, SortNode * head);
 	void DrawSorted(int listindex);
