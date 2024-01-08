@@ -173,6 +173,7 @@ public:
 	void RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV);
 	void WriteSavePic(player_t *player, FileWriter *file, int width, int height);
 	sector_t *RenderView(player_t *player);
+	void DrawBlend(float* blend);
 	void BeginFrame();
 
 	bool StartOffscreen();
@@ -184,6 +185,10 @@ public:
 
 	static float GetZNear() { return 0.5f; }
 	static float GetZFar() { return 65536.f; }
+
+private: 
+	
+	void gl_FillScreen();
 };
 
 #include "hwrenderer/scene/hw_fakeflat.h"

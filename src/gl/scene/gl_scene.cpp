@@ -716,7 +716,8 @@ sector_t * GLSceneDrawer::RenderViewpoint (AActor * camera, IntRect * bounds, fl
 			}
 
 			eye->AdjustBlend();
-			screen->DrawBlend(lviewsector);
+			float* blend = screen->GetBlend(lviewsector);
+			GLRenderer->DrawBlend(blend);
 			PostProcess.Unclock();
 		}
 		FDrawInfo::EndDrawInfo();

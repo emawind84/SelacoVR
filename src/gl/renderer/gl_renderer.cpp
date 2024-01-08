@@ -413,6 +413,35 @@ void FGLRenderer::BeginFrame()
 		buffersActive = GLRenderer->mSaveBuffers->Setup(SAVEPICWIDTH, SAVEPICHEIGHT, SAVEPICWIDTH, SAVEPICHEIGHT);
 }
 
+void FGLRenderer::gl_FillScreen()
+{
+	gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
+	gl_RenderState.EnableTexture(false);
+	gl_RenderState.Apply();
+	// The fullscreen quad is stored at index 4 in the main vertex buffer.
+	GLRenderer->mVBO->RenderArray(GL_TRIANGLE_STRIP, FFlatVertexBuffer::FULLSCREEN_INDEX, 4);
+}
+
+
+
+//==========================================================================
+//
+// Draws a blend over the entire view
+//
+//==========================================================================
+void FGLRenderer::DrawBlend(float* blend)
+{
+	gl_RenderState.SetTextureMode(TM_MODULATE);
+	gl_RenderState.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	if (blend[3] > 0.0f)
+	{
+		gl_RenderState.SetColor(blend[0], blend[1], blend[2], blend[3]);
+		gl_FillScreen();
+	}
+	gl_RenderState.ResetColor();
+	gl_RenderState.EnableTexture(true);
+}
+
 //===========================================================================
 // 
 // Vertex buffer for 2D drawer
