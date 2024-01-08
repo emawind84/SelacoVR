@@ -76,10 +76,10 @@ static bool isBright(DPSprite *psp)
 //
 //==========================================================================
 
-static WeaponPosition GetWeaponPosition(player_t *player)
+static WeaponPosition GetWeaponPosition(player_t *player, double ticFrac)
 {
 	WeaponPosition w;
-	P_BobWeapon(player, &w.bobx, &w.boby, r_viewpoint.TicFrac);
+	P_BobWeapon(player, &w.bobx, &w.boby, ticFrac);
 
 	// Interpolate the main weapon layer once so as to be able to add it to other layers.
 	if ((w.weapon = player->FindPSprite(PSP_WEAPON)) != nullptr)
@@ -91,8 +91,8 @@ static WeaponPosition GetWeaponPosition(player_t *player)
 		}
 		else
 		{
-			w.wx = (float)(w.weapon->oldx + (w.weapon->x - w.weapon->oldx) * r_viewpoint.TicFrac);
-			w.wy = (float)(w.weapon->oldy + (w.weapon->y - w.weapon->oldy) * r_viewpoint.TicFrac);
+			w.wx = (float)(w.weapon->oldx + (w.weapon->x - w.weapon->oldx) * ticFrac);
+			w.wy = (float)(w.weapon->oldy + (w.weapon->y - w.weapon->oldy) * ticFrac);
 		}
 	}
 	else
@@ -109,7 +109,7 @@ static WeaponPosition GetWeaponPosition(player_t *player)
 //
 //==========================================================================
 
-static FVector2 BobWeapon(WeaponPosition &weap, DPSprite *psp)
+static FVector2 BobWeapon(WeaponPosition &weap, DPSprite *psp, double ticFrac)
 {
 	if (psp->firstTic)
 	{ // Can't interpolate the first tic.
@@ -117,8 +117,8 @@ static FVector2 BobWeapon(WeaponPosition &weap, DPSprite *psp)
 		psp->ResetInterpolation();
 	}
 
-	float sx = float(psp->oldx + (psp->x - psp->oldx) * r_viewpoint.TicFrac);
-	float sy = float(psp->oldy + (psp->y - psp->oldy) * r_viewpoint.TicFrac);
+	float sx = float(psp->oldx + (psp->x - psp->oldx) * ticFrac);
+	float sy = float(psp->oldy + (psp->y - psp->oldy) * ticFrac);
 
 	if (psp->Flags & PSPF_ADDBOB)
 	{
@@ -167,14 +167,14 @@ static WeaponLighting GetWeaponLighting(sector_t *viewsector, const DVector3 &po
 
 				if (i<lightlist.Size() - 1)
 				{
-					lightbottom = lightlist[i + 1].plane.ZatPoint(r_viewpoint.Pos);
+					lightbottom = lightlist[i + 1].plane.ZatPoint(pos);
 				}
 				else
 				{
-					lightbottom = viewsector->floorplane.ZatPoint(r_viewpoint.Pos);
+					lightbottom = viewsector->floorplane.ZatPoint(pos);
 				}
 
-				if (lightbottom<r_viewpoint.Pos.Z)
+				if (lightbottom < pos.Z)
 				{
 					l.cm = lightlist[i].extra_colormap;
 					l.lightlevel = hw_ClampLight(*lightlist[i].p_lightlevel);
@@ -511,8 +511,10 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 	AActor * playermo = players[consoleplayer].camera;
 	player_t * player = playermo->player;
 	const bool hudModelStep = IsHUDModelForPlayerAvailable(player);
+    
+    auto &vp = r_viewpoint;
 
-	AActor *camera = r_viewpoint.camera;
+	AActor *camera = vp.camera;
 
 	// this is the same as the software renderer
 	if (!player ||
@@ -522,8 +524,8 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 		(r_deathcamera && camera->health <= 0))
 		return;
 
-	WeaponPosition weap = GetWeaponPosition(camera->player);
-	WeaponLighting light = GetWeaponLighting(viewsector, r_viewpoint.Pos, FixedColormap, in_area, camera->Pos());
+	WeaponPosition weap = GetWeaponPosition(camera->player, vp.TicFrac);
+	WeaponLighting light = GetWeaponLighting(viewsector, vp.Pos, FixedColormap, in_area, camera->Pos());
 
 	// hack alert! Rather than changing everything in the underlying lighting code let's just temporarily change
 	// light mode here to draw the weapon sprite.
@@ -545,7 +547,7 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 
 		if (!hudsprite.GetWeaponRenderStyle(psp, camera, viewsector, light)) continue;
 
-		FVector2 spos = BobWeapon(weap, psp);
+		FVector2 spos = BobWeapon(weap, psp, vp.TicFrac);
 
 		hudsprite.dynrgb[0] = hudsprite.dynrgb[1] = hudsprite.dynrgb[2] = 0;
 		hudsprite.lightindex = -1;

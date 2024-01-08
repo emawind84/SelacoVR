@@ -382,6 +382,21 @@ static void ValidateResolution(int &hres, int &vres)
 	}
 }
 
+static void ValidateResolution(int &hres, int &vres)
+{
+	if (hres == 0)
+	{
+		static const int HORIZONTAL_RESOLUTION_DEFAULT = 320;
+		hres = HORIZONTAL_RESOLUTION_DEFAULT;
+	}
+
+	if (vres == 0)
+	{
+		static const int VERTICAL_RESOLUTION_DEFAULT = 200;
+		vres = VERTICAL_RESOLUTION_DEFAULT;
+	}
+}
+
 void DBaseStatusBar::SetSize(int reltop, int hres, int vres, int hhres, int hvres)
 {
 	ValidateResolution(hres, vres);

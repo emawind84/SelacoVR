@@ -379,6 +379,7 @@ void HWDrawInfo::RenderThings(subsector_t * sub, sector_t * sector)
 	SetupSprite.Clock();
 	sector_t * sec=sub->sector;
 	// Handle all things in sector.
+    auto &vp = r_viewpoint;
 	for (auto p = sec->touching_renderthings; p != nullptr; p = p->m_snext)
 	{
 		auto thing = p->m_thing;
@@ -388,7 +389,7 @@ void HWDrawInfo::RenderThings(subsector_t * sub, sector_t * sector)
 		FIntCVar *cvar = thing->GetInfo()->distancecheck;
 		if (cvar != nullptr && *cvar >= 0)
 		{
-			double dist = (thing->Pos() - r_viewpoint.Pos).LengthSquared();
+			double dist = (thing->Pos() - vp.Pos).LengthSquared();
 			double check = (double)**cvar;
 			if (dist >= check * check)
 			{
@@ -421,7 +422,7 @@ void HWDrawInfo::RenderThings(subsector_t * sub, sector_t * sector)
 		FIntCVar *cvar = thing->GetInfo()->distancecheck;
 		if (cvar != nullptr && *cvar >= 0)
 		{
-			double dist = (thing->Pos() - r_viewpoint.Pos).LengthSquared();
+			double dist = (thing->Pos() - vp.Pos).LengthSquared();
 			double check = (double)**cvar;
 			if (dist >= check * check)
 			{
