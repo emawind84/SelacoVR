@@ -102,6 +102,7 @@
 #include "r_data/r_vanillatrans.h"
 #include "s_music.h"
 #include "swrenderer/r_swcolormaps.h"
+#include "gl/stereo3d/gl_stereo3d.h"
 
 #include <QzDoom/VrCommon.h>
 
@@ -841,7 +842,10 @@ void D_Display ()
 
 			viewsec = screen->RenderView(&players[consoleplayer]);
 			screen->Begin2D(false);
-			screen->DrawBlend(viewsec);
+			if (s3d::Stereo3DMode::getCurrentMode().IsMono())
+			{
+				screen->DrawBlend(viewsec);
+			}
 			// returns with 2S mode set.
 			if (automapactive)
 			{
