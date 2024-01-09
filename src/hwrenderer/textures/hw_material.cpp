@@ -31,6 +31,8 @@
 
 EXTERN_CVAR(Bool, gl_texture_usehires)
 
+extern TArray<UserShaderDesc> usershaders;
+
 
 //===========================================================================
 //
@@ -146,7 +148,7 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 				{
 					if (texture == nullptr) continue;
 					ValidateSysTexture(texture, expanded);
-					mTextureLayers.Push({ texture, false });
+					mTextureLayers.Push(texture);
 				}
 				mShaderIndex = tx->shaderindex;
 			}
@@ -360,70 +362,6 @@ outl:
 	return true;
 }
 
-
-//===========================================================================
-// 
-//	Binds a texture to the renderer
-//
-//===========================================================================
-
-static FMaterial *last;
-static int lastclamp;
-static int lasttrans;
-
-void FMaterial::InitGlobalState()
-{
-	last = nullptr;
-	lastclamp = 0;
-	lasttrans = 0;
-}
-
-void FMaterial::Bind(int clampmode, int translation)
-{
-	if (tex->UseType == ETextureType::SWCanvas) clampmode = CLAMP_NOFILTER;
-	if (tex->bHasCanvas) clampmode = CLAMP_CAMTEX;
-	else if ((tex->bWarped || tex->shaderindex >= FIRST_USER_SHADER) && clampmode <= CLAMP_XY) clampmode = CLAMP_NONE;
-	
-	// avoid rebinding the same texture multiple times.
-	if (this == last && lastclamp == clampmode && translation == lasttrans) return;
-	last = this;
-	lastclamp = clampmode;
-	lasttrans = translation;
-
-	int usebright = false;
-	int maxbound = 0;
-
-	// Textures that are already scaled in the texture lump will not get replaced by hires textures.
-	int flags = mExpanded? CTF_Expand : (gl_texture_usehires && tex->Scale.X == 1 && tex->Scale.Y == 1 && clampmode <= CLAMP_XY)? CTF_CheckHires : 0;
-
-	if (mBaseLayer->BindOrCreate(tex, 0, clampmode, translation, flags))
-	{
-		for(unsigned i=0;i<mTextureLayers.Size();i++)
-		{
-			FTexture *layer;
-			if (mTextureLayers[i].animated)
-			{
-				FTextureID id = mTextureLayers[i].texture->id;
-				layer = TexMan(id);
-			}
-			else
-			{
-				layer = mTextureLayers[i].texture;
-			}
-			auto systex = ValidateSysTexture(layer, mExpanded);
-			systex->BindOrCreate(layer, i+1, clampmode, 0, mExpanded ? CTF_Expand : 0);
-			maxbound = i+1;
-		}
-	}
-	// unbind everything from the last texture that's still active
-	for(int i=maxbound+1; i<=mMaxBound;i++)
-	{
-		screen->UnbindTexUnit(i);
-		mMaxBound = maxbound;
-	}
-}
-
-
 //===========================================================================
 //
 //
@@ -431,7 +369,7 @@ void FMaterial::Bind(int clampmode, int translation)
 //===========================================================================
 void FMaterial::Precache()
 {
-	Bind(0, 0);
+	screen->PrecacheMaterial(this, 0);
 }
 
 //===========================================================================
@@ -444,7 +382,7 @@ void FMaterial::PrecacheList(SpriteHits &translations)
 	if (mBaseLayer != nullptr) mBaseLayer->CleanUnused(translations);
 	SpriteHits::Iterator it(translations);
 	SpriteHits::Pair *pair;
-	while(it.NextPair(pair)) Bind(0, pair->Key);
+	while(it.NextPair(pair)) screen->PrecacheMaterial(this, pair->Key);
 }
 
 //===========================================================================
@@ -464,24 +402,6 @@ int FMaterial::GetAreas(FloatRect **pAreas) const
 	{
 		return 0;
 	}
-}
-
-//===========================================================================
-//
-//
-//
-//===========================================================================
-
-void FMaterial::BindToFrameBuffer()
-{
-	if (mBaseLayer == nullptr)
-	{
-		// must create the hardware texture first
-		mBaseLayer->BindOrCreate(sourcetex, 0, 0, 0, 0);
-		screen->UnbindTexUnit(0);
-		ClearLastTexture();
-	}
-	mBaseLayer->BindToFrameBuffer(mWidth, mHeight);
 }
 
 //==========================================================================
@@ -553,11 +473,6 @@ void FMaterial::FlushAll()
 			if (gltex != nullptr) gltex->Clean(true);
 		}
 	}
-}
-
-void FMaterial::ClearLastTexture()
-{
-	last = NULL;
 }
 
 void FMaterial::Clean(bool f)

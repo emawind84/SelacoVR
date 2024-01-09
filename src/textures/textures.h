@@ -294,6 +294,8 @@ public:
 	FTexture *Metallic = nullptr;						// Metalness texture for the physically based rendering (PBR) light model
 	FTexture *Roughness = nullptr;						// Roughness texture for PBR
 	FTexture *AmbientOcclusion = nullptr;				// Ambient occlusion texture for PBR
+	
+	FTexture *CustomShaderTextures[MAX_CUSTOM_HW_SHADER_TEXTURES] = { nullptr }; // Custom texture maps for custom hardware shaders
 
 	FTexture *CustomShaderTextures[MAX_CUSTOM_HW_SHADER_TEXTURES] = { nullptr }; // Custom texture maps for custom hardware shaders
 
