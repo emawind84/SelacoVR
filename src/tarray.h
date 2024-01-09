@@ -1369,7 +1369,6 @@ public:
 			if (!memcmp(t, Array[i], sizeof(T))) return Array[i];
 		}
 		auto newo = new T(*t);
-		memset(newo, 0, sizeof(T));
 		Array.Push(newo);
 		return newo;
 	}
