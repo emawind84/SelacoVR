@@ -292,39 +292,6 @@ struct VMVa_List
 	int numargs;
 	const uint8_t *reginfo;
 };
-
-class DShape2DTransform : public DObject
-{
-
-	DECLARE_CLASS(DShape2DTransform, DObject)
-public:
-	DMatrix3x3 transform;
-};
-
-// intermediate struct for fake shape drawing
-
-enum EClearWhich
-{
-	C_Verts = 1,
-	C_Coords = 2,
-	C_Indices = 4,
-};
-
-class DShape2D : public DObject
-{
-
-	DECLARE_CLASS(DShape2D,DObject)
-public:
-	TArray<int> mIndices;
-	TArray<DVector2> mVertices;
-	TArray<DVector2> mCoords;
-
-	DMatrix3x3 transform;
-
-	bool dirty = true;
-	TArray<DVector2> mTransformedVertices;
-};
-
 //
 // VIDEO
 //

@@ -297,8 +297,6 @@ public:
 	
 	FTexture *CustomShaderTextures[MAX_CUSTOM_HW_SHADER_TEXTURES] = { nullptr }; // Custom texture maps for custom hardware shaders
 
-	FTexture *CustomShaderTextures[MAX_CUSTOM_HW_SHADER_TEXTURES] = { nullptr }; // Custom texture maps for custom hardware shaders
-
 	FString Name;
 	ETextureType UseType;	// This texture's primary purpose
 

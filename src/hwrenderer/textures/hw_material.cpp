@@ -90,7 +90,7 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 			for (auto &texture : { tx->Normal, tx->Specular })
 			{
 				ValidateSysTexture(texture, expanded);
-				mTextureLayers.Push({ texture, false });
+				mTextureLayers.Push(texture);
 			}
 			mShaderIndex = SHADER_Specular;
 		}
@@ -99,7 +99,7 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 			for (auto &texture : { tx->Normal, tx->Metallic, tx->Roughness, tx->AmbientOcclusion })
 			{
 				ValidateSysTexture(texture, expanded);
-				mTextureLayers.Push({ texture, false });
+				mTextureLayers.Push(texture);
 			}
 			mShaderIndex = SHADER_PBR;
 		}
@@ -108,35 +108,35 @@ FMaterial::FMaterial(FTexture * tx, bool expanded)
 		if (tx->Brightmap)
 		{
 			ValidateSysTexture(tx->Brightmap, expanded);
-			mTextureLayers.Push({ tx->Brightmap, false });
+			mTextureLayers.Push(tx->Brightmap);
 			mLayerFlags |= TEXF_Brightmap;
 		}
 		else	
 		{ 
 			ValidateSysTexture(TexMan.ByIndex(1), expanded);
-			mTextureLayers.Push({ TexMan.ByIndex(1), false });
+			mTextureLayers.Push(TexMan.ByIndex(1));
 		}
 		if (tx->Detailmap)
 		{
 			ValidateSysTexture(tx->Detailmap, expanded);
-			mTextureLayers.Push({ tx->Detailmap, false });
+			mTextureLayers.Push(tx->Detailmap);
 			mLayerFlags |= TEXF_Detailmap;
 		}
 		else
 		{
 			ValidateSysTexture(TexMan.ByIndex(1), expanded);
-			mTextureLayers.Push({ TexMan.ByIndex(1), false });
+			mTextureLayers.Push(TexMan.ByIndex(1));
 		}
 		if (tx->Glowmap)
 		{
 			ValidateSysTexture(tx->Glowmap, expanded);
-			mTextureLayers.Push({ tx->Glowmap, false });
+			mTextureLayers.Push(tx->Glowmap);
 			mLayerFlags |= TEXF_Glowmap;
 		}
 		else
 		{
 			ValidateSysTexture(TexMan.ByIndex(1), expanded);
-			mTextureLayers.Push({ TexMan.ByIndex(1), false });
+			mTextureLayers.Push(TexMan.ByIndex(1));
 		}
 
 		if (tx->shaderindex >= FIRST_USER_SHADER)
