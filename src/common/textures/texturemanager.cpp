@@ -1058,7 +1058,7 @@ int FTextureManager::ParseBatchTextureDef(int lump, int wadnum) {
 
 		if (count == 4 && fileType >= 0) {
 			int lumpnum = -1;
-			if(strnlen_s(path, 1023) > 1) lumpnum = fileSystem.CheckNumForFullName(path, wadnum);
+			if(strnlen(path, 1023) > 1) lumpnum = fileSystem.CheckNumForFullName(path, wadnum);
 			else lumpnum = fileSystem.CheckNumForName(path, wadnum);
 
 			if (lumpnum >= 0)
