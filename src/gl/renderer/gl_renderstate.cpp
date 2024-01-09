@@ -500,6 +500,7 @@ void FRenderState::SetMaterial(FMaterial *mat, int clampmode, int translation, i
 	}
 	mEffectState = overrideshader >= 0 ? overrideshader : mat->mShaderIndex;
 	mShaderTimer = mat->tex->shaderspeed;
+	mTextureModeFlags = mat->GetLayerFlags();
 	SetSpecular(mat->tex->Glossiness, mat->tex->SpecularLevel);
 
 	// avoid rebinding the same texture multiple times.

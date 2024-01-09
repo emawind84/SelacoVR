@@ -511,11 +511,6 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 	}
 	color = min(color, 1.0);
 
-	//
-	// apply brightmaps (or other light manipulation by custom shaders.
-	//
-	color = ProcessLight(material, color);
-
 	// these cannot be safely applied by the legacy format where the implementation cannot guarantee that the values are set.
 #ifndef LEGACY_USER_SHADER
 	//
@@ -528,9 +523,14 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 	//
 	color.rgb = min(color.rgb + material.Bright.rgb, 1.0);
 #endif
-	
+
 	//
 	// apply other light manipulation by custom shaders, default is a NOP.
+	//
+	color = ProcessLight(material, color);
+	
+	//
+	// apply dynamic lights
 	//
 	return vec4(ProcessMaterialLight(material, color.rgb), material.Base.a * vColor.a);
 }
