@@ -119,7 +119,6 @@ static bool		MenuEnabled = true;
 DMenu			*CurrentMenu;
 int				MenuTime;
 
-void M_InitVideoModes();
 extern PClass *DefaultListMenuClass;
 extern PClass *DefaultOptionMenuClass;
 
@@ -477,7 +476,6 @@ void M_SetMenu(FName menu, int param)
 		}
 
 	case NAME_VideoModeMenu:
-		M_InitVideoModes();
 		break;
 
 	case NAME_Quitmenu:

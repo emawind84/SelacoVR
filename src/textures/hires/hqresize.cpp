@@ -43,6 +43,7 @@
 #include "xbr/xbrz.h"
 #include "xbr/xbrz_old.h"
 #include "parallel_for.h"
+#include "hwrenderer/textures/hw_material.h"
 
 EXTERN_CVAR(Int, gl_texture_hqresizemult)
 CUSTOM_CVAR(Int, gl_texture_hqresizemode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
@@ -51,7 +52,7 @@ CUSTOM_CVAR(Int, gl_texture_hqresizemode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | 
 		self = 0;
 	if ((gl_texture_hqresizemult > 4) && (self < 4) && (self > 0))
 		gl_texture_hqresizemult = 4;
-	screen->FlushTextures();
+	FMaterial::FlushAll();
 }
 
 CUSTOM_CVAR(Int, gl_texture_hqresizemult, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
@@ -60,18 +61,18 @@ CUSTOM_CVAR(Int, gl_texture_hqresizemult, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | 
 		self = 1;
 	if ((self > 4) && (gl_texture_hqresizemode < 4) && (gl_texture_hqresizemode > 0))
 		self = 4;
-	screen->FlushTextures();
+	FMaterial::FlushAll();
 }
 
 CUSTOM_CVAR(Int, gl_texture_hqresize_maxinputsize, 512, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	if (self > 1024) self = 1024;
-	screen->FlushTextures();
+	FMaterial::FlushAll();
 }
 
 CUSTOM_CVAR(Int, gl_texture_hqresize_targets, 7, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
-	screen->FlushTextures();
+	FMaterial::FlushAll();
 }
 
 CVAR (Flag, gl_texture_hqresize_textures, gl_texture_hqresize_targets, 1);
