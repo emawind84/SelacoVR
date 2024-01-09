@@ -77,6 +77,12 @@ Win32BaseVideo::Win32BaseVideo()
 //
 //==========================================================================
 
+HMONITOR GetPrimaryMonitorHandle()
+{
+	const POINT ptZero = { 0, 0 };
+	return MonitorFromPoint(ptZero, MONITOR_DEFAULTTOPRIMARY);
+}
+
 struct MonitorEnumState
 {
 	int curIdx;
@@ -93,7 +99,7 @@ static BOOL CALLBACK GetDisplayDeviceNameMonitorEnumProc(HMONITOR hMonitor, HDC,
 
 	// This assumes the monitors are returned by EnumDisplayMonitors in the
 	// order they're found in the Direct3D9 adapters list. Fingers crossed...
-	if (state->curIdx == vid_adapter)
+	if (state->curIdx == vid_adapter || state->hFoundMonitor == nullptr)
 	{
 		state->hFoundMonitor = hMonitor;
 
@@ -122,24 +128,27 @@ void Win32BaseVideo::GetDisplayDeviceName()
 	MonitorEnumState mes;
 
 	mes.curIdx = 1;
-	mes.hFoundMonitor = 0;
+	mes.hFoundMonitor = nullptr;
 
-	// Could also use EnumDisplayDevices, I guess. That might work.
-	if (EnumDisplayMonitors(0, 0, &GetDisplayDeviceNameMonitorEnumProc, LPARAM(&mes)))
+	if (vid_adapter == 0)
 	{
-		if (mes.hFoundMonitor)
+		mes.hFoundMonitor = GetPrimaryMonitorHandle();
+	}
+	// Could also use EnumDisplayDevices, I guess. That might work.
+	else EnumDisplayMonitors(0, 0, &GetDisplayDeviceNameMonitorEnumProc, LPARAM(&mes));
+
+	if (mes.hFoundMonitor)
+	{
+		MONITORINFOEXA mi;
+
+		mi.cbSize = sizeof mi;
+
+		if (GetMonitorInfoA(mes.hFoundMonitor, &mi))
 		{
-			MONITORINFOEX mi;
+			strcpy(m_DisplayDeviceBuffer, mi.szDevice);
+			m_DisplayDeviceName = m_DisplayDeviceBuffer;
 
-			mi.cbSize = sizeof mi;
-
-			if (GetMonitorInfo(mes.hFoundMonitor, &mi))
-			{
-				strcpy(m_DisplayDeviceBuffer, mi.szDevice);
-				m_DisplayDeviceName = m_DisplayDeviceBuffer;
-
-				m_hMonitor = mes.hFoundMonitor;
-			}
+			m_hMonitor = mes.hFoundMonitor;
 		}
 	}
 }
@@ -160,14 +169,14 @@ static BOOL CALLBACK DumpAdaptersMonitorEnumProc(HMONITOR hMonitor, HDC, LPRECT,
 {
 	DumpAdaptersState *state = reinterpret_cast<DumpAdaptersState *>(dwData);
 
-	MONITORINFOEX mi;
+	MONITORINFOEXA mi;
 	mi.cbSize = sizeof mi;
 
 	char moreinfo[64] = "";
 
 	bool active = true;
 
-	if (GetMonitorInfo(hMonitor, &mi))
+	if (GetMonitorInfoA(hMonitor, &mi))
 	{
 		bool primary = !!(mi.dwFlags & MONITORINFOF_PRIMARY);
 

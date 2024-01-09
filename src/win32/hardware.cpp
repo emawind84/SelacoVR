@@ -130,7 +130,7 @@ void I_InitGraphics ()
 	if (Video == NULL)
 		I_FatalError ("Failed to initialize display");
 	
-	atterm (I_ShutdownGraphics);
+	//atterm (I_ShutdownGraphics);
 }
 
 
@@ -149,7 +149,7 @@ HANDLE FPSLimitEvent;
 //
 //==========================================================================
 
-static void StopFPSLimit()
+void StopFPSLimit()
 {
 	I_SetFPSLimit(0);
 }
@@ -186,7 +186,7 @@ void I_SetFPSLimit(int limit)
 				return;
 			}
 		}
-		atterm(StopFPSLimit);
+		//atterm(StopFPSLimit);
 		// Set timer event as close as we can to limit/sec, in milliseconds.
 		UINT period = 1000 / limit;
 		FPSLimitTimer = timeSetEvent(period, 0, (LPTIMECALLBACK)FPSLimitEvent, 0, TIME_PERIODIC | TIME_CALLBACK_EVENT_SET);

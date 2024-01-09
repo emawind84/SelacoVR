@@ -169,7 +169,7 @@ int HWDrawInfo::SetFullbrightFlags(player_t *player)
 		{
 			auto torchtype = PClass::FindActor(NAME_PowerTorch);
 			auto litetype = PClass::FindActor(NAME_PowerLightAmp);
-			for (AInventory * in = cplayer->mo->Inventory; in; in = in->Inventory)
+			for (AActor *in = cplayer->mo->Inventory; in; in = in->Inventory)
 			{
 				//PalEntry color = in->CallGetBlend();
 
@@ -280,5 +280,6 @@ void HWViewpointUniforms::SetDefaults()
 	mGlobVis = (float)R_GetGlobVis(r_viewwindow, r_visibility) / 32.f;
 	mPalLightLevels = static_cast<int>(gl_bandedswlight) | (static_cast<int>(gl_fogmode) << 8);
 	mClipLine.X = -10000000.0f;
+	mShadowmapFilter = gl_shadowmap_filter;
 
 }

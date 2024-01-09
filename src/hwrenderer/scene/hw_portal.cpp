@@ -34,6 +34,7 @@
 #include "g_levellocals.h"
 
 EXTERN_CVAR(Int, r_mirror_recursions)
+EXTERN_CVAR(Bool, gl_mirror_player)
 
 //-----------------------------------------------------------------------------
 //
@@ -264,7 +265,7 @@ bool HWMirrorPortal::Setup(HWDrawInfo *di, Clipper *clipper)
 	vertex_t *v2 = linedef->v2;
 
 	// the player is always visible in a mirror.
-	vp.showviewer = true;
+	vp.showviewer = gl_mirror_player;
 	// Reflect the current view behind the mirror.
 	if (linedef->Delta().X == 0)
 	{
@@ -601,7 +602,7 @@ bool HWPlaneMirrorPortal::Setup(HWDrawInfo *di, Clipper *clipper)
 	old_pm = state->PlaneMirrorMode;
 
 	// the player is always visible in a mirror.
-	vp.showviewer = true;
+	vp.showviewer = gl_mirror_player;
 
 	double planez = origin->ZatPoint(vp.Pos);
 	vp.Pos.Z = 2 * planez - vp.Pos.Z;

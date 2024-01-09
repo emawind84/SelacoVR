@@ -358,26 +358,23 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	unsigned int lightbuffersize = GLRenderer->mLights->GetBlockSize();
 	if (lightbuffertype == GL_UNIFORM_BUFFER)
 	{
-		if (gl.es)
-		{
-			vp_comb.Format("#version 310 es\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
-		}
-		else
-		{
-			vp_comb.Format("#version 330 core\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
-		}
+#ifdef __MOBILE__
+		vp_comb.Format("#version 310 es\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
+#else
+		vp_comb.Format("#version 330 core\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
+#endif
 	}
 	else
 	{
-		if (gl.es)
-		{
-			vp_comb.Format("#version 300 es\n#define SHADER_STORAGE_LIGHTS\n");
-		}
+#ifdef __MOBILE__
+		vp_comb.Format("#version 300 es\n#define SHADER_STORAGE_LIGHTS\n");
+#else
 		// This differentiation is for Intel which do not seem to expose the full extension, even if marked as required.
-		else if (gl.glslversion < 4.3f)
+		if (gl.glslversion < 4.3f)
 			vp_comb = "#version 400 core\n#extension GL_ARB_shader_storage_buffer_object : require\n#define SHADER_STORAGE_LIGHTS\n";
 		else
 			vp_comb = "#version 430 core\n#define SHADER_STORAGE_LIGHTS\n";
+#endif
 	}
 
 	if (gl.buffermethod == BM_DEFERRED)

@@ -106,7 +106,7 @@ static void xbrzApplyOptions()
 		}
 		else
 		{
-			screen->FlushTextures();
+			FMaterial::FlushAll();
 		}
 	}
 }
