@@ -308,6 +308,9 @@ static void ParseModelDefLump(int Lump);
 
 void InitModels()
 {
+	cycle_t model_time = cycle_t();
+	model_time.Clock();
+
 	Models.DeleteAndClear();
 	SpriteModelFrames.Clear();
 	SpriteModelHash.Clear();
@@ -377,6 +380,9 @@ void InitModels()
 		SpriteModelFrames[i].hashnext = SpriteModelHash[j];
 		SpriteModelHash[j]=i;
 	}
+
+	model_time.Unclock();
+	Printf(TEXTCOLOR_GOLD"Model Indexing: %.2fms\n", model_time.TimeMS());
 }
 
 static void ParseModelDefLump(int Lump)

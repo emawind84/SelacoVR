@@ -94,9 +94,15 @@ struct FThinkerCollection
 	void Link(DThinker *thinker, int statnum);
 	void LinkSleeper(DThinker *thinker, int statnum);
 
+	bool IsSleepCycle() const { return inSleepCycle; }
+	void AddWaker(DThinker* einstein) { tempWakers.Push(einstein); }
+
 private:
 	FThinkerList Thinkers[MAX_STATNUM + 2];
 	FThinkerList FreshThinkers[MAX_STATNUM + 1];
+
+	bool inSleepCycle = false;							// Set when running through sleepers.  If in sleep cycle, we put new sleeping thinkers into FreshThinkers and new wakes into the wake list
+	TArray<DThinker*> tempWakers;
 
 	friend class FThinkerIterator;
 };

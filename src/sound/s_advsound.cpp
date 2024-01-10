@@ -36,6 +36,7 @@
 
 
 #include "actor.h"
+#include "actorinlines.h"
 #include "c_dispatch.h"
 #include "filesystem.h"
 #include "gi.h"

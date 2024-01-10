@@ -611,6 +611,8 @@ void FMultipatchTextureBuilder::ParseTexture(FScanner &sc, ETextureType UseType,
 {
 	BuildInfo &buildinfo = BuiltTextures[BuiltTextures.Reserve(1)];
 
+	FString firstPatchName;
+
 	bool bSilent = false;
 
 	buildinfo.textual = true;
@@ -681,6 +683,7 @@ void FMultipatchTextureBuilder::ParseTexture(FScanner &sc, ETextureType UseType,
 				ParsePatch(sc, buildinfo, part, init);
 				if (init.TexName.IsNotEmpty())
 				{
+					if (buildinfo.Parts.Size() == 0) firstPatchName = init.TexName;
 					buildinfo.Parts.Push(part);
 					init.UseType = ETextureType::WallPatch;
 					init.Silent = bSilent;
@@ -759,6 +762,57 @@ void FMultipatchTextureBuilder::ParseTexture(FScanner &sc, ETextureType UseType,
 		UseType = ETextureType::Null;
 		Printf("Texture %s has invalid dimensions (%d, %d)\n", buildinfo.Name.GetChars(), buildinfo.Width, buildinfo.Height);
 		buildinfo.Width = buildinfo.Height = 1;
+	}
+
+	// @Cockatrice - Special case, for redefining single sprite images
+	// If the size and single patch match the original texture, let's just change the original texture first instead of creating a whole new multipatch texture
+	if (buildinfo.Parts.Size() == 1) {
+		auto& bi = buildinfo.Parts[0];
+
+		if( firstPatchName == buildinfo.Name &&
+			bi.op == OP_COPY &&
+			bi.Alpha == FRACUNIT &&
+			bi.OriginX == 0 &&
+			bi.OriginY == 0 &&
+			bi.Rotate == 0 &&
+			bi.Blend == 0 &&
+			bi.Translation == nullptr
+			) {
+
+			
+
+			// Get existing texture if possible..
+			FTextureID oldtex = TexMan.CheckForTexture(buildinfo.Name.GetChars(), (ETextureType)UseType);
+			
+			if (oldtex.isValid()) {
+				if (skipRedefines) {
+					// Remove new data
+					BuiltTextures.Pop();
+
+					sc.SetCMode(false);
+					return;
+				}
+
+				//Printf("Texture %s is just a redefinition!\n", buildinfo.Name.GetChars());
+				FGameTexture *tex = TexMan.GetGameTexture(oldtex, false);
+
+				if (tex != nullptr) {
+					tex->SetSize(buildinfo.Width, buildinfo.Height);
+					tex->SetOffsets(0, buildinfo.LeftOffset[0], buildinfo.TopOffset[0]);
+					tex->SetOffsets(1, buildinfo.LeftOffset[1], buildinfo.TopOffset[1]);
+					tex->SetScale((float)buildinfo.Scale.X, (float)buildinfo.Scale.Y);
+					tex->SetWorldPanning(buildinfo.bWorldPanning);
+					tex->SetNoDecals(buildinfo.bNoDecals);
+					tex->SetNoTrimming(buildinfo.bNoTrim);
+
+					// Remove new data
+					BuiltTextures.Pop();
+
+					sc.SetCMode(false);
+					return;
+				}
+			}
+		}
 	}
 
 	MakeTexture(buildinfo, UseType);

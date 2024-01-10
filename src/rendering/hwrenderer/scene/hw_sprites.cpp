@@ -519,12 +519,12 @@ bool HWSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 //
 //==========================================================================
 
-inline void HWSprite::PutSprite(HWDrawInfo *di, bool translucent)
+inline void HWSprite::PutSprite(HWDrawInfo *di, bool translucent, double ticFrac)
 {
 	// That's a lot of checks...
 	if (modelframe && !modelframe->isVoxel && !(modelframe->flags & MDL_NOPERPIXELLIGHTING) && RenderStyle.BlendOp != STYLEOP_Shadow && gl_light_sprites && di->Level->HasDynamicLights && !di->isFullbrightScene() && !fullbright)
 	{
-		hw_GetDynModelLight(actor, lightdata);
+		hw_GetDynModelLight(actor, lightdata, ticFrac);
 		dynlightindex = screen->mLights->UploadLights(lightdata);
 	}
 	else
@@ -606,7 +606,7 @@ void HWSprite::SplitSprite(HWDrawInfo *di, sector_t * frontsector, bool transluc
 			z1=copySprite.z2=lightbottom;
 			vt=copySprite.vb=copySprite.vt+ 
 				(lightbottom-copySprite.z1)*(copySprite.vb-copySprite.vt)/(z2-copySprite.z1);
-			copySprite.PutSprite(di, translucent);
+			copySprite.PutSprite(di, translucent, di->Viewpoint.TicFrac);
 			put=true;
 		}
 	}
@@ -1302,7 +1302,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		lightlist = nullptr;
 	}
 
-	PutSprite(di, hw_styleflags != STYLEHW_Solid);
+	PutSprite(di, hw_styleflags != STYLEHW_Solid, vp.TicFrac);
 	rendered_sprites++;
 }
 
@@ -1437,7 +1437,7 @@ void HWSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	else
 		lightlist = nullptr;
 
-	PutSprite(di, hw_styleflags != STYLEHW_Solid);
+	PutSprite(di, hw_styleflags != STYLEHW_Solid, vp.TicFrac);
 	rendered_sprites++;
 }
 

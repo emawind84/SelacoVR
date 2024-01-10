@@ -236,6 +236,30 @@ FImageLoadParams *FImageSource::NewLoaderParams(int conversion, int translation,
 }
 
 
+bool FImageSource::SerializeForTextureDef(FILE* fp, FString& name, int useType, FGameTexture* gameTex) {
+	const char* fullName = fileSystem.GetFileFullName(SourceLump, false);
+	fprintf(fp, "%d:%s:%s:%d:%dx%d:%dx%d\n", 999, name.GetChars(), fullName != NULL ? fullName : "-", useType, Width, Height, LeftOffset, TopOffset);
+	return true;
+}
+
+int FImageSource::DeSerializeFromTextureDef(FileReader &fr) {
+	int fileType = 0, useType = 0;
+	char id[9], path[1024];
+	char str[1800];
+
+	if (fr.Gets(str, 1800)) {
+		int count = sscanf(str,
+			"%d:%8[^:]:%1023[^:]:%d:%dx%d:%dx%d",
+			&fileType, id, path, &useType, &Width, &Height, &LeftOffset, &TopOffset
+		);
+
+		return (int)(count == 8);
+	}
+
+	return 0;
+}
+
+
 //==========================================================================
 //
 //
@@ -364,7 +388,8 @@ void FImageSource::RegisterForPrecache(FImageSource *img, bool requiretruecolor)
 //
 //==========================================================================
 
-typedef FImageSource * (*CreateFunc)(FileReader & file, int lumpnum);
+typedef FImageSource* (*CreateFunc)(FileReader & file, int lumpnum);
+typedef FImageSource* (*MakeFunc)(FileReader& fr, int lumpnum, bool* hasExtraInfo);
 
 struct TexCreateInfo
 {
@@ -388,21 +413,33 @@ FImageSource *AutomapImage_TryCreate(FileReader &, int lumpnum);
 FImageSource *StartupPageImage_TryCreate(FileReader &, int lumpnum);
 
 
+FImageSource* PNGImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
+FImageSource* JPEGImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
+//FImageSource* DDSImage_TryMake(const char* str, int lumpnum);
+//FImageSource* PCXImage_TryMake(const char* str, int lumpnum);
+//FImageSource* TGAImage_TryMake(const char* str, int lumpnum);
+//FImageSource* FlatImage_TryMake(const char* str, int lumpnum);
+//FImageSource* PatchImage_TryMake(const char* str, int lumpnum);
+//FImageSource* EmptyImage_TryMake(const char* str, int lumpnum);
+//FImageSource* StartupPageImage_TryMake(const char* str, int lumpnum);
+//FImageSource* AutomapImage_TryMake(const char* str, int lumpnum);
+
+
 // Examines the lump contents to decide what type of texture to create,
 // and creates the texture.
 FImageSource * FImageSource::GetImage(int lumpnum, bool isflat)
 {
 	static TexCreateInfo CreateInfo[] = {
-		{ IMGZImage_TryCreate,			false },
+		//{ IMGZImage_TryCreate,			false },
 		{ PNGImage_TryCreate,			false },
 		{ JPEGImage_TryCreate,			false },
 		{ DDSImage_TryCreate,			false },
-		{ PCXImage_TryCreate,			false },
-		{ StbImage_TryCreate,			false },
+		//{ PCXImage_TryCreate,			false },
+		//{ StbImage_TryCreate,			false },
 		{ TGAImage_TryCreate,			false },
-		{ AnmImage_TryCreate,			false },
+		//{ AnmImage_TryCreate,			false },
 		{ StartupPageImage_TryCreate,	false },
-		{ RawPageImage_TryCreate,		false },
+		//{ RawPageImage_TryCreate,		false },
 		{ FlatImage_TryCreate,			true },	// flat detection is not reliable, so only consider this for real flats.
 		{ PatchImage_TryCreate,			false },
 		{ EmptyImage_TryCreate,			false },
@@ -441,112 +478,50 @@ FImageSource * FImageSource::GetImage(int lumpnum, bool isflat)
 }
 
 
+FImageSource* FImageSource::CreateImageFromDef(FileReader& fr, int filetype, int lumpnum, bool *hasExtraInfo)
+{
+	static MakeFunc MakeInfo[] = {
+		//IMGZImage_TryCreate
+		PNGImage_TryMake,
+		JPEGImage_TryMake,
+		//DDSImage_TryMake,
+		//PCXImage_TryMake,
+		//StbImage_TryMake,
+		//TGAImage_TryMake,
+		//AnmImage_TryMake,
+		//StartupPageImage_TryMake,
+		//RawPageImage_TryMake,
+		//FlatImage_TryMake,
+		//PatchImage_TryMake,
+		//EmptyImage_TryMake,
+		//AutomapImage_TryMake
+	};
 
-// TODO: Move this to a unique file
-// Image Loader ====================================================
-/*ImageLoaderQueue *ImageLoaderQueue::Instance = new ImageLoaderQueue();
-const int ImageLoaderQueue::MAX_THREADS;
+	if (lumpnum == -1) 
+		return nullptr;
 
-bool ImageLoadThread::loadResource(ImageLoadIn &input, ImageLoadOut &output) {
-	currentImageID.store(input.imgSource->GetId());
+	unsigned size = ImageForLump.Size();
+	if (size <= (unsigned)lumpnum)
+	{
+		// Hires textures can be added dynamically to the end of the lump array, so this must be checked each time.
+		ImageForLump.Resize(lumpnum + 1);
+		for (; size < ImageForLump.Size(); size++) ImageForLump[size] = nullptr;
+	}
 
-	auto *src = input.imgSource;
-	output.pixels.Create(src->GetWidth(), src->GetHeight());
+	// An image for this lump already exists. We do not need another one.
+	if (ImageForLump[lumpnum] != nullptr) {
+		// Skip the next line
+		char buf[1800];
+		fr.Gets(buf, 1800);	// Ignore results
+		return ImageForLump[lumpnum];
+	}
 
-	output.trans = src->ReadPixels(input.readerCopy, &output.pixels, input.conversion);
-	
-	// TODO: We have the image now, let's store it somewhere
-	
+	// Use the specified type to create an empty image of that type
+	auto image = MakeInfo[filetype](fr, lumpnum, hasExtraInfo);
 
-	// Always return true, because failed images need to be marked as unloadable
-	return true;
+	if (image != nullptr) {
+		ImageForLump[lumpnum] = image;
+	}
+
+	return image;
 }
-
-
-ImageLoadThread *ImageLoaderQueue::spinupThreads() {
-	if ((int)mRunning.Size() >= 2) return nullptr;
-
-	int createThreads = clamp((int)(2 - mRunning.Size()), 0, MAX_THREADS);
-	ImageLoadThread *first = nullptr;
-
-	for (int x = 0; x < createThreads; x++) {
-		ImageLoadThread *t = new ImageLoadThread();
-		t->start();
-
-		mRunning.Push(t);
-
-		if (!first) first = t;
-	}
-
-	return first;
-}
-
-
-ImageLoadThread *ImageLoaderQueue::nextAvailableThread() {
-	ImageLoadThread *th = nullptr;
-	int minQ = INT_MAX - 1;
-
-	for (ImageLoadThread *thi : mRunning) {
-		int numQueued = thi->numQueued();
-
-		if (numQueued < minQ) {
-			th = thi;
-			minQ = numQueued;
-		}
-	}
-
-	if (!th) {
-		th = spinupThreads();
-	}
-
-	assert(th != nullptr);
-
-	return th;
-}
-
-// TODO: Make sure we haven't already queued this image, or that it is not already cached!
-void ImageLoaderQueue::queue(FImageSource *img, int conversion) {
-	ImageLoadIn input;
-
-	input.conversion = conversion;
-	input.imgSource = img;
-	input.readerCopy = fileSystem.OpenFileReader(img->LumpNum()).CopyNew();
-
-	// Reserve the data in the cache
-
-
-	ImageLoadThread *th = nextAvailableThread();
-	th->queue(input);
-}
-
-void ImageLoaderQueue::clear() {
-	// We can't abort the current jobs yet, we'll have to let them finish
-	for (unsigned int x = 0; x < mRunning.Size(); x++) {
-		mRunning[x]->clearInputQueue();	// Stop any pending loads
-		mRunning[x]->stop();			// Stop the thread, this will not abort the current load but will wait for it to finish, nor does it clear output queue
-	}
-	
-	update();	// Since we cleared the queue this update should move data where it belongs before we clear everything
-
-	while (int x = mRunning.Size()) {
-		delete mRunning[x - 1];
-		mRunning.Delete(x - 1);
-	}
-
-	//for (unsigned int x = mRunning.Size() - 1; x >= 0; x--) {
-	//	delete mRunning[x];
-	//	mRunning.Delete(x);
-	//}
-}
-
-
-void ImageLoaderQueue::update() {
-	for (unsigned int x = 0; x < mRunning.Size(); x++) {
-		ImageLoadOut loaded;
-
-		while (mRunning[x]->popFinished(loaded)) {
-			// Mark image as belonging to the precache by filling in the necessary data
-
-		}
-	}
-}*/

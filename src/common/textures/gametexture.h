@@ -137,7 +137,7 @@ public:
 	void SetupSpriteData();
 	static void GenerateInitialSpriteData(SpritePositioningInfo *info, FBitmap *bmp, bool expandSprite = false, bool noTrimming = false);	// @Cockatrice - Generate the data with an already-loaded image in a thread
 	void SetSpriteRect();
-	void SetSpriteRect(SpritePositioningInfo *spi);																							// @Cockatrice - Use this after loading spi in a thread
+	void SetSpriteRect(SpritePositioningInfo *spi, bool raw = false);																		// @Cockatrice - Use this after loading spi in a thread
 
 	ETextureType GetUseType() const { return UseType; }
 	void SetUpscaleFlag(int what, bool manual = false) 

@@ -249,7 +249,7 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 			//Printf("%s found precache state: %s\n", cls->GetDisplayName().GetChars(), FState::StaticGetStateName(precacheState, cls).GetChars());
 			int failsafeCounter = 0;		// If someone forgot to add a stop; to the Precache state, we don't want to loop endlessly
 
-			while (precacheState && failsafeCounter < 100) {
+			while (precacheState && failsafeCounter < 1000) {
 				//Printf("   Precaching sprite: %s frame: %d State: %s \n", sprites[precacheState->sprite].name, precacheState->Frame, FState::StaticGetStateName(precacheState, cls).GetChars());
 
 				spritelist[precacheState->sprite].Insert(gltrans, true);
@@ -290,6 +290,10 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 
 				precacheState = precacheState->GetNextState();
 				failsafeCounter++;
+			}
+
+			if (failsafeCounter >= 999) {
+				Printf(TEXTCOLOR_RED"Pre-Cache error: 1000+ states encountered in %s!\n", cls->GetDisplayName().GetChars());
 			}
 		}
 

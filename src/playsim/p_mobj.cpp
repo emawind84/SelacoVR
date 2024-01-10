@@ -2009,14 +2009,16 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 			else if ((mo->flags2 & (MF2_SLIDE|MF2_BLASTED) || bForceSlide) && !(mo->flags&MF_MISSILE))
 			{	// try to slide along it
 				if (BlockingMobj == NULL)
-				{ // slide against wall
-					if (BlockingLine != NULL &&
+				{ // slide against wall\
+					// @Cocaktrice - This little water jump is supremely annoying and not controllable by script at all
+					// So let's turn it off and replicate it in ZScript if we want the same behaviour
+					/*if (BlockingLine != NULL &&
 						mo->player && mo->waterlevel && mo->waterlevel < 3 &&
 						(mo->player->cmd.ucmd.forwardmove | mo->player->cmd.ucmd.sidemove) &&
 						mo->BlockingLine->sidedef[1] != NULL)
 					{
 						mo->Vel.Z = WATER_JUMP_SPEED;
-					}
+					}*/
 					// If the blocked move executed any push specials that changed the
 					// actor's velocity, do not attempt to slide.
 					if (mo->Vel.XY() == startvel)

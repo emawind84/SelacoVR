@@ -1226,6 +1226,7 @@ void D_DoomLoop ()
 			}
 			// Update display, next frame, with current state.
 			I_StartTic ();
+			D_ProcessEvents();
 			D_Display ();
 			S_UpdateMusic();
 			if (wantToRestart)
@@ -1970,6 +1971,82 @@ static void D_DoomInit()
 	if (!batchrun) Printf ("M_LoadDefaults: Load system defaults.\n");
 	M_LoadDefaults ();			// load before initing other systems
 }
+
+
+//==========================================================================
+//
+// AddModFiles
+//
+// Adds all files found in the subdirectory /Mods
+//==========================================================================
+
+static void AddModFilesFrom(FString path, TArray<FString>& allwads) {
+	void* handle;
+	findstate_t findstate;
+	FString findmask = path + "*.*";
+	if ((handle = I_FindFirst(findmask, &findstate)) != (void*)-1)
+	{
+		do
+		{
+			if (!(I_FindAttr(&findstate) & FA_DIREC))
+			{
+				auto FindName = I_FindName(&findstate);
+				auto p = strrchr(FindName, '.');
+				if (p != nullptr)
+				{
+					// Only valid extensions
+					if (!stricmp(p, ".wad") || !stricmp(p, ".pk3") || !stricmp(p, ".pk7"))
+					{
+						Printf("\tFound %s!\n", FindName);
+						D_AddFile(allwads, path + FindName, false, -1, GameConfig);
+					}
+				}
+			}
+		} while (I_FindNext(handle, &findstate) == 0);
+		I_FindClose(handle);
+	}
+}
+
+
+static void AddModFiles(TArray<FString>& allwads) {
+	if (!(gameinfo.flags & GI_SHAREWARE) && !Args->CheckParm("-noautoload") && !disableautoload) {
+		Printf("Finding Mods...\n");
+
+		const char* modFolder = "Mods";
+		FStringf slasheddir("%s/%s/", progdir.GetChars(), modFolder);
+		AddModFilesFrom(slasheddir, allwads);
+		AddModFilesFrom(slasheddir + "Workshop" + "/", allwads);
+
+		// Open workshop.txt if it exists, and add any PK3 files
+		FString workshopPath = slasheddir + "workshop.txt";
+		FILE* ws = fopen(workshopPath.GetChars(), "r");
+		if (ws != NULL) {
+			Printf("Checking Steam Workshop mods...\n");
+			char buff[1024];
+
+			// Skip first line
+			fgets(buff, 1024, ws);
+
+			while (fgets(buff, 1024, ws)) {
+				size_t len = strnlen(buff, 1024);
+				if (len > 4) {
+					buff[len - 1] = '\0';	// Remove nasty \n
+
+					auto p = strrchr(buff, '.');
+					if (p != nullptr) {
+						if (!strnicmp(p, ".pk3", 1024)) {
+							Printf("\tFound %s!\n", buff);
+							D_AddFile(allwads, buff, false, -1, GameConfig);
+						}
+					}
+				}
+			}
+
+			fclose(ws);
+		}
+	}
+}
+
 
 //==========================================================================
 //
@@ -3015,8 +3092,13 @@ static FILE* D_GetHashFile()
 //
 //==========================================================================
 
+#define CLOCK_START  timer.Reset(); timer.Clock(); 
+#define CLOCK_END(_D_)  timer.Unclock(); Printf(TEXTCOLOR_GOLD"%s: %.2fms\n", _D_, timer.TimeMS()); 
+
 static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArray<FString>& pwads)
 {
+	cycle_t timer = cycle_t();
+
 	gameinfo.gametype = iwad_info->gametype;
 	gameinfo.flags = iwad_info->flags;
 	gameinfo.nokeyboardcheats = iwad_info->nokeyboardcheats;
@@ -3094,6 +3176,8 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	};
 	allwads.Append(std::move(pwads));
 
+	AddModFiles(allwads);
+
 	bool allowduplicates = Args->CheckParm("-allowduplicates");
 	auto hashfile = D_GetHashFile();
 	fileSystem.InitMultipleFiles (allwads, false, &lfi, allowduplicates, hashfile);
@@ -3104,10 +3188,14 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	D_GrabCVarDefaults(); //parse DEFCVARS
 	InitPalette();
 
+	CLOCK_START
 	if (!batchrun) Printf("S_Init: Setting up sound.\n");
 	S_Init();
-
+	CLOCK_END("Sound Startup")
+	
+	bool writeCache = Args->CheckParm("-writetexturecache");
 	int max_progress = TexMan.GuesstimateNumTextures();
+	if (writeCache) max_progress *= 2;	// If we are writing textures, we need to double the estimated time so we get actual progress
 	int per_shader_progress = 0;//screen->GetShaderCount()? (max_progress / 10 / screen->GetShaderCount()) : 0;
 	bool nostartscreen = batchrun || restart || Args->CheckParm("-join") || Args->CheckParm("-host") || Args->CheckParm("-norun");
 
@@ -3136,8 +3224,10 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 		exec = NULL;
 	}
 
+	CLOCK_START
 	// [RH] Initialize localizable strings.
 	GStrings.LoadStrings (language);
+	CLOCK_END("Loaded Strings")
 
 	V_InitFontColors ();
 
@@ -3217,6 +3307,7 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	// MUSINFO must be parsed after MAPINFO
 	S_ParseMusInfo();
 
+	CLOCK_START
 	if (!batchrun) Printf ("Texman.Init: Init texture manager.\n");
 	UpdateUpscaleMask();
 	SpriteFrames.Clear();
@@ -3230,11 +3321,15 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	C_InitConback(TexMan.CheckForTexture(gameinfo.BorderFlat, ETextureType::Flat), true, 0.25);
 
 	FixWideStatusBar();
-
+	CLOCK_END("Textures Startup Total")
+	
 	StartWindow->Progress(); 
 	if (StartScreen) StartScreen->Progress(1);
+	
+	CLOCK_START
 	V_InitFonts();
 	InitDoomFonts();
+	CLOCK_END("Font Startup")
 	V_LoadTranslations();
 	UpdateGenericUI(false);
 
@@ -3329,6 +3424,7 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	if (!batchrun) Printf ("P_Init: Init Playloop state.\n");
 	if (StartScreen) StartScreen->LoadingStatus ("Init game engine", 0x3f);
 	AM_StaticInit();
+	
 	P_Init ();
 
 	P_SetupWeapons_ntohton();
@@ -3409,10 +3505,12 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 			StartScreen = NULL;
 		}
 
+		CLOCK_START
 		while(!screen->CompileNextShader())
 		{
 			// here we can do some visual updates later
 		}
+		CLOCK_END("Compiling Shaders")
 		twod->fullscreenautoaspect = gameinfo.fullscreenautoaspect;
 		// Initialize the size of the 2D drawer so that an attempt to access it outside the draw code won't crash.
 		twod->Begin(screen->GetWidth(), screen->GetHeight());

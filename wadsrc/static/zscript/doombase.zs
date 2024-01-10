@@ -190,7 +190,7 @@ class Thinker : Object native play
 	virtual native void Sleep(int tics);
 	virtual native bool ShouldWake();
 	virtual native void Wake();
-	native void SleepIndefinite();
+	virtual native void SleepIndefinite();
 
 	static clearscope int Tics2Seconds(int tics)
 	{
@@ -449,6 +449,7 @@ struct LevelLocals native
 	native readonly bool nomonsters;
 	native readonly bool allowrespawn;
 	native readonly bool rainymap;
+	native readonly bool saferoom;
 	deprecated("3.8", "Use Level.isFrozen() instead") native bool frozen;
 	native readonly bool infinite_flight;
 	native readonly bool no_dlg_freeze;
