@@ -71,7 +71,7 @@ EXTERN_CVAR(Float, transsouls)
 //
 //==========================================================================
 
-bool GLSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v)
+bool GLSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 {
 	if (actor != nullptr && (actor->renderflags & RF_SPRITETYPEMASK) == RF_FLATSPRITE)
 	{
@@ -151,8 +151,8 @@ bool GLSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v)
 		{
 			// [CMB] Rotate relative to camera XY position, not just camera direction,
 			// which is nicer in VR
-			float xrel = xcenter - r_viewpoint.Pos.X;
-			float yrel = ycenter - r_viewpoint.Pos.Y;
+			float xrel = xcenter - vp->X;
+			float yrel = ycenter - vp->Y;
 			float absAngleDeg = RAD2DEG(atan2(-yrel, xrel));
 			float counterRotationDeg = 270. - di->mAngles.Yaw.Degrees; // counteracts existing sprite rotation
 			float relAngleDeg = counterRotationDeg + absAngleDeg;
@@ -410,7 +410,6 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 {
 	sector_t rs;
 	sector_t * rendersector;
-	auto vp = r_viewpoint;
 
 	if (thing == nullptr)
 		return;
@@ -427,7 +426,8 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		return;
 	}
 
-	AActor *camera = r_viewpoint.camera;
+    auto &vp = r_viewpoint;
+	AActor *camera = vp.camera;
 
 	if (thing->renderflags & RF_INVISIBLE || !thing->RenderStyle.IsVisible(thing->Alpha))
 	{
@@ -449,7 +449,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	}
 
 	// [RH] Interpolate the sprite's position to make it look smooth
-	DVector3 thingpos = thing->InterpolatedPosition(r_viewpoint.TicFrac);
+	DVector3 thingpos = thing->InterpolatedPosition(vp.TicFrac);
 	if (thruportal == 1) thingpos += level.Displacements.getOffset(thing->Sector->PortalGroup, sector->PortalGroup);
 
 	AActor *viewmaster = thing;
@@ -495,9 +495,9 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	}
 
 	// Too close to the camera. This doesn't look good if it is a sprite.
-	if (thing != camera && fabs(thingpos.X - r_viewpoint.CenterEyePos.X) < 2 && fabs(thingpos.Y - r_viewpoint.CenterEyePos.Y) < 2)
+	if (thing != camera && fabs(thingpos.X - vp.CenterEyePos.X) < 2 && fabs(thingpos.Y - vp.CenterEyePos.Y) < 2)
 	{
-		if (r_viewpoint.CenterEyePos.Z >= thingpos.Z - 2 && r_viewpoint.CenterEyePos.Z <= thingpos.Z + thing->Height + 2)
+		if (vp.CenterEyePos.Z >= thingpos.Z - 2 && vp.CenterEyePos.Z <= thingpos.Z + thing->Height + 2)
 		{
 			// exclude vertically moving objects from this check.
 			if (!thing->Vel.isZero())
@@ -513,13 +513,13 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	// don't draw first frame of a player missile
 	if (thing->flags&MF_MISSILE)
 	{
-		if (!(thing->flags7 & MF7_FLYCHEAT) && thing->target == di->mViewActor && di->mViewActor != nullptr)
+		if (!(thing->flags7 & MF7_FLYCHEAT) && thing->target == vp.ViewActor && vp.ViewActor != nullptr)
 		{
 			double speed = thing->Vel.Length();
 			if (speed >= thing->target->radius / 2)
 			{
 				double clipdist = clamp(thing->Speed, thing->target->radius, thing->target->radius * 2);
-				if ((thingpos - r_viewpoint.CenterEyePos).LengthSquared() < clipdist * clipdist) return;
+				if ((thingpos - vp.CenterEyePos).LengthSquared() < clipdist * clipdist) return;
 			}
 		}
 		thing->flags7 |= MF7_FLYCHEAT;	// do this only once for the very first frame, but not if it gets into range again.
@@ -532,7 +532,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	}
 	// disabled because almost none of the actual game code is even remotely prepared for this. If desired, use the INTERPOLATE flag.
 	if (thing->renderflags & RF_INTERPOLATEANGLES)
-		Angles = thing->InterpolatedAngles(r_viewpoint.TicFrac);
+		Angles = thing->InterpolatedAngles(vp.TicFrac);
 	else
 		Angles = thing->Angles;
 
@@ -566,7 +566,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	// [RH] Make floatbobbing a renderer-only effect.
 	else if (thing->flags2 & MF2_FLOATBOB)
 	{
-		float fz = thing->GetBobOffset(r_viewpoint.TicFrac);
+		float fz = thing->GetBobOffset(vp.TicFrac);
 		z += fz;
 	}
 
@@ -581,7 +581,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	if (!modelframe)
 	{
 		bool mirror;
-		DAngle ang = (thingpos - r_viewpoint.CenterEyePos).Angle();
+		DAngle ang = (thingpos - vp.CenterEyePos).Angle();
 		FTextureID patch;
 		// [ZZ] add direct picnum override
 		if (isPicnumOverride)
@@ -598,7 +598,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			int rot;
 			if (!(thing->renderflags & RF_FLATSPRITE) || thing->flags7 & MF7_SPRITEANGLE)
 			{
-				sprangle = thing->GetSpriteAngle(ang, r_viewpoint.TicFrac);
+				sprangle = thing->GetSpriteAngle(ang, vp.TicFrac);
 				rot = -1;
 			}
 			else
@@ -665,8 +665,8 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		{
 		case RF_FACESPRITE:
 		{
-			float viewvecX = di->mViewVector.X;
-			float viewvecY = di->mViewVector.Y;
+			float viewvecX = vp.ViewVector.X;
+			float viewvecY = vp.ViewVector.Y;
 
 			x1 = x - viewvecY*leftfac;
 			x2 = x - viewvecY*rightfac;
@@ -711,7 +711,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		gltexture = nullptr;
 	}
 
-	depth = (float)((x - r_viewpoint.CenterEyePos.X) * r_viewpoint.TanCos + (y - r_viewpoint.CenterEyePos.Y) * r_viewpoint.TanSin);
+	depth = (float)((x - vp.CenterEyePos.X) * vp.TanCos + (y - vp.CenterEyePos.Y) * vp.TanSin);
 	if (isSpriteShadow) depth += 1.f/65536.f; // always sort shadows behind the sprite.
 
 	// light calculation
@@ -1038,7 +1038,8 @@ void GLSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 		}
 	}
 
-	double timefrac = r_viewpoint.TicFrac;
+	auto &vp = r_viewpoint;
+	double timefrac = vp.TicFrac;
 	if (paused || level.isFrozen())
 		timefrac = 0.;
 	float xvf = (particle->Vel.X) * timefrac;
@@ -1061,8 +1062,8 @@ void GLSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	else factor = 1 / 7.f;
 	float scalefac=particle->size * factor;
 
-	float viewvecX = di->mViewVector.X;
-	float viewvecY = di->mViewVector.Y;
+	float viewvecX = vp.ViewVector.X;
+	float viewvecY = vp.ViewVector.Y;
 
 	x1=x+viewvecY*scalefac;
 	x2=x-viewvecY*scalefac;
@@ -1071,7 +1072,7 @@ void GLSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	z1=z-scalefac;
 	z2=z+scalefac;
 
-	depth = FloatToFixed((x - r_viewpoint.CenterEyePos.X) * r_viewpoint.TanCos + (y - r_viewpoint.CenterEyePos.Y) * r_viewpoint.TanSin);
+	depth = (float)((x - vp.CenterEyePos.X) * vp.TanCos + (y - vp.CenterEyePos.Y) * vp.TanSin);
 
 	actor=nullptr;
 	this->particle=particle;
@@ -1101,6 +1102,7 @@ void HWDrawInfo::ProcessActorsInPortal(FLinePortalSpan *glport, area_t in_area)
 	TMap<AActor*, bool> processcheck;
 	if (glport->validcount == validcount) return;	// only process once per frame
 	glport->validcount = validcount;
+    auto &vp = r_viewpoint;
 	for (auto port : glport->lines)
 	{
 		line_t *line = port->mOrigin;
@@ -1124,9 +1126,9 @@ void HWDrawInfo::ProcessActorsInPortal(FLinePortalSpan *glport, area_t in_area)
 					DVector3 newpos = savedpos;
 					sector_t fakesector;
 
-					if (!r_viewpoint.showviewer && th == r_viewpoint.camera)
+					if (!vp.showviewer && th == vp.camera)
 					{
-						if (fabs(savedpos.X - r_viewpoint.ActorPos.X) < 2 && fabs(savedpos.Y - r_viewpoint.ActorPos.Y) < 2)
+						if (fabs(savedpos.X - vp.ActorPos.X) < 2 && fabs(savedpos.Y - vp.ActorPos.Y) < 2)
 						{
 							continue;
 						}

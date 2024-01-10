@@ -93,7 +93,6 @@ public:
 	int mMirrorCount;
 	int mPlaneMirrorCount;
 	float mCurrentFoV;
-	AActor *mViewActor;
 	FShaderManager *mShaderManager;
 	FSamplerManager *mSamplerManager;
 	unsigned int mFBID;
@@ -129,7 +128,6 @@ public:
 	FShadowMap mShadowMap;
 
 	FRotator mAngles;
-	FVector2 mViewVector;
 
 	FFlatVertexBuffer *mVBO;
 	FSkyVertexBuffer *mSkyVBO;

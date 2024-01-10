@@ -265,6 +265,7 @@ void GLFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector)
 	dynlightindex = -1;
 
 	uint8_t &srf = di->sectorrenderflags[sector->sectornum];
+    auto &vp = r_viewpoint;
 
 	//
 	//
@@ -273,7 +274,7 @@ void GLFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector)
 	//
 	//
 	//
-	if (frontsector->floorplane.ZatPoint(r_viewpoint.Pos) <= r_viewpoint.Pos.Z)
+	if (frontsector->floorplane.ZatPoint(vp.Pos) <= vp.Pos.Z)
 	{
 		// process the original floor first.
 
@@ -334,7 +335,7 @@ void GLFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector)
 	//
 	//
 	//
-	if (frontsector->ceilingplane.ZatPoint(r_viewpoint.Pos) >= r_viewpoint.Pos.Z)
+	if (frontsector->ceilingplane.ZatPoint(vp.Pos) >= vp.Pos.Z)
 	{
 		// process the original ceiling first.
 
@@ -426,7 +427,7 @@ void GLFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector)
 					double ff_top = rover->top.plane->ZatPoint(sector->centerspot);
 					if (ff_top < lastceilingheight)
 					{
-						if (r_viewpoint.Pos.Z <= rover->top.plane->ZatPoint(r_viewpoint.Pos))
+						if (vp.Pos.Z <= rover->top.plane->ZatPoint(vp.Pos))
 						{
 							SetFrom3DFloor(rover, true, !!(rover->flags&FF_FOG));
 							Colormap.FadeColor = frontsector->Colormap.FadeColor;
@@ -440,7 +441,7 @@ void GLFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector)
 					double ff_bottom = rover->bottom.plane->ZatPoint(sector->centerspot);
 					if (ff_bottom < lastceilingheight)
 					{
-						if (r_viewpoint.Pos.Z <= rover->bottom.plane->ZatPoint(r_viewpoint.Pos))
+						if (vp.Pos.Z <= rover->bottom.plane->ZatPoint(vp.Pos))
 						{
 							SetFrom3DFloor(rover, false, !(rover->flags&FF_FOG));
 							Colormap.FadeColor = frontsector->Colormap.FadeColor;
@@ -466,7 +467,7 @@ void GLFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector)
 					double ff_bottom = rover->bottom.plane->ZatPoint(sector->centerspot);
 					if (ff_bottom > lastfloorheight || (rover->flags&FF_FIX))
 					{
-						if (r_viewpoint.Pos.Z >= rover->bottom.plane->ZatPoint(r_viewpoint.Pos))
+						if (vp.Pos.Z >= rover->bottom.plane->ZatPoint(vp.Pos))
 						{
 							SetFrom3DFloor(rover, false, !(rover->flags&FF_FOG));
 							Colormap.FadeColor = frontsector->Colormap.FadeColor;
@@ -487,7 +488,7 @@ void GLFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector)
 					double ff_top = rover->top.plane->ZatPoint(sector->centerspot);
 					if (ff_top > lastfloorheight)
 					{
-						if (r_viewpoint.Pos.Z >= rover->top.plane->ZatPoint(r_viewpoint.Pos))
+						if (vp.Pos.Z >= rover->top.plane->ZatPoint(vp.Pos))
 						{
 							SetFrom3DFloor(rover, true, !!(rover->flags&FF_FOG));
 							Colormap.FadeColor = frontsector->Colormap.FadeColor;

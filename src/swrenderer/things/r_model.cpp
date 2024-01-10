@@ -92,7 +92,7 @@ namespace swrenderer
 		renderer.Translation = actor->Translation;
 
 		renderer.AddLights(actor);
-		renderer.RenderModel(x, y, z, smf, actor);
+		renderer.RenderModel(x, y, z, smf, actor, r_viewpoint.TicFrac);
 		PolyTriangleDrawer::SetModelVertexShader(thread->DrawQueue, -1, -1, 0.0f);
 	}
 
