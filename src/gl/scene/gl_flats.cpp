@@ -46,7 +46,7 @@
 #include "gl/dynlights/gl_lightbuffer.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/renderer/gl_quaddrawer.h"
-#include "gl/stereo3d/gl_stereo3d.h"
+#include "hwrenderer/utility/hw_vrmodes.h"
 
 CVAR(Int, gl_max_vertices, 0, CVAR_ARCHIVE)
 
@@ -114,7 +114,7 @@ void FDrawInfo::SetupSectorLights(GLFlat *flat, int pass, int *dli)
 
 void FDrawInfo::DrawSubsector(GLFlat *flat, subsector_t * sub)
 {
-	if (gl_max_vertices > 0 && s3d::EyePose::flatVerticesPerEye + sub->numlines >= gl_max_vertices)
+	if (gl_max_vertices > 0 && flatVerticesPerEye + sub->numlines >= gl_max_vertices)
 	{
 		return;
 	}
@@ -157,7 +157,7 @@ void FDrawInfo::DrawSubsector(GLFlat *flat, subsector_t * sub)
 		}
 	}
 
-	s3d::EyePose::flatVerticesPerEye += sub->numlines;
+	flatVerticesPerEye += sub->numlines;
 	flatvertices += sub->numlines;
 	flatprimitives++;
 }
@@ -237,7 +237,7 @@ void FDrawInfo::DrawSubsectors(GLFlat *flat, int pass, bool processlights, bool 
 			for (int i = 0; i < flat->sector->subsectorcount; i++)
 			{
 				subsector_t * sub = flat->sector->subsectors[i];
-				if (gl_max_vertices > 0 && s3d::EyePose::flatVerticesPerEye + sub->numlines >= gl_max_vertices)
+				if (gl_max_vertices > 0 && flatVerticesPerEye + sub->numlines >= gl_max_vertices)
 				{
 					continue;
 				}
@@ -249,7 +249,7 @@ void FDrawInfo::DrawSubsectors(GLFlat *flat, int pass, bool processlights, bool 
 					drawcalls.Clock();
 					glDrawElements(GL_TRIANGLES, (sub->numlines - 2) * 3, GL_UNSIGNED_INT, GLRenderer->mVBO->GetIndexPointer() + index);
 					drawcalls.Unclock();
-					s3d::EyePose::flatVerticesPerEye += sub->numlines;
+					flatVerticesPerEye += sub->numlines;
 					flatvertices += sub->numlines;
 					flatprimitives++;
 				}
@@ -296,7 +296,7 @@ void FDrawInfo::DrawSubsectors(GLFlat *flat, int pass, bool processlights, bool 
 
 void FDrawInfo::DrawSkyboxSector(GLFlat *flat, int pass, bool processlights)
 {
-	if (gl_max_vertices > 0 && s3d::EyePose::flatVerticesPerEye + 4 >= gl_max_vertices)
+	if (gl_max_vertices > 0 && flatVerticesPerEye + 4 >= gl_max_vertices)
 	{
 		return;
 	}
@@ -305,7 +305,7 @@ void FDrawInfo::DrawSkyboxSector(GLFlat *flat, int pass, bool processlights)
 	flat->CreateSkyboxVertices(qd.Pointer());
 	qd.Render(GL_TRIANGLE_FAN);
 
-	s3d::EyePose::flatVerticesPerEye += 4;
+	flatVerticesPerEye += 4;
 	flatvertices += 4;
 	flatprimitives++;
 }

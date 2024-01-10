@@ -38,7 +38,7 @@
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/scene/gl_portal.h"
 #include "gl/renderer/gl_quaddrawer.h"
-#include "gl/stereo3d/gl_stereo3d.h"
+#include "hwrenderer/utility/hw_vrmodes.h"
 
 EXTERN_CVAR(Int, gl_max_vertices)
 
@@ -54,14 +54,14 @@ void FDrawInfo::RenderWall(GLWall *wall, int textured)
 	assert(wall->vertcount > 0);
 	gl_RenderState.Apply();
 	gl_RenderState.ApplyLightIndex(wall->dynlightindex);
-	
-	if (gl_max_vertices > 0 && s3d::EyePose::wallVerticesPerEye >= gl_max_vertices) {
+
+	if (gl_max_vertices > 0 && wallVerticesPerEye >= gl_max_vertices) {
 		return;
 	}
 
 	GLRenderer->mVBO->RenderArray(GL_TRIANGLE_FAN, wall->vertindex, wall->vertcount);
 	vertexcount += wall->vertcount;
-	s3d::EyePose::wallVerticesPerEye += wall->vertcount;
+	wallVerticesPerEye += wall->vertcount;
 }
 
 //==========================================================================

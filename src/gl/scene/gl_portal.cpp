@@ -43,7 +43,7 @@
 #include "hwrenderer/scene/hw_clipper.h"
 #include "hwrenderer/utility/hw_cvars.h"
 #include "gl/scene/gl_portal.h"
-#include "gl/stereo3d/gl_stereo3d.h"
+#include "hwrenderer/utility/hw_vrmodes.h"
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -126,13 +126,13 @@ void GLPortal::DrawPortalStencil(int pass)
 
 bool GLPortal::Start(bool usestencil, bool doquery, HWDrawInfo *outer_di, HWDrawInfo **pDi)
 {
-	if (gl_max_portals > -1 && s3d::EyePose::portalsPerEye >= gl_max_portals)
+	if (gl_max_portals > -1 && portalsPerEye >= gl_max_portals)
 	{
 		return false;
 	}
 	*pDi = nullptr;
 	rendered_portals++;
-	s3d::EyePose::portalsPerEye++;
+	portalsPerEye++;
 	Clocker c(PortalAll);
 
 	if (usestencil)

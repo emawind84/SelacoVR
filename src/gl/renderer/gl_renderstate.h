@@ -407,14 +407,7 @@ public:
 		{
 			mSceneColor = mFadeColor;
 		}
-		if (gl_enhanced_nightvision && mColormapState == CM_LITE)
-		{
-			r = 0.375f, g = 1.0f, b = 0.375f;
-		}
-		else
-		{
-			r = g = b = 1.f;
-		}
+		r = g = b = 1.f;
 		GLRenderer->mSceneClearColor[0] = mSceneColor.r * r / 255.f;
 		GLRenderer->mSceneClearColor[1] = mSceneColor.g * g / 255.f;
 		GLRenderer->mSceneClearColor[2] = mSceneColor.b * b / 255.f;

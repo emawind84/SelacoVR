@@ -594,10 +594,6 @@ vec4 ApplyFadeColor(vec4 frag)
 		float visibility = exp(-pow((fogdist * uGlobalFadeDensity), uGlobalFadeGradient));
 		visibility = clamp(visibility, 0.0, 1.0);
 		vec4 fogcolor = uGlobalFadeColor;
-		if (uFixedColormap == 2)
-		{
-			fogcolor = fogcolor * uFixedColormapStart;
-		}
 		if (uGlobalFadeMode == -1)
 		{
 			frag = vec4(mix(fogcolor.rgb, frag.rgb, visibility), frag.a * visibility);
@@ -677,6 +673,7 @@ void main()
 		{
 			frag = vec4(uFogColor.rgb, (1.0 - fogfactor) * frag.a * 0.75 * vColor.a);
 		}
+		frag = ApplyFadeColor(frag);
 	}
 	else // simple 2D (uses the fog color to add a color overlay)
 	{
@@ -690,7 +687,7 @@ void main()
 		frag.rgb = frag.rgb + uFogColor.rgb;
 	}
 	
-	FragColor = ApplyFadeColor(frag);
+	FragColor = frag;
 #ifdef GBUFFER_PASS
 	FragFog = vec4(AmbientOcclusionColor(), 1.0);
 	FragNormal = vec4(vEyeNormal.xyz * 0.5 + 0.5, 1.0);

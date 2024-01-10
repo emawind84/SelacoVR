@@ -462,6 +462,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 	auto vrmode = VRMode::GetVRMode(mainview && toscreen);
 	for (int eye_ix = 0; eye_ix < vrmode->mEyeCount; ++eye_ix)
 	{
+		flatVerticesPerEye = wallVerticesPerEye = portalsPerEye = 0;
 		const auto &eye = vrmode->mEyes[eye_ix];
 		screen->SetViewportRects(bounds);
 
