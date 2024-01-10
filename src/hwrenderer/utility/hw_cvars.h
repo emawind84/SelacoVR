@@ -41,7 +41,6 @@ EXTERN_CVAR(Bool, gl_seamless)
 EXTERN_CVAR(Float, gl_mask_threshold)
 EXTERN_CVAR(Float, gl_mask_sprite_threshold)
 
-EXTERN_CVAR(Bool, gl_renderbuffers)
 EXTERN_CVAR(Int, gl_multisample)
 
 EXTERN_CVAR(Bool, gl_bloom)
@@ -77,3 +76,5 @@ EXTERN_CVAR(Bool, gl_billboard_faces_camera)
 EXTERN_CVAR(Bool, gl_billboard_particles)
 EXTERN_CVAR(Int, gl_enhanced_nv_stealth)
 EXTERN_CVAR(Int, gl_fuzztype)
+
+EXTERN_CVAR(Int, gl_shadowmap_filter)

@@ -144,11 +144,11 @@ static FVector2 BobWeapon(WeaponPosition &weap, DPSprite *psp, double ticFrac)
 //
 //==========================================================================
 
-static WeaponLighting GetWeaponLighting(sector_t *viewsector, const DVector3 &pos, int FixedColormap, area_t in_area, const DVector3 &playerpos)
+static WeaponLighting GetWeaponLighting(sector_t *viewsector, const DVector3 &pos, int cm, area_t in_area, const DVector3 &playerpos)
 {
 	WeaponLighting l;
 
-	if (FixedColormap)
+	if (cm)
 	{
 		l.lightlevel = 255;
 		l.cm.Clear();
@@ -515,7 +515,7 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 	AActor * playermo = players[consoleplayer].camera;
 	player_t * player = playermo->player;
     
-    auto &vp = r_viewpoint;
+    const auto &vp = Viewpoint;
 
 	AActor *camera = vp.camera;
 
@@ -527,12 +527,12 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 		(r_deathcamera && camera->health <= 0))
 		return;
 
-	WeaponLighting light = GetWeaponLighting(viewsector, vp.Pos, FixedColormap, in_area, camera->Pos());
+	WeaponLighting light = GetWeaponLighting(viewsector, vp.Pos, isFullbrightScene(), in_area, camera->Pos());
 
 	// hack alert! Rather than changing everything in the underlying lighting code let's just temporarily change
 	// light mode here to draw the weapon sprite.
 	int oldlightmode = level.lightmode;
-	if (level.lightmode == 8) level.lightmode = 2;
+	if (level.lightmode >= 8) level.lightmode = 2;
 
 	DPSprite *readyWeaponPsp = camera->player->FindPSprite(PSP_WEAPON);
 	DPSprite *offhandWeaponPsp = camera->player->FindPSprite(PSP_OFFHANDWEAPON);
@@ -560,9 +560,9 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 		hudsprite.dynrgb[0] = hudsprite.dynrgb[1] = hudsprite.dynrgb[2] = 0;
 		hudsprite.lightindex = -1;
 		// set the lighting parameters
-		if (hudsprite.RenderStyle.BlendOp != STYLEOP_Shadow && level.HasDynamicLights && FixedColormap == CM_DEFAULT && gl_light_weapons)
+		if (hudsprite.RenderStyle.BlendOp != STYLEOP_Shadow && level.HasDynamicLights && !isFullbrightScene() && gl_light_weapons)
 		{
-			if (!hudModelStep || (screen->hwcaps & RFL_NO_SHADERS))
+			if (!hudModelStep)
 			{
 				GetDynSpriteLight(playermo, nullptr, hudsprite.dynrgb);
 			}
@@ -600,7 +600,7 @@ void HWDrawInfo::PrepareTargeterSprites(double ticfrac)
 {
 	AActor * playermo = players[consoleplayer].camera;
 	player_t * player = playermo->player;
-	AActor *camera = r_viewpoint.camera;
+	AActor *camera = Viewpoint.camera;
 
 	// this is the same as above
 	if (!player ||

@@ -9,7 +9,7 @@ enum area_t : int
 };
 
 
-// Global functions. Make them members of GLRenderer later?
+// Global functions.
 bool hw_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsector);
 void hw_ClearFakeFlat();
 sector_t * hw_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *localcopy = nullptr);

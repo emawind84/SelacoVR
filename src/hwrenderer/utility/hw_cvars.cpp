@@ -25,6 +25,7 @@
 #include "c_dispatch.h"
 #include "v_video.h"
 #include "hw_cvars.h"
+#include "hwrenderer/textures/hw_material.h"
 #include "menu/menu.h"
 
 
@@ -94,7 +95,7 @@ CUSTOM_CVAR(Float,gl_texture_filter_anisotropic,4.0f,CVAR_ARCHIVE|CVAR_GLOBALCON
 
 CCMD(gl_flush)
 {
-	screen->FlushTextures();
+	FMaterial::FlushAll();
 }
 
 CUSTOM_CVAR(Int, gl_texture_filter, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
@@ -105,7 +106,7 @@ CUSTOM_CVAR(Int, gl_texture_filter, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINI
 
 CUSTOM_CVAR(Bool, gl_texture_usehires, true, CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
-	screen->FlushTextures();
+	FMaterial::FlushAll();
 }
 
 CVAR(Bool, gl_precache, true, CVAR_ARCHIVE)
@@ -130,4 +131,9 @@ CVAR(Int, gl_enhanced_nv_stealth, 3, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CUSTOM_CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
 {
 	if (self < 0 || self > 8) self = 0;
+}
+
+CUSTOM_CVAR(Int, gl_shadowmap_filter, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+{
+	if (self < 0 || self > 8) self = 1;
 }

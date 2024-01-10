@@ -36,6 +36,7 @@
 #include "m_misc.h"
 #include "hwrenderer/utility/hw_shaderpatcher.h"
 #include "hwrenderer/data/shaderuniforms.h"
+#include "hwrenderer/scene/hw_viewpointuniforms.h"
 
 #include "gl_load/gl_interface.h"
 #include "gl/system/gl_debug.h"
@@ -239,11 +240,6 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	i_data += "uniform float uDesaturationFactor;\n";
 	i_data += "uniform float uInterpolationFactor;\n";
 
-	// Fixed colormap stuff
-	i_data += "uniform int uFixedColormap;\n"; // 0, when no fixed colormap, 1 for a light value, 2 for a color blend, 3 for a fog layer
-	i_data += "uniform vec4 uFixedColormapStart;\n";
-	i_data += "uniform vec4 uFixedColormapRange;\n";
-
 	// Glowing walls stuff
 	i_data += "uniform vec4 uGlowTopPlane;\n";
 	i_data += "uniform vec4 uGlowTopColor;\n";
@@ -370,26 +366,23 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	unsigned int lightbuffersize = GLRenderer->mLights->GetBlockSize();
 	if (lightbuffertype == GL_UNIFORM_BUFFER)
 	{
-		if (gl.es)
-		{
-			vp_comb.Format(ES_VERSION_STR"\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
-		}
-		else
-		{
-			vp_comb.Format("#version 330 core\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
-		}
+#ifdef __MOBILE__
+		vp_comb.Format("#version 310 es\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
+#else
+		vp_comb.Format("#version 330 core\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
+#endif
 	}
 	else
 	{
-		if (gl.es)
-		{
-			vp_comb.Format(ES_VERSION_STR"\n#define SHADER_STORAGE_LIGHTS\n");
-		}
+#ifdef __MOBILE__
+		vp_comb.Format("#version 300 es\n#define SHADER_STORAGE_LIGHTS\n");
+#else
 		// This differentiation is for Intel which do not seem to expose the full extension, even if marked as required.
-		else if (gl.glslversion < 4.3f)
+		if (gl.glslversion < 4.3f)
 			vp_comb = "#version 400 core\n#extension GL_ARB_shader_storage_buffer_object : require\n#define SHADER_STORAGE_LIGHTS\n";
 		else
 			vp_comb = "#version 430 core\n#define SHADER_STORAGE_LIGHTS\n";
+#endif
 	}
 
 	if (gl.buffermethod == BM_DEFERRED)
@@ -593,14 +586,9 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 
 	muDesaturation.Init(hShader, "uDesaturationFactor");
 	muFogEnabled.Init(hShader, "uFogEnabled");
-	muPalLightLevels.Init(hShader, "uPalLightLevels");
-	muGlobVis.Init(hShader, "uGlobVis");
 	muTextureMode.Init(hShader, "uTextureMode");
-	muCameraPos.Init(hShader, "uCameraPos");
 	muLightParms.Init(hShader, "uLightAttr");
 	muClipSplit.Init(hShader, "uClipSplit");
-	muColormapStart.Init(hShader, "uFixedColormapStart");
-	muColormapRange.Init(hShader, "uFixedColormapRange");
 	muLightIndex.Init(hShader, "uLightIndex");
 	muFogColor.Init(hShader, "uFogColor");
 	muDynLightColor.Init(hShader, "uDynLightColor");
@@ -615,16 +603,10 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	muSplitBottomPlane.Init(hShader, "uSplitBottomPlane");
 	muSplitTopPlane.Init(hShader, "uSplitTopPlane");
 	muDetailParms.Init(hShader, "uDetailParms");
-	muClipLine.Init(hShader, "uClipLine");
-	muFixedColormap.Init(hShader, "uFixedColormap");
 	muInterpolationFactor.Init(hShader, "uInterpolationFactor");
-	muClipHeight.Init(hShader, "uClipHeight");
-	muClipHeightDirection.Init(hShader, "uClipHeightDirection");
-	muShadowmapFilter.Init(hShader, "uShadowmapFilter");
 	muAlphaThreshold.Init(hShader, "uAlphaThreshold");
 	muSpecularMaterial.Init(hShader, "uSpecularMaterial");
 	muAddColor.Init(hShader, "uAddColor");
-	muViewHeight.Init(hShader, "uViewHeight");
 	muTimer.Init(hShader, "timer");
 	muGlobalFadeMode.Init(hShader, "uGlobalFadeMode");
 	muGlobalFade.Init(hShader, "uGlobalFade");
@@ -644,8 +626,15 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	normalviewmatrix_index = glGetUniformLocation(hShader, "NormalViewMatrix");
 	normalmodelmatrix_index = glGetUniformLocation(hShader, "NormalModelMatrix");
 	quadmode_index = glGetUniformLocation(hShader, "uQuadMode");
+	viewheight_index = glGetUniformLocation(hShader, "uViewHeight");
+	camerapos_index = glGetUniformLocation(hShader, "uCameraPos");
+	pallightlevels_index = glGetUniformLocation(hShader, "uPalLightLevels");
+	globvis_index = glGetUniformLocation(hShader, "uGlobVis");
+	clipheight_index = glGetUniformLocation(hShader, "uClipHeight");
+	clipheightdirection_index = glGetUniformLocation(hShader, "uClipHeightDirection");
+	clipline_index = glGetUniformLocation(hShader, "uClipLine");
 
-	if (!gl.legacyMode && lightbuffertype == GL_UNIFORM_BUFFER)
+	if (lightbuffertype == GL_UNIFORM_BUFFER)
 	{
 		int tempindex = glGetUniformBlockIndex(hShader, "LightBufferUBO");
 		if (tempindex != -1) glUniformBlockBinding(hShader, tempindex, LIGHTBUF_BINDINGPOINT);
@@ -716,7 +705,6 @@ FShader *FShaderCollection::Compile (const char *ShaderName, const char *ShaderP
 	FString defines;
 	defines += shaderdefines;
 	// this can't be in the shader code due to ATI strangeness.
-	if (gl.MaxLights() == 128) defines += "#define MAXLIGHTS128\n";
 	if (!usediscard) defines += "#define NO_ALPHATEST\n";
 	if (passType == GBUFFER_PASS) defines += "#define GBUFFER_PASS\n";
 
@@ -744,12 +732,19 @@ FShader *FShaderCollection::Compile (const char *ShaderName, const char *ShaderP
 //
 //==========================================================================
 
-void FShader::ApplyMatrices(VSMatrix *proj, VSMatrix *view, VSMatrix *norm)
+void FShader::ApplyMatrices(HWViewpointUniforms *u)
 {
 	Bind();
-	glUniformMatrix4fv(projectionmatrix_index, 1, false, proj->get());
-	glUniformMatrix4fv(viewmatrix_index, 1, false, view->get());
-	glUniformMatrix4fv(normalviewmatrix_index, 1, false, norm->get());
+	glUniformMatrix4fv(projectionmatrix_index, 1, false, u->mProjectionMatrix.get());
+	glUniformMatrix4fv(viewmatrix_index, 1, false, u->mViewMatrix.get());
+	glUniformMatrix4fv(normalviewmatrix_index, 1, false, u->mNormalViewMatrix.get());
+	
+	glUniform4fv(camerapos_index, 1, &u->mCameraPos[0]);
+	glUniform1i(viewheight_index, u->mViewHeight);
+	glUniform1i(pallightlevels_index, u->mPalLightLevels);
+	glUniform1f(globvis_index, u->mGlobVis);
+	glUniform1f(clipheight_index, u->mClipHeight);
+	glUniform1f(clipheightdirection_index, u->mClipHeightDirection);
 }
 
 //==========================================================================
@@ -804,28 +799,21 @@ static const FEffectShader effectshaders[]=
 	{ "spheremap", "shaders/glsl/main.vp", "shaders/glsl/main.fp", "shaders/glsl/func_normal.fp", "shaders/glsl/material_normal.fp", "#define SPHEREMAP\n#define NO_ALPHATEST\n" },
 	{ "burn", "shaders/glsl/main.vp", "shaders/glsl/burn.fp", nullptr, nullptr, "#define SIMPLE\n#define NO_ALPHATEST\n" },
 	{ "stencil", "shaders/glsl/main.vp", "shaders/glsl/stencil.fp", nullptr, nullptr, "#define SIMPLE\n#define NO_ALPHATEST\n" },
-	{ "swrquad", "shaders/glsl/main.vp", "shaders/glsl/swshader.fp", nullptr, nullptr, "#define SIMPLE\n" },
 };
 
 FShaderManager::FShaderManager()
 {
-	if (!gl.legacyMode)
-	{
-		for (int passType = 0; passType < MAX_PASS_TYPES; passType++)
-			mPassShaders.Push(new FShaderCollection((EPassType)passType));
-	}
+	for (int passType = 0; passType < MAX_PASS_TYPES; passType++)
+		mPassShaders.Push(new FShaderCollection((EPassType)passType));
 }
 
 FShaderManager::~FShaderManager()
 {
-	if (!gl.legacyMode)
-	{
-		glUseProgram(0);
-		mActiveShader = NULL;
+	glUseProgram(0);
+	mActiveShader = NULL;
 
-		for (auto collection : mPassShaders)
-			delete collection;
-	}
+	for (auto collection : mPassShaders)
+		delete collection;
 }
 
 void FShaderManager::SetActiveShader(FShader *sh)
@@ -853,29 +841,13 @@ FShader *FShaderManager::Get(unsigned int eff, bool alphateston, EPassType passT
 		return nullptr;
 }
 
-void FShaderManager::ApplyMatrices(VSMatrix *proj, VSMatrix *view, EPassType passType)
+void FShaderManager::ApplyMatrices(HWViewpointUniforms *u, EPassType passType)
 {
-	if (gl.legacyMode)
-	{
-		glMatrixMode(GL_PROJECTION);
-		glLoadMatrixf(proj->get());
-		glMatrixMode(GL_MODELVIEW);
-		glLoadMatrixf(view->get());
-	}
-	else
-	{
-		if (passType < mPassShaders.Size())
-			mPassShaders[passType]->ApplyMatrices(proj, view);
+	if (passType < mPassShaders.Size())
+		mPassShaders[passType]->ApplyMatrices(u);
 
-		if (mActiveShader)
-			mActiveShader->Bind();
-	}
-}
-
-void FShaderManager::ResetFixedColormap()
-{
-	for (auto &collection : mPassShaders)
-		collection->ResetFixedColormap();
+	if (mActiveShader)
+		mActiveShader->Bind();
 }
 
 //==========================================================================
@@ -1019,28 +991,25 @@ FShader *FShaderCollection::BindEffect(int effect)
 //==========================================================================
 EXTERN_CVAR(Int, gl_fuzztype)
 
-void FShaderCollection::ApplyMatrices(VSMatrix *proj, VSMatrix *view)
+void FShaderCollection::ApplyMatrices(HWViewpointUniforms *u)
 {
-	VSMatrix norm;
-	norm.computeNormalMatrix(*view);
-
 	for (int i = 0; i < SHADER_NoTexture; i++)
 	{
-		mMaterialShaders[i]->ApplyMatrices(proj, view, &norm);
-		mMaterialShadersNAT[i]->ApplyMatrices(proj, view, &norm);
+		mMaterialShaders[i]->ApplyMatrices(u);
+		mMaterialShadersNAT[i]->ApplyMatrices(u);
 	}
-	mMaterialShaders[SHADER_NoTexture]->ApplyMatrices(proj, view, &norm);
+	mMaterialShaders[SHADER_NoTexture]->ApplyMatrices(u);
 	if (gl_fuzztype != 0)
 	{
-		mMaterialShaders[SHADER_NoTexture + gl_fuzztype]->ApplyMatrices(proj, view, &norm);
+		mMaterialShaders[SHADER_NoTexture + gl_fuzztype]->ApplyMatrices(u);
 	}
 	for (unsigned i = FIRST_USER_SHADER; i < mMaterialShaders.Size(); i++)
 	{
-		mMaterialShaders[i]->ApplyMatrices(proj, view, &norm);
+		mMaterialShaders[i]->ApplyMatrices(u);
 	}
 	for (int i = 0; i < MAX_EFFECTS; i++)
 	{
-		mEffectShaders[i]->ApplyMatrices(proj, view, &norm);
+		mEffectShaders[i]->ApplyMatrices(u);
 	}
 }
 
