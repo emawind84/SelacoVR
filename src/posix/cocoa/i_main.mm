@@ -58,7 +58,6 @@ CVAR (Bool, i_soundinbackground, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 EXTERN_CVAR(Int,  vid_defwidth )
 EXTERN_CVAR(Int,  vid_defheight)
 EXTERN_CVAR(Bool, vid_vsync    )
-EXTERN_CVAR(Bool, fullscreen   )
 
 
 // ---------------------------------------------------------------------------
@@ -165,7 +164,6 @@ int DoMain(int argc, char** argv)
 	vid_defwidth  = static_cast<int>(screenSize.width);
 	vid_defheight = static_cast<int>(screenSize.height);
 	vid_vsync     = true;
-	fullscreen    = true;
 
 	Args = new FArgs(argc, argv);
 

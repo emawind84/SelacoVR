@@ -54,7 +54,6 @@
 #include "gl/system/gl_framebuffer.h"
 
 EXTERN_CVAR(Int, vid_adapter)
-EXTERN_CVAR(Bool, fullscreen)
 EXTERN_CVAR(Bool, vr_enable_quadbuffered)
 EXTERN_CVAR(Bool, vid_hdr)
 

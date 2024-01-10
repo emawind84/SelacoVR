@@ -794,7 +794,7 @@ set (PCH_SOURCES
 	d_dehacked.cpp
 	d_iwad.cpp
 	d_main.cpp
-	d_stats.cpp
+	d_anonstats.cpp
 	d_net.cpp
 	d_netinfo.cpp
 	d_protocol.cpp

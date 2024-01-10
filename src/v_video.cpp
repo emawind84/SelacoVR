@@ -69,6 +69,12 @@
 
 EXTERN_CVAR(Bool, cl_capfps)
 
+CVAR(Int, win_x, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, win_y, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, win_w, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, win_h, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, win_maximized, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+
 CUSTOM_CVAR(Int, vid_maxfps, 200, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
 	if (vid_maxfps < TICRATE && vid_maxfps != 0)
@@ -104,8 +110,6 @@ EXTERN_CVAR(Bool, r_blendmethod)
 int active_con_scale();
 
 FRenderer *SWRenderer;
-
-EXTERN_CVAR (Bool, fullscreen)
 
 #define DBGBREAK assert(0)
 
@@ -845,12 +849,26 @@ void ScaleWithAspect (int &w, int &h, int Width, int Height)
 		h = static_cast<int>(y);
 }
 
+CCMD(vid_setsize)
+{
+	if (argv.argc() < 2)
+	{
+		Printf("Usage: vid_setsize width height\n");
+	}
+	else
+	{
+		screen->SetWindowSize((int)strtol(argv[1], nullptr, 0), (int)strtol(argv[2], nullptr, 0));
+		V_OutputResized(screen->GetClientWidth(), screen->GetClientHeight());
+	}
+}
+
+
 void IVideo::DumpAdapters ()
 {
 	Printf("Multi-monitor support unavailable.\n");
 }
 
-CUSTOM_CVAR(Bool, fullscreen, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+CUSTOM_CVAR(Bool, fullscreen, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	setmodeneeded = true;
 }

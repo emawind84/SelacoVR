@@ -88,12 +88,6 @@ EXTERN_CVAR(Bool, vid_vsync)
 EXTERN_CVAR(Bool, vid_hidpi)
 EXTERN_CVAR(Int,  vid_defwidth)
 EXTERN_CVAR(Int,  vid_defheight)
-EXTERN_CVAR(Bool, fullscreen)
-
-CVAR(Int, win_x, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Int, win_y, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Int, win_w, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Int, win_h, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 CUSTOM_CVAR(Bool, vid_autoswitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
@@ -319,9 +313,9 @@ static SystemGLFrameBuffer* frameBuffer;
 
 SystemGLFrameBuffer::SystemGLFrameBuffer(void*, const bool fullscreen)
 : DFrameBuffer(vid_defwidth, vid_defheight)
-, m_window(CreateWindow(STYLE_MASK_WINDOWED))
 , m_fullscreen(false)
 , m_hiDPI(false)
+, m_window(CreateWindow(STYLE_MASK_WINDOWED))
 {
 	SetFlash(0, 0);
 
@@ -386,6 +380,37 @@ bool SystemGLFrameBuffer::IsFullscreen()
 void SystemGLFrameBuffer::ToggleFullscreen(bool yes)
 {
 	SetMode(yes, m_hiDPI);
+}
+
+void SystemGLFrameBuffer::SetWindowSize(int width, int height)
+{
+	if (width < MINIMUM_WIDTH || height < MINIMUM_HEIGHT)
+	{
+		return;
+	}
+
+	if (fullscreen)
+	{
+		// Enter windowed mode in order to calculate title bar height
+		fullscreen = false;
+		SetMode(false, m_hiDPI);
+	}
+
+	win_w = width;
+	win_h = height + GetTitleBarHeight();
+
+	SetMode(false, m_hiDPI);
+
+	[m_window center];
+}
+
+int SystemGLFrameBuffer::GetTitleBarHeight() const
+{
+	const NSRect windowFrame = [m_window frame];
+	const NSRect contentFrame = [m_window contentRectForFrameRect:windowFrame];
+	const int titleBarHeight = windowFrame.size.height - contentFrame.size.height;
+
+	return titleBarHeight;
 }
 
 
@@ -465,11 +490,24 @@ void SystemGLFrameBuffer::SetWindowedMode()
 		[m_window setHidesOnDeactivate:NO];
 	}
 
-	const bool isFrameValid = win_x >= 0 && win_y >= 0 && win_w > 320 && win_h > 200;
-	const NSRect frameSize = isFrameValid
-		? NSMakeRect(win_x, win_y, win_w, win_h)
-		: NSMakeRect(0, 0, vid_defwidth, vid_defheight);
+	const int minimumFrameWidth  = MINIMUM_WIDTH;
+	const int minimumFrameHeight = MINIMUM_HEIGHT + GetTitleBarHeight();
+	const NSSize minimumFrameSize = NSMakeSize(minimumFrameWidth, minimumFrameHeight);
+	[m_window setMinSize:minimumFrameSize];
 
+	const bool isFrameValid = win_x != -1 && win_y != -1
+		&& win_w >= minimumFrameWidth && win_h >= minimumFrameHeight;
+
+	if (!isFrameValid)
+	{
+		const NSRect screenSize = [[NSScreen mainScreen] frame];
+		win_x = screenSize.origin.x + screenSize.size.width  / 10;
+		win_y = screenSize.origin.y + screenSize.size.height / 10;
+		win_w = screenSize.size.width  * 8 / 10;
+		win_h = screenSize.size.height * 8 / 10 + GetTitleBarHeight();
+	}
+
+	const NSRect frameSize = NSMakeRect(win_x, win_y, win_w, win_h);
 	[m_window setFrame:frameSize display:YES];
 	[m_window enterFullscreenOnZoom];
 	[m_window exitAppOnClose];

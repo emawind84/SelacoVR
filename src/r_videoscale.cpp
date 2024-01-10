@@ -36,27 +36,21 @@
 #include "v_video.h"
 #include "templates.h"
 
-#define NUMSCALEMODES 7
+#define NUMSCALEMODES 6
 
 extern bool setsizeneeded;
-#ifdef _WIN32
-extern int currentcanvas;
-#else
-int currentcanvas = -1;
-#endif
 
 EXTERN_CVAR(Int, vid_aspect)
-
 CUSTOM_CVAR(Int, vid_scale_customwidth, 320, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
-	if (self < 160)
-		self = 160;
+	if (self < 320)
+		self = 320;
 	setsizeneeded = true;
 }
 CUSTOM_CVAR(Int, vid_scale_customheight, 200, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
-	if (self < 100)
-		self = 100;
+	if (self < 200)
+		self = 200;
 	setsizeneeded = true;
 }
 CVAR(Bool, vid_scale_customlinear, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
@@ -110,9 +104,8 @@ namespace
 		{ true,			true,		[](uint32_t Width)->uint32_t { return Width; },			        [](uint32_t Height)->uint32_t { return Height; },	        		false,  	false   },	// 1  - Native (Linear)
 		{ true,			false,		[](uint32_t Width)->uint32_t { return 320; },		            	[](uint32_t Height)->uint32_t { return 200; },			        	true,   	false   },	// 2  - 320x200
 		{ true,			false,		[](uint32_t Width)->uint32_t { return 640; },		            	[](uint32_t Height)->uint32_t { return 400; },				        true,   	false   },	// 3  - 640x400
-		{ true,			true,		[](uint32_t Width)->uint32_t { return 1280; },		            	[](uint32_t Height)->uint32_t { return 800; },	        			true,   	false   },	// 4  - 1280x800
+		{ true,			true,		[](uint32_t Width)->uint32_t { return 1280; },		            	[](uint32_t Height)->uint32_t { return 800; },	        			true,   	false   },	// 4  - 1280x800		
 		{ true,			true,		[](uint32_t Width)->uint32_t { return vid_scale_customwidth; },	[](uint32_t Height)->uint32_t { return vid_scale_customheight; },	true,   	true    },	// 5  - Custom
-		{ true,			false,		[](uint32_t Width)->uint32_t { return v_mfillX(); },				[](uint32_t Height)->uint32_t { return v_mfillY(); },				false,		false   },	// 6  - Minimum Scale to Fill Entire Screen
 	};
 	bool isOutOfBounds(int x)
 	{
@@ -159,7 +152,7 @@ int ViewportScaledWidth(int width, int height)
 		vid_scalemode = 0;
 	if (vid_cropaspect && height > 0)
 		width = ((float)width/height > ActiveRatio(width, height)) ? (int)(height * ActiveRatio(width, height)) : width;
-	return (int)MAX((int32_t)160, (int32_t)(vid_scalefactor * vScaleTable[vid_scalemode].GetScaledWidth(width)));
+	return (int)MAX((int32_t)320, (int32_t)vScaleTable[vid_scalemode].GetScaledWidth((int)((float)width * vid_scalefactor)));
 }
 
 int ViewportScaledHeight(int width, int height)
@@ -168,7 +161,7 @@ int ViewportScaledHeight(int width, int height)
 		vid_scalemode = 0;
 	if (vid_cropaspect && height > 0)
 		height = ((float)width/height < ActiveRatio(width, height)) ? (int)(width / ActiveRatio(width, height)) : height;
-	return (int)MAX((int32_t)100, (int32_t)(vid_scalefactor * vScaleTable[vid_scalemode].GetScaledHeight(height)));
+	return (int)MAX((int32_t)200, (int32_t)vScaleTable[vid_scalemode].GetScaledHeight((int)((float)height * vid_scalefactor)));
 }
 
 bool ViewportIsScaled43()

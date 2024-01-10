@@ -115,7 +115,6 @@ static HCURSOR CreateBitmapCursor(int xhot, int yhot, HBITMAP and_mask, HBITMAP 
 
 EXTERN_CVAR (Bool, queryiwad);
 // Used on welcome/IWAD screen.
-EXTERN_CVAR (Bool, fullscreen)
 EXTERN_CVAR (Bool, disableautoload)
 EXTERN_CVAR (Bool, autoloadlights)
 EXTERN_CVAR (Bool, autoloadbrightmaps)
