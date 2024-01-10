@@ -2480,6 +2480,20 @@ OptionMenu ModReplayerOptions protected
 	6, "$OPTVAL_PMDWINOPNA"
  }
 
+ OptionValue ADLOplCores
+ {
+	0, "$OPTVAL_NUKEDOPL3"
+	1, "$OPTVAL_NUKEDOPL3174"
+	2, "$OPTVAL_DOSBOXOPL3"
+ }
+
+ OptionValue OpnCores
+ {
+	0, "$OPTVAL_MAMEOPN2"
+	1, "$OPTVAL_NUKEDOPN2"
+	2, "$OPTVAL_GENSOPN2"
+ }
+
  OptionMenu ADLOptions protected
  {
 	Title "$ADVSNDMNU_ADLMIDI"

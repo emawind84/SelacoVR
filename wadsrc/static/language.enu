@@ -2332,6 +2332,8 @@ ADVSNDMNU_OPNBANKFILE       = "WOPN Bank file";
 
 // ADLMIDI's emulation cores
 
+// ADLMIDI's emulation cores
+
 // ADLMIDI's volume models
 ADLVLMODEL_AUTO				= "Auto (Use setup of bank)";
 ADLVLMODEL_GENERIC			= "Generic";
