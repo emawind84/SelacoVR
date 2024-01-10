@@ -595,9 +595,10 @@ file( GLOB HEADER_FILES
 	polyrenderer/scene/*.h
 	hwrenderer/data/*.h
 	hwrenderer/dynlights/*.h
+	hwrenderer/postprocessing/*.h
 	hwrenderer/scene/*.h
 	hwrenderer/textures/*.h
-	hwrenderer/utilities/*.h
+	hwrenderer/utility/*.h
 	gl/*.h
 	gl/data/*.h
 	gl/dynlights/*.h
@@ -608,7 +609,6 @@ file( GLOB HEADER_FILES
 	gl/shaders/*.h
 	gl/system/*.h
 	gl/textures/*.h
-	gl/utility/*.h
 	gl_load/*.h
 	*.h
 )
@@ -929,6 +929,7 @@ set (PCH_SOURCES
 	gl/compatibility/gl_20.cpp
 	gl/compatibility/gl_swshader20.cpp
 	gl/data/gl_vertexbuffer.cpp
+	gl/data/gl_uniformbuffer.cpp
 	gl/dynlights/gl_lightbuffer.cpp
 	gl/dynlights/gl_shadowmap.cpp
 	gl/models/gl_models.cpp
@@ -942,20 +943,9 @@ set (PCH_SOURCES
 	gl/shaders/gl_shader.cpp
 	gl/shaders/gl_shaderprogram.cpp
 	gl/shaders/gl_postprocessshader.cpp
-	gl/shaders/gl_shadowmapshader.cpp
-	gl/shaders/gl_presentshader.cpp
-	gl/shaders/gl_present3dRowshader.cpp
-	gl/shaders/gl_bloomshader.cpp
-	gl/shaders/gl_ambientshader.cpp
-	gl/shaders/gl_blurshader.cpp
-	gl/shaders/gl_colormapshader.cpp
-	gl/shaders/gl_tonemapshader.cpp
-	gl/shaders/gl_lensshader.cpp
-	gl/shaders/gl_fxaashader.cpp
 	gl/stereo3d/gl_stereo3d.cpp
 	gl/stereo3d/gl_stereo_cvars.cpp
 	gl/stereo3d/gl_stereo_leftright.cpp
-	gl/stereo3d/scoped_view_shifter.cpp
 	gl/stereo3d/gl_anaglyph.cpp
 	gl/stereo3d/gl_quadstereo.cpp
 	gl/stereo3d/gl_sidebyside3d.cpp
@@ -972,12 +962,23 @@ set (PCH_SOURCES
 	hwrenderer/scene/hw_skydome.cpp
 	hwrenderer/postprocessing/hw_postprocess_cvars.cpp
 	hwrenderer/postprocessing/hw_postprocessshader.cpp
+	hwrenderer/postprocessing/hw_shadowmapshader.cpp
+	hwrenderer/postprocessing/hw_presentshader.cpp
+	hwrenderer/postprocessing/hw_present3dRowshader.cpp
+	hwrenderer/postprocessing/hw_bloomshader.cpp
+	hwrenderer/postprocessing/hw_ambientshader.cpp
+	hwrenderer/postprocessing/hw_blurshader.cpp
+	hwrenderer/postprocessing/hw_colormapshader.cpp
+	hwrenderer/postprocessing/hw_tonemapshader.cpp
+	hwrenderer/postprocessing/hw_lensshader.cpp
+	hwrenderer/postprocessing/hw_fxaashader.cpp
 	hwrenderer/textures/hw_material.cpp
 	hwrenderer/textures/hw_precache.cpp
 	hwrenderer/utility/hw_clock.cpp
 	hwrenderer/utility/hw_cvars.cpp
 	hwrenderer/utility/hw_lighting.cpp
-	
+	hwrenderer/utility/hw_shaderpatcher.cpp
+
 	menu/joystickmenu.cpp
 	menu/loadsavemenu.cpp
 	menu/menu.cpp
@@ -1263,6 +1264,7 @@ source_group("Hardware Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR
 source_group("Hardware Renderer\\Data" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/data/.+")
 source_group("Hardware Renderer\\Dynamic Lights" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/dynlights/.+")
 source_group("Hardware Renderer\\Models" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/models/.+")
+source_group("Hardware Renderer\\Postprocessing" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/postprocessing/.+")
 source_group("Hardware Renderer\\Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/renderer/.+")
 source_group("Hardware Renderer\\Scene" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/scene/.+")
 source_group("Hardware Renderer\\Stereo3D" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/stereo3d/.+")

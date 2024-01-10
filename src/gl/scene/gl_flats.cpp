@@ -59,6 +59,7 @@ CVAR(Int, gl_max_vertices, 0, CVAR_ARCHIVE)
 
 void FDrawInfo::SetupSubsectorLights(GLFlat *flat, int pass, subsector_t * sub, int *dli)
 {
+	if (FixedColormap != CM_DEFAULT) return;
 	if (dli != NULL && *dli != -1)
 	{
 		gl_RenderState.ApplyLightIndex(GLRenderer->mLights->GetIndex(*dli));
@@ -87,6 +88,7 @@ void FDrawInfo::SetupSubsectorLights(GLFlat *flat, int pass, subsector_t * sub, 
 
 void FDrawInfo::SetupSectorLights(GLFlat *flat, int pass, int *dli)
 {
+	if (FixedColormap != CM_DEFAULT) return;
 	if (dli != NULL && *dli != -1)
 	{
 		gl_RenderState.ApplyLightIndex(GLRenderer->mLights->GetIndex(*dli));

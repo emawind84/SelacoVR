@@ -1,7 +1,7 @@
 // 
 //---------------------------------------------------------------------------
 //
-// Copyright(C) 2015 Christopher Bruns
+// Copyright(C) 2016 Magnus Norddahl
 // All rights reserved.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -20,29 +20,31 @@
 //--------------------------------------------------------------------------
 //
 /*
-** scoped_view_shifter.cpp
-** Stack-scoped class for temporarily changing camera viewpoint
-** Used for stereoscopic 3D.
+** gl_blurshader.cpp
+** Gaussian blur shader
 **
 */
 
-#include "scoped_view_shifter.h"
-#include "r_utility.h"
+#include "v_video.h"
+#include "hw_blurshader.h"
 
-namespace s3d {
-
-ScopedViewShifter::ScopedViewShifter(float dxyz[3]) // in meters
+void FBlurShader::Bind(IRenderQueue *q, bool vertical)
 {
-	// save original values
-	cachedView = r_viewpoint.Pos;
-	// modify values
-	r_viewpoint.Pos += DVector3(dxyz[0], dxyz[1], dxyz[2]);
-}
+	if (!mShader[vertical])
+	{
+		FString prolog = Uniforms[vertical].CreateDeclaration("Uniforms", UniformBlock::Desc());
+		if (vertical)
+			prolog += "#define BLUR_VERTICAL\n";
+		else
+			prolog += "#define BLUR_HORIZONTAL\n";
 
-ScopedViewShifter::~ScopedViewShifter()
-{
-	// restore original values
-	r_viewpoint.Pos = cachedView;
-}
+		mShader[vertical].reset(screen->CreateShaderProgram());
+		mShader[vertical]->Compile(IShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 330);
+		mShader[vertical]->Compile(IShaderProgram::Fragment, "shaders/glsl/blur.fp", prolog, 330);
+		mShader[vertical]->Link("shaders/glsl/blur");
+		mShader[vertical]->SetUniformBufferLocation(POSTPROCESS_BINDINGPOINT, "Uniforms");
+		Uniforms[vertical].Init();
+	}
 
+	mShader[vertical]->Bind(q);
 }

@@ -1,7 +1,7 @@
 // 
 //---------------------------------------------------------------------------
 //
-// Copyright(C) 2015 Christopher Bruns
+// Copyright(C) 2016 Magnus Norddahl
 // All rights reserved.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -20,33 +20,26 @@
 //--------------------------------------------------------------------------
 //
 /*
-** scoped_view_shifter.h
-** Stack-scoped class for temporarily changing camera viewpoint
-** Used for stereoscopic 3D.
+** gl_lensshader.cpp
+** Lens distortion with chromatic aberration shader
 **
 */
 
-#ifndef GL_STEREO3D_SCOPED_VIEW_SHIFTER_H_
-#define GL_STEREO3D_SCOPED_VIEW_SHIFTER_H_
+#include "v_video.h"
+#include "hw_lensshader.h"
 
-#include "basictypes.h"
-#include "vectors.h"
-
-namespace s3d {
-
-	/**
-	 * Temporarily shift 
-	 */
-	class ScopedViewShifter
+void FLensShader::Bind(IRenderQueue *q)
+{
+	if (!mShader)
 	{
-	public:
-		ScopedViewShifter(float dxyz[3]); // in meters
-		~ScopedViewShifter();
+		FString prolog = Uniforms.CreateDeclaration("Uniforms", UniformBlock::Desc());
 
-	private:
-		DVector3 cachedView;
-	};
-
-} /* namespace s3d */
-
-#endif // GL_STEREO3D_SCOPED_VIEW_SHIFTER_H_
+		mShader.reset(screen->CreateShaderProgram());
+		mShader->Compile(IShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 330);
+		mShader->Compile(IShaderProgram::Fragment, "shaders/glsl/lensdistortion.fp", prolog, 330);
+		mShader->Link("shaders/glsl/lensdistortion");
+		mShader->SetUniformBufferLocation(Uniforms.BindingPoint(), "Uniforms");
+		Uniforms.Init();
+	}
+	mShader->Bind(q);
+}

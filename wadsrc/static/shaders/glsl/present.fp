@@ -1,16 +1,9 @@
 
 in vec2 TexCoord;
-out vec4 FragColor;
+layout(location=0) out vec4 FragColor;
 
-uniform sampler2D InputTexture;
-uniform float InvGamma;
-uniform float Contrast;
-uniform float Brightness;
-uniform float Saturation;
-uniform int GrayFormula;
-uniform sampler2D DitherTexture;
-uniform float ColorScale;
-uniform int HdrMode;
+layout(binding=0) uniform sampler2D InputTexture;
+layout(binding=1) uniform sampler2D DitherTexture;
 
 vec4 ApplyGamma(vec4 c)
 {

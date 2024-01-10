@@ -132,7 +132,6 @@ void GLWall::SkyPlane(HWDrawInfo *di, sector_t *sector, int plane, bool allowref
 		}
 		ptype = PORTALTYPE_SKY;
 		sky = &skyinfo;
-		PutPortal(di, ptype);
 	}
 	else if (sportal != nullptr)
 	{

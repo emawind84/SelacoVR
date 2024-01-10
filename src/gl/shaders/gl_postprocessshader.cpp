@@ -56,7 +56,7 @@ void FCustomPostProcessShaders::Run(FString target)
 	{
 		if (shader->Desc->Target == target)
 		{
-			shader->Run();
+			shader->Run(NOQUEUE);
 		}
 	}
 }
@@ -69,7 +69,7 @@ PostProcessShaderInstance::~PostProcessShaderInstance()
 		glDeleteTextures(1, (GLuint*)&it.second);
 }
 
-void PostProcessShaderInstance::Run()
+void PostProcessShaderInstance::Run(IRenderQueue *q)
 {
 	if (!IsShaderSupported())
 		return;
@@ -89,12 +89,10 @@ void PostProcessShaderInstance::Run()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	mProgram.Bind();
+	mProgram.Bind(q);
 
 	UpdateUniforms();
 	BindTextures();
-
-	mInputTexture.Set(0);
 
 	GLRenderer->RenderScreenQuad();
 
@@ -123,7 +121,7 @@ bool PostProcessShaderInstance::IsShaderSupported()
 
 void PostProcessShaderInstance::CompileShader()
 {
-	if (mProgram)
+	if (mProgram.Handle())
 		return;
 
 	// Get the custom shader
@@ -176,12 +174,10 @@ void PostProcessShaderInstance::CompileShader()
 	prolog += uniformTextures;
 	prolog += pipelineInOut;
 
-	mProgram.Compile(FShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", Desc->ShaderVersion);
-	mProgram.Compile(FShaderProgram::Fragment, lumpName, code, prolog.GetChars(), Desc->ShaderVersion);
-	mProgram.SetFragDataLocation(0, "FragColor");
+	mProgram.Compile(IShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", Desc->ShaderVersion);
+	mProgram.Compile(IShaderProgram::Fragment, lumpName, code, prolog.GetChars(), Desc->ShaderVersion);
 	mProgram.Link(Desc->ShaderLumpName.GetChars());
-	mProgram.SetAttribLocation(0, "PositionInProjection");
-	mInputTexture.Init(mProgram, "InputTexture");
+	mInputTexture.Init(mProgram.Handle(), "InputTexture");
 }
 
 void PostProcessShaderInstance::UpdateUniforms()
@@ -190,7 +186,7 @@ void PostProcessShaderInstance::UpdateUniforms()
 	TMap<FString, PostProcessUniformValue>::Pair *pair;
 	while (it.NextPair(pair))
 	{
-		int location = glGetUniformLocation(mProgram, pair->Key.GetChars());
+		int location = glGetUniformLocation(mProgram.Handle(), pair->Key.GetChars());
 		if (location != -1)
 		{
 			switch (pair->Value.Type)
@@ -221,7 +217,7 @@ void PostProcessShaderInstance::BindTextures()
 	TMap<FString, FString>::Pair *pair;
 	while (it.NextPair(pair))
 	{
-		int location = glGetUniformLocation(mProgram, pair->Key.GetChars());
+		int location = glGetUniformLocation(mProgram.Handle(), pair->Key.GetChars());
 		if (location == -1)
 			continue;
 

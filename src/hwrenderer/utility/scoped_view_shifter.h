@@ -20,45 +20,43 @@
 //--------------------------------------------------------------------------
 //
 /*
-** gl_present3dRowshader.h
-** Final composition and present shader for row-interleaved stereoscopic 3D mode
+** scoped_view_shifter.h
+** Stack-scoped class for temporarily changing camera viewpoint
+** Used for stereoscopic 3D.
 **
 */
 
-#ifndef GL_PRESENT3DROWSHADER_H_
-#define GL_PRESENT3DROWSHADER_H_
+#ifndef GL_STEREO3D_SCOPED_VIEW_SHIFTER_H_
+#define GL_STEREO3D_SCOPED_VIEW_SHIFTER_H_
 
-#include "gl_shaderprogram.h"
-#include "gl_presentshader.h"
+#include "basictypes.h"
+#include "vectors.h"
 
-class FPresentStereoShaderBase : public FPresentShaderBase
+/**
+ * Temporarily shift
+ */
+class ScopedViewShifter
 {
 public:
-	FBufferedUniformSampler LeftEyeTexture;
-	FBufferedUniformSampler RightEyeTexture;
-	FBufferedUniform1i WindowPositionParity;
+    ScopedViewShifter(DVector3 &var, float dxyz[3]) // in meters
+    {
+        // save original values
+        mVar = &var;
+        cachedView = var;
+        // modify values
+        var += DVector3(dxyz[0], dxyz[1], dxyz[2]);
+    }
+    
+    ~ScopedViewShifter()
+    {
+        // restore original values
+        *mVar = cachedView;
+    }
 
-protected:
-	void Init(const char * vtx_shader_name, const char * program_name) override;
+private:
+    DVector3 *mVar;
+    DVector3 cachedView;
 };
 
-class FPresent3DCheckerShader : public FPresentStereoShaderBase
-{
-public:
-	void Bind() override;
-};
 
-class FPresent3DColumnShader : public FPresentStereoShaderBase
-{
-public:
-	void Bind() override;
-};
-
-class FPresent3DRowShader : public FPresentStereoShaderBase
-{
-public:
-	void Bind() override;
-};
-
-// GL_PRESENT3DROWSHADER_H_
-#endif
+#endif // GL_STEREO3D_SCOPED_VIEW_SHIFTER_H_

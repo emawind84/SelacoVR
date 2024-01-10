@@ -25,37 +25,33 @@
 **
 */
 
-#include "gl_load/gl_system.h"
 #include "v_video.h"
-#include "gl/shaders/gl_bloomshader.h"
+#include "hw_bloomshader.h"
 
-void FBloomExtractShader::Bind()
+void FBloomExtractShader::Bind(IRenderQueue *q)
 {
 	if (!mShader)
 	{
-		mShader.Compile(FShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 330);
-		mShader.Compile(FShaderProgram::Fragment, "shaders/glsl/bloomextract.fp", "", 330);
-		mShader.SetFragDataLocation(0, "FragColor");
-		mShader.Link("shaders/glsl/bloomextract");
-		mShader.SetAttribLocation(0, "PositionInProjection");
-		SceneTexture.Init(mShader, "SceneTexture");
-		ExposureTexture.Init(mShader, "ExposureTexture");
-		Scale.Init(mShader, "Scale");
-		Offset.Init(mShader, "Offset");
+		FString prolog = Uniforms.CreateDeclaration("Uniforms", UniformBlock::Desc());
+
+		mShader.reset(screen->CreateShaderProgram());
+		mShader->Compile(IShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 330);
+		mShader->Compile(IShaderProgram::Fragment, "shaders/glsl/bloomextract.fp", prolog, 330);
+		mShader->Link("shaders/glsl/bloomextract");
+		mShader->SetUniformBufferLocation(Uniforms.BindingPoint(), "Uniforms");
+		Uniforms.Init();
 	}
-	mShader.Bind();
+	mShader->Bind(q);
 }
 
-void FBloomCombineShader::Bind()
+void FBloomCombineShader::Bind(IRenderQueue *q)
 {
 	if (!mShader)
 	{
-		mShader.Compile(FShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 330);
-		mShader.Compile(FShaderProgram::Fragment, "shaders/glsl/bloomcombine.fp", "", 330);
-		mShader.SetFragDataLocation(0, "FragColor");
-		mShader.Link("shaders/glsl/bloomcombine");
-		mShader.SetAttribLocation(0, "PositionInProjection");
-		BloomTexture.Init(mShader, "Bloom");
+		mShader.reset(screen->CreateShaderProgram());
+		mShader->Compile(IShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 330);
+		mShader->Compile(IShaderProgram::Fragment, "shaders/glsl/bloomcombine.fp", "", 330);
+		mShader->Link("shaders/glsl/bloomcombine");
 	}
-	mShader.Bind();
+	mShader->Bind(q);
 }

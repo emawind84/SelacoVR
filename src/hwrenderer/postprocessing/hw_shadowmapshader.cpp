@@ -19,30 +19,22 @@
 //
 //--------------------------------------------------------------------------
 //
-/*
-** gl_lensshader.cpp
-** Lens distortion with chromatic aberration shader
-**
-*/
 
-#include "gl_load/gl_system.h"
-#include "v_video.h"
-#include "gl/shaders/gl_lensshader.h"
+#include "files.h"
+#include "hw_shadowmapshader.h"
 
-void FLensShader::Bind()
+void FShadowMapShader::Bind(IRenderQueue *q)
 {
 	if (!mShader)
 	{
-		mShader.Compile(FShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 330);
-		mShader.Compile(FShaderProgram::Fragment, "shaders/glsl/lensdistortion.fp", "", 330);
-		mShader.SetFragDataLocation(0, "FragColor");
-		mShader.Link("shaders/glsl/lensdistortion");
-		mShader.SetAttribLocation(0, "PositionInProjection");
-		InputTexture.Init(mShader, "InputTexture");
-		AspectRatio.Init(mShader, "Aspect");
-		Scale.Init(mShader, "Scale");
-		LensDistortionCoefficient.Init(mShader, "k");
-		CubicDistortionValue.Init(mShader, "kcube");
+		FString prolog = Uniforms.CreateDeclaration("Uniforms", UniformBlock::Desc());
+
+		mShader.reset(screen->CreateShaderProgram());
+		mShader->Compile(IShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 430);
+		mShader->Compile(IShaderProgram::Fragment, "shaders/glsl/shadowmap.fp", prolog, 430);
+		mShader->Link("shaders/glsl/shadowmap");
+		mShader->SetUniformBufferLocation(Uniforms.BindingPoint(), "Uniforms");
+		Uniforms.Init();
 	}
-	mShader.Bind();
+	mShader->Bind(q);
 }

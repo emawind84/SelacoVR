@@ -34,6 +34,8 @@
 #include "cmdlib.h"
 #include "md5.h"
 #include "m_misc.h"
+#include "hwrenderer/utility/hw_shaderpatcher.h"
+#include "hwrenderer/data/shaderuniforms.h"
 
 #include "gl_load/gl_interface.h"
 #include "gl/system/gl_debug.h"
@@ -45,92 +47,9 @@
 #include <map>
 #include <memory>
 
-
 #ifdef __MOBILE__
 CVAR(Bool, gl_customshader, true, 0)
 #endif
-
-static bool IsGlslWhitespace(char c)
-{
-	switch (c)
-	{
-	case ' ':
-	case '\r':
-	case '\n':
-	case '\t':
-	case '\f':
-		return true;
-	default:
-		return false;
-	}
-}
-
-static FString NextGlslToken(const char *chars, long len, long &pos)
-{
-	// Eat whitespace
-	long tokenStart = pos;
-	while (tokenStart != len && IsGlslWhitespace(chars[tokenStart]))
-		tokenStart++;
-
-	// Find token end
-	long tokenEnd = tokenStart;
-	while (tokenEnd != len && !IsGlslWhitespace(chars[tokenEnd]) && chars[tokenEnd] != ';')
-		tokenEnd++;
-
-	pos = tokenEnd;
-	return FString(chars + tokenStart, tokenEnd - tokenStart);
-}
-
-static FString RemoveLegacyUserUniforms(FString code)
-{
-	// User shaders must declare their uniforms via the GLDEFS file.
-	// The following code searches for legacy uniform declarations in the shader itself and replaces them with whitespace.
-
-	long len = (long)code.Len();
-	char *chars = code.LockBuffer();
-
-	long startIndex = 0;
-	while (true)
-	{
-		long matchIndex = code.IndexOf("uniform", startIndex);
-		if (matchIndex == -1)
-			break;
-
-		bool isLegacyUniformName = false;
-
-		bool isKeywordStart = matchIndex == 0 || IsGlslWhitespace(chars[matchIndex - 1]);
-		bool isKeywordEnd = matchIndex + 7 == len || IsGlslWhitespace(chars[matchIndex + 7]);
-		if (isKeywordStart && isKeywordEnd)
-		{
-			long pos = matchIndex + 7;
-			FString type = NextGlslToken(chars, len, pos);
-			FString identifier = NextGlslToken(chars, len, pos);
-
-			isLegacyUniformName = type.Compare("float") == 0 && identifier.Compare("timer") == 0;
-		}
-
-		if (isLegacyUniformName)
-		{
-			long statementEndIndex = code.IndexOf(';', matchIndex + 7);
-			if (statementEndIndex == -1)
-				statementEndIndex = len;
-			for (long i = matchIndex; i <= statementEndIndex; i++)
-			{
-				if (!IsGlslWhitespace(chars[i]))
-					chars[i] = ' ';
-			}
-			startIndex = statementEndIndex;
-		}
-		else
-		{
-			startIndex = matchIndex + 7;
-		}
-	}
-
-	code.UnlockBuffer();
-
-	return code;
-}
 
 struct ProgramBinary
 {
@@ -455,13 +374,9 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		{
 			vp_comb.Format(ES_VERSION_STR"\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
 		}
-		else if (gl.glslversion < 1.4f) // This differentiation is for some Intel drivers which fail on #extension, so use of #version 140 is necessary
-		{
-			vp_comb.Format("#version 130\n#extension GL_ARB_uniform_buffer_object : require\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
-		}
 		else
 		{
-			vp_comb.Format("#version 140\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
+			vp_comb.Format("#version 330 core\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
 		}
 	}
 	else

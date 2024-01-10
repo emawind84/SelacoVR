@@ -1,7 +1,7 @@
 // 
 //---------------------------------------------------------------------------
 //
-// Copyright(C) 2016 Magnus Norddahl
+// Copyright(C) 2015 Christopher Bruns
 // All rights reserved.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -19,21 +19,35 @@
 //
 //--------------------------------------------------------------------------
 //
+/*
+** gl_present3dRowshader.h
+** Final composition and present shader for row-interleaved stereoscopic 3D mode
+**
+*/
 
-#include "gl_load/gl_system.h"
-#include "files.h"
-#include "gl/shaders/gl_shadowmapshader.h"
+#ifndef GL_PRESENT3DROWSHADER_H_
+#define GL_PRESENT3DROWSHADER_H_
 
-void FShadowMapShader::Bind()
+#include "hw_shaderprogram.h"
+#include "hw_presentshader.h"
+
+class FPresent3DCheckerShader : public FPresentShaderBase
 {
-	if (!mShader)
-	{
-		mShader.Compile(FShaderProgram::Vertex, "shaders/glsl/screenquad.vp", "", 430);
-		mShader.Compile(FShaderProgram::Fragment, "shaders/glsl/shadowmap.fp", "", 430);
-		mShader.SetFragDataLocation(0, "FragColor");
-		mShader.Link("shaders/glsl/shadowmap");
-		mShader.SetAttribLocation(0, "PositionInProjection");
-		ShadowmapQuality.Init(mShader, "ShadowmapQuality");
-	}
-	mShader.Bind();
-}
+public:
+	void Bind(IRenderQueue *q) override;
+};
+
+class FPresent3DColumnShader : public FPresentShaderBase
+{
+public:
+	void Bind(IRenderQueue *q) override;
+};
+
+class FPresent3DRowShader : public FPresentShaderBase
+{
+public:
+	void Bind(IRenderQueue *q) override;
+};
+
+// GL_PRESENT3DROWSHADER_H_
+#endif
