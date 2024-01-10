@@ -52,7 +52,7 @@ CVAR(Bool, gl_multithread, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 EXTERN_CVAR(Float, r_actorspriteshadowdist)
 
 thread_local bool isWorkerThread;
-ctpl::thread_pool renderPool(1);
+ctpl::thread_pool renderPool(4);
 bool inited = false;
 
 struct RenderJob
