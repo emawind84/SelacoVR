@@ -118,6 +118,8 @@ public:
 	void EndOffscreen();
 
 	void BindToFrameBuffer(FMaterial *mat);
+
+	private: void gl_FillScreen();
 };
 
 #include "hwrenderer/scene/hw_fakeflat.h"
