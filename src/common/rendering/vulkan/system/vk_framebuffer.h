@@ -73,6 +73,7 @@ struct VkLoadJobOut{
 
 
 // @Cockatrice - Background loader thread to handle transfer of texture data
+// TODO: Move the queue outside of the object and have each thread pull from a central queue
 class VkTexLoadThread : public ResourceLoader<VkTexLoadIn, VkTexLoadOut> {
 public:
 	VkTexLoadThread(VkCommandBufferManager *bgCmd, VulkanDevice *device, int uploadQueueIndex) { 

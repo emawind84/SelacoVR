@@ -695,10 +695,10 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 	int lump = layer->layerTexture->GetSourceLump();
 	FResourceLump *rLump = lump >= 0 ? fileSystem.GetFileAt(lump) : nullptr;
 	FImageLoadParams *params;
-	VkTexLoadSpi spi;
+	VkTexLoadSpi spi = {};
 
 	// If the texture is already submitted to the cache, find it and move it to the normal queue to reprioritize it
-	if (rLump && systex->GetState() == IHardwareTexture::HardwareState::CACHING) {
+	if (rLump && !secondary && systex->GetState() == IHardwareTexture::HardwareState::CACHING) {
 		for (auto& tfr : bgTransferThreads) tfr->moveToMainQueue(systex);	// We don't know which queue it is in, send this command to all
 	} else if (rLump && systex->GetState() == IHardwareTexture::HardwareState::NONE) {
 		systex->SetHardwareState(secondary ? IHardwareTexture::HardwareState::CACHING : IHardwareTexture::HardwareState::LOADING);
