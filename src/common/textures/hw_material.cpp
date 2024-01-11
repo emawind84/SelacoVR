@@ -208,14 +208,14 @@ bool FMaterial::IsHardwareCached(int translation) {
 
 	if (hwt->layerTexture) {
 		ihwt = hwt->layerTexture->SystemTextures.GetHardwareTexture(translation, hwt->scaleFlags);
-		if(!ihwt || !ihwt->IsValid()) return false;
+		if(!ihwt || !ihwt->IsValid(0)) return false;
 	}
 
 	for (unsigned int i = 1; i < mTextureLayers.Size(); i++) {
 		hwt = &mTextureLayers[i];
 		if (hwt->layerTexture) {
 			ihwt = hwt->layerTexture->SystemTextures.GetHardwareTexture(0, hwt->scaleFlags);
-			if (!ihwt || !ihwt->IsValid()) return false;
+			if (!ihwt || !ihwt->IsValid(i)) return false;
 		}
 	}
 
