@@ -480,6 +480,8 @@ void FGLRenderer::Draw2D(F2DDrawer *drawer)
 		matrices.mProjectionMatrix.ortho(0, screen->GetWidth(), screen->GetHeight(), 0, -1.0f, 1.0f);
 		matrices.CalcDependencies();
 		GLRenderer->mShaderManager->ApplyMatrices(&matrices, NORMAL_PASS);
+
+		drawer->SwapColors();
 	}
 
 	glDisable(GL_DEPTH_TEST);
@@ -506,11 +508,6 @@ void FGLRenderer::Draw2D(F2DDrawer *drawer)
 		return;
 	}
 
-	for (auto &v : vertices)
-	{
-		// Change from BGRA to RGBA
-		std::swap(v.color0.r, v.color0.b);
-	}
 	auto vb = new F2DVertexBuffer;
 	vb->UploadData(&vertices[0], vertices.Size(), &indices[0], indices.Size());
 	gl_RenderState.SetVertexBuffer(vb);
