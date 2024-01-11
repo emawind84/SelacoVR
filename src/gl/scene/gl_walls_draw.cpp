@@ -42,6 +42,8 @@
 
 EXTERN_CVAR(Int, gl_max_vertices)
 
+extern int wallVerticesPerEye;
+
 //==========================================================================
 //
 // General purpose wall rendering function

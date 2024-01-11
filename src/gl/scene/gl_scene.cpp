@@ -72,6 +72,9 @@ EXTERN_CVAR (Bool, r_deathcamera)
 EXTERN_CVAR (Float, r_visibility)
 EXTERN_CVAR (Bool, r_drawvoxels)
 
+extern int flatVerticesPerEye;
+extern int wallVerticesPerEye;
+extern int portalsPerEye;
 
 void FDrawInfo::ApplyVPUniforms()
 {

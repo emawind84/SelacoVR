@@ -45,7 +45,3 @@ struct VRMode
 	void AdjustViewport(DFrameBuffer *fb) const;
 	VSMatrix GetHUDSpriteProjection() const;
 };
-
-extern int flatVerticesPerEye;
-extern int wallVerticesPerEye;
-extern int portalsPerEye;

@@ -61,6 +61,8 @@ EXTERN_CVAR(Bool, gl_portals)
 EXTERN_CVAR(Bool, gl_noquery)
 EXTERN_CVAR(Int, r_mirror_recursions)
 
+extern int portalsPerEye;
+
 //==========================================================================
 //
 //
