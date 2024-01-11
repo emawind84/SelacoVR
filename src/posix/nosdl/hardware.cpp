@@ -57,7 +57,6 @@ EXTERN_CVAR (Float, vid_winscale)
 
 IVideo *Video;
 
-extern int NewWidth, NewHeight, NewBits, DisplayBits;
 bool V_DoModeSetup (int width, int height, int bits);
 void I_RestartRenderer();
 
@@ -76,46 +75,19 @@ void I_ShutdownGraphics ()
 
 void I_InitGraphics ()
 {
-	UCVarValue val;
-
-	val.Bool = !!Args->CheckParm ("-devparm");
-	ticker.SetGenericRepDefault (val, CVAR_Bool);
-	
 	extern IVideo *gl_CreateVideo();
 	Video = gl_CreateVideo();
 	
 	if (Video == NULL)
 		I_FatalError ("Failed to initialize display");
 
-	Video->SetWindowedScale (vid_winscale);
+	//atterm (I_ShutdownGraphics);
 }
 
 /** Remaining code is common to Win32 and Linux **/
 
 // VIDEO WRAPPERS ---------------------------------------------------------
 
-DFrameBuffer *I_SetMode (int &width, int &height, DFrameBuffer *old)
-{
-	return Video->CreateFrameBuffer (width, height, false, true, old);
-}
-
-bool I_CheckResolution (int width, int height, int bits)
-{
-	int twidth, theight;
-
-	Video->StartModeIterator (bits, screen ? screen->IsFullscreen() : fullscreen);
-	while (Video->NextMode (&twidth, &theight, NULL))
-	{
-		if (width == twidth && height == theight)
-			return true;
-	}
-	return false;
-}
-
-void I_ClosestResolution (int *width, int *height, int bits)
-{
-    return;
-}
 
 //==========================================================================
 //
@@ -142,39 +114,3 @@ void I_SetFPSLimit(int limit)
 {
 }
 #endif
-
-extern int NewWidth, NewHeight, NewBits, DisplayBits;
-
-CUSTOM_CVAR (Bool, fullscreen, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
-{
-	NewWidth = screen->VideoWidth;
-	NewHeight = screen->VideoHeight;
-	NewBits = DisplayBits;
-	setmodeneeded = true;
-}
-
-CUSTOM_CVAR (Float, vid_winscale, 1.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-{
-	if (self < 1.f)
-	{
-		self = 1.f;
-	}
-	else if (Video)
-	{
-		Video->SetWindowedScale (self);
-		NewWidth = screen->VideoWidth;
-		NewHeight = screen->VideoHeight;
-		NewBits = DisplayBits;
-		setmodeneeded = true;
-	}
-}
-
-CCMD (vid_listmodes)
-{
-	Printf ("Just.. dont!\n");
-}
-
-CCMD (vid_currentmode)
-{
-	Printf ("%dx%dx%d\n", DisplayWidth, DisplayHeight, DisplayBits);
-}

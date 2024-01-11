@@ -76,6 +76,8 @@ EXTERN_CVAR (Int, vid_adapter)
 EXTERN_CVAR (Int, vid_displaybits)
 EXTERN_CVAR (Int, vid_renderer)
 EXTERN_CVAR (Int, vid_maxfps)
+EXTERN_CVAR (Int, vid_defwidth)
+EXTERN_CVAR (Int, vid_defheight)
 EXTERN_CVAR (Int, vid_refreshrate)
 EXTERN_CVAR (Bool, cl_capfps)
 
@@ -111,7 +113,6 @@ NoSDLGLVideo::NoSDLGLVideo (int parm)
 
 NoSDLGLVideo::~NoSDLGLVideo ()
 {
-	if (GLRenderer != NULL) GLRenderer->FlushTextures();
 }
 
 void NoSDLGLVideo::StartModeIterator (int bits, bool fs)
@@ -137,57 +138,15 @@ bool NoSDLGLVideo::NextMode (int *width, int *height, bool *letterbox)
 
 int TBXR_GetRefresh();
 
-DFrameBuffer *NoSDLGLVideo::CreateFrameBuffer (int width, int height, bool bgra, bool fullscreen, DFrameBuffer *old)
+DFrameBuffer *NoSDLGLVideo::CreateFrameBuffer ()
 {
-	static int retry = 0;
-	static int owidth, oheight;
-	
-	PalEntry flashColor;
-//	int flashAmount;
+	SystemGLFrameBuffer *fb = new OpenGLFrameBuffer(0, true);
 
-	if (old != NULL)
-	{
-		delete old;
-	}
-	else
-	{
-		flashColor = 0;
-//		flashAmount = 0;
-	}
-	
-	SystemFrameBuffer *fb;
-
-	fb = new OpenGLFrameBuffer(0, width, height, 32, TBXR_GetRefresh(), true);
-
-	retry = 0;
 	return fb;
 }
 
 void NoSDLGLVideo::SetWindowedScale (float scale)
 {
-}
-
-bool NoSDLGLVideo::SetResolution (int width, int height, int bits)
-{
-	// FIXME: Is it possible to do this without completely destroying the old
-	// interface?
-#ifndef NO_GL
-
-	if (GLRenderer != NULL) GLRenderer->FlushTextures();
-	I_ShutdownGraphics();
-
-	Video = new NoSDLGLVideo(0);
-	if (Video == NULL) I_FatalError ("Failed to initialize display");
-
-#if (defined(WINDOWS)) || defined(WIN32)
-	bits=32;
-#else
-	bits=24;
-#endif
-	
-	V_DoModeSetup(width, height, bits);
-#endif
-	return true;	// We must return true because the old video context no longer exists.
 }
 
 //==========================================================================
@@ -238,52 +197,52 @@ IVideo *gl_CreateVideo()
 
 // FrameBuffer implementation -----------------------------------------------
 
-SystemFrameBuffer::SystemFrameBuffer (void *, int width, int height, int, int, bool fullscreen, bool bgra)
-	: DFrameBuffer (width, height, bgra)
+SystemGLFrameBuffer::SystemGLFrameBuffer (void *, bool fullscreen)
+	: DFrameBuffer (vid_defwidth, vid_defheight)
 {
 }
 
-SystemFrameBuffer::~SystemFrameBuffer ()
+SystemGLFrameBuffer::~SystemGLFrameBuffer ()
 {
 }
 
 
-void SystemFrameBuffer::InitializeState() 
+void SystemGLFrameBuffer::InitializeState() 
 {
 }
 
-void SystemFrameBuffer::SetGammaTable(uint16_t *tbl)
+void SystemGLFrameBuffer::SetGammaTable(uint16_t *tbl)
 {
 }
 
-void SystemFrameBuffer::ResetGammaTable()
+void SystemGLFrameBuffer::ResetGammaTable()
 {
 }
 
-bool SystemFrameBuffer::IsFullscreen ()
+bool SystemGLFrameBuffer::IsFullscreen ()
 {
 	return true;
 }
 
-void SystemFrameBuffer::SetVSync( bool vsync )
+void SystemGLFrameBuffer::SetVSync( bool vsync )
 {
 }
 
 int QzDoom_SetRefreshRate(int refreshRate);
 
-void SystemFrameBuffer::NewRefreshRate ()
+void SystemGLFrameBuffer::NewRefreshRate ()
 {
 	if (QzDoom_SetRefreshRate(vid_refreshrate) != 0) {
 		Printf("Failed to set refresh rate to %dHz.\n", *vid_refreshrate);
 	}
 }
 
-void SystemFrameBuffer::SwapBuffers()
+void SystemGLFrameBuffer::SwapBuffers()
 {
 	//No swapping required
 }
 
-int SystemFrameBuffer::GetClientWidth()
+int SystemGLFrameBuffer::GetClientWidth()
 {
 	uint32_t w, h;
     QzDoom_GetScreenRes(&w, &h);
@@ -291,7 +250,7 @@ int SystemFrameBuffer::GetClientWidth()
 	return width;
 }
 
-int SystemFrameBuffer::GetClientHeight()
+int SystemGLFrameBuffer::GetClientHeight()
 {
 	uint32_t w, h;
     QzDoom_GetScreenRes(&w, &h);

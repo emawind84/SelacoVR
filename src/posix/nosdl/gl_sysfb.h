@@ -8,14 +8,14 @@
 void QzDoom_GetScreenRes(uint32_t *width, uint32_t *height);
 void QzDoom_Vibrate(float duration, int channel, float intensity );
 
-class SystemFrameBuffer : public DFrameBuffer
+class SystemGLFrameBuffer : public DFrameBuffer
 {
 	typedef DFrameBuffer Super;
 
 public:
 	// this must have the same parameters as the Windows version, even if they are not used!
-	SystemFrameBuffer (void *hMonitor, int width, int height, int, int, bool fullscreen, bool bgra);
-	~SystemFrameBuffer ();
+	SystemGLFrameBuffer (void *hMonitor, bool fullscreen);
+	~SystemGLFrameBuffer ();
 
 	void ForceBuffering (bool force);
 
@@ -40,7 +40,7 @@ protected:
 	void ResetGammaTable();
 	void InitializeState();
 
-	SystemFrameBuffer () {}
+	SystemGLFrameBuffer () {}
 	uint8_t GammaTable[3][256];
 	bool UpdatePending;
 
