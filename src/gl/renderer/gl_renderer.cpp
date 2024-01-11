@@ -57,6 +57,7 @@
 #include "gl/textures/gl_samplers.h"
 #include "gl/dynlights/gl_lightbuffer.h"
 #include "r_videoscale.h"
+#include "hwrenderer/utility/hw_vrmodes.h"
 
 EXTERN_CVAR(Int, screenblocks)
 EXTERN_CVAR(Bool, cl_capfps)
@@ -339,7 +340,7 @@ void FGLRenderer::WriteSavePic (player_t *player, FileWriter *file, int width, i
     
     // This shouldn't overwrite the global viewpoint even for a short time.
     FRenderViewpoint savevp;
-    sector_t *viewsector = RenderViewpoint(savevp, players[consoleplayer].camera, &bounds, r_viewpoint.FieldOfView.Degrees, 1.6f, 1.6f, true, false);
+    sector_t *viewsector = RenderViewpoint(savevp, players[consoleplayer].camera, &bounds, r_viewpoint.FieldOfView().Degrees, 1.6f, 1.6f, true, false);
     glDisable(GL_STENCIL_TEST);
     gl_RenderState.SetSoftLightLevel(-1);
     CopyToBackbuffer(&bounds, false);

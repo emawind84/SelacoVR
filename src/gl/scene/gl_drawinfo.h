@@ -83,7 +83,7 @@ struct FDrawInfo : public HWDrawInfo
 	// Sprite drawer
 	void DrawSprite(GLSprite *sprite, int pass);
 	void DrawPSprite(HUDSprite *huds);
-	void DrawPlayerSprites();
+	void DrawPlayerSprites(bool hudModelStep);
 
 	void DoDrawSorted(HWDrawList *dl, SortNode * head);
 	void DrawSorted(int listindex);
@@ -94,8 +94,8 @@ struct FDrawInfo : public HWDrawInfo
     void CreateScene();
     void RenderScene(int recursion);
     void RenderTranslucent();
-    void DrawScene(int drawmode);
-    void ProcessScene(bool toscreen = false);
+    void DrawScene(int drawmode, sector_t* sector = nullptr);
+    void ProcessScene(bool toscreen = false,  sector_t* sector = nullptr);
     void EndDrawScene(sector_t * viewsector);
     void DrawEndScene2D(sector_t * viewsector);
 	bool SetDepthClamp(bool on) override;

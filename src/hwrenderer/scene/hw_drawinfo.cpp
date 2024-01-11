@@ -210,7 +210,7 @@ angle_t HWDrawInfo::FrustumAngle()
 
 	// ok, this is a gross hack that barely works...
 	// but at least it doesn't overestimate too much...
-	double floatangle = 2.0 + (45.0 + ((tilt / 1.9)))*Viewpoint.FieldOfView.Degrees*48.0 / AspectMultiplier(r_viewwindow.WidescreenRatio) / 90.0;
+	double floatangle = 2.0 + (45.0 + ((tilt / 1.9)))*Viewpoint.FieldOfView().Degrees*48.0 / AspectMultiplier(r_viewwindow.WidescreenRatio) / 90.0;
 	angle_t a1 = DAngle(floatangle).BAMs();
 	if (a1 >= ANGLE_180) return 0xffffffff;
 	return a1;

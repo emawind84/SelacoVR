@@ -107,14 +107,14 @@ void FDrawInfo::DrawPSprite (HUDSprite *huds)
 //
 //==========================================================================
 
-void FDrawInfo::DrawPlayerSprites()
+void FDrawInfo::DrawPlayerSprites(bool hudModelStep)
 {
 	auto vrmode = VRMode::GetVRMode(true);
 	int oldlightmode = level.lightmode;
+	if (!hudModelStep && level.lightmode >= 8) level.lightmode = 2;	// Software lighting cannot handle 2D content so revert to lightmode 2 for that.
 	for(auto &hudsprite : hudsprites)
 	{
-		bool hudModelStep = hudsprite.mframe != nullptr;
-		if (!hudModelStep && level.lightmode >= 8) level.lightmode = 2;	// Software lighting cannot handle 2D content so revert to lightmode 2 for that.
+		hudModelStep = hudsprite.mframe != nullptr;
 		if (!hudModelStep) vrmode->AdjustPlayerSprites(hudsprite.weapon->GetCaller() == hudsprite.owner->player->OffhandWeapon);
 		DrawPSprite(&hudsprite);
 		if (!hudModelStep) vrmode->UnAdjustPlayerSprites();

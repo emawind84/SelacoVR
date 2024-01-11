@@ -49,10 +49,10 @@
 #include "hwrenderer/utility/hw_cvars.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_lighting.h"
+#include "hwrenderer/utility/hw_vrmodes.h"
 #include "hwrenderer/textures/hw_material.h"
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
 
-#include "gl/stereo3d/gl_stereo3d.h"
 #include "gl/scene/gl_portal.h"
 
 extern TArray<spritedef_t> sprites;
@@ -609,7 +609,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				sprangle = 0.;
 				rot = 0;
 			}
-			if (thing == camera && GLPortal::GetRecursion() > 0)
+			if (thing == camera && di->mCurrentPortal->mState->GetRecursion() > 0)
 			{
 				rot = 0;
 			}

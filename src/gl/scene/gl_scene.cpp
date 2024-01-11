@@ -60,7 +60,7 @@
 //
 // CVARs
 //
-//===========NextLightBuffer===============================================================
+//==========================================================================
 CVAR(Bool, gl_texture, true, 0)
 CVAR(Bool, gl_no_skyclear, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Float, gl_mask_threshold, 0.5f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
@@ -337,7 +337,7 @@ void FDrawInfo::DrawScene(int drawmode, sector_t * viewsector)
 	auto vrmode = VRMode::GetVRMode(true);
 	if (vrmode->RenderPlayerSpritesInScene())
 	{
-		di->DrawPlayerSprites();
+		DrawPlayerSprites(IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player));
 	}
 
 	if (applySSAO && gl_RenderState.GetPassType() == GBUFFER_PASS)
@@ -378,7 +378,7 @@ void FDrawInfo::EndDrawScene(sector_t * viewsector)
 		{
 			// [BB] The HUD model should be drawn over everything else already drawn.
 			glClear(GL_DEPTH_BUFFER_BIT);
-			DrawPlayerSprites();
+			DrawPlayerSprites(true);
 		}
 	}
 
@@ -408,7 +408,7 @@ void FDrawInfo::DrawEndScene2D(sector_t * viewsector)
 		// [BB] Only draw the sprites if we didn't render a HUD model before.
 		if (renderHUDModel == false)
 		{
- 			DrawPlayerSprites();
+ 			DrawPlayerSprites(false);
 		}
 	}
 
@@ -503,7 +503,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 		auto &vp = di->Viewpoint;
 		di->SetViewArea();
 		auto cm =  di->SetFullbrightFlags(mainview ? vp.camera->player : nullptr);
-		di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
+		//di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
 
 		// Stereo mode specific perspective projection
 		di->VPUniforms.mProjectionMatrix = eye.GetProjection(fov, ratio, fovratio);
@@ -512,7 +512,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 		vp.Pos += eye.GetViewShift(vp.HWAngles.Yaw.Degrees);
 		di->SetupView(vp.Pos.X, vp.Pos.Y, vp.Pos.Z, false, false);
 
-		di->ProcessScene(toscreen);
+		di->ProcessScene(toscreen, mainvp.sector);
 
 		if (mainview)
 		{
