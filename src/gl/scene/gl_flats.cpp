@@ -50,6 +50,8 @@
 
 CVAR(Int, gl_max_vertices, 0, CVAR_ARCHIVE)
 
+extern int flatVerticesPerEye;
+
 //==========================================================================
 //
 // Flats 

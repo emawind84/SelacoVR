@@ -82,7 +82,3 @@ struct VRMode
 	virtual bool GetTeleportLocation(DVector3 &out) const { return false; }
 	virtual bool IsInitialized() const { return true; }
 };
-
-extern int flatVerticesPerEye;
-extern int wallVerticesPerEye;
-extern int portalsPerEye;

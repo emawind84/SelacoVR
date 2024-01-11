@@ -88,6 +88,13 @@ void V_OutputResized (int width, int height);
 void V_CalcCleanFacs (int designwidth, int designheight, int realwidth, int realheight, int *cleanx, int *cleany, int *cx1=NULL, int *cx2=NULL);
 
 EXTERN_CVAR(Int, vid_rendermode)
+EXTERN_CVAR(Bool, fullscreen)
+EXTERN_CVAR(Int, win_x)
+EXTERN_CVAR(Int, win_y)
+EXTERN_CVAR(Int, win_w)
+EXTERN_CVAR(Int, win_h)
+EXTERN_CVAR(Bool, win_maximized)
+
 
 inline bool V_IsHardwareRenderer()
 {
@@ -449,6 +456,7 @@ public:
 	virtual void UnbindTexUnit(int no) {}
 	virtual void TextureFilterChanged() {}
 	virtual void BeginFrame() {}
+	virtual void SetWindowSize(int w, int h) {}
 
 	virtual int GetClientWidth() = 0;
 	virtual int GetClientHeight() = 0;

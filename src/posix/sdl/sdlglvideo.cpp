@@ -43,7 +43,6 @@
 #include "c_console.h"
 #include "s_sound.h"
 
-#include "videomodes.h"
 #include "hardware.h"
 #include "gl_sysfb.h"
 #include "gl_load/gl_system.h"
@@ -71,7 +70,6 @@ EXTERN_CVAR (Int, vid_displaybits)
 EXTERN_CVAR (Int, vid_maxfps)
 EXTERN_CVAR (Int, vid_defwidth)
 EXTERN_CVAR (Int, vid_defheight)
-EXTERN_CVAR (Bool, fullscreen)
 EXTERN_CVAR (Bool, cl_capfps)
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
@@ -84,11 +82,6 @@ CUSTOM_CVAR(Bool, gl_es, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCA
 {
 	Printf("This won't take effect until " GAMENAME " is restarted.\n");
 }
-
-CVAR(Int, win_x, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Int, win_y, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Int, win_w, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Int, win_h, -1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 CVAR(Bool, i_soundinbackground, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
@@ -217,6 +210,15 @@ IVideo *gl_CreateVideo()
 SystemGLFrameBuffer::SystemGLFrameBuffer (void *, bool fullscreen)
 	: DFrameBuffer (vid_defwidth, vid_defheight)
 {
+	// SDL_GetWindowBorderSize() is only available since 2.0.5, but because
+	// GZDoom supports platforms with older SDL2 versions, this function
+	// has to be dynamically loaded
+	sdl_lib = SDL_LoadObject("libSDL2.so");
+	if (sdl_lib != nullptr)
+	{
+		SDL_GetWindowBordersSize_ = (SDL_GetWindowBordersSizePtr)SDL_LoadFunction(sdl_lib,"SDL_GetWindowBordersSize");
+	}
+
 	// NOTE: Core profiles were added with GL 3.2, so there's no sense trying
 	// to set core 3.1 or 3.0. We could try a forward-compatible context
 	// instead, but that would be too restrictive (w.r.t. shaders).
@@ -256,32 +258,30 @@ SystemGLFrameBuffer::SystemGLFrameBuffer (void *, bool fullscreen)
 	{
 		static_cast<SDLGLVideo*>(Video)->SetupPixelFormat(false, 0, glvers[glveridx]);
 
-		Screen = SDL_CreateWindow (caption,
-			SDL_WINDOWPOS_UNDEFINED_DISPLAY(vid_adapter),
-			SDL_WINDOWPOS_UNDEFINED_DISPLAY(vid_adapter),
-			vid_defwidth, vid_defheight, (fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0) | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
-		);
+		SDL_Rect bounds;
+		SDL_GetDisplayBounds(vid_adapter,&bounds);
+		// set default size
+		if ( win_w <= 0 || win_h <= 0 )
+		{
+			win_w = bounds.w * 8 / 10;
+			win_h = bounds.h * 8 / 10;
+		}
+
+		Screen = SDL_CreateWindow(caption,
+			(win_x <= 0) ? SDL_WINDOWPOS_CENTERED_DISPLAY(vid_adapter) : win_x,
+			(win_y <= 0) ? SDL_WINDOWPOS_CENTERED_DISPLAY(vid_adapter) : win_y,
+			win_w, win_h, (fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0) | (win_maximized ? SDL_WINDOW_MAXIMIZED : 0) | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 		if (Screen != NULL)
 		{
+			// enforce minimum size limit
+			SDL_SetWindowMinimumSize(Screen, MIN_WIDTH, MIN_HEIGHT);
+
 			GLContext = SDL_GL_CreateContext(Screen);
 			if (GLContext != NULL)
 			{
 				m_supportsGamma = -1 != SDL_GetWindowGammaRamp(Screen,
 					 m_origGamma[0], m_origGamma[1], m_origGamma[2]
 				);
-
-				if (!fullscreen)
-				{
-					if (win_x >= 0 && win_y >= 0)
-					{
-						SDL_SetWindowPosition(Screen, win_x, win_y);
-					}
-
-					if (win_h > 320 && win_w > 200)
-					{
-						SDL_SetWindowSize(Screen, win_w, win_h);
-					}
-				}
 
 				return;
 			}
@@ -294,6 +294,11 @@ SystemGLFrameBuffer::SystemGLFrameBuffer (void *, bool fullscreen)
 
 SystemGLFrameBuffer::~SystemGLFrameBuffer ()
 {
+	if (sdl_lib != nullptr)
+	{
+		SDL_UnloadObject(sdl_lib);
+	}
+
 	if (Screen)
 	{
 		ResetGammaTable();
@@ -362,6 +367,11 @@ void SystemGLFrameBuffer::SwapBuffers()
 void SystemGLFrameBuffer::ToggleFullscreen(bool yes)
 {
 	SDL_SetWindowFullscreen(Screen, yes ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	if ( !yes )
+	{
+		fullscreen = false;
+		SetWindowSize(win_w, win_h);
+	}
 }
 
 int SystemGLFrameBuffer::GetClientWidth()
@@ -378,6 +388,39 @@ int SystemGLFrameBuffer::GetClientHeight()
 	return height;
 }
 
+void SystemGLFrameBuffer::SetWindowSize(int w, int h)
+{
+	if (w < MIN_WIDTH || h < MIN_HEIGHT)
+	{
+		w = MIN_WIDTH;
+		h = MIN_HEIGHT;
+	}
+	win_w = w;
+	win_h = h;
+	if ( fullscreen )
+	{
+		fullscreen = false;
+	}
+	else
+	{
+		win_maximized = false;
+		SDL_SetWindowSize(Screen, w, h);
+		SDL_SetWindowPosition(Screen, SDL_WINDOWPOS_CENTERED_DISPLAY(vid_adapter), SDL_WINDOWPOS_CENTERED_DISPLAY(vid_adapter));
+		SetSize(GetClientWidth(), GetClientHeight());
+		int x, y;
+		SDL_GetWindowPosition(Screen, &x, &y);
+		win_x = x;
+		win_y = y;
+	}
+}
+
+void SystemGLFrameBuffer::GetWindowBordersSize(int &top, int &left)
+{
+	if (SDL_GetWindowBordersSize_ != nullptr)
+	{
+		SDL_GetWindowBordersSize_(Screen, &top, &left, nullptr, nullptr);
+	}
+}
 
 void ProcessSDLWindowEvent(const SDL_WindowEvent &event)
 {
@@ -398,8 +441,10 @@ void ProcessSDLWindowEvent(const SDL_WindowEvent &event)
 	case SDL_WINDOWEVENT_MOVED:
 		if (!fullscreen)
 		{
-			win_x = event.data1;
-			win_y = event.data2;
+			int top = 0, left = 0;
+			static_cast<SystemGLFrameBuffer *>(screen)->GetWindowBordersSize(top,left);
+			win_x = event.data1-left;
+			win_y = event.data2-top;
 		}
 		break;
 
@@ -409,6 +454,14 @@ void ProcessSDLWindowEvent(const SDL_WindowEvent &event)
 			win_w = event.data1;
 			win_h = event.data2;
 		}
+		break;
+
+	case SDL_WINDOWEVENT_MAXIMIZED:
+		win_maximized = true;
+		break;
+
+	case SDL_WINDOWEVENT_RESTORED:
+		win_maximized = false;
 		break;
 	}
 }
@@ -427,3 +480,4 @@ void I_SetWindowTitle(const char* caption)
 		SDL_SetWindowTitle(window, default_caption);
 	}
 }
+

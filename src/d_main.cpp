@@ -108,7 +108,6 @@
 
 EXTERN_CVAR(Bool, hud_althud)
 EXTERN_CVAR(Bool, cl_customizeinvulmap)
-EXTERN_CVAR(Bool, fullscreen)
 EXTERN_CVAR(Int, vr_mode)
 void DrawHUD();
 void D_DoAnonStats();
@@ -728,10 +727,10 @@ void D_Display ()
 	// fullscreen toggle has been requested
 	if (setmodeneeded)
 	{
+		setmodeneeded = false;
 		screen->ToggleFullscreen(fullscreen);
 		V_OutputResized(screen->GetWidth(), screen->GetHeight());
-		setmodeneeded = false;
-			}
+	}
 
 	// change the view size if needed
 	if (setsizeneeded)
