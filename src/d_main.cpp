@@ -102,7 +102,7 @@
 #include "r_data/r_vanillatrans.h"
 #include "s_music.h"
 #include "swrenderer/r_swcolormaps.h"
-#include <hwrenderer\utility\hw_vrmodes.h>
+#include "hwrenderer/utility/hw_vrmodes.h"
 
 #include <QzDoom/VrCommon.h>
 
