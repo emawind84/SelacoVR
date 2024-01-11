@@ -22,9 +22,6 @@ class NoSDLGLVideo : public IVideo
 
 	DFrameBuffer *CreateFrameBuffer ();
 
-	void StartModeIterator (int bits, bool fs);
-	bool NextMode (int *width, int *height, bool *letterbox);
-
 	void SetupPixelFormat(bool allowsoftware, int multisample, const int *glver);
 
 private:

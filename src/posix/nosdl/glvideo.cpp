@@ -45,7 +45,6 @@
 #include "version.h"
 #include "c_console.h"
 
-#include "videomodes.h"
 #include "glvideo.h"
 #include "gl_sysfb.h"
 //#include "gl/system/gl_system.h"
@@ -113,27 +112,6 @@ NoSDLGLVideo::NoSDLGLVideo (int parm)
 
 NoSDLGLVideo::~NoSDLGLVideo ()
 {
-}
-
-void NoSDLGLVideo::StartModeIterator (int bits, bool fs)
-{
-	IteratorMode = 0;
-	IteratorBits = bits;
-}
-
-bool NoSDLGLVideo::NextMode (int *width, int *height, bool *letterbox)
-{
-	if (IteratorBits != 8)
-		return false;
-
-	if ((unsigned)IteratorMode < sizeof(VideoModes)/sizeof(VideoModes[0]))
-	{
-		*width = VideoModes[IteratorMode].width;
-		*height = VideoModes[IteratorMode].height;
-		++IteratorMode;
-		return true;
-	}
-	return false;
 }
 
 int TBXR_GetRefresh();
