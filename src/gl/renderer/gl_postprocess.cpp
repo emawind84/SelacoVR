@@ -146,10 +146,10 @@ void FGLRenderer::Flush()
 	}
 	else
 	{
-		stereo3dMode.AdjustViewports();
+		vrmode->AdjustViewport(screen);
 		
 		const bool is2D = (gamestate != GS_LEVEL) || cinemamode;
-		if (is2D) stereo3dMode.SetUp();
+		if (is2D) vrmode->SetUp();
 
 		// Render 2D to eye textures
 		for (int eye_ix = 0; eye_ix < vrmode->mEyeCount; ++eye_ix)
@@ -160,7 +160,8 @@ void FGLRenderer::Flush()
 			glScissor(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
 
 			//Only adjust HUD if we are 3D and not showing menu (otherwise we are rendering to a cylinder compositor layer)
-			if (!is2D && !getMenuState())	stereo3dMode.getEyePose(eye_ix)->AdjustHud();
+			if (!is2D && !getMenuState())
+				vrmode->mEyes[eye_ix]->AdjustHud();
 
 			screen->Draw2D();
 			FGLDebug::PopGroup();
@@ -173,7 +174,7 @@ void FGLRenderer::Flush()
 		// There's absolutely no need to create a overly complex class hierarchy for just this.
 		GLRenderer->PresentStereo();
 		FGLDebug::PopGroup();
-		if (is2D) stereo3dMode.TearDown();
+		if (is2D) vrmode->TearDown();
 	}
 }
 

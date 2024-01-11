@@ -49,7 +49,6 @@
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/models/gl_models.h"
 #include "gl/renderer/gl_quaddrawer.h"
-#include "gl/stereo3d/gl_stereo3d.h"
 #include "gl/dynlights/gl_lightbuffer.h"
 
 extern uint32_t r_renderercaps;

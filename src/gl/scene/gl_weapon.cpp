@@ -32,6 +32,7 @@
 
 #include "gl_load/gl_interface.h"
 #include "hwrenderer/utility/hw_cvars.h"
+#include "hwrenderer/utility/hw_vrmodes.h"
 #include "hwrenderer/scene/hw_weapon.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_lightdata.h"
@@ -87,7 +88,8 @@ void FDrawInfo::DrawPSprite (HUDSprite *huds)
 		gl_RenderState.SetMaterial(huds->tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader, !!(huds->RenderStyle.Flags & STYLEF_RedIsAlpha));
 		gl_RenderState.Apply();
 
-		if (s3d::Stereo3DMode::getCurrentMode().IsMono() || (r_PlayerSprites3DMode != ITEM_ONLY && r_PlayerSprites3DMode != FAT_ITEM))
+		auto vrmode = VRMode::GetVRMode(true);
+		if (vrmode->IsMono() || (r_PlayerSprites3DMode != ITEM_ONLY && r_PlayerSprites3DMode != FAT_ITEM))
 		{
 			GLRenderer->mVBO->RenderArray(GL_TRIANGLE_STRIP, huds->mx, 4);
 		}
@@ -107,14 +109,15 @@ void FDrawInfo::DrawPSprite (HUDSprite *huds)
 
 void FDrawInfo::DrawPlayerSprites()
 {
+	auto vrmode = VRMode::GetVRMode(true);
 	int oldlightmode = level.lightmode;
 	for(auto &hudsprite : hudsprites)
 	{
 		bool hudModelStep = hudsprite.mframe != nullptr;
 		if (!hudModelStep && level.lightmode >= 8) level.lightmode = 2;	// Software lighting cannot handle 2D content so revert to lightmode 2 for that.
-		if (!hudModelStep) s3d::Stereo3DMode::getCurrentMode().AdjustPlayerSprites(hudsprite.weapon->GetCaller() == hudsprite.owner->player->OffhandWeapon);
+		if (!hudModelStep) vrmode->AdjustPlayerSprites(hudsprite.weapon->GetCaller() == hudsprite.owner->player->OffhandWeapon);
 		DrawPSprite(&hudsprite);
-		if (!hudModelStep) s3d::Stereo3DMode::getCurrentMode().UnAdjustPlayerSprites();
+		if (!hudModelStep) vrmode->UnAdjustPlayerSprites();
 	}
 	level.lightmode = oldlightmode;
 }

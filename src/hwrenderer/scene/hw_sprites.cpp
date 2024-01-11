@@ -476,7 +476,8 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		DVector3 vieworigin = viewmaster->Pos();
 
 		//If we get here, then we want to override the location of the camera actor
-		if (s3d::Stereo3DMode::getCurrentMode().GetTeleportLocation(thingpos))
+		auto vrmode = VRMode::GetVRMode(true);
+		if (vrmode->GetTeleportLocation(thingpos))
 		{
 			vieworigin = thingpos;
 

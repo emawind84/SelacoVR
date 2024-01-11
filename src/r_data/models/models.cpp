@@ -42,7 +42,7 @@
 #include "r_data/models/models_ue1.h"
 #include "r_data/models/models_obj.h"
 #include "i_time.h"
-#include "gl/stereo3d/gl_stereo3d.h"
+#include "hwrenderer/utility/hw_vrmodes.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244) // warning C4244: conversion from 'double' to 'float', possible loss of data
@@ -200,7 +200,8 @@ void FModelRenderer::RenderHUDModel(DPSprite *psp, float ofsX, float ofsY)
 	// but we need to position it correctly in the world for light to work properly.
 	VSMatrix objectToWorldMatrix = GetViewToWorldMatrix();
 	int hand = psp->GetCaller() == playermo->player->OffhandWeapon ? 1 : 0;
-	if (s3d::Stereo3DMode::getCurrentMode().GetWeaponTransform(&objectToWorldMatrix, hand))
+	auto vrmode = VRMode::GetVRMode(true);
+	if (vrmode->GetWeaponTransform(&objectToWorldMatrix, hand))
 	{
 		float scale = 0.01f;
 		objectToWorldMatrix.scale(scale, scale, scale);

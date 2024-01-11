@@ -334,7 +334,8 @@ void FDrawInfo::DrawScene(int drawmode, sector_t * viewsector)
 
 	RenderScene(recursion);
 
-	if (s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
+	auto vrmode = VRMode::GetVRMode(true);
+	if (vrmode->RenderPlayerSpritesInScene())
 	{
 		di->DrawPlayerSprites();
 	}
@@ -368,7 +369,8 @@ void FDrawInfo::EndDrawScene(sector_t * viewsector)
 {
 	gl_RenderState.EnableFog(false);
 
-	if (!s3d::Stereo3DMode::getCurrentMode().RenderPlayerSpritesInScene())
+	auto vrmode = VRMode::GetVRMode(true);
+	if (!vrmode->RenderPlayerSpritesInScene())
 	{
 		// [BB] HUD models need to be rendered here. 
 		const bool renderHUDModel = IsHUDModelForPlayerAvailable( players[consoleplayer].camera->player );
