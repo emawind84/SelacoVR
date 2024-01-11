@@ -437,6 +437,9 @@ public:
 	// Changes the vsync setting, if supported by the device.
 	virtual void SetVSync (bool vsync);
 
+	// Tells the device to recreate itself with the new setting from vid_refreshrate.
+	virtual void NewRefreshRate () {};
+
 	// Delete any resources that need to be deleted after restarting with a different IWAD
 	virtual void CleanForRestart() {}
 	virtual void SetTextureFilterMode() {}
@@ -558,7 +561,7 @@ public:
 	// Hint: Pitch can be negative for upside-down images, in which case buffer
 	// points to the last row in the buffer, which will be the first row output.
 	virtual void GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, ESSType &color_type, float &gamma) {}
-
+	//TODO this was 0.5f in gl_renderer.h from questzdoom branch ????
 	static float GetZNear() { return 5.f; }
 	static float GetZFar() { return 65536.f; }
 

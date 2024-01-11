@@ -506,10 +506,10 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 		//di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
 
 		// Stereo mode specific perspective projection
-		di->VPUniforms.mProjectionMatrix = eye.GetProjection(fov, ratio, fovratio);
+		di->VPUniforms.mProjectionMatrix = eye->GetProjection(fov, ratio, fovratio);
 		// Stereo mode specific viewpoint adjustment
 		vp.CenterEyePos = vp.Pos; // Retain unshifted center eye pos so all sprites show the same frame
-		vp.Pos += eye.GetViewShift(vp.HWAngles.Yaw.Degrees);
+		vp.Pos += eye->GetViewShift(vp);
 		di->SetupView(vp.Pos.X, vp.Pos.Y, vp.Pos.Z, false, false);
 
 		di->ProcessScene(toscreen, mainvp.sector);
@@ -530,7 +530,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 
 			PostProcessScene(cm, [&]() { di->DrawEndScene2D(mainvp.sector); });
 
-			eye->AdjustBlend();
+			eye->AdjustBlend(di);
 			float* blend = screen->GetBlend(mainvp.sector);
 			GLRenderer->DrawBlend(blend);
 		}

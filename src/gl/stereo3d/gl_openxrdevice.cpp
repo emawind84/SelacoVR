@@ -169,7 +169,7 @@ namespace s3d
     static float deltaYawDegrees;
 
     OpenXRDeviceEyePose::OpenXRDeviceEyePose(int eye)
-            : ShiftedEyePose( 0.0f )
+            : VREyeInfo(0.0f, 1.f)
             , eye(eye)
     {
     }
@@ -181,12 +181,17 @@ namespace s3d
     }
 
 /* virtual */
-    void OpenXRDeviceEyePose::GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const
+    DVector3 OpenXRDeviceEyePose::GetViewShift(FRenderViewpoint& vp) const
     {
+        // maybe this is enough ???
+        //auto *di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
+        //di->Viewpoint.HWAngles
+
+        float outViewShift[3];
         outViewShift[0] = outViewShift[1] = outViewShift[2] = 0;
 
         vec3_t angles;
-        VectorSet(angles, GLRenderer->mAngles.Pitch.Degrees,  getViewpointYaw(), GLRenderer->mAngles.Roll.Degrees);
+        VectorSet(angles, vp.HWAngles.Pitch.Degrees,  getViewpointYaw(), vp.HWAngles.Roll.Degrees);
 
         vec3_t v_forward, v_right, v_up;
         AngleVectors(angles, v_forward, v_right, v_up);
@@ -203,13 +208,15 @@ namespace s3d
         outViewShift[0] = eyeOffset[0];
         outViewShift[1] = eyeOffset[1];
         outViewShift[2] = eyeOffset[2];
+
+        return { outViewShift[0], outViewShift[1], outViewShift[2] };
     }
 
 /* virtual */
     VSMatrix OpenXRDeviceEyePose::GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatio) const
     {
         float m[16];
-        VR_GetVRProjection(eye, FGLRenderer::GetZNear(), FGLRenderer::GetZFar(), m);
+        VR_GetVRProjection(eye, screen->GetZNear(), screen->GetZFar(), m);
         projection.loadMatrix(m);
 
         //projection = EyePose::GetProjection(fov, aspectRatio, fovRatio);
@@ -286,40 +293,48 @@ namespace s3d
 
     void OpenXRDeviceEyePose::AdjustHud() const
     {
-        const Stereo3DMode * mode3d = &Stereo3DMode::getCurrentMode();
-        if (mode3d->IsMono())
+        // Draw crosshair on a separate quad, before updating HUD matrix
+        const auto vrmode = VRMode::GetVRMode(true);
+        if (vrmode->mEyeCount == 1)
+        {
             return;
+        }
+        auto *di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
 
         // Update HUD matrix to render on a separate quad
-        gl_RenderState.mProjectionMatrix = getHUDProjection();
-        gl_RenderState.ApplyMatrices();
+        di->VPUniforms.mProjectionMatrix = getHUDProjection();
+        di->ApplyVPUniforms();
     }
 
-    void OpenXRDeviceEyePose::AdjustBlend() const
+    void OpenXRDeviceEyePose::AdjustBlend(FDrawInfo *di) const
     {
-        VSMatrix& proj = gl_RenderState.mProjectionMatrix;
+        VSMatrix& proj = di->VPUniforms.mProjectionMatrix;
         proj.loadIdentity();
         proj.translate(-1, 1, 0);
         proj.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
-        gl_RenderState.ApplyMatrices();
+        di->ApplyVPUniforms();
     }
 
 
 /* static */
-    const Stereo3DMode& OpenXRDeviceMode::getInstance()
-    {
-        static OpenXRDeviceMode instance;
-        return instance;
-    }
+    // const VRMode& OpenXRDeviceMode::getInstance()
+    // {
+    //     static OpenXRDeviceMode instance;
+    //     return instance;
+    // }
 
-    OpenXRDeviceMode::OpenXRDeviceMode()
-            : leftEyeView(0)
-            , rightEyeView(1)
+    OpenXRDeviceMode::OpenXRDeviceMode(OpenXRDeviceEyePose eyes[2])
+            : VRMode(2, 1.f, 1.f, 1.f, eyes)
             , isSetup(false)
             , sceneWidth(0), sceneHeight(0), cachedScreenBlocks(0)
     {
-        eye_ptrs.Push(&leftEyeView);
-        eye_ptrs.Push(&rightEyeView);
+        //eye_ptrs.Push(&leftEyeView);
+        //eye_ptrs.Push(&rightEyeView);
+
+        leftEyeView = &eyes[0];
+        rightEyeView = &eyes[1];
+        mEyes[0] = &eyes[0];
+        mEyes[1] = &eyes[1];
 
         //Get this from my code
         QzDoom_GetScreenRes(&sceneWidth, &sceneHeight);
@@ -327,7 +342,7 @@ namespace s3d
 
 /* virtual */
 // AdjustViewports() is called from within FLGRenderer::SetOutputViewport(...)
-    void OpenXRDeviceMode::AdjustViewports() const
+    void OpenXRDeviceMode::AdjustViewport(DFrameBuffer* screen) const
     {
         if (screen == nullptr)
             return;
@@ -442,8 +457,8 @@ namespace s3d
             return;
         }
 
-        leftEyeView.submitFrame();
-        rightEyeView.submitFrame();
+        leftEyeView->submitFrame();
+        rightEyeView->submitFrame();
 
         TBXR_submitFrame();
 
@@ -461,7 +476,8 @@ namespace s3d
     static DVector3 MapWeaponDir(AActor* actor, DAngle yaw, DAngle pitch, int hand = 0)
     {
         LSMatrix44 mat;
-        if (!s3d::Stereo3DMode::getCurrentMode().GetWeaponTransform(&mat, hand))
+        auto vrmode = VRMode::GetVRMode(true);
+        if (!vrmode->GetWeaponTransform(&mat, hand))
         {
             double pc = pitch.Cos();
 
@@ -677,13 +693,13 @@ namespace s3d
                 }
                 player->mo->Vel = vel;
             }
-            updateHmdPose();
+            updateHmdPose(r_viewpoint);
         }
 
         isSetup = true;
     }
 
-    void OpenXRDeviceMode::updateHmdPose() const
+    void OpenXRDeviceMode::updateHmdPose(FRenderViewpoint& vp) const
     {
         float dummy=0;
         float yaw=0;
@@ -709,7 +725,7 @@ namespace s3d
         {
             if (resetPreviousPitch)
             {
-                previousPitch = GLRenderer->mAngles.Pitch.Degrees;
+                previousPitch = vp.HWAngles.Pitch.Degrees;
                 resetPreviousPitch = false;
             }
 
@@ -726,8 +742,8 @@ namespace s3d
             if (getGameState() == GS_LEVEL && getMenuState() == MENU_Off)
             {
                 doomYaw += hmdYawDeltaDegrees;
-                GLRenderer->mAngles.Roll = roll;
-                GLRenderer->mAngles.Pitch = pitch;
+                vp.HWAngles.Roll = roll;
+                vp.HWAngles.Pitch = pitch;
             }
 
             {

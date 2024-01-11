@@ -1,6 +1,8 @@
 #pragma once
 
 #include "r_data/matrix.h"
+#include "gl\scene\gl_drawinfo.h"
+#include "gl\renderer\gl_renderer.h"
 
 class DFrameBuffer;
 
@@ -18,7 +20,8 @@ enum
 	VR_TOPBOTTOM = 11,
 	VR_ROWINTERLEAVED = 12,
 	VR_COLUMNINTERLEAVED = 13,
-	VR_CHECKERINTERLEAVED = 14
+	VR_CHECKERINTERLEAVED = 14,
+	VR_OPENVR = 15
 };
 
 struct VREyeInfo
@@ -26,9 +29,20 @@ struct VREyeInfo
 	float mShiftFactor;
 	float mScaleFactor;
 
-	VSMatrix GetProjection(float fov, float aspectRatio, float fovRatio) const;
-	DVector3 GetViewShift(float yaw) const;
+	VREyeInfo() {}
+	VREyeInfo(float shiftFactor, float scaleFactor);
+	virtual ~VREyeInfo() {}
+
+	virtual VSMatrix GetProjection(float fov, float aspectRatio, float fovRatio) const;
+	virtual DVector3 GetViewShift(FRenderViewpoint& vp) const;
+	virtual void SetUp() const { m_isActive = true; }
+	virtual void TearDown() const { m_isActive = false; }
+	virtual void AdjustHud() const {}
+	virtual void AdjustBlend(FDrawInfo* di) const {}
+	bool isActive() const { return m_isActive; }
+
 private:
+	mutable bool m_isActive;
 	float getShift() const;
 
 };
@@ -39,11 +53,34 @@ struct VRMode
 	float mHorizontalViewportScale;
 	float mVerticalViewportScale;
 	float mWeaponProjectionScale;
-	VREyeInfo mEyes[2];
+	VREyeInfo* mEyes[2];
+
+	VRMode(int eyeCount, float horizontalViewportScale, 
+		float verticalViewportScalem, float weaponProjectionScale, VREyeInfo eyes[2]);
+	virtual ~VRMode() {}
 
 	static const VRMode *GetVRMode(bool toscreen = true);
-	void AdjustViewport(DFrameBuffer *fb) const;
+	virtual void AdjustViewport(DFrameBuffer *fb) const;
 	VSMatrix GetHUDSpriteProjection() const;
+
+	/* hooks for setup and cleanup operations for each stereo mode */
+	virtual void SetUp() const {};
+	virtual void TearDown() const {};
+
+	virtual bool IsMono() const { return mEyeCount == 1; }
+	virtual void AdjustPlayerSprites(int hand = 0) const {};
+	virtual void UnAdjustPlayerSprites() const {};
+	virtual void AdjustCrossHair() const {}
+	virtual void UnAdjustCrossHair() const {}
+	
+	virtual void Present() const { GLRenderer->PresentStereo(); };
+
+	virtual bool GetHandTransform(int hand, VSMatrix* out) const { return false; }
+	virtual bool GetWeaponTransform(VSMatrix* out, int hand = 0) const { return false; }
+	virtual bool RenderPlayerSpritesCrossed() const { return false; }
+	virtual bool RenderPlayerSpritesInScene() const { return false; }
+	virtual bool GetTeleportLocation(DVector3 &out) const { return false; }
+	virtual bool IsInitialized() const { return true; }
 };
 
 extern int flatVerticesPerEye;

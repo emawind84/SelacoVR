@@ -28,14 +28,13 @@
 #ifndef _GL_OCULUSQUEST_H
 #define _GL_OCULUSQUEST_H
 
-#include "gl_stereo3d.h"
-#include "gl_stereo_leftright.h"
+#include "hwrenderer/utility/hw_vrmodes.h"
 
 
 /* stereoscopic 3D API */
 namespace s3d {
 
-class OpenXRDeviceEyePose : public ShiftedEyePose
+class OpenXRDeviceEyePose : public VREyeInfo
 {
 public:
 	friend class OpenXRDeviceMode;
@@ -43,9 +42,9 @@ public:
 	OpenXRDeviceEyePose(int eye);
 	virtual ~OpenXRDeviceEyePose() override;
 	virtual VSMatrix GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatio) const override;
-	void GetViewShift(FLOATTYPE yaw, FLOATTYPE outViewShift[3]) const override;
+	DVector3 GetViewShift(FRenderViewpoint& vp) const override;
 	virtual void AdjustHud() const override;
-	virtual void AdjustBlend() const override;
+	virtual void AdjustBlend(FDrawInfo* di) const override;
 
 	bool submitFrame() const;
 
@@ -58,17 +57,18 @@ protected:
 	mutable VSMatrix projection;
 };
 
-class OpenXRDeviceMode : public Stereo3DMode
+class OpenXRDeviceMode : public VRMode
 {
 public:
 	friend class OpenXRDeviceEyePose;
-	static const Stereo3DMode& getInstance(); // Might return Mono mode, if no HMD available
+	//static const VRMode& getInstance(); // Might return Mono mode, if no HMD available
 
+	OpenXRDeviceMode(OpenXRDeviceEyePose eyes[2]);
 	virtual ~OpenXRDeviceMode() override;
 	virtual void SetUp() const override; // called immediately before rendering a scene frame
 	virtual void TearDown() const override; // called immediately after rendering a scene frame
 	virtual void Present() const override;
-	virtual void AdjustViewports() const override;
+	virtual void AdjustViewport(DFrameBuffer* screen) const override;
 	virtual void AdjustPlayerSprites(int hand = 0) const override;
 	virtual void UnAdjustPlayerSprites() const override;
 
@@ -81,17 +81,17 @@ public:
 protected:
 	OpenXRDeviceMode();
 
-	void updateHmdPose() const;
+	void updateHmdPose(FRenderViewpoint& vp) const;
 
-	OpenXRDeviceEyePose leftEyeView;
-	OpenXRDeviceEyePose rightEyeView;
+	OpenXRDeviceEyePose* leftEyeView;
+	OpenXRDeviceEyePose* rightEyeView;
 
 	mutable int cachedScreenBlocks;
 
 	mutable bool isSetup;
 
 private:
-	typedef Stereo3DMode super;
+	typedef VRMode super;
 	uint32_t sceneWidth, sceneHeight;
 
     mutable DVector3        m_TeleportLocation;

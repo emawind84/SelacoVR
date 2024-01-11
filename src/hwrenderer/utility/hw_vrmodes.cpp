@@ -30,32 +30,102 @@
 #include "hwrenderer/utility/hw_cvars.h"
 #include "hw_vrmodes.h"
 #include "v_video.h"
+#include "menu/menu.h"
+#include "gl/stereo3d/gl_openxrdevice.h"
 
 // Set up 3D-specific console variables:
-CVAR(Int, vr_mode, 0, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
+CVAR(Int, vr_mode, 15, 0)
 
 // switch left and right eye views
 CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
 
 // intraocular distance in meters
-CVAR(Float, vr_ipd, 0.062f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG) // METERS
+CVAR(Float, vr_ipd, 0.064f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG) // METERS
 
 // distance between viewer and the display screen
 CVAR(Float, vr_screendist, 0.80f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
 
 // default conversion between (vertical) DOOM units and meters
-CVAR(Float, vr_hunits_per_meter, 41.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
+CVAR(Float, vr_vunits_per_meter, 34.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
+CVAR(Float, vr_height_adjust, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
+CUSTOM_CVAR(Int, vr_control_scheme, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+{
+	M_ResetButtonStates();
+}
+CVAR(Bool, vr_move_use_offhand, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_teleport, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_weaponRotate, -30, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_weaponScale, 1.02f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_3dweaponOffsetX, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_3dweaponOffsetY, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_3dweaponOffsetZ, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_2dweaponOffsetX, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_2dweaponOffsetY, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_2dweaponOffsetZ, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_2dweaponScale, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Float, vr_snapTurn, 45.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, vr_move_speed, 19, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_run_multiplier, 1.5, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_switch_sticks, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_secondary_button_mappings, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_two_handed_weapons, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_momentum, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // Only used in player.zs
+CVAR(Float, vr_momentum_threshold, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_crouch_use_button, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, use_action_spawn_yzoffset, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+CVAR(Float, vr_pickup_haptic_level, 0.2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_quake_haptic_level, 0.8, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+//HUD control
+CVAR(Float, vr_hud_scale, 0.25f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_hud_stereo, 1.4f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_hud_rotate, 10.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_hud_fixed_pitch, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_hud_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+//AutoMap control
+CVAR(Bool, vr_automap_use_hud, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_automap_scale, 0.4f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_automap_stereo, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_automap_rotate, 13.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_automap_fixed_pitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_automap_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 
 #define isqrt2 0.7071067812f
-static VRMode vrmi_mono = { 1, 1.f, 1.f, 1.f,{ { 0.f, 1.f },{ 0.f, 0.f } } };
-static VRMode vrmi_stereo = { 2, 1.f, 1.f, 1.f,{ { -.5f, 1.f },{ .5f, 1.f } } };
-static VRMode vrmi_sbsfull = { 2, .5f, 1.f, 2.f,{ { -.5f, .5f },{ .5f, .5f } } };
-static VRMode vrmi_sbssquished = { 2, .5f, 1.f, 1.f,{ { -.5f, 1.f },{ .5f, 1.f } } };
-static VRMode vrmi_lefteye = { 1, 1.f, 1.f, 1.f, { { -.5f, 1.f },{ 0.f, 0.f } } };
-static VRMode vrmi_righteye = { 1, 1.f, 1.f, 1.f,{ { .5f, 1.f },{ 0.f, 0.f } } };
-static VRMode vrmi_topbottom = { 2, 1.f, .5f, 1.f,{ { -.5f, 1.f },{ .5f, 1.f } } };
-static VRMode vrmi_checker = { 2, isqrt2, isqrt2, 1.f,{ { -.5f, 1.f },{ .5f, 1.f } } };
+
+static VREyeInfo vrmi_mono_eyes[2] = { VREyeInfo(0.f, 1.f), VREyeInfo(0.f, 0.f) };
+static VREyeInfo vrmi_stereo_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(.5f, 1.f) };
+static VREyeInfo vrmi_sbsfull_eyes[2] = { VREyeInfo(-.5f, .5f), VREyeInfo(.5f, .5f) };
+static VREyeInfo vrmi_sbssquished_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(.5f, 1.f) };
+static VREyeInfo vrmi_lefteye_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(0.f, 0.f) };
+static VREyeInfo vrmi_righteye_eyes[2] = { VREyeInfo(.5f, 1.f), VREyeInfo(0.f, 0.f) };
+static VREyeInfo vrmi_topbottom_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(.5f, 1.f) };
+static VREyeInfo vrmi_checker_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(.5f, 1.f) };
+static s3d::OpenXRDeviceEyePose vrmi_openvr_eyes[2] = { s3d::OpenXRDeviceEyePose(0), s3d::OpenXRDeviceEyePose(1) };
+
+static VRMode vrmi_mono(1, 1.f, 1.f, 1.f, vrmi_mono_eyes);
+static VRMode vrmi_stereo(2, 1.f, 1.f, 1.f, vrmi_stereo_eyes);
+static VRMode vrmi_sbsfull(2, .5f, 1.f, 2.f, vrmi_sbsfull_eyes);
+static VRMode vrmi_sbssquished(2, .5f, 1.f, 1.f, vrmi_sbssquished_eyes);
+static VRMode vrmi_lefteye(1, 1.f, 1.f, 1.f, vrmi_lefteye_eyes);
+static VRMode vrmi_righteye(1, 1.f, 1.f, 1.f, vrmi_righteye_eyes);
+static VRMode vrmi_topbottom(2, 1.f, .5f, 1.f, vrmi_topbottom_eyes);
+static VRMode vrmi_checker(2, isqrt2, isqrt2, 1.f, vrmi_checker_eyes);
+static s3d::OpenXRDeviceMode vrmi_openvr(vrmi_openvr_eyes);
+
+VRMode::VRMode(int eyeCount, float horizontalViewportScale,
+	float verticalViewportScale, float weaponProjectionScale, VREyeInfo eyes[2])
+{
+	mEyeCount = eyeCount;
+	mHorizontalViewportScale = horizontalViewportScale;
+	mVerticalViewportScale = verticalViewportScale;
+	mWeaponProjectionScale = weaponProjectionScale;
+	mEyes[0] = &eyes[0];
+	mEyes[1] = &eyes[1];
+
+}
 
 const VRMode *VRMode::GetVRMode(bool toscreen)
 {
@@ -90,6 +160,9 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 
 	case VR_CHECKERINTERLEAVED:
 		return &vrmi_checker;
+
+	case VR_OPENVR:
+		return vrmi_openvr.IsInitialized() ? &vrmi_openvr : &vrmi_mono;
 	}
 }
 
@@ -115,6 +188,12 @@ VSMatrix VRMode::GetHUDSpriteProjection() const
 	float left_ofs = (w - scaled_w) / 2.f;
 	mat.ortho(left_ofs, left_ofs + scaled_w, (float)h, 0, -1.0f, 1.0f);
 	return mat;
+}
+
+VREyeInfo::VREyeInfo(float shiftFactor, float scaleFactor)
+{
+	mShiftFactor = shiftFactor;
+	mScaleFactor = scaleFactor;
 }
 
 float VREyeInfo::getShift() const
@@ -159,7 +238,7 @@ VSMatrix VREyeInfo::GetProjection(float fov, float aspectRatio, float fovRatio) 
 
 
 /* virtual */
-DVector3 VREyeInfo::GetViewShift(float yaw) const
+DVector3 VREyeInfo::GetViewShift(FRenderViewpoint& vp) const
 {
 	if (mShiftFactor == 0)
 	{
@@ -168,8 +247,9 @@ DVector3 VREyeInfo::GetViewShift(float yaw) const
 	}
 	else
 	{
-		double dx = -cos(DEG2RAD(yaw)) * vr_hunits_per_meter * getShift();
-		double dy = sin(DEG2RAD(yaw)) * vr_hunits_per_meter * getShift();
+		float yaw = vp.HWAngles.Yaw.Degrees;
+		double dx = -cos(DEG2RAD(yaw)) * vr_vunits_per_meter * getShift();
+		double dy = sin(DEG2RAD(yaw)) * vr_vunits_per_meter * getShift();
 		return { dx, dy, 0 };
 	}
 }
