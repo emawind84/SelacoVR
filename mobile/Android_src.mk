@@ -109,9 +109,11 @@ FASTMATH_SOURCES = \
 	hwrenderer/scene/hw_bsp.cpp \
 	hwrenderer/scene/hw_fakeflat.cpp \
 	hwrenderer/scene/hw_decal.cpp \
+	hwrenderer/scene/hw_drawinfo.cpp \
 	hwrenderer/scene/hw_drawlist.cpp \
 	hwrenderer/scene/hw_clipper.cpp \
 	hwrenderer/scene/hw_flats.cpp \
+	hwrenderer/scene/hw_portal.cpp \
 	hwrenderer/scene/hw_renderhacks.cpp \
 	hwrenderer/scene/hw_sky.cpp \
 	hwrenderer/scene/hw_sprites.cpp \
@@ -268,6 +270,7 @@ PCH_SOURCES = \
 	v_collection.cpp \
 	v_draw.cpp \
 	v_font.cpp \
+	v_framebuffer.cpp \
 	v_palette.cpp \
 	v_pfx.cpp \
 	v_text.cpp \
@@ -292,8 +295,6 @@ PCH_SOURCES = \
 	g_statusbar/sbarinfo.cpp \
 	g_statusbar/sbar_mugshot.cpp \
 	g_statusbar/shared_sbar.cpp \
-	gl/compatibility/gl_20.cpp \
-	gl/compatibility/gl_swshader20.cpp \
 	gl/data/gl_vertexbuffer.cpp \
 	gl/data/gl_uniformbuffer.cpp \
 	gl/dynlights/gl_lightbuffer.cpp \
@@ -306,16 +307,10 @@ PCH_SOURCES = \
 	gl/renderer/gl_lightdata.cpp \
 	gl/renderer/gl_postprocess.cpp \
 	gl/renderer/gl_postprocessstate.cpp \
+	gl/renderer/gl_stereo3d.cpp \
 	gl/shaders/gl_shader.cpp \
 	gl/shaders/gl_shaderprogram.cpp \
 	gl/shaders/gl_postprocessshader.cpp \
-	gl/stereo3d/gl_stereo3d.cpp \
-	gl/stereo3d/gl_stereo_cvars.cpp \
-	gl/stereo3d/gl_stereo_leftright.cpp \
-	gl/stereo3d/gl_anaglyph.cpp \
-	gl/stereo3d/gl_quadstereo.cpp \
-	gl/stereo3d/gl_sidebyside3d.cpp \
-	gl/stereo3d/gl_interleaved3d.cpp \
 	gl/stereo3d/gl_openxrdevice.cpp \
 	gl_load/gl_interface.cpp \
 	gl/system/gl_framebuffer.cpp \
@@ -327,24 +322,19 @@ PCH_SOURCES = \
 	hwrenderer/dynlights/hw_aabbtree.cpp \
 	hwrenderer/dynlights/hw_shadowmap.cpp \
 	hwrenderer/scene/hw_skydome.cpp \
+	hwrenderer/postprocessing/hw_postprocess.cpp \
 	hwrenderer/postprocessing/hw_postprocess_cvars.cpp \
 	hwrenderer/postprocessing/hw_postprocessshader.cpp \
 	hwrenderer/postprocessing/hw_shadowmapshader.cpp \
 	hwrenderer/postprocessing/hw_presentshader.cpp \
 	hwrenderer/postprocessing/hw_present3dRowshader.cpp \
-	hwrenderer/postprocessing/hw_bloomshader.cpp \
-	hwrenderer/postprocessing/hw_ambientshader.cpp \
-	hwrenderer/postprocessing/hw_blurshader.cpp \
-	hwrenderer/postprocessing/hw_colormapshader.cpp \
-	hwrenderer/postprocessing/hw_tonemapshader.cpp \
-	hwrenderer/postprocessing/hw_lensshader.cpp \
-	hwrenderer/postprocessing/hw_fxaashader.cpp \
 	hwrenderer/textures/hw_material.cpp \
 	hwrenderer/textures/hw_precache.cpp \
 	hwrenderer/utility/hw_clock.cpp \
 	hwrenderer/utility/hw_cvars.cpp \
 	hwrenderer/utility/hw_lighting.cpp \
 	hwrenderer/utility/hw_shaderpatcher.cpp \
+	hwrenderer/utility/hw_vrmodes.cpp \
 	menu/joystickmenu.cpp \
 	menu/loadsavemenu.cpp \
 	menu/menu.cpp \
@@ -352,7 +342,6 @@ PCH_SOURCES = \
 	menu/messagebox.cpp \
 	menu/optionmenu.cpp \
 	menu/playermenu.cpp \
-	menu/videomenu.cpp \
 	menu/profiledef.cpp \
 	resourcefiles/ancientzip.cpp \
 	resourcefiles/file_7z.cpp \
@@ -385,7 +374,6 @@ PCH_SOURCES = \
 	textures/formats/pngtexture.cpp \
 	textures/formats/rawpagetexture.cpp \
 	textures/formats/emptytexture.cpp \
-	textures/formats/backdroptexture.cpp \
 	textures/formats/shadertexture.cpp \
 	textures/formats/tgatexture.cpp \
 	textures/formats/worldtexture.cpp \
