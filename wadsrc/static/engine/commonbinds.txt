@@ -7,12 +7,12 @@ H switchGadget
 C +crouch
 ctrl crouch
 Q meleeButton
-R reloader
+R +reload
 Z useMeds
 Alt weaponWheel
 Mouse2 +altattack
 Mouse3 useability
-Mouse4 reloader
+Mouse4 +reload
 capslock "codex"
 LeftBracket previousAbility
 RightBracket nextAbility
