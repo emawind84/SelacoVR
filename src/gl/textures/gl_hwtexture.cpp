@@ -274,10 +274,6 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	}
 	else
 	{
-#ifdef __MOBILE__
-		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, (mipmap && TexFilter[gl_texture_filter].mipmapping) );
-#endif
-
 		if (rw < w || rh < h)
 		{
 			// The texture is larger than what the hardware can handle so scale it down.
@@ -306,11 +302,23 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	{
 		sourcetype = GL_BGRA;
 	}
-	
+
+#ifdef __MOBILE__
+	if(texformat == GL_BGRA)
+	{
+		sourcetype = GL_RGBA;
+		BGRAtoRGBA( buffer, rw * rh );
+	}
+	else
+	{
+		texformat = GL_BGRA;
+	}
+#endif
+
 	if (!firstCall && glBufferID > 0)
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, rw, rh, sourcetype, GL_UNSIGNED_BYTE, buffer);
 	else
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, rw, rh, 0, GL_BGRA, GL_UNSIGNED_BYTE, buffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, sourcetype, GL_UNSIGNED_BYTE, buffer);
 
 	if (deletebuffer && buffer) free(buffer);
 	else if (glBufferID)
