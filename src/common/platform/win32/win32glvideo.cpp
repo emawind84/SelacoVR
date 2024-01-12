@@ -553,7 +553,7 @@ void Win32GLVideo::Shutdown()
 	if (m_hRC)
 	{
 		zd_wglMakeCurrent(0, 0);
-		for(int x = 0; x < 2; x++) zd_wglDeleteContext(gl_auxContexts[x]);
+		for(int x = 0; x < 4; x++) zd_wglDeleteContext(gl_auxContexts[x]);
 		zd_wglDeleteContext(m_hRC);
 	}
 	if (m_hDC) ReleaseDC(m_Window, m_hDC);
