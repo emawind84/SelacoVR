@@ -270,7 +270,6 @@ void GLSkyPortal::DrawContents(HWDrawInfo *di)
 		}
 	}
 	gl_RenderState.SetVertexBuffer(GLRenderer->mVBO);
-	di->ApplyVPUniforms();
 	::level.lightmode = oldlightmode;
 	gl_RenderState.SetDepthClamp(oldClamp);
 }

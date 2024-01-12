@@ -19,7 +19,7 @@
 #include <vector>
 #include <algorithm>
 #include <cmath> //std::sqrt
-#include "gl/xbr/xbrz_tools.h"
+#include "xbrz_tools.h"
 
 using namespace xbrz;
 

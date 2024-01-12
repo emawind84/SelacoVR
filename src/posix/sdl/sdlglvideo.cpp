@@ -35,6 +35,7 @@
 
 #include "doomtype.h"
 
+#include "i_module.h"
 #include "i_system.h"
 #include "i_video.h"
 #include "m_argv.h"
@@ -172,16 +173,22 @@ IVideo *gl_CreateVideo()
 
 // FrameBuffer implementation -----------------------------------------------
 
+FModule sdl_lib("SDL2");
+
+typedef int (*SDL_GetWindowBordersSizePtr)(SDL_Window *, int *, int *, int *, int *);
+static TOptProc<sdl_lib, SDL_GetWindowBordersSizePtr> SDL_GetWindowBordersSize_("SDL_GetWindowBordersSize");
+
 SystemGLFrameBuffer::SystemGLFrameBuffer (void *, bool fullscreen)
 	: DFrameBuffer (vid_defwidth, vid_defheight)
 {
+	m_fsswitch = false;
+
 	// SDL_GetWindowBorderSize() is only available since 2.0.5, but because
 	// GZDoom supports platforms with older SDL2 versions, this function
 	// has to be dynamically loaded
-	sdl_lib = SDL_LoadObject("libSDL2.so");
-	if (sdl_lib != nullptr)
+	if (!sdl_lib.IsLoaded())
 	{
-		SDL_GetWindowBordersSize_ = (SDL_GetWindowBordersSizePtr)SDL_LoadFunction(sdl_lib,"SDL_GetWindowBordersSize");
+		sdl_lib.Load({ "libSDL2.so", "libSDL2-2.0.so" });
 	}
 
 	// NOTE: Core profiles were added with GL 3.2, so there's no sense trying
@@ -259,11 +266,6 @@ SystemGLFrameBuffer::SystemGLFrameBuffer (void *, bool fullscreen)
 
 SystemGLFrameBuffer::~SystemGLFrameBuffer ()
 {
-	if (sdl_lib != nullptr)
-	{
-		SDL_UnloadObject(sdl_lib);
-	}
-
 	if (Screen)
 	{
 		ResetGammaTable();
@@ -334,8 +336,16 @@ void SystemGLFrameBuffer::ToggleFullscreen(bool yes)
 	SDL_SetWindowFullscreen(Screen, yes ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 	if ( !yes )
 	{
-		fullscreen = false;
-		SetWindowSize(win_w, win_h);
+		if ( !m_fsswitch )
+		{
+			m_fsswitch = true;
+			fullscreen = false;
+		}
+		else
+		{
+			m_fsswitch = false;
+			SetWindowSize(win_w, win_h);
+		}
 	}
 }
 
@@ -381,7 +391,7 @@ void SystemGLFrameBuffer::SetWindowSize(int w, int h)
 
 void SystemGLFrameBuffer::GetWindowBordersSize(int &top, int &left)
 {
-	if (SDL_GetWindowBordersSize_ != nullptr)
+	if (SDL_GetWindowBordersSize_)
 	{
 		SDL_GetWindowBordersSize_(Screen, &top, &left, nullptr, nullptr);
 	}
@@ -414,7 +424,7 @@ void ProcessSDLWindowEvent(const SDL_WindowEvent &event)
 		break;
 
 	case SDL_WINDOWEVENT_RESIZED:
-		if (!fullscreen)
+		if (!fullscreen && !(static_cast<SystemGLFrameBuffer *>(screen)->m_fsswitch))
 		{
 			win_w = event.data1;
 			win_h = event.data2;

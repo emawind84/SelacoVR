@@ -596,6 +596,7 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 	parms->srcy = 0.;
 	parms->srcwidth = 1.;
 	parms->srcheight = 1.;
+	parms->burn = false;
 	parms->monospace = EMonospacing::MOff;
 	parms->spacing = 0;
 	parms->fsscalemode = -1;
@@ -984,6 +985,10 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 		case DTA_CellY:
 			parms->celly = ListGetInt(tags);
 			break;
+		
+		case DTA_Burn:
+			parms->burn = true;
+			break;
 
 		case DTA_Monospace:
 			parms->monospace = ListGetInt(tags);
@@ -1229,6 +1234,24 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawThickLine)
 	PARAM_INT(alpha);
 	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
 	screen->DrawLine(x0, y0, x1, y1, -1, color, alpha);
+	return 0;
+}
+
+void DFrameBuffer::DrawThickLine(int x0, int y0, int x1, int y1, double thickness, uint32_t realcolor) {
+	m2DDrawer.AddThickLine(x0, y0, x1, y1, thickness, realcolor);
+}
+
+DEFINE_ACTION_FUNCTION(_Screen, DrawThickLine)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(x0);
+	PARAM_INT(y0);
+	PARAM_INT(x1);
+	PARAM_INT(y1);
+	PARAM_FLOAT(thickness);
+	PARAM_INT(color);
+	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
+	screen->DrawThickLine(x0, y0, x1, y1, thickness, color);
 	return 0;
 }
 
