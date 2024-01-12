@@ -534,9 +534,6 @@ public:
 	void DrawLine(int x0, int y0, int x1, int y1, int palColor, uint32_t realcolor, uint8_t alpha = 255);
 
 	// Draws a line with thickness
-	void DrawThickLine(int x0, int y0, int x1, int y1, double thickness, uint32_t realcolor, uint8_t alpha = 255);
-
-	// Draws a line with thickness
 	void DrawThickLine(int x0, int y0, int x1, int y1, double thickness, uint32_t realcolor);
 
 	// Draws a single pixel

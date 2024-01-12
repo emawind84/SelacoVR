@@ -232,7 +232,6 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	)";
 	
 	i_data += "uniform int uTextureMode;\n";
-	i_data += "uniform int uShadowmapFilter;\n";
 	i_data += "uniform vec2 uClipSplit;\n";
 	i_data += "uniform float uAlphaThreshold;\n";
 

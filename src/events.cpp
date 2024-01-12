@@ -741,10 +741,6 @@ static bool isEmptyInt(VMFunction *func)
 	return (code == nullptr || code->word == (0x00048000|OP_RET));
 }
 
-DEFINE_EMPTY_HANDLER(DStaticEventHandler, CheckReplacement);
-
-DEFINE_EMPTY_HANDLER(DStaticEventHandler, NewGame)
-
 // ===========================================
 //
 //  Event handlers

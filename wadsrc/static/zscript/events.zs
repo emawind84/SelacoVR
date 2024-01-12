@@ -299,6 +299,13 @@ struct ConsoleEvent native version("2.4")
     native readonly bool IsManual;
 }
 
+struct ReplaceEvent native version("2.4")
+{
+	native readonly Class<Actor> Replacee;
+	native Class<Actor> Replacement;
+	native bool IsFinal;
+}
+
 struct ReplacedEvent native version("3.7")
 {
 	native Class<Actor> Replacee;
