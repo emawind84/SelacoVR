@@ -106,7 +106,7 @@ FGameConfigFile::FGameConfigFile ()
 	{
 		SetSection ("IWADSearch.Directories", true);
 		SetValueForKey ("Path", ".", true);
-		SetValueForKey ("Path", "$DOOMWADDIR", true);
+		//SetValueForKey ("Path", "$SELACOWADDIR", true);
 #ifdef __APPLE__
 		SetValueForKey ("Path", user_docs, true);
 		SetValueForKey ("Path", user_app_support, true);
@@ -148,7 +148,7 @@ FGameConfigFile::FGameConfigFile ()
 		SetValueForKey ("Path", "/usr/share/doom", true);
 		SetValueForKey ("Path", "/usr/share/games/doom", true);
 #endif
-		SetValueForKey ("Path", "$DOOMWADDIR", true);
+		//SetValueForKey ("Path", "$SELACOWADDIR", true);
 	}
 
 	// Set default search paths if none present
@@ -218,34 +218,6 @@ void FGameConfigFile::DoAutoloadSetup (FIWadManager *iwad_man)
 		if (lastver != NULL) last = atof(lastver);
 	}
 
-	if (last < 211)
-	{
-		RenameSection("Chex3.Autoload", "chex.chex3.Autoload");
-		RenameSection("Chex1.Autoload", "chex.chex1.Autoload");
-		RenameSection("HexenDK.Autoload", "hexen.deathkings.Autoload");
-		RenameSection("HereticSR.Autoload", "heretic.shadow.Autoload");
-		RenameSection("FreeDM.Autoload", "doom.freedoom.freedm.Autoload");
-		RenameSection("Freedoom2.Autoload", "doom.freedoom.phase2.Autoload");
-		RenameSection("Freedoom1.Autoload", "doom.freedoom.phase1.Autoload");
-		RenameSection("Freedoom.Autoload", "doom.freedoom.Autoload");
-		RenameSection("DoomBFG.Autoload", "doom.id.doom1.bfg.Autoload");
-		RenameSection("DoomU.Autoload", "doom.id.doom1.ultimate.Autoload");
-		RenameSection("Doom1.Autoload", "doom.id.doom1.registered.Autoload");
-		RenameSection("TNT.Autoload", "doom.id.doom2.tnt.Autoload");
-		RenameSection("Plutonia.Autoload", "doom.id.doom2.plutonia.Autoload");
-		RenameSection("Doom2BFG.Autoload", "doom.id.doom2.bfg.Autoload");
-		RenameSection("Doom2.Autoload", "doom.id.doom2.commercial.Autoload");
-	}
-	else if (last < 218)
-	{
-		RenameSection("doom.doom1.bfg.Autoload", "doom.id.doom1.bfg.Autoload");
-		RenameSection("doom.doom1.ultimate.Autoload", "doom.id.doom1.ultimate.Autoload");
-		RenameSection("doom.doom1.registered.Autoload", "doom.id.doom1.registered.Autoload");
-		RenameSection("doom.doom2.tnt.Autoload", "doom.id.doom2.tnt.Autoload");
-		RenameSection("doom.doom2.plutonia.Autoload", "doom.id.doom2.plutonia.Autoload");
-		RenameSection("doom.doom2.bfg.Autoload", "doom.id.doom2.bfg.Autoload");
-		RenameSection("doom.doom2.commercial.Autoload", "doom.id.doom2.commercial.Autoload");
-	}
 	const FString *pAuto;
 	for (int num = 0; (pAuto = iwad_man->GetAutoname(num)) != NULL; num++)
 	{
@@ -266,32 +238,20 @@ void FGameConfigFile::DoAutoloadSetup (FIWadManager *iwad_man)
 	CreateSectionAtStart("Global.Autoload");
 
 	// The same goes for auto-exec files.
-	CreateStandardAutoExec("Chex.AutoExec", true);
-	CreateStandardAutoExec("Strife.AutoExec", true);
-	CreateStandardAutoExec("Hexen.AutoExec", true);
-	CreateStandardAutoExec("Heretic.AutoExec", true);
-	CreateStandardAutoExec("Doom.AutoExec", true);
+	CreateStandardAutoExec("Selaco.AutoExec", true);
 
 	// Move search paths back to the top.
 	MoveSectionToStart("SoundfontSearch.Directories");
 	MoveSectionToStart("FileSearch.Directories");
 	MoveSectionToStart("IWADSearch.Directories");
 
-	SetSectionNote("Doom.AutoExec",
+	SetSectionNote("Selaco.AutoExec",
 		"# Files to automatically execute when running the corresponding game.\n"
 		"# Each file should be on its own line, preceded by Path=\n\n");
 	SetSectionNote("Global.Autoload",
 		"# WAD files to always load. These are loaded after the IWAD but before\n"
 		"# any files added with -file. Place each file on its own line, preceded\n"
 		"# by Path=\n");
-	SetSectionNote("Doom.Autoload",
-		"# Wad files to automatically load depending on the game and IWAD you are\n"
-		"# playing.  You may have have files that are loaded for all similar IWADs\n"
-		"# (the game) and files that are only loaded for particular IWADs. For example,\n"
-		"# any files listed under 'doom.Autoload' will be loaded for any version of Doom,\n"
-		"# but files listed under 'doom.doom2.Autoload' will only load when you are\n"
-		"# playing a Doom 2 based game (doom2.wad, tnt.wad or plutonia.wad), and files listed under\n"
-		"# 'doom.doom2.commercial.Autoload' only when playing doom2.wad.\n\n");
 }
 
 void FGameConfigFile::DoGlobalSetup ()

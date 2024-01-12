@@ -1588,7 +1588,7 @@ CCMD (toggle)
 	}
 }
 
-void FBaseCVar::ListVars (const char *filter, bool plain)
+void FBaseCVar::ListVars (const char *filter, bool plain, int is_default)
 {
 	FBaseCVar *var = CVars;
 	int count = 0;
@@ -1598,6 +1598,42 @@ void FBaseCVar::ListVars (const char *filter, bool plain)
 		if (CheckWildcards (filter, var->GetName()))
 		{
 			uint32_t flags = var->GetFlags();
+			bool valIsDefault = (flags & CVAR_ISDEFAULT);
+
+			// Check if value is the same as default
+			if (!valIsDefault) {
+				switch (var->GetRealType()) {
+				case ECVarType::CVAR_DummyBool:
+				case ECVarType::CVAR_Bool:
+					valIsDefault = var->GetGenericRepDefault(CVAR_Bool).Bool == var->GetGenericRep(CVAR_Bool).Bool;
+					break;
+				case ECVarType::CVAR_Color:
+					valIsDefault = var->GetGenericRepDefault(CVAR_Int).Int == var->GetGenericRep(CVAR_Int).Int;
+					break;
+				case ECVarType::CVAR_Float:
+					valIsDefault = var->GetGenericRepDefault(CVAR_Float).Float == var->GetGenericRep(CVAR_Float).Float;
+					break;
+				case ECVarType::CVAR_DummyInt:
+				case ECVarType::CVAR_Int:
+					valIsDefault = var->GetGenericRepDefault(CVAR_Int).Int == var->GetGenericRep(CVAR_Int).Int;
+					break;
+				case ECVarType::CVAR_String:
+					valIsDefault = stricmp(var->GetGenericRepDefault(var->GetRealType()).String, ((FStringCVar*)var)->GetGenericRep(var->GetRealType()).String) == 0;
+					break;
+					
+				default:
+					break;
+				}
+			}
+
+			
+
+			// Skip if we want only changed or default values and this doesn't match
+			if ((is_default > 0 && !valIsDefault) || (is_default < 0 && valIsDefault)) {
+				var = var->m_Next;
+				continue;
+			}
+			
 			if (plain)
 			{ // plain formatting does not include user-defined cvars
 				if (!(flags & CVAR_UNSETTABLE))
@@ -1609,16 +1645,17 @@ void FBaseCVar::ListVars (const char *filter, bool plain)
 			else
 			{
 				++count;
-				Printf ("%c%c%c%c%c %s = %s\n",
+				Printf ("%c%c%c%c%c%c %s = %s\n",
 					flags & CVAR_ARCHIVE ? 'A' : ' ',
 					flags & CVAR_USERINFO ? 'U' :
-						flags & CVAR_SERVERINFO ? 'S' :
-						flags & CVAR_AUTO ? 'C' : ' ',
+					flags & CVAR_SERVERINFO ? 'S' :
+					flags & CVAR_AUTO ? 'C' : ' ',
 					flags & CVAR_NOSET ? '-' :
-						flags & CVAR_LATCH ? 'L' :
-						flags & CVAR_UNSETTABLE ? '*' : ' ',
+					flags & CVAR_LATCH ? 'L' :
+					flags & CVAR_UNSETTABLE ? '*' : ' ',
 					flags & CVAR_MOD ? 'M' : ' ',
 					flags & CVAR_IGNORE ? 'X' : ' ',
+					valIsDefault ? 'D' : ' ',
 					var->GetName(),
 					var->GetHumanString());
 			}
@@ -1639,6 +1676,20 @@ CCMD (cvarlist)
 		FBaseCVar::ListVars (argv[1], false);
 	}
 }
+
+// @Cockatrice - List cvars that are not at default value
+CCMD(cvarlistd)
+{
+	if (argv.argc() == 1)
+	{
+		FBaseCVar::ListVars(NULL, false, -1);
+	}
+	else
+	{
+		FBaseCVar::ListVars(argv[1], false, -1);
+	}
+}
+
 
 CCMD (cvarlistplain)
 {
