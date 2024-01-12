@@ -1218,7 +1218,7 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawLine)
 	return 0;
 }
 
-void DFrameBuffer::DrawThickLine(int x0, int y0, int x1, int y1, double thickness, uint32_t realcolor) {
+void DFrameBuffer::DrawThickLine(int x0, int y0, int x1, int y1, double thickness, uint32_t realcolor, uint8_t alpha) {
 	m2DDrawer.AddThickLine(x0, y0, x1, y1, thickness, realcolor);
 }
 
