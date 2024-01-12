@@ -88,6 +88,13 @@ extern bool vid_hdr_active;
 #define gl_setNULLContext() static_cast<Win32GLVideo*>(Video)->setNULLContext()
 #endif
 
+#ifdef __POSIX_SDL_GL_SYSFB_H__
+#include "hardware.h"
+#define gl_setAUXContext(a) static_cast<OpenGLFrameBuffer*>(screen)->setAuxContext(a)
+#define gl_numAUXContexts() static_cast<OpenGLFrameBuffer*>(screen)->numAuxContexts()
+#define gl_setNULLContext() static_cast<OpenGLFrameBuffer*>(screen)->setNULLContext()
+#endif
+
 
 ADD_STAT(glloader)
 {
