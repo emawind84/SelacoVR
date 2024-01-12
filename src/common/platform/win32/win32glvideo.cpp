@@ -69,6 +69,7 @@ PROC zd_wglGetProcAddress(LPCSTR name);
 EXTERN_CVAR(Int, vid_adapter)
 EXTERN_CVAR(Int, vid_preferbackend)
 EXTERN_CVAR(Bool, vid_hdr)
+EXTERN_CVAR(Int, gl_max_transfer_threads)
 
 CUSTOM_CVAR(Bool, gl_debug, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
@@ -90,7 +91,7 @@ PFNWGLCHOOSEPIXELFORMATARBPROC myWglChoosePixelFormatARB; // = (PFNWGLCHOOSEPIXE
 PFNWGLCREATECONTEXTATTRIBSARBPROC myWglCreateContextAttribsARB;
 
 // @Cockatrice - Additional contexts may be fetched for background loading
-HGLRC gl_auxContexts[2] = { NULL, NULL };		
+HGLRC gl_auxContexts[4] = { NULL, NULL, NULL, NULL };		
 
 
 //==========================================================================
@@ -477,8 +478,10 @@ bool Win32GLVideo::InitHardware(HWND Window, int multisample)
 			Printf("R_OPENGL: Creating additional contexts...\n");
 
 			char err[256] = {'\0'};
+			const int numAux = min((int)gl_max_transfer_threads, 4);
+			int numCreated = 0;
 
-			for (int x = 0; x < 2; x++) {
+			for (int x = 0; x < numAux; x++) {
 				if (version > -2) {
 					int ctxAttribs[] = {
 						WGL_CONTEXT_MAJOR_VERSION_ARB, version / 10,
@@ -496,22 +499,34 @@ bool Win32GLVideo::InitHardware(HWND Window, int multisample)
 
 				
 				if (gl_auxContexts[x] == NULL) {
-					FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(), 0, err, 255, NULL);
-					
-					Printf("R_OPENGL: Warning - Unable to create additional context [%d] (%d : %s) \n\tTexture loading may be main-thread only.\n", x + 1, GetLastError(), err);
 					break;
 				}
 				else {
 					if (version <= -2 && !zd_wglShareContext(gl_auxContexts[x], m_hRC)) {
 						FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(), 0, err, 255, NULL);
-						Printf("R_OPENGL: Warning - Unable to share additional context [%d] (%d : %s) \n\tTexture loading may be main-thread only.\n", x + 1, GetLastError(), err);
+						Printf("R_OPENGL: Warning - Unable to share additional context [%d] (%d : %s)\n", x + 1, GetLastError(), err);
 						zd_wglDeleteContext(gl_auxContexts[x]);
 						gl_auxContexts[x] = NULL;
 						break;
 					}
 					else {
-						Printf("R_OPENGL: Created additional context %d\n", x + 1);
+						numCreated++;
 					}
+				}
+			}
+
+			if (numAux > 0) {
+				if (numCreated < numAux) {
+					FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(), 0, err, 255, NULL);
+
+					if (numCreated == 0) {
+						Printf("R_OPENGL: Warning - Unable to create any additional context(s) [0/%d] (%d : %s) \n\tTexture loading may be main-thread only.\n", numAux, GetLastError(), err);
+					} else {
+						Printf("R_OPENGL: Warning - %d Contexts could not be created. Created %d of %d requested.\n\t(%d : %s)\n", numAux - numCreated, numCreated, numAux, GetLastError(), err);
+					}
+				}
+				else {
+					Printf("R_OPENGL: Created %d additional contexts\n", numCreated);
 				}
 			}
 		}
@@ -562,7 +577,7 @@ void Win32GLVideo::setAuxContext(int index) {
 
 int Win32GLVideo::numAuxContexts() {
 	int num = 0;
-	for (int x = 0; x < 2; x++) if (gl_auxContexts[x] != NULL) num++;
+	for (int x = 0; x < 4; x++) if (gl_auxContexts[x] != NULL) num++;
 	return num;
 }
 

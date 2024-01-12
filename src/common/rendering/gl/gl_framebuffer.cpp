@@ -71,7 +71,8 @@ EXTERN_CVAR (Bool, vid_vsync)
 EXTERN_CVAR(Bool, r_drawvoxels)
 EXTERN_CVAR(Int, gl_tonemap)
 EXTERN_CVAR(Bool, cl_capfps)
-EXTERN_CVAR(Int, gl_pipeline_depth);
+EXTERN_CVAR(Int, gl_pipeline_depth)
+EXTERN_CVAR(Int, gl_max_transfer_threads)
 
 void gl_LoadExtensions();
 void gl_PrintStartupLog();
@@ -552,7 +553,7 @@ void OpenGLFrameBuffer::InitializeState()
 	mDebug->Update();
 
 	
-	int numThreads = gl_numAUXContexts();
+	int numThreads = min((int)gl_max_transfer_threads, gl_numAUXContexts());
 	for (int x = 0; x < numThreads; x++) {
 		std::unique_ptr<GlTexLoadThread> ptr(new GlTexLoadThread(this, x, &primaryTexQueue, &secondaryTexQueue, &outputTexQueue));
 		ptr->start();
