@@ -526,7 +526,7 @@ void VulkanFrameBuffer::InitializeState()
 #endif
 
 	// @Cockatrice - Init the background loader
-	for (int q = 0; q < device->uploadQueues.size(); q++) {
+	for (int q = 0; q < (int)device->uploadQueues.size(); q++) {
 		if (q > 0 && q > vk_max_transfer_threads) break;	// Cap the number of threads used based on user preference
 		std::unique_ptr<VkCommandBufferManager> cmds(new VkCommandBufferManager(this, &device->uploadQueues[q].queue, device->uploadQueues[q].queueFamily, true));
 		std::unique_ptr<VkTexLoadThread> ptr(new VkTexLoadThread(cmds.get(), device, q));

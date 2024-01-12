@@ -435,7 +435,7 @@ void VulkanDevice::CreateDevice()
 	uploadQueues.push_back(slot);
 
 	// Push more upload queues if supported
-	for(int x = 1; x < uploadFamilySlots.size(); x++) {
+	for(int x = 1; x < (int)uploadFamilySlots.size(); x++) {
 		VulkanUploadSlot slot = { VK_NULL_HANDLE, uploadFamily, uploadFamilySlots[x], uploadFamilySupportsGraphics };
 		vkGetDeviceQueue(device, uploadFamily, uploadFamilySlots[x], &slot.queue);
 		uploadQueues.push_back(slot);
@@ -448,7 +448,7 @@ void VulkanDevice::CreateDevice()
 	}
 
 	Printf(TEXTCOLOR_WHITE "VK Graphics Queue: %p\nVK Present Queue: %p\n", graphicsQueue, presentQueue);
-	for (int x = 0; x < uploadQueues.size(); x++) Printf(TEXTCOLOR_WHITE "VK Upload Queue %d: %p\n", uploadQueues[x].queue);
+	for (int x = 0; x < (int)uploadQueues.size(); x++) Printf(TEXTCOLOR_WHITE "VK Upload Queue %d: %p\n", x, uploadQueues[x].queue);
 }
 
 void VulkanDevice::CreateSurface()
