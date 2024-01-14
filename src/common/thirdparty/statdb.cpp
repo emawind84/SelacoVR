@@ -64,7 +64,7 @@ DEFINE_ACTION_FUNCTION(_StatDatabase, GetAchievement)
     PARAM_PROLOGUE;
     PARAM_STRING(name);
     
-    int val;
+    int val = 0;
     bool success = statDatabase.getAchievement(name, &val);
 
     if (numret > 0) ret[0].SetInt(success);
@@ -123,7 +123,7 @@ void StatDatabase::update() {
 
             StatPacket p;
             p.type = (char)stat.type;
-            strncpy(p.name, name.GetChars(), 64);
+            strncpy(p.name, name.GetChars(), 63);
             
             if (stat.type == Stat::INT_TYPE) memcpy(&p.data, &stat.iVal, 4);
             else memcpy(&p.data, &stat.fVal, 4);
@@ -137,7 +137,7 @@ void StatDatabase::update() {
 
             StatPacket p;
             p.type = 3;
-            strncpy(p.name, name.GetChars(), 64);
+            strncpy(p.name, name.GetChars(), 63);
             memcpy(&p.data, &ach.hasIt, 4);
 
             outPackets.queue(p);
@@ -208,9 +208,11 @@ bool StatDatabase::setStat(FString name, double value) {
 
 bool StatDatabase::setAchievement(FString name, int value) {
     if (auto search = allAchievements.find(name); search != allAchievements.end()) {
-        search->second.hasIt = value;
-        search->second.hasChanged = true;
-        return true;
+        if(value != search->second.hasIt) {
+            search->second.hasIt = value;
+            search->second.hasChanged = true;
+            return true;
+        }
     }
     return false;
 }
@@ -238,8 +240,10 @@ void StatDatabase::backgroundProc() {
     std::unique_lock<std::mutex> lock(mWakeLock);
 
     rpcFailures = connectRPC() ? 0 : 1;
+    bool sentRequestForData = false;
+    auto lastKeepAlive = std::chrono::steady_clock::now();
 
-    while (mRunning.load() && rpcFailures < 50) {
+    while (mRunning.load() && rpcFailures < 75) {
         // Ensure connection, if failed reconnect
         if (!isConnected()) {
             connectRPC();
@@ -250,27 +254,50 @@ void StatDatabase::backgroundProc() {
             rpcFailures = 0;
         }
 
-        // Check for more data from server
-        StatPacket p;
-        while (readRPC(&p, sizeof(StatPacket))) {
-            p.name[63] = '\0';
-            if(p.type <= 3 && p.type >= 0) inPackets.queue(p);
-        }
+        
+        if(isConnected()) {
+            // Check for more data from server
+            StatPacket p;
+            while (readRPC(&p, sizeof(StatPacket))) {
+                p.name[63] = '\0';
+                if(p.type <= 3 && p.type >= 0) inPackets.queue(p);
+            }
 
-        // If we have new data, send it
-        while (outPackets.dequeue(p)) {
-            if (!writeRPC(&p, sizeof(StatPacket))) {
-                break;
+            // If we have new data, send it
+            while (outPackets.dequeue(p)) {
+                if (!writeRPC(&p, sizeof(StatPacket))) {
+                    break;
+                }
+            }
+
+            if(!sentRequestForData) {
+                StatPacket p;
+                p.type = 4;
+                if(writeRPC(&p, sizeof(StatPacket))) {
+                    sentRequestForData = true;
+                }
+            }
+
+            auto keepAliveTimer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - lastKeepAlive);
+            if(keepAliveTimer.count() > 500) {
+                // Send keep alive
+                StatPacket p;
+                p.type = 5;
+                if(writeRPC(&p, sizeof(StatPacket))) {
+                    lastKeepAlive = std::chrono::steady_clock::now();
+                } else {
+                    rpcFailures++;
+                }
             }
         }
-
-
+        
         mWake.wait_for(lock, std::chrono::milliseconds(75));
     }
 
     mRunning.store(false);
     disconnectRPC();
 }
+
 
 
 #ifdef WIN32
@@ -344,3 +371,120 @@ bool StatDatabase::readRPC(void* data, size_t size) {
 }
 
 #endif // WIN32
+
+
+
+#ifdef __linux__
+
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#define OUT_PIPE "/var/lock/selacoStat2"
+#define IN_PIPE "/var/lock/selacoStat1"
+
+int outputFile = -1;
+int inputFile = -1;
+bool outReady = false;
+
+void StatDatabase::init() {
+    
+}
+
+bool StatDatabase::isConnected() {
+    return (inputFile > -1) && (outputFile > -1) && outReady;
+}
+
+bool StatDatabase::connectRPC() {
+    if(inputFile <= 0) {
+        inputFile = open(IN_PIPE, O_RDONLY | O_NONBLOCK);
+        if(inputFile < 0) {
+            return false;
+        }
+
+        // Wait briefly for a connection
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(inputFile, &readfds);
+        timeval tw = { 0, 1000 * 100 };
+        auto con2 = select(inputFile + 1, &readfds, NULL, NULL, &tw);
+        if(con2 < 0) {
+            return false;
+        }
+    }
+
+
+    if(outputFile < 0) {
+        // Reading works, let's set up writing
+        unlink(OUT_PIPE);
+        int con = mkfifo(OUT_PIPE, 0666);
+
+        if(outputFile < 0) {
+            outputFile = open(OUT_PIPE, O_RDWR | O_NONBLOCK);
+            if(outputFile < 0){
+                unlink(OUT_PIPE);
+                return false;
+            }
+        }
+    }
+    
+    fd_set writefds;
+    FD_ZERO(&writefds);
+    FD_SET(outputFile, &writefds);
+    timeval tw = { 0, 1000 * 100 };
+    auto con2 = select(outputFile + 1, &writefds, NULL, NULL, &tw);
+    if(con2 < 0) {
+        return false;
+    }
+
+    outReady = true;
+
+    return true;
+}
+
+void StatDatabase::disconnectRPC() {
+    close(outputFile);
+    close(inputFile);
+    unlink(OUT_PIPE);
+    outputFile = -1;
+    inputFile = -1;
+    outReady = false;
+}
+
+
+bool StatDatabase::writeRPC(const void* data, size_t size) {
+    if (!size || data == nullptr || !outReady) return false;
+
+    auto ret = write(outputFile, data, size);
+    if(ret < 0) {
+        // write is no longer working, invalidate outfile
+        close(outputFile);
+        outReady = false;
+        outputFile = -1;
+        return false;
+    }
+
+    return ret == (ssize_t)size;
+}
+
+
+bool StatDatabase::readRPC(void* data, size_t size) {
+    if (data == nullptr || size == 0) return false;
+
+    auto ret = read(inputFile, data, size);
+    if(ret < 0) {
+        if(errno != EAGAIN) {
+            const char *err = strerror(errno);
+            Printf("Error: %s", err);
+            close(inputFile);
+            inputFile = -1;
+        }
+        return false;
+    }
+
+    return ret == (ssize_t)size;
+}
+
+#endif 
