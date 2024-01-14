@@ -381,10 +381,18 @@ bool StatDatabase::readRPC(void* data, size_t size) {
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <netdb.h>
+#include <sys/un.h>
 
 #define OUT_PIPE "/var/lock/selacoStat2"
 #define IN_PIPE "/var/lock/selacoStat1"
 
+int sock = -1;
 int outputFile = -1;
 int inputFile = -1;
 bool outReady = false;
@@ -394,62 +402,44 @@ void StatDatabase::init() {
 }
 
 bool StatDatabase::isConnected() {
-    return (inputFile > -1) && (outputFile > -1) && outReady;
+    return sock > -1 && outReady;
 }
 
 bool StatDatabase::connectRPC() {
-    if(inputFile <= 0) {
-        inputFile = open(IN_PIPE, O_RDONLY | O_NONBLOCK);
-        if(inputFile < 0) {
+    if(sock < 0) {
+        sock = socket(AF_LOCAL, SOCK_STREAM | SOCK_NONBLOCK, 0);
+        if(sock < 0) {
             return false;
         }
 
-        // Wait briefly for a connection
-        fd_set readfds;
-        FD_ZERO(&readfds);
-        FD_SET(inputFile, &readfds);
-        timeval tw = { 0, 1000 * 100 };
-        auto con2 = select(inputFile + 1, &readfds, NULL, NULL, &tw);
-        if(con2 < 0) {
+        struct hostent* hptr = gethostbyname("127.0.0.1");
+        if (!hptr || (hptr->h_addrtype != AF_LOCAL && hptr->h_addrtype != AF_INET))  {
+            close(sock);
+            sock = -1;
             return false;
         }
-    }
 
+        bool bindSuccess = false;
 
-    if(outputFile < 0) {
-        // Reading works, let's set up writing
-        unlink(OUT_PIPE);
-        int con = mkfifo(OUT_PIPE, 0666);
+        struct sockaddr_un saddr;
+        memset(&saddr, 0, sizeof(saddr));
+        saddr.sun_family = AF_LOCAL;
+        strncpy(saddr.sun_path, IN_PIPE, sizeof(saddr.sun_path) - 1);
 
-        if(outputFile < 0) {
-            outputFile = open(OUT_PIPE, O_RDWR | O_NONBLOCK);
-            if(outputFile < 0){
-                unlink(OUT_PIPE);
-                return false;
-            }
+        if(connect(sock, (struct sockaddr*) &saddr, sizeof(saddr)) < 0) {
+            close(sock);
+            return false;
         }
-    }
-    
-    fd_set writefds;
-    FD_ZERO(&writefds);
-    FD_SET(outputFile, &writefds);
-    timeval tw = { 0, 1000 * 100 };
-    auto con2 = select(outputFile + 1, &writefds, NULL, NULL, &tw);
-    if(con2 < 0) {
-        return false;
+
+        outReady = true;
+        return true;
     }
 
-    outReady = true;
-
-    return true;
+    return false;
 }
 
 void StatDatabase::disconnectRPC() {
-    close(outputFile);
-    close(inputFile);
-    unlink(OUT_PIPE);
-    outputFile = -1;
-    inputFile = -1;
+    close(sock);
     outReady = false;
 }
 
@@ -457,12 +447,12 @@ void StatDatabase::disconnectRPC() {
 bool StatDatabase::writeRPC(const void* data, size_t size) {
     if (!size || data == nullptr || !outReady) return false;
 
-    auto ret = write(outputFile, data, size);
+    auto ret = write(sock, data, size);
     if(ret < 0) {
         // write is no longer working, invalidate outfile
-        close(outputFile);
+        close(sock);
         outReady = false;
-        outputFile = -1;
+        sock = -1;
         return false;
     }
 
@@ -473,13 +463,13 @@ bool StatDatabase::writeRPC(const void* data, size_t size) {
 bool StatDatabase::readRPC(void* data, size_t size) {
     if (data == nullptr || size == 0) return false;
 
-    auto ret = read(inputFile, data, size);
+    auto ret = read(sock, data, size);
     if(ret < 0) {
         if(errno != EAGAIN) {
             const char *err = strerror(errno);
             Printf("Error: %s", err);
-            close(inputFile);
-            inputFile = -1;
+            close(sock);
+            sock = -1;
         }
         return false;
     }
