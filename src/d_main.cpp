@@ -1737,14 +1737,14 @@ void ParseCVarInfo()
 				cvar = FindCVar(cvarname, NULL);
 
 				if (cvar == nullptr) {
-					sc.ScriptError("CVAR %s could not be found for setdefault", cvarname);
+					Printf("Warning: CVAR %s could not be found for setdefault\n", cvarname.GetChars());
 				}
 			} 
 			else {
 				cvar = C_CreateCVar(cvarname, cvartype, cvarflags);
 			}
 
-			if (cvardefault != NULL)
+			if (cvar != nullptr && cvardefault != NULL)
 			{
 				UCVarValue val;
 				val.String = cvardefault;
