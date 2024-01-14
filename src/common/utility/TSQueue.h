@@ -1,9 +1,12 @@
 #pragma once
 
+#include <iostream>
 #include <thread>
 #include <functional>
 #include <mutex>
 #include <atomic>
+#include <algorithm>
+
 #ifdef __linux__
 #include <condition_variable>
 #endif

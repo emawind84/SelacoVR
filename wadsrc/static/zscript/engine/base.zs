@@ -836,3 +836,12 @@ struct Translation version("2.4")
 	}
 }
 
+struct StatDatabase native 
+{
+	native static bool isAvailable();
+	native static bool, int GetAchievement(String key);
+	native static bool, double GetStat(String key);
+	native static bool SetAchievement(String key, int value);
+	native static bool SetStat(String key, double value);
+	native static bool AddStat(String key, double amount);
+}

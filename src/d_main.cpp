@@ -123,6 +123,9 @@
 #include "shiftstate.h"
 #include "s_loader.h"
 
+#include "statdb.h"
+
+
 #ifdef __unix__
 #include "i_system.h"  // for SHARE_DIR
 #endif // __unix__
@@ -1226,6 +1229,7 @@ void D_DoomLoop ()
 			}
 			// Update display, next frame, with current state.
 			I_StartTic ();
+			statDatabase.update();
 			D_ProcessEvents();
 			D_Display ();
 			S_UpdateMusic();
@@ -3367,6 +3371,10 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	V_LoadTranslations();
 	UpdateGenericUI(false);
 
+	// @Cockatrice - Startup stats database
+	statDatabase.init();
+	statDatabase.start();
+
 	// [CW] Parse any TEAMINFO lumps.
 	if (!batchrun) Printf ("ParseTeamInfo: Load team definitions.\n");
 	TeamLibrary.ParseTeamInfo ();
@@ -3789,6 +3797,8 @@ static int D_DoomMain_Internal (void)
 
 		startupClock.Unclock();
 		Printf(TEXTCOLOR_YELLOW "Full startup in %.2fms\n", startupClock.TimeMS());
+		
+		statDatabase.update();	// @Cockatrice - Do at least one update before the game loop
 
 		D_DoAnonStats();
 		I_UpdateWindowTitle();
