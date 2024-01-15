@@ -47,6 +47,8 @@ public:
     bool getStat(FString name, double *value);
     bool getAchievement(FString name, int* value);
 
+    void print();
+
 protected:
     struct StatPacket {
         char name[64];

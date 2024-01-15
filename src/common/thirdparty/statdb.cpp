@@ -6,14 +6,28 @@
 #include "zstring.h"
 #include "vm.h"
 #include "c_cvars.h"
+#include "c_dispatch.h"
 
-CUSTOM_CVAR(Bool, g_statdb, true, CVAR_ARCHIVE | CVAR_NOINITCALL) {
-    Printf("The game will need to be restarted for this change to take effect.\n");
+CUSTOM_CVAR(Bool, g_statdb, false, CVAR_NOSET | CVAR_NOINITCALL) {
+    Printf("This value can only be changed from the command line.\n");
 }
 
+EXTERN_CVAR(Bool, sv_cheats)
 EXTERN_CVAR(Int, developer)
 
 StatDatabase statDatabase;
+
+#define ALLOW_STAT_CHEATS
+
+
+#ifdef ALLOW_STAT_CHEATS
+
+CCMD(globalstats)
+{
+    statDatabase.print();
+}
+
+#endif
 
 
 DEFINE_ACTION_FUNCTION(_StatDatabase, GetStat)
@@ -37,6 +51,15 @@ DEFINE_ACTION_FUNCTION(_StatDatabase, SetStat)
     PARAM_STRING(name);
     PARAM_FLOAT(flt);
 
+#ifndef ALLOW_STAT_CHEATS
+    if (sv_cheats) {
+        if (developer > 0) {
+            Printf(TEXTCOLOR_RED"StatDatabase::SetStat() not available with sv_cheats enabled.\n");
+        }
+        return false;
+    }
+#endif
+
     bool success = statDatabase.setStat(name, flt);
 
     ACTION_RETURN_BOOL(success);
@@ -51,8 +74,17 @@ DEFINE_ACTION_FUNCTION(_StatDatabase, AddStat)
     double curVal = 0;
     bool success = false;
 
+#ifndef ALLOW_STAT_CHEATS
+    if (sv_cheats) {
+        if (developer > 0) {
+            Printf(TEXTCOLOR_RED"StatDatabase::AddStat() not available with sv_cheats enabled.\n");
+        }
+        return false;
+    }
+#endif
+
     if (flt > 0 && statDatabase.getStat(name, &curVal)) {
-        statDatabase.setStat(name, flt + curVal);
+        success = statDatabase.setStat(name, flt + curVal);
     }
 
     ACTION_RETURN_BOOL(success);
@@ -80,6 +112,15 @@ DEFINE_ACTION_FUNCTION(_StatDatabase, SetAchievement)
     PARAM_STRING(name);
     PARAM_INT(val);
 
+#ifndef ALLOW_STAT_CHEATS
+    if (sv_cheats) {
+        if (developer > 0) {
+            Printf(TEXTCOLOR_RED"StatDatabase::SetAchievement() not available with sv_cheats enabled.\n");
+        }
+        return false;
+    }
+#endif
+
     bool success = statDatabase.setAchievement(name, val);
 
     ACTION_RETURN_BOOL(success);
@@ -102,8 +143,26 @@ StatDatabase::~StatDatabase() {
     disconnect();
 }
 
+void StatDatabase::print() {
+    Printf("\nAll Stats\n----------------\n");
+    for (auto& [name, stat] : allStats) {
+        if (stat.type == Stat::FLOAT_TYPE)
+            Printf("%s : %.4f\n", name.GetChars(), stat.fVal);
+        else
+            Printf("%s : %d\n", name.GetChars(), stat.iVal);
+    }
+
+    Printf("\nAll Achievements\n----------------\n");
+    for (auto& [name, ach] : allAchievements) {
+        if (ach.hasIt)
+            Printf(TEXTCOLOR_GOLD "%s : (COMPLETE)\n", name.GetChars());
+        else
+            Printf("%s\n", name.GetChars());
+    }
+}
+
 bool StatDatabase::isAvailable() {
-    return mRunning.load();
+    return g_statdb && allStats.size() > 0 && mRunning.load();
 }
 
 void StatDatabase::start() {
@@ -116,6 +175,8 @@ void StatDatabase::start() {
 }
 
 void StatDatabase::update() {
+    if (!g_statdb) return;
+
     // Check for changed stats and create outgoing packets
     if (outPackets.size() < 32) {
         for (auto& [name, stat] : allStats) {
