@@ -836,11 +836,11 @@ struct Translation version("2.4")
 	}
 }
 
-struct StatDatabase native 
+struct StatDatabase native play
 {
-	native static bool isAvailable();
-	native static bool, int GetAchievement(String key);
-	native static bool, double GetStat(String key);
+	native static clearscope bool isAvailable();
+	native static clearscope bool, int GetAchievement(String key);
+	native static clearscope bool, double GetStat(String key);
 	native static bool SetAchievement(String key, int value);
 	native static bool SetStat(String key, double value);
 	native static bool AddStat(String key, double amount);
