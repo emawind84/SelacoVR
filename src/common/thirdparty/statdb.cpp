@@ -475,16 +475,20 @@ bool StatDatabase::readRPC(void* data, size_t size) {
 #include <netdb.h>
 #include <sys/un.h>
 
-#define OUT_PIPE "/var/lock/selacoStat2"
-#define IN_PIPE "/var/lock/selacoStat1"
+const std::string IN_FILENAME = "selacoStat1";
+std::string IN_PIPE =  "/tmp/" + IN_FILENAME;
 
 int sock = -1;
 int outputFile = -1;
 int inputFile = -1;
 bool outReady = false;
 
+
 void StatDatabase::init() {
-    
+    char *tmp = std::getenv("TMPDIR");
+    if(tmp != NULL) {
+        IN_PIPE = std::string(tmp) + IN_FILENAME;
+    }
 }
 
 bool StatDatabase::isConnected() {
@@ -510,7 +514,7 @@ bool StatDatabase::connectRPC() {
         struct sockaddr_un saddr;
         memset(&saddr, 0, sizeof(saddr));
         saddr.sun_family = AF_LOCAL;
-        strncpy(saddr.sun_path, IN_PIPE, sizeof(saddr.sun_path) - 1);
+        strncpy(saddr.sun_path, IN_PIPE.c_str(), sizeof(saddr.sun_path) - 1);
 
         if(connect(sock, (struct sockaddr*) &saddr, sizeof(saddr)) < 0) {
             close(sock);
