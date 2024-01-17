@@ -7,6 +7,7 @@
 #include "vm.h"
 #include "c_cvars.h"
 #include "c_dispatch.h"
+#include "filesystem.h"
 
 CUSTOM_CVAR(Bool, g_statdb, false, CVAR_NOSET | CVAR_NOINITCALL) {
     Printf("This value can only be changed from the command line.\n");
@@ -167,6 +168,14 @@ bool StatDatabase::isAvailable() {
 
 void StatDatabase::start() {
     if (!g_statdb) return;  // Don't startup if disabled
+
+#ifndef ALLOW_STAT_CHEATS
+    // Don't startup if we have mods installed
+    if (fileSystem.HasExtraWads()) {
+        Printf(TEXTCOLOR_YELLOW "Global stat database disabled: Mods are installed\n");
+        return;
+    }
+#endif
 
     if (mThread.get_id() == std::thread::id()) {
         mRunning.store(true);

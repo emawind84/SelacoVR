@@ -730,6 +730,12 @@ DEFINE_ACTION_FUNCTION(_Wads, GetWadName)
 	ACTION_RETURN_STRING(fileSystem.GetWadName(wadnum));
 }
 
+DEFINE_ACTION_FUNCTION(_Wads, HasMods)
+{
+	PARAM_PROLOGUE;
+	ACTION_RETURN_BOOL(fileSystem.HasExtraWads());
+}
+
 
 DEFINE_ACTION_FUNCTION(_Wads, GetNumLumps)
 {
