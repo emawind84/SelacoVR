@@ -194,8 +194,6 @@ void FModelRenderer::RenderHUDModel(DPSprite *psp, float ofsX, float ofsY)
 	if (smf == nullptr)
 		return;
 
-	long oculusquest_rightHanded = vr_control_scheme < 10;
-
 	// The model position and orientation has to be drawn independently from the position of the player,
 	// but we need to position it correctly in the world for light to work properly.
 	VSMatrix objectToWorldMatrix = GetViewToWorldMatrix();

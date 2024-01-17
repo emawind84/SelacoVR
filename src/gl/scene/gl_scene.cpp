@@ -514,7 +514,6 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 		// Stereo mode specific perspective projection
 		di->VPUniforms.mProjectionMatrix = eye->GetProjection(fov, ratio, fovratio);
 		// Stereo mode specific viewpoint adjustment
-		vp.CenterEyePos = vp.Pos; // Retain unshifted center eye pos so all sprites show the same frame
 		vp.Pos += eye->GetViewShift(vp);
 		di->SetupView(vp.Pos.X, vp.Pos.Y, vp.Pos.Z, false, false);
 
@@ -537,9 +536,9 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 			PostProcessScene(cm, [&]() { di->DrawEndScene2D(mainvp.sector); });
 
 			eye->AdjustBlend(di);
-			BlendInfo blendinfo;
-			screen->FillBlend(mainvp.sector, blendinfo);
-			GLRenderer->DrawBlend(blendinfo);
+			//BlendInfo blendinfo;
+			//screen->FillBlend(mainvp.sector, blendinfo);
+			//GLRenderer->DrawBlend(blendinfo);
 		}
 		di->EndDrawInfo();
 		if (vrmode->mEyeCount > 1)

@@ -579,7 +579,7 @@ public:
 	// points to the last row in the buffer, which will be the first row output.
 	virtual void GetScreenshotBuffer(const uint8_t *&buffer, int &pitch, ESSType &color_type, float &gamma) {}
 	//TODO this was 0.5f in gl_renderer.h from questzdoom branch ????
-	static float GetZNear() { return 5.f; }
+	static float GetZNear() { return 0.5f; }
 	static float GetZFar() { return 65536.f; }
 
 	// The original size of the framebuffer as selected in the video menu.

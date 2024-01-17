@@ -61,7 +61,7 @@ class OpenXRDeviceMode : public VRMode
 {
 public:
 	friend class OpenXRDeviceEyePose;
-	//static const VRMode& getInstance(); // Might return Mono mode, if no HMD available
+	static const VRMode& getInstance(); // Might return Mono mode, if no HMD available
 
 	OpenXRDeviceMode(OpenXRDeviceEyePose eyes[2]);
 	virtual ~OpenXRDeviceMode() override;

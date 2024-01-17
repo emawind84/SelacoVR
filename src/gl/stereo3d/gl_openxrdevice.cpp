@@ -183,10 +183,6 @@ namespace s3d
 /* virtual */
     DVector3 OpenXRDeviceEyePose::GetViewShift(FRenderViewpoint& vp) const
     {
-        // maybe this is enough ???
-        //auto *di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
-        //di->Viewpoint.HWAngles
-
         float outViewShift[3];
         outViewShift[0] = outViewShift[1] = outViewShift[2] = 0;
 
@@ -303,6 +299,7 @@ namespace s3d
 
         // Update HUD matrix to render on a separate quad
         di->VPUniforms.mProjectionMatrix = getHUDProjection();
+        //GLRenderer->mShaderManager->ApplyMatrices(&di->VPUniforms, gl_RenderState.GetPassType());
         di->ApplyVPUniforms();
     }
 
@@ -312,16 +309,18 @@ namespace s3d
         proj.loadIdentity();
         proj.translate(-1, 1, 0);
         proj.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
+        //GLRenderer->mShaderManager->ApplyMatrices(&di->VPUniforms, gl_RenderState.GetPassType());
         di->ApplyVPUniforms();
     }
 
 
 /* static */
-    // const VRMode& OpenXRDeviceMode::getInstance()
-    // {
-    //     static OpenXRDeviceMode instance;
-    //     return instance;
-    // }
+    const VRMode& OpenXRDeviceMode::getInstance()
+    {
+        static OpenXRDeviceEyePose vrmi_openvr_eyes[2] = { OpenXRDeviceEyePose(0), OpenXRDeviceEyePose(1) };
+        static OpenXRDeviceMode instance(vrmi_openvr_eyes);
+        return instance;
+    }
 
     OpenXRDeviceMode::OpenXRDeviceMode(OpenXRDeviceEyePose eyes[2])
             : VRMode(2, 1.f, 1.f, 1.f, eyes)
@@ -752,7 +751,7 @@ namespace s3d
                     viewYaw += 360.0;
                 while (viewYaw > 180.0)
                     viewYaw -= 360.0;
-                r_viewpoint.Angles.Yaw.Degrees = viewYaw;
+                vp.Angles.Yaw.Degrees = viewYaw;
             }
         }
     }

@@ -103,7 +103,7 @@ static VREyeInfo vrmi_lefteye_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(0.f, 0
 static VREyeInfo vrmi_righteye_eyes[2] = { VREyeInfo(.5f, 1.f), VREyeInfo(0.f, 0.f) };
 static VREyeInfo vrmi_topbottom_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(.5f, 1.f) };
 static VREyeInfo vrmi_checker_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(.5f, 1.f) };
-static s3d::OpenXRDeviceEyePose vrmi_openvr_eyes[2] = { s3d::OpenXRDeviceEyePose(0), s3d::OpenXRDeviceEyePose(1) };
+//static s3d::OpenXRDeviceEyePose vrmi_openvr_eyes[2] = { s3d::OpenXRDeviceEyePose(0), s3d::OpenXRDeviceEyePose(1) };
 
 static VRMode vrmi_mono(1, 1.f, 1.f, 1.f, vrmi_mono_eyes);
 static VRMode vrmi_stereo(2, 1.f, 1.f, 1.f, vrmi_stereo_eyes);
@@ -113,7 +113,7 @@ static VRMode vrmi_lefteye(1, 1.f, 1.f, 1.f, vrmi_lefteye_eyes);
 static VRMode vrmi_righteye(1, 1.f, 1.f, 1.f, vrmi_righteye_eyes);
 static VRMode vrmi_topbottom(2, 1.f, .5f, 1.f, vrmi_topbottom_eyes);
 static VRMode vrmi_checker(2, isqrt2, isqrt2, 1.f, vrmi_checker_eyes);
-static s3d::OpenXRDeviceMode vrmi_openvr(vrmi_openvr_eyes);
+//static s3d::OpenXRDeviceMode vrmi_openvr(vrmi_openvr_eyes);
 
 VRMode::VRMode(int eyeCount, float horizontalViewportScale,
 	float verticalViewportScale, float weaponProjectionScale, VREyeInfo eyes[2])
@@ -162,7 +162,7 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 		return &vrmi_checker;
 
 	case VR_OPENVR:
-		return vrmi_openvr.IsInitialized() ? &vrmi_openvr : &vrmi_mono;
+		return &s3d::OpenXRDeviceMode::getInstance();
 	}
 }
 

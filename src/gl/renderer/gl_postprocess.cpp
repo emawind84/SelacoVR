@@ -172,7 +172,7 @@ void FGLRenderer::Flush()
 		FGLDebug::PushGroup("PresentEyes");
 		// Note: This here is the ONLY place in the entire engine where the OpenGL dependent parts of the Stereo3D code need to be dealt with.
 		// There's absolutely no need to create a overly complex class hierarchy for just this.
-		GLRenderer->PresentStereo();
+		vrmode->Present();
 		FGLDebug::PopGroup();
 		if (is2D) vrmode->TearDown();
 	}
