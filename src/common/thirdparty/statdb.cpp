@@ -172,39 +172,12 @@ void StatDatabase::start() {
         mRunning.store(true);
         mThread = std::thread(&StatDatabase::backgroundProc, this);
     }
+
+    lastStatUpdate = std::chrono::steady_clock::now();
 }
 
 void StatDatabase::update() {
     if (!g_statdb) return;
-
-    // Check for changed stats and create outgoing packets
-    if (outPackets.size() < 32) {
-        for (auto& [name, stat] : allStats) {
-            if (!stat.hasChanged) continue;
-
-            StatPacket p;
-            p.type = (char)stat.type;
-            strncpy(p.name, name.GetChars(), 63);
-            
-            if (stat.type == Stat::INT_TYPE) memcpy(&p.data, &stat.iVal, 4);
-            else memcpy(&p.data, &stat.fVal, 4);
-
-            outPackets.queue(p);
-            stat.hasChanged = false;
-        }
-
-        for (auto& [name, ach] : allAchievements) {
-            if (!ach.hasChanged) continue;
-
-            StatPacket p;
-            p.type = 3;
-            strncpy(p.name, name.GetChars(), 63);
-            memcpy(&p.data, &ach.hasIt, 4);
-
-            outPackets.queue(p);
-            ach.hasChanged = false;
-        }
-    }
 
     StatPacket p;
     while (inPackets.dequeue(p)) {
@@ -218,7 +191,7 @@ void StatDatabase::update() {
             ach.hasChanged = false;
             if (developer > 0) Printf("StatDatabase: Received Achievement - %s = %d\n", name.GetChars(), ach.hasIt);
         }
-        else {
+        else if(p.type == Stat::FLOAT_TYPE || p.type == Stat::INT_TYPE) {
             // Stat
             auto& stat = allStats[name];
             if (stat.type == Stat::INT_TYPE && p.type == Stat::INT_TYPE) {
@@ -231,13 +204,61 @@ void StatDatabase::update() {
                 stat.hasChanged = false;
                 if (developer > 0) Printf("StatDatabase: Received Stat - %s = %f\n", name.GetChars(), stat.fVal);
             }
+        } else if(developer > 0) {
+            Printf("StatDatabase: Received nonsense: %d - %s", p.type, p.name);
         }
+    }
+
+    // Only run output updates every half second or so, or if there are new achievements
+    if(!newAchievements && (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - lastStatUpdate).count() < 500)) {
+        return;
+    }
+
+    // Check for changed stats and create outgoing packets
+    if (outPackets.size() < 32) {
+        queueOutput();
+
+        newAchievements = false;
+    }
+}
+
+void StatDatabase::queueOutput() {
+    for (auto& [name, stat] : allStats) {
+        if (!stat.hasChanged) continue;
+
+        StatPacket p;
+        p.type = (char)stat.type;
+        strncpy(p.name, name.GetChars(), 63);
+        
+        if (stat.type == Stat::INT_TYPE) memcpy(&p.data, &stat.iVal, 4);
+        else memcpy(&p.data, &stat.fVal, 4);
+
+        outPackets.queue(p);
+        stat.hasChanged = false;
+        if(developer > 0 && stat.type == Stat::INT_TYPE) Printf("StatDatabase: Queued %s : %d\n", name.GetChars(), stat.iVal);
+        else if(developer > 0) Printf("StatDatabase: Queued %s : %f\n", name.GetChars(), stat.fVal);
+    }
+
+    for (auto& [name, ach] : allAchievements) {
+        if (!ach.hasChanged) continue;
+
+        StatPacket p;
+        p.type = 3;
+        strncpy(p.name, name.GetChars(), 63);
+        memcpy(&p.data, &ach.hasIt, 4);
+
+        outPackets.queue(p);
+        ach.hasChanged = false;
+
+        if(developer > 0) Printf("StatDatabase: Queued Achievement %s", name.GetChars());
     }
 }
 
 void StatDatabase::disconnect() {
     // Make sure thread is killed
     if (mThread.joinable()) {
+        queueOutput(); // Queue the last of the output
+
         mRunning.store(false);
         mWake.notify_all();
         mThread.join();
@@ -270,6 +291,7 @@ bool StatDatabase::setStat(FString name, double value) {
 bool StatDatabase::setAchievement(FString name, int value) {
     if (auto search = allAchievements.find(name); search != allAchievements.end()) {
         if(value != search->second.hasIt) {
+            newAchievements = true;
             search->second.hasIt = value;
             search->second.hasChanged = true;
             return true;
@@ -304,9 +326,9 @@ void StatDatabase::backgroundProc() {
     bool sentRequestForData = false;
     auto lastKeepAlive = std::chrono::steady_clock::now();
 
-    while (mRunning.load() && rpcFailures < 75) {
+    while (rpcFailures < 75) {
         // Ensure connection, if failed reconnect
-        if (!isConnected()) {
+        if (!isConnected() && mRunning.load()) {
             connectRPC();
             rpcFailures++;
             std::this_thread::sleep_for(std::chrono::milliseconds(350));
@@ -351,6 +373,9 @@ void StatDatabase::backgroundProc() {
                 }
             }
         }
+
+        if(!mRunning.load())
+            break;
         
         mWake.wait_for(lock, std::chrono::milliseconds(75));
     }
@@ -450,16 +475,20 @@ bool StatDatabase::readRPC(void* data, size_t size) {
 #include <netdb.h>
 #include <sys/un.h>
 
-#define OUT_PIPE "/var/lock/selacoStat2"
-#define IN_PIPE "/var/lock/selacoStat1"
+const std::string IN_FILENAME = "selacoStat1";
+std::string IN_PIPE =  "/tmp/" + IN_FILENAME;
 
 int sock = -1;
 int outputFile = -1;
 int inputFile = -1;
 bool outReady = false;
 
+
 void StatDatabase::init() {
-    
+    char *tmp = std::getenv("TMPDIR");
+    if(tmp != NULL) {
+        IN_PIPE = std::string(tmp) + IN_FILENAME;
+    }
 }
 
 bool StatDatabase::isConnected() {
@@ -485,7 +514,7 @@ bool StatDatabase::connectRPC() {
         struct sockaddr_un saddr;
         memset(&saddr, 0, sizeof(saddr));
         saddr.sun_family = AF_LOCAL;
-        strncpy(saddr.sun_path, IN_PIPE, sizeof(saddr.sun_path) - 1);
+        strncpy(saddr.sun_path, IN_PIPE.c_str(), sizeof(saddr.sun_path) - 1);
 
         if(connect(sock, (struct sockaddr*) &saddr, sizeof(saddr)) < 0) {
             close(sock);
@@ -528,7 +557,6 @@ bool StatDatabase::readRPC(void* data, size_t size) {
     if(ret < 0) {
         if(errno != EAGAIN) {
             const char *err = strerror(errno);
-            Printf("Error: %s", err);
             close(sock);
             sock = -1;
         }

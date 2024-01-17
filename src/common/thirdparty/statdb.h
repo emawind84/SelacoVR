@@ -56,6 +56,11 @@ protected:
         unsigned char data[4];
     };
 
+    void queueOutput();
+
+    std::chrono::steady_clock::time_point lastStatUpdate;
+    bool newAchievements = false;
+
     TSQueue<StatPacket> outPackets;
     TSQueue<StatPacket> inPackets;
 
