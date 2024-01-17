@@ -44,6 +44,9 @@
 #include "gl/dynlights/gl_lightbuffer.h"
 #include "gl/models/gl_models.h"
 
+EXTERN_CVAR(Int, gl_max_portals);
+extern int portalsPerEye;
+
 class FDrawInfoList
 {
 public:
@@ -314,6 +317,7 @@ void FDrawInfo::DrawHUDModel(HUDSprite *huds, FRenderState &state)
 
 void FDrawInfo::RenderPortal(HWPortal *p, bool usestencil)
 {
+	if (gl_max_portals > -1 && portalsPerEye >= gl_max_portals) return;
 	auto gp = static_cast<HWPortal *>(p);
 	gp->SetupStencil(this, gl_RenderState, usestencil);
 	auto new_di = StartDrawInfo(Viewpoint, &VPUniforms);

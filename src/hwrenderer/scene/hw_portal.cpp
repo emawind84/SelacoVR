@@ -38,9 +38,13 @@
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_lighting.h"
 
+CVAR(Int, gl_max_portals, -1, CVAR_ARCHIVE);
+
 EXTERN_CVAR(Int, r_mirror_recursions)
 EXTERN_CVAR(Bool, gl_mirror_player)
 EXTERN_CVAR(Bool, gl_portals)
+
+extern int portalsPerEye;
 
 //-----------------------------------------------------------------------------
 //
@@ -205,6 +209,7 @@ void HWPortal::SetupStencil(HWDrawInfo *di, FRenderState &state, bool usestencil
 	Clocker c(PortalAll);
 
 	rendered_portals++;
+	portalsPerEye++;
 	if (usestencil)
 	{
 		// Create stencil 
@@ -897,6 +902,7 @@ void HWHorizonPortal::DrawContents(HWDrawInfo *di, FRenderState &state)
 	}
 
 
+	state.EnableBrightmap(true);
 	state.SetMaterial(gltexture, CLAMP_NONE, 0, -1);
 	state.SetObjectColor(origin->specialcolor);
 

@@ -41,6 +41,10 @@
 #include "hw_renderstate.h"
 #include "hw_skydome.h"
 
+EXTERN_CVAR(Int, gl_max_vertices)
+
+extern int wallVerticesPerEye;
+
 //==========================================================================
 //
 // General purpose wall rendering function
@@ -52,8 +56,14 @@ void GLWall::RenderWall(HWDrawInfo *di, FRenderState &state, int textured)
 {
 	assert(vertcount > 0);
 	state.SetLightIndex(dynlightindex);
+
+	if (gl_max_vertices > 0 && wallVerticesPerEye >= gl_max_vertices) {
+		return;
+	}
+
 	di->Draw(DT_TriangleFan, state, vertindex, vertcount);
 	vertexcount += vertcount;
+	wallVerticesPerEye += vertcount;
 }
 
 //==========================================================================
@@ -129,6 +139,20 @@ void GLWall::RenderMirrorSurface(HWDrawInfo *di, FRenderState &state)
 //
 //==========================================================================
 
+static const uint8_t renderwalltotier[] =
+{
+	side_t::none,
+	side_t::top,
+	side_t::mid,
+	side_t::mid,
+	side_t::bottom,
+	side_t::none,
+	side_t::none,
+	side_t::mid,
+	side_t::none,
+	side_t::mid,
+};
+
 void GLWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 {
 	int tmode = state.GetTextureMode();
@@ -138,20 +162,54 @@ void GLWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 	{
 		state.EnableGlow(true);
 		state.SetGlowParams(topglowcolor, bottomglowcolor);
+		state.SetGlowPlanes(frontsector->ceilingplane, frontsector->floorplane);
 	}
-	state.SetGlowPlanes(topplane, bottomplane);
 	state.SetMaterial(gltexture, flags & 3, 0, -1);
+
+	if (flags & GLWall::GLWF_CLAMPY && (type == RENDERWALL_M2S || type == RENDERWALL_M2SNF))
+	{
+		state.SetTextureMode(tmode | TM_CLAMPY);
+	}
 
 	if (type == RENDERWALL_M2SNF)
 	{
-		if (flags & GLWall::GLWF_CLAMPY)
-		{
-			if (tmode == TM_NORMAL) state.SetTextureMode(TM_CLAMPY);
-		}
 		state.SetFog(255, 0, di->isFullbrightScene(), nullptr, false);
 	}
-	state.SetObjectColor(seg->frontsector->SpecialColors[sector_t::walltop] | 0xff000000);
-	state.SetObjectColor2(seg->frontsector->SpecialColors[sector_t::wallbottom] | 0xff000000);
+	if (type != RENDERWALL_COLOR)
+	{
+		auto side = seg->sidedef;
+		auto tierndx = renderwalltotier[type];
+		auto &tier = side->textures[tierndx];
+		PalEntry color1 = side->GetSpecialColor(tierndx, side_t::walltop, frontsector);
+		PalEntry color2 = side->GetSpecialColor(tierndx, side_t::wallbottom, frontsector);
+		state.SetObjectColor(color1);
+		state.SetObjectColor2(color2);
+		if (color1 != color2)
+		{
+			// Do gradient setup only if there actually is a gradient.
+
+			state.EnableGradient(true);
+			if ((tier.flags & side_t::part::ClampGradient) && backsector)
+			{
+				if (tierndx == side_t::top)
+				{
+					state.SetGradientPlanes(frontsector->ceilingplane, backsector->ceilingplane);
+				}
+				else if (tierndx == side_t::mid)
+				{
+					state.SetGradientPlanes(backsector->ceilingplane, backsector->floorplane);
+				}
+				else // side_t::bottom:
+				{
+					state.SetGradientPlanes(backsector->floorplane, frontsector->floorplane);
+				}
+			}
+			else
+			{
+				state.SetGradientPlanes(frontsector->ceilingplane, frontsector->floorplane);
+			}
+		}
+	}
 
 	float absalpha = fabsf(alpha);
 	if (lightlist == nullptr)
@@ -166,14 +224,14 @@ void GLWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 
 		for (unsigned i = 0; i < lightlist->Size(); i++)
 		{
-			secplane_t &lowplane = i == (*lightlist).Size() - 1 ? bottomplane : (*lightlist)[i + 1].plane;
+			secplane_t &lowplane = i == (*lightlist).Size() - 1 ? frontsector->floorplane : (*lightlist)[i + 1].plane;
 			// this must use the exact same calculation method as GLWall::Process etc.
 			float low1 = lowplane.ZatPoint(vertexes[0]);
 			float low2 = lowplane.ZatPoint(vertexes[1]);
 
 			if (low1 < ztop[0] || low2 < ztop[1])
 			{
-				int thisll = (*lightlist)[i].caster != NULL ? hw_ClampLight(*(*lightlist)[i].p_lightlevel) : lightlevel;
+				int thisll = (*lightlist)[i].caster != nullptr ? hw_ClampLight(*(*lightlist)[i].p_lightlevel) : lightlevel;
 				FColormap thiscm;
 				thiscm.FadeColor = Colormap.FadeColor;
 				thiscm.FogDensity = Colormap.FogDensity;
@@ -192,6 +250,7 @@ void GLWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 	state.SetObjectColor2(0);
 	state.SetTextureMode(tmode);
 	state.EnableGlow(false);
+	state.EnableGradient(false);
 }
 
 //==========================================================================

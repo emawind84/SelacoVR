@@ -77,6 +77,7 @@ protected:
 	uint8_t mFogEnabled;
 	uint8_t mTextureEnabled:1;
 	uint8_t mGlowEnabled : 1;
+	uint8_t mGradientEnabled : 1;
 	uint8_t mBrightmapEnabled : 1;
 	uint8_t mModelMatrixEnabled : 1;
 	uint8_t mTextureMatrixEnabled : 1;
@@ -85,6 +86,7 @@ protected:
 	int mLightIndex;
 	int mSpecialEffect;
 	int mTextureMode;
+	int mTextureModeFlags;
 	int mDesaturation;
 	int mSoftLight;
 	float mLightParms[4];
@@ -95,11 +97,16 @@ protected:
 	FStateVec4 mColor;
 	FStateVec4 mGlowTop, mGlowBottom;
 	FStateVec4 mGlowTopPlane, mGlowBottomPlane;
+	FStateVec4 mGradientTopPlane, mGradientBottomPlane;
 	FStateVec4 mSplitTopPlane, mSplitBottomPlane;
+	PalEntry mAddColor;
 	PalEntry mFogColor;
+	PalEntry mFadeColor;
 	PalEntry mObjectColor;
 	PalEntry mObjectColor2;
+	PalEntry mSceneColor;
 	FStateVec4 mDynColor;
+	FStateVec4 mDetailParms;
 	FRenderStyle mRenderStyle;
 
 	FMaterialState mMaterial;
@@ -116,14 +123,16 @@ public:
 	void Reset()
 	{
 		mTextureEnabled = true;
-		mBrightmapEnabled = mFogEnabled = mGlowEnabled = false;
+		mBrightmapEnabled = mGradientEnabled = mFogEnabled = mGlowEnabled = false;
 		mFogColor.d = -1;
 		mTextureMode = -1;
+		mTextureModeFlags = 0;
 		mDesaturation = 0;
 		mAlphaThreshold = 0.5f;
 		mModelMatrixEnabled = false;
 		mTextureMatrixEnabled = false;
 		mSplitEnabled = false;
+		mAddColor = 0;
 		mObjectColor = 0xffffffff;
 		mObjectColor2 = 0;
 		mSoftLight = 0;
@@ -140,9 +149,12 @@ public:
 		mGlowBottom.Set(0.0f, 0.0f, 0.0f, 0.0f);
 		mGlowTopPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
 		mGlowBottomPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
+		mGradientTopPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
+		mGradientBottomPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
 		mSplitTopPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
 		mSplitBottomPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
 		mDynColor.Set(0.0f, 0.0f, 0.0f, 0.0f);
+		mDetailParms.Set(0.0f, 0.0f, 0.0f, 0.0f);
 
 		mModelMatrix.loadIdentity();
 		mTextureMatrix.loadIdentity();
@@ -191,15 +203,15 @@ public:
 	{
 		if (style.Flags & STYLEF_RedIsAlpha)
 		{
-			mTextureMode = TM_ALPHATEXTURE;
+			SetTextureMode(TM_ALPHATEXTURE);
 		}
 		else if (style.Flags & STYLEF_ColorIsFixed)
 		{
-			mTextureMode = TM_STENCIL;
+			SetTextureMode(TM_STENCIL);
 		}
 		else if (style.Flags & STYLEF_InvertSource)
 		{
-			mTextureMode = TM_INVERSE;
+			SetTextureMode(TM_INVERSE);
 		}
 	}
 
@@ -226,6 +238,11 @@ public:
 	void EnableGlow(bool on)
 	{
 		mGlowEnabled = on;
+	}
+
+	void EnableGradient(bool on)
+	{
+		mGradientEnabled = on;
 	}
 
 	void EnableBrightmap(bool on)
@@ -256,24 +273,37 @@ public:
 
 	void SetSoftLightLevel(int llevel, int blendfactor = 0)
 	{
-		if (level.lightmode == 8 && blendfactor == 0) mLightParms[3] = llevel / 255.f;
+		if (level.lightmode >= 8 && blendfactor == 0) mLightParms[3] = llevel / 255.f;
 		else mLightParms[3] = -1.f;
 	}
 
 	void SetGlowPlanes(const secplane_t &top, const secplane_t &bottom)
 	{
-		DVector3 tn = top.Normal();
-		DVector3 bn = bottom.Normal();
-		mGlowTopPlane.Set((float)tn.X, (float)tn.Y, (float)(1. / tn.Z), (float)top.fD());
-		mGlowBottomPlane.Set((float)bn.X, (float)bn.Y, (float)(1. / bn.Z), (float)bottom.fD());
+		auto &tn = top.Normal();
+		auto &bn = bottom.Normal();
+		mGlowTopPlane.Set((float)tn.X, (float)tn.Y, (float)top.negiC, (float)top.fD());
+		mGlowBottomPlane.Set((float)bn.X, (float)bn.Y, (float)bottom.negiC, (float)bottom.fD());
+	}
+
+	void SetGradientPlanes(const secplane_t &top, const secplane_t &bottom)
+	{
+		auto &tn = top.Normal();
+		auto &bn = bottom.Normal();
+		mGradientTopPlane.Set((float)tn.X, (float)tn.Y, (float)top.negiC, (float)top.fD());
+		mGradientBottomPlane.Set((float)bn.X, (float)bn.Y, (float)bottom.negiC, (float)bottom.fD());
 	}
 
 	void SetSplitPlanes(const secplane_t &top, const secplane_t &bottom)
 	{
-		DVector3 tn = top.Normal();
-		DVector3 bn = bottom.Normal();
-		mSplitTopPlane.Set((float)tn.X, (float)tn.Y, (float)(1. / tn.Z), (float)top.fD());
-		mSplitBottomPlane.Set((float)bn.X, (float)bn.Y, (float)(1. / bn.Z), (float)bottom.fD());
+		auto &tn = top.Normal();
+		auto &bn = bottom.Normal();
+		mSplitTopPlane.Set((float)tn.X, (float)tn.Y, (float)top.negiC, (float)top.fD());
+		mSplitBottomPlane.Set((float)bn.X, (float)bn.Y, (float)bottom.negiC, (float)bottom.fD());
+	}
+
+	void SetDetailParms(float xscale, float yscale, float bias)
+	{
+		mDetailParms.Set(xscale, yscale, bias, 0);
 	}
 
 	void SetDynLight(float r, float g, float b)
@@ -289,6 +319,16 @@ public:
 	void SetObjectColor2(PalEntry pe)
 	{
 		mObjectColor2 = pe;
+	}
+
+	void SetSceneColor(PalEntry sceneColor)
+	{
+		mSceneColor = sceneColor;
+	}
+
+	void SetAddColor(PalEntry pe)
+	{
+		mAddColor = pe;
 	}
 
 	void SetFog(PalEntry c, float d)
@@ -359,6 +399,7 @@ public:
 		mMaterial.mTranslation = translation;
 		mMaterial.mOverrideShader = overrideshader;
 		mMaterial.mChanged = true;
+		mTextureModeFlags = mat->GetLayerFlags();
 	}
 
 	void SetColor(int sectorlightlevel, int rellight, bool fullbright, const FColormap &cm, float alpha, bool weapon = false);

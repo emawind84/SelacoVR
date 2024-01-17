@@ -56,9 +56,9 @@ int HWDrawInfo::SetupLightsForOtherPlane(subsector_t * sub, FDynLightData &light
 		lightdata.Clear();
 		while (node)
 		{
-			ADynamicLight * light = node->lightsource;
+			FDynamicLight * light = node->lightsource;
 
-			if (light->flags2&MF2_DORMANT)
+			if (!light->IsActive() || gl_IsDistanceCulled(light))
 			{
 				node = node->nextLight;
 				continue;
@@ -486,8 +486,6 @@ bool HWDrawInfo::DoFakeCeilingBridge(subsector_t * subsec, float Planez, area_t 
 //==========================================================================
 void HWDrawInfo::HandleMissingTextures(area_t in_area)
 {
-	sector_t fake;
-
 	for (unsigned int i = 0; i < MissingUpperTextures.Size(); i++)
 	{
 		if (!MissingUpperTextures[i].seg) continue;
@@ -688,9 +686,8 @@ void HWDrawInfo::CreateFloodPoly(wallseg * ws, FFlatVertex *vertices, float plan
 void HWDrawInfo::PrepareUpperGap(seg_t * seg)
 {
 	wallseg ws;
-	sector_t ffake, bfake;
-	sector_t * fakefsector = hw_FakeFlat(seg->frontsector, &ffake, in_area, true);
-	sector_t * fakebsector = hw_FakeFlat(seg->backsector, &bfake, in_area, false);
+	sector_t * fakefsector = hw_FakeFlat(seg->frontsector, in_area, false);
+	sector_t * fakebsector = hw_FakeFlat(seg->backsector, in_area, true);
 
 	vertex_t * v1, *v2;
 
@@ -751,9 +748,8 @@ void HWDrawInfo::PrepareUpperGap(seg_t * seg)
 void HWDrawInfo::PrepareLowerGap(seg_t * seg)
 {
 	wallseg ws;
-	sector_t ffake, bfake;
-	sector_t * fakefsector = hw_FakeFlat(seg->frontsector, &ffake, in_area, true);
-	sector_t * fakebsector = hw_FakeFlat(seg->backsector, &bfake, in_area, false);
+	sector_t * fakefsector = hw_FakeFlat(seg->frontsector, in_area, false);
+	sector_t * fakebsector = hw_FakeFlat(seg->backsector, in_area, true);
 
 	vertex_t * v1, *v2;
 

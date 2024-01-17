@@ -58,6 +58,7 @@ class FGLRenderState : public FRenderState
 {
 	uint8_t mLastDepthClamp : 1;
 
+	int mGlobalFadeMode;
 	float mGlossiness, mSpecularLevel;
 	float mShaderTimer;
 
@@ -120,10 +121,35 @@ public:
 		mCurrentVertexBuffer = NULL;
 	}
 
+	int SetGlobalFadeMode(int fadeMode)
+	{
+		int fademode = mGlobalFadeMode;
+		mGlobalFadeMode = fadeMode;
+		return fademode;
+	}
+
 	void SetSpecular(float glossiness, float specularLevel)
 	{
 		mGlossiness = glossiness;
 		mSpecularLevel = specularLevel;
+	}
+
+	void InitSceneClearColor()
+	{
+		float r, g, b;
+		if (gl_global_fade)
+		{
+			mSceneColor = mFadeColor;
+		}
+		r = g = b = 1.f;
+		GLRenderer->mSceneClearColor[0] = mSceneColor.r * r / 255.f;
+		GLRenderer->mSceneClearColor[1] = mSceneColor.g * g / 255.f;
+		GLRenderer->mSceneClearColor[2] = mSceneColor.b * b / 255.f;
+	}
+
+	void ResetFadeColor()
+	{
+		mFadeColor = gl_global_fade_color;
 	}
 
 	void SetClipSplit(float bottom, float top)

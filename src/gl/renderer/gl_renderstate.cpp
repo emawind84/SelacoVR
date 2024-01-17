@@ -95,6 +95,9 @@ void FGLRenderState::Reset()
 	mEffectState = 0;
 	activeShader = nullptr;
 	mPassType = NORMAL_PASS;
+
+	mGlobalFadeMode = -1;
+	ResetFadeColor();
 }
 
 //==========================================================================

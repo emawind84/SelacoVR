@@ -54,8 +54,6 @@
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
 #include "hw_renderstate.h"
 
-#include "gl/scene/gl_portal.h"
-
 extern TArray<spritedef_t> sprites;
 extern TArray<spriteframe_t> SpriteFrames;
 extern uint32_t r_renderercaps;
@@ -104,10 +102,8 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 		{
 			state.AlphaFunc(Alpha_GEqual, 0.f);
 		}
-		else
-		{
-			state.AlphaFunc(Alpha_GEqual, gl_mask_sprite_threshold);
-		}
+		else if (!gltexture || !gltexture->tex->GetTranslucency()) state.AlphaFunc(Alpha_GEqual, gl_mask_sprite_threshold);
+		else state.AlphaFunc(Alpha_Greater, 0.f);
 
 		if (RenderStyle.BlendOp == STYLEOP_Shadow)
 		{
@@ -161,6 +157,7 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 				: ThingColor.Modulate(cursec->SpecialColors[sector_t::sprites]);
 
 			state.SetObjectColor(finalcol);
+			state.SetAddColor(cursec->AdditiveColors[sector_t::sprites] | 0xff000000);
 		}
 		state.SetColor(lightlevel, rel, di->isFullbrightScene(), Colormap, trans);
 	}
@@ -209,8 +206,8 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 		state.EnableSplit(true);
 	}
 
-	secplane_t bottomp = { { 0, 0, -1. }, bottomclip };
-	secplane_t topp = { { 0, 0, -1. }, topclip };
+	secplane_t bottomp = { { 0, 0, -1. }, bottomclip, 1. };
+	secplane_t topp = { { 0, 0, -1. }, topclip, 1. };
 	for (unsigned i = 0; i < iter; i++)
 	{
 		if (lightlist)
@@ -294,6 +291,7 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 	}
 
 	state.SetObjectColor(0xffffffff);
+	state.SetAddColor(0);
 	state.EnableTexture(true);
 	state.SetDynLight(0, 0, 0);
 }

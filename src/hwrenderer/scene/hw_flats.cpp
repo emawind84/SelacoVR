@@ -45,6 +45,10 @@
 #include "hw_drawstructs.h"
 #include "hw_renderstate.h"
 
+CVAR(Int, gl_max_vertices, 0, CVAR_ARCHIVE)
+
+extern int flatVerticesPerEye;
+
 #ifdef _DEBUG
 CVAR(Int, gl_breaksec, -1, 0)
 #endif
@@ -182,6 +186,10 @@ void GLFlat::SetupLights(HWDrawInfo *di, FLightNode * node, FDynLightData &light
 void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 {
 	auto vcount = sector->ibocount;
+	if (gl_max_vertices > 0 && flatVerticesPerEye + vcount >= gl_max_vertices)
+	{
+		return;
+	}
 
 	if (screen->BuffersArePersistent())
 	{
@@ -191,6 +199,7 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 	if (vcount > 0 && !di->ClipLineShouldBeActive())
 	{
 		di->DrawIndexed(DT_Triangles, state, iboindex, vcount);
+		flatVerticesPerEye += vcount;
 		flatvertices += vcount;
 		flatprimitives++;
 	}
@@ -205,6 +214,7 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 			if (di->ss_renderflags[sub->Index()] & renderflags)
 			{
 				di->DrawIndexed(DT_Triangles, state, index, (sub->numlines - 2) * 3, false);
+				flatVerticesPerEye += sub->numlines;
 				flatvertices += sub->numlines;
 				flatprimitives++;
 			}
@@ -221,8 +231,9 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 
 		while (node)
 		{
-			state.SetLightIndex(node->lightindex);
 			auto num = node->sub->numlines;
+			state.SetLightIndex(node->lightindex);
+			flatVerticesPerEye += num;
 			flatvertices += num;
 			flatprimitives++;
 			di->Draw(DT_TriangleFan, state, node->vertexindex, num);
@@ -238,6 +249,7 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 		state.SetLightIndex(dynlightindex);
 		while (fnode)
 		{
+			flatVerticesPerEye += 12;
 			flatvertices += 12;
 			flatprimitives += 3;
 
@@ -290,6 +302,7 @@ void GLFlat::DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent)
 	state.SetFog(lightlevel, rel, di->isFullbrightScene(), &Colormap, false);
 	if (!gltexture || !gltexture->tex->isFullbright())
 		state.SetObjectColor(FlatColor | 0xff000000);
+	state.SetAddColor(AddColor | 0xff000000);
 
 	if (!translucent)
 	{
@@ -305,6 +318,7 @@ void GLFlat::DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent)
 			state.SetMaterial(gltexture, CLAMP_XY, 0, -1);
 			state.SetLightIndex(dynlightindex);
 			di->Draw(DT_TriangleFan, state, iboindex, 4);
+			flatVerticesPerEye += 4;
 			flatvertices += 4;
 			flatprimitives++;
 		}
@@ -332,6 +346,7 @@ void GLFlat::DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent)
 		state.SetRenderStyle(DefaultRenderStyle());
 		state.SetObjectColor(0xffffffff);
 	}
+	state.SetAddColor(0);
 }
 
 //==========================================================================

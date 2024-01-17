@@ -120,14 +120,14 @@ void FRenderState::SetFog(int lightlevel, int rellight, bool fullbright, const F
 
 
 	// no fog in enhanced vision modes!
-	if (fogdensity == 0 || gl_fogmode == 0)
+	if (gl_fogmode == 0)
 	{
 		EnableFog(false);
 		SetFog(0, 0);
 	}
 	else
 	{
-		if ((level.lightmode == 2 || (level.lightmode == 8 && cmap->BlendFactor > 0)) && fogcolor == 0)
+		if (cmap && (level.lightmode == 2 || (level.lightmode >= 8 && cmap->BlendFactor > 0)) && fogcolor == 0)
 		{
 			float light = (float)hw_CalcLightLevel(lightlevel, rellight, false, cmap->BlendFactor);
 			SetShaderLight(light, lightlevel);
@@ -148,7 +148,7 @@ void FRenderState::SetFog(int lightlevel, int rellight, bool fullbright, const F
 		SetFog(fogcolor, fogdensity);
 
 		// Korshun: fullbright fog like in software renderer.
-		if (level.lightmode == 8 && cmap->BlendFactor == 0 && level.brightfog && fogdensity != 0 && fogcolor != 0)
+		if (level.lightmode >= 8 && cmap && cmap->BlendFactor == 0 && level.brightfog && fogdensity != 0 && fogcolor != 0)
 		{
 			SetSoftLightLevel(255);
 		}
