@@ -77,23 +77,17 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, bool fullscreen) :
 	FHardwareTexture::InitGlobalState();
 	gl_RenderState.Reset();
 
-	GLRenderer = new FGLRenderer(this);
+	GLRenderer = nullptr;
 	InitPalette();
-
-	InitializeState();
-	mDebug = std::make_shared<FGLDebug>();
-	mDebug->Update();
-	SetGamma();
-
-	// Move some state to the framebuffer object for easier access.
-	hwcaps = gl.flags;
-	glslversion = gl.glslversion;
 }
 
 OpenGLFrameBuffer::~OpenGLFrameBuffer()
 {
-	delete GLRenderer;
-	GLRenderer = NULL;
+	if (GLRenderer)
+	{
+		delete GLRenderer;
+		GLRenderer = nullptr;
+	}
 }
 
 //==========================================================================
@@ -115,6 +109,10 @@ void OpenGLFrameBuffer::InitializeState()
 	}
 
 	gl_LoadExtensions();
+
+	// Move some state to the framebuffer object for easier access.
+	hwcaps = gl.flags;
+	glslversion = gl.glslversion;
 
 	if (first)
 	{
@@ -138,8 +136,12 @@ void OpenGLFrameBuffer::InitializeState()
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	GLRenderer = new FGLRenderer(this);
 	GLRenderer->Initialize(GetWidth(), GetHeight());
 	SetViewportRects(nullptr);
+
+	mDebug = std::make_shared<FGLDebug>();
+	mDebug->Update();
 }
 
 //==========================================================================
@@ -343,7 +345,7 @@ IHardwareTexture *OpenGLFrameBuffer::CreateHardwareTexture(FTexture *tex)
 
 void OpenGLFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 {
-	gl_RenderState.SetMaterial(mat, CLAMP_NONE, translation, false, false);
+	gl_RenderState.ApplyMaterial(mat, CLAMP_NONE, translation, false);
 }
 
 FModelRenderer *OpenGLFrameBuffer::CreateModelRenderer(int mli) 

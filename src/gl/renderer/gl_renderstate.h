@@ -29,6 +29,7 @@
 #include "gl/renderer/gl_renderer.h"
 #include "r_data/matrix.h"
 #include "hwrenderer/scene//hw_drawstructs.h"
+#include "hwrenderer/scene//hw_renderstate.h"
 #include "hwrenderer/textures/hw_material.h"
 #include "c_cvars.h"
 #include "r_defs.h"
@@ -41,35 +42,9 @@ class FShader;
 struct GLSectorPlane;
 extern TArray<VSMatrix> gl_MatrixStack;
 
-EXTERN_CVAR(Bool, gl_direct_state_change)
 EXTERN_CVAR(Bool, gl_global_fade)
 EXTERN_CVAR(Color, gl_global_fade_color)
 EXTERN_CVAR(Bool, gl_enhanced_nightvision)
-
-struct FStateVec4
-{
-	float vec[4];
-
-	void Set(float r, float g, float b, float a)
-	{
-		vec[0] = r;
-		vec[1] = g;
-		vec[2] = b;
-		vec[3] = a;
-	}
-};
-
-
-enum EEffect
-{
-	EFF_NONE=-1,
-	EFF_FOGBOUNDARY,
-	EFF_SPHEREMAP,
-	EFF_BURN,
-	EFF_STENCIL,
-
-	MAX_EFFECTS
-};
 
 enum EPassType
 {
@@ -78,57 +53,26 @@ enum EPassType
 	MAX_PASS_TYPES
 };
 
-class FRenderState
+
+class FGLRenderState : public FRenderState
 {
-	friend void gl_SetTextureMode(int type);
-	bool mTextureEnabled;
-	uint8_t mFogEnabled;
-	bool mGlowEnabled;
-	bool mGradientEnabled;
-	bool mSplitEnabled;
-	bool mBrightmapEnabled;
-	bool mColorMask[4];
-	bool currentColorMask[4];
-	int mSpecialEffect;
-	int mTextureMode;
-	int mTextureModeFlags;
-	int mDesaturation;
-	int mSoftLight;
-	int mGlobalFadeMode;
-	float mLightParms[4];
-	int mSrcBlend, mDstBlend;
-	float mAlphaThreshold;
-	int mBlendEquation;
-	bool mModelMatrixEnabled;
-	bool mTextureMatrixEnabled;
-	bool mLastDepthClamp;
-	float mInterpolationFactor;
+	uint8_t mLastDepthClamp : 1;
+
 	float mGlossiness, mSpecularLevel;
 	float mShaderTimer;
 
+	float mInterpolationFactor;
+
 	FVertexBuffer *mVertexBuffer, *mCurrentVertexBuffer;
-	FStateVec4 mNormal;
-	FStateVec4 mColor;
-	FStateVec4 mGlowTop, mGlowBottom;
-	FStateVec4 mGlowTopPlane, mGlowBottomPlane;
-	FStateVec4 mGradientTopPlane, mGradientBottomPlane;
-	FStateVec4 mSplitTopPlane, mSplitBottomPlane;
-	PalEntry mAddColor;
-	PalEntry mFogColor;
-	PalEntry mFadeColor;
-	PalEntry mObjectColor;
-	PalEntry mObjectColor2;
-	PalEntry mSceneColor;
-	FStateVec4 mDynColor;
-	FStateVec4 mDetailParms;
 	float mClipSplit[2];
 
 	int mEffectState;
-	int mTempTM = TM_MODULATE;
+	int mTempTM = TM_NORMAL;
 
-	float stAlphaThreshold;
+	FRenderStyle stRenderStyle;
 	int stSrcBlend, stDstBlend;
 	bool stAlphaTest;
+	bool stSplitEnabled;
 	int stBlendEquation;
 
 	FShader *activeShader;
@@ -147,10 +91,7 @@ class FRenderState
 
 public:
 
-	VSMatrix mModelMatrix;
-	VSMatrix mTextureMatrix;
-
-	FRenderState()
+	FGLRenderState()
 	{
 		Reset();
 	}
@@ -162,11 +103,11 @@ public:
 		lastMaterial = nullptr;
 	}
 
-	void SetMaterial(FMaterial *mat, int clampmode, int translation, int overrideshader, bool alphatexture);
+	void ApplyMaterial(FMaterial *mat, int clampmode, int translation, int overrideshader);
 
 	void Apply();
-	void ApplyColorMask();
 	void ApplyLightIndex(int index);
+	void ApplyBlendMode();
 
 	void SetVertexBuffer(FVertexBuffer *vb)
 	{
@@ -179,243 +120,10 @@ public:
 		mCurrentVertexBuffer = NULL;
 	}
 
-	void SetNormal(FVector3 norm)
-	{
-		mNormal.Set(norm.X, norm.Y, norm.Z, 0.f);
-	}
-
-	void SetNormal(float x, float y, float z)
-	{
-		mNormal.Set(x, y, z, 0.f);
-	}
-
-	void SetColor(float r, float g, float b, float a = 1.f, int desat = 0)
-	{
-		mColor.Set(r, g, b, a);
-		mDesaturation = desat;
-	}
-
-	void SetColor(PalEntry pe, int desat = 0)
-	{
-		mColor.Set(pe.r/255.f, pe.g/255.f, pe.b/255.f, pe.a/255.f);
-		mDesaturation = desat;
-	}
-
-	void SetColorAlpha(PalEntry pe, float alpha = 1.f, int desat = 0)
-	{
-		mColor.Set(pe.r/255.f, pe.g/255.f, pe.b/255.f, alpha);
-		mDesaturation = desat;
-	}
-
-	void ResetColor()
-	{
-		mColor.Set(1,1,1,1);
-		mDesaturation = 0;
-	}
-
-	void GetColorMask(bool& r, bool &g, bool& b, bool& a) const
-	{
-		r = mColorMask[0];
-		g = mColorMask[1];
-		b = mColorMask[2];
-		a = mColorMask[3];
-	}
-
-	void SetColorMask(bool r, bool g, bool b, bool a)
-	{
-		mColorMask[0] = r;
-		mColorMask[1] = g;
-		mColorMask[2] = b;
-		mColorMask[3] = a;
-	}
-
-	void ResetColorMask()
-	{
-		for (int i = 0; i < 4; ++i)
-			mColorMask[i] = true;
-	}
-
-	void SetTextureMode(int mode)
-	{
-		mTextureMode = mode;
-	}
-
-	int GetTextureMode()
-	{
-		return mTextureMode;
-	}
-
-	void EnableTexture(bool on)
-	{
-		mTextureEnabled = on;
-	}
-
-	void EnableFog(uint8_t on)
-	{
-		mFogEnabled = on;
-	}
-
-	void SetEffect(int eff)
-	{
-		mSpecialEffect = eff;
-	}
-
-	void EnableGlow(bool on)
-	{
-		mGlowEnabled = on;
-	}
-
-	void EnableGradient(bool on)
-	{
-		mGradientEnabled = on;
-	}
-
-	void EnableSplit(bool on)
-	{
-		if (!(gl.flags & RFL_NO_CLIP_PLANES))
-		{
-			mSplitEnabled = on;
-			if (on)
-			{
-				glEnable(GL_CLIP_DISTANCE3);
-				glEnable(GL_CLIP_DISTANCE4);
-			}
-			else
-			{
-				glDisable(GL_CLIP_DISTANCE3);
-				glDisable(GL_CLIP_DISTANCE4);
-			}
-		}
-	}
-
-	void EnableBrightmap(bool on)
-	{
-		mBrightmapEnabled = on;
-	}
-
-	void EnableModelMatrix(bool on)
-	{
-		mModelMatrixEnabled = on;
-	}
-
-	void EnableTextureMatrix(bool on)
-	{
-		mTextureMatrixEnabled = on;
-	}
-
-	void SetGlowParams(float *t, float *b)
-	{
-		mGlowTop.Set(t[0], t[1], t[2], t[3]);
-		mGlowBottom.Set(b[0], b[1], b[2], b[3]);
-	}
-
-	void SetSoftLightLevel(int llevel, int blendfactor = 0)
-	{
-		if (level.lightmode >= 8 && blendfactor == 0) mLightParms[3] = llevel / 255.f;
-		else mLightParms[3] = -1.f;
-	}
-
-	void SetGlowPlanes(const secplane_t &top, const secplane_t &bottom)
-	{
-		auto &tn = top.Normal();
-		auto &bn = bottom.Normal();
-		mGlowTopPlane.Set((float)tn.X, (float)tn.Y, (float)top.negiC, (float)top.fD());
-		mGlowBottomPlane.Set((float)bn.X, (float)bn.Y, (float)bottom.negiC, (float)bottom.fD());
-	}
-
-	void SetGradientPlanes(const secplane_t &top, const secplane_t &bottom)
-	{
-		auto &tn = top.Normal();
-		auto &bn = bottom.Normal();
-		mGradientTopPlane.Set((float)tn.X, (float)tn.Y, (float)top.negiC, (float)top.fD());
-		mGradientBottomPlane.Set((float)bn.X, (float)bn.Y, (float)bottom.negiC, (float)bottom.fD());
-	}
-
-	void SetSplitPlanes(const secplane_t &top, const secplane_t &bottom)
-	{
-		auto &tn = top.Normal();
-		auto &bn = bottom.Normal();
-		mSplitTopPlane.Set((float)tn.X, (float)tn.Y, (float)top.negiC, (float)top.fD());
-		mSplitBottomPlane.Set((float)bn.X, (float)bn.Y, (float)bottom.negiC, (float)bottom.fD());
-	}
-
-	void SetDetailParms(float xscale, float yscale, float bias)
-	{
-		mDetailParms.Set(xscale, yscale, bias, 0);
-	}
-
-	void SetDynLight(float r, float g, float b)
-	{
-		mDynColor.Set(r, g, b, 0);
-	}
-
-	void SetObjectColor(PalEntry pe)
-	{
-		mObjectColor = pe;
-	}
-
-	void SetObjectColor2(PalEntry pe)
-	{
-		mObjectColor2 = pe;
-	}
-
-	int SetGlobalFadeMode(int fadeMode)
-	{
-		int fademode = mGlobalFadeMode;
-		mGlobalFadeMode = fadeMode;
-		return fademode;
-	}
-
-	void SetAddColor(PalEntry pe)
-	{
-		mAddColor = pe;
-	}
-
 	void SetSpecular(float glossiness, float specularLevel)
 	{
 		mGlossiness = glossiness;
 		mSpecularLevel = specularLevel;
-	}
-
-	void SetFog(PalEntry c, float d)
-	{
-		const float LOG2E = 1.442692f;	// = 1/log(2)
-		mFogColor = c;
-		if (d >= 0.0f) mLightParms[2] = d * (-LOG2E / 64000.f);
-	}
-
-	void SetLightParms(float f, float d)
-	{
-		mLightParms[1] = f;
-		mLightParms[0] = d;
-	}
-
-	PalEntry GetFogColor() const
-	{
-		return mFogColor;
-	}
-
-	void SetSceneColor(PalEntry sceneColor)
-	{
-		mSceneColor = sceneColor;
-	}
-
-	void InitSceneClearColor()
-	{
-		float r, g, b;
-		if (gl_global_fade)
-		{
-			mSceneColor = mFadeColor;
-		}
-		r = g = b = 1.f;
-		GLRenderer->mSceneClearColor[0] = mSceneColor.r * r / 255.f;
-		GLRenderer->mSceneClearColor[1] = mSceneColor.g * g / 255.f;
-		GLRenderer->mSceneClearColor[2] = mSceneColor.b * b / 255.f;
-	}
-
-	void ResetFadeColor()
-	{
-		mFadeColor = gl_global_fade_color;
 	}
 
 	void SetClipSplit(float bottom, float top)
@@ -438,37 +146,6 @@ public:
 	{
 		mClipSplit[0] = -1000000.f;
 		mClipSplit[1] = 1000000.f;
-	}
-
-	void BlendFunc(int src, int dst)
-	{
-		if (!gl_direct_state_change)
-		{
-			mSrcBlend = src;
-			mDstBlend = dst;
-		}
-		else
-		{
-			glBlendFunc(src, dst);
-		}
-	}
-
-	void AlphaFunc(int func, float thresh)
-	{
-		if (func == GL_GREATER) mAlphaThreshold = thresh;
-		else mAlphaThreshold = thresh - 0.001f;
-	}
-
-	void BlendEquation(int eq)
-	{
-		if (!gl_direct_state_change)
-		{
-			mBlendEquation = eq;
-		}
-		else
-		{
-			glBlendEquation(eq);
-		}
 	}
 
 	// This wraps the depth clamp setting because we frequently need to read it which OpenGL is not particularly performant at...
@@ -517,20 +194,10 @@ public:
 		return mPassType == GBUFFER_PASS ? 3 : 1;
 	}
 
-	// Backwards compatibility crap follows
-	void ApplyFixedFunction();
-	void DrawColormapOverlay();
 
-	void SetPlaneTextureRotation(GLSectorPlane *plane, FMaterial *texture)
-	{
-		if (hw_SetPlaneTextureRotation(plane, texture, mTextureMatrix))
-		{
-			EnableTextureMatrix(true);
-		}
-	}
-
+	void SetVertexBuffer(int which) override;
 };
 
-extern FRenderState gl_RenderState;
+extern FGLRenderState gl_RenderState;
 
 #endif

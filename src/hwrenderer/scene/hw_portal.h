@@ -1,9 +1,12 @@
 #pragma once
 
 #include "portal.h"
+#include "actor.h"
 #include "hw_drawinfo.h"
 #include "hw_drawstructs.h"
 #include "hwrenderer/textures/hw_material.h"
+
+class FSkyDomeCreator;
 
 struct GLSkyInfo
 {
@@ -37,41 +40,43 @@ struct GLHorizonInfo
 
 struct FPortalSceneState;
 
-class IPortal
+class HWPortal
 {
 	friend struct FPortalSceneState;
+
+	enum
+	{
+		STP_Stencil,
+		STP_DepthClear,
+		STP_DepthRestore,
+		STP_AllInOne
+	};
+
+	ActorRenderFlags savedvisibility;
+	TArray<unsigned int> mPrimIndices;
+
+	void DrawPortalStencil(HWDrawInfo *di, FRenderState &state, int pass);
+
 public:
 	FPortalSceneState * mState;
 	TArray<GLWall> lines;
 
-	IPortal(FPortalSceneState *s, bool local);
-	virtual ~IPortal() {}
+	HWPortal(FPortalSceneState *s, bool local);
+	void SetupStencil(HWDrawInfo *di, FRenderState &state, bool usestencil);
+	void RemoveStencil(HWDrawInfo *di, FRenderState &state, bool usestencil);
+
+	virtual ~HWPortal() {}
 	virtual void * GetSource() const = 0;	// GetSource MUST be implemented!
 	virtual const char *GetName() = 0;
 	virtual bool IsSky() { return false; }
 	virtual bool NeedCap() { return true; }
 	virtual bool NeedDepthBuffer() { return true; }
-	virtual void DrawContents(HWDrawInfo *di) = 0;
+	virtual void DrawContents(HWDrawInfo *di, FRenderState &state) = 0;
 	virtual void RenderAttached(HWDrawInfo *di) {}
-	virtual bool Start(bool usestencil, bool doquery, HWDrawInfo *outer_di, HWDrawInfo **pDi) = 0;
-	virtual void End(HWDrawInfo *di, bool usestencil) = 0;
 
 	void AddLine(GLWall * l)
 	{
 		lines.Push(*l);
-	}
-
-	void RenderPortal(bool usestencil, bool doquery, HWDrawInfo *outer_di)
-	{
-		// Start may perform an occlusion query. If that returns 0 there
-		// is no need to draw the stencil's contents and there's also no
-		// need to restore the affected area becasue there is none!
-		HWDrawInfo *di;
-		if (Start(usestencil, doquery, outer_di, &di))
-		{
-			DrawContents(di);
-			End(di, usestencil);
-		}
 	}
 
 
@@ -79,8 +84,6 @@ public:
 
 struct FPortalSceneState
 {
-	int recursion = 0;
-
 	int MirrorFlag = 0;
 	int PlaneMirrorFlag = 0;
 	int renderdepth = 0;
@@ -101,11 +104,6 @@ struct FPortalSceneState
 		UniquePlaneMirrors.Clear();
 	}
 
-	int GetRecursion() const
-	{
-		return recursion;
-	}
-
 	bool isMirrored() const
 	{
 		return !!((MirrorFlag ^ PlaneMirrorFlag) & 1);
@@ -114,11 +112,10 @@ struct FPortalSceneState
 	void StartFrame();
 	bool RenderFirstSkyPortal(int recursion, HWDrawInfo *outer_di);
 	void EndFrame(HWDrawInfo *outer_di);
-
-
+	void RenderPortal(HWPortal *p, bool usestencil, HWDrawInfo *outer_di);
 };
 
-inline IPortal::IPortal(FPortalSceneState *s, bool local) : mState(s)
+inline HWPortal::HWPortal(FPortalSceneState *s, bool local) : mState(s)
 {
 	//if (!local) s->portals.Push(this);
 }
@@ -127,11 +124,11 @@ inline IPortal::IPortal(FPortalSceneState *s, bool local) : mState(s)
 class HWScenePortalBase
 {
 protected:
-	IPortal *mOwner;
+	HWPortal *mOwner;
 public:
 	HWScenePortalBase() {}
 	virtual ~HWScenePortalBase() {}
-	void SetOwner(IPortal *p) { mOwner = p; }
+	void SetOwner(HWPortal *p) { mOwner = p; }
 	void ClearClipper(HWDrawInfo *di, Clipper *clipper);
 
 	virtual int ClipSeg(seg_t *seg, const DVector3 &viewpos) { return PClip_Inside; }
@@ -310,3 +307,100 @@ public:
 
 };
 
+
+class HWScenePortal : public HWPortal
+{
+public:
+	HWScenePortalBase *mScene;
+	HWScenePortal(FPortalSceneState *state, HWScenePortalBase *handler) : HWPortal(state, false)
+	{
+		mScene = handler;
+		handler->SetOwner(this);
+	}
+	~HWScenePortal() { delete mScene; }
+	virtual void * GetSource() const { return mScene->GetSource(); }
+	virtual const char *GetName() { return mScene->GetName(); }
+	virtual bool IsSky() { return mScene->IsSky(); }
+	virtual bool NeedCap() { return true; }
+	virtual bool NeedDepthBuffer() { return true; }
+	virtual void DrawContents(HWDrawInfo *di, FRenderState &state)
+	{
+		if (mScene->Setup(di, di->mClipper))
+		{
+			di->DrawScene(DM_PORTAL);
+			mScene->Shutdown(di);
+		}
+		else di->ClearScreen();
+	}
+	virtual void RenderAttached(HWDrawInfo *di) { return mScene->RenderAttached(di); }
+};
+
+
+struct HWHorizonPortal : public HWPortal
+{
+	GLHorizonInfo * origin;
+	unsigned int voffset;
+	unsigned int vcount;
+	friend struct HWEEHorizonPortal;
+
+protected:
+	virtual void DrawContents(HWDrawInfo *di, FRenderState &state);
+	virtual void * GetSource() const { return origin; }
+	virtual bool NeedDepthBuffer() { return false; }
+	virtual bool NeedCap() { return false; }
+	virtual const char *GetName();
+
+public:
+
+	HWHorizonPortal(FPortalSceneState *state, GLHorizonInfo * pt, FRenderViewpoint &vp, HWDrawInfo *di, bool local = false);
+};
+
+struct HWEEHorizonPortal : public HWPortal
+{
+	FSectorPortal * portal;
+
+protected:
+	virtual void DrawContents(HWDrawInfo *di, FRenderState &state);
+	virtual void * GetSource() const { return portal; }
+	virtual bool NeedDepthBuffer() { return false; }
+	virtual bool NeedCap() { return false; }
+	virtual const char *GetName();
+
+public:
+
+	HWEEHorizonPortal(FPortalSceneState *state, FSectorPortal *pt, HWDrawInfo *di) : HWPortal(state, false)
+	{
+		portal = pt;
+	}
+
+};
+
+
+struct HWSkyPortal : public HWPortal
+{
+	GLSkyInfo * origin;
+	FSkyDomeCreator *vertexBuffer;
+	friend struct HWEEHorizonPortal;
+
+	void RenderRow(HWDrawInfo *di, FRenderState &state, EDrawType prim, int row, bool apply = true);
+	void RenderBox(HWDrawInfo *di, FRenderState &state, FTextureID texno, FMaterial * gltex, float x_offset, bool sky2);
+	void RenderDome(HWDrawInfo *di, FRenderState &state, FMaterial * tex, float x_offset, float y_offset, bool mirror, int mode);
+
+protected:
+	virtual void DrawContents(HWDrawInfo *di, FRenderState &state);
+	virtual void * GetSource() const { return origin; }
+	virtual bool IsSky() { return true; }
+	virtual bool NeedDepthBuffer() { return false; }
+	virtual const char *GetName();
+
+public:
+
+
+	HWSkyPortal(FSkyDomeCreator *vertexbuffer, FPortalSceneState *state, GLSkyInfo *  pt, bool local = false)
+		: HWPortal(state, local)
+	{
+		origin = pt;
+		vertexBuffer = vertexbuffer;
+	}
+
+};

@@ -46,7 +46,6 @@
 #include "gl/system/gl_framebuffer.h"
 #include "gl/system/gl_debug.h"
 #include "hwrenderer/utility/hw_cvars.h"
-#include "gl/renderer/gl_lightdata.h"
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/renderer/gl_renderbuffers.h"
 #include "gl/data/gl_vertexbuffer.h"
@@ -54,8 +53,8 @@
 #include "hwrenderer/scene/hw_clipper.h"
 #include "hwrenderer/scene/hw_portal.h"
 #include "gl/scene/gl_drawinfo.h"
-#include "gl/scene/gl_portal.h"
 #include "hwrenderer/utility/hw_vrmodes.h"
+#include "gl/renderer/gl_renderer.h"
 
 //==========================================================================
 //
@@ -99,7 +98,7 @@ void FDrawInfo::CreateScene()
 	mClipper->SafeAddClipRangeRealAngles(vp.Angles.Yaw.BAMs() + a1, vp.Angles.Yaw.BAMs() - a1);
 
 	// reset the portal manager
-	GLRenderer->mPortalState.StartFrame();
+	screen->mPortalState->StartFrame();
 	PO_LinkToSubsectors();
 
 	ProcessAll.Clock();
@@ -131,6 +130,7 @@ void FDrawInfo::CreateScene()
 	HandleMissingTextures(in_area);	// Missing upper/lower textures
 	HandleHackedSubsectors();	// open sector hacks for deep water
 	ProcessSectorStacks(in_area);		// merge visplanes of sector stacks
+	PrepareUnhandledMissingTextures();
 	GLRenderer->mLights->Finish();
 	GLRenderer->mVBO->Unmap();
 
@@ -152,11 +152,11 @@ void FDrawInfo::RenderScene(int recursion)
 	RenderAll.Clock();
 
 	glDepthMask(true);
- 	if (!gl_no_skyclear) GLRenderer->mPortalState.RenderFirstSkyPortal(recursion, this);
+ 	if (!gl_no_skyclear) screen->mPortalState->RenderFirstSkyPortal(recursion, this);
 
 	GLRenderer->mLights->BindBase();
 	gl_RenderState.EnableFog(true);
-	gl_RenderState.BlendFunc(GL_ONE,GL_ZERO);
+	gl_RenderState.SetRenderStyle(STYLE_Source);
 
 	if (gl_sort_textures)
 	{
@@ -167,92 +167,44 @@ void FDrawInfo::RenderScene(int recursion)
 		drawlists[GLDL_MASKEDWALLSOFS].SortWalls();
 	}
 
-	// if we don't have a persistently mapped buffer, we have to process all the dynamic lights up front,
-	// so that we don't have to do repeated map/unmap calls on the buffer.
-	if (gl.lightmethod == LM_DEFERRED && level.HasDynamicLights && !isFullbrightScene())
-	{
-		GLRenderer->mLights->Begin();
-		drawlists[GLDL_PLAINFLATS].DrawFlats(this, GLPASS_LIGHTSONLY);
-		drawlists[GLDL_MASKEDFLATS].DrawFlats(this, GLPASS_LIGHTSONLY);
-		drawlists[GLDL_TRANSLUCENTBORDER].Draw(this, GLPASS_LIGHTSONLY);
-		drawlists[GLDL_TRANSLUCENT].Draw(this, GLPASS_LIGHTSONLY, true);
-		GLRenderer->mLights->Finish();
-	}
-
 	// Part 1: solid geometry. This is set up so that there are no transparent parts
 	glDepthFunc(GL_LESS);
-	gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
-	glDisable(GL_POLYGON_OFFSET_FILL);
-
-	int pass = GLPASS_ALL;
+	gl_RenderState.AlphaFunc(Alpha_GEqual, 0.f);
+	gl_RenderState.ClearDepthBias();
 
 	gl_RenderState.EnableTexture(gl_texture);
 	gl_RenderState.EnableBrightmap(true);
-	drawlists[GLDL_PLAINWALLS].DrawWalls(this, pass);
-	drawlists[GLDL_PLAINFLATS].DrawFlats(this, pass);
+	drawlists[GLDL_PLAINWALLS].DrawWalls(this, gl_RenderState, false);
+	drawlists[GLDL_PLAINFLATS].DrawFlats(this, gl_RenderState, false);
 
 
 	// Part 2: masked geometry. This is set up so that only pixels with alpha>gl_mask_threshold will show
-	if (!gl_texture) 
-	{
-		gl_RenderState.EnableTexture(true);
-		gl_RenderState.SetTextureMode(TM_MASK);
-	}
-	gl_RenderState.AlphaFunc(GL_GEQUAL, gl_mask_threshold);
-	drawlists[GLDL_MASKEDWALLS].DrawWalls(this, pass);
-	drawlists[GLDL_MASKEDFLATS].DrawFlats(this, pass);
+	gl_RenderState.AlphaFunc(Alpha_GEqual, gl_mask_threshold);
+	drawlists[GLDL_MASKEDWALLS].DrawWalls(this, gl_RenderState, false);
+	drawlists[GLDL_MASKEDFLATS].DrawFlats(this, gl_RenderState, false);
 
 	// Part 3: masked geometry with polygon offset. This list is empty most of the time so only waste time on it when in use.
 	if (drawlists[GLDL_MASKEDWALLSOFS].Size() > 0)
 	{
-		glEnable(GL_POLYGON_OFFSET_FILL);
-		glPolygonOffset(-1.0f, -128.0f);
-		drawlists[GLDL_MASKEDWALLSOFS].DrawWalls(this, pass);
-		glDisable(GL_POLYGON_OFFSET_FILL);
-		glPolygonOffset(0, 0);
+		gl_RenderState.SetDepthBias(-1, -128);
+		drawlists[GLDL_MASKEDWALLSOFS].DrawWalls(this, gl_RenderState, false);
+		gl_RenderState.ClearDepthBias();
 	}
 
-	drawlists[GLDL_MODELS].Draw(this, pass);
+	drawlists[GLDL_MODELS].Draw(this, gl_RenderState, false);
 
-	gl_RenderState.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	gl_RenderState.SetRenderStyle(STYLE_Translucent);
 
 	// Part 4: Draw decals (not a real pass)
 	glDepthFunc(GL_LEQUAL);
-	glEnable(GL_POLYGON_OFFSET_FILL);
-	glPolygonOffset(-1.0f, -128.0f);
-	glDepthMask(false);
-	DrawDecals();
+	DrawDecals(gl_RenderState, Decals[0]);
 
-	gl_RenderState.SetTextureMode(TM_MODULATE);
-
-	glDepthMask(true);
-
-
-	// Push bleeding floor/ceiling textures back a little in the z-buffer
-	// so they don't interfere with overlapping mid textures.
-	glPolygonOffset(1.0f, 128.0f);
-
-	// Part 5: flood all the gaps with the back sector's flat texture
-	// This will always be drawn like GLDL_PLAIN, depending on the fog settings
-	
-	glDepthMask(false);							// don't write to Z-buffer!
-	gl_RenderState.EnableFog(true);
-	gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
-	gl_RenderState.BlendFunc(GL_ONE,GL_ZERO);
-	DrawUnhandledMissingTextures();
-	glDepthMask(true);
-
-	glPolygonOffset(0.0f, 0.0f);
-	glDisable(GL_POLYGON_OFFSET_FILL);
 	RenderAll.Unclock();
-
 }
 
 //-----------------------------------------------------------------------------
 //
 // RenderTranslucent
-//
-// Draws the current draw lists for the non GLSL renderer
 //
 //-----------------------------------------------------------------------------
 
@@ -261,17 +213,17 @@ void FDrawInfo::RenderTranslucent()
 	RenderAll.Clock();
 
 	// final pass: translucent stuff
-	gl_RenderState.AlphaFunc(GL_GEQUAL, gl_mask_sprite_threshold);
-	gl_RenderState.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	gl_RenderState.AlphaFunc(Alpha_GEqual, gl_mask_sprite_threshold);
+	gl_RenderState.SetRenderStyle(STYLE_Translucent);
 
 	gl_RenderState.EnableBrightmap(true);
-	drawlists[GLDL_TRANSLUCENTBORDER].Draw(this, GLPASS_TRANSLUCENT);
+	drawlists[GLDL_TRANSLUCENTBORDER].Draw(this, gl_RenderState, true);
 	glDepthMask(false);
 	DrawSorted(GLDL_TRANSLUCENT);
 	gl_RenderState.EnableBrightmap(false);
 
 
-	gl_RenderState.AlphaFunc(GL_GEQUAL, 0.5f);
+	gl_RenderState.AlphaFunc(Alpha_GEqual, 0.5f);
 	glDepthMask(true);
 
 	RenderAll.Unclock();
@@ -282,7 +234,7 @@ void FDrawInfo::RenderTranslucent()
 //
 // gl_drawscene - this function renders the scene from the current
 // viewpoint, including mirrors and skyboxes and other portals
-// It is assumed that the GLPortal::EndFrame returns with the 
+// It is assumed that the HWPortal::EndFrame returns with the 
 // stencil, z-buffer and the projection matrix intact!
 //
 //-----------------------------------------------------------------------------
@@ -336,7 +288,7 @@ void FDrawInfo::DrawScene(int drawmode)
 	// Handle all portals after rendering the opaque objects but before
 	// doing all translucent stuff
 	recursion++;
-	GLRenderer->mPortalState.EndFrame(this);
+	screen->mPortalState->EndFrame(this);
 	recursion--;
 	RenderTranslucent();
 }
@@ -358,14 +310,14 @@ void FDrawInfo::EndDrawScene(sector_t * viewsector)
 	{
 		// [BB] The HUD model should be drawn over everything else already drawn.
 		glClear(GL_DEPTH_BUFFER_BIT);
-		DrawPlayerSprites(true);
+		DrawPlayerSprites(true, gl_RenderState);
 	}
 
 	glDisable(GL_STENCIL_TEST);
     glViewport(screen->mScreenViewport.left, screen->mScreenViewport.top, screen->mScreenViewport.width, screen->mScreenViewport.height);
 
 	// Restore standard rendering state
-	gl_RenderState.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	gl_RenderState.SetRenderStyle(STYLE_Translucent);
 	gl_RenderState.ResetColor();
 	gl_RenderState.EnableTexture(true);
 	glDisable(GL_SCISSOR_TEST);
@@ -384,12 +336,12 @@ void FDrawInfo::DrawEndScene2D(sector_t * viewsector)
 	glDisable(GL_MULTISAMPLE);
 
 
- 	DrawPlayerSprites(false);
+ 	DrawPlayerSprites(false, gl_RenderState);
 
 	gl_RenderState.SetSoftLightLevel(-1);
 
 	// Restore standard rendering state
-	gl_RenderState.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	gl_RenderState.SetRenderStyle(STYLE_Translucent);
 	gl_RenderState.ResetColor();
 	gl_RenderState.EnableTexture(true);
 	glDisable(GL_SCISSOR_TEST);
@@ -404,7 +356,7 @@ void FDrawInfo::DrawEndScene2D(sector_t * viewsector)
 void FDrawInfo::ProcessScene(bool toscreen)
 {
 	iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
-	GLRenderer->mPortalState.BeginScene();
+	screen->mPortalState->BeginScene();
 
 	int mapsection = R_PointInSubsector(Viewpoint.Pos)->mapsection;
 	CurrentMapSections.Set(mapsection);

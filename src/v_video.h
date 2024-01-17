@@ -34,6 +34,7 @@
 #ifndef __V_VIDEO_H__
 #define __V_VIDEO_H__
 
+#include <functional>
 #include "doomtype.h"
 #include "vectors.h"
 
@@ -43,11 +44,12 @@
 #include "c_cvars.h"
 #include "v_colortables.h"
 #include "v_2ddrawer.h"
-#include <functional>
 
 struct sector_t;
 class IShaderProgram;
 class FTexture;
+struct FPortalSceneState;
+class FSkyDomeCreator;
 
 enum EHWCaps
 {
@@ -63,6 +65,7 @@ enum EHWCaps
 	RFL_INVALIDATE_BUFFER = 64,
 	RFL_DEBUG = 128,
 };
+
 
 struct IntRect
 {
@@ -383,9 +386,12 @@ protected:
 
 public:
 	int hwcaps = 0;
-	float glslversion = 0;			// This is here so that the differences between old OpenGL and new OpenGL/Vulkan can be handled by platform independent code.
-	int instack[2] = { 0,0 };	// this is globally maintained state for portal recursion avoidance.
+	float glslversion = 0;				// This is here so that the differences between old OpenGL and new OpenGL/Vulkan can be handled by platform independent code.
+	int instack[2] = { 0,0 };			// this is globally maintained state for portal recursion avoidance.
+	int stencilValue = 0;				// Global stencil test value
 	bool enable_quadbuffered = false;
+	FPortalSceneState *mPortalState;	// global portal state.
+	FSkyDomeCreator *mSkyData;			// we need access to this in the device independent part, but cannot depend on how the renderer manages it internally.
 
 	IntRect mScreenViewport;
 	IntRect mSceneViewport;
@@ -393,7 +399,8 @@ public:
 
 public:
 	DFrameBuffer (int width=1, int height=1);
-	virtual ~DFrameBuffer() {}
+	virtual ~DFrameBuffer();
+	virtual void InitializeState() = 0;	// For stuff that needs 'screen' set.
 
 	void SetSize(int width, int height);
 	void SetVirtualSize(int width, int height)
@@ -465,6 +472,7 @@ public:
     // Interface to hardware rendering resources
     virtual IUniformBuffer *CreateUniformBuffer(size_t size, bool staticuse = false) { return nullptr; }
 	virtual IShaderProgram *CreateShaderProgram() { return nullptr; }
+	bool BuffersArePersistent() { return !!(hwcaps & RFL_BUFFER_STORAGE); }
 
 	// Begin/End 2D drawing operations.
 	void Begin2D() { isIn2D = true; }

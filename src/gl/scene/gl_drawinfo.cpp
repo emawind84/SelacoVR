@@ -38,11 +38,11 @@
 #include "gl/data/gl_vertexbuffer.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "hwrenderer/scene/hw_clipper.h"
-#include "gl/scene/gl_portal.h"
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/renderer/gl_renderer.h"
-#include "gl/renderer/gl_quaddrawer.h"
+#include "gl/data/gl_viewpointbuffer.h"
 #include "gl/dynlights/gl_lightbuffer.h"
+#include "gl/models/gl_models.h"
 
 class FDrawInfoList
 {
@@ -92,13 +92,13 @@ void FDrawInfo::DoDrawSorted(HWDrawList *dl, SortNode * head)
 		DoDrawSorted(dl, head->left);
 		gl_RenderState.SetClipSplit(clipsplit);
 	}
-	dl->DoDraw(this, GLPASS_TRANSLUCENT, head->itemindex, true);
+	dl->DoDraw(this, gl_RenderState, true, head->itemindex);
 	if (head->equal)
 	{
 		SortNode * ehead=head->equal;
 		while (ehead)
 		{
-			dl->DoDraw(this, GLPASS_TRANSLUCENT, ehead->itemindex, true);
+			dl->DoDraw(this, gl_RenderState, true, ehead->itemindex);
 			ehead=ehead->equal;
 		}
 	}
@@ -211,8 +211,6 @@ void FDrawInfo::StartScene()
 	outer = gl_drawinfo;
 	gl_drawinfo = this;
 	for (int i = 0; i < GLDL_TYPES; i++) drawlists[i].Reset();
-	decals[0].Clear();
-	decals[1].Clear();
 	hudsprites.Clear();
 	vpIndex = 0;
 
@@ -238,256 +236,16 @@ FDrawInfo *FDrawInfo::EndDrawInfo()
 	return gl_drawinfo;
 }
 
-
-//==========================================================================
-//
-// Flood gaps with the back side's ceiling/floor texture
-// This requires a stencil because the projected plane interferes with
-// the depth buffer
-//
-//==========================================================================
-
-void FDrawInfo::SetupFloodStencil(wallseg * ws)
-{
-	int recursion = GLRenderer->mPortalState.GetRecursion();
-
-	// Create stencil 
-	glStencilFunc(GL_EQUAL, recursion, ~0);		// create stencil
-	glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);		// increment stencil of valid pixels
-		// Use revertible color mask, to avoid stomping on anaglyph 3D state
-	glColorMask(0, 0, 0, 0);						// don't write to the graphics buffer
-	gl_RenderState.EnableTexture(false);
-	gl_RenderState.ResetColor();
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(true);
-
-	gl_RenderState.Apply();
-	FQuadDrawer qd;
-	qd.Set(0, ws->x1, ws->z1, ws->y1, 0, 0);
-	qd.Set(1, ws->x1, ws->z2, ws->y1, 0, 0);
-	qd.Set(2, ws->x2, ws->z2, ws->y2, 0, 0);
-	qd.Set(3, ws->x2, ws->z1, ws->y2, 0, 0);
-	qd.Render(GL_TRIANGLE_FAN);
-
-	glStencilFunc(GL_EQUAL, recursion + 1, ~0);		// draw sky into stencil
-	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);		// this stage doesn't modify the stencil
-
-	glColorMask(1, 1, 1, 1);						// don't write to the graphics buffer
-	gl_RenderState.EnableTexture(true);
-	glDisable(GL_DEPTH_TEST);
-	glDepthMask(false);
-}
-
-void FDrawInfo::ClearFloodStencil(wallseg * ws)
-{
-	int recursion = GLRenderer->mPortalState.GetRecursion();
-
-	glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
-	gl_RenderState.EnableTexture(false);
-	// Use revertible color mask, to avoid stomping on anaglyph 3D state
-	glColorMask(0, 0, 0, 0);						// don't write to the graphics buffer
-	gl_RenderState.ResetColor();
-
-	gl_RenderState.Apply();
-	FQuadDrawer qd;
-	qd.Set(0, ws->x1, ws->z1, ws->y1, 0, 0);
-	qd.Set(1, ws->x1, ws->z2, ws->y1, 0, 0);
-	qd.Set(2, ws->x2, ws->z2, ws->y2, 0, 0);
-	qd.Set(3, ws->x2, ws->z1, ws->y2, 0, 0);
-	qd.Render(GL_TRIANGLE_FAN);
-
-	// restore old stencil op.
-	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	glStencilFunc(GL_EQUAL, recursion, ~0);
-	gl_RenderState.EnableTexture(true);
-	glColorMask(1, 1, 1, 1);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(true);
-}
-
-//==========================================================================
-//
-// Draw the plane segment into the gap
-//
-//==========================================================================
-void FDrawInfo::DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, bool ceiling)
-{
-	GLSectorPlane plane;
-	int lightlevel;
-	FColormap Colormap;
-	FMaterial * gltexture;
-
-	plane.GetFromSector(sec, ceiling);
-
-	gltexture=FMaterial::ValidateTexture(plane.texture, false, true);
-	if (!gltexture) return;
-
-	if (isFullbrightScene()) 
-	{
-		Colormap.Clear();
-		lightlevel=255;
-	}
-	else
-	{
-		Colormap = sec->Colormap;
-		if (gltexture->tex->isFullbright())
-		{
-			Colormap.MakeWhite();
-			lightlevel=255;
-		}
-		else lightlevel=abs(ceiling? sec->GetCeilingLight() : sec->GetFloorLight());
-	}
-
-	int rel = getExtraLight();
-	SetColor(lightlevel, rel, Colormap, 1.0f);
-	SetFog(lightlevel, rel, &Colormap, false);
-	gl_RenderState.SetMaterial(gltexture, CLAMP_NONE, 0, -1, false);
-
-	float fviewx = Viewpoint.Pos.X;
-	float fviewy = Viewpoint.Pos.Y;
-	float fviewz = Viewpoint.Pos.Z;
-
-	gl_RenderState.SetPlaneTextureRotation(&plane, gltexture);
-	gl_RenderState.Apply();
-
-	float prj_fac1 = (planez-fviewz)/(ws->z1-fviewz);
-	float prj_fac2 = (planez-fviewz)/(ws->z2-fviewz);
-
-	float px1 = fviewx + prj_fac1 * (ws->x1-fviewx);
-	float py1 = fviewy + prj_fac1 * (ws->y1-fviewy);
-
-	float px2 = fviewx + prj_fac2 * (ws->x1-fviewx);
-	float py2 = fviewy + prj_fac2 * (ws->y1-fviewy);
-
-	float px3 = fviewx + prj_fac2 * (ws->x2-fviewx);
-	float py3 = fviewy + prj_fac2 * (ws->y2-fviewy);
-
-	float px4 = fviewx + prj_fac1 * (ws->x2-fviewx);
-	float py4 = fviewy + prj_fac1 * (ws->y2-fviewy);
-
-	FQuadDrawer qd;
-	qd.Set(0, px1, planez, py1, px1 / 64, -py1 / 64);
-	qd.Set(1, px2, planez, py2, px2 / 64, -py2 / 64);
-	qd.Set(2, px3, planez, py3, px3 / 64, -py3 / 64);
-	qd.Set(3, px4, planez, py4, px4 / 64, -py4 / 64);
-	qd.Render(GL_TRIANGLE_FAN);
-
-	gl_RenderState.EnableTextureMatrix(false);
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FDrawInfo::FloodUpperGap(seg_t * seg)
-{
-	wallseg ws;
-	sector_t * fakefsector = hw_FakeFlat(seg->frontsector, in_area, false);
-	sector_t * fakebsector = hw_FakeFlat(seg->backsector, in_area, true);
-
-	vertex_t * v1, * v2;
-
-	// Although the plane can be sloped this code will only be called
-	// when the edge itself is not.
-	double backz = fakebsector->ceilingplane.ZatPoint(seg->v1);
-	double frontz = fakefsector->ceilingplane.ZatPoint(seg->v1);
-
-	if (fakebsector->GetTexture(sector_t::ceiling)==skyflatnum) return;
-	if (backz < Viewpoint.Pos.Z) return;
-
-	if (seg->sidedef == seg->linedef->sidedef[0])
-	{
-		v1=seg->linedef->v1;
-		v2=seg->linedef->v2;
-	}
-	else
-	{
-		v1=seg->linedef->v2;
-		v2=seg->linedef->v1;
-	}
-
-	ws.x1 = v1->fX();
-	ws.y1 = v1->fY();
-	ws.x2 = v2->fX();
-	ws.y2 = v2->fY();
-
-	ws.z1= frontz;
-	ws.z2= backz;
-
-	// Step1: Draw a stencil into the gap
-	SetupFloodStencil(&ws);
-
-	// Step2: Project the ceiling plane into the gap
-	DrawFloodedPlane(&ws, ws.z2, fakebsector, true);
-
-	// Step3: Delete the stencil
-	ClearFloodStencil(&ws);
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FDrawInfo::FloodLowerGap(seg_t * seg)
-{
-	wallseg ws;
-	sector_t * fakefsector = hw_FakeFlat(seg->frontsector, in_area, false);
-	sector_t * fakebsector = hw_FakeFlat(seg->backsector, in_area, true);
-
-	vertex_t * v1, * v2;
-
-	// Although the plane can be sloped this code will only be called
-	// when the edge itself is not.
-	double backz = fakebsector->floorplane.ZatPoint(seg->v1);
-	double frontz = fakefsector->floorplane.ZatPoint(seg->v1);
-
-
-	if (fakebsector->GetTexture(sector_t::floor) == skyflatnum) return;
-	if (fakebsector->GetPlaneTexZ(sector_t::floor) > Viewpoint.Pos.Z) return;
-
-	if (seg->sidedef == seg->linedef->sidedef[0])
-	{
-		v1=seg->linedef->v1;
-		v2=seg->linedef->v2;
-	}
-	else
-	{
-		v1=seg->linedef->v2;
-		v2=seg->linedef->v1;
-	}
-
-	ws.x1 = v1->fX();
-	ws.y1 = v1->fY();
-	ws.x2 = v2->fX();
-	ws.y2 = v2->fY();
-
-	ws.z2= frontz;
-	ws.z1= backz;
-
-	// Step1: Draw a stencil into the gap
-	SetupFloodStencil(&ws);
-
-	// Step2: Project the ceiling plane into the gap
-	DrawFloodedPlane(&ws, ws.z1, fakebsector, false);
-
-	// Step3: Delete the stencil
-	ClearFloodStencil(&ws);
-}
-
 // Same here for the dependency on the portal.
 void FDrawInfo::AddSubsectorToPortal(FSectorPortalGroup *ptg, subsector_t *sub)
 {
 	auto portal = FindPortal(ptg);
 	if (!portal)
 	{
-		portal = new GLScenePortal(&GLRenderer->mPortalState, new HWSectorStackPortal(ptg));
+		portal = new HWScenePortal(screen->mPortalState, new HWSectorStackPortal(ptg));
 		Portals.Push(portal);
 	}
-	auto ptl = static_cast<HWSectorStackPortal*>(static_cast<GLScenePortal*>(portal)->mScene);
+	auto ptl = static_cast<HWSectorStackPortal*>(static_cast<HWScenePortal*>(portal)->mScene);
 	ptl->AddSubsector(sub);
 }
 
@@ -496,13 +254,6 @@ std::pair<FFlatVertex *, unsigned int> FDrawInfo::AllocVertices(unsigned int cou
 	unsigned int index = -1;
 	auto p = GLRenderer->mVBO->Alloc(count, &index);
 	return std::make_pair(p, index);
-}
-
-GLDecal *FDrawInfo::AddDecal(bool onmirror)
-{
-	auto decal = (GLDecal*)RenderDataAllocator.Alloc(sizeof(GLDecal));
-	decals[onmirror ? 1 : 0].Push(decal);
-	return decal;
 }
 
 int FDrawInfo::UploadLights(FDynLightData &data)
@@ -515,5 +266,190 @@ bool FDrawInfo::SetDepthClamp(bool on)
 	return gl_RenderState.SetDepthClamp(on);
 }
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
+static int dt2gl[] = { GL_POINTS, GL_LINES, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP };
+
+void FDrawInfo::Draw(EDrawType dt, FRenderState &state, int index, int count, bool apply)
+{
+	assert(&state == &gl_RenderState);
+	if (apply)
+	{
+		gl_RenderState.Apply();
+		gl_RenderState.ApplyLightIndex(-2);
+	}
+	drawcalls.Clock();
+	glDrawArrays(dt2gl[dt], index, count);
+	drawcalls.Unclock();
+}
+
+void FDrawInfo::DrawIndexed(EDrawType dt, FRenderState &state, int index, int count, bool apply)
+{
+	assert(&state == &gl_RenderState);
+	if (apply)
+	{
+		gl_RenderState.Apply();
+		gl_RenderState.ApplyLightIndex(-2);
+	}
+	drawcalls.Clock();
+	glDrawElements(dt2gl[dt], count, GL_UNSIGNED_INT, GLRenderer->mVBO->GetIndexPointer() + index);
+	drawcalls.Unclock();
+}
+
+void FDrawInfo::DrawModel(GLSprite *spr, FRenderState &state)
+{
+	FGLModelRenderer renderer(this, spr->dynlightindex);
+	renderer.RenderModel(spr->x, spr->y, spr->z, spr->modelframe, spr->actor, Viewpoint.TicFrac);
+}
+
+void FDrawInfo::DrawHUDModel(HUDSprite *huds, FRenderState &state)
+{
+	FGLModelRenderer renderer(this, huds->lightindex);
+	renderer.RenderHUDModel(huds->weapon, huds->mx, huds->my);
+}
+
+void FDrawInfo::RenderPortal(HWPortal *p, bool usestencil)
+{
+	auto gp = static_cast<HWPortal *>(p);
+	gp->SetupStencil(this, gl_RenderState, usestencil);
+	auto new_di = StartDrawInfo(Viewpoint, &VPUniforms);
+	new_di->mCurrentPortal = gp;
+	gp->DrawContents(new_di, gl_RenderState);
+	new_di->EndDrawInfo();
+	GLRenderer->mViewpoints->Bind(vpIndex);
+	gp->RemoveStencil(this, gl_RenderState, usestencil);
+
+}
+
+void FDrawInfo::SetDepthMask(bool on)
+{
+	glDepthMask(on);
+}
+
+void FDrawInfo::SetDepthFunc(int func)
+{
+	static int df2gl[] = { GL_LESS, GL_LEQUAL, GL_ALWAYS };
+	glDepthFunc(df2gl[func]);
+}
+
+void FDrawInfo::SetDepthRange(float min, float max)
+{
+	glDepthRange(min, max);
+}
+
+void FDrawInfo::EnableDrawBufferAttachments(bool on)
+{
+	gl_RenderState.EnableDrawBuffers(on? gl_RenderState.GetPassDrawBufferCount() : 1);
+}
+
+void FDrawInfo::SetStencil(int offs, int op, int flags)
+{
+	static int op2gl[] = { GL_KEEP, GL_INCR, GL_DECR };
+
+	glStencilFunc(GL_EQUAL, screen->stencilValue + offs, ~0);		// draw sky into stencil
+	glStencilOp(GL_KEEP, GL_KEEP, op2gl[op]);		// this stage doesn't modify the stencil
+
+	bool cmon = !(flags & SF_ColorMaskOff);
+	glColorMask(cmon, cmon, cmon, cmon);						// don't write to the graphics buffer
+	glDepthMask(!(flags & SF_DepthMaskOff));
+	if (flags & SF_DepthTestOff)
+		glDisable(GL_DEPTH_TEST);
+	else
+		glEnable(GL_DEPTH_TEST);
+	if (flags & SF_DepthClear)
+		glClear(GL_DEPTH_BUFFER_BIT);
+}
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+void FDrawInfo::ClearScreen()
+{
+	bool multi = !!glIsEnabled(GL_MULTISAMPLE);
+
+	GLRenderer->mViewpoints->Set2D(SCREENWIDTH, SCREENHEIGHT);
+	gl_RenderState.SetColor(0, 0, 0);
+	gl_RenderState.Apply();
+
+	glDisable(GL_MULTISAMPLE);
+	glDisable(GL_DEPTH_TEST);
+
+	glDrawArrays(GL_TRIANGLE_STRIP, FFlatVertexBuffer::FULLSCREEN_INDEX, 4);
+
+	glEnable(GL_DEPTH_TEST);
+	if (multi) glEnable(GL_MULTISAMPLE);
+}
+
+
+//==========================================================================
+//
+// FDrawInfo::AddFlat
+//
+// Checks texture, lighting and translucency settings and puts this
+// plane in the appropriate render list.
+//
+//==========================================================================
+
+void FDrawInfo::AddFlat(GLFlat *flat, bool fog)
+{
+	int list;
+
+	if (flat->renderstyle != STYLE_Translucent || flat->alpha < 1.f - FLT_EPSILON || fog || flat->gltexture == nullptr)
+	{
+		// translucent 3D floors go into the regular translucent list, translucent portals go into the translucent border list.
+		list = (flat->renderflags&SSRF_RENDER3DPLANES) ? GLDL_TRANSLUCENT : GLDL_TRANSLUCENTBORDER;
+	}
+	else if (flat->gltexture->tex->GetTranslucency())
+	{
+		if (flat->stack)
+		{
+			list = GLDL_TRANSLUCENTBORDER;
+		}
+		else if ((flat->renderflags&SSRF_RENDER3DPLANES) && !flat->plane.plane.isSlope())
+		{
+			list = GLDL_TRANSLUCENT;
+		}
+		else
+		{
+			list = GLDL_PLAINFLATS;
+		}
+	}
+	else
+	{
+		bool masked = flat->gltexture->isMasked() && ((flat->renderflags&SSRF_RENDER3DPLANES) || flat->stack);
+		list = masked ? GLDL_MASKEDFLATS : GLDL_PLAINFLATS;
+	}
+	auto newflat = drawlists[list].NewFlat();
+	*newflat = *flat;
+}
+
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+void FDrawInfo::AddSprite(GLSprite *sprite, bool translucent)
+{
+	int list;
+	// [BB] Allow models to be drawn in the GLDL_TRANSLUCENT pass.
+	if (translucent || sprite->actor == nullptr || (!sprite->modelframe && (sprite->actor->renderflags & RF_SPRITETYPEMASK) != RF_WALLSPRITE))
+	{
+		list = GLDL_TRANSLUCENT;
+	}
+	else
+	{
+		list = GLDL_MODELS;
+	}
+
+	auto newsprt = drawlists[list].NewSprite();
+	*newsprt = *sprite;
+}
 

@@ -43,11 +43,15 @@ CUSTOM_CVAR (Int, gl_light_buffer_type, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CV
 static const int ELEMENTS_PER_LIGHT = 4;			// each light needs 4 vec4's.
 static const int ELEMENT_SIZE = (4*sizeof(float));
 
+
 FLightBuffer::FLightBuffer()
 {
 	int maxNumberOfLights = gl_max_lights;
+	
+	mPersistentBuffer = screen->BuffersArePersistent();
 	mBufferSize = maxNumberOfLights * ELEMENTS_PER_LIGHT;
 	mByteSize = mBufferSize * ELEMENT_SIZE;
+	
 	// Hack alert: On Intel's GL driver SSBO's perform quite worse than UBOs.
 	// We only want to disable using SSBOs for lights but not disable the feature entirely.
 	// Note that using an uniform buffer here will limit the number of lights per surface so it isn't done for NVidia and AMD.
@@ -69,7 +73,7 @@ FLightBuffer::FLightBuffer()
 	glGenBuffers(1, &mBufferId);
 	glBindBufferBase(mBufferType, LIGHTBUF_BINDINGPOINT, mBufferId);
 	glBindBuffer(mBufferType, mBufferId);	// Note: Some older AMD drivers don't do that in glBindBufferBase, as they should.
-	if (gl.lightmethod == LM_DIRECT)
+	if (mPersistentBuffer)
 	{
 		glBufferStorage(mBufferType, mByteSize, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 		mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
@@ -93,7 +97,56 @@ void FLightBuffer::Clear()
 {
 	mIndex = 0;
 	mLastMappedIndex = UINT_MAX;
-	mIndices.Clear();
+}
+
+void FLightBuffer::CheckSize()
+{
+	// reallocate the buffer with twice the size
+	unsigned int newbuffer;
+	
+	// first unmap the old buffer
+	glBindBuffer(mBufferType, mBufferId);
+	glUnmapBuffer(mBufferType);
+	
+	// create and bind the new buffer, bind the old one to a copy target (too bad that DSA is not yet supported well enough to omit this crap.)
+	glGenBuffers(1, &newbuffer);
+	glBindBufferBase(mBufferType, LIGHTBUF_BINDINGPOINT, newbuffer);
+	glBindBuffer(mBufferType, newbuffer);	// Note: Some older AMD drivers don't do that in glBindBufferBase, as they should.
+	glBindBuffer(GL_COPY_READ_BUFFER, mBufferId);
+	
+	// create the new buffer's storage (twice as large as the old one)
+	int oldbytesize = mByteSize;
+	unsigned int bufferbytesize = mBufferedData.Size() * 4;
+	if (bufferbytesize > mByteSize)
+	{
+		mByteSize += bufferbytesize;
+	}
+	else
+	{
+		mByteSize *= 2;
+	}
+	mBufferSize = mByteSize / ELEMENT_SIZE;
+
+	if (mPersistentBuffer)
+	{
+		glBufferStorage(mBufferType, mByteSize, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+		mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+	}
+	else
+	{
+		glBufferData(mBufferType, mByteSize, NULL, GL_DYNAMIC_DRAW);
+		mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT|GL_MAP_INVALIDATE_BUFFER_BIT);
+	}
+	
+	// copy contents and delete the old buffer.
+	glCopyBufferSubData(GL_COPY_READ_BUFFER, mBufferType, 0, 0, mByteSize/2);
+	glBindBuffer(GL_COPY_READ_BUFFER, 0);
+	glDeleteBuffers(1, &mBufferId);
+	mBufferId = newbuffer;
+	Begin();
+	memcpy(mBufferPointer + mBlockSize*4, &mBufferedData[0], bufferbytesize);
+	mBufferedData.Clear();
+	Finish();
 }
 
 int FLightBuffer::UploadLights(FDynLightData &data)
@@ -121,11 +174,10 @@ int FLightBuffer::UploadLights(FDynLightData &data)
 		}
 		totalsize = size0 + size1 + size2 + 1;
 	}
-	
-	if (totalsize <= 1) return -1;	// there are no lights
 
 	assert(mBufferPointer != nullptr);
 	if (mBufferPointer == nullptr) return -1;
+	if (totalsize <= 1) return -1;	// there are no lights
 	
 	unsigned thisindex = mIndex.fetch_add(totalsize);
 	float parmcnt[] = { 0, float(size0), float(size0 + size1), float(size0 + size1 + size2) };
@@ -144,14 +196,22 @@ int FLightBuffer::UploadLights(FDynLightData &data)
 	}
 	else
 	{
-		DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mIndex=%d\n", thisindex + totalsize);
-		return -1;	// Buffer is full. Since it is being used live at the point of the upload we cannot do much here but to abort.
+		// The buffered data always starts at the old buffer's end to avoid more extensive synchronization.
+		std::lock_guard<std::mutex> lock(mBufferMutex);
+		auto index = mBufferedData.Reserve(totalsize);
+		float *copyptr =&mBufferedData[index];
+		// The copy operation must be inside the mutexed block of code here!
+		memcpy(&copyptr[0], parmcnt, ELEMENT_SIZE);
+		memcpy(&copyptr[4], &data.arrays[0][0], size0 * ELEMENT_SIZE);
+		memcpy(&copyptr[4 + 4*size0], &data.arrays[1][0], size1 * ELEMENT_SIZE);
+		memcpy(&copyptr[4 + 4*(size0 + size1)], &data.arrays[2][0], size2 * ELEMENT_SIZE);
+		return mBufferSize + index;
 	}
 }
 
 void FLightBuffer::Begin()
 {
-	if (gl.lightmethod == LM_DEFERRED)
+	if (!mPersistentBuffer)
 	{
 		glBindBuffer(mBufferType, mBufferId);
 		mBufferPointer = (float*)glMapBufferRange(mBufferType, 0, mByteSize, GL_MAP_WRITE_BIT);
@@ -160,12 +220,13 @@ void FLightBuffer::Begin()
 
 void FLightBuffer::Finish()
 {
-	if (gl.lightmethod == LM_DEFERRED)
+	if (!mPersistentBuffer)
 	{
 		glBindBuffer(mBufferType, mBufferId);
 		glUnmapBuffer(mBufferType);
 		mBufferPointer = NULL;
 	}
+	if (mBufferedData.Size() > 0) CheckSize();
 }
 
 int FLightBuffer::BindUBO(unsigned int index)

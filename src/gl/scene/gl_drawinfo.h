@@ -1,10 +1,11 @@
 #ifndef __GL_DRAWINFO_H
 #define __GL_DRAWINFO_H
 
-#include "gl/renderer/gl_lightdata.h"
 #include "hwrenderer/scene/hw_drawlist.h"
 #include "hwrenderer/scene/hw_weapon.h"
 #include "hwrenderer/scene/hw_viewpointuniforms.h"
+
+#include "gl/renderer/gl_renderstate.h"	// temporary
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244)
@@ -25,66 +26,35 @@ enum DrawListType
 	GLDL_TYPES,
 };
 
-enum Drawpasses
-{
-	GLPASS_ALL,			// Main pass with dynamic lights
-	GLPASS_LIGHTSONLY,	// only collect dynamic lights
-	GLPASS_DECALS,		// Draws a decal
-	GLPASS_TRANSLUCENT,	// Draws translucent objects
-};
 
 struct FDrawInfo : public HWDrawInfo
 {
 	HWDrawList drawlists[GLDL_TYPES];
-	TArray<HUDSprite> hudsprites;	// These may just be stored by value.
-	TArray<GLDecal *> decals[2];	// the second slot is for mirrors which get rendered in a separate pass.
 	int vpIndex;
 	
 	void ApplyVPUniforms() override;
 
 	void AddWall(GLWall *wall) override;
     void AddMirrorSurface(GLWall *w) override;
-	GLDecal *AddDecal(bool onmirror) override;
-	void AddPortal(GLWall *w, int portaltype) override;
 	void AddFlat(GLFlat *flat, bool fog) override;
 	void AddSprite(GLSprite *sprite, bool translucent) override;
-	void AddHUDSprite(HUDSprite *huds) override;
 
 	std::pair<FFlatVertex *, unsigned int> AllocVertices(unsigned int count) override;
 	int UploadLights(FDynLightData &data) override;
 
-	void DrawDecal(GLDecal *gldecal);
-	void DrawDecals();
-	void DrawDecalsForMirror(GLWall *wall);
+	void Draw(EDrawType dt, FRenderState &state, int index, int count, bool apply = true) override;
+	void DrawIndexed(EDrawType dt, FRenderState &state, int index, int count, bool apply = true) override;
+	void DrawModel(GLSprite *spr, FRenderState &state) override;
+	void DrawHUDModel(HUDSprite *spr, FRenderState &state) override;
+	void RenderPortal(HWPortal *p, bool stencil) override;
 
+	void SetDepthMask(bool on) override;
+	void SetDepthFunc(int func) override;
+	void SetDepthRange(float min, float max) override;
+	void EnableDrawBufferAttachments(bool on) override;
+	void SetStencil(int offs, int op, int flags) override;
+	
 	void StartScene();
-	void SetupFloodStencil(wallseg * ws);
-	void ClearFloodStencil(wallseg * ws);
-	void DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, bool ceiling);
-	void FloodUpperGap(seg_t * seg) override;
-	void FloodLowerGap(seg_t * seg) override;
-
-	// Wall drawer
-	void RenderWall(GLWall *wall, int textured);
-	void RenderFogBoundary(GLWall *wall);
-	void RenderMirrorSurface(GLWall *wall);
-	void RenderTranslucentWall(GLWall *wall);
-	void RenderTexturedWall(GLWall *wall, int rflags);
-	void DrawWall(GLWall *wall, int pass) override;
-
-	// Flat drawer
-	void DrawFlat(GLFlat *flat, int pass, bool trans) override;	// trans only has meaning for GLPASS_LIGHTSONLY
-	void DrawSkyboxSector(GLFlat *flat, int pass, bool processlights);
-	void DrawSubsectors(GLFlat *flat, int pass, bool processlights, bool istrans);
-	void ProcessLights(GLFlat *flat, bool istrans);
-	void DrawSubsector(GLFlat *flat, subsector_t * sub);
-	void SetupSubsectorLights(GLFlat *flat, int pass, subsector_t * sub, int *dli);
-	void SetupSectorLights(GLFlat *flat, int pass, int *dli);
-
-	// Sprite drawer
-	void DrawSprite(GLSprite *sprite, int pass);
-	void DrawPSprite(HUDSprite *huds);
-	void DrawPlayerSprites(bool hudModelStep);
 
 	void DoDrawSorted(HWDrawList *dl, SortNode * head);
 	void DrawSorted(int listindex);
@@ -95,40 +65,25 @@ struct FDrawInfo : public HWDrawInfo
     void CreateScene();
     void RenderScene(int recursion);
     void RenderTranslucent();
-    void DrawScene(int drawmode);
+    void DrawScene(int drawmode) override;
     void ProcessScene(bool toscreen = false);
     void EndDrawScene(sector_t * viewsector);
     void DrawEndScene2D(sector_t * viewsector);
 	bool SetDepthClamp(bool on) override;
+	void ClearScreen() override;
 
 	static FDrawInfo *StartDrawInfo(FRenderViewpoint &parentvp, HWViewpointUniforms *uniforms);
 	FDrawInfo *EndDrawInfo();
 	
-	gl_subsectorrendernode * GetOtherFloorPlanes(unsigned int sector)
-	{
-		if (sector<otherfloorplanes.Size()) return otherfloorplanes[sector];
-		else return NULL;
-	}
-	
-	gl_subsectorrendernode * GetOtherCeilingPlanes(unsigned int sector)
-	{
-		if (sector<otherceilingplanes.Size()) return otherceilingplanes[sector];
-		else return NULL;
-	}
-
 	void SetColor(int light, int rellight, const FColormap &cm, float alpha, bool weapon = false)
 	{
-		gl_SetColor(light, rellight, isFullbrightScene(), cm, alpha, weapon);
+		gl_RenderState.SetColor(light, rellight, isFullbrightScene(), cm, alpha, weapon);
 	}
 
 	void SetFog(int lightlevel, int rellight, const FColormap *cmap, bool isadditive)
 	{
-		gl_SetFog(lightlevel, rellight, isFullbrightScene(), cmap, isadditive);
+		gl_RenderState.SetFog(lightlevel, rellight, isFullbrightScene(), cmap, isadditive);
 	}
 
 };
-
-
-void gl_SetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblending);
-
 #endif

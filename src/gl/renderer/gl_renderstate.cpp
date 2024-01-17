@@ -38,11 +38,7 @@
 #include "gl/renderer/gl_renderbuffers.h"
 #include "gl/textures/gl_hwtexture.h"
 
-void gl_SetTextureMode(int type);
-
-FRenderState gl_RenderState;
-
-CVAR(Bool, gl_direct_state_change, true, 0)
+FGLRenderState gl_RenderState;
 
 CVAR(Bool, gl_global_fade, false, CVAR_ARCHIVE)
 CUSTOM_CVAR(Float, gl_global_fade_density, 0.001f, CVAR_ARCHIVE)
@@ -75,64 +71,30 @@ static void matrixToGL(const VSMatrix &mat, int loc)
 
 //==========================================================================
 //
-//
+// This only gets called once upon setup.
+// With OpenGL the state is persistent and cannot be cleared, once set up.
 //
 //==========================================================================
 
-void FRenderState::Reset()
+void FGLRenderState::Reset()
 {
-	mTextureEnabled = true;
-	mSplitEnabled = mGradientEnabled = mBrightmapEnabled = mFogEnabled = mGlowEnabled = false;
-	mColorMask[0] = mColorMask[1] = mColorMask[2] = mColorMask[3] = true;
-	currentColorMask[0] = currentColorMask[1] = currentColorMask[2] = currentColorMask[3] = true;
-	mFogColor.d = -1;
-	mTextureMode = -1;
-	mTextureModeFlags = 0;
-	mDesaturation = 0;
-	mSrcBlend = GL_SRC_ALPHA;
-	mDstBlend = GL_ONE_MINUS_SRC_ALPHA;
-	mAlphaThreshold = 0.5f;
-	mBlendEquation = GL_FUNC_ADD;
-	mModelMatrixEnabled = false;
-	mTextureMatrixEnabled = false;
-	mAddColor = 0;
-	mObjectColor = 0xffffffff;
-	mObjectColor2 = 0;
-	mVertexBuffer = mCurrentVertexBuffer = NULL;
-	mSoftLight = 0;
-	mLightParms[0] = mLightParms[1] = mLightParms[2] = 0.0f;
-	mLightParms[3] = -1.f;
-	mSpecialEffect = EFF_NONE;
+	FRenderState::Reset();
+	mVertexBuffer = mCurrentVertexBuffer = nullptr;
 	mGlossiness = 0.0f;
 	mSpecularLevel = 0.0f;
 	mShaderTimer = 0.0f;
 	ClearClipSplit();
 
+	stRenderStyle = DefaultRenderStyle();
 	stSrcBlend = stDstBlend = -1;
 	stBlendEquation = -1;
-	stAlphaThreshold = -1.f;
 	stAlphaTest = 0;
 	mLastDepthClamp = true;
 	mInterpolationFactor = 0.0f;
 
-	mColor.Set(1.0f, 1.0f, 1.0f, 1.0f);
-	mGlowTop.Set(0.0f, 0.0f, 0.0f, 0.0f);
-	mGlowBottom.Set(0.0f, 0.0f, 0.0f, 0.0f);
-	mGlowTopPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
-	mGlowBottomPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
-	mGradientTopPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
-	mGradientBottomPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
-	mSplitTopPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
-	mSplitBottomPlane.Set(0.0f, 0.0f, 0.0f, 0.0f);
-	mDynColor.Set(0.0f, 0.0f, 0.0f, 0.0f);
-	mDetailParms.Set(0.0f, 0.0f, 0.0f, 0.0f);
 	mEffectState = 0;
 	activeShader = nullptr;
-	mModelMatrix.loadIdentity();
-	mTextureMatrix.loadIdentity();
 	mPassType = NORMAL_PASS;
-	mGlobalFadeMode = -1;
-	ResetFadeColor();
 }
 
 //==========================================================================
@@ -141,7 +103,7 @@ void FRenderState::Reset()
 //
 //==========================================================================
 
-bool FRenderState::ApplyShader()
+bool FGLRenderState::ApplyShader()
 {
 	static uint64_t firstFrame = 0;
 	// if firstFrame is not yet initialized, initialize it to current time
@@ -186,7 +148,7 @@ bool FRenderState::ApplyShader()
 
 	int f = mTextureModeFlags;
 	if (!mBrightmapEnabled) f &= TEXF_Detailmap;
-	activeShader->muTextureMode.Set((mTextureMode == TM_MODULATE && mTempTM == TM_OPAQUE ? TM_OPAQUE : mTextureMode) | f);
+	activeShader->muTextureMode.Set((mTextureMode == TM_NORMAL && mTempTM == TM_OPAQUE ? TM_OPAQUE : mTextureMode) | f);
 	activeShader->muLightParms.Set(mLightParms);
 	activeShader->muFogColor.Set(mFogColor);
 	activeShader->muObjectColor.Set(mObjectColor);
@@ -285,24 +247,48 @@ bool FRenderState::ApplyShader()
 //
 //==========================================================================
 
-void FRenderState::Apply()
+void FGLRenderState::Apply()
 {
-	if (!gl_direct_state_change)
+	if (mRenderStyle != stRenderStyle)
 	{
-		if (mSrcBlend != stSrcBlend || mDstBlend != stDstBlend)
-		{
-			stSrcBlend = mSrcBlend;
-			stDstBlend = mDstBlend;
-			glBlendFunc(mSrcBlend, mDstBlend);
-		}
-		if (mBlendEquation != stBlendEquation)
-		{
-			stBlendEquation = mBlendEquation;
-			glBlendEquation(mBlendEquation);
-		}
+		ApplyBlendMode();
+		stRenderStyle = mRenderStyle;
 	}
 
-	//ApplyColorMask(); I don't think this is needed.
+	if (mSplitEnabled != stSplitEnabled)
+	{
+		if (mSplitEnabled)
+		{
+			glEnable(GL_CLIP_DISTANCE3);
+			glEnable(GL_CLIP_DISTANCE4);
+		}
+		else
+		{
+			glDisable(GL_CLIP_DISTANCE3);
+			glDisable(GL_CLIP_DISTANCE4);
+		}
+		stSplitEnabled = mSplitEnabled;
+	}
+
+	if (mMaterial.mChanged)
+	{
+		ApplyMaterial(mMaterial.mMaterial, mMaterial.mClampMode, mMaterial.mTranslation, mMaterial.mOverrideShader);
+		mMaterial.mChanged = false;
+	}
+
+	if (mBias.mChanged)
+	{
+		if (mBias.mFactor == 0 && mBias.mUnits == 0)
+		{
+			glDisable(GL_POLYGON_OFFSET_FILL);
+		}
+		else
+		{
+			glEnable(GL_POLYGON_OFFSET_FILL);
+		}
+		glPolygonOffset(mBias.mFactor, mBias.mUnits);
+		mBias.mChanged = false;
+	}
 
 	if (mVertexBuffer != mCurrentVertexBuffer)
 	{
@@ -315,23 +301,9 @@ void FRenderState::Apply()
 
 
 
-void FRenderState::ApplyColorMask()
+void FGLRenderState::ApplyLightIndex(int index)
 {
-	if ((mColorMask[0] != currentColorMask[0]) ||
-		(mColorMask[1] != currentColorMask[1]) ||
-		(mColorMask[2] != currentColorMask[2]) ||
-		(mColorMask[3] != currentColorMask[3]))
-	{
-		glColorMask(mColorMask[0], mColorMask[1], mColorMask[2], mColorMask[3]);
-		currentColorMask[0] = mColorMask[0];
-		currentColorMask[1] = mColorMask[1];
-		currentColorMask[2] = mColorMask[2];
-		currentColorMask[3] = mColorMask[3];
-	}
-}
-
-void FRenderState::ApplyLightIndex(int index)
-{
+	if (index == -2) index = mLightIndex;	// temporary workaround so that both old and new code can be handled.
 	if (index > -1 && GLRenderer->mLights->GetBufferType() == GL_UNIFORM_BUFFER)
 	{
 		index = GLRenderer->mLights->BindUBO(index);
@@ -345,7 +317,7 @@ void FRenderState::ApplyLightIndex(int index)
 //
 //===========================================================================
 
-void FRenderState::SetMaterial(FMaterial *mat, int clampmode, int translation, int overrideshader, bool alphatexture)
+void FGLRenderState::ApplyMaterial(FMaterial *mat, int clampmode, int translation, int overrideshader)
 {
 	if (mat->tex->bHasCanvas)
 	{
@@ -353,9 +325,9 @@ void FRenderState::SetMaterial(FMaterial *mat, int clampmode, int translation, i
 	}
 	else
 	{
-		mTempTM = TM_MODULATE;
+		mTempTM = TM_NORMAL;
 	}
-	mEffectState = overrideshader >= 0 ? overrideshader : mat->mShaderIndex;
+	mEffectState = overrideshader >= 0 ? overrideshader : mat->GetShaderIndex();
 	mShaderTimer = mat->tex->shaderspeed;
 	mTextureModeFlags = mat->GetLayerFlags();
 	SetSpecular(mat->tex->Glossiness, mat->tex->SpecularLevel);
@@ -397,4 +369,46 @@ void FRenderState::SetMaterial(FMaterial *mat, int clampmode, int translation, i
 	}
 }
 
+//==========================================================================
+//
+// Apply blend mode from RenderStyle
+//
+//==========================================================================
 
+void FGLRenderState::ApplyBlendMode()
+{
+	static int blendstyles[] = { GL_ZERO, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR, GL_DST_COLOR, GL_ONE_MINUS_DST_COLOR, };
+	static int renderops[] = { 0, GL_FUNC_ADD, GL_FUNC_SUBTRACT, GL_FUNC_REVERSE_SUBTRACT, -1, -1, -1, -1,
+		-1, -1, -1, -1, -1, -1, -1, -1 };
+
+	int srcblend = blendstyles[mRenderStyle.SrcAlpha%STYLEALPHA_MAX];
+	int dstblend = blendstyles[mRenderStyle.DestAlpha%STYLEALPHA_MAX];
+	int blendequation = renderops[mRenderStyle.BlendOp & 15];
+
+	if (blendequation == -1)	// This was a fuzz style.
+	{
+		srcblend = GL_DST_COLOR;
+		dstblend = GL_ONE_MINUS_SRC_ALPHA;
+		blendequation = GL_FUNC_ADD;
+	}
+
+	// Checks must be disabled until all draw code has been converted.
+	//if (srcblend != stSrcBlend || dstblend != stDstBlend)
+	{
+		stSrcBlend = srcblend;
+		stDstBlend = dstblend;
+		glBlendFunc(srcblend, dstblend);
+	}
+	//if (blendequation != stBlendEquation)
+	{
+		stBlendEquation = blendequation;
+		glBlendEquation(blendequation);
+	}
+
+}
+
+// Needs to be redone
+void FGLRenderState::SetVertexBuffer(int which)
+{
+	SetVertexBuffer(which == VB_Sky ? (FVertexBuffer*)GLRenderer->mSkyVBO : GLRenderer->mVBO);
+}

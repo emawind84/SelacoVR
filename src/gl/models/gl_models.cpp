@@ -40,7 +40,6 @@
 #include "gl_load/gl_interface.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/scene/gl_drawinfo.h"
-#include "gl/scene/gl_portal.h"
 #include "gl/models/gl_models.h"
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/shaders/gl_shader.h"
@@ -65,7 +64,7 @@ void FGLModelRenderer::BeginDrawModel(AActor *actor, FSpriteModelFrame *smf, con
 	if (!(actor->RenderStyle == LegacyRenderStyles[STYLE_Normal]) && !(smf->flags & MDL_DONTCULLBACKFACES))
 	{
 		glEnable(GL_CULL_FACE);
-		glFrontFace((mirrored ^ GLRenderer->mPortalState.isMirrored()) ? GL_CCW : GL_CW);
+		glFrontFace((mirrored ^ screen->mPortalState->isMirrored()) ? GL_CCW : GL_CW);
 	}
 
 	gl_RenderState.mModelMatrix = objectToWorldMatrix;
@@ -91,7 +90,7 @@ void FGLModelRenderer::BeginDrawHUDModel(AActor *actor, const VSMatrix &objectTo
 	if (!(actor->RenderStyle == LegacyRenderStyles[STYLE_Normal]))
 	{
 		glEnable(GL_CULL_FACE);
-		glFrontFace((mirrored ^ GLRenderer->mPortalState.isMirrored()) ? GL_CW : GL_CCW);
+		glFrontFace((mirrored ^ screen->mPortalState->isMirrored()) ? GL_CW : GL_CCW);
 	}
 
 	gl_RenderState.mModelMatrix = objectToWorldMatrix;
@@ -130,7 +129,7 @@ void FGLModelRenderer::SetInterpolation(double inter)
 void FGLModelRenderer::SetMaterial(FTexture *skin, bool clampNoFilter, int translation)
 {
 	FMaterial * tex = FMaterial::ValidateTexture(skin, false);
-	gl_RenderState.SetMaterial(tex, clampNoFilter ? CLAMP_NOFILTER : CLAMP_NONE, translation, -1, false);
+	gl_RenderState.ApplyMaterial(tex, clampNoFilter ? CLAMP_NOFILTER : CLAMP_NONE, translation, -1);
 
 	gl_RenderState.Apply();
 	if (modellightindex != -1) gl_RenderState.ApplyLightIndex(modellightindex);
@@ -287,30 +286,8 @@ static TArray<FModelVertex> iBuffer;
 void FModelVertexBuffer::SetupFrame(FModelRenderer *renderer, unsigned int frame1, unsigned int frame2, unsigned int size)
 {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
-	if (vbo_id > 0)
-	{
-		glVertexAttribPointer(VATTR_VERTEX, 3, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame1].x);
-		glVertexAttribPointer(VATTR_TEXCOORD, 2, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame1].u);
-		glVertexAttribPointer(VATTR_VERTEX2, 3, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame2].x);
-		glVertexAttribPointer(VATTR_NORMAL, 4, GL_INT_2_10_10_10_REV, true, sizeof(FModelVertex), &VMO[frame2].packedNormal);
-	}
-	else if (frame1 == frame2 || size == 0 || gl_RenderState.GetInterpolationFactor() == 0.f)
-	{
-		glVertexPointer(3, GL_FLOAT, sizeof(FModelVertex), &vbo_ptr[frame1].x);
-		glTexCoordPointer(2, GL_FLOAT, sizeof(FModelVertex), &vbo_ptr[frame1].u);
-	}
-	else
-	{
-		// must interpolate
-		iBuffer.Resize(size);
-		glVertexPointer(3, GL_FLOAT, sizeof(FModelVertex), &iBuffer[0].x);
-		glTexCoordPointer(2, GL_FLOAT, sizeof(FModelVertex), &vbo_ptr[frame1].u);
-		float frac = gl_RenderState.GetInterpolationFactor();
-		for (unsigned i = 0; i < size; i++)
-		{
-			iBuffer[i].x = vbo_ptr[frame1 + i].x * (1.f - frac) + vbo_ptr[frame2 + i].x * frac;
-			iBuffer[i].y = vbo_ptr[frame1 + i].y * (1.f - frac) + vbo_ptr[frame2 + i].y * frac;
-			iBuffer[i].z = vbo_ptr[frame1 + i].z * (1.f - frac) + vbo_ptr[frame2 + i].z * frac;
-		}
-	}
+	glVertexAttribPointer(VATTR_VERTEX, 3, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame1].x);
+	glVertexAttribPointer(VATTR_TEXCOORD, 2, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame1].u);
+	glVertexAttribPointer(VATTR_VERTEX2, 3, GL_FLOAT, false, sizeof(FModelVertex), &VMO[frame2].x);
+	glVertexAttribPointer(VATTR_NORMAL, 4, GL_INT_2_10_10_10_REV, true, sizeof(FModelVertex), &VMO[frame2].packedNormal);
 }

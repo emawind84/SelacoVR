@@ -21,7 +21,7 @@ class FSkyVertexBuffer;
 class OpenGLFrameBuffer;
 struct FDrawInfo;
 class FShaderManager;
-class GLPortal;
+class HWPortal;
 class FLightBuffer;
 class FSamplerManager;
 class DPSprite;
@@ -39,14 +39,6 @@ class GLViewpointBuffer;
 struct FRenderViewpoint;
 #define NOQUEUE nullptr	// just some token to be used as a placeholder
 
-enum
-{
-	DM_MAINVIEW,
-	DM_OFFSCREEN,
-	DM_PORTAL,
-	DM_SKYPORTAL
-};
-
 class FGLRenderer
 {
 public:
@@ -59,6 +51,7 @@ public:
 	unsigned int mFBID;
 	unsigned int mVAOID;
 	unsigned int PortalQueryObject;
+	unsigned int mStencilValue = 0;
 
 	int mOldFBID;
 
@@ -81,8 +74,6 @@ public:
 	FLightBuffer *mLights = nullptr;
 	GLViewpointBuffer *mViewpoints = nullptr;
 	SWSceneDrawer *swdrawer = nullptr;
-
-	FPortalSceneState mPortalState;
 
 	float mSceneClearColor[3];
 

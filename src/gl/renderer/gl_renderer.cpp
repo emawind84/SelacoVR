@@ -42,10 +42,8 @@
 #include "gl_load/gl_interface.h"
 #include "gl/system/gl_framebuffer.h"
 #include "hwrenderer/utility/hw_cvars.h"
-#include "gl/scene/gl_portal.h"
 #include "gl/system/gl_debug.h"
 #include "gl/renderer/gl_renderer.h"
-#include "gl/renderer/gl_lightdata.h"
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/renderer/gl_renderbuffers.h"
 #include "gl/data/gl_vertexbuffer.h"
@@ -460,23 +458,11 @@ void FGLRenderer::Draw2D(F2DDrawer *drawer)
 	{
 
 		int gltrans = -1;
-		int tm, sb, db, be;
-		// The texture mode being returned here cannot be used, because the higher level code 
-		// already manipulated the data so that some cases will not be handled correctly.
-		// Since we already get a proper mode from the calling code this doesn't really matter.
-		gl_GetRenderStyle(cmd.mRenderStyle, false, false, &tm, &sb, &db, &be);
-		gl_RenderState.BlendEquation(be); 
-		gl_RenderState.BlendFunc(sb, db);
+		gl_RenderState.SetRenderStyle(cmd.mRenderStyle);
 		gl_RenderState.EnableBrightmap(!(cmd.mRenderStyle.Flags & STYLEF_ColorIsFixed));
 		gl_RenderState.EnableFog(2);	// Special 2D mode 'fog'.
 
 		// Rather than adding remapping code, let's enforce that the constants here are equal.
-		static_assert(int(F2DDrawer::DTM_Normal) == int(TM_MODULATE), "DTM_Normal != TM_MODULATE");
-		static_assert(int(F2DDrawer::DTM_Opaque) == int(TM_OPAQUE), "DTM_Opaque != TM_OPAQUE");
-		static_assert(int(F2DDrawer::DTM_Invert) == int(TM_INVERSE), "DTM_Invert != TM_INVERSE");
-		static_assert(int(F2DDrawer::DTM_InvertOpaque) == int(TM_INVERTOPAQUE), "DTM_InvertOpaque != TM_INVERTOPAQUE");
-		static_assert(int(F2DDrawer::DTM_Stencil) == int(TM_MASK), "DTM_Stencil != TM_MASK");
-		static_assert(int(F2DDrawer::DTM_AlphaTexture) == int(TM_REDTOALPHA), "DTM_AlphaTexture != TM_REDTOALPHA");
 		gl_RenderState.SetTextureMode(cmd.mDrawMode);
 		if (cmd.mFlags & F2DDrawer::DTF_Scissor)
 		{
@@ -500,7 +486,7 @@ void FGLRenderer::Draw2D(F2DDrawer *drawer)
 		gl_RenderState.SetFog(cmd.mColor1, 0);
 		gl_RenderState.SetColor(1, 1, 1, 1, cmd.mDesaturate); 
 
-		gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
+		gl_RenderState.AlphaFunc(Alpha_GEqual, 0.f);
 
 		if (cmd.mTexture != nullptr)
 		{
@@ -508,7 +494,7 @@ void FGLRenderer::Draw2D(F2DDrawer *drawer)
 			if (mat == nullptr) continue;
 
 			if (gltrans == -1 && cmd.mTranslation != nullptr) gltrans = cmd.mTranslation->GetUniqueIndex();
-			gl_RenderState.SetMaterial(mat, cmd.mFlags & F2DDrawer::DTF_Wrap ? CLAMP_NONE : CLAMP_XY_NOMIP, -gltrans, -1, cmd.mDrawMode == F2DDrawer::DTM_AlphaTexture);
+			gl_RenderState.ApplyMaterial(mat, cmd.mFlags & F2DDrawer::DTF_Wrap ? CLAMP_NONE : CLAMP_XY_NOMIP, -gltrans, -1);
 			gl_RenderState.EnableTexture(true);
 
 			// Canvas textures are stored upside down
@@ -553,12 +539,11 @@ void FGLRenderer::Draw2D(F2DDrawer *drawer)
 	}
 	glDisable(GL_SCISSOR_TEST);
 
-	gl_RenderState.BlendEquation(GL_FUNC_ADD);
-	gl_RenderState.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	gl_RenderState.SetRenderStyle(STYLE_Translucent);
 	gl_RenderState.SetVertexBuffer(mVBO);
 	gl_RenderState.EnableTexture(true);
 	gl_RenderState.EnableBrightmap(true);
-	gl_RenderState.SetTextureMode(TM_MODULATE);
+	gl_RenderState.SetTextureMode(TM_NORMAL);
 	gl_RenderState.EnableFog(false);
 	gl_RenderState.ResetColor();
 	gl_RenderState.Apply();

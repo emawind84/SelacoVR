@@ -60,7 +60,6 @@ public:
 	FVertexBuffer(bool wantbuffer = true);
 	virtual ~FVertexBuffer();
 	virtual void BindVBO() = 0;
-	void EnableBufferArrays(int enable, int disable);
 };
 
 struct FSimpleVertex
@@ -103,19 +102,10 @@ class FFlatVertexBuffer : public FVertexBuffer, public FFlatVertexGenerator
 	std::atomic<unsigned int> mCurIndex;
 	std::mutex mBufferMutex;
 	unsigned int mNumReserved;
+	bool mPersistent;
 
 
 public:
-	enum
-	{
-		QUAD_INDEX = 0,
-		FULLSCREEN_INDEX = 4,
-		PRESENT_INDEX = 8,
-		STENCILTOP_INDEX = 12,
-		STENCILBOTTOM_INDEX = 16,
-
-		NUM_RESERVED = 20
-	};
 
 	FFlatVertexBuffer(int width, int height);
 	~FFlatVertexBuffer();
@@ -202,12 +192,10 @@ public:
 
 class FSkyVertexBuffer : public FVertexBuffer, public FSkyDomeCreator
 {
-	void RenderRow(int prim, int row);
 
 public:
 
 	FSkyVertexBuffer();
-	void RenderDome(FMaterial *tex, int mode);
 	void BindVBO();
 };
 

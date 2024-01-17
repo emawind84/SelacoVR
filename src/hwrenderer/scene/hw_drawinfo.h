@@ -6,6 +6,49 @@
 #include "r_utility.h"
 #include "hw_viewpointuniforms.h"
 #include "v_video.h"
+#include "hw_weapon.h"
+
+enum EDrawMode
+{
+	DM_MAINVIEW,
+	DM_OFFSCREEN,
+	DM_PORTAL,
+	DM_SKYPORTAL
+};
+
+
+enum EDrawType
+{
+	DT_Points = 0,
+	DT_Lines = 1,
+	DT_Triangles = 2,
+	DT_TriangleFan = 3,
+	DT_TriangleStrip = 4
+};
+
+enum EDepthFunc
+{
+	DF_Less,
+	DF_LEqual,
+	DF_Always
+};
+
+enum EStencilFlags
+{
+	SF_AllOn = 0,
+	SF_ColorMaskOff = 1,
+	SF_DepthMaskOff = 2,
+	SF_DepthTestOff = 4,
+	SF_DepthClear = 8
+};
+
+enum EStencilOp
+{
+	SOP_Keep = 0,
+	SOP_Increment = 1,
+	SOP_Decrement = 2
+};
+
 
 
 struct FSectorPortalGroup;
@@ -20,10 +63,11 @@ struct particle_t;
 struct FDynLightData;
 struct HUDSprite;
 class Clipper;
-class IPortal;
+class HWPortal;
 class FFlatVertexGenerator;
 class IRenderQueue;
 class HWScenePortalBase;
+class FRenderState;
 
 //==========================================================================
 //
@@ -34,6 +78,16 @@ struct gl_subsectorrendernode
 {
 	gl_subsectorrendernode *	next;
 	subsector_t *				sub;
+	int							lightindex;
+	int							vertexindex;
+};
+
+struct gl_floodrendernode
+{
+	gl_floodrendernode * next;
+	seg_t *seg;
+	int vertexindex;
+	// This will use the light list of the originating sector.
 };
 
 enum area_t : int;
@@ -104,13 +158,15 @@ struct HWDrawInfo
 	int FullbrightFlags;
 	std::atomic<int> spriteindex;
 	HWScenePortalBase *mClipPortal;
-	IPortal *mCurrentPortal;
+	HWPortal *mCurrentPortal;
 	//FRotator mAngles;
 	IShadowMap *mShadowMap;
 	Clipper *mClipper;
 	FRenderViewpoint Viewpoint;
 	HWViewpointUniforms VPUniforms;	// per-viewpoint uniform state
-	TArray<IPortal *> Portals;
+	TArray<HWPortal *> Portals;
+	TArray<GLDecal *> Decals[2];	// the second slot is for mirrors which get rendered in a separate pass.
+	TArray<HUDSprite> hudsprites;	// These may just be stored by value.
 
 	TArray<MissingTextureInfo> MissingUpperTextures;
 	TArray<MissingTextureInfo> MissingLowerTextures;
@@ -122,6 +178,8 @@ struct HWDrawInfo
 
 	TArray<gl_subsectorrendernode*> otherfloorplanes;
 	TArray<gl_subsectorrendernode*> otherceilingplanes;
+	TArray<gl_floodrendernode*> floodfloorsegs;
+	TArray<gl_floodrendernode*> floodceilingsegs;
 
 	TArray<sector_t *> CeilingStacks;
 	TArray<sector_t *> FloorStacks;
@@ -160,7 +218,36 @@ private:
 	void AddSpecialPortalLines(subsector_t * sub, sector_t * sector, line_t *line);
 	void RenderThings(subsector_t * sub, sector_t * sector);
 	void DoSubsector(subsector_t * sub);
+	int SetupLightsForOtherPlane(subsector_t * sub, FDynLightData &lightdata, const secplane_t *plane);
+	int CreateOtherPlaneVertices(subsector_t *sub, const secplane_t *plane);
+	void DrawPSprite(HUDSprite *huds, FRenderState &state);
 public:
+
+	gl_subsectorrendernode * GetOtherFloorPlanes(unsigned int sector)
+	{
+		if (sector<otherfloorplanes.Size()) return otherfloorplanes[sector];
+		else return nullptr;
+	}
+
+	gl_subsectorrendernode * GetOtherCeilingPlanes(unsigned int sector)
+	{
+		if (sector<otherceilingplanes.Size()) return otherceilingplanes[sector];
+		else return nullptr;
+	}
+
+	gl_floodrendernode * GetFloodFloorSegs(unsigned int sector)
+	{
+		if (sector<floodfloorsegs.Size()) return floodfloorsegs[sector];
+		else return nullptr;
+	}
+
+	gl_floodrendernode * GetFloodCeilingSegs(unsigned int sector)
+	{
+		if (sector<floodceilingsegs.Size()) return floodceilingsegs[sector];
+		else return nullptr;
+	}
+
+
 
 	void SetCameraPos(const DVector3 &pos)
 	{
@@ -185,7 +272,7 @@ public:
 		return (screen->hwcaps & RFL_NO_CLIP_PLANES) && VPUniforms.mClipLine.X > -1000000.f;
 	}
 
-	IPortal * FindPortal(const void * src);
+	HWPortal * FindPortal(const void * src);
 	void RenderBSPNode(void *node);
 
 	void ClearBuffers();
@@ -207,7 +294,12 @@ public:
 	void AddUpperMissingTexture(side_t * side, subsector_t *sub, float backheight);
 	void AddLowerMissingTexture(side_t * side, subsector_t *sub, float backheight);
 	void HandleMissingTextures(area_t in_area);
-	void DrawUnhandledMissingTextures();
+	void PrepareUnhandledMissingTextures();
+	void PrepareUpperGap(seg_t * seg);
+	void PrepareLowerGap(seg_t * seg);
+	void CreateFloodPoly(wallseg * ws, FFlatVertex *vertices, float planez, sector_t * sec, bool ceiling);
+	void CreateFloodStencilPoly(wallseg * ws, FFlatVertex *vertices);
+
 	void AddHackedSubsector(subsector_t * sub);
 	void HandleHackedSubsectors();
 	void AddFloorStack(sector_t * sec);
@@ -230,27 +322,41 @@ public:
 	void SetupView(float vx, float vy, float vz, bool mirror, bool planemirror);
 	angle_t FrustumAngle();
 
-	virtual void DrawWall(GLWall *wall, int pass) = 0;
-	virtual void DrawFlat(GLFlat *flat, int pass, bool trans) = 0;
-	virtual void DrawSprite(GLSprite *sprite, int pass) = 0;
+	void DrawDecals(FRenderState &state, TArray<GLDecal *> &decals);
+	void DrawPlayerSprites(bool hudModelStep, FRenderState &state);
 
-	virtual void FloodUpperGap(seg_t * seg) = 0;
-	virtual void FloodLowerGap(seg_t * seg) = 0;
 	void ProcessLowerMinisegs(TArray<seg_t *> &lowersegs);
     virtual void AddSubsectorToPortal(FSectorPortalGroup *portal, subsector_t *sub) = 0;
     
     virtual void AddWall(GLWall *w) = 0;
-	virtual void AddPortal(GLWall *w, int portaltype) = 0;
     virtual void AddMirrorSurface(GLWall *w) = 0;
 	virtual void AddFlat(GLFlat *flat, bool fog) = 0;
 	virtual void AddSprite(GLSprite *sprite, bool translucent) = 0;
-	virtual void AddHUDSprite(HUDSprite *huds) = 0;
 
 	virtual int UploadLights(FDynLightData &data) = 0;
 	virtual void ApplyVPUniforms() = 0;
 	virtual bool SetDepthClamp(bool on) = 0;
 
-    virtual GLDecal *AddDecal(bool onmirror) = 0;
+    GLDecal *AddDecal(bool onmirror);
+
 	virtual std::pair<FFlatVertex *, unsigned int> AllocVertices(unsigned int count) = 0;
+
+	virtual void ClearScreen() = 0;
+	virtual void Draw(EDrawType dt, FRenderState &state, int index, int count, bool apply = true) = 0;
+	virtual void DrawIndexed(EDrawType dt, FRenderState &state, int index, int count, bool apply = true) = 0;
+	virtual void DrawModel(GLSprite *spr, FRenderState &state) = 0;
+	virtual void DrawHUDModel(HUDSprite *spr, FRenderState &state) = 0;
+	virtual void RenderPortal(HWPortal *p, bool usestencil) = 0;
+	virtual void DrawScene(int drawmode) = 0;
+
+
+	// Immediate render state change commands. These only change infrequently and should not clutter the render state.
+	virtual void SetDepthMask(bool on) = 0;
+	virtual void SetDepthFunc(int func) = 0;
+	virtual void SetDepthRange(float min, float max) = 0;
+	virtual void EnableDrawBufferAttachments(bool on) = 0;
+	virtual void SetStencil(int offs, int op, int flags) = 0;
+	
+
 };
 

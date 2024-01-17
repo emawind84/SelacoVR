@@ -33,6 +33,7 @@
 #include "hw_fakeflat.h"
 #include "hw_drawinfo.h"
 #include "hw_portal.h"
+#include "hw_drawlist.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_cvars.h"
 
@@ -47,31 +48,30 @@ sector_t * hw_FakeFlat(sector_t * sec, sector_t * dest, area_t in_area, bool bac
 //
 //==========================================================================
 
+template<class T>
+inline void DeleteLinkedList(T *node)
+{
+	while (node)
+	{
+		auto n = node;
+		node = node->next;
+		delete n;
+	}
+}
+
 void HWDrawInfo::ClearBuffers()
 {
-	for(unsigned int i=0;i< otherfloorplanes.Size();i++)
-	{
-		gl_subsectorrendernode * node = otherfloorplanes[i];
-		while (node)
-		{
-			gl_subsectorrendernode * n = node;
-			node = node->next;
-			delete n;
-		}
-	}
+	for (auto node : otherfloorplanes) DeleteLinkedList(node);
 	otherfloorplanes.Clear();
 
-	for(unsigned int i=0;i< otherceilingplanes.Size();i++)
-	{
-		gl_subsectorrendernode * node = otherceilingplanes[i];
-		while (node)
-		{
-			gl_subsectorrendernode * n = node;
-			node = node->next;
-			delete n;
-		}
-	}
+	for (auto node : otherceilingplanes) DeleteLinkedList(node);
 	otherceilingplanes.Clear();
+
+	for (auto node : floodfloorsegs) DeleteLinkedList(node);
+	floodfloorsegs.Clear();
+
+	for (auto node : floodceilingsegs) DeleteLinkedList(node);
+	floodceilingsegs.Clear();
 
 	// clear all the lists that might not have been cleared already
 	MissingUpperTextures.Clear();
@@ -94,6 +94,9 @@ void HWDrawInfo::ClearBuffers()
 	memset(&sectorrenderflags[0], 0, level.sectors.Size() * sizeof(sectorrenderflags[0]));
 	memset(&ss_renderflags[0], 0, level.subsectors.Size() * sizeof(ss_renderflags[0]));
 	memset(&no_renderflags[0], 0, level.nodes.Size() * sizeof(no_renderflags[0]));
+
+	Decals[0].Clear();
+	Decals[1].Clear();
 
 	mClipPortal = nullptr;
 	mCurrentPortal = nullptr;
@@ -257,7 +260,7 @@ void HWDrawInfo::SetupView(float vx, float vy, float vz, bool mirror, bool plane
 //
 //-----------------------------------------------------------------------------
 
-IPortal * HWDrawInfo::FindPortal(const void * src)
+HWPortal * HWDrawInfo::FindPortal(const void * src)
 {
 	int i = Portals.Size() - 1;
 
@@ -283,3 +286,17 @@ void HWViewpointUniforms::SetDefaults()
 	mShadowmapFilter = gl_shadowmap_filter;
 
 }
+
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
+GLDecal *HWDrawInfo::AddDecal(bool onmirror)
+{
+	auto decal = (GLDecal*)RenderDataAllocator.Alloc(sizeof(GLDecal));
+	Decals[onmirror ? 1 : 0].Push(decal);
+	return decal;
+}
+
