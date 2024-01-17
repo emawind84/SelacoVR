@@ -342,6 +342,7 @@ PCH_SOURCES = \
 	menu/messagebox.cpp \
 	menu/optionmenu.cpp \
 	menu/playermenu.cpp \
+	menu/resolutionmenu.cpp \
 	menu/profiledef.cpp \
 	resourcefiles/ancientzip.cpp \
 	resourcefiles/file_7z.cpp \
