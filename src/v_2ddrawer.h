@@ -9,6 +9,18 @@
 
 struct DrawParms;
 
+class DShape2DTransform : public DObject
+{
+
+DECLARE_CLASS(DShape2DTransform, DObject)
+public:
+	DShape2DTransform()
+	{
+		transform.Identity();
+	}
+	DMatrix3x3 transform;
+};
+
 // intermediate struct for shape drawing
 
 enum EClearWhich
@@ -23,9 +35,21 @@ class DShape2D : public DObject
 
 	DECLARE_CLASS(DShape2D,DObject)
 public:
+	DShape2D()
+	{
+		transform.Identity();
+	}
+
 	TArray<int> mIndices;
 	TArray<DVector2> mVertices;
 	TArray<DVector2> mCoords;
+
+	DMatrix3x3 transform;
+
+	// dirty stores whether we need to re-apply the transformation
+	// otherwise it uses the cached values
+	bool dirty = true;
+	TArray<DVector2> mTransformedVertices;
 };
 
 class F2DDrawer
@@ -53,6 +77,7 @@ public:
 	{
 		DTF_Wrap = 1,
 		DTF_Scissor = 2,
+        DTF_Burn = 4,
 	};
 
 
@@ -149,6 +174,7 @@ public:
 	
 		
 	void AddLine(int x1, int y1, int x2, int y2, int palcolor, uint32_t color);
+	void AddThickLine(int x1, int y1, int x2, int y2, double thickness, uint32_t color);
 	void AddPixel(int x1, int y1, int palcolor, uint32_t color);
 
 	void Clear();

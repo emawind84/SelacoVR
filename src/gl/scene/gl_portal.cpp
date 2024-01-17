@@ -43,6 +43,7 @@
 #include "hwrenderer/scene/hw_clipper.h"
 #include "hwrenderer/utility/hw_cvars.h"
 #include "gl/scene/gl_portal.h"
+#include "gl/data/gl_viewpointbuffer.h"
 #include "hwrenderer/utility/hw_vrmodes.h"
 
 //-----------------------------------------------------------------------------
@@ -72,9 +73,7 @@ void GLPortal::ClearScreen(HWDrawInfo *di)
 {
 	bool multi = !!glIsEnabled(GL_MULTISAMPLE);
 
-	di->VPUniforms.mViewMatrix.loadIdentity();
-	di->VPUniforms.mProjectionMatrix.ortho(0, SCREENWIDTH, SCREENHEIGHT, 0, -1.0f, 1.0f);
-	di->ApplyVPUniforms();
+	GLRenderer->mViewpoints->Set2D(SCREENWIDTH, SCREENHEIGHT);
 	gl_RenderState.SetColor(0, 0, 0);
 	gl_RenderState.Apply();
 
@@ -249,7 +248,7 @@ void GLPortal::End(HWDrawInfo *di, bool usestencil)
 	Clocker c(PortalAll);
 
 	di = static_cast<FDrawInfo*>(di)->EndDrawInfo();
-	di->ApplyVPUniforms();
+	GLRenderer->mViewpoints->Bind(static_cast<FDrawInfo*>(di)->vpIndex);
 	if (usestencil)
 	{
 		auto &vp = di->Viewpoint;
@@ -308,7 +307,6 @@ void GLPortal::End(HWDrawInfo *di, bool usestencil)
 
 		// Restore the old view
 		if (vp.camera != nullptr) vp.camera->renderflags = (vp.camera->renderflags & ~RF_MAYBEINVISIBLE) | savedvisibility;
-		di->SetupView(vp.Pos.X, vp.Pos.Y, vp.Pos.Z, !!(mState->MirrorFlag & 1), !!(mState->PlaneMirrorFlag & 1));
 
 		// This draws a valid z-buffer into the stencil's contents to ensure it
 		// doesn't get overwritten by the level's geometry.

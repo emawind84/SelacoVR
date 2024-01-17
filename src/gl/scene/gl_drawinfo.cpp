@@ -214,6 +214,7 @@ void FDrawInfo::StartScene()
 	decals[0].Clear();
 	decals[1].Clear();
 	hudsprites.Clear();
+	vpIndex = 0;
 
 	// Fullbright information needs to be propagated from the main view.
 	if (outer != nullptr) FullbrightFlags = outer->FullbrightFlags;

@@ -19,6 +19,7 @@ public:
 		int WindowPositionParity; // top-of-window might not be top-of-screen
 		FVector2 Scale;
 		float ColorScale;
+		float Padding1, Padding2, Padding3;
 		int HdrMode;
 
 		static std::vector<UniformFieldDesc> Desc()

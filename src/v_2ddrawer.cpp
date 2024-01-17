@@ -35,13 +35,61 @@
 
 EXTERN_CVAR(Float, transsouls)
 
+IMPLEMENT_CLASS(DShape2DTransform, false, false)
+
+DEFINE_ACTION_FUNCTION(DShape2DTransform, Clear)
+{
+	PARAM_SELF_PROLOGUE(DShape2DTransform);
+	self->transform.Identity();
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DShape2DTransform, Rotate)
+{
+	PARAM_SELF_PROLOGUE(DShape2DTransform);
+	PARAM_FLOAT(angle);
+	self->transform = DMatrix3x3::Rotate2D(DEG2RAD(angle)) * self->transform;
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DShape2DTransform, Scale)
+{
+	PARAM_SELF_PROLOGUE(DShape2DTransform);
+	PARAM_FLOAT(x);
+	PARAM_FLOAT(y);
+	self->transform = DMatrix3x3::Scale2D(DVector2(x, y)) * self->transform;
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DShape2DTransform, Translate)
+{
+	PARAM_SELF_PROLOGUE(DShape2DTransform);
+	PARAM_FLOAT(x);
+	PARAM_FLOAT(y);
+	self->transform = DMatrix3x3::Translate2D(DVector2(x, y)) * self->transform;
+	return 0;
+}
+
 IMPLEMENT_CLASS(DShape2D, false, false)
+
+DEFINE_ACTION_FUNCTION(DShape2D, SetTransform)
+{
+	PARAM_SELF_PROLOGUE(DShape2D);
+	PARAM_OBJECT(transform, DShape2DTransform);
+	self->transform = transform->transform;
+	self->dirty = true;
+	return 0;
+}
 
 DEFINE_ACTION_FUNCTION(DShape2D, Clear)
 {
 	PARAM_SELF_PROLOGUE(DShape2D);
 	PARAM_INT(which);
-	if ( which&C_Verts ) self->mVertices.Clear();
+	if ( which&C_Verts )
+	{
+		self->mVertices.Clear();
+		self->dirty = true;
+	}
 	if ( which&C_Coords ) self->mCoords.Clear();
 	if ( which&C_Indices ) self->mIndices.Clear();
 	return 0;
@@ -53,6 +101,7 @@ DEFINE_ACTION_FUNCTION(DShape2D, PushVertex)
 	PARAM_FLOAT(x);
 	PARAM_FLOAT(y);
 	self->mVertices.Push(DVector2(x,y));
+	self->dirty = true;
 	return 0;
 }
 
@@ -242,6 +291,7 @@ bool F2DDrawer::SetStyle(FTexture *tex, DrawParms &parms, PalEntry &vertexcolor,
 		else if (quad.mDrawMode == DTM_Invert) quad.mDrawMode = DTM_InvertOpaque;
 	}
 	quad.mRenderStyle = parms.style;	// this  contains the blend mode and blend equation settings.
+    if (parms.burn) quad.mFlags |= DTF_Burn;
 	return true;
 }
 
@@ -380,13 +430,22 @@ void F2DDrawer::AddShape( FTexture *img, DShape2D *shape, DrawParms &parms )
 	if (!img->bHasCanvas && parms.remap != nullptr && !parms.remap->Inactive)
 		dg.mTranslation = parms.remap;
 
+	if (shape->dirty) {
+		if (shape->mVertices.Size() != shape->mTransformedVertices.Size())
+			shape->mTransformedVertices.Resize(shape->mVertices.Size());
+		for (int i = 0; i < dg.mVertCount; i++) {
+			shape->mTransformedVertices[i] = (shape->transform * DVector3(shape->mVertices[i], 1.0)).XY();
+		}
+		shape->dirty = false;
+	}
+
 	double minx = 16383, miny = 16383, maxx = -16384, maxy = -16384;
 	for ( int i=0; i<dg.mVertCount; i++ )
 	{
-		if ( shape->mVertices[i].X < minx ) minx = shape->mVertices[i].X;
-		if ( shape->mVertices[i].Y < miny ) miny = shape->mVertices[i].Y;
-		if ( shape->mVertices[i].X > maxx ) maxx = shape->mVertices[i].X;
-		if ( shape->mVertices[i].Y > maxy ) maxy = shape->mVertices[i].Y;
+		if ( shape->mTransformedVertices[i].X < minx ) minx = shape->mTransformedVertices[i].X;
+		if ( shape->mTransformedVertices[i].Y < miny ) miny = shape->mTransformedVertices[i].Y;
+		if ( shape->mTransformedVertices[i].X > maxx ) maxx = shape->mTransformedVertices[i].X;
+		if ( shape->mTransformedVertices[i].Y > maxy ) maxy = shape->mTransformedVertices[i].Y;
 	}
 	if (minx < (double)parms.lclip || miny < (double)parms.uclip || maxx >(double)parms.rclip || maxy >(double)parms.dclip)
 	{
@@ -402,7 +461,7 @@ void F2DDrawer::AddShape( FTexture *img, DShape2D *shape, DrawParms &parms )
 	dg.mVertIndex = (int)mVertices.Reserve(dg.mVertCount);
 	TwoDVertex *ptr = &mVertices[dg.mVertIndex];
 	for ( int i=0; i<dg.mVertCount; i++ )
-		ptr[i].Set(shape->mVertices[i].X, shape->mVertices[i].Y, 0, shape->mCoords[i].X, shape->mCoords[i].Y, vertexcolor);
+		ptr[i].Set(shape->mTransformedVertices[i].X, shape->mTransformedVertices[i].Y, 0, shape->mCoords[i].X, shape->mCoords[i].Y, vertexcolor);
 	dg.mIndexIndex = mIndices.Size();
 	dg.mIndexCount += shape->mIndices.Size();
 	for ( int i=0; i<int(shape->mIndices.Size()); i+=3 )
@@ -427,6 +486,7 @@ void F2DDrawer::AddPoly(FTexture *texture, FVector2 *points, int npoints,
 	// is necessary in order to best reproduce Doom's original lighting.
 	double fadelevel;
 
+	// The hardware renderer's light modes 0, 1 and 4 use a linear light scale which must be used here as well. Otherwise the automap gets too dark.
 	if (vid_rendermode != 4 || (level.lightmode >= 2 && level.lightmode != 4))
 	{
 		double map = (NUMCOLORMAPS * 2.) - ((lightlevel + 12) * (NUMCOLORMAPS / 128.));
@@ -585,6 +645,46 @@ void F2DDrawer::AddLine(int x1, int y1, int x2, int y2, int palcolor, uint32_t c
 	dg.mVertIndex = (int)mVertices.Reserve(2);
 	mVertices[dg.mVertIndex].Set(x1, y1, 0, 0, 0, p);
 	mVertices[dg.mVertIndex+1].Set(x2, y2, 0, 0, 0, p);
+	AddCommand(&dg);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void F2DDrawer::AddThickLine(int x1, int y1, int x2, int y2, double thickness, uint32_t color)
+{
+	PalEntry p = (PalEntry)color;
+
+	DVector2 point0(x1, y1);
+	DVector2 point1(x2, y2);
+
+	DVector2 delta = point1 - point0;
+	DVector2 perp(-delta.Y, delta.X);
+	perp.MakeUnit();
+	perp *= thickness / 2;
+
+	DVector2 corner0 = point0 + perp;
+	DVector2 corner1 = point0 - perp;
+	DVector2 corner2 = point1 + perp;
+	DVector2 corner3 = point1 - perp;
+
+	RenderCommand dg;
+
+	dg.mType = DrawTypeTriangles;
+	dg.mVertCount = 4;
+	dg.mVertIndex = (int)mVertices.Reserve(4);
+	dg.mRenderStyle = LegacyRenderStyles[STYLE_Translucent];
+	auto ptr = &mVertices[dg.mVertIndex];
+	ptr->Set(corner0.X, corner0.Y, 0, 0, 0, p); ptr++;
+	ptr->Set(corner1.X, corner1.Y, 0, 0, 0, p); ptr++;
+	ptr->Set(corner2.X, corner2.Y, 0, 0, 0, p); ptr++;
+	ptr->Set(corner3.X, corner3.Y, 0, 0, 0, p); ptr++;
+	dg.mIndexIndex = mIndices.Size();
+	dg.mIndexCount += 6;
+	AddIndices(dg.mVertIndex, 6, 0, 1, 2, 1, 3, 2);
 	AddCommand(&dg);
 }
 
