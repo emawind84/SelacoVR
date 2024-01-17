@@ -302,6 +302,12 @@ void EventManager::WorldUnloaded(const FString& nextmap)
 	}
 }
 
+bool EventManager::IsSaveAllowed(bool quicksave) {
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
+		if (!handler->IsSaveAllowed(quicksave)) return false;
+	return true;
+}
+
 FString EventManager::GetSavegameComments()
 {
 	struct Comment {
@@ -1021,6 +1027,19 @@ FString DStaticEventHandler::GetSavegameComment(int &order)
 	}
 
 	return "";
+}
+
+bool DStaticEventHandler::IsSaveAllowed(bool quicksave) {
+	IFVIRTUAL(DStaticEventHandler, IsSaveAllowed)
+	{
+		int valid = 1;
+		VMReturn results[1] = { &valid };
+		VMValue params[2] = { (DStaticEventHandler*)this, &quicksave };
+		VMCall(func, params, 2, results, 1);
+		return !!valid;
+	}
+
+	return true;
 }
 
 FRenderEvent EventManager::SetupRenderEvent()

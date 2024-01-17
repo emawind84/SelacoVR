@@ -92,6 +92,7 @@ public:
 	void WorldLightning();
 	void WorldTick();
 	FString GetSavegameComment(int &order);		// @Cockatrice - Static handlers can append custom data to savegame comments, sorted by order
+	bool IsSaveAllowed(bool quicksave);			// @Cockatrice - Callback to check if game saving is allowed at this moment
 
 	//
 	void RenderFrame();
@@ -261,6 +262,8 @@ struct EventManager
 	void WorldTick();
 	// @Cockatrice - Get a compilation of comments from all static event handlers for the savegame text
 	FString GetSavegameComments();
+	// @Cockatrice - Check if any event handler is preventing save games from happening
+	bool IsSaveAllowed(bool quicksave);
 	// this executes on every tick on UI side, always
 	void UiTick();
 	// this executes on every tick on UI side, always AND immediately after everything else

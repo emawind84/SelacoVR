@@ -104,6 +104,7 @@ class StaticEventHandler : Object native play version("2.4")
     virtual void WorldLightning(WorldEvent e) {} // for the sake of completeness.
     virtual void WorldTick() {}
 	virtual String, Int GetSavegameComment() { return "", 0; }	// @Cockatrice - Supply additional information to the savegame comment field during a save
+    virtual bool IsSaveAllowed(bool quicksave) { return true; }               // @Cockatrice - Returning false from any event manager will prevent a savegame
 
     //
     //virtual ui void RenderFrame(RenderEvent e) {}
