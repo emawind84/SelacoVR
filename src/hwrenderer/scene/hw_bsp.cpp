@@ -96,7 +96,7 @@ static RenderJobQueue jobQueue;	// One static queue is sufficient here. This cod
 
 void HWDrawInfo::WorkerThread()
 {
-	sector_t fakefront, fakeback, *front, *back;
+	sector_t *front, *back;
 
 	WTTotal.Clock();
 	isWorkerThread = true;	// for adding asserts in GL API code. The worker thread may never call any GL API.
@@ -118,6 +118,8 @@ void HWDrawInfo::WorkerThread()
 			_mm_pause();
 			_mm_pause();
 		}
+		// Note that the main thread MUST have prepared the fake sectors that get used below!
+		// This worker thread cannot prepare them itself without costly synchronization.
 		else switch (job->type)
 		{
 		case RenderJob::TerminateJob:
@@ -130,7 +132,7 @@ void HWDrawInfo::WorkerThread()
 			SetupWall.Clock();
 			wall.sub = job->sub;
 
-			front = hw_FakeFlat(job->sub->sector, &fakefront, in_area, false);
+			front = hw_FakeFlat(job->sub->sector, in_area, false);
 			auto seg = job->seg;
 			if (seg->backsector)
 			{
@@ -140,7 +142,7 @@ void HWDrawInfo::WorkerThread()
 				}
 				else
 				{
-					back = hw_FakeFlat(seg->backsector, &fakeback, in_area, true);
+					back = hw_FakeFlat(seg->backsector, in_area, true);
 				}
 			}
 			else back = nullptr;
@@ -155,7 +157,7 @@ void HWDrawInfo::WorkerThread()
 		{
 			GLFlat flat;
 			SetupFlat.Clock();
-			front = hw_FakeFlat(job->sub->render_sector, &fakefront, in_area, false);
+			front = hw_FakeFlat(job->sub->render_sector, in_area, false);
 			flat.ProcessSector(this, front);
 			SetupFlat.Unclock();
 			break;
@@ -163,14 +165,14 @@ void HWDrawInfo::WorkerThread()
 
 		case RenderJob::SpriteJob:
 			SetupSprite.Clock();
-			front = hw_FakeFlat(job->sub->sector, &fakefront, in_area, false);
+			front = hw_FakeFlat(job->sub->sector, in_area, false);
 			RenderThings(job->sub, front);
 			SetupSprite.Unclock();
 			break;
 
 		case RenderJob::ParticleJob:
 			SetupSprite.Clock();
-			front = hw_FakeFlat(job->sub->sector, &fakefront, in_area, false);
+			front = hw_FakeFlat(job->sub->sector, in_area, false);
 			RenderParticles(job->sub, front);
 			SetupSprite.Unclock();
 			break;

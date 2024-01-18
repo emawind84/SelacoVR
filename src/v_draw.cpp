@@ -1231,7 +1231,7 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawThickLine)
 	PARAM_INT(y1);
 	PARAM_FLOAT(thickness);
 	PARAM_INT(color);
-	PARAM_INT_DEF(alpha);
+	PARAM_INT(alpha);
 	if (!screen->HasBegun2D()) ThrowAbortException(X_OTHER, "Attempt to draw to screen outside a draw function");
 	screen->DrawThickLine(x0, y0, x1, y1, thickness, color, alpha);
 	return 0;
