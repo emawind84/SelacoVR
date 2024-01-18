@@ -23,9 +23,6 @@ class FLightBuffer
 	unsigned int mByteSize;
     unsigned int mMaxUploadSize;
     
-    std::mutex mBufferMutex;
-    TArray<float> mBufferedData;
-
 	void CheckSize();
 
 public:
@@ -35,7 +32,7 @@ public:
 	void Clear();
 	int UploadLights(FDynLightData &data);
 	void Map() { mBuffer->Map(); }
-	void Unmap() { mBuffer->Unmap(); if (mBufferedData.Size() > 0) CheckSize(); }
+	void Unmap() { mBuffer->Unmap(); }
 	unsigned int GetBlockSize() const { return mBlockSize; }
 	bool GetBufferType() const { return mBufferType; }
 
@@ -50,7 +47,7 @@ public:
     }
 
 	// Only relevant for OpenGL, so this does not need access to the render state.
-	int BindUBO(unsigned int index)
+	int BindUBO(int index)
 	{
 		if (!mBufferType && index > -1)
 		{
@@ -60,7 +57,7 @@ public:
 	}
 
 	// The parameter is a reminder for Vulkan.
-	void BindBase(FRenderState &state)
+	void BindBase()
 	{
 		mBuffer->BindBase();
 	}

@@ -388,7 +388,7 @@ possibly_out_of_time:
 	}
 	
 	case 0xFF: // RST
-		if ( pc > idle_addr )
+		if ( pc >= idle_addr )
 			goto hit_idle_addr;
 	CASE7( C7, CF, D7, DF, E7, EF, F7 ):
 		data = pc;
@@ -746,7 +746,7 @@ possibly_out_of_time:
 		flags = (flags & (S80 | Z40 | P04)) |
 				(temp & (F20 | F08)) |
 				(temp >> 8);
-		rg.a = (uint8_t)temp;
+		rg.a = temp;
 		goto loop;
 	}
 	

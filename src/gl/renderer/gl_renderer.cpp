@@ -221,7 +221,7 @@ void FGLRenderer::UpdateShadowMap()
 
 sector_t *FGLRenderer::RenderView(player_t* player)
 {
-	screen->mVertexData->Bind(gl_RenderState);
+	gl_RenderState.SetVertexBuffer(screen->mVertexData);
 	screen->mVertexData->Reset();
 	sector_t *retsec;
 
@@ -349,7 +349,7 @@ void FGLRenderer::WriteSavePic (player_t *player, FileWriter *file, int width, i
     
 	hw_ClearFakeFlat();
 	P_FindParticleSubsectors();    // make sure that all recently spawned particles have a valid subsector.
-	screen->mVertexData->Bind(gl_RenderState);
+	gl_RenderState.SetVertexBuffer(screen->mVertexData);
 	screen->mVertexData->Reset();
     screen->mLights->Clear();
 	screen->mViewpoints->Clear();

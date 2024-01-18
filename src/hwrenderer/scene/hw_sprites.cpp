@@ -270,7 +270,7 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 		{
 			FGLModelRenderer renderer(di, state, dynlightindex);
 			renderer.RenderModel(x, y, z, modelframe, actor, di->Viewpoint.TicFrac);
-			screen->mVertexData->Bind(state);
+			state.SetVertexBuffer(screen->mVertexData);
 		}
 	}
 
@@ -460,7 +460,7 @@ bool GLSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 inline void GLSprite::PutSprite(HWDrawInfo *di, bool translucent)
 {
 	// That's a lot of checks...
-	if (modelframe && RenderStyle.BlendOp != STYLEOP_Shadow && gl_light_sprites && level.HasDynamicLights && !di->isFullbrightScene() && !fullbright)
+	if (modelframe && !modelframe->isVoxel && RenderStyle.BlendOp != STYLEOP_Shadow && gl_light_sprites && level.HasDynamicLights && !di->isFullbrightScene() && !fullbright)
 	{
 		hw_GetDynModelLight(actor, lightdata);
 		dynlightindex = screen->mLights->UploadLights(lightdata);

@@ -78,6 +78,9 @@ struct FLevelData
 	// [ZZ] Destructible geometry information
 	TMap<int, FHealthGroup> healthGroups;
 
+	// [ZZ] Destructible geometry information
+	TMap<int, FHealthGroup> healthGroups;
+
 	FBlockmap blockmap;
 
 	// These are copies of the loaded map data that get used by the savegame code to skip unaltered fields

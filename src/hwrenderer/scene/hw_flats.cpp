@@ -192,7 +192,7 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 		return;
 	}
 
-	if (screen->BuffersArePersistent())
+	if (level.HasDynamicLights && screen->BuffersArePersistent())
 	{
 		SetupLights(di, sector->lighthead, lightdata, sector->PortalGroup);
 	}
@@ -207,6 +207,7 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 	else
 	{
 		int index = iboindex;
+		bool applied = false;
 		for (int i = 0; i < sector->subsectorcount; i++)
 		{
 			subsector_t * sub = sector->subsectors[i];
@@ -214,7 +215,8 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 
 			if (di->ss_renderflags[sub->Index()] & renderflags)
 			{
-				state.DrawIndexed(DT_Triangles, index, (sub->numlines - 2) * 3, false);
+				state.DrawIndexed(DT_Triangles, index, (sub->numlines - 2) * 3, !applied);
+				applied = true;
 				flatVerticesPerEye += sub->numlines;
 				flatvertices += sub->numlines;
 				flatprimitives++;
@@ -297,6 +299,13 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 //==========================================================================
 void GLFlat::DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent)
 {
+#ifdef _DEBUG
+	if (sector->sectornum == gl_breaksec)
+	{
+		int a = 0;
+	}
+#endif
+
 	int rel = getExtraLight();
 
 	state.SetNormal(plane.plane.Normal().X, plane.plane.Normal().Z, plane.plane.Normal().Y);

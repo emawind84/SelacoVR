@@ -13,7 +13,6 @@ public:
 
 	// Set output sample rate. Must be called only once before loading file.
 	blargg_err_t set_sample_rate( long sample_rate );
-
 	// specifies if all 8 voices get rendered to their own stereo channel
 	// default implementation of Music_Emu always returns not supported error (i.e. no multichannel support by default)
 	// derived emus must override this if they support multichannel rendering

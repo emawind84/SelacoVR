@@ -82,8 +82,8 @@ FFlatVertexBuffer::FFlatVertexBuffer(int width, int height)
 	mVertexBuffer->SetData(bytesize, nullptr, false);
 
 	static const FVertexBufferAttribute format[] = {
-		{ 0, VATTR_VERTEX, VFmt_Float3, myoffsetof(FFlatVertex, x) },
-		{ 0, VATTR_TEXCOORD, VFmt_Float2, myoffsetof(FFlatVertex, u) }
+		{ 0, VATTR_VERTEX, VFmt_Float3, (int)myoffsetof(FFlatVertex, x) },
+		{ 0, VATTR_TEXCOORD, VFmt_Float2, (int)myoffsetof(FFlatVertex, u) }
 	};
 	mVertexBuffer->SetFormat(1, 2, sizeof(FFlatVertex), format);
 
@@ -403,18 +403,6 @@ void FFlatVertexBuffer::Copy(int start, int count)
 	Map();
 	memcpy(GetBuffer(start), &vbo_shadowdata[0], count * sizeof(FFlatVertex));
 	Unmap();
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FFlatVertexBuffer::Bind(FRenderState &state)
-{
-	state.SetVertexBuffer(mVertexBuffer, 0, 0);
-	state.SetIndexBuffer(mIndexBuffer);
 }
 
 //==========================================================================

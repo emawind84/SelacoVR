@@ -58,9 +58,9 @@ public:
 		mIndexBuffer = screen->CreateIndexBuffer();
 
 		static const FVertexBufferAttribute format[] = {
-			{ 0, VATTR_VERTEX, VFmt_Float3, myoffsetof(F2DDrawer::TwoDVertex, x) },
-			{ 0, VATTR_TEXCOORD, VFmt_Float2, myoffsetof(F2DDrawer::TwoDVertex, u) },
-			{ 0, VATTR_COLOR, VFmt_Byte4, myoffsetof(F2DDrawer::TwoDVertex, color0) }
+			{ 0, VATTR_VERTEX, VFmt_Float3, (int)myoffsetof(F2DDrawer::TwoDVertex, x) },
+			{ 0, VATTR_TEXCOORD, VFmt_Float2, (int)myoffsetof(F2DDrawer::TwoDVertex, u) },
+			{ 0, VATTR_COLOR, VFmt_Byte4, (int)myoffsetof(F2DDrawer::TwoDVertex, color0) }
 		};
 		mVertexBuffer->SetFormat(1, 3, sizeof(F2DDrawer::TwoDVertex), format);
 	}
@@ -76,10 +76,9 @@ public:
 		mIndexBuffer->SetData(indexcount * sizeof(unsigned int), indices, false);
 	}
 
-	void Bind(FRenderState &state)
+	std::pair<IVertexBuffer *, IIndexBuffer *> GetBufferObjects() const
 	{
-		state.SetVertexBuffer(mVertexBuffer, 0, 0);
-		state.SetIndexBuffer(mIndexBuffer);
+		return std::make_pair(mVertexBuffer, mIndexBuffer);
 	}
 };
 
@@ -120,7 +119,7 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state)
 	}
 	F2DVertexBuffer vb;
 	vb.UploadData(&vertices[0], vertices.Size(), &indices[0], indices.Size());
-	vb.Bind(state);
+	state.SetVertexBuffer(&vb);
 	state.EnableFog(false);
 
 	for(auto &cmd : commands)
@@ -131,7 +130,6 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state)
 		state.EnableBrightmap(!(cmd.mRenderStyle.Flags & STYLEF_ColorIsFixed));
 		state.EnableFog(2);	// Special 2D mode 'fog'.
 
-		// Rather than adding remapping code, let's enforce that the constants here are equal.
 		state.SetTextureMode(cmd.mDrawMode);
 
 		int sciX, sciY, sciW, sciH;
@@ -212,7 +210,7 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state)
 	state.SetScissor(-1, -1, -1, -1);
 
 	state.SetRenderStyle(STYLE_Translucent);
-	screen->mVertexData->Bind(state);
+	state.SetVertexBuffer(screen->mVertexData);
 	state.EnableTexture(true);
 	state.EnableBrightmap(true);
 	state.SetTextureMode(TM_NORMAL);

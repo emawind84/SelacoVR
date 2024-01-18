@@ -450,22 +450,10 @@ void HWDrawInfo::CreateScene()
 	ProcessAll.Clock();
 
 	// clip the scene and fill the drawlists
-	Bsp.Clock();
 	screen->mVertexData->Map();
 	screen->mLights->Map();
 
-	// Give the DrawInfo the viewpoint in fixed point because that's what the nodes are.
-	viewx = FLOAT2FIXED(vp.Pos.X);
-	viewy = FLOAT2FIXED(vp.Pos.Y);
-
-	validcount++;	// used for processing sidedefs only once by the renderer.
-
-	RenderBSPNode(level.HeadNode());
-	PreparePlayerSprites(vp.sector, in_area);
-
-	// Process all the sprites on the current portal's back side which touch the portal.
-	if (mCurrentPortal != nullptr) mCurrentPortal->RenderAttached(this);
-	Bsp.Unclock();
+	RenderBSP(level.HeadNode());
 
 	// And now the crappy hacks that have to be done to avoid rendering anomalies.
 	// These cannot be multithreaded when the time comes because all these depend
@@ -497,7 +485,7 @@ void HWDrawInfo::RenderScene(FRenderState &state)
 
 	state.SetDepthMask(true);
 
-	screen->mLights->BindBase(state);	// not needed for OpenGL but necessary for Vulkan command buffers to do it here!
+	screen->mLights->BindBase();
 	state.EnableFog(true);
 	state.SetRenderStyle(STYLE_Source);
 
@@ -590,7 +578,7 @@ void HWDrawInfo::RenderPortal(HWPortal *p, FRenderState &state, bool usestencil)
 	state.SetLightIndex(-1);
 	gp->DrawContents(new_di, state);
 	new_di->EndDrawInfo();
-	screen->mVertexData->Bind(state);
+	state.SetVertexBuffer(screen->mVertexData);
 	screen->mViewpoints->Bind(state, vpIndex);
 	gp->RemoveStencil(this, state, usestencil);
 

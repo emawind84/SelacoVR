@@ -533,6 +533,32 @@ VMFrame *VMFrameStack::PopFrame()
 
 //===========================================================================
 //
+// The jitted code does not implement C++ exception handling.
+// Catch them, longjmp out of the jitted functions, perform vmframe cleanup
+// then rethrow the C++ exception
+//
+//===========================================================================
+
+thread_local JitExceptionInfo *CurrentJitExceptInfo;
+
+void VMThrowException(std::exception_ptr cppException)
+{
+	CurrentJitExceptInfo->cppException = cppException;
+	longjmp(CurrentJitExceptInfo->sjljbuf, 1);
+}
+
+static void VMRethrowException(JitExceptionInfo *exceptInfo)
+{
+	int c = exceptInfo->vmframes;
+	VMFrameStack *stack = &GlobalVMStack;
+	for (int i = 0; i < c; i++)
+		stack->PopFrame();
+
+	std::rethrow_exception(exceptInfo->cppException);
+}
+
+//===========================================================================
+//
 // VMFrameStack :: Call
 //
 // Calls a function, either native or scripted. If an exception occurs while
@@ -704,6 +730,16 @@ void ThrowAbortException(VMScriptFunction *sfunc, VMOP *line, EVMAbortException 
 
 	err.stacktrace.AppendFormat("Called from %s at %s, line %d\n", sfunc->PrintableName.GetChars(), sfunc->SourceFileName.GetChars(), sfunc->PCToLine(line));
 	throw err;
+}
+
+void ThrowAbortException(VMScriptFunction *sfunc, VMOP *line, EVMAbortException reason, const char *moreinfo, ...)
+{
+	va_list ap;
+	va_start(ap, moreinfo);
+	CVMAbortException err(reason, moreinfo, ap);
+	err.stacktrace.AppendFormat("Called from %s at %s, line %d\n", sfunc->PrintableName.GetChars(), sfunc->SourceFileName.GetChars(), sfunc->PCToLine(line));
+	throw err;
+	va_end(ap);
 }
 
 DEFINE_ACTION_FUNCTION(DObject, ThrowAbortException)

@@ -273,19 +273,6 @@ public:
 	void DrawDecalsForMirror(HWDrawInfo *di, FRenderState &state, TArray<GLDecal *> &decals);
 
 public:
-	GLWall() {}
-
-	GLWall(const GLWall &other)
-	{
-		memcpy(this, &other, sizeof(GLWall));
-	}
-
-	GLWall & operator=(const GLWall &other)
-	{
-		memcpy(this, &other, sizeof(GLWall));
-		return *this;
-	}
-
 	void Process(HWDrawInfo *di, seg_t *seg, sector_t *frontsector, sector_t *backsector, bool isculled = false);
 	void ProcessLowerMiniseg(HWDrawInfo *di, seg_t *seg, sector_t *frontsector, sector_t *backsector);
 
@@ -337,20 +324,6 @@ public:
 	
 	void DrawSubsectors(HWDrawInfo *di, FRenderState &state);
 	void DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent);
-
-	GLFlat() {}
-
-	GLFlat(const GLFlat &other)
-	{
-		memcpy(this, &other, sizeof(GLFlat));
-	}
-
-	GLFlat & operator=(const GLFlat &other)
-	{
-		memcpy(this, &other, sizeof(GLFlat));
-		return *this;
-	}
-
 };
 
 //==========================================================================
@@ -404,25 +377,12 @@ public:
 
 public:
 
-	GLSprite() = default;
 	void CreateVertices(HWDrawInfo *di);
 	void PutSprite(HWDrawInfo *di, bool translucent);
 	void Process(HWDrawInfo *di, AActor* thing,sector_t * sector, area_t in_area, int thruportal = false, bool isSpriteShadow = false);
 	void ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *sector);//, int shade, int fakeside)
 
 	void DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent);
-
-	GLSprite(const GLSprite &other)
-	{
-		memcpy(this, &other, sizeof(GLSprite));
-	}
-
-	GLSprite & operator=(const GLSprite &other)
-	{
-		memcpy(this, &other, sizeof(GLSprite));
-		return *this;
-	}
-
 };
 
 
