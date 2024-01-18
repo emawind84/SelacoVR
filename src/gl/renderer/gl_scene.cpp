@@ -72,6 +72,9 @@ EXTERN_CVAR (Bool, r_deathcamera)
 EXTERN_CVAR (Float, r_visibility)
 EXTERN_CVAR (Bool, r_drawvoxels)
 
+extern int flatVerticesPerEye;
+extern int wallVerticesPerEye;
+extern int portalsPerEye;
 
 //-----------------------------------------------------------------------------
 //
@@ -147,6 +150,7 @@ void FGLRenderer::DrawScene(HWDrawInfo *di, int drawmode)
 
 sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * camera, IntRect * bounds, float fov, float ratio, float fovratio, bool mainview, bool toscreen)
 {
+	gl_RenderState.InitSceneClearColor();
 	R_SetupFrame (mainvp, r_viewwindow, camera);
 
     // Render (potentially) multiple views for stereo 3d
@@ -154,6 +158,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 	auto vrmode = VRMode::GetVRMode(mainview && toscreen);
 	for (int eye_ix = 0; eye_ix < vrmode->mEyeCount; ++eye_ix)
 	{
+		flatVerticesPerEye = wallVerticesPerEye = portalsPerEye = 0;
 		const auto &eye = vrmode->mEyes[eye_ix];
 		screen->SetViewportRects(bounds);
 

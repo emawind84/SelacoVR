@@ -62,7 +62,7 @@ FLightBuffer::FLightBuffer()
 	{
 		mBufferType = false;
 		mBlockSize = 2 * 1024 / ELEMENT_SIZE;
-		mBlockAlign = gl.uniformblockalignment / ELEMENT_SIZE;
+		mBlockAlign = screen->uniformblockalignment / ELEMENT_SIZE;
 		mMaxUploadSize = (mBlockSize - mBlockAlign);
 	}
 
@@ -179,11 +179,6 @@ int FLightBuffer::DoBindUBO(unsigned int index)
 	return (index - offset);
 }
 
-void FLightBuffer::BindBase()
-{
-	glBindBufferBase(mBufferType, LIGHTBUF_BINDINGPOINT, mBufferId);
-	mLastMappedIndex = UINT_MAX;
-}
 
 
 

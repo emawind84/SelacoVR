@@ -129,6 +129,24 @@ public:
 		mSpecularLevel = specularLevel;
 	}
 
+	void InitSceneClearColor()
+	{
+		float r, g, b;
+		if (gl_global_fade)
+		{
+			mSceneColor = mFadeColor;
+		}
+		r = g = b = 1.f;
+		screen->mSceneClearColor[0] = mSceneColor.r * r / 255.f;
+		screen->mSceneClearColor[1] = mSceneColor.g * g / 255.f;
+		screen->mSceneClearColor[2] = mSceneColor.b * b / 255.f;
+	}
+
+	void ResetFadeColor()
+	{
+		mFadeColor = gl_global_fade_color;
+	}
+
 	void SetPassType(EPassType passType)
 	{
 		mPassType = passType;

@@ -228,9 +228,11 @@ sector_t *FGLRenderer::RenderView(player_t* player)
 	}
 	else
 	{
+		hw_ClearFakeFlat();
+
 		iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
 
-		checkBenchActive();
+		CheckBenchActive();
 
 		// reset statistics counters
 		ResetProfilingData();
@@ -341,7 +343,8 @@ void FGLRenderer::WriteSavePic (player_t *player, FileWriter *file, int width, i
     // Switch to render buffers dimensioned for the savepic
     mBuffers = mSaveBuffers;
     
-    P_FindParticleSubsectors();    // make sure that all recently spawned particles have a valid subsector.
+	hw_ClearFakeFlat();
+	P_FindParticleSubsectors();    // make sure that all recently spawned particles have a valid subsector.
 	screen->mVertexData->Bind(gl_RenderState);
 	screen->mVertexData->Reset();
     screen->mLights->Clear();

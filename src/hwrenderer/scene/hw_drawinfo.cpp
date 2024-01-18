@@ -45,8 +45,11 @@
 #include "hw_clipper.h"
 
 EXTERN_CVAR(Float, r_visibility)
+EXTERN_CVAR(Int, gl_max_portals);
 CVAR(Bool, gl_bandedswlight, false, CVAR_ARCHIVE)
 CVAR(Bool, gl_sort_textures, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+extern int portalsPerEye;
 
 sector_t * hw_FakeFlat(sector_t * sec, sector_t * dest, area_t in_area, bool back);
 
@@ -581,6 +584,7 @@ void HWDrawInfo::RenderTranslucent(FRenderState &state)
 
 void HWDrawInfo::RenderPortal(HWPortal *p, FRenderState &state, bool usestencil)
 {
+	if (gl_max_portals > -1 && portalsPerEye >= gl_max_portals) return;
 	auto gp = static_cast<HWPortal *>(p);
 	gp->SetupStencil(this, state, usestencil);
 	auto new_di = StartDrawInfo(this, Viewpoint, &VPUniforms);
