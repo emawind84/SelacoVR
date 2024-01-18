@@ -52,6 +52,10 @@ EXTERN_CVAR(Float, gl_global_fade_density)
 
 CVAR(Int, gl_dither_bpc, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 
+namespace OpenGLRenderer
+{
+
+
 void FGLRenderer::RenderScreenQuad()
 {
 	screen->mVertexData->Bind(gl_RenderState);
@@ -290,3 +294,4 @@ void FGLRenderer::ClearBorders()
 	glDisable(GL_SCISSOR_TEST);
 }
 
+}

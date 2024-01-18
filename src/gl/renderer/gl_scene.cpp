@@ -76,6 +76,9 @@ extern int flatVerticesPerEye;
 extern int wallVerticesPerEye;
 extern int portalsPerEye;
 
+namespace OpenGLRenderer
+{
+
 //-----------------------------------------------------------------------------
 //
 // gl_drawscene - this function renders the scene from the current
@@ -220,3 +223,4 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 	return mainvp.sector;
 }
 
+}

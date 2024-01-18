@@ -42,6 +42,9 @@
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 
+namespace OpenGLRenderer
+{
+
 FGLRenderState gl_RenderState;
 
 CVAR(Bool, gl_global_fade, false, CVAR_ARCHIVE)
@@ -621,3 +624,4 @@ bool FGLRenderState::SetDepthClamp(bool on)
 	return res;
 }
 
+}

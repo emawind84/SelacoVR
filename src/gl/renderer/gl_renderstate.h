@@ -37,6 +37,9 @@
 #include "v_palette.h"
 #include "g_levellocals.h"
 
+namespace OpenGLRenderer
+{
+
 class FShader;
 struct GLSectorPlane;
 extern TArray<VSMatrix> gl_MatrixStack;
@@ -199,5 +202,7 @@ public:
 };
 
 extern FGLRenderState gl_RenderState;
+
+}
 
 #endif

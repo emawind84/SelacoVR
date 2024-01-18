@@ -202,6 +202,12 @@ void SaveCachedProgramBinary(const FString &vertex, const FString &fragment, con
 	SaveShaders();
 }
 
+extern TArray<UserShaderDesc> usershaders;
+
+namespace OpenGLRenderer
+{
+
+
 bool FShader::Load(const char * name, const char * vert_prog_lump, const char * frag_prog_lump, const char * proc_prog_lump, const char * light_fragprog, const char * defines)
 {
 	static char buffer[10000];
@@ -724,8 +730,6 @@ static const FDefaultShader defaultshaders[]=
 	{nullptr,nullptr,nullptr,nullptr}
 };
 
-TArray<UserShaderDesc> usershaders;
-
 struct FEffectShader
 {
 	const char *ShaderName;
@@ -926,3 +930,4 @@ void gl_DestroyUserShaders()
 	// todo
 }
 
+}
