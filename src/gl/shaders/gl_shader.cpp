@@ -37,20 +37,22 @@
 #include "hwrenderer/utility/hw_shaderpatcher.h"
 #include "hwrenderer/data/shaderuniforms.h"
 #include "hwrenderer/scene/hw_viewpointuniforms.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
 
 #include "gl_load/gl_interface.h"
 #include "gl/system/gl_debug.h"
 #include "r_data/matrix.h"
 #include "gl/renderer/gl_renderer.h"
-#include "gl/renderer/gl_renderstate.h"
 #include "gl/shaders/gl_shader.h"
-#include "gl/dynlights/gl_lightbuffer.h"
 #include <map>
 #include <memory>
 
 #ifdef __MOBILE__
 CVAR(Bool, gl_customshader, true, 0)
 #endif
+
+namespace OpenGLRenderer
+{
 
 struct ProgramBinary
 {
@@ -287,13 +289,6 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	// Blinn glossiness and specular level
 	i_data += "uniform vec2 uSpecularMaterial;\n";
 
-	// quad drawer stuff
-	i_data += "#ifdef USE_QUAD_DRAWER\n";
-	i_data += "uniform mat4 uQuadVertices;\n";
-	i_data += "uniform mat4 uQuadTexCoords;\n";
-	i_data += "uniform int uQuadMode;\n";
-	i_data += "#endif\n";
-
 	// matrices
 	i_data += "uniform mat4 ModelMatrix;\n";
 	i_data += "uniform mat4 NormalModelMatrix;\n";
@@ -365,11 +360,11 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 //
 	FString vp_comb;
 
-	assert(GLRenderer->mLights != NULL);
-	// On the shader side there is no difference between LM_DEFERRED and LM_DIRECT, it only decides how the buffer is initialized.
-	unsigned int lightbuffertype = GLRenderer->mLights->GetBufferType();
-	unsigned int lightbuffersize = GLRenderer->mLights->GetBlockSize();
-	if (lightbuffertype == GL_UNIFORM_BUFFER)
+	assert(screen->mLights != NULL);
+
+	bool lightbuffertype = screen->mLights->GetBufferType();
+	unsigned int lightbuffersize = screen->mLights->GetBlockSize();
+	if (!lightbuffertype)
 	{
 #ifdef __MOBILE__
 		vp_comb.Format("#version 310 es\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
@@ -390,12 +385,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 #endif
 	}
 
-	if (gl.buffermethod == BM_DEFERRED)
-	{
-		vp_comb << "#define USE_QUAD_DRAWER\n";
-	}
-
-	if (!!(gl.flags & RFL_SHADER_STORAGE_BUFFER))
+	if (gl.flags & RFL_SHADER_STORAGE_BUFFER)
 	{
 		vp_comb << "#define SUPPORTS_SHADOWMAPS\n";
 	}
@@ -624,12 +614,9 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	fakevb_index = glGetUniformLocation(hShader, "fakeVB");
 	modelmatrix_index = glGetUniformLocation(hShader, "ModelMatrix");
 	texturematrix_index = glGetUniformLocation(hShader, "TextureMatrix");
-	vertexmatrix_index = glGetUniformLocation(hShader, "uQuadVertices");
-	texcoordmatrix_index = glGetUniformLocation(hShader, "uQuadTexCoords");
 	normalmodelmatrix_index = glGetUniformLocation(hShader, "NormalModelMatrix");
-	quadmode_index = glGetUniformLocation(hShader, "uQuadMode");
 
-	if (lightbuffertype == GL_UNIFORM_BUFFER)
+	if (!lightbuffertype)
 	{
 		int tempindex = glGetUniformBlockIndex(hShader, "LightBufferUBO");
 		if (tempindex != -1) glUniformBlockBinding(hShader, tempindex, LIGHTBUF_BINDINGPOINT);
@@ -638,7 +625,6 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	if (tempindex != -1) glUniformBlockBinding(hShader, tempindex, VIEWPOINT_BINDINGPOINT);
 
 	glUseProgram(hShader);
-	if (quadmode_index > 0) glUniform1i(quadmode_index, 0);
 
 	// set up other texture units (if needed by the shader)
 	for (int i = 2; i<16; i++)
@@ -756,8 +742,6 @@ static const FDefaultShader defaultshaders[]=
 	{"Software Fuzz", "shaders/glsl/fuzz_software.fp", "shaders/glsl/material_normal.fp", ""},
 	{nullptr,nullptr,nullptr,nullptr}
 };
-
-TArray<UserShaderDesc> usershaders;
 
 struct FEffectShader
 {
@@ -962,3 +946,4 @@ void gl_DestroyUserShaders()
 	// todo
 }
 
+}

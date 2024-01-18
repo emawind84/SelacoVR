@@ -69,6 +69,8 @@
 
 void JitDumpLog(FILE *file, VMScriptFunction *func);
 
+void JitDumpLog(FILE *file, VMScriptFunction *func);
+
 // [SO] Just the way Randy said to do it :)
 // [RH] Made this CVAR_SERVERINFO
 CVAR (Int, infighting, 0, CVAR_SERVERINFO)

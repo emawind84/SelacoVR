@@ -35,6 +35,10 @@
 
 CVAR(Bool, gl_custompost, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 
+namespace OpenGLRenderer
+{
+
+
 FCustomPostProcessShaders::FCustomPostProcessShaders()
 {
 	for (unsigned int i = 0; i < PostProcessShaders.Size(); i++)
@@ -250,4 +254,6 @@ void PostProcessShaderInstance::BindTextures()
 			textureUnit++;
 		}
 	}
+}
+
 }

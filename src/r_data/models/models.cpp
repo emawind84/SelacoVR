@@ -353,7 +353,6 @@ void FModelRenderer::RenderFrameModels(const FSpriteModelFrame *smf, const FStat
 			FModel * mdl = Models[modelid];
 			auto tex = skinid.isValid() ? TexMan(skinid) : nullptr;
 			mdl->BuildVertexBuffer(this);
-			SetVertexBuffer(mdl->GetVertexBuffer(this));
 
 			auto& ssids = surfaceskinids.Size() > 0 ? surfaceskinids : smf->surfaceskinIDs;
 			auto ssidp = (unsigned)(i * MD3_MAX_SURFACES) < ssids.Size() ? &ssids[i * MD3_MAX_SURFACES] : nullptr;
@@ -362,8 +361,6 @@ void FModelRenderer::RenderFrameModels(const FSpriteModelFrame *smf, const FStat
 				mdl->RenderFrame(this, tex, modelframe, modelframenext, inter, translation, ssidp);
 			else
 				mdl->RenderFrame(this, tex, modelframe, modelframe, 0.f, translation, ssidp);
-
-			ResetVertexBuffer();
 		}
 	}
 }

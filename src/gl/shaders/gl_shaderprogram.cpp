@@ -34,6 +34,9 @@
 #include "hwrenderer/utility/hw_shaderpatcher.h"
 #include "w_wad.h"
 
+namespace OpenGLRenderer
+{
+
 bool IsShaderCacheActive();
 TArray<uint8_t> LoadCachedProgramBinary(const FString &vertex, const FString &fragment, uint32_t &binaryFormat);
 void SaveCachedProgramBinary(const FString &vertex, const FString &fragment, const TArray<uint8_t> &binary, uint32_t binaryFormat);
@@ -300,4 +303,6 @@ FString FShaderProgram::PatchShader(ShaderType type, const FString &code, const 
 	}
 
 	return patchedCode;
+}
+
 }
