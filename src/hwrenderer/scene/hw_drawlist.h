@@ -1,10 +1,14 @@
 #pragma once
 
-#include "hwrenderer/scene/hw_drawinfo.h"
 #include "memarena.h"
 
 extern FMemArena RenderDataAllocator;
 void ResetRenderDataAllocator();
+struct HWDrawInfo;
+class GLWall;
+class GLFlat;
+class GLSprite;
+class FRenderState;
 
 //==========================================================================
 //
@@ -107,7 +111,10 @@ public:
 	void Draw(HWDrawInfo *di, FRenderState &state, bool translucent);
 	void DrawWalls(HWDrawInfo *di, FRenderState &state, bool translucent);
 	void DrawFlats(HWDrawInfo *di, FRenderState &state, bool translucent);
-	
+
+	void DrawSorted(HWDrawInfo *di, FRenderState &state, SortNode * head);
+	void DrawSorted(HWDrawInfo *di, FRenderState &state);
+
 	HWDrawList * next;
 } ;
 

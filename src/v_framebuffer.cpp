@@ -49,6 +49,8 @@
 #include "r_videoscale.h"
 #include "i_time.h"
 #include "hwrenderer/scene/hw_portal.h"
+#include "hwrenderer/utility/hw_clock.h"
+#include "hwrenderer/data/flatvertices.h"
 
 
 CVAR(Bool, gl_scale_viewport, true, CVAR_ARCHIVE);
@@ -286,6 +288,24 @@ void DFrameBuffer::GetFlashedPalette(PalEntry pal[256])
 	DoBlending(SourcePalette, pal, 256, Flash.r, Flash.g, Flash.b, Flash.a);
 }
 
+void DFrameBuffer::Update()
+{
+	CheckBench();
+
+	int initialWidth = GetClientWidth();
+	int initialHeight = GetClientHeight();
+	int clientWidth = ViewportScaledWidth(initialWidth, initialHeight);
+	int clientHeight = ViewportScaledHeight(initialWidth, initialHeight);
+	if (clientWidth < 320) clientWidth = 320;
+	if (clientHeight < 200) clientHeight = 200;
+	if (clientWidth > 0 && clientHeight > 0 && (GetWidth() != clientWidth || GetHeight() != clientHeight))
+	{
+		SetVirtualSize(clientWidth, clientHeight);
+		V_OutputResized(clientWidth, clientHeight);
+		mVertexData->OutputResized(clientWidth, clientHeight);
+	}
+}
+
 PalEntry *DFrameBuffer::GetPalette()
 {
 	return SourcePalette;
@@ -304,6 +324,14 @@ void DFrameBuffer::GetFlash(PalEntry &rgb, int &amount)
 	amount = Flash.a;
 }
 
+void DFrameBuffer::SetClearColor(int color)
+{
+	PalEntry pe = GPalette.BaseColors[color];
+	mSceneClearColor[0] = pe.r / 255.f;
+	mSceneClearColor[1] = pe.g / 255.f;
+	mSceneClearColor[2] = pe.b / 255.f;
+	mSceneClearColor[3] = 1.f;
+}
 
 //==========================================================================
 //
@@ -533,30 +561,3 @@ void DFrameBuffer::ScaleCoordsFromWindow(int16_t &x, int16_t &y)
 	x = int16_t((x - letterboxX) * Width / letterboxWidth);
 	y = int16_t((y - letterboxY) * Height / letterboxHeight);
 }
-
-//===========================================================================
-// 
-// 
-//
-//===========================================================================
-
-#define DBGBREAK assert(0)
-
-class DDummyFrameBuffer : public DFrameBuffer
-{
-	typedef DFrameBuffer Super;
-public:
-	DDummyFrameBuffer(int width, int height)
-		: DFrameBuffer(0, 0)
-	{
-		SetVirtualSize(width, height);
-	}
-	// These methods should never be called.
-	void Update() { DBGBREAK; }
-	bool IsFullscreen() { DBGBREAK; return 0; }
-	int GetClientWidth() { DBGBREAK; return 0; }
-	int GetClientHeight() { DBGBREAK; return 0; }
-
-	float Gamma;
-};
-

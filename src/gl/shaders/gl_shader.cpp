@@ -37,13 +37,13 @@
 #include "hwrenderer/utility/hw_shaderpatcher.h"
 #include "hwrenderer/data/shaderuniforms.h"
 #include "hwrenderer/scene/hw_viewpointuniforms.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
 
 #include "gl_load/gl_interface.h"
 #include "gl/system/gl_debug.h"
 #include "r_data/matrix.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/shaders/gl_shader.h"
-#include "gl/dynlights/gl_lightbuffer.h"
 #include <map>
 #include <memory>
 
@@ -348,11 +348,11 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 //
 	FString vp_comb;
 
-	assert(GLRenderer->mLights != NULL);
+	assert(screen->mLights != NULL);
 
-	unsigned int lightbuffertype = GLRenderer->mLights->GetBufferType();
-	unsigned int lightbuffersize = GLRenderer->mLights->GetBlockSize();
-	if (lightbuffertype == GL_UNIFORM_BUFFER)
+	bool lightbuffertype = screen->mLights->GetBufferType();
+	unsigned int lightbuffersize = screen->mLights->GetBlockSize();
+	if (!lightbuffertype)
 	{
 #ifdef __MOBILE__
 		vp_comb.Format("#version 310 es\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
@@ -604,7 +604,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	texturematrix_index = glGetUniformLocation(hShader, "TextureMatrix");
 	normalmodelmatrix_index = glGetUniformLocation(hShader, "NormalModelMatrix");
 
-	if (lightbuffertype == GL_UNIFORM_BUFFER)
+	if (!lightbuffertype)
 	{
 		int tempindex = glGetUniformBlockIndex(hShader, "LightBufferUBO");
 		if (tempindex != -1) glUniformBlockBinding(hShader, tempindex, LIGHTBUF_BINDINGPOINT);

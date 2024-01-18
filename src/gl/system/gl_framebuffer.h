@@ -27,8 +27,6 @@ public:
 
 	void CleanForRestart() override;
 	void UpdatePalette() override;
-	void InitForLevel() override;
-	void SetClearColor(int color) override;
 	uint32_t GetCaps() override;
 	void RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV) override;
 	void WriteSavePic(player_t *player, FileWriter *file, int width, int height) override;
@@ -41,8 +39,10 @@ public:
 	void BeginFrame() override;
 	void SetViewportRects(IntRect *bounds) override;
 	void BlurScene(float amount) override;
-    IUniformBuffer *CreateUniformBuffer(size_t size, bool staticuse = false) override;
-	IShaderProgram *CreateShaderProgram() override;
+    IShaderProgram *CreateShaderProgram() override;
+	IVertexBuffer *CreateVertexBuffer() override;
+	IIndexBuffer *CreateIndexBuffer() override;
+	IDataBuffer *CreateDataBuffer(int bindingpoint, bool ssbo) override;
 
 	// Retrieves a buffer containing image data for a screenshot.
 	// Hint: Pitch can be negative for upside-down images, in which case buffer

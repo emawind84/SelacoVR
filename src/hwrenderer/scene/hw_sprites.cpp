@@ -42,6 +42,7 @@
 #include "r_data/models/models.h"
 #include "vectors.h"
 
+#include "hwrenderer/models/hw_models.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_fakeflat.h"
@@ -52,6 +53,7 @@
 #include "hwrenderer/utility/hw_lighting.h"
 #include "hwrenderer/textures/hw_material.h"
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
 #include "hw_renderstate.h"
 
 extern TArray<spritedef_t> sprites;
@@ -251,8 +253,8 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 			{
 				state.SetDepthBias(-1, -128);
 			}
-
-			di->Draw(DT_TriangleStrip, state, vertexindex, 4);
+			state.SetLightIndex(-1);
+			state.Draw(DT_TriangleStrip, vertexindex, 4);
 
 			if (foglayer)
 			{
@@ -260,13 +262,15 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 				state.SetFog(foglevel, rel, false, &Colormap, additivefog);
 				state.SetTextureMode(TM_FOGLAYER);
 				state.SetRenderStyle(STYLE_Translucent);
-				di->Draw(DT_TriangleStrip, state, vertexindex, 4);
+				state.Draw(DT_TriangleStrip, vertexindex, 4);
 				state.SetTextureMode(TM_NORMAL);
 			}
 		}
 		else
 		{
-			di->DrawModel(this, state);
+			FGLModelRenderer renderer(di, state, dynlightindex);
+			renderer.RenderModel(x, y, z, modelframe, actor, di->Viewpoint.TicFrac);
+			screen->mVertexData->Bind(state);
 		}
 	}
 
@@ -459,7 +463,7 @@ inline void GLSprite::PutSprite(HWDrawInfo *di, bool translucent)
 	if (modelframe && RenderStyle.BlendOp != STYLEOP_Shadow && gl_light_sprites && level.HasDynamicLights && !di->isFullbrightScene() && !fullbright)
 	{
 		hw_GetDynModelLight(actor, lightdata);
-		dynlightindex = di->UploadLights(lightdata);
+		dynlightindex = screen->mLights->UploadLights(lightdata);
 	}
 	else
 		dynlightindex = -1;
@@ -484,7 +488,7 @@ void GLSprite::CreateVertices(HWDrawInfo *di)
 	{
 		FVector3 v[4];
 		polyoffset = CalculateVertices(di, v, &di->Viewpoint.Pos);
-		auto vert = di->AllocVertices(4);
+		auto vert = screen->mVertexData->AllocVertices(4);
 		auto vp = vert.first;
 		vertexindex = vert.second;
 

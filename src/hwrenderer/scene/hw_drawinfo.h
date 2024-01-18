@@ -1,12 +1,14 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
 #include "vectors.h"
 #include "r_defs.h"
 #include "r_utility.h"
 #include "hw_viewpointuniforms.h"
 #include "v_video.h"
 #include "hw_weapon.h"
+#include "hw_drawlist.h"
 
 enum EDrawMode
 {
@@ -15,41 +17,6 @@ enum EDrawMode
 	DM_PORTAL,
 	DM_SKYPORTAL
 };
-
-
-enum EDrawType
-{
-	DT_Points = 0,
-	DT_Lines = 1,
-	DT_Triangles = 2,
-	DT_TriangleFan = 3,
-	DT_TriangleStrip = 4
-};
-
-enum EDepthFunc
-{
-	DF_Less,
-	DF_LEqual,
-	DF_Always
-};
-
-enum EStencilFlags
-{
-	SF_AllOn = 0,
-	SF_ColorMaskOff = 1,
-	SF_DepthMaskOff = 2,
-	SF_DepthTestOff = 4,
-	SF_DepthClear = 8
-};
-
-enum EStencilOp
-{
-	SOP_Keep = 0,
-	SOP_Increment = 1,
-	SOP_Decrement = 2
-};
-
-
 
 struct FSectorPortalGroup;
 struct FLinePortalSpan;
@@ -64,7 +31,7 @@ struct FDynLightData;
 struct HUDSprite;
 class Clipper;
 class HWPortal;
-class FFlatVertexGenerator;
+class FFlatVertexBuffer;
 class IRenderQueue;
 class HWScenePortalBase;
 class FRenderState;
@@ -108,6 +75,21 @@ enum EPortalClip
 	PClip_InFront,
 	PClip_Inside,
 	PClip_Behind,
+};
+
+enum DrawListType
+{
+	GLDL_PLAINWALLS,
+	GLDL_PLAINFLATS,
+	GLDL_MASKEDWALLS,
+	GLDL_MASKEDFLATS,
+	GLDL_MASKEDWALLSOFS,
+	GLDL_MODELS,
+
+	GLDL_TRANSLUCENT,
+	GLDL_TRANSLUCENTBORDER,
+
+	GLDL_TYPES,
 };
 
 
@@ -154,13 +136,15 @@ struct HWDrawInfo
 	bool isNightvision() const { return !!(FullbrightFlags & Nightvision); }
 	bool isStealthVision() const { return !!(FullbrightFlags & StealthVision); }
     
+	HWDrawList drawlists[GLDL_TYPES];
+	int vpIndex;
+
 	HWDrawInfo * outer = nullptr;
 	int FullbrightFlags;
 	std::atomic<int> spriteindex;
 	HWScenePortalBase *mClipPortal;
 	HWPortal *mCurrentPortal;
 	//FRotator mAngles;
-	IShadowMap *mShadowMap;
 	Clipper *mClipper;
 	FRenderViewpoint Viewpoint;
 	HWViewpointUniforms VPUniforms;	// per-viewpoint uniform state
@@ -194,8 +178,8 @@ struct HWDrawInfo
 	BitArray CurrentMapSections;	// this cannot be a single number, because a group of portals with the same displacement may link different sections.
 	area_t	in_area;
 	fixed_t viewx, viewy;	// since the nodes are still fixed point, keeping the view position  also fixed point for node traversal is faster.
-	FFlatVertexGenerator *mVBO;	// this class needs access because the sector vertex updating is part of BSP traversal.
 
+	std::function<void(HWDrawInfo *, int)> DrawScene = nullptr;
 
 private:
     // For ProcessLowerMiniseg
@@ -207,7 +191,6 @@ private:
 	sector_t *currentsector;
 
     sector_t fakesec;    // this is a struct member because it gets used in recursively called functions so it cannot be put on the stack.
-
 
 	void UnclipSubsector(subsector_t *sub);
 	void AddLine(seg_t *seg, bool portalclip);
@@ -275,9 +258,21 @@ public:
 	HWPortal * FindPortal(const void * src);
 	void RenderBSPNode(void *node);
 
+	static HWDrawInfo *StartDrawInfo(HWDrawInfo *parent, FRenderViewpoint &parentvp, HWViewpointUniforms *uniforms);
+	void StartScene(FRenderViewpoint &parentvp, HWViewpointUniforms *uniforms);
 	void ClearBuffers();
+	HWDrawInfo *EndDrawInfo();
 	void SetViewArea();
 	int SetFullbrightFlags(player_t *player);
+
+	void CreateScene();
+	void RenderScene(FRenderState &state);
+	void RenderTranslucent(FRenderState &state);
+	void RenderPortal(HWPortal *p, FRenderState &state, bool usestencil);
+	void EndDrawScene(sector_t * viewsector, FRenderState &state);
+	void DrawEndScene2D(sector_t * viewsector, FRenderState &state);
+	void Set3DViewport(FRenderState &state);
+	void ProcessScene(bool toscreen, const std::function<void(HWDrawInfo *, int)> &drawScene);
 
 	bool DoOneSectorUpper(subsector_t * subsec, float planez, area_t in_area);
 	bool DoOneSectorLower(subsector_t * subsec, float planez, area_t in_area);
@@ -319,44 +314,21 @@ public:
 
 	void UpdateCurrentMapSection();
 	void SetViewMatrix(const FRotator &angles, float vx, float vy, float vz, bool mirror, bool planemirror);
-	void SetupView(float vx, float vy, float vz, bool mirror, bool planemirror);
+	void SetupView(FRenderState &state, float vx, float vy, float vz, bool mirror, bool planemirror);
 	angle_t FrustumAngle();
 
 	void DrawDecals(FRenderState &state, TArray<GLDecal *> &decals);
 	void DrawPlayerSprites(bool hudModelStep, FRenderState &state);
 
 	void ProcessLowerMinisegs(TArray<seg_t *> &lowersegs);
-    virtual void AddSubsectorToPortal(FSectorPortalGroup *portal, subsector_t *sub) = 0;
+    void AddSubsectorToPortal(FSectorPortalGroup *portal, subsector_t *sub);
     
-    virtual void AddWall(GLWall *w) = 0;
-    virtual void AddMirrorSurface(GLWall *w) = 0;
-	virtual void AddFlat(GLFlat *flat, bool fog) = 0;
-	virtual void AddSprite(GLSprite *sprite, bool translucent) = 0;
+    void AddWall(GLWall *w);
+    void AddMirrorSurface(GLWall *w);
+	void AddFlat(GLFlat *flat, bool fog);
+	void AddSprite(GLSprite *sprite, bool translucent);
 
-	virtual int UploadLights(FDynLightData &data) = 0;
-	virtual void ApplyVPUniforms() = 0;
-	virtual bool SetDepthClamp(bool on) = 0;
 
     GLDecal *AddDecal(bool onmirror);
-
-	virtual std::pair<FFlatVertex *, unsigned int> AllocVertices(unsigned int count) = 0;
-
-	virtual void ClearScreen() = 0;
-	virtual void Draw(EDrawType dt, FRenderState &state, int index, int count, bool apply = true) = 0;
-	virtual void DrawIndexed(EDrawType dt, FRenderState &state, int index, int count, bool apply = true) = 0;
-	virtual void DrawModel(GLSprite *spr, FRenderState &state) = 0;
-	virtual void DrawHUDModel(HUDSprite *spr, FRenderState &state) = 0;
-	virtual void RenderPortal(HWPortal *p, bool usestencil) = 0;
-	virtual void DrawScene(int drawmode) = 0;
-
-
-	// Immediate render state change commands. These only change infrequently and should not clutter the render state.
-	virtual void SetDepthMask(bool on) = 0;
-	virtual void SetDepthFunc(int func) = 0;
-	virtual void SetDepthRange(float min, float max) = 0;
-	virtual void EnableDrawBufferAttachments(bool on) = 0;
-	virtual void SetStencil(int offs, int op, int flags) = 0;
-	
-
 };
 

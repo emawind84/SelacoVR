@@ -30,13 +30,17 @@
 #include "r_data/colormaps.h"
 #include "gl_load/gl_system.h"
 #include "gl_load/gl_interface.h"
-#include "gl/data/gl_vertexbuffer.h"
 #include "hwrenderer/utility/hw_cvars.h"
+#include "hwrenderer/data/flatvertices.h"
+#include "hwrenderer/scene/hw_skydome.h"
 #include "gl/shaders/gl_shader.h"
 #include "gl/renderer/gl_renderer.h"
-#include "gl/dynlights//gl_lightbuffer.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
 #include "gl/renderer/gl_renderbuffers.h"
 #include "gl/textures/gl_hwtexture.h"
+#include "gl/system/gl_buffers.h"
+#include "hwrenderer/utility/hw_clock.h"
+#include "hwrenderer/data/hw_viewpointbuffer.h"
 
 FGLRenderState gl_RenderState;
 
@@ -83,21 +87,23 @@ void FGLRenderState::Reset()
 	mGlossiness = 0.0f;
 	mSpecularLevel = 0.0f;
 	mShaderTimer = 0.0f;
-	ClearClipSplit();
 
 	stRenderStyle = DefaultRenderStyle();
 	stSrcBlend = stDstBlend = -1;
 	stBlendEquation = -1;
 	stAlphaTest = 0;
 	mLastDepthClamp = true;
-	mInterpolationFactor = 0.0f;
 
 	mEffectState = 0;
 	activeShader = nullptr;
 	mPassType = NORMAL_PASS;
-
 	mGlobalFadeMode = -1;
 	ResetFadeColor();
+
+	mCurrentVertexBuffer = nullptr;
+	mCurrentVertexOffsets[0] = mVertexOffsets[0] = 0;
+	mCurrentIndexBuffer = nullptr;
+
 }
 
 //==========================================================================
@@ -240,6 +246,10 @@ bool FGLRenderState::ApplyShader()
 		matrixToGL(identityMatrix, activeShader->modelmatrix_index);
 		matrixToGL(identityMatrix, activeShader->normalmodelmatrix_index);
 	}
+
+	auto index = screen->mLights->BindUBO(mLightIndex);
+	activeShader->muLightIndex.Set(index);
+
 	return true;
 }
 
@@ -250,7 +260,7 @@ bool FGLRenderState::ApplyShader()
 //
 //==========================================================================
 
-void FGLRenderState::Apply()
+void FGLRenderState::ApplyState()
 {
 	if (mRenderStyle != stRenderStyle)
 	{
@@ -292,26 +302,30 @@ void FGLRenderState::Apply()
 		glPolygonOffset(mBias.mFactor, mBias.mUnits);
 		mBias.mChanged = false;
 	}
-
-	if (mVertexBuffer != mCurrentVertexBuffer)
-	{
-		if (mVertexBuffer == NULL) glBindBuffer(GL_ARRAY_BUFFER, 0);
-		else mVertexBuffer->BindVBO();
-		mCurrentVertexBuffer = mVertexBuffer;
-	}
-	ApplyShader();
 }
 
-
-
-void FGLRenderState::ApplyLightIndex(int index)
+void FGLRenderState::ApplyBuffers()
 {
-	if (index == -2) index = mLightIndex;	// temporary workaround so that both old and new code can be handled.
-	if (index > -1 && GLRenderer->mLights->GetBufferType() == GL_UNIFORM_BUFFER)
+	if (mVertexBuffer != mCurrentVertexBuffer || mVertexOffsets[0] != mCurrentVertexOffsets[0] || mVertexOffsets[1] != mCurrentVertexOffsets[1])
 	{
-		index = GLRenderer->mLights->BindUBO(index);
+		assert(mVertexBuffer != nullptr);
+		static_cast<GLVertexBuffer*>(mVertexBuffer)->Bind(mVertexOffsets);
+		mCurrentVertexBuffer = mVertexBuffer;
+		mCurrentVertexOffsets[0] = mVertexOffsets[0];
+		mCurrentVertexOffsets[1] = mVertexOffsets[1];
 	}
-	activeShader->muLightIndex.Set(index);
+	if (mIndexBuffer != mCurrentIndexBuffer)
+	{
+		if (mIndexBuffer) static_cast<GLIndexBuffer*>(mIndexBuffer)->Bind();
+		mCurrentIndexBuffer = mIndexBuffer;
+	}
+}
+
+void FGLRenderState::Apply()
+{
+	ApplyState();
+	ApplyBuffers();
+	ApplyShader();
 }
 
 //===========================================================================
@@ -410,8 +424,200 @@ void FGLRenderState::ApplyBlendMode()
 
 }
 
-// Needs to be redone
-void FGLRenderState::SetVertexBuffer(int which)
+//==========================================================================
+//
+// API dependent draw calls
+//
+//==========================================================================
+
+static int dt2gl[] = { GL_POINTS, GL_LINES, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP };
+
+void FGLRenderState::Draw(int dt, int index, int count, bool apply)
 {
-	SetVertexBuffer(which == VB_Sky ? (FVertexBuffer*)GLRenderer->mSkyVBO : GLRenderer->mVBO);
+	if (apply)
+	{
+		Apply();
+	}
+	drawcalls.Clock();
+	glDrawArrays(dt2gl[dt], index, count);
+	drawcalls.Unclock();
 }
+
+void FGLRenderState::DrawIndexed(int dt, int index, int count, bool apply)
+{
+	if (apply)
+	{
+		Apply();
+	}
+	drawcalls.Clock();
+	glDrawElements(dt2gl[dt], count, GL_UNSIGNED_INT, (void*)(intptr_t)(index * sizeof(uint32_t)));
+	drawcalls.Unclock();
+}
+
+void FGLRenderState::SetDepthMask(bool on)
+{
+	glDepthMask(on);
+}
+
+void FGLRenderState::SetDepthFunc(int func)
+{
+	static int df2gl[] = { GL_LESS, GL_LEQUAL, GL_ALWAYS };
+	glDepthFunc(df2gl[func]);
+}
+
+void FGLRenderState::SetDepthRange(float min, float max)
+{
+	glDepthRange(min, max);
+}
+
+void FGLRenderState::EnableDrawBufferAttachments(bool on)
+{
+	EnableDrawBuffers(on ? GetPassDrawBufferCount() : 1);
+}
+
+void FGLRenderState::SetStencil(int offs, int op, int flags)
+{
+	static int op2gl[] = { GL_KEEP, GL_INCR, GL_DECR };
+
+	glStencilFunc(GL_EQUAL, screen->stencilValue + offs, ~0);		// draw sky into stencil
+	glStencilOp(GL_KEEP, GL_KEEP, op2gl[op]);		// this stage doesn't modify the stencil
+
+	bool cmon = !(flags & SF_ColorMaskOff);
+	glColorMask(cmon, cmon, cmon, cmon);						// don't write to the graphics buffer
+	glDepthMask(!(flags & SF_DepthMaskOff));
+}
+
+void FGLRenderState::ToggleState(int state, bool on)
+{
+	if (on)
+	{
+		glEnable(state);
+	}
+	else
+	{
+		glDisable(state);
+	}
+}
+
+void FGLRenderState::SetCulling(int mode)
+{
+	if (mode != Cull_None)
+	{
+		glEnable(GL_CULL_FACE);
+		glFrontFace(mode == Cull_CCW ? GL_CCW : GL_CW);
+	}
+	else
+	{
+		glDisable(GL_CULL_FACE);
+	}
+}
+
+void FGLRenderState::EnableClipDistance(int num, bool state)
+{
+	// Update the viewpoint-related clip plane setting.
+	if (!(gl.flags & RFL_NO_CLIP_PLANES))
+	{
+		ToggleState(GL_CLIP_DISTANCE0 + num, state);
+	}
+}
+
+void FGLRenderState::Clear(int targets)
+{
+	// This always clears to default values.
+	int gltarget = 0;
+	if (targets & CT_Depth)
+	{
+		gltarget |= GL_DEPTH_BUFFER_BIT;
+		glClearDepth(1);
+	}
+	if (targets & CT_Stencil)
+	{
+		gltarget |= GL_STENCIL_BUFFER_BIT;
+		glClearStencil(0);
+	}
+	if (targets & CT_Color)
+	{
+		gltarget |= GL_COLOR_BUFFER_BIT;
+		glClearColor(screen->mSceneClearColor[0], screen->mSceneClearColor[1], screen->mSceneClearColor[2], screen->mSceneClearColor[3]);
+	}
+	glClear(gltarget);
+}
+
+void FGLRenderState::EnableStencil(bool on)
+{
+	ToggleState(GL_STENCIL_TEST, on);
+}
+
+void FGLRenderState::SetScissor(int x, int y, int w, int h)
+{
+	if (w > -1)
+	{
+		glEnable(GL_SCISSOR_TEST);
+		glScissor(x, y, w, h);
+	}
+	else
+	{
+		glDisable(GL_SCISSOR_TEST);
+	}
+}
+
+void FGLRenderState::SetViewport(int x, int y, int w, int h)
+{
+	glViewport(x, y, w, h);
+}
+
+void FGLRenderState::EnableDepthTest(bool on)
+{
+	ToggleState(GL_DEPTH_TEST, on);
+}
+
+void FGLRenderState::EnableMultisampling(bool on)
+{
+	ToggleState(GL_MULTISAMPLE, on);
+}
+
+void FGLRenderState::EnableLineSmooth(bool on)
+{
+	ToggleState(GL_LINE_SMOOTH, on);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+void FGLRenderState::ClearScreen()
+{
+	bool multi = !!glIsEnabled(GL_MULTISAMPLE);
+
+	screen->mViewpoints->Set2D(*this, SCREENWIDTH, SCREENHEIGHT);
+	SetColor(0, 0, 0);
+	Apply();
+
+	glDisable(GL_MULTISAMPLE);
+	glDisable(GL_DEPTH_TEST);
+
+	glDrawArrays(GL_TRIANGLE_STRIP, FFlatVertexBuffer::FULLSCREEN_INDEX, 4);
+
+	glEnable(GL_DEPTH_TEST);
+	if (multi) glEnable(GL_MULTISAMPLE);
+}
+
+
+
+//==========================================================================
+//
+// Below are less frequently altrered state settings which do not get
+// buffered by the state object, but set directly instead.
+//
+//==========================================================================
+
+bool FGLRenderState::SetDepthClamp(bool on)
+{
+	bool res = mLastDepthClamp;
+	if (!on) glDisable(GL_DEPTH_CLAMP);
+	else glEnable(GL_DEPTH_CLAMP);
+	mLastDepthClamp = on;
+	return res;
+}
+

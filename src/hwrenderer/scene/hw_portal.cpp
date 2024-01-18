@@ -83,7 +83,7 @@ static FString indent;
 //
 //-----------------------------------------------------------------------------
 
-void FPortalSceneState::EndFrame(HWDrawInfo *di)
+void FPortalSceneState::EndFrame(HWDrawInfo *di, FRenderState &state)
 {
 	HWPortal * p;
 
@@ -101,7 +101,7 @@ void FPortalSceneState::EndFrame(HWDrawInfo *di)
 		}
 		if (p->lines.Size() > 0)
 		{
-			RenderPortal(p, true, di);
+			RenderPortal(p, state, true, di);
 		}
 		delete p;
 	}
@@ -123,7 +123,7 @@ void FPortalSceneState::EndFrame(HWDrawInfo *di)
 // the GPU and there's rarely more than one sky visible at a time.
 //
 //-----------------------------------------------------------------------------
-bool FPortalSceneState::RenderFirstSkyPortal(int recursion, HWDrawInfo *outer_di)
+bool FPortalSceneState::RenderFirstSkyPortal(int recursion, HWDrawInfo *outer_di, FRenderState &state)
 {
 	HWPortal * p;
 	HWPortal * best = nullptr;
@@ -152,7 +152,7 @@ bool FPortalSceneState::RenderFirstSkyPortal(int recursion, HWDrawInfo *outer_di
 	if (best)
 	{
 		portals.Delete(bestindex);
-		RenderPortal(best, false, outer_di);
+		RenderPortal(best, state, false, outer_di);
 		delete best;
 		return true;
 	}
@@ -160,9 +160,9 @@ bool FPortalSceneState::RenderFirstSkyPortal(int recursion, HWDrawInfo *outer_di
 }
 
 
-void FPortalSceneState::RenderPortal(HWPortal *p, bool usestencil, HWDrawInfo *outer_di)
+void FPortalSceneState::RenderPortal(HWPortal *p, FRenderState &state, bool usestencil, HWDrawInfo *outer_di)
 {
-	if (gl_portals) outer_di->RenderPortal(p, usestencil);
+	if (gl_portals) outer_di->RenderPortal(p, state, usestencil);
 }
 
 
@@ -172,7 +172,7 @@ void FPortalSceneState::RenderPortal(HWPortal *p, bool usestencil, HWDrawInfo *o
 //
 //-----------------------------------------------------------------------------
 
-void HWPortal::DrawPortalStencil(HWDrawInfo *di, FRenderState &state, int pass)
+void HWPortal::DrawPortalStencil(FRenderState &state, int pass)
 {
 	if (mPrimIndices.Size() == 0)
 	{
@@ -186,15 +186,15 @@ void HWPortal::DrawPortalStencil(HWDrawInfo *di, FRenderState &state, int pass)
 	}
 	for (unsigned int i = 0; i < mPrimIndices.Size(); i += 2)
 	{
-		di->Draw(DT_TriangleFan, state, mPrimIndices[i], mPrimIndices[i + 1], i == 0);
+		state.Draw(DT_TriangleFan, mPrimIndices[i], mPrimIndices[i + 1], i == 0);
 	}
 	if (NeedCap() && lines.Size() > 1)
 	{
 		// The cap's depth handling needs special treatment so that it won't block further portal caps.
-		if (pass == STP_DepthRestore) di->SetDepthRange(1, 1);
-		di->Draw(DT_TriangleFan, state, FFlatVertexGenerator::STENCILTOP_INDEX, 4);
-		di->Draw(DT_TriangleFan, state, FFlatVertexGenerator::STENCILBOTTOM_INDEX, 4);
-		if (pass == STP_DepthRestore) di->SetDepthRange(0, 1);
+		if (pass == STP_DepthRestore) state.SetDepthRange(1, 1);
+		state.Draw(DT_TriangleFan, FFlatVertexBuffer::STENCILTOP_INDEX, 4);
+		state.Draw(DT_TriangleFan, FFlatVertexBuffer::STENCILBOTTOM_INDEX, 4);
+		if (pass == STP_DepthRestore) state.SetDepthRange(0, 1);
 	}
 }
 
@@ -219,32 +219,33 @@ void HWPortal::SetupStencil(HWDrawInfo *di, FRenderState &state, bool usestencil
 
 		if (NeedDepthBuffer())
 		{
-			di->SetStencil(0, SOP_Increment, SF_ColorMaskOff | SF_DepthMaskOff);
-			di->SetDepthFunc(DF_Less);
-			DrawPortalStencil(di, state, STP_Stencil);
+			state.SetStencil(0, SOP_Increment, SF_ColorMaskOff | SF_DepthMaskOff);
+			state.SetDepthFunc(DF_Less);
+			DrawPortalStencil(state, STP_Stencil);
 
 			// Clear Z-buffer
-			di->SetStencil(1, SOP_Keep, SF_ColorMaskOff);
-			di->SetDepthRange(1, 1);
-			di->SetDepthFunc(DF_Always);
-			DrawPortalStencil(di, state, STP_DepthClear);
+			state.SetStencil(1, SOP_Keep, SF_ColorMaskOff);
+			state.SetDepthRange(1, 1);
+			state.SetDepthFunc(DF_Always);
+			DrawPortalStencil(state, STP_DepthClear);
 
 			// set normal drawing mode
 			state.EnableTexture(true);
-			di->SetStencil(1, SOP_Keep, SF_AllOn);
-			di->SetDepthRange(0, 1);
-			di->SetDepthFunc(DF_Less);
+			state.SetStencil(1, SOP_Keep, SF_AllOn);
+			state.SetDepthRange(0, 1);
+			state.SetDepthFunc(DF_Less);
 			state.SetEffect(EFF_NONE);
 		}
 		else
 		{
 			// No z-buffer is needed therefore we can skip all the complicated stuff that is involved
 			// Note: We must draw the stencil with z-write enabled here because there is no second pass!
-			di->SetStencil(0, SOP_Increment, SF_ColorMaskOff);
-			di->SetDepthFunc(DF_Less);
-			DrawPortalStencil(di, state, STP_AllInOne);
+			state.SetStencil(0, SOP_Increment, SF_ColorMaskOff);
+			state.SetDepthFunc(DF_Less);
+			DrawPortalStencil(state, STP_AllInOne);
 
-			di->SetStencil(1, SOP_Keep, SF_DepthTestOff | SF_DepthMaskOff);
+			state.SetStencil(1, SOP_Keep, SF_DepthMaskOff);
+			state.EnableDepthTest(false);
 			state.EnableTexture(true);
 			state.SetEffect(EFF_NONE);
 		}
@@ -255,7 +256,8 @@ void HWPortal::SetupStencil(HWDrawInfo *di, FRenderState &state, bool usestencil
 	{
 		if (!NeedDepthBuffer())
 		{
-			di->SetStencil(0, SOP_Keep, SF_DepthTestOff | SF_DepthMaskOff);
+			state.SetStencil(0, SOP_Keep, SF_DepthMaskOff);
+			state.EnableDepthTest(false);
 		}
 	}
 
@@ -272,6 +274,7 @@ void HWPortal::RemoveStencil(HWDrawInfo *di, FRenderState &state, bool usestenci
 	auto &vp = di->Viewpoint;
 	if (vp.camera != nullptr) vp.camera->renderflags = (vp.camera->renderflags & ~RF_MAYBEINVISIBLE) | savedvisibility;
 
+	state.EnableDepthTest(true);
 	if (usestencil)
 	{
 		state.SetEffect(EFF_NONE);
@@ -281,17 +284,17 @@ void HWPortal::RemoveStencil(HWDrawInfo *di, FRenderState &state, bool usestenci
 		if (needdepth)
 		{
 			// first step: reset the depth buffer to max. depth
-			di->SetStencil(0, SOP_Keep, SF_ColorMaskOff);
-			di->SetDepthRange(1, 1);							// always
-			di->SetDepthFunc(DF_Always);						// write the farthest depth value
-			DrawPortalStencil(di, state, STP_DepthClear);
+			state.SetStencil(0, SOP_Keep, SF_ColorMaskOff);
+			state.SetDepthRange(1, 1);							// always
+			state.SetDepthFunc(DF_Always);						// write the farthest depth value
+			DrawPortalStencil(state, STP_DepthClear);
 		}
 
 		// second step: restore the depth buffer to the previous values and reset the stencil
-		di->SetStencil(0, SOP_Decrement, SF_ColorMaskOff);
-		di->SetDepthRange(0, 1);
-		di->SetDepthFunc(DF_LEqual);
-		DrawPortalStencil(di, state, STP_DepthRestore);
+		state.SetStencil(0, SOP_Decrement, SF_ColorMaskOff);
+		state.SetDepthRange(0, 1);
+		state.SetDepthFunc(DF_LEqual);
+		DrawPortalStencil(state, STP_DepthRestore);
 
 		state.EnableTexture(true);
 		state.SetEffect(EFF_NONE);
@@ -304,15 +307,16 @@ void HWPortal::RemoveStencil(HWDrawInfo *di, FRenderState &state, bool usestenci
 		state.EnableTexture(false);
 		state.SetRenderStyle(STYLE_Source);
 
-		di->SetStencil(0, SOP_Keep, needdepth ? SF_ColorMaskOff | SF_DepthClear : SF_ColorMaskOff);
-		di->SetDepthRange(0, 1);
-		di->SetDepthFunc(DF_LEqual);
-		DrawPortalStencil(di, state, STP_DepthRestore);
+		state.SetStencil(0, SOP_Keep, SF_ColorMaskOff);
+		if (needdepth) state.Clear(CT_Depth);
+		state.SetDepthRange(0, 1);
+		state.SetDepthFunc(DF_LEqual);
+		DrawPortalStencil(state, STP_DepthRestore);
 
 		state.SetEffect(EFF_NONE);
 		state.EnableTexture(true);
 	}
-	di->SetStencil(0, SOP_Keep, SF_AllOn);
+	state.SetStencil(0, SOP_Keep, SF_AllOn);
 }
 
 
@@ -409,7 +413,7 @@ int HWLinePortal::ClipPoint(const DVector2 &pos)
 //
 //-----------------------------------------------------------------------------
 
-bool HWMirrorPortal::Setup(HWDrawInfo *di, Clipper *clipper)
+bool HWMirrorPortal::Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clipper)
 {
 	auto state = mOwner->mState;
 	if (state->renderdepth > r_mirror_recursions)
@@ -479,7 +483,7 @@ bool HWMirrorPortal::Setup(HWDrawInfo *di, Clipper *clipper)
 
 	state->MirrorFlag++;
 	di->SetClipLine(linedef);
-	di->SetupView(vp.Pos.X, vp.Pos.Y, vp.Pos.Z, !!(state->MirrorFlag & 1), !!(state->PlaneMirrorFlag & 1));
+	di->SetupView(rstate, vp.Pos.X, vp.Pos.Y, vp.Pos.Z, !!(state->MirrorFlag & 1), !!(state->PlaneMirrorFlag & 1));
 
 	clipper->Clear();
 
@@ -490,7 +494,7 @@ bool HWMirrorPortal::Setup(HWDrawInfo *di, Clipper *clipper)
 	return true;
 }
 
-void HWMirrorPortal::Shutdown(HWDrawInfo *di)
+void HWMirrorPortal::Shutdown(HWDrawInfo *di, FRenderState &rstate)
 {
 	mOwner->mState->MirrorFlag--;
 }
@@ -512,7 +516,7 @@ const char *HWMirrorPortal::GetName() { return "Mirror"; }
 //
 //
 //-----------------------------------------------------------------------------
-bool HWLineToLinePortal::Setup(HWDrawInfo *di, Clipper *clipper)
+bool HWLineToLinePortal::Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clipper)
 {
 	// TODO: Handle recursion more intelligently
 	auto &state = mOwner->mState;
@@ -559,7 +563,7 @@ bool HWLineToLinePortal::Setup(HWDrawInfo *di, Clipper *clipper)
 
 	vp.ViewActor = nullptr;
 	di->SetClipLine(glport->lines[0]->mDestination);
-	di->SetupView(vp.Pos.X, vp.Pos.Y, vp.Pos.Z, !!(state->MirrorFlag & 1), !!(state->PlaneMirrorFlag & 1));
+	di->SetupView(rstate, vp.Pos.X, vp.Pos.Y, vp.Pos.Z, !!(state->MirrorFlag & 1), !!(state->PlaneMirrorFlag & 1));
 
 	ClearClipper(di, clipper);
 	return true;
@@ -589,7 +593,7 @@ const char *HWLineToLinePortal::GetName() { return "LineToLine"; }
 //
 //-----------------------------------------------------------------------------
 
-bool HWSkyboxPortal::Setup(HWDrawInfo *di, Clipper *clipper)
+bool HWSkyboxPortal::Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clipper)
 {
 	auto state = mOwner->mState;
 	old_pm = state->PlaneMirrorMode;
@@ -608,8 +612,7 @@ bool HWSkyboxPortal::Setup(HWDrawInfo *di, Clipper *clipper)
 	portal->mFlags |= PORTSF_INSKYBOX;
 	vp.extralight = 0;
 
-
-	oldclamp = di->SetDepthClamp(false);
+	oldclamp = rstate.SetDepthClamp(false);
 	vp.Pos = origin->InterpolatedPosition(vp.TicFrac);
 	vp.ActorPos = origin->Pos();
 	vp.Angles.Yaw += (origin->PrevAngles.Yaw + deltaangle(origin->PrevAngles.Yaw, origin->Angles.Yaw) * vp.TicFrac);
@@ -622,7 +625,7 @@ bool HWSkyboxPortal::Setup(HWDrawInfo *di, Clipper *clipper)
 
 	vp.ViewActor = origin;
 
-	di->SetupView(vp.Pos.X, vp.Pos.Y, vp.Pos.Z, !!(state->MirrorFlag & 1), !!(state->PlaneMirrorFlag & 1));
+	di->SetupView(rstate, vp.Pos.X, vp.Pos.Y, vp.Pos.Z, !!(state->MirrorFlag & 1), !!(state->PlaneMirrorFlag & 1));
 	di->SetViewArea();
 	ClearClipper(di, clipper);
 	di->UpdateCurrentMapSection();
@@ -630,11 +633,12 @@ bool HWSkyboxPortal::Setup(HWDrawInfo *di, Clipper *clipper)
 }
 
 
-void HWSkyboxPortal::Shutdown(HWDrawInfo *di)
+void HWSkyboxPortal::Shutdown(HWDrawInfo *di, FRenderState &rstate)
 {
+	rstate.SetDepthClamp(oldclamp);
+
 	auto state = mOwner->mState;
 	portal->mFlags &= ~PORTSF_INSKYBOX;
-	di->SetDepthClamp(oldclamp);
 	state->inskybox = false;
 	state->skyboxrecursion--;
 	state->PlaneMirrorMode = old_pm;
@@ -699,7 +703,7 @@ void HWSectorStackPortal::SetupCoverage(HWDrawInfo *di)
 // GLSectorStackPortal::DrawContents
 //
 //-----------------------------------------------------------------------------
-bool HWSectorStackPortal::Setup(HWDrawInfo *di, Clipper *clipper)
+bool HWSectorStackPortal::Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clipper)
 {
 	auto state = mOwner->mState;
 	FSectorPortalGroup *portal = origin;
@@ -712,7 +716,7 @@ bool HWSectorStackPortal::Setup(HWDrawInfo *di, Clipper *clipper)
 	// avoid recursions!
 	if (origin->plane != -1) screen->instack[origin->plane]++;
 
-	di->SetupView(vp.Pos.X, vp.Pos.Y, vp.Pos.Z, !!(state->MirrorFlag & 1), !!(state->PlaneMirrorFlag & 1));
+	di->SetupView(rstate, vp.Pos.X, vp.Pos.Y, vp.Pos.Z, !!(state->MirrorFlag & 1), !!(state->PlaneMirrorFlag & 1));
 	SetupCoverage(di);
 	ClearClipper(di, clipper);
 
@@ -728,7 +732,7 @@ bool HWSectorStackPortal::Setup(HWDrawInfo *di, Clipper *clipper)
 }
 
 
-void HWSectorStackPortal::Shutdown(HWDrawInfo *di)
+void HWSectorStackPortal::Shutdown(HWDrawInfo *di, FRenderState &rstate)
 {
 	if (origin->plane != -1) screen->instack[origin->plane]--;
 }
@@ -751,7 +755,7 @@ const char *HWSectorStackPortal::GetName() { return "Sectorstack"; }
 //
 //-----------------------------------------------------------------------------
 
-bool HWPlaneMirrorPortal::Setup(HWDrawInfo *di, Clipper *clipper)
+bool HWPlaneMirrorPortal::Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clipper)
 {
 	auto state = mOwner->mState;
 	if (state->renderdepth > r_mirror_recursions)
@@ -774,14 +778,14 @@ bool HWPlaneMirrorPortal::Setup(HWDrawInfo *di, Clipper *clipper)
 
 	state->PlaneMirrorFlag++;
 	di->SetClipHeight(planez, state->PlaneMirrorMode < 0 ? -1.f : 1.f);
-	di->SetupView(vp.Pos.X, vp.Pos.Y, vp.Pos.Z, !!(state->MirrorFlag & 1), !!(state->PlaneMirrorFlag & 1));
+	di->SetupView(rstate, vp.Pos.X, vp.Pos.Y, vp.Pos.Z, !!(state->MirrorFlag & 1), !!(state->PlaneMirrorFlag & 1));
 	ClearClipper(di, clipper);
 
 	di->UpdateCurrentMapSection();
 	return true;
 }
 
-void HWPlaneMirrorPortal::Shutdown(HWDrawInfo *di)
+void HWPlaneMirrorPortal::Shutdown(HWDrawInfo *di, FRenderState &rstate)
 {
 	auto state = mOwner->mState;
 	state->PlaneMirrorFlag--;
@@ -817,7 +821,7 @@ HWHorizonPortal::HWHorizonPortal(FPortalSceneState *s, GLHorizonInfo * pt, FRend
 
 	// Draw to some far away boundary
 	// This is not drawn as larger strips because it causes visual glitches.
-	auto verts = di->AllocVertices(1024 + 10);
+	auto verts = screen->mVertexData->AllocVertices(1024 + 10);
 	auto ptr = verts.first;
 	for (int xx = -32768; xx < 32768; xx += 4096)
 	{
@@ -882,7 +886,7 @@ void HWHorizonPortal::DrawContents(HWDrawInfo *di, FRenderState &state)
 	gltexture = FMaterial::ValidateTexture(sp->texture, false, true);
 	if (!gltexture)
 	{
-		di->ClearScreen();
+		state.ClearScreen();
 		return;
 	}
 	di->SetCameraPos(vp.Pos);
@@ -912,9 +916,9 @@ void HWHorizonPortal::DrawContents(HWDrawInfo *di, FRenderState &state)
 
 	for (unsigned i = 0; i < vcount; i += 4)
 	{
-		di->Draw(DT_TriangleStrip, state, voffset + i, 4, true);// i == 0);
+		state.Draw(DT_TriangleStrip, voffset + i, 4, true);// i == 0);
 	}
-	di->Draw(DT_TriangleStrip, state, voffset + vcount, 10, false);
+	state.Draw(DT_TriangleStrip, voffset + vcount, 10, false);
 
 	state.EnableTextureMatrix(false);
 }

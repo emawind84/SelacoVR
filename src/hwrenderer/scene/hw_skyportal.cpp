@@ -41,7 +41,7 @@
 
 void HWSkyPortal::RenderRow(HWDrawInfo *di, FRenderState &state, EDrawType prim, int row, bool apply)
 {
-	di->Draw(prim, state, vertexBuffer->mPrimStart[row], vertexBuffer->mPrimStart[row + 1] - vertexBuffer->mPrimStart[row]);
+	state.Draw(prim, vertexBuffer->mPrimStart[row], vertexBuffer->mPrimStart[row + 1] - vertexBuffer->mPrimStart[row]);
 }
 
 //-----------------------------------------------------------------------------
@@ -64,7 +64,7 @@ void HWSkyPortal::RenderDome(HWDrawInfo *di, FRenderState &state, FMaterial * te
 	int rc = vertexBuffer->mRows + 1;
 
 	// The caps only get drawn for the main layer but not for the overlay.
-	if (mode == FSkyDomeCreator::SKYMODE_MAINLAYER && tex != NULL)
+	if (mode == FSkyVertexBuffer::SKYMODE_MAINLAYER && tex != NULL)
 	{
 		PalEntry pe = tex->tex->GetSkyCapColor(false);
 		state.SetObjectColor(pe);
@@ -115,40 +115,40 @@ void HWSkyPortal::RenderBox(HWDrawInfo *di, FRenderState &state, FTextureID texn
 		// north
 		tex = FMaterial::ValidateTexture(sb->faces[0], false);
 		state.SetMaterial(tex, CLAMP_XY, 0, -1);
-		di->Draw(DT_TriangleStrip, state, vertexBuffer->FaceStart(0), 4);
+		state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(0), 4);
 
 		// east
 		tex = FMaterial::ValidateTexture(sb->faces[1], false);
 		state.SetMaterial(tex, CLAMP_XY, 0, -1);
-		di->Draw(DT_TriangleStrip, state, vertexBuffer->FaceStart(1), 4);
+		state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(1), 4);
 
 		// south
 		tex = FMaterial::ValidateTexture(sb->faces[2], false);
 		state.SetMaterial(tex, CLAMP_XY, 0, -1);
-		di->Draw(DT_TriangleStrip, state, vertexBuffer->FaceStart(2), 4);
+		state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(2), 4);
 
 		// west
 		tex = FMaterial::ValidateTexture(sb->faces[3], false);
 		state.SetMaterial(tex, CLAMP_XY, 0, -1);
-		di->Draw(DT_TriangleStrip, state, vertexBuffer->FaceStart(3), 4);
+		state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(3), 4);
 	}
 	else 
 	{
 		faces=1;
 		tex = FMaterial::ValidateTexture(sb->faces[0], false);
 		state.SetMaterial(tex, CLAMP_XY, 0, -1);
-		di->Draw(DT_TriangleStrip, state, vertexBuffer->FaceStart(-1), 10);
+		state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(-1), 10);
 	}
 
 	// top
 	tex = FMaterial::ValidateTexture(sb->faces[faces], false);
 	state.SetMaterial(tex, CLAMP_XY, 0, -1);
-	di->Draw(DT_TriangleStrip, state, vertexBuffer->FaceStart(sb->fliptop ? 6 : 5), 4);
+	state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(sb->fliptop ? 6 : 5), 4);
 
 	// bottom
 	tex = FMaterial::ValidateTexture(sb->faces[faces+1], false);
 	state.SetMaterial(tex, CLAMP_XY, 0, -1);
-	di->Draw(DT_TriangleStrip, state, vertexBuffer->FaceStart(4), 4);
+	state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(4), 4);
 
 	state.EnableModelMatrix(false);
 }
@@ -176,11 +176,11 @@ void HWSkyPortal::DrawContents(HWDrawInfo *di, FRenderState &state)
 	state.EnableFog(false);
 	state.AlphaFunc(Alpha_GEqual, 0.f);
 	state.SetRenderStyle(STYLE_Translucent);
-	bool oldClamp = di->SetDepthClamp(true);
+	bool oldClamp = state.SetDepthClamp(true);
 
-	di->SetupView(0, 0, 0, !!(mState->MirrorFlag & 1), !!(mState->PlaneMirrorFlag & 1));
+	di->SetupView(state, 0, 0, 0, !!(mState->MirrorFlag & 1), !!(mState->PlaneMirrorFlag & 1));
 
-	state.SetVertexBuffer(FRenderState::VB_Sky);
+	vertexBuffer->Bind(state);
 	if (origin->texture[0] && origin->texture[0]->tex->bSkybox)
 	{
 		RenderBox(di, state, origin->skytexno1, origin->texture[0], origin->x_offset[0], origin->sky2);
@@ -192,7 +192,7 @@ void HWSkyPortal::DrawContents(HWDrawInfo *di, FRenderState &state)
 		if (origin->texture[0])
 		{
 			state.SetTextureMode(TM_OPAQUE);
-			RenderDome(di, state, origin->texture[0], origin->x_offset[0], origin->y_offset, origin->mirrored, FSkyDomeCreator::SKYMODE_MAINLAYER);
+			RenderDome(di, state, origin->texture[0], origin->x_offset[0], origin->y_offset, origin->mirrored, FSkyVertexBuffer::SKYMODE_MAINLAYER);
 			state.SetTextureMode(TM_NORMAL);
 		}
 		
@@ -200,7 +200,7 @@ void HWSkyPortal::DrawContents(HWDrawInfo *di, FRenderState &state)
 		
 		if (origin->doublesky && origin->texture[1])
 		{
-			RenderDome(di, state, origin->texture[1], origin->x_offset[1], origin->y_offset, false, FSkyDomeCreator::SKYMODE_SECONDLAYER);
+			RenderDome(di, state, origin->texture[1], origin->x_offset[1], origin->y_offset, false, FSkyVertexBuffer::SKYMODE_SECONDLAYER);
 		}
 
 		if (::level.skyfog>0 && !di->isFullbrightScene()  && (origin->fadecolor & 0xffffff) != 0)
@@ -210,14 +210,13 @@ void HWSkyPortal::DrawContents(HWDrawInfo *di, FRenderState &state)
 
 			state.EnableTexture(false);
 			state.SetObjectColor(FadeColor);
-			di->Draw(DT_Triangles, state, 0, 12);
+			state.Draw(DT_Triangles, 0, 12);
 			state.EnableTexture(true);
 			state.SetObjectColor(0xffffffff);
 		}
 	}
-	state.SetVertexBuffer(FRenderState::VB_Default);
 	::level.lightmode = oldlightmode;
-	di->SetDepthClamp(oldClamp);
+	state.SetDepthClamp(oldClamp);
 }
 
 const char *HWSkyPortal::GetName() { return "Sky"; }

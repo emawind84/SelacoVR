@@ -196,14 +196,6 @@ IModelVertexBuffer *PolyModelRenderer::CreateVertexBuffer(bool needindex, bool s
 	return new PolyModelVertexBuffer(needindex, singleframe);
 }
 
-void PolyModelRenderer::SetVertexBuffer(IModelVertexBuffer *buffer)
-{
-}
-
-void PolyModelRenderer::ResetVertexBuffer()
-{
-}
-
 VSMatrix PolyModelRenderer::GetViewToWorldMatrix()
 {
 	Mat4f swapYZ = Mat4f::Null();

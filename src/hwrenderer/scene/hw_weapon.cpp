@@ -34,6 +34,8 @@
 #include "r_data/models/models.h"
 #include "hw_weapon.h"
 #include "hw_fakeflat.h"
+
+#include "hwrenderer/models/hw_models.h"
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
 #include "hwrenderer/textures/hw_material.h"
 #include "hwrenderer/utility/hw_lighting.h"
@@ -41,6 +43,7 @@
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/data/flatvertices.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
 #include "hw_renderstate.h"
 
 EXTERN_CVAR(Float, transsouls)
@@ -65,6 +68,7 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 	{
 		state.SetColor(huds->lightlevel, 0, isFullbrightScene(), huds->cm, huds->alpha, true);
 	}
+	state.SetLightIndex(-1);
 	state.SetRenderStyle(huds->RenderStyle);
 	state.SetTextureMode(huds->RenderStyle);
 	state.SetObjectColor(huds->ObjectColor);
@@ -74,14 +78,17 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 	if (huds->mframe)
 	{
 		state.AlphaFunc(Alpha_GEqual, 0);
-		DrawHUDModel(huds, state);
+
+		FGLModelRenderer renderer(this, state, huds->lightindex);
+		renderer.RenderHUDModel(huds->weapon, huds->mx, huds->my);
+		screen->mVertexData->Bind(state);
 	}
 	else
 	{
 		float thresh = (huds->tex->tex->GetTranslucency() || huds->OverrideShader != -1) ? 0.f : gl_mask_sprite_threshold;
 		state.AlphaFunc(Alpha_GEqual, thresh);
 		state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
-		Draw(DT_TriangleStrip, state, huds->mx, 4);
+		state.Draw(DT_TriangleStrip, huds->mx, 4);
 	}
 
 	state.SetTextureMode(TM_NORMAL);
@@ -548,7 +555,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 		return false;
 	*/
 
-	auto verts = di->AllocVertices(4);
+	auto verts = screen->mVertexData->AllocVertices(4);
 	mx = verts.second;
 
 	verts.first[0].Set(Vert.v[0].X, Vert.v[0].Y, 0, u1, v1);
@@ -623,7 +630,7 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 			else
 			{
 				hw_GetDynModelLight(playermo, lightdata);
-				hudsprite.lightindex = UploadLights(lightdata);
+				hudsprite.lightindex = screen->mLights->UploadLights(lightdata);
 			}
 		}
 

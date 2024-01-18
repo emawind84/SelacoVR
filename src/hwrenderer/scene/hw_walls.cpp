@@ -38,6 +38,7 @@
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/scene/hw_portal.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
 #include "hw_renderstate.h"
 #include "hw_skydome.h"
 
@@ -61,7 +62,7 @@ void GLWall::RenderWall(HWDrawInfo *di, FRenderState &state, int textured)
 		return;
 	}
 
-	di->Draw(DT_TriangleFan, state, vertindex, vertcount);
+	state.Draw(DT_TriangleFan, vertindex, vertcount);
 	vertexcount += vertcount;
 	wallVerticesPerEye += vertcount;
 }
@@ -77,7 +78,7 @@ void GLWall::RenderFogBoundary(HWDrawInfo *di, FRenderState &state)
 	if (gl_fogmode && !di->isFullbrightScene())
 	{
 		int rel = rellight + getExtraLight();
-		di->EnableDrawBufferAttachments(false);
+		state.EnableDrawBufferAttachments(false);
 		state.SetFog(lightlevel, rel, false, &Colormap, false);
 		state.SetEffect(EFF_FOGBOUNDARY);
 		state.AlphaFunc(Alpha_GEqual, 0.f);
@@ -85,7 +86,7 @@ void GLWall::RenderFogBoundary(HWDrawInfo *di, FRenderState &state)
 		RenderWall(di, state, GLWall::RWF_BLANK);
 		state.ClearDepthBias();
 		state.SetEffect(EFF_NONE);
-		di->EnableDrawBufferAttachments(true);
+		state.EnableDrawBufferAttachments(true);
 	}
 }
 
@@ -99,7 +100,7 @@ void GLWall::RenderMirrorSurface(HWDrawInfo *di, FRenderState &state)
 {
 	if (!TexMan.mirrorTexture.isValid()) return;
 
-	di->SetDepthFunc(DF_LEqual);
+	state.SetDepthFunc(DF_LEqual);
 
 	// we use texture coordinates and texture matrix to pass the normal stuff to the shader so that the default vertex buffer format can be used as is.
 	state.EnableTextureMatrix(true);
@@ -121,7 +122,7 @@ void GLWall::RenderMirrorSurface(HWDrawInfo *di, FRenderState &state)
 	state.SetEffect(EFF_NONE);
 	state.AlphaFunc(Alpha_GEqual, gl_mask_sprite_threshold);
 
-	di->SetDepthFunc(DF_Less);
+	state.SetDepthFunc(DF_Less);
 
 	// This is drawn in the translucent pass which is done after the decal pass
 	// As a result the decals have to be drawn here, right after the wall they are on,
@@ -412,13 +413,13 @@ void GLWall::SetupLights(HWDrawInfo *di, FDynLightData &lightdata)
 				}
 				if (outcnt[0]!=4 && outcnt[1]!=4 && outcnt[2]!=4 && outcnt[3]!=4) 
 				{
-					lightdata.GetLight(seg->frontsector->PortalGroup, p, node->lightsource, true);
+					draw_dlight += lightdata.GetLight(seg->frontsector->PortalGroup, p, node->lightsource, true);
 				}
 			}
 		}
 		node = node->nextLight;
 	}
-	dynlightindex = di->UploadLights(lightdata);
+	dynlightindex = screen->mLights->UploadLights(lightdata);
 }
 
 
@@ -570,6 +571,8 @@ void GLWall::PutPortal(HWDrawInfo *di, int ptype)
 		break;
 
 	case PORTALTYPE_LINETOLINE:
+		if (!lineportal)
+			return;
 		portal = di->FindPortal(lineportal);
 		if (!portal)
 		{

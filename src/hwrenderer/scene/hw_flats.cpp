@@ -42,6 +42,7 @@
 #include "hwrenderer/textures/hw_material.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/data/flatvertices.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
 #include "hw_drawstructs.h"
 #include "hw_renderstate.h"
 
@@ -170,11 +171,11 @@ void GLFlat::SetupLights(HWDrawInfo *di, FLightNode * node, FDynLightData &light
 		}
 
 		p.Set(plane.plane.Normal(), plane.plane.fD());
-		lightdata.GetLight(portalgroup, p, light, false);
+		draw_dlightf += lightdata.GetLight(portalgroup, p, light, false);
 		node = node->nextLight;
 	}
 
-	dynlightindex = di->UploadLights(lightdata);
+	dynlightindex = screen->mLights->UploadLights(lightdata);
 }
 
 //==========================================================================
@@ -198,7 +199,7 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 	state.SetLightIndex(dynlightindex);
 	if (vcount > 0 && !di->ClipLineShouldBeActive())
 	{
-		di->DrawIndexed(DT_Triangles, state, iboindex, vcount);
+		state.DrawIndexed(DT_Triangles, iboindex, vcount);
 		flatVerticesPerEye += vcount;
 		flatvertices += vcount;
 		flatprimitives++;
@@ -213,7 +214,7 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 
 			if (di->ss_renderflags[sub->Index()] & renderflags)
 			{
-				di->DrawIndexed(DT_Triangles, state, index, (sub->numlines - 2) * 3, false);
+				state.DrawIndexed(DT_Triangles, index, (sub->numlines - 2) * 3, false);
 				flatVerticesPerEye += sub->numlines;
 				flatvertices += sub->numlines;
 				flatprimitives++;
@@ -236,7 +237,7 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 			flatVerticesPerEye += num;
 			flatvertices += num;
 			flatprimitives++;
-			di->Draw(DT_TriangleFan, state, node->vertexindex, num);
+			state.Draw(DT_TriangleFan,node->vertexindex, num);
 			node = node->next;
 		}
 		// Flood gaps with the back side's ceiling/floor texture
@@ -260,26 +261,28 @@ void GLFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 			// Create stencil 
 			state.SetEffect(EFF_STENCIL);
 			state.EnableTexture(false);
-			di->SetStencil(0, SOP_Increment, SF_ColorMaskOff);
-			di->Draw(DT_TriangleFan, state, fnode->vertexindex, 4);
+			state.SetStencil(0, SOP_Increment, SF_ColorMaskOff);
+			state.Draw(DT_TriangleFan,fnode->vertexindex, 4);
 
 			// Draw projected plane into stencil
 			state.EnableTexture(true);
 			state.SetEffect(EFF_NONE);
-			di->SetStencil(1, SOP_Keep, SF_DepthMaskOff | SF_DepthTestOff);
-			di->Draw(DT_TriangleFan, state, fnode->vertexindex + 4, 4);
+			state.SetStencil(1, SOP_Keep, SF_DepthMaskOff);
+			state.EnableDepthTest(false);
+			state.Draw(DT_TriangleFan,fnode->vertexindex + 4, 4);
 
 			// clear stencil
 			state.SetEffect(EFF_STENCIL);
 			state.EnableTexture(false);
-			di->SetStencil(1, SOP_Decrement, SF_ColorMaskOff | SF_DepthMaskOff | SF_DepthTestOff);
-			di->Draw(DT_TriangleFan, state, fnode->vertexindex, 4);
+			state.SetStencil(1, SOP_Decrement, SF_ColorMaskOff | SF_DepthMaskOff);
+			state.Draw(DT_TriangleFan,fnode->vertexindex, 4);
 
 			// restore old stencil op.
 			state.EnableTexture(true);
+			state.EnableDepthTest(true);
 			state.SetEffect(EFF_NONE);
 			state.SetDepthBias(0, 0);
-			di->SetStencil(0, SOP_Keep, SF_AllOn);
+			state.SetStencil(0, SOP_Keep, SF_AllOn);
 
 			fnode = fnode->next;
 		}
@@ -317,7 +320,7 @@ void GLFlat::DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent)
 		{
 			state.SetMaterial(gltexture, CLAMP_XY, 0, -1);
 			state.SetLightIndex(dynlightindex);
-			di->Draw(DT_TriangleFan, state, iboindex, 4);
+			state.Draw(DT_TriangleFan,iboindex, 4);
 			flatVerticesPerEye += 4;
 			flatvertices += 4;
 			flatprimitives++;
@@ -410,7 +413,7 @@ void GLFlat::Process(HWDrawInfo *di, sector_t * model, int whichplane, bool fog)
 	z = plane.plane.ZatPoint(0.f, 0.f);
 	if (sector->special == GLSector_Skybox)
 	{
-		auto vert = di->AllocVertices(4);
+		auto vert = screen->mVertexData->AllocVertices(4);
 		CreateSkyboxVertices(vert.first);
 		iboindex = vert.second;
 	}

@@ -20,21 +20,12 @@
 //--------------------------------------------------------------------------
 //
 
-#include "gl_load/gl_system.h"
-#include "p_local.h"
-#include "p_lnspec.h"
-#include "a_sharedglobal.h"
-#include "g_levellocals.h"
-#include "actorinlines.h"
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
-
-#include "gl_load/gl_interface.h"
 #include "hwrenderer/utility/hw_cvars.h"
-#include "gl/renderer/gl_renderer.h"
-#include "gl/data/gl_vertexbuffer.h"
-#include "gl/dynlights/gl_lightbuffer.h"
-#include "gl/scene/gl_drawinfo.h"
-#include "hwrenderer/utility/hw_vrmodes.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "hwrenderer/scene/hw_drawstructs.h"
+#include "hwrenderer/scene/hw_drawinfo.h"
+#include "hwrenderer/textures/hw_material.h"
 
 EXTERN_CVAR(Int, gl_max_vertices)
 
@@ -46,7 +37,7 @@ extern int wallVerticesPerEye;
 //
 //==========================================================================
 
-void FDrawInfo::AddWall(GLWall *wall)
+void HWDrawInfo::AddWall(GLWall *wall)
 {
 	if (wall->flags & GLWall::GLWF_TRANSLUCENT)
 	{
@@ -77,7 +68,7 @@ void FDrawInfo::AddWall(GLWall *wall)
 //
 //==========================================================================
 
-void FDrawInfo::AddMirrorSurface(GLWall *w)
+void HWDrawInfo::AddMirrorSurface(GLWall *w)
 {
 	w->type = RENDERWALL_MIRRORSURFACE;
 	auto newwall = drawlists[GLDL_TRANSLUCENTBORDER].NewWall();
@@ -92,5 +83,70 @@ void FDrawInfo::AddMirrorSurface(GLWall *w)
 	tcs[GLWall::LOLFT].v = tcs[GLWall::LORGT].v = tcs[GLWall::UPLFT].v = tcs[GLWall::UPRGT].v = v.Z;
 	newwall->MakeVertices(this, false);
 	newwall->ProcessDecals(this);
+}
+
+//==========================================================================
+//
+// FDrawInfo::AddFlat
+//
+// Checks texture, lighting and translucency settings and puts this
+// plane in the appropriate render list.
+//
+//==========================================================================
+
+void HWDrawInfo::AddFlat(GLFlat *flat, bool fog)
+{
+	int list;
+
+	if (flat->renderstyle != STYLE_Translucent || flat->alpha < 1.f - FLT_EPSILON || fog || flat->gltexture == nullptr)
+	{
+		// translucent 3D floors go into the regular translucent list, translucent portals go into the translucent border list.
+		list = (flat->renderflags&SSRF_RENDER3DPLANES) ? GLDL_TRANSLUCENT : GLDL_TRANSLUCENTBORDER;
+	}
+	else if (flat->gltexture->tex->GetTranslucency())
+	{
+		if (flat->stack)
+		{
+			list = GLDL_TRANSLUCENTBORDER;
+		}
+		else if ((flat->renderflags&SSRF_RENDER3DPLANES) && !flat->plane.plane.isSlope())
+		{
+			list = GLDL_TRANSLUCENT;
+		}
+		else
+		{
+			list = GLDL_PLAINFLATS;
+		}
+	}
+	else
+	{
+		bool masked = flat->gltexture->isMasked() && ((flat->renderflags&SSRF_RENDER3DPLANES) || flat->stack);
+		list = masked ? GLDL_MASKEDFLATS : GLDL_PLAINFLATS;
+	}
+	auto newflat = drawlists[list].NewFlat();
+	*newflat = *flat;
+}
+
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+void HWDrawInfo::AddSprite(GLSprite *sprite, bool translucent)
+{
+	int list;
+	// [BB] Allow models to be drawn in the GLDL_TRANSLUCENT pass.
+	if (translucent || sprite->actor == nullptr || (!sprite->modelframe && (sprite->actor->renderflags & RF_SPRITETYPEMASK) != RF_WALLSPRITE))
+	{
+		list = GLDL_TRANSLUCENT;
+	}
+	else
+	{
+		list = GLDL_MODELS;
+	}
+
+	auto newsprt = drawlists[list].NewSprite();
+	*newsprt = *sprite;
 }
 

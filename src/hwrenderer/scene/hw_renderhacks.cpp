@@ -37,6 +37,8 @@
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
 #include "hwrenderer/data/flatvertices.h"
+#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "hwrenderer/scene/hw_portal.h"
 
 //==========================================================================
 //
@@ -66,11 +68,11 @@ int HWDrawInfo::SetupLightsForOtherPlane(subsector_t * sub, FDynLightData &light
 			iter_dlightf++;
 
 			p.Set(plane->Normal(), plane->fD());
-			lightdata.GetLight(sub->sector->PortalGroup, p, light, true);
+			draw_dlightf += lightdata.GetLight(sub->sector->PortalGroup, p, light, true);
 			node = node->nextLight;
 		}
 
-		return UploadLights(lightdata);
+		return screen->mLights->UploadLights(lightdata);
 	}
 	else return -1;
 }
@@ -83,7 +85,7 @@ int HWDrawInfo::SetupLightsForOtherPlane(subsector_t * sub, FDynLightData &light
 
 int HWDrawInfo::CreateOtherPlaneVertices(subsector_t *sub, const secplane_t *plane)
 {
-	auto alloc = AllocVertices(sub->numlines);
+	auto alloc = screen->mVertexData->AllocVertices(sub->numlines);
 	auto ptr = alloc.first;
 	for (unsigned int k = 0; k < sub->numlines; k++)
 	{
@@ -718,7 +720,7 @@ void HWDrawInfo::PrepareUpperGap(seg_t * seg)
 	ws.z1 = frontz;
 	ws.z2 = backz;
 
-	auto vertices = AllocVertices(8);
+	auto vertices = screen->mVertexData->AllocVertices(8);
 
 	CreateFloodStencilPoly(&ws, vertices.first);
 	CreateFloodPoly(&ws, vertices.first+4, ws.z2, fakebsector, true);
@@ -781,7 +783,7 @@ void HWDrawInfo::PrepareLowerGap(seg_t * seg)
 	ws.z2 = frontz;
 	ws.z1 = backz;
 
-	auto vertices = AllocVertices(8);
+	auto vertices = screen->mVertexData->AllocVertices(8);
 
 	CreateFloodStencilPoly(&ws, vertices.first);
 	CreateFloodPoly(&ws, vertices.first+4, ws.z1, fakebsector, false);
@@ -1357,5 +1359,23 @@ void HWDrawInfo::ProcessSectorStacks(area_t in_area)
 
 	FloorStacks.Clear();
 	CeilingStacks.Clear();
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void HWDrawInfo::AddSubsectorToPortal(FSectorPortalGroup *ptg, subsector_t *sub)
+{
+	auto portal = FindPortal(ptg);
+	if (!portal)
+	{
+		portal = new HWScenePortal(screen->mPortalState, new HWSectorStackPortal(ptg));
+		Portals.Push(portal);
+	}
+	auto ptl = static_cast<HWSectorStackPortal*>(static_cast<HWScenePortal*>(portal)->mScene);
+	ptl->AddSubsector(sub);
 }
 

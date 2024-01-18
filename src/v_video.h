@@ -44,12 +44,20 @@
 #include "c_cvars.h"
 #include "v_colortables.h"
 #include "v_2ddrawer.h"
+#include "hwrenderer/dynlights/hw_shadowmap.h"
 
 struct sector_t;
 class IShaderProgram;
 class FTexture;
 struct FPortalSceneState;
-class FSkyDomeCreator;
+class FSkyVertexBuffer;
+class IIndexBuffer;
+class IVertexBuffer;
+class IDataBuffer;
+class FFlatVertexBuffer;
+class GLViewpointBuffer;
+class FLightBuffer;
+struct HWDrawInfo;
 
 enum EHWCaps
 {
@@ -355,7 +363,6 @@ public:
 class FUniquePalette;
 class IHardwareTexture;
 class FTexture;
-class IUniformBuffer;
 
 // A canvas that represents the actual display. The video code is responsible
 // for actually implementing this. Built on top of SimpleCanvas, because it
@@ -385,17 +392,27 @@ protected:
 	PalEntry SourcePalette[256];		// This is where unpaletted textures get their palette from
 
 public:
-	int hwcaps = 0;
-	float glslversion = 0;				// This is here so that the differences between old OpenGL and new OpenGL/Vulkan can be handled by platform independent code.
-	int instack[2] = { 0,0 };			// this is globally maintained state for portal recursion avoidance.
-	int stencilValue = 0;				// Global stencil test value
-	bool enable_quadbuffered = false;
-	FPortalSceneState *mPortalState;	// global portal state.
-	FSkyDomeCreator *mSkyData;			// we need access to this in the device independent part, but cannot depend on how the renderer manages it internally.
+	// Hardware render state that needs to be exposed to the API independent part of the renderer. For ease of access this is stored in the base class.
+	int hwcaps = 0;								// Capability flags
+	float glslversion = 0;						// This is here so that the differences between old OpenGL and new OpenGL/Vulkan can be handled by platform independent code.
+	int instack[2] = { 0,0 };					// this is globally maintained state for portal recursion avoidance.
+	int stencilValue = 0;						// Global stencil test value
+	bool enable_quadbuffered = false;			// Quad-buffered stereo available?
+	unsigned int uniformblockalignment = 256;	// Hardware dependent uniform buffer alignment.
+	unsigned int maxuniformblock = 65536;
+	const char *gl_vendorstring;				// On OpenGL (not Vulkan) we have to account for some issues with Intel.
+	FPortalSceneState *mPortalState;			// global portal state.
+	FSkyVertexBuffer *mSkyData = nullptr;		// the sky vertex buffer
+	FFlatVertexBuffer *mVertexData = nullptr;	// Global vertex data
+	GLViewpointBuffer *mViewpoints = nullptr;	// Viewpoint render data.
+	FLightBuffer *mLights = nullptr;			// Dynamic lights
+	IShadowMap mShadowMap;
 
 	IntRect mScreenViewport;
 	IntRect mSceneViewport;
 	IntRect mOutputLetterbox;
+	float mSceneClearColor[4];
+
 
 public:
 	DFrameBuffer (int width=1, int height=1);
@@ -422,7 +439,7 @@ public:
 	}
 
 	// Make the surface visible.
-	virtual void Update () = 0;
+	virtual void Update ();
 
 	// Return a pointer to 256 palette entries that can be written to.
 	PalEntry *GetPalette ();
@@ -470,8 +487,10 @@ public:
 	virtual void BlurScene(float amount) {}
     
     // Interface to hardware rendering resources
-    virtual IUniformBuffer *CreateUniformBuffer(size_t size, bool staticuse = false) { return nullptr; }
 	virtual IShaderProgram *CreateShaderProgram() { return nullptr; }
+	virtual IVertexBuffer *CreateVertexBuffer() { return nullptr; }
+	virtual IIndexBuffer *CreateIndexBuffer() { return nullptr; }
+	virtual IDataBuffer *CreateDataBuffer(int bindingpoint, bool ssbo) { return nullptr; }
 	bool BuffersArePersistent() { return !!(hwcaps & RFL_BUFFER_STORAGE); }
 
 	// Begin/End 2D drawing operations.
@@ -497,8 +516,7 @@ public:
 
 	// Report a game restart
 	void InitPalette();
-	virtual void InitForLevel() {}
-	virtual void SetClearColor(int color) {}
+	void SetClearColor(int color);
 	virtual uint32_t GetCaps();
 	virtual void RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV);
 	virtual void WriteSavePic(player_t *player, FileWriter *file, int width, int height);

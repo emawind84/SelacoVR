@@ -7,7 +7,7 @@
 #include "r_renderer.h"
 #include "r_data/matrix.h"
 #include "hwrenderer/scene/hw_portal.h"
-#include "gl/dynlights/gl_shadowmap.h"
+#include "hwrenderer/dynlights/hw_shadowmap.h"
 #include <functional>
 
 #ifdef _MSC_VER
@@ -19,7 +19,6 @@ class FCanvasTexture;
 class FFlatVertexBuffer;
 class FSkyVertexBuffer;
 class OpenGLFrameBuffer;
-struct FDrawInfo;
 class FShaderManager;
 class HWPortal;
 class FLightBuffer;
@@ -37,6 +36,7 @@ class FCustomPostProcessShaders;
 class SWSceneDrawer;
 class GLViewpointBuffer;
 struct FRenderViewpoint;
+class FPresentShaderBase;
 #define NOQUEUE nullptr	// just some token to be used as a placeholder
 
 class FGLRenderer
@@ -65,17 +65,9 @@ public:
 	FShadowMapShader *mShadowMapShader = nullptr;
 	FCustomPostProcessShaders *mCustomPostProcessShaders = nullptr;
 
-	FShadowMap mShadowMap;
-
 	//FRotator mAngles;
 
-	FFlatVertexBuffer *mVBO = nullptr;
-	FSkyVertexBuffer *mSkyVBO = nullptr;
-	FLightBuffer *mLights = nullptr;
-	GLViewpointBuffer *mViewpoints = nullptr;
 	SWSceneDrawer *swdrawer = nullptr;
-
-	float mSceneClearColor[3];
 
 	FGLRenderer(OpenGLFrameBuffer *fb);
 	~FGLRenderer() ;
@@ -84,7 +76,6 @@ public:
 
 	void ClearBorders();
 
-	void SetupLevel();
 	void ResetSWScene();
 
 	void PresentStereo();
@@ -102,14 +93,28 @@ public:
 	sector_t *RenderView(player_t *player);
 	void BeginFrame();
     
-    void Set3DViewport();
     sector_t *RenderViewpoint (FRenderViewpoint &mainvp, AActor * camera, IntRect * bounds, float fov, float ratio, float fovratio, bool mainview, bool toscreen);
 
 
 	bool StartOffscreen();
 	void EndOffscreen();
+	void UpdateShadowMap();
 
 	void BindToFrameBuffer(FMaterial *mat);
+
+private:
+
+	void DrawScene(HWDrawInfo *di, int drawmode);
+	bool QuadStereoCheckInitialRenderContextState();
+	void PresentAnaglyph(bool r, bool g, bool b);
+	void PresentSideBySide();
+	void PresentTopBottom();
+	void prepareInterleavedPresent(FPresentShaderBase& shader);
+	void PresentColumnInterleaved();
+	void PresentRowInterleaved();
+	void PresentCheckerInterleaved();
+	void PresentQuadStereo();
+
 };
 
 #include "hwrenderer/scene/hw_fakeflat.h"

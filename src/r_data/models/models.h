@@ -71,9 +71,6 @@ public:
 
 	virtual IModelVertexBuffer *CreateVertexBuffer(bool needindex, bool singleframe) = 0;
 
-	virtual void SetVertexBuffer(IModelVertexBuffer *buffer) = 0;
-	virtual void ResetVertexBuffer() = 0;
-
 	virtual VSMatrix GetViewToWorldMatrix() = 0;
 
 	virtual void BeginDrawHUDModel(AActor *actor, const VSMatrix &objectToWorldMatrix, bool mirrored) = 0;

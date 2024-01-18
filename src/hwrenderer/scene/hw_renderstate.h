@@ -4,12 +4,22 @@
 #include "vectors.h"
 #include "g_levellocals.h"
 #include "hw_drawstructs.h"
+#include "hw_drawlist.h"
 #include "r_data/matrix.h"
 #include "hwrenderer/textures/hw_material.h"
 
 struct FColormap;
+class IVertexBuffer;
+class IIndexBuffer;
 
-enum EEffect
+enum EClearTarget
+{
+	CT_Depth = 1,
+	CT_Stencil = 2,
+	CT_Color = 4
+};
+
+enum ERenderEffect
 {
 	EFF_NONE = -1,
 	EFF_FOGBOUNDARY,
@@ -25,6 +35,45 @@ enum EAlphaFunc
 	Alpha_GEqual = 0,
 	Alpha_Greater = 1
 };
+
+enum EDrawType
+{
+	DT_Points = 0,
+	DT_Lines = 1,
+	DT_Triangles = 2,
+	DT_TriangleFan = 3,
+	DT_TriangleStrip = 4
+};
+
+enum EDepthFunc
+{
+	DF_Less,
+	DF_LEqual,
+	DF_Always
+};
+
+enum EStencilFlags
+{
+	SF_AllOn = 0,
+	SF_ColorMaskOff = 1,
+	SF_DepthMaskOff = 2,
+};
+
+enum EStencilOp
+{
+	SOP_Keep = 0,
+	SOP_Increment = 1,
+	SOP_Decrement = 2
+};
+
+enum ECull
+{
+	Cull_None,
+	Cull_CCW,
+	Cull_CW
+};
+
+
 
 struct FStateVec4
 {
@@ -92,6 +141,8 @@ protected:
 	float mLightParms[4];
 
 	float mAlphaThreshold;
+	float mClipSplit[2];
+	float mInterpolationFactor;
 
 	FStateVec4 mNormal;
 	FStateVec4 mColor;
@@ -111,6 +162,10 @@ protected:
 
 	FMaterialState mMaterial;
 	FDepthBiasState mBias;
+
+	IVertexBuffer *mVertexBuffer;
+	int mVertexOffsets[2];	// one per binding point
+	IIndexBuffer *mIndexBuffer;
 
 	void SetShaderLight(float level, float olight);
 
@@ -140,9 +195,14 @@ public:
 		mLightParms[3] = -1.f;
 		mSpecialEffect = EFF_NONE;
 		mLightIndex = -1;
+		mInterpolationFactor = 0;
 		mRenderStyle = DefaultRenderStyle();
 		mMaterial.Reset();
 		mBias.Reset();
+
+		mVertexBuffer = nullptr;
+		mVertexOffsets[0] = mVertexOffsets[0] = 0;
+		mIndexBuffer = nullptr;
 
 		mColor.Set(1.0f, 1.0f, 1.0f, 1.0f);
 		mGlowTop.Set(0.0f, 0.0f, 0.0f, 0.0f);
@@ -158,6 +218,7 @@ public:
 
 		mModelMatrix.loadIdentity();
 		mTextureMatrix.loadIdentity();
+		ClearClipSplit();
 	}
 
 	void SetNormal(FVector3 norm)
@@ -402,16 +463,78 @@ public:
 		mTextureModeFlags = mat->GetLayerFlags();
 	}
 
+	void SetClipSplit(float bottom, float top)
+	{
+		mClipSplit[0] = bottom;
+		mClipSplit[1] = top;
+	}
+
+	void SetClipSplit(float *vals)
+	{
+		memcpy(mClipSplit, vals, 2 * sizeof(float));
+	}
+
+	void GetClipSplit(float *out)
+	{
+		memcpy(out, mClipSplit, 2 * sizeof(float));
+	}
+
+	void ClearClipSplit()
+	{
+		mClipSplit[0] = -1000000.f;
+		mClipSplit[1] = 1000000.f;
+	}
+
+	void SetVertexBuffer(IVertexBuffer *vb, int offset0, int offset1)
+	{
+		assert(vb);
+		mVertexBuffer = vb;
+		mVertexOffsets[0] = offset0;
+		mVertexOffsets[1] = offset1;
+	}
+
+	void SetIndexBuffer(IIndexBuffer *ib)
+	{
+		mIndexBuffer = ib;
+	}
+
+	void SetInterpolationFactor(float fac)
+	{
+		mInterpolationFactor = fac;
+	}
+
+	float GetInterpolationFactor()
+	{
+		return mInterpolationFactor;
+	}
+
 	void SetColor(int sectorlightlevel, int rellight, bool fullbright, const FColormap &cm, float alpha, bool weapon = false);
 	void SetFog(int lightlevel, int rellight, bool fullbright, const FColormap *cmap, bool isadditive);
 
-	// Temporary helper to get around the lack of hardware independent vertex buffer interface.
-	// This needs to be done better so that abstract interfaces can be passed around between hwrenderer and the backends.
-	enum
-	{
-		VB_Default,
-		VB_Sky
-	};
-	virtual void SetVertexBuffer(int which) = 0;
+	// API-dependent render interface
+
+	// Draw commands
+	virtual void ClearScreen() = 0;
+	virtual void Draw(int dt, int index, int count, bool apply = true) = 0;
+	virtual void DrawIndexed(int dt, int index, int count, bool apply = true) = 0;
+
+	// Immediate render state change commands. These only change infrequently and should not clutter the render state.
+	virtual bool SetDepthClamp(bool on) = 0;
+	virtual void SetDepthMask(bool on) = 0;
+	virtual void SetDepthFunc(int func) = 0;
+	virtual void SetDepthRange(float min, float max) = 0;
+	virtual void EnableDrawBufferAttachments(bool on) = 0;
+	virtual void SetStencil(int offs, int op, int flags) = 0;
+	virtual void SetCulling(int mode) = 0;
+	virtual void EnableClipDistance(int num, bool state) = 0;
+	virtual void Clear(int targets) = 0;
+	virtual void EnableStencil(bool on) = 0;
+	virtual void SetScissor(int x, int y, int w, int h) = 0;
+	virtual void SetViewport(int x, int y, int w, int h) = 0;
+	virtual void EnableDepthTest(bool on) = 0;
+	virtual void EnableMultisampling(bool on) = 0;
+	virtual void EnableLineSmooth(bool on) = 0;
+
+
 };
 
