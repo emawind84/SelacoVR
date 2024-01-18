@@ -53,6 +53,7 @@
 #include "hwrenderer/postprocessing/hw_shadowmapshader.h"
 #include "hwrenderer/data/flatvertices.h"
 #include "hwrenderer/scene/hw_skydome.h"
+#include "hwrenderer/scene/hw_fakeflat.h"
 #include "gl/shaders/gl_postprocessshaderinstance.h"
 #include "gl/textures/gl_samplers.h"
 #include "hwrenderer/dynlights/hw_lightbuffer.h"

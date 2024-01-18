@@ -153,10 +153,17 @@ void FGLRenderer::DrawScene(HWDrawInfo *di, int drawmode)
 
 sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * camera, IntRect * bounds, float fov, float ratio, float fovratio, bool mainview, bool toscreen)
 {
+	GLSkyInfo skyinfo;
+	skyinfo.init(mainvp.sector->sky, mainvp.sector->Colormap.FadeColor);
+	if (skyinfo.texture[0])
+	{
+		PalEntry pe = skyinfo.texture[0]->tex->GetSkyCapColor(false);
+		gl_RenderState.SetSceneColor(pe);
+	}
 	gl_RenderState.InitSceneClearColor();
 	R_SetupFrame (mainvp, r_viewwindow, camera);
 
-    // Render (potentially) multiple views for stereo 3d
+	// Render (potentially) multiple views for stereo 3d
 	// Fixme. The view offsetting should be done with a static table and not require setup of the entire render state for the mode.
 	auto vrmode = VRMode::GetVRMode(mainview && toscreen);
 	for (int eye_ix = 0; eye_ix < vrmode->mEyeCount; ++eye_ix)

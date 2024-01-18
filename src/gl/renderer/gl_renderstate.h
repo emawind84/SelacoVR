@@ -24,9 +24,7 @@
 #define __GL_RENDERSTATE_H
 
 #include <string.h>
-#include "gl_load/gl_system.h"
 #include "gl_load/gl_interface.h"
-#include "gl/renderer/gl_renderer.h"
 #include "r_data/matrix.h"
 #include "hwrenderer/scene//hw_drawstructs.h"
 #include "hwrenderer/scene//hw_renderstate.h"
@@ -34,8 +32,9 @@
 #include "c_cvars.h"
 #include "r_defs.h"
 #include "r_data/r_translate.h"
-#include "v_palette.h"
 #include "g_levellocals.h"
+
+EXTERN_CVAR(Bool, gl_global_fade)
 
 namespace OpenGLRenderer
 {
@@ -44,9 +43,7 @@ class FShader;
 struct GLSectorPlane;
 extern TArray<VSMatrix> gl_MatrixStack;
 
-EXTERN_CVAR(Bool, gl_global_fade)
 EXTERN_CVAR(Color, gl_global_fade_color)
-EXTERN_CVAR(Bool, gl_enhanced_nightvision)
 
 enum EPassType
 {

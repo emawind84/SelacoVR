@@ -46,10 +46,6 @@
 
 extern bool vid_hdr_active;
 
-EXTERN_CVAR(Bool, gl_global_fade)
-EXTERN_CVAR(Float, gl_global_fade_gradient)
-EXTERN_CVAR(Float, gl_global_fade_density)
-
 CVAR(Int, gl_dither_bpc, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 
 namespace OpenGLRenderer

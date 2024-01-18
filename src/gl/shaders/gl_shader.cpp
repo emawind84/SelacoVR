@@ -47,6 +47,9 @@
 #include <map>
 #include <memory>
 
+namespace OpenGLRenderer
+{
+
 struct ProgramBinary
 {
 	uint32_t format;
@@ -201,12 +204,6 @@ void SaveCachedProgramBinary(const FString &vertex, const FString &fragment, con
 
 	SaveShaders();
 }
-
-extern TArray<UserShaderDesc> usershaders;
-
-namespace OpenGLRenderer
-{
-
 
 bool FShader::Load(const char * name, const char * vert_prog_lump, const char * frag_prog_lump, const char * proc_prog_lump, const char * light_fragprog, const char * defines)
 {

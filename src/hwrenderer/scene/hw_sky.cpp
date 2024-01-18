@@ -31,9 +31,9 @@
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/scene/hw_portal.h"
 #include "hwrenderer/utility/hw_lighting.h"
+#include "hwrenderer/utility/hw_cvars.h"
 #include "hwrenderer/textures/hw_material.h"
 
-#include "gl/renderer/gl_renderstate.h"
 
 CVAR(Bool,gl_noskyboxes, false, 0)
 CUSTOM_CVAR(Bool, gl_skydome, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
@@ -125,11 +125,6 @@ void GLWall::SkyPlane(HWDrawInfo *di, sector_t *sector, int plane, bool allowref
 	{
 		GLSkyInfo skyinfo;
 		skyinfo.init(sector->sky, Colormap.FadeColor);
-		if (skyinfo.texture[0])
-		{
-			PalEntry pe = skyinfo.texture[0]->tex->GetSkyCapColor(false);
-			gl_RenderState.SetSceneColor(pe);
-		}
 		ptype = PORTALTYPE_SKY;
 		sky = &skyinfo;
 	}

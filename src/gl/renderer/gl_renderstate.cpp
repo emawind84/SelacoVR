@@ -27,6 +27,7 @@
 
 #include "templates.h"
 #include "doomstat.h"
+#include "c_dispatch.h"
 #include "r_data/colormaps.h"
 #include "gl_load/gl_system.h"
 #include "gl_load/gl_interface.h"
@@ -42,12 +43,13 @@
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 
+CVAR(Bool, gl_global_fade, false, CVAR_ARCHIVE)
+
 namespace OpenGLRenderer
 {
 
 FGLRenderState gl_RenderState;
 
-CVAR(Bool, gl_global_fade, false, CVAR_ARCHIVE)
 CUSTOM_CVAR(Float, gl_global_fade_density, 0.001f, CVAR_ARCHIVE)
 {
 	if (self < 0.0001f) self = 0.0001f;
@@ -622,6 +624,36 @@ bool FGLRenderState::SetDepthClamp(bool on)
 	else glEnable(GL_DEPTH_CLAMP);
 	mLastDepthClamp = on;
 	return res;
+}
+
+CCMD(fade_toggle)
+{
+	gl_global_fade = !gl_global_fade;
+}
+
+CCMD(fade_density_up)
+{
+	gl_global_fade_density = gl_global_fade_density + 0.0005f;
+}
+
+CCMD(fade_density_down)
+{
+	gl_global_fade_density = gl_global_fade_density - 0.0005f;
+}
+
+CCMD(fade_gradient_up)
+{
+	gl_global_fade_gradient = gl_global_fade_gradient + 0.2f;
+}
+
+CCMD(fade_gradient_down)
+{
+	gl_global_fade_gradient = gl_global_fade_gradient - 0.2f;
+}
+
+CCMD(fade_debug)
+{
+	gl_global_fade_debug = !gl_global_fade_debug;
 }
 
 }

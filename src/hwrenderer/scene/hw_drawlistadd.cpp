@@ -27,10 +27,6 @@
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/textures/hw_material.h"
 
-EXTERN_CVAR(Int, gl_max_vertices)
-
-extern int wallVerticesPerEye;
-
 //==========================================================================
 //
 // 

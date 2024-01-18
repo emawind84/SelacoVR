@@ -42,12 +42,12 @@ EXTERN_CVAR(Float, vid_contrast)
 EXTERN_CVAR(Int, gl_satformula)
 EXTERN_CVAR(Int, gl_dither_bpc)
 
-namespace OpenGLRenderer
-{
-
 int flatVerticesPerEye;
 int wallVerticesPerEye;
 int portalsPerEye;
+
+namespace OpenGLRenderer
+{
 
 //==========================================================================
 //
