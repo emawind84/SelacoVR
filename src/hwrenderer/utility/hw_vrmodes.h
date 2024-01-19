@@ -1,10 +1,9 @@
 #pragma once
 
+#include "r_utility.h"
 #include "r_data/matrix.h"
-#include "gl/renderer/gl_renderer.h"
 
 class DFrameBuffer;
-using namespace OpenGLRenderer;
 
 enum
 {
@@ -23,6 +22,8 @@ enum
 	VR_CHECKERINTERLEAVED = 14,
 	VR_OPENVR = 15
 };
+
+struct HWDrawInfo;
 
 struct VREyeInfo
 {
@@ -73,7 +74,7 @@ struct VRMode
 	virtual void AdjustCrossHair() const {}
 	virtual void UnAdjustCrossHair() const {}
 	
-	virtual void Present() const { GLRenderer->PresentStereo(); };
+	virtual void Present() const;
 
 	virtual bool GetHandTransform(int hand, VSMatrix* out) const { return false; }
 	virtual bool GetWeaponTransform(VSMatrix* out, int hand = 0) const { return false; }

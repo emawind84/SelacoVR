@@ -97,14 +97,6 @@ FASTMATH_SOURCES = \
 	textures/hires/hqnx/hq4x.cpp \
 	textures/hires/xbr/xbrz.cpp \
 	textures/hires/xbr/xbrz_old.cpp \
-	gl/scene/gl_drawinfo.cpp \
-	gl/scene/gl_flats.cpp \
-	gl/scene/gl_sprite.cpp \
-	gl/scene/gl_skydome.cpp \
-	gl/scene/gl_weapon.cpp \
-	gl/scene/gl_scene.cpp \
-	gl/scene/gl_portal.cpp \
-	gl/scene/gl_walls_draw.cpp \
 	gl_load/gl_load.c \
 	hwrenderer/dynlights/hw_dynlightdata.cpp \
 	hwrenderer/scene/hw_bsp.cpp \
@@ -117,6 +109,7 @@ FASTMATH_SOURCES = \
 	hwrenderer/scene/hw_portal.cpp \
 	hwrenderer/scene/hw_renderhacks.cpp \
 	hwrenderer/scene/hw_sky.cpp \
+	hwrenderer/scene/hw_skyportal.cpp \
 	hwrenderer/scene/hw_sprites.cpp \
 	hwrenderer/scene/hw_spritelight.cpp \
 	hwrenderer/scene/hw_walls.cpp \
@@ -296,19 +289,13 @@ PCH_SOURCES = \
 	g_statusbar/sbarinfo.cpp \
 	g_statusbar/sbar_mugshot.cpp \
 	g_statusbar/shared_sbar.cpp \
-	gl/data/gl_vertexbuffer.cpp \
-	gl/data/gl_uniformbuffer.cpp \
-	gl/dynlights/gl_lightbuffer.cpp \
-	gl/dynlights/gl_shadowmap.cpp \
-	gl/models/gl_models.cpp \
-	gl/renderer/gl_quaddrawer.cpp \
 	gl/renderer/gl_renderer.cpp \
 	gl/renderer/gl_renderstate.cpp \
 	gl/renderer/gl_renderbuffers.cpp \
-	gl/renderer/gl_lightdata.cpp \
 	gl/renderer/gl_postprocess.cpp \
 	gl/renderer/gl_postprocessstate.cpp \
 	gl/renderer/gl_stereo3d.cpp \
+	gl/renderer/gl_scene.cpp \
 	gl/shaders/gl_shader.cpp \
 	gl/shaders/gl_shaderprogram.cpp \
 	gl/shaders/gl_postprocessshader.cpp \
@@ -316,13 +303,18 @@ PCH_SOURCES = \
 	gl_load/gl_interface.cpp \
 	gl/system/gl_framebuffer.cpp \
 	gl/system/gl_debug.cpp \
-	gl/system/gl_wipe.cpp \
+	gl/system/gl_buffers.cpp \
 	gl/textures/gl_hwtexture.cpp \
 	gl/textures/gl_samplers.cpp \
 	hwrenderer/data/flatvertices.cpp \
+	hwrenderer/data/hw_viewpointbuffer.cpp \
 	hwrenderer/dynlights/hw_aabbtree.cpp \
 	hwrenderer/dynlights/hw_shadowmap.cpp \
+	hwrenderer/dynlights/hw_lightbuffer.cpp \
+	hwrenderer/models/hw_models.cpp \
 	hwrenderer/scene/hw_skydome.cpp \
+	hwrenderer/scene/hw_drawlistadd.cpp \
+	hwrenderer/scene/hw_renderstate.cpp \
 	hwrenderer/postprocessing/hw_postprocess.cpp \
 	hwrenderer/postprocessing/hw_postprocess_cvars.cpp \
 	hwrenderer/postprocessing/hw_postprocessshader.cpp \
@@ -333,6 +325,7 @@ PCH_SOURCES = \
 	hwrenderer/textures/hw_precache.cpp \
 	hwrenderer/utility/hw_clock.cpp \
 	hwrenderer/utility/hw_cvars.cpp \
+	hwrenderer/utility/hw_draw2d.cpp \
 	hwrenderer/utility/hw_lighting.cpp \
 	hwrenderer/utility/hw_shaderpatcher.cpp \
 	hwrenderer/utility/hw_vrmodes.cpp \

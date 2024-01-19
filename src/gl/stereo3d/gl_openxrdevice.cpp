@@ -55,6 +55,8 @@
 #include "hwrenderer/data/flatvertices.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 
+using namespace OpenGLRenderer;
+
 EXTERN_CVAR(Bool, puristmode);
 EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Float, movebob);

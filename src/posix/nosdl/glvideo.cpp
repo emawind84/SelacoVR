@@ -51,9 +51,7 @@
 #include "r_defs.h"
 //#include "gl/gl_intern.h"
 
-#include "gl/renderer/gl_renderer.h"
 #include "gl/system/gl_framebuffer.h"
-#include "gl/shaders/gl_shader.h"
 
 //#include <QzDoom/VrCommon.h>
 
@@ -118,7 +116,7 @@ int TBXR_GetRefresh();
 
 DFrameBuffer *NoSDLGLVideo::CreateFrameBuffer ()
 {
-	SystemGLFrameBuffer *fb = new OpenGLFrameBuffer(0, true);
+	SystemGLFrameBuffer *fb = new OpenGLRenderer::OpenGLFrameBuffer(0, true);
 
 	return fb;
 }
