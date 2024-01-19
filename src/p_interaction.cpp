@@ -1362,7 +1362,7 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 			float level = (float)(0.4 + (0.6 * (temp / 100.0)));
 			QzDoom_Vibrate(200, 0, level); // left
 			QzDoom_Vibrate(200, 1, level); // right
-
+#ifdef __MOBILE__
 			if (source == NULL)
             {
                 if (strcasestr(mod.GetChars(), "slime"))
@@ -1422,6 +1422,7 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
                     }
                 }
             }
+#endif
 		}
 	}
 	else if (!player)

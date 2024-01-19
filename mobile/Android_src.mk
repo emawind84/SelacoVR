@@ -80,6 +80,7 @@ PLAT_NOSDL_SOURCES = \
 	posix/nosdl/i_gui.cpp \
 	posix/nosdl/i_joystick.cpp \
 	posix/nosdl/i_system.cpp \
+	posix/nosdl/i_input.cpp \
 	posix/nosdl/glvideo.cpp \
 	posix/nosdl/st_start.cpp
 

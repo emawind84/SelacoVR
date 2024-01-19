@@ -1046,14 +1046,14 @@ void D_DoomLoop ()
 			if (gametic > lasttic)
 			{
 				lasttic = gametic;
-				//I_StartFrame (); // not used
+				I_StartFrame ();
 			}
 			I_SetFrameTime();
 
 			// process one or more tics
 			if (singletics)
 			{
-				//I_StartTic ();
+				I_StartTic ();
 				D_ProcessEvents ();
 				G_BuildTiccmd (&netcmds[consoleplayer][maketic%BACKUPTICS]);
 				if (advancedemo)
@@ -1073,7 +1073,7 @@ void D_DoomLoop ()
 				TryRunTics (); // will run at least one tic
 			}
 			// Update display, next frame, with current state.
-			//I_StartTic ();
+			I_StartTic ();
 			D_Display ();
 			S_UpdateMusic();
 			if (wantToRestart)
@@ -2469,10 +2469,10 @@ static int D_DoomMain_Internal (void)
 	
 	std::set_new_handler(NewFailure);
 	const char *batchout = Args->CheckValue("-errorlog");
-
+	
 	C_InitConsole(80*8, 25*8, false);
 	Printf("%s version %s\n", GAMENAME, GetVersionString());
-	//I_DetectOS();
+	I_DetectOS();
 
 	// +logfile gets checked too late to catch the full startup log in the logfile so do some extra check for it here.
 	FString logfile = Args->TakeValue("+logfile");
@@ -2936,8 +2936,8 @@ static int D_DoomMain_Internal (void)
 
 		D_DoAnonStats();
 
-//		if (I_FriendlyWindowTitle)
-//			I_SetWindowTitle(DoomStartupInfo.Name.GetChars());
+		if (I_FriendlyWindowTitle)
+			I_SetWindowTitle(DoomStartupInfo.Name.GetChars());
 
 		D_DoomLoop ();		// this only returns if a 'restart' CCMD is given.
 
@@ -2975,9 +2975,6 @@ int D_DoomMain()
 	InitShutdown();
 	return ret;
 }
-
-// The command line arguments.
-FArgs *Args;
 
 void VR_DoomMain(int argc, char** argv)
 {

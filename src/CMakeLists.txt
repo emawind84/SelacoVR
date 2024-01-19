@@ -609,7 +609,9 @@ file( GLOB HEADER_FILES
 	gl/shaders/*.h
 	gl/system/*.h
 	gl/textures/*.h
+	gl/stereo3d/*.h
 	gl_load/*.h
+	QzDoom/*.h
 	*.h
 )
 
@@ -938,6 +940,7 @@ set (PCH_SOURCES
 	gl/system/gl_buffers.cpp
 	gl/textures/gl_hwtexture.cpp
 	gl/textures/gl_samplers.cpp
+	gl/stereo3d/gl_openxrdevice.cpp
 	hwrenderer/data/flatvertices.cpp
 	hwrenderer/data/hw_viewpointbuffer.cpp
 	hwrenderer/dynlights/hw_aabbtree.cpp
@@ -961,6 +964,7 @@ set (PCH_SOURCES
 	hwrenderer/utility/hw_lighting.cpp
 	hwrenderer/utility/hw_shaderpatcher.cpp
 	hwrenderer/utility/hw_vrmodes.cpp
+	QzDoom/qzdoom_common.cpp
 
 	menu/joystickmenu.cpp
 	menu/loadsavemenu.cpp
@@ -1104,6 +1108,7 @@ add_executable( zdoom WIN32 MACOSX_BUNDLE
 	math/tanh.c
 	math/fastsin.cpp
 	zzautozend.cpp
+	QzDoom/mathlib.c
 )
 
 set_source_files_properties( ${FASTMATH_SOURCES} PROPERTIES COMPILE_FLAGS ${ZD_FASTMATH_FLAG} )
@@ -1149,7 +1154,6 @@ if( NOT ZDOOM_OUTPUT_OLDSTYLE )
 	# Linux distributions are slow to adopt 2.6. :(
 	set_target_properties( zdoom PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${ZDOOM_OUTPUT_DIR} )
 	set_target_properties( zdoom PROPERTIES OUTPUT_NAME ${ZDOOM_EXE_NAME} )
-	set_target_properties( zdoom PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD True)
 else()
 	set_target_properties( zdoom PROPERTIES
 		RUNTIME_OUTPUT_NAME ${ZDOOM_EXE_NAME}

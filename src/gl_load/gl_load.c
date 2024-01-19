@@ -41,7 +41,7 @@ static void* PosixGetProcAddress (const GLubyte* name)
 #endif /* __sgi || __sun || __unix__ */
 
 
-#if defined(__MOBILE__)
+#ifdef __MOBILE__
 
 #include <android/log.h>
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO,"GZDOOM", __VA_ARGS__))
@@ -108,7 +108,64 @@ static void *MOBILE_GetProcAddress(const char* name)
 
 #endif
 
-#define IntGetProcAddress(name) MOBILE_GetProcAddress((const char*)name)
+#if defined(_WIN32)
+
+#ifdef APIENTRY
+#undef APIENTRY
+#endif
+#include <windows.h>
+
+
+#ifdef _MSC_VER
+// disable inlining here because it creates an incredible amount of bloat in this file.
+#pragma inline_depth(0)
+#pragma warning(disable: 4055)
+#pragma warning(disable: 4054)
+#pragma warning(disable: 4996)
+#endif
+
+static int TestPointer(const PROC pTest)
+{
+	ptrdiff_t iTest;
+	if(!pTest) return 0;
+	iTest = (ptrdiff_t)pTest;
+	
+	if(iTest == 1 || iTest == 2 || iTest == 3 || iTest == -1) return 0;
+	
+	return 1;
+}
+
+static PROC WinGetProcAddress(const char *name)
+{
+	HMODULE glMod = NULL;
+	PROC pFunc = wglGetProcAddress((LPCSTR)name);
+	if(TestPointer(pFunc))
+	{
+		return pFunc;
+	}
+	glMod = GetModuleHandleA("OpenGL32.dll");
+	return (PROC)GetProcAddress(glMod, (LPCSTR)name);
+}
+	
+#define IntGetProcAddress(name) WinGetProcAddress(name)
+#else
+	#if defined(__APPLE__)
+		#define IntGetProcAddress(name) AppleGLGetProcAddress(name)
+	#else
+		#if defined (__MOBILE__)
+			#define IntGetProcAddress(name) MOBILE_GetProcAddress((const char*)name)
+		#elif defined(__sgi) || defined(__sun) || defined(__unix__)
+			void* SDL_GL_GetProcAddress(const char* proc);
+			#define IntGetProcAddress(name) SDL_GL_GetProcAddress((const char*)name)
+			//#define IntGetProcAddress(name) PosixGetProcAddress((const GLubyte*)name)
+/* END OF MANUAL CHANGES, DO NOT REMOVE! */
+		#else /* GLX */
+		    #include <GL/glx.h>
+
+			#define IntGetProcAddress(name) (*glXGetProcAddressARB)((const GLubyte*)name)
+		#endif
+	#endif
+#endif
 
 int ogl_ext_ARB_buffer_storage = ogl_LOAD_FAILED;
 int ogl_ext_ARB_shader_storage_buffer_object = ogl_LOAD_FAILED;
@@ -1404,10 +1461,6 @@ static int Load_Version_4_5(void)
 	if(!_ptrc_glDepthMask) numFailed++;
 	_ptrc_glDepthRange = (void (CODEGEN_FUNCPTR *)(GLdouble, GLdouble))IntGetProcAddress("glDepthRange");
 	if(!_ptrc_glDepthRange) numFailed++;
-#ifdef __MOBILE__
-    _ptrc_glDepthRangef = (void (CODEGEN_FUNCPTR *)(GLfloat, GLfloat))IntGetProcAddress("glDepthRangef");
-    if(!_ptrc_glDepthRangef) numFailed++;
-#endif
 	_ptrc_glDisable = (void (CODEGEN_FUNCPTR *)(GLenum))IntGetProcAddress("glDisable");
 	if(!_ptrc_glDisable) numFailed++;
 	_ptrc_glDrawBuffer = (void (CODEGEN_FUNCPTR *)(GLenum))IntGetProcAddress("glDrawBuffer");
@@ -3426,10 +3479,6 @@ static int ProcExtsFromExtList(void)
 
 	if (_ptrc_glGetStringi == NULL) return 0;
 
-#ifdef __MOBILE__
-    if(glesLoad < 3)
-        return 0;
-#endif
 	_ptrc_glGetIntegerv(GL_NUM_EXTENSIONS, &iNumExtensions);
 
 	for(iLoop = 0; iLoop < iNumExtensions; iLoop++)
