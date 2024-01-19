@@ -34,6 +34,7 @@
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_cvars.h"
+#include "hwrenderer/utility/hw_vrmodes.h"
 #include "hwrenderer/scene/hw_renderstate.h"
 #include "r_videoscale.h"
 
@@ -94,9 +95,16 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state)
 {
 	twoD.Clock();
 
-	const auto &mScreenViewport = screen->mScreenViewport;
-	state.SetViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
-	screen->mViewpoints->Set2D(state, screen->GetWidth(), screen->GetHeight());
+	auto vrmode = VRMode::GetVRMode(true);
+	//In vr mode viewport setting and color swaping is already done in FGLRenderer::Flush()
+	if (1)
+	{
+		const auto &mScreenViewport = screen->mScreenViewport;
+		state.SetViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
+		screen->mViewpoints->Set2D(state, screen->GetWidth(), screen->GetHeight());
+
+		drawer->SwapColors();
+	}
 
 	state.EnableDepthTest(false);
 	state.EnableMultisampling(false);
@@ -112,11 +120,6 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state)
 		return;
 	}
 
-	for (auto &v : vertices)
-	{
-		// Change from BGRA to RGBA
-		std::swap(v.color0.r, v.color0.b);
-	}
 	F2DVertexBuffer vb;
 	vb.UploadData(&vertices[0], vertices.Size(), &indices[0], indices.Size());
 	state.SetVertexBuffer(&vb);
@@ -203,6 +206,7 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state)
 		}
 		state.SetObjectColor(0xffffffff);
 		state.SetObjectColor2(0);
+		state.SetAddColor(0);
 		state.EnableTextureMatrix(false);
 		state.SetEffect(EFF_NONE);
 

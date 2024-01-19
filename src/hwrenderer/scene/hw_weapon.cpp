@@ -40,6 +40,7 @@
 #include "hwrenderer/textures/hw_material.h"
 #include "hwrenderer/utility/hw_lighting.h"
 #include "hwrenderer/utility/hw_cvars.h"
+#include "hwrenderer/utility/hw_vrmodes.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/data/flatvertices.h"
@@ -50,6 +51,17 @@ EXTERN_CVAR(Float, transsouls)
 EXTERN_CVAR(Int, gl_fuzztype)
 EXTERN_CVAR(Bool, r_drawplayersprites)
 EXTERN_CVAR(Bool, r_deathcamera)
+
+EXTERN_CVAR(Int, r_PlayerSprites3DMode)
+EXTERN_CVAR(Float, gl_fatItemWidth)
+
+enum PlayerSprites3DMode
+{
+	CROSSED,
+	BACK_ONLY,
+	ITEM_ONLY,
+	FAT_ITEM,
+};
 
 
 //==========================================================================
@@ -87,8 +99,12 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 	{
 		float thresh = (huds->tex->tex->GetTranslucency() || huds->OverrideShader != -1) ? 0.f : gl_mask_sprite_threshold;
 		state.AlphaFunc(Alpha_GEqual, thresh);
-		state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
-		state.Draw(DT_TriangleStrip, huds->mx, 4);
+		auto vrmode = VRMode::GetVRMode(true);
+		if (vrmode->IsMono() || (r_PlayerSprites3DMode != ITEM_ONLY && r_PlayerSprites3DMode != FAT_ITEM))
+		{
+			state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
+			state.Draw(DT_TriangleStrip, huds->mx, 4);
+		}
 	}
 
 	state.SetTextureMode(TM_NORMAL);
@@ -106,12 +122,15 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 
 void HWDrawInfo::DrawPlayerSprites(bool hudModelStep, FRenderState &state)
 {
+	auto vrmode = VRMode::GetVRMode(true);
 	int oldlightmode = level.lightmode;
 	if (!hudModelStep && level.lightmode >= 8) level.lightmode = 2;	// Software lighting cannot handle 2D content so revert to lightmode 2 for that.
 	for (auto &hudsprite : hudsprites)
 	{
-		if ((!!hudsprite.mframe) == hudModelStep)
-			DrawPSprite(&hudsprite, state);
+		hudModelStep = hudsprite.mframe != nullptr;
+		if (!hudModelStep) vrmode->AdjustPlayerSprites(hudsprite.weapon->GetCaller() == hudsprite.owner->player->OffhandWeapon);
+		DrawPSprite(&hudsprite, state);
+		if (!hudModelStep) vrmode->UnAdjustPlayerSprites();
 	}
 	level.lightmode = oldlightmode;
 }

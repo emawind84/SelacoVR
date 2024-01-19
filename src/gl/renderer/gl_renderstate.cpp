@@ -599,8 +599,9 @@ void FGLRenderState::ClearScreen()
 	screen->mViewpoints->Set2D(*this, SCREENWIDTH, SCREENHEIGHT);
 	SetColor(0, 0, 0);
 	Apply();
-
+#ifndef __MOBILE__
 	glDisable(GL_MULTISAMPLE);
+#endif
 	glDisable(GL_DEPTH_TEST);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, FFlatVertexBuffer::FULLSCREEN_INDEX, 4);
@@ -621,8 +622,10 @@ void FGLRenderState::ClearScreen()
 bool FGLRenderState::SetDepthClamp(bool on)
 {
 	bool res = mLastDepthClamp;
+#ifndef __MOBILE__
 	if (!on) glDisable(GL_DEPTH_CLAMP);
 	else glEnable(GL_DEPTH_CLAMP);
+#endif
 	mLastDepthClamp = on;
 	return res;
 }

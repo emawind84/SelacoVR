@@ -126,6 +126,12 @@ void FGLRenderer::DrawScene(HWDrawInfo *di, int drawmode)
 
 	di->RenderScene(gl_RenderState);
 
+	auto vrmode = VRMode::GetVRMode(true);
+	if (vrmode->RenderPlayerSpritesInScene())
+	{
+		di->DrawPlayerSprites(IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player), gl_RenderState);
+	}
+
 	if (applySSAO && gl_RenderState.GetPassType() == GBUFFER_PASS)
 	{
 		gl_RenderState.EnableDrawBuffers(1);
@@ -166,10 +172,12 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 	// Render (potentially) multiple views for stereo 3d
 	// Fixme. The view offsetting should be done with a static table and not require setup of the entire render state for the mode.
 	auto vrmode = VRMode::GetVRMode(mainview && toscreen);
+	vrmode->SetUp();
 	for (int eye_ix = 0; eye_ix < vrmode->mEyeCount; ++eye_ix)
 	{
 		flatVerticesPerEye = wallVerticesPerEye = portalsPerEye = 0;
 		const auto &eye = vrmode->mEyes[eye_ix];
+		eye->SetUp();
 		screen->SetViewportRects(bounds);
 
 		if (mainview) // Bind the scene frame buffer and turn on draw buffers used by ssao
@@ -190,12 +198,12 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 		di->Set3DViewport(gl_RenderState);
 		di->SetViewArea();
 		auto cm =  di->SetFullbrightFlags(mainview ? vp.camera->player : nullptr);
-		di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
+		//di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
 
 		// Stereo mode specific perspective projection
-		di->VPUniforms.mProjectionMatrix = eye.GetProjection(fov, ratio, fovratio);
+		di->VPUniforms.mProjectionMatrix = eye->GetProjection(fov, ratio, fovratio);
 		// Stereo mode specific viewpoint adjustment
-		vp.Pos += eye.GetViewShift(vp.HWAngles.Yaw.Degrees);
+		vp.Pos += eye->GetViewShift(vp);
 		di->SetupView(gl_RenderState, vp.Pos.X, vp.Pos.Y, vp.Pos.Z, false, false);
 
 		// std::function until this can be done better in a cross-API fashion.
@@ -219,13 +227,21 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 			FGLDebug::PopGroup(); // MainView
 
 			PostProcessScene(cm, [&]() { di->DrawEndScene2D(mainvp.sector, gl_RenderState); });
+
+			eye->AdjustBlend(di);
+			BlendInfo blendinfo;
+			screen->FillBlend(mainvp.sector, blendinfo);
+			GLRenderer->DrawBlend(blendinfo);
 			PostProcess.Unclock();
 		}
 		di->EndDrawInfo();
 		if (vrmode->mEyeCount > 1)
+		{
 			mBuffers->BlitToEyeTexture(eye_ix);
+		}
+		eye->TearDown();
 	}
-
+	vrmode->TearDown();
 	interpolator.RestoreInterpolations ();
 	return mainvp.sector;
 }

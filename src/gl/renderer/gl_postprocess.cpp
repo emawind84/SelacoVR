@@ -46,6 +46,7 @@
 #include "r_videoscale.h"
 
 extern bool vid_hdr_active;
+extern bool cinemamode;
 
 CVAR(Int, gl_dither_bpc, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 
@@ -132,8 +133,6 @@ void FGLRenderer::ClearTonemapPalette()
 //
 //-----------------------------------------------------------------------------
 
-extern bool cinemamode;
-
 void FGLRenderer::Flush()
 {
 	auto vrmode = VRMode::GetVRMode(true);
@@ -150,7 +149,8 @@ void FGLRenderer::Flush()
 		
 		const bool is2D = (gamestate != GS_LEVEL) || cinemamode;
 		if (is2D) vrmode->SetUp();
-
+		// Change from BGRA to RGBA
+		screen->SwapColors();
 		// Render 2D to eye textures
 		for (int eye_ix = 0; eye_ix < vrmode->mEyeCount; ++eye_ix)
 		{

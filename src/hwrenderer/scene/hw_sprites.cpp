@@ -874,7 +874,7 @@ void GLSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				sprangle = 0.;
 				rot = 0;
 			}
-			if (thing == camera && di->mCurrentPortal->mState->GetRecursion() > 0)
+			if (thing == camera && screen->stencilValue > 0)
 			{
 				rot = 0;
 			}

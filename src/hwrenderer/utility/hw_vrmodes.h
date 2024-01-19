@@ -1,10 +1,10 @@
 #pragma once
 
 #include "r_data/matrix.h"
-#include "gl\scene\gl_drawinfo.h"
-#include "gl\renderer\gl_renderer.h"
+#include "gl/renderer/gl_renderer.h"
 
 class DFrameBuffer;
+using namespace OpenGLRenderer;
 
 enum
 {
@@ -38,7 +38,7 @@ struct VREyeInfo
 	virtual void SetUp() const { m_isActive = true; }
 	virtual void TearDown() const { m_isActive = false; }
 	virtual void AdjustHud() const {}
-	virtual void AdjustBlend(FDrawInfo* di) const {}
+	virtual void AdjustBlend(HWDrawInfo* di) const {}
 	bool isActive() const { return m_isActive; }
 
 private:

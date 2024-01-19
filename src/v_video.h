@@ -492,6 +492,7 @@ public:
 	virtual void UnbindTexUnit(int no) {}
 	virtual void TextureFilterChanged() {}
 	virtual void BeginFrame() {}
+	virtual void SwapColors() { m2DDrawer.SwapColors(); }
 	virtual void SetWindowSize(int w, int h) {}
 
 	virtual int GetClientWidth() = 0;

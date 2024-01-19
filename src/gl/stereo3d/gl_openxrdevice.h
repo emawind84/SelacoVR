@@ -44,7 +44,7 @@ public:
 	virtual VSMatrix GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatio) const override;
 	DVector3 GetViewShift(FRenderViewpoint& vp) const override;
 	virtual void AdjustHud() const override;
-	virtual void AdjustBlend(FDrawInfo* di) const override;
+	virtual void AdjustBlend(HWDrawInfo* di) const override;
 
 	bool submitFrame() const;
 

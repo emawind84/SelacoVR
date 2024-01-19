@@ -37,21 +37,23 @@
 #include "d_player.h"
 #include "g_game.h" // G_Add...
 #include "p_local.h" // P_TryMove
-#include "r_utility.h" // viewpitch
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderbuffers.h"
+#include "hwrenderer/models/hw_models.h"
+#include "r_utility.h"
+#include "v_video.h"
 #include "g_levellocals.h" // pixelstretch
 #include "math/cmath.h"
 #include "c_cvars.h"
 #include "cmdlib.h"
+#include "LSMatrix.h"
 #include "w_wad.h"
 #include "d_gui.h"
 #include "d_event.h"
 #include "doomstat.h"
 #include "c_console.h"
-
-#include "LSMatrix.h"
-
+#include "hwrenderer/data/flatvertices.h"
+#include "hwrenderer/data/hw_viewpointbuffer.h"
 
 EXTERN_CVAR(Bool, puristmode);
 EXTERN_CVAR(Int, screenblocks);
@@ -287,6 +289,12 @@ namespace s3d
         return new_projection;
     }
 
+    void ApplyVPUniforms(HWDrawInfo* di)
+    {
+        di->VPUniforms.CalcDependencies();
+        di->vpIndex = screen->mViewpoints->SetViewpoint(gl_RenderState, &di->VPUniforms);
+    }
+
     void OpenXRDeviceEyePose::AdjustHud() const
     {
         // Draw crosshair on a separate quad, before updating HUD matrix
@@ -295,22 +303,20 @@ namespace s3d
         {
             return;
         }
-        auto *di = FDrawInfo::StartDrawInfo(r_viewpoint, nullptr);
+        auto *di = HWDrawInfo::StartDrawInfo(nullptr, r_viewpoint, nullptr);
 
         // Update HUD matrix to render on a separate quad
         di->VPUniforms.mProjectionMatrix = getHUDProjection();
-        //GLRenderer->mShaderManager->ApplyMatrices(&di->VPUniforms, gl_RenderState.GetPassType());
-        di->ApplyVPUniforms();
+        ApplyVPUniforms(di);
     }
 
-    void OpenXRDeviceEyePose::AdjustBlend(FDrawInfo *di) const
+    void OpenXRDeviceEyePose::AdjustBlend(HWDrawInfo *di) const
     {
         VSMatrix& proj = di->VPUniforms.mProjectionMatrix;
         proj.loadIdentity();
         proj.translate(-1, 1, 0);
         proj.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
-        //GLRenderer->mShaderManager->ApplyMatrices(&di->VPUniforms, gl_RenderState.GetPassType());
-        di->ApplyVPUniforms();
+        ApplyVPUniforms(di);
     }
 
 

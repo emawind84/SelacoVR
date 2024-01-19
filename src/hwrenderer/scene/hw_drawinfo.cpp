@@ -595,13 +595,17 @@ void HWDrawInfo::EndDrawScene(sector_t * viewsector, FRenderState &state)
 {
 	state.EnableFog(false);
 
-	// [BB] HUD models need to be rendered here. 
-	const bool renderHUDModel = IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
-	if (renderHUDModel)
+	auto vrmode = VRMode::GetVRMode(true);
+	if (!vrmode->RenderPlayerSpritesInScene())
 	{
-		// [BB] The HUD model should be drawn over everything else already drawn.
-		state.Clear(CT_Depth);
-		DrawPlayerSprites(true, state);
+		// [BB] HUD models need to be rendered here. 
+		const bool renderHUDModel = IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
+		if (renderHUDModel)
+		{
+			// [BB] The HUD model should be drawn over everything else already drawn.
+			state.Clear(CT_Depth);
+			DrawPlayerSprites(true, state);
+		}
 	}
 
 	state.EnableStencil(false);
@@ -626,7 +630,14 @@ void HWDrawInfo::DrawEndScene2D(sector_t * viewsector, FRenderState &state)
 	state.EnableDepthTest(false);
 	state.EnableMultisampling(false);
 
-	DrawPlayerSprites(false, state);
+	if (!vrmode->RenderPlayerSpritesInScene())
+	{
+		// [BB] Only draw the sprites if we didn't render a HUD model before.
+		if ( renderHUDModel == false )
+		{
+			DrawPlayerSprites(false, state);
+		}
+	}
 
 	state.SetSoftLightLevel(-1);
 

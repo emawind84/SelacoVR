@@ -83,7 +83,7 @@ void HWDrawInfo::AddMirrorSurface(GLWall *w)
 
 //==========================================================================
 //
-// FDrawInfo::AddFlat
+// HWDrawInfo::AddFlat
 //
 // Checks texture, lighting and translucency settings and puts this
 // plane in the appropriate render list.
