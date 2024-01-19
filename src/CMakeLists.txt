@@ -1061,13 +1061,6 @@ set (PCH_SOURCES
 	scripting/decorate/thingdef_states.cpp
 	scripting/vm/vmexec.cpp
 	scripting/vm/vmframe.cpp
-	scripting/vm/jit.cpp
-	scripting/vm/jit_call.cpp
-	scripting/vm/jit_flow.cpp
-	scripting/vm/jit_load.cpp
-	scripting/vm/jit_math.cpp
-	scripting/vm/jit_move.cpp
-	scripting/vm/jit_store.cpp
 	scripting/zscript/ast.cpp
 	scripting/zscript/zcc_compile.cpp
 	scripting/zscript/zcc_parser.cpp
