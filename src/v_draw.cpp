@@ -736,7 +736,7 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 			parms->cleanmode = DTA_Base;
 			parms->virtHeight = ListGetDouble(tags);
 			break;
-
+			
 		case DTA_FullscreenScale:
 			intval = ListGetInt(tags);
 			if (intval >= 0 && intval <= 3)
@@ -1534,7 +1534,7 @@ void DFrameBuffer::RefreshViewBorder ()
 // Draws a blend over the entire view
 //
 //==========================================================================
-float* DFrameBuffer::GetBlend(sector_t * viewsector)
+void DFrameBuffer::DrawBlend(sector_t * viewsector)
 {
 	float blend[4] = { 0,0,0,0 };
 	PalEntry blendv = 0;
@@ -1663,13 +1663,6 @@ float* DFrameBuffer::GetBlend(sector_t * viewsector)
 		V_AddBlend(player->BlendR, player->BlendG, player->BlendB, player->BlendA, blend);
 	}
 
-	return blend;
-	//screen->Dim(bcolor, blend[3], 0, 0, screen->GetWidth(), screen->GetHeight());
-}
-
-void DFrameBuffer::DrawBlend(sector_t* viewsector)
-{
-	float* blend = GetBlend(viewsector);
 	const float br = clamp(blend[0] * 255.f, 0.f, 255.f);
 	const float bg = clamp(blend[1] * 255.f, 0.f, 255.f);
 	const float bb = clamp(blend[2] * 255.f, 0.f, 255.f);

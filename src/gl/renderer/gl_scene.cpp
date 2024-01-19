@@ -229,9 +229,6 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 			PostProcessScene(cm, [&]() { di->DrawEndScene2D(mainvp.sector, gl_RenderState); });
 
 			eye->AdjustBlend(di);
-			BlendInfo blendinfo;
-			screen->FillBlend(mainvp.sector, blendinfo);
-			GLRenderer->DrawBlend(blendinfo);
 			PostProcess.Unclock();
 		}
 		di->EndDrawInfo();
