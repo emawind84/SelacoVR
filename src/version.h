@@ -93,7 +93,7 @@ const char *GetVersionString();
 #define GAMESIG "LZDOOM"
 #ifdef __ANDROID__
 #define BASEWAD "res/lzdoom.pk3"
-#define OPTIONALWAD "res/lz_game_support.pk3"
+#define OPTIONALWAD "res/game_support.pk3"
 #else
 #define BASEWAD "lzdoom.pk3"
 #define OPTIONALWAD "game_support.pk3"
