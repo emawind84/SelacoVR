@@ -69,6 +69,7 @@ struct VRMode
 	virtual void TearDown() const {};
 
 	virtual bool IsMono() const { return mEyeCount == 1; }
+	virtual bool IsVR() const { return false; }
 	virtual void AdjustPlayerSprites(int hand = 0) const {};
 	virtual void UnAdjustPlayerSprites() const {};
 	virtual void AdjustCrossHair() const {}

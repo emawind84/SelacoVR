@@ -74,6 +74,7 @@
 #include "gi.h"
 #include "p_conversation.h"
 #include "r_data/models/models.h"
+#include "hwrenderer/utility/hw_vrmodes.h"
 
 #include "g_hub.h"
 #include "g_levellocals.h"
@@ -648,6 +649,8 @@ static int mAngleFromRadians(double radians)
 //
 void G_BuildTiccmd (ticcmd_t *cmd)
 {
+	auto vrmode = VRMode::GetVRMode(true);
+
 	int 		strafe;
 	int 		speed;
 	int 		forward;
@@ -689,21 +692,21 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 		if (turnheld < SLOWTURNTICS)
 			tspeed += 2;		// slow turn
 		
-		if (false && Button_Right.bDown)
+		if (!vrmode->IsVR() && Button_Right.bDown)
 		{
 			G_AddViewAngle (*angleturn[tspeed]);
 		}
-		if (false && Button_Left.bDown)
+		if (!vrmode->IsVR() && Button_Left.bDown)
 		{
 			G_AddViewAngle (-*angleturn[tspeed]);
 		}
 	}
 
-	if (false && Button_LookUp.bDown)
+	if (!vrmode->IsVR() && Button_LookUp.bDown)
 	{
 		G_AddViewPitch (lookspeed[speed]);
 	}
-	if (false && Button_LookDown.bDown)
+	if (!vrmode->IsVR() && Button_LookDown.bDown)
 	{
 		G_AddViewPitch (-lookspeed[speed]);
 	}
@@ -715,9 +718,9 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 
 	if (Button_Klook.bDown)
 	{
-		if (false && Button_Forward.bDown)
+		if (!vrmode->IsVR() && Button_Forward.bDown)
 			G_AddViewPitch (lookspeed[speed]);
-		if (false && Button_Back.bDown)
+		if (!vrmode->IsVR() && Button_Back.bDown)
 			G_AddViewPitch (-lookspeed[speed]);
 	}
 	else
@@ -766,13 +769,16 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (Button_ShowScores.bDown)	cmd->ucmd.buttons |= BT_SHOWSCORES;
 	if (speed) cmd->ucmd.buttons |= BT_RUN;
 
+	if (vrmode->IsVR())
+		side = forward = 0;
+
 	if (!vr_teleport) {
 		float joyforward=0;
 		float joyside=0;
 		float dummy=0;
 		VR_GetMove(&joyforward, &joyside, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy);
-		side = joyint(joyside * (vr_move_speed * (speed ? vr_run_multiplier : 1.0)));
-		forward = joyint(joyforward * (vr_move_speed * (speed ? vr_run_multiplier : 1.0)));
+		side += joyint(joyside * (vr_move_speed * (speed ? vr_run_multiplier : 1.0)));
+		forward += joyint(joyforward * (vr_move_speed * (speed ? vr_run_multiplier : 1.0)));
 	}
 	else
 	{

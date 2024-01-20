@@ -67,6 +67,7 @@ public:
 	virtual ~OpenXRDeviceMode() override;
 	virtual void SetUp() const override; // called immediately before rendering a scene frame
 	virtual void TearDown() const override; // called immediately after rendering a scene frame
+	virtual bool IsVR() const override { return true; }
 	virtual void Present() const override;
 	virtual void AdjustViewport(DFrameBuffer* screen) const override;
 	virtual void AdjustPlayerSprites(int hand = 0) const override;
