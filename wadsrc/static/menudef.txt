@@ -1213,6 +1213,7 @@ OptionMenu "VideoOptions" protected
 	Title "$DSPLYMNU_TITLE"
 
 	Submenu "$DSPLYMNU_GLOPT", 			"OpenGLOptions"
+	Submenu "$DSPLYMNU_SWOPT", 			"SWROptions"
 	Submenu "$GLMNU_DYNLIGHT",			"GLLightOptions"
 	StaticText " "
 	Option "Refresh Rate",                      "vid_refreshrate", "RefreshRate"
@@ -3117,6 +3118,7 @@ OptionMenu "OpenGLOptions" protected
 {
 	Title "$GLMNU_TITLE"
 	Submenu "$GLMNU_TEXOPT",					"GLTextureGLOptions"
+	Submenu "$GLPREFMNU_VRMODE",				"VR3DMenu"
 	Submenu "$GLMNU_POSTPROCESS",				"PostProcessMenu"
 	StaticText " "
 	Option "$GLPREFMNU_SECLIGHTMODE",			gl_lightmode,					"LightingModes"
