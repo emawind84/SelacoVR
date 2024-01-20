@@ -307,18 +307,32 @@ namespace s3d
         }
         auto *di = HWDrawInfo::StartDrawInfo(nullptr, r_viewpoint, nullptr);
 
+        di->VPUniforms.mViewMatrix.loadIdentity();
         // Update HUD matrix to render on a separate quad
         di->VPUniforms.mProjectionMatrix = getHUDProjection();
         ApplyVPUniforms(di);
+        di->EndDrawInfo();
     }
 
     void OpenXRDeviceEyePose::AdjustBlend(HWDrawInfo *di) const
     {
+        bool new_di = false;
+        if (di == nullptr)
+        {
+            di = HWDrawInfo::StartDrawInfo(nullptr, r_viewpoint, nullptr);
+            new_di = true;
+        }
+
         VSMatrix& proj = di->VPUniforms.mProjectionMatrix;
         proj.loadIdentity();
         proj.translate(-1, 1, 0);
         proj.scale(2.0 / SCREENWIDTH, -2.0 / SCREENHEIGHT, -1.0);
         ApplyVPUniforms(di);
+
+        if (new_di)
+        {
+            di->EndDrawInfo();
+        }
     }
 
 

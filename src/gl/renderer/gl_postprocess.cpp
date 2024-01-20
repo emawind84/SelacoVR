@@ -136,8 +136,6 @@ void FGLRenderer::ClearTonemapPalette()
 void FGLRenderer::Flush()
 {
 	auto vrmode = VRMode::GetVRMode(true);
-	const auto &mSceneViewport = screen->mSceneViewport;
-	const auto &mScreenViewport = screen->mScreenViewport;
 
 	if (vrmode->mEyeCount == 1)
 	{
@@ -146,6 +144,8 @@ void FGLRenderer::Flush()
 	else
 	{
 		vrmode->AdjustViewport(screen);
+		const auto &mSceneViewport = screen->mSceneViewport;
+		const auto &mScreenViewport = screen->mScreenViewport;
 		
 		const bool is2D = (gamestate != GS_LEVEL) || cinemamode;
 		if (is2D) vrmode->SetUp();
@@ -160,8 +160,11 @@ void FGLRenderer::Flush()
 			glScissor(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
 
 			//Only adjust HUD if we are 3D and not showing menu (otherwise we are rendering to a cylinder compositor layer)
+			vrmode->mEyes[eye_ix]->AdjustBlend(nullptr);
 			if (!is2D && !getMenuState())
+			{
 				vrmode->mEyes[eye_ix]->AdjustHud();
+			}
 
 			screen->Draw2D();
 			FGLDebug::PopGroup();
