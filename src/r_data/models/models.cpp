@@ -203,7 +203,7 @@ void FModelRenderer::RenderHUDModel(DPSprite *psp, float ofsX, float ofsY)
 		objectToWorldMatrix.scale(scale, scale, scale);
 		objectToWorldMatrix.translate(0, 5, 30);
 	}
-	else
+	else if (vrmode->IsVR())
 	{
 		DVector3 pos = playermo->Pos();
 		objectToWorldMatrix.translate(pos.X, pos.Z + 40, pos.Y);
