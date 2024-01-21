@@ -249,6 +249,7 @@ void GLWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 	}
 	state.SetObjectColor(0xffffffff);
 	state.SetObjectColor2(0);
+	state.SetAddColor(0);
 	state.SetTextureMode(tmode);
 	state.EnableGlow(false);
 	state.EnableGradient(false);
