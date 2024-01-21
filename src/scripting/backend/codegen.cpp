@@ -9468,8 +9468,6 @@ FxExpression *FxFlopFunctionCall::Resolve(FCompileContext& ctx)
 
 ExpEmit FxFlopFunctionCall::Emit(VMFunctionBuilder *build)
 {
-	//Need to figure out why this was causing a crash!!
-	//assert(ValueType == ArgList[0]->ValueType);
 	ExpEmit from = ArgList[0]->Emit(build);
 	ExpEmit to;
 	assert(from.Konst == 0);
@@ -10976,7 +10974,7 @@ FxExpression *FxReturnStatement::Resolve(FCompileContext &ctx)
 			return nullptr;
 		}
 	}
-	
+
 	if (retCount == 0)
 	{
 		TArray<PType *> none(0);
