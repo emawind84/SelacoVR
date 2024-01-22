@@ -400,6 +400,10 @@ static int CheckForTexture(const FString& name, int type, int flags)
 	return TexMan.CheckForTexture(name, static_cast<ETextureType>(type), flags).GetIndex();
 }
 
+static int FindTextures(const FString& search, TArray<FTextureID> *out, int type, int flags) {
+	return TexMan.FindTextures(search, out, static_cast<ETextureType>(type), flags);
+}
+
 DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, CheckForTexture, CheckForTexture)
 {
 	PARAM_PROLOGUE;
@@ -407,6 +411,17 @@ DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, CheckForTexture, CheckForTexture)
 	PARAM_INT(type);
 	PARAM_INT(flags);
 	ACTION_RETURN_INT(CheckForTexture(name, type, flags));
+}
+
+
+DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, FindTextures, FindTextures)
+{
+	PARAM_PROLOGUE;
+	PARAM_STRING(search);
+	PARAM_POINTER(out, TArray<FTextureID>);
+	PARAM_INT(type);
+	PARAM_INT(flags);
+	ACTION_RETURN_INT(FindTextures(search, out, type, flags));
 }
 
 //==========================================================================

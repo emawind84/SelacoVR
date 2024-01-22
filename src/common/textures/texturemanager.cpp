@@ -276,6 +276,61 @@ FTextureID FTextureManager::CheckForTexture (const char *name, ETextureType uset
 	return FTextureID(-1);
 }
 
+
+
+//==========================================================================
+//
+// FTextureManager :: FindTextures
+// @Cockatrice - Search through textures finding all that contain search
+//
+//==========================================================================
+
+int FTextureManager::FindTextures(const char* search, TArray<FTextureID> *list, ETextureType usetype, BITFIELD flags)
+{
+	//int firstfound = -1;
+	//auto firsttype = ETextureType::Null;
+	int found = 0;
+	//size_t stLen = strlen(search);
+	
+	// Disallow NULL and * (wildcard all) or **, we don't want to dump the entire texture database
+	if (search == NULL || search[0] == '\0' || (search[0] == '*' && search[1] == '\0') || (search[0] == '*' && search[1] == '*')) {
+		return 0;
+	}
+
+	for (auto &tx : Textures)
+	{
+		auto tex = tx.Texture;
+
+		// If we look for short names, we must ignore any long name texture.
+		if ((flags & TEXMAN_ShortNameOnly) && tex->isFullNameTexture())
+		{
+			continue;
+		}
+		auto texUseType = tex->GetUseType();
+		// The name matches, so check the texture type
+		if (usetype == ETextureType::Any)
+		{
+			// All NULL textures should actually return 0
+			if (texUseType == ETextureType::FirstDefined && !(flags & TEXMAN_ReturnFirst)) continue;
+			if (texUseType == ETextureType::SkinGraphic && !(flags & TEXMAN_AllowSkins)) continue;
+			if (texUseType == ETextureType::Null) continue;
+		}
+		else if (texUseType != usetype)
+		{
+			continue;
+		}
+		
+		if (strstr(tex->GetName(), search) == nullptr) {
+			continue;
+		}
+			
+		list->Push(tex->GetID());
+		found++;
+	}
+
+	return found;
+}
+
 //==========================================================================
 //
 // FTextureManager :: ListTextures
