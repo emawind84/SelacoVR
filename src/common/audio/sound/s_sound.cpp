@@ -50,6 +50,8 @@
 CVARD(Bool, snd_enabled, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "enables/disables sound effects")
 EXTERN_CVAR(Bool, snd_pitched)
 
+CVAR(Bool, snd_evict_lists, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+
 int SoundEnabled()
 {
 	return snd_enabled && !nosound && !nosfx;
@@ -519,7 +521,7 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 	}
 
 	// If this sound doesn't like playing near itself, don't play it if that's what would happen.
-	if (near_limit > 0 && CheckSoundLimit(sfx, pos, near_limit, limit_range, type, source, channel, attenuation))
+	if (near_limit > 0 && CheckSoundLimit(sfx, pos, near_limit, limit_range, type, source, channel, attenuation, snd_evict_lists ? &S_sfx[org_id] : nullptr))
 	{
 		chanflags |= CHANF_EVICTED;
 	}
@@ -1188,7 +1190,7 @@ bool SoundEngine::CheckSingular(int sound_id)
 //==========================================================================
 
 bool SoundEngine::CheckSoundLimit(sfxinfo_t *sfx, const FVector3 &pos, int near_limit, float limit_range,
-	int sourcetype, const void *actor, int channel, float attenuation)
+	int sourcetype, const void *actor, int channel, float attenuation, sfxinfo_t* compareOrgID)
 {
 	FSoundChan *chan;
 	int count;
@@ -1196,7 +1198,7 @@ bool SoundEngine::CheckSoundLimit(sfxinfo_t *sfx, const FVector3 &pos, int near_
 	for (chan = Channels, count = 0; chan != NULL && count < near_limit; chan = chan->NextChan)
 	{
 		if (chan->ChanFlags & CHANF_FORGETTABLE) continue;
-		if (!(chan->ChanFlags & CHANF_EVICTED) && &S_sfx[chan->SoundID] == sfx)
+		if (!(chan->ChanFlags & CHANF_EVICTED) && (&S_sfx[chan->SoundID] == sfx || (compareOrgID != nullptr && &S_sfx[chan->OrgID] == compareOrgID)))
 		{
 			FVector3 chanorigin;
 
