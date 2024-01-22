@@ -68,6 +68,8 @@ enum SectorRenderFlags
     SSRF_RENDERALL = 7,
     SSRF_PROCESSED = 8,
     SSRF_SEEN = 16,
+    SSRF_PLANEHACK = 32,
+    SSRF_FLOODHACK = 64
 };
 
 enum EPortalClip
@@ -142,7 +144,7 @@ struct HWDrawInfo
 	HWDrawInfo * outer = nullptr;
 	int FullbrightFlags;
 	std::atomic<int> spriteindex;
-	HWScenePortalBase *mClipPortal;
+	HWPortal *mClipPortal;
 	HWPortal *mCurrentPortal;
 	//FRotator mAngles;
 	Clipper *mClipper;
@@ -160,17 +162,17 @@ struct HWDrawInfo
 
 	TArray<SubsectorHackInfo> SubsectorHacks;
 
-	TArray<gl_subsectorrendernode*> otherfloorplanes;
-	TArray<gl_subsectorrendernode*> otherceilingplanes;
-	TArray<gl_floodrendernode*> floodfloorsegs;
-	TArray<gl_floodrendernode*> floodceilingsegs;
+    TMap<int, gl_subsectorrendernode*> otherFloorPlanes;
+    TMap<int, gl_subsectorrendernode*> otherCeilingPlanes;
+    TMap<int, gl_floodrendernode*> floodFloorSegs;
+    TMap<int, gl_floodrendernode*> floodCeilingSegs;
 
-	TArray<sector_t *> CeilingStacks;
-	TArray<sector_t *> FloorStacks;
+	//TArray<sector_t *> CeilingStacks;
+	//TArray<sector_t *> FloorStacks;
 
 	TArray<subsector_t *> HandledSubsectors;
 
-	TArray<uint8_t> sectorrenderflags;
+	TArray<uint8_t> section_renderflags;
 	TArray<uint8_t> ss_renderflags;
 	TArray<uint8_t> no_renderflags;
 
@@ -191,8 +193,6 @@ private:
 	subsector_t *currentsubsector;	// used by the line processing code.
 	sector_t *currentsector;
 
-    sector_t fakesec;    // this is a struct member because it gets used in recursively called functions so it cannot be put on the stack.
-
 	void WorkerThread();
 
 	void UnclipSubsector(subsector_t *sub);
@@ -212,32 +212,6 @@ private:
 	void DrawPSprite(HUDSprite *huds, FRenderState &state);
 public:
 
-	gl_subsectorrendernode * GetOtherFloorPlanes(unsigned int sector)
-	{
-		if (sector<otherfloorplanes.Size()) return otherfloorplanes[sector];
-		else return nullptr;
-	}
-
-	gl_subsectorrendernode * GetOtherCeilingPlanes(unsigned int sector)
-	{
-		if (sector<otherceilingplanes.Size()) return otherceilingplanes[sector];
-		else return nullptr;
-	}
-
-	gl_floodrendernode * GetFloodFloorSegs(unsigned int sector)
-	{
-		if (sector<floodfloorsegs.Size()) return floodfloorsegs[sector];
-		else return nullptr;
-	}
-
-	gl_floodrendernode * GetFloodCeilingSegs(unsigned int sector)
-	{
-		if (sector<floodceilingsegs.Size()) return floodceilingsegs[sector];
-		else return nullptr;
-	}
-
-
-
 	void SetCameraPos(const DVector3 &pos)
 	{
 		VPUniforms.mCameraPos = { (float)pos.X, (float)pos.Z, (float)pos.Y, 0.f };
@@ -254,11 +228,6 @@ public:
 	{
 		VPUniforms.mClipLine = { (float)line->v1->fX(), (float)line->v1->fY(), (float)line->Delta().X, (float)line->Delta().Y };
 		VPUniforms.mClipHeight = 0;
-	}
-
-	bool ClipLineShouldBeActive()
-	{
-		return (screen->hwcaps & RFL_NO_CLIP_PLANES) && VPUniforms.mClipLine.X > -1000000.f;
 	}
 
 	HWPortal * FindPortal(const void * src);
@@ -293,6 +262,7 @@ public:
 	void CollectSectorStacksCeiling(subsector_t * sub, sector_t * anchor, area_t in_area);
 	void CollectSectorStacksFloor(subsector_t * sub, sector_t * anchor, area_t in_area);
 
+	void DispatchRenderHacks();
 	void AddUpperMissingTexture(side_t * side, subsector_t *sub, float backheight);
 	void AddLowerMissingTexture(side_t * side, subsector_t *sub, float backheight);
 	void HandleMissingTextures(area_t in_area);

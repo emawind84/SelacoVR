@@ -843,7 +843,6 @@ class Actor : Thinker native
 	native clearscope Inventory FindInventory(class<Inventory> itemtype, bool subclass = false) const;
 	native Inventory GiveInventoryType(class<Inventory> itemtype);
 	native bool UsePuzzleItem(int PuzzleItemType);
-
 	action native void SetCamera(Actor cam, bool revert = false);
 	native bool Warp(Actor dest, double xofs = 0, double yofs = 0, double zofs = 0, double angle = 0, int flags = 0, double heightoffset = 0, double radiusoffset = 0, double pitch = 0);
 

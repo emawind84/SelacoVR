@@ -3672,6 +3672,8 @@ void P_SetupLevel(const char *lumpname, int position, bool newGame)
 	if (hasglnodes)
 	{
 		P_SetRenderSector();
+		FixMinisegReferences();
+		FixHoles();
 	}
 
 	level.bodyqueslot = 0;
@@ -3680,6 +3682,8 @@ void P_SetupLevel(const char *lumpname, int position, bool newGame)
 
 	for(auto & p : level.bodyque)
 		p = nullptr;
+
+	CreateSections(level.sections);
 
 	if (!buildmap)
 	{
@@ -3743,6 +3747,12 @@ void P_SetupLevel(const char *lumpname, int position, bool newGame)
 	// This must be done BEFORE the PolyObj Spawn!!!
 	InitRenderInfo();			// create hardware independent renderer resources for the level.
 	screen->mVertexData->CreateVBO();
+
+	for (auto &sec : level.sectors)
+	{
+		P_Recalculate3DFloors(&sec);
+	}
+
 	SWRenderer->SetColormap();	//The SW renderer needs to do some special setup for the level's default colormap.
 	InitPortalGroups();
 	P_InitHealthGroups();
@@ -3755,8 +3765,8 @@ void P_SetupLevel(const char *lumpname, int position, bool newGame)
 	P_InitHealthGroups();
 
 	times[16].Clock();
-	if (reloop) P_LoopSidedefs (false);
-	PO_Init ();				// Initialize the polyobjs
+	if (reloop) P_LoopSidedefs(false);
+	PO_Init();				// Initialize the polyobjs
 	if (!level.IsReentering())
 		P_FinalizePortals();	// finalize line portals after polyobjects have been initialized. This info is needed for properly flagging them.
 	times[16].Unclock();

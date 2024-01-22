@@ -12,6 +12,7 @@ struct side_t;
 struct seg_t;
 
 class FSerializer;
+struct FSectionLine;
 
 enum ELightType
 {
@@ -243,8 +244,8 @@ struct FDynamicLight
 	void ReleaseLight();
 
 private:
-	double DistToSeg(const DVector3 &pos, seg_t *seg);
-	void CollectWithinRadius(const DVector3 &pos, subsector_t *subSec, float radius);
+	double DistToSeg(const DVector3 &pos, vertex_t *start, vertex_t *end);
+	void CollectWithinRadius(const DVector3 &pos, FSection *section, float radius);
 
 public:
 	FCycler m_cycler;
@@ -264,7 +265,6 @@ public:
 	sector_t *Sector;
 	TObjPtr<AActor *> target;
 	FLightNode * touching_sides;
-	FLightNode * touching_subsectors;
 	FLightNode * touching_sector;
 	float radius;			// The maximum size the light can be with its current settings.
 	float m_currentRadius;	// The current light size.

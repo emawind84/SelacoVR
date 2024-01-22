@@ -8799,7 +8799,6 @@ ExpEmit FxActionSpecialCall::Emit(VMFunctionBuilder *build)
 	emitters.AddParameterIntConst(abs(Special));			// pass special number
 	emitters.AddParameter(build, Self);
 
-
 	for (; i < ArgList.Size(); ++i)
 	{
 		FxExpression *argex = ArgList[i];
