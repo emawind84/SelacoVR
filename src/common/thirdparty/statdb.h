@@ -56,6 +56,15 @@ protected:
         unsigned char data[4];
     };
 
+    struct NamePacket {
+        char name[128];
+    };
+    
+    struct AchievementNotif {
+        StatPacket stat;
+        NamePacket name;
+    };
+
     void queueOutput();
 
     std::chrono::steady_clock::time_point lastStatUpdate;
@@ -63,6 +72,7 @@ protected:
 
     TSQueue<StatPacket> outPackets;
     TSQueue<StatPacket> inPackets;
+    TSQueue<AchievementNotif> notifs;
 
     std::map<FString, Stat> allStats;
     std::map<FString, Achievement> allAchievements;
@@ -70,7 +80,7 @@ protected:
     std::mutex mWakeLock;
     std::thread mThread;
     std::condition_variable mWake;
-    std::atomic<bool> mRunning{ false };
+    std::atomic<bool> mRunning{ false }, mConnected{ false };
 
     int rpcFailures = 0;
 
@@ -80,6 +90,7 @@ protected:
     bool readRPC(void* data, size_t size);
     void disconnectRPC();
     bool isConnected();
+    bool checkConnection();
 
     void* pipe;
 };

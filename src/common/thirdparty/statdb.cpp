@@ -8,10 +8,14 @@
 #include "c_cvars.h"
 #include "c_dispatch.h"
 #include "filesystem.h"
+#include "events.h"
+#include "g_levellocals.h"
 
 CUSTOM_CVAR(Bool, g_statdb, false, CVAR_NOSET | CVAR_NOINITCALL) {
     Printf("This value can only be changed from the command line.\n");
 }
+
+CVAR(Bool, g_statdb_modded, false, CVAR_NOSET);
 
 EXTERN_CVAR(Bool, sv_cheats)
 EXTERN_CVAR(Int, developer)
@@ -131,7 +135,7 @@ DEFINE_ACTION_FUNCTION(_StatDatabase, SetAchievement)
 DEFINE_ACTION_FUNCTION(_StatDatabase, IsAvailable)
 {
     PARAM_PROLOGUE;
-    ACTION_RETURN_BOOL(statDatabase.isAvailable());
+    ACTION_RETURN_INT(statDatabase.isAvailable());
 }
 
 
@@ -163,7 +167,7 @@ void StatDatabase::print() {
 }
 
 bool StatDatabase::isAvailable() {
-    return g_statdb && allStats.size() > 0 && mRunning.load();
+    return g_statdb && allStats.size() > 0 && mRunning.load() && mConnected.load();
 }
 
 void StatDatabase::start() {
@@ -172,6 +176,7 @@ void StatDatabase::start() {
 #ifndef ALLOW_STAT_CHEATS
     // Don't startup if we have mods installed
     if (fileSystem.HasExtraWads()) {
+        g_statdb_modded = true;
         Printf(TEXTCOLOR_YELLOW "Global stat database disabled: Mods are installed\n");
         return;
     }
@@ -195,26 +200,57 @@ void StatDatabase::update() {
 
         if (p.type == 3) {
             // Achievement
+            int32_t data = *(reinterpret_cast<int32_t*>(p.data));
+            bool exists = allAchievements.find(name) != allAchievements.end();
             auto& ach = allAchievements[name];
-            ach.hasIt = *(reinterpret_cast<int32_t*>(p.data));
+            bool didChange = ach.hasIt != data;
+            ach.hasIt = data;
             ach.hasChanged = false;
+
             if (developer > 0) Printf("StatDatabase: Received Achievement - %s = %d\n", name.GetChars(), ach.hasIt);
+
+            // Notify script that achievement data came in
+            if (didChange && !exists && data > 0) {
+                primaryLevel->localEventManager->Stat(name, "", true, (double)data);
+            }
         }
         else if(p.type == Stat::FLOAT_TYPE || p.type == Stat::INT_TYPE) {
             // Stat
+            bool exists = allAchievements.find(name) != allAchievements.end();
             auto& stat = allStats[name];
             if (stat.type == Stat::INT_TYPE && p.type == Stat::INT_TYPE) {
-                stat.iVal = *(reinterpret_cast<int32_t*>(p.data));
+                int32_t data = *(reinterpret_cast<int32_t*>(p.data));
+                bool didChange = stat.iVal != data;
+                stat.iVal = data;
                 stat.hasChanged = false;
                 if (developer > 0) Printf("StatDatabase: Received Stat - %s = %d\n", name.GetChars(), stat.iVal);
+
+                // Notify script that achievement data came in
+                if (didChange && !exists) {
+                    primaryLevel->localEventManager->Stat(name, "", false, (double)data);
+                }
             }
             else if (stat.type == Stat::FLOAT_TYPE && p.type == Stat::FLOAT_TYPE) {
-                stat.fVal = *(reinterpret_cast<float*>(p.data));
+                float data = *(reinterpret_cast<float*>(p.data));
+                bool didChange = stat.fVal != data;
+                stat.fVal = data;
                 stat.hasChanged = false;
                 if (developer > 0) Printf("StatDatabase: Received Stat - %s = %f\n", name.GetChars(), stat.fVal);
+
+                // Notify script that achievement data came in
+                if (didChange && !exists) {
+                    primaryLevel->localEventManager->Stat(name, "", false, (double)data);
+                }
             }
-        } else if(developer > 0) {
-            Printf("StatDatabase: Received nonsense: %d - %s", p.type, p.name);
+        }
+        else if (p.type == 6) {
+            // Achievement notification
+            // Hack for now, send name twice. Eventually need a way of transfering achievement names from the host
+            if (developer > 0) Printf("StatDatabase: Received Achievement Notification - %s : %s\n", name.GetChars(), name.GetChars());
+            primaryLevel->localEventManager->Stat(name, name, true, (double)1);
+        }
+        else if (developer > 0) {
+            Printf("StatDatabase: Received nonsense: %d - %s\n", p.type, p.name);
         }
     }
 
@@ -259,7 +295,7 @@ void StatDatabase::queueOutput() {
         outPackets.queue(p);
         ach.hasChanged = false;
 
-        if(developer > 0) Printf("StatDatabase: Queued Achievement %s", name.GetChars());
+        if(developer > 0) Printf("StatDatabase: Queued Achievement %s\n", name.GetChars());
     }
 }
 
@@ -335,15 +371,21 @@ void StatDatabase::backgroundProc() {
     bool sentRequestForData = false;
     auto lastKeepAlive = std::chrono::steady_clock::now();
 
+    if (rpcFailures == 0) mConnected.store(true);
+
     while (rpcFailures < 75) {
         // Ensure connection, if failed reconnect
-        if (!isConnected() && mRunning.load()) {
-            connectRPC();
+        if (!checkConnection() && mRunning.load()) {
+            mConnected.store(false);
+            if (connectRPC()) {
+                mConnected.store(true);
+            }
             rpcFailures++;
             std::this_thread::sleep_for(std::chrono::milliseconds(350));
         }
         else {
             rpcFailures = 0;
+            mConnected.store(true);
         }
 
         
@@ -352,7 +394,7 @@ void StatDatabase::backgroundProc() {
             StatPacket p;
             while (readRPC(&p, sizeof(StatPacket))) {
                 p.name[63] = '\0';
-                if(p.type <= 3 && p.type >= 0) inPackets.queue(p);
+                if(p.type <= 6 && p.type >= 0) inPackets.queue(p);
             }
 
             // If we have new data, send it
@@ -371,7 +413,7 @@ void StatDatabase::backgroundProc() {
             }
 
             auto keepAliveTimer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - lastKeepAlive);
-            if(keepAliveTimer.count() > 500) {
+            if(keepAliveTimer.count() > 100) {
                 // Send keep alive
                 StatPacket p;
                 p.type = 5;
@@ -390,6 +432,7 @@ void StatDatabase::backgroundProc() {
     }
 
     mRunning.store(false);
+    mConnected.store(false);
     disconnectRPC();
 }
 
@@ -400,6 +443,10 @@ void StatDatabase::backgroundProc() {
 
 void StatDatabase::init() {
     pipe = INVALID_HANDLE_VALUE;
+}
+
+bool StatDatabase::checkConnection() {
+    return isConnected() && GetNamedPipeHandleStateA(pipe, NULL, NULL, NULL, NULL, NULL, 0);
 }
 
 bool StatDatabase::isConnected() {
