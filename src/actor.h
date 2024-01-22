@@ -1306,9 +1306,6 @@ public:
 	uint32_t SpawnOrder;
 
 
-	// When was this actor spawned?
-	int SpawnTime;
-
 	// ThingIDs
 	static void ClearTIDHashes ();
 	void SetTID (int newTID);
