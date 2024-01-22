@@ -119,6 +119,9 @@ public:
 	void CheckReplacement(PClassActor* replacee, PClassActor** replacement, bool* final);
 	void CheckReplacee(PClassActor** replacee, PClassActor* replacement, bool* final);
 
+	// 
+	void StatsEvent(FString name, FString text, bool isAchievement, double value = 1);
+
 	//
 	void NewGame();
 };
@@ -190,6 +193,13 @@ struct FConsoleEvent
 	int Args[3];
 	//
 	bool IsManual;
+};
+
+struct FStatsEvent
+{
+	FString Name, Text;
+	bool IsAchievement;
+	double Value;
 };
 
 struct FReplaceEvent
@@ -296,6 +306,8 @@ struct EventManager
 
 	// called on new game
 	void NewGame();
+
+	void Stat(FString name, FString text, bool isAchievement, double value);
 
 	// send networked event. unified function.
 	bool SendNetworkEvent(FString name, int arg1, int arg2, int arg3, bool manual);

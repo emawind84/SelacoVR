@@ -63,6 +63,14 @@ struct ConsoleEvent native version("2.4")
     native readonly bool IsManual;
 }
 
+// This version number is meaningless right now
+struct StatsEvent native version("4.1")
+{
+    native readonly String Name, Text;
+    native readonly double Value;
+    native readonly bool IsAchievement;
+}
+
 struct ReplaceEvent native version("2.4")
 {
 	native readonly Class<Actor> Replacee;
@@ -131,6 +139,10 @@ class StaticEventHandler : Object native play version("2.4")
     //
     virtual void CheckReplacement(ReplaceEvent e) {}
 	virtual void CheckReplacee(ReplacedEvent e) {}
+
+    // 
+    virtual ui void StatProcess(StatsEvent e) {}
+    //virtual void WorldStatProcess(StatsEvent e) {}
 
     //
     virtual  void NewGame() {}
