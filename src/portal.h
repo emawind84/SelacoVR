@@ -259,7 +259,6 @@ struct FSectorPortal
 //
 //============================================================================
 
-struct GLSectorStackPortal;
 struct FSectorPortalGroup
 {
 	DVector2 mDisplacement;

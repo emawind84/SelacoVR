@@ -518,16 +518,6 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		glAttachShader(hShader, hVertProg);
 		glAttachShader(hShader, hFragProg);
 
-		glBindAttribLocation(hShader, VATTR_VERTEX, "aPosition");
-		glBindAttribLocation(hShader, VATTR_TEXCOORD, "aTexCoord");
-		glBindAttribLocation(hShader, VATTR_COLOR, "aColor");
-		glBindAttribLocation(hShader, VATTR_VERTEX2, "aVertex2");
-		glBindAttribLocation(hShader, VATTR_NORMAL, "aNormal");
-
-		glBindFragDataLocation(hShader, 0, "FragColor");
-		glBindFragDataLocation(hShader, 1, "FragFog");
-		glBindFragDataLocation(hShader, 2, "FragNormal");
-
 		glLinkProgram(hShader);
 
 		glGetShaderInfoLog(hVertProg, 10000, NULL, buffer);

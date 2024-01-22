@@ -53,8 +53,7 @@ struct FBlockNode;
 struct FPortalGroupArray;
 struct visstyle_t;
 class FLightDefaults;
-struct FDynamicLight;
-
+struct FSection;
 //
 // NOTES: AActor
 //
@@ -1116,6 +1115,7 @@ public:
 	FBlockNode		*BlockNode;			// links in blocks (if needed)
 	struct sector_t	*Sector;
 	subsector_t *		subsector;
+	FSection *			section;
 	double			floorz, ceilingz;	// closest together of contacted secs
 	double			dropoffz;		// killough 11/98: the lowest floor over all contacted Sectors.
 
@@ -1305,6 +1305,9 @@ public:
 	int SpawnTime;
 	uint32_t SpawnOrder;
 
+
+	// When was this actor spawned?
+	int SpawnTime;
 
 	// ThingIDs
 	static void ClearTIDHashes ();

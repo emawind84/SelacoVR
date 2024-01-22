@@ -57,18 +57,6 @@ extern int portalsPerEye;
 //
 //==========================================================================
 
-template<class T>
-inline void DeleteLinkedList(T *node)
-{
-	while (node)
-	{
-		auto n = node;
-		node = node->next;
-		delete n;
-	}
-}
-
-
 class FDrawInfoList
 {
 public:
@@ -189,17 +177,10 @@ HWDrawInfo *HWDrawInfo::EndDrawInfo()
 
 void HWDrawInfo::ClearBuffers()
 {
-	for (auto node : otherfloorplanes) DeleteLinkedList(node);
-	otherfloorplanes.Clear();
-
-	for (auto node : otherceilingplanes) DeleteLinkedList(node);
-	otherceilingplanes.Clear();
-
-	for (auto node : floodfloorsegs) DeleteLinkedList(node);
-	floodfloorsegs.Clear();
-
-	for (auto node : floodceilingsegs) DeleteLinkedList(node);
-	floodceilingsegs.Clear();
+    otherFloorPlanes.Clear();
+    otherCeilingPlanes.Clear();
+    floodFloorSegs.Clear();
+    floodCeilingSegs.Clear();
 
 	// clear all the lists that might not have been cleared already
 	MissingUpperTextures.Clear();
@@ -207,19 +188,19 @@ void HWDrawInfo::ClearBuffers()
 	MissingUpperSegs.Clear();
 	MissingLowerSegs.Clear();
 	SubsectorHacks.Clear();
-	CeilingStacks.Clear();
-	FloorStacks.Clear();
+	//CeilingStacks.Clear();
+	//FloorStacks.Clear();
 	HandledSubsectors.Clear();
 	spriteindex = 0;
 
 	CurrentMapSections.Resize(level.NumMapSections);
 	CurrentMapSections.Zero();
 
-	sectorrenderflags.Resize(level.sectors.Size());
+	section_renderflags.Resize(level.sections.allSections.Size());
 	ss_renderflags.Resize(level.subsectors.Size());
 	no_renderflags.Resize(level.subsectors.Size());
 
-	memset(&sectorrenderflags[0], 0, level.sectors.Size() * sizeof(sectorrenderflags[0]));
+	memset(&section_renderflags[0], 0, level.sections.allSections.Size() * sizeof(section_renderflags[0]));
 	memset(&ss_renderflags[0], 0, level.subsectors.Size() * sizeof(ss_renderflags[0]));
 	memset(&no_renderflags[0], 0, level.nodes.Size() * sizeof(no_renderflags[0]));
 
@@ -461,8 +442,8 @@ void HWDrawInfo::CreateScene()
 
 	HandleMissingTextures(in_area);	// Missing upper/lower textures
 	HandleHackedSubsectors();	// open sector hacks for deep water
-	ProcessSectorStacks(in_area);		// merge visplanes of sector stacks
 	PrepareUnhandledMissingTextures();
+	DispatchRenderHacks();
 	screen->mLights->Unmap();
 	screen->mVertexData->Unmap();
 
@@ -676,3 +657,22 @@ void HWDrawInfo::ProcessScene(bool toscreen, const std::function<void(HWDrawInfo
 	DrawScene(this, toscreen ? DM_MAINVIEW : DM_OFFSCREEN);
 
 }
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void HWDrawInfo::AddSubsectorToPortal(FSectorPortalGroup *ptg, subsector_t *sub)
+{
+	auto portal = FindPortal(ptg);
+	if (!portal)
+	{
+        portal = new HWSectorStackPortal(screen->mPortalState, ptg);
+		Portals.Push(portal);
+	}
+    auto ptl = static_cast<HWSectorStackPortal*>(portal);
+	ptl->AddSubsector(sub);
+}
+

@@ -2305,4 +2305,3 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, StartIntermission)
 	F_StartIntermission(seq, (uint8_t)state);
 	return 0;
 }
-

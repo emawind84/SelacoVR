@@ -128,7 +128,6 @@ void IHardwareTexture::Resize(int swidth, int sheight, int width, int height, un
 	}
 }
 
-
 //===========================================================================
 //
 //

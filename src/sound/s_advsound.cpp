@@ -1893,6 +1893,7 @@ int GetTicker(struct FAmbientSound *ambient)
 	{
 		return ambient->periodmin;
 	}
+	return 0;
 }
 
 //==========================================================================

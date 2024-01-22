@@ -167,8 +167,8 @@ void FWadCollection::InitMultipleFiles (TArray<FString> &filenames)
 	NextLumpIndex = &Hashes[NumLumps];
 	FirstLumpIndex_FullName = &Hashes[NumLumps*2];
 	NextLumpIndex_FullName = &Hashes[NumLumps*3];
-	FirstLumpIndex_NoExt = new uint32_t[NumLumps];
-	NextLumpIndex_NoExt = new uint32_t[NumLumps];
+	FirstLumpIndex_NoExt = &Hashes[NumLumps*4];
+	NextLumpIndex_NoExt = &Hashes[NumLumps*5];
 	InitHashChains ();
 	LumpInfo.ShrinkToFit();
 	Files.ShrinkToFit();
