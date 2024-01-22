@@ -167,7 +167,7 @@ void GLWall::SkyPlane(HWDrawInfo *di, sector_t *sector, int plane, bool allowref
 	if (ptype != -1
 	&& (ptype > PORTALTYPE_SKYBOX || (gl_skydome && !gl_global_fade))) 
 	{
-		PutPortal(di, ptype);
+		PutPortal(di, ptype, plane);
 	}
 }
 
@@ -202,7 +202,7 @@ void GLWall::SkyLine(HWDrawInfo *di, sector_t *fs, line_t *line)
 	ztop[1] = zceil[1];
 	zbottom[0] = zfloor[0];
 	zbottom[1] = zfloor[1];
-	PutPortal(di, ptype);
+	PutPortal(di, ptype, -1);
 }
 
 

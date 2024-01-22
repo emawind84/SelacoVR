@@ -38,6 +38,8 @@
 
 static sector_t **fakesectorbuffer;
 
+extern thread_local bool isWorkerThread;
+
 //==========================================================================
 //
 // Check whether the player can look beyond this line
@@ -241,6 +243,7 @@ sector_t * hw_FakeFlat(sector_t * sec, area_t in_area, bool back, sector_t *loca
 	{
 		return fakesectorbuffer[sec->sectornum];
 	}
+	assert(!(isWorkerThread && localcopy == nullptr));
 
 	if (in_area==area_above)
 	{

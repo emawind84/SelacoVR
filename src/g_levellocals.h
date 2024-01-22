@@ -43,6 +43,7 @@
 #include "p_blockmap.h"
 #include "p_local.h"
 #include "p_destructible.h"
+#include "r_data/r_sections.h"
 
 
 extern int i_compatflags, i_compatflags2;
@@ -72,6 +73,8 @@ struct FLevelData
 	TArray<FLinePortal*> linkedPortals;	// only the linked portals, this is used to speed up looking for them in P_CollectConnectedGroups.
 	TArray<FSectorPortalGroup *> portalGroups;	
 	TArray<FLinePortalSpan> linePortalSpans;
+	FSectionContainer sections;
+
 	int NumMapSections;
 
 
