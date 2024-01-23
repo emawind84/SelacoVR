@@ -91,7 +91,6 @@ The FON2 header is followed by variable length data:
 #include "gstrings.h"
 #include "v_text.h"
 #include "vm.h"
-#include "fontinternals.h"
 #include "image.h"
 #include "utf8.h"
 #include "textures/formats/fontchars.h"
@@ -1078,7 +1077,7 @@ FFont *V_GetFont(const char *name, const char *fontlumpname)
 		FTextureID picnum = TexMan.CheckForTexture (name, ETextureType::Any);
 		if (picnum.isValid())
 		{
-			FTexture *tex = TexMan[picnum];
+			FTexture *tex = TexMan.GetTexture(picnum);
 			if (tex && tex->GetSourceLump() >= folderfile)
 			{
 				return new FSinglePicFont (name);
@@ -1111,7 +1110,6 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 
 	noTranslate = notranslate;
 	Lump = fdlump;
-	Chars.Resize(count);
 	FontHeight = 0;
 	GlobalKerning = false;
 	FontName = name;
@@ -1260,7 +1258,7 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 	FirstChar = minchar;
 	LastChar = maxchar;
 	auto count = maxchar - minchar + 1;
-	Chars = new CharData[count];
+	Chars.Resize(count);
 	int fontheight = 0;
 
 	for (i = 0; i < count; i++)
@@ -1272,7 +1270,7 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 			if (pic != nullptr)
 			{
 				int height = pic->GetDisplayHeight();
-				int yoffs = pic->GetDisplayTopOffset(0);
+				int yoffs = pic->GetDisplayTopOffset();
 
 				if (yoffs > maxyoffs)
 				{
@@ -1624,7 +1622,7 @@ int FFont::GetCharCode(int code, bool needpic) const
 		return code;
 	}
 	
-	// Special handling for the ß which may only exist as lowercase, so for this we need an additional upper -> lower check for all fonts aside from the generic substitution logic.
+	// Special handling for the ÃŸ which may only exist as lowercase, so for this we need an additional upper -> lower check for all fonts aside from the generic substitution logic.
 	if (code == 0x1e9e)
 	{
 		if (LastChar <= 0xdf && (!needpic || Chars[0xdf - FirstChar].TranslatedPic != nullptr))
@@ -1642,7 +1640,7 @@ int FFont::GetCharCode(int code, bool needpic) const
 		if (myislower(code))
 		{
 			code = upperforlower[code];
-			if (code >= FirstChar && code <= LastChar && (!needpic || Chars[code - FirstChar].Pic != nullptr))
+			if (code >= FirstChar && code <= LastChar && (!needpic || Chars[code - FirstChar].TranslatedPic != nullptr))
 			{
 				return code;
 			}
@@ -1667,7 +1665,7 @@ int FFont::GetCharCode(int code, bool needpic) const
 		while ((newcode = stripaccent(code)) != code)
 		{
 			code = newcode;
-			if (code >= FirstChar && code <= LastChar && (!needpic || Chars[code - FirstChar].Pic != nullptr))
+			if (code >= FirstChar && code <= LastChar && (!needpic || Chars[code - FirstChar].TranslatedPic != nullptr))
 			{
 				return code;
 			}
@@ -1833,10 +1831,10 @@ int FFont::GetMaxAscender(const uint8_t* string) const
 		}
 		else
 		{
-			auto ctex = GetChar(chr, nullptr);
+			auto ctex = GetChar(chr, CR_UNTRANSLATED, nullptr);
 			if (ctex)
 			{
-				auto offs = int(ctex->GetScaledTopOffset(0));
+				auto offs = int(ctex->GetDisplayTopOffset());
 				if (offs > retval) retval = offs;
 			}
 		}
@@ -2028,7 +2026,7 @@ void FSingleLumpFont::LoadFON1 (int lump, const uint8_t *data)
 	// The default console font is for Windows-1252 and fills the 0x80-0x9f range with valid glyphs.
 	// Since now all internal text is processed as Unicode, these have to be remapped to their proper places.
 	// The highest valid character in this range is 0x2122, so we need 0x2123 entries in our character table.
-	Chars = new CharData[0x2123];
+	Chars.Resize(0x2123);
 
 	w = data[4] + data[5]*256;
 	h = data[6] + data[7]*256;
@@ -2046,7 +2044,7 @@ void FSingleLumpFont::LoadFON1 (int lump, const uint8_t *data)
 	// Move the Windows-1252 characters to their proper place.
 	for (int i = 0x80; i < 0xa0; i++)
 	{
-		if (win1252map[i-0x80] != i && Chars[i].Pic != nullptr && Chars[win1252map[i - 0x80]].Pic == nullptr)
+		if (win1252map[i-0x80] != i && Chars[i].TranslatedPic != nullptr && Chars[win1252map[i - 0x80]].TranslatedPic == nullptr)
 		{ 
 			std::swap(Chars[i], Chars[win1252map[i - 0x80]]);
 		}

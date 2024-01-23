@@ -422,7 +422,7 @@ bool DFrameBuffer::SetTextureParms(DrawParms *parms, FTexture *img, double xx, d
 		case DTA_FullscreenEx:
 		{
 			DoubleRect rect;
-			CalcFullscreenScale(img->GetScaledWidthDouble(), img->GetScaledHeightDouble(), parms->fsscalemode, rect);
+			CalcFullscreenScale(img->GetDisplayWidthDouble(), img->GetDisplayHeightDouble(), parms->fsscalemode, rect);
 			parms->keepratio = true;
 			parms->x = rect.left;
 			parms->y = rect.top;

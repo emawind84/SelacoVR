@@ -71,7 +71,7 @@ FImageSource *EmptyImage_TryCreate(FileReader & file, int lumpnum)
 	return new FEmptyTexture(lumpnum);
 }
 
-FTexture* CreateEmptyTexture()
+FImageSource* CreateEmptyTexture()
 {
 	return new FEmptyTexture(0);
 }

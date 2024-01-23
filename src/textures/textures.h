@@ -333,6 +333,7 @@ class FTexture
 	friend class FMultiPatchTexture;
 	friend class FSkyBox;
 	friend class FBrightmapTexture;
+	friend class FFont;
 	friend class FFontChar1;
 	friend void RecordTextureColors (FTexture *pic, uint8_t *usedcolors);
 

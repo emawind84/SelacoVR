@@ -57,6 +57,8 @@ CUSTOM_CVAR (Int, r_skymode, 2, CVAR_ARCHIVE)
 
 CVAR(Float, skyoffset, 0, 0)	// for testing
 
+int 		sskyoffset;
+
 //==========================================================================
 //
 // R_InitSkyMap

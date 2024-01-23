@@ -1643,7 +1643,7 @@ void DBaseStatusBar::DrawString(FFont *font, const FString &cstring, double x, d
 		// Take text scale into account
 		dx = monospaced
 			? spacing * scaleX
-			: (double(width) + spacing - c->GetLeftOffset(0)) * scaleX - 1;
+			: (double(width) + spacing - c->GetDisplayLeftOffsetDouble()) * scaleX - 1;
 
 		x += dx;
 	}

@@ -106,7 +106,7 @@ static void xbrzApplyOptions()
 		}
 		else
 		{
-			FMaterial::FlushAll();
+			TexMan.FlushAll();
 		}
 	}
 }
@@ -494,7 +494,7 @@ void FTexture::CreateUpsampledTextureBuffer(FTextureBuffer &texbuffer, bool hasA
 			else if (type == 5)
 				texbuffer.mBuffer = xbrzHelper(xbrzOldScale, mult, texbuffer.mBuffer, inWidth, inHeight, texbuffer.mWidth, texbuffer.mHeight);
 			else if (type == 6)
-				texbuffer.mBuffer = normalNxHelper(&normalNx, mult, texbuffer.mBuffer, inWidth, inHeight, texbuffer.mWidth, texbuffer.mHeight);
+				texbuffer.mBuffer = normalNx(mult, texbuffer.mBuffer, inWidth, inHeight, texbuffer.mWidth, texbuffer.mHeight);
 			else
 				return;
 		}

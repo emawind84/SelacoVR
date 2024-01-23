@@ -3172,7 +3172,7 @@ void AM_drawMarks ()
 
 			if (font == nullptr)
 			{
-				DrawMarker (TexMan(marknums[i]), markpoints[i].x, markpoints[i].y, -3, 0,
+				DrawMarker (TexMan.GetTexture(marknums[i], true), markpoints[i].x, markpoints[i].y, -3, 0,
 					1, 1, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
 			}
 			else
