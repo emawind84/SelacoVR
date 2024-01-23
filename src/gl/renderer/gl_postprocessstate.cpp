@@ -104,6 +104,7 @@ FGLPostProcessState::~FGLPostProcessState()
 	else
 		glDisable(GL_DEPTH_TEST);
 
+#ifndef __MOBILE__
 	if (multisampleEnabled)
 		glEnable(GL_MULTISAMPLE);
 	else
@@ -111,6 +112,7 @@ FGLPostProcessState::~FGLPostProcessState()
 
 	glBlendEquationSeparate(blendEquationRgb, blendEquationAlpha);
 	glBlendFuncSeparate(blendSrcRgb, blendDestRgb, blendSrcAlpha, blendDestAlpha);
+#endif
 
 	glUseProgram(currentProgram);
 

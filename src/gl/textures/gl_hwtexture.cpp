@@ -208,19 +208,9 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 	{
 		sourcetype = GL_BGRA;
 	}
-
 #ifdef __MOBILE__
-	if(texformat == GL_BGRA)
-	{
-		sourcetype = GL_RGBA;
-		BGRAtoRGBA( buffer, rw * rh );
-	}
-	else
-	{
-		texformat = GL_BGRA;
-	}
+	texformat = sourcetype = GL_BGRA;
 #endif
-
 	if (!firstCall && glBufferID > 0)
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, rw, rh, sourcetype, GL_UNSIGNED_BYTE, buffer);
 	else
