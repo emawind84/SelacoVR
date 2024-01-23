@@ -571,6 +571,9 @@ void FDynamicLight::CollectWithinRadius(const DVector3 &opos, FSection *section,
 	bool hitonesidedback = false;
 	for (unsigned i = 0; i < collected_ss.Size(); i++)
 	{
+		if (collected_ss.Size() >= (unsigned int)gl_light_max_collected_subsectors)
+			break;
+
 		auto &pos = collected_ss[i].pos;
 		section = collected_ss[i].sect;
 
