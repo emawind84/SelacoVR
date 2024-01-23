@@ -94,7 +94,7 @@ public:
 	FFont (const char *fontname, const char *nametemplate, const char *filetemplate, int first, int count, int base, int fdlump, int spacewidth=-1, bool notranslate = false);
 	virtual ~FFont ();
 
-	virtual FTexture *GetChar (int code, int *const width) const;
+	virtual FTexture *GetChar (int code, int translation, int *const width, bool *redirected = nullptr) const;
 	virtual int GetCharWidth (int code) const;
 	FRemapTable *GetColorTranslation (EColorRange range, PalEntry *color = nullptr) const;
 	int GetLump() const { return Lump; }
@@ -130,7 +130,7 @@ protected:
 	void FixXMoves();
 
 	static int SimpleTranslation (uint32_t *colorsused, uint8_t *translation,
-		uint8_t *identity, double **luminosity);
+		uint8_t *identity, TArray<double> &Luminosity);
 
 	EFontType Type = EFontType::Unknown;
 	int FirstChar, LastChar;
@@ -139,15 +139,18 @@ protected:
 	int GlobalKerning;
 	char Cursor;
 	bool noTranslate;
+	bool translateUntranslated;
 	bool MixedCase = false;
 	struct CharData
 	{
-		FTexture *Pic;
-		int XMove;
-	} *Chars;
+		FTexture *TranslatedPic = nullptr;	// Texture for use with font translations.
+		FTexture *OriginalPic = nullptr;	// Texture for use with CR_UNTRANSLATED or font colorization. 
+		int XMove = INT_MIN;
+	};
+	TArray<CharData> Chars;
 	int ActiveColors;
 	TArray<FRemapTable> Ranges;
-	uint8_t *PatchRemap;
+	uint8_t PatchRemap[256];
 
 	int Lump;
 	FName FontName = NAME_None;

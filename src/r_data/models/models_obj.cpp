@@ -635,11 +635,11 @@ void FOBJModel::RenderFrame(FModelRenderer *renderer, FTexture * skin, int frame
 		{
 			if (surfaceskinids && surfaceskinids[i].isValid())
 			{
-				userSkin = TexMan(surfaceskinids[i]);
+				userSkin = TexMan.GetTexture(surfaceskinids[i], true);
 			}
 			else if (surf->skin.isValid())
 			{
-				userSkin = TexMan(surf->skin);
+				userSkin = TexMan.GetTexture(surf->skin, true);
 			}
 		}
 

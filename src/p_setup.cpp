@@ -3159,7 +3159,6 @@ void P_FreeLevelData ()
 	MapThingsUserDataIndex.Clear();
 	MapThingsUserData.Clear();
 	linemap.Clear();
-	FCanvasTextureInfo::EmptyList();
 	R_FreePastViewers();
 	P_ClearUDMFKeys();
 
@@ -3202,6 +3201,8 @@ void P_FreeLevelData ()
 
 	FBehavior::StaticUnloadModules ();
 	level.CorpseQueue.Clear();
+	level.canvasTextureInfo.EmptyList();
+	level.sections.Clear();
 	level.segs.Clear();
 	level.sectors.Clear();
 	level.lines.Clear();

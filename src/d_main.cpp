@@ -202,18 +202,19 @@ CVAR (Bool, fixunitystatusbar, false, 0);
 CUSTOM_CVAR (String, vid_cursor, "None", CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
 	bool res = false;
+	
 
 	if (!stricmp(self, "None" ) && gameinfo.CursorPic.IsNotEmpty())
 	{
-		res = I_SetCursor(TexMan[gameinfo.CursorPic]);
+		res = I_SetCursor(TexMan.GetTextureByName(gameinfo.CursorPic));
 	}
 	else
 	{
-		res = I_SetCursor(TexMan[self]);
+		res = I_SetCursor(TexMan.GetTextureByName(self));
 	}
 	if (!res)
 	{
-		I_SetCursor(TexMan["cursor"]);
+		I_SetCursor(TexMan.GetTextureByName("cursor"));
 	}
 }
 
@@ -887,18 +888,18 @@ void D_Display ()
 		{
 			FTexture *tex;
 			int x;
+			FString pstring = "By ";
 
-			tex = TexMan(gameinfo.PauseSign);
-			x = (SCREENWIDTH - tex->GetScaledWidth() * CleanXfac)/2 +
-				tex->GetScaledLeftOffset(0) * CleanXfac;
+			tex = TexMan.GetTextureByName(gameinfo.PauseSign, true);
+			x = (SCREENWIDTH - tex->GetDisplayWidth() * CleanXfac)/2 +
+				tex->GetDisplayLeftOffset() * CleanXfac;
 			screen->DrawTexture (tex, x, 4, DTA_CleanNoMove, true, TAG_DONE);
 			if (paused && multiplayer)
 			{
-				FString pstring = GStrings("TXT_BY");
-				pstring.Substitute("%s", players[paused - 1].userinfo.GetName());
+				pstring += players[paused - 1].userinfo.GetName();
 				screen->DrawText(SmallFont, CR_RED,
 					(screen->GetWidth() - SmallFont->StringWidth(pstring)*CleanXfac) / 2,
-					(tex->GetScaledHeight() * CleanYfac) + 4, pstring, DTA_CleanNoMove, true, TAG_DONE);
+					(tex->GetDisplayHeight() * CleanYfac) + 4, pstring, DTA_CleanNoMove, true, TAG_DONE);
 			}
 		}
 	}
@@ -911,8 +912,8 @@ void D_Display ()
 		D_DrawIcon = NULL;
 		if (picnum.isValid())
 		{
-			FTexture *tex = TexMan[picnum];
-			screen->DrawTexture (tex, 160 - tex->GetScaledWidth()/2, 100 - tex->GetScaledHeight()/2,
+			FTexture *tex = TexMan.GetTexture(picnum);
+			screen->DrawTexture (tex, 160 - tex->GetDisplayWidth()/2, 100 - tex->GetDisplayHeight()/2,
 				DTA_320x200, true, TAG_DONE);
 		}
 		NoWipe = 10;
@@ -1114,7 +1115,7 @@ void D_PageDrawer (void)
 	screen->Clear(0, 0, SCREENWIDTH, SCREENHEIGHT, 0, 0);
 	if (Page.Exists())
 	{
-		screen->DrawTexture (TexMan(Page), 0, 0,
+		screen->DrawTexture (TexMan.GetTexture(Page, true), 0, 0,
 			DTA_Fullscreen, true,
 			DTA_Masked, false,
 			DTA_BilinearFilter, true,
@@ -1323,7 +1324,7 @@ void D_DoAdvanceDemo (void)
 	case 3:
 		if (gameinfo.advisoryTime)
 		{
-			Advisory = TexMan["ADVISOR"];
+			Advisory = TexMan.GetTextureByName("ADVISOR");
 			demosequence = 1;
 			pagetic = (int)(gameinfo.advisoryTime * TICRATE);
 			break;
@@ -2999,7 +3000,7 @@ void D_Cleanup()
 	DestroyCVarsFlagged(CVAR_MOD);	// Delete any cvar left by mods
 	FS_Close();						// destroy the global FraggleScript.
 	DeinitMenus();
-	LightDefaults.Clear();			// this can leak heap memory if it isn't cleared.
+	LightDefaults.DeleteAndClear();			// this can leak heap memory if it isn't cleared.
 
 	// delete DoomStartupInfo data
 	DoomStartupInfo.Name = "";

@@ -1019,7 +1019,7 @@ void G_SerializeLevel(FSerializer &arc, bool hubload)
 	StatusBar->SerializeMessages(arc);
 	AM_SerializeMarkers(arc);
 	FRemapTable::StaticSerializeTranslations(arc);
-	FCanvasTextureInfo::Serialize(arc);
+	level.canvasTextureInfo.Serialize(arc);
 	P_SerializePlayers(arc, hubload);
 	P_SerializeSounds(arc);
 
