@@ -86,7 +86,6 @@ DEFINE_ACTION_FUNCTION_NATIVE(_Shader, SetUniform1f, ShaderSetUniform1f)
 	PARAM_STRING(uniformName);
 	PARAM_FLOAT(value);
 	ShaderSetUniform1f(player, shaderName, uniformName, value);
-
 	return 0;
 }
 

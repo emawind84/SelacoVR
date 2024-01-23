@@ -283,8 +283,6 @@ int HWDrawInfo::SetFullbrightFlags(player_t *player)
 			auto litetype = PClass::FindActor(NAME_PowerLightAmp);
 			for (AActor *in = cplayer->mo->Inventory; in; in = in->Inventory)
 			{
-				//PalEntry color = in->CallGetBlend();
-
 				// Need special handling for light amplifiers 
 				if (in->IsKindOf(torchtype))
 				{

@@ -422,8 +422,8 @@ public:
 	void CallTick();
 	virtual void Draw (EHudState state, double ticFrac);
 	void CallDraw(EHudState state, double ticFrac);
-	void DrawBottomStuff (EHudState state);
-	void DrawTopStuff (EHudState state);
+    void DrawBottomStuff (EHudState state);
+    void DrawTopStuff (EHudState state);
 	void AttachToPlayer(player_t *player);
 	DVector2 GetHUDScale() const;
 	virtual void FlashCrosshair ();
