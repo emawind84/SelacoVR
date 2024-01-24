@@ -3254,7 +3254,7 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, ClearSectorTags)
 {
 	PARAM_SELF_PROLOGUE(DLevelPostProcessor);
 	PARAM_INT(sector);
-	self->Level->tagManager.RemoveSectorTags(sector);
+	tagManager.RemoveSectorTags(sector);
 	return 0;
 }
 
@@ -3266,7 +3266,7 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, AddSectorTag)
 
 	if ((unsigned)sector < self->Level->sectors.Size())
 	{
-		self->Level->tagManager.AddSectorTag(sector, tag);
+		tagManager.AddSectorTag(sector, tag);
 	}
 	return 0;
 }
@@ -3275,7 +3275,7 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, ClearLineIDs)
 {
 	PARAM_SELF_PROLOGUE(DLevelPostProcessor);
 	PARAM_INT(line);
-	self->Level->tagManager.RemoveLineIDs(line);
+	tagManager.RemoveLineIDs(line);
 	return 0;
 }
 
@@ -3287,7 +3287,7 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, AddLineID)
 
 	if ((unsigned)line < self->Level->lines.Size())
 	{
-		self->Level->tagManager.AddLineID(line, tag);
+		tagManager.AddLineID(line, tag);
 	}
 	return 0;
 }

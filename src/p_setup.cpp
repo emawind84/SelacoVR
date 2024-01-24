@@ -78,7 +78,6 @@ extern AActor *SpawnMapThing (int index, FMapThing *mthing, int position);
 
 extern unsigned int R_OldBlend;
 
-static void P_Shutdown ();
 
 //===========================================================================
 //
