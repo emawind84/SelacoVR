@@ -36,6 +36,7 @@
 #include "g_levellocals.h"
 #include "actorinlines.h"
 #include "v_text.h"
+#include "s_sndseq.h"
 
 #include "maploader/maploader.h"
 
