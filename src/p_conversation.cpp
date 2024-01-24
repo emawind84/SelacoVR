@@ -94,7 +94,7 @@ struct TeaserSpeech
 	Response Responses[5];
 };
 
-static FRandom pr_randomspeech("RandomSpeech", false);
+static FRandom pr_randomspeech("RandomSpeech");
 
 TArray<FStrifeDialogueNode *> StrifeDialogues;
 
