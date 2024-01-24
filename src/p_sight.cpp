@@ -482,7 +482,6 @@ int SightCheck::P_SightBlockLinesIterator (int x, int y)
 
 	polyblock_t *polyLink;
 	unsigned int i;
-	extern polyblock_t **PolyBlockMap;
 
 	offset = y* Level->blockmap.bmapwidth+x;
 
@@ -490,7 +489,7 @@ int SightCheck::P_SightBlockLinesIterator (int x, int y)
 	// (We still try to delay activating this for as long as possible.)
 	portalfound = portalfound || level.PortalBlockmap(x, y).containsLinkedPortals;
 
-	polyLink = PolyBlockMap[offset];
+	polyLink = level.PolyBlockMap[offset];
 	portalfound |= (polyLink && level.PortalBlockmap.hasLinkedPolyPortals);
 	while (polyLink)
 	{

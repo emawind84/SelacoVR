@@ -4,7 +4,8 @@
 **
 **---------------------------------------------------------------------------
 ** Copyright 2009 Randy Heit
-** All rights reserved.
+** Copyright 2009-2018 Christoph Oelckers
+ All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions
@@ -39,7 +40,6 @@
 
 // HEADER FILES ------------------------------------------------------------
 
-#include "compatibility.h"
 #include "sc_man.h"
 #include "doomstat.h"
 #include "c_dispatch.h"
@@ -52,11 +52,41 @@
 #include "g_levellocals.h"
 #include "vm.h"
 #include "actor.h"
+#include "p_setup.h"
+#include "maploader/maploader.h"
 #include "types.h"
 
 // MACROS ------------------------------------------------------------------
 
 // TYPES -------------------------------------------------------------------
+
+union FMD5Holder
+{
+	uint8_t Bytes[16];
+	uint32_t DWords[4];
+	hash_t Hash;
+};
+
+struct FCompatValues
+{
+	int CompatFlags[3];
+	unsigned int ExtCommandIndex;
+};
+
+struct FMD5HashTraits
+{
+	hash_t Hash(const FMD5Holder key)
+	{
+		return key.Hash;
+	}
+	int Compare(const FMD5Holder left, const FMD5Holder right)
+	{
+		return left.DWords[0] != right.DWords[0] ||
+			left.DWords[1] != right.DWords[1] ||
+			left.DWords[2] != right.DWords[2] ||
+			left.DWords[3] != right.DWords[3];
+	}
+};
 
 struct FCompatOption
 {
@@ -82,7 +112,7 @@ enum
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
-TMap<FMD5Holder, FCompatValues, FMD5HashTraits> BCompatMap;
+static TMap<FMD5Holder, FCompatValues, FMD5HashTraits> BCompatMap;
 
 CVAR (Bool, sv_njnoautolevelcompat, false, CVAR_SERVERINFO | CVAR_LATCH)
 
@@ -250,10 +280,12 @@ void ParseCompatibility()
 //
 //==========================================================================
 
-FName CheckCompatibility(MapData *map)
+FName MapLoader::CheckCompatibility(MapData *map)
 {
 	FMD5Holder md5;
 	FCompatValues *flags;
+
+	if (BCompatMap.CountUsed() == 0) ParseCompatibility();
 
 	ii_compatflags = 0;
 	ii_compatflags2 = 0;
@@ -262,7 +294,7 @@ FName CheckCompatibility(MapData *map)
 	// When playing Doom IWAD levels force COMPAT_SHORTTEX and COMPATF_LIGHT.
 	// I'm not sure if the IWAD maps actually need COMPATF_LIGHT but it certainly does not hurt.
 	// TNT's MAP31 also needs COMPATF_STAIRINDEX but that only gets activated for TNT.WAD.
-	if (Wads.GetLumpFile(map->lumpnum) == Wads.GetIwadNum() && (gameinfo.flags & GI_COMPATSHORTTEX) && level.maptype == MAPTYPE_DOOM)
+	if (Wads.GetLumpFile(map->lumpnum) == Wads.GetIwadNum() && (gameinfo.flags & GI_COMPATSHORTTEX) && Level->maptype == MAPTYPE_DOOM)
 	{
 		ii_compatflags = COMPATF_SHORTTEX|COMPATF_LIGHT;
 		if (gameinfo.flags & GI_COMPATSTAIRS) ii_compatflags |= COMPATF_STAIRINDEX;
@@ -304,7 +336,7 @@ FName CheckCompatibility(MapData *map)
 	compatflags.Callback();
 	compatflags2.Callback();
 	// Set floatbob compatibility for all maps with an original Hexen MAPINFO.
-	if (level.flags2 & LEVEL2_HEXENHACK)
+	if (Level->flags2 & LEVEL2_HEXENHACK)
 	{
 		ib_compatflags |= BCOMPATF_FLOATBOB;
 	}
@@ -504,7 +536,7 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, SetThingXY)
 
 	if (thing < MapThingsConverted.Size())
 	{
-		auto& pos = MapThingsConverted[thing].pos;
+		auto& pos = self->loader->MapThingsConverted[thing].pos;
 		pos.X = x;
 		pos.Y = y;
 	}
@@ -519,7 +551,7 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, SetThingZ)
 
 	if (thing < MapThingsConverted.Size())
 	{
-		MapThingsConverted[thing].pos.Z = z;
+		self->loader->MapThingsConverted[thing].pos.Z = z;
 	}
 	return 0;
 }
@@ -588,7 +620,7 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, SetThingFlags)
 
 	if (thing < MapThingsConverted.Size())
 	{
-		MapThingsConverted[thing].flags = flags;
+		self->loader->MapThingsConverted[thing].flags = flags;
 	}
 	return 0;
 }
@@ -694,11 +726,11 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, SetVertex)
 	PARAM_FLOAT(x);
 	PARAM_FLOAT(y);
 
-	if (vertex < level.vertexes.Size())
+	if (vertex < self->Level->vertexes.Size())
 	{
-		level.vertexes[vertex].p = DVector2(x, y);
+		self->Level->vertexes[vertex].p = DVector2(x, y);
 	}
-	ForceNodeBuild = true;
+	self->loader->ForceNodeBuild = true;
 	return 0;
 }
 
@@ -757,16 +789,16 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, SetLineSectorRef)
 	PARAM_UINT(sectoridx);
 
 	if (   sideidx < 2
-		&& lineidx < level.lines.Size()
-		&& sectoridx < level.sectors.Size())
+		&& lineidx < self->Level->lines.Size()
+		&& sectoridx < self->Level->sectors.Size())
 	{
-		line_t *line = &level.lines[lineidx];
+		line_t *line = &self->Level->lines[lineidx];
 		side_t *side = line->sidedef[sideidx];
-		side->sector = &level.sectors[sectoridx];
+		side->sector = &self->Level->sectors[sectoridx];
 		if (sideidx == 0) line->frontsector = side->sector;
 		else line->backsector = side->sector;
 	}
-	ForceNodeBuild = true;
+	self->loader->ForceNodeBuild = true;
 	return 0;
 }
 
@@ -777,6 +809,8 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, GetDefaultActor)
 	ACTION_RETURN_OBJECT(GetDefaultByName(actorclass));
 }
 
+
+DEFINE_FIELD(DLevelCompatibility, Level);
 
 //==========================================================================
 //

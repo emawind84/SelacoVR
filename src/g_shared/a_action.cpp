@@ -124,7 +124,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_QueueCorpse)
 	return 0;
 }
 
-// Remove an self from the queue (for resurrection)
+// Remove an actor from the queue (for resurrection)
 DEFINE_ACTION_FUNCTION(AActor, A_DeQueueCorpse)
 {
 	PARAM_SELF_PROLOGUE(AActor);
