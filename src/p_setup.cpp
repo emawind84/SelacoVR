@@ -781,7 +781,6 @@ void MapLoader::LoadSegs (MapData * map)
 		Printf ("This map has no segs.\n");
 		Level->subsectors.Clear();
 		Level->nodes.Clear();
-		delete[] vertchanged;
 		ForceNodeBuild = true;
 		return;
 	}
@@ -1161,7 +1160,7 @@ void MapLoader::LoadNodes (MapData * map)
 						"The BSP will be rebuilt.\n", i, child);
 					ForceNodeBuild = true;
 					Level->nodes.Clear();
->>>>>>> 017b3f9dc7441500d5cacf724a255b047bf18ac1
+					return;
 				}
 				no->children[j] = (uint8_t *)&Level->subsectors[child] + 1;
 			}
@@ -3507,7 +3506,7 @@ void P_SetupLevel(const char *lumpname, int position, bool newGame)
 		// In case the compatibility handler made changes to the map's layout
 		for(auto &line : level.lines)
 		{
-			P_AdjustLine(&line);
+			line.AdjustLine();
 		}
 
 		startTime = I_msTime();

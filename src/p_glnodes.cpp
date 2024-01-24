@@ -448,7 +448,7 @@ bool MapLoader::LoadGLSubsectors(FileReader &lump)
 		return false;
 	lump.Seek(0, FileReader::SeekSet);
 	auto datab = lump.Read();
-	const unsigned numsegs = level.segs.Size();
+	const unsigned numsegs = Level->segs.Size();
 	
 	if (numsubsectors == 0)
 	{
