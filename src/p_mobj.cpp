@@ -144,7 +144,7 @@ static FRandom pr_uniquetid("UniqueTID");
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
-FRandom pr_spawnmobj ("SpawnActor", false);
+FRandom pr_spawnmobj ("SpawnActor");
 
 CUSTOM_CVAR (Float, sv_gravity, 800.f, CVAR_SERVERINFO|CVAR_NOSAVE)
 {
@@ -7508,7 +7508,7 @@ void AActor::SetTranslation(FName trname)
 // PROP A_RestoreSpecialPosition
 //
 //---------------------------------------------------------------------------
-static FRandom pr_restore("RestorePos", false);
+static FRandom pr_restore("RestorePos");
 
 void AActor::RestoreSpecialPosition()
 {
