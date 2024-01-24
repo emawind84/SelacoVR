@@ -220,11 +220,11 @@ void DIntermissionScreen::Drawer ()
 	{
 		if (!mFlatfill)
 		{
-			screen->DrawTexture (TexMan[mBackground], 0, 0, DTA_Fullscreen, true, TAG_DONE);
+			screen->DrawTexture (TexMan.GetTexture(mBackground), 0, 0, DTA_Fullscreen, true, TAG_DONE);
 		}
 		else
 		{
-			screen->FlatFill (0,0, SCREENWIDTH, SCREENHEIGHT, TexMan[mBackground]);
+			screen->FlatFill (0,0, SCREENWIDTH, SCREENHEIGHT, TexMan.GetTexture(mBackground));
 		}
 	}
 	else
@@ -234,7 +234,7 @@ void DIntermissionScreen::Drawer ()
 	for (unsigned i=0; i < mOverlays.Size(); i++)
 	{
 		if (CheckOverlay(i))
-			screen->DrawTexture (TexMan[mOverlays[i].mPic], mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, TAG_DONE);
+			screen->DrawTexture (TexMan.GetTexture(mOverlays[i].mPic), mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, TAG_DONE);
 	}
 	if (mSubtitle)
 	{
@@ -292,11 +292,11 @@ void DIntermissionScreenFader::Drawer ()
 		if (mType == FADE_In) factor = 1.0 - factor;
 		int color = MAKEARGB(int(factor*255), 0,0,0);
 
-		screen->DrawTexture (TexMan[mBackground], 0, 0, DTA_Fullscreen, true, DTA_ColorOverlay, color, TAG_DONE);
+		screen->DrawTexture (TexMan.GetTexture(mBackground), 0, 0, DTA_Fullscreen, true, DTA_ColorOverlay, color, TAG_DONE);
 		for (unsigned i=0; i < mOverlays.Size(); i++)
 		{
 			if (CheckOverlay(i))
-				screen->DrawTexture (TexMan[mOverlays[i].mPic], mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, DTA_ColorOverlay, color, TAG_DONE);
+				screen->DrawTexture (TexMan.GetTexture(mOverlays[i].mPic), mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, DTA_ColorOverlay, color, TAG_DONE);
 		}
 		screen->FillBorder (NULL);
 	}
@@ -420,7 +420,7 @@ void DIntermissionScreenText::Drawer ()
 				continue;
 			}
 
-			pic = SmallFont->GetChar (c, &w);
+			pic = SmallFont->GetChar (c, mTextColor, &w);
 			w += kerning;
 			w *= CleanXfac;
 			if (cx + w > SCREENWIDTH)
@@ -651,13 +651,13 @@ void DIntermissionScreenCast::Drawer ()
 		}
 
 		sprframe = &SpriteFrames[sprites[castsprite].spriteframes + caststate->GetFrame()];
-		pic = TexMan(sprframe->Texture[0]);
+		pic = TexMan.GetTexture(sprframe->Texture[0], true);
 
 		screen->DrawTexture (pic, 160, 170,
 			DTA_320x200, true,
 			DTA_FlipX, sprframe->Flip & 1,
-			DTA_DestHeightF, pic->GetScaledHeightDouble() * castscale.Y,
-			DTA_DestWidthF, pic->GetScaledWidthDouble() * castscale.X,
+			DTA_DestHeightF, pic->GetDisplayHeightDouble() * castscale.Y,
+			DTA_DestWidthF, pic->GetDisplayWidthDouble() * castscale.X,
 			DTA_RenderStyle, mDefaults->RenderStyle,
 			DTA_Alpha, mDefaults->Alpha,
 			DTA_TranslationIndex, casttranslation,
@@ -694,14 +694,14 @@ int DIntermissionScreenScroller::Responder (event_t *ev)
 
 void DIntermissionScreenScroller::Drawer ()
 {
-	FTexture *tex = TexMan[mFirstPic];
-	FTexture *tex2 = TexMan[mSecondPic];
+	FTexture *tex = TexMan.GetTexture(mFirstPic);
+	FTexture *tex2 = TexMan.GetTexture(mSecondPic);
 
 	// These must round down to the nearest full pixel to cover seams between the two textures.
-	int fwidth = (int)tex->GetScaledWidth();
-	int fheight = (int)tex->GetScaledHeight();
-	int fwidth2 = (int)tex2->GetScaledWidth();
-	int fheight2 = (int)tex2->GetScaledHeight();
+	int fwidth = (int)tex->GetDisplayWidth();
+	int fheight = (int)tex->GetDisplayHeight();
+	int fwidth2 = (int)tex2->GetDisplayWidth();
+	int fheight2 = (int)tex2->GetDisplayHeight();
 
 	double xpos1 = 0, ypos1 = 0, xpos2 = 0, ypos2 = 0;
 

@@ -223,10 +223,10 @@ private:
 			int            bottom;
 
 
-			right = c[i]->GetScaledWidth();
-			bottom = c[i]->GetScaledHeight();
-			left = lnodes[n].x - c[i]->GetScaledLeftOffset(0);
-			top = lnodes[n].y - c[i]->GetScaledTopOffset(0);
+			right = c[i]->GetDisplayWidth();
+			bottom = c[i]->GetDisplayHeight();
+			left = lnodes[n].x - c[i]->GetDisplayLeftOffset();
+			top = lnodes[n].y - c[i]->GetDisplayTopOffset();
 			right += left;
 			bottom += top;
 
@@ -389,13 +389,13 @@ bool DInterBackground::LoadBackground(bool isenterpic)
 
 				case 1:		// Splat
 					sc.MustGetString();
-					splat = TexMan[sc.String];
+					splat = TexMan.GetTextureByName(sc.String);
 					break;
 
 				case 2:		// Pointers
 					while (sc.GetString() && !sc.Crossed)
 					{
-						yah.Push(TexMan[sc.String]);
+						yah.Push(TexMan.GetTextureByName(sc.String));
 					}
 					if (sc.Crossed)
 						sc.UnGet();
@@ -494,14 +494,14 @@ bool DInterBackground::LoadBackground(bool isenterpic)
 						if (!sc.CheckString("{"))
 						{
 							sc.MustGetString();
-							an.frames.Push(TexMan[sc.String]);
+							an.frames.Push(TexMan.GetTextureByName(sc.String));
 						}
 						else
 						{
 							while (!sc.CheckString("}"))
 							{
 								sc.MustGetString();
-								an.frames.Push(TexMan[sc.String]);
+								an.frames.Push(TexMan.GetTextureByName(sc.String));
 							}
 						}
 						an.ctr = -1;
@@ -516,7 +516,7 @@ bool DInterBackground::LoadBackground(bool isenterpic)
 						an.loc.y = sc.Number;
 						sc.MustGetString();
 						an.frames.Reserve(1);	// allocate exactly one element
-						an.frames[0] = TexMan[sc.String];
+						an.frames[0] = TexMan.GetTextureByName(sc.String);
 						anims.Push(an);
 						break;
 
@@ -529,10 +529,10 @@ bool DInterBackground::LoadBackground(bool isenterpic)
 		else
 		{
 			Printf("Intermission script %s not found!\n", lumpname + 1);
-			texture = TexMan.GetTexture("INTERPIC", ETextureType::MiscPatch);
+			texture = TexMan.GetTextureID("INTERPIC", ETextureType::MiscPatch);
 		}
 	}
-	background = TexMan[texture];
+	background = TexMan.GetTexture(texture);
 	return noautostartmap;
 }
 
@@ -602,15 +602,15 @@ void DInterBackground::drawBackground(int state, bool drawsplat, bool snl_pointe
 	if (background)
 	{
 		// background
-		if (background->UseType == ETextureType::MiscPatch)
+		if (background->isMiscPatch())
 		{
 			// if no explicit size was set scale all animations below to fit the size of the base pic
 			// The base pic is always scaled to fit the screen so this allows
 			// placing the animations precisely where they belong on the base pic
 			if (bgwidth < 0 || bgheight < 0)
 			{
-				animwidth = background->GetScaledWidthDouble();
-				animheight = background->GetScaledHeightDouble();
+				animwidth = background->GetDisplayWidth();
+				animheight = background->GetDisplayHeight();
 				if (animheight == 200) animwidth = 320;	// deal with widescreen replacements that keep the original coordinates.
 			}
 			screen->DrawTexture(background, 0, 0, DTA_FullscreenEx, ScaleToFit43, TAG_DONE);

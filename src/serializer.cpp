@@ -1458,7 +1458,7 @@ FSerializer &Serialize(FSerializer &arc, const char *key, FTextureID &value, FTe
 			}
 			FTextureID chk = value;
 			if (chk.GetIndex() >= TexMan.NumTextures()) chk.SetNull();
-			FTexture *pic = TexMan[chk];
+			FTexture *pic = TexMan.GetTexture(chk);
 			const char *name;
 
 			if (Wads.GetLinkedTexture(pic->SourceLump) == pic)
@@ -1488,7 +1488,7 @@ FSerializer &Serialize(FSerializer &arc, const char *key, FTextureID &value, FTe
 				assert(nameval.IsString() && typeval.IsInt());
 				if (nameval.IsString() && typeval.IsInt())
 				{
-					value = TexMan.GetTexture(UnicodeToString(nameval.GetString()), static_cast<ETextureType>(typeval.GetInt()));
+					value = TexMan.GetTextureID(UnicodeToString(nameval.GetString()), static_cast<ETextureType>(typeval.GetInt()));
 				}
 				else
 				{

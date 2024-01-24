@@ -351,7 +351,7 @@ void FModelRenderer::RenderFrameModels(const FSpriteModelFrame *smf, const FStat
 		if (modelid >= 0)
 		{
 			FModel * mdl = Models[modelid];
-			auto tex = skinid.isValid() ? TexMan(skinid) : nullptr;
+			auto tex = skinid.isValid() ? TexMan.GetTexture(skinid, true) : nullptr;
 			mdl->BuildVertexBuffer(this);
 
 			auto& ssids = surfaceskinids.Size() > 0 ? surfaceskinids : smf->surfaceskinIDs;

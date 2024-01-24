@@ -95,6 +95,7 @@ extend class Actor
 					double x = Spawnofs_xy * cos(pangle);
 					double y = Spawnofs_xy * sin(pangle);
 					
+					let pos = self.pos;
 					SetXYZ(Vec3Offset(x, y, 0.));
 					let proj = SpawnMissileAngleZSpeed(Pos.Z + GetBobOffset() + Spawnheight, missile, self.Angle, 0, GetDefaultByType(missile).Speed, self, false);
 					SetXYZ(pos);
@@ -400,13 +401,13 @@ extend class Actor
 	// Enhanced spawning function
 	//
 	//===========================================================================
-	bool, Actor A_SpawnItemEx(class<Actor> missile, double xofs = 0, double yofs = 0, double zofs = 0, double xvel = 0, double yvel = 0, double zvel = 0, double angle = 0, int flags = 0, int chance = 0, int tid=0)
+	bool, Actor A_SpawnItemEx(class<Actor> missile, double xofs = 0, double yofs = 0, double zofs = 0, double xvel = 0, double yvel = 0, double zvel = 0, double angle = 0, int flags = 0, int failchance = 0, int tid=0)
 	{
 		if (missile == NULL) 
 		{
 			return false, null;
 		}
-		if (chance > 0 && random[spawnitemex]() < chance)
+		if (failchance > 0 && random[spawnitemex]() < failchance)
 		{
 			return true, null;
 		}
@@ -495,7 +496,7 @@ extend class Actor
 			bo.PlaySpawnSound(self);
 			if (xyvel != 0)
 				bo.Speed = xyvel;
-			bo.Angle = Angle + (((random[grenade]()&7) - 4) * (360./256.));
+			bo.Angle = Angle + (random[grenade](-4, 3) * (360./256.));
 
 			let pitch = -self.Pitch;
 			let angle = bo.Angle;
@@ -560,7 +561,7 @@ extend class Actor
 	//
 	//==========================================================================
 
-	int A_Explode(int damage = -1, int distance = -1, int flags = XF_HURTSOURCE, bool alert = false, int fulldmgdistance = 0, int nails = 0, int naildamage = 10, class<Actor> pufftype = "BulletPuff", name damagetype = "none")
+	int A_Explode(int damage = -1, int distance = -1, int flags = XF_HURTSOURCE, bool alert = false, int fulldamagedistance = 0, int nails = 0, int naildamage = 10, class<Actor> pufftype = "BulletPuff", name damagetype = "none")
 	{
 
 		if (damage < 0)	// get parameters from metadata
@@ -597,7 +598,7 @@ extend class Actor
 		if (flags & XF_HURTSOURCE)	pflags |= RADF_HURTSOURCE;
 		if (flags & XF_NOTMISSILE)	pflags |= RADF_SOURCEISSPOT;
 
-		int count = RadiusAttack (target, damage, distance, damagetype, pflags, fulldmgdistance);
+		int count = RadiusAttack (target, damage, distance, damagetype, pflags, fulldamagedistance);
 		if (!(flags & XF_NOSPLASH)) CheckSplash(distance);
 		if (alert && target != NULL && target.player != NULL)
 		{
@@ -616,17 +617,20 @@ extend class Actor
 	{
 		if (force == 0) force = 128;
 		if (distance <= 0) distance = abs(force);
+		bool nothrust = false;
 
-		bool nothrust = target.bNoDamageThrust;
-		// Temporarily negate MF2_NODMGTHRUST on the shooter, since it renders this function useless.
-		if (!(flags & RTF_NOTMISSILE) && target != NULL)
+		if (target)
 		{
-			target.bNoDamageThrust = false;
+			nothrust = target.bNoDamageThrust;
+			// Temporarily negate MF2_NODMGTHRUST on the shooter, since it renders this function useless.
+			if (!(flags & RTF_NOTMISSILE))
+			{
+				target.bNoDamageThrust = false;
+			}
 		}
-
 		RadiusAttack (target, force, distance, DamageType, flags | RADF_NODAMAGE, fullthrustdistance);
 		CheckSplash(distance);
-		target.bNoDamageThrust = nothrust;
+		if (target) target.bNoDamageThrust = nothrust;
 	}
 
 	//==========================================================================

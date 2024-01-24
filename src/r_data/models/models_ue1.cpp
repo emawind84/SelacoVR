@@ -241,7 +241,7 @@ void FUE1Model::RenderFrame( FModelRenderer *renderer, FTexture *skin, int frame
 		if ( !sskin )
 		{
 			if (surfaceskinids && surfaceskinids[i].isValid())
-				sskin = TexMan(surfaceskinids[i]);
+				sskin = TexMan.GetTexture(surfaceskinids[i], true);
 			if ( !sskin )
 			{
 				vofs += vsize;

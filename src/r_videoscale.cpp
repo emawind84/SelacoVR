@@ -152,7 +152,7 @@ int ViewportScaledWidth(int width, int height)
 		vid_scalemode = 0;
 	if (vid_cropaspect && height > 0)
 		width = ((float)width/height > ActiveRatio(width, height)) ? (int)(height * ActiveRatio(width, height)) : width;
-	return (int)MAX((int32_t)320, (int32_t)vScaleTable[vid_scalemode].GetScaledWidth((int)((float)width * vid_scalefactor)));
+	return (int)MAX((int32_t)320, (int32_t)(vid_scalefactor * vScaleTable[vid_scalemode].GetScaledWidth(width)));
 }
 
 int ViewportScaledHeight(int width, int height)
@@ -161,7 +161,7 @@ int ViewportScaledHeight(int width, int height)
 		vid_scalemode = 0;
 	if (vid_cropaspect && height > 0)
 		height = ((float)width/height < ActiveRatio(width, height)) ? (int)(width / ActiveRatio(width, height)) : height;
-	return (int)MAX((int32_t)200, (int32_t)vScaleTable[vid_scalemode].GetScaledHeight((int)((float)height * vid_scalefactor)));
+	return (int)MAX((int32_t)200, (int32_t)(vid_scalefactor * vScaleTable[vid_scalemode].GetScaledHeight(height)));
 }
 
 bool ViewportIsScaled43()
@@ -181,21 +181,6 @@ void R_ShowCurrentScaling()
 	Printf("Real resolution: %i x %i\nEmulated resolution: %i x %i\n", x1, y1, x2, y2);
 }
 
-bool R_CalcsShouldBeBlocked()
-{
-	if (vid_scalemode < 0 || vid_scalemode > 1)
-	{
-		Printf("vid_scalemode should be 0 or 1 before using this command.\n");
-		return true;
-	}
-	if (vid_aspect != 0 && vid_cropaspect == true)
-	{   // just warn ... I'm not going to fix this, it's a pretty niche condition anyway.
-        Printf("Warning: Using this command while vid_aspect is not 0 will yield results based on FULL screen geometry, NOT cropped!.\n");
-		return false;
-	}
-	return false;	
-}
-
 CCMD (vid_showcurrentscaling)
 {
 	R_ShowCurrentScaling();
@@ -203,9 +188,6 @@ CCMD (vid_showcurrentscaling)
 
 CCMD (vid_scaletowidth)
 {
-	if (R_CalcsShouldBeBlocked())
-		return;	
-
 	if (argv.argc() > 1)
 	{
 		// the following enables the use of ViewportScaledWidth to get the proper dimensions in custom scale modes
@@ -216,9 +198,6 @@ CCMD (vid_scaletowidth)
 
 CCMD (vid_scaletoheight)
 {
-	if (R_CalcsShouldBeBlocked())
-		return;	
-
 	if (argv.argc() > 1)
 	{
 		vid_scalefactor = 1;

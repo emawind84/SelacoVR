@@ -663,6 +663,7 @@ public:
 		walltop,
 		wallbottom,
 		sprites
+
 	};
 
 	struct splane
@@ -1411,6 +1412,7 @@ struct line_t
 	}
 
 	FSectorPortal *GetTransferredPortal();
+	void AdjustLine();
 
 	inline FLinePortal *getPortal() const;
 	inline bool isLinePortal() const;

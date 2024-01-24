@@ -565,7 +565,6 @@ void InitRenderInfo()
 			}
 		}
 	}
-
 }
 
 

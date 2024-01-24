@@ -616,7 +616,7 @@ void C_InitConback()
 
 	if (!conback.isValid())
 	{
-		conback = TexMan.GetTexture (gameinfo.TitlePage, ETextureType::MiscPatch);
+		conback = TexMan.GetTextureID (gameinfo.TitlePage, ETextureType::MiscPatch);
 		conshade = MAKEARGB(175,0,0,0);
 		conline = true;
 	}
@@ -1180,7 +1180,7 @@ void C_DrawConsole ()
 	else if (ConBottom)
 	{
 		int visheight;
-		FTexture *conpic = TexMan[conback];
+		FTexture *conpic = TexMan.GetTexture(conback);
 
 		visheight = ConBottom;
 

@@ -187,7 +187,6 @@ public:
 	int GetNumWads () const;
 
 	int AddExternalFile(const char *filename);
-	int AddData(const char *filename, int length);
 
 protected:
 

@@ -283,8 +283,6 @@ int HWDrawInfo::SetFullbrightFlags(player_t *player)
 			auto litetype = PClass::FindActor(NAME_PowerLightAmp);
 			for (AActor *in = cplayer->mo->Inventory; in; in = in->Inventory)
 			{
-				//PalEntry color = in->CallGetBlend();
-
 				// Need special handling for light amplifiers 
 				if (in->IsKindOf(torchtype))
 				{
@@ -391,7 +389,7 @@ void HWViewpointUniforms::SetDefaults()
 	mNormalViewMatrix.loadIdentity();
 	mViewHeight = viewheight;
 	mGlobVis = (float)R_GetGlobVis(r_viewwindow, r_visibility) / 32.f;
-	mPalLightLevels = static_cast<int>(gl_bandedswlight) | (static_cast<int>(gl_fogmode) << 8);
+	mPalLightLevels = static_cast<int>(gl_bandedswlight) | (static_cast<int>(gl_fogmode) << 8) | (static_cast<int>(gl_lightmode) << 16);
 	mClipLine.X = -10000000.0f;
 	mShadowmapFilter = gl_shadowmap_filter;
 

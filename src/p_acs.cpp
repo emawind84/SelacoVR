@@ -3815,7 +3815,7 @@ void DLevelScript::ChangeFlat (int tag, int name, bool floorOrCeiling)
 	if (flatname == NULL)
 		return;
 
-	flat = TexMan.GetTexture (flatname, ETextureType::Flat, FTextureManager::TEXMAN_Overridable);
+	flat = TexMan.GetTextureID(flatname, ETextureType::Flat, FTextureManager::TEXMAN_Overridable);
 
 	FSectorTagIterator it(tag);
 	while ((secnum = it.Next()) >= 0)
@@ -3847,7 +3847,7 @@ void DLevelScript::SetLineTexture (int lineid, int side, int position, int name)
 
 	side = !!side;
 
-	texture = TexMan.GetTexture (texname, ETextureType::Wall, FTextureManager::TEXMAN_Overridable);
+	texture = TexMan.GetTextureID(texname, ETextureType::Wall, FTextureManager::TEXMAN_Overridable);
 
 	FLineIdIterator itr(lineid);
 	while ((linenum = itr.Next()) >= 0)
@@ -4648,10 +4648,10 @@ bool DLevelScript::DoCheckActorTexture(int tid, AActor *activator, int string, b
 	{
 		return 0;
 	}
-	FTexture *tex = TexMan.FindTexture(FBehavior::StaticLookupString(string), ETextureType::Flat,
+	FTextureID tex = TexMan.CheckForTexture(FBehavior::StaticLookupString(string), ETextureType::Flat,
 			FTextureManager::TEXMAN_Overridable|FTextureManager::TEXMAN_TryAny|FTextureManager::TEXMAN_DontCreate);
 
-	if (tex == NULL)
+	if (!tex.Exists())
 	{ // If the texture we want to check against doesn't exist, then
 	  // they're obviously not the same.
 		return 0;
@@ -4670,7 +4670,7 @@ bool DLevelScript::DoCheckActorTexture(int tid, AActor *activator, int string, b
 		NextHighestCeilingAt(actor->Sector, actor->X(), actor->Y(), actor->Z(), actor->Top(), 0, &resultsec, &resffloor);
 		secpic = resffloor ? *resffloor->bottom.texture : resultsec->planes[sector_t::ceiling].Texture;
 	}
-	return tex == TexMan[secpic];
+	return tex == secpic;
 }
 
 
@@ -6761,7 +6761,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			auto a = SingleActorFromTID(args[0], activator);
 			if (a != nullptr)
 			{
-				return GlobalACSStrings.AddString(TexMan[a->floorpic]->Name);
+				return GlobalACSStrings.AddString(TexMan.GetTexture(a->floorpic)->GetName());
 			}
 			else
 			{
@@ -9969,11 +9969,11 @@ scriptwait:
 				sky2name = FBehavior::StaticLookupString (STACK(1));
 				if (sky1name[0] != 0)
 				{
-					sky1texture = level.skytexture1 = TexMan.GetTexture (sky1name, ETextureType::Wall, FTextureManager::TEXMAN_Overridable|FTextureManager::TEXMAN_ReturnFirst);
+					sky1texture = level.skytexture1 = TexMan.GetTextureID(sky1name, ETextureType::Wall, FTextureManager::TEXMAN_Overridable|FTextureManager::TEXMAN_ReturnFirst);
 				}
 				if (sky2name[0] != 0)
 				{
-					sky2texture = level.skytexture2 = TexMan.GetTexture (sky2name, ETextureType::Wall, FTextureManager::TEXMAN_Overridable|FTextureManager::TEXMAN_ReturnFirst);
+					sky2texture = level.skytexture2 = TexMan.GetTextureID(sky2name, ETextureType::Wall, FTextureManager::TEXMAN_Overridable|FTextureManager::TEXMAN_ReturnFirst);
 				}
 				R_InitSkyMap ();
 				sp -= 2;
@@ -10004,7 +10004,7 @@ scriptwait:
 					}
 					else
 					{
-						FCanvasTextureInfo::Add (camera, picnum, STACK(1));
+						level.canvasTextureInfo.Add(camera, picnum, STACK(1));
 					}
 				}
 				sp -= 3;

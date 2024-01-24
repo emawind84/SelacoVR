@@ -584,6 +584,7 @@ file( GLOB HEADER_FILES
 	sound/thirdparty/*.h
 	xlat/*.h
 	swrenderer/*.h
+	swrenderer/textures/*.h
 	swrenderer/drawers/*.h
 	swrenderer/scene/*.h
 	swrenderer/segments/*.h
@@ -990,7 +991,10 @@ set (PCH_SOURCES
 	textures/anim_switches.cpp
 	textures/bitmap.cpp
 	textures/texture.cpp
+	textures/image.cpp
+	textures/imagetexture.cpp
 	textures/texturemanager.cpp
+	textures/multipatchtexturebuilder.cpp
 	textures/skyboxtexture.cpp
 	textures/formats/automaptexture.cpp
 	textures/formats/brightmaptexture.cpp
@@ -998,6 +1002,7 @@ set (PCH_SOURCES
 	textures/formats/canvastexture.cpp
 	textures/formats/ddstexture.cpp
 	textures/formats/flattexture.cpp
+	textures/formats/fontchars.cpp
 	textures/formats/imgztexture.cpp
 	textures/formats/jpegtexture.cpp
 	textures/formats/md5check.cpp
@@ -1009,8 +1014,6 @@ set (PCH_SOURCES
 	textures/formats/emptytexture.cpp
 	textures/formats/shadertexture.cpp
 	textures/formats/tgatexture.cpp
-	textures/formats/worldtexture.cpp
-	textures/formats/warptexture.cpp
 	textures/hires/hqresize.cpp
 	textures/hires/hirestex.cpp
 	xlat/parse_xlat.cpp
@@ -1034,6 +1037,7 @@ set (PCH_SOURCES
 	r_data/voxels.cpp
 	r_data/renderinfo.cpp
 	r_data/renderstyle.cpp
+	r_data/r_canvastexture.cpp
 	r_data/r_interpolate.cpp
 	r_data/r_vanillatrans.cpp
 	r_data/r_sections.cpp
@@ -1069,6 +1073,9 @@ set (PCH_SOURCES
 	sound/music/i_soundfont.cpp
 	sound/backend/i_sound.cpp
 	sound/music/music_config.cpp
+	swrenderer/textures/r_swtexture.cpp
+	swrenderer/textures/warptexture.cpp
+	swrenderer/textures/swcanvastexture.cpp
 	events.cpp
 )
 

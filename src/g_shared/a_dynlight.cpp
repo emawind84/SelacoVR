@@ -572,6 +572,9 @@ void FDynamicLight::CollectWithinRadius(const DVector3 &opos, FSection *section,
 	bool hitonesidedback = false;
 	for (unsigned i = 0; i < collected_ss.Size(); i++)
 	{
+		if (collected_ss.Size() >= (unsigned int)gl_light_max_collected_subsectors)
+			break;
+
 		auto &pos = collected_ss[i].pos;
 		section = collected_ss[i].sect;
 
@@ -1055,7 +1058,7 @@ CCMD(listlights)
 		if (dl->target)
 		{
 			FTextureID spr = sprites[dl->target->sprite].GetSpriteFrame(dl->target->frame, 0, 0., nullptr);
-			Printf(", frame = %s ", TexMan[spr]->Name.GetChars());
+			Printf(", frame = %s ", TexMan.GetTexture(spr)->GetName().GetChars());
 		}
 
 

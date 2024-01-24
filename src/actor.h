@@ -794,6 +794,11 @@ public:
 	bool CallOkayToSwitchTarget(AActor *other);
 	bool OkayToSwitchTarget (AActor *other);
 
+	// Note: Although some of the inventory functions are virtual, this
+	// is not exposed to scripts, as the only class overriding them is 
+	// APlayerPawn for some specific handling for players. None of this
+	// should ever be overridden by custom classes.
+
 	// Uses an item and removes it from the inventory.
 	bool UseInventory (AActor *item);
 
@@ -834,7 +839,7 @@ public:
 	void ObtainInventory (AActor *other);
 
 	// Die. Now.
-	virtual bool Massacre ();
+	bool Massacre ();
 
 	// Transforms the actor into a finely-ground paste
 	bool Grind(bool items);

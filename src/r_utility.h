@@ -142,25 +142,4 @@ extern void R_ClearPastViewer (AActor *actor);
 
 bool R_ShouldDrawSpriteShadow(AActor *thing);
 
-class FCanvasTexture;
-// This list keeps track of the cameras that draw into canvas textures.
-struct FCanvasTextureInfo
-{
-	FCanvasTextureInfo *Next;
-	TObjPtr<AActor*> Viewpoint;
-	FCanvasTexture *Texture;
-	FTextureID PicNum;
-	double FOV;
-
-	static void Add (AActor *viewpoint, FTextureID picnum, double fov);
-	static void UpdateAll ();
-	static void EmptyList ();
-	static void Serialize(FSerializer &arc);
-	static void Mark();
-
-private:
-	static FCanvasTextureInfo *List;
-};
-
-
 #endif
