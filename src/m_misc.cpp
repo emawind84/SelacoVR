@@ -97,7 +97,7 @@ void M_FindResponseFile (void)
 		else
 		{
 			char	**argv;
-			char	*file = NULL;
+			TArray<uint8_t> file;
 			int		argc = 0;
 			int 	size;
 			long	argsize = 0;
@@ -117,10 +117,9 @@ void M_FindResponseFile (void)
 				{
 					Printf ("Found response file %s!\n", Args->GetArg(i) + 1);
 					size = (int)fr.GetLength();
-					file = new char[size+1];
-					fr.Read (file, size);
+					file = fr.Read (size);
 					file[size] = 0;
-					argsize = ParseCommandLine (file, &argc, NULL);
+					argsize = ParseCommandLine ((char*)file.Data(), &argc, NULL);
 				}
 			}
 			else
@@ -132,7 +131,7 @@ void M_FindResponseFile (void)
 			{
 				argv = (char **)M_Malloc (argc*sizeof(char *) + argsize);
 				argv[0] = (char *)argv + argc*sizeof(char *);
-				ParseCommandLine (file, NULL, argv);
+				ParseCommandLine ((char*)file.Data(), NULL, argv);
 
 				// Create a new argument vector
 				FArgs *newargs = new FArgs;
@@ -161,10 +160,6 @@ void M_FindResponseFile (void)
 			{
 				// Remove the response file from the Args object
 				Args->RemoveArg(i);
-			}
-			if (file != NULL)
-			{
-				delete[] file;
 			}
 		}
 	}
@@ -612,13 +607,12 @@ void M_ScreenShot (const char *filename)
 	}
 
 	// save the screenshot
-	const uint8_t *buffer;
 	int pitch;
 	ESSType color_type;
 	float gamma;
 
-	screen->GetScreenshotBuffer(buffer, pitch, color_type, gamma);
-	if (buffer != NULL)
+	auto buffer = screen->GetScreenshotBuffer(pitch, color_type, gamma);
+	if (buffer.Size() > 0)
 	{
 		PalEntry palette[256];
 
@@ -630,21 +624,19 @@ void M_ScreenShot (const char *filename)
 		if (file == NULL)
 		{
 			Printf ("Could not open %s\n", autoname.GetChars());
-			delete[] buffer;
 			return;
 		}
 		if (writepcx)
 		{
-			WritePCXfile(file, buffer, palette, color_type,
+			WritePCXfile(file, buffer.Data(), palette, color_type,
 				screen->GetWidth(), screen->GetHeight(), pitch);
 		}
 		else
 		{
-			WritePNGfile(file, buffer, palette, color_type,
+			WritePNGfile(file, buffer.Data(), palette, color_type,
 				screen->GetWidth(), screen->GetHeight(), pitch, gamma);
 		}
 		delete file;
-		delete[] buffer;
 
 		if (!screenshot_quiet)
 		{

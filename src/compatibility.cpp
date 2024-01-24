@@ -79,8 +79,6 @@ enum
 // PRIVATE FUNCTION PROTOTYPES ---------------------------------------------
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
-extern TArray<FMapThing> MapThingsConverted;
-extern bool ForceNodeBuild;
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 

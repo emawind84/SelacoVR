@@ -453,7 +453,7 @@ void GLFlat::SetFrom3DFloor(F3DFloor *rover, bool top, bool underside)
 	// FF_FOG requires an inverted logic where to get the light from
 	lightlist_t *light = P_GetPlaneLight(sector, plane.plane, underside);
 	lightlevel = hw_ClampLight(*light->p_lightlevel);
-	
+
 	if (rover->flags & FF_FOG)
 	{
 		Colormap.LightColor = light->extra_colormap.FadeColor;

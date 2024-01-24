@@ -44,13 +44,13 @@ namespace swrenderer
 		int minx;
 		double planeheight;
 		bool plane_shade;
-		int planeshade;
-		double GlobVis;
-		FDynamicColormap *basecolormap;
+		int lightlevel;
+		bool foggy;
 		double pviewx, pviewy;
 		double xstepscale, ystepscale;
 		double basexfrac, baseyfrac;
 		VisiblePlaneLight *light_list;
+		FSoftwareTexture *tex;
 
 		SpanDrawerArgs drawerargs;
 	};

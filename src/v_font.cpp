@@ -2554,6 +2554,7 @@ FSpecialFont::FSpecialFont (const char *name, int first, int count, FTexture **l
 			if (!noTranslate)
 			{
 				Chars[i].TranslatedPic = new FImageTexture(new FFontChar1 (charlumps[i]->GetImage()), "");
+				Chars[i].TranslatedPic->Scale = charlumps[i]->Scale;
 				TexMan.AddTexture(Chars[i].TranslatedPic);
 			}
 			else Chars[i].TranslatedPic = charlumps[i];

@@ -77,9 +77,6 @@ struct FLevelData
 	FSectionContainer sections;
 	FCanvasTextureInfo canvasTextureInfo;
 
-	int NumMapSections;
-
-
 	// [ZZ] Destructible geometry information
 	TMap<int, FHealthGroup> healthGroups;
 
@@ -148,6 +145,8 @@ struct FLevelLocals : public FLevelData
 	static const int BODYQUESIZE = 32;
 	TObjPtr<AActor*> bodyque[BODYQUESIZE];
 	int bodyqueslot;
+
+	int NumMapSections;
 
 	uint32_t		flags;
 	uint32_t		flags2;
