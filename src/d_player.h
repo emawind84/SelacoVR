@@ -420,6 +420,7 @@ public:
 		return mo->FloatVar(NAME_ViewHeight);
 	}
 
+
 	void Uncrouch()
 	{
 		if (crouchfactor != 1)
