@@ -175,7 +175,7 @@ bool M_SetSpecialMenu(FName& menu, int param)
 		M_ClearMenus ();
 		return false;
 
-	case NAME_Savegamemenu:
+	case NAME_SaveSelacoMenu:
 		if (!usergame || (players[consoleplayer].health <= 0 && !multiplayer) || gamestate != GS_LEVEL)
 		{
 			// cannot save outside the game.
@@ -412,18 +412,19 @@ CCMD (quicksave)
 	{
 		S_Sound(CHAN_VOICE, CHANF_UI, "menu/activate", snd_menuvolume, ATTN_NONE);
 		M_StartControlPanel(false);
-		M_SetMenu(NAME_Savegamemenu);
+		M_SetMenu(NAME_SaveSelacoMenu);
 		return;
 	}
 	
 	// [mxd]. Just save the game, no questions asked.
-	if (!saveloadconfirmation)
-	{
+	//if (!saveloadconfirmation)
+	//{
 		G_SaveGame(savegameManager.quickSaveSlot->Filename.GetChars(), savegameManager.quickSaveSlot->SaveTitle.GetChars());
 		return;
-	}
+	//}
 
-	S_Sound(CHAN_VOICE, CHANF_UI, "menu/activate", snd_menuvolume, ATTN_NONE);
+	// @Cockatrice - TODO: Add a Selaco confirmation menu for quicksaves
+	/*S_Sound(CHAN_VOICE, CHANF_UI, "menu/activate", snd_menuvolume, ATTN_NONE);
 
 	FString tempstring = GStrings("QSPROMPT");
 	tempstring.Substitute("%s", savegameManager.quickSaveSlot->SaveTitle.GetChars());
@@ -435,7 +436,7 @@ CCMD (quicksave)
 		M_ClearMenus();
 	});
 
-	M_ActivateMenu(newmenu);
+	M_ActivateMenu(newmenu);*/
 }
 
 //=============================================================================
@@ -458,7 +459,7 @@ CCMD (quickload)
 		M_StartControlPanel(true);
 		// signal that whatever gets loaded should be the new quicksave
 		savegameManager.quickSaveSlot = (FSaveGameNode *)1;
-		M_SetMenu(NAME_Loadgamemenu);
+		M_SetMenu(NAME_LoadSelacoMenu);
 		return;
 	}
 
@@ -468,18 +469,21 @@ CCMD (quickload)
 		G_LoadGame(savegameManager.quickSaveSlot->Filename.GetChars());
 		return;
 	}
-	FString tempstring = GStrings("QLPROMPT");
+	/*FString tempstring = GStrings("QLPROMPT");
 	tempstring.Substitute("%s", savegameManager.quickSaveSlot->SaveTitle.GetChars());
 
 	M_StartControlPanel(true);
 
-	DMenu *newmenu = CreateMessageBoxMenu(CurrentMenu, tempstring, 0, false, NAME_None, []()
+	DMenu* newmenu = CreateMessageBoxMenu(CurrentMenu, tempstring, 0, false, NAME_None, []()
 	{
 		G_LoadGame(savegameManager.quickSaveSlot->Filename.GetChars());
 		S_Sound(CHAN_VOICE, CHANF_UI, "menu/dismiss", snd_menuvolume, ATTN_NONE);
 		M_ClearMenus();
 	});
-	M_ActivateMenu(newmenu);
+	M_ActivateMenu(newmenu);*/
+
+	M_StartControlPanel(true);
+	M_SetMenu(NAME_QuickLoadgamemenu);
 }
 
 
@@ -1347,13 +1351,13 @@ CCMD (menu_main)
 CCMD (menu_load)
 {	// F3
 	M_StartControlPanel (true);
-	M_SetMenu(NAME_Loadgamemenu, -1);
+	M_SetMenu(NAME_LoadSelacoMenu, -1);
 }
 
 CCMD (menu_save)
 {	// F2
 	M_StartControlPanel (true);
-	M_SetMenu(NAME_Savegamemenu, -1);
+	M_SetMenu(NAME_SaveSelacoMenu, -1);
 }
 
 CCMD (menu_help)
