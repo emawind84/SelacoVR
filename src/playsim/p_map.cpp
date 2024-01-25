@@ -1657,6 +1657,7 @@ bool PIT_CheckThing(FMultiBlockThingsIterator &it, FMultiBlockThingsIterator::Ch
 					{ // Push thing
 						if (thing->lastpush != tm.PushTime)
 						{
+							Printf("Pushing basics\n");
 							thing->Vel += tm.thing->Vel.XY() * thing->pushfactor;
 							thing->lastpush = tm.PushTime;
 						}
@@ -1681,11 +1682,52 @@ bool PIT_CheckThing(FMultiBlockThingsIterator &it, FMultiBlockThingsIterator::Ch
 		return false;		// don't traverse any more
 	}
 	if (thing->flags2 & MF2_PUSHABLE && !(tm.thing->flags2 & MF2_CANNOTPUSH))
-	{ // Push thing
+	{	// Push thing
+		//@Cockatrice - Push em away, keep em far
 		if (thing->lastpush != tm.PushTime)
 		{
+			TVector2 vxy = tm.thing->Vel.XY();
+			bool zeroVel = vxy.isZero();
+			TVector2 velDir = vxy.Unit();
+			TVector2 contactDir = (tm.thing->Pos().XY() - thing->Pos().XY());
+			TVector2 contactNorm = contactDir.isZero() ? TVector2(0.0,0.0) : contactDir.Unit();
+			double velDot = zeroVel ? 0.0 : velDir | contactNorm;
+
+			// SpecialPushDirectionFix tries to help the player push in the desired direction
+			if (velDot < 0 && !contactNorm.isZero() && !zeroVel) {
+				// Move contact norm between the real one and the player velocity
+				// Ease the difference between desired normal and contact normal
+				double easeDot = velDot * velDot;
+				contactNorm = (contactNorm + (((-velDir) - contactNorm) * easeDot)).Unit();
+
+				// Readjust velDot
+				velDot = zeroVel ? 0 : velDir | contactNorm;
+			}
+
+			// Push objects away
+			if (velDot < 0) {
+				
+				auto dvel = contactNorm * (vxy.Length() * velDot) * thing->pushfactor;
+
+				double dv = (vxy.Length() * velDot) * thing->pushfactor;
+				double uv = (contactNorm | thing->Vel.XY().Unit()) * thing->Vel.XY().Length();
+				double mv = min(0.0, dv - uv);
+				thing->Vel += contactNorm * mv;
+
+				//thing->Vel.X = dvel.X;
+				//thing->Vel.Y = dvel.Y;
+				//thing->Vel += contactNorm * (vxy.Length() * velDot) * thing->pushfactor;
+
+				// Push obj away by specialPushFactor
+				//tm.thing->Vel -= contactNorm * (vxy.Length() * velDot) * (1.0 - thing->pushfactor);
+				tm.thing->Vel -= contactNorm * (mv * (1.0 - thing->pushfactor));
+			}
+
+			/* Old push code 
 			thing->Vel += tm.thing->Vel.XY() * thing->pushfactor;
+			*/
 			thing->lastpush = tm.PushTime;
+			tm.pushFactor = velDot < 0 ? -velDot : 0;
 		}
 	}
 	solid = (thing->flags & MF_SOLID) &&
