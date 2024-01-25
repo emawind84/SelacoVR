@@ -113,6 +113,110 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 			state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
 			state.Draw(DT_TriangleStrip, huds->mx, 4);
 		}
+		
+		DPSprite* psp = huds->weapon;
+		bool alphatexture = huds->RenderStyle.Flags & STYLEF_RedIsAlpha;
+		float sy;
+
+		//TODO Cleanup code for rendering weapon models from sprites in VR mode
+		if ((psp->GetID() == PSP_WEAPON || psp->GetID() == PSP_OFFHANDWEAPON) && vrmode->RenderPlayerSpritesCrossed())
+		{
+			if (r_PlayerSprites3DMode == BACK_ONLY)
+				return;
+
+			float fU1, fV1;
+			float fU2, fV2;
+
+			if (psp->GetCaller() == nullptr)
+				return;
+
+			bool mirror;
+			FState* spawn = psp->GetCaller()->FindState(NAME_Spawn);
+			FTextureID lump = sprites[spawn->sprite].GetSpriteFrame(0, 0, 0., &mirror);
+			if (!lump.isValid()) return;
+
+			FMaterial* tex = FMaterial::ValidateTexture(lump, true, false);
+			if (!tex) return;
+
+			float vw = (float)viewwidth;
+			float vh = (float)viewheight;
+
+			state.AlphaFunc(Alpha_GEqual, 1);
+			state.SetMaterial(tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
+
+			float z1 = 0.0f;
+			float z2 = (huds->y2 - huds->y1) * MIN(3, tex->GetWidth() / tex->GetHeight());
+
+			if (!(mirror) != !(psp->Flags & PSPF_FLIP))
+			{
+				fU2 = tex->GetSpriteUL();
+				fV1 = tex->GetSpriteVT();
+				fU1 = tex->GetSpriteUR();
+				fV2 = tex->GetSpriteVB();
+			}
+			else
+			{
+				fU1 = tex->GetSpriteUL();
+				fV1 = tex->GetSpriteVT();
+				fU2 = tex->GetSpriteUR();
+				fV2 = tex->GetSpriteVB();
+			}
+
+			if (r_PlayerSprites3DMode == FAT_ITEM)
+			{
+				float x1 = vw / 2 + (huds->x1 - vw / 2) * gl_fatItemWidth;
+				float x2 = vw / 2 + (huds->x2 - vw / 2) * gl_fatItemWidth;
+
+				for (float x = x1; x < x2; x += 1)
+				{
+					screen->mVertexData->Map();
+					auto vert = screen->mVertexData->AllocVertices(4);
+					auto vp = vert.first;
+					vp[0].Set(x, huds->y1, -z1, fU1, fV1);
+					vp[1].Set(x, huds->y2, -z1, fU1, fV2);
+					vp[2].Set(x, huds->y1, -z2, fU2, fV1);
+					vp[3].Set(x, huds->y2, -z2, fU2, fV2);
+					screen->mVertexData->Unmap();
+					state.Draw(DT_TriangleStrip, vert.second, 4);
+				}
+			}
+			else
+			{
+				float crossAt;
+				if (r_PlayerSprites3DMode == ITEM_ONLY)
+				{
+					crossAt = 0.0f;
+					sy = 0.0f;
+				}
+				else
+				{
+					sy = huds->y2 - huds->y1;
+					crossAt = sy * 0.25f;
+				}
+
+				float y1 = huds->y1 - crossAt;
+				float y2 = huds->y2 - crossAt;
+
+				screen->mVertexData->Map();
+				auto vert = screen->mVertexData->AllocVertices(4);
+				auto vp = vert.first;
+				vp[0].Set(vw / 2 - crossAt, y1, -z1, fU1, fV1);
+				vp[1].Set(vw / 2 + sy / 2, y2, -z1, fU1, fV2);
+				vp[2].Set(vw / 2 - crossAt, y1, -z2, fU2, fV1);
+				vp[3].Set(vw / 2 + sy / 2, y2, -z2, fU2, fV2);
+
+				auto vert2 = screen->mVertexData->AllocVertices(4);
+				auto vp2 = vert2.first;
+				vp2[0].Set(vw / 2 + crossAt, y1, -z1, fU1, fV1);
+				vp2[1].Set(vw / 2 - sy / 2, y2, -z1, fU1, fV2);
+				vp2[2].Set(vw / 2 + crossAt, y1, -z2, fU2, fV1);
+				vp2[3].Set(vw / 2 - sy / 2, y2, -z2, fU2, fV2);
+				
+				screen->mVertexData->Unmap();
+				state.Draw(DT_TriangleStrip, vert.second, 4);
+				state.Draw(DT_TriangleStrip, vert2.second, 4);
+			}
+		}
 	}
 
 	state.SetTextureMode(TM_NORMAL);
@@ -449,8 +553,6 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 
 	// calculate edges of the shape
 	scalex = (320.0f / (240.0f * r_viewwindow.WidescreenRatio)) * vw / 320;
-
-	float x1, y1, x2, y2, u1, v1, u2, v2;
 
 	tx = (psp->Flags & PSPF_MIRROR) ? ((160 - r.width) - (sx + r.left)) : (sx - (160 - r.left));
 	x1 = tx * scalex + vw / 2;
