@@ -5349,26 +5349,24 @@ bool CheckDoubleSpawn (AActor *&mobj, const AActor *info, const FMapThing *mthin
 	return spawned;
 }
 
-void SetMobj (AActor *mobj, const FMapThing *mthing, const PClassActor *type)
+void SetMobj (AActor *mobj, const FMapThing *mthing)
 {
+	if (mobj->flags2 & MF2_FLOORCLIP)
+	{
+		mobj->AdjustFloorClip();
+	}
+
 	mobj->SpawnPoint = mthing->pos;
 	mobj->SpawnAngle = mthing->angle;
 	mobj->SpawnFlags = mthing->flags;
 	if (mthing->friendlyseeblocks > 0)
 		mobj->friendlyseeblocks = mthing->friendlyseeblocks;
-	if (mthing->FloatbobPhase >= 0 && mthing->FloatbobPhase < 64) mobj->FloatBobPhase = mthing->FloatbobPhase;
 	if (mthing->Gravity < 0) mobj->Gravity = -mthing->Gravity;
 	else if (mthing->Gravity > 0) mobj->Gravity *= mthing->Gravity;
 	else 
 	{
 		mobj->flags |= MF_NOGRAVITY;
 		mobj->Gravity = 0;
-	}
-
-	// For Hexen floatbob 'compatibility' we do not really want to alter the floorz.
-	if (mobj->specialf1 == 0 || !(mobj->flags2 & MF2_FLOATBOB) || !(ib_compatflags & BCOMPATF_FLOATBOB))
-	{
-		P_FindFloorCeiling(mobj, FFCF_SAMESECTOR | FFCF_ONLY3DFLOORS | FFCF_3DRESTRICT);
 	}
 
 	// if the actor got args defined either in DECORATE or MAPINFO we must ignore the map's properties.
@@ -5414,30 +5412,6 @@ void SetMobj (AActor *mobj, const FMapThing *mthing, const PClassActor *type)
 	if (mthing->fillcolor)
 		mobj->fillcolor = (mthing->fillcolor & 0xffffff) | (ColorMatcher.Pick((mthing->fillcolor & 0xff0000) >> 16,
 			(mthing->fillcolor & 0xff00) >> 8, (mthing->fillcolor & 0xff)) << 24);
-
-	// allow color strings for lights and reshuffle the args for spot lights
-	if (type->IsDescendantOf(NAME_DynamicLight))
-	{
-		if (mthing->arg0str != NAME_None)
-		{
-			PalEntry color = V_GetColor(nullptr, mthing->arg0str);
-			mobj->args[0] = color.r;
-			mobj->args[1] = color.g;
-			mobj->args[2] = color.b;
-		}
-		else if (mobj->IntVar(NAME_lightflags) & LF_SPOT)
-		{
-			mobj->args[0] = RPART(mthing->args[0]);
-			mobj->args[1] = GPART(mthing->args[0]);
-			mobj->args[2] = BPART(mthing->args[0]);
-		}
-
-		if (mobj->IntVar(NAME_lightflags) & LF_SPOT)
-		{
-			mobj->AngleVar(NAME_SpotInnerAngle) = double(mthing->args[1]);
-			mobj->AngleVar(NAME_SpotOuterAngle) = double(mthing->args[2]);
-		}
-	}
 
 	mobj->CallBeginPlay ();
 	if (!(mobj->ObjectFlags & OF_EuthanizeMe))
@@ -5739,40 +5713,14 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 	else if (sz == ONCEILINGZ)
 		mobj->AddZ(-mthing->pos.Z);
 
-	if (mobj->flags2 & MF2_FLOORCLIP)
-	{
-		mobj->AdjustFloorClip();
-	}
+	if (mthing->FloatbobPhase >= 0 && mthing->FloatbobPhase < 64)
+		mobj->FloatBobPhase = mthing->FloatbobPhase;
 
-	if ((G_SkillProperty(SKILLP_DoubleSpawn) || (dmflags2 & DF2_DOUBLESPAWN)) && info->flags3 & MF3_ISMONSTER
-		&& info->radius < 65)
+	// For Hexen floatbob 'compatibility' we do not really want to alter the floorz.
+	if (mobj->specialf1 == 0 || !(mobj->flags2 & MF2_FLOATBOB) || !(ib_compatflags & BCOMPATF_FLOATBOB))
 	{
-		spawned = CheckDoubleSpawn (mobj, info, mthing, sz, i, true); // previously double spawned monster might block
-		if (spawned)
-		{
-			mobj->ConversationRoot = root;
-			mobj->Conversation = StrifeDialogues[mobj->ConversationRoot];
-		}
+		P_FindFloorCeiling(mobj, FFCF_SAMESECTOR | FFCF_ONLY3DFLOORS | FFCF_3DRESTRICT);
 	}
-
-	// Set various UDMF options
-	if (mthing->Alpha >= 0)
-		mobj->Alpha = mthing->Alpha;
-	if (mthing->RenderStyle != STYLE_Count)
-		mobj->RenderStyle = (ERenderStyle)mthing->RenderStyle;
-	if (mthing->Scale.X != 0)
-		mobj->Scale.X = mthing->Scale.X * mobj->Scale.X;
-	if (mthing->Scale.Y != 0)
-		mobj->Scale.Y = mthing->Scale.Y * mobj->Scale.Y;
-	if (mthing->pitch)
-		mobj->Angles.Pitch = (double)mthing->pitch;
-	if (mthing->roll)
-		mobj->Angles.Roll = (double)mthing->roll;
-	if (mthing->score)
-		mobj->Score = mthing->score;
-	if (mthing->fillcolor)
-		mobj->fillcolor = (mthing->fillcolor & 0xffffff) | (ColorMatcher.Pick((mthing->fillcolor & 0xff0000) >> 16,
-			(mthing->fillcolor & 0xff00) >> 8, (mthing->fillcolor & 0xff)) << 24);
 
 	// allow color strings for lights and reshuffle the args for spot lights
 	if (i->IsDescendantOf(NAME_DynamicLight))
@@ -5797,9 +5745,25 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 			mobj->AngleVar(NAME_SpotOuterAngle) = double(mthing->args[2]);
 		}
 	}
+
+	if ((G_SkillProperty(SKILLP_DoubleSpawn) || (dmflags2 & DF2_DOUBLESPAWN)) && info->flags3 & MF3_ISMONSTER
+		&& info->radius < 65)
+	{
+		spawned = CheckDoubleSpawn (mobj, info, mthing, sz, i, true); // previously double spawned monster might block
+		if (spawned)
+		{
+			SetMobj(mobj, mthing);
+			mobj2 = AActor::StaticSpawn (i, DVector3(mthing->pos.X + 2 * info->radius, mthing->pos.Y, sz), NO_REPLACE, true);
+			spawned = CheckDoubleSpawn (mobj2, info, mthing, sz, i, false);
+			if (spawned)
+			{
+				SetMobj(mobj2, mthing);
+			}
+		}
+	}
 	else
 	{
-		SetMobj(mobj, mthing, i);
+		SetMobj(mobj, mthing);
 	}
 
 	return mobj;
