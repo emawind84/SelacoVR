@@ -3364,7 +3364,7 @@ OptionMenu QuickMenu protected
  OptionMenu "InfoAndCreditsMenu"
 { 
 	//Title		"QUESTZDOOM INFO AND CREDITS"
-	StaticPatch 52, 4, "QZDOOM"
+	StaticPatch 52, -20, "QZDOOM"
 	Position 50
 	Submenu		"INFORMATION AND INSTRUCTIONS", "QuestZDoomInstructions", 0, 1
 	Submenu		"CREDITS", "QuestZDoomCredits", 0, 1
@@ -3373,7 +3373,7 @@ OptionMenu QuickMenu protected
 OptionMenu "QuestZDoomInstructions"
 { 
 	//Title		"QUESTZDOOM INFO AND CREDITS"
-	StaticPatch 52, 4, "QZDOOM"
+	StaticPatch 52, -20, "QZDOOM"
 	Position 50
 	StaticText	"===== INFORMATION AND INSTRUCTIONS ====="
 	StaticText	""
@@ -3410,7 +3410,7 @@ OptionMenu "QuestZDoomInstructions"
 OptionMenu "QuestZDoomCredits"
 { 
 	//Title		"QUESTZDOOM INFO AND CREDITS"
-	StaticPatch 52, 4, "QZDOOM"
+	StaticPatch 52, -20, "QZDOOM"
 	Position 50
 	StaticText	"===== CREDITS ====="
 	StaticText	""

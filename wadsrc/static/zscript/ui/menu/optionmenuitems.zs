@@ -159,7 +159,7 @@ class OptionMenuItemStaticPatch : OptionMenuItem
 		if (mYpos >= 0)
 		{
 			if (mCentered) x -= vec.X / 2;
-			screen.DrawTexture (mTexture, true, x, mYpos, DTA_CleanTop, true);
+			screen.DrawTexture (mTexture, true, x, mYpos, DTA_Clean, true);
 		}
 		else
 		{
