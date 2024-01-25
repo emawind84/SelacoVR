@@ -2184,7 +2184,6 @@ GMPLYMNU_KEEPPOWERUPS		= "Keep powerups";
 GMPLYMNU_KEEPAMMO			= "Keep ammo";
 GMPLYMNU_LOSEHALFAMMO		= "Lose half ammo";
 GMPLYMNU_SPAWNWHEREDIED		= "Spawn where died";
-GMPLYMNU_DOUBLESPAWN		= "Spawn double the monsters";
 GMPLYMNU_ALWAYSSPAWNMULTI	= "Always spawn multiplayer objects";
 
 // Compatibility Options

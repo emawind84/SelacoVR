@@ -1834,9 +1834,8 @@ OptionMenu GameplayOptions protected
 	Option "$GMPLYMNU_KILLBOSSSPAWNS",			"sv_killbossmonst", "YesNo"
 	Option "$GMPLYMNU_NOCOUNTENDMONSTER",		"sv_nocountendmonst", "NoYes"
 	Option "$GMPLYMNU_ALWAYSSPAWNMULTI",		"sv_alwaysspawnmulti", "YesNo"
-	Option "$GMPLYMNU_DOUBLESPAWN",				"sv_doublespawn", "YesNo"
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar teamplay teamdamage sv_smartaim sv_fallingdamage sv_weapondrop sv_doubleammo sv_infiniteammo sv_infiniteinventory sv_nomonsters sv_killallmonsters sv_monsterrespawn sv_norespawn sv_itemrespawn sv_respawnsuper sv_fastmonsters sv_instantreaction sv_degeneration sv_noautoaim sv_disallowsuicide sv_jump sv_crouch sv_freelook sv_nofov sv_nobfgaim sv_noautomap sv_noautomapallies sv_disallowspying sv_chasecam sv_dontcheckammo sv_killbossmonst sv_nocountendmonst sv_alwaysspawnmulti sv_doublespawn"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar teamplay teamdamage sv_smartaim sv_fallingdamage sv_weapondrop sv_doubleammo sv_infiniteammo sv_infiniteinventory sv_nomonsters sv_killallmonsters sv_monsterrespawn sv_norespawn sv_itemrespawn sv_respawnsuper sv_fastmonsters sv_instantreaction sv_degeneration sv_noautoaim sv_disallowsuicide sv_jump sv_crouch sv_freelook sv_nofov sv_nobfgaim sv_noautomap sv_noautomapallies sv_disallowspying sv_chasecam sv_dontcheckammo sv_killbossmonst sv_nocountendmonst sv_alwaysspawnmulti"
 	Class "GameplayMenu"
 }
 
