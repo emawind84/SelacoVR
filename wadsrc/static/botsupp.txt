@@ -1,1 +1,0 @@
-// This is just a straight dump of an internal table. Contents are: Weapon type, distance coefficient, optional flags and an optional projectile type.
