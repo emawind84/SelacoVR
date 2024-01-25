@@ -5750,13 +5750,51 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 		spawned = CheckDoubleSpawn (mobj, info, mthing, sz, i, true); // previously double spawned monster might block
 		if (spawned)
 		{
-			SetMobj(mobj, mthing, i);
-			mobj2 = AActor::StaticSpawn (i, DVector3(mthing->pos.X + 2 * info->radius, mthing->pos.Y, sz), NO_REPLACE, true);
-			spawned = CheckDoubleSpawn (mobj2, info, mthing, sz, i, false);
-			if (spawned)
-			{
-				SetMobj(mobj2, mthing, i);
-			}
+			mobj->ConversationRoot = root;
+			mobj->Conversation = StrifeDialogues[mobj->ConversationRoot];
+		}
+	}
+
+	// Set various UDMF options
+	if (mthing->Alpha >= 0)
+		mobj->Alpha = mthing->Alpha;
+	if (mthing->RenderStyle != STYLE_Count)
+		mobj->RenderStyle = (ERenderStyle)mthing->RenderStyle;
+	if (mthing->Scale.X != 0)
+		mobj->Scale.X = mthing->Scale.X * mobj->Scale.X;
+	if (mthing->Scale.Y != 0)
+		mobj->Scale.Y = mthing->Scale.Y * mobj->Scale.Y;
+	if (mthing->pitch)
+		mobj->Angles.Pitch = (double)mthing->pitch;
+	if (mthing->roll)
+		mobj->Angles.Roll = (double)mthing->roll;
+	if (mthing->score)
+		mobj->Score = mthing->score;
+	if (mthing->fillcolor)
+		mobj->fillcolor = (mthing->fillcolor & 0xffffff) | (ColorMatcher.Pick((mthing->fillcolor & 0xff0000) >> 16,
+			(mthing->fillcolor & 0xff00) >> 8, (mthing->fillcolor & 0xff)) << 24);
+
+	// allow color strings for lights and reshuffle the args for spot lights
+	if (i->IsDescendantOf(NAME_DynamicLight))
+	{
+		if (mthing->arg0str != NAME_None)
+		{
+			PalEntry color = V_GetColor(nullptr, mthing->arg0str);
+			mobj->args[0] = color.r;
+			mobj->args[1] = color.g;
+			mobj->args[2] = color.b;
+		}
+		else if (mobj->IntVar(NAME_lightflags) & LF_SPOT)
+		{
+			mobj->args[0] = RPART(mthing->args[0]);
+			mobj->args[1] = GPART(mthing->args[0]);
+			mobj->args[2] = BPART(mthing->args[0]);
+		}
+
+		if (mobj->IntVar(NAME_lightflags) & LF_SPOT)
+		{
+			mobj->AngleVar(NAME_SpotInnerAngle) = double(mthing->args[1]);
+			mobj->AngleVar(NAME_SpotOuterAngle) = double(mthing->args[2]);
 		}
 	}
 	else

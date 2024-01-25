@@ -58,6 +58,7 @@ void gl_LoadExtensions();
 void gl_PrintStartupLog();
 void Draw2D(F2DDrawer *drawer, FRenderState &state);
 
+extern bool vid_hdr_active;
 
 extern bool vid_hdr_active;
 
