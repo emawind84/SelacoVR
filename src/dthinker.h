@@ -62,9 +62,6 @@ struct FThinkerList
 	DThinker *Sentinel;
 };
 
-struct FLevelLocals;
-extern FLevelLocals level;
-
 class DThinker : public DObject
 {
 	DECLARE_CLASS (DThinker, DObject)
