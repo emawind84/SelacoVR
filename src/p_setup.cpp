@@ -68,9 +68,11 @@
 #include "types.h"
 #include "i_time.h"
 #include "scripting/vm/vm.h"
-#include "fragglescript/t_fs.h"
+#include "a_specialspot.h"
 #include "maploader/maploader.h"
 #include "s_music.h"
+#include "p_acs.h"
+#include "fragglescript/t_script.h"
 
 void P_ClearUDMFKeys();
 
@@ -273,6 +275,9 @@ void FLevelLocals::ClearLevelData()
 	}
 	ClearPortals();
 
+	SpotState = nullptr;
+	ACSThinker = nullptr;
+	FraggleScriptThinker = nullptr;
 	CorpseQueue.Clear();
 	canvasTextureInfo.EmptyList();
 	sections.Clear();
@@ -338,7 +343,7 @@ void P_FreeLevelData ()
 	DThinker::DestroyAllThinkers ();
 	tagManager.Clear();
 
-	FBehavior::StaticUnloadModules ();
+	level.Behaviors.UnloadModules ();
 
 	P_FreeStrifeConversations ();
 	level.ClearLevelData();
@@ -488,7 +493,7 @@ void P_SetupLevel(const char *lumpname, int position, bool newGame)
 		}
 	}
 
-	T_PreprocessScripts();        // preprocess FraggleScript scripts
+	T_PreprocessScripts(&level);        // preprocess FraggleScript scripts
 
 	// build subsector connect matrix
 	//	UNUSED P_ConnectSubsectors ();

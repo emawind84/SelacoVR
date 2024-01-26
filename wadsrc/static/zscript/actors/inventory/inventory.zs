@@ -266,7 +266,7 @@ class Inventory : Actor
 		if (SpawnPointClass != NULL)
 		{
 			Actor spot = NULL;
-			let state = SpotState.GetSpotState();
+			let state = Level.GetSpotState();
 
 			if (state != NULL) spot = state.GetRandomSpot(SpawnPointClass, false);
 			if (spot != NULL) 

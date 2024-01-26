@@ -3147,6 +3147,8 @@ enum T_Flags
 	TF_SENSITIVEZ =		0x00000800, // Fail if the actor wouldn't fit in the position (for Z).
 };
 
+DSpotState *GetSpotState(FLevelLocals *self, int create);
+
 DEFINE_ACTION_FUNCTION(AActor, A_Teleport)
 {
 	PARAM_ACTION_PROLOGUE(AActor);
@@ -3203,7 +3205,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Teleport)
 		}
 	}
 
-	DSpotState *state = DSpotState::GetSpotState();
+	DSpotState *state = GetSpotState(&level, false);
 	if (state == NULL)
 	{
 		return numret;

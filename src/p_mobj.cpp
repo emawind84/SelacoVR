@@ -117,7 +117,6 @@ static void PlayerLandedOnThing (AActor *mo, AActor *onmobj);
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
-extern int BotWTG;
 EXTERN_CVAR (Int,  cl_rockettrails)
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
@@ -5151,7 +5150,7 @@ AActor *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 			VMValue params[] = { mobj, oldactor };
 			VMCall(func, params, 2, nullptr, 0);
 		}
-		FBehavior::StaticStopMyScripts (oldactor);	// cancel all ENTER/RESPAWN scripts for the voodoo doll
+		level.Behaviors.StopMyScripts (oldactor);	// cancel all ENTER/RESPAWN scripts for the voodoo doll
 	}
 
 	// [GRB] Reset skin
@@ -5280,7 +5279,7 @@ AActor *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 	{
 		if (state == PST_ENTER || (state == PST_LIVE && !savegamerestore))
 		{
-			FBehavior::StaticStartTypedScripts (SCRIPT_Enter, p->mo, true);
+			level.Behaviors.StartTypedScripts (SCRIPT_Enter, p->mo, true);
 			E_PlayerSpawned(PlayerNum(p));
 		}
 		else if (state == PST_REBORN)
@@ -5305,7 +5304,7 @@ AActor *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 			DObject::StaticPointerSubstitution (oldactor, p->mo);
 
 			E_PlayerRespawned(int(p - players));
-			FBehavior::StaticStartTypedScripts (SCRIPT_Respawn, p->mo, true);
+			level.Behaviors.StartTypedScripts (SCRIPT_Respawn, p->mo, true);
 		}
 	}
 	return mobj;
@@ -5721,7 +5720,7 @@ AActor *SpawnMapThing(int index, FMapThing *mt, int position)
 			index, mt->pos.X, mt->pos.Y, mt->pos.Z, mt->EdNum, mt->flags,
 			spawned ? spawned->GetClass()->TypeName.GetChars() : "(none)");
 	}
-	T_AddSpawnedThing(spawned);
+	T_AddSpawnedThing(&level, spawned);
 	return spawned;
 }
 

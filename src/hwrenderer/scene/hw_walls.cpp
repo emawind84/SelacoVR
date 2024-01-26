@@ -79,7 +79,7 @@ void GLWall::RenderFogBoundary(HWDrawInfo *di, FRenderState &state)
 	{
 		int rel = rellight + getExtraLight();
 		state.EnableDrawBufferAttachments(false);
-		state.SetFog(lightlevel, rel, false, &Colormap, false);
+		di->SetFog(state, lightlevel, rel, false, &Colormap, false);
 		state.SetEffect(EFF_FOGBOUNDARY);
 		state.AlphaFunc(Alpha_GEqual, 0.f);
 		state.SetDepthBias(-1, -128);
@@ -107,8 +107,8 @@ void GLWall::RenderMirrorSurface(HWDrawInfo *di, FRenderState &state)
 
 	// Use sphere mapping for this
 	state.SetEffect(EFF_SPHEREMAP);
-	state.SetColor(lightlevel, 0, di->isFullbrightScene(), Colormap, 0.1f);
-	state.SetFog(lightlevel, 0, di->isFullbrightScene(), &Colormap, true);
+	di->SetColor(state, lightlevel, 0, di->isFullbrightScene(), Colormap, 0.1f);
+	di->SetFog(state, lightlevel, 0, di->isFullbrightScene(), &Colormap, true);
 	state.SetRenderStyle(STYLE_Add);
 	state.AlphaFunc(Alpha_Greater, 0);
 
@@ -174,7 +174,7 @@ void GLWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 
 	if (type == RENDERWALL_M2SNF)
 	{
-		state.SetFog(255, 0, di->isFullbrightScene(), nullptr, false);
+		di->SetFog(state, 255, 0, di->isFullbrightScene(), nullptr, false);
 	}
 	if (type != RENDERWALL_COLOR && seg->sidedef != nullptr)
 	{
@@ -216,8 +216,8 @@ void GLWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 	float absalpha = fabsf(alpha);
 	if (lightlist == nullptr)
 	{
-		if (type != RENDERWALL_M2SNF) state.SetFog(lightlevel, rel, di->isFullbrightScene(), &Colormap, RenderStyle == STYLE_Add);
-		state.SetColor(lightlevel, rel, di->isFullbrightScene(), Colormap, absalpha);
+		if (type != RENDERWALL_M2SNF) di->SetFog(state, lightlevel, rel, di->isFullbrightScene(), &Colormap, RenderStyle == STYLE_Add);
+		di->SetColor(state, lightlevel, rel, di->isFullbrightScene(), Colormap, absalpha);
 		RenderWall(di, state, rflags);
 	}
 	else
@@ -238,8 +238,8 @@ void GLWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 				thiscm.FadeColor = Colormap.FadeColor;
 				thiscm.FogDensity = Colormap.FogDensity;
 				thiscm.CopyFrom3DLight(&(*lightlist)[i]);
-				state.SetColor(thisll, rel, false, thiscm, absalpha);
-				if (type != RENDERWALL_M2SNF) state.SetFog(thisll, rel, false, &thiscm, RenderStyle == STYLE_Add);
+				di->SetColor(state, thisll, rel, false, thiscm, absalpha);
+				if (type != RENDERWALL_M2SNF) di->SetFog(state, thisll, rel, false, &thiscm, RenderStyle == STYLE_Add);
 				state.SetSplitPlanes((*lightlist)[i].plane, lowplane);
 				RenderWall(di, state, rflags);
 			}
@@ -274,8 +274,8 @@ void GLWall::RenderTranslucentWall(HWDrawInfo *di, FRenderState &state)
 	else
 	{
 		state.AlphaFunc(Alpha_GEqual, 0.f);
-		state.SetColor(lightlevel, 0, false, Colormap, fabsf(alpha));
-		state.SetFog(lightlevel, 0, false, &Colormap, RenderStyle == STYLE_Add);
+		di->SetColor(state, lightlevel, 0, false, Colormap, fabsf(alpha));
+		di->SetFog(state, lightlevel, 0, false, &Colormap, RenderStyle == STYLE_Add);
 		state.EnableTexture(false);
 		RenderWall(di, state, GLWall::RWF_NOSPLIT);
 		state.EnableTexture(true);
@@ -2090,7 +2090,7 @@ void GLWall::Process(HWDrawInfo *di, seg_t *seg, sector_t * frontsector, sector_
 		bool isportal = seg->linedef->isVisualPortal() && seg->sidedef == seg->linedef->sidedef[0];
 		sector_t *backsec = isportal? seg->linedef->getPortalDestination()->frontsector : backsector;
 
-		bool drawfogboundary = !di->isFullbrightScene() && hw_CheckFog(frontsector, backsec);
+		bool drawfogboundary = !di->isFullbrightScene() && di->CheckFog(frontsector, backsec);
 		FTexture *tex = TexMan.GetTexture(seg->sidedef->GetTexture(side_t::mid), true);
 		if (tex != NULL)
 		{

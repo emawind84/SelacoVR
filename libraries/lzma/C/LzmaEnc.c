@@ -54,6 +54,8 @@ static unsigned g_STAT_OFFSET = 0;
 
 #define REP_LEN_COUNT 64
 
+#define REP_LEN_COUNT 64
+
 void LzmaEncProps_Init(CLzmaEncProps *p)
 {
   p->level = 5;
