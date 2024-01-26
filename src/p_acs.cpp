@@ -4340,7 +4340,7 @@ void DLevelScript::DoSetActorProperty (AActor *actor, int property, int value)
 		{
 			if (actor->player != nullptr)
 			{
-				actor->player->SoundClass = FBehavior::StaticLookupString(value);
+				actor->player->SoundClass = level.Behaviors.LookupString(value);
 			}
 		}
 		break;
@@ -5829,7 +5829,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		case ACSF_GetCVarString:
 			if (argCount == 1)
 			{
-				return DoGetCVar(GetCVar(activator && activator->player ? int(activator->player - players) : -1, Level->Behaviors.LookupString(args[0])), true);
+				return DoGetCVar(GetCVar(activator && activator->player ? int(activator->player - players) : -1, level.Behaviors.LookupString(args[0])), true);
 			}
 			break;
 
@@ -6748,7 +6748,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 					int logNum = args[0];
 					FSoundID sid = 0;
 
-					const char* lookup = FBehavior::StaticLookupString(args[1]);
+					const char* lookup = level.Behaviors.LookupString(args[1]);
 					if (lookup != nullptr)
 					{
 						sid = lookup;
@@ -9810,7 +9810,7 @@ scriptwait:
 			break;
 
 		case PCD_GETCVAR:
-			STACK(1) = DoGetCVar(GetCVar(activator && activator->player? int(activator->player - players) : -1, Level->Behaviors.LookupString(STACK(1))), false);
+			STACK(1) = DoGetCVar(GetCVar(activator && activator->player? int(activator->player - players) : -1, level.Behaviors.LookupString(STACK(1))), false);
 			break;
 
 		case PCD_SETHUDSIZE:

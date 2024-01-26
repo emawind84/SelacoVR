@@ -431,7 +431,7 @@ struct FBehaviorContainer
 {
 	TArray<FBehavior *> StaticModules;
 
-	FBehavior *LoadModule(int lumpnum, FileReader *fr = nullptr, int len = 0);
+	FBehavior *LoadModule(int lumpnum, FileReader *fr = nullptr, int len = 0, int reallumpnum = -1);
 	void LoadDefaultModules();
 	void UnloadModules();
 	bool CheckAllGood();
@@ -442,7 +442,7 @@ struct FBehaviorContainer
 	void UnlockLevelVarStrings(int levelnum);
 
 	const ScriptPtr *FindScript(int script, FBehavior *&module);
-	const char *LookupString(uint32_t index);
+	const char *LookupString(uint32_t index, bool forprint = false);
 	void StartTypedScripts(uint16_t type, AActor *activator, bool always, int arg1 = 0, bool runNow = false);
 	void StopMyScripts(AActor *actor);
 
