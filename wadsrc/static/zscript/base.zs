@@ -56,6 +56,8 @@ struct _ native	// These are the global variables, the struct is only here to av
 	native readonly int GameTicRate;
 	native readonly double NotifyFontScale;
 	native readonly int paused;
+	native ui readonly LevelLocals currentUILevel;
+	
 }
 
 struct MusPlayingInfo native
@@ -534,8 +536,11 @@ class ThinkerIterator : Object native
 }
 
 class ActorIterator : Object native
-{	
-	native static ActorIterator Create(int tid, class<Actor> type = "Actor");
+{
+	deprecated("3.8") static ActorIterator Create(int tid, class<Actor> type = "Actor")
+	{
+		return level.CreateActorIterator(tid, type);
+	}
 	native Actor Next();
 	native void Reinit();
 }
@@ -790,7 +795,7 @@ struct LevelLocals native
 	native static void MakeAutoSave();
 	native void WorldDone();
 	native static void RemoveAllBots(bool fromlist);
-	native static Vector2 GetAutomapPosition();
+	native ui Vector2 GetAutomapPosition();
 	native void SetInterMusic(String nextmap);
 	native String FormatMapName(int mapnamecolor);
 	native bool IsJumpingAllowed() const;
@@ -798,8 +803,8 @@ struct LevelLocals native
 	native bool IsFreelookAllowed() const;
 	native void StartIntermission(Name type, int state) const;
 	native SpotState GetSpotState(bool create = true);
-	static play int FindUniqueTid(int start = 0, int limit = 0) { return Actor.FindUniqueTid(start, limit); }
-	static play uint GetSkyboxPortal(Actor actor) { return SectorPortal.GetSkyboxPortal(actor); }
+	native int FindUniqueTid(int start = 0, int limit = 0);
+	native uint GetSkyboxPortal(Actor actor);
 	static void ReplaceTextures(String from, String to, int flags) { Texman.ReplaceTextures(from, to, flags); }
 	clearscope static HealthGroup FindHealthGroup(int id) { return HealthGroup.Find(id); }
 	static vector3, int PickDeathmatchStart() { return Object.G_PickDeathmatchStart(); }
@@ -823,9 +828,9 @@ struct LevelLocals native
 
 	native void ChangeSky( TextureID sky1, TextureID sky2 );
 
-	static SectorTagIterator CreateSectorTagIterator(int tag, line defline = null) { return SectorTagIterator.Create(tag, defline); }
-	static LineIdIterator CreateLineIdIterator(int tag){ return LineIdIterator.Create(tag); }
-	static ActorIterator CreateActorIterator(int tid, class<Actor> type = "Actor") { return ActorIterator.Create(tid); }
+	native SectorTagIterator CreateSectorTagIterator(int tag, line defline = null);
+	native LineIdIterator CreateLineIdIterator(int tag);
+	native ActorIterator CreateActorIterator(int tid, class<Actor> type = "Actor");
 
 	String TimeFormatted(bool totals = false)
 	{
@@ -833,15 +838,8 @@ struct LevelLocals native
 		return String.Format("%02d:%02d:%02d", sec / 3600, (sec % 3600) / 60, sec % 60);
 	}
 
-	static play bool CreateCeiling(sector sec, int type, line ln, double speed, double speed2, double height = 0, int crush = -1, int silent = 0, int change = 0, int crushmode = 0 /*Floor.crushDoom*/)
-	{
-		return Ceiling.CreateCeiling(sec, type, ln, speed, speed2, height, crush, silent, change, crushmode);
-	}
-
-	static play bool CreateFloor(sector sec, int floortype, line ln, double speed, double height = 0, int crush = -1, int change = 0, bool crushmode = false, bool hereticlower = false)
-	{
-		return Floor.CreateFloor(sec, floortype, ln, speed, height, crush, change, crushmode, hereticlower);
-	}
+	native bool CreateCeiling(sector sec, int type, line ln, double speed, double speed2, double height = 0, int crush = -1, int silent = 0, int change = 0, int crushmode = 0 /*Floor.crushDoom*/);
+	native bool CreateFloor(sector sec, int floortype, line ln, double speed, double height = 0, int crush = -1, int change = 0, bool crushmode = false, bool hereticlower = false);
 
 	native static void ExitLevel(int position, bool keepFacing);
 	native static void SecretExitLevel(int position);
@@ -1059,7 +1057,10 @@ class Floor : MovingFloor native
 		genFloorChg
 	};
 
-	native static bool CreateFloor(sector sec, EFloor floortype, line ln, double speed, double height = 0, int crush = -1, int change = 0, bool crushmode = false, bool hereticlower = false);
+	deprecated("3.8") static bool CreateFloor(sector sec, int floortype, line ln, double speed, double height = 0, int crush = -1, int change = 0, bool crushmode = false, bool hereticlower = false)
+	{
+		return level.CreateFloor(sec, floortype, ln, speed, height, crush, change, crushmode, hereticlower);
+	}
 }
 
 class Ceiling : MovingCeiling native
@@ -1102,8 +1103,11 @@ class Ceiling : MovingCeiling native
 		crushSlowdown = 2
 	}
 	
-	native static bool CreateCeiling(sector sec, int type, line ln, double speed, double speed2, double height = 0, int crush = -1, int silent = 0, int change = 0, int crushmode = crushDoom);
-
+	deprecated("3.8") static bool CreateCeiling(sector sec, int type, line ln, double speed, double speed2, double height = 0, int crush = -1, int silent = 0, int change = 0, int crushmode = crushDoom)
+	{
+		return level.CreateCeiling(sec, type, ln, speed, speed2, height, crush, silent, change, crushmode);
+	}
+	
 }
 
 struct LookExParams

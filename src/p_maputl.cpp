@@ -513,7 +513,7 @@ void AActor::LinkToWorld(FLinkContext *ctx, bool spawningmapthing, sector_t *sec
 	{
 		FPortalGroupArray check;
 
-		P_CollectConnectedGroups(Sector->PortalGroup, Pos(), Top(), radius, check);
+		level.CollectConnectedGroups(Sector->PortalGroup, Pos(), Top(), radius, check);
 
 		BlockNode = NULL;
 		FBlockNode **alink = &this->BlockNode;
@@ -723,7 +723,7 @@ FMultiBlockLinesIterator::FMultiBlockLinesIterator(FPortalGroupArray &check, AAc
 	: checklist(check)
 {
 	checkpoint = origin->Pos();
-	if (!check.inited) P_CollectConnectedGroups(origin->Sector->PortalGroup, checkpoint, origin->Top(), checkradius, checklist);
+	if (!check.inited) level.CollectConnectedGroups(origin->Sector->PortalGroup, checkpoint, origin->Top(), checkradius, checklist);
 	checkpoint.Z = checkradius == -1? origin->radius : checkradius;
 	basegroup = origin->Sector->PortalGroup;
 	startsector = origin->Sector;
@@ -737,7 +737,7 @@ FMultiBlockLinesIterator::FMultiBlockLinesIterator(FPortalGroupArray &check, dou
 	if (newsec == NULL)	newsec = P_PointInSector(checkx, checky);
 	startsector = newsec;
 	basegroup = newsec->PortalGroup;
-	if (!check.inited) P_CollectConnectedGroups(basegroup, checkpoint, checkz + checkh, checkradius, checklist);
+	if (!check.inited) level.CollectConnectedGroups(basegroup, checkpoint, checkz + checkh, checkradius, checklist);
 	checkpoint.Z = checkradius;
 	Reset();
 }
@@ -1065,7 +1065,7 @@ FMultiBlockThingsIterator::FMultiBlockThingsIterator(FPortalGroupArray &check, A
 	: checklist(check)
 {
 	checkpoint = origin->Pos();
-	if (!check.inited) P_CollectConnectedGroups(origin->Sector->PortalGroup, checkpoint, origin->Top(), checkradius, checklist);
+	if (!check.inited) level.CollectConnectedGroups(origin->Sector->PortalGroup, checkpoint, origin->Top(), checkradius, checklist);
 	checkpoint.Z = checkradius == -1? origin->radius : checkradius;
 	basegroup = origin->Sector->PortalGroup;
 	Reset();
@@ -1079,7 +1079,7 @@ FMultiBlockThingsIterator::FMultiBlockThingsIterator(FPortalGroupArray &check, d
 	checkpoint.Z = checkz;
 	if (newsec == NULL) newsec = P_PointInSector(checkx, checky);
 	basegroup = newsec->PortalGroup;
-	if (!check.inited) P_CollectConnectedGroups(basegroup, checkpoint, checkz + checkh, checkradius, checklist);
+	if (!check.inited) level.CollectConnectedGroups(basegroup, checkpoint, checkz + checkh, checkradius, checklist);
 	checkpoint.Z = checkradius;
 	Reset();
 }

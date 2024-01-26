@@ -996,7 +996,7 @@ bool G_Responder (event_t *ev)
 	{
 		if (ST_Responder (ev))
 			return true;		// status window ate it
-		if (!viewactive && AM_Responder (ev, false))
+		if (!viewactive && currentUILevel->automap->Responder (ev, false))
 			return true;		// automap ate it
 	}
 	else if (gamestate == GS_FINALE)
@@ -1027,7 +1027,7 @@ bool G_Responder (event_t *ev)
 	// the events *last* so that any bound keys get precedence.
 
 	if (gamestate == GS_LEVEL && viewactive)
-		return AM_Responder (ev, true);
+		return currentUILevel->automap->Responder (ev, true);
 
 	return (ev->type == EV_KeyDown ||
 			ev->type == EV_Mouse);
@@ -1226,7 +1226,7 @@ void G_Ticker ()
 	{
 	case GS_LEVEL:
 		P_Ticker ();
-		AM_Ticker ();
+		currentUILevel->automap->Ticker ();
 		break;
 
 	case GS_TITLELEVEL:
@@ -1883,7 +1883,7 @@ void G_DoLoadGame ()
 	SaveVersion = 0;
 
 	void *data = info->CacheLump();
-	FSerializer arc;
+	FSerializer arc(nullptr);
 	if (!arc.OpenReader((const char *)data, info->LumpSize))
 	{
 		LoadGameError("TXT_FAILEDTOREADSG");
@@ -2183,12 +2183,12 @@ static void PutSaveWads (FSerializer &arc)
 	name = Wads.GetWadName (Wads.GetIwadNum());
 	arc.AddString("Game WAD", name);
 
-		// Name of wad the map resides in
+	// Name of wad the map resides in
 	if (Wads.GetLumpFile (level.lumpnum) > Wads.GetIwadNum())
-		{
+	{
 		name = Wads.GetWadName (Wads.GetLumpFile (level.lumpnum));
 		arc.AddString("Map WAD", name);
-		}
+	}
 }
 
 static void PutSaveComment (FSerializer &arc)
@@ -2199,7 +2199,7 @@ static void PutSaveComment (FSerializer &arc)
 
 	arc.AddString("Creation Time", comment);
 
-		// Get level name
+	// Get level name
 	//strcpy (comment, level.level_name);
 	comment.Format("%s - %s\n", level.MapName.GetChars(), level.LevelName.GetChars());
 
@@ -2249,7 +2249,7 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 	insave = true;
 	try
 	{
-		G_SnapshotLevel();
+		level.SnapshotLevel();
 	}
 	catch(CRecoverableError &err)
 	{
@@ -2272,8 +2272,8 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 	}
 
 	BufferWriter savepic;
-	FSerializer savegameinfo;		// this is for displayable info about the savegame
-	FSerializer savegameglobals;	// and this for non-level related info that must be saved.
+	FSerializer savegameinfo(nullptr);		// this is for displayable info about the savegame
+	FSerializer savegameglobals(nullptr);	// and this for non-level related info that must be saved.
 
 	savegameinfo.OpenWriter(true);
 	savegameglobals.OpenWriter(save_formatted);

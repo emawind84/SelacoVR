@@ -54,6 +54,7 @@
 #include "serializer.h"
 #include "menu/menu.h"
 #include "vm.h"
+#include "g_levellocals.h"
 
 // MACROS ------------------------------------------------------------------
 

@@ -54,6 +54,7 @@ struct FPortalGroupArray;
 struct visstyle_t;
 class FLightDefaults;
 struct FSection;
+struct FLevelLocals;
 //
 // NOTES: AActor
 //
@@ -685,8 +686,8 @@ class AActor : public DThinker
 	DECLARE_CLASS_WITH_META (AActor, DThinker, PClassActor)
 	HAS_OBJECT_POINTERS
 public:
-	AActor () throw();
-	AActor (const AActor &other) throw();
+	AActor() = default;
+	AActor(const AActor &other) = delete;	// Calling this would be disastrous.
 	AActor &operator= (const AActor &other);
 	~AActor ();
 
@@ -955,74 +956,12 @@ public:
 		return other->PosRelative(this) - Pos();
 	}
 
-	DVector2 Vec2Offset(double dx, double dy, bool absolute = false)
-	{
-		if (absolute)
-		{
-			return { X() + dx, Y() + dy };
-		}
-		else
-		{
-			return P_GetOffsetPosition(X(), Y(), dx, dy);
-		}
-	}
-
-
-	DVector3 Vec2OffsetZ(double dx, double dy, double atz, bool absolute = false)
-	{
-		if (absolute)
-		{
-			return{ X() + dx, Y() + dy, atz };
-		}
-		else
-		{
-			DVector2 v = P_GetOffsetPosition(X(), Y(), dx, dy);
-			return DVector3(v, atz);
-		}
-	}
-
-	DVector2 Vec2Angle(double length, DAngle angle, bool absolute = false)
-	{
-		if (absolute)
-		{
-			return{ X() + length * angle.Cos(), Y() + length * angle.Sin() };
-		}
-		else
-		{
-			return P_GetOffsetPosition(X(), Y(), length*angle.Cos(), length*angle.Sin());
-		}
-	}
-
-	DVector3 Vec3Offset(double dx, double dy, double dz, bool absolute = false)
-	{
-		if (absolute)
-		{
-			return { X() + dx, Y() + dy, Z() + dz };
-		}
-		else
-		{
-			DVector2 v = P_GetOffsetPosition(X(), Y(), dx, dy);
-			return DVector3(v, Z() + dz);
-		}
-	}
-
-	DVector3 Vec3Offset(const DVector3 &ofs, bool absolute = false)
-	{
-		return Vec3Offset(ofs.X, ofs.Y, ofs.Z, absolute);
-	}
-
-	DVector3 Vec3Angle(double length, DAngle angle, double dz, bool absolute = false)
-	{
-		if (absolute)
-		{
-			return{ X() + length * angle.Cos(), Y() + length * angle.Sin(), Z() + dz };
-		}
-		else
-		{
-			DVector2 v = P_GetOffsetPosition(X(), Y(), length*angle.Cos(), length*angle.Sin());
-			return DVector3(v, Z() + dz);
-		}
-	}
+	DVector2 Vec2Offset(double dx, double dy, bool absolute = false);
+	DVector3 Vec2OffsetZ(double dx, double dy, double atz, bool absolute = false);
+	DVector2 Vec2Angle(double length, DAngle angle, bool absolute = false);
+	DVector3 Vec3Offset(double dx, double dy, double dz, bool absolute = false);
+	DVector3 Vec3Offset(const DVector3 &ofs, bool absolute = false);
+	DVector3 Vec3Angle(double length, DAngle angle, double dz, bool absolute = false);
 
 	void ClearInterpolation();
 
@@ -1307,21 +1246,18 @@ public:
 
 
 	// ThingIDs
-	static void ClearTIDHashes ();
 	void SetTID (int newTID);
 
 private:
 	void AddToHash ();
 	void RemoveFromHash ();
 
-	static AActor *TIDHash[128];
 	static inline int TIDHASH (int key) { return key & 127; }
 
 public:
 	static FSharedStringArena mStringPropertyData;
 private:
 	friend class FActorIterator;
-	friend bool P_IsTIDUsed(int tid);
 
 	bool FixMapthingPos();
 
@@ -1573,19 +1509,21 @@ public:
 
 class FActorIterator
 {
+	friend struct FLevelLocals;
+protected:
+	FActorIterator (AActor **hash, int i) : TIDHash(hash), base (nullptr), id (i)
+	{
+	}
+	FActorIterator (AActor **hash, int i, AActor *start) : TIDHash(hash), base (start), id (i)
+	{
+	}
 public:
-	FActorIterator (int i) : base (NULL), id (i)
-	{
-	}
-	FActorIterator (int i, AActor *start) : base (start), id (i)
-	{
-	}
 	AActor *Next ()
 	{
 		if (id == 0)
-			return NULL;
+			return nullptr;
 		if (!base)
-			base = AActor::TIDHash[id & 127];
+			base = TIDHash[id & 127];
 		else
 			base = base->inext;
 
@@ -1600,37 +1538,23 @@ public:
 	}
 
 private:
+	AActor **TIDHash;
 	AActor *base;
 	int id;
 };
 
-template<class T>
-class TActorIterator : public FActorIterator
-{
-public:
-	TActorIterator (int id) : FActorIterator (id) {}
-	T *Next ()
-	{
-		AActor *actor;
-		do
-		{
-			actor = FActorIterator::Next ();
-		} while (actor && !actor->IsKindOf (RUNTIME_CLASS(T)));
-		return static_cast<T *>(actor);
-	}
-};
-
 class NActorIterator : public FActorIterator
 {
+	friend struct FLevelLocals;
 	const PClass *type;
+protected:
+	NActorIterator (AActor **hash, const PClass *cls, int id) : FActorIterator (hash, id) { type = cls; }
+	NActorIterator (AActor **hash, FName cls, int id) : FActorIterator (hash, id) { type = PClass::FindClass(cls); }
 public:
-	NActorIterator (const PClass *cls, int id) : FActorIterator (id) { type = cls; }
-	NActorIterator (FName cls, int id) : FActorIterator (id) { type = PClass::FindClass(cls); }
-	NActorIterator (const char *cls, int id) : FActorIterator (id) { type = PClass::FindClass(cls); }
 	AActor *Next ()
 	{
 		AActor *actor;
-		if (type == NULL) return NULL;
+		if (type == nullptr) return nullptr;
 		do
 		{
 			actor = FActorIterator::Next ();
@@ -1638,9 +1562,6 @@ public:
 		return actor;
 	}
 };
-
-bool P_IsTIDUsed(int tid);
-int P_FindUniqueTID(int start_tid, int limit);
 
 PClassActor *ClassForSpawn(FName classname);
 

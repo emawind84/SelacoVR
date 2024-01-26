@@ -1,5 +1,5 @@
 /*
-** p_saveg.h
+** mus2midi.h
 **
 **---------------------------------------------------------------------------
 ** Copyright 1998-2006 Randy Heit
@@ -31,17 +31,48 @@
 **
 */
 
-#ifndef __P_SAVEG_H__
-#define __P_SAVEG_H__
+#ifndef __MUS2MIDI_H__
+#define __MUS2MIDI_H__
 
-class FSerializer;
+#ifdef _MSC_VER
+#pragma once
+#endif
 
-// Persistent storage/archiving.
-// These are the load / save game routines.
-// Also see farchive.(h|cpp)
-void P_DestroyThinkers(bool hubLoad);
+#include <stdio.h>
+#include <stdint.h>
 
-void P_ReadACSDefereds (FSerializer &);
-void P_WriteACSDefereds (FSerializer &);
+#define MIDI_SYSEX		((uint8_t)0xF0)		 // SysEx begin
+#define MIDI_SYSEXEND	((uint8_t)0xF7)		 // SysEx end
+#define MIDI_META		((uint8_t)0xFF)		 // Meta event begin
+#define MIDI_META_TEMPO ((uint8_t)0x51)
+#define MIDI_META_EOT	((uint8_t)0x2F)		 // End-of-track
+#define MIDI_META_SSPEC	((uint8_t)0x7F)		 // System-specific event
 
-#endif // __P_SAVEG_H__
+#define MIDI_NOTEOFF	((uint8_t)0x80)		 // + note + velocity
+#define MIDI_NOTEON 	((uint8_t)0x90)		 // + note + velocity
+#define MIDI_POLYPRESS	((uint8_t)0xA0)		 // + pressure (2 bytes)
+#define MIDI_CTRLCHANGE ((uint8_t)0xB0)		 // + ctrlr + value
+#define MIDI_PRGMCHANGE ((uint8_t)0xC0)		 // + new patch
+#define MIDI_CHANPRESS	((uint8_t)0xD0)		 // + pressure (1 byte)
+#define MIDI_PITCHBEND	((uint8_t)0xE0)		 // + pitch bend (2 bytes)
+
+#define MUS_NOTEOFF 	((uint8_t)0x00)
+#define MUS_NOTEON		((uint8_t)0x10)
+#define MUS_PITCHBEND	((uint8_t)0x20)
+#define MUS_SYSEVENT	((uint8_t)0x30)
+#define MUS_CTRLCHANGE	((uint8_t)0x40)
+#define MUS_SCOREEND	((uint8_t)0x60)
+
+typedef struct
+{
+	uint32_t Magic;
+	uint16_t SongLen;
+	uint16_t SongStart;
+	uint16_t NumChans;
+	uint16_t NumSecondaryChans;
+	uint16_t NumInstruments;
+	uint16_t Pad;
+	// uint16_t UsedInstruments[NumInstruments];
+} MUSHeader;
+
+#endif //__MUS2MIDI_H__

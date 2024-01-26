@@ -75,7 +75,7 @@ class InterpolationPoint : Actor
 
 			me.bVisited = true;
 
-			let iterator = ActorIterator.Create(me.args[3] + 256 * me.args[4], "InterpolationPoint");
+			let iterator = Level.CreateActorIterator(me.args[3] + 256 * me.args[4], "InterpolationPoint");
 			me.Next = InterpolationPoint(iterator.Next ());
 
 			if (me.Next == me)	// Don't link to self
@@ -188,7 +188,7 @@ class PathFollower : Actor
 	override void PostBeginPlay ()
 	{
 		// Find first node of path
-		let iterator = ActorIterator.Create(args[0] + 256 * args[1], "InterpolationPoint");
+		let iterator = Level.CreateActorIterator(args[0] + 256 * args[1], "InterpolationPoint");
 		let node = InterpolationPoint(iterator.Next ());
 		InterpolationPoint prevnode;
 
@@ -312,7 +312,7 @@ class PathFollower : Actor
 
 	void NewNode ()
 	{
-		let iterator = ActorIterator.Create(CurrNode.tid, "InterpolationSpecial");
+		let iterator = Level.CreateActorIterator(CurrNode.tid, "InterpolationSpecial");
 		InterpolationSpecial spec;
 
 		while ( (spec = InterpolationSpecial(iterator.Next ())) )
@@ -442,7 +442,7 @@ class ActorMover : PathFollower
 	{
 		Super.PostBeginPlay ();
 
-		let iterator = ActorIterator.Create(args[3]);
+		let iterator = Level.CreateActorIterator(args[3]);
 		tracer = iterator.Next ();
 
 		if (tracer == null)
@@ -554,7 +554,7 @@ class MovingCamera : PathFollower
 		Activator = null;
 		if (args[3] != 0)
 		{
-			let iterator = ActorIterator.Create(args[3]);
+			let iterator = Level.CreateActorIterator(args[3]);
 			tracer = iterator.Next ();
 			if (tracer == null)
 			{

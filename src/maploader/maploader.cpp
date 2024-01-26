@@ -113,8 +113,6 @@ void InitRenderInfo();
 
 extern AActor *SpawnMapThing (int index, FMapThing *mthing, int position);
 
-extern void P_TranslateTeleportThings (void);
-
 EXTERN_CVAR(Bool, am_textured)
 
 CVAR (Bool, genblockmap, false, CVAR_SERVERINFO|CVAR_GLOBALCONFIG);
@@ -124,6 +122,61 @@ inline bool P_LoadBuildMap(uint8_t *mapdata, size_t len, FMapThing **things, int
 {
 	return false;
 }
+
+//===========================================================================
+//
+// Now that ZDoom again gives the option of using Doom's original teleport
+// behavior, only teleport dests in a sector with a 0 tag need to be
+// given a TID. And since Doom format maps don't have TIDs, we can safely
+// give them TID 1.
+//
+//===========================================================================
+
+void MapLoader::TranslateTeleportThings ()
+{
+	AActor *dest;
+	auto iterator = Level->GetThinkerIterator<AActor>(NAME_TeleportDest);
+	bool foundSomething = false;
+	
+	while ( (dest = iterator.Next()) )
+	{
+		if (!Level->SectorHasTags(dest->Sector))
+		{
+			dest->tid = 1;
+			dest->AddToHash ();
+			foundSomething = true;
+		}
+	}
+	
+	if (foundSomething)
+	{
+		for (auto &line : Level->lines)
+		{
+			if (line.special == Teleport)
+			{
+				if (line.args[1] == 0)
+				{
+					line.args[0] = 1;
+				}
+			}
+			else if (line.special == Teleport_NoFog)
+			{
+				if (line.args[2] == 0)
+				{
+					line.args[0] = 1;
+				}
+			}
+			else if (line.special == Teleport_ZombieChanger)
+			{
+				if (line.args[1] == 0)
+				{
+					line.args[0] = 1;
+				}
+			}
+		}
+	}
+}
+
 
 //===========================================================================
 //
@@ -1058,7 +1111,7 @@ void MapLoader::LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 			ss->special = LittleShort(ms->special);
 		else	// [RH] Translate to new sector special
 			ss->special = P_TranslateSectorSpecial (LittleShort(ms->special));
-		tagManager.AddSectorTag(i, LittleShort(ms->tag));
+		Level->tagManager.AddSectorTag(i, LittleShort(ms->tag));
 		ss->thinglist = nullptr;
 		ss->touching_thinglist = nullptr;		// phares 3/14/98
 		ss->sectorportal_thinglist = nullptr;
@@ -1476,7 +1529,7 @@ void MapLoader::SetLineID (int i, line_t *ld)
 		}
 		if (setid != -1)
 		{
-			tagManager.AddLineID(i, setid);
+			Level->tagManager.AddLineID(i, setid);
 		}
 	}
 }
@@ -1570,7 +1623,7 @@ void MapLoader::FinishLoadingLineDef(line_t *ld, int alpha)
 		{
 			for (unsigned j = 0; j < Level->lines.Size(); j++)
 			{
-				if (tagManager.LineHasID(j, ld->args[0]))
+				if (Level->LineHasId(j, ld->args[0]))
 				{
 					Level->lines[j].alpha = dalpha;
 					if (additive)
@@ -1696,11 +1749,11 @@ void MapLoader::LoadLineDefs (MapData * map)
 		mld->special = LittleShort(mld->special);
 		mld->tag = LittleShort(mld->tag);
 		mld->flags = LittleShort(mld->flags);
-		P_TranslateLineDef (ld, mld, -1);
+		Level->TranslateLineDef (ld, mld, -1);
 		// do not assign the tag for Extradata lines.
 		if (ld->special != Static_Init || (ld->args[1] != Init_EDLine && ld->args[1] != Init_EDSector))
 		{
-			tagManager.AddLineID(i, mld->tag);
+			Level->tagManager.AddLineID(i, mld->tag);
 		}
 #ifndef NO_EDATA
 		if (ld->special == Static_Init && ld->args[1] == Init_EDLine)
@@ -2074,7 +2127,7 @@ void MapLoader::ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec
 			{
 				for (unsigned s = 0; s < Level->sectors.Size(); s++)
 				{
-					if (tagManager.SectorHasTag(s, tag))
+					if (Level->SectorHasTag(s, tag))
 					{
 						if (colorgood)
 						{
@@ -2700,9 +2753,9 @@ void MapLoader::GroupLines (bool buildmap)
 	{
 		if (sector->Lines.Count == 0)
 		{
-			Printf ("Sector %i (tag %i) has no lines\n", i, tagManager.GetFirstSectorTag(Index(sector)));
+			Printf ("Sector %i (tag %i) has no lines\n", i, Level->GetFirstSectorTag(Index(sector)));
 			// 0 the sector's tag so that no specials can use it
-			tagManager.RemoveSectorTags(i);
+			Level->tagManager.RemoveSectorTags(i);
 		}
 		else
 		{
@@ -2757,7 +2810,7 @@ void MapLoader::GroupLines (bool buildmap)
 	}
 
 	// killough 1/30/98: Create xref tables for tags
-	tagManager.HashTags();
+	Level->tagManager.HashTags();
 
 	if (!buildmap)
 	{
@@ -2988,7 +3041,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 	LoadMapinfoACSLump();
 
 
-	P_LoadStrifeConversations(map, lumpname);
+	P_LoadStrifeConversations(Level, map, lumpname);
 
 	FMissingTextureTracker missingtex;
 
@@ -3183,7 +3236,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 	CopySlopes();
 
 	// Spawn 3d floors - must be done before spawning things so it can't be done in P_SpawnSpecials
-	P_Spawn3DFloors();
+	Spawn3DFloors();
 
 	SpawnThings(position);
 
@@ -3193,7 +3246,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 			players[i].health = players[i].mo->health;
 	}
 	if (!map->HasBehavior && !map->isText)
-		P_TranslateTeleportThings();	// [RH] Assign teleport destination TIDs
+		TranslateTeleportThings();	// [RH] Assign teleport destination TIDs
 
 	if (oldvertextable != nullptr)
 	{
@@ -3201,7 +3254,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 	}
 
 	// set up world state
-	P_SpawnSpecials(this);
+	SpawnSpecials();
 
 	// disable reflective planes on sloped sectors.
 	for (auto &sec : Level->sectors)
@@ -3218,7 +3271,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 
 	InitRenderInfo();				// create hardware independent renderer resources for the level. This must be done BEFORE the PolyObj Spawn!!!
 	P_ClearDynamic3DFloorData();	// CreateVBO must be run on the plain 3D floor data.
-	screen->mVertexData->CreateVBO();
+	screen->mVertexData->CreateVBO(Level->sectors);
 
 	for (auto &sec : Level->sectors)
 	{
@@ -3232,7 +3285,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 	if (reloop) LoopSidedefs(false);
 	PO_Init();				// Initialize the polyobjs
 	if (!Level->IsReentering())
-		P_FinalizePortals();	// finalize line portals after polyobjects have been initialized. This info is needed for properly flagging them.
+		Level->FinalizePortals();	// finalize line portals after polyobjects have been initialized. This info is needed for properly flagging them.
 }
 
 //==========================================================================

@@ -61,7 +61,6 @@ DThinker *NextToThink;
 
 FThinkerList DThinker::Thinkers[MAX_STATNUM+2];
 FThinkerList DThinker::FreshThinkers[MAX_STATNUM+1];
-bool DThinker::bSerialOverride = false;
 
 //==========================================================================
 //
@@ -75,8 +74,8 @@ void FThinkerList::AddTail(DThinker *thinker)
 	assert(!(thinker->ObjectFlags & OF_EuthanizeMe));
 	if (Sentinel == NULL)
 	{
-		Sentinel = Create<DThinker>(DThinker::NO_LINK);
-		Sentinel->ObjectFlags |= OF_Sentinel;
+		Sentinel = Create<DThinker>();
+		Sentinel->ObjectFlags = OF_Sentinel;
 		Sentinel->NextThinker = Sentinel;
 		Sentinel->PrevThinker = Sentinel;
 		GC::WriteBarrier(Sentinel);
@@ -237,28 +236,6 @@ void DThinker::SerializeThinkers(FSerializer &arc, bool hubLoad)
 //
 //==========================================================================
 
-DThinker::DThinker (int statnum) throw()
-{
-	NextThinker = NULL;
-	PrevThinker = NULL;
-	if (bSerialOverride)
-	{ // The serializer will insert us into the right list
-		return;
-	}
-
-	ObjectFlags |= OF_JustSpawned;
-	if ((unsigned)statnum > MAX_STATNUM)
-	{
-		statnum = MAX_STATNUM;
-	}
-	FreshThinkers[statnum].AddTail (this);
-}
-
-DThinker::DThinker(no_link_type foo) throw()
-{
-	foo;	// Avoid unused argument warnings.
-}
-
 DThinker::~DThinker ()
 {
 	assert(NextThinker == nullptr && PrevThinker == nullptr);
@@ -273,6 +250,12 @@ void DThinker::OnDestroy ()
 		Remove();
 	}
 	Super::OnDestroy();
+}
+
+void DThinker::Serialize(FSerializer &arc)
+{
+	Super::Serialize(arc);
+	arc("level", Level);
 }
 
 //==========================================================================

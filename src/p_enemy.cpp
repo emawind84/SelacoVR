@@ -1447,7 +1447,7 @@ int P_LookForTID (AActor *actor, INTBOOL allaround, FLookExParams *params)
 		actor->LastLookActor = nullptr;
 	}
 
-	FActorIterator iterator (actor->TIDtoHate, actor->LastLookActor);
+	auto iterator = level.GetActorIterator(actor->TIDtoHate, actor->LastLookActor);
 	int c = (pr_look3() & 31) + 7;	// Look for between 7 and 38 hatees at a time
 	while ((other = iterator.Next()) != actor->LastLookActor)
 	{
@@ -1881,7 +1881,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Look)
 	// [RH] Set goal now if appropriate
 	if (self->special == Thing_SetGoal && self->args[0] == 0) 
 	{
-		NActorIterator iterator (NAME_PatrolPoint, self->args[1]);
+		auto iterator = level.GetActorIterator(NAME_PatrolPoint, self->args[1]);
 		self->special = 0;
 		self->goal = iterator.Next ();
 		self->reactiontime = self->args[2] * TICRATE + level.maptime;
@@ -2010,7 +2010,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_LookEx)
 	// [RH] Set goal now if appropriate
 	if (self->special == Thing_SetGoal && self->args[0] == 0) 
 	{
-		NActorIterator iterator(NAME_PatrolPoint, self->args[1]);
+		auto iterator = level.GetActorIterator(NAME_PatrolPoint, self->args[1]);
 		self->special = 0;
 		self->goal = iterator.Next ();
 		self->reactiontime = self->args[2] * TICRATE + level.maptime;
@@ -2494,8 +2494,8 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 		if (result)
 		{
 			// reached the goal
-			NActorIterator iterator (NAME_PatrolPoint, actor->goal->args[0]);
-			NActorIterator specit (NAME_PatrolSpecial, actor->goal->tid);
+			auto iterator = level.GetActorIterator(NAME_PatrolPoint, actor->goal->args[0]);
+			auto specit = level.GetActorIterator(NAME_PatrolSpecial, actor->goal->tid);
 			AActor *spec;
 
 			// Execute the specials of any PatrolSpecials with the same TID
@@ -3209,9 +3209,10 @@ void A_BossDeath(AActor *self)
 	
 	// Do generic special death actions first
 	bool checked = false;
-	for (unsigned i = 0; i < level.info->specialactions.Size(); i++)
+	auto Level = &level;
+	for (unsigned i = 0; i < Level->info->specialactions.Size(); i++)
 	{
-		FSpecialAction *sa = &level.info->specialactions[i];
+		FSpecialAction *sa = &Level->info->specialactions[i];
 
 		if (type == sa->Type || mytype == sa->Type)
 		{
@@ -3229,29 +3230,29 @@ void A_BossDeath(AActor *self)
 	// [RH] These all depend on the presence of level flags now
 	//		rather than being hard-coded to specific levels/episodes.
 
-	if (((level.flags & (LEVEL_MAP07SPECIAL|
+	if (((Level->flags & (LEVEL_MAP07SPECIAL|
 						LEVEL_BRUISERSPECIAL|
 						LEVEL_CYBORGSPECIAL|
 						LEVEL_SPIDERSPECIAL|
 						LEVEL_HEADSPECIAL|
 						LEVEL_MINOTAURSPECIAL|
 						LEVEL_SORCERER2SPECIAL)) == 0) &&
-		((level.flags3 & (LEVEL3_E1M8SPECIAL | LEVEL3_E2M8SPECIAL | LEVEL3_E3M8SPECIAL | LEVEL3_E4M8SPECIAL | LEVEL3_E4M6SPECIAL)) == 0))
+		((Level->flags3 & (LEVEL3_E1M8SPECIAL | LEVEL3_E2M8SPECIAL | LEVEL3_E3M8SPECIAL | LEVEL3_E4M8SPECIAL | LEVEL3_E4M6SPECIAL)) == 0))
 		return;
 
 	if ((i_compatflags & COMPATF_ANYBOSSDEATH) || ( // [GZ] Added for UAC_DEAD
-		((level.flags & LEVEL_MAP07SPECIAL) && (flags8 & (MF8_MAP07BOSS1|MF8_MAP07BOSS2))) ||
-		((level.flags & LEVEL_BRUISERSPECIAL) && (type == NAME_BaronOfHell)) ||
-		((level.flags & LEVEL_CYBORGSPECIAL) && (type == NAME_Cyberdemon)) ||
-		((level.flags & LEVEL_SPIDERSPECIAL) && (type == NAME_SpiderMastermind)) ||
-		((level.flags & LEVEL_HEADSPECIAL) && (type == NAME_Ironlich)) ||
-		((level.flags & LEVEL_MINOTAURSPECIAL) && (type == NAME_Minotaur)) ||
-		((level.flags & LEVEL_SORCERER2SPECIAL) && (type == NAME_Sorcerer2)) ||
-		((level.flags3 & LEVEL3_E1M8SPECIAL) && (flags8 & MF8_E1M8BOSS)) ||
-		((level.flags3 & LEVEL3_E2M8SPECIAL) && (flags8 & MF8_E2M8BOSS)) ||
-		((level.flags3 & LEVEL3_E3M8SPECIAL) && (flags8 & MF8_E3M8BOSS)) ||
-		((level.flags3 & LEVEL3_E4M8SPECIAL) && (flags8 & MF8_E4M8BOSS)) ||
-		((level.flags3 & LEVEL3_E4M6SPECIAL) && (flags8 & MF8_E4M6BOSS))
+		((Level->flags & LEVEL_MAP07SPECIAL) && (flags8 & (MF8_MAP07BOSS1|MF8_MAP07BOSS2))) ||
+		((Level->flags & LEVEL_BRUISERSPECIAL) && (type == NAME_BaronOfHell)) ||
+		((Level->flags & LEVEL_CYBORGSPECIAL) && (type == NAME_Cyberdemon)) ||
+		((Level->flags & LEVEL_SPIDERSPECIAL) && (type == NAME_SpiderMastermind)) ||
+		((Level->flags & LEVEL_HEADSPECIAL) && (type == NAME_Ironlich)) ||
+		((Level->flags & LEVEL_MINOTAURSPECIAL) && (type == NAME_Minotaur)) ||
+		((Level->flags & LEVEL_SORCERER2SPECIAL) && (type == NAME_Sorcerer2)) ||
+		((Level->flags3 & LEVEL3_E1M8SPECIAL) && (flags8 & MF8_E1M8BOSS)) ||
+		((Level->flags3 & LEVEL3_E2M8SPECIAL) && (flags8 & MF8_E2M8BOSS)) ||
+		((Level->flags3 & LEVEL3_E3M8SPECIAL) && (flags8 & MF8_E3M8BOSS)) ||
+		((Level->flags3 & LEVEL3_E4M8SPECIAL) && (flags8 & MF8_E4M8BOSS)) ||
+		((Level->flags3 & LEVEL3_E4M6SPECIAL) && (flags8 & MF8_E4M6BOSS))
 		))
 		;
 	else
@@ -3263,11 +3264,11 @@ void A_BossDeath(AActor *self)
 	}
 
 	// victory!
-	if (level.flags & LEVEL_SPECKILLMONSTERS)
+	if (Level->flags & LEVEL_SPECKILLMONSTERS)
 	{ // Kill any remaining monsters
 		P_Massacre ();
 	}
-	if (level.flags & LEVEL_MAP07SPECIAL)
+	if (Level->flags & LEVEL_MAP07SPECIAL)
 	{
 		// samereplacement will only be considered if both Fatso and Arachnotron are flagged as MAP07 bosses and the current monster maps to one of them.
 		PClassActor * fatso = PClass::FindActor(NAME_Fatso);
@@ -3280,34 +3281,34 @@ void A_BossDeath(AActor *self)
 
 		if ((flags8 & MF8_MAP07BOSS1) || samereplacement)
 		{
-			EV_DoFloor (DFloor::floorLowerToLowest, NULL, 666, 1., 0, -1, 0, false);
+			Level->EV_DoFloor (DFloor::floorLowerToLowest, NULL, 666, 1., 0, -1, 0, false);
 		}
 		
 		if ((flags8 & MF8_MAP07BOSS2) || samereplacement)
 		{
-			EV_DoFloor (DFloor::floorRaiseByTexture, NULL, 667, 1., 0, -1, 0, false);
+			Level->EV_DoFloor (DFloor::floorRaiseByTexture, NULL, 667, 1., 0, -1, 0, false);
 		}
 		return;
 	}
 	else
 	{
-		switch (level.flags & LEVEL_SPECACTIONSMASK)
+		switch (Level->flags & LEVEL_SPECACTIONSMASK)
 		{
 		case LEVEL_SPECLOWERFLOOR:
-			EV_DoFloor (DFloor::floorLowerToLowest, NULL, 666, 1., 0, -1, 0, false);
+			Level->EV_DoFloor (DFloor::floorLowerToLowest, NULL, 666, 1., 0, -1, 0, false);
 			return;
 		
 		case LEVEL_SPECLOWERFLOORTOHIGHEST:
-			EV_DoFloor (DFloor::floorLowerToHighest, NULL, 666, 1., 0, -1, 0, false);
+			Level->EV_DoFloor (DFloor::floorLowerToHighest, NULL, 666, 1., 0, -1, 0, false);
 			return;
 		
 		case LEVEL_SPECOPENDOOR:
-			EV_DoDoor (DDoor::doorOpen, NULL, NULL, 666, 8., 0, 0, 0);
+			Level->EV_DoDoor (DDoor::doorOpen, NULL, NULL, 666, 8., 0, 0, 0);
 			return;
 		}
 	}
 
-	// [RH] If noexit, then don't end the level.
+	// [RH] If noexit, then don't end the Level->
 	if ((deathmatch || alwaysapplydmflags) && (dmflags & DF_NO_EXIT))
 		return;
 

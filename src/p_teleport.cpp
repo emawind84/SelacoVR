@@ -199,7 +199,7 @@ bool P_Teleport (AActor *thing, DVector3 pos, DAngle angle, int flags)
 		if (!predicting)
 		{
 			DVector2 vector = angle.ToVector(20);
-			DVector2 fogpos = P_GetOffsetPosition(pos.X, pos.Y, vector.X, vector.Y);
+			DVector2 fogpos = level.GetPortalOffsetPosition(pos.X, pos.Y, vector.X, vector.Y);
 			P_SpawnTeleportFog(thing, DVector3(fogpos, thing->Z()), false, true);
 
 		}
@@ -271,11 +271,11 @@ static AActor *SelectTeleDest (int tid, int tag, bool norandom)
 
 	if (tid != 0)
 	{
-		NActorIterator iterator (NAME_TeleportDest, tid);
+		auto iterator = level.GetActorIterator(NAME_TeleportDest, tid);
 		int count = 0;
 		while ( (searcher = iterator.Next ()) )
 		{
-			if (tag == 0 || tagManager.SectorHasTag(searcher->Sector, tag))
+			if (tag == 0 || level.SectorHasTag(searcher->Sector, tag))
 			{
 				count++;
 			}
@@ -289,12 +289,12 @@ static AActor *SelectTeleDest (int tid, int tag, bool norandom)
 			if (tag == 0)
 			{
 				// Try to find a matching map spot (fixes Hexen MAP10)
-				NActorIterator it2 (NAME_MapSpot, tid);
+				auto it2 = level.GetActorIterator(NAME_MapSpot, tid);
 				searcher = it2.Next ();
-				if (searcher == NULL)
+				if (searcher == nullptr)
 				{
 					// Try to find a matching non-blocking spot of any type (fixes Caldera MAP13)
-					FActorIterator it3 (tid);
+					auto it3 = level.GetActorIterator(tid);
 					searcher = it3.Next ();
 					while (searcher != NULL && (searcher->flags & MF_SOLID))
 					{
@@ -314,7 +314,7 @@ static AActor *SelectTeleDest (int tid, int tag, bool norandom)
 			while (count > 0)
 			{
 				searcher = iterator.Next ();
-				if (tag == 0 || tagManager.SectorHasTag(searcher->Sector, tag))
+				if (tag == 0 || level.SectorHasTag(searcher->Sector, tag))
 				{
 					count--;
 				}
@@ -327,7 +327,7 @@ static AActor *SelectTeleDest (int tid, int tag, bool norandom)
 	{
 		int secnum;
 
-		FSectorTagIterator itr(tag);
+		auto itr = level.GetSectorTagIterator(tag);
 		while ((secnum = itr.Next()) >= 0)
 		{
 			// Scanning the snext links of things in the sector will not work, because
@@ -451,7 +451,7 @@ bool EV_SilentLineTeleport (line_t *line, int side, AActor *thing, int id, INTBO
 	if (side || thing->flags2 & MF2_NOTELEPORT || !line || line->sidedef[1] == NULL)
 		return false;
 
-	FLineIdIterator itr(id);
+	auto itr = level.GetLineIdIterator(id);
 	while ((i = itr.Next()) >= 0)
 	{
 		if (line->Index() == i)
@@ -628,7 +628,7 @@ bool EV_TeleportOther (int other_tid, int dest_tid, bool fog)
 	if (other_tid != 0 && dest_tid != 0)
 	{
 		AActor *victim;
-		FActorIterator iterator (other_tid);
+		auto iterator = level.GetActorIterator(other_tid);
 
 		while ( (victim = iterator.Next ()) )
 		{
@@ -663,7 +663,7 @@ bool EV_TeleportGroup (int group_tid, AActor *victim, int source_tid, int dest_t
 {
 	AActor *sourceOrigin, *destOrigin;
 	{
-		FActorIterator iterator (source_tid);
+		auto iterator = level.GetActorIterator(source_tid);
 		sourceOrigin = iterator.Next ();
 	}
 	if (sourceOrigin == NULL)
@@ -672,7 +672,7 @@ bool EV_TeleportGroup (int group_tid, AActor *victim, int source_tid, int dest_t
 	}
 
 	{
-		NActorIterator iterator (NAME_TeleportDest, dest_tid);
+		auto iterator = level.GetActorIterator(NAME_TeleportDest, dest_tid);
 		destOrigin = iterator.Next ();
 	}
 	if (destOrigin == NULL)
@@ -690,7 +690,7 @@ bool EV_TeleportGroup (int group_tid, AActor *victim, int source_tid, int dest_t
 	}
 	else
 	{
-		FActorIterator iterator (group_tid);
+		auto iterator = level.GetActorIterator(group_tid);
 
 		// For each actor with tid matching arg0, move it to the same
 		// position relative to destOrigin as it is relative to sourceOrigin
@@ -718,7 +718,7 @@ bool EV_TeleportSector (int tag, int source_tid, int dest_tid, bool fog, int gro
 {
 	AActor *sourceOrigin, *destOrigin;
 	{
-		FActorIterator iterator (source_tid);
+		auto iterator = level.GetActorIterator(source_tid);
 		sourceOrigin = iterator.Next ();
 	}
 	if (sourceOrigin == NULL)
@@ -726,7 +726,7 @@ bool EV_TeleportSector (int tag, int source_tid, int dest_tid, bool fog, int gro
 		return false;
 	}
 	{
-		NActorIterator iterator (NAME_TeleportDest, dest_tid);
+		auto iterator = level.GetActorIterator(NAME_TeleportDest, dest_tid);
 		destOrigin = iterator.Next ();
 	}
 	if (destOrigin == NULL)
@@ -739,7 +739,7 @@ bool EV_TeleportSector (int tag, int source_tid, int dest_tid, bool fog, int gro
 	int secnum;
 
 	secnum = -1;
-	FSectorTagIterator itr(tag);
+	auto itr = level.GetSectorTagIterator(tag);
 	while ((secnum = itr.Next()) >= 0)
 	{
 		msecnode_t *node;

@@ -158,7 +158,7 @@ void P_Ticker (void)
 	//if added by MC: Freeze mode.
 	if (!level.isFrozen())
 	{
-		P_UpdateSpecials ();
+		P_UpdateSpecials (&level);
 	}
 
 	// for par times

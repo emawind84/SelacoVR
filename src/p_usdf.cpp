@@ -40,6 +40,7 @@
 #include "actor.h"
 #include "a_pickups.h"
 #include "w_wad.h"
+#include "g_levellocals.h"
 
 #define Zd 1
 #define St 2
@@ -47,6 +48,8 @@
 
 class USDFParser : public UDMFParserBase
 {
+	FLevelLocals *Level;
+	
 	//===========================================================================
 	//
 	// Checks an actor type (different representation depending on namespace)
@@ -311,7 +314,7 @@ class USDFParser : public UDMFParserBase
 		FStrifeDialogueNode *node = new FStrifeDialogueNode;
 		FStrifeDialogueReply **replyptr = &node->Children;
 
-		node->ThisNodeNum = StrifeDialogues.Push(node);
+		node->ThisNodeNum = Level->StrifeDialogues.Push(node);
 		node->ItemCheckNode = -1;
 
 		FString SpeakerName;
@@ -424,7 +427,7 @@ class USDFParser : public UDMFParserBase
 		PClassActor *type = nullptr;
 		int dlgid = -1;
 		FName clsid = NAME_None;
-		unsigned int startpos = StrifeDialogues.Size();
+		unsigned int startpos = Level->StrifeDialogues.Size();
 
 		while (!sc.CheckToken('}'))
 		{
@@ -476,9 +479,9 @@ class USDFParser : public UDMFParserBase
 			sc.ScriptMessage("No valid actor type defined in conversation.");
 			return false;
 		}
-		SetConversation(dlgid, type, startpos);
+		Level->SetConversation(dlgid, type, startpos);
 
-		auto& dialogues = StrifeDialogues;
+		auto& dialogues = Level->StrifeDialogues;
 		const auto numnodes = dialogues.Size();
 
 		for (auto i = startpos; i < numnodes; i++)
@@ -555,8 +558,9 @@ class USDFParser : public UDMFParserBase
 	//===========================================================================
 
 public:
-	bool Parse(int lumpnum, FileReader &lump, int lumplen)
+	bool Parse(FLevelLocals *l, int lumpnum, FileReader &lump, int lumplen)
 	{
+		Level = l;
 		sc.OpenMem(Wads.GetLumpFullName(lumpnum), lump.Read(lumplen));
 		sc.SetCMode(true);
 		// Namespace must be the first field because everything else depends on it.
@@ -599,7 +603,7 @@ public:
 			{
 				sc.MustGetToken('=');
 				sc.MustGetToken(TK_StringConst);
-				LoadScriptFile(sc.String, true);
+				LoadScriptFile(Level, sc.String, true);
 				sc.MustGetToken(';');
 			}
 			else
@@ -614,13 +618,13 @@ public:
 
 
 
-bool P_ParseUSDF(int lumpnum, FileReader &lump, int lumplen)
+bool P_ParseUSDF(FLevelLocals *l, int lumpnum, FileReader &lump, int lumplen)
 {
 	USDFParser parse;
 
 	try
 	{
-		if (!parse.Parse(lumpnum, lump, lumplen))
+		if (!parse.Parse(l, lumpnum, lump, lumplen))
 		{
 			// clean up the incomplete dialogue structures here
 			return false;
