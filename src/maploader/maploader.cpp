@@ -142,8 +142,7 @@ void MapLoader::TranslateTeleportThings ()
 	{
 		if (!Level->SectorHasTags(dest->Sector))
 		{
-			dest->tid = 1;
-			dest->AddToHash ();
+			dest->SetTID(1);
 			foundSomething = true;
 		}
 	}
@@ -3354,7 +3353,7 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, ClearSectorTags)
 {
 	PARAM_SELF_PROLOGUE(DLevelPostProcessor);
 	PARAM_INT(sector);
-	tagManager.RemoveSectorTags(sector);
+	self->Level->tagManager.RemoveSectorTags(sector);
 	return 0;
 }
 
@@ -3366,7 +3365,7 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, AddSectorTag)
 
 	if ((unsigned)sector < self->Level->sectors.Size())
 	{
-		tagManager.AddSectorTag(sector, tag);
+		self->Level->tagManager.AddSectorTag(sector, tag);
 	}
 	return 0;
 }
@@ -3375,7 +3374,7 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, ClearLineIDs)
 {
 	PARAM_SELF_PROLOGUE(DLevelPostProcessor);
 	PARAM_INT(line);
-	tagManager.RemoveLineIDs(line);
+	self->Level->tagManager.RemoveLineIDs(line);
 	return 0;
 }
 
@@ -3387,7 +3386,7 @@ DEFINE_ACTION_FUNCTION(DLevelPostProcessor, AddLineID)
 
 	if ((unsigned)line < self->Level->lines.Size())
 	{
-		tagManager.AddLineID(line, tag);
+		self->Level->tagManager.AddLineID(line, tag);
 	}
 	return 0;
 }

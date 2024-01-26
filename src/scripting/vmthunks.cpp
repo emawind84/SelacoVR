@@ -3143,7 +3143,8 @@ DEFINE_FIELD_X(LevelInfo, level_info_t, RedirectType)
 DEFINE_FIELD_X(LevelInfo, level_info_t, RedirectMapName)
 DEFINE_FIELD_X(LevelInfo, level_info_t, teamdamage)
 
-DEFINE_GLOBAL_NAMED(currentVMLevel, level)
+DEFINE_GLOBAL(level);
+DEFINE_GLOBAL(currentUILevel);
 DEFINE_FIELD(FLevelLocals, sectors)
 DEFINE_FIELD(FLevelLocals, lines)
 DEFINE_FIELD(FLevelLocals, sides)
@@ -3188,8 +3189,6 @@ DEFINE_FIELD(FLevelLocals, skyfog)
 DEFINE_FIELD(FLevelLocals, pixelstretch)
 DEFINE_FIELD(FLevelLocals, MusicVolume)
 DEFINE_FIELD(FLevelLocals, deathsequence)
-DEFINE_FIELD_NAMED(FLevelLocals, li_compatflags, compatflags)
-DEFINE_FIELD_NAMED(FLevelLocals, li_compatflags2, compatflags2)
 DEFINE_FIELD_BIT(FLevelLocals, frozenstate, frozen, 1)	// still needed for backwards compatibility.
 DEFINE_FIELD(FLevelLocals, info);
 

@@ -3064,7 +3064,7 @@ void DAutomap::drawMarks ()
 
 				if (am_rotate == 1 || (am_rotate == 2 && viewactive))
 				{
-					AM_rotatePoint (&x, &y);
+					rotatePoint (&x, &y);
 				}
 
 				screen->DrawText(font, am_markcolor, CXMTOF(x), CYMTOF(y), numstr, TAG_DONE);

@@ -178,7 +178,7 @@ struct FLevelLocals : public FLevelData
 	void Init();
 
 private:
-	line_t *FindPortalDestination(line_t *src, int tag);
+	line_t *FindPortalDestination(line_t *src, int tag, int matchtype = -1);
 	void BuildPortalBlockmap();
 	void UpdatePortal(FLinePortal *port);
 	void CollectLinkedPortals();

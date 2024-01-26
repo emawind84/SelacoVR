@@ -240,7 +240,7 @@ FUNC(LS_Polyobj_StopSound)
 {
 	FPolyObj *poly;
 
-	poly = PO_GetPolyobj(arg0);
+	poly = Level->GetPolyobj(arg0);
 	if (poly != nullptr)
 	{
 		SN_StopSequence(poly);

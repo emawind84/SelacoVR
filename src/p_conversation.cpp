@@ -183,7 +183,7 @@ void P_LoadStrifeConversations (FLevelLocals *Level, MapData *map, const char *m
 		bool addedDialogues = false;
 		for (const FString &addd : gameinfo.AddDialogues)
 		{
-			if (!LoadScriptFile(addd, true, 0))
+			if (!LoadScriptFile(Level, addd, true, 0))
 			{
 				continue;
 			}

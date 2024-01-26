@@ -590,7 +590,7 @@ unsigned FLevelLocals::GetStackPortal(AActor *point, int plane)
 	sectorPortals[i].mDestination = point->Sector;
 	sectorPortals[i].mPlaneZ = FLT_MAX;
 	sectorPortals[i].mSkybox = point;
->>>>>>> e9954ee01825594bcdb623e5937745e14932771b
+	return i;
 }
 
 

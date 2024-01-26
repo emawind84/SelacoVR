@@ -612,7 +612,7 @@ DBaseDecal* DImpactDecal::StaticCreate (FLevelLocals *Level, const FDecalTemplat
 
 			uint32_t lowerTrans = (bloodTranslation != 0 ? bloodTranslation : 0);
 
-			StaticCreate (tpl_low, pos, wall, ffloor, lowercolor, lowerTrans, permanent);
+			StaticCreate (Level, tpl_low, pos, wall, ffloor, lowercolor, lowerTrans, permanent);
 		}
 		if (!permanent) decal = Level->CreateThinker<DImpactDecal>(pos.Z);
 		else decal = Level->CreateThinker<DBaseDecal>(pos.Z);
