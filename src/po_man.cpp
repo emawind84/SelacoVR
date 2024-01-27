@@ -743,11 +743,6 @@ int FPolyObj::GetMirror()
 	return MirrorNum;
 }
 
-FLevelLocals *FPolyObj::GetLevel() const
-{
-	return &level;
-}
-
 //==========================================================================
 //
 // ThrustMobj
@@ -758,7 +753,6 @@ void FPolyObj::ThrustMobj (AActor *actor, side_t *side)
 {
 	DAngle thrustAngle;
 	DPolyAction *pe;
-	auto Level = GetLevel();
 
 	double force;
 
@@ -813,7 +807,6 @@ void FPolyObj::UpdateLinks()
 {
 	if (bHasPortals == 2)
 	{
-		auto Level = GetLevel();
 		TMap<int, bool> processed;
 		for (unsigned i = 0; i < Linedefs.Size(); i++)
 		{
@@ -1002,7 +995,6 @@ void FPolyObj::UnLinkPolyobj ()
 	polyblock_t *link;
 	int i, j;
 	int index;
-	auto Level = GetLevel();
 
 	// remove the polyobj from each blockmap section
 	for(j = bbox[BOXBOTTOM]; j <= bbox[BOXTOP]; j++)
@@ -1035,7 +1027,6 @@ void FPolyObj::UnLinkPolyobj ()
 
 bool FPolyObj::CheckMobjBlocking (side_t *sd)
 {
-	auto Level = GetLevel();
 	static TArray<AActor *> checker;
 	FBlockNode *block;
 	AActor *mobj;
@@ -1167,7 +1158,6 @@ void FPolyObj::LinkPolyobj ()
 {
 	polyblock_t **link;
 	polyblock_t *tempLink;
-	auto Level = GetLevel();
 	int bmapwidth = Level->blockmap.bmapwidth;
 	int bmapheight = Level->blockmap.bmapheight;
 
@@ -1664,7 +1654,6 @@ static void SplitPoly(FPolyNode *pnode, void *node, float bbox[4])
 
 void FPolyObj::CreateSubsectorLinks()
 {
-	auto Level = GetLevel();
 	FPolyNode *node = NewPolyNode();
 	// Even though we don't care about it, we need to initialize this
 	// bounding box to something so that Valgrind won't complain about it
@@ -1844,7 +1833,7 @@ FPolyObj *FPolyMirrorIterator::NextMirror()
 		if (i == NumUsedPolys)
 		{ // No, it has not been returned.
 			UsedPolys[NumUsedPolys++] = mirror;
-			nextpoly = poly->GetLevel()->GetPolyobj(mirror);
+			nextpoly = poly->Level->GetPolyobj(mirror);
 			if (nextpoly == nullptr)
 			{
 				Printf("Invalid mirror polyobj num %d for polyobj num %d\n", mirror, UsedPolys[i - 1]);

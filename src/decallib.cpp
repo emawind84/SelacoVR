@@ -1191,11 +1191,11 @@ void DDecalFader::Tick ()
 	}
 	else
 	{
-		if (level.maptime < TimeToStartDecay || level.isFrozen())
+		if (Level->maptime < TimeToStartDecay || Level->isFrozen())
 		{
 			return;
 		}
-		else if (level.maptime >= TimeToEndDecay)
+		else if (Level->maptime >= TimeToEndDecay)
 		{
 			TheDecal->Destroy ();		// remove the decal
 			Destroy ();					// remove myself
@@ -1206,7 +1206,7 @@ void DDecalFader::Tick ()
 			StartTrans = TheDecal->Alpha;
 		}
 
-		int distanceToEnd = TimeToEndDecay - level.maptime;
+		int distanceToEnd = TimeToEndDecay - Level->maptime;
 		int fadeDistance = TimeToEndDecay - TimeToStartDecay;
 		TheDecal->Alpha = StartTrans * distanceToEnd / fadeDistance;
 	}
@@ -1278,11 +1278,11 @@ void DDecalStretcher::Tick ()
 		Destroy ();
 		return;
 	}
-	if (level.maptime < TimeToStart || level.isFrozen())
+	if (Level->maptime < TimeToStart || Level->isFrozen())
 	{
 		return;
 	}
-	if (level.maptime >= TimeToStop)
+	if (Level->maptime >= TimeToStop)
 	{
 		if (bStretchX)
 		{
@@ -1302,7 +1302,7 @@ void DDecalStretcher::Tick ()
 		StartY = TheDecal->ScaleY;
 	}
 
-	int distance = level.maptime - TimeToStart;
+	int distance = Level->maptime - TimeToStart;
 	int maxDistance = TimeToStop - TimeToStart;
 	if (bStretchX)
 	{
@@ -1346,7 +1346,7 @@ void DDecalSlider::Tick ()
 		Destroy ();
 		return;
 	}
-	if (level.maptime < TimeToStart || level.isFrozen())
+	if (Level->maptime < TimeToStart || Level->isFrozen())
 	{
 		return;
 	}
@@ -1356,7 +1356,7 @@ void DDecalSlider::Tick ()
 		/*StartX = TheDecal->LeftDistance;*/
 		StartY = TheDecal->Z;
 	}
-	if (level.maptime >= TimeToStop)
+	if (Level->maptime >= TimeToStop)
 	{
 		/*TheDecal->LeftDistance = StartX + DistX;*/
 		TheDecal->Z = StartY + DistY;
@@ -1364,7 +1364,7 @@ void DDecalSlider::Tick ()
 		return;
 	}
 
-	int distance = level.maptime - TimeToStart;
+	int distance = Level->maptime - TimeToStart;
 	int maxDistance = TimeToStop - TimeToStart;
 	/*TheDecal->LeftDistance = StartX + DistX * distance / maxDistance);*/
 	TheDecal->Z = StartY + DistY * distance / maxDistance;
@@ -1414,11 +1414,11 @@ void DDecalColorer::Tick ()
 	}
 	else
 	{
-		if (level.maptime < TimeToStartDecay || level.isFrozen())
+		if (Level->maptime < TimeToStartDecay || Level->isFrozen())
 		{
 			return;
 		}
-		else if (level.maptime >= TimeToEndDecay)
+		else if (Level->maptime >= TimeToEndDecay)
 		{
 			TheDecal->SetShade (GoalColor);
 			Destroy ();					// remove myself
@@ -1432,12 +1432,12 @@ void DDecalColorer::Tick ()
 				return;
 			}
 		}
-		if (level.maptime & 0)
+		if (Level->maptime & 0)
 		{ // Changing the shade can be expensive, so don't do it too often.
 			return;
 		}
 
-		int distance = level.maptime - TimeToStartDecay;
+		int distance = Level->maptime - TimeToStartDecay;
 		int maxDistance = TimeToEndDecay - TimeToStartDecay;
 		int r = StartColor.r + Scale (GoalColor.r - StartColor.r, distance, maxDistance);
 		int g = StartColor.g + Scale (GoalColor.g - StartColor.g, distance, maxDistance);

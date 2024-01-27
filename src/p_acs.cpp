@@ -5618,7 +5618,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 		}
 
 		case ACSF_Radius_Quake2:
-			P_StartQuake(activator, args[0], args[1], args[2], args[3], args[4], Level->Behaviors.LookupString(args[5]));
+			P_StartQuake(Level, activator, args[0], args[1], args[2], args[3], args[4], Level->Behaviors.LookupString(args[5]));
 			break;
 
 		case ACSF_CheckActorClass:
@@ -6191,7 +6191,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 
 		case ACSF_QuakeEx:
 		{
-			return P_StartQuakeXYZ(activator, args[0], args[1], args[2], args[3], args[4], args[5], args[6], Level->Behaviors.LookupString(args[7]), 
+			return P_StartQuakeXYZ(Level, activator, args[0], args[1], args[2], args[3], args[4], args[5], args[6], Level->Behaviors.LookupString(args[7]),
 				argCount > 8 ? args[8] : 0,
 				argCount > 9 ? ACSToDouble(args[9]) : 1.0,
 				argCount > 10 ? ACSToDouble(args[10]) : 1.0,
@@ -6855,7 +6855,7 @@ int DLevelScript::RunScript()
 
 	case SCRIPT_PolyWait:
 		// Wait for polyobj(s) to stop moving, then enter state running
-		if (!PO_Busy (&level, statedata))
+		if (!PO_Busy (Level, statedata))
 		{
 			state = SCRIPT_Running;
 		}
@@ -8949,7 +8949,7 @@ scriptwait:
 			const char *fromname = Level->Behaviors.LookupString(STACK(3));
 			const char *toname = Level->Behaviors.LookupString(STACK(2));
 
-			P_ReplaceTextures(fromname, toname, STACK(1));
+			Level->ReplaceTextures(fromname, toname, STACK(1));
 			sp -= 3;
 			break;
 		}
@@ -9118,13 +9118,13 @@ scriptwait:
 		case PCD_SETAIRCONTROL:
 			Level->aircontrol = ACSToDouble(STACK(1));
 			sp--;
-			G_AirControlChanged ();
+			Level->AirControlChanged ();
 			break;
 
 		case PCD_SETAIRCONTROLDIRECT:
 			Level->aircontrol = ACSToDouble(uallong(pc[0]));
 			pc++;
-			G_AirControlChanged ();
+			Level->AirControlChanged ();
 			break;
 
 		case PCD_SPAWN:
@@ -9758,14 +9758,14 @@ scriptwait:
 			// Like Thing_Projectile(Gravity) specials, but you can give the
 			// projectile a TID.
 			// Thing_Projectile2 (tid, type, angle, speed, vspeed, gravity, newtid);
-			P_Thing_Projectile(STACK(7), activator, STACK(6), NULL, STACK(5) * (360. / 256.),
+			Level->EV_Thing_Projectile(STACK(7), activator, STACK(6), NULL, STACK(5) * (360. / 256.),
 				STACK(4) / 8., STACK(3) / 8., 0, NULL, STACK(2), STACK(1), false);
 			sp -= 7;
 			break;
 
 		case PCD_SPAWNPROJECTILE:
 			// Same, but takes an actor name instead of a spawn ID.
-			P_Thing_Projectile(STACK(7), activator, 0, Level->Behaviors.LookupString(STACK(6)), STACK(5) * (360. / 256.),
+			Level->EV_Thing_Projectile(STACK(7), activator, 0, Level->Behaviors.LookupString(STACK(6)), STACK(5) * (360. / 256.),
 				STACK(4) / 8., STACK(3) / 8., 0, NULL, STACK(2), STACK(1), false);
 			sp -= 7;
 			break;
@@ -9977,12 +9977,12 @@ scriptwait:
 				int flags = STACK(1);
 				sp -= 5;
 
-				P_SectorDamage(&level, tag, amount, type, protectClass, flags);
+				P_SectorDamage(Level, tag, amount, type, protectClass, flags);
 			}
 			break;
 
 		case PCD_THINGDAMAGE2:
-			STACK(3) = P_Thing_Damage (STACK(3), activator, STACK(2), FName(Level->Behaviors.LookupString(STACK(1))));
+			STACK(3) = Level->EV_Thing_Damage (STACK(3), activator, STACK(2), FName(Level->Behaviors.LookupString(STACK(1))));
 			sp -= 2;
 			break;
 
@@ -10433,14 +10433,14 @@ static void addDefered (level_info_t *i, acsdefered_t::EType type, int script, c
 
 EXTERN_CVAR (Bool, sv_cheats)
 
-int P_StartScript (AActor *who, line_t *where, int script, const char *map, const int *args, int argcount, int flags)
+int P_StartScript (FLevelLocals *Level, AActor *who, line_t *where, int script, const char *map, const int *args, int argcount, int flags)
 {
-	if (map == NULL || 0 == strnicmp (level.MapName, map, 8))
+	if (map == NULL || 0 == strnicmp (Level->MapName, map, 8))
 	{
 		FBehavior *module = NULL;
 		const ScriptPtr *scriptdata;
 
-		if ((scriptdata = level.Behaviors.FindScript (script, module)) != NULL)
+		if ((scriptdata = Level->Behaviors.FindScript (script, module)) != NULL)
 		{
 			if ((flags & ACS_NET) && netgame && !sv_cheats)
 			{
@@ -10458,7 +10458,7 @@ int P_StartScript (AActor *who, line_t *where, int script, const char *map, cons
 					return false;
 				}
 			}
-			DLevelScript *runningScript = P_GetScriptGoing (&level, who, where, script,
+			DLevelScript *runningScript = P_GetScriptGoing (Level, who, where, script,
 				scriptdata, module, args, argcount, flags);
 			if (runningScript != NULL)
 			{
@@ -10488,20 +10488,20 @@ int P_StartScript (AActor *who, line_t *where, int script, const char *map, cons
 	return false;
 }
 
-void P_SuspendScript (int script, const char *map)
+void P_SuspendScript (FLevelLocals *Level, int script, const char *map)
 {
-	if (strnicmp (level.MapName, map, 8))
+	if (strnicmp (Level->MapName, map, 8))
 		addDefered (FindLevelInfo (map), acsdefered_t::defsuspend, script, NULL, 0, NULL);
 	else
-		SetScriptState (level.ACSThinker, script, DLevelScript::SCRIPT_Suspended);
+		SetScriptState (Level->ACSThinker, script, DLevelScript::SCRIPT_Suspended);
 }
 
-void P_TerminateScript (int script, const char *map)
+void P_TerminateScript (FLevelLocals *Level, int script, const char *map)
 {
-	if (strnicmp (level.MapName, map, 8))
+	if (strnicmp (Level->MapName, map, 8))
 		addDefered (FindLevelInfo (map), acsdefered_t::defterminate, script, NULL, 0, NULL);
 	else
-		SetScriptState (level.ACSThinker, script, DLevelScript::SCRIPT_PleaseRemove);
+		SetScriptState (Level->ACSThinker, script, DLevelScript::SCRIPT_PleaseRemove);
 }
 
 FSerializer &Serialize(FSerializer &arc, const char *key, acsdefered_t &defer, acsdefered_t *def)

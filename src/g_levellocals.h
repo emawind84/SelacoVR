@@ -143,7 +143,6 @@ struct FLevelData
 	TArray<FPlayerStart> AllPlayerStarts;
 
 	FBehaviorContainer Behaviors;
-	FTagManager tagManager;
 	AActor *TIDHash[128];
 	
 	TArray<FStrifeDialogueNode *> StrifeDialogues;
@@ -156,6 +155,8 @@ struct FLevelData
 
 struct FLevelLocals : public FLevelData
 {
+	FLevelLocals() : tagManager(this) {}
+
 	friend class MapLoader;
 
 	void Tick();
@@ -175,6 +176,7 @@ struct FLevelLocals : public FLevelData
 	int GetConversation(FName classname);
 	void SetConversation(int convid, PClassActor *Class, int dlgindex);
 	int FindNode (const FStrifeDialogueNode *node);
+    int GetInfighting();
 	void Init();
 
 	int li_compatflags = i_compatflags;
@@ -208,6 +210,24 @@ public:
 	bool CreateFloor(sector_t *sec, DFloor::EFloor floortype, line_t *line, double speed, double height, int crush, int change, bool hexencrush, bool hereticlower);
 	void DoDeferedScripts();
 	void AdjustPusher(int tag, int magnitude, int angle, bool wind);
+	int Massacre(bool baddies = false, FName cls = NAME_None);
+	AActor *SpawnMapThing(FMapThing *mthing, int position);
+	AActor *SpawnMapThing(int index, FMapThing *mt, int position);
+	AActor *SpawnPlayer(FPlayerStart *mthing, int playernum, int flags = 0);
+	void StartLightning();
+	void ForceLightning(int mode);
+	void ClearDynamic3DFloorData();
+	void WorldDone(void);
+	void AirControlChanged();
+	AActor *SelectTeleDest(int tid, int tag, bool norandom);
+	bool AlignFlat(int linenum, int side, int fc);
+	void ReplaceTextures(const char *fromname, const char *toname, int flags);
+
+	bool EV_Thing_Spawn(int tid, AActor *source, int type, DAngle angle, bool fog, int newtid);
+	bool EV_Thing_Move(int tid, AActor *source, int mapspot, bool fog);
+	bool EV_Thing_Projectile(int tid, AActor *source, int type, const char *type_name, DAngle angle,
+		double speed, double vspeed, int dest, AActor *forcedest, int gravity, int newtid, bool leadTarget);
+	int EV_Thing_Damage(int tid, AActor *whofor0, int amount, FName type);
 
 	bool EV_DoPlat(int tag, line_t *line, DPlat::EPlatType type, double height, double speed, int delay, int lip, int change);
 	void EV_StopPlat(int tag, bool remove);
@@ -237,10 +257,29 @@ public:
 	void EV_StartLightFading(int tag, int value, int tics);
 	void EV_StopLightEffect(int tag);
 
+	bool EV_Teleport(int tid, int tag, line_t *line, int side, AActor *thing, int flags);
+	bool EV_SilentLineTeleport(line_t *line, int side, AActor *thing, int id, INTBOOL reverse);
+	bool EV_TeleportOther(int other_tid, int dest_tid, bool fog);
+	bool EV_TeleportGroup(int group_tid, AActor *victim, int source_tid, int dest_tid, bool moveSource, bool fog);
+	bool EV_TeleportSector(int tag, int source_tid, int dest_tid, bool fog, int group_tid);
+
 	void RecalculateDrawnSubsectors();
 	FSerializer &SerializeSubsectors(FSerializer &arc, const char *key);
 	void SpawnExtraPlayers();
 	void Serialize(FSerializer &arc, bool hubload);
+	DThinker *FirstThinker (int statnum);
+
+	// g_Game
+	void PlayerReborn (int player);
+	bool CheckSpot (int playernum, FPlayerStart *mthing);
+	void DoReborn (int playernum, bool freshbot);
+	void QueueBody (AActor *body);
+	double PlayersRangeFromSpot (FPlayerStart *spot);
+	FPlayerStart *SelectFarthestDeathmatchSpot (size_t selections);
+	FPlayerStart *SelectRandomDeathmatchSpot (int playernum, unsigned int selections);
+	void DeathMatchSpawnPlayer (int playernum);
+	FPlayerStart *PickPlayerStart(int playernum, int flags = 0);
+
 
 private:
 	// Work data for CollectConnectedGroups.
@@ -266,6 +305,10 @@ public:
 	{
 		if (subtype == NAME_None) return TThinkerIterator<T>(statnum);
 		else return TThinkerIterator<T>(subtype, statnum);
+	}
+	template<class T> TThinkerIterator<T> GetThinkerIterator(FName subtype, int statnum, AActor *prev)
+	{
+		return TThinkerIterator<T>(subtype, statnum, prev);
 	}
 	FActorIterator GetActorIterator(int tid)
 	{
@@ -375,6 +418,12 @@ public:
 		thinker->Construct(std::forward<Args>(args)...);
 		return thinker;
 	}
+	
+	void SetMusic()
+	{
+		if (cdtrack == 0 || !S_ChangeCDMusic(cdtrack, cdid))
+			S_ChangeMusic(Music, musicorder);
+	}
 
 	void SetMusic();
 
@@ -399,6 +448,7 @@ public:
 	FString		AuthorName;
 	FString		F1Pic;
 	EMapType	maptype;
+	FTagManager tagManager;
 
 	uint64_t	ShaderStartTime = 0;	// tell the shader system when we started the level (forces a timer restart)
 
@@ -518,32 +568,33 @@ extern FLevelLocals *currentUILevel;	// level for which to display the user inte
 
 inline FSectorPortal *line_t::GetTransferredPortal()
 {
-	return portaltransferred >= level.sectorPortals.Size() ? (FSectorPortal*)nullptr : &level.sectorPortals[portaltransferred];
+	auto Level = GetLevel();
+	return portaltransferred >= Level->sectorPortals.Size() ? (FSectorPortal*)nullptr : &Level->sectorPortals[portaltransferred];
 }
 
 inline FSectorPortal *sector_t::GetPortal(int plane)
 {
-	return &level.sectorPortals[Portals[plane]];
+	return &Level->sectorPortals[Portals[plane]];
 }
 
 inline double sector_t::GetPortalPlaneZ(int plane)
 {
-	return level.sectorPortals[Portals[plane]].mPlaneZ;
+	return Level->sectorPortals[Portals[plane]].mPlaneZ;
 }
 
 inline DVector2 sector_t::GetPortalDisplacement(int plane)
 {
-	return level.sectorPortals[Portals[plane]].mDisplacement;
+	return Level->sectorPortals[Portals[plane]].mDisplacement;
 }
 
 inline int sector_t::GetPortalType(int plane)
 {
-	return level.sectorPortals[Portals[plane]].mType;
+	return Level->sectorPortals[Portals[plane]].mType;
 }
 
 inline int sector_t::GetOppositePortalGroup(int plane)
 {
-	return level.sectorPortals[Portals[plane]].mDestination->PortalGroup;
+	return Level->sectorPortals[Portals[plane]].mDestination->PortalGroup;
 }
 
 inline bool sector_t::PortalBlocksView(int plane)
@@ -574,7 +625,7 @@ inline bool sector_t::PortalIsLinked(int plane)
 
 inline FLevelLocals *line_t::GetLevel() const
 {
-	return &level;
+	return frontsector->Level;
 }
 inline FLinePortal *line_t::getPortal() const
 {
@@ -608,4 +659,11 @@ inline bool line_t::hitSkyWall(AActor* mo) const
 	return backsector &&
 		backsector->GetTexture(sector_t::ceiling) == skyflatnum &&
 		mo->Z() >= backsector->ceilingplane.ZatPoint(mo->PosRelative(this));
+}
+
+// This must later be extended to return an array with all levels.
+// It is meant for code that needs to iterate over all levels to make some global changes, e.g. configuation CCMDs.
+inline TArrayView<FLevelLocals *> AllLevels()
+{
+	return TArrayView<FLevelLocals *>(&currentUILevel, 1);
 }

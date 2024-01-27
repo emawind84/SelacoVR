@@ -2139,11 +2139,6 @@ uint8_t *FDynamicBuffer::GetData (int *len)
 }
 
 
-static int KillAll(PClassActor *cls)
-{
-	return P_Massacre(false, cls);
-}
-
 static int RemoveClass(const PClass *cls)
 {
 	AActor *actor;
@@ -2629,11 +2624,11 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 
 			if (cls != NULL)
 			{
-				killcount = KillAll(cls);
+				killcount = currentUILevel->Massacre(false, cls->TypeName);
 				PClassActor *cls_rep = cls->GetReplacement();
 				if (cls != cls_rep)
 				{
-					killcount += KillAll(cls_rep);
+					killcount += currentUILevel->Massacre(false, cls_rep->TypeName);
 				}
 				Printf ("Killed %d monsters of type %s.\n",killcount, s);
 			}
@@ -2773,7 +2768,7 @@ static void RunScript(uint8_t **stream, AActor *pawn, int snum, int argn, int al
 			arg[i] = argval;
 		}
 	}
-	P_StartScript(pawn, NULL, snum, level.MapName, arg, MIN<int>(countof(arg), argn), ACS_NET | always);
+	P_StartScript(pawn->Level, pawn, NULL, snum, level.MapName, arg, MIN<int>(countof(arg), argn), ACS_NET | always);
 }
 
 void Net_SkipCommand (int type, uint8_t **stream)

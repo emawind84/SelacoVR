@@ -1019,7 +1019,7 @@ void FLevelLocals::CreateLinkedPortals()
 	if (linkedPortals.Size() > 0)
 	{
 		// We need to relink all actors that may touch a linked line portal
-		TThinkerIterator<AActor> it;
+		auto it = GetThinkerIterator<AActor>();
 		AActor *actor;
 		while ((actor = it.Next()))
 		{
@@ -1192,14 +1192,18 @@ bool FLevelLocals::CollectConnectedGroups(int startgroup, const DVector3 &positi
 
 CCMD(dumplinktable)
 {
-	for (int x = 1; x < level.Displacements.size; x++)
+	for (auto Level : AllLevels())
 	{
-		for (int y = 1; y < level.Displacements.size; y++)
+		Printf("Portal displacements for %s:\n", Level->MapName.GetChars());
+		for (int x = 1; x < Level->Displacements.size; x++)
 		{
-			FDisplacement &disp = level.Displacements(x, y);
-			Printf("%c%c(%6d, %6d)", TEXTCOLOR_ESCAPE, 'C' + disp.indirect, int(disp.pos.X), int(disp.pos.Y));
+			for (int y = 1; y < Level->Displacements.size; y++)
+			{
+				FDisplacement &disp = Level->Displacements(x, y);
+				Printf("%c%c(%6d, %6d)", TEXTCOLOR_ESCAPE, 'C' + disp.indirect, int(disp.pos.X), int(disp.pos.Y));
+			}
+			Printf("\n");
 		}
-		Printf("\n");
 	}
 }
 

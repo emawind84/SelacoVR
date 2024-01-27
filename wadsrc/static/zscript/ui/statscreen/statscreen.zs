@@ -502,7 +502,7 @@ class StatusScreen abstract play version("2.5")
 		//Added by mc
 		if (deathmatch)
 		{
-			level.RemoveAllBots (consoleplayer != Net_Arbitrator);
+			currentUILevel.RemoveAllBots (consoleplayer != Net_Arbitrator);
 		}
 	}
 
@@ -562,7 +562,7 @@ class StatusScreen abstract play version("2.5")
 		if (cnt == 0)
 		{
 			End();
-			level.WorldDone();
+			currentUILevel.WorldDone();
 		}
 	}
 
@@ -578,7 +578,7 @@ class StatusScreen abstract play version("2.5")
 		{
 			// Last map in episode - there is no next location!
 			End();
-			level.WorldDone();
+			currentUILevel.WorldDone();
 			return;
 		}
 
@@ -709,7 +709,7 @@ class StatusScreen abstract play version("2.5")
 	
 	virtual void StartMusic()
 	{
-		level.SetInterMusic(wbs.next);
+		currentUILevel.SetInterMusic(wbs.next);
 	}
 
 	//====================================================================
@@ -816,7 +816,7 @@ class StatusScreen abstract play version("2.5")
 		finishedPatch = TexMan.CheckForTexture("WIF", TexMan.Type_MiscPatch);			// "finished"
 
 		// Use the local level structure which can be overridden by hubs
-		lnametexts[0] = level.LevelName;		
+		lnametexts[0] = currentUILevel.LevelName;		
 		lnametexts[1] = wbstartstruct.nextname;
 		authortexts[0] = StringTable.Localize(wbstartstruct.thisauthor);
 		authortexts[1] = StringTable.Localize(wbstartstruct.nextauthor);

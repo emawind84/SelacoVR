@@ -105,7 +105,7 @@ DEFINE_CLASS_PROPERTY(type, S, DynamicLight)
 //
 //==========================================================================
 
-static FDynamicLight *GetLight()
+static FDynamicLight *GetLight(FLevelLocals *Level)
 {
 	FDynamicLight *ret;
 	if (FreeList.Size())
@@ -115,11 +115,12 @@ static FDynamicLight *GetLight()
 	else ret = (FDynamicLight*)DynLightArena.Alloc(sizeof(FDynamicLight));
 	memset(ret, 0, sizeof(*ret));
 	ret->m_cycler.m_increment = true;
-	ret->next = level.lights;
-	level.lights = ret;
+	ret->next = Level->lights;
+	Level->lights = ret;
 	if (ret->next) ret->next->prev = ret;
 	ret->visibletoplayer = true;
 	ret->mShadowmapIndex = 1024;
+	ret->Level = Level;
 	ret->Pos.X = -10000000;	// not a valid coordinate.
 	return ret;
 }
@@ -134,7 +135,7 @@ static FDynamicLight *GetLight()
 
 void AttachLight(AActor *self)
 {
-	auto light = GetLight();
+	auto light = GetLight(self->Level);
 
 	light->pSpotInnerAngle = &self->AngleVar(NAME_SpotInnerAngle);
 	light->pSpotOuterAngle = &self->AngleVar(NAME_SpotOuterAngle);
@@ -230,9 +231,9 @@ DEFINE_ACTION_FUNCTION_NATIVE(ADynamicLight, SetOffset, SetOffset)
 
 void FDynamicLight::ReleaseLight()
 {
-	assert(prev != nullptr || this == level.lights);
+	assert(prev != nullptr || this == Level->lights);
 	if (prev != nullptr) prev->next = next;
-	else level.lights = next;
+	else Level->lights = next;
 	if (next != nullptr) next->prev = prev;
 	next = prev = nullptr;
 	FreeList.Push(this);
@@ -254,7 +255,7 @@ void FDynamicLight::Activate()
 	{
 		float pulseTime = float(specialf1 / TICRATE);
 
-		m_lastUpdate = level.maptime;
+		m_lastUpdate = Level->maptime;
 		if (!swapped) m_cycler.SetParams(float(GetSecondaryIntensity()), float(GetIntensity()), pulseTime);
 		else m_cycler.SetParams(float(GetIntensity()), float(GetSecondaryIntensity()), pulseTime);
 		m_cycler.ShouldCycle(true);
@@ -304,9 +305,9 @@ void FDynamicLight::Tick()
 	{
 	case PulseLight:
 	{
-		float diff = (level.maptime - m_lastUpdate) / (float)TICRATE;
+		float diff = (Level->maptime - m_lastUpdate) / (float)TICRATE;
 		
-		m_lastUpdate = level.maptime;
+		m_lastUpdate = Level->maptime;
 		m_cycler.Update(diff);
 		m_currentRadius = float(m_cycler.GetVal());
 		break;
@@ -774,7 +775,7 @@ void AActor::AttachLight(unsigned int count, const FLightDefaults *lightdef)
 	}
 	else
 	{
-		light = GetLight();
+		light = GetLight(Level);
 		light->SetActor(this, true);
 		AttachedLights.Push(light);
 	}
@@ -1042,48 +1043,52 @@ CCMD(listlights)
 	int allwalls=0, allsectors=0, allsubsecs = 0;
 	int i=0, shadowcount = 0;
 	FDynamicLight * dl;
-
-	for (dl = level.lights; dl; dl = dl->next)
+	
+	for (auto Level : AllLevels())
 	{
-		walls=0;
-		sectors=0;
-		Printf("%s at (%f, %f, %f), color = 0x%02x%02x%02x, radius = %f %s %s",
-			dl->target->GetClass()->TypeName.GetChars(),
-			dl->X(), dl->Y(), dl->Z(), dl->GetRed(), dl->GetGreen(), dl->GetBlue(), 
-			dl->radius, dl->IsAttenuated()? "attenuated" : "", dl->shadowmapped? "shadowmapped" : "");
-		i++;
-		shadowcount += dl->shadowmapped;
-
-		if (dl->target)
+		Printf("Lights for %s\n", Level->MapName.GetChars());
+		for (dl = Level->lights; dl; dl = dl->next)
 		{
-			FTextureID spr = sprites[dl->target->sprite].GetSpriteFrame(dl->target->frame, 0, 0., nullptr);
-			Printf(", frame = %s ", TexMan.GetTexture(spr)->GetName().GetChars());
+			walls=0;
+			sectors=0;
+			Printf("%s at (%f, %f, %f), color = 0x%02x%02x%02x, radius = %f %s %s",
+				   dl->target->GetClass()->TypeName.GetChars(),
+				   dl->X(), dl->Y(), dl->Z(), dl->GetRed(), dl->GetGreen(), dl->GetBlue(),
+				   dl->radius, dl->IsAttenuated()? "attenuated" : "", dl->shadowmapped? "shadowmapped" : "");
+			i++;
+			shadowcount += dl->shadowmapped;
+			
+			if (dl->target)
+			{
+				FTextureID spr = sprites[dl->target->sprite].GetSpriteFrame(dl->target->frame, 0, 0., nullptr);
+				Printf(", frame = %s ", TexMan.GetTexture(spr)->GetName().GetChars());
+			}
+			
+			
+			FLightNode * node;
+			
+			node=dl->touching_sides;
+			
+			while (node)
+			{
+				walls++;
+				allwalls++;
+				node = node->nextTarget;
+			}
+			
+			
+			node = dl->touching_sector;
+			
+			while (node)
+			{
+				allsectors++;
+				sectors++;
+				node = node->nextTarget;
+			}
+			Printf("- %d walls, %d sectors\n", walls, sectors);
+			
 		}
-
-
-		FLightNode * node;
-
-		node=dl->touching_sides;
-
-		while (node)
-		{
-			walls++;
-			allwalls++;
-			node = node->nextTarget;
-		}
-
-
-		node = dl->touching_sector;
-
-		while (node)
-		{
-			allsectors++;
-			sectors++;
-			node = node->nextTarget;
-		}
-		Printf("- %d walls, %d sectors\n", walls, sectors);
-
+		Printf("%i dynamic lights, %d shadowmapped, %d walls, %d sectors\n\n\n", i, shadowcount, allwalls, allsectors);
 	}
-	Printf("%i dynamic lights, %d shadowmapped, %d walls, %d sectors\n\n\n", i, shadowcount, allwalls, allsectors);
 }
 
