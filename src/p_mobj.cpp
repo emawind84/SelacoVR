@@ -5011,7 +5011,7 @@ EXTERN_CVAR(Float, fov)
 
 extern bool demonew;
 
-void PlayerSpawnPickClass (int playernum)
+void FLevelLocals::PlayerSpawnPickClass (int playernum)
 {
 	auto p = &players[playernum];
 

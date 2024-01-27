@@ -515,7 +515,6 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	if (precache)
 	{
 		PrecacheLevel(Level);
-		S_PrecacheLevel(Level);
 	}
 
 	if (deathmatch)
