@@ -177,6 +177,9 @@ struct FLevelLocals : public FLevelData
 	int FindNode (const FStrifeDialogueNode *node);
 	void Init();
 
+	int li_compatflags = i_compatflags;
+	int li_compatflags2 = i_compatflags2;
+
 private:
 	line_t *FindPortalDestination(line_t *src, int tag, int matchtype = -1);
 	void BuildPortalBlockmap();

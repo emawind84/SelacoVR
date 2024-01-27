@@ -3190,6 +3190,8 @@ DEFINE_FIELD(FLevelLocals, pixelstretch)
 DEFINE_FIELD(FLevelLocals, MusicVolume)
 DEFINE_FIELD(FLevelLocals, deathsequence)
 DEFINE_FIELD_BIT(FLevelLocals, frozenstate, frozen, 1)	// still needed for backwards compatibility.
+DEFINE_FIELD_NAMED(FLevelLocals, li_compatflags, compatflags)
+DEFINE_FIELD_NAMED(FLevelLocals, li_compatflags2, compatflags2)
 DEFINE_FIELD(FLevelLocals, info);
 
 DEFINE_FIELD_BIT(FLevelLocals, flags, noinventorybar, LEVEL_NOINVENTORYBAR)

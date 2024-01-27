@@ -1591,6 +1591,10 @@ bool ZCCCompiler::CompileFields(PContainerType *type, TArray<ZCC_VarDeclarator *
 				{
 					f = type->AddField(name->Name, thisfieldtype, varflags);
 				}
+				else
+				{
+					Error(field, "Cannot declare non-native global variables. Tried to declare %s", FName(name->Name).GetChars());
+				}
 
 				if ((field->Flags & (ZCC_Version | ZCC_Deprecated)) && f != nullptr)
 				{
@@ -1600,10 +1604,6 @@ bool ZCCCompiler::CompileFields(PContainerType *type, TArray<ZCC_VarDeclarator *
 					{
 						f->DeprecationMessage = *field->DeprecationMessage;
 					}
-				}
-				else
-				{
-					Error(field, "Cannot declare non-native global variables. Tried to declare %s", FName(name->Name).GetChars());
 				}
 			}
 			name = static_cast<ZCC_VarName*>(name->SiblingNext);
