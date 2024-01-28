@@ -349,7 +349,7 @@ class FBehavior
 public:
 	FBehavior ();
 	~FBehavior ();
-	bool Init(int lumpnum, FileReader * fr = NULL, int len = 0, int reallumpnum = -1);
+	bool Init(FLevelLocals *l, int lumpnum, FileReader * fr = NULL, int len = 0, int reallumpnum = -1);
 
 	bool IsGood ();
 	uint8_t *FindChunk (uint32_t id) const;
@@ -385,6 +385,7 @@ public:
 private:
 	struct ArrayInfo;
 
+	FLevelLocals *Level;
 	uint8_t *Data;
 	uint8_t *Chunks;
 	ScriptPtr *Scripts;
@@ -427,7 +428,10 @@ private:
 
 struct FBehaviorContainer
 {
+	FLevelLocals *Level;
 	TArray<FBehavior *> StaticModules;
+
+	FBehaviorContainer(FLevelLocals *l) : Level(l) {}
 
 	FBehavior *LoadModule(int lumpnum, FileReader *fr = nullptr, int len = 0, int reallumpnum = -1);
 	void LoadDefaultModules();

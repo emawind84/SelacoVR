@@ -1075,9 +1075,9 @@ FUNC(LS_Generic_Lift)
 FUNC(LS_Exit_Normal)
 // Exit_Normal (position)
 {
-	if (Level->CheckIfExitIsGood (it, FindLevelInfo(G_GetExitMap())))
+	if (Level->CheckIfExitIsGood (it, FindLevelInfo(Level->NextMap)))
 	{
-		G_ExitLevel (arg0, false);
+		Level->ExitLevel (arg0, false);
 		return true;
 	}
 	return false;
@@ -1086,9 +1086,9 @@ FUNC(LS_Exit_Normal)
 FUNC(LS_Exit_Secret)
 // Exit_Secret (position)
 {
-	if (Level->CheckIfExitIsGood (it, FindLevelInfo(G_GetSecretExitMap())))
+	if (Level->CheckIfExitIsGood (it, FindLevelInfo(Level->GetSecretExitMap())))
 	{
-		G_SecretExitLevel (arg0);
+		Level->SecretExitLevel (arg0);
 		return true;
 	}
 	return false;
@@ -1103,7 +1103,7 @@ FUNC(LS_Teleport_NewMap)
 
 		if (info && Level->CheckIfExitIsGood (it, info))
 		{
-			G_ChangeLevel(info->MapName, arg1, arg2 ? CHANGELEVEL_KEEPFACING : 0);
+			Level->ChangeLevel(info->MapName, arg1, arg2 ? CHANGELEVEL_KEEPFACING : 0);
 			return true;
 		}
 	}
@@ -1198,7 +1198,7 @@ FUNC(LS_Teleport_EndGame)
 {
 	if (!backSide && Level->CheckIfExitIsGood (it, NULL))
 	{
-		G_ChangeLevel(NULL, 0, 0);
+		Level->ChangeLevel(NULL, 0, 0);
 		return true;
 	}
 	return false;
@@ -2843,24 +2843,25 @@ FUNC(LS_ChangeCamera)
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (!playeringame[i])
+			if (!Level->PlayerInGame(i))
 				continue;
 
-			AActor *oldcamera = players[i].camera;
+			auto p = Level->Players[i];
+			AActor *oldcamera = p->camera;
 			if (camera)
 			{
-				players[i].camera = camera;
+				p->camera = camera;
 				if (arg2)
-					players[i].cheats |= CF_REVERTPLEASE;
+					p->cheats |= CF_REVERTPLEASE;
 			}
 			else
 			{
-				players[i].camera = players[i].mo;
-				players[i].cheats &= ~CF_REVERTPLEASE;
+				p->camera = p->mo;
+				p->cheats &= ~CF_REVERTPLEASE;
 			}
-			if (oldcamera != players[i].camera)
+			if (oldcamera != p->camera)
 			{
-				R_ClearPastViewer (players[i].camera);
+				R_ClearPastViewer (p->camera);
 			}
 		}
 	}
@@ -2985,14 +2986,15 @@ FUNC(LS_SetPlayerProperty)
 
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if (!playeringame[i] || players[i].mo == NULL)
+				auto p = Level->Players[i];
+				if (!Level->PlayerInGame(i) || p->mo == nullptr)
 					continue;
 
 				if (arg1)
 				{ // Give power
 					if (power != 4)
 					{
-						auto item = players[i].mo->GiveInventoryType ((PClass::FindActor(powers[power])));
+						auto item = p->mo->GiveInventoryType ((PClass::FindActor(powers[power])));
 						if (item != NULL && power == 0 && arg1 == 1) 
 						{
 							item->ColorVar(NAME_BlendColor) = MakeSpecialColormap(INVERSECOLORMAP);
@@ -3007,7 +3009,7 @@ FUNC(LS_SetPlayerProperty)
 				{ // Take power
 					if (power != 4)
 					{
-						auto item = players[i].mo->FindInventory (PClass::FindActor(powers[power]));
+						auto item = p->mo->FindInventory (PClass::FindActor(powers[power]));
 						if (item != NULL)
 						{
 							item->Destroy ();
@@ -3073,32 +3075,33 @@ FUNC(LS_SetPlayerProperty)
 	{
 		int i;
 
-		if ((ib_compatflags & BCOMPATF_LINKFROZENPROPS) && (mask & (CF_FROZEN | CF_TOTALLYFROZEN)))
+		if ((Level->ib_compatflags & BCOMPATF_LINKFROZENPROPS) && (mask & (CF_FROZEN | CF_TOTALLYFROZEN)))
 		{ // Clearing one of these properties clears both of them (if the compat flag is set.)
 			mask = CF_FROZEN | CF_TOTALLYFROZEN;
 		}
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (!playeringame[i])
+			if (!Level->PlayerInGame(i))
 				continue;
 
+			auto p = Level->Players[i];
 			if (arg1)
 			{
-				players[i].cheats |= mask;
+				p->cheats |= mask;
 				if (arg2 == PROP_FLY)
 				{
-					players[i].mo->flags2 |= MF2_FLY;
-					players[i].mo->flags |= MF_NOGRAVITY;
+					p->mo->flags2 |= MF2_FLY;
+					p->mo->flags |= MF_NOGRAVITY;
 				}
 			}
 			else
 			{
-				players[i].cheats &= ~mask;
+				p->cheats &= ~mask;
 				if (arg2 == PROP_FLY)
 				{
-					players[i].mo->flags2 &= ~MF2_FLY;
-					players[i].mo->flags &= ~MF_NOGRAVITY;
+					p->mo->flags2 &= ~MF2_FLY;
+					p->mo->flags &= ~MF_NOGRAVITY;
 				}
 			}
 		}
@@ -3319,9 +3322,9 @@ FUNC(LS_GlassBreak)
 			{
 				for (int i = 0; i < MAXPLAYERS; ++i)
 				{
-					if (playeringame[i])
+					if (Level->PlayerInGame(i))
 					{
-						it = players[i].mo;
+						it = Level->Players[i]->mo;
 						break;
 					}
 				}
@@ -3500,7 +3503,7 @@ FUNC(LS_Line_SetHealth)
 		line_t* line = &Level->lines[l];
 		line->health = arg1;
 		if (line->healthgroup)
-			P_SetHealthGroupHealth(line->healthgroup, arg1);
+			P_SetHealthGroupHealth(Level, line->healthgroup, arg1);
 	}
 	return true;
 }
@@ -3521,19 +3524,19 @@ FUNC(LS_Sector_SetHealth)
 		{
 			sector->healthceiling = arg2;
 			if (sector->healthceilinggroup)
-				P_SetHealthGroupHealth(sector->healthceilinggroup, arg2);
+				P_SetHealthGroupHealth(Level, sector->healthceilinggroup, arg2);
 		}
 		else if (arg1 == SECPART_Floor)
 		{
 			sector->healthfloor = arg2;
 			if (sector->healthfloorgroup)
-				P_SetHealthGroupHealth(sector->healthfloorgroup, arg2);
+				P_SetHealthGroupHealth(Level, sector->healthfloorgroup, arg2);
 		}
 		else if (arg1 == SECPART_3D)
 		{
 			sector->health3d = arg2;
 			if (sector->health3dgroup)
-				P_SetHealthGroupHealth(sector->health3dgroup, arg2);
+				P_SetHealthGroupHealth(Level, sector->health3dgroup, arg2);
 		}
 	}
 	return true;

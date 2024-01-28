@@ -108,7 +108,7 @@ inline DVector3 AActor::Vec2OffsetZ(double dx, double dy, double atz, bool absol
 	{
 		return{ X() + dx, Y() + dy, atz };
 	}
-	else
+		else
 	{
 		DVector2 v = Level->GetPortalOffsetPosition(X(), Y(), dx, dy);
 		return DVector3(v, atz);
@@ -134,7 +134,7 @@ inline DVector3 AActor::Vec3Offset(double dx, double dy, double dz, bool absolut
 		return { X() + dx, Y() + dy, Z() + dz };
 	}
 	else
-	{
+		{
 		DVector2 v = Level->GetPortalOffsetPosition(X(), Y(), dx, dy);
 		return DVector3(v, Z() + dz);
 	}
@@ -152,7 +152,7 @@ inline DVector3 AActor::Vec3Angle(double length, DAngle angle, double dz, bool a
 		return{ X() + length * angle.Cos(), Y() + length * angle.Sin(), Z() + dz };
 	}
 	else
-	{
+		{
 		DVector2 v = Level->GetPortalOffsetPosition(X(), Y(), length*angle.Cos(), length*angle.Sin());
 		return DVector3(v, Z() + dz);
 	}
@@ -162,7 +162,7 @@ inline bool AActor::isFrozen() const
 {
 	if (!(flags5 & MF5_NOTIMEFREEZE))
 	{
-		auto state = level.isFrozen();
+		auto state = Level->isFrozen();
 		if (state)
 		{
 			if (player == nullptr || player->Bot != nullptr) return true;

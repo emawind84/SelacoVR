@@ -590,8 +590,7 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 	bool brightflash = false;
 	AActor * playermo = players[consoleplayer].camera;
 	player_t * player = playermo->player;
-	const bool hudModelStep = IsHUDModelForPlayerAvailable(player);
-    
+	
     const auto &vp = Viewpoint;
 
 	AActor *camera = vp.camera;
@@ -604,6 +603,7 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 		(r_deathcamera && camera->health <= 0))
 		return;
 
+	const bool hudModelStep = IsHUDModelForPlayerAvailable(camera->player);
 	WeaponPosition weap = GetWeaponPosition(camera->player, vp.TicFrac);
 	WeaponLighting light = GetWeaponLighting(viewsector, vp.Pos, isFullbrightScene(), in_area, camera->Pos());
 

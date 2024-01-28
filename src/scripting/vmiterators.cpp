@@ -41,8 +41,8 @@ class DThinkerIterator : public DObject, public FThinkerIterator
 	DECLARE_ABSTRACT_CLASS(DThinkerIterator, DObject)
 
 public:
-	DThinkerIterator(PClass *cls, int statnum = MAX_STATNUM + 1)
-		: FThinkerIterator(cls, statnum)
+	DThinkerIterator(FLevelLocals *Level, PClass *cls, int statnum = MAX_STATNUM + 1)
+		: FThinkerIterator(Level, cls, statnum)
 	{
 	}
 };
@@ -51,7 +51,7 @@ IMPLEMENT_CLASS(DThinkerIterator, true, false);
 
 static DThinkerIterator *CreateThinkerIterator(PClass *type, int statnum)
 {
-	return Create<DThinkerIterator>(type, statnum);
+	return Create<DThinkerIterator>(&level, type, statnum);
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(DThinkerIterator, Create, CreateThinkerIterator)
@@ -59,7 +59,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(DThinkerIterator, Create, CreateThinkerIterator)
 	PARAM_PROLOGUE;
 	PARAM_CLASS(type, DThinker);
 	PARAM_INT(statnum);
-	ACTION_RETURN_OBJECT(Create<DThinkerIterator>(type, statnum));
+	ACTION_RETURN_OBJECT(CreateThinkerIterator(type, statnum));
 }
 
 static DThinker *NextThinker(DThinkerIterator *self, bool exact)
@@ -111,7 +111,7 @@ public:
 	}
 
 	DBlockLinesIterator(double x, double y, double z, double height, double radius, sector_t *sec)
-		: iterator(check, x, y, z, height, radius, sec)
+		: iterator(check, &level, x, y, z, height, radius, sec)
 	{
 		cres.line = nullptr;
 		cres.Position.Zero();
@@ -185,7 +185,7 @@ public:
 	}
 
 	DBlockThingsIterator(double checkx, double checky, double checkz, double checkh, double checkradius, bool ignorerestricted, sector_t *newsec)
-		: iterator(check, checkx, checky, checkz, checkh, checkradius, ignorerestricted, newsec)
+		: iterator(check, &level, checkx, checky, checkz, checkh, checkradius, ignorerestricted, newsec)
 	{
 		cres.thing = nullptr;
 		cres.Position.Zero();

@@ -385,9 +385,9 @@ int FVoxelModel::FindFrame(const char * name)
 //
 //===========================================================================
 
-float FVoxelModel::getAspectFactor()
+float FVoxelModel::getAspectFactor(FLevelLocals *Level)
 {
-	return level.info->pixelstretch;
+	return Level->info->pixelstretch;
 }
 
 //===========================================================================

@@ -1515,7 +1515,7 @@ void MapLoader::SetLineID (int i, line_t *ld)
 			break;
 			
 		case Plane_Align:
-			if (!(ib_compatflags & BCOMPATF_NOSLOPEID)) setid = ld->args[2];
+			if (!(Level->ib_compatflags & BCOMPATF_NOSLOPEID)) setid = ld->args[2];
 			break;
 			
 		case Static_Init:
@@ -3024,7 +3024,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 		Level->maptype = MAPTYPE_UDMF;
 	}
 	FName checksum = CheckCompatibility(map);
-	if (ib_compatflags & BCOMPATF_REBUILDNODES)
+	if (Level->ib_compatflags & BCOMPATF_REBUILDNODES)
 	{
 		ForceNodeBuild = true;
 	}
@@ -3250,8 +3250,8 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 
 	for (int i = 0; i < MAXPLAYERS; ++i)
 	{
-		if (playeringame[i] && players[i].mo != nullptr)
-			players[i].health = players[i].mo->health;
+		if (Level->PlayerInGame(i) && Level->Players[i]->mo != nullptr)
+			Level->Players[i]->health = Level->Players[i]->mo->health;
 	}
 	if (!map->HasBehavior && !map->isText)
 		TranslateTeleportThings();	// [RH] Assign teleport destination TIDs
@@ -3288,7 +3288,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 
 	SWRenderer->SetColormap(Level);	//The SW renderer needs to do some special setup for the level's default colormap.
 	InitPortalGroups(Level);
-	P_InitHealthGroups();
+	P_InitHealthGroups(Level);
 
 	if (reloop) LoopSidedefs(false);
 	PO_Init();				// Initialize the polyobjs

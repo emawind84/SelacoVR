@@ -97,15 +97,15 @@ struct Side native play
 	
 	int GetUDMFInt(Name nm)
 	{
-		return Level.GetUDMFInt(LevelLocals.UDMF_Side, Index(), nm);
+		return sector.Level.GetUDMFInt(LevelLocals.UDMF_Side, Index(), nm);
 	}
 	double GetUDMFFloat(Name nm)
 	{
-		return Level.GetUDMFFloat(LevelLocals.UDMF_Side, Index(), nm);
+		return sector.Level.GetUDMFFloat(LevelLocals.UDMF_Side, Index(), nm);
 	}
 	String GetUDMFString(Name nm)
 	{
-		return Level.GetUDMFString(LevelLocals.UDMF_Side, Index(), nm);
+		return sector.Level.GetUDMFString(LevelLocals.UDMF_Side, Index(), nm);
 	}
 	
 };
@@ -185,15 +185,15 @@ struct Line native play
 	
 	int GetUDMFInt(Name nm)
 	{
-		return Level.GetUDMFInt(LevelLocals.UDMF_Line, Index(), nm);
+		return frontsector.Level.GetUDMFInt(LevelLocals.UDMF_Line, Index(), nm);
 	}
 	double GetUDMFFloat(Name nm)
 	{
-		return Level.GetUDMFFloat(LevelLocals.UDMF_Line, Index(), nm);
+		return frontsector.Level.GetUDMFFloat(LevelLocals.UDMF_Line, Index(), nm);
 	}
 	String GetUDMFString(Name nm)
 	{
-		return Level.GetUDMFString(LevelLocals.UDMF_Line, Index(), nm);
+		return frontsector.Level.GetUDMFString(LevelLocals.UDMF_Line, Index(), nm);
 	}
 
     native clearscope int GetHealth();
@@ -314,6 +314,7 @@ struct Sector native play
 	native SectorEffect floordata;
 	native SectorEffect ceilingdata;
 	native SectorEffect lightingdata;
+	native readonly LevelLocals Level;
 
 	enum EPlane
 	{
@@ -428,7 +429,10 @@ struct Sector native play
 	native int GetAttachedCount();
 
 	native void RemoveForceField();
-	native static clearscope Sector PointInSector(Vector2 pt);
+	deprecated("3.8") static clearscope Sector PointInSector(Vector2 pt)
+	{
+		return level.PointInSector(pt);
+	}
 
 	native bool PlaneMoving(int pos);
 	native int GetFloorLight();

@@ -762,22 +762,27 @@ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, RemoveForceField, RemoveForceField)
 	 return 0;
  }
 
-  DEFINE_ACTION_FUNCTION_NATIVE(_Sector, PointInSector, P_PointInSectorXY)
- {
-	 PARAM_PROLOGUE;
-	 PARAM_FLOAT(x);
-	 PARAM_FLOAT(y);
-	 ACTION_RETURN_POINTER(P_PointInSector(x, y));
- }
+static sector_t *PointInSectorXY(FLevelLocals *self, double x, double y)
+{
+	return self->PointInSector(x ,y);
+}
 
-  static void SetXOffset(sector_t *self, int pos, double o)
-  {
-	  self->SetXOffset(pos, o);
-  }
+DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, PointInSector, PointInSectorXY)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	PARAM_FLOAT(x);
+	PARAM_FLOAT(y);
+	ACTION_RETURN_POINTER(PointInSectorXY(self, x, y));
+}
 
- DEFINE_ACTION_FUNCTION_NATIVE(_Sector, SetXOffset, SetXOffset)
- {
-	 PARAM_SELF_STRUCT_PROLOGUE(sector_t);
+static void SetXOffset(sector_t *self, int pos, double o)
+{
+	self->SetXOffset(pos, o);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(_Sector, SetXOffset, SetXOffset)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(sector_t);
 	 PARAM_INT(pos);
 	 PARAM_FLOAT(o);
 	 self->SetXOffset(pos, o);
@@ -2751,7 +2756,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, GetAutomapPosition, GetAutomapPositi
 
 static int ZGetUDMFInt(FLevelLocals *self, int type, int index, int key)
 {
-	return GetUDMFInt(type, index, ENamedName(key));
+	return GetUDMFInt(self,type, index, ENamedName(key));
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, GetUDMFInt, ZGetUDMFInt)
@@ -2760,12 +2765,12 @@ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, GetUDMFInt, ZGetUDMFInt)
 	PARAM_INT(type);
 	PARAM_INT(index);
 	PARAM_NAME(key);
-	ACTION_RETURN_INT(GetUDMFInt(type, index, key));
+	ACTION_RETURN_INT(GetUDMFInt(self, type, index, key));
 }
 
 static double ZGetUDMFFloat(FLevelLocals *self, int type, int index, int key)
 {
-	return GetUDMFFloat(type, index, ENamedName(key));
+	return GetUDMFFloat(self, type, index, ENamedName(key));
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, GetUDMFFloat, ZGetUDMFFloat)
@@ -2774,12 +2779,12 @@ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, GetUDMFFloat, ZGetUDMFFloat)
 	PARAM_INT(type);
 	PARAM_INT(index);
 	PARAM_NAME(key);
-	ACTION_RETURN_FLOAT(GetUDMFFloat(type, index, key));
+	ACTION_RETURN_FLOAT(GetUDMFFloat(self, type, index, key));
 }
 
 static void ZGetUDMFString(FLevelLocals *self, int type, int index, int key, FString *result)
 {
-	*result = GetUDMFString(type, index, ENamedName(key));
+	*result = GetUDMFString(self, type, index, ENamedName(key));
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, GetUDMFString, ZGetUDMFString)
@@ -2788,7 +2793,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, GetUDMFString, ZGetUDMFString)
 	PARAM_INT(type);
 	PARAM_INT(index);
 	PARAM_NAME(key);
-	ACTION_RETURN_STRING(GetUDMFString(type, index, key));
+	ACTION_RETURN_STRING(GetUDMFString(self, type, index, key));
 }
 
 DEFINE_ACTION_FUNCTION(FLevelLocals, GetChecksum)
@@ -2804,7 +2809,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, GetChecksum)
 	ACTION_RETURN_STRING((const char*)md5string);
 }
 
-static void Vec2Offset(double x, double y, double dx, double dy, bool absolute, DVector2 *result)
+static void Vec2Offset(FLevelLocals *Level, double x, double y, double dx, double dy, bool absolute, DVector2 *result)
 {
 	if (absolute)
 	{
@@ -2812,24 +2817,24 @@ static void Vec2Offset(double x, double y, double dx, double dy, bool absolute, 
 	}
 	else
 	{
-		*result = level.GetPortalOffsetPosition(x, y, dx, dy);
+		*result = Level->GetPortalOffsetPosition(x, y, dx, dy);
 	}
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, Vec2Offset, Vec2Offset)
 {
-	PARAM_PROLOGUE;
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
 	PARAM_FLOAT(x);
 	PARAM_FLOAT(y);
 	PARAM_FLOAT(dx);
 	PARAM_FLOAT(dy);
 	PARAM_BOOL(absolute);
 	DVector2 result;
-	Vec2Offset(x, y, dx, dy, absolute, &result);
+	Vec2Offset(self, x, y, dx, dy, absolute, &result);
 	ACTION_RETURN_VEC2(result);
 }
 
-static void Vec2OffsetZ(double x, double y, double dx, double dy, double atz, bool absolute, DVector3 *result)
+static void Vec2OffsetZ(FLevelLocals *Level, double x, double y, double dx, double dy, double atz, bool absolute, DVector3 *result)
 {
 	if (absolute)
 	{
@@ -2837,14 +2842,14 @@ static void Vec2OffsetZ(double x, double y, double dx, double dy, double atz, bo
 	}
 	else
 	{
-		DVector2 v = level.GetPortalOffsetPosition(x, y, dx, dy);
+		DVector2 v = Level->GetPortalOffsetPosition(x, y, dx, dy);
 		*result = (DVector3(v, atz));
 	}
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, Vec2OffsetZ, Vec2OffsetZ)
 {
-	PARAM_PROLOGUE;
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
 	PARAM_FLOAT(x);
 	PARAM_FLOAT(y);
 	PARAM_FLOAT(dx);
@@ -2852,11 +2857,11 @@ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, Vec2OffsetZ, Vec2OffsetZ)
 	PARAM_FLOAT(atz);
 	PARAM_BOOL(absolute);
 	DVector3 result;
-	Vec2OffsetZ(x, y, dx, dy, atz, absolute, &result);
+	Vec2OffsetZ(self, x, y, dx, dy, atz, absolute, &result);
 	ACTION_RETURN_VEC3(result);
 }
 
-static void Vec3Offset(double x, double y, double z, double dx, double dy, double dz, bool absolute, DVector3 *result)
+static void Vec3Offset(FLevelLocals *Level, double x, double y, double z, double dx, double dy, double dz, bool absolute, DVector3 *result)
 {
 	if (absolute)
 	{
@@ -2864,14 +2869,14 @@ static void Vec3Offset(double x, double y, double z, double dx, double dy, doubl
 	}
 	else
 	{
-		DVector2 v = level.GetPortalOffsetPosition(x, y, dx, dy);
+		DVector2 v = Level->GetPortalOffsetPosition(x, y, dx, dy);
 		*result = (DVector3(v, z + dz));
 	}
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, Vec3Offset, Vec3Offset)
 {
-	PARAM_PROLOGUE;
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
 	PARAM_FLOAT(x);
 	PARAM_FLOAT(y);
 	PARAM_FLOAT(z);
@@ -2880,7 +2885,100 @@ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, Vec3Offset, Vec3Offset)
 	PARAM_FLOAT(dz);
 	PARAM_BOOL(absolute);
 	DVector3 result;
-	Vec3Offset(x, y, z, dx, dy, dz, absolute, &result);
+	Vec3Offset(self, x, y, z, dx, dy, dz, absolute, &result);
+	ACTION_RETURN_VEC3(result);
+}
+
+int IsPointInMap(FLevelLocals *Level, double x, double y, double z);
+
+DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, IsPointInLevel, IsPointInMap)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	PARAM_FLOAT(x);
+	PARAM_FLOAT(y);
+	PARAM_FLOAT(z);
+	ACTION_RETURN_BOOL(IsPointInMap(self, x, y, z));
+}
+
+template <typename T>
+inline T VecDiff(FLevelLocals *Level, const T& v1, const T& v2)
+{
+	T result = v2 - v1;
+	
+	if (Level->subsectors.Size() > 0)
+	{
+		const sector_t * sec1 = Level->PointInSector(v1);
+		const sector_t * sec2 = Level->PointInSector(v2);
+		
+		if (nullptr != sec1 && nullptr != sec2)
+		{
+			result += Level->Displacements.getOffset(sec2->PortalGroup, sec1->PortalGroup);
+		}
+	}
+	
+	return result;
+}
+
+void Vec2Diff(FLevelLocals *Level, double x1, double y1, double x2, double y2, DVector2 *result)
+{
+	*result = VecDiff(Level, DVector2(x1, y1), DVector2(x2, y2));
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, Vec2Diff, Vec2Diff)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	PARAM_FLOAT(x1);
+	PARAM_FLOAT(y1);
+	PARAM_FLOAT(x2);
+	PARAM_FLOAT(y2);
+	ACTION_RETURN_VEC2(VecDiff(self, DVector2(x1, y1), DVector2(x2, y2)));
+}
+
+void Vec3Diff(FLevelLocals *Level, double x1, double y1, double z1, double x2, double y2, double z2, DVector3 *result)
+{
+	*result = VecDiff(Level, DVector3(x1, y1, z1), DVector3(x2, y2, z2));
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, Vec3Diff, Vec3Diff)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	PARAM_FLOAT(x1);
+	PARAM_FLOAT(y1);
+	PARAM_FLOAT(z1);
+	PARAM_FLOAT(x2);
+	PARAM_FLOAT(y2);
+	PARAM_FLOAT(z2);
+	ACTION_RETURN_VEC3(VecDiff(self, DVector3(x1, y1, z1), DVector3(x2, y2, z2)));
+}
+
+void SphericalCoords(FLevelLocals *self, double vpX, double vpY, double vpZ, double tX, double tY, double tZ, double viewYaw, double viewPitch, int absolute, DVector3 *result)
+{
+	
+	DVector3 viewpoint(vpX, vpY, vpZ);
+	DVector3 target(tX, tY, tZ);
+	auto vecTo = absolute ? target - viewpoint : VecDiff(self, viewpoint, target);
+	
+	*result = (DVector3(
+								deltaangle(vecTo.Angle(), viewYaw).Degrees,
+								deltaangle(vecTo.Pitch(), viewPitch).Degrees,
+								vecTo.Length()
+								));
+
+}
+DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, SphericalCoords, SphericalCoords)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	PARAM_FLOAT(viewpointX);
+	PARAM_FLOAT(viewpointY);
+	PARAM_FLOAT(viewpointZ);
+	PARAM_FLOAT(targetX);
+	PARAM_FLOAT(targetY);
+	PARAM_FLOAT(targetZ);
+	PARAM_FLOAT(viewYaw);
+	PARAM_FLOAT(viewPitch);
+	PARAM_BOOL(absolute);
+	DVector3 result;
+	SphericalCoords(self, viewpointX, viewpointY, viewpointZ, targetX, targetY, targetZ, viewYaw, viewpointZ, absolute, &result);
 	ACTION_RETURN_VEC3(result);
 }
 
@@ -3234,6 +3332,7 @@ DEFINE_FIELD_X(Sector, sector_t, terrainnum)
 DEFINE_FIELD_X(Sector, sector_t, floordata)
 DEFINE_FIELD_X(Sector, sector_t, ceilingdata)
 DEFINE_FIELD_X(Sector, sector_t, lightingdata)
+DEFINE_FIELD_X(Sector, sector_t, Level)
 DEFINE_FIELD_X(Sector, sector_t, interpolations)
 DEFINE_FIELD_X(Sector, sector_t, soundtraversed)
 DEFINE_FIELD_X(Sector, sector_t, stairlock)

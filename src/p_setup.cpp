@@ -75,8 +75,6 @@
 #include "am_map.h"
 #include "fragglescript/t_script.h"
 
-void P_ClearUDMFKeys();
-
 extern AActor *SpawnMapThing (int index, FMapThing *mthing, int position);
 
 extern unsigned int R_OldBlend;
@@ -175,20 +173,14 @@ static void PrecacheLevel(FLevelLocals *Level)
 		AddToList(hitlist.Data(), Level->sides[i].GetTexture(side_t::bottom), FTextureManager::HIT_Wall);
 	}
 
-	// Sky texture is always present.
-	// Note that F_SKY1 is the name used to
-	//	indicate a sky floor/ceiling as a flat,
-	//	while the sky texture is stored like
-	//	a wall texture, with an episode dependant
-	//	name.
 
-	if (sky1texture.isValid())
+	if (Level->skytexture1.isValid())
 	{
-		AddToList(hitlist.Data(), sky1texture, FTextureManager::HIT_Sky);
+		AddToList(hitlist.Data(), Level->skytexture1, FTextureManager::HIT_Sky);
 	}
-	if (sky2texture.isValid())
+	if (Level->skytexture2.isValid())
 	{
-		AddToList(hitlist.Data(), sky2texture, FTextureManager::HIT_Sky);
+		AddToList(hitlist.Data(), Level->skytexture2, FTextureManager::HIT_Sky);
 	}
 
 	for (auto n : gameinfo.PrecachedTextures)
@@ -261,12 +253,20 @@ void FLevelLocals::ClearPortals()
 
 void FLevelLocals::ClearLevelData()
 {
+	Thinkers.DestroyAllThinkers();
 	ClearAllSubsectorLinks(); // can't be done as part of the polyobj deletion process.
 
 	total_monsters = total_items = total_secrets =
 		killed_monsters = found_items = found_secrets =
 		wminfo.maxfrags = 0;
+
+	for (int i = 0; i < 4; i++)
+	{
+		UDMFKeys[i].Clear();
+	}
 	
+	SN_StopAllSequences(this);
+
 	FStrifeDialogueNode *node;
 	
 	while (StrifeDialogues.Pop (node))
@@ -288,6 +288,7 @@ void FLevelLocals::ClearLevelData()
 	}
 	ClearPortals();
 
+	interpolator.ClearInterpolations();	// [RH] Nothing to interpolate on a fresh level.
 	tagManager.Clear();
 	ClearTIDHashes();
 	Behaviors.UnloadModules();
@@ -348,11 +349,6 @@ void P_FreeLevelData ()
 	// [ZZ] delete per-map event handlers
 	E_Shutdown(true);
 	R_FreePastViewers();
-	P_ClearUDMFKeys();
-
-	interpolator.ClearInterpolations();	// [RH] Nothing to interpolate on a fresh level.
-	SN_StopAllSequences ();
-	DThinker::DestroyAllThinkers ();
 
 	level.ClearLevelData();
 }
@@ -381,13 +377,13 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 		Level->SetMusicVolume(Level->MusicVolume);
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{
-			players[i].killcount = players[i].secretcount
-				= players[i].itemcount = 0;
+			Level->Players[i]->killcount = Level->Players[i]->secretcount
+				= Level->Players[i]->itemcount = 0;
 		}
 	}
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
-		players[i].mo = nullptr;
+		Level->Players[i]->mo = nullptr;
 	}
 	// [RH] Clear any scripted translation colors the previous level may have set.
 	for (i = 0; i < int(translationtables[TRANSLATION_LevelScripted].Size()); ++i)
@@ -443,9 +439,9 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (playeringame[i])
+			if (Level->PlayerInGame(i))
 			{
-				players[i].mo = nullptr;
+				Level->Players[i]->mo = nullptr;
 				Level->DeathMatchSpawnPlayer(i);
 			}
 		}
@@ -455,9 +451,9 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	{
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{
-			if (playeringame[i])
+			if (Level->PlayerInGame(i))
 			{
-				players[i].mo = nullptr;
+				Level->Players[i]->mo = nullptr;
 				FPlayerStart *mthing = Level->PickPlayerStart(i);
 				Level->SpawnPlayer(mthing, i, (Level->flags2 & LEVEL2_PRERAISEWEAPON) ? SPF_WEAPONFULLYUP : 0);
 			}
@@ -470,11 +466,12 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	{
 		for (i = 0; i < MAXPLAYERS; ++i)
 		{
-			if (playeringame[i] && players[i].mo != nullptr)
+			auto p = Level->Players[i];
+			if (Level->PlayerInGame(i) && p->mo != nullptr)
 			{
-				if (!(players[i].mo->flags & MF_FRIENDLY))
+				if (!(p->mo->flags & MF_FRIENDLY))
 				{
-					AActor * oldSpawn = players[i].mo;
+					AActor * oldSpawn = p->mo;
 					Level->DeathMatchSpawnPlayer(i);
 					oldSpawn->Destroy();
 				}
@@ -509,7 +506,7 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	R_OldBlend = 0xffffffff;
 
 	// [RH] Remove all particles
-	P_ClearParticles();
+	P_ClearParticles(Level);
 
 	// preload graphics and sounds
 	if (precache)
@@ -551,6 +548,7 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 
 	Level->automap = AM_Create(Level);
 	Level->automap->LevelInit();
+	Level->SetCompatLineOnSide(true);
 
 	// [RH] Start lightning, if MAPINFO tells us to
 	if (Level->flags & LEVEL_STARTLIGHTNING)
@@ -573,7 +571,7 @@ void P_Init ()
 
 void P_Shutdown ()
 {	
-	DThinker::DestroyThinkersInList(STAT_STATIC);	
+	level.Thinkers.DestroyThinkersInList(STAT_STATIC);
 	P_FreeLevelData ();
 	// [ZZ] delete global event handlers
 	E_Shutdown(false);
@@ -609,13 +607,13 @@ CCMD(dumpgeometry)
 					if (seg->linedef)
 					{
 						Printf(PRINT_LOG, "      (%4.4f, %4.4f), (%4.4f, %4.4f) - seg %d, linedef %d, side %d",
-							   seg->v1->fX(), seg->v1->fY(), seg->v2->fX(), seg->v2->fY(),
-							   seg->Index(), seg->linedef->Index(), seg->sidedef != seg->linedef->sidedef[0]);
+							seg->v1->fX(), seg->v1->fY(), seg->v2->fX(), seg->v2->fY(),
+							seg->Index(), seg->linedef->Index(), seg->sidedef != seg->linedef->sidedef[0]);
 					}
 					else
 					{
 						Printf(PRINT_LOG, "      (%4.4f, %4.4f), (%4.4f, %4.4f) - seg %d, miniseg",
-							   seg->v1->fX(), seg->v1->fY(), seg->v2->fX(), seg->v2->fY(), seg->Index());
+							seg->v1->fX(), seg->v1->fY(), seg->v2->fX(), seg->v2->fY(), seg->Index());
 					}
 					if (seg->PartnerSeg)
 					{

@@ -473,9 +473,9 @@ double FindHighestCeilingSurrounding (const sector_t *sector, vertex_t **v)
 // jff 02/03/98 Add routine to find shortest lower texture
 //
 
-static inline void CheckShortestTex (FTextureID texnum, double &minsize)
+static inline void CheckShortestTex (FLevelLocals *Level, FTextureID texnum, double &minsize)
 {
-	if (texnum.isValid() || (texnum.isNull() && (i_compatflags & COMPATF_SHORTTEX)))
+	if (texnum.isValid() || (texnum.isNull() && (Level->i_compatflags & COMPATF_SHORTTEX)))
 	{
 		FTexture *tex = TexMan.GetTexture(texnum);
 		if (tex != NULL)
@@ -497,8 +497,8 @@ double FindShortestTextureAround (sector_t *sec)
 	{
 		if (check->flags & ML_TWOSIDED)
 		{
-			CheckShortestTex (check->sidedef[0]->GetTexture(side_t::bottom), minsize);
-			CheckShortestTex (check->sidedef[1]->GetTexture(side_t::bottom), minsize);
+			CheckShortestTex (sec->Level, check->sidedef[0]->GetTexture(side_t::bottom), minsize);
+			CheckShortestTex (sec->Level, check->sidedef[1]->GetTexture(side_t::bottom), minsize);
 		}
 	}
 	return minsize < FLT_MAX ? minsize : TexMan.ByIndex(0)->GetDisplayHeight();
@@ -522,8 +522,8 @@ double FindShortestUpperAround (sector_t *sec)
 	{
 		if (check->flags & ML_TWOSIDED)
 		{
-			CheckShortestTex (check->sidedef[0]->GetTexture(side_t::top), minsize);
-			CheckShortestTex (check->sidedef[1]->GetTexture(side_t::top), minsize);
+			CheckShortestTex (sec->Level, check->sidedef[0]->GetTexture(side_t::top), minsize);
+			CheckShortestTex (sec->Level, check->sidedef[1]->GetTexture(side_t::top), minsize);
 		}
 	}
 	return minsize < FLT_MAX ? minsize : TexMan.ByIndex(0)->GetDisplayHeight();
@@ -941,7 +941,7 @@ double HighestCeilingAt(sector_t *check, double x, double y, sector_t **resultse
 	{
 		pos += check->GetPortalDisplacement(sector_t::ceiling);
 		planeheight = check->GetPortalPlaneZ(sector_t::ceiling);
-		check = P_PointInSector(pos);
+		check = check->Level->PointInSector(pos);
 	}
 	if (resultsec) *resultsec = check;
 	return check->ceilingplane.ZatPoint(pos);
@@ -963,7 +963,7 @@ double LowestFloorAt(sector_t *check, double x, double y, sector_t **resultsec)
 	{
 		pos += check->GetPortalDisplacement(sector_t::floor);
 		planeheight = check->GetPortalPlaneZ(sector_t::ceiling);
-		check = P_PointInSector(pos);
+		check = check->Level->PointInSector(pos);
 	}
 	if (resultsec) *resultsec = check;
 	return check->floorplane.ZatPoint(pos);
@@ -1012,7 +1012,7 @@ double NextHighestCeilingAt(sector_t *sec, double x, double y, double bottomz, d
 			x += pos.X;
 			y += pos.Y;
 			planeheight = sec->GetPortalPlaneZ(sector_t::ceiling);
-			sec = P_PointInSector(x, y);
+			sec = sec->Level->PointInSector(x, y);
 		}
 	}
 }
@@ -1061,7 +1061,7 @@ double NextLowestFloorAt(sector_t *sec, double x, double y, double z, int flags,
 			x += pos.X;
 			y += pos.Y;
 			planeheight = sec->GetPortalPlaneZ(sector_t::floor);
-			sec = P_PointInSector(x, y);
+			sec = sec->Level->PointInSector(x, y);
 		}
 	}
 }

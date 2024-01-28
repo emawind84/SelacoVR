@@ -71,8 +71,11 @@ static FRandom randLight;
 
 CUSTOM_CVAR (Bool, gl_lights, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
-	if (self) AActor::RecreateAllAttachedLights();
-	else AActor::DeleteAllAttachedLights();
+	for (auto Level : AllLevels())
+	{
+		if (self) Level->RecreateAllAttachedLights();
+		else Level->DeleteAllAttachedLights();
+	}
 }
 
 CVAR(Float, gl_light_max_intensity, 1000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
@@ -605,7 +608,7 @@ void FDynamicLight::CollectWithinRadius(const DVector3 &opos, FSection *section,
 					line_t *other = port->mDestination;
 					if (other->validcount != ::validcount)
 					{
-						subsector_t *othersub = R_PointInSubsector(other->v1->fPos() + other->Delta() / 2);
+						subsector_t *othersub = Level->PointInRenderSubsector(other->v1->fPos() + other->Delta() / 2);
 						FSection *othersect = othersub->section;
 						if (othersect->validcount != ::validcount)
 						{
@@ -656,7 +659,7 @@ void FDynamicLight::CollectWithinRadius(const DVector3 &opos, FSection *section,
 			if (sec->GetPortalPlaneZ(sector_t::ceiling) < Z() + radius)
 			{
 				DVector2 refpos = other->v1->fPos() + other->Delta() / 2 + sec->GetPortalDisplacement(sector_t::ceiling);
-				subsector_t *othersub = R_PointInSubsector(refpos);
+				subsector_t *othersub = Level->PointInRenderSubsector(refpos);
 				FSection *othersect = othersub->section;
 				if (othersect->validcount != dl_validcount)
 				{
@@ -671,7 +674,7 @@ void FDynamicLight::CollectWithinRadius(const DVector3 &opos, FSection *section,
 			if (sec->GetPortalPlaneZ(sector_t::floor) > Z() - radius)
 			{
 				DVector2 refpos = other->v1->fPos() + other->Delta() / 2 + sec->GetPortalDisplacement(sector_t::floor);
-				subsector_t *othersub = R_PointInSubsector(refpos);
+				subsector_t *othersub = Level->PointInRenderSubsector(refpos);
 				FSection *othersect = othersub->section;
 				if (othersect->validcount != dl_validcount)
 				{
@@ -711,7 +714,7 @@ void FDynamicLight::LinkLight()
 	if (radius>0)
 	{
 		// passing in radius*radius allows us to do a distance check without any calls to sqrt
-		FSection *sect = R_PointInSubsector(Pos)->section;
+		FSection *sect = Level->PointInRenderSubsector(Pos)->section;
 
 		dl_validcount++;
 		::validcount++;
@@ -992,9 +995,9 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_RemoveLight, RemoveLight)
 //
 //==========================================================================
 
-void AActor::DeleteAllAttachedLights()
+void FLevelLocals::DeleteAllAttachedLights()
 {
-	TThinkerIterator<AActor> it;
+	auto it = GetThinkerIterator<AActor>();
 	AActor * a;
 
 	while ((a=it.Next())) 
@@ -1009,9 +1012,9 @@ void AActor::DeleteAllAttachedLights()
 //
 //==========================================================================
 
-void AActor::RecreateAllAttachedLights()
+void FLevelLocals::RecreateAllAttachedLights()
 {
-	TThinkerIterator<AActor> it;
+	auto it = GetThinkerIterator<AActor>();
 	AActor * a;
 
 	while ((a=it.Next())) 

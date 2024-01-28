@@ -53,6 +53,7 @@ void InitializeActorLights(TArray<FLightAssociation> &LightAssociations);
 
 TArray<UserShaderDesc> usershaders;
 extern TDeletingArray<FLightDefaults *> LightDefaults;
+extern int AttenuationIsSet;
 
 
 //-----------------------------------------------------------------------------
@@ -1784,6 +1785,7 @@ void ParseGLDefs()
 	const char *defsLump = NULL;
 
 	LightDefaults.DeleteAndClear();
+	AttenuationIsSet = -1;
 	//gl_DestroyUserShaders(); function says 'todo'
 	switch (gameinfo.gametype)
 	{
