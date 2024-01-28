@@ -193,7 +193,7 @@ inline bool P_IsBlockedByLine(AActor* actor, line_t* line)
 	// just optionally generalizes the behavior to other friendly monsters.
 
 	if (!((actor->flags3 & MF3_NOBLOCKMONST)
-		|| ((i_compatflags & COMPATF_NOBLOCKFRIENDS) && (actor->flags & MF_FRIENDLY))))
+		|| ((actor->Level->i_compatflags & COMPATF_NOBLOCKFRIENDS) && (actor->flags & MF_FRIENDLY))))
 	{
 		// the regular 'blockmonsters' flag.
 		if (line->flags & ML_BLOCKMONSTERS) return true;
