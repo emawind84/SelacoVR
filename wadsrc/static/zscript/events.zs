@@ -270,7 +270,7 @@ struct InputEvent native play version("2.4")
         Key_Pad_X = 0x1C2,
         Key_Pad_Y = 0x1C3,
 
-        Num_Keys = 0x26C
+        Num_Keys = 0x224
     }
     
     //
