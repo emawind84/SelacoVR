@@ -974,9 +974,6 @@ bool FLevelLocals::DoCompleted (FString nextlevel, wbstartstruct_t &wminfo)
 
 	finishstate = mode;
 
-	S_StopAllChannels();
-	SN_StopAllSequences();
-
 	if (!ShouldDoIntermission(nextcluster, thiscluster))
 	{
 		WorldDone ();
