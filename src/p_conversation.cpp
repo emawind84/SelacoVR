@@ -854,7 +854,7 @@ void P_StartConversation (AActor *npc, AActor *pc, bool facetalker, bool saveang
 
 	// Make sure this is actually a player.
 	if (pc == nullptr || pc->player == nullptr || npc == nullptr) return;
-	auto Level = &level;
+	auto Level = pc->Level;
 
 	// [CW] If an NPC is talking to a PC already, then don't let
 	// anyone else talk to the NPC.
@@ -1004,7 +1004,7 @@ static void HandleReply(player_t *player, bool isconsole, int nodenum, int reply
 	AActor *npc;
 	bool takestuff;
 	int i;
-	auto Level = &level;
+	auto Level = player->mo->Level;
 	if (player->ConversationNPC == nullptr || (unsigned)nodenum >= Level->StrifeDialogues.Size())
 	{
 		return;
@@ -1183,7 +1183,7 @@ static void HandleReply(player_t *player, bool isconsole, int nodenum, int reply
 
 	if (isconsole)
 	{
-		I_SetMusicVolume (level.MusicVolume);
+		I_SetMusicVolume (player->mo->Level->MusicVolume);
 	}
 }
 

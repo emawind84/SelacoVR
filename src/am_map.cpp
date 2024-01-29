@@ -815,9 +815,9 @@ static TArray<mline_t> CheatKey;
 static TArray<mline_t> EasyKey;
 
 static std::array<mline_t, 3> thintriangle_guy = { {
-	{-.5,-.7, 1,0},
-	{1,0, -.5,.7},
-	{-.5,.7, -.5,-.7}
+	{{-.5,-.7}, {1,0}},
+	{{1,0}, {-.5,.7}},
+	{{-.5,.7}, {-.5,-.7}}
 } };
 
 //=============================================================================
@@ -2687,14 +2687,15 @@ void DAutomap::rotatePoint (double *x, double *y)
 
 void DAutomap::drawLineCharacter(const mline_t *lineguy, size_t lineguylines, double scale, DAngle angle, const AMColor &color, double x, double y)
 {
-	int		i;
 	mline_t	l;
 
-	for (i=0;i<lineguylines;i++) {
+	for (size_t i=0;i<lineguylines;i++)
+	{
 		l.a.x = lineguy[i].a.x;
 		l.a.y = lineguy[i].a.y;
 
-		if (scale) {
+		if (scale)
+		{
 			l.a.x *= scale;
 			l.a.y *= scale;
 		}
@@ -2708,7 +2709,8 @@ void DAutomap::drawLineCharacter(const mline_t *lineguy, size_t lineguylines, do
 		l.b.x = lineguy[i].b.x;
 		l.b.y = lineguy[i].b.y;
 
-		if (scale) {
+		if (scale)
+		{
 			l.b.x *= scale;
 			l.b.y *= scale;
 		}
@@ -2840,7 +2842,7 @@ void DAutomap::drawKeys ()
 	mpoint_t p;
 	DAngle	 angle;
 
-	TThinkerIterator<AActor> it(NAME_Key);
+	auto it = Level->GetThinkerIterator<AActor>(NAME_Key);
 	AActor *key;
 
 	while ((key = it.Next()) != nullptr)

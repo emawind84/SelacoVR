@@ -286,7 +286,10 @@ void cht_DoCheat (player_t *player, int cheat)
 
 		if (i == 4)
 		{
-			level.flags2 ^= LEVEL2_ALLMAP;
+			for (auto Level : AllLevels())
+			{
+				Level->flags2 ^= LEVEL2_ALLMAP;
+			}
 		}
 		else if (player->mo != NULL && player->health >= 0)
 		{
@@ -318,7 +321,7 @@ void cht_DoCheat (player_t *player, int cheat)
 	case CHT_MASSACRE:
 	case CHT_MASSACRE2:
 		{
-			int killcount = P_Massacre (cheat == CHT_MASSACRE2);
+			int killcount = currentUILevel->Massacre (cheat == CHT_MASSACRE2);
 			// killough 3/22/98: make more intelligent about plural
 			if (killcount == 1)
 			{

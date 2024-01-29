@@ -111,7 +111,6 @@ void BloodCrypt (void *data, int key, int len);
 void P_ClearUDMFKeys();
 void InitRenderInfo();
 
-extern AActor *SpawnMapThing (int index, FMapThing *mthing, int position);
 
 EXTERN_CVAR(Bool, am_textured)
 
@@ -1098,6 +1097,7 @@ void MapLoader::LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 	for (unsigned i = 0; i < numsectors; i++, ss++, ms++)
 	{
 		ss->e = &sectors[0].e[i];
+		ss->Level = Level;
 		if (!map->HasBehavior) ss->Flags |= SECF_FLOORDROP;
 		ss->SetPlaneTexZ(sector_t::floor, (double)LittleShort(ms->floorheight));
 		ss->floorplane.set(0, 0, 1., -ss->GetPlaneTexZ(sector_t::floor));
@@ -1447,7 +1447,7 @@ void MapLoader::SpawnThings (int position)
 
 	for (int i=0; i < numthings; i++)
 	{
-		AActor *actor = SpawnMapThing (i, &MapThingsConverted[i], position);
+		AActor *actor = Level->SpawnMapThing (i, &MapThingsConverted[i], position);
 		unsigned *udi = MapThingsUserDataIndex.CheckKey((unsigned)i);
 		if (udi != nullptr)
 		{
@@ -3278,7 +3278,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 	}
 
 	InitRenderInfo();				// create hardware independent renderer resources for the level. This must be done BEFORE the PolyObj Spawn!!!
-	P_ClearDynamic3DFloorData();	// CreateVBO must be run on the plain 3D floor data.
+	Level->ClearDynamic3DFloorData();	// CreateVBO must be run on the plain 3D floor data.
 	screen->mVertexData->CreateVBO(Level->sectors);
 
 	for (auto &sec : Level->sectors)
@@ -3286,7 +3286,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 		P_Recalculate3DFloors(&sec);
 	}
 
-	SWRenderer->SetColormap();	//The SW renderer needs to do some special setup for the level's default colormap.
+	SWRenderer->SetColormap(Level);	//The SW renderer needs to do some special setup for the level's default colormap.
 	InitPortalGroups(Level);
 	P_InitHealthGroups();
 

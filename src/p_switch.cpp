@@ -85,7 +85,7 @@ protected:
 static bool P_StartButton (side_t *side, int Where, FSwitchDef *Switch, const DVector2 &pos, bool useagain)
 {
 	DActiveButton *button;
-	TThinkerIterator<DActiveButton> iterator;
+	auto iterator = side->GetLevel()->GetThinkerIterator<DActiveButton>();
 	
 	// See if button is already pressed
 	while ( (button = iterator.Next ()) )
@@ -97,7 +97,7 @@ static bool P_StartButton (side_t *side, int Where, FSwitchDef *Switch, const DV
 		}
 	}
 
-	level.CreateThinker<DActiveButton> (side, Where, Switch, pos, useagain);
+	side->GetLevel()->CreateThinker<DActiveButton> (side, Where, Switch, pos, useagain);
 	return true;
 }
 
@@ -308,7 +308,7 @@ bool P_ChangeSwitchTexture (side_t *side, int useAgain, uint8_t special, bool *q
 	}
 	if (playsound)
 	{
-		S_Sound (DVector3(pt, 0), CHAN_VOICE, CHANF_LISTENERZ, sound, 1, ATTN_STATIC);
+		S_Sound (side->GetLevel(), DVector3(pt, 0), CHAN_VOICE, CHANF_LISTENERZ, sound, 1, ATTN_STATIC);
 	}
 	if (quest != NULL)
 	{
@@ -404,7 +404,7 @@ void DActiveButton::Tick ()
 			if (def != NULL)
 			{
 				m_Frame = -1;
-				S_Sound (DVector3(m_Pos, 0), CHAN_VOICE, CHANF_LISTENERZ,
+				S_Sound (Level, DVector3(m_Pos, 0), CHAN_VOICE, CHANF_LISTENERZ,
 					def->Sound != 0 ? FSoundID(def->Sound) : FSoundID("switches/normbutn"),
 					1, ATTN_STATIC);
 				bFlippable = false;

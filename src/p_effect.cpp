@@ -692,7 +692,7 @@ void P_DrawRailTrail(AActor *source, TArray<SPortalHit> &portalhits, int color1,
 				{
 					if (shortest == NULL || shortest->sounddist > seg.sounddist) shortest = &seg;
 				}
-				S_Sound (DVector3(shortest->soundpos, r_viewpoint.Pos.Z), CHAN_WEAPON, 0, sound, 1, ATTN_NORM);
+				S_Sound (source->Level, DVector3(shortest->soundpos, r_viewpoint.Pos.Z), CHAN_WEAPON, 0, sound, 1, ATTN_NORM);
 			}
 		}
 	}

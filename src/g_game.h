@@ -38,10 +38,6 @@ class AActor;
 //
 // GAME
 //
-
-void G_DeathMatchSpawnPlayer (int playernum);
-
-struct FPlayerStart *G_PickPlayerStart (int playernum, int flags = 0);
 enum
 {
 	PPS_FORCERANDOM			= 1,
@@ -70,8 +66,6 @@ void G_PlayDemo (char* name);
 void G_TimeDemo (const char* name);
 bool G_CheckDemoStatus (void);
 
-void G_WorldDone (void);
-
 void G_Ticker (void);
 bool G_Responder (event_t*	ev);
 
@@ -92,7 +86,6 @@ enum EFinishLevelType
 
 void G_PlayerFinishLevel (int player, EFinishLevelType mode, int flags);
 
-void G_DoReborn (int playernum, bool freshbot);
 void G_DoPlayerPop(int playernum);
 
 // Adds pitch to consoleplayer's viewpitch and clamps it

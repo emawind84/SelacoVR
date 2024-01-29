@@ -9,29 +9,23 @@
 
 inline DVector3 AActor::PosRelative(int portalgroup) const
 {
-	return Pos() + level.Displacements.getOffset(Sector->PortalGroup, portalgroup);
+	return Pos() + Level->Displacements.getOffset(Sector->PortalGroup, portalgroup);
 }
 
 inline DVector3 AActor::PosRelative(const AActor *other) const
 {
-	return Pos() + level.Displacements.getOffset(Sector->PortalGroup, other->Sector->PortalGroup);
+	return Pos() + Level->Displacements.getOffset(Sector->PortalGroup, other->Sector->PortalGroup);
 }
 
 inline DVector3 AActor::PosRelative(sector_t *sec) const
 {
-	return Pos() + level.Displacements.getOffset(Sector->PortalGroup, sec->PortalGroup);
+	return Pos() + Level->Displacements.getOffset(Sector->PortalGroup, sec->PortalGroup);
 }
 
 inline DVector3 AActor::PosRelative(const line_t *line) const
 {
-	return Pos() + level.Displacements.getOffset(Sector->PortalGroup, line->frontsector->PortalGroup);
+	return Pos() + Level->Displacements.getOffset(Sector->PortalGroup, line->frontsector->PortalGroup);
 }
-
-inline DVector3 PosRelative(const DVector3 &pos, line_t *line, sector_t *refsec = NULL)
-{
-	return pos + level.Displacements.getOffset(refsec->PortalGroup, line->frontsector->PortalGroup);
-}
-
 
 inline void AActor::ClearInterpolation()
 {
@@ -62,7 +56,7 @@ inline double AActor::GetBobOffset(double ticfrac) const
 	{
 		return 0;
 	}
-	return BobSin(FloatBobPhase + level.maptime + ticfrac) * FloatBobStrength;
+	return BobSin(FloatBobPhase + Level->maptime + ticfrac) * FloatBobStrength;
 }
 
 inline double AActor::GetCameraHeight() const
@@ -79,7 +73,7 @@ inline FDropItem *AActor::GetDropItems() const
 inline double AActor::GetGravity() const
 {
 	if (flags & MF_NOGRAVITY) return 0;
-	return level.gravity * Sector->gravity * Gravity * 0.00125;
+	return Level->gravity * Sector->gravity * Gravity * 0.00125;
 }
 
 inline double AActor::AttackOffset(double offset)
@@ -103,7 +97,7 @@ inline DVector2 AActor::Vec2Offset(double dx, double dy, bool absolute)
 	}
 	else
 	{
-		return level.GetPortalOffsetPosition(X(), Y(), dx, dy);
+		return Level->GetPortalOffsetPosition(X(), Y(), dx, dy);
 	}
 }
 
@@ -116,7 +110,7 @@ inline DVector3 AActor::Vec2OffsetZ(double dx, double dy, double atz, bool absol
 	}
 	else
 	{
-		DVector2 v = level.GetPortalOffsetPosition(X(), Y(), dx, dy);
+		DVector2 v = Level->GetPortalOffsetPosition(X(), Y(), dx, dy);
 		return DVector3(v, atz);
 	}
 }
@@ -129,7 +123,7 @@ inline DVector2 AActor::Vec2Angle(double length, DAngle angle, bool absolute)
 	}
 	else
 	{
-		return level.GetPortalOffsetPosition(X(), Y(), length*angle.Cos(), length*angle.Sin());
+		return Level->GetPortalOffsetPosition(X(), Y(), length*angle.Cos(), length*angle.Sin());
 	}
 }
 
@@ -141,7 +135,7 @@ inline DVector3 AActor::Vec3Offset(double dx, double dy, double dz, bool absolut
 	}
 	else
 	{
-		DVector2 v = level.GetPortalOffsetPosition(X(), Y(), dx, dy);
+		DVector2 v = Level->GetPortalOffsetPosition(X(), Y(), dx, dy);
 		return DVector3(v, Z() + dz);
 	}
 }
@@ -159,7 +153,7 @@ inline DVector3 AActor::Vec3Angle(double length, DAngle angle, double dz, bool a
 	}
 	else
 	{
-		DVector2 v = level.GetPortalOffsetPosition(X(), Y(), length*angle.Cos(), length*angle.Sin());
+		DVector2 v = Level->GetPortalOffsetPosition(X(), Y(), length*angle.Cos(), length*angle.Sin());
 		return DVector3(v, Z() + dz);
 	}
 }

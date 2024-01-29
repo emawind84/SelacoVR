@@ -562,7 +562,7 @@ void FParser::SF_Include(void)
 		else
 			mysnprintf(tempstr, countof(tempstr), "%i", (int)t_argv[0].value.i);
 		
-		Script->ParseInclude(tempstr);
+		Script->ParseInclude(Level, tempstr);
 	}
 }
 
@@ -1042,7 +1042,7 @@ void FParser::SF_Teleport(void)
 		}
 		
 		if(mo)
-			EV_Teleport(0, tag, NULL, 0, mo, TELF_DESTFOG | TELF_SOURCEFOG);
+			Level->EV_Teleport(0, tag, NULL, 0, mo, TELF_DESTFOG | TELF_SOURCEFOG);
 	}
 }
 
@@ -1071,7 +1071,7 @@ void FParser::SF_SilentTeleport(void)
 		}
 		
 		if(mo)
-			EV_Teleport(0, tag, NULL, 0, mo, TELF_KEEPORIENTATION);
+			Level->EV_Teleport(0, tag, NULL, 0, mo, TELF_KEEPORIENTATION);
 	}
 }
 

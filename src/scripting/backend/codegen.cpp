@@ -6201,6 +6201,7 @@ FxExpression *FxIdentifier::Resolve(FCompileContext& ctx)
 						deprecationMessage.IsEmpty() ? "" : ", ", deprecationMessage.GetChars());
 				}
 			}
+			
 
 			newex = new FxGlobalVariable(static_cast<PField *>(sym), ScriptPosition);
 			goto foundit;

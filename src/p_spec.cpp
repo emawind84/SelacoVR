@@ -164,6 +164,8 @@ bool P_ActivateLine (line_t *line, AActor *mo, int side, int activationType, DVe
 		return false;
 	}
 
+	auto Level = line->GetLevel();
+
 	// [MK] Use WorldLinePreActivated to decide if activation should continue
 	bool shouldactivate = true;
 	E_WorldLinePreActivated(line, mo, activationType, &shouldactivate);
@@ -198,13 +200,13 @@ bool P_ActivateLine (line_t *line, AActor *mo, int side, int activationType, DVe
 	}
 	// some old WADs use this method to create walls that change the texture when shot.
 	else if (activationType == SPAC_Impact &&					// only for shootable triggers
-		(level.flags2 & LEVEL2_DUMMYSWITCHES) &&				// this is only a compatibility setting for an old hack!
+		(Level->flags2 & LEVEL2_DUMMYSWITCHES) &&				// this is only a compatibility setting for an old hack!
 		!repeat &&												// only non-repeatable triggers
 		(special<Generic_Floor || special>Generic_Crusher) &&	// not for Boom's generalized linedefs
 		special &&												// not for lines without a special
-		level.LineHasId(line, line->args[0]) &&							// Safety check: exclude edited UDMF linedefs or ones that don't map the tag to args[0]
+		Level->LineHasId(line, line->args[0]) &&							// Safety check: exclude edited UDMF linedefs or ones that don't map the tag to args[0]
 		line->args[0] &&										// only if there's a tag (which is stored in the first arg)
-		level.FindFirstSectorFromTag (line->args[0]) == -1)			// only if no sector is tagged to this linedef
+		Level->FindFirstSectorFromTag (line->args[0]) == -1)			// only if no sector is tagged to this linedef
 	{
 		P_ChangeSwitchTexture (line->sidedef[0], repeat, special);
 		line->special = 0;
@@ -434,7 +436,7 @@ void P_PlayerInSpecialSector (player_t *player, sector_t * sector)
 	if (sector->damageinterval <= 0)
 		sector->damageinterval = 32; // repair invalid damageinterval values
 
-	auto Level = &level;
+	auto Level = sector->Level;
 
 	// [RH] Apply any customizable damage
 	if (sector->damageamount > 0)
@@ -637,7 +639,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, GiveSecret)
 
 void P_PlayerOnSpecialFlat (player_t *player, int floorType)
 {
-	auto Level = &level;
+	auto Level = player->mo->Level;
 
 	if (Terrains[floorType].DamageAmount &&
 		!(Level->time % (Terrains[floorType].DamageTimeMask+1)))
@@ -714,7 +716,6 @@ void DLightTransfer::Construct(sector_t *srcSec, int target, bool copyFloor)
 	CopyFloor = copyFloor;
 	DoTransfer (LastLight = srcSec->lightlevel, target, copyFloor);
 
-	auto Level = &level;
 	if (copyFloor)
 	{
 		auto itr = Level->GetSectorTagIterator(target);
@@ -744,7 +745,6 @@ void DLightTransfer::DoTransfer (int llevel, int target, bool floor)
 {
 	int secnum;
 
-	auto Level = &level;
 	if (floor)
 	{
 		auto itr = Level->GetSectorTagIterator(target);
@@ -790,7 +790,6 @@ void DWallLightTransfer::Construct(sector_t *srcSec, int target, uint8_t flags)
 		wallflags = WALLF_ABSLIGHTING | WALLF_NOFAKECONTRAST;
 	}
 
-	auto Level = &level;
 	auto itr = Level->GetLineIdIterator(target);
 	while ((linenum = itr.Next()) >= 0)
 	{
@@ -821,7 +820,6 @@ void DWallLightTransfer::DoTransfer (short lightlevel, int target, uint8_t flags
 {
 	int linenum;
 
-	auto Level = &level;
 	auto itr = Level->GetLineIdIterator(target);
 	while ((linenum = itr.Next()) >= 0)
 	{

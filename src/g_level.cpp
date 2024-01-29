@@ -112,17 +112,26 @@ void G_VerifySkill();
 
 CUSTOM_CVAR(Bool, gl_brightfog, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
-	if (level.info == nullptr || level.info->brightfog == -1) level.brightfog = self;
+	for (auto Level : AllLevels())
+	{
+		if (Level->info == nullptr || Level->info->brightfog == -1) Level->brightfog = self;
+	}
 }
 
 CUSTOM_CVAR(Bool, gl_lightadditivesurfaces, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
-	if (level.info == nullptr || level.info->lightadditivesurfaces == -1) level.lightadditivesurfaces = self;
+	for (auto Level : AllLevels())
+	{
+		if (Level->info == nullptr || Level->info->lightadditivesurfaces == -1) Level->lightadditivesurfaces = self;
+	}
 }
 
 CUSTOM_CVAR(Bool, gl_notexturefill, false, CVAR_NOINITCALL)
 {
-	if (level.info == nullptr || level.info->notexturefill == -1) level.notexturefill = self;
+	for (auto Level : AllLevels())
+	{
+		if (Level->info == nullptr || Level->info->notexturefill == -1) Level->notexturefill = self;
+	}
 }
 
 CUSTOM_CVAR(Int, gl_lightmode, 2, CVAR_ARCHIVE | CVAR_NOINITCALL)
@@ -132,7 +141,10 @@ CUSTOM_CVAR(Int, gl_lightmode, 2, CVAR_ARCHIVE | CVAR_NOINITCALL)
 	else if (newself > 4) newself = 8;
 	else if (newself < 0) newself = 0;
 	if (self != newself) self = newself;
-	else if ((level.info == nullptr || level.info->lightmode == ELightMode::NotSet)) level.lightMode = (ELightMode)*self;
+	else for (auto Level : AllLevels())
+	{
+		if ((level.info == nullptr || level.info->lightmode == ELightMode::NotSet)) level.lightMode = (ELightMode)*self;
+	}
 }
 
 
@@ -205,7 +217,7 @@ CCMD (map)
 	if (argv.argc() > 1)
 	{
 		const char *mapname = argv[1];
-		if (!strcmp(mapname, "*")) mapname = level.MapName.GetChars();
+		if (!strcmp(mapname, "*")) mapname = currentUILevel->MapName.GetChars();
 
 		try
 		{
@@ -255,7 +267,7 @@ UNSAFE_CCMD(recordmap)
 	if (argv.argc() > 2)
 	{
 		const char *mapname = argv[2];
-		if (!strcmp(mapname, "*")) mapname = level.MapName.GetChars();
+		if (!strcmp(mapname, "*")) mapname = currentUILevel->MapName.GetChars();
 
 		try
 		{
@@ -710,7 +722,7 @@ void G_ChangeLevel(const char *levelname, int position, int flags, int nextSkill
 					player->mo->special1 = 0;
 				}
 				// ]]
-				G_DoReborn(i, false);
+				level.DoReborn(i, false);
 			}
 		}
 	}
@@ -950,7 +962,7 @@ void G_DoCompleted (void)
 
 	if (!ShouldDoIntermission(nextcluster, thiscluster))
 	{
-		G_WorldDone ();
+		level.WorldDone ();
 		return;
 	}
 
@@ -1088,11 +1100,6 @@ void G_DoLoadLevel (int position, bool autosave, bool newGame)
 	P_SetupLevel (&level, position, newGame);
 
 
-	// [RH] Start lightning, if MAPINFO tells us to
-	if (level.flags & LEVEL_STARTLIGHTNING)
-	{
-		P_StartLightning ();
-	}
 
 	TThinkerIterator<AActor> it;
 	AActor* ac;
@@ -1211,17 +1218,17 @@ void G_DoLoadLevel (int position, bool autosave, bool newGame)
 //
 //==========================================================================
 
-void G_WorldDone (void) 
+void FLevelLocals::WorldDone (void) 
 { 
 	cluster_info_t *nextcluster;
 	cluster_info_t *thiscluster;
 
 	gameaction = ga_worlddone; 
 
-	if (level.flags & LEVEL_CHANGEMAPCHEAT)
+	if (flags & LEVEL_CHANGEMAPCHEAT)
 		return;
 
-	thiscluster = FindClusterInfo (level.cluster);
+	thiscluster = FindClusterInfo (cluster);
 
 	if (strncmp (nextlevel, "enDSeQ", 6) == 0)
 	{
@@ -1240,7 +1247,7 @@ void G_WorldDone (void)
 			}
 		}
 
-		auto ext = level.info->ExitMapTexts.CheckKey(level.flags3 & LEVEL3_EXITSECRETUSED ? NAME_Secret : NAME_Normal);
+		auto ext = info->ExitMapTexts.CheckKey(flags3 & LEVEL3_EXITSECRETUSED ? NAME_Secret : NAME_Normal);
 		if (ext != nullptr && (ext->mDefined & FExitText::DEF_TEXT))
 		{
 			F_StartFinale(ext->mDefined & FExitText::DEF_MUSIC ? ext->mMusic : gameinfo.finaleMusic,
@@ -1268,9 +1275,9 @@ void G_WorldDone (void)
 	{
 		FExitText *ext = nullptr;
 		
-		if (level.flags3 & LEVEL3_EXITSECRETUSED) ext = level.info->ExitMapTexts.CheckKey(NAME_Secret);
-		else if (level.flags3 & LEVEL3_EXITNORMALUSED) ext = level.info->ExitMapTexts.CheckKey(NAME_Normal);
-		if (ext == nullptr) ext = level.info->ExitMapTexts.CheckKey(nextlevel);
+		if (flags3 & LEVEL3_EXITSECRETUSED) ext = info->ExitMapTexts.CheckKey(NAME_Secret);
+		else if (flags3 & LEVEL3_EXITNORMALUSED) ext = info->ExitMapTexts.CheckKey(NAME_Normal);
+		if (ext == nullptr) ext = info->ExitMapTexts.CheckKey(nextlevel);
 
 		if (ext != nullptr)
 		{
@@ -1291,7 +1298,7 @@ void G_WorldDone (void)
 
 		nextcluster = FindClusterInfo (FindLevelInfo (nextlevel)->cluster);
 
-		if (nextcluster->cluster != level.cluster && !(level.flags2 & LEVEL2_NOCLUSTERTEXT))
+		if (nextcluster->cluster != cluster && !(level.flags2 & LEVEL2_NOCLUSTERTEXT))
 		{
 			// Only start the finale if the next level's cluster is different
 			// than the current one and we're not in deathmatch.
@@ -1321,7 +1328,7 @@ void G_WorldDone (void)
  
 DEFINE_ACTION_FUNCTION(FLevelLocals, WorldDone)
 {
-	G_WorldDone();
+	currentUILevel->WorldDone();
 	return 0;
 }
 
@@ -1428,7 +1435,7 @@ int G_FinishTravel ()
 		pawndup = pawn->player->mo;
 		assert (pawn != pawndup);
 
-		start = G_PickPlayerStart(pnum, 0);
+		start = level.PickPlayerStart(pnum, 0);
 		if (start == NULL)
 		{
 			if (pawndup != nullptr)
@@ -1447,7 +1454,7 @@ int G_FinishTravel ()
 
 		// The player being spawned here is a short lived dummy and
 		// must not start any ENTER script or big problems will happen.
-		pawndup = P_SpawnPlayer(start, pnum, SPF_TEMPPLAYER);
+		pawndup = level.SpawnPlayer(start, pnum, SPF_TEMPPLAYER);
 		if (pawndup != NULL)
 		{
 			if (!(changeflags & CHANGELEVEL_KEEPFACING))
@@ -1542,7 +1549,7 @@ void FLevelLocals::Init()
 
 	gravity = sv_gravity * 35/TICRATE;
 	aircontrol = sv_aircontrol;
-	teamdamage = teamdamage;
+	teamdamage = ::teamdamage;
 	flags = 0;
 	flags2 = 0;
 	flags3 = 0;
@@ -1583,7 +1590,7 @@ void FLevelLocals::Init()
 		teamdamage = info->teamdamage;
 	}
 
-	G_AirControlChanged ();
+	AirControlChanged ();
 
 	cluster_info_t *clus = FindClusterInfo (info->cluster);
 
@@ -1717,16 +1724,16 @@ FString CalcMapName (int episode, int level)
 //
 //==========================================================================
 
-void G_AirControlChanged ()
+void FLevelLocals::AirControlChanged ()
 {
-	if (level.aircontrol <= 1/256.)
+	if (aircontrol <= 1/256.)
 	{
-		level.airfriction = 1.;
+		airfriction = 1.;
 	}
 	else
 	{
 		// Friction is inversely proportional to the amount of control
-		level.airfriction = level.aircontrol * -0.0941 + 1.0004;
+		airfriction = aircontrol * -0.0941 + 1.0004;
 	}
 }
 
@@ -2104,11 +2111,11 @@ void FLevelLocals::AddScroller (int secnum)
 
 void FLevelLocals::SetInterMusic(const char *nextmap)
 {
-	auto mus = level.info->MapInterMusic.CheckKey(nextmap);
+	auto mus = info->MapInterMusic.CheckKey(nextmap);
 	if (mus != nullptr)
 		S_ChangeMusic(mus->first, mus->second);
-	else if (level.info->InterMusic.IsNotEmpty())
-		S_ChangeMusic(level.info->InterMusic, level.info->intermusicorder);
+	else if (info->InterMusic.IsNotEmpty())
+		S_ChangeMusic(info->InterMusic, info->intermusicorder);
 	else
 		S_ChangeMusic(gameinfo.intermissionMusic.GetChars(), gameinfo.intermissionOrder);
 }
@@ -2132,10 +2139,17 @@ void FLevelLocals::SetMusicVolume(float f)
 	I_SetMusicVolume(f);
 }
 
-void FLevelLocals::SetMusic()
+//============================================================================
+//
+//
+//
+//============================================================================
+
+int FLevelLocals::GetInfighting()
 {
-	if (cdtrack == 0 || !S_ChangeCDMusic(cdtrack, cdid))
-		S_ChangeMusic(Music, musicorder);
+	if (flags2 & LEVEL2_TOTALINFIGHTING) return 1;
+	if (flags2 & LEVEL2_NOINFIGHTING) return -1;
+	return G_SkillProperty(SKILLP_Infight);
 }
 
 //==========================================================================
@@ -2284,7 +2298,8 @@ CCMD(skyfog)
 {
 	if (argv.argc()>1)
 	{
-		level.skyfog = MAX(0, (int)strtoull(argv[1], NULL, 0));
+		// Do this only on the primary level.
+		currentUILevel->skyfog = MAX(0, (int)strtoull(argv[1], NULL, 0));
 	}
 }
 
@@ -2312,4 +2327,11 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, StartIntermission)
 	PARAM_INT(state);
 	F_StartIntermission(seq, (uint8_t)state);
 	return 0;
+}
+
+
+void FLevelLocals::SetMusic()
+{
+	if (cdtrack == 0 || !S_ChangeCDMusic(cdtrack, cdid))
+		S_ChangeMusic(Music, musicorder);
 }

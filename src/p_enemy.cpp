@@ -1309,7 +1309,7 @@ int P_LookForMonsters (AActor *actor)
 {
 	int count;
 	AActor *mo;
-	TThinkerIterator<AActor> iterator;
+	auto iterator = actor->Level->GetThinkerIterator<AActor>();
 
 	if (!P_CheckSight (players[0].mo, actor, SF_SEEPASTBLOCKEVERYTHING))
 	{ // Player can't see monster
@@ -1366,7 +1366,7 @@ AActor *LookForTIDInBlock (AActor *lookee, int index, void *extparams)
 	AActor *link;
 	AActor *other;
 	
-	for (block = level.blockmap.blocklinks[index]; block != NULL; block = block->NextActor)
+	for (block = lookee->Level->blockmap.blocklinks[index]; block != NULL; block = block->NextActor)
 	{
 		link = block->Me;
 
@@ -1447,7 +1447,7 @@ int P_LookForTID (AActor *actor, INTBOOL allaround, FLookExParams *params)
 		actor->LastLookActor = nullptr;
 	}
 
-	auto iterator = level.GetActorIterator(actor->TIDtoHate, actor->LastLookActor);
+	auto iterator = actor->Level->GetActorIterator(actor->TIDtoHate, actor->LastLookActor);
 	int c = (pr_look3() & 31) + 7;	// Look for between 7 and 38 hatees at a time
 	while ((other = iterator.Next()) != actor->LastLookActor)
 	{
@@ -1537,7 +1537,7 @@ AActor *LookForEnemiesInBlock (AActor *lookee, int index, void *extparam)
 	AActor *other;
 	FLookExParams *params = (FLookExParams *)extparam;
 	
-	for (block = level.blockmap.blocklinks[index]; block != NULL; block = block->NextActor)
+	for (block = lookee->Level->blockmap.blocklinks[index]; block != NULL; block = block->NextActor)
 	{
 		link = block->Me;
 
@@ -1881,10 +1881,10 @@ DEFINE_ACTION_FUNCTION(AActor, A_Look)
 	// [RH] Set goal now if appropriate
 	if (self->special == Thing_SetGoal && self->args[0] == 0) 
 	{
-		auto iterator = level.GetActorIterator(NAME_PatrolPoint, self->args[1]);
+		auto iterator = self->Level->GetActorIterator(NAME_PatrolPoint, self->args[1]);
 		self->special = 0;
 		self->goal = iterator.Next ();
-		self->reactiontime = self->args[2] * TICRATE + level.maptime;
+		self->reactiontime = self->args[2] * TICRATE + self->Level->maptime;
 		if (self->args[3] == 0) self->flags5 &= ~MF5_CHASEGOAL;
 		else self->flags5 |= MF5_CHASEGOAL;
 	}
@@ -1959,7 +1959,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Look)
 	// [RH] Don't start chasing after a goal if it isn't time yet.
 	if (self->target == self->goal)
 	{
-		if (self->reactiontime > level.maptime)
+		if (self->reactiontime > self->Level->maptime)
 			self->target = nullptr;
 	}
 	else if (self->SeeSound)
@@ -2010,10 +2010,10 @@ DEFINE_ACTION_FUNCTION(AActor, A_LookEx)
 	// [RH] Set goal now if appropriate
 	if (self->special == Thing_SetGoal && self->args[0] == 0) 
 	{
-		auto iterator = level.GetActorIterator(NAME_PatrolPoint, self->args[1]);
+		auto iterator = self->Level->GetActorIterator(NAME_PatrolPoint, self->args[1]);
 		self->special = 0;
 		self->goal = iterator.Next ();
-		self->reactiontime = self->args[2] * TICRATE + level.maptime;
+		self->reactiontime = self->args[2] * TICRATE + self->Level->maptime;
 		if (self->args[3] == 0)
 			self->flags5 &= ~MF5_CHASEGOAL;
 		else
@@ -2141,7 +2141,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_LookEx)
 	// [RH] Don't start chasing after a goal if it isn't time yet.
 	if (self->target == self->goal)
 	{
-		if (self->reactiontime > level.maptime)
+		if (self->reactiontime > self->Level->maptime)
 			self->target = nullptr;
 	}
 	else if (self->SeeSound && !(flags & LOF_NOSEESOUND))
@@ -2272,7 +2272,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Look2)
 
 	if (targ && (targ->flags & MF_SHOOTABLE))
 	{
-		if ((level.flags & LEVEL_NOALLIES) ||
+		if ((self->Level->flags & LEVEL_NOALLIES) ||
 			(self->flags & MF_FRIENDLY) != (targ->flags & MF_FRIENDLY))
 		{
 			if (self->flags & MF_AMBUSH)
@@ -2494,8 +2494,8 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 		if (result)
 		{
 			// reached the goal
-			auto iterator = level.GetActorIterator(NAME_PatrolPoint, actor->goal->args[0]);
-			auto specit = level.GetActorIterator(NAME_PatrolSpecial, actor->goal->tid);
+			auto iterator = actor->Level->GetActorIterator(NAME_PatrolPoint, actor->goal->args[0]);
+			auto specit = actor->Level->GetActorIterator(NAME_PatrolSpecial, actor->goal->tid);
 			AActor *spec;
 
 			// Execute the specials of any PatrolSpecials with the same TID
@@ -2512,7 +2512,7 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 			if (newgoal != NULL && actor->goal == actor->target)
 			{
 				delay = newgoal->args[1];
-				actor->reactiontime = delay * TICRATE + level.maptime;
+				actor->reactiontime = delay * TICRATE + actor->Level->maptime;
 			}
 			else
 			{
@@ -3166,7 +3166,7 @@ int CheckBossDeath (AActor *actor)
 		return false; // no one left alive, so do not end game
 	
 	// Make sure all bosses are dead
-	TThinkerIterator<AActor> iterator;
+	auto iterator = actor->Level->GetThinkerIterator<AActor>();
 	AActor *other;
 
 	PClassActor *cls = actor->GetClass();
@@ -3209,7 +3209,7 @@ void A_BossDeath(AActor *self)
 	
 	// Do generic special death actions first
 	bool checked = false;
-	auto Level = &level;
+	auto Level = self->Level;
 	for (unsigned i = 0; i < Level->info->specialactions.Size(); i++)
 	{
 		FSpecialAction *sa = &Level->info->specialactions[i];
@@ -3222,8 +3222,20 @@ void A_BossDeath(AActor *self)
 			}
 			checked = true;
 
-			P_ExecuteSpecial(sa->Action, NULL, self, false, 
-				sa->Args[0], sa->Args[1], sa->Args[2], sa->Args[3], sa->Args[4]);
+			if (sa->Action & 0x40000000)
+			{
+				// This is a Doom format special from UMAPINFO. It must be translated here, because at parsing time there is not sufficient context to do it.
+				maplinedef_t ml;
+				ml.special = sa->Action & 0x3fffffff;
+				ml.tag = sa->Args[0];
+				line_t line;
+				self->Level->TranslateLineDef(&line, &ml);
+				P_ExecuteSpecial(line.special, NULL, self, false, line.args[0], line.args[1], line.args[2], line.args[3], line.args[4]);
+			}
+			else
+			{
+				P_ExecuteSpecial(sa->Action, NULL, self, false, sa->Args[0], sa->Args[1], sa->Args[2], sa->Args[3], sa->Args[4]);
+			}
 		}
 	}
 
@@ -3266,7 +3278,7 @@ void A_BossDeath(AActor *self)
 	// victory!
 	if (Level->flags & LEVEL_SPECKILLMONSTERS)
 	{ // Kill any remaining monsters
-		P_Massacre ();
+		Level->Massacre ();
 	}
 	if (Level->flags & LEVEL_MAP07SPECIAL)
 	{
@@ -3323,7 +3335,7 @@ void A_BossDeath(AActor *self)
 //
 //----------------------------------------------------------------------------
 
-int P_Massacre (bool baddies, PClassActor *cls)
+int FLevelLocals::Massacre (bool baddies, FName cls)
 {
 	// jff 02/01/98 'em' cheat - kill all monsters
 	// partially taken from Chi's .46 port
@@ -3333,7 +3345,7 @@ int P_Massacre (bool baddies, PClassActor *cls)
 
 	int killcount = 0;
 	AActor *actor;
-	TThinkerIterator<AActor> iterator(cls? cls : RUNTIME_CLASS(AActor));
+	auto iterator = GetThinkerIterator<AActor>(cls);
 
 	while ( (actor = iterator.Next ()) )
 	{

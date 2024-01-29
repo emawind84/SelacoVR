@@ -144,7 +144,7 @@ static void PrecacheLevel(FLevelLocals *Level)
 	memset(hitlist.Data(), 0, cnt);
 
 	AActor *actor;
-	TThinkerIterator<AActor> iterator;
+	auto iterator = Level->GetThinkerIterator<AActor>();
 
 	while ((actor = iterator.Next()))
 	{
@@ -447,7 +447,7 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 			if (playeringame[i])
 			{
 				players[i].mo = nullptr;
-				G_DeathMatchSpawnPlayer(i);
+				Level->DeathMatchSpawnPlayer(i);
 			}
 		}
 	}
@@ -459,8 +459,8 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 			if (playeringame[i])
 			{
 				players[i].mo = nullptr;
-				FPlayerStart *mthing = G_PickPlayerStart(i);
-				P_SpawnPlayer(mthing, i, (Level->flags2 & LEVEL2_PRERAISEWEAPON) ? SPF_WEAPONFULLYUP : 0);
+				FPlayerStart *mthing = Level->PickPlayerStart(i);
+				Level->SpawnPlayer(mthing, i, (Level->flags2 & LEVEL2_PRERAISEWEAPON) ? SPF_WEAPONFULLYUP : 0);
 			}
 		}
 	}
@@ -476,7 +476,7 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 				if (!(players[i].mo->flags & MF_FRIENDLY))
 				{
 					AActor * oldSpawn = players[i].mo;
-					G_DeathMatchSpawnPlayer(i);
+					Level->DeathMatchSpawnPlayer(i);
 					oldSpawn->Destroy();
 				}
 			}
@@ -487,7 +487,7 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	// Don't count monsters in end-of-level sectors if option is on
 	if (dmflags2 & DF2_NOCOUNTENDMONST)
 	{
-		TThinkerIterator<AActor> it;
+		auto it = Level->GetThinkerIterator<AActor>();
 		AActor * mo;
 
 		while ((mo = it.Next()))
@@ -502,7 +502,7 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 		}
 	}
 
-	T_PreprocessScripts(&level);        // preprocess FraggleScript scripts
+	T_PreprocessScripts(Level);        // preprocess FraggleScript scripts
 
 	// build subsector connect matrix
 	//	UNUSED P_ConnectSubsectors ();
@@ -515,8 +515,7 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	// preload graphics and sounds
 	if (precache)
 	{
-		PrecacheLevel(&level);
-		S_PrecacheLevel();
+		PrecacheLevel(Level);
 	}
 
 	if (deathmatch)
@@ -557,6 +556,13 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 
 	Level->automap = AM_Create(Level);
 	Level->automap->LevelInit();
+
+	// [RH] Start lightning, if MAPINFO tells us to
+	if (Level->flags & LEVEL_STARTLIGHTNING)
+	{
+		Level->StartLightning();
+	}
+
 }
 
 //
@@ -591,39 +597,43 @@ void P_Shutdown ()
 
 CCMD(dumpgeometry)
 {
-	for (auto &sector : level.sectors)
+	for (auto Level : AllLevels())
 	{
-		Printf(PRINT_LOG, "Sector %d\n", sector.sectornum);
-		for (int j = 0; j<sector.subsectorcount; j++)
+		Printf("Geometry for %s\n", Level->MapName.GetChars());
+		for (auto &sector : Level->sectors)
 		{
-			subsector_t * sub = sector.subsectors[j];
-
-			Printf(PRINT_LOG, "    Subsector %d - real sector = %d - %s\n", int(sub->Index()), sub->sector->sectornum, sub->hacked & 1 ? "hacked" : "");
-			for (uint32_t k = 0; k<sub->numlines; k++)
+			Printf(PRINT_LOG, "Sector %d\n", sector.sectornum);
+			for (int j = 0; j<sector.subsectorcount; j++)
 			{
-				seg_t * seg = sub->firstline + k;
-				if (seg->linedef)
+				subsector_t * sub = sector.subsectors[j];
+				
+				Printf(PRINT_LOG, "    Subsector %d - real sector = %d - %s\n", int(sub->Index()), sub->sector->sectornum, sub->hacked & 1 ? "hacked" : "");
+				for (uint32_t k = 0; k<sub->numlines; k++)
 				{
-					Printf(PRINT_LOG, "      (%4.4f, %4.4f), (%4.4f, %4.4f) - seg %d, linedef %d, side %d",
-						seg->v1->fX(), seg->v1->fY(), seg->v2->fX(), seg->v2->fY(),
-						seg->Index(), seg->linedef->Index(), seg->sidedef != seg->linedef->sidedef[0]);
+					seg_t * seg = sub->firstline + k;
+					if (seg->linedef)
+					{
+						Printf(PRINT_LOG, "      (%4.4f, %4.4f), (%4.4f, %4.4f) - seg %d, linedef %d, side %d",
+							   seg->v1->fX(), seg->v1->fY(), seg->v2->fX(), seg->v2->fY(),
+							   seg->Index(), seg->linedef->Index(), seg->sidedef != seg->linedef->sidedef[0]);
+					}
+					else
+					{
+						Printf(PRINT_LOG, "      (%4.4f, %4.4f), (%4.4f, %4.4f) - seg %d, miniseg",
+							   seg->v1->fX(), seg->v1->fY(), seg->v2->fX(), seg->v2->fY(), seg->Index());
+					}
+					if (seg->PartnerSeg)
+					{
+						subsector_t * sub2 = seg->PartnerSeg->Subsector;
+						Printf(PRINT_LOG, ", back sector = %d, real back sector = %d", sub2->render_sector->sectornum, seg->PartnerSeg->frontsector->sectornum);
+					}
+					else if (seg->backsector)
+					{
+						Printf(PRINT_LOG, ", back sector = %d (no partnerseg)", seg->backsector->sectornum);
+					}
+					
+					Printf(PRINT_LOG, "\n");
 				}
-				else
-				{
-					Printf(PRINT_LOG, "      (%4.4f, %4.4f), (%4.4f, %4.4f) - seg %d, miniseg",
-						seg->v1->fX(), seg->v1->fY(), seg->v2->fX(), seg->v2->fY(), seg->Index());
-				}
-				if (seg->PartnerSeg)
-				{
-					subsector_t * sub2 = seg->PartnerSeg->Subsector;
-					Printf(PRINT_LOG, ", back sector = %d, real back sector = %d", sub2->render_sector->sectornum, seg->PartnerSeg->frontsector->sectornum);
-				}
-				else if (seg->backsector)
-				{
-					Printf(PRINT_LOG, ", back sector = %d (no partnerseg)", seg->backsector->sectornum);
-				}
-
-				Printf(PRINT_LOG, "\n");
 			}
 		}
 	}
@@ -637,14 +647,18 @@ CCMD(dumpgeometry)
 
 CCMD(listmapsections)
 {
-	for (int i = 0; i < 100; i++)
+	for (auto Level : AllLevels())
 	{
-		for (auto &sub : level.subsectors)
+		Printf("Map sections for %s:\n", Level->MapName.GetChars());
+		for (int i = 0; i < 100; i++)
 		{
-			if (sub.mapsection == i)
+			for (auto &sub : Level->subsectors)
 			{
-				Printf("Mapsection %d, sector %d, line %d\n", i, sub.render_sector->Index(), sub.firstline->linedef->Index());
-				break;
+				if (sub.mapsection == i)
+				{
+					Printf("Mapsection %d, sector %d, line %d\n", i, sub.render_sector->Index(), sub.firstline->linedef->Index());
+					break;
+				}
 			}
 		}
 	}
@@ -658,9 +672,8 @@ CCMD(listmapsections)
 
 CUSTOM_CVAR(Bool, forcewater, false, CVAR_ARCHIVE | CVAR_SERVERINFO)
 {
-	if (gamestate == GS_LEVEL)
+	if (gamestate == GS_LEVEL) for (auto Level : AllLevels())
 	{
-		auto Level = &level;
 		for (auto &sec : Level->sectors)
 		{
 			sector_t *hsec = sec.GetHeightSec();

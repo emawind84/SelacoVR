@@ -50,13 +50,20 @@ CVAR (Bool, alwaysapplydmflags, false, CVAR_SERVERINFO);
 
 CUSTOM_CVAR (Float, teamdamage, 0.f, CVAR_SERVERINFO)
 {
-	level.teamdamage = self;
+	for (auto Level : AllLevels())
+	{
+		Level->teamdamage = self;
+	}
 }
 
 CUSTOM_CVAR (String, language, "auto", CVAR_ARCHIVE|CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 {
 	GStrings.UpdateLanguage();
-	if (level.info != NULL) level.LevelName = level.info->LookupLevelName();
+	for (auto Level : AllLevels())
+	{
+		// does this even make sense on secondary levels...?
+		if (Level->info != nullptr) Level->LevelName = Level->info->LookupLevelName();
+	}
 }
 
 // [RH] Network arbitrator

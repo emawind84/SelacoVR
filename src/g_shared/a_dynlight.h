@@ -200,7 +200,7 @@ struct FDynamicLight
 
 	inline DVector3 PosRelative(int portalgroup) const
 	{
-		return Pos + level.Displacements.getOffset(Sector->PortalGroup, portalgroup);
+		return Pos + Level->Displacements.getOffset(Sector->PortalGroup, portalgroup);
 	}
 
 	bool ShouldLightActor(AActor *check)
@@ -263,6 +263,7 @@ public:
 	double specialf1;
 	FDynamicLight *next, *prev;
 	sector_t *Sector;
+	FLevelLocals *Level;
 	TObjPtr<AActor *> target;
 	FLightNode * touching_sides;
 	FLightNode * touching_sector;

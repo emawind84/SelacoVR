@@ -7,7 +7,7 @@ struct _ native	// These are the global variables, the struct is only here to av
 	native readonly Array<@Team> Teams;
 	native int validcount;
 	native readonly bool multiplayer;
-	native play @LevelLocals level;
+	deprecated("3.8") native play @LevelLocals level;
 	native @KeyBindings Bindings;
 	native @KeyBindings AutomapBindings;
 	native @KeyBindings DoubleBindings;
@@ -111,7 +111,10 @@ struct TexMan
 	};
 
 	native static TextureID CheckForTexture(String name, int usetype = Type_Any, int flags = TryAny);
-	native static void ReplaceTextures(String from, String to, int flags);
+	deprecated("3.8") static void ReplaceTextures(String from, String to, int flags)
+	{
+		level.ReplaceTextures(from, to, flags);
+	}
 	native static String GetName(TextureID tex);
 	native static int, int GetSize(TextureID tex);
 	native static Vector2 GetScaledSize(TextureID tex);
@@ -450,8 +453,14 @@ class Object native
 	native static String G_SkillName();
 	native static int G_SkillPropertyInt(int p);
 	native static double G_SkillPropertyFloat(int p);
-	native static vector3, int G_PickDeathmatchStart();
-	native static vector3, int G_PickPlayerStart(int pnum, int flags = 0);
+	deprecated("3.8") static vector3, int G_PickDeathmatchStart()
+	{
+		return level.PickDeathmatchStart();
+	}
+	deprecated("3.8") static vector3, int G_PickPlayerStart(int pnum, int flags = 0)
+	{
+		return level.PickPlayerStart(pnum, flags);
+	}
 	deprecated("4.3", "Use S_StartSound() instead") native static void S_Sound (Sound sound_id, int channel, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0, float startTime = 0.0);
 	native static void S_StartSound (Sound sound_id, int channel, int flags = 0, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0, float startTime = 0.0);
 	native static void S_PauseSound (bool notmusic, bool notsfx);
@@ -515,6 +524,8 @@ class Thinker : Object native play
 		MAX_STATNUM = 127
 	}
 
+
+	native LevelLocals Level;
 	
 	virtual native void Tick();
 	virtual native void PostBeginPlay();
@@ -804,10 +815,10 @@ struct LevelLocals native
 	native SpotState GetSpotState(bool create = true);
 	native int FindUniqueTid(int start = 0, int limit = 0);
 	native uint GetSkyboxPortal(Actor actor);
-	static void ReplaceTextures(String from, String to, int flags) { Texman.ReplaceTextures(from, to, flags); }
+	native void ReplaceTextures(String from, String to, int flags);
 	clearscope static HealthGroup FindHealthGroup(int id) { return HealthGroup.Find(id); }
-	static vector3, int PickDeathmatchStart() { return Object.G_PickDeathmatchStart(); }
-	static vector3, int PickPlayerStart(int pnum, int flags = 0) { return Object.G_PickPlayerStart(pnum, flags); }
+	native vector3, int PickDeathmatchStart();
+	native vector3, int PickPlayerStart(int pnum, int flags = 0);
 	native int isFrozen() const;
 	native void setFrozen(bool on);
 
