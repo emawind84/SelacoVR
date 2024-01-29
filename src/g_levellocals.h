@@ -47,9 +47,13 @@
 #include "p_tags.h"
 #include "p_spec.h"
 #include "actor.h"
+#include "b_bot.h"
+#include "p_effect.h"
+#include "d_player.h"
 #include "p_destructible.h"
 #include "r_data/r_sections.h"
 #include "r_data/r_canvastexture.h"
+#include "r_data/r_interpolate.h"
 
 //============================================================================
 //
@@ -86,76 +90,29 @@ struct FPortalBits
 class DACSThinker;
 class DFraggleThinker;
 class DSpotState;
+class DSeqNode;
 struct FStrifeDialogueNode;
 class DAutomapBase;
+struct wbstartstruct_t;
+class DSectorMarker;
 
 typedef TMap<int, int> FDialogueIDMap;				// maps dialogue IDs to dialogue array index (for ACS)
 typedef TMap<FName, int> FDialogueMap;				// maps actor class names to dialogue array index
+typedef TMap<int, FUDMFKeys> FUDMFKeyMap;
 
-extern int i_compatflags, i_compatflags2;
-
-struct FLevelData
+struct FLevelLocals
 {
-	TArray<vertex_t> vertexes;
-	TArray<sector_t> sectors;
-	TArray<line_t*> linebuffer;	// contains the line lists for the sectors.
-	TArray<subsector_t*> subsectorbuffer;	// contains the subsector lists for the sectors.
-	TArray<line_t> lines;
-	TArray<side_t> sides;
-	TArray<seg_t *> segbuffer;	// contains the seg links for the sidedefs.
-	TArray<seg_t> segs;
-	TArray<subsector_t> subsectors;
-	TArray<node_t> nodes;
-	TArray<subsector_t> gamesubsectors;
-	TArray<node_t> gamenodes;
-	node_t *headgamenode;
-	TArray<uint8_t> rejectmatrix;
-	TArray<zone_t>	Zones;
-	TArray<FPolyObj> Polyobjects;
-
-	TArray<FSectorPortal> sectorPortals;
-	TArray<FLinePortal> linePortals;
-
-	// Portal information.
-	FDisplacementTable Displacements;
-	FPortalBlockmap PortalBlockmap;
-	TArray<FLinePortal*> linkedPortals;	// only the linked portals, this is used to speed up looking for them in P_CollectConnectedGroups.
-	TArray<FSectorPortalGroup *> portalGroups;
-	TArray<FLinePortalSpan> linePortalSpans;
-	FSectionContainer sections;
-	FCanvasTextureInfo canvasTextureInfo;
-
-	// [ZZ] Destructible geometry information
-	TMap<int, FHealthGroup> healthGroups;
-
-	FBlockmap blockmap;
-	TArray<polyblock_t *> PolyBlockMap;
-
-	// These are copies of the loaded map data that get used by the savegame code to skip unaltered fields
-	// Without such a mechanism the savegame format would become too slow and large because more than 80-90% are normally still unaltered.
-	TArray<sector_t>	loadsectors;
-	TArray<line_t>	loadlines;
-	TArray<side_t>	loadsides;
-
-	// Maintain single and multi player starting spots.
-	TArray<FPlayerStart> deathmatchstarts;
-	FPlayerStart		playerstarts[MAXPLAYERS];
-	TArray<FPlayerStart> AllPlayerStarts;
-
-	FBehaviorContainer Behaviors;
-	AActor *TIDHash[128];
-	
-	TArray<FStrifeDialogueNode *> StrifeDialogues;
-	FDialogueIDMap DialogueRoots;
-	FDialogueMap ClassRoots;
-
-
-};
-
-
-struct FLevelLocals : public FLevelData
-{
-	FLevelLocals() : tagManager(this) {}
+	void *level;
+	void *Level;	// bug catchers.
+	FLevelLocals() : Behaviors(this), tagManager(this)
+	{
+		// Make sure that these point to the right data all the time.
+		// This will be needed for as long as it takes to completely separate global UI state from per-level play state.
+		for (int i = 0; i < MAXPLAYERS; i++)
+		{
+			Players[i] = &players[i];
+		}
+	}
 
 	friend class MapLoader;
 
@@ -177,10 +134,8 @@ struct FLevelLocals : public FLevelData
 	void SetConversation(int convid, PClassActor *Class, int dlgindex);
 	int FindNode (const FStrifeDialogueNode *node);
     int GetInfighting();
+	void SetCompatLineOnSide(bool state);
 	void Init();
-
-	int li_compatflags = i_compatflags;
-	int li_compatflags2 = i_compatflags2;
 
 private:
 	line_t *FindPortalDestination(line_t *src, int tag, int matchtype = -1);
@@ -281,6 +236,17 @@ public:
 	FPlayerStart *SelectRandomDeathmatchSpot (int playernum, unsigned int selections);
 	void DeathMatchSpawnPlayer (int playernum);
 	FPlayerStart *PickPlayerStart(int playernum, int flags = 0);
+	bool DoCompleted(FString nextlevel, wbstartstruct_t &wminfo);
+	void StartTravel();
+	int FinishTravel();
+	void ChangeLevel(const char *levelname, int position, int flags, int nextSkill = -1);
+	const char *GetSecretExitMap();
+	void ExitLevel(int position, bool keepFacing);
+	void SecretExitLevel(int position);
+	void DoLoadLevel(const FString &nextmapname, int position, bool autosave, bool newGame);
+
+	void DeleteAllAttachedLights();
+	void RecreateAllAttachedLights();
 
 
 private:
@@ -305,12 +271,12 @@ public:
 	}
 	template<class T> TThinkerIterator<T> GetThinkerIterator(FName subtype = NAME_None, int statnum = MAX_STATNUM+1)
 	{
-		if (subtype == NAME_None) return TThinkerIterator<T>(statnum);
-		else return TThinkerIterator<T>(subtype, statnum);
+		if (subtype == NAME_None) return TThinkerIterator<T>(this, statnum);
+		else return TThinkerIterator<T>(this, subtype, statnum);
 	}
 	template<class T> TThinkerIterator<T> GetThinkerIterator(FName subtype, int statnum, AActor *prev)
 	{
-		return TThinkerIterator<T>(subtype, statnum, prev);
+		return TThinkerIterator<T>(this, subtype, statnum, prev);
 	}
 	FActorIterator GetActorIterator(int tid)
 	{
@@ -375,11 +341,32 @@ public:
 		return it.Next();
 	}
 
+	int isFrozen()
+	{
+		return frozenstate;
+	}
+
+private:	// The engine should never ever access subsectors of the game nodes. This is only needed for actually implementing PointInSector.
+	subsector_t *PointInSubsector(double x, double y);
+public:
+	sector_t *PointInSectorBuggy(double x, double y);
+	subsector_t *PointInRenderSubsector (fixed_t x, fixed_t y);
+
 	sector_t *PointInSector(const DVector2 &pos)
 	{
-		return P_PointInSector(pos);
+		return PointInSubsector(pos.X, pos.Y)->sector;
 	}
-	
+
+	sector_t *PointInSector(double x, double y)
+	{
+		return PointInSubsector(x, y)->sector;
+	}
+
+	subsector_t *PointInRenderSubsector (const DVector2 &pos)
+	{
+		return PointInRenderSubsector(FloatToFixed(pos.X), FloatToFixed(pos.Y));
+	}
+
 	FPolyObj *GetPolyobj (int polyNum)
 	{
 		auto index = Polyobjects.FindEx([=](const auto &poly) { return poly.tag == polyNum; });
@@ -408,7 +395,7 @@ public:
 		DThinker *thinker = static_cast<DThinker*>(cls->CreateNew());
 		assert(thinker->IsKindOf(RUNTIME_CLASS(DThinker)));
 		thinker->ObjectFlags |= OF_JustSpawned;
-		DThinker::FreshThinkers[statnum].AddTail(thinker);
+		Thinkers.Link(thinker, statnum);
 		thinker->Level = this;
 		return thinker;
 	}
@@ -423,9 +410,73 @@ public:
 
 	void SetMusic();
 
+
+	TArray<vertex_t> vertexes;
+	TArray<sector_t> sectors;
+	TArray<line_t*> linebuffer;	// contains the line lists for the sectors.
+	TArray<subsector_t*> subsectorbuffer;	// contains the subsector lists for the sectors.
+	TArray<line_t> lines;
+	TArray<side_t> sides;
+	TArray<seg_t *> segbuffer;	// contains the seg links for the sidedefs.
+	TArray<seg_t> segs;
+	TArray<subsector_t> subsectors;
+	TArray<node_t> nodes;
+	TArray<subsector_t> gamesubsectors;
+	TArray<node_t> gamenodes;
+	node_t *headgamenode;
+	TArray<uint8_t> rejectmatrix;
+	TArray<zone_t>	Zones;
+	TArray<FPolyObj> Polyobjects;
+
+	TArray<FSectorPortal> sectorPortals;
+	TArray<FLinePortal> linePortals;
+
+	// Portal information.
+	FDisplacementTable Displacements;
+	FPortalBlockmap PortalBlockmap;
+	TArray<FLinePortal*> linkedPortals;	// only the linked portals, this is used to speed up looking for them in P_CollectConnectedGroups.
+	TArray<FSectorPortalGroup *> portalGroups;
+	TArray<FLinePortalSpan> linePortalSpans;
+	FSectionContainer sections;
+	FCanvasTextureInfo canvasTextureInfo;
+
+	// [ZZ] Destructible geometry information
+	TMap<int, FHealthGroup> healthGroups;
+
+	FBlockmap blockmap;
+	TArray<polyblock_t *> PolyBlockMap;
+	FUDMFKeyMap UDMFKeys[4];
+
+	// These are copies of the loaded map data that get used by the savegame code to skip unaltered fields
+	// Without such a mechanism the savegame format would become too slow and large because more than 80-90% are normally still unaltered.
+	TArray<sector_t>	loadsectors;
+	TArray<line_t>	loadlines;
+	TArray<side_t>	loadsides;
+
+	// Maintain single and multi player starting spots.
+	TArray<FPlayerStart> deathmatchstarts;
+	FPlayerStart		playerstarts[MAXPLAYERS];
+	TArray<FPlayerStart> AllPlayerStarts;
+
+	FBehaviorContainer Behaviors;
+	AActor *TIDHash[128];
+
+	TArray<FStrifeDialogueNode *> StrifeDialogues;
+	FDialogueIDMap DialogueRoots;
+	FDialogueMap ClassRoots;
+	FCajunMaster BotInfo;
+
+	int ii_compatflags = 0;
+	int ii_compatflags2 = 0;
+	int ib_compatflags = 0;
+	int i_compatflags = 0;
+	int i_compatflags2 = 0;
+
+	DSectorMarker *SectorMarker;
+
 	uint8_t		md5[16];			// for savegame validation. If the MD5 does not match the savegame won't be loaded.
 	int			time;			// time in the hub
-	int			maptime;		// time in the map
+	int			maptime;			// time in the map
 	int			totaltime;		// time in the game
 	int			starttime;
 	int			partime;
@@ -445,6 +496,7 @@ public:
 	FString		F1Pic;
 	EMapType	maptype;
 	FTagManager tagManager;
+	FInterpolator interpolator;
 
 	uint64_t	ShaderStartTime = 0;	// tell the shader system when we started the level (forces a timer restart)
 
@@ -452,6 +504,42 @@ public:
 	TObjPtr<AActor*> bodyque[BODYQUESIZE];
 	TObjPtr<DAutomapBase*> automap = nullptr;
 	int bodyqueslot;
+	
+	// For now this merely points to the global player array, but with this in place, access to this array can be moved over to the level.
+	// As things progress each level needs to be able to point to different players,
+	// but even then the level will not own the player - the player merely links to the level.
+	// This should also be made a real object eventually.
+	player_t *Players[MAXPLAYERS];
+	
+	// This is to allow refactoring without refactoring the data right away.
+	bool PlayerInGame(int pnum)
+	{
+		return playeringame[pnum];
+	}
+	
+	// This needs to be done better, but for now it should be good enough.
+	bool PlayerInGame(player_t *player)
+	{
+		for (int i = 0; i < MAXPLAYERS; i++)
+		{
+			if (player == Players[i]) return PlayerInGame(i);
+		}
+		return false;
+	}
+
+	int PlayerNum(player_t *player)
+	{
+		for (int i = 0; i < MAXPLAYERS; i++)
+		{
+			if (player == Players[i]) return i;
+		}
+		return -1;
+	}
+	
+	bool isPrimaryLevel() const
+	{
+		return true;
+	}
 
 	int NumMapSections;
 
@@ -475,6 +563,10 @@ public:
 	float		skyspeed1;				// Scrolling speed of sky textures, in pixels per ms
 	float		skyspeed2;
 
+	double		sky1pos, sky2pos;
+	float		hw_sky1pos, hw_sky2pos;
+	bool		skystretch;
+
 	int			total_secrets;
 	int			found_secrets;
 
@@ -492,6 +584,16 @@ public:
 	double		airfriction;
 	int			airsupply;
 	int			DefaultEnvironment;		// Default sound environment.
+
+	int ActiveSequences;
+	DSeqNode *SequenceListHead;
+
+	// [RH] particle globals
+	uint32_t			ActiveParticles;
+	uint32_t			InactiveParticles;
+	TArray<particle_t>	Particles;
+	TArray<uint16_t>	ParticlesInSubsec;
+	FThinkerCollection Thinkers;
 
 	TArray<DVector2>	Scrolls;		// NULL if no DScrollers in this level
 
@@ -550,11 +652,6 @@ public:
 	{
 		return savegamerestore
 			|| (info != nullptr && info->Snapshot.mBuffer != nullptr && info->isValid());
-	}
-
-	int isFrozen()
-	{
-		return frozenstate;
 	}
 };
 

@@ -62,6 +62,8 @@ class PainElemental : Actor
 
 extend class Actor
 {
+	private native bool compat_limitpain();
+
 	//
 	// A_PainShootSkull
 	// Spawn a lost soul and launch it at the target

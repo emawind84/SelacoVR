@@ -151,61 +151,7 @@ const char *KeyNames[NUM_KEYS] =
 	"DPadUp","DPadDown","DPadLeft","DPadRight",	// Gamepad buttons
 	"Pad_Start","Pad_Back","LThumb","RThumb",
 	"LShoulder","RShoulder","LTrigger","RTrigger",
-	"Pad_A", "Pad_B", "Pad_X", "Pad_Y",
-
-	"POV21Up",	"POV21Right","POV21Down",	"POV21Left",		// First POV hat
-	"POV22Up",	"POV22Right","POV22Down",	"POV22Left",		// Second POV hat
-	"POV23Up",	"POV23Right","POV23Down",	"POV23Left",		// Third POV hat
-	"POV24Up",	"POV24Right","POV24Down",	"POV24Left",		// Fourth POV hat
-
-	"POV31Up",	"POV31Right","POV31Down",	"POV31Left",		// First POV hat
-	"POV32Up",	"POV32Right","POV32Down",	"POV32Left",		// Second POV hat
-	"POV33Up",	"POV33Right","POV33Down",	"POV33Left",		// Third POV hat
-	"POV34Up",	"POV34Right","POV34Down",	"POV34Left",		// Fourth POV hat
-
-	"POV41Up",	"POV41Right","POV41Down",	"POV41Left",		// First POV hat
-	"POV42Up",	"POV42Right","POV42Down",	"POV42Left",		// Second POV hat
-	"POV43Up",	"POV43Right","POV43Down",	"POV43Left",		// Third POV hat
-	"POV44Up",	"POV44Right","POV44Down",	"POV44Left",		// Fourth POV hat
-
-	"Axis21Plus","Axis21Minus","Axis22Plus","Axis22Minus",	// joystick axes as buttons
-	"Axis23Plus","Axis23Minus","Axis24Plus","Axis24Minus",
-	"Axis25Plus","Axis25Minus","Axis26Plus","Axis26Minus",
-	"Axis27Plus","Axis27Minus","Axis28Plus","Axis28Minus",
-
-	"Axis31Plus","Axis31Minus","Axis32Plus","Axis32Minus",	// joystick axes as buttons
-	"Axis33Plus","Axis33Minus","Axis34Plus","Axis34Minus",
-	"Axis35Plus","Axis35Minus","Axis36Plus","Axis36Minus",
-	"Axis37Plus","Axis37Minus","Axis38Plus","Axis38Minus",
-
-	"Axis41Plus","Axis41Minus","Axis42Plus","Axis42Minus",	// joystick axes as buttons
-	"Axis43Plus","Axis43Minus","Axis44Plus","Axis44Minus",
-	"Axis45Plus","Axis45Minus","Axis46Plus","Axis46Minus",
-	"Axis47Plus","Axis47Minus","Axis48Plus","Axis48Minus",
-
-	"LStick2Right","LStick2Left","LStick2Down","LStick2Up",			// Gamepad axis-based buttons
-	"RStick2Right","RStick2Left","RStick2Down","RStick2Up",
-
-	"DPad2Up","DPad2Down","DPad2Left","DPad2Right",	// Gamepad buttons
-	"Pad2_Start","Pad2_Back","LThumb2","RThumb2",
-	"LShoulder2","RShoulder2","LTrigger2","RTrigger2",
-	"Pad2_A", "Pad2_B", "Pad2_X", "Pad2_Y",
-
-	"LStick3Right","LStick3Left","LStick3Down","LStick3Up",			// Gamepad axis-based buttons
-	"RStick3Right","RStick3Left","RStick3Down","RStick3Up",
-
-	"DPad3Up","DPad3Down","DPad3Left","DPad3Right",	// Gamepad buttons
-	"Pad3_Start","Pad3_Back","LThumb3","RThumb3",
-	"LShoulder3","RShoulder3","LTrigger3","RTrigger3",
-	"Pad3_A", "Pad3_B", "Pad3_X", "Pad3_Y",
-
-	"LStick4Right","LStick4Left","LStick4Down","LStick4Up",			// Gamepad axis-based buttons
-	"RStick4Right","RStick4Left","RStick4Down","RStick4Up",
-
-	"DPad4Up","DPad4Down","DPad4Left","DPad4Right",	// Gamepad buttons
-	"Pad4_Start","Pad4_Back","LThumb4","RThumb4",
-	"LShoulder4","RShoulder4","LTrigger4","RTrigger4",
-	"Pad4_A", "Pad4_B", "Pad4_X", "Pad4_Y"
+	"Pad_A", "Pad_B", "Pad_X", "Pad_Y"
 };
 
 FKeyBindings Bindings;

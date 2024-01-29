@@ -173,13 +173,13 @@ void FModelRenderer::RenderModel(float x, float y, float z, FSpriteModelFrame *s
 	objectToWorldMatrix.rotate(-smf->rolloffset, 1, 0, 0);
 
 	// consider the pixel stretching. For non-voxels this must be factored out here
-	float stretch = (smf->modelIDs[0] != -1 ? Models[smf->modelIDs[0]]->getAspectFactor() : 1.f) / actor->Level->info->pixelstretch;
+	float stretch = (smf->modelIDs[0] != -1 ? Models[smf->modelIDs[0]]->getAspectFactor(actor->Level) : 1.f) / actor->Level->info->pixelstretch;
 	objectToWorldMatrix.scale(1, stretch, 1);
 
 	float orientation = scaleFactorX * scaleFactorY * scaleFactorZ;
 
 	BeginDrawModel(actor, smf, objectToWorldMatrix, orientation < 0);
-	RenderFrameModels(smf, actor->state, actor->tics, actor->modelData != nullptr ? actor->modelData->modelDef != NAME_None ? PClass::FindActor(actor->modelData->modelDef) : actor->GetClass() : actor->GetClass(), translation, actor);
+	RenderFrameModels(actor->Level, smf, actor->state, actor->tics, actor->modelData != nullptr ? actor->modelData->modelDef != NAME_None ? PClass::FindActor(actor->modelData->modelDef) : actor->GetClass() : actor->GetClass(), translation, actor);
 	EndDrawModel(actor, smf);
 }
 
@@ -239,11 +239,11 @@ void FModelRenderer::RenderHUDModel(DPSprite *psp, float ofsX, float ofsY)
 	BeginDrawHUDModel(playermo, objectToWorldMatrix, orientation < 0);
 	uint32_t trans = psp->GetTranslation() != 0 ? psp->GetTranslation() : 0;
 	if ((psp->Flags & PSPF_PLAYERTRANSLATED)) trans = psp->Owner->mo->Translation;
-	RenderFrameModels(smf, psp->GetState(), psp->GetTics(), psp->GetCaller()->modelData != nullptr ? psp->GetCaller()->modelData->modelDef != NAME_None ? PClass::FindActor(psp->GetCaller()->modelData->modelDef) : psp->GetCaller()->GetClass() : psp->GetCaller()->GetClass(), trans, psp->GetCaller());
+	RenderFrameModels(playermo->Level, smf, psp->GetState(), psp->GetTics(), psp->GetCaller()->modelData != nullptr ? psp->GetCaller()->modelData->modelDef != NAME_None ? PClass::FindActor(psp->GetCaller()->modelData->modelDef) : psp->GetCaller()->GetClass() : psp->GetCaller()->GetClass(), trans, psp->GetCaller());
 	EndDrawHUDModel(playermo);
 }
 
-void FModelRenderer::RenderFrameModels(const FSpriteModelFrame *smf, const FState *curState, const int curTics, const PClass *ti, int translation, AActor* actor)
+void FModelRenderer::RenderFrameModels(FLevelLocals *Level, const FSpriteModelFrame *smf, const FState *curState, const int curTics, const PClass *ti, int translation, AActor* actor)
 {
 	// [BB] Frame interpolation: Find the FSpriteModelFrame smfNext which follows after smf in the animation
 	// and the scalar value inter ( element of [0,1) ), both necessary to determine the interpolated frame.
@@ -257,7 +257,7 @@ void FModelRenderer::RenderFrameModels(const FSpriteModelFrame *smf, const FStat
 			// [BB] To interpolate at more than 35 fps we take tic fractions into account.
 			float ticFraction = 0.;
 			// [BB] In case the tic counter is frozen we have to leave ticFraction at zero.
-			if (ConsoleState == c_up && menuactive != MENU_On && !level.isFrozen())
+			if (ConsoleState == c_up && menuactive != MENU_On && !Level->isFrozen())
 			{
 				ticFraction = I_GetTimeFrac();
 			}

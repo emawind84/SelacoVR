@@ -237,7 +237,7 @@ msecnode_t *P_CreateSecNodeList(AActor *thing, double radius, msecnode_t *sector
 	}
 
 	FBoundingBox box(thing->X(), thing->Y(), radius);
-	FBlockLinesIterator it(box);
+	FBlockLinesIterator it(thing->Level, box);
 	line_t *ld;
 
 	while (!restricted && (ld = it.Next()))
@@ -415,7 +415,7 @@ void AActor::UpdateRenderSectorList()
 			if (Top() + SPRITE_SPACE < planeh) break;
 			lasth = planeh;
 			DVector2 newpos = Pos() + sec->GetPortalDisplacement(sector_t::ceiling);
-			sec = P_PointInSector(newpos);
+			sec = sec->Level->PointInSector(newpos);
 			touching_sectorportallist = P_AddSecnode(sec, this, touching_sectorportallist, sec->sectorportal_thinglist);
 		}
 		sec = Sector;
@@ -427,7 +427,7 @@ void AActor::UpdateRenderSectorList()
 			if (Z() - SPRITE_SPACE > planeh) break;
 			lasth = planeh;
 			DVector2 newpos = Pos() + sec->GetPortalDisplacement(sector_t::floor);
-			sec = P_PointInSector(newpos);
+			sec = sec->Level->PointInSector(newpos);
 			touching_sectorportallist = P_AddSecnode(sec, this, touching_sectorportallist, sec->sectorportal_thinglist);
 		}
 	}

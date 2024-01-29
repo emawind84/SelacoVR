@@ -102,7 +102,7 @@ public:
 		m_lightFlags = lf;
 		m_attenuate = !!(m_lightFlags & LF_ATTENUATE);
 	}
-	static void SetAttenuationForLevel();
+	static void SetAttenuationForLevel(bool);
 
 	void OrderIntensities()
 	{

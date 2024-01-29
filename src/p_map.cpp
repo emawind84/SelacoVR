@@ -312,7 +312,7 @@ static bool PIT_FindFloorCeiling(FMultiBlockLinesIterator &mit, FMultiBlockLines
 
 void P_GetFloorCeilingZ(FCheckPosition &tmf, int flags)
 {
-	sector_t *sec = (!(flags & FFCF_SAMESECTOR) || tmf.thing->Sector == NULL)? P_PointInSector(tmf.pos) : tmf.sector;
+	sector_t *sec = (!(flags & FFCF_SAMESECTOR) || tmf.thing->Sector == NULL)? tmf.thing->Level->PointInSector(tmf.pos) : tmf.sector;
 	F3DFloor *ffc, *fff;
 
 	tmf.ceilingz = NextHighestCeilingAt(sec, tmf.pos.X, tmf.pos.Y, tmf.pos.Z, tmf.pos.Z + tmf.thing->Height, flags, &tmf.ceilingsector, &ffc);
@@ -456,10 +456,10 @@ bool	P_TeleportMove(AActor* thing, const DVector3 &pos, bool telefrag, bool modi
 	// P_LineOpening requires the thing's z to be the destination z in order to work.
 	double savedz = thing->Z();
 	thing->SetZ(pos.Z);
-	sector_t *sector = P_PointInSector(pos);
+	sector_t *sector = thing->Level->PointInSector(pos);
 
 	FPortalGroupArray grouplist;
-	FMultiBlockLinesIterator mit(grouplist, pos.X, pos.Y, pos.Z, thing->Height, thing->radius, sector);
+	FMultiBlockLinesIterator mit(grouplist, thing->Level, pos.X, pos.Y, pos.Z, thing->Height, thing->radius, sector);
 	FMultiBlockLinesIterator::CheckResult cres;
 
 	while (mit.Next(&cres))
@@ -470,7 +470,7 @@ bool	P_TeleportMove(AActor* thing, const DVector3 &pos, bool telefrag, bool modi
 
 	if (tmf.touchmidtex) tmf.dropoffz = tmf.floorz;
 
-	FMultiBlockThingsIterator mit2(grouplist, pos.X, pos.Y, pos.Z, thing->Height, thing->radius, false, sector);
+	FMultiBlockThingsIterator mit2(grouplist, thing->Level, pos.X, pos.Y, pos.Z, thing->Height, thing->radius, false, sector);
 	FMultiBlockThingsIterator::CheckResult cres2;
 
 	while (mit2.Next(&cres2))
@@ -500,7 +500,7 @@ bool	P_TeleportMove(AActor* thing, const DVector3 &pos, bool telefrag, bool modi
 		// [RH] Z-Check
 		// But not if not MF2_PASSMOBJ or MF3_DONTOVERLAP are set!
 		// Otherwise those things would get stuck inside each other.
-		if ((thing->flags2 & MF2_PASSMOBJ || th->flags4 & MF4_ACTLIKEBRIDGE) && !(i_compatflags & COMPATF_NO_PASSMOBJ))
+		if ((thing->flags2 & MF2_PASSMOBJ || th->flags4 & MF4_ACTLIKEBRIDGE) && !(thing->Level->i_compatflags & COMPATF_NO_PASSMOBJ))
 		{
 			if (!(th->flags3 & thing->flags3 & MF3_DONTOVERLAP))
 			{
@@ -557,7 +557,7 @@ bool	P_TeleportMove(AActor* thing, const DVector3 &pos, bool telefrag, bool modi
 		// If this teleport was caused by a move, P_TryMove() will handle the
 		// sector transition messages better than we can here.
 		// This needs to be compatibility optioned because some older maps exploited this missing feature.
-		if (!(thing->flags6 & MF6_INTRYMOVE) && !(i_compatflags2 & COMPATF2_TELEPORT))
+		if (!(thing->flags6 & MF6_INTRYMOVE) && !(thing->Level->i_compatflags2 & COMPATF2_TELEPORT))
 		{
 			thing->CheckSectorTransition(oldsec);
 		}
@@ -1017,7 +1017,7 @@ bool PIT_CheckLine(FMultiBlockLinesIterator &mit, FMultiBlockLinesIterator::Chec
 		// better than Strife's handling of rails, which lets you jump into rails
 		// from either side. How long until somebody reports this as a bug and I'm
 		// forced to say, "It's not a bug. It's a feature?" Ugh.
-		(!(i_compatflags2 & COMPATF2_RAILING) ||
+		(!(tm.thing->Level->i_compatflags2 & COMPATF2_RAILING) ||
 		open.bottom == tm.thing->Sector->floorplane.ZatPoint(ref)))
 	{
 		open.bottom += 32;
@@ -1129,7 +1129,7 @@ static bool PIT_CheckPortal(FMultiBlockLinesIterator &mit, FMultiBlockLinesItera
 	tm.thing->AddZ(zofs);
 
 	FBoundingBox pbox(cres.Position.X, cres.Position.Y, tm.thing->radius);
-	FBlockLinesIterator it(pbox);
+	FBlockLinesIterator it(tm.thing->Level, pbox);
 	bool ret = false;
 	line_t *ld;
 
@@ -1364,7 +1364,7 @@ bool PIT_CheckThing(FMultiBlockThingsIterator &it, FMultiBlockThingsIterator::Ch
 	// walking on other actors and unblocking is too messy through restricted portal types so disable it.
 	if (!(cres.portalflags & FFCF_RESTRICTEDPORTAL))
 	{
-		if (!(i_compatflags & COMPATF_NO_PASSMOBJ) && !(tm.thing->flags & (MF_FLOAT | MF_MISSILE | MF_SKULLFLY | MF_NOGRAVITY)) &&
+		if (!(thing->Level->i_compatflags & COMPATF_NO_PASSMOBJ) && !(tm.thing->flags & (MF_FLOAT | MF_MISSILE | MF_SKULLFLY | MF_NOGRAVITY)) &&
 			(thing->flags & MF_SOLID) && (thing->flags4 & MF4_ACTLIKEBRIDGE))
 		{
 			// [RH] Let monsters walk on actors as well as floors
@@ -1412,7 +1412,7 @@ bool PIT_CheckThing(FMultiBlockThingsIterator &it, FMultiBlockThingsIterator::Ch
 
 	// [RH] If the other thing is a bridge, then treat the moving thing as if it had MF2_PASSMOBJ, so
 	// you can use a scrolling floor to move scenery items underneath a bridge.
-	if ((tm.thing->flags2 & MF2_PASSMOBJ || thing->flags4 & MF4_ACTLIKEBRIDGE) && !(i_compatflags & COMPATF_NO_PASSMOBJ))
+	if ((tm.thing->flags2 & MF2_PASSMOBJ || thing->flags4 & MF4_ACTLIKEBRIDGE) && !(tm.thing->Level->i_compatflags & COMPATF_NO_PASSMOBJ))
 	{ // check if a mobj passed over/under another object
 		if (!(tm.thing->flags & MF_MISSILE) ||
 			!(tm.thing->flags2 & MF2_RIP) ||
@@ -1548,7 +1548,7 @@ bool PIT_CheckThing(FMultiBlockThingsIterator &it, FMultiBlockThingsIterator::Ch
 		{
 			clipheight = thing->projectilepassheight;
 		}
-		else if (thing->projectilepassheight < 0 && (i_compatflags & COMPATF_MISSILECLIP))
+		else if (thing->projectilepassheight < 0 && (thing->Level->i_compatflags & COMPATF_MISSILECLIP))
 		{
 			clipheight = -thing->projectilepassheight;
 		}
@@ -1745,7 +1745,7 @@ bool P_CheckPosition(AActor *thing, const DVector2 &pos, FCheckPosition &tm, boo
 	tm.pos.Y = pos.Y;
 	tm.pos.Z = thing->Z();
 
-	newsec = tm.sector = P_PointInSector(pos);
+	newsec = tm.sector = thing->Level->PointInSector(pos);
 	tm.ceilingline = thing->BlockingLine = NULL;
 
 	// Retrieve the base floor / ceiling from the target location.
@@ -1829,7 +1829,7 @@ bool P_CheckPosition(AActor *thing, const DVector2 &pos, FCheckPosition &tm, boo
 	FBoundingBox box(pos.X, pos.Y, thing->radius);
 
 	FPortalGroupArray pcheck;
-	FMultiBlockThingsIterator it2(pcheck, pos.X, pos.Y, thing->Z(), thing->Height, thing->radius, false, newsec);
+	FMultiBlockThingsIterator it2(pcheck, thing->Level, pos.X, pos.Y, thing->Z(), thing->Height, thing->radius, false, newsec);
 	FMultiBlockThingsIterator::CheckResult tcres;
 
 	if (!(thing->flags2 & MF2_THRUACTORS))
@@ -1843,7 +1843,7 @@ bool P_CheckPosition(AActor *thing, const DVector2 &pos, FCheckPosition &tm, boo
 			AActor *BlockingMobj = thing->BlockingMobj;
 
 			// If this blocks through a restricted line portal, it will always completely block.
-			if (BlockingMobj == NULL || (i_compatflags & COMPATF_NO_PASSMOBJ) || (tcres.portalflags & FFCF_RESTRICTEDPORTAL))
+			if (BlockingMobj == NULL || (thing->Level->i_compatflags & COMPATF_NO_PASSMOBJ) || (tcres.portalflags & FFCF_RESTRICTEDPORTAL))
 			{ // Thing slammed into something; don't let it move now.
 				thing->Height = realHeight;
 				return false;
@@ -1902,7 +1902,7 @@ bool P_CheckPosition(AActor *thing, const DVector2 &pos, FCheckPosition &tm, boo
 		return (thing->BlockingMobj = thingblocker) == NULL;
 
 
-	FMultiBlockLinesIterator it(pcheck, pos.X, pos.Y, thing->Z(), thing->Height, thing->radius, newsec);
+	FMultiBlockLinesIterator it(pcheck, thing->Level, pos.X, pos.Y, thing->Z(), thing->Height, thing->radius, newsec);
 	FMultiBlockLinesIterator::CheckResult lcres;
 
 	double thingdropoffz = tm.floorz;
@@ -2152,7 +2152,7 @@ static void CheckForPushSpecial(line_t *line, int side, AActor *mobj, DVector2 *
 {
 	if (line->special && !(mobj->flags6 & MF6_NOTRIGGER))
 	{
-		if (posforwindowcheck && !(i_compatflags2 & COMPATF2_PUSHWINDOW) && line->backsector != NULL)
+		if (posforwindowcheck && !(mobj->Level->i_compatflags2 & COMPATF2_PUSHWINDOW) && line->backsector != NULL)
 		{ // Make sure this line actually blocks us and is not a window
 			// or similar construct we are standing inside of.
 			DVector3 pos = mobj->PosRelative(line);
@@ -2259,7 +2259,7 @@ bool P_TryMove(AActor *thing, const DVector2 &pos,
 				goto pushline;
 			}
 		}
-		if (!(tm.thing->flags2 & MF2_PASSMOBJ) || (i_compatflags & COMPATF_NO_PASSMOBJ))
+		if (!(tm.thing->flags2 & MF2_PASSMOBJ) || (tm.thing->Level->i_compatflags & COMPATF_NO_PASSMOBJ))
 		{
 			thing->SetZ(oldz);
 			thing->flags6 &= ~MF6_INTRYMOVE;
@@ -2358,7 +2358,7 @@ bool P_TryMove(AActor *thing, const DVector2 &pos,
 
 		// compatibility check: Doom originally did not allow monsters to cross dropoffs at all.
 		// If the compatibility flag is on, only allow this when the velocity comes from a scroller
-		if ((i_compatflags & COMPATF_CROSSDROPOFF) && !(thing->flags4 & MF4_SCROLLMOVE))
+		if ((thing->Level->i_compatflags & COMPATF_CROSSDROPOFF) && !(thing->flags4 & MF4_SCROLLMOVE))
 		{
 			dropoff = false;
 		}
@@ -2417,7 +2417,7 @@ bool P_TryMove(AActor *thing, const DVector2 &pos,
 		if (thing->player && thing->player->Bot != NULL && thing->flags & MF_SHOOTABLE)
 		{
 			if (tm.sector != thing->Sector
-				&& bglobal.IsDangerous(tm.sector))
+				&& thing->Level->BotInfo.IsDangerous(tm.sector))
 			{
 				thing->player->Bot->prev = thing->player->Bot->dest;
 				thing->player->Bot->dest = nullptr;
@@ -2682,7 +2682,7 @@ bool P_TryMove(AActor *thing, const DVector2 &pos,
 		thing->UnlinkFromWorld(&ctx);
 		thing->SetXYZ(thing->PosRelative(tm.portalgroup));
 		thing->Prev += thing->Pos() - oldpos;
-		thing->Sector = P_PointInSector(thing->Pos());
+		thing->Sector = thing->Level->PointInSector(thing->Pos());
 		thing->PrevPortalGroup = thing->Sector->PortalGroup;
 		thing->LinkToWorld(&ctx);
 
@@ -3903,7 +3903,7 @@ struct aim_t
 		newtrace.aimdir = position == sector_t::ceiling? aim_t::aim_up : aim_t::aim_down;
 		newtrace.startpos = startpos + entersec->GetPortalDisplacement(position);
 		newtrace.startfrac = frac + 1. / attackrange;	// this is to skip the transition line to the portal which would produce a bogus opening
-		newtrace.lastsector = P_PointInSector(newtrace.startpos + aimtrace * newtrace.startfrac);
+		newtrace.lastsector = entersec->Level->PointInSector(newtrace.startpos + aimtrace * newtrace.startfrac);
 		newtrace.limitz = portalz;
 		if (aimdebug)
 			Printf("-----Entering %s portal from sector %d to sector %d\n", position ? "ceiling" : "floor", lastsector->sectornum, newtrace.lastsector->sectornum);
@@ -3942,7 +3942,7 @@ struct aim_t
 
 		DVector2 pos = newtrace.startpos + newtrace.aimtrace * newtrace.startfrac;
 
-		newtrace.lastsector = P_PointInSector(pos);
+		newtrace.lastsector = li->GetLevel()->PointInSector(pos);
 		P_TranslatePortalZ(li, limitz);
 		if (aimdebug)
 			Printf("-----Entering line portal from sector %d to sector %d\n", lastsector->sectornum, newtrace.lastsector->sectornum);
@@ -4778,7 +4778,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 			// Hit a thing, so it could be either a puff or blood
 			DVector3 bleedpos = trace.HitPos;
 			// position a bit closer for puffs/blood if using compatibility mode.
-			if (i_compatflags & COMPATF_HITSCAN)
+			if (trace.Actor->Level->i_compatflags & COMPATF_HITSCAN)
 			{
 				DVector2 ofs = t1->Level->GetPortalOffsetPosition(bleedpos.X, bleedpos.Y, -10 * trace.HitVector.X, -10 * trace.HitVector.Y);
 				bleedpos.X = ofs.X;
@@ -4971,7 +4971,7 @@ int P_LineTrace(AActor *t1, DAngle angle, double distance,
 	if ( flags & TRF_BLOCKSELF )
 	{
 		bool Projectile = ( (t1->flags&MF_MISSILE) || (t1->BounceFlags&BOUNCE_MBF) );
-		bool NotBlocked = ( (t1->flags3&MF3_NOBLOCKMONST) || ( (i_compatflags&COMPATF_NOBLOCKFRIENDS) && (t1->flags&MF_FRIENDLY) ) );
+		bool NotBlocked = ( (t1->flags3&MF3_NOBLOCKMONST) || ( (t1->Level->i_compatflags&COMPATF_NOBLOCKFRIENDS) && (t1->flags&MF_FRIENDLY) ) );
 		if ( Projectile ) lflags |= ML_BLOCKPROJECTILE;
 		if ( !Projectile || (t1->flags8&MF8_BLOCKASPLAYER) ) lflags |= ML_BLOCKING;
 		if ( !NotBlocked ) lflags |= ML_BLOCKMONSTERS;
@@ -4984,7 +4984,7 @@ int P_LineTrace(AActor *t1, DAngle angle, double distance,
 	if ( flags & TRF_NOSKY ) tflags |= TRACE_NoSky;
 
 	// Do trace
-	bool ret = Trace(startpos, P_PointInSector(startpos), direction, distance, aflags, lflags, t1, trace, tflags, CheckLineTrace, &TData);
+	bool ret = Trace(startpos, t1->Level->PointInSector(startpos), direction, distance, aflags, lflags, t1, trace, tflags, CheckLineTrace, &TData);
 	if ( outdata )
 	{
 		memset(outdata,0,sizeof(*outdata));
@@ -5296,7 +5296,7 @@ static ETraceStatus ProcessRailHit(FTraceResults &res, void *userdata)
 	newhit.HitActor = res.Actor;
 	newhit.HitPos = res.HitPos;
 	newhit.HitAngle = res.SrcAngleFromTarget;
-	if (i_compatflags & COMPATF_HITSCAN)
+	if (res.Actor->Level->i_compatflags & COMPATF_HITSCAN)
 	{
 		DVector2 ofs = res.Actor->Level->GetPortalOffsetPosition(newhit.HitPos.X, newhit.HitPos.Y, -10 * res.HitVector.X, -10 * res.HitVector.Y);
 		newhit.HitPos.X = ofs.X;
@@ -5687,7 +5687,7 @@ bool P_UseTraverse(AActor *usething, const DVector2 &start, const DVector2 &end,
 				P_LineOpening(open, NULL, in->d.line, it.InterceptPoint(in));
 			}
 			if (open.range <= 0 ||
-				(in->d.line->special != 0 && (i_compatflags & COMPATF_USEBLOCKING)))
+				(in->d.line->special != 0 && (usething->Level->i_compatflags & COMPATF_USEBLOCKING)))
 			{
 				// [RH] Give sector a chance to intercept the use
 
@@ -5747,7 +5747,7 @@ bool P_UseTraverse(AActor *usething, const DVector2 &start, const DVector2 &end,
 			//[RH] And now I've changed it again. If the line is of type
 			//	   SPAC_USE, then it eats the use. Everything else passes
 			//	   it through, including SPAC_USETHROUGH.
-			if (i_compatflags & COMPATF_USEBLOCKING)
+			if (usething->Level->i_compatflags & COMPATF_USEBLOCKING)
 			{
 				if (in->d.line->activation & SPAC_UseThrough) continue;
 				else return true;
@@ -6159,7 +6159,7 @@ int P_RadiusAttack(AActor *bombspot, AActor *bombsource, int bombdamage, int bom
 	fulldamagedistance = clamp<int>(fulldamagedistance, 0, bombdistance - 1);
 
 	FPortalGroupArray grouplist(FPortalGroupArray::PGA_Full3d);
-	FMultiBlockThingsIterator it(grouplist, bombspot->X(), bombspot->Y(), bombspot->Z() - bombdistance, bombspot->Height + bombdistance*2, bombdistance, false, bombspot->Sector);
+	FMultiBlockThingsIterator it(grouplist, bombspot->Level, bombspot->X(), bombspot->Y(), bombspot->Z() - bombdistance, bombspot->Height + bombdistance*2, bombdistance, false, bombspot->Sector);
 	FMultiBlockThingsIterator::CheckResult cres;
 
 	if (flags & RADF_SOURCEISSPOT)
@@ -6215,7 +6215,7 @@ int P_RadiusAttack(AActor *bombspot, AActor *bombsource, int bombdamage, int bom
 		// because some user levels require they have a height of 16,
 		// which can make them near impossible to hit with the new code.
 		if ((flags & RADF_NODAMAGE) || (!((bombspot->flags5 | thing->flags5) & MF5_OLDRADIUSDMG) && 
-			!(flags & RADF_OLDRADIUSDAMAGE) && !(i_compatflags2 & COMPATF2_EXPLODE2)))
+			!(flags & RADF_OLDRADIUSDAMAGE) && !(thing->Level->i_compatflags2 & COMPATF2_EXPLODE2)))
 		{
 			double points = GetRadiusDamage(false, bombspot, thing, bombdamage, bombdistance, fulldamagedistance, bombsource == thing);
 			double check = int(points) * bombdamage;
@@ -6266,7 +6266,7 @@ int P_RadiusAttack(AActor *bombspot, AActor *bombsource, int bombdamage, int bom
 								thing->Thrust(bombspot->AngleTo(thing), thrust);
 								if (!(flags & RADF_NODAMAGE) || (flags & RADF_THRUSTZ))
 								{
-									if (!(i_compatflags2 & COMPATF2_EXPLODE1) || (flags & RADF_THRUSTZ))
+									if (!(thing->Level->i_compatflags2 & COMPATF2_EXPLODE1) || (flags & RADF_THRUSTZ))
 										thing->Vel.Z += vz;	// this really doesn't work well
 								}
 							}
@@ -6542,7 +6542,7 @@ void P_DoCrunch(AActor *thing, FChangePosition *cpos)
 				DAngle an = (M_Random() - 128) * (360./256);
 				if (cl_bloodtype >= 1)
 				{
-					P_DrawSplash2(32,  thing->PosPlusZ(thing->Height/2), an, 2, thing->BloodColor);
+					P_DrawSplash2(thing->Level, 32,  thing->PosPlusZ(thing->Height/2), an, 2, thing->BloodColor);
 				}
 			}
 			if (thing->CrushPainSound != 0 && !S_GetSoundPlayingInfo(thing, thing->CrushPainSound))
@@ -7118,7 +7118,7 @@ static void SpawnDeepSplash(AActor *t1, const FTraceResults &trace, AActor *puff
 	}
 	else return;
 
-	P_HitWater(puff != NULL ? puff : t1, P_PointInSector(*hitpos), *hitpos);
+	P_HitWater(puff != NULL ? puff : t1, t1->Level->PointInSector(*hitpos), *hitpos);
 }
 
 //=============================================================================

@@ -72,6 +72,7 @@
 #include "vm.h"
 #include "dobjgc.h"
 #include "gi.h"
+#include "a_dynlight.h"
 #include "p_conversation.h"
 #include "r_data/models/models.h"
 #include "hwrenderer/utility/hw_vrmodes.h"
@@ -254,6 +255,8 @@ FString BackupSaveName;
 bool SendLand;
 const AActor *SendItemUse, *SendItemDrop;
 int SendItemDropAmount;
+
+extern uint8_t globalfreeze;
 
 EXTERN_CVAR (Int, team)
 
@@ -1151,9 +1154,6 @@ void G_Ticker ()
 		}
 		switch (gameaction)
 		{
-		case ga_loadlevel:
-			G_DoLoadLevel (-1, false, false);
-			break;
 		case ga_recordgame:
 			G_CheckDemoStatus();
 			G_RecordDemo(newdemoname);
@@ -1233,7 +1233,7 @@ void G_Ticker ()
 	uint32_t rngsum = FRandom::StaticSumSeeds ();
 
 	//Added by MC: For some of that bot stuff. The main bot function.
-	bglobal.Main ();
+	level.BotInfo.Main (&level);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1461,7 +1461,7 @@ bool FLevelLocals::CheckSpot (int playernum, FPlayerStart *mthing)
 	{
 		spot.Z = 0;
 	}
-	spot.Z += P_PointInSector (spot)->floorplane.ZatPoint (spot);
+	spot.Z += PointInSector (spot)->floorplane.ZatPoint (spot);
 
 	if (!players[playernum].mo)
 	{ // first spawn of level, before corpses
@@ -1533,7 +1533,7 @@ FPlayerStart *FLevelLocals::SelectFarthestDeathmatchSpot (size_t selections)
 		if (distance > bestdistance)
 		{
 			bestdistance = distance;
-			bestspot = &level.deathmatchstarts[i];
+			bestspot = &deathmatchstarts[i];
 		}
 	}
 
@@ -1548,7 +1548,7 @@ FPlayerStart *FLevelLocals::SelectRandomDeathmatchSpot (int playernum, unsigned 
 	for (j = 0; j < 20; j++)
 	{
 		i = pr_dmspawn() % selections;
-		if (CheckSpot (playernum, &level.deathmatchstarts[i]) )
+		if (CheckSpot (playernum, &deathmatchstarts[i]) )
 		{
 			return &deathmatchstarts[i];
 		}
@@ -1649,7 +1649,7 @@ FPlayerStart *FLevelLocals::PickPlayerStart(int playernum, int flags)
 			unsigned int i;
 
 			// Find all unblocked player starts.
-			for (i = 0; i < level.AllPlayerStarts.Size(); ++i)
+			for (i = 0; i < AllPlayerStarts.Size(); ++i)
 			{
 				if (CheckSpot(playernum, &AllPlayerStarts[i]))
 				{
@@ -1662,7 +1662,7 @@ FPlayerStart *FLevelLocals::PickPlayerStart(int playernum, int flags)
 			}
 		}
 		// Pick a spot at random, whether it's open or not.
-		return &level.AllPlayerStarts[pr_pspawn(AllPlayerStarts.Size())];
+		return &AllPlayerStarts[pr_pspawn(AllPlayerStarts.Size())];
 	}
 	return &playerstarts[playernum];
 }
@@ -1691,7 +1691,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, PickPlayerStart)
 void FLevelLocals::QueueBody (AActor *body)
 {
 	// flush an old corpse if needed
-	int modslot = bodyqueslot%level.BODYQUESIZE;
+	int modslot = bodyqueslot % BODYQUESIZE;
 	bodyqueslot = modslot + 1;
 
 	if (bodyqueslot >= BODYQUESIZE && bodyque[modslot] != NULL)
@@ -1728,7 +1728,6 @@ void FLevelLocals::QueueBody (AActor *body)
 //
 // G_DoReborn
 //
-CVAR (Bool, pistolstart, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 EXTERN_CVAR(Bool, sv_singleplayerrespawn)
 void FLevelLocals::DoReborn (int playernum, bool freshbot)
 {
@@ -1744,9 +1743,8 @@ void FLevelLocals::DoReborn (int playernum, bool freshbot)
 		{ // Reload the level from scratch
 			bool indemo = demoplayback;
 			BackupSaveName = "";
-			G_InitNew (level.MapName, false);
+			G_InitNew (MapName, false);
 			demoplayback = indemo;
-//			gameaction = ga_loadlevel;
 		}
 	}
 	else
@@ -1827,22 +1825,23 @@ void G_DoPlayerPop(int playernum)
 	}
 
 	// [RH] Make the player disappear
-	level.Behaviors.StopMyScripts(players[playernum].mo);
+	auto mo = players[playernum].mo;
+	mo->Level->Behaviors.StopMyScripts(mo);
 	// [ZZ] fire player disconnect hook
 	E_PlayerDisconnected(playernum);
 	// [RH] Let the scripts know the player left
-	level.Behaviors.StartTypedScripts(SCRIPT_Disconnect, players[playernum].mo, true, playernum, true);
-	if (players[playernum].mo != NULL)
+	mo->Level->Behaviors.StartTypedScripts(SCRIPT_Disconnect, mo, true, playernum, true);
+	if (mo != NULL)
 	{
-		P_DisconnectEffect(players[playernum].mo);
-		players[playernum].mo->player = NULL;
-		players[playernum].mo->Destroy();
+		P_DisconnectEffect(mo);
+		mo->player = NULL;
+		mo->Destroy();
 		if (!(players[playernum].mo->ObjectFlags & OF_EuthanizeMe))
 		{ // We just destroyed a morphed player, so now the original player
 			// has taken their place. Destroy that one too.
 			players[playernum].mo->Destroy();
 		}
-		players[playernum].mo = NULL;
+		players[playernum].mo = nullptr;
 		players[playernum].camera = nullptr;
 	}
 
@@ -2041,7 +2040,7 @@ void G_DoLoadGame ()
 	// Read intermission data for hubs
 	G_SerializeHub(arc);
 
-	bglobal.RemoveAllBots(true);
+	level.BotInfo.RemoveAllBots(&level, true);
 
 	FString cvar;
 	arc("importantcvars", cvar);
@@ -2058,7 +2057,8 @@ void G_DoLoadGame ()
 	uint32_t time[2] = { 1,0 };
 
 	arc("ticrate", time[0])
-		("leveltime", time[1]);
+		("leveltime", time[1])
+		("globalfreeze", globalfreeze);
 	// dearchive all the modifications
 	level.time = Scale(time[1], TICRATE, time[0]);
 
@@ -2203,14 +2203,15 @@ void G_DoAutoSave ()
 
 	file = G_BuildSaveName ("auto", nextautosave);
 
-	if (!(level.flags2 & LEVEL2_NOAUTOSAVEHINT))
+	// The hint flag is only relevant on the primary level.
+	if (!(currentUILevel->flags2 & LEVEL2_NOAUTOSAVEHINT))
 	{
 		nextautosave = (nextautosave + 1) % count;
 	}
 	else
 	{
 		// This flag can only be used once per level
-		level.flags2 &= ~LEVEL2_NOAUTOSAVEHINT;
+		currentUILevel->flags2 &= ~LEVEL2_NOAUTOSAVEHINT;
 	}
 
 	readableTime = myasctime ();
@@ -2292,7 +2293,10 @@ static void PutSavePic (FileWriter *file, int width, int height)
 	}
 	else
 	{
-		screen->WriteSavePic(&players[consoleplayer], file, width, height);
+		D_Render([&]()
+			{
+				screen->WriteSavePic(&players[consoleplayer], file, width, height);
+			}, false);
 	}
 }
 
@@ -3056,17 +3060,17 @@ bool G_CheckDemoStatus (void)
 	return false; 
 }
 
-void G_StartSlideshow(FName whichone)
+void G_StartSlideshow(FLevelLocals *Level, FName whichone)
 {
 	gameaction = ga_slideshow;
-	SelectedSlideshow = whichone == NAME_None ? level.info->slideshow : whichone;
+	SelectedSlideshow = whichone == NAME_None ? Level->info->slideshow : whichone;
 }
 
 DEFINE_ACTION_FUNCTION(FLevelLocals, StartSlideshow)
 {
-	PARAM_PROLOGUE;
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
 	PARAM_NAME(whichone);
-	G_StartSlideshow(whichone);
+	G_StartSlideshow(self, whichone);
 	return 0;
 }
 
@@ -3105,7 +3109,7 @@ DEFINE_GLOBAL(multiplayer)
 DEFINE_GLOBAL(gameaction)
 DEFINE_GLOBAL(gamestate)
 DEFINE_GLOBAL(skyflatnum)
-DEFINE_GLOBAL_NAMED(bglobal.freeze, globalfreeze)
+DEFINE_GLOBAL(globalfreeze)
 DEFINE_GLOBAL(gametic)
 DEFINE_GLOBAL(GameTicRate)
 DEFINE_GLOBAL(demoplayback)

@@ -1503,6 +1503,11 @@ struct seg_t
 	int				segnum;
 
 	int Index() const { return segnum; }
+	
+	FLevelLocals *GetLevel() const
+	{
+		return frontsector->Level;
+	}
 };
 
 //extern seg_t *segs;
@@ -1604,26 +1609,9 @@ typedef uint8_t lighttable_t;	// This could be wider for >8 bit display.
 
 //----------------------------------------------------------------------------------
 //
-// The playsim can use different nodes than the renderer so this is
-// not the same as R_PointInSubsector
+//
 //
 //----------------------------------------------------------------------------------
-subsector_t *P_PointInSubsector(double x, double y);
-
-inline sector_t *P_PointInSector(const DVector2 &pos)
-{
-	return P_PointInSubsector(pos.X, pos.Y)->sector;
-}
-
-inline sector_t *P_PointInSector(double X, double Y)
-{
-	return P_PointInSubsector(X, Y)->sector;
-}
-
-inline sector_t *P_PointInSectorXY(double X, double Y)	// This is for the benefit of unambiguously looking up this function's address
-{
-	return P_PointInSubsector(X, Y)->sector;
-}
 
 inline bool FBoundingBox::inRange(const line_t *ld) const
 {

@@ -153,7 +153,7 @@ bool P_CheckSwitchRange(AActor *user, line_t *line, int sideno, const DVector3 *
 		// if the polyobject lies directly on a sector boundary
 		check.X = dll.x + dll.dx * (inter + 0.01);
 		check.Y = dll.y + dll.dy * (inter + 0.01);
-		front = P_PointInSector(check);
+		front = line->GetLevel()->PointInSector(check);
 	}
 	else
 	{
@@ -196,7 +196,7 @@ bool P_CheckSwitchRange(AActor *user, line_t *line, int sideno, const DVector3 *
 			}
 		}
 
-		return (i_compatflags2 & COMPATF2_CHECKSWITCHRANGE)
+		return (user->Level->i_compatflags2 & COMPATF2_CHECKSWITCHRANGE)
 			? (user->Top() >= open.top)
 			: (user->Top() > open.top);
 	}
@@ -220,7 +220,7 @@ bool P_CheckSwitchRange(AActor *user, line_t *line, int sideno, const DVector3 *
 			}
 		}
 
-		return (i_compatflags2 & COMPATF2_CHECKSWITCHRANGE)
+		return (user->Level->i_compatflags2 & COMPATF2_CHECKSWITCHRANGE)
 			? (user->Z() <= open.bottom)
 			: (user->Z() < open.bottom);
 	}
@@ -235,7 +235,7 @@ bool P_CheckSwitchRange(AActor *user, line_t *line, int sideno, const DVector3 *
 	else
 	{
 		// no switch found. Check whether the player can touch either top or bottom texture
-		return (i_compatflags2 & COMPATF2_CHECKSWITCHRANGE)
+		return (user->Level->i_compatflags2 & COMPATF2_CHECKSWITCHRANGE)
 			? ( (user->Top() >= open.top) || (user->Z() <= open.bottom) )
 			: ( (user->Top() > open.top)  || user->isBelow(open.bottom) );
 	}

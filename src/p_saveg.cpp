@@ -57,6 +57,7 @@
 #include "g_levellocals.h"
 #include "events.h"
 #include "p_destructible.h"
+#include "r_sky.h"
 #include "fragglescript/t_script.h"
 #include "s_music.h"
 
@@ -530,7 +531,6 @@ FSerializer &Serialize(FSerializer &arc, const char *key, zone_t &z, zone_t *def
 void P_SerializeSounds(FLevelLocals *Level, FSerializer &arc)
 {
 	S_SerializeSounds(arc);
-	DSeqNode::SerializeSequences (arc);
 	const char *name = NULL;
 	uint8_t order;
 	float musvol = Level->MusicVolume;
@@ -575,7 +575,7 @@ void P_SerializePlayers(FLevelLocals *Level, FSerializer &arc, bool skipload)
 	// Count the number of players present right now.
 	for (numPlayersNow = 0, i = 0; i < MAXPLAYERS; ++i)
 	{
-		if (playeringame[i])
+		if (Level->PlayerInGame(i))
 		{
 			++numPlayersNow;
 		}
@@ -824,7 +824,7 @@ void CopyPlayer(player_t *dst, player_t *src, const char *name)
 
 	if (dst->Bot != nullptr)
 	{
-		botinfo_t *thebot = bglobal.botinfo;
+		botinfo_t *thebot = level.BotInfo.botinfo;
 		while (thebot && stricmp(name, thebot->name))
 		{
 			thebot = thebot->next;
@@ -833,7 +833,7 @@ void CopyPlayer(player_t *dst, player_t *src, const char *name)
 		{
 			thebot->inuse = BOTINUSE_Yes;
 		}
-		bglobal.botnum++;
+		level.BotInfo.botnum++;
 		dst->userinfo.TransferFrom(uibackup2);
 	}
 	else
@@ -879,16 +879,16 @@ void FLevelLocals::SpawnExtraPlayers()
 	// be sure to spawn the extra players.
 	int i;
 
-	if (deathmatch)
+	if (deathmatch || !isPrimaryLevel())
 	{
 		return;
 	}
 
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
-		if (playeringame[i] && players[i].mo == NULL)
+		if (PlayerInGame(i) && Players[i]->mo == NULL)
 		{
-			players[i].playerstate = PST_ENTER;
+			Players[i]->playerstate = PST_ENTER;
 			SpawnPlayer(&playerstarts[i], i, (flags2 & LEVEL2_PRERAISEWEAPON) ? SPF_WEAPONFULLYUP : 0);
 		}
 	}
@@ -928,7 +928,7 @@ void FLevelLocals::Serialize(FSerializer &arc, bool hubload)
 
 	if (arc.isReading())
 	{
-		DThinker::DestroyAllThinkers();
+		Thinkers.DestroyAllThinkers();
 		interpolator.ClearInterpolations();
 		arc.ReadObjects(hubload);
 		// If there have been object deserialization errors we must absolutely not continue here because scripted objects can do unpredictable things.
@@ -964,11 +964,13 @@ void FLevelLocals::Serialize(FSerializer &arc, bool hubload)
 		("spotstate", SpotState)
 		("fragglethinker", FraggleScriptThinker)
 		("acsthinker", ACSThinker)
-        ("impactdecalcount", ImpactDecalCount)
+		("impactdecalcount", ImpactDecalCount)
 		("scrolls", Scrolls)
 		("automap", automap)
+		("interpolator", interpolator)
 		("frozenstate", frozenstate)
-		("savedModelFiles", savedModelFiles);
+		("savedModelFiles", savedModelFiles)
+		("sndseqlisthead", SequenceListHead);
 
 
 	// Hub transitions must keep the current total time
@@ -977,16 +979,15 @@ void FLevelLocals::Serialize(FSerializer &arc, bool hubload)
 
 	if (arc.isReading())
 	{
-		sky1texture = skytexture1;
-		sky2texture = skytexture2;
-		R_InitSkyMap();
+		InitSkyMap(this);
 		AirControlChanged();
-		bglobal.freeze = !!(frozenstate & 2);
 	}
 
 	Behaviors.SerializeModuleStates(arc);
 	// The order here is important: First world state, then portal state, then thinkers, and last polyobjects.
+	SetCompatLineOnSide(false);	// This flag should not be saved. It solely depends on current compatibility state.
 	arc("linedefs", lines, loadlines);
+	SetCompatLineOnSide(true);
 	arc("sidedefs", sides, loadsides);
 	arc("sectors", sectors, loadsectors);
 	arc("zones", Zones);
@@ -998,10 +999,10 @@ void FLevelLocals::Serialize(FSerializer &arc, bool hubload)
 	}
 
 	// [ZZ] serialize health groups
-	P_SerializeHealthGroups(arc);
+	P_SerializeHealthGroups(this, arc);
 	// [ZZ] serialize events
 	E_SerializeEvents(arc);
-	DThinker::SerializeThinkers(arc, hubload);
+	Thinkers.SerializeThinkers(arc, hubload);
 	arc("polyobjs", Polyobjects);
 	SerializeSubsectors(arc, "subsectors");
 	StatusBar->SerializeMessages(arc);
@@ -1014,17 +1015,17 @@ void FLevelLocals::Serialize(FSerializer &arc, bool hubload)
 	if (arc.isReading())
 	{
 		for (auto &sec : sectors)
-		{
+	{
 			P_Recalculate3DFloors(&sec);
 		}
 		for (int i = 0; i < MAXPLAYERS; ++i)
 		{
-			if (playeringame[i] && players[i].mo != nullptr)
+			if (PlayerInGame(i) && Players[i]->mo != nullptr)
 			{
-				FWeaponSlots::SetupWeaponSlots(players[i].mo);
+				FWeaponSlots::SetupWeaponSlots(Players[i]->mo);
 			}
 		}
-		AActor::RecreateAllAttachedLights();
+		RecreateAllAttachedLights();
 		InitPortalGroups(this);
 
 		automap->UpdateShowAllLines();

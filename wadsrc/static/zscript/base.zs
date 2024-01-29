@@ -799,12 +799,12 @@ struct LevelLocals native
 	native int GetUDMFInt(int type, int index, Name key);
 	native double GetUDMFFloat(int type, int index, Name key);
 	native play int ExecuteSpecial(int special, Actor activator, line linedef, bool lineside, int arg1 = 0, int arg2 = 0, int arg3 = 0, int arg4 = 0, int arg5 = 0);
-	native static void GiveSecret(Actor activator, bool printmsg = true, bool playsound = true);
-	native static void StartSlideshow(Name whichone = 'none');
+	native void GiveSecret(Actor activator, bool printmsg = true, bool playsound = true);
+	native void StartSlideshow(Name whichone = 'none');
 	native static void MakeScreenShot();
 	native static void MakeAutoSave();
 	native void WorldDone();
-	native static void RemoveAllBots(bool fromlist);
+    deprecated("3.8") static void RemoveAllBots(bool fromlist) { /* intentionally left as no-op. */ }
 	native ui Vector2 GetAutomapPosition();
 	native void SetInterMusic(String nextmap);
 	native String FormatMapName(int mapnamecolor);
@@ -812,31 +812,35 @@ struct LevelLocals native
 	native bool IsCrouchingAllowed() const;
 	native bool IsFreelookAllowed() const;
 	native void StartIntermission(Name type, int state) const;
-	native SpotState GetSpotState(bool create = true);
+	native play SpotState GetSpotState(bool create = true);
 	native int FindUniqueTid(int start = 0, int limit = 0);
 	native uint GetSkyboxPortal(Actor actor);
 	native void ReplaceTextures(String from, String to, int flags);
-	clearscope static HealthGroup FindHealthGroup(int id) { return HealthGroup.Find(id); }
+    clearscope native HealthGroup FindHealthGroup(int id);
 	native vector3, int PickDeathmatchStart();
 	native vector3, int PickPlayerStart(int pnum, int flags = 0);
 	native int isFrozen() const;
 	native void setFrozen(bool on);
 
-	native static clearscope bool IsPointInMap(vector3 p);
-	static clearscope Sector PointInSector(Vector2 pt) { return Sector.PointInSector(pt); }
-	static clearscope bool IsPointInLevel(vector3 p) { return level.IsPointInMap(p); }
+	native clearscope Sector PointInSector(Vector2 pt) const;
 
-	native static clearscope vector2 Vec2Diff(vector2 v1, vector2 v2);
-	native static clearscope vector3 Vec3Diff(vector3 v1, vector3 v2);
-	native static clearscope vector3 SphericalCoords(vector3 viewpoint, vector3 targetPos, vector2 viewAngles = (0, 0), bool absolute = false);	
+	native clearscope bool IsPointInLevel(vector3 p) const;
+	deprecated("3.8") clearscope static bool IsPointInMap(vector3 p)
+	{
+		return level.IsPointInLevel(p);
+	}
+
+	native clearscope vector2 Vec2Diff(vector2 v1, vector2 v2) const;
+	native clearscope vector3 Vec3Diff(vector3 v1, vector3 v2) const;
+	native clearscope vector3 SphericalCoords(vector3 viewpoint, vector3 targetPos, vector2 viewAngles = (0, 0), bool absolute = false) const;
 	
-	native static clearscope vector2 Vec2Offset(vector2 pos, vector2 dir, bool absolute = false);
-	native static clearscope vector3 Vec2OffsetZ(vector2 pos, vector2 dir, double atz, bool absolute = false);
-	native static clearscope vector3 Vec3Offset(vector3 pos, vector3 dir, bool absolute = false);
+	native clearscope vector2 Vec2Offset(vector2 pos, vector2 dir, bool absolute = false) const;
+	native clearscope vector3 Vec2OffsetZ(vector2 pos, vector2 dir, double atz, bool absolute = false) const;
+	native clearscope vector3 Vec3Offset(vector3 pos, vector3 dir, bool absolute = false) const;
 
 	native String GetChecksum() const;
 
-	native void ChangeSky( TextureID sky1, TextureID sky2 );
+	native void ChangeSky(TextureID sky1, TextureID sky2 );
 
 	native SectorTagIterator CreateSectorTagIterator(int tag, line defline = null);
 	native LineIdIterator CreateLineIdIterator(int tag);
@@ -848,11 +852,11 @@ struct LevelLocals native
 		return String.Format("%02d:%02d:%02d", sec / 3600, (sec % 3600) / 60, sec % 60);
 	}
 
-	native bool CreateCeiling(sector sec, int type, line ln, double speed, double speed2, double height = 0, int crush = -1, int silent = 0, int change = 0, int crushmode = 0 /*Floor.crushDoom*/);
-	native bool CreateFloor(sector sec, int floortype, line ln, double speed, double height = 0, int crush = -1, int change = 0, bool crushmode = false, bool hereticlower = false);
+	native play bool CreateCeiling(sector sec, int type, line ln, double speed, double speed2, double height = 0, int crush = -1, int silent = 0, int change = 0, int crushmode = 0 /*Floor.crushDoom*/);
+	native play bool CreateFloor(sector sec, int floortype, line ln, double speed, double height = 0, int crush = -1, int change = 0, bool crushmode = false, bool hereticlower = false);
 
-	native static void ExitLevel(int position, bool keepFacing);
-	native static void SecretExitLevel(int position);
+	native void ExitLevel(int position, bool keepFacing);
+	native void SecretExitLevel(int position);
 	native static void ChangeLevel(string levelname, int position = 0, int flags = 0, int skill = -1);
 }
 

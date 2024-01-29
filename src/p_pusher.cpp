@@ -204,7 +204,7 @@ void DPusher::Tick ()
 			bool pusharound = ((thing->flags2 & MF2_WINDTHRUST) && !(thing->flags & MF_NOCLIP));
 					
 			// MBF allows any sentient or shootable thing to be affected, but players with a fly cheat aren't.
-			if (compatflags & COMPATF_MBFMONSTERMOVE)
+			if (Level->i_compatflags & COMPATF_MBFMONSTERMOVE)
 			{
 				pusharound = ((pusharound || (thing->IsSentient()) || (thing->flags & MF_SHOOTABLE)) // Add categories here
 					&& (!(thing->player && (thing->flags & (MF_NOGRAVITY))))); // Exclude flying players here
@@ -300,8 +300,14 @@ void DPusher::Tick ()
 
 void FLevelLocals::AdjustPusher(int tag, int magnitude, int angle, bool wind)
 {
-	DPusher::EPusher type = wind ? DPusher::p_wind : DPusher::p_current;
+	struct FThinkerCollection
+	{
+		int RefNum;
+		DThinker *Obj;
+	};
 
+	DPusher::EPusher type = wind? DPusher::p_wind : DPusher::p_current;
+	
 	// Find pushers already attached to the sector, and change their parameters.
 	TArray<FThinkerCollection> Collection;
 	{

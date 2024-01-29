@@ -44,6 +44,7 @@
 #define FX_VISIBILITYPULSE	0x00000040
 
 struct subsector_t;
+struct FLevelLocals;
 
 // [RH] Particle details
 
@@ -71,22 +72,20 @@ struct particle_t
 	bool doRoll;
 };
 
-extern TArray<particle_t>	Particles;
-extern TArray<uint16_t>		ParticlesInSubsec;
-
 const uint16_t NO_PARTICLE = 0xffff;
 
-void P_ClearParticles ();
-void P_FindParticleSubsectors ();
+void P_InitParticles(FLevelLocals *);
+void P_ClearParticles (FLevelLocals *Level);
+void P_FindParticleSubsectors (FLevelLocals *Level);
 
 
 class AActor;
 
-particle_t *JitterParticle (int ttl);
-particle_t *JitterParticle (int ttl, double drift);
+particle_t *JitterParticle (FLevelLocals *Level, int ttl);
+particle_t *JitterParticle (FLevelLocals *Level, int ttl, double drift);
 
-void P_ThinkParticles ();
-void P_SpawnParticle(const DVector3 &pos, const DVector3 &vel, const DVector3 &accel, PalEntry color, double startalpha, int lifetime, double size, double fadestep, double sizestep, int flags = 0, FTextureID texture = FNullTextureID(), ERenderStyle style = STYLE_None, double startroll = 0, double rollvel = 0, double rollacc = 0);
+void P_ThinkParticles (FLevelLocals *Level);
+void P_SpawnParticle(FLevelLocals *Level, const DVector3 &pos, const DVector3 &vel, const DVector3 &accel, PalEntry color, double startalpha, int lifetime, double size, double fadestep, double sizestep, int flags = 0, FTextureID texture = FNullTextureID(), ERenderStyle style = STYLE_None, double startroll = 0, double rollvel = 0, double rollacc = 0);
 void P_InitEffects (void);
 
 void P_RunEffect (AActor *actor, int effects);
@@ -99,6 +98,6 @@ struct SPortalHit
 };
 
 void P_DrawRailTrail(AActor *source, TArray<SPortalHit> &portalhits, int color1, int color2, double maxdiff = 0, int flags = 0, PClassActor *spawnclass = NULL, DAngle angle = 0., int duration = TICRATE, double sparsity = 1.0, double drift = 1.0, int SpiralOffset = 270, DAngle pitch = 0.);
-void P_DrawSplash (int count, const DVector3 &pos, DAngle angle, int kind);
-void P_DrawSplash2 (int count, const DVector3 &pos, DAngle angle, int updown, int kind);
+void P_DrawSplash (FLevelLocals *Level, int count, const DVector3 &pos, DAngle angle, int kind);
+void P_DrawSplash2 (FLevelLocals *Level, int count, const DVector3 &pos, DAngle angle, int updown, int kind);
 void P_DisconnectEffect (AActor *actor);

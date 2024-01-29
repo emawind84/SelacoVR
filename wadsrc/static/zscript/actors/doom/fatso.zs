@@ -106,6 +106,7 @@ extend class Actor
 {
 	const FATSPREAD = 90./8;
 	
+	private native bool compat_mushroom();
 
 	void A_FatRaise()
 	{

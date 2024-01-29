@@ -222,7 +222,7 @@ bool SightCheck::PTR_SightTraverse (intercept_t *in)
 //
 
 	// ignore self referencing sectors if COMPAT_TRACE is on
-	if ((i_compatflags & COMPATF_TRACE) && li->frontsector == li->backsector)
+	if ((Level->i_compatflags & COMPATF_TRACE) && li->frontsector == li->backsector)
 		return true;
 
 	double trX = Trace.x + Trace.dx * in->frac;
@@ -633,7 +633,7 @@ bool SightCheck::P_SightPathTraverse ()
 	y1 = sightstart.Y + Startfrac * Trace.dy;
 	x2 = sightend.X;
 	y2 = sightend.Y;
-	if (lastsector == NULL) lastsector = P_PointInSector(x1, y1);
+	if (lastsector == NULL) lastsector = Level->PointInSector(x1, y1);
 
 	// for FF_SEETHROUGH the following rule applies:
 	// If the viewer is in an area without FF_SEETHROUGH he can only see into areas without this flag
@@ -878,7 +878,7 @@ sightcounts[0]++;
 		(t2->flags8 & MF8_MINVISIBLE) ||
 		!t2->RenderStyle.IsVisible(t2->Alpha)))
 	{ // small chance of an attack being made anyway
-		if ((bglobal.m_Thinking ? pr_botchecksight() : pr_checksight()) > 50)
+		if ((t1->Level->BotInfo.m_Thinking ? pr_botchecksight() : pr_checksight()) > 50)
 		{
 			res = false;
 			goto done;
@@ -921,7 +921,7 @@ sightcounts[0]++;
 		SightTask task = { 0, topslope, bottomslope, -1, sec->PortalGroup };
 
 
-		SightCheck s(&level);
+		SightCheck s(t1->Level);
 		s.init(t1, t2, sec, &task, flags);
 		res = s.P_SightPathTraverse ();
 		if (!res)

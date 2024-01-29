@@ -165,12 +165,12 @@ static void P_RecursiveSound(sector_t *sec, AActor *soundtarget, bool splash, AA
 		// I wish there was a better method to do this than randomly looking through the portal at a few places...
 		if (checkabove)
 		{
-			sector_t *upper = P_PointInSector(check->v1->fPos() + check->Delta() / 2 + sec->GetPortalDisplacement(sector_t::ceiling));
+			sector_t *upper = sec->Level->PointInSector(check->v1->fPos() + check->Delta() / 2 + sec->GetPortalDisplacement(sector_t::ceiling));
 			NoiseMarkSector(upper, soundtarget, splash, emitter, soundblocks, maxdist);
 		}
 		if (checkbelow)
 		{
-			sector_t *lower = P_PointInSector(check->v1->fPos() + check->Delta() / 2 + sec->GetPortalDisplacement(sector_t::floor));
+			sector_t *lower = sec->Level->PointInSector(check->v1->fPos() + check->Delta() / 2 + sec->GetPortalDisplacement(sector_t::floor));
 			NoiseMarkSector(lower, soundtarget, splash, emitter, soundblocks, maxdist);
 		}
 
@@ -536,7 +536,7 @@ static int P_Move (AActor *actor)
 
 	// [RH] I'm not so sure this is such a good idea
 	// [GZ] That's why it's compat-optioned.
-	if (compatflags & COMPATF_MBFMONSTERMOVE && !(actor->flags8 & MF8_NOFRICTION))
+	if (actor->Level->i_compatflags & COMPATF_MBFMONSTERMOVE && !(actor->flags8 & MF8_NOFRICTION))
 	{
 		// killough 10/98: make monsters get affected by ice and sludge too:
 		movefactor = P_GetMoveFactor (actor, &friction);
@@ -733,10 +733,10 @@ int P_SmartMove(AActor* actor)
 {
 	AActor* target = actor->target;
 	int on_lift = false, dropoff = false, under_damage;
-	bool monster_avoid_hazards = (i_compatflags2 & COMPATF2_AVOID_HAZARDS) || (actor->flags8 & MF8_AVOIDHAZARDS);
+	bool monster_avoid_hazards = (actor->Level->i_compatflags2 & COMPATF2_AVOID_HAZARDS) || (actor->flags8 & MF8_AVOIDHAZARDS);
 
 	  /* killough 9/12/98: Stay on a lift if target is on one */
-	on_lift = ((actor->flags8 & MF8_STAYONLIFT) || (i_compatflags2 & COMPATF2_STAYONLIFT))
+	on_lift = ((actor->flags8 & MF8_STAYONLIFT) || (actor->Level->i_compatflags2 & COMPATF2_STAYONLIFT))
 		&& target && target->health > 0 && P_IsOnLift(actor)
 		&& P_CheckTags(target->Sector, actor->Sector);
 
@@ -972,10 +972,10 @@ void P_NewChaseDir(AActor * actor)
 	if (actor->floorz - actor->dropoffz > actor->MaxDropOffHeight && 
 		actor->Z() <= actor->floorz && !(actor->flags & MF_DROPOFF) && 
 		!(actor->flags2 & MF2_ONMOBJ) &&
-		!(actor->flags & MF_FLOAT) && !(i_compatflags & COMPATF_DROPOFF))
+		!(actor->flags & MF_FLOAT) && !(actor->Level->i_compatflags & COMPATF_DROPOFF))
 	{
 		FBoundingBox box(actor->X(), actor->Y(), actor->radius);
-		FBlockLinesIterator it(box);
+		FBlockLinesIterator it(actor->Level, box);
 		line_t *line;
 
 		double deltax = 0;
@@ -1113,12 +1113,12 @@ void P_RandomChaseDir (AActor *actor)
 			{
 				i = 0;
 			}
-			else for (i = pr_newchasedir() & (MAXPLAYERS-1); !playeringame[i]; i = (i+1) & (MAXPLAYERS-1))
+			else for (i = pr_newchasedir() & (MAXPLAYERS-1); !actor->Level->PlayerInGame(i); i = (i+1) & (MAXPLAYERS-1))
 			{
 			}
-			player = players[i].mo;
+			player = actor->Level->Players[i]->mo;
 		}
-		if (player != NULL && playeringame[i])
+		if (player != NULL && actor->Level->PlayerInGame(i))
 		{
 			if (pr_newchasedir() & 1 || !P_CheckSight (actor, player))
 			{
@@ -1311,7 +1311,7 @@ int P_LookForMonsters (AActor *actor)
 	AActor *mo;
 	auto iterator = actor->Level->GetThinkerIterator<AActor>();
 
-	if (!P_CheckSight (players[0].mo, actor, SF_SEEPASTBLOCKEVERYTHING))
+	if (!P_CheckSight (actor->Level->Players[0]->mo, actor, SF_SEEPASTBLOCKEVERYTHING))
 	{ // Player can't see monster
 		return false;
 	}
@@ -1707,11 +1707,13 @@ int P_LookForPlayers (AActor *actor, INTBOOL allaround, FLookExParams *params)
 			// Go back to a player, no matter whether it's visible or not
 			for (int anyone=0; anyone<=1; anyone++)
 			{
+				auto Level = actor->Level;
 				for (int c=0; c<MAXPLAYERS; c++)
 				{
-					if (playeringame[c] && players[c].playerstate==PST_LIVE &&
-						actor->IsFriend(players[c].mo) &&
-						(anyone || P_IsVisible(actor, players[c].mo, allaround)))
+					auto p = Level->Players[i];
+					if (Level->PlayerInGame(c) && p->playerstate==PST_LIVE &&
+						actor->IsFriend(p->mo) &&
+						(anyone || P_IsVisible(actor, p->mo, allaround)))
 					{
 						actor->target = players[c].mo;
 
@@ -1744,8 +1746,9 @@ int P_LookForPlayers (AActor *actor, INTBOOL allaround, FLookExParams *params)
 	}
 
 	if (!(gameinfo.gametype & (GAME_DoomStrifeChex)) &&
+		actor->Level->isPrimaryLevel() &&
 		!multiplayer &&
-		players[0].health <= 0 && 
+		actor->Level->Players[0]->health <= 0 &&
 		actor->goal == NULL &&
 		gamestate != GS_TITLELEVEL
 		)
@@ -1769,7 +1772,7 @@ int P_LookForPlayers (AActor *actor, INTBOOL allaround, FLookExParams *params)
 		if (c++ < MAXPLAYERS)
 		{
 			pnum = (pnum + 1) & (MAXPLAYERS - 1);
-			if (!playeringame[pnum])
+			if (!actor->Level->PlayerInGame(pnum))
 				continue;
 
 			if (actor->TIDtoHate == 0)
@@ -1807,12 +1810,12 @@ int P_LookForPlayers (AActor *actor, INTBOOL allaround, FLookExParams *params)
 			return actor->target == actor->goal && actor->goal != NULL;
 		}
 
-		player = &players[pnum];
+		player = actor->Level->Players[pnum];
 
 		if (!(player->mo->flags & MF_SHOOTABLE))
 			continue;			// not shootable (observer or dead)
 
-		if (!((actor->flags ^ player->mo->flags) & MF_FRIENDLY))
+		if (actor->IsFriend(player->mo))
 			continue;			// same +MF_FRIENDLY, ignore
 
 		if (player->cheats & CF_NOTARGET)
@@ -1836,7 +1839,7 @@ int P_LookForPlayers (AActor *actor, INTBOOL allaround, FLookExParams *params)
 		// the player then, eh?
 		if(!(actor->flags6 & MF6_SEEINVISIBLE)) 
 		{
-			if ((player->mo->flags & MF_SHADOW && !(i_compatflags & COMPATF_INVISIBILITY)) ||
+			if ((player->mo->flags & MF_SHADOW && !(actor->Level->i_compatflags & COMPATF_INVISIBILITY)) ||
 				player->mo->flags3 & MF3_GHOST)
 			{
 				if (player->mo->Distance2D (actor) > 128 && player->mo->Vel.XY().LengthSquared() < 5*5)
@@ -1897,7 +1900,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Look)
 	}
 	else
 	{
-		targ = (i_compatflags & COMPATF_SOUNDTARGET || self->flags & MF_NOSECTOR)? 
+		targ = (self->Level->i_compatflags & COMPATF_SOUNDTARGET || self->flags & MF_NOSECTOR)? 
 			self->Sector->SoundTarget : self->LastHeard;
 
 		// [RH] If the soundtarget is dead, don't chase it
@@ -2030,7 +2033,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_LookEx)
 	{
 		if (!(flags & LOF_NOSOUNDCHECK))
 		{
-			targ = (i_compatflags & COMPATF_SOUNDTARGET || self->flags & MF_NOSECTOR)?
+			targ = (self->Level->i_compatflags & COMPATF_SOUNDTARGET || self->flags & MF_NOSECTOR)?
 				self->Sector->SoundTarget : self->LastHeard;
 			if (targ != NULL)
 			{
@@ -2406,7 +2409,7 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 
 		if (actor->FriendPlayer != 0)
 		{
-			player = &players[actor->FriendPlayer - 1];
+			player = actor->Level->Players[actor->FriendPlayer - 1];
 		}
 		else
 		{
@@ -2415,10 +2418,10 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 			{
 				i = 0;
 			}
-			else for (i = pr_newchasedir() & (MAXPLAYERS-1); !playeringame[i]; i = (i+1) & (MAXPLAYERS-1))
+			else for (i = pr_newchasedir() & (MAXPLAYERS-1); !actor->Level->PlayerInGame(i); i = (i+1) & (MAXPLAYERS-1))
 			{
 			}
-			player = &players[i];
+			player = actor->Level->Players[i];
 		}
 		if (player->attacker && player->attacker->health > 0 && player->attacker->flags & MF_SHOOTABLE && pr_newchasedir() < 80)
 		{
@@ -2749,7 +2752,7 @@ bool P_CheckForResurrection(AActor *self, bool usevilestates)
 
 		FPortalGroupArray check(FPortalGroupArray::PGA_Full3d);
 
-		FMultiBlockThingsIterator it(check, viletry.X, viletry.Y, self->Z() - 64, self->Top() + 64, 32., false, NULL);
+		FMultiBlockThingsIterator it(check, self->Level, viletry.X, viletry.Y, self->Z() - 64, self->Top() + 64, 32., false, NULL);
 		FMultiBlockThingsIterator::CheckResult cres;
 		while (it.Next(&cres))
 		{
@@ -2843,7 +2846,7 @@ bool P_CheckForResurrection(AActor *self, bool usevilestates)
 				{
 					corpsehit->Translation = info->Translation; // Clean up bloodcolor translation from crushed corpses
 				}
-				if (ib_compatflags & BCOMPATF_VILEGHOSTS)
+				if (self->Level->ib_compatflags & BCOMPATF_VILEGHOSTS)
 				{
 					corpsehit->Height *= 4;
 					// [GZ] This was a commented-out feature, so let's make use of it,
@@ -3159,7 +3162,7 @@ int CheckBossDeath (AActor *actor)
 
 	// make sure there is a player alive for victory
 	for (i = 0; i < MAXPLAYERS; i++)
-		if (playeringame[i] && players[i].health > 0)
+		if (actor->Level->PlayerInGame(i) && actor->Level->Players[i]->health > 0)
 			break;
 	
 	if (i == MAXPLAYERS)
@@ -3252,7 +3255,7 @@ void A_BossDeath(AActor *self)
 		((Level->flags3 & (LEVEL3_E1M8SPECIAL | LEVEL3_E2M8SPECIAL | LEVEL3_E3M8SPECIAL | LEVEL3_E4M8SPECIAL | LEVEL3_E4M6SPECIAL)) == 0))
 		return;
 
-	if ((i_compatflags & COMPATF_ANYBOSSDEATH) || ( // [GZ] Added for UAC_DEAD
+	if ((Level->i_compatflags & COMPATF_ANYBOSSDEATH) || ( // [GZ] Added for UAC_DEAD
 		((Level->flags & LEVEL_MAP07SPECIAL) && (flags8 & (MF8_MAP07BOSS1|MF8_MAP07BOSS2))) ||
 		((Level->flags & LEVEL_BRUISERSPECIAL) && (type == NAME_BaronOfHell)) ||
 		((Level->flags & LEVEL_CYBORGSPECIAL) && (type == NAME_Cyberdemon)) ||
@@ -3324,7 +3327,7 @@ void A_BossDeath(AActor *self)
 	if ((deathmatch || alwaysapplydmflags) && (dmflags & DF_NO_EXIT))
 		return;
 
-	G_ExitLevel (0, false);
+	Level->ExitLevel (0, false);
 }
 
 //----------------------------------------------------------------------------

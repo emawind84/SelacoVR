@@ -158,12 +158,6 @@ namespace swrenderer
 
 		this->dontmaplines = dontmaplines;
 
-		// [RH] Setup particles for this frame
-		P_FindParticleSubsectors();
-
-		// Link the polyobjects right before drawing the scene to reduce the amounts of calls to this function
-		PO_LinkToSubsectors(&level);
-
 		R_UpdateFuzzPosFrameStart();
 
 		if (r_modelscene && r_models_carmack)
@@ -188,7 +182,6 @@ namespace swrenderer
 		RenderPSprites();
 
 		MainThread()->Viewport->viewpoint.camera->renderflags = savedflags;
-		interpolator.RestoreInterpolations();
 	}
 
 	void RenderScene::RenderPSprites()

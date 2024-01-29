@@ -715,7 +715,7 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 	bool brightflash = false;
 	AActor * playermo = players[consoleplayer].camera;
 	player_t * player = playermo->player;
-    
+	
     const auto &vp = Viewpoint;
 
 	AActor *camera = vp.camera;

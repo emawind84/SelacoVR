@@ -146,7 +146,10 @@ void S_Shutdown()
 {
 	S_StopMusic(true);
 
-	SN_StopAllSequences();
+	for (auto Level : AllLevels())
+	{
+		SN_StopAllSequences(Level);
+	}
 
 	if (soundEngine)
 	{
@@ -365,7 +368,7 @@ static bool VerifyActorSound(AActor* ent, FSoundID& sound_id, int& channel, ECha
 	if (ent == nullptr || ent->ObjectFlags & OF_EuthanizeMe || ent->Sector->Flags & SECF_SILENT)
 		return false;
 
-	if ((flags & CHANF_MAYBE_LOCAL) && (i_compatflags & COMPATF_SILENTPICKUP))
+	if ((flags & CHANF_MAYBE_LOCAL) && (compatflags & COMPATF_SILENTPICKUP))
 	{
 		if (!soundEngine->isListener(ent))
 		{
@@ -373,7 +376,7 @@ static bool VerifyActorSound(AActor* ent, FSoundID& sound_id, int& channel, ECha
 		}
 	}
 
-	if (i_compatflags & COMPATF_MAGICSILENCE)
+	if (compatflags & COMPATF_MAGICSILENCE)
 	{ // For people who just can't play without a silent BFG.
 		channel = CHAN_WEAPON;
 	}
@@ -532,7 +535,7 @@ void A_PlaySound(AActor* self, int soundid, int channel, double volume, int loop
 
 void S_StopSound (AActor *actor, int channel)
 {
-	soundEngine->StopSound(SOURCE_Actor, actor, (i_compatflags & COMPATF_MAGICSILENCE) ? -1 : channel);
+	soundEngine->StopSound(SOURCE_Actor, actor, (compatflags & COMPATF_MAGICSILENCE) ? -1 : channel);
 }
 
 //==========================================================================
@@ -558,7 +561,7 @@ void S_StopActorSounds(AActor *actor, int chanmin, int chanmax)
 
 void S_StopSound (const sector_t *sec, int channel)
 {
-	soundEngine->StopSound(SOURCE_Sector, sec, (i_compatflags & COMPATF_MAGICSILENCE) ? -1 : channel);
+	soundEngine->StopSound(SOURCE_Sector, sec, (compatflags & COMPATF_MAGICSILENCE) ? -1 : channel);
 }
 
 //==========================================================================
@@ -571,7 +574,7 @@ void S_StopSound (const sector_t *sec, int channel)
 
 void S_StopSound (const FPolyObj *poly, int channel)
 {
-	soundEngine->StopSound(SOURCE_Polyobj, poly, (i_compatflags & COMPATF_MAGICSILENCE) ? -1 : channel);
+	soundEngine->StopSound(SOURCE_Polyobj, poly, (compatflags & COMPATF_MAGICSILENCE) ? -1 : channel);
 }
 
 //==========================================================================
@@ -597,7 +600,7 @@ void S_RelinkSound (AActor *from, AActor *to)
 
 void S_ChangeActorSoundVolume(AActor *actor, int channel, double dvolume)
 {
-	soundEngine->ChangeSoundVolume(SOURCE_Actor, actor, (i_compatflags & COMPATF_MAGICSILENCE)? -1 : channel, dvolume);
+	soundEngine->ChangeSoundVolume(SOURCE_Actor, actor, (compatflags & COMPATF_MAGICSILENCE)? -1 : channel, dvolume);
 }
 
 //==========================================================================
@@ -641,7 +644,7 @@ bool S_GetSoundPlayingInfo (const FPolyObj *poly, int sound_id)
 
 int S_IsActorPlayingSomething (AActor *actor, int channel, int sound_id)
 {
-	if (i_compatflags & COMPATF_MAGICSILENCE)
+	if (compatflags & COMPATF_MAGICSILENCE)
 	{
 		channel = CHAN_AUTO; // checks all channels
 	}
@@ -697,7 +700,10 @@ void S_UpdateSounds (AActor *listenactor)
 	// should never happen
 	S_SetListener(listenactor);
 
-	SN_UpdateActiveSequences();
+	for (auto Level : AllLevels())
+	{
+		SN_UpdateActiveSequences(Level);
+	}
 
 	soundEngine->UpdateSounds(level.time);
 }
@@ -862,10 +868,10 @@ void S_SetSoundPaused(int state)
 
 static void CalcSectorSoundOrg(const DVector3& listenpos, const sector_t* sec, int channum, FVector3& pos)
 {
-	if (!(i_compatflags & COMPATF_SECTORSOUNDS))
+	if (!(sec->Level->i_compatflags & COMPATF_SECTORSOUNDS))
 	{
 		// Are we inside the sector? If yes, the closest point is the one we're on.
-		if (P_PointInSector(listenpos.X, listenpos.Y) == sec)
+		if (currentUILevel->PointInSector(listenpos.X, listenpos.Y) == sec)
 		{
 			pos.X = (float)listenpos.X;
 			pos.Z = (float)listenpos.Y;
@@ -959,7 +965,7 @@ void DoomSoundEngine::CalcPosVel(int type, const void* source, const float pt[3]
 		//      on static analysis.
 		if (type == SOURCE_Unattached)
 		{
-			sector_t* sec = P_PointInSector(pt[0], pt[2]);
+			sector_t *sec = currentUILevel->PointInSector(pt[0], pt[2]);
 			DVector2 disp = currentUILevel->Displacements.getOffset(pgroup, sec->PortalGroup);
 			pos->X = pt[0] - (float)disp.X;
 			pos->Y = !(chanflags & CHANF_LISTENERZ) ? pt[1] : (float)listenpos.Z;
