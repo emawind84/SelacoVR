@@ -24,40 +24,36 @@ LOCAL_C_INCLUDES := \
  $(TOP_DIR)/ \
  ${TOP_DIR}/OpenXR-SDK/include \
  ${TOP_DIR}/OpenXR-SDK/src/common \
- $(GZDOOM_TOP_PATH)/src/  \
- $(GZDOOM_TOP_PATH)/mobile/src/extrafiles  \
- $(GZDOOM_TOP_PATH)/game-music-emu/ \
- $(GZDOOM_TOP_PATH)/gdtoa \
- $(GZDOOM_TOP_PATH)/lzma/C \
- $(GZDOOM_TOP_PATH)/bzip2 \
- $(GZDOOM_TOP_PATH)/asmjit \
- $(GZDOOM_TOP_PATH)/src/sound \
+	$(GZDOOM_TOP_PATH)/src/  \
+	$(GZDOOM_TOP_PATH)/src/sound \
 	$(GZDOOM_TOP_PATH)/src/sound/music \
 	$(GZDOOM_TOP_PATH)/src/sound/backend \
- $(GZDOOM_TOP_PATH)/src/textures \
- $(GZDOOM_TOP_PATH)/src/thingdef \
- $(GZDOOM_TOP_PATH)/src/sdl \
- $(GZDOOM_TOP_PATH)/src/g_inventory \
- $(GZDOOM_TOP_PATH)/src/g_strife \
- $(GZDOOM_TOP_PATH)/src/g_shared \
- $(GZDOOM_TOP_PATH)/src/g_statusbar \
- $(GZDOOM_TOP_PATH)/src/scripting \
- $(GZDOOM_TOP_PATH)/src/scripting/vm \
- $(GZDOOM_TOP_PATH)/src/posix \
- $(GZDOOM_TOP_PATH)/src/posix/nosdl \
- $(GZDOOM_TOP_PATH)/src/../libraries/gdtoa \
- $(GZDOOM_TOP_PATH)/src/../libraries/bzip2 \
- $(GZDOOM_TOP_PATH)/src/../libraries/game-music-emu/ \
- $(GZDOOM_TOP_PATH)/src/../libraries/dumb/include \
- $(GZDOOM_TOP_PATH)/src/../libraries/glslang/glslang/Public \
- $(GZDOOM_TOP_PATH)/src/../libraries/glslang/spirv \
- $(GZDOOM_TOP_PATH)/src/../libraries/lzma/C \
- $(GZDOOM_TOP_PATH)/src/../libraries/zmusic \
+	$(GZDOOM_TOP_PATH)/src/xlat \
+	$(GZDOOM_TOP_PATH)/src/utility \
+	$(GZDOOM_TOP_PATH)/src/utility/nodebuilder \
+	$(GZDOOM_TOP_PATH)/src/textures \
+	$(GZDOOM_TOP_PATH)/src/g_inventory \
+	$(GZDOOM_TOP_PATH)/src/g_shared \
+	$(GZDOOM_TOP_PATH)/src/g_statusbar \
+	$(GZDOOM_TOP_PATH)/src/scripting \
+	$(GZDOOM_TOP_PATH)/src/scripting/vm \
+	$(GZDOOM_TOP_PATH)/src/rendering \
+	$(GZDOOM_TOP_PATH)/src/../libraries/gdtoa \
+    $(GZDOOM_TOP_PATH)/src/../libraries/bzip2 \
+	$(GZDOOM_TOP_PATH)/src/../libraries/game-music-emu/ \
+	$(GZDOOM_TOP_PATH)/src/../libraries/dumb/include \
+	$(GZDOOM_TOP_PATH)/src/../libraries/glslang/glslang/Public \
+	$(GZDOOM_TOP_PATH)/src/../libraries/glslang/spirv \
+	$(GZDOOM_TOP_PATH)/src/../libraries/lzma/C \
+	$(GZDOOM_TOP_PATH)/src/../libraries/zmusic \
+	$(GZDOOM_TOP_PATH)/src/posix \
+	$(GZDOOM_TOP_PATH)/src/posix/nosdl \
  $(SUPPORT_LIBS)/fluidsynth-lite/include \
  $(SUPPORT_LIBS)/openal/include/AL \
  $(SUPPORT_LIBS)/libsndfile-android/jni/ \
  $(SUPPORT_LIBS)/libmpg123 \
  $(SUPPORT_LIBS)/jpeg8d \
+ $(GZDOOM_TOP_PATH)/mobile/src/extrafiles  \
  $(GZDOOM_TOP_PATH)/mobile/src \
  $(GL4ES_PATH)
 
@@ -86,9 +82,9 @@ PLAT_NOSDL_SOURCES = \
 
 
 FASTMATH_SOURCES = \
-	swrenderer/r_all.cpp \
-	swrenderer/r_swscene.cpp \
-	polyrenderer/poly_all.cpp \
+	rendering/swrenderer/r_all.cpp \
+	rendering/swrenderer/r_swscene.cpp \
+	rendering/polyrenderer/poly_all.cpp \
 	sound/music/music_midi_base.cpp \
 	sound/backend/oalsound.cpp \
 	textures/hires/hqnx/init.cpp \
@@ -97,24 +93,24 @@ FASTMATH_SOURCES = \
 	textures/hires/hqnx/hq4x.cpp \
 	textures/hires/xbr/xbrz.cpp \
 	textures/hires/xbr/xbrz_old.cpp \
-	gl_load/gl_load.c \
-	hwrenderer/dynlights/hw_dynlightdata.cpp \
-	hwrenderer/scene/hw_bsp.cpp \
-	hwrenderer/scene/hw_fakeflat.cpp \
-	hwrenderer/scene/hw_decal.cpp \
-	hwrenderer/scene/hw_drawinfo.cpp \
-	hwrenderer/scene/hw_drawlist.cpp \
-	hwrenderer/scene/hw_clipper.cpp \
-	hwrenderer/scene/hw_flats.cpp \
-	hwrenderer/scene/hw_portal.cpp \
-	hwrenderer/scene/hw_renderhacks.cpp \
-	hwrenderer/scene/hw_sky.cpp \
-	hwrenderer/scene/hw_skyportal.cpp \
-	hwrenderer/scene/hw_sprites.cpp \
-	hwrenderer/scene/hw_spritelight.cpp \
-	hwrenderer/scene/hw_walls.cpp \
-	hwrenderer/scene/hw_walls_vertex.cpp \
-	hwrenderer/scene/hw_weapon.cpp \
+	rendering/gl_load/gl_load.c \
+	rendering/hwrenderer/dynlights/hw_dynlightdata.cpp \
+	rendering/hwrenderer/scene/hw_bsp.cpp \
+	rendering/hwrenderer/scene/hw_fakeflat.cpp \
+	rendering/hwrenderer/scene/hw_decal.cpp \
+	rendering/hwrenderer/scene/hw_drawinfo.cpp \
+	rendering/hwrenderer/scene/hw_drawlist.cpp \
+	rendering/hwrenderer/scene/hw_clipper.cpp \
+	rendering/hwrenderer/scene/hw_flats.cpp \
+	rendering/hwrenderer/scene/hw_portal.cpp \
+	rendering/hwrenderer/scene/hw_renderhacks.cpp \
+	rendering/hwrenderer/scene/hw_sky.cpp \
+	rendering/hwrenderer/scene/hw_skyportal.cpp \
+	rendering/hwrenderer/scene/hw_sprites.cpp \
+	rendering/hwrenderer/scene/hw_spritelight.cpp \
+	rendering/hwrenderer/scene/hw_walls.cpp \
+	rendering/hwrenderer/scene/hw_walls_vertex.cpp \
+	rendering/hwrenderer/scene/hw_weapon.cpp \
 	r_data/models/models.cpp \
 	r_data/matrix.cpp \
 
@@ -139,7 +135,6 @@ PCH_SOURCES = \
 	c_functions.cpp \
 	cmdlib.cpp \
 	colormatcher.cpp \
-	compatibility.cpp \
 	configfile.cpp \
 	ct_chat.cpp \
 	cycler.cpp \
@@ -157,11 +152,10 @@ PCH_SOURCES = \
 	doomstat.cpp \
 	dsectoreffect.cpp \
 	dthinker.cpp \
-	edata.cpp \
 	f_wipe.cpp \
-	files.cpp \
-	files_decompress.cpp \
+	g_cvars.cpp \
 	g_doomedmap.cpp \
+	g_dumpinfo.cpp \
 	g_game.cpp \
 	g_hub.cpp \
 	g_level.cpp \
@@ -181,48 +175,28 @@ PCH_SOURCES = \
 	m_cheat.cpp \
 	m_joy.cpp \
 	m_misc.cpp \
-	m_png.cpp \
-	m_random.cpp \
-	memarena.cpp \
-	md5.cpp \
 	name.cpp \
-	nodebuild.cpp \
-	nodebuild_classify_nosse2.cpp \
-	nodebuild_events.cpp \
-	nodebuild_extract.cpp \
-	nodebuild_gl.cpp \
-	nodebuild_utility.cpp \
 	p_3dfloors.cpp \
 	p_3dmidtex.cpp \
 	p_acs.cpp \
 	p_actionfunctions.cpp \
-	p_ceiling.cpp \
 	p_conversation.cpp \
 	p_destructible.cpp \
-	p_doors.cpp \
 	p_effect.cpp \
 	p_enemy.cpp \
-	p_floor.cpp \
-	p_glnodes.cpp \
 	p_interaction.cpp \
-	p_lights.cpp \
 	p_linkedsectors.cpp \
 	p_lnspec.cpp \
 	p_map.cpp \
 	p_maputl.cpp \
 	p_mobj.cpp \
 	p_openmap.cpp \
-	p_pillar.cpp \
-	p_plats.cpp \
 	p_pspr.cpp \
-	p_pusher.cpp \
 	p_saveg.cpp \
-	p_scroll.cpp \
 	p_secnodes.cpp \
 	p_sectors.cpp \
 	p_setup.cpp \
 	p_sight.cpp \
-	p_slopes.cpp \
 	p_spec.cpp \
 	p_states.cpp \
 	p_switch.cpp \
@@ -232,7 +206,6 @@ PCH_SOURCES = \
 	p_things.cpp \
 	p_tick.cpp \
 	p_trace.cpp \
-	p_udmf.cpp \
 	p_usdf.cpp \
 	p_user.cpp \
 	p_xlat.cpp \
@@ -251,7 +224,6 @@ PCH_SOURCES = \
 	sound/s_music.cpp \
 	s_playlist.cpp \
 	serializer.cpp \
-	sc_man.cpp \
 	scriptutil.cpp \
 	st_stuff.cpp \
 	statistics.cpp \
@@ -278,58 +250,76 @@ PCH_SOURCES = \
 	g_inventory/a_weapons.cpp \
 	g_shared/a_action.cpp \
 	g_shared/a_decals.cpp \
+	g_shared/a_doors.cpp \
 	g_shared/a_dynlight.cpp \
 	g_shared/a_flashfader.cpp \
 	g_shared/a_lightning.cpp \
 	g_shared/a_morph.cpp \
 	g_shared/a_quake.cpp \
 	g_shared/a_specialspot.cpp \
-	g_shared/hudmessages.cpp \
-	g_shared/shared_hud.cpp \
+	g_shared/a_ceiling.cpp \
+	g_shared/a_floor.cpp \
+	g_shared/a_lights.cpp \
+	g_shared/a_lighttransfer.cpp \
+	g_shared/a_pillar.cpp \
+	g_shared/a_plats.cpp \
+	g_shared/a_pusher.cpp \
+	g_shared/a_scroll.cpp \
+	g_statusbar/hudmessages.cpp \
+	g_statusbar/shared_hud.cpp \
 	g_statusbar/sbarinfo.cpp \
 	g_statusbar/sbar_mugshot.cpp \
 	g_statusbar/shared_sbar.cpp \
-	gl/renderer/gl_renderer.cpp \
-	gl/renderer/gl_renderstate.cpp \
-	gl/renderer/gl_renderbuffers.cpp \
-	gl/renderer/gl_postprocess.cpp \
-	gl/renderer/gl_postprocessstate.cpp \
-	gl/renderer/gl_stereo3d.cpp \
-	gl/renderer/gl_scene.cpp \
-	gl/shaders/gl_shader.cpp \
-	gl/shaders/gl_shaderprogram.cpp \
-	gl/shaders/gl_postprocessshader.cpp \
+	rendering/gl/renderer/gl_renderer.cpp \
+	rendering/gl/renderer/gl_renderstate.cpp \
+	rendering/gl/renderer/gl_renderbuffers.cpp \
+	rendering/gl/renderer/gl_postprocess.cpp \
+	rendering/gl/renderer/gl_postprocessstate.cpp \
+	rendering/gl/renderer/gl_stereo3d.cpp \
+	rendering/gl/renderer/gl_scene.cpp \
+	rendering/gl/shaders/gl_shader.cpp \
+	rendering/gl/shaders/gl_shaderprogram.cpp \
+	rendering/gl/shaders/gl_postprocessshader.cpp \
 	gl/stereo3d/gl_openxrdevice.cpp \
-	gl_load/gl_interface.cpp \
-	gl/system/gl_framebuffer.cpp \
-	gl/system/gl_debug.cpp \
-	gl/system/gl_buffers.cpp \
-	gl/textures/gl_hwtexture.cpp \
-	gl/textures/gl_samplers.cpp \
-	hwrenderer/data/hw_vertexbuilder.cpp \
-	hwrenderer/data/flatvertices.cpp \
-	hwrenderer/data/hw_viewpointbuffer.cpp \
-	hwrenderer/dynlights/hw_aabbtree.cpp \
-	hwrenderer/dynlights/hw_shadowmap.cpp \
-	hwrenderer/dynlights/hw_lightbuffer.cpp \
-	hwrenderer/models/hw_models.cpp \
-	hwrenderer/scene/hw_skydome.cpp \
-	hwrenderer/scene/hw_drawlistadd.cpp \
-	hwrenderer/scene/hw_renderstate.cpp \
-	hwrenderer/postprocessing/hw_postprocess.cpp \
-	hwrenderer/postprocessing/hw_postprocess_cvars.cpp \
-	hwrenderer/postprocessing/hw_postprocessshader.cpp \
-	hwrenderer/postprocessing/hw_shadowmapshader.cpp \
-	hwrenderer/postprocessing/hw_presentshader.cpp \
-	hwrenderer/postprocessing/hw_present3dRowshader.cpp \
-	hwrenderer/textures/hw_material.cpp \
-	hwrenderer/textures/hw_precache.cpp \
-	hwrenderer/utility/hw_clock.cpp \
-	hwrenderer/utility/hw_cvars.cpp \
-	hwrenderer/utility/hw_draw2d.cpp \
-	hwrenderer/utility/hw_lighting.cpp \
-	hwrenderer/utility/hw_shaderpatcher.cpp \
-	hwrenderer/utility/hw_vrmodes.cpp \
+	rendering/gl_load/gl_interface.cpp \
+	rendering/gl/system/gl_framebuffer.cpp \
+	rendering/gl/system/gl_debug.cpp \
+	rendering/gl/system/gl_buffers.cpp \
+	rendering/gl/textures/gl_hwtexture.cpp \
+	rendering/gl/textures/gl_samplers.cpp \
+	rendering/hwrenderer/data/hw_vertexbuilder.cpp \
+	rendering/hwrenderer/data/flatvertices.cpp \
+	rendering/hwrenderer/data/hw_viewpointbuffer.cpp \
+	rendering/hwrenderer/dynlights/hw_aabbtree.cpp \
+	rendering/hwrenderer/dynlights/hw_shadowmap.cpp \
+	rendering/hwrenderer/dynlights/hw_lightbuffer.cpp \
+	rendering/hwrenderer/models/hw_models.cpp \
+	rendering/hwrenderer/scene/hw_skydome.cpp \
+	rendering/hwrenderer/scene/hw_drawlistadd.cpp \
+	rendering/hwrenderer/scene/hw_renderstate.cpp \
+	rendering/hwrenderer/postprocessing/hw_postprocess.cpp \
+	rendering/hwrenderer/postprocessing/hw_postprocess_cvars.cpp \
+	rendering/hwrenderer/postprocessing/hw_postprocessshader.cpp \
+	rendering/hwrenderer/postprocessing/hw_shadowmapshader.cpp \
+	rendering/hwrenderer/postprocessing/hw_presentshader.cpp \
+	rendering/hwrenderer/postprocessing/hw_present3dRowshader.cpp \
+	rendering/hwrenderer/textures/hw_material.cpp \
+	rendering/hwrenderer/textures/hw_precache.cpp \
+	rendering/hwrenderer/utility/hw_clock.cpp \
+	rendering/hwrenderer/utility/hw_cvars.cpp \
+	rendering/hwrenderer/utility/hw_draw2d.cpp \
+	rendering/hwrenderer/utility/hw_lighting.cpp \
+	rendering/hwrenderer/utility/hw_shaderpatcher.cpp \
+	rendering/hwrenderer/utility/hw_vrmodes.cpp \
+	maploader/edata.cpp \
+	maploader/specials.cpp \
+	maploader/maploader.cpp \
+	maploader/slopes.cpp \
+	maploader/glnodes.cpp \
+	maploader/udmf.cpp \
+	maploader/polyobjects.cpp \
+	maploader/renderinfo.cpp \
+	maploader/compatibility.cpp \
 	menu/joystickmenu.cpp \
 	menu/loadsavemenu.cpp \
 	menu/menu.cpp \
@@ -397,7 +387,6 @@ PCH_SOURCES = \
 	r_data/sprites.cpp \
 	r_data/portalgroups.cpp \
 	r_data/voxels.cpp \
-	r_data/renderinfo.cpp \
 	r_data/renderstyle.cpp \
 	r_data/r_canvastexture.cpp \
 	r_data/r_interpolate.cpp \
@@ -430,15 +419,28 @@ PCH_SOURCES = \
 	scripting/zscript/ast.cpp \
 	scripting/zscript/zcc_compile.cpp \
 	scripting/zscript/zcc_parser.cpp \
-	sfmt/SFMT.cpp \
+	utility/sfmt/SFMT.cpp \
 	sound/music/i_music.cpp \
 	sound/music/i_soundfont.cpp \
 	sound/backend/i_sound.cpp \
 	sound/music/music_config.cpp \
-	swrenderer/textures/r_swtexture.cpp \
-	swrenderer/textures/warptexture.cpp \
-	swrenderer/textures/swcanvastexture.cpp \
+	rendering/swrenderer/textures/r_swtexture.cpp \
+	rendering/swrenderer/textures/warptexture.cpp \
+	rendering/swrenderer/textures/swcanvastexture.cpp \
 	events.cpp \
+	utility/files.cpp \
+	utility/files_decompress.cpp \
+	utility/m_png.cpp \
+	utility/m_random.cpp \
+	utility/memarena.cpp \
+	utility/md5.cpp \
+	utility/nodebuilder/nodebuild.cpp \
+	utility/nodebuilder/nodebuild_classify_nosse2.cpp \
+	utility/nodebuilder/nodebuild_events.cpp \
+	utility/nodebuilder/nodebuild_extract.cpp \
+	utility/nodebuilder/nodebuild_gl.cpp \
+	utility/nodebuilder/nodebuild_utility.cpp \
+	utility/sc_man.cpp \
 	
 
 QZDOOM_SRC = \
@@ -461,27 +463,27 @@ LOCAL_SRC_FILES = \
     $(FASTMATH_SOURCES) \
     $(PCH_SOURCES) \
 	x86.cpp \
-	strnatcmp.c \
+	utility/strnatcmp.c \
 	zstring.cpp \
 	dictionary.cpp \
-	math/asin.c \
-	math/atan.c \
-	math/const.c \
-	math/cosh.c \
-	math/exp.c \
-	math/isnan.c \
-	math/log.c \
-	math/log10.c \
-	math/mtherr.c \
-	math/polevl.c \
-	math/pow.c \
-	math/powi.c \
-	math/sin.c \
-	math/sinh.c \
-	math/sqrt.c \
-	math/tan.c \
-	math/tanh.c \
-	math/fastsin.cpp \
+	utility/math/asin.c \
+	utility/math/atan.c \
+	utility/math/const.c \
+	utility/math/cosh.c \
+	utility/math/exp.c \
+	utility/math/isnan.c \
+	utility/math/log.c \
+	utility/math/log10.c \
+	utility/math/mtherr.c \
+	utility/math/polevl.c \
+	utility/math/pow.c \
+	utility/math/powi.c \
+	utility/math/sin.c \
+	utility/math/sinh.c \
+	utility/math/sqrt.c \
+	utility/math/tan.c \
+	utility/math/tanh.c \
+	utility/math/fastsin.cpp \
 	zzautozend.cpp
 
 

@@ -47,6 +47,9 @@
 #include "w_wad.h"
 #include "v_text.h"
 #include "m_argv.h"
+#ifndef _MSC_VER
+#include "i_system.h"  // for strlwr()
+#endif // !_MSC_VER
 
 void ParseOldDecoration(FScanner &sc, EDefinitionType def, PNamespace *ns);
 EXTERN_CVAR(Bool, strictdecorate);

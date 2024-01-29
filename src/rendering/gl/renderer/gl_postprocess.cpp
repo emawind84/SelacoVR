@@ -44,6 +44,7 @@
 #include "gl/shaders/gl_postprocessshaderinstance.h"
 #include "gl/textures/gl_hwtexture.h"
 #include "r_videoscale.h"
+#include "g_game.h"
 
 extern bool vid_hdr_active;
 extern bool cinemamode;

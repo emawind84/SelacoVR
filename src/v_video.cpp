@@ -542,38 +542,6 @@ static void BuildTransTable (const PalEntry *palette)
 		}
 }
 
-//==========================================================================
-//
-// DFrameBuffer :: DrawVersionString
-//
-// Draws the version string to the main screen
-//
-//==========================================================================
-
-void DFrameBuffer::DrawVersionString ()
-{
-	static uint64_t first = screen->FrameTime;
-
-	//Only show version string for 5 seconds
-	if ((screen->FrameTime - first) > 5000)
-	{
-		return;
-	}
-
-	if (gamestate == GS_STARTUP ||
-			gamestate == GS_DEMOSCREEN) {
-		char buff[60];
-
-		int textScale = active_con_scale();
-
-		mysnprintf(buff, countof(buff), "%s", GetVersionString());
-		DrawText(ConFont, CR_WHITE, 0, 0, (char *) &buff[0],
-				 DTA_VirtualWidth, screen->GetWidth() / textScale,
-				 DTA_VirtualHeight, screen->GetHeight() / textScale,
-				 DTA_KeepRatio, true, TAG_DONE);
-	}
-}
-
 CCMD(clean)
 {
 	Printf ("CleanXfac: %d\nCleanYfac: %d\n", CleanXfac, CleanYfac);

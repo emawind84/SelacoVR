@@ -614,6 +614,7 @@ file( GLOB HEADER_FILES
 	rendering/gl/system/*.h
 	rendering/gl/textures/*.h
 	rendering/gl_load/*.h
+	gl/stereo3d/*.h
 	QzDoom/*.h
 	*.h
 )
@@ -928,6 +929,7 @@ set (PCH_SOURCES
 	rendering/gl/system/gl_buffers.cpp
 	rendering/gl/textures/gl_hwtexture.cpp
 	rendering/gl/textures/gl_samplers.cpp
+	gl/stereo3d/gl_openxrdevice.cpp
 	rendering/hwrenderer/data/hw_vertexbuilder.cpp
 	rendering/hwrenderer/data/flatvertices.cpp
 	rendering/hwrenderer/data/hw_viewpointbuffer.cpp
