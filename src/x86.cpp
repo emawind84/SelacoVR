@@ -32,7 +32,7 @@
 **
 */
 
-#include "i_system.h"
+#include "doomtype.h"
 #include "doomdef.h"
 #include "x86.h"
 
@@ -258,9 +258,6 @@ void DumpCPUInfo(const CPUInfo *cpu)
 		if (cpu->HyperThreading)	Printf(" HyperThreading");
 		Printf ("\n");
 	}
-#ifndef NO_SSE
-	if (!cpu->bSSE2)	I_Error ("SSE2 instructions not supported!");
-#endif
 }
 #if !defined(__amd64__) && !defined(_M_X64)
 
