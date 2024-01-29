@@ -1653,7 +1653,6 @@ void FLevelLocals::QueueBody (AActor *body)
 //
 // G_DoReborn
 //
-CVAR (Bool, pistolstart, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 EXTERN_CVAR(Bool, sv_singleplayerrespawn)
 void FLevelLocals::DoReborn (int playernum, bool freshbot)
 {
