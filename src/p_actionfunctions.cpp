@@ -1741,7 +1741,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnParticleEx)
 			style = STYLE_None;
 		}
 
-		P_SpawnParticle(self->Vec3Offset(pos), vel, acc, color, startalpha, lifetime, size, fadestep, sizestep, flags, texid, ERenderStyle(style), startroll, rollvel, rollacc);
+		P_SpawnParticle(self->Level, self->Vec3Offset(pos), vel, acc, color, startalpha, lifetime, size, fadestep, sizestep, flags, texid, ERenderStyle(style), startroll, rollvel, rollacc);
 	}
 	return 0;
 }

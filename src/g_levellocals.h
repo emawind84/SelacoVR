@@ -653,11 +653,6 @@ public:
 		return savegamerestore
 			|| (info != nullptr && info->Snapshot.mBuffer != nullptr && info->isValid());
 	}
-
-	int isFrozen()
-	{
-		return frozenstate;
-	}
 };
 
 

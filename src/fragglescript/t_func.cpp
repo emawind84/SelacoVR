@@ -660,7 +660,7 @@ void FParser::SF_PlayerTip(void)
 	if (CheckArgs(1))
 	{
 		int plnum = T_GetPlayerNum(t_argv[0]);
-		if (plnum!=-1 && Level->players[plnum].mo->CheckLocalView()) 
+		if (plnum!=-1 && Level->Players[plnum]->mo->CheckLocalView())
 		{
 			C_MidPrint(SmallFont, GetFormatString(1).GetChars());
 		}
@@ -693,7 +693,7 @@ void FParser::SF_PlayerMsg(void)
 	if (CheckArgs(1))
 	{
 		int plnum = T_GetPlayerNum(t_argv[0]);
-		if (plnum!=-1 && Level->players[plnum].mo->CheckLocalView()) 
+		if (plnum!=-1 && Level->Players[plnum]->mo->CheckLocalView())
 		{
 			Printf(PRINT_HIGH, "%s\n", GetFormatString(1).GetChars());
 		}

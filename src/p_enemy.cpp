@@ -733,10 +733,10 @@ int P_SmartMove(AActor* actor)
 {
 	AActor* target = actor->target;
 	int on_lift = false, dropoff = false, under_damage;
-	bool monster_avoid_hazards = (i_compatflags2 & COMPATF2_AVOID_HAZARDS) || (actor->flags8 & MF8_AVOIDHAZARDS);
+	bool monster_avoid_hazards = (actor->Level->i_compatflags2 & COMPATF2_AVOID_HAZARDS) || (actor->flags8 & MF8_AVOIDHAZARDS);
 
 	  /* killough 9/12/98: Stay on a lift if target is on one */
-	on_lift = ((actor->flags8 & MF8_STAYONLIFT) || (i_compatflags2 & COMPATF2_STAYONLIFT))
+	on_lift = ((actor->flags8 & MF8_STAYONLIFT) || (actor->Level->i_compatflags2 & COMPATF2_STAYONLIFT))
 		&& target && target->health > 0 && P_IsOnLift(actor)
 		&& P_CheckTags(target->Sector, actor->Sector);
 

@@ -963,7 +963,7 @@ DEFINE_ACTION_FUNCTION(AActor, GiveBody)
 
 bool AActor::CheckLocalView() const
 {
-	auto p = &players[playernum];
+	auto p = &players[consoleplayer];
 	if (p->camera == this)
 	{
 		return true;

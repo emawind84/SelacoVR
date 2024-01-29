@@ -146,7 +146,10 @@ void S_Shutdown()
 {
 	S_StopMusic(true);
 
-	SN_StopAllSequences();
+	for (auto Level : AllLevels())
+	{
+		SN_StopAllSequences(Level);
+	}
 
 	if (soundEngine)
 	{
@@ -365,7 +368,7 @@ static bool VerifyActorSound(AActor* ent, FSoundID& sound_id, int& channel, ECha
 	if (ent == nullptr || ent->ObjectFlags & OF_EuthanizeMe || ent->Sector->Flags & SECF_SILENT)
 		return false;
 
-	if ((flags & CHANF_MAYBE_LOCAL) && (i_compatflags & COMPATF_SILENTPICKUP))
+	if ((flags & CHANF_MAYBE_LOCAL) && (compatflags & COMPATF_SILENTPICKUP))
 	{
 		if (!soundEngine->isListener(ent))
 		{
@@ -373,7 +376,7 @@ static bool VerifyActorSound(AActor* ent, FSoundID& sound_id, int& channel, ECha
 		}
 	}
 
-	if (i_compatflags & COMPATF_MAGICSILENCE)
+	if (compatflags & COMPATF_MAGICSILENCE)
 	{ // For people who just can't play without a silent BFG.
 		channel = CHAN_WEAPON;
 	}

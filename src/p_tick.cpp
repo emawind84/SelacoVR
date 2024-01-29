@@ -94,15 +94,18 @@ void P_Ticker (void)
 	if (paused || P_CheckTickerPaused())
 	{
 		// This must run even when the game is paused to catch changes from netevents before the frame is rendered.
-		TThinkerIterator<AActor> it;
-		AActor* ac;
-
-		while ((ac = it.Next()))
+		for (auto Level : AllLevels())
 		{
-			if (ac->flags8 & MF8_RECREATELIGHTS)
+			auto it = Level->GetThinkerIterator<AActor>();
+			AActor* ac;
+
+			while ((ac = it.Next()))
 			{
-				ac->flags8 &= ~MF8_RECREATELIGHTS;
-				ac->SetDynamicLights();
+				if (ac->flags8 & MF8_RECREATELIGHTS)
+				{
+					ac->flags8 &= ~MF8_RECREATELIGHTS;
+					ac->SetDynamicLights();
+				}
 			}
 		}
 		return;

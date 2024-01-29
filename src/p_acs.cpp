@@ -8353,7 +8353,7 @@ scriptwait:
 			break;
 
 		case PCD_SCRIPTWAITDIRECT:
-			if (!(i_compatflags2 & COMPATF2_SCRIPTWAIT))
+			if (!(Level->i_compatflags2 & COMPATF2_SCRIPTWAIT))
 			{
 				statedata = uallong(pc[0]);
 				pc++;

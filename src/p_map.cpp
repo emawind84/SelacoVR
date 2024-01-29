@@ -1013,7 +1013,7 @@ bool PIT_CheckLine(FMultiBlockLinesIterator &mit, FMultiBlockLinesIterator::Chec
 		// better than Strife's handling of rails, which lets you jump into rails
 		// from either side. How long until somebody reports this as a bug and I'm
 		// forced to say, "It's not a bug. It's a feature?" Ugh.
-		(!(i_compatflags2 & COMPATF2_RAILING) ||
+		(!(tm.thing->Level->i_compatflags2 & COMPATF2_RAILING) ||
 		open.bottom == tm.thing->Sector->floorplane.ZatPoint(ref)))
 	{
 		open.bottom += 32;
@@ -4885,7 +4885,7 @@ int P_LineTrace(AActor *t1, DAngle angle, double distance,
 	if ( flags & TRF_NOSKY ) tflags |= TRACE_NoSky;
 
 	// Do trace
-	bool ret = Trace(startpos, P_PointInSector(startpos), direction, distance, aflags, lflags, t1, trace, tflags, CheckLineTrace, &TData);
+	bool ret = Trace(startpos, t1->Level->PointInSector(startpos), direction, distance, aflags, lflags, t1, trace, tflags, CheckLineTrace, &TData);
 	if ( outdata )
 	{
 		memset(outdata,0,sizeof(*outdata));
@@ -6000,7 +6000,7 @@ int P_RadiusAttack(AActor *bombspot, AActor *bombsource, int bombdamage, int bom
 		// because some user levels require they have a height of 16,
 		// which can make them near impossible to hit with the new code.
 		if ((flags & RADF_NODAMAGE) || (!((bombspot->flags5 | thing->flags5) & MF5_OLDRADIUSDMG) && 
-			!(flags & RADF_OLDRADIUSDAMAGE) && !(i_compatflags2 & COMPATF2_EXPLODE2)))
+			!(flags & RADF_OLDRADIUSDAMAGE) && !(thing->Level->i_compatflags2 & COMPATF2_EXPLODE2)))
 		{
 			double points = GetRadiusDamage(false, bombspot, thing, bombdamage, bombdistance, fulldamagedistance, bombsource == thing);
 			double check = int(points) * bombdamage;
@@ -6051,7 +6051,7 @@ int P_RadiusAttack(AActor *bombspot, AActor *bombsource, int bombdamage, int bom
 								thing->Thrust(bombspot->AngleTo(thing), thrust);
 								if (!(flags & RADF_NODAMAGE) || (flags & RADF_THRUSTZ))
 								{
-									if (!(i_compatflags2 & COMPATF2_EXPLODE1) || (flags & RADF_THRUSTZ))
+									if (!(thing->Level->i_compatflags2 & COMPATF2_EXPLODE1) || (flags & RADF_THRUSTZ))
 										thing->Vel.Z += vz;	// this really doesn't work well
 								}
 							}

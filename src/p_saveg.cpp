@@ -979,7 +979,6 @@ void FLevelLocals::Serialize(FSerializer &arc, bool hubload)
 	{
 		InitSkyMap(this);
 		AirControlChanged();
-		bglobal.freeze = !!(frozenstate & 2);
 	}
 
 	Behaviors.SerializeModuleStates(arc);

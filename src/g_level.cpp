@@ -100,6 +100,8 @@ EXTERN_CVAR (Float, sv_aircontrol)
 EXTERN_CVAR (Int, disableautosave)
 EXTERN_CVAR (String, playerclass)
 
+extern uint8_t globalfreeze, globalchangefreeze;
+
 #define SNAP_ID			MAKE_ID('s','n','A','p')
 #define DSNP_ID			MAKE_ID('d','s','N','p')
 #define VIST_ID			MAKE_ID('v','i','S','t')
@@ -372,7 +374,7 @@ void G_NewInit ()
 
 	// Destroy thinkers that may remain after change level failure
 	// Usually, the list contains just a sentinel when such error occurred
-	DThinker::DestroyThinkersInList(STAT_TRAVELLING);
+	level.Thinkers.DestroyThinkersInList(STAT_TRAVELLING);
 
 	G_ClearSnapshots ();
 	netgame = false;
@@ -476,7 +478,7 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 	UnlatchCVars ();
 	G_VerifySkill();
 	UnlatchCVars ();
-	bglobal.freeze = bglobal.changefreeze = 0;
+	globalfreeze = globalchangefreeze = 0;
 	level.Thinkers.DestroyThinkersInList(STAT_STATIC);
 
 	if (paused)
@@ -735,12 +737,12 @@ void FLevelLocals::ChangeLevel(const char *levelname, int position, int flags, i
 
 DEFINE_ACTION_FUNCTION(FLevelLocals, ChangeLevel)
 {
-	PARAM_PROLOGUE;
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
 	PARAM_STRING(levelname);
 	PARAM_INT(position);
 	PARAM_INT(inflags);
 	PARAM_INT(nextSkill);
-	G_ChangeLevel(levelname, position, inflags, nextSkill);
+	self->ChangeLevel(levelname, position, inflags, nextSkill);
 	return 0;
 }
 
