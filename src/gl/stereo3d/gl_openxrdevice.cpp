@@ -305,7 +305,7 @@ namespace s3d
         {
             return;
         }
-        auto *di = HWDrawInfo::StartDrawInfo(nullptr, r_viewpoint, nullptr);
+        auto *di = HWDrawInfo::StartDrawInfo(r_viewpoint.ViewLevel, nullptr, r_viewpoint, nullptr);
 
         di->VPUniforms.mViewMatrix.loadIdentity();
         // Update HUD matrix to render on a separate quad
@@ -319,7 +319,7 @@ namespace s3d
         bool new_di = false;
         if (di == nullptr)
         {
-            di = HWDrawInfo::StartDrawInfo(nullptr, r_viewpoint, nullptr);
+            di = HWDrawInfo::StartDrawInfo(r_viewpoint.ViewLevel, nullptr, r_viewpoint, nullptr);
             new_di = true;
         }
 
