@@ -555,7 +555,7 @@ CUSTOM_CVAR (Int, compatflags, 0, CVAR_ARCHIVE|CVAR_SERVERINFO)
 	i_compatflags = GetCompatibility(self) | ii_compatflags;
 	if ((old ^ i_compatflags) & COMPATF_POLYOBJ)
 	{
-		FPolyObj::ClearAllSubsectorLinks();
+		level.ClearAllSubsectorLinks();
 	}
 }
 
@@ -809,7 +809,7 @@ void D_Display ()
 		}
 		if (automapactive)
 		{
-			AM_Drawer (hud_althud? viewheight : StatusBar->GetTopOfStatusbar());
+			currentUILevel->automap->Drawer (hud_althud? viewheight : StatusBar->GetTopOfStatusbar());
 		}
 		
 		// for timing the statusbar code.

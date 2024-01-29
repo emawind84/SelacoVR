@@ -86,13 +86,14 @@ HWDrawInfo *FDrawInfoList::GetNew()
 		mList.Pop(di);
 		return di;
 	}
-	return new HWDrawInfo;
+	return new HWDrawInfo();
 }
 
 void FDrawInfoList::Release(HWDrawInfo * di)
 {
 	di->DrawScene = nullptr;
 	di->ClearBuffers();
+	di->Level = nullptr;
 	mList.Push(di);
 }
 
@@ -102,10 +103,11 @@ void FDrawInfoList::Release(HWDrawInfo * di)
 //
 //==========================================================================
 
-HWDrawInfo *HWDrawInfo::StartDrawInfo(HWDrawInfo *parent, FRenderViewpoint &parentvp, HWViewpointUniforms *uniforms)
+HWDrawInfo *HWDrawInfo::StartDrawInfo(FLevelLocals *lev, HWDrawInfo *parent, FRenderViewpoint &parentvp, HWViewpointUniforms *uniforms)
 {
 	HWDrawInfo *di = di_list.GetNew();
 	if (parent) di->DrawScene = parent->DrawScene;
+	di->Level = lev;
 	di->StartScene(parentvp, uniforms);
 	return di;
 }
@@ -126,7 +128,7 @@ void HWDrawInfo::StartScene(FRenderViewpoint &parentvp, HWViewpointUniforms *uni
 	mClipper = &staticClipper;
 
 	Viewpoint = parentvp;
-	lightmode = level.lightMode;
+	lightmode = Level->lightMode;
 	if (uniforms)
 	{
 		VPUniforms = *uniforms;
@@ -194,16 +196,19 @@ void HWDrawInfo::ClearBuffers()
 	HandledSubsectors.Clear();
 	spriteindex = 0;
 
-	CurrentMapSections.Resize(level.NumMapSections);
-	CurrentMapSections.Zero();
+	if (Level)
+	{
+		CurrentMapSections.Resize(Level->NumMapSections);
+		CurrentMapSections.Zero();
 
-	section_renderflags.Resize(level.sections.allSections.Size());
-	ss_renderflags.Resize(level.subsectors.Size());
-	no_renderflags.Resize(level.subsectors.Size());
+		section_renderflags.Resize(Level->sections.allSections.Size());
+		ss_renderflags.Resize(Level->subsectors.Size());
+		no_renderflags.Resize(Level->subsectors.Size());
 
-	memset(&section_renderflags[0], 0, level.sections.allSections.Size() * sizeof(section_renderflags[0]));
-	memset(&ss_renderflags[0], 0, level.subsectors.Size() * sizeof(ss_renderflags[0]));
-	memset(&no_renderflags[0], 0, level.nodes.Size() * sizeof(no_renderflags[0]));
+		memset(&section_renderflags[0], 0, Level->sections.allSections.Size() * sizeof(section_renderflags[0]));
+		memset(&ss_renderflags[0], 0, Level->subsectors.Size() * sizeof(ss_renderflags[0]));
+		memset(&no_renderflags[0], 0, Level->nodes.Size() * sizeof(no_renderflags[0]));
+	}
 
 	Decals[0].Clear();
 	Decals[1].Clear();
@@ -246,7 +251,7 @@ void HWDrawInfo::SetViewArea()
 	}
 	else
 	{
-		in_area = level.HasHeightSecs ? area_default : area_normal;	// depends on exposed lower sectors, if map contains heightsecs.
+		in_area = Level->HasHeightSecs ? area_default : area_normal;	// depends on exposed lower sectors, if map contains heightsecs.
 	}
 }
 
@@ -336,7 +341,7 @@ angle_t HWDrawInfo::FrustumAngle()
 void HWDrawInfo::SetViewMatrix(const FRotator &angles, float vx, float vy, float vz, bool mirror, bool planemirror)
 {
 	float mult = mirror ? -1.f : 1.f;
-	float planemult = planemirror ? -level.info->pixelstretch : level.info->pixelstretch;
+	float planemult = planemirror ? -Level->info->pixelstretch : Level->info->pixelstretch;
 
 	VPUniforms.mViewMatrix.loadIdentity();
 	VPUniforms.mViewMatrix.rotate(angles.Roll.Degrees, 0.0f, 0.0f, 1.0f);
@@ -425,7 +430,7 @@ void HWDrawInfo::CreateScene()
 
 	// reset the portal manager
 	screen->mPortalState->StartFrame();
-	PO_LinkToSubsectors();
+	PO_LinkToSubsectors(Level);
 
 	ProcessAll.Clock();
 
@@ -433,7 +438,7 @@ void HWDrawInfo::CreateScene()
 	screen->mVertexData->Map();
 	screen->mLights->Map();
 
-	RenderBSP(level.HeadNode());
+	RenderBSP(Level->HeadNode());
 
 	// And now the crappy hacks that have to be done to avoid rendering anomalies.
 	// These cannot be multithreaded when the time comes because all these depend
@@ -553,7 +558,7 @@ void HWDrawInfo::RenderPortal(HWPortal *p, FRenderState &state, bool usestencil)
 	if (gl_max_portals > -1 && portalsPerEye >= gl_max_portals) return;
 	auto gp = static_cast<HWPortal *>(p);
 	gp->SetupStencil(this, state, usestencil);
-	auto new_di = StartDrawInfo(this, Viewpoint, &VPUniforms);
+	auto new_di = StartDrawInfo(this->Level, this, Viewpoint, &VPUniforms);
 	new_di->mCurrentPortal = gp;
 	state.SetLightIndex(-1);
 	gp->DrawContents(new_di, state);

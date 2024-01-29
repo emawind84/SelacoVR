@@ -72,7 +72,7 @@
 static const uint8_t ChangeMap[8] = { 0, 1, 5, 3, 7, 2, 6, 0 };
 
 
-#define FUNC(a) static int a (line_t *ln, AActor *it, bool backSide, \
+#define FUNC(a) static int a (FLevelLocals *Level, line_t *ln, AActor *it, bool backSide, \
 	int arg0, int arg1, int arg2, int arg3, int arg4)
 
 #define SPEED(a)		((a) / 8.)
@@ -142,97 +142,97 @@ FUNC(LS_NOP)
 FUNC(LS_Polyobj_RotateLeft)
 // Polyobj_RotateLeft (po, speed, angle)
 {
-	return EV_RotatePoly (ln, arg0, arg1, arg2, 1, false);
+	return EV_RotatePoly (Level, ln, arg0, arg1, arg2, 1, false);
 }
 
 FUNC(LS_Polyobj_RotateRight)
 // Polyobj_rotateRight (po, speed, angle)
 {
-	return EV_RotatePoly (ln, arg0, arg1, arg2, -1, false);
+	return EV_RotatePoly (Level, ln, arg0, arg1, arg2, -1, false);
 }
 
 FUNC(LS_Polyobj_Move)
 // Polyobj_Move (po, speed, angle, distance)
 {
-	return EV_MovePoly (ln, arg0, SPEED(arg1), BYTEANGLE(arg2), arg3, false);
+	return EV_MovePoly (Level, ln, arg0, SPEED(arg1), BYTEANGLE(arg2), arg3, false);
 }
 
 FUNC(LS_Polyobj_MoveTimes8)
 // Polyobj_MoveTimes8 (po, speed, angle, distance)
 {
-	return EV_MovePoly (ln, arg0, SPEED(arg1), BYTEANGLE(arg2), arg3 * 8, false);
+	return EV_MovePoly (Level, ln, arg0, SPEED(arg1), BYTEANGLE(arg2), arg3 * 8, false);
 }
 
 FUNC(LS_Polyobj_MoveTo)
 // Polyobj_MoveTo (po, speed, x, y)
 {
-	return EV_MovePolyTo (ln, arg0, SPEED(arg1), DVector2(arg2, arg3), false);
+	return EV_MovePolyTo (Level, ln, arg0, SPEED(arg1), DVector2(arg2, arg3), false);
 }
 
 FUNC(LS_Polyobj_MoveToSpot)
 // Polyobj_MoveToSpot (po, speed, tid)
 {
-	FActorIterator iterator (arg2);
+	auto iterator = Level->GetActorIterator(arg2);
 	AActor *spot = iterator.Next();
 	if (spot == NULL) return false;
-	return EV_MovePolyTo (ln, arg0, SPEED(arg1), spot->Pos(), false);
+	return EV_MovePolyTo (Level, ln, arg0, SPEED(arg1), spot->Pos(), false);
 }
 
 FUNC(LS_Polyobj_DoorSwing)
 // Polyobj_DoorSwing (po, speed, angle, delay)
 {
-	return EV_OpenPolyDoor (ln, arg0, arg1, BYTEANGLE(arg2), arg3, 0, PODOOR_SWING);
+	return EV_OpenPolyDoor (Level, ln, arg0, arg1, BYTEANGLE(arg2), arg3, 0, PODOOR_SWING);
 }
 
 FUNC(LS_Polyobj_DoorSlide)
 // Polyobj_DoorSlide (po, speed, angle, distance, delay)
 {
-	return EV_OpenPolyDoor (ln, arg0, SPEED(arg1), BYTEANGLE(arg2), arg4, arg3, PODOOR_SLIDE);
+	return EV_OpenPolyDoor (Level, ln, arg0, SPEED(arg1), BYTEANGLE(arg2), arg4, arg3, PODOOR_SLIDE);
 }
 
 FUNC(LS_Polyobj_OR_RotateLeft)
 // Polyobj_OR_RotateLeft (po, speed, angle)
 {
-	return EV_RotatePoly (ln, arg0, arg1, arg2, 1, true);
+	return EV_RotatePoly (Level, ln, arg0, arg1, arg2, 1, true);
 }
 
 FUNC(LS_Polyobj_OR_RotateRight)
 // Polyobj_OR_RotateRight (po, speed, angle)
 {
-	return EV_RotatePoly (ln, arg0, arg1, arg2, -1, true);
+	return EV_RotatePoly (Level, ln, arg0, arg1, arg2, -1, true);
 }
 
 FUNC(LS_Polyobj_OR_Move)
 // Polyobj_OR_Move (po, speed, angle, distance)
 {
-	return EV_MovePoly (ln, arg0, SPEED(arg1), BYTEANGLE(arg2), arg3, true);
+	return EV_MovePoly (Level, ln, arg0, SPEED(arg1), BYTEANGLE(arg2), arg3, true);
 }
 
 FUNC(LS_Polyobj_OR_MoveTimes8)
 // Polyobj_OR_MoveTimes8 (po, speed, angle, distance)
 {
-	return EV_MovePoly (ln, arg0, SPEED(arg1), BYTEANGLE(arg2), arg3 * 8, true);
+	return EV_MovePoly (Level, ln, arg0, SPEED(arg1), BYTEANGLE(arg2), arg3 * 8, true);
 }
 
 FUNC(LS_Polyobj_OR_MoveTo)
 // Polyobj_OR_MoveTo (po, speed, x, y)
 {
-	return EV_MovePolyTo (ln, arg0, SPEED(arg1), DVector2(arg2, arg3), true);
+	return EV_MovePolyTo (Level, ln, arg0, SPEED(arg1), DVector2(arg2, arg3), true);
 }
 
 FUNC(LS_Polyobj_OR_MoveToSpot)
 // Polyobj_OR_MoveToSpot (po, speed, tid)
 {
-	FActorIterator iterator (arg2);
+	auto iterator = Level->GetActorIterator(arg2);
 	AActor *spot = iterator.Next();
 	if (spot == NULL) return false;
-	return EV_MovePolyTo (ln, arg0, SPEED(arg1), spot->Pos(), true);
+	return EV_MovePolyTo (Level, ln, arg0, SPEED(arg1), spot->Pos(), true);
 }
 
 FUNC(LS_Polyobj_Stop)
 // Polyobj_Stop (po)
 {
-	return EV_StopPoly (arg0);
+	return EV_StopPoly (Level, arg0);
 }
 
 FUNC(LS_Polyobj_StopSound)
@@ -240,7 +240,7 @@ FUNC(LS_Polyobj_StopSound)
 {
 	FPolyObj *poly;
 
-	poly = PO_GetPolyobj(arg0);
+	poly = Level->GetPolyobj(arg0);
 	if (poly != nullptr)
 	{
 		SN_StopSequence(poly);
@@ -252,19 +252,19 @@ FUNC(LS_Polyobj_StopSound)
 FUNC(LS_Door_Close)
 // Door_Close (tag, speed, lighttag)
 {
-	return EV_DoDoor (DDoor::doorClose, ln, it, arg0, SPEED(arg1), 0, 0, arg2);
+	return Level->EV_DoDoor (DDoor::doorClose, ln, it, arg0, SPEED(arg1), 0, 0, arg2);
 }
 
 FUNC(LS_Door_Open)
 // Door_Open (tag, speed, lighttag)
 {
-	return EV_DoDoor (DDoor::doorOpen, ln, it, arg0, SPEED(arg1), 0, 0, arg2);
+	return Level->EV_DoDoor (DDoor::doorOpen, ln, it, arg0, SPEED(arg1), 0, 0, arg2);
 }
 
 FUNC(LS_Door_Raise)
 // Door_Raise (tag, speed, delay, lighttag)
 {
-	return EV_DoDoor (DDoor::doorRaise, ln, it, arg0, SPEED(arg1), TICS(arg2), 0, arg3);
+	return Level->EV_DoDoor (DDoor::doorRaise, ln, it, arg0, SPEED(arg1), TICS(arg2), 0, arg3);
 }
 
 FUNC(LS_Door_LockedRaise)
@@ -273,9 +273,9 @@ FUNC(LS_Door_LockedRaise)
 #if 0
 	// In Hexen this originally created a thinker running for nearly 4 years.
 	// Let's not do this unless it becomes necessary because this can hang tagwait.
-	return EV_DoDoor (arg2 || (level.flags2 & LEVEL2_HEXENHACK) ? DDoor::doorRaise : DDoor::doorOpen, ln, it,
+	return Level->EV_DoDoor (arg2 || (Level->flags2 & LEVEL2_HEXENHACK) ? DDoor::doorRaise : DDoor::doorOpen, ln, it,
 #else
-	return EV_DoDoor (arg2 ? DDoor::doorRaise : DDoor::doorOpen, ln, it,
+	return Level->EV_DoDoor (arg2 ? DDoor::doorRaise : DDoor::doorOpen, ln, it,
 #endif
 					  arg0, SPEED(arg1), TICS(arg2), arg3, arg4);
 }
@@ -283,19 +283,19 @@ FUNC(LS_Door_LockedRaise)
 FUNC(LS_Door_CloseWaitOpen)
 // Door_CloseWaitOpen (tag, speed, delay, lighttag)
 {
-	return EV_DoDoor (DDoor::doorCloseWaitOpen, ln, it, arg0, SPEED(arg1), OCTICS(arg2), 0, arg3);
+	return Level->EV_DoDoor (DDoor::doorCloseWaitOpen, ln, it, arg0, SPEED(arg1), OCTICS(arg2), 0, arg3);
 }
 
 FUNC(LS_Door_WaitRaise)
 // Door_WaitRaise(tag, speed, delay, wait, lighttag)
 {
-	return EV_DoDoor(DDoor::doorWaitRaise, ln, it, arg0, SPEED(arg1), TICS(arg2), 0, arg4, false, TICS(arg3));
+	return Level->EV_DoDoor(DDoor::doorWaitRaise, ln, it, arg0, SPEED(arg1), TICS(arg2), 0, arg4, false, TICS(arg3));
 }
 
 FUNC(LS_Door_WaitClose)
 // Door_WaitRaise(tag, speed, wait, lighttag)
 {
-	return EV_DoDoor(DDoor::doorWaitClose, ln, it, arg0, SPEED(arg1), 0, 0, arg3, false, TICS(arg2));
+	return Level->EV_DoDoor(DDoor::doorWaitClose, ln, it, arg0, SPEED(arg1), 0, 0, arg3, false, TICS(arg2));
 }
 
 FUNC(LS_Door_Animated)
@@ -304,13 +304,13 @@ FUNC(LS_Door_Animated)
 	if (arg3 != 0 && !P_CheckKeys (it, arg3, arg0 != 0))
 		return false;
 
-	return EV_SlidingDoor (ln, it, arg0, arg1, arg2, DAnimatedDoor::adOpenClose);
+	return Level->EV_SlidingDoor (ln, it, arg0, arg1, arg2, DAnimatedDoor::adOpenClose);
 }
 
 FUNC(LS_Door_AnimatedClose)
 // Door_AnimatedClose (tag, speed)
 {
-	return EV_SlidingDoor(ln, it, arg0, arg1, -1, DAnimatedDoor::adClose);
+	return Level->EV_SlidingDoor(ln, it, arg0, arg1, -1, DAnimatedDoor::adClose);
 }
 
 FUNC(LS_Generic_Door)
@@ -341,203 +341,203 @@ FUNC(LS_Generic_Door)
 		tag = arg0;
 		lightTag = 0;
 	}
-	return EV_DoDoor (type, ln, it, tag, SPEED(arg1), OCTICS(arg3), arg4, lightTag, boomgen);
+	return Level->EV_DoDoor (type, ln, it, tag, SPEED(arg1), OCTICS(arg3), arg4, lightTag, boomgen);
 }
 
 FUNC(LS_Floor_LowerByValue)
 // Floor_LowerByValue (tag, speed, height, change)
 {
-	return EV_DoFloor (DFloor::floorLowerByValue, ln, arg0, SPEED(arg1), arg2, -1, CHANGE(arg3), false);
+	return Level->EV_DoFloor (DFloor::floorLowerByValue, ln, arg0, SPEED(arg1), arg2, -1, CHANGE(arg3), false);
 }
 
 FUNC(LS_Floor_LowerToLowest)
 // Floor_LowerToLowest (tag, speed, change)
 {
-	return EV_DoFloor (DFloor::floorLowerToLowest, ln, arg0, SPEED(arg1), 0, -1, CHANGE(arg2), false);
+	return Level->EV_DoFloor (DFloor::floorLowerToLowest, ln, arg0, SPEED(arg1), 0, -1, CHANGE(arg2), false);
 }
 
 FUNC(LS_Floor_LowerToHighest)
 // Floor_LowerToHighest (tag, speed, adjust, hereticlower)
 {
-	return EV_DoFloor (DFloor::floorLowerToHighest, ln, arg0, SPEED(arg1), (arg2-128), -1, 0, false, arg3==1);
+	return Level->EV_DoFloor (DFloor::floorLowerToHighest, ln, arg0, SPEED(arg1), (arg2-128), -1, 0, false, arg3==1);
 }
 
 FUNC(LS_Floor_LowerToHighestEE)
 // Floor_LowerToHighestEE (tag, speed, change)
 {
-	return EV_DoFloor (DFloor::floorLowerToHighest, ln, arg0, SPEED(arg1), 0, -1, CHANGE(arg2), false);
+	return Level->EV_DoFloor (DFloor::floorLowerToHighest, ln, arg0, SPEED(arg1), 0, -1, CHANGE(arg2), false);
 }
 
 FUNC(LS_Floor_LowerToNearest)
 // Floor_LowerToNearest (tag, speed, change)
 {
-	return EV_DoFloor (DFloor::floorLowerToNearest, ln, arg0, SPEED(arg1), 0, -1, CHANGE(arg2), false);
+	return Level->EV_DoFloor (DFloor::floorLowerToNearest, ln, arg0, SPEED(arg1), 0, -1, CHANGE(arg2), false);
 }
 
 FUNC(LS_Floor_RaiseByValue)
 // Floor_RaiseByValue (tag, speed, height, change, crush)
 {
-	return EV_DoFloor (DFloor::floorRaiseByValue, ln, arg0, SPEED(arg1), arg2, CRUSH(arg4), CHANGE(arg3), true);
+	return Level->EV_DoFloor (DFloor::floorRaiseByValue, ln, arg0, SPEED(arg1), arg2, CRUSH(arg4), CHANGE(arg3), true);
 }
 
 FUNC(LS_Floor_RaiseToHighest)
 // Floor_RaiseToHighest (tag, speed, change, crush)
 {
-	return EV_DoFloor (DFloor::floorRaiseToHighest, ln, arg0, SPEED(arg1), 0, CRUSH(arg3), CHANGE(arg2), true);
+	return Level->EV_DoFloor (DFloor::floorRaiseToHighest, ln, arg0, SPEED(arg1), 0, CRUSH(arg3), CHANGE(arg2), true);
 }
 
 FUNC(LS_Floor_RaiseToNearest)
 // Floor_RaiseToNearest (tag, speed, change, crush)
 {
-	return EV_DoFloor (DFloor::floorRaiseToNearest, ln, arg0, SPEED(arg1), 0, CRUSH(arg3), CHANGE(arg2), true);
+	return Level->EV_DoFloor (DFloor::floorRaiseToNearest, ln, arg0, SPEED(arg1), 0, CRUSH(arg3), CHANGE(arg2), true);
 }
 
 FUNC(LS_Floor_RaiseToLowest)
 // Floor_RaiseToLowest (tag, change, crush)
 {
 	// This is merely done for completeness as it's a rather pointless addition.
-	return EV_DoFloor (DFloor::floorRaiseToLowest, ln, arg0, 2., 0, CRUSH(arg3), CHANGE(arg2), true);
+	return Level->EV_DoFloor (DFloor::floorRaiseToLowest, ln, arg0, 2., 0, CRUSH(arg3), CHANGE(arg2), true);
 }
 
 FUNC(LS_Floor_RaiseAndCrush)
 // Floor_RaiseAndCrush (tag, speed, crush, crushmode)
 {
-	return EV_DoFloor (DFloor::floorRaiseAndCrush, ln, arg0, SPEED(arg1), 0, arg2, 0, CRUSHTYPE(arg3));
+	return Level->EV_DoFloor (DFloor::floorRaiseAndCrush, ln, arg0, SPEED(arg1), 0, arg2, 0, CRUSHTYPE(arg3));
 }
 
 FUNC(LS_Floor_RaiseAndCrushDoom)
 // Floor_RaiseAndCrushDoom (tag, speed, crush, crushmode)
 {
-	return EV_DoFloor (DFloor::floorRaiseAndCrushDoom, ln, arg0, SPEED(arg1), 0, arg2, 0, CRUSHTYPE(arg3));
+	return Level->EV_DoFloor (DFloor::floorRaiseAndCrushDoom, ln, arg0, SPEED(arg1), 0, arg2, 0, CRUSHTYPE(arg3));
 }
 
 FUNC(LS_Floor_RaiseByValueTimes8)
 // FLoor_RaiseByValueTimes8 (tag, speed, height, change, crush)
 {
-	return EV_DoFloor (DFloor::floorRaiseByValue, ln, arg0, SPEED(arg1), arg2*8, CRUSH(arg4), CHANGE(arg3), true);
+	return Level->EV_DoFloor (DFloor::floorRaiseByValue, ln, arg0, SPEED(arg1), arg2*8, CRUSH(arg4), CHANGE(arg3), true);
 }
 
 FUNC(LS_Floor_LowerByValueTimes8)
 // Floor_LowerByValueTimes8 (tag, speed, height, change)
 {
-	return EV_DoFloor (DFloor::floorLowerByValue, ln, arg0, SPEED(arg1), arg2*8, -1, CHANGE(arg3), false);
+	return Level->EV_DoFloor (DFloor::floorLowerByValue, ln, arg0, SPEED(arg1), arg2*8, -1, CHANGE(arg3), false);
 }
 
 FUNC(LS_Floor_CrushStop)
 // Floor_CrushStop (tag)
 {
-	return EV_FloorCrushStop (arg0, ln);
+	return Level->EV_FloorCrushStop (arg0, ln);
 }
 
 FUNC(LS_Floor_LowerInstant)
 // Floor_LowerInstant (tag, unused, height, change)
 {
-	return EV_DoFloor (DFloor::floorLowerInstant, ln, arg0, 0., arg2*8, -1, CHANGE(arg3), false);
+	return Level->EV_DoFloor (DFloor::floorLowerInstant, ln, arg0, 0., arg2*8, -1, CHANGE(arg3), false);
 }
 
 FUNC(LS_Floor_RaiseInstant)
 // Floor_RaiseInstant (tag, unused, height, change, crush)
 {
-	return EV_DoFloor (DFloor::floorRaiseInstant, ln, arg0, 0., arg2*8, CRUSH(arg4), CHANGE(arg3), true);
+	return Level->EV_DoFloor (DFloor::floorRaiseInstant, ln, arg0, 0., arg2*8, CRUSH(arg4), CHANGE(arg3), true);
 }
 
 FUNC(LS_Floor_ToCeilingInstant)
 // Floor_ToCeilingInstant (tag, change, crush, gap)
 {
-	return EV_DoFloor (DFloor::floorLowerToCeiling, ln, arg0, 0, arg3, CRUSH(arg2), CHANGE(arg1), true);
+	return Level->EV_DoFloor (DFloor::floorLowerToCeiling, ln, arg0, 0, arg3, CRUSH(arg2), CHANGE(arg1), true);
 }
 
 FUNC(LS_Floor_MoveToValueTimes8)
 // Floor_MoveToValueTimes8 (tag, speed, height, negative, change)
 {
-	return EV_DoFloor (DFloor::floorMoveToValue, ln, arg0, SPEED(arg1),
+	return Level->EV_DoFloor (DFloor::floorMoveToValue, ln, arg0, SPEED(arg1),
 					   arg2*8*(arg3?-1:1), -1, CHANGE(arg4), false);
 }
 
 FUNC(LS_Floor_MoveToValue)
 // Floor_MoveToValue (tag, speed, height, negative, change)
 {
-	return EV_DoFloor (DFloor::floorMoveToValue, ln, arg0, SPEED(arg1),
+	return Level->EV_DoFloor (DFloor::floorMoveToValue, ln, arg0, SPEED(arg1),
 					   arg2*(arg3?-1:1), -1, CHANGE(arg4), false);
 }
 
 FUNC(LS_Floor_MoveToValueAndCrush)
 // Floor_MoveToValueAndCrush (tag, speed, height, crush, crushmode)
 {
-	return EV_DoFloor(DFloor::floorMoveToValue, ln, arg0, SPEED(arg1),
+	return Level->EV_DoFloor(DFloor::floorMoveToValue, ln, arg0, SPEED(arg1),
 		arg2, CRUSH(arg3) -1, 0, CRUSHTYPE(arg4), false);
 }
 
 FUNC(LS_Floor_RaiseToLowestCeiling)
 // Floor_RaiseToLowestCeiling (tag, speed, change, crush)
 {
-	return EV_DoFloor (DFloor::floorRaiseToLowestCeiling, ln, arg0, SPEED(arg1), 0, CRUSH(arg3), CHANGE(arg2), true);
+	return Level->EV_DoFloor (DFloor::floorRaiseToLowestCeiling, ln, arg0, SPEED(arg1), 0, CRUSH(arg3), CHANGE(arg2), true);
 }
 
 FUNC(LS_Floor_LowerToLowestCeiling)
 // Floor_LowerToLowestCeiling (tag, speed, change)
 {
-	return EV_DoFloor (DFloor::floorLowerToLowestCeiling, ln, arg0, SPEED(arg1), arg4, -1, CHANGE(arg2), true);
+	return Level->EV_DoFloor (DFloor::floorLowerToLowestCeiling, ln, arg0, SPEED(arg1), arg4, -1, CHANGE(arg2), true);
 }
 
 FUNC(LS_Floor_RaiseByTexture)
 // Floor_RaiseByTexture (tag, speed, change, crush)
 {
-	return EV_DoFloor (DFloor::floorRaiseByTexture, ln, arg0, SPEED(arg1), 0, CRUSH(arg3), CHANGE(arg2), true);
+	return Level->EV_DoFloor (DFloor::floorRaiseByTexture, ln, arg0, SPEED(arg1), 0, CRUSH(arg3), CHANGE(arg2), true);
 }
 
 FUNC(LS_Floor_LowerByTexture)
 // Floor_LowerByTexture (tag, speed, change, crush)
 {
-	return EV_DoFloor (DFloor::floorLowerByTexture, ln, arg0, SPEED(arg1), 0, -1, CHANGE(arg2), true);
+	return Level->EV_DoFloor (DFloor::floorLowerByTexture, ln, arg0, SPEED(arg1), 0, -1, CHANGE(arg2), true);
 }
 
 FUNC(LS_Floor_RaiseToCeiling)
 // Floor_RaiseToCeiling (tag, speed, change, crush, gap)
 {
-	return EV_DoFloor (DFloor::floorRaiseToCeiling, ln, arg0, SPEED(arg1), arg4, CRUSH(arg3), CHANGE(arg2), true);
+	return Level->EV_DoFloor (DFloor::floorRaiseToCeiling, ln, arg0, SPEED(arg1), arg4, CRUSH(arg3), CHANGE(arg2), true);
 }
 
 FUNC(LS_Floor_RaiseByValueTxTy)
 // Floor_RaiseByValueTxTy (tag, speed, height)
 {
-	return EV_DoFloor (DFloor::floorRaiseAndChange, ln, arg0, SPEED(arg1), arg2, -1, 0, false);
+	return Level->EV_DoFloor (DFloor::floorRaiseAndChange, ln, arg0, SPEED(arg1), arg2, -1, 0, false);
 }
 
 FUNC(LS_Floor_LowerToLowestTxTy)
 // Floor_LowerToLowestTxTy (tag, speed)
 {
-	return EV_DoFloor (DFloor::floorLowerAndChange, ln, arg0, SPEED(arg1), arg2, -1, 0, false);
+	return Level->EV_DoFloor (DFloor::floorLowerAndChange, ln, arg0, SPEED(arg1), arg2, -1, 0, false);
 }
 
 FUNC(LS_Floor_Waggle)
 // Floor_Waggle (tag, amplitude, frequency, delay, time)
 {
-	return EV_StartWaggle (arg0, ln, arg1, arg2, arg3, arg4, false);
+	return Level->EV_StartWaggle (arg0, ln, arg1, arg2, arg3, arg4, false);
 }
 
 FUNC(LS_Ceiling_Waggle)
 // Ceiling_Waggle (tag, amplitude, frequency, delay, time)
 {
-	return EV_StartWaggle (arg0, ln, arg1, arg2, arg3, arg4, true);
+	return Level->EV_StartWaggle (arg0, ln, arg1, arg2, arg3, arg4, true);
 }
 
 FUNC(LS_Floor_TransferTrigger)
 // Floor_TransferTrigger (tag)
 {
-	return EV_DoChange (ln, trigChangeOnly, arg0);
+	return Level->EV_DoChange (ln, trigChangeOnly, arg0);
 }
 
 FUNC(LS_Floor_TransferNumeric)
 // Floor_TransferNumeric (tag)
 {
-	return EV_DoChange (ln, numChangeOnly, arg0);
+	return Level->EV_DoChange (ln, numChangeOnly, arg0);
 }
 
 FUNC(LS_Floor_Donut)
 // Floor_Donut (pillartag, pillarspeed, slimespeed)
 {
-	return EV_DoDonut (arg0, ln, SPEED(arg1), SPEED(arg2));
+	return Level->EV_DoDonut (arg0, ln, SPEED(arg1), SPEED(arg2));
 }
 
 FUNC(LS_Generic_Floor)
@@ -572,7 +572,7 @@ FUNC(LS_Generic_Floor)
 		}
 	}
 
-	return EV_DoFloor (type, ln, arg0, SPEED(arg1), arg2,
+	return Level->EV_DoFloor (type, ln, arg0, SPEED(arg1), arg2,
 					   (arg4 & 16) ? 20 : -1, arg4 & 7, true);
 					   
 }
@@ -580,70 +580,70 @@ FUNC(LS_Generic_Floor)
 FUNC(LS_Floor_Stop)
 // Floor_Stop (tag)
 {
-	return EV_StopFloor(arg0, ln);
+	return Level->EV_StopFloor(arg0, ln);
 }
 
 
 FUNC(LS_Stairs_BuildDown)
 // Stair_BuildDown (tag, speed, height, delay, reset)
 {
-	return EV_BuildStairs (arg0, DFloor::buildDown, ln,
+	return Level->EV_BuildStairs (arg0, DFloor::buildDown, ln,
 						   arg2, SPEED(arg1), TICS(arg3), arg4, 0, DFloor::stairUseSpecials);
 }
 
 FUNC(LS_Stairs_BuildUp)
 // Stairs_BuildUp (tag, speed, height, delay, reset)
 {
-	return EV_BuildStairs (arg0, DFloor::buildUp, ln,
+	return Level->EV_BuildStairs (arg0, DFloor::buildUp, ln,
 						   arg2, SPEED(arg1), TICS(arg3), arg4, 0, DFloor::stairUseSpecials);
 }
 
 FUNC(LS_Stairs_BuildDownSync)
 // Stairs_BuildDownSync (tag, speed, height, reset)
 {
-	return EV_BuildStairs (arg0, DFloor::buildDown, ln,
+	return Level->EV_BuildStairs (arg0, DFloor::buildDown, ln,
 						   arg2, SPEED(arg1), 0, arg3, 0, DFloor::stairUseSpecials|DFloor::stairSync);
 }
 
 FUNC(LS_Stairs_BuildUpSync)
 // Stairs_BuildUpSync (tag, speed, height, reset)
 {
-	return EV_BuildStairs (arg0, DFloor::buildUp, ln,
+	return Level->EV_BuildStairs (arg0, DFloor::buildUp, ln,
 						   arg2, SPEED(arg1), 0, arg3, 0, DFloor::stairUseSpecials|DFloor::stairSync);
 }
 
 FUNC(LS_Stairs_BuildUpDoom)
 // Stairs_BuildUpDoom (tag, speed, height, delay, reset)
 {
-	return EV_BuildStairs (arg0, DFloor::buildUp, ln,
+	return Level->EV_BuildStairs (arg0, DFloor::buildUp, ln,
 						   arg2, SPEED(arg1), TICS(arg3), arg4, 0, 0);
 }
 
 FUNC(LS_Stairs_BuildUpDoomCrush)
 // Stairs_BuildUpDoom (tag, speed, height, delay, reset)
 {
-	return EV_BuildStairs(arg0, DFloor::buildUp, ln,
+	return Level->EV_BuildStairs(arg0, DFloor::buildUp, ln,
 		arg2, SPEED(arg1), TICS(arg3), arg4, 0, DFloor::stairCrush);
 }
 
 FUNC(LS_Stairs_BuildDownDoom)
 // Stair_BuildDownDoom (tag, speed, height, delay, reset)
 {
-	return EV_BuildStairs (arg0, DFloor::buildDown, ln,
+	return Level->EV_BuildStairs (arg0, DFloor::buildDown, ln,
 						   arg2, SPEED(arg1), TICS(arg3), arg4, 0, 0);
 }
 
 FUNC(LS_Stairs_BuildDownDoomSync)
 // Stairs_BuildDownDoomSync (tag, speed, height, reset)
 {
-	return EV_BuildStairs (arg0, DFloor::buildDown, ln,
+	return Level->EV_BuildStairs (arg0, DFloor::buildDown, ln,
 						   arg2, SPEED(arg1), 0, arg3, 0, DFloor::stairSync);
 }
 
 FUNC(LS_Stairs_BuildUpDoomSync)
 // Stairs_BuildUpDoomSync (tag, speed, height, reset)
 {
-	return EV_BuildStairs (arg0, DFloor::buildUp, ln,
+	return Level->EV_BuildStairs (arg0, DFloor::buildUp, ln,
 						   arg2, SPEED(arg1), 0, arg3, 0, DFloor::stairSync);
 }
 
@@ -652,7 +652,7 @@ FUNC(LS_Generic_Stairs)
 // Generic_Stairs (tag, speed, step, dir/igntxt, reset)
 {
 	DFloor::EStair type = (arg3 & 1) ? DFloor::buildUp : DFloor::buildDown;
-	bool res = EV_BuildStairs (arg0, type, ln,
+	bool res = Level->EV_BuildStairs (arg0, type, ln,
 							   arg2, SPEED(arg1), 0, arg4, arg3 & 2, 0);
 
 	if (res && ln && (ln->flags & ML_REPEAT_SPECIAL) && ln->special == Generic_Stairs)
@@ -665,61 +665,61 @@ FUNC(LS_Generic_Stairs)
 FUNC(LS_Pillar_Build)
 // Pillar_Build (tag, speed, height)
 {
-	return EV_DoPillar (DPillar::pillarBuild, ln, arg0, SPEED(arg1), arg2, 0, -1, false);
+	return Level->EV_DoPillar (DPillar::pillarBuild, ln, arg0, SPEED(arg1), arg2, 0, -1, false);
 }
 
 FUNC(LS_Pillar_BuildAndCrush)
 // Pillar_BuildAndCrush (tag, speed, height, crush, crushtype)
 {
-	return EV_DoPillar (DPillar::pillarBuild, ln, arg0, SPEED(arg1), arg2, 0, arg3, CRUSHTYPE(arg4));
+	return Level->EV_DoPillar (DPillar::pillarBuild, ln, arg0, SPEED(arg1), arg2, 0, arg3, CRUSHTYPE(arg4));
 }
 
 FUNC(LS_Pillar_Open)
 // Pillar_Open (tag, speed, f_height, c_height)
 {
-	return EV_DoPillar (DPillar::pillarOpen, ln, arg0, SPEED(arg1), arg2, arg3, -1, false);
+	return Level->EV_DoPillar (DPillar::pillarOpen, ln, arg0, SPEED(arg1), arg2, arg3, -1, false);
 }
 
 FUNC(LS_Ceiling_LowerByValue)
 // Ceiling_LowerByValue (tag, speed, height, change, crush)
 {
-	return EV_DoCeiling (DCeiling::ceilLowerByValue, ln, arg0, SPEED(arg1), 0, arg2, CRUSH(arg4), 0, CHANGE(arg3));
+	return Level->EV_DoCeiling (DCeiling::ceilLowerByValue, ln, arg0, SPEED(arg1), 0, arg2, CRUSH(arg4), 0, CHANGE(arg3));
 }
 
 FUNC(LS_Ceiling_RaiseByValue)
 // Ceiling_RaiseByValue (tag, speed, height, change)
 {
-	return EV_DoCeiling (DCeiling::ceilRaiseByValue, ln, arg0, SPEED(arg1), 0, arg2, CRUSH(arg4), 0, CHANGE(arg3));
+	return Level->EV_DoCeiling (DCeiling::ceilRaiseByValue, ln, arg0, SPEED(arg1), 0, arg2, CRUSH(arg4), 0, CHANGE(arg3));
 }
 
 FUNC(LS_Ceiling_LowerByValueTimes8)
 // Ceiling_LowerByValueTimes8 (tag, speed, height, change, crush)
 {
-	return EV_DoCeiling (DCeiling::ceilLowerByValue, ln, arg0, SPEED(arg1), 0, arg2*8, -1, 0, CHANGE(arg3));
+	return Level->EV_DoCeiling (DCeiling::ceilLowerByValue, ln, arg0, SPEED(arg1), 0, arg2*8, -1, 0, CHANGE(arg3));
 }
 
 FUNC(LS_Ceiling_RaiseByValueTimes8)
 // Ceiling_RaiseByValueTimes8 (tag, speed, height, change)
 {
-	return EV_DoCeiling (DCeiling::ceilRaiseByValue, ln, arg0, SPEED(arg1), 0, arg2*8, -1, 0, CHANGE(arg3));
+	return Level->EV_DoCeiling (DCeiling::ceilRaiseByValue, ln, arg0, SPEED(arg1), 0, arg2*8, -1, 0, CHANGE(arg3));
 }
 
 FUNC(LS_Ceiling_CrushAndRaise)
 // Ceiling_CrushAndRaise (tag, speed, crush, crushtype)
 {
-	return EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1), SPEED(arg1)/2, 8, arg2, 0, 0, CRUSHTYPE(arg3, false));
+	return Level->EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1), SPEED(arg1)/2, 8, arg2, 0, 0, CRUSHTYPE(arg3, false));
 }
 
 FUNC(LS_Ceiling_LowerAndCrush)
 // Ceiling_LowerAndCrush (tag, speed, crush, crushtype)
 {
-	return EV_DoCeiling (DCeiling::ceilLowerAndCrush, ln, arg0, SPEED(arg1), SPEED(arg1), 8, arg2, 0, 0, CRUSHTYPE(arg3, arg1 == 8));
+	return Level->EV_DoCeiling (DCeiling::ceilLowerAndCrush, ln, arg0, SPEED(arg1), SPEED(arg1), 8, arg2, 0, 0, CRUSHTYPE(arg3, arg1 == 8));
 }
 
 FUNC(LS_Ceiling_LowerAndCrushDist)
 // Ceiling_LowerAndCrush (tag, speed, crush, dist, crushtype)
 {
-	return EV_DoCeiling (DCeiling::ceilLowerAndCrush, ln, arg0, SPEED(arg1), SPEED(arg1), arg3, arg2, 0, 0, CRUSHTYPE(arg4, arg1 == 8));
+	return Level->EV_DoCeiling (DCeiling::ceilLowerAndCrush, ln, arg0, SPEED(arg1), SPEED(arg1), arg3, arg2, 0, 0, CRUSHTYPE(arg4, arg1 == 8));
 }
 
 FUNC(LS_Ceiling_CrushStop)
@@ -738,160 +738,160 @@ FUNC(LS_Ceiling_CrushStop)
 		remove = gameinfo.gametype == GAME_Hexen;
 		break;
 	}
-	return EV_CeilingCrushStop (arg0, remove);
+	return Level->EV_CeilingCrushStop (arg0, remove);
 }
 
 FUNC(LS_Ceiling_CrushRaiseAndStay)
 // Ceiling_CrushRaiseAndStay (tag, speed, crush, crushtype)
 {
-	return EV_DoCeiling (DCeiling::ceilCrushRaiseAndStay, ln, arg0, SPEED(arg1), SPEED(arg1)/2, 8, arg2, 0, 0, CRUSHTYPE(arg3, false));
+	return Level->EV_DoCeiling (DCeiling::ceilCrushRaiseAndStay, ln, arg0, SPEED(arg1), SPEED(arg1)/2, 8, arg2, 0, 0, CRUSHTYPE(arg3, false));
 }
 
 FUNC(LS_Ceiling_MoveToValueTimes8)
 // Ceiling_MoveToValueTimes8 (tag, speed, height, negative, change)
 {
-	return EV_DoCeiling (DCeiling::ceilMoveToValue, ln, arg0, SPEED(arg1), 0,
+	return Level->EV_DoCeiling (DCeiling::ceilMoveToValue, ln, arg0, SPEED(arg1), 0,
 						 arg2*8*((arg3) ? -1 : 1), -1, 0, CHANGE(arg4));
 }
 
 FUNC(LS_Ceiling_MoveToValue)
 // Ceiling_MoveToValue (tag, speed, height, negative, change)
 {
-	return EV_DoCeiling (DCeiling::ceilMoveToValue, ln, arg0, SPEED(arg1), 0,
+	return Level->EV_DoCeiling (DCeiling::ceilMoveToValue, ln, arg0, SPEED(arg1), 0,
 						 arg2*((arg3) ? -1 : 1), -1, 0, CHANGE(arg4));
 }
 
 FUNC(LS_Ceiling_MoveToValueAndCrush)
 // Ceiling_MoveToValueAndCrush (tag, speed, height, crush, crushmode)
 {
-	return EV_DoCeiling (DCeiling::ceilMoveToValue, ln, arg0, SPEED(arg1), 0,
+	return Level->EV_DoCeiling (DCeiling::ceilMoveToValue, ln, arg0, SPEED(arg1), 0,
 						 arg2, CRUSH(arg3), 0, 0, CRUSHTYPE(arg4, arg1 == 8));
 }
 
 FUNC(LS_Ceiling_LowerToHighestFloor)
 // Ceiling_LowerToHighestFloor (tag, speed, change, crush, gap)
 {
-	return EV_DoCeiling (DCeiling::ceilLowerToHighestFloor, ln, arg0, SPEED(arg1), 0, arg4, CRUSH(arg3), 0, CHANGE(arg2));
+	return Level->EV_DoCeiling (DCeiling::ceilLowerToHighestFloor, ln, arg0, SPEED(arg1), 0, arg4, CRUSH(arg3), 0, CHANGE(arg2));
 }
 
 FUNC(LS_Ceiling_LowerInstant)
 // Ceiling_LowerInstant (tag, unused, height, change, crush)
 {
-	return EV_DoCeiling (DCeiling::ceilLowerInstant, ln, arg0, 0, 0, arg2*8, CRUSH(arg4), 0, CHANGE(arg3));
+	return Level->EV_DoCeiling (DCeiling::ceilLowerInstant, ln, arg0, 0, 0, arg2*8, CRUSH(arg4), 0, CHANGE(arg3));
 }
 
 FUNC(LS_Ceiling_RaiseInstant)
 // Ceiling_RaiseInstant (tag, unused, height, change)
 {
-	return EV_DoCeiling (DCeiling::ceilRaiseInstant, ln, arg0, 0, 0, arg2*8, -1, 0, CHANGE(arg3));
+	return Level->EV_DoCeiling (DCeiling::ceilRaiseInstant, ln, arg0, 0, 0, arg2*8, -1, 0, CHANGE(arg3));
 }
 
 FUNC(LS_Ceiling_CrushRaiseAndStayA)
 // Ceiling_CrushRaiseAndStayA (tag, dnspeed, upspeed, damage, crushtype)
 {
-	return EV_DoCeiling (DCeiling::ceilCrushRaiseAndStay, ln, arg0, SPEED(arg1), SPEED(arg2), 0, arg3, 0, 0, CRUSHTYPE(arg4, false));
+	return Level->EV_DoCeiling (DCeiling::ceilCrushRaiseAndStay, ln, arg0, SPEED(arg1), SPEED(arg2), 0, arg3, 0, 0, CRUSHTYPE(arg4, false));
 }
 
 FUNC(LS_Ceiling_CrushRaiseAndStaySilA)
 // Ceiling_CrushRaiseAndStaySilA (tag, dnspeed, upspeed, damage, crushtype)
 {
-	return EV_DoCeiling (DCeiling::ceilCrushRaiseAndStay, ln, arg0, SPEED(arg1), SPEED(arg2), 0, arg3, 1, 0, CRUSHTYPE(arg4, false));
+	return Level->EV_DoCeiling (DCeiling::ceilCrushRaiseAndStay, ln, arg0, SPEED(arg1), SPEED(arg2), 0, arg3, 1, 0, CRUSHTYPE(arg4, false));
 }
 
 FUNC(LS_Ceiling_CrushAndRaiseA)
 // Ceiling_CrushAndRaiseA (tag, dnspeed, upspeed, damage, crushtype)
 {
-	return EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1), SPEED(arg2), 0, arg3, 0, 0, CRUSHTYPE(arg4, arg1 == 8 && arg2 == 8));
+	return Level->EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1), SPEED(arg2), 0, arg3, 0, 0, CRUSHTYPE(arg4, arg1 == 8 && arg2 == 8));
 }
 
 FUNC(LS_Ceiling_CrushAndRaiseDist)
 // Ceiling_CrushAndRaiseDist (tag, dist, speed, damage, crushtype)
 {
-	return EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg2), SPEED(arg2), arg1, arg3, 0, 0, CRUSHTYPE(arg4, arg2 == 8));
+	return Level->EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg2), SPEED(arg2), arg1, arg3, 0, 0, CRUSHTYPE(arg4, arg2 == 8));
 }
 
 FUNC(LS_Ceiling_CrushAndRaiseSilentA)
 // Ceiling_CrushAndRaiseSilentA (tag, dnspeed, upspeed, damage, crushtype)
 {
-	return EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1), SPEED(arg2), 0, arg3, 1, 0, CRUSHTYPE(arg4, arg1 == 8 && arg2 == 8));
+	return Level->EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1), SPEED(arg2), 0, arg3, 1, 0, CRUSHTYPE(arg4, arg1 == 8 && arg2 == 8));
 }
 
 FUNC(LS_Ceiling_CrushAndRaiseSilentDist)
 // Ceiling_CrushAndRaiseSilentDist (tag, dist, upspeed, damage, crushtype)
 {
-	return EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg2), SPEED(arg2), arg1, arg3, 1, 0, CRUSHTYPE(arg4, arg2 == 8));
+	return Level->EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg2), SPEED(arg2), arg1, arg3, 1, 0, CRUSHTYPE(arg4, arg2 == 8));
 }
 
 FUNC(LS_Ceiling_RaiseToNearest)
 // Ceiling_RaiseToNearest (tag, speed, change)
 {
-	return EV_DoCeiling (DCeiling::ceilRaiseToNearest, ln, arg0, SPEED(arg1), 0, 0, -1, CHANGE(arg2), 0);
+	return Level->EV_DoCeiling (DCeiling::ceilRaiseToNearest, ln, arg0, SPEED(arg1), 0, 0, -1, CHANGE(arg2), 0);
 }
 
 FUNC(LS_Ceiling_RaiseToHighest)
 // Ceiling_RaiseToHighest (tag, speed, change)
 {
-	return EV_DoCeiling (DCeiling::ceilRaiseToHighest, ln, arg0, SPEED(arg1), 0, 0, -1, CHANGE(arg2), 0);
+	return Level->EV_DoCeiling (DCeiling::ceilRaiseToHighest, ln, arg0, SPEED(arg1), 0, 0, -1, CHANGE(arg2), 0);
 }
 
 FUNC(LS_Ceiling_RaiseToLowest)
 // Ceiling_RaiseToLowest (tag, speed, change)
 {
-	return EV_DoCeiling (DCeiling::ceilRaiseToLowest, ln, arg0, SPEED(arg1), 0, 0, -1, CHANGE(arg2), 0);
+	return Level->EV_DoCeiling (DCeiling::ceilRaiseToLowest, ln, arg0, SPEED(arg1), 0, 0, -1, CHANGE(arg2), 0);
 }
 
 FUNC(LS_Ceiling_RaiseToHighestFloor)
 // Ceiling_RaiseToHighestFloor (tag, speed, change)
 {
-	return EV_DoCeiling (DCeiling::ceilRaiseToHighestFloor, ln, arg0, SPEED(arg1), 0, 0, -1, CHANGE(arg2), 0);
+	return Level->EV_DoCeiling (DCeiling::ceilRaiseToHighestFloor, ln, arg0, SPEED(arg1), 0, 0, -1, CHANGE(arg2), 0);
 }
 
 FUNC(LS_Ceiling_RaiseByTexture)
 // Ceiling_RaiseByTexture (tag, speed, change)
 {
-	return EV_DoCeiling (DCeiling::ceilRaiseByTexture, ln, arg0, SPEED(arg1), 0, 0, -1, CHANGE(arg2), 0);
+	return Level->EV_DoCeiling (DCeiling::ceilRaiseByTexture, ln, arg0, SPEED(arg1), 0, 0, -1, CHANGE(arg2), 0);
 }
 
 FUNC(LS_Ceiling_LowerToLowest)
 // Ceiling_LowerToLowest (tag, speed, change, crush)
 {
-	return EV_DoCeiling (DCeiling::ceilLowerToLowest, ln, arg0, SPEED(arg1), 0, 0, CRUSH(arg3), 0, CHANGE(arg2));
+	return Level->EV_DoCeiling (DCeiling::ceilLowerToLowest, ln, arg0, SPEED(arg1), 0, 0, CRUSH(arg3), 0, CHANGE(arg2));
 }
 
 FUNC(LS_Ceiling_LowerToNearest)
 // Ceiling_LowerToNearest (tag, speed, change, crush)
 {
-	return EV_DoCeiling (DCeiling::ceilLowerToNearest, ln, arg0, SPEED(arg1), 0, 0, CRUSH(arg3), 0, CHANGE(arg2));
+	return Level->EV_DoCeiling (DCeiling::ceilLowerToNearest, ln, arg0, SPEED(arg1), 0, 0, CRUSH(arg3), 0, CHANGE(arg2));
 }
 
 FUNC(LS_Ceiling_ToHighestInstant)
 // Ceiling_ToHighestInstant (tag, change, crush)
 {
-	return EV_DoCeiling (DCeiling::ceilLowerToHighest, ln, arg0, 2, 0, 0, CRUSH(arg2), 0, CHANGE(arg1));
+	return Level->EV_DoCeiling (DCeiling::ceilLowerToHighest, ln, arg0, 2, 0, 0, CRUSH(arg2), 0, CHANGE(arg1));
 }
 
 FUNC(LS_Ceiling_ToFloorInstant)
 // Ceiling_ToFloorInstant (tag, change, crush, gap)
 {
-	return EV_DoCeiling (DCeiling::ceilRaiseToFloor, ln, arg0, 2, 0, arg3, CRUSH(arg2), 0, CHANGE(arg1));
+	return Level->EV_DoCeiling (DCeiling::ceilRaiseToFloor, ln, arg0, 2, 0, arg3, CRUSH(arg2), 0, CHANGE(arg1));
 }
 
 FUNC(LS_Ceiling_LowerToFloor)
 // Ceiling_LowerToFloor (tag, speed, change, crush, gap)
 {
-	return EV_DoCeiling (DCeiling::ceilLowerToFloor, ln, arg0, SPEED(arg1), 0, arg4, CRUSH(arg3), 0, CHANGE(arg2));
+	return Level->EV_DoCeiling (DCeiling::ceilLowerToFloor, ln, arg0, SPEED(arg1), 0, arg4, CRUSH(arg3), 0, CHANGE(arg2));
 }
 
 FUNC(LS_Ceiling_LowerByTexture)
 // Ceiling_LowerByTexture (tag, speed, change, crush)
 {
-	return EV_DoCeiling (DCeiling::ceilLowerByTexture, ln, arg0, SPEED(arg1), 0, 0, CRUSH(arg3), 0, CHANGE(arg2));
+	return Level->EV_DoCeiling (DCeiling::ceilLowerByTexture, ln, arg0, SPEED(arg1), 0, 0, CRUSH(arg3), 0, CHANGE(arg2));
 }
 
 FUNC(LS_Ceiling_Stop)
 // Ceiling_Stop (tag)
 {
-	return EV_StopCeiling(arg0, ln);
+	return Level->EV_StopCeiling(arg0, ln);
 }
 
 
@@ -922,14 +922,14 @@ FUNC(LS_Generic_Ceiling)
 		}
 	}
 
-	return EV_DoCeiling (type, ln, arg0, SPEED(arg1), SPEED(arg1), arg2,
+	return Level->EV_DoCeiling (type, ln, arg0, SPEED(arg1), SPEED(arg1), arg2,
 						 (arg4 & 16) ? 20 : -1, 0, arg4 & 7);
 }
 
 FUNC(LS_Generic_Crusher)
 // Generic_Crusher (tag, dnspeed, upspeed, silent, damage)
 {
-	return EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1),
+	return Level->EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1),
 						 SPEED(arg2), 0, arg4, arg3 ? 2 : 0, 0, (arg1 <= 24 && arg2 <= 24)? DCeiling::ECrushMode::crushSlowdown : DCeiling::ECrushMode::crushDoom);
 }
 
@@ -937,20 +937,20 @@ FUNC(LS_Generic_Crusher2)
 // Generic_Crusher2 (tag, dnspeed, upspeed, silent, damage)
 {
 	// same as above but uses Hexen's crushing method.
-	return EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1),
+	return Level->EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1),
 						 SPEED(arg2), 0, arg4, arg3 ? 2 : 0, 0, DCeiling::ECrushMode::crushHexen);
 }
 
 FUNC(LS_Plat_PerpetualRaise)
 // Plat_PerpetualRaise (tag, speed, delay)
 {
-	return EV_DoPlat (arg0, ln, DPlat::platPerpetualRaise, 0, SPEED(arg1), TICS(arg2), 8, 0);
+	return Level->EV_DoPlat (arg0, ln, DPlat::platPerpetualRaise, 0, SPEED(arg1), TICS(arg2), 8, 0);
 }
 
 FUNC(LS_Plat_PerpetualRaiseLip)
 // Plat_PerpetualRaiseLip (tag, speed, delay, lip)
 {
-	return EV_DoPlat (arg0, ln, DPlat::platPerpetualRaise, 0, SPEED(arg1), TICS(arg2), arg3, 0);
+	return Level->EV_DoPlat (arg0, ln, DPlat::platPerpetualRaise, 0, SPEED(arg1), TICS(arg2), arg3, 0);
 }
 
 FUNC(LS_Plat_Stop)
@@ -969,20 +969,20 @@ FUNC(LS_Plat_Stop)
 		remove = gameinfo.gametype == GAME_Hexen;
 		break;
 	}
-	EV_StopPlat(arg0, remove);
+	Level->EV_StopPlat(arg0, remove);
 	return true;
 }
 
 FUNC(LS_Plat_DownWaitUpStay)
 // Plat_DownWaitUpStay (tag, speed, delay)
 {
-	return EV_DoPlat (arg0, ln, DPlat::platDownWaitUpStay, 0, SPEED(arg1), TICS(arg2), 8, 0);
+	return Level->EV_DoPlat (arg0, ln, DPlat::platDownWaitUpStay, 0, SPEED(arg1), TICS(arg2), 8, 0);
 }
 
 FUNC(LS_Plat_DownWaitUpStayLip)
 // Plat_DownWaitUpStayLip (tag, speed, delay, lip, floor-sound?)
 {
-	return EV_DoPlat (arg0, ln,
+	return Level->EV_DoPlat (arg0, ln,
 		arg4 ? DPlat::platDownWaitUpStayStone : DPlat::platDownWaitUpStay,
 		0, SPEED(arg1), TICS(arg2), arg3, 0);
 }
@@ -990,25 +990,25 @@ FUNC(LS_Plat_DownWaitUpStayLip)
 FUNC(LS_Plat_DownByValue)
 // Plat_DownByValue (tag, speed, delay, height)
 {
-	return EV_DoPlat (arg0, ln, DPlat::platDownByValue, arg3*8, SPEED(arg1), TICS(arg2), 0, 0);
+	return Level->EV_DoPlat (arg0, ln, DPlat::platDownByValue, arg3*8, SPEED(arg1), TICS(arg2), 0, 0);
 }
 
 FUNC(LS_Plat_UpByValue)
 // Plat_UpByValue (tag, speed, delay, height)
 {
-	return EV_DoPlat (arg0, ln, DPlat::platUpByValue, arg3*8, SPEED(arg1), TICS(arg2), 0, 0);
+	return Level->EV_DoPlat (arg0, ln, DPlat::platUpByValue, arg3*8, SPEED(arg1), TICS(arg2), 0, 0);
 }
 
 FUNC(LS_Plat_UpWaitDownStay)
 // Plat_UpWaitDownStay (tag, speed, delay)
 {
-	return EV_DoPlat (arg0, ln, DPlat::platUpWaitDownStay, 0, SPEED(arg1), TICS(arg2), 0, 0);
+	return Level->EV_DoPlat (arg0, ln, DPlat::platUpWaitDownStay, 0, SPEED(arg1), TICS(arg2), 0, 0);
 }
 
 FUNC(LS_Plat_UpNearestWaitDownStay)
 // Plat_UpNearestWaitDownStay (tag, speed, delay)
 {
-	return EV_DoPlat (arg0, ln, DPlat::platUpNearestWaitDownStay, 0, SPEED(arg1), TICS(arg2), 0, 0);
+	return Level->EV_DoPlat (arg0, ln, DPlat::platUpNearestWaitDownStay, 0, SPEED(arg1), TICS(arg2), 0, 0);
 }
 
 FUNC(LS_Plat_RaiseAndStayTx0)
@@ -1030,19 +1030,19 @@ FUNC(LS_Plat_RaiseAndStayTx0)
 	}
 
 
-	return EV_DoPlat (arg0, ln, type, 0, SPEED(arg1), 0, 0, 1);
+	return Level->EV_DoPlat (arg0, ln, type, 0, SPEED(arg1), 0, 0, 1);
 }
 
 FUNC(LS_Plat_UpByValueStayTx)
 // Plat_UpByValueStayTx (tag, speed, height)
 {
-	return EV_DoPlat (arg0, ln, DPlat::platUpByValueStay, arg2*8, SPEED(arg1), 0, 0, 2);
+	return Level->EV_DoPlat (arg0, ln, DPlat::platUpByValueStay, arg2*8, SPEED(arg1), 0, 0, 2);
 }
 
 FUNC(LS_Plat_ToggleCeiling)
 // Plat_ToggleCeiling (tag)
 {
-	return EV_DoPlat (arg0, ln, DPlat::platToggle, 0, 0, 0, 0, 0);
+	return Level->EV_DoPlat (arg0, ln, DPlat::platToggle, 0, 0, 0, 0, 0);
 }
 
 FUNC(LS_Generic_Lift)
@@ -1069,13 +1069,13 @@ FUNC(LS_Generic_Lift)
 			break;
 	}
 
-	return EV_DoPlat (arg0, ln, type, arg4*8, SPEED(arg1), OCTICS(arg2), 0, 0);
+	return Level->EV_DoPlat (arg0, ln, type, arg4*8, SPEED(arg1), OCTICS(arg2), 0, 0);
 }
 
 FUNC(LS_Exit_Normal)
 // Exit_Normal (position)
 {
-	if (CheckIfExitIsGood (it, FindLevelInfo(G_GetExitMap())))
+	if (Level->CheckIfExitIsGood (it, FindLevelInfo(G_GetExitMap())))
 	{
 		G_ExitLevel (arg0, false);
 		return true;
@@ -1086,7 +1086,7 @@ FUNC(LS_Exit_Normal)
 FUNC(LS_Exit_Secret)
 // Exit_Secret (position)
 {
-	if (CheckIfExitIsGood (it, FindLevelInfo(G_GetSecretExitMap())))
+	if (Level->CheckIfExitIsGood (it, FindLevelInfo(G_GetSecretExitMap())))
 	{
 		G_SecretExitLevel (arg0);
 		return true;
@@ -1101,7 +1101,7 @@ FUNC(LS_Teleport_NewMap)
 	{
 		level_info_t *info = FindLevelByNum (arg0);
 
-		if (info && CheckIfExitIsGood (it, info))
+		if (info && Level->CheckIfExitIsGood (it, info))
 		{
 			G_ChangeLevel(info->MapName, arg1, arg2 ? CHANGELEVEL_KEEPFACING : 0);
 			return true;
@@ -1196,7 +1196,7 @@ FUNC(LS_TeleportInSector)
 FUNC(LS_Teleport_EndGame)
 // Teleport_EndGame ()
 {
-	if (!backSide && CheckIfExitIsGood (it, NULL))
+	if (!backSide && Level->CheckIfExitIsGood (it, NULL))
 	{
 		G_ChangeLevel(NULL, 0, 0);
 		return true;
@@ -1229,7 +1229,7 @@ FUNC(LS_ThrustThing)
 {
 	if (arg3 != 0)
 	{
-		FActorIterator iterator (arg3);
+		auto iterator = Level->GetActorIterator(arg3);
 		while ((it = iterator.Next()) != NULL)
 		{
 			ThrustThingHelper (it, BYTEANGLE(arg0), arg1, arg2);
@@ -1238,7 +1238,7 @@ FUNC(LS_ThrustThing)
 	}
 	else if (it)
 	{
-		if (level.flags2 & LEVEL2_HEXENHACK && backSide)
+		if (Level->flags2 & LEVEL2_HEXENHACK && backSide)
 		{
 			return false;
 		}
@@ -1260,7 +1260,7 @@ FUNC(LS_ThrustThingZ)	// [BC]
 
 	if (arg0 != 0)
 	{
-		FActorIterator iterator (arg0);
+		auto iterator = Level->GetActorIterator(arg0);
 
 		while ( (victim = iterator.Next ()) )
 		{
@@ -1300,7 +1300,7 @@ FUNC(LS_Thing_SetSpecial)	// [BC]
 	else
 	{
 		AActor *actor;
-		FActorIterator iterator (arg0);
+		auto iterator = Level->GetActorIterator(arg0);
 
 		while ( (actor = iterator.Next ()) )
 		{
@@ -1325,7 +1325,7 @@ FUNC(LS_Thing_ChangeTID)
 	}
 	else
 	{
-		FActorIterator iterator (arg0);
+		auto iterator = Level->GetActorIterator(arg0);
 		AActor *actor, *next;
 
 		next = iterator.Next ();
@@ -1436,7 +1436,7 @@ FUNC(LS_Thing_Activate)
 	if (arg0 != 0)
 	{
 		AActor *actor;
-		FActorIterator iterator (arg0);
+		auto iterator = Level->GetActorIterator(arg0);
 		int count = 0;
 
 		actor = iterator.Next ();
@@ -1466,7 +1466,7 @@ FUNC(LS_Thing_Deactivate)
 	if (arg0 != 0)
 	{
 		AActor *actor;
-		FActorIterator iterator (arg0);
+		auto iterator = Level->GetActorIterator(arg0);
 		int count = 0;
 	
 		actor = iterator.Next ();
@@ -1495,7 +1495,7 @@ FUNC(LS_Thing_Remove)
 {
 	if (arg0 != 0)
 	{
-		FActorIterator iterator (arg0);
+		auto iterator = Level->GetActorIterator(arg0);
 		AActor *actor;
 
 		actor = iterator.Next ();
@@ -1532,20 +1532,20 @@ FUNC(LS_Thing_Destroy)
 		while (actor)
 		{
 			AActor *temp = iterator.Next ();
-			if (actor->flags & MF_SHOOTABLE && tagManager.SectorHasTag(actor->Sector, arg2))
+			if (actor->flags & MF_SHOOTABLE && Level->SectorHasTag(actor->Sector, arg2))
 				P_DamageMobj (actor, NULL, it, arg1 ? TELEFRAG_DAMAGE : actor->health, NAME_None);
 			actor = temp;
 		}
 	}
 	else
 	{
-		FActorIterator iterator (arg0);
+		auto iterator = Level->GetActorIterator(arg0);
 
 		actor = iterator.Next ();
 		while (actor)
 		{
 			AActor *temp = iterator.Next ();
-			if (actor->flags & MF_SHOOTABLE && (arg2 == 0 || tagManager.SectorHasTag(actor->Sector, arg2)))
+			if (actor->flags & MF_SHOOTABLE && (arg2 == 0 || Level->SectorHasTag(actor->Sector, arg2)))
 				P_DamageMobj (actor, NULL, it, arg1 ? TELEFRAG_DAMAGE : actor->health, NAME_None);
 			actor = temp;
 		}
@@ -1577,9 +1577,9 @@ FUNC(LS_Thing_ProjectileGravity)
 FUNC(LS_Thing_Hate)
 // Thing_Hate (hater, hatee, group/"xray"?)
 {
-	FActorIterator haterIt (arg0);
-	AActor *hater, *hatee = NULL;
-	FActorIterator hateeIt (arg1);
+	AActor *hater, *hatee = nullptr;
+	auto haterIt = Level->GetActorIterator(arg0);
+	auto hateeIt = Level->GetActorIterator(arg1);
 	bool nothingToHate = false;
 
 	if (arg1 != 0)
@@ -1780,7 +1780,7 @@ FUNC(LS_Thing_Raise)
 	}
 	else
 	{
-		TActorIterator<AActor> iterator (arg0);
+		auto iterator = Level->GetActorIterator(arg0);
 
 		while ( (target = iterator.Next ()) )
 		{
@@ -1807,7 +1807,7 @@ FUNC(LS_Thing_Stop)
 	}
 	else
 	{
-		TActorIterator<AActor> iterator (arg0);
+		auto iterator = Level->GetActorIterator(arg0);
 
 		while ( (target = iterator.Next ()) )
 		{
@@ -1823,8 +1823,8 @@ FUNC(LS_Thing_Stop)
 FUNC(LS_Thing_SetGoal)
 // Thing_SetGoal (tid, goal, delay, chasegoal)
 {
-	TActorIterator<AActor> selfiterator (arg0);
-	NActorIterator goaliterator (NAME_PatrolPoint, arg1);
+	auto selfiterator = Level->GetActorIterator(arg0);
+	auto goaliterator = Level->GetActorIterator(NAME_PatrolPoint, arg1);
 	AActor *self;
 	AActor *goal = goaliterator.Next ();
 	bool ok = false;
@@ -1873,7 +1873,7 @@ enum
 FUNC(LS_Thing_SetTranslation)
 // Thing_SetTranslation (tid, range)
 {
-	TActorIterator<AActor> iterator (arg0);
+	auto iterator = Level->GetActorIterator(arg0);
 	int range;
 	AActor *target;
 	bool ok = false;
@@ -1925,7 +1925,7 @@ FUNC(LS_ACS_Execute)
 
 	if (arg1 == 0)
 	{
-		mapname = level.MapName;
+		mapname = Level->MapName;
 	}
 	else if ((info = FindLevelByNum(arg1)) != NULL)
 	{
@@ -1948,7 +1948,7 @@ FUNC(LS_ACS_ExecuteAlways)
 
 	if (arg1 == 0)
 	{
-		mapname = level.MapName;
+		mapname = Level->MapName;
 	}
 	else if ((info = FindLevelByNum(arg1)) != NULL)
 	{
@@ -1967,7 +1967,7 @@ FUNC(LS_ACS_LockedExecute)
 	if (arg4 && !P_CheckKeys (it, arg4, true))
 		return false;
 	else
-		return LS_ACS_Execute (ln, it, backSide, arg0, arg1, arg2, arg3, 0);
+		return LS_ACS_Execute (Level, ln, it, backSide, arg0, arg1, arg2, arg3, 0);
 }
 
 FUNC(LS_ACS_LockedExecuteDoor)
@@ -1976,7 +1976,7 @@ FUNC(LS_ACS_LockedExecuteDoor)
 	if (arg4 && !P_CheckKeys (it, arg4, false))
 		return false;
 	else
-		return LS_ACS_Execute (ln, it, backSide, arg0, arg1, arg2, arg3, 0);
+		return LS_ACS_Execute (Level, ln, it, backSide, arg0, arg1, arg2, arg3, 0);
 }
 
 FUNC(LS_ACS_ExecuteWithResult)
@@ -1988,7 +1988,7 @@ FUNC(LS_ACS_ExecuteWithResult)
 	int args[4] = { arg1, arg2, arg3, arg4 };
 	int flags = (backSide ? ACS_BACKSIDE : 0) | ACS_ALWAYS | ACS_WANTRESULT;
 
-	return P_StartScript (it, ln, arg0, level.MapName, args, 4, flags);
+	return P_StartScript (it, ln, arg0, Level->MapName, args, 4, flags);
 }
 
 FUNC(LS_ACS_Suspend)
@@ -1997,7 +1997,7 @@ FUNC(LS_ACS_Suspend)
 	level_info_t *info;
 
 	if (arg1 == 0)
-		P_SuspendScript (arg0, level.MapName);
+		P_SuspendScript (arg0, Level->MapName);
 	else if ((info = FindLevelByNum (arg1)) )
 		P_SuspendScript (arg0, info->MapName);
 
@@ -2010,7 +2010,7 @@ FUNC(LS_ACS_Terminate)
 	level_info_t *info;
 
 	if (arg1 == 0)
-		P_TerminateScript (arg0, level.MapName);
+		P_TerminateScript (arg0, Level->MapName);
 	else if ((info = FindLevelByNum (arg1)) )
 		P_TerminateScript (arg0, info->MapName);
 
@@ -2036,26 +2036,26 @@ FUNC(LS_FS_Execute)
 FUNC(LS_FloorAndCeiling_LowerByValue)
 // FloorAndCeiling_LowerByValue (tag, speed, height)
 {
-	return EV_DoElevator (ln, DElevator::elevateLower, SPEED(arg1), arg2, arg0);
+	return Level->EV_DoElevator (ln, DElevator::elevateLower, SPEED(arg1), arg2, arg0);
 }
 
 FUNC(LS_FloorAndCeiling_RaiseByValue)
 // FloorAndCeiling_RaiseByValue (tag, speed, height)
 {
-	return EV_DoElevator (ln, DElevator::elevateRaise, SPEED(arg1), arg2, arg0);
+	return Level->EV_DoElevator (ln, DElevator::elevateRaise, SPEED(arg1), arg2, arg0);
 }
 
 FUNC(LS_FloorAndCeiling_LowerRaise)
 // FloorAndCeiling_LowerRaise (tag, fspeed, cspeed, boomemu)
 {
-	bool res = EV_DoCeiling (DCeiling::ceilRaiseToHighest, ln, arg0, SPEED(arg2), 0, 0, 0, 0, 0);
+	bool res = Level->EV_DoCeiling (DCeiling::ceilRaiseToHighest, ln, arg0, SPEED(arg2), 0, 0, 0, 0, 0);
 	// The switch based Boom equivalents of FloorandCeiling_LowerRaise do incorrect checks
 	// which cause the floor only to move when the ceiling fails to do so.
 	// To avoid problems with maps that have incorrect args this only uses a 
 	// more or less unintuitive value for the fourth arg to trigger Boom's broken behavior
 	if (arg3 != 1998 || !res)	// (1998 for the year in which Boom was released... :P)
 	{
-		res |= EV_DoFloor (DFloor::floorLowerToLowest, ln, arg0, SPEED(arg1), 0, -1, 0, false);
+		res |= Level->EV_DoFloor (DFloor::floorLowerToLowest, ln, arg0, SPEED(arg1), 0, -1, 0, false);
 	}
 	return res;
 }
@@ -2063,19 +2063,19 @@ FUNC(LS_FloorAndCeiling_LowerRaise)
 FUNC(LS_Elevator_MoveToFloor)
 // Elevator_MoveToFloor (tag, speed)
 {
-	return EV_DoElevator (ln, DElevator::elevateCurrent, SPEED(arg1), 0, arg0);
+	return Level->EV_DoElevator (ln, DElevator::elevateCurrent, SPEED(arg1), 0, arg0);
 }
 
 FUNC(LS_Elevator_RaiseToNearest)
 // Elevator_RaiseToNearest (tag, speed)
 {
-	return EV_DoElevator (ln, DElevator::elevateUp, SPEED(arg1), 0, arg0);
+	return Level->EV_DoElevator (ln, DElevator::elevateUp, SPEED(arg1), 0, arg0);
 }
 
 FUNC(LS_Elevator_LowerToNearest)
 // Elevator_LowerToNearest (tag, speed)
 {
-	return EV_DoElevator (ln, DElevator::elevateDown, SPEED(arg1), 0, arg0);
+	return Level->EV_DoElevator (ln, DElevator::elevateDown, SPEED(arg1), 0, arg0);
 }
 
 FUNC(LS_Light_ForceLightning)
@@ -2088,77 +2088,77 @@ FUNC(LS_Light_ForceLightning)
 FUNC(LS_Light_RaiseByValue)
 // Light_RaiseByValue (tag, value)
 {
-	EV_LightChange (arg0, arg1);
+	Level->EV_LightChange (arg0, arg1);
 	return true;
 }
 
 FUNC(LS_Light_LowerByValue)
 // Light_LowerByValue (tag, value)
 {
-	EV_LightChange (arg0, -arg1);
+	Level->EV_LightChange (arg0, -arg1);
 	return true;
 }
 
 FUNC(LS_Light_ChangeToValue)
 // Light_ChangeToValue (tag, value)
 {
-	EV_LightTurnOn (arg0, arg1);
+	Level->EV_LightTurnOn (arg0, arg1);
 	return true;
 }
 
 FUNC(LS_Light_Fade)
 // Light_Fade (tag, value, tics);
 {
-	EV_StartLightFading (arg0, arg1, TICS(arg2));
+	Level->EV_StartLightFading (arg0, arg1, TICS(arg2));
 	return true;
 }
 
 FUNC(LS_Light_Glow)
 // Light_Glow (tag, upper, lower, tics)
 {
-	EV_StartLightGlowing (arg0, arg1, arg2, TICS(arg3));
+	Level->EV_StartLightGlowing (arg0, arg1, arg2, TICS(arg3));
 	return true;
 }
 
 FUNC(LS_Light_Flicker)
 // Light_Flicker (tag, upper, lower)
 {
-	EV_StartLightFlickering (arg0, arg1, arg2);
+	Level->EV_StartLightFlickering (arg0, arg1, arg2);
 	return true;
 }
 
 FUNC(LS_Light_Strobe)
 // Light_Strobe (tag, upper, lower, u-tics, l-tics)
 {
-	EV_StartLightStrobing (arg0, arg1, arg2, TICS(arg3), TICS(arg4));
+	Level->EV_StartLightStrobing (arg0, arg1, arg2, TICS(arg3), TICS(arg4));
 	return true;
 }
 
 FUNC(LS_Light_StrobeDoom)
 // Light_StrobeDoom (tag, u-tics, l-tics)
 {
-	EV_StartLightStrobing (arg0, TICS(arg1), TICS(arg2));
+	Level->EV_StartLightStrobing (arg0, TICS(arg1), TICS(arg2));
 	return true;
 }
 
 FUNC(LS_Light_MinNeighbor)
 // Light_MinNeighbor (tag)
 {
-	EV_TurnTagLightsOff (arg0);
+	Level->EV_TurnTagLightsOff (arg0);
 	return true;
 }
 
 FUNC(LS_Light_MaxNeighbor)
 // Light_MaxNeighbor (tag)
 {
-	EV_LightTurnOn (arg0, -1);
+	Level->EV_LightTurnOn (arg0, -1);
 	return true;
 }
 
 FUNC(LS_Light_Stop)
 // Light_Stop (tag)
 {
-	EV_StopLightEffect (arg0);
+	Level->EV_StopLightEffect (arg0);
 	return true;
 }
 
@@ -2206,10 +2206,10 @@ FUNC(LS_Sector_ChangeSound)
 		return false;
 
 	rtn = false;
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	while ((secNum = itr.Next()) >= 0)
 	{
-		level.sectors[secNum].seqType = arg1;
+		Level->sectors[secNum].seqType = arg1;
 		rtn = true;
 	}
 	return rtn;
@@ -2225,13 +2225,13 @@ FUNC(LS_Sector_ChangeFlags)
 		return false;
 
 	rtn = false;
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	// exclude protected flags
 	arg1 &= ~SECF_NOMODIFY;
 	arg2 &= ~SECF_NOMODIFY;
 	while ((secNum = itr.Next()) >= 0)
 	{
-		level.sectors[secNum].Flags = (level.sectors[secNum].Flags | arg1) & ~arg2;
+		Level->sectors[secNum].Flags = (Level->sectors[secNum].Flags | arg1) & ~arg2;
 		rtn = true;
 	}
 	return rtn;
@@ -2239,7 +2239,6 @@ FUNC(LS_Sector_ChangeFlags)
 
 
 
-void AdjustPusher(int tag, int magnitude, int angle, bool wind);
 
 FUNC(LS_Sector_SetWind)
 // Sector_SetWind (tag, amount, angle)
@@ -2247,7 +2246,7 @@ FUNC(LS_Sector_SetWind)
 	if (arg3)
 		return false;
 
-	AdjustPusher (arg0, arg1, arg2, true);
+	Level->AdjustPusher (arg0, arg1, arg2, true);
 	return true;
 }
 
@@ -2257,14 +2256,14 @@ FUNC(LS_Sector_SetCurrent)
 	if (arg3)
 		return false;
 
-	AdjustPusher (arg0, arg1, arg2, false);
+	Level->AdjustPusher (arg0, arg1, arg2, false);
 	return true;
 }
 
 FUNC(LS_Sector_SetFriction)
 // Sector_SetFriction (tag, amount)
 {
-	P_SetSectorFriction (arg0, arg1, true);
+	P_SetSectorFriction (&level, arg0, arg1, true);
 	return true;
 }
 
@@ -2274,11 +2273,11 @@ FUNC(LS_Sector_SetTranslucent)
 	if (arg0 != 0)
 	{
 		int secnum;
-		FSectorTagIterator itr(arg0);
+		auto itr = Level->GetSectorTagIterator(arg0);
 		while ((secnum = itr.Next()) >= 0)
 		{
-			level.sectors[secnum].SetAlpha(arg1, clamp(arg2, 0, 255) / 255.);
-			level.sectors[secnum].ChangeFlags(arg1, ~PLANEF_ADDITIVE, arg3? PLANEF_ADDITIVE:0);
+			Level->sectors[secnum].SetAlpha(arg1, clamp(arg2, 0, 255) / 255.);
+			Level->sectors[secnum].ChangeFlags(arg1, ~PLANEF_ADDITIVE, arg3? PLANEF_ADDITIVE:0);
 		}
 		return true;
 	}
@@ -2290,10 +2289,10 @@ FUNC(LS_Sector_SetLink)
 {
 	if (arg0 != 0)	// control tag == 0 is for static initialization and must not be handled here
 	{
-		int control = P_FindFirstSectorFromTag(arg0);
+		int control = Level->FindFirstSectorFromTag(arg0);
 		if (control >= 0)
 		{
-			return P_AddSectorLinks(&level.sectors[control], arg1, arg2, arg3);
+			return P_AddSectorLinks(&Level->sectors[control], arg1, arg2, arg3);
 		}
 	}
 	return false;
@@ -2391,7 +2390,7 @@ FUNC(LS_Sector_SetDamage)
 	// problems by adding an unwanted constructor.
 	// Since it doesn't really matter whether the type is translated
 	// here or in P_PlayerInSpecialSector I think it's the best solution.
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
@@ -2413,10 +2412,10 @@ FUNC(LS_Sector_SetDamage)
 				arg3 = 1;
 			}
 		}
-		level.sectors[secnum].damageamount = (short)arg1;
-		level.sectors[secnum].damagetype = MODtoDamageType(arg2);
-		level.sectors[secnum].damageinterval = (short)arg3;
-		level.sectors[secnum].leakydamage = (short)arg4;
+		Level->sectors[secnum].damageamount = (short)arg1;
+		Level->sectors[secnum].damagetype = MODtoDamageType(arg2);
+		Level->sectors[secnum].damageinterval = (short)arg3;
+		Level->sectors[secnum].leakydamage = (short)arg4;
 	}
 	return true;
 }
@@ -2430,10 +2429,10 @@ FUNC(LS_Sector_SetGravity)
 		arg2 = 99;
 	gravity = (double)arg1 + (double)arg2 * 0.01;
 
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
-		level.sectors[secnum].gravity = gravity;
+		Level->sectors[secnum].gravity = gravity;
 
 	return true;
 }
@@ -2441,11 +2440,11 @@ FUNC(LS_Sector_SetGravity)
 FUNC(LS_Sector_SetColor)
 // Sector_SetColor (tag, r, g, b, desaturate)
 {
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
-		level.sectors[secnum].SetColor(PalEntry(arg1, arg2, arg3), arg4);
+		Level->sectors[secnum].SetColor(PalEntry(arg1, arg2, arg3), arg4);
 	}
 
 	return true;
@@ -2454,11 +2453,11 @@ FUNC(LS_Sector_SetColor)
 FUNC(LS_Sector_SetFade)
 // Sector_SetFade (tag, r, g, b)
 {
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
-		level.sectors[secnum].SetFade(PalEntry(arg1, arg2, arg3));
+		Level->sectors[secnum].SetFade(PalEntry(arg1, arg2, arg3));
 	}
 	return true;
 }
@@ -2469,12 +2468,12 @@ FUNC(LS_Sector_SetCeilingPanning)
 	double xofs = arg1 + arg2 / 100.;
 	double yofs = arg3 + arg4 / 100.;
 
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
-		level.sectors[secnum].SetXOffset(sector_t::ceiling, xofs);
-		level.sectors[secnum].SetYOffset(sector_t::ceiling, yofs);
+		Level->sectors[secnum].SetXOffset(sector_t::ceiling, xofs);
+		Level->sectors[secnum].SetYOffset(sector_t::ceiling, yofs);
 	}
 	return true;
 }
@@ -2485,12 +2484,12 @@ FUNC(LS_Sector_SetFloorPanning)
 	double xofs = arg1 + arg2 / 100.;
 	double yofs = arg3 + arg4 / 100.;
 
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
-		level.sectors[secnum].SetXOffset(sector_t::floor, xofs);
-		level.sectors[secnum].SetYOffset(sector_t::floor, yofs);
+		Level->sectors[secnum].SetXOffset(sector_t::floor, xofs);
+		Level->sectors[secnum].SetYOffset(sector_t::floor, yofs);
 	}
 	return true;
 }
@@ -2506,14 +2505,14 @@ FUNC(LS_Sector_SetFloorScale)
 	if (yscale)
 		yscale = 1. / yscale;
 
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
 		if (xscale)
-			level.sectors[secnum].SetXScale(sector_t::floor, xscale);
+			Level->sectors[secnum].SetXScale(sector_t::floor, xscale);
 		if (yscale)
-			level.sectors[secnum].SetYScale(sector_t::floor, yscale);
+			Level->sectors[secnum].SetYScale(sector_t::floor, yscale);
 	}
 	return true;
 }
@@ -2529,14 +2528,14 @@ FUNC(LS_Sector_SetCeilingScale)
 	if (yscale)
 		yscale = 1. / yscale;
 
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
 		if (xscale)
-			level.sectors[secnum].SetXScale(sector_t::ceiling, xscale);
+			Level->sectors[secnum].SetXScale(sector_t::ceiling, xscale);
 		if (yscale)
-			level.sectors[secnum].SetYScale(sector_t::ceiling, yscale);
+			Level->sectors[secnum].SetYScale(sector_t::ceiling, yscale);
 	}
 	return true;
 }
@@ -2551,14 +2550,14 @@ FUNC(LS_Sector_SetFloorScale2)
 	if (yscale)
 		yscale = 1. / yscale;
 
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
 		if (arg1)
-			level.sectors[secnum].SetXScale(sector_t::floor, xscale);
+			Level->sectors[secnum].SetXScale(sector_t::floor, xscale);
 		if (arg2)
-			level.sectors[secnum].SetYScale(sector_t::floor, yscale);
+			Level->sectors[secnum].SetYScale(sector_t::floor, yscale);
 	}
 	return true;
 }
@@ -2573,14 +2572,14 @@ FUNC(LS_Sector_SetCeilingScale2)
 	if (yscale)
 		yscale = 1. / yscale;
 
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
 		if (arg1)
-			level.sectors[secnum].SetXScale(sector_t::ceiling, xscale);
+			Level->sectors[secnum].SetXScale(sector_t::ceiling, xscale);
 		if (arg2)
-			level.sectors[secnum].SetYScale(sector_t::ceiling, yscale);
+			Level->sectors[secnum].SetYScale(sector_t::ceiling, yscale);
 	}
 	return true;
 }
@@ -2591,12 +2590,12 @@ FUNC(LS_Sector_SetRotation)
 	DAngle ceiling = (double)arg2;
 	DAngle floor = (double)arg1;
 
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
-		level.sectors[secnum].SetAngle(sector_t::floor, floor);
-		level.sectors[secnum].SetAngle(sector_t::ceiling, ceiling);
+		Level->sectors[secnum].SetAngle(sector_t::floor, floor);
+		Level->sectors[secnum].SetAngle(sector_t::ceiling, ceiling);
 	}
 	return true;
 }
@@ -2606,7 +2605,7 @@ FUNC(LS_Line_AlignCeiling)
 {
 	bool ret = 0;
 
-	FLineIdIterator itr(arg0);
+	auto itr = Level->GetLineIdIterator(arg0);
 	int line;
 	while ((line = itr.Next()) >= 0)
 	{
@@ -2620,7 +2619,7 @@ FUNC(LS_Line_AlignFloor)
 {
 	bool ret = 0;
 
-	FLineIdIterator itr(arg0);
+	auto itr = Level->GetLineIdIterator(arg0);
 	int line;
 	while ((line = itr.Next()) >= 0)
 	{
@@ -2639,11 +2638,11 @@ FUNC(LS_Line_SetTextureOffset)
 	if (arg0 == 0 || arg3 < 0 || arg3 > 1)
 		return false;
 
-	FLineIdIterator itr(arg0);
+	auto itr = Level->GetLineIdIterator(arg0);
 	int line;
 	while ((line = itr.Next()) >= 0)
 	{
-		side_t *side = level.lines[line].sidedef[arg3];
+		side_t *side = Level->lines[line].sidedef[arg3];
 		if (side != NULL)
 		{
 
@@ -2694,11 +2693,11 @@ FUNC(LS_Line_SetTextureScale)
 	if (arg0 == 0 || arg3 < 0 || arg3 > 1)
 		return false;
 
-	FLineIdIterator itr(arg0);
+	auto itr = Level->GetLineIdIterator(arg0);
 	int line;
 	while ((line = itr.Next()) >= 0)
 	{
-		side_t *side = level.lines[line].sidedef[arg3];
+		side_t *side = Level->lines[line].sidedef[arg3];
 		if (side != NULL)
 		{
 			if ((arg4&8)==0)
@@ -2768,11 +2767,11 @@ FUNC(LS_Line_SetBlocking)
 		if (arg2 & 1) clearflags |= flagtrans[i];
 	}
 
-	FLineIdIterator itr(arg0);
+	auto itr = Level->GetLineIdIterator(arg0);
 	int line;
 	while ((line = itr.Next()) >= 0)
 	{
-		level.lines[line].flags = (level.lines[line].flags & ~clearflags) | setflags;
+		Level->lines[line].flags = (Level->lines[line].flags & ~clearflags) | setflags;
 	}
 	return true;
 }
@@ -2800,11 +2799,11 @@ FUNC(LS_Line_SetAutomapFlags)
 		if (arg2 & 1) clearflags |= flagtrans[i];
 	}
 
-	FLineIdIterator itr(arg0);
+	auto itr = Level->GetLineIdIterator(arg0);
 	int line;
 	while ((line = itr.Next()) >= 0)
 	{
-		level.lines[line].flags = (level.lines[line].flags & ~clearflags) | setflags;
+		Level->lines[line].flags = (Level->lines[line].flags & ~clearflags) | setflags;
 	}
 
 	return true;
@@ -2815,11 +2814,11 @@ FUNC(LS_Line_SetAutomapStyle)
 {
 	if (arg1 < AMLS_COUNT && arg1 >= 0)
 	{
-		FLineIdIterator itr(arg0);
+		auto itr = Level->GetLineIdIterator(arg0);
 		int line;
 		while ((line = itr.Next()) >= 0)
 		{
-			level.lines[line].automapstyle = (AutomapLineStyle) arg1;
+			Level->lines[line].automapstyle = (AutomapLineStyle) arg1;
 		}
 
 		return true;
@@ -2834,7 +2833,7 @@ FUNC(LS_ChangeCamera)
 	AActor *camera;
 	if (arg0 != 0)
 	{
-		FActorIterator iterator (arg0);
+		auto iterator = Level->GetActorIterator(arg0);
 		camera = iterator.Next ();
 	}
 	else
@@ -2965,7 +2964,7 @@ FUNC(LS_SetPlayerProperty)
 				}
 				else if (it->player - players == consoleplayer)
 				{
-					level.flags2 |= LEVEL2_ALLMAP;
+					Level->flags2 |= LEVEL2_ALLMAP;
 				}
 			}
 			else
@@ -2980,7 +2979,7 @@ FUNC(LS_SetPlayerProperty)
 				}
 				else if (it->player - players == consoleplayer)
 				{
-					level.flags2 &= ~LEVEL2_ALLMAP;
+					Level->flags2 &= ~LEVEL2_ALLMAP;
 				}
 			}
 		}
@@ -3005,7 +3004,7 @@ FUNC(LS_SetPlayerProperty)
 					}
 					else if (i == consoleplayer)
 					{
-						level.flags2 |= LEVEL2_ALLMAP;
+						Level->flags2 |= LEVEL2_ALLMAP;
 					}
 				}
 				else
@@ -3020,7 +3019,7 @@ FUNC(LS_SetPlayerProperty)
 					}
 					else if (i == consoleplayer)
 					{
-						level.flags2 &= ~LEVEL2_ALLMAP;
+						Level->flags2 &= ~LEVEL2_ALLMAP;
 					}
 				}
 			}
@@ -3115,18 +3114,18 @@ FUNC(LS_SetPlayerProperty)
 FUNC(LS_TranslucentLine)
 // TranslucentLine (id, amount, type)
 {
-	FLineIdIterator itr(arg0);
+	auto itr = Level->GetLineIdIterator(arg0);
 	int linenum;
 	while ((linenum = itr.Next()) >= 0)
 	{
-		level.lines[linenum].alpha = clamp(arg1, 0, 255) / 255.;
+		Level->lines[linenum].alpha = clamp(arg1, 0, 255) / 255.;
 		if (arg2 == 0)
 		{
-			level.lines[linenum].flags &= ~ML_ADDTRANS;
+			Level->lines[linenum].flags &= ~ML_ADDTRANS;
 		}
 		else if (arg2 == 1)
 		{
-			level.lines[linenum].flags |= ML_ADDTRANS;
+			Level->lines[linenum].flags |= ML_ADDTRANS;
 		}
 		else
 		{
@@ -3141,7 +3140,7 @@ FUNC(LS_Autosave)
 {
 	if (gameaction != ga_savegame)
 	{
-		level.flags2 &= ~LEVEL2_NOAUTOSAVEHINT;
+		Level->flags2 &= ~LEVEL2_NOAUTOSAVEHINT;
 		Net_WriteByte (DEM_CHECKAUTOSAVE);
 	}
 	return true;
@@ -3171,7 +3170,7 @@ FUNC(LS_NoiseAlert)
 	}
 	else
 	{
-		FActorIterator iter (arg0);
+		auto iter = Level->GetActorIterator(arg0);
 		target = iter.Next();
 	}
 
@@ -3185,7 +3184,7 @@ FUNC(LS_NoiseAlert)
 	}
 	else
 	{
-		FActorIterator iter (arg1);
+		auto iter = Level->GetActorIterator(arg1);
 		emitter = iter.Next();
 	}
 
@@ -3246,11 +3245,11 @@ FUNC(LS_ClearForceField)
 {
 	bool rtn = false;
 
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int secnum;
 	while ((secnum = itr.Next()) >= 0)
 	{
-		sector_t *sec = &level.sectors[secnum];
+		sector_t *sec = &Level->sectors[secnum];
 		rtn = true;
 
 		sec->RemoveForceField();
@@ -3346,7 +3345,7 @@ FUNC(LS_GlassBreak)
 FUNC(LS_StartConversation)
 // StartConversation (tid, facetalker)
 {
-	FActorIterator iterator (arg0);
+	auto iterator = Level->GetActorIterator(arg0);
 
 	AActor *target = iterator.Next();
 
@@ -3390,14 +3389,14 @@ FUNC(LS_Thing_SetConversation)
 
 	if (arg1 != 0)
 	{
-		dlg_index = GetConversation(arg1);	
+		dlg_index = Level->GetConversation(arg1);
 		if (dlg_index == -1) return false;
-		node = StrifeDialogues[dlg_index];
+		node = Level->StrifeDialogues[dlg_index];
 	}
 
 	if (arg0 != 0)
 	{
-		FActorIterator iterator (arg0);
+		auto iterator = Level->GetActorIterator(arg0);
 		while ((it = iterator.Next()) != NULL)
 		{
 			it->ConversationRoot = dlg_index;
@@ -3415,20 +3414,20 @@ FUNC(LS_Thing_SetConversation)
 FUNC(LS_Line_SetPortalTarget)
 // Line_SetPortalTarget(thisid, destid)
 {
-	return P_ChangePortal(ln, arg0, arg1);
+	return Level->ChangePortal(ln, arg0, arg1);
 }
 
 FUNC(LS_Sector_SetPlaneReflection)
 // Sector_SetPlaneReflection (tag, floor, ceiling)
 {
 	int secnum;
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 
 	while ((secnum = itr.Next()) >= 0)
 	{
-		sector_t * s = &level.sectors[secnum];
+		sector_t * s = &Level->sectors[secnum];
 		if (!s->floorplane.isSlope()) s->reflect[sector_t::floor] = arg1 / 255.f;
-		if (!s->ceilingplane.isSlope()) level.sectors[secnum].reflect[sector_t::ceiling] = arg2 / 255.f;
+		if (!s->ceilingplane.isSlope()) Level->sectors[secnum].reflect[sector_t::ceiling] = arg2 / 255.f;
 	}
 
 	return true;
@@ -3441,15 +3440,15 @@ FUNC(LS_SetGlobalFogParameter)
 	switch (arg0)
 	{
 	case 0:
-		level.fogdensity = arg1 >> 1;
+		Level->fogdensity = arg1 >> 1;
 		return true;
 
 	case 1:
-		level.outsidefogdensity = arg1 >> 1;
+		Level->outsidefogdensity = arg1 >> 1;
 		return true;
 
 	case 2:
-		level.skyfog = arg1;
+		Level->skyfog = arg1;
 		return true;
 
 	default:
@@ -3463,11 +3462,11 @@ FUNC(LS_Sector_SetFloorGlow)
 	int secnum;
 	PalEntry color(arg2, arg3, arg4);
 	if (arg1 < 0) color = -1;	// negative height invalidates the glow.
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 
 	while ((secnum = itr.Next()) >= 0)
 	{
-		sector_t * s = &level.sectors[secnum];
+		sector_t * s = &Level->sectors[secnum];
 		s->SetGlowColor(sector_t::floor, color);
 		s->SetGlowHeight(sector_t::floor, float(arg1));
 	}
@@ -3480,11 +3479,11 @@ FUNC(LS_Sector_SetCeilingGlow)
 	int secnum;
 	PalEntry color(arg2, arg3, arg4);
 	if (arg1 < 0) color = -1;	// negative height invalidates the glow.
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 
 	while ((secnum = itr.Next()) >= 0)
 	{
-		sector_t * s = &level.sectors[secnum];
+		sector_t * s = &Level->sectors[secnum];
 		s->SetGlowColor(sector_t::ceiling, color);
 		s->SetGlowHeight(sector_t::ceiling, float(arg1));
 	}
@@ -3494,7 +3493,7 @@ FUNC(LS_Sector_SetCeilingGlow)
 FUNC(LS_Line_SetHealth)
 // Line_SetHealth(id, health)
 {
-	FLineIdIterator itr(arg0);
+	auto itr = Level->GetLineIdIterator(arg0);
 	int l;
 
 	if (arg1 < 0)
@@ -3502,7 +3501,7 @@ FUNC(LS_Line_SetHealth)
 
 	while ((l = itr.Next()) >= 0)
 	{
-		line_t* line = &level.lines[l];
+		line_t* line = &Level->lines[l];
 		line->health = arg1;
 		if (line->healthgroup)
 			P_SetHealthGroupHealth(line->healthgroup, arg1);
@@ -3513,7 +3512,7 @@ FUNC(LS_Line_SetHealth)
 FUNC(LS_Sector_SetHealth)
 // Sector_SetHealth(id, part, health)
 {
-	FSectorTagIterator itr(arg0);
+	auto itr = Level->GetSectorTagIterator(arg0);
 	int s;
 
 	if (arg2 < 0)
@@ -3521,7 +3520,7 @@ FUNC(LS_Sector_SetHealth)
 
 	while ((s = itr.Next()) >= 0)
 	{
-		sector_t* sector = &level.sectors[s];
+		sector_t* sector = &Level->sectors[s];
 		if (arg1 == SECPART_Ceiling)
 		{
 			sector->healthceiling = arg2;
@@ -3956,7 +3955,7 @@ int P_ExecuteSpecial(int			num,
 {
 	if (num >= 0 && num < (int)countof(LineSpecials))
 	{
-		return LineSpecials[num](line, activator, backSide, arg1, arg2, arg3, arg4, arg5);
+		return LineSpecials[num](&level, line, activator, backSide, arg1, arg2, arg3, arg4, arg5);
 	}
 	return 0;
 }

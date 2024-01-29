@@ -39,6 +39,7 @@
 #include "p_local.h"
 #include "serializer.h"
 #include "g_levellocals.h"
+#include "actorinlines.h"
 #include "r_data/models/models.h"
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
 #include "hwrenderer/utility/hw_clock.h"
@@ -161,14 +162,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 {
 	gl_RenderState.InitSceneClearColor();
 	R_SetupFrame (mainvp, r_viewwindow, camera);
-	GLSkyInfo skyinfo;
-	skyinfo.init(mainvp.sector->sky, mainvp.sector->Colormap.FadeColor);
-	if (skyinfo.texture[0])
-	{
-		PalEntry pe = skyinfo.texture[0]->tex->GetSkyCapColor(false);
-		gl_RenderState.SetSceneColor(pe);
-	}
-
+	
 	if (mainview && toscreen)
 		UpdateShadowMap();
 
@@ -195,7 +189,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 		}
 
 
-		auto di = HWDrawInfo::StartDrawInfo(nullptr, mainvp, nullptr);
+		auto di = HWDrawInfo::StartDrawInfo(mainvp.ViewLevel, nullptr, mainvp, nullptr);
 		auto &vp = di->Viewpoint;
 
 		di->Set3DViewport(gl_RenderState);
@@ -217,6 +211,15 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 		if (mainview)
 		{
 			PostProcess.Clock();
+
+			GLSkyInfo skyinfo;
+			skyinfo.init(di, mainvp.sector->sky, mainvp.sector->Colormap.FadeColor);
+			if (skyinfo.texture[0])
+			{
+				PalEntry pe = skyinfo.texture[0]->tex->GetSkyCapColor(false);
+				gl_RenderState.SetSceneColor(pe);
+			}
+			
 			if (toscreen) di->EndDrawScene(mainvp.sector, gl_RenderState); // do not call this for camera textures.
 
 			if (gl_RenderState.GetPassType() == GBUFFER_PASS) // Turn off ssao draw buffers

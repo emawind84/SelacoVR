@@ -57,7 +57,7 @@ bool P_Thing_Spawn (int tid, AActor *source, int type, DAngle angle, bool fog, i
 	int rtn = 0;
 	PClassActor *kind;
 	AActor *spot, *mobj;
-	FActorIterator iterator (tid);
+	auto iterator = level.GetActorIterator(tid);
 
 	kind = P_GetSpawnableType(type);
 
@@ -149,10 +149,10 @@ bool P_Thing_Move (int tid, AActor *source, int mapspot, bool fog)
 
 	if (tid != 0)
 	{
-		FActorIterator iterator1(tid);
+		auto iterator1 = level.GetActorIterator(tid);
 		source = iterator1.Next();
 	}
-	FActorIterator iterator2 (mapspot);
+	auto iterator2 = level.GetActorIterator(mapspot);
 	target = iterator2.Next ();
 
 	if (source != NULL && target != NULL)
@@ -271,7 +271,7 @@ bool P_Thing_Projectile (int tid, AActor *source, int type, const char *type_nam
 	int rtn = 0;
 	PClassActor *kind;
 	AActor *spot, *mobj, *targ = forcedest;
-	FActorIterator iterator (tid);
+	auto iterator = level.GetActorIterator(tid);
 	int defflags3;
 
 	if (type_name == NULL)
@@ -305,7 +305,7 @@ bool P_Thing_Projectile (int tid, AActor *source, int type, const char *type_nam
 	}
 	while (spot != NULL)
 	{
-		FActorIterator tit (dest);
+		auto tit = level.GetActorIterator(dest);
 
 		if (dest == 0 || (targ = tit.Next()))
 		{
@@ -403,7 +403,7 @@ bool P_Thing_Projectile (int tid, AActor *source, int type, const char *type_nam
 
 int P_Thing_Damage (int tid, AActor *whofor0, int amount, FName type)
 {
-	FActorIterator iterator (tid);
+	auto iterator = level.GetActorIterator(tid);
 	int count = 0;
 	AActor *actor;
 

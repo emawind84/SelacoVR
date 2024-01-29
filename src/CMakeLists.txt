@@ -965,6 +965,7 @@ set (PCH_SOURCES
 	QzDoom/qzdoom_common.cpp
 
 	maploader/edata.cpp
+	maploader/specials.cpp
 	maploader/maploader.cpp
 	maploader/slopes.cpp
 	maploader/glnodes.cpp

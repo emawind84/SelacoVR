@@ -64,8 +64,7 @@ IMPLEMENT_POINTERS_END
 
 DEFINE_FIELD(DBot, dest)
 
-DBot::DBot ()
-: DThinker(STAT_BOT)
+void DBot::Construct()
 {
 	Clear ();
 }

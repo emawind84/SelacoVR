@@ -11,7 +11,7 @@ struct F3DFloor;
 class DBaseDecal;
 struct SpreadInfo;
 
-class DBaseDecal *ShootDecal(const FDecalTemplate *tpl, AActor *basisactor, sector_t *sec, double x, double y, double z, DAngle angle, double tracedist, bool permanent);
+DBaseDecal *ShootDecal(FLevelLocals *Level, const FDecalTemplate *tpl, sector_t *sec, double x, double y, double z, DAngle angle, double tracedist, bool permanent);
 void SprayDecal(AActor *shooter, const char *name,double distance = 172., DVector3 offset = DVector3(0., 0., 0.), DVector3 direction = DVector3(0., 0., 0.), bool useBloodColor = false, uint32_t decalColor = 0);
 
 class DBaseDecal : public DThinker
@@ -19,11 +19,10 @@ class DBaseDecal : public DThinker
 	DECLARE_CLASS (DBaseDecal, DThinker)
 	HAS_OBJECT_POINTERS
 public:
-	DBaseDecal ();
-	DBaseDecal(double z);
-	DBaseDecal(int statnum, double z);
-	DBaseDecal (const AActor *actor);
-	DBaseDecal (const DBaseDecal *basis);
+	static const int DEFAULT_STAT = STAT_DECAL;
+	void Construct(double z = 0);
+	void Construct(const AActor *actor);
+	void Construct(const DBaseDecal *basis);
 
 	void Serialize(FSerializer &arc);
 	void OnDestroy() override;
@@ -35,19 +34,19 @@ public:
 	void Spread (const FDecalTemplate *tpl, side_t *wall, double x, double y, double z, F3DFloor * ffloor);
 	void GetXY (side_t *side, double &x, double &y) const;
 
-	DBaseDecal *WallNext, *WallPrev;
+	DBaseDecal *WallNext = nullptr, *WallPrev = nullptr;
 
-	double LeftDistance;
+	double LeftDistance = 0;
 	double Z;
-	double ScaleX, ScaleY;
-	double Alpha;
-	uint32_t AlphaColor;
-	int Translation;
+	double ScaleX = 1, ScaleY = 1;
+	double Alpha = 1;
+	uint32_t AlphaColor = 0;
+	int Translation = 0;
 	FTextureID PicNum;
-	uint32_t RenderFlags;
+	uint32_t RenderFlags = 0;
 	FRenderStyle RenderStyle;
-	side_t *Side;
-	sector_t *Sector;
+	side_t *Side = nullptr;
+	sector_t *Sector = nullptr;
 
 protected:
 	virtual DBaseDecal *CloneSelf(const FDecalTemplate *tpl, double x, double y, double z, side_t *wall, F3DFloor * ffloor) const;
@@ -62,20 +61,21 @@ class DImpactDecal : public DBaseDecal
 {
 	DECLARE_CLASS (DImpactDecal, DBaseDecal)
 public:
-	DImpactDecal(double z);
-	DImpactDecal (side_t *wall, const FDecalTemplate *templ);
+	static const int DEFAULT_STAT = STAT_AUTODECAL;
+	void Construct(double z = 0)
+	{
+		Super::Construct(z);
+	}
+	void Construct(side_t *wall, const FDecalTemplate *templ);
 
-	static DBaseDecal *StaticCreate(const char *name, const DVector3 &pos, side_t *wall, F3DFloor * ffloor, PalEntry color = 0, uint32_t bloodTranslation = 0);
-	static DBaseDecal *StaticCreate(const FDecalTemplate *tpl, const DVector3 &pos, side_t *wall, F3DFloor * ffloor, PalEntry color = 0, uint32_t bloodTranslation = 0, bool permanent = false);
+	static DBaseDecal *StaticCreate(FLevelLocals *Level, const char *name, const DVector3 &pos, side_t *wall, F3DFloor * ffloor, PalEntry color = 0, uint32_t bloodTranslation = 0);
+	static DBaseDecal *StaticCreate(FLevelLocals *Level, const FDecalTemplate *tpl, const DVector3 &pos, side_t *wall, F3DFloor * ffloor, PalEntry color = 0, uint32_t bloodTranslation = 0, bool permanent = false);
 
 	void BeginPlay ();
 
 protected:
 	DBaseDecal *CloneSelf(const FDecalTemplate *tpl, double x, double y, double z, side_t *wall, F3DFloor * ffloor) const;
 	void CheckMax ();
-
-private:
-	DImpactDecal();
 };
 
 class DFlashFader : public DThinker
@@ -83,7 +83,7 @@ class DFlashFader : public DThinker
 	DECLARE_CLASS (DFlashFader, DThinker)
 	HAS_OBJECT_POINTERS
 public:
-	DFlashFader (float r1, float g1, float b1, float a1,
+	void Construct(float r1, float g1, float b1, float a1,
 				 float r2, float g2, float b2, float a2,
 				 float time, AActor *who, bool terminate = false);
 	void OnDestroy() override;
@@ -100,7 +100,6 @@ protected:
 	TObjPtr<AActor*> ForWho;
 	bool Terminate;
 	void SetBlend (float time);
-	DFlashFader() = default;
 };
 
 enum
@@ -128,7 +127,8 @@ class DEarthquake : public DThinker
 	DECLARE_CLASS (DEarthquake, DThinker)
 	HAS_OBJECT_POINTERS
 public:
-	DEarthquake(AActor *center, int intensityX, int intensityY, int intensityZ, int duration,
+	static const int DEFAULT_STAT = STAT_EARTHQUAKE;
+	void Construct(AActor *center, int intensityX, int intensityY, int intensityZ, int duration,
 		int damrad, int tremrad, FSoundID quakesfx, int flags, 
 		double waveSpeedX, double waveSpeedY, double waveSpeedZ, int falloff, int highpoint, double rollIntensity, double rollWave);
 
@@ -151,9 +151,6 @@ public:
 	double GetFalloff(double dist) const;
 
 	static int StaticGetQuakeIntensities(double ticFrac, AActor *viewer, FQuakeJiggers &jiggers);
-
-private:
-	DEarthquake ();
 };
 
 #endif //__A_SHAREDGLOBAL_H__

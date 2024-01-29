@@ -11,7 +11,8 @@ class DLightningThinker : public DThinker
 {
 	DECLARE_CLASS (DLightningThinker, DThinker);
 public:
-	DLightningThinker ();
+	static const int DEFAULT_STAT = STAT_LIGHTNING;
+	void Construct();
 	~DLightningThinker ();
 	void Serialize(FSerializer &arc);
 	void Tick ();

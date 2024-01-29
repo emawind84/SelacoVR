@@ -31,6 +31,7 @@
 #include "serializer.h"
 #include "d_player.h"
 #include "r_utility.h"
+#include "g_levellocals.h"
 
 static FRandom pr_quake ("Quake");
 
@@ -42,26 +43,14 @@ IMPLEMENT_POINTERS_END
 
 //==========================================================================
 //
-// DEarthquake :: DEarthquake private constructor
-//
-//==========================================================================
-
-DEarthquake::DEarthquake()
-: DThinker(STAT_EARTHQUAKE)
-{
-}
-
-//==========================================================================
-//
 // DEarthquake :: DEarthquake public constructor
 //
 //==========================================================================
 
-DEarthquake::DEarthquake(AActor *center, int intensityX, int intensityY, int intensityZ, int duration,
+void DEarthquake::Construct(AActor *center, int intensityX, int intensityY, int intensityZ, int duration,
 	int damrad, int tremrad, FSoundID quakesound, int flags,
 	double waveSpeedX, double waveSpeedY, double waveSpeedZ, int falloff, int highpoint, 
 	double rollIntensity, double rollWave)
-	: DThinker(STAT_EARTHQUAKE)
 {
 	m_QuakeSFX = quakesound;
 	m_Spot = center;
@@ -398,18 +387,18 @@ bool P_StartQuakeXYZ(AActor *activator, int tid, int intensityX, int intensityY,
 	{
 		if (activator != NULL)
 		{
-			Create<DEarthquake>(activator, intensityX, intensityY, intensityZ, duration, damrad, tremrad,
+			level.CreateThinker<DEarthquake>(activator, intensityX, intensityY, intensityZ, duration, damrad, tremrad,
 				quakesfx, flags, waveSpeedX, waveSpeedY, waveSpeedZ, falloff, highpoint, rollIntensity, rollWave);
 			return true;
 		}
 	}
 	else
 	{
-		FActorIterator iterator (tid);
+		auto iterator = level.GetActorIterator(tid);
 		while ( (center = iterator.Next ()) )
 		{
 			res = true;
-			Create<DEarthquake>(center, intensityX, intensityY, intensityZ, duration, damrad, tremrad,
+			level.CreateThinker<DEarthquake>(center, intensityX, intensityY, intensityZ, duration, damrad, tremrad,
 				quakesfx, flags, waveSpeedX, waveSpeedY, waveSpeedZ, falloff, highpoint, rollIntensity, rollWave);
 		}
 	}

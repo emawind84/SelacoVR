@@ -3014,7 +3014,7 @@ void FSlide::HitSlideLine(line_t* ld)
 void FSlide::SlideTraverse(const DVector2 &start, const DVector2 &end)
 {
 	FLineOpening open;
-	FPathTraverse it(start.X, start.Y, end.X, end.Y, PT_ADDLINES);
+	FPathTraverse it(&level, start.X, start.Y, end.X, end.Y, PT_ADDLINES);
 	intercept_t *in;
 
 	while ((in = it.Next()))
@@ -3359,7 +3359,7 @@ const secplane_t * P_CheckSlopeWalk(AActor *actor, DVector2 &move)
 bool FSlide::BounceTraverse(const DVector2 &start, const DVector2 &end)
 {
 	FLineOpening open;
-	FPathTraverse it(start.X, start.Y, end.X, end.Y, PT_ADDLINES);
+	FPathTraverse it(&level, start.X, start.Y, end.X, end.Y, PT_ADDLINES);
 	intercept_t *in;
 
 	while ((in = it.Next()))
@@ -4061,7 +4061,7 @@ struct aim_t
 		if (ceilingportalstate) EnterSectorPortal(sector_t::ceiling, 0, lastsector, toppitch, MIN<DAngle>(0., bottompitch));
 		if (floorportalstate) EnterSectorPortal(sector_t::floor, 0, lastsector, MAX<DAngle>(0., toppitch), bottompitch);
 
-		FPathTraverse it(startpos.X, startpos.Y, aimtrace.X, aimtrace.Y, PT_ADDLINES | PT_ADDTHINGS | PT_COMPATIBLE | PT_DELTA, startfrac);
+		FPathTraverse it(&level, startpos.X, startpos.Y, aimtrace.X, aimtrace.Y, PT_ADDLINES | PT_ADDTHINGS | PT_COMPATIBLE | PT_DELTA, startfrac);
 		intercept_t *in;
 
 		if (aimdebug)
@@ -4728,7 +4728,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 			// position a bit closer for puffs
 			if (nointeract || trace.HitType != TRACE_HitWall || ((trace.Line->special != Line_Horizon) || spawnSky))
 			{
-				DVector2 pos = P_GetOffsetPosition(trace.HitPos.X, trace.HitPos.Y, -trace.HitVector.X * 4, -trace.HitVector.Y * 4);
+				DVector2 pos = level.GetPortalOffsetPosition(trace.HitPos.X, trace.HitPos.Y, -trace.HitVector.X * 4, -trace.HitVector.Y * 4);
 				puff = P_SpawnPuff(t1, pufftype, DVector3(pos, trace.HitPos.Z - trace.HitVector.Z * 4), trace.SrcAngleFromTarget,
 					trace.SrcAngleFromTarget - 90, 0, puffFlags);
 				puff->radius = 1/65536.;
@@ -4780,7 +4780,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 			// position a bit closer for puffs/blood if using compatibility mode.
 			if (i_compatflags & COMPATF_HITSCAN)
 			{
-				DVector2 ofs = P_GetOffsetPosition(bleedpos.X, bleedpos.Y, -10 * trace.HitVector.X, -10 * trace.HitVector.Y);
+				DVector2 ofs = level.GetPortalOffsetPosition(bleedpos.X, bleedpos.Y, -10 * trace.HitVector.X, -10 * trace.HitVector.Y);
 				bleedpos.X = ofs.X;
 				bleedpos.Y = ofs.Y;
 				bleedpos.Z -= -10 * trace.HitVector.Z;
@@ -5146,7 +5146,7 @@ void P_TraceBleed(int damage, const DVector3 &pos, AActor *actor, DAngle angle, 
 
 				uint32_t bloodTrans = (bloodcolor != 0 ? actor->BloodTranslation : 0);
 
-				DImpactDecal::StaticCreate(bloodType, bleedtrace.HitPos,
+				DImpactDecal::StaticCreate(actor->Level, bloodType, bleedtrace.HitPos,
 					bleedtrace.Line->sidedef[bleedtrace.Side], bleedtrace.ffloor, bloodcolor, bloodTrans);
 			}
 		}
@@ -5298,7 +5298,7 @@ static ETraceStatus ProcessRailHit(FTraceResults &res, void *userdata)
 	newhit.HitAngle = res.SrcAngleFromTarget;
 	if (i_compatflags & COMPATF_HITSCAN)
 	{
-		DVector2 ofs = P_GetOffsetPosition(newhit.HitPos.X, newhit.HitPos.Y, -10 * res.HitVector.X, -10 * res.HitVector.Y);
+		DVector2 ofs = level.GetPortalOffsetPosition(newhit.HitPos.X, newhit.HitPos.Y, -10 * res.HitVector.X, -10 * res.HitVector.Y);
 		newhit.HitPos.X = ofs.X;
 		newhit.HitPos.Y = ofs.Y;
 		newhit.HitPos.Z -= -10 * res.HitVector.Z;
@@ -5636,7 +5636,7 @@ bool P_TalkFacing(AActor *player)
 
 bool P_UseTraverse(AActor *usething, const DVector2 &start, const DVector2 &end, bool &foundline)
 {
-	FPathTraverse it(start.X, start.Y, end.X, end.Y, PT_ADDLINES | PT_ADDTHINGS);
+	FPathTraverse it(&level, start.X, start.Y, end.X, end.Y, PT_ADDLINES | PT_ADDTHINGS);
 	intercept_t *in;
 	DVector3 xpos = { start.X, start.Y, usething->Z() };
 
@@ -5779,7 +5779,7 @@ bool P_UseTraverse(AActor *usething, const DVector2 &start, const DVector2 &end,
 
 bool P_NoWayTraverse(AActor *usething, const DVector2 &start, const DVector2 &end)
 {
-	FPathTraverse it(start.X, start.Y, end.X, end.Y, PT_ADDLINES);
+	FPathTraverse it(&level, start.X, start.Y, end.X, end.Y, PT_ADDLINES);
 	intercept_t *in;
 
 	while ((in = it.Next()))
@@ -5871,7 +5871,7 @@ void P_UseLines(player_t *player)
 
 int P_UsePuzzleItem(AActor *PuzzleItemUser, int PuzzleItemType, double x1, double y1, double x2, double y2)
 {
-	FPathTraverse it(x1, y1, x2, y2, PT_DELTA | PT_ADDLINES | PT_ADDTHINGS);
+	FPathTraverse it(&level, x1, y1, x2, y2, PT_DELTA | PT_ADDLINES | PT_ADDTHINGS);
 	intercept_t *in;
 
 	while ((in = it.Next()))
@@ -7094,7 +7094,7 @@ void SpawnShootDecal(AActor *t1, AActor *defaults, const FTraceResults &trace, i
 	}
 	if (decalbase != nullptr)
 	{
-		DImpactDecal::StaticCreate(decalbase->GetDecal(),
+		DImpactDecal::StaticCreate(t1->Level, decalbase->GetDecal(),
 			trace.HitPos, trace.Line->sidedef[trace.Side], trace.ffloor);
 	}
 }
