@@ -1284,7 +1284,7 @@ void FLevelLocals::WorldDone (void)
 				ext->mDefined & FExitText::DEF_LOOKUP,
 				true, endsequence);
 		}
-		else if (!(level.flags2 & LEVEL2_NOCLUSTERTEXT))
+		else if (!(info->flags2 & LEVEL2_NOCLUSTERTEXT))
 		{
 			F_StartFinale(thiscluster->MessageMusic, thiscluster->musicorder,
 				thiscluster->cdtrack, thiscluster->cdid,
@@ -1322,7 +1322,7 @@ void FLevelLocals::WorldDone (void)
 
 		nextcluster = FindClusterInfo (FindLevelInfo (nextlevel)->cluster);
 
-		if (nextcluster->cluster != cluster && !(level.flags2 & LEVEL2_NOCLUSTERTEXT))
+		if (nextcluster->cluster != cluster && !(info->flags2 & LEVEL2_NOCLUSTERTEXT))
 		{
 			// Only start the finale if the next level's cluster is different
 			// than the current one and we're not in deathmatch.

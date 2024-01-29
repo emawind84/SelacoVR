@@ -57,7 +57,6 @@ struct _ native	// These are the global variables, the struct is only here to av
 	native readonly double NotifyFontScale;
 	native readonly int paused;
 	native ui readonly LevelLocals currentUILevel;
-	deprecated("3.8") native readonly bool globalfreeze;
 	
 }
 
