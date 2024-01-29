@@ -73,6 +73,7 @@
 #include "s_music.h"
 #include "p_acs.h"
 #include "am_map.h"
+#include "i_system.h"
 #include "fragglescript/t_script.h"
 
 extern AActor *SpawnMapThing (int index, FMapThing *mthing, int position);
@@ -335,6 +336,7 @@ void FLevelLocals::ClearLevelData()
 	memset(playerstarts, 0, sizeof(playerstarts));
 	Scrolls.Clear();
 	if (automap) automap->Destroy();
+	Behaviors.UnloadModules();
 }
 
 //==========================================================================

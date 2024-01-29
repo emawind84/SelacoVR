@@ -45,6 +45,7 @@
 #include "gameconfigfile.h"
 #include "m_argv.h"
 #include "i_soundfont.h"
+#include "i_system.h"
 #include "teaminfo.h"
 #include "r_data/sprites.h"
 #include "zmusic/zmusic.h"

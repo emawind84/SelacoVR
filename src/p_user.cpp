@@ -89,6 +89,7 @@
 #include "actorinlines.h"
 #include "p_acs.h"
 #include "events.h"
+#include "g_game.h"
 #include "gstrings.h"
 #include "s_music.h"
 

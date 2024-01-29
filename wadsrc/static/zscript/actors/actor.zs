@@ -641,7 +641,7 @@ class Actor : Thinker native
 	native void SoundAlert(Actor target, bool splash = false, double maxdist = 0);
 	native void ClearBounce();
 	native TerrainDef GetFloorTerrain();
-	native bool CheckLocalView(int consoleplayer = -1); // parameter is not used anymore but needed for backward compatibility.
+	native bool CheckLocalView(int consoleplayer = -1 /* parameter is not used anymore but needed for backward compatibilityö. */);
 	native bool CheckNoDelay();
 	native bool UpdateWaterLevel (bool splash = true);
 	native bool IsZeroDamage();
