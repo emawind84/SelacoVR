@@ -466,7 +466,6 @@ int ModelFrameHash(FSpriteModelFrame* smf);
 unsigned FindModel(const char* path, const char* modelfile);
 
 
-
 extern TDeletingArray<FModel*> Models;
 
 // Check if circle potentially intersects with node AABB

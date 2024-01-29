@@ -538,7 +538,7 @@
 
 extern FILE *Logfile;
 
-FRandom pr_acs ("ACS", false);
+FRandom pr_acs ("ACS");
 
 // I imagine this much stack space is probably overkill, but it could
 // potentially get used with recursive functions.

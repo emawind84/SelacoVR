@@ -558,6 +558,7 @@ file( GLOB HEADER_FILES
 	g_statusbar/*.h
 	g_inventory/*.h
 	intermission/*.h
+	maploader/*.h
 	menu/*.h
 	sound/*.h
 	sound/backend/*.h*
@@ -775,7 +776,6 @@ set (PCH_SOURCES
 	c_functions.cpp
 	cmdlib.cpp
 	colormatcher.cpp
-	compatibility.cpp
 	configfile.cpp
 	ct_chat.cpp
 	cycler.cpp
@@ -793,7 +793,6 @@ set (PCH_SOURCES
 	doomstat.cpp
 	dsectoreffect.cpp
 	dthinker.cpp
-	edata.cpp
 	f_wipe.cpp
 	files.cpp
 	files_decompress.cpp
@@ -839,7 +838,6 @@ set (PCH_SOURCES
 	p_effect.cpp
 	p_enemy.cpp
 	p_floor.cpp
-	p_glnodes.cpp
 	p_interaction.cpp
 	p_lights.cpp
 	p_linkedsectors.cpp
@@ -858,7 +856,6 @@ set (PCH_SOURCES
 	p_sectors.cpp
 	p_setup.cpp
 	p_sight.cpp
-	p_slopes.cpp
 	p_spec.cpp
 	p_states.cpp
 	p_switch.cpp
@@ -868,7 +865,6 @@ set (PCH_SOURCES
 	p_things.cpp
 	p_tick.cpp
 	p_trace.cpp
-	p_udmf.cpp
 	p_usdf.cpp
 	p_user.cpp
 	p_xlat.cpp
@@ -968,6 +964,14 @@ set (PCH_SOURCES
 	hwrenderer/utility/hw_vrmodes.cpp
 	QzDoom/qzdoom_common.cpp
 
+	maploader/edata.cpp
+	maploader/maploader.cpp
+	maploader/slopes.cpp
+	maploader/glnodes.cpp
+	maploader/udmf.cpp
+	maploader/polyobjects.cpp
+	maploader/renderinfo.cpp
+	maploader/compatibility.cpp
 	menu/joystickmenu.cpp
 	menu/loadsavemenu.cpp
 	menu/menu.cpp
@@ -1035,7 +1039,6 @@ set (PCH_SOURCES
 	r_data/sprites.cpp
 	r_data/portalgroups.cpp
 	r_data/voxels.cpp
-	r_data/renderinfo.cpp
 	r_data/renderstyle.cpp
 	r_data/r_canvastexture.cpp
 	r_data/r_interpolate.cpp
@@ -1253,7 +1256,7 @@ source_group("External\\RapidJSON" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_D
 source_group("External\\SFMT" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sfmt/.+")
 source_group("FraggleScript" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/fragglescript/.+")
 source_group("Intermission" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/intermission/.+")
-source_group("Inventory" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/g_inventory/.+")
+source_group("Map Loader" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/maploader/.+")
 source_group("Menu" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/menu/.+")
 source_group("Hardware Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/.+")
 source_group("Hardware Renderer\\Data" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/hwrenderer/data/.+")

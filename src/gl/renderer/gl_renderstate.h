@@ -41,7 +41,6 @@ namespace OpenGLRenderer
 
 class FShader;
 struct GLSectorPlane;
-extern TArray<VSMatrix> gl_MatrixStack;
 
 EXTERN_CVAR(Color, gl_global_fade_color)
 

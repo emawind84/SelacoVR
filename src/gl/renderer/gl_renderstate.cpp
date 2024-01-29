@@ -71,7 +71,6 @@ CUSTOM_CVAR(Bool, gl_global_fade_debug, false, 0)
 }
 
 static VSMatrix identityMatrix(1);
-TArray<VSMatrix> gl_MatrixStack;
 
 static void matrixToGL(const VSMatrix &mat, int loc)
 {

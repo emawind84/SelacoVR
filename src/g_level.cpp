@@ -136,7 +136,7 @@ CUSTOM_CVAR(Int, gl_lightmode, 2, CVAR_ARCHIVE | CVAR_NOINITCALL)
 
 
 
-static FRandom pr_classchoice ("RandomPlayerClassChoice", false);
+static FRandom pr_classchoice ("RandomPlayerClassChoice");
 
 extern level_info_t TheDefaultLevelInfo;
 extern bool timingdemo;

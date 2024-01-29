@@ -45,15 +45,13 @@ class FRandom
 {
 public:
 	FRandom ();
-	FRandom (const char *name, bool useold = true);
+	FRandom (const char *name);
 	~FRandom ();
-
-	unsigned int GetRandom(); // [ED850]
 
 	// Returns a random number in the range [0,255]
 	int operator()()
 	{
-		return GetRandom() & 255;
+		return GenRand32() & 255;
 	}
 
 	// Returns a random number in the range [0,mod)
@@ -61,7 +59,7 @@ public:
 	{
 		return (0 == mod)
 			? 0
-			: (GetRandom() % mod);
+			: (GenRand32() % mod);
 	}
 
 	// Returns rand# - rand#
@@ -73,8 +71,8 @@ public:
 // Returns (rand# & mask) - (rand# & mask)
 	int Random2(int mask)
 	{
-		int t = GetRandom() & mask & 255;
-		return t - (GetRandom() & mask & 255);
+		int t = GenRand32() & mask & 255;
+		return t - (GenRand32() & mask & 255);
 	}
 
 	// HITDICE macro used in Heretic and Hexen
@@ -215,9 +213,6 @@ private:
 #ifndef NDEBUG
 	bool initialized;
 #endif
-
-	// Use the old PRNG table if/when requested [ED850]
-	bool useOldRNG;
 };
 
 extern uint32_t rngseed;			// The starting seed (not part of state)
@@ -230,7 +225,7 @@ extern bool use_staticrng;
 extern FRandom M_Random;
 
 // Returns a number from 0 to 255, from a lookup table.
-unsigned int P_Random (void);
+int P_Random (void);
 void M_ClearRandom (void);
 
 extern int prndindex;

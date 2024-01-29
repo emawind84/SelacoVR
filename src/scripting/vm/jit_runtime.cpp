@@ -316,6 +316,7 @@ extern "C"
 {
 	void __register_frame(const void*);
 	void __deregister_frame(const void*);
+}
 
 static void WriteLength(TArray<uint8_t> &stream, unsigned int pos, unsigned int v)
 {

@@ -35,8 +35,6 @@
 #include "xlat/xlat.h"
 #include "s_music.h"
 
-void T_Init();
-
 class FScriptLoader
 {
 	enum
@@ -55,56 +53,6 @@ class FScriptLoader
 public:
 	bool ParseInfo(MapData * map);
 };
-
-struct FFsOptions : public FOptionalMapinfoData
-{
-	FFsOptions()
-	{
-		identifier = "fragglescript";
-		nocheckposition = false;
-		setcolormaterial = false;
-	}
-	virtual FOptionalMapinfoData *Clone() const
-	{
-		FFsOptions *newopt = new FFsOptions;
-		newopt->identifier = identifier;
-		newopt->nocheckposition = nocheckposition;
-		newopt->setcolormaterial = setcolormaterial;
-		return newopt;
-	}
-	bool nocheckposition;
-	bool setcolormaterial;
-};
-
-DEFINE_MAP_OPTION(fs_nocheckposition, false)
-{
-	FFsOptions *opt = info->GetOptData<FFsOptions>("fragglescript");
-
-	if (parse.CheckAssign())
-	{
-		parse.sc.MustGetNumber();
-		opt->nocheckposition = !!parse.sc.Number;
-	}
-	else
-	{
-		opt->nocheckposition = true;
-	}
-}
-
-DEFINE_MAP_OPTION(fs_setcolormaterial, false)
-{
-	FFsOptions *opt = info->GetOptData<FFsOptions>("fragglescript");
-
-	if (parse.CheckAssign())
-	{
-		parse.sc.MustGetNumber();
-		opt->setcolormaterial = !!parse.sc.Number;
-	}
-	else
-	{
-		opt->setcolormaterial = true;
-	}
-}
 
 //-----------------------------------------------------------------------------
 //
@@ -304,23 +252,11 @@ bool FScriptLoader::ParseInfo(MapData * map)
     }
 	if (HasScripts) 
 	{
-		Create<DFraggleThinker>();
-		DFraggleThinker::ActiveThinker->LevelScript->data = copystring(scriptsrc.GetChars());
+		auto th = Create<DFraggleThinker>();
+		th->LevelScript->data = copystring(scriptsrc.GetChars());
 
 		if (drownflag==-1) drownflag = (level.maptype != MAPTYPE_DOOM || fsglobal);
 		if (!drownflag) level.airsupply=0;	// Legacy doesn't to water damage so we need to check if it has to be disabled here.
-
-		FFsOptions *opt = level.info->GetOptData<FFsOptions>("fragglescript", false);
-		if (opt != NULL)
-		{
-			DFraggleThinker::ActiveThinker->nocheckposition = opt->nocheckposition;
-			DFraggleThinker::ActiveThinker->setcolormaterial = opt->setcolormaterial;
-		}
-		else
-		{
-			DFraggleThinker::ActiveThinker->nocheckposition = false;
-			DFraggleThinker::ActiveThinker->setcolormaterial = false;
-		}
 	}
 
 
@@ -339,8 +275,6 @@ void T_LoadScripts(MapData *map)
 {
 	FScriptLoader parser;
 	
-	T_Init();
-
 	bool HasScripts = parser.ParseInfo(map);
 
 	// Hack for Legacy compatibility: Since 272 is normally an MBF sky transfer we have to patch it.
@@ -352,9 +286,7 @@ void T_LoadScripts(MapData *map)
 	if ((gameinfo.gametype == GAME_Doom || gameinfo.gametype == GAME_Heretic) && level.info->Translator.IsEmpty() &&
 		level.maptype == MAPTYPE_DOOM && SimpleLineTranslations.Size() > 272 && SimpleLineTranslations[272 - 2*HasScripts].special == FS_Execute)
 	{
-		FLineTrans t = SimpleLineTranslations[270];
-		SimpleLineTranslations[270] = SimpleLineTranslations[272];
-		SimpleLineTranslations[272] = t;
+		std::swap(SimpleLineTranslations[270], SimpleLineTranslations[272]);
 	}
 }
 

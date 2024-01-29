@@ -1,6 +1,8 @@
 
 class LevelPostProcessor native play
 {
+	protected native LevelLocals level;
+
 	protected void Apply(Name checksum, String mapname)
 	{
 	}

@@ -110,7 +110,9 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 		auto vrmode = VRMode::GetVRMode(true);
 		if (vrmode->IsMono() || (r_PlayerSprites3DMode != ITEM_ONLY && r_PlayerSprites3DMode != FAT_ITEM))
 		{
-			state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
+			uint32_t trans = huds->weapon->GetTranslation() != 0 ? huds->weapon->GetTranslation() : 0;
+			if ((huds->weapon->Flags & PSPF_PLAYERTRANSLATED)) trans = huds->owner->Translation;
+			state.SetMaterial(huds->tex, CLAMP_XY_NOMIP, trans, huds->OverrideShader);
 			state.Draw(DT_TriangleStrip, huds->mx, 4);
 		}
 		

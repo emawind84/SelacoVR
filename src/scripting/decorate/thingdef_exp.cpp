@@ -44,7 +44,7 @@
 #include "thingdef.h"
 #include "backend/codegen.h"
 
-FRandom pr_exrandom ("EX_Random", false);
+FRandom pr_exrandom ("EX_Random");
 
 static FxExpression *ParseRandom(FScanner &sc, FName identifier, PClassActor *cls);
 static FxExpression *ParseRandomPick(FScanner &sc, FName identifier, PClassActor *cls);

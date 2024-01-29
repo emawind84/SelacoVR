@@ -47,7 +47,7 @@
 
 #define FUDGEFACTOR		10
 
-static FRandom pr_teleport ("Teleport", false);
+static FRandom pr_teleport ("Teleport");
 
 CVAR (Bool, telezoom, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG); // Default to off for VR
 

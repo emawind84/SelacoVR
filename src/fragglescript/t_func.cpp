@@ -53,7 +53,7 @@
 #include "vm.h"
 #include "s_music.h"
 
-static FRandom pr_script("FScript", false);
+static FRandom pr_script("FScript");
 
 // functions. FParser::SF_ means Script Function not, well.. heh, me
 
@@ -889,7 +889,7 @@ void FParser::SF_Spawn(void)
 		{
 			t_return.value.mobj->Angles.Yaw = angle;
 
-			if (!DFraggleThinker::ActiveThinker->nocheckposition)
+			if (!level.info->fs_nocheckposition)
 			{
 				if (!P_TestMobjLocation(t_return.value.mobj))
 				{
@@ -3727,19 +3727,7 @@ void FParser::SF_SetColor(void)
 		FSSectorTagIterator itr(tagnum);
 		while ((i = itr.Next()) >= 0)
 		{
-			if (!DFraggleThinker::ActiveThinker->setcolormaterial)
-			{
-				level.sectors[i].SetColor(color, 0);
-			}
-			else
-			{
-				// little hack for testing the D64 color stuff.
-				for (int j = 0; j < 4; j++) level.sectors[i].SetSpecialColor(j, color);
-				// simulates 'nocoloredspritelighting' settings.
-				int v = (color.r + color.g + color.b) / 3;
-				v = (255 + v + v) / 3;
-				level.sectors[i].SetSpecialColor(sector_t::sprites, v, v, v);
-			}
+			level.sectors[i].SetColor(color, 0);
 		}
 	}
 }
@@ -4061,16 +4049,14 @@ void FParser::SF_ScriptRunning()
 //
 //==========================================================================
 
-static int zoom=1;	// Dummy - no longer needed!
-
-void init_functions(void)
+void DFraggleThinker::InitFunctions()
 {
 	for(unsigned i=0;i<countof(ActorNames_init);i++)
 	{
 		ActorTypes[i]=PClass::FindActor(ActorNames_init[i]);
 	}
 
-	DFsScript * gscr = global_script;
+	DFsScript * gscr = GlobalScript;
 
 	// add all the functions
 	gscr->NewVariable("consoleplayer", svt_pInt)->value.pI = &consoleplayer;

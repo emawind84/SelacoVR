@@ -52,6 +52,7 @@ struct seg_t;
 struct sector_t;
 class AActor;
 struct FSection;
+struct FLevelLocals;
 
 #define MAXWIDTH 12000
 #define MAXHEIGHT 5000
@@ -1185,6 +1186,8 @@ struct side_t
 	uint8_t		Flags;
 	int			UDMFIndex;		// needed to access custom UDMF fields which are stored in loading order.
 	FLightNode * lighthead;		// all dynamic lights that may affect this wall
+	seg_t **segs;	// all segs belonging to this sidedef in ascending order. Used for precise rendering
+	int numsegs;
 
 	int GetLightLevel (bool foggy, int baselight, bool is3dlight=false, int *pfakecontrast_usedbygzdoom=NULL) const;
 
@@ -1348,12 +1351,6 @@ struct side_t
 	vertex_t *V2() const;
 
 	int Index() const;
-
-	//For GL
-
-	seg_t **segs;	// all segs belonging to this sidedef in ascending order. Used for precise rendering
-	int numsegs;
-
 };
 
 enum AutomapLineStyle : int
@@ -1523,7 +1520,7 @@ struct FPortalCoverage
 	int			sscount;
 };
 
-void BuildPortalCoverage(FPortalCoverage *coverage, subsector_t *subsector, const DVector2 &displacement);
+void BuildPortalCoverage(FLevelLocals *Level, FPortalCoverage *coverage, subsector_t *subsector, const DVector2 &displacement);
 
 struct subsector_t
 {
