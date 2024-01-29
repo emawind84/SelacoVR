@@ -72,6 +72,7 @@
 #include "g_levellocals.h"
 #include "s_sound.h"
 #include "vm.h"
+#include "i_system.h"
 #include "gstrings.h"
 #include "s_music.h"
 
