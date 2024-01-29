@@ -677,12 +677,12 @@ void main()
 	}
 	else // simple 2D (uses the fog color to add a color overlay)
 	{
-		// if (uTextureMode == 7)
-		// {
-		// 	float gray = grayscale(frag);
-		// 	vec4 cm = (uObjectColor + gray * (uObjectColor2 - uObjectColor)) * 2.0;
-		// 	frag = vec4(clamp(cm.rgb, 0.0, 1.0), frag.a);
-		// }
+		if (uTextureMode == 7)
+		{
+			float gray = grayscale(frag);
+			vec4 cm = (uObjectColor + gray * (uObjectColor2 - uObjectColor)) * 2.0;
+			frag = vec4(clamp(cm.rgb, 0.0, 1.0), frag.a);
+		}
 			frag = frag * ProcessLight(material, vColor);
 		frag.rgb = frag.rgb + uFogColor.rgb;
 	}
