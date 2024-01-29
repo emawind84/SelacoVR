@@ -545,7 +545,6 @@ enum ESkillProperty
 	SKILLP_PlayerRespawn,
 	SKILLP_SpawnMulti,
 	SKILLP_InstantReaction,
-	SKILLP_DoubleSpawn,
 };
 enum EFSkillProperty	// floating point properties
 {
@@ -606,7 +605,6 @@ struct FSkillInfo
 	bool NoPain;
 	int Infighting;
 	bool PlayerRespawn;
-	bool DoubleSpawn;
 
 	FSkillInfo() = default;
 	FSkillInfo(const FSkillInfo &other)

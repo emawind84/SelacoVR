@@ -241,7 +241,7 @@ class CommandDrawImage : public SBarInfoCommandFlowControl
 				applyscale = false;
 			}
 			if(type == PLAYERICON)
-				texture = TexMan.ByIndex(statusBar->CPlayer->mo->IntVar(NAME_ScoreIcon));
+				texture = TexMan.ByIndex(statusBar->CPlayer->mo->IntVar(NAME_ScoreIcon), true);
 			else if(type == AMMO1)
 			{
 				auto ammo = statusBar->ammo1;
@@ -292,9 +292,9 @@ class CommandDrawImage : public SBarInfoCommandFlowControl
 				}
 			}
 			else if(type == INVENTORYICON)
-				texture = TexMan.GetTexture(sprite);
+				texture = TexMan.GetTexture(sprite, true);
 			else if(type == SELECTEDINVENTORYICON && statusBar->CPlayer->mo->PointerVar<AActor>(NAME_InvSel) != NULL)
-				texture = TexMan.GetTexture(statusBar->CPlayer->mo->PointerVar<AActor>(NAME_InvSel)->TextureIDVar(NAME_Icon));
+				texture = TexMan.GetTexture(statusBar->CPlayer->mo->PointerVar<AActor>(NAME_InvSel)->TextureIDVar(NAME_Icon), true);
 			else if(image >= 0)
 				texture = statusBar->Images[image];
 			
