@@ -69,11 +69,10 @@ public:
 	static DBaseDecal *StaticCreate(const FDecalTemplate *tpl, const DVector3 &pos, side_t *wall, F3DFloor * ffloor, PalEntry color = 0, uint32_t bloodTranslation = 0, bool permanent = false);
 
 	void BeginPlay ();
-	void OnDestroy() override;
 
 protected:
 	DBaseDecal *CloneSelf(const FDecalTemplate *tpl, double x, double y, double z, side_t *wall, F3DFloor * ffloor) const;
-	static void CheckMax ();
+	void CheckMax ();
 
 private:
 	DImpactDecal();
@@ -97,11 +96,11 @@ public:
 protected:
 	float Blends[2][4];
 	int TotalTics;
-	int StartTic;
+	int RemainingTics;
 	TObjPtr<AActor*> ForWho;
 	bool Terminate;
 	void SetBlend (float time);
-	DFlashFader ();
+	DFlashFader() = default;
 };
 
 enum

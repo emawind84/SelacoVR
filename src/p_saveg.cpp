@@ -57,6 +57,7 @@
 #include "g_levellocals.h"
 #include "events.h"
 #include "p_destructible.h"
+#include "fragglescript/t_script.h"
 #include "s_music.h"
 
 //==========================================================================
@@ -978,6 +979,10 @@ void G_SerializeLevel(FSerializer &arc, bool hubload)
 		("level.spawnindex", level.spawnindex)
 		.Array("level.bodyque", level.bodyque, level.BODYQUESIZE)
 		("level.corpsequeue", level.CorpseQueue)
+		("level.spotstate", level.SpotState)
+		("level.fragglethinker", level.FraggleScriptThinker)
+		("level.acsthinker", level.ACSThinker)
+		("level.impactdecalcount", level.ImpactDecalCount)
 		("level.frozenstate", level.frozenstate)
 		("level.savedModelFiles", level.savedModelFiles);
 
@@ -994,11 +999,7 @@ void G_SerializeLevel(FSerializer &arc, bool hubload)
 		bglobal.freeze = !!(level.frozenstate & 2);
 	}
 
-
-
-	// fixme: This needs to ensure it reads from the correct place. Should be one once there's enough of this code converted to JSON
-
-	FBehavior::StaticSerializeModuleStates(arc);
+	level.Behaviors.SerializeModuleStates(arc);
 	// The order here is important: First world state, then portal state, then thinkers, and last polyobjects.
 	arc("linedefs", level.lines, level.loadlines);
 	arc("sidedefs", level.sides, level.loadsides);

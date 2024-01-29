@@ -1830,11 +1830,11 @@ void G_DoPlayerPop(int playernum)
 	}
 
 	// [RH] Make the player disappear
-	FBehavior::StaticStopMyScripts(players[playernum].mo);
+	level.Behaviors.StopMyScripts(players[playernum].mo);
 	// [ZZ] fire player disconnect hook
 	E_PlayerDisconnected(playernum);
 	// [RH] Let the scripts know the player left
-	FBehavior::StaticStartTypedScripts(SCRIPT_Disconnect, players[playernum].mo, true, playernum, true);
+	level.Behaviors.StartTypedScripts(SCRIPT_Disconnect, players[playernum].mo, true, playernum, true);
 	if (players[playernum].mo != NULL)
 	{
 		P_DisconnectEffect(players[playernum].mo);
@@ -2258,12 +2258,12 @@ static void PutSaveWads (FSerializer &arc)
 	name = Wads.GetWadName (Wads.GetIwadNum());
 	arc.AddString("Game WAD", name);
 
-	// Name of wad the map resides in
+		// Name of wad the map resides in
 	if (Wads.GetLumpFile (level.lumpnum) > Wads.GetIwadNum())
-	{
+		{
 		name = Wads.GetWadName (Wads.GetLumpFile (level.lumpnum));
 		arc.AddString("Map WAD", name);
-	}
+		}
 }
 
 static void PutSaveComment (FSerializer &arc)
@@ -2274,7 +2274,7 @@ static void PutSaveComment (FSerializer &arc)
 
 	arc.AddString("Creation Time", comment);
 
-	// Get level name
+		// Get level name
 	//strcpy (comment, level.level_name);
 	comment.Format("%s - %s\n", level.MapName.GetChars(), level.LevelName.GetChars());
 

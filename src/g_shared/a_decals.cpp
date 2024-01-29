@@ -559,9 +559,9 @@ CUSTOM_CVAR (Int, cl_maxdecals, 20, CVAR_ARCHIVE)
 	}
 	else
 	{
-		while (ImpactCount > self)
+		while (level.ImpactDecalCount > self)
 		{
-			DThinker *thinker = DThinker::FirstThinker (STAT_AUTODECAL);
+			DThinker *thinker = DThinker::FirstThinker(STAT_AUTODECAL);
 			if (thinker != NULL)
 			{
 				thinker->Destroy();
@@ -573,23 +573,22 @@ CUSTOM_CVAR (Int, cl_maxdecals, 20, CVAR_ARCHIVE)
 DImpactDecal::DImpactDecal ()
 : DBaseDecal (STAT_AUTODECAL, 0.)
 {
-	ImpactCount++;
 }
 
 DImpactDecal::DImpactDecal (double z)
 : DBaseDecal (STAT_AUTODECAL, z)
 {
-	ImpactCount++;
 }
 
 void DImpactDecal::CheckMax ()
 {
-	if (ImpactCount >= cl_maxdecals)
+	if (++level.ImpactDecalCount >= cl_maxdecals)
 	{
 		DThinker *thinker = DThinker::FirstThinker (STAT_AUTODECAL);
 		if (thinker != NULL)
 		{
 			thinker->Destroy();
+			level.ImpactDecalCount--;
 		}
 	}
 }
@@ -678,12 +677,12 @@ DBaseDecal *DImpactDecal::CloneSelf (const FDecalTemplate *tpl, double ix, doubl
 		return NULL;
 	}
 
-	DImpactDecal::CheckMax();
 	DImpactDecal *decal = Create<DImpactDecal>(iz);
 	if (decal != NULL)
 	{
 		if (decal->StickToWall (wall, ix, iy, ffloor).isValid())
 		{
+			decal->CheckMax();
 			tpl->ApplyToDecal (decal, wall);
 			decal->AlphaColor = AlphaColor;
 
@@ -704,12 +703,6 @@ DBaseDecal *DImpactDecal::CloneSelf (const FDecalTemplate *tpl, double ix, doubl
 		}
 	}
 	return decal;
-}
-
-void DImpactDecal::OnDestroy ()
-{
-	ImpactCount--;
-	Super::OnDestroy();
 }
 
 CCMD (countdecals)

@@ -797,7 +797,7 @@ struct LevelLocals native
 	native bool IsCrouchingAllowed() const;
 	native bool IsFreelookAllowed() const;
 	native void StartIntermission(Name type, int state) const;
-	static play SpotState GetSpotState(bool create = true) { return SpotState.GetSpotState(create); }
+	native SpotState GetSpotState(bool create = true);
 	static play int FindUniqueTid(int start = 0, int limit = 0) { return Actor.FindUniqueTid(start, limit); }
 	static play uint GetSkyboxPortal(Actor actor) { return SectorPortal.GetSkyboxPortal(actor); }
 	static void ReplaceTextures(String from, String to, int flags) { Texman.ReplaceTextures(from, to, flags); }

@@ -184,11 +184,33 @@ public:
 		return *this;
 	}
 
+	T operator=(std::nullptr_t nul)
+	{
+		o = nullptr;
+		return *this;
+	}
+
+	// To allow NULL, too.
+	T operator=(const int val)
+	{
+		assert(val == 0);
+		o = nullptr;
+		return *this;
+	}
+
+	// To allow NULL, too. In Clang NULL is a long.
+	T operator=(const long val)
+	{
+		assert(val == 0);
+		o = nullptr;
+		return *this;
+	}
+
 	T Get() throw()
 	{
 		return GC::ReadBarrier(pp);
 	}
-
+	
 	operator T() throw()
 	{
 		return GC::ReadBarrier(pp);

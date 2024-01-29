@@ -254,7 +254,7 @@ inline bool IsDistanceCulled(seg_t *line)
 void HWDrawInfo::AddLine (seg_t *seg, bool portalclip)
 {
 #ifdef _DEBUG
-	if (seg->linedef->Index() == 38)
+	if (seg->linedef && seg->linedef->Index() == 38)
 	{
 		int a = 0;
 	}

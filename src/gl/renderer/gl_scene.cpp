@@ -169,7 +169,10 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 		gl_RenderState.SetSceneColor(pe);
 	}
 
-	// Render (potentially) multiple views for stereo 3d
+	if (mainview && toscreen)
+		UpdateShadowMap();
+
+    // Render (potentially) multiple views for stereo 3d
 	// Fixme. The view offsetting should be done with a static table and not require setup of the entire render state for the mode.
 	auto vrmode = VRMode::GetVRMode(mainview && toscreen);
 	vrmode->SetUp();

@@ -117,7 +117,7 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 			if (!Colormap.FadeColor.isBlack())
 			{
 				float dist = Dist2(vp.Pos.X, vp.Pos.Y, x, y);
-				int fogd = hw_GetFogDensity(lightlevel, Colormap.FadeColor, Colormap.FogDensity, Colormap.BlendFactor);
+				int fogd = di->GetFogDensity(lightlevel, Colormap.FadeColor, Colormap.FogDensity, Colormap.BlendFactor);
 
 				// this value was determined by trial and error and is scale dependent!
 				float factor = 0.05f + exp(-fogd * dist / 62500.f);
@@ -162,7 +162,7 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 			state.SetObjectColor(finalcol);
 			state.SetAddColor(cursec->AdditiveColors[sector_t::sprites] | 0xff000000);
 		}
-		state.SetColor(lightlevel, rel, di->isFullbrightScene(), Colormap, trans);
+		di->SetColor(state, lightlevel, rel, di->isFullbrightScene(), Colormap, trans);
 	}
 
 
@@ -189,7 +189,7 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 		else RenderStyle.BlendOp = STYLEOP_Fuzz;	// subtractive with models is not going to work.
 	}
 
-	if (!foglayer) state.SetFog(foglevel, rel, di->isFullbrightScene(), &Colormap, additivefog);
+	if (!foglayer) di->SetFog(state, foglevel, rel, di->isFullbrightScene(), &Colormap, additivefog);
 	else
 	{
 		state.EnableFog(false);
@@ -230,10 +230,10 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 				thiscm.Decolorize();
 			}
 
-			state.SetColor(thisll, rel, di->isFullbrightScene(), thiscm, trans);
+			di->SetColor(state, thisll, rel, di->isFullbrightScene(), thiscm, trans);
 			if (!foglayer)
 			{
-				state.SetFog(thislight, rel, di->isFullbrightScene(), &thiscm, additivefog);
+				di->SetFog(state, thislight, rel, di->isFullbrightScene(), &thiscm, additivefog);
 			}
 			state.SetSplitPlanes(*topplane, *lowplane);
 		}
@@ -261,7 +261,7 @@ void GLSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 			if (foglayer)
 			{
 				// If we get here we know that we have colored fog and no fixed colormap.
-				state.SetFog(foglevel, rel, false, &Colormap, additivefog);
+				di->SetFog(state, foglevel, rel, false, &Colormap, additivefog);
 				state.SetTextureMode(TM_FOGLAYER);
 				state.SetRenderStyle(STYLE_Translucent);
 				state.Draw(DT_TriangleStrip, vertexindex, 4);
