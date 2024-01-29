@@ -45,6 +45,16 @@
 #include "g_levellocals.h"
 #include "vm.h"
 
+EXTERN_CVAR (Bool, cl_spreaddecals)
+EXTERN_CVAR (Int, cl_maxdecals)
+
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 struct SpreadInfo
 {
 	double DecalWidth, DecalLeft, DecalRight;
@@ -54,7 +64,12 @@ struct SpreadInfo
 	TArray<side_t *> SpreadStack;
 };
 
-CVAR (Bool, cl_spreaddecals, true, CVAR_ARCHIVE)
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
 
 IMPLEMENT_CLASS(DBaseDecal, false, true)
 
@@ -65,12 +80,24 @@ IMPLEMENT_POINTERS_END
 
 IMPLEMENT_CLASS(DImpactDecal, false, false)
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 void DBaseDecal::Construct(double z)
 {
 	Z = z;
 	RenderStyle = STYLE_None;
 	PicNum.SetInvalid();
 }
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
 
 void DBaseDecal::Construct(const AActor *basis)
 {
@@ -84,6 +111,12 @@ void DBaseDecal::Construct(const AActor *basis)
 	RenderFlags = basis->renderflags;
 	RenderStyle = basis->RenderStyle;
 }
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
 
 void DBaseDecal::Construct(const DBaseDecal *basis)
 {
@@ -100,11 +133,23 @@ void DBaseDecal::Construct(const DBaseDecal *basis)
 
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 void DBaseDecal::OnDestroy ()
 {
 	Remove ();
 	Super::OnDestroy();
 }
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
 
 void DBaseDecal::Remove ()
 {
@@ -119,6 +164,12 @@ void DBaseDecal::Remove ()
 	WallPrev = nullptr;
 	WallNext = nullptr;
 }
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
 
 void DBaseDecal::Serialize(FSerializer &arc)
 {
@@ -138,6 +189,12 @@ void DBaseDecal::Serialize(FSerializer &arc)
 		("side", Side)
 		("sector", Sector);
 }
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
 
 void DBaseDecal::GetXY (side_t *wall, double &ox, double &oy) const
 {
@@ -162,17 +219,31 @@ void DBaseDecal::GetXY (side_t *wall, double &ox, double &oy) const
 	oy = v1->fY() + LeftDistance * dy;
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 void DBaseDecal::SetShade (uint32_t rgb)
 {
 	PalEntry *entry = (PalEntry *)&rgb;
 	AlphaColor = rgb | (ColorMatcher.Pick (entry->r, entry->g, entry->b) << 24);
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 void DBaseDecal::SetShade (int r, int g, int b)
 {
 	AlphaColor = MAKEARGB(ColorMatcher.Pick (r, g, b), r, g, b);
 }
 
+//----------------------------------------------------------------------------
+//
 //
 //
 //----------------------------------------------------------------------------
@@ -185,6 +256,9 @@ void DBaseDecal::SetTranslation(uint32_t trans)
 //----------------------------------------------------------------------------
 //
 // Returns the texture the decal stuck to.
+//
+//----------------------------------------------------------------------------
+
 FTextureID DBaseDecal::StickToWall (side_t *wall, double x, double y, F3DFloor *ffloor)
 {
 	Side = wall;
@@ -276,6 +350,12 @@ FTextureID DBaseDecal::StickToWall (side_t *wall, double x, double y, F3DFloor *
 	return tex;
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 double DBaseDecal::GetRealZ (const side_t *wall) const
 {
 	const line_t *line = wall->linedef;
@@ -330,6 +410,12 @@ double DBaseDecal::GetRealZ (const side_t *wall) const
 	}
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 void DBaseDecal::CalcFracPos (side_t *wall, double x, double y)
 {
 	line_t *line = wall->linedef;
@@ -363,6 +449,12 @@ void DBaseDecal::CalcFracPos (side_t *wall, double x, double y)
 	}
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 static void GetWallStuff (side_t *wall, vertex_t *&v1, double &ldx, double &ldy)
 {
 	line_t *line = wall->linedef;
@@ -380,10 +472,22 @@ static void GetWallStuff (side_t *wall, vertex_t *&v1, double &ldx, double &ldy)
 	}
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 static double Length (double dx, double dy)
 {
 	return DVector2(dx, dy).Length();
 }
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
 
 static side_t *NextWall (const side_t *wall)
 {
@@ -402,6 +506,12 @@ static side_t *NextWall (const side_t *wall)
 	}
 	return NULL;
 }
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
 
 void DBaseDecal::SpreadLeft (double r, vertex_t *v1, side_t *feelwall, F3DFloor *ffloor, SpreadInfo *spread)
 {
@@ -447,6 +557,12 @@ void DBaseDecal::SpreadLeft (double r, vertex_t *v1, side_t *feelwall, F3DFloor 
 	}
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 void DBaseDecal::SpreadRight (double r, side_t *feelwall, double wallsize, F3DFloor *ffloor, SpreadInfo *spread)
 {
 	vertex_t *v1;
@@ -487,6 +603,12 @@ void DBaseDecal::SpreadRight (double r, side_t *feelwall, double wallsize, F3DFl
 	}
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 void DBaseDecal::Spread (const FDecalTemplate *tpl, side_t *wall, double x, double y, double z, F3DFloor * ffloor)
 {
 	SpreadInfo spread;
@@ -520,6 +642,12 @@ void DBaseDecal::Spread (const FDecalTemplate *tpl, side_t *wall, double x, doub
 			Length (wall->linedef->Delta().X, wall->linedef->Delta().Y), ffloor, &spread);
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 DBaseDecal *DBaseDecal::CloneSelf (const FDecalTemplate *tpl, double ix, double iy, double iz, side_t *wall, F3DFloor * ffloor) const
 {
 	DBaseDecal *decal = Level->CreateThinker<DBaseDecal>(iz);
@@ -541,24 +669,11 @@ DBaseDecal *DBaseDecal::CloneSelf (const FDecalTemplate *tpl, double ix, double 
 	return decal;
 }
 
-CUSTOM_CVAR (Int, cl_maxdecals, 20, CVAR_ARCHIVE)
-{
-	if (self < 0)
-	{
-		self = 0;
-	}
-	else for (auto Level : AllLevels())
-	{
-		while (Level->ImpactDecalCount > self)
-		{
-			DThinker *thinker = Level->FirstThinker(STAT_AUTODECAL);
-			if (thinker != NULL)
-			{
-				thinker->Destroy();
-			}
-		}
-	}
-}
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
 
 void DImpactDecal::CheckMax ()
 {
@@ -572,6 +687,12 @@ void DImpactDecal::CheckMax ()
 		}
 	}
 }
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
 
 DBaseDecal* DImpactDecal::StaticCreate (FLevelLocals *Level, const char *name, const DVector3 &pos, side_t *wall, F3DFloor * ffloor, PalEntry color, uint32_t bloodTranslation)
 {
@@ -650,6 +771,12 @@ DBaseDecal* DImpactDecal::StaticCreate (FLevelLocals *Level, const FDecalTemplat
 	return decal;
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 DBaseDecal *DImpactDecal::CloneSelf (const FDecalTemplate *tpl, double ix, double iy, double iz, side_t *wall, F3DFloor * ffloor) const
 {
 	if (wall->Flags & WALLF_NOAUTODECALS)
@@ -685,31 +812,11 @@ DBaseDecal *DImpactDecal::CloneSelf (const FDecalTemplate *tpl, double ix, doubl
 	return decal;
 }
 
-CCMD (countdecals)
-{
-	for (auto Level : AllLevels())
-	{
-		auto iterator = Level->GetThinkerIterator<DImpactDecal>(NAME_None, STAT_AUTODECAL);
-		int count = 0;
-
-		while (iterator.Next())
-			count++;
-
-		Printf("%s: Counted %d impact decals\n", Level->MapName.GetChars(), count);
-	}
-}
-
-CCMD (spray)
-{
-	if (who == NULL || argv.argc() < 2)
-	{
-		Printf ("Usage: spray <decal>\n");
-		return;
-	}
-
-	Net_WriteByte (DEM_SPRAY);
-	Net_WriteString (argv[1]);
-}
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
 
 void SprayDecal(AActor *shooter, const char *name, double distance, DVector3 offset, DVector3 direction, bool useBloodColor, uint32_t decalColor)
 {
@@ -751,6 +858,12 @@ void SprayDecal(AActor *shooter, const char *name, double distance, DVector3 off
 	}
 }
 
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 DBaseDecal *ShootDecal(FLevelLocals *Level, const FDecalTemplate *tpl, sector_t *sec, double x, double y, double z, DAngle angle, double tracedist, bool permanent)
 {
 	if (tpl == NULL || (tpl = tpl->GetDecal()) == NULL)
@@ -769,12 +882,16 @@ DBaseDecal *ShootDecal(FLevelLocals *Level, const FDecalTemplate *tpl, sector_t 
 	return NULL;
 }
 
-DEFINE_ACTION_FUNCTION(ADecal, SpawnDecal)
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
+static void SpawnDecal(AActor *self)
 {
-	PARAM_SELF_PROLOGUE(AActor);
-
 	const FDecalTemplate *tpl = nullptr;
-
+	
 	if (self->args[0] < 0)
 	{
 		FName name = ENamedName(-self->args[0]);
@@ -785,7 +902,7 @@ DEFINE_ACTION_FUNCTION(ADecal, SpawnDecal)
 		int decalid = self->args[0] + (self->args[1] << 8); // [KS] High byte for decals.
 		tpl = DecalLibrary.GetDecalByNum(decalid);
 	}
-
+	
 	// If no decal is specified, don't try to create one.
 	if (tpl != nullptr)
 	{
@@ -808,5 +925,11 @@ DEFINE_ACTION_FUNCTION(ADecal, SpawnDecal)
 	{
 		DPrintf (DMSG_ERROR, "Decal actor at (%f,%f) does not have a good template\n", self->X(), self->Y());
 	}
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(ADecal, SpawnDecal, SpawnDecal)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	SpawnDecal(self);
 	return 0;
 }

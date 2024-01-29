@@ -66,6 +66,7 @@
 #include "actorinlines.h"
 #include "events.h"
 #include "i_time.h"
+#include "i_system.h"
 #include "vm.h"
 #include "gstrings.h"
 #include "s_music.h"

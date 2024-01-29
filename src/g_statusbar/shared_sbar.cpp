@@ -57,6 +57,7 @@
 #include "sbarinfo.h"
 #include "gstrings.h"
 #include "events.h"
+#include "g_game.h"
 
 #include "../version.h"
 

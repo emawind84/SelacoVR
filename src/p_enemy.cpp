@@ -33,7 +33,7 @@
 
 #include "templates.h"
 #include "m_random.h"
-#include "i_system.h"
+
 #include "doomdef.h"
 #include "p_local.h"
 #include "p_maputl.h"
@@ -49,6 +49,7 @@
 #include "g_levellocals.h"
 #include "vm.h"
 #include "actorinlines.h"
+#include "a_ceiling.h"
 #include "p_tags.h"
 #include "doomstat.h"
 

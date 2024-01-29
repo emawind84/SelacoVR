@@ -73,6 +73,7 @@
 #include "dobjgc.h"
 #include "gi.h"
 #include "a_dynlight.h"
+#include "i_system.h"
 #include "p_conversation.h"
 #include "r_data/models/models.h"
 #include "hwrenderer/utility/hw_vrmodes.h"
