@@ -629,7 +629,7 @@ static int GetSoftPitch(bool down)
 
 void player_t::SendPitchLimits() const
 {
-	if (this == mo->Level->GetConsolePlayer())
+	if (this - players == consoleplayer)
 	{
 		int uppitch, downpitch;
 

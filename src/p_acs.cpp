@@ -2321,7 +2321,7 @@ bool FBehavior::Init(FLevelLocals *Level, int lumpnum, FileReader * fr, int len,
 		StringTable += LittleLong(((uint32_t *)(Data + StringTable))[0]) * 12 + 4;
 		UnescapeStringTable(Data + StringTable, Data, false);
 		// If this is an original Hexen BEHAVIOR, set up some localization info for it. Original Hexen BEHAVIORs are always in the old format.
-		if ((level.flags2 & LEVEL2_HEXENHACK) && gameinfo.gametype == GAME_Hexen && lumpnum == -1 && reallumpnum > 0)
+		if ((Level->flags2 & LEVEL2_HEXENHACK) && gameinfo.gametype == GAME_Hexen && lumpnum == -1 && reallumpnum > 0)
 		{
 			int fileno = Wads.GetLumpFile(reallumpnum);
 			const char * filename = Wads.GetWadName(fileno);
@@ -3249,7 +3249,7 @@ const char *FBehavior::LookupString (uint32_t index, bool forprint) const
 			token.Substitute(" ", "");
 			token.Truncate(5);
 
-			FStringf label("TXT_ACS_%s_%d_%.5s", level.MapName.GetChars(), index, token.GetChars());
+			FStringf label("TXT_ACS_%s_%d_%.5s", Level->MapName.GetChars(), index, token.GetChars());
 			auto p = GStrings[label];
 			if (p) return p;
 		}

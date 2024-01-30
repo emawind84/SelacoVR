@@ -31,6 +31,9 @@ if( ${ZDOOM_TARGET_ARCH} MATCHES "x86_64" )
 	set( X64 64 )
 endif()
 
+if( X64 OR ${ZDOOM_TARGET_ARCH} MATCHES "i386" )
+	add_definitions( -DARCH_IA32 )
+endif()
 
 if( NOT ZDOOM_LIBS )
 	set( ZDOOM_LIBS "" )
@@ -715,6 +718,17 @@ set( NOT_COMPILED_SOURCE_FILES
 	zcc-parse.c
 	zcc-parse.h
 	win32/zdoom.natvis
+)
+
+set( VM_JIT_SOURCES
+	scripting/vm/jit.cpp
+	scripting/vm/jit_runtime.cpp
+	scripting/vm/jit_call.cpp
+	scripting/vm/jit_flow.cpp
+	scripting/vm/jit_load.cpp
+	scripting/vm/jit_math.cpp
+	scripting/vm/jit_move.cpp
+	scripting/vm/jit_store.cpp
 )
 
 set( VM_JIT_SOURCES
