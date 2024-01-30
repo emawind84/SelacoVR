@@ -510,7 +510,7 @@ void GLFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector, int which)
 	//
 	//
 	//
-	if ((which & SSRF_RENDERFLOOR) && frontsector->floorplane.ZatPoint(vp.Pos) <= vp.Pos.Z)
+	if ((which & SSRF_RENDERFLOOR) && frontsector->floorplane.ZatPoint(vp.Pos) <= vp.Pos.Z && (!section || !(section->flags & FSection::DONTRENDERFLOOR)))
 	{
 		// process the original floor first.
 
@@ -564,9 +564,9 @@ void GLFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector, int which)
 	//
 	// do ceilings
 	//
+	// 
 	//
-	//
-	if ((which & SSRF_RENDERCEILING) && frontsector->ceilingplane.ZatPoint(vp.Pos) >= vp.Pos.Z)
+	if ((which & SSRF_RENDERCEILING) && frontsector->ceilingplane.ZatPoint(vp.Pos) >= vp.Pos.Z && (!section || !(section->flags & FSection::DONTRENDERCEILING)))
 	{
 		// process the original ceiling first.
 
