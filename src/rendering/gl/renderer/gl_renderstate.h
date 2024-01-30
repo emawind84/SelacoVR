@@ -33,6 +33,7 @@
 #include "r_defs.h"
 #include "r_data/r_translate.h"
 #include "g_levellocals.h"
+#include "v_video.h"
 
 EXTERN_CVAR(Bool, gl_global_fade)
 
