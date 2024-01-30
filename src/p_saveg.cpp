@@ -824,7 +824,7 @@ void CopyPlayer(player_t *dst, player_t *src, const char *name)
 
 	if (dst->Bot != nullptr)
 	{
-		botinfo_t *thebot = level.BotInfo.botinfo;
+		botinfo_t *thebot = src->mo->Level->BotInfo.botinfo;
 		while (thebot && stricmp(name, thebot->name))
 		{
 			thebot = thebot->next;
@@ -833,7 +833,7 @@ void CopyPlayer(player_t *dst, player_t *src, const char *name)
 		{
 			thebot->inuse = BOTINUSE_Yes;
 		}
-		level.BotInfo.botnum++;
+		src->mo->Level->BotInfo.botnum++;
 		dst->userinfo.TransferFrom(uibackup2);
 	}
 	else
@@ -1000,7 +1000,8 @@ void FLevelLocals::Serialize(FSerializer &arc, bool hubload)
 	// [ZZ] serialize health groups
 	P_SerializeHealthGroups(this, arc);
 	// [ZZ] serialize events
-	E_SerializeEvents(arc);
+	arc("firstevent", localEventManager->FirstEventHandler)
+		("lastevent", localEventManager->LastEventHandler);
 	Thinkers.SerializeThinkers(arc, hubload);
 	arc("polyobjs", Polyobjects);
 	SerializeSubsectors(arc, "subsectors");
@@ -1024,6 +1025,7 @@ void FLevelLocals::Serialize(FSerializer &arc, bool hubload)
 				FWeaponSlots::SetupWeaponSlots(Players[i]->mo);
 			}
 		}
+		localEventManager->SetOwnerForHandlers();	// This cannot be automated.
 		RecreateAllAttachedLights();
 		InitPortalGroups(this);
 

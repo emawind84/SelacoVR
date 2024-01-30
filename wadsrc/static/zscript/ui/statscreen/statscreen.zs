@@ -556,7 +556,7 @@ class StatusScreen abstract play version("2.5")
 		if (cnt == 0)
 		{
 			End();
-			currentUILevel.WorldDone();
+			Level.WorldDone();
 		}
 	}
 
@@ -572,7 +572,7 @@ class StatusScreen abstract play version("2.5")
 		{
 			// Last map in episode - there is no next location!
 			End();
-			currentUILevel.WorldDone();
+			Level.WorldDone();
 			return;
 		}
 
@@ -703,7 +703,7 @@ class StatusScreen abstract play version("2.5")
 	
 	virtual void StartMusic()
 	{
-		currentUILevel.SetInterMusic(wbs.next);
+		Level.SetInterMusic(wbs.next);
 	}
 
 	//====================================================================
@@ -810,7 +810,7 @@ class StatusScreen abstract play version("2.5")
 		finishedPatch = TexMan.CheckForTexture("WIF", TexMan.Type_MiscPatch);			// "finished"
 
 		// Use the local level structure which can be overridden by hubs
-		lnametexts[0] = currentUILevel.LevelName;		
+		lnametexts[0] = Level.LevelName;		
 		lnametexts[1] = wbstartstruct.nextname;
 		authortexts[0] = StringTable.Localize(wbstartstruct.thisauthor);
 		authortexts[1] = StringTable.Localize(wbstartstruct.nextauthor);

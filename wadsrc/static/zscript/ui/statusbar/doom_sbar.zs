@@ -174,7 +174,7 @@ class DoomStatusBar : BaseStatusBar
 			DrawString(mHUDFont, FormatNumber(ammotype2.Amount, 3), (-30, invY), DI_TEXT_ALIGN_RIGHT);
 			invY -= 20;
 		}
-		if (!isInventoryBarVisible() && !currentUILevel.NoInventoryBar && CPlayer.mo.InvSel != null)
+		if (!isInventoryBarVisible() && !Level.NoInventoryBar && CPlayer.mo.InvSel != null)
 		{
 			DrawInventoryIcon(CPlayer.mo.InvSel, (-14, invY + 17), DI_DIMDEPLETED);
 			DrawString(mHUDFont, FormatNumber(CPlayer.mo.InvSel.Amount, 3), (-30, invY), DI_TEXT_ALIGN_RIGHT);

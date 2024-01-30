@@ -132,8 +132,6 @@ void D_Render(std::function<void()> action, bool interpolate);
 #define MAXEVENTS		128
 
 extern	event_t 		events[MAXEVENTS];
-extern	int 			eventhead;
-extern	int 			eventtail;
 
 extern	gameaction_t	gameaction;
 

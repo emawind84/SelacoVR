@@ -189,7 +189,7 @@ CUSTOM_CVAR (Int, fraglimit, 0, CVAR_SERVERINFO)
 			if (playeringame[i] && self <= D_GetFragCount(&players[i]))
 			{
 				Printf ("%s\n", GStrings("TXT_FRAGLIMIT"));
-				level.ExitLevel (0, false);
+				primaryLevel->ExitLevel (0, false);
 				break;
 			}
 		}
@@ -294,7 +294,7 @@ void D_ProcessEvents (void)
 		if (M_Responder (ev))
 			continue;				// menu ate the event
 		// check events
-		if (ev->type != EV_Mouse && E_Responder(ev)) // [ZZ] ZScript ate the event // update 07.03.17: mouse events are handled directly
+		if (ev->type != EV_Mouse && primaryLevel->localEventManager->Responder(ev)) // [ZZ] ZScript ate the event // update 07.03.17: mouse events are handled directly
 			continue;
 		G_Responder (ev);
 	}
@@ -316,7 +316,7 @@ void D_PostEvent (const event_t *ev)
 		return;
 	}
 	events[eventhead] = *ev;
-	if (ev->type == EV_Mouse && menuactive == MENU_Off && ConsoleState != c_down && ConsoleState != c_falling && !E_Responder(ev) && !paused)
+	if (ev->type == EV_Mouse && menuactive == MENU_Off && ConsoleState != c_down && ConsoleState != c_falling && !primaryLevel->localEventManager->Responder(ev) && !paused)
 	{
 		if (Button_Mlook.bDown || freelook)
 		{
@@ -391,7 +391,7 @@ void D_Render(std::function<void()> action, bool interpolate)
 		// Check for the presence of dynamic lights at the start of the frame once.
 		if ((gl_lights && vid_rendermode == 4) || (r_dynlights && vid_rendermode != 4))
 		{
-			Level->HasDynamicLights = !!level.lights;
+			Level->HasDynamicLights = !!Level->lights;
 		}
 		else Level->HasDynamicLights = false;	// lights are off so effectively we have none.
 		if (interpolate) Level->interpolator.DoInterpolations(I_GetTimeFrac());
@@ -832,7 +832,7 @@ void D_Display ()
 		screen->DrawBlend(viewsec);
 		if (automapactive)
 		{
-			currentUILevel->automap->Drawer (hud_althud? viewheight : StatusBar->GetTopOfStatusbar());
+			primaryLevel->automap->Drawer (hud_althud? viewheight : StatusBar->GetTopOfStatusbar());
 		}
 		
 		// for timing the statusbar code.
@@ -1017,7 +1017,7 @@ void D_ErrorCleanup ()
 	bool aux;
 
 	savegamerestore = false;
-	level.BotInfo.RemoveAllBots (&level, true);
+	primaryLevel->BotInfo.RemoveAllBots (primaryLevel, true);
 	D_QuitNetGame ();
 	if (demorecording || demoplayback)
 		G_CheckDemoStatus ();
@@ -2768,14 +2768,14 @@ static int D_DoomMain_Internal (void)
 		PClassActor::StaticSetActorNums();
 
 		//Added by MC:
-		level.BotInfo.getspawned.Clear();
+		primaryLevel->BotInfo.getspawned.Clear();
 		argcount = Args->CheckParmList("-bots", &args);
 		for (p = 0; p < argcount; ++p)
 		{
-			level.BotInfo.getspawned.Push(args[p]);
+			primaryLevel->BotInfo.getspawned.Push(args[p]);
 		}
-		level.BotInfo.spawn_tries = 0;
-		level.BotInfo.wanted_botnum = level.BotInfo.getspawned.Size();
+		primaryLevel->BotInfo.spawn_tries = 0;
+		primaryLevel->BotInfo.wanted_botnum = primaryLevel->BotInfo.getspawned.Size();
 
 		if (!batchrun) Printf ("P_Init: Init Playloop state.\n");
 		StartScreen->LoadingStatus ("Init game engine", 0x3f);

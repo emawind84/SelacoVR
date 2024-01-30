@@ -1,3 +1,4 @@
+
 struct _ native	// These are the global variables, the struct is only here to avoid extending the parser for this.
 {
 	native readonly Array<class> AllClasses;
@@ -7,21 +8,17 @@ struct _ native	// These are the global variables, the struct is only here to av
 	native readonly Array<@Team> Teams;
 	native int validcount;
 	native readonly bool multiplayer;
-	deprecated("3.8") native play @LevelLocals level;
 	native @KeyBindings Bindings;
 	native @KeyBindings AutomapBindings;
 	native @KeyBindings DoubleBindings;
 	native play @DehInfo deh;
 	native readonly @GameInfoStruct gameinfo;
-	native play @PlayerInfo players[MAXPLAYERS];
-	native readonly bool playeringame[MAXPLAYERS];
 	native readonly ui bool netgame;
 
 	native readonly bool automapactive;
 	native readonly uint gameaction;
 	native readonly int gamestate;
 	native readonly TextureID skyflatnum;
-	native readonly int consoleplayer;
 	native readonly Font smallfont;
 	native readonly Font smallfont2;
 	native readonly Font bigfont;
@@ -56,8 +53,14 @@ struct _ native	// These are the global variables, the struct is only here to av
 	native readonly int GameTicRate;
 	native readonly double NotifyFontScale;
 	native readonly int paused;
-	native ui readonly LevelLocals currentUILevel;
-	
+
+// sandbox state in multi-level setups:
+
+	native play @PlayerInfo players[MAXPLAYERS];
+	native readonly bool playeringame[MAXPLAYERS];
+	native readonly int consoleplayer;
+	native play LevelLocals Level;
+
 }
 
 struct MusPlayingInfo native

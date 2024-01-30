@@ -95,6 +95,8 @@ struct FStrifeDialogueNode;
 class DAutomapBase;
 struct wbstartstruct_t;
 class DSectorMarker;
+struct FTranslator;
+struct EventManager;
 
 typedef TMap<int, int> FDialogueIDMap;				// maps dialogue IDs to dialogue array index (for ACS)
 typedef TMap<FName, int> FDialogueMap;				// maps actor class names to dialogue array index
@@ -127,6 +129,7 @@ struct FLevelLocals
 	void FormatMapName(FString &mapname, const char *mapnamecolor);
 	void ClearAllSubsectorLinks();
 	void TranslateLineDef (line_t *ld, maplinedef_t *mld, int lineindexforid = -1);
+	int TranslateSectorSpecial(int special);
 	bool IsTIDUsed(int tid);
 	int FindUniqueTID(int start_tid, int limit);
 	int GetConversation(int conv_id);
@@ -439,6 +442,7 @@ public:
 	TArray<FLinePortalSpan> linePortalSpans;
 	FSectionContainer sections;
 	FCanvasTextureInfo canvasTextureInfo;
+	EventManager *localEventManager = nullptr;
 
 	// [ZZ] Destructible geometry information
 	TMap<int, FHealthGroup> healthGroups;
@@ -494,6 +498,7 @@ public:
 	FString		NextSecretMap;		// map to go to when used secret exit
 	FString		AuthorName;
 	FString		F1Pic;
+	FTranslator *Translator;
 	EMapType	maptype;
 	FTagManager tagManager;
 	FInterpolator interpolator;
@@ -677,7 +682,8 @@ public:
 
 
 extern FLevelLocals level;
-extern FLevelLocals *currentUILevel;	// level for which to display the user interface. This will always be the one the current consoleplayer is in.
+extern FLevelLocals *primaryLevel;	// level for which to display the user interface. This will always be the one the current consoleplayer is in.
+extern FLevelLocals *currentVMLevel;
 
 inline FSectorPortal *line_t::GetTransferredPortal()
 {
@@ -778,5 +784,5 @@ inline bool line_t::hitSkyWall(AActor* mo) const
 // It is meant for code that needs to iterate over all levels to make some global changes, e.g. configuation CCMDs.
 inline TArrayView<FLevelLocals *> AllLevels()
 {
-	return TArrayView<FLevelLocals *>(&currentUILevel, 1);
+	return TArrayView<FLevelLocals *>(&primaryLevel, 1);
 }

@@ -856,7 +856,7 @@ void FParser::SF_Spawn(void)
 		}
 		
 		t_return.type = svt_mobj;
-		t_return.value.mobj = Spawn(pclass, pos, ALLOW_REPLACE);
+		t_return.value.mobj = Spawn(Level, pclass, pos, ALLOW_REPLACE);
 
 		if (t_return.value.mobj)		
 		{
@@ -2072,7 +2072,7 @@ void FParser::SF_LineTrigger()
 		mld.special=intvalue(t_argv[0]);
 		mld.tag=t_argc > 1 ? intvalue(t_argv[1]) : 0;
 		Level->TranslateLineDef(&line, &mld);
-		P_ExecuteSpecial(line.special, NULL, Script->trigger, false, 
+		P_ExecuteSpecial(Level, line.special, NULL, Script->trigger, false, 
 			line.args[0],line.args[1],line.args[2],line.args[3],line.args[4]); 
 	}
 }
@@ -2904,7 +2904,7 @@ void FParser::SF_SpawnExplosion()
 		else
 			pos.Z = Level->PointInSector(pos)->floorplane.ZatPoint(pos);
 		
-		spawn = Spawn (pclass, pos, ALLOW_REPLACE);
+		spawn = Spawn (Level, pclass, pos, ALLOW_REPLACE);
 		t_return.type = svt_int;
 		t_return.value.i=0;
 		if (spawn)
@@ -3616,7 +3616,7 @@ void FParser::SF_ThingCount(void)
 		pClass=T_GetMobjType(t_argv[0]);
 		if (!pClass) return;
 		// If we want to count map items we must consider actor replacement
-		pClass = pClass->GetReplacement();
+		pClass = pClass->GetReplacement(Level);
 		
 	again:
 		auto it = Level->GetThinkerIterator<AActor>();
@@ -3645,7 +3645,7 @@ void FParser::SF_ThingCount(void)
 		{
 			// Again, with decorate replacements
 			replacemented = true;
-			PClassActor *newkind = pClass->GetReplacement();
+			PClassActor *newkind = pClass->GetReplacement(Level);
 			if (newkind != pClass)
 			{
 				pClass = newkind;
@@ -3735,7 +3735,7 @@ void FParser::SF_SpawnShot2(void)
 
 		t_return.type = svt_mobj;
 
-		AActor *mo = Spawn(pclass, source->PosPlusZ(z), ALLOW_REPLACE);
+		AActor *mo = Spawn(Level, pclass, source->PosPlusZ(z), ALLOW_REPLACE);
 		if (mo)
 		{
 			S_Sound(mo, CHAN_VOICE, 0, mo->SeeSound, 1, ATTN_NORM);
@@ -3822,7 +3822,7 @@ void FParser::RunLineSpecial(const FLineSpecial *spec)
 			if (t_argc>i) args[i]=intvalue(t_argv[i]);
 			else args[i] = 0;
 		}
-		t_return.value.i = P_ExecuteSpecial(spec->number, NULL,Script->trigger,false, args[0],args[1],args[2],args[3],args[4]);
+		t_return.value.i = P_ExecuteSpecial(Level, spec->number, NULL,Script->trigger,false, args[0],args[1],args[2],args[3],args[4]);
 	}
 }
 

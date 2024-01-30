@@ -97,7 +97,6 @@ struct TeaserSpeech
 
 static FRandom pr_randomspeech("RandomSpeech");
 
-FClassMap StrifeTypes;
 static int ConversationMenuY;
 
 // These two should be moved to player_t...
@@ -120,16 +119,6 @@ static void TerminalResponse (const char *str);
 // Given an item type number, returns the corresponding PClass.
 //
 //============================================================================
-
-void SetStrifeType(int convid, PClassActor *Class)
-{
-	StrifeTypes[convid] = Class;
-}
-
-void ClearStrifeTypes()
-{
-	StrifeTypes.Clear();
-}
 
 void FLevelLocals::SetConversation(int convid, PClassActor *Class, int dlgindex)
 {
@@ -1064,7 +1053,7 @@ static void HandleReply(player_t *player, bool isconsole, int nodenum, int reply
 	
 			if (takestuff)
 			{
-				auto item = Spawn(reply->GiveType);
+				auto item = Spawn(player->mo->Level, reply->GiveType);
 				// Items given here should not count as items!
 				item->ClearCounters();
 				if (item->GetClass()->TypeName == NAME_FlameThrower)
@@ -1096,7 +1085,7 @@ static void HandleReply(player_t *player, bool isconsole, int nodenum, int reply
 
 	if (reply->ActionSpecial != 0)
 	{
-		takestuff |= !!P_ExecuteSpecial(reply->ActionSpecial, NULL, player->mo, false,
+		takestuff |= !!P_ExecuteSpecial(player->mo->Level, reply->ActionSpecial, NULL, player->mo, false,
 			reply->Args[0], reply->Args[1], reply->Args[2], reply->Args[3], reply->Args[4]);
 	}
 

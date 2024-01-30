@@ -833,7 +833,7 @@ void DBaseStatusBar::RefreshViewBorder ()
 		{
 			return;
 		}
-		auto tex = GetBorderTexture(currentUILevel);
+		auto tex = GetBorderTexture(primaryLevel);
 		screen->DrawBorder (tex, 0, 0, Width, viewwindowy);
 		screen->DrawBorder (tex, 0, viewwindowy, viewwindowx, viewheight + viewwindowy);
 		screen->DrawBorder (tex, viewwindowx + viewwidth, viewwindowy, Width, viewheight + viewwindowy);
@@ -859,7 +859,7 @@ void DBaseStatusBar::RefreshBackground () const
 	
 	if (x == 0 && y == SCREENHEIGHT) return;
 
-	auto tex = GetBorderTexture(currentUILevel);
+	auto tex = GetBorderTexture(primaryLevel);
 
 	if(!CompleteBorder)
 	{
@@ -1215,7 +1215,7 @@ void DBaseStatusBar::DrawTopStuff (EHudState state)
 		DrawMessages (HUDMSGLayer_OverMap, (state == HUD_StatusBar) ? GetTopOfStatusbar() : SCREENHEIGHT);
 	}
 	DrawMessages (HUDMSGLayer_OverHUD, (state == HUD_StatusBar) ? GetTopOfStatusbar() : SCREENHEIGHT);
-	E_RenderOverlay(state);
+	primaryLevel->localEventManager->RenderOverlay(state);
 
 	DrawConsistancy ();
 	DrawWaiting ();

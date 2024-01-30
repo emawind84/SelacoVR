@@ -2371,8 +2371,8 @@ void G_ClearMapinfo()
 	AllSkills.Clear();
 	DefaultSkill = -1;
 	DeinitIntermissions();
-	level.info = NULL;
-	level.F1Pic = "";
+	primaryLevel->info = nullptr;
+	primaryLevel->F1Pic = "";
 	ParsedLumps.Clear();
 }
 

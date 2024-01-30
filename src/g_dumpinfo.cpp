@@ -41,6 +41,7 @@
 #include "p_setup.h"
 #include "w_wad.h"
 #include "v_text.h"
+#include "c_functions.h"
 
 //==========================================================================
 //
@@ -258,12 +259,12 @@ CCMD(dump3df)
 		// Print 3D floor info for a single sector.
 		// This only checks the primary level.
 		int sec = (int)strtoll(argv[1], NULL, 10);
-		if ((unsigned)sec >= currentUILevel->sectors.Size())
+		if ((unsigned)sec >= primaryLevel->sectors.Size())
 		{
 			Printf("Sector %d does not exist.\n", sec);
 			return;
 		}
-		sector_t *sector = &currentUILevel->sectors[sec];
+		sector_t *sector = &primaryLevel->sectors[sec];
 		TArray<F3DFloor*> & ffloors = sector->e->XFloor.ffloors;
 
 		for (unsigned int i = 0; i < ffloors.Size(); i++)
@@ -305,5 +306,46 @@ CCMD(dumplinktable)
 }
 
 
+//===========================================================================
+//
+// CCMD printinv
+//
+// Prints the console player's current inventory.
+//
+//===========================================================================
 
+CCMD(printinv)
+{
+	int pnum = consoleplayer;
+
+#ifdef _DEBUG
+	// Only allow peeking on other players' inventory in debug builds.
+	if (argv.argc() > 1)
+	{
+		pnum = atoi(argv[1]);
+		if (pnum < 0 || pnum >= MAXPLAYERS)
+		{
+			return;
+		}
+	}
+#endif
+	C_PrintInv(players[pnum].mo);
+}
+
+CCMD(targetinv)
+{
+	FTranslatedLineTarget t;
+
+	if (CheckCheatmode() || players[consoleplayer].mo == NULL)
+		return;
+
+	C_AimLine(&t, true);
+
+	if (t.linetarget)
+	{
+		C_PrintInv(t.linetarget);
+	}
+	else Printf("No target found. Targetinv cannot find actors that have "
+		"the NOBLOCKMAP flag or have height/radius of 0.\n");
+}
 

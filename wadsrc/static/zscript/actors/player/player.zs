@@ -356,13 +356,6 @@ class PlayerPawn : Actor
 	{
 		let player = self.player;
 		
-		// [SO] 9/2/02: People were able to do an awful lot of damage
-		// when they were observers...
-		if (player.Bot == null && bot_observer)
-		{
-			return;
-		}
-
 		let weapn = player.ReadyWeapon;
 		if (weapn == null || !weapn.CheckAmmo (Weapon.PrimaryFire, true))
 		{
@@ -391,13 +384,6 @@ class PlayerPawn : Actor
 
 	virtual void FireWeaponAlt (State stat)
 	{
-		// [SO] 9/2/02: People were able to do an awful lot of damage
-		// when they were observers...
-		if (player.Bot == null && bot_observer)
-		{
-			return;
-		}
-
 		let weapn = player.ReadyWeapon;
 		if (weapn == null || weapn.FindState('AltFire') == null || !weapn.CheckAmmo (Weapon.AltFire, true))
 		{

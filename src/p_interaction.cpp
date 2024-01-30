@@ -346,7 +346,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 	}
 
 	// [ZZ] Fire WorldThingDied script hook.
-	E_WorldThingDied(this, inflictor);
+	Level->localEventManager->WorldThingDied(this, inflictor);
 
 	// [JM] Fire KILL type scripts for actor. Not needed for players, since they have the "DEATH" script type.
 	if (!player && !(flags7 & MF7_NOKILLSCRIPTS) && ((flags7 & MF7_USEKILLSCRIPTS) || gameinfo.forcekillscripts))
@@ -559,7 +559,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 		ClientObituary (this, inflictor, source, dmgflags, MeansOfDeath);
 
 		// [ZZ] fire player death hook
-		E_PlayerDied(Level->PlayerNum(player));
+		Level->localEventManager->PlayerDied(Level->PlayerNum(player));
 
 		// Death script execution, care of Skull Tag
 		Level->Behaviors.StartTypedScripts (SCRIPT_Death, this, true);
@@ -1452,7 +1452,7 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 			}
 
 			const int realdamage = MAX(0, damage);
-			E_WorldThingDamaged(target, inflictor, source, realdamage, mod, flags, angle);
+			target->Level->localEventManager->WorldThingDamaged(target, inflictor, source, realdamage, mod, flags, angle);
 			needevent = false;
 
 			target->CallDie (source, inflictor, flags, MeansOfDeath);
@@ -1473,7 +1473,7 @@ static int DoDamageMobj(AActor *target, AActor *inflictor, AActor *source, int d
 	if (realdamage > 0 && needevent)
 	{
 		// [ZZ] event handlers only need the resultant damage (they can't do anything about it anyway)
-		E_WorldThingDamaged(target, inflictor, source, realdamage, mod, flags, angle);
+		target->Level->localEventManager->WorldThingDamaged(target, inflictor, source, realdamage, mod, flags, angle);
 	}
 
 	return MAX(0, realdamage);

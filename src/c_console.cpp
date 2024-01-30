@@ -1326,7 +1326,7 @@ void C_FullConsole ()
 	if (gamestate != GS_STARTUP)
 	{
 		gamestate = GS_FULLCONSOLE;
-		currentUILevel->Music = "";
+		primaryLevel->Music = "";
 		S_Start ();
 		S_StartMusic();
 		P_FreeLevelData ();
