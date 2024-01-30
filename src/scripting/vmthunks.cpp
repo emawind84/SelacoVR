@@ -3247,7 +3247,7 @@ DEFINE_FIELD_X(LevelInfo, level_info_t, RedirectType)
 DEFINE_FIELD_X(LevelInfo, level_info_t, RedirectMapName)
 DEFINE_FIELD_X(LevelInfo, level_info_t, teamdamage)
 
-DEFINE_GLOBAL(currentVMLevel, level);
+DEFINE_GLOBAL_NAMED(currentVMLevel, level)
 DEFINE_FIELD(FLevelLocals, sectors)
 DEFINE_FIELD(FLevelLocals, lines)
 DEFINE_FIELD(FLevelLocals, sides)
