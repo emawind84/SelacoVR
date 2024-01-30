@@ -48,6 +48,7 @@
 #include "w_wad.h"
 #include "doomstat.h"
 #include "g_levellocals.h"
+#include "v_video.h"
 #include "utf8.h"
 
 extern FRandom pr_exrandom;

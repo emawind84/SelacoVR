@@ -74,6 +74,7 @@
 #include "p_acs.h"
 #include "am_map.h"
 #include "i_system.h"
+#include "v_video.h"
 #include "fragglescript/t_script.h"
 
 extern AActor *SpawnMapThing (int index, FMapThing *mthing, int position);
@@ -400,7 +401,8 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	translationtables[TRANSLATION_LevelScripted].Clear();
 
 	// Initial height of PointOfView will be set by player think.
-	players[consoleplayer].viewz = NO_VALUE;
+	auto p = Level->GetConsolePlayer();
+	if (p) p->viewz = NO_VALUE;
 
 	// Make sure all sounds are stopped before Z_FreeTags.
 	S_Start();

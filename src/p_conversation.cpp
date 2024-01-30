@@ -55,6 +55,7 @@
 #include "menu/menu.h"
 #include "g_levellocals.h"
 #include "vm.h"
+#include "v_video.h"
 #include "actorinlines.h"
 
 // The conversations as they exist inside a SCRIPTxx lump.
@@ -853,17 +854,17 @@ void P_StartConversation (AActor *npc, AActor *pc, bool facetalker, bool saveang
 	int i;
 
 	// Make sure this is actually a player.
-	if (pc == nullptr || pc->player == nullptr || npc == nullptr || pc->Level != currentUILevel) return;
+	if (pc == nullptr || pc->player == nullptr || npc == nullptr || !pc->Level->isPrimaryLevel()) return;
 	auto Level = pc->Level;
 
 	// [CW] If an NPC is talking to a PC already, then don't let
 	// anyone else talk to the NPC.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || pc->player == &players[i])
+		if (!Level->PlayerInGame(i) || pc->player == Level->Players[i])
 			continue;
 
-		if (npc == players[i].ConversationNPC)
+		if (npc == Level->Players[i]->ConversationNPC)
 			return;
 	}
 
@@ -877,7 +878,7 @@ void P_StartConversation (AActor *npc, AActor *pc, bool facetalker, bool saveang
 
 	FStrifeDialogueNode *CurNode = npc->Conversation;
 
-	if (pc->player == &players[consoleplayer])
+	if (pc->player == Level->GetConsolePlayer())
 	{
 		S_Sound (CHAN_VOICE, CHANF_UI, gameinfo.chatSound, 1, ATTN_NONE);
 	}
@@ -928,7 +929,7 @@ void P_StartConversation (AActor *npc, AActor *pc, bool facetalker, bool saveang
 	if (CurNode->SpeakerVoice != 0) S_Sound(npc, CHAN_VOICE, CHANF_NOPAUSE, CurNode->SpeakerVoice, 1, ATTN_NORM);
 
 	// The rest is only done when the conversation is actually displayed.
-	if (pc->player == &players[consoleplayer])
+	if (pc->player == Level->GetConsolePlayer())
 	{
 		if (CurNode->SpeakerVoice != 0)
 		{

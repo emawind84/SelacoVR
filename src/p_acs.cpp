@@ -5013,7 +5013,8 @@ int DLevelScript::SetUserCVar(int playernum, const char *cvarname, int value, bo
 	{
 		return 0;
 	}
-	FBaseCVar **cvar_p = Level->Players[playernum]->userinfo.CheckKey(FName(cvarname, true));
+	auto player = Level->Players[playernum];
+	FBaseCVar **cvar_p = player->userinfo.CheckKey(FName(cvarname, true));
 	FBaseCVar *cvar;
 	// Only mod-created cvars may be set.
 	if (cvar_p == NULL || (cvar = *cvar_p) == NULL || (cvar->GetFlags() & CVAR_IGNORE) || !(cvar->GetFlags() & CVAR_MOD))
@@ -5023,7 +5024,7 @@ int DLevelScript::SetUserCVar(int playernum, const char *cvarname, int value, bo
 	DoSetCVar(cvar, value, is_string);
 
 	// If we are this player, then also reflect this change in the local version of this cvar.
-	if (playernum == consoleplayer && Level->isPrimaryLevel())
+	if (player && player == Level->GetConsolePlayer())
 	{
 		FBaseCVar *cvar = FindCVar(cvarname, NULL);
 		// If we can find it in the userinfo, then we should also be able to find it in the normal cvar list,
@@ -8692,8 +8693,7 @@ scriptwait:
 				{
 					screen = screen->target;
 				}
-				if (pcd == PCD_ENDHUDMESSAGEBOLD || screen == NULL ||
-					players[consoleplayer].mo == screen)
+				if (Level->isPrimaryLevel() && (pcd == PCD_ENDHUDMESSAGEBOLD || screen == NULL || Level->isConsolePlayer(screen)))
 				{
 					int type = Stack[optstart-6];
 					int id = Stack[optstart-5];
@@ -9376,7 +9376,7 @@ scriptwait:
 			break;
 
 		case PCD_LOCALSETMUSIC:
-			if (activator == players[consoleplayer].mo)
+			if (Level->isConsolePlayer(activator))
 			{
 				S_ChangeMusic (Level->Behaviors.LookupString (STACK(3)), STACK(2));
 			}
@@ -9384,7 +9384,7 @@ scriptwait:
 			break;
 
 		case PCD_LOCALSETMUSICDIRECT:
-			if (activator == players[consoleplayer].mo)
+			if (Level->isConsolePlayer(activator))
 			{
 				S_ChangeMusic (Level->Behaviors.LookupString (TAGSTR(uallong(pc[0]))), uallong(pc[1]));
 			}
@@ -9717,7 +9717,7 @@ scriptwait:
 			}
 			else
 			{
-				PushToStack (int(activator->player - players));
+				PushToStack (Level->PlayerNum(activator->player));
 			}
 			break;
 
@@ -10430,7 +10430,7 @@ static void addDefered (level_info_t *i, acsdefered_t::EType type, int script, c
 		}
 		if (who != NULL && who->player != NULL)
 		{
-			def.playernum = int(who->player - players);
+			def.playernum = who->Level->PlayerNum(who->player);
 		}
 		else
 		{
@@ -10481,7 +10481,7 @@ int P_StartScript (FLevelLocals *Level, AActor *who, line_t *where, int script, 
 		}
 		else
 		{
-			if (!(flags & ACS_NET) || (who && who->player == &players[consoleplayer]))
+			if (!(flags & ACS_NET) || (who && Level->isConsolePlayer(who->player->mo))) // The indirection is necessary here.
 			{
 				Printf("P_StartScript: Unknown %s\n", ScriptPresentation(script).GetChars());
 			}

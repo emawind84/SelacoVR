@@ -400,7 +400,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 		// fair to count them toward a player's score.
 		if (player && Level->maptime)
 		{
-			source->player->frags[player - players]++;
+			source->player->frags[Level->PlayerNum(player)]++;
 			if (player == source->player)	// [RH] Cumulative frag count
 			{
 				char buff[256];
@@ -559,7 +559,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 		ClientObituary (this, inflictor, source, dmgflags, MeansOfDeath);
 
 		// [ZZ] fire player death hook
-		E_PlayerDied(int(player - players));
+		E_PlayerDied(Level->PlayerNum(player));
 
 		// Death script execution, care of Skull Tag
 		Level->Behaviors.StartTypedScripts (SCRIPT_Death, this, true);
@@ -592,7 +592,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 		// count environment kills against you
 		if (!source)
 		{
-			player->frags[player - players]++;
+			player->frags[Level->PlayerNum(player)]++;
 			player->fragcount--;	// [RH] Cumulative frag count
 		}
 						
@@ -605,7 +605,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 			VMCall(func, &param, 1, nullptr, 0);
 		}
 
-		if (this == players[consoleplayer].camera && automapactive)
+		if (Level->isCamera(this) && automapactive)
 		{
 			// don't die in auto map, switch view prior to dying
 			AM_Stop ();
@@ -1344,7 +1344,7 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 			player->damagecount = 100;	// teleport stomp does 10k points...
 		}
 		temp = damage < 100 ? damage : 100;
-		if (player == &players[consoleplayer])
+		if (player == target->Level->GetConsolePlayer() )
 		{
 			I_Tactile (40,10,40+temp*2);
 		}

@@ -2959,7 +2959,7 @@ FUNC(LS_SetPlayerProperty)
 						item->ColorVar(NAME_BlendColor) = MakeSpecialColormap(INVERSECOLORMAP);
 					}
 				}
-				else if (it->player - players == consoleplayer)
+				else if (it->player && it->player == Level->GetConsolePlayer())
 				{
 					Level->flags2 |= LEVEL2_ALLMAP;
 				}
@@ -2974,7 +2974,7 @@ FUNC(LS_SetPlayerProperty)
 						item->Destroy ();
 					}
 				}
-				else if (it->player - players == consoleplayer)
+				else if (it->player && it->player == Level->GetConsolePlayer())
 				{
 					Level->flags2 &= ~LEVEL2_ALLMAP;
 				}
@@ -3000,7 +3000,7 @@ FUNC(LS_SetPlayerProperty)
 							item->ColorVar(NAME_BlendColor) = MakeSpecialColormap(INVERSECOLORMAP);
 						}
 					}
-					else if (i == consoleplayer)
+					else if (p == Level->GetConsolePlayer())
 					{
 						Level->flags2 |= LEVEL2_ALLMAP;
 					}
@@ -3015,7 +3015,7 @@ FUNC(LS_SetPlayerProperty)
 							item->Destroy ();
 						}
 					}
-					else if (i == consoleplayer)
+					else if (p == Level->GetConsolePlayer())
 					{
 						Level->flags2 &= ~LEVEL2_ALLMAP;
 					}

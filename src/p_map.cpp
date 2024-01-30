@@ -545,10 +545,7 @@ bool	P_TeleportMove(AActor* thing, const DVector3 &pos, bool telefrag, bool modi
 			thing->AdjustFloorClip();
 		}
 
-		if (thing == players[consoleplayer].camera)
-		{
-			R_ResetViewInterpolation();
-		}
+		thing->renderflags |= RF_NOINTERPOLATEVIEW;
 
 		// If this teleport was caused by a move, P_TryMove() will handle the
 		// sector transition messages better than we can here.
@@ -2532,7 +2529,7 @@ bool P_TryMove(AActor *thing, const DVector2 &pos,
 			}
 			// if this is the current camera we need to store the point where the portal was crossed and the exit
 			// so that the renderer can properly calculate an interpolated position along the movement path.
-			if (thing == players[consoleplayer].camera)
+			if (thing->Level->isCamera(thing))
 			{
 				divline_t dl1 = { besthit.Oldrefpos.X,besthit.Oldrefpos.Y, besthit.Refpos.X - besthit.Oldrefpos.X, besthit.Refpos.Y - besthit.Oldrefpos.Y };
 				DVector3a hit = { {dl1.x + dl1.dx * bestfrac, dl1.y + dl1.dy * bestfrac, 0.},0. };
@@ -2547,7 +2544,8 @@ bool P_TryMove(AActor *thing, const DVector2 &pos,
 				{
 					P_TranslatePortalXY(ld, hit.pos.X, hit.pos.Y);
 					P_TranslatePortalZ(ld, hit.pos.Z);
-					players[consoleplayer].viewz += hit.pos.Z;	// needs to be done here because otherwise the renderer will not catch the change.
+					auto p = thing->Level->GetConsolePlayer();
+					if (p) p->viewz += hit.pos.Z;	// needs to be done here because otherwise the renderer will not catch the change.
 					P_TranslatePortalAngle(ld, hit.angle);
 				}
 				R_AddInterpolationPoint(hit);
@@ -6398,7 +6396,7 @@ int P_PushUp(AActor *thing, FChangePosition *cpos)
 		if (cpos->instant)
 		{
 			intersect->Prev.Z += intersect->Z() - oldz;
-			if (intersect->CheckLocalView()) R_ResetViewInterpolation();
+			intersect->renderflags |= RF_NOINTERPOLATEVIEW;
 		}
 
 		intersect->UpdateRenderSectorList();
@@ -6495,7 +6493,7 @@ void PIT_FloorDrop(AActor *thing, FChangePosition *cpos)
 			if (cpos->instant)
 			{
 				thing->Prev.Z += thing->floorz - oldz;
-				if (thing->CheckLocalView()) R_ResetViewInterpolation();
+				thing->renderflags |= RF_NOINTERPOLATEVIEW;
 			}
 			thing->SetZ(thing->floorz);
 			P_CheckFakeFloorTriggers(thing, oldz);
@@ -6509,7 +6507,7 @@ void PIT_FloorDrop(AActor *thing, FChangePosition *cpos)
 			if (cpos->instant)
 			{
 				thing->Prev.Z += -oldfloorz + thing->floorz;
-				if (thing->CheckLocalView()) R_ResetViewInterpolation();
+				thing->renderflags |= RF_NOINTERPOLATEVIEW;
 			}
 			thing->AddZ(-oldfloorz + thing->floorz);
 			P_CheckFakeFloorTriggers(thing, oldz);
@@ -6549,7 +6547,7 @@ void PIT_FloorRaise(AActor *thing, FChangePosition *cpos)
 		if (cpos->instant)
 		{
 			thing->Prev.Z += thing->floorz - thing->Z();
-			if (thing->CheckLocalView()) R_ResetViewInterpolation();
+			thing->renderflags |= RF_NOINTERPOLATEVIEW;
 		}
 
 		thing->SetZ(thing->floorz);
@@ -6563,7 +6561,7 @@ void PIT_FloorRaise(AActor *thing, FChangePosition *cpos)
 			if (cpos->instant)
 			{
 				thing->Prev.Z += -oldfloorz + thing->floorz;
-				if (thing->CheckLocalView()) R_ResetViewInterpolation();
+				thing->renderflags |= RF_NOINTERPOLATEVIEW;
 			}
 		}
 		else return;

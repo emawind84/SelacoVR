@@ -44,6 +44,7 @@
 #include "c_dispatch.h"
 #include "dikeys.h"
 #include "events.h"
+#include "g_game.h"
 #include "utf8.h"
 #include "doomerrors.h"
 

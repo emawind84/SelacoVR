@@ -19,6 +19,17 @@
 //-----------------------------------------------------------------------------
 //
 
+#include "i_system.h"
+
+#include <dirent.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <fnmatch.h>
+#include <unistd.h>
+
+#include <stdarg.h>
 #include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
