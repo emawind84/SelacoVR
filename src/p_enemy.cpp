@@ -3174,7 +3174,7 @@ int CheckBossDeath (AActor *actor)
 	AActor *other;
 
 	PClassActor *cls = actor->GetClass();
-	FName type = cls->GetReplacee()->TypeName;
+	FName type = cls->GetReplacee(actor->Level)->TypeName;
 
 	while ( (other = iterator.Next ()) )
 	{
@@ -3182,7 +3182,7 @@ int CheckBossDeath (AActor *actor)
 			continue;
 
 		PClassActor *ocls = other->GetClass();
-		FName otype = ocls->GetReplacee()->TypeName;
+		FName otype = ocls->GetReplacee(other->Level)->TypeName;
 
 		if ((other->health > 0 || (other->flags & MF_ICECORPSE))
 			&& (ocls == cls || otype == type))
@@ -3293,7 +3293,7 @@ void A_BossDeath(AActor *self)
 			fatso && arachnotron && 
 			(GetDefaultByType(fatso)->flags8 & MF8_MAP07BOSS1) && 
 			(GetDefaultByType(arachnotron)->flags8 & MF8_MAP07BOSS2) &&
-			fatso->GetReplacement() == arachnotron->GetReplacement();
+			fatso->GetReplacement(Level) == arachnotron->GetReplacement(Level);
 
 		if ((flags8 & MF8_MAP07BOSS1) || samereplacement)
 		{

@@ -323,7 +323,7 @@ void E_WorldThingGround(AActor* actor, FState* st)
 	// don't call anything if actor was destroyed on PostBeginPlay/BeginPlay/whatever.
 	if (actor->ObjectFlags & OF_EuthanizeMe)
 		return;
-	for (DStaticEventHandler* handler = E_FirstEventHandler; handler; handler = handler->next)
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
 		handler->WorldThingGround(actor, st);
 }
 
@@ -450,7 +450,7 @@ bool EventManager::Responder(const event_t* ev)
 
 	// FIRST, check if there are UI processors
 	// if there are, block mouse input
-	for (DStaticEventHandler* handler = E_LastEventHandler; handler; handler = handler->prev)
+	for (DStaticEventHandler* handler = LastEventHandler; handler; handler = handler->prev)
 	{
 		if (handler->IsUiProcessor)
 		{
@@ -514,9 +514,11 @@ void EventManager::RenderOverlay(EHudState state)
 		handler->RenderOverlay(state);
 }
 
-void E_RenderUnderlay(EHudState state)
+void EventManager::RenderUnderlay(EHudState state)
 {
-	for (DStaticEventHandler* handler = E_FirstEventHandler; handler; handler = handler->next)
+	if (ShouldCallStatic(false)) staticEventManager.RenderUnderlay(state);
+
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
 		handler->RenderUnderlay(state);
 }
 
@@ -1016,7 +1018,7 @@ void DStaticEventHandler::RenderUnderlay(EHudState state)
 	{
 		// don't create excessive DObjects if not going to be processed anyway
 		if (isEmpty(func)) return;
-		FRenderEvent e = E_SetupRenderEvent();
+		FRenderEvent e = owner->SetupRenderEvent();
 		e.HudState = int(state);
 		VMValue params[2] = { (DStaticEventHandler*)this, &e };
 		VMCall(func, params, 2, nullptr, 0);

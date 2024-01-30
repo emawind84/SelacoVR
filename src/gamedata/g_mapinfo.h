@@ -201,7 +201,7 @@ enum ELevelFlags : unsigned int
 	LEVEL2_LAXACTIVATIONMAPINFO	= 0x00000008,	// LEVEL_LAXMONSTERACTIVATION is not a default.
 
 	LEVEL2_MISSILESACTIVATEIMPACT=0x00000010,	// Missiles are the activators of SPAC_IMPACT events, not their shooters
-	LEVEL2_FROZEN				= 0x00000020,	// Game is frozen by a TimeFreezer
+	LEVEL2_NEEDCLUSTERTEXT		= 0x00000020,	// A map with this flag needs to retain its cluster intermission texts when being redefined in UMAPINFO
 
 	LEVEL2_KEEPFULLINVENTORY	= 0x00000040,	// doesn't reduce the amount of inventory items to 1
 
@@ -225,7 +225,7 @@ enum ELevelFlags : unsigned int
 	LEVEL2_FORCETEAMPLAYOFF		= 0x00080000,
 
 	LEVEL2_CONV_SINGLE_UNFREEZE	= 0x00100000,
-	LEVEL2_RAILINGHACK			= 0x00200000,	// but UDMF requires them to be separate to have more control
+	LEVEL2_NOCLUSTERTEXT		= 0x00200000,	// ignore intermission texts fro clusters. This gets set when UMAPINFO is used to redefine its properties.
 	LEVEL2_DUMMYSWITCHES		= 0x00400000,
 	LEVEL2_HEXENHACK			= 0x00800000,	// Level was defined in a Hexen style MAPINFO
 
@@ -248,6 +248,16 @@ enum ELevelFlags : unsigned int
 	LEVEL3_EXITNORMALUSED		= 0x00000020,
 	LEVEL3_EXITSECRETUSED		= 0x00000040,
 	LEVEL3_FORCEWORLDPANNING	= 0x00000080,	// Forces the world panning flag for all textures, even those without it explicitly set.
+	LEVEL3_HIDEAUTHORNAME		= 0x00000100,
+	LEVEL3_PROPERMONSTERFALLINGDAMAGE	= 0x00000200,	// Properly apply falling damage to the monsters
+	LEVEL3_E1M8SPECIAL			= 0x00000800,
+	LEVEL3_E2M8SPECIAL			= 0x00001000,
+	LEVEL3_E3M8SPECIAL			= 0x00002000,
+	LEVEL3_E4M8SPECIAL			= 0x00004000,
+	LEVEL3_E4M6SPECIAL			= 0x00008000,
+	LEVEL3_AVOIDMELEE			= 0x00020000,	// global flag needed for proper MBF support.
+	LEVEL3_NOJUMPDOWN			= 0x00040000,	// only for MBF21. Inverse of MBF's dog_jumping flag.
+	LEVEL3_LIGHTCREATED			= 0x00080000,	// a light had been created in the last frame
 };
 
 
@@ -323,6 +333,7 @@ struct level_info_t
 
 	FString		Music;
 	FString		LevelName;
+	FString		AuthorName;
 	int8_t		WallVertLight, WallHorizLight;
 	int			musicorder;
 	FCompressedBuffer	Snapshot;
@@ -427,15 +438,18 @@ struct cluster_info_t
 };
 
 // Cluster flags
-#define CLUSTER_HUB				0x00000001	// Cluster uses hub behavior
-#define CLUSTER_EXITTEXTINLUMP	0x00000002	// Exit text is the name of a lump
-#define CLUSTER_ENTERTEXTINLUMP	0x00000004	// Enter text is the name of a lump
-#define CLUSTER_FINALEPIC		0x00000008	// Finale "flat" is actually a full-sized image
-#define CLUSTER_LOOKUPEXITTEXT	0x00000010	// Exit text is the name of a language string
-#define CLUSTER_LOOKUPENTERTEXT	0x00000020	// Enter text is the name of a language string
-#define CLUSTER_LOOKUPNAME		0x00000040	// Name is the name of a language string
-#define CLUSTER_LOOKUPCLUSTERNAME 0x00000080	// Cluster name is the name of a language string
-#define CLUSTER_ALLOWINTERMISSION 0x00000100  // Allow intermissions between levels in a hub.
+enum
+{
+	CLUSTER_HUB				= 0x00000001,	// Cluster uses hub behavior
+	CLUSTER_EXITTEXTINLUMP	= 0x00000002,	// Exit text is the name of a lump
+	CLUSTER_ENTERTEXTINLUMP	= 0x00000004,	// Enter text is the name of a lump
+	CLUSTER_FINALEPIC		= 0x00000008,	// Finale "flat" is actually a full-sized image
+	CLUSTER_LOOKUPEXITTEXT	= 0x00000010,	// Exit text is the name of a language string
+	CLUSTER_LOOKUPENTERTEXT	= 0x00000020,	// Enter text is the name of a language string
+	CLUSTER_LOOKUPNAME		= 0x00000040,	// Name is the name of a language string
+	CLUSTER_LOOKUPCLUSTERNAME = 0x00000080,	// Cluster name is the name of a language string
+	CLUSTER_ALLOWINTERMISSION = 0x00000100  // Allow intermissions between levels in a hub.
+};
 
 extern TArray<level_info_t> wadlevelinfos;
 
@@ -449,6 +463,7 @@ level_info_t *CheckLevelRedirect (level_info_t *info);
 
 FString CalcMapName (int episode, int level);
 
+void G_ClearMapinfo();
 void G_ParseMapInfo (FString basemapinfo);
 
 enum ESkillProperty
@@ -466,6 +481,8 @@ enum ESkillProperty
 	SKILLP_SlowMonsters,
 	SKILLP_Infight,
 	SKILLP_PlayerRespawn,
+	SKILLP_SpawnMulti,
+	SKILLP_InstantReaction,
 };
 enum EFSkillProperty	// floating point properties
 {
@@ -509,6 +526,8 @@ struct FSkillInfo
 	int RespawnLimit;
 	double Aggressiveness;
 	int SpawnFilter;
+	bool SpawnMulti;
+	bool InstantReaction;
 	int ACSReturn;
 	FString MenuName;
 	FString PicName;
@@ -525,7 +544,7 @@ struct FSkillInfo
 	int Infighting;
 	bool PlayerRespawn;
 
-	FSkillInfo() {}
+	FSkillInfo() = default;
 	FSkillInfo(const FSkillInfo &other)
 	{
 		operator=(other);

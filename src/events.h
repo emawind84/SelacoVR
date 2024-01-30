@@ -297,6 +297,8 @@ struct EventManager
 	void RenderFrame();
 	// called after everything's been rendered, but before console/menus
 	void RenderOverlay(EHudState state);
+	// called after everything's been rendered, but before console/menus/huds
+	void RenderUnderlay(EHudState state);
 	// this executes when a player enters the level (once). PlayerEnter+inhub = RETURN
 	void PlayerEntered(int num, bool fromhub);
 	// this executes when a player respawns. includes resurrect cheat.
