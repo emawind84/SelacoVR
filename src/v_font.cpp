@@ -1275,7 +1275,7 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 			{
 				Chars[i].OriginalPic = pic;
 				Chars[i].TranslatedPic = new FImageTexture(new FFontChar1 (pic->GetImage()), "");
-				Chars[i].TranslatedPic->Scale = pic->Scale;
+				Chars[i].TranslatedPic->CopySize(pic);
 				Chars[i].TranslatedPic->SetUseType(ETextureType::FontChar);
 				TexMan.AddTexture(Chars[i].TranslatedPic);
 			}
@@ -2549,7 +2549,7 @@ FSpecialFont::FSpecialFont (const char *name, int first, int count, FTexture **l
 			if (!noTranslate)
 			{
 				Chars[i].TranslatedPic = new FImageTexture(new FFontChar1 (charlumps[i]->GetImage()), "");
-				Chars[i].TranslatedPic->Scale = charlumps[i]->Scale;
+				Chars[i].TranslatedPic->CopySize(charlumps[i]);
 				Chars[i].TranslatedPic->SetUseType(ETextureType::FontChar);
 				TexMan.AddTexture(Chars[i].TranslatedPic);
 			}
@@ -3269,12 +3269,8 @@ void V_InitFonts()
 
 	if (!(ConFont = V_GetFont("ConsoleFont", "CONFONT")))
 	{
-		ConFont = SmallFont;
+	ConFont = SmallFont;
 	}
-
-	if (ConFont->GetName() == FName("badfont"))
-		ConFont = SmallFont;
-
 	if (!(IntermissionFont = FFont::FindFont("IntermissionFont")))
 	{
 		if (gameinfo.gametype & GAME_DoomChex)

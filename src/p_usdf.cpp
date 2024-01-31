@@ -612,6 +612,57 @@ public:
 			}
 		}
 
+		if (namespace_bits == Gz) // string page name linker
+		{
+			int numnodes = Level->StrifeDialogues.Size();
+			int usedstrings = false;
+
+			TMap<FString, int> nameToIndex;
+			for (int i = 0; i < numnodes; i++)
+			{
+				FString key = Level->StrifeDialogues[i]->ThisNodeName;
+				if (key.IsNotEmpty())
+				{
+					key.ToLower();
+					if (nameToIndex.CheckKey(key))
+						Printf("Warning! Duplicate page name '%s'!\n", Level->StrifeDialogues[i]->ThisNodeName.GetChars());
+					else
+						nameToIndex[key] = i;
+					usedstrings = true;
+				}
+			}
+			if (usedstrings)
+			{
+				for (int i = 0; i < numnodes; i++)
+				{
+					FString itemLinkKey = Level->StrifeDialogues[i]->ItemCheckNodeName;
+					if (itemLinkKey.IsNotEmpty())
+					{
+						itemLinkKey.ToLower();
+						if (nameToIndex.CheckKey(itemLinkKey))
+							Level->StrifeDialogues[i]->ItemCheckNode = nameToIndex[itemLinkKey] + 1;
+						else
+							Printf("Warning! Reference to non-existent item-linked dialogue page name '%s' in page %i!\n", Level->StrifeDialogues[i]->ItemCheckNodeName.GetChars(), i);
+					}
+
+					FStrifeDialogueReply *NodeCheck = Level->StrifeDialogues[i]->Children;
+					while (NodeCheck)
+					{
+						if (NodeCheck->NextNodeName.IsNotEmpty())
+						{
+							FString key = NodeCheck->NextNodeName;
+							key.ToLower();
+							if (nameToIndex.CheckKey(key))
+								NodeCheck->NextNode = nameToIndex[key] + 1;
+							else
+								Printf("Warning! Reference to non-existent reply-linked dialogue page name '%s' in page %i!\n", NodeCheck->NextNodeName.GetChars(), i);
+						}
+						NodeCheck = NodeCheck->Next;
+					}
+				}
+			}
+
+		}
 		return true;
 	}
 };

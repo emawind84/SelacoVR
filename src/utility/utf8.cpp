@@ -94,7 +94,7 @@ int utf8_decode(const uint8_t *src, int *size)
 		return c;
 	}
 
-	int c1 = src[1];
+	int c1 = src[1] & 0x3f;
 
 	if ((c & 0xE0) == 0xC0) 
 	{
@@ -107,7 +107,7 @@ int utf8_decode(const uint8_t *src, int *size)
 		return -1;
 	}
 
-	int c2 = src[2];
+	int c2 = src[2] & 0x3f;
 
 	if ((c & 0xF0) == 0xE0) 
 	{
@@ -120,7 +120,7 @@ int utf8_decode(const uint8_t *src, int *size)
 		return -1;
 	}
 	
-	int c3 = src[3];
+	int c3 = src[3] & 0x3f;
 
 	if ((c & 0xF8) == 0xF0) 
 	{
@@ -245,5 +245,15 @@ const char *MakeUTF8(const char *outline, int *numchars = nullptr)
 		if (numchars) *numchars++;
 	}
 	UTF8String.Push(0);
+	return UTF8String.Data();
+}
+
+const char *MakeUTF8(int codepoint, int *psize)
+{
+	int size = 0;
+	UTF8String.Resize(5);
+	utf8_encode(codepoint, (uint8_t*)UTF8String.Data(), &size);
+	UTF8String[size] = 0;
+	if (psize) *psize = size;
 	return UTF8String.Data();
 }
