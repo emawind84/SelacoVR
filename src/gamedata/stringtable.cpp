@@ -332,5 +332,4 @@ CCMD(printlocalized)
 		}
 		Printf("%s\n", GStrings(argv[1]));
 	}
-
 }
