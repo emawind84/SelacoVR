@@ -106,8 +106,6 @@ extend class Actor
 {
 	const FATSPREAD = 90./8;
 	
-	private native bool compat_mushroom();
-
 	void A_FatRaise()
 	{
 		A_FaceTarget();
@@ -197,7 +195,7 @@ extend class Actor
 		aimtarget.Height = Height;
 		
 		bool shootmode = ((flags & MSF_Classic) || // Flag explicitly set, or no flags and compat options
-					(flags == 0 && CurState.bDehacked && (compatflags & COMPATF_MUSHROOM)));
+					(flags == 0 && CurState.bDehacked && (Level.compatflags & COMPATF_MUSHROOM)));
 
 		for (i = -numspawns; i <= numspawns; i += 8)
 		{

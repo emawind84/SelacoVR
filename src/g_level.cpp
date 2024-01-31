@@ -604,7 +604,7 @@ bool ShouldDoIntermission(cluster_info_t* nextcluster, cluster_info_t* thisclust
 	return true;
 }
 
-void FLevelLocals::ChangeLevel(const char *levelname, int position, int flags, int nextSkill)
+void FLevelLocals::ChangeLevel(const char *levelname, int position, int inflags, int nextSkill)
 {
 	if (!isPrimaryLevel()) return;	// only the primary level may exit.
 
@@ -661,7 +661,7 @@ void FLevelLocals::ChangeLevel(const char *levelname, int position, int flags, i
 	if (nextSkill != -1)
 		NextSkill = (unsigned)nextSkill < AllSkills.Size() ? nextSkill : -1;
 
-	if (flags & CHANGELEVEL_NOINTERMISSION)
+	if (inflags & CHANGELEVEL_NOINTERMISSION)
 	{
 		flags |= LEVEL_NOINTERMISSION;
 	}
@@ -678,15 +678,15 @@ void FLevelLocals::ChangeLevel(const char *levelname, int position, int flags, i
 		{
 			if (nextinfo->flags2 & LEVEL2_RESETINVENTORY)
 			{
-				flags |= CHANGELEVEL_RESETINVENTORY;
+				inflags |= CHANGELEVEL_RESETINVENTORY;
 			}
 			if (nextinfo->flags2 & LEVEL2_RESETHEALTH)
 			{
-				flags |= CHANGELEVEL_RESETHEALTH;
+				inflags |= CHANGELEVEL_RESETHEALTH;
 			}
 		}
 	}
-	changeflags = flags;
+	changeflags = inflags;
 
 	BotInfo.End();	//Added by MC:
 
