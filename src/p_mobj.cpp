@@ -5123,8 +5123,7 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 
 	mobj = Spawn (this, p->cls, spawn, NO_REPLACE);
 
-	if (mobj == nullptr) return nullptr;
-	if (flags & LEVEL_USEPLAYERSTARTZ)
+	if (this->flags & LEVEL_USEPLAYERSTARTZ)
 	{
 		if (spawn.Z == ONFLOORZ)
 			mobj->AddZ(mthing->pos.Z);

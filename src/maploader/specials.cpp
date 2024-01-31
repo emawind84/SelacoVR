@@ -1058,7 +1058,7 @@ void MapLoader::SpawnLights(sector_t *sector)
 
 		// [RH] Hexen-like phased lighting
 	case LightSequenceStart:
-		Level->CreateThinker<DPhased>(sector);
+		Level->CreateThinker<DPhased>(sector)->Propagate();
 		break;
 
 	case dLight_Flicker:
