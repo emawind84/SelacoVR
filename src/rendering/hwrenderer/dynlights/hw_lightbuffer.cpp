@@ -61,9 +61,10 @@ FLightBuffer::FLightBuffer()
 	else
 	{
 		mBufferType = false;
-		mBlockSize = 2 * 1024 / ELEMENT_SIZE;
+		mBlockSize = screen->maxuniformblock / ELEMENT_SIZE;
 		mBlockAlign = screen->uniformblockalignment / ELEMENT_SIZE;
 		mMaxUploadSize = (mBlockSize - mBlockAlign);
+		mByteSize += screen->maxuniformblock;	// to avoid mapping beyond the end of the buffer.
 	}
 
 	mBuffer = screen->CreateDataBuffer(LIGHTBUF_BINDINGPOINT, mBufferType);
@@ -131,6 +132,7 @@ int FLightBuffer::UploadLights(FDynLightData &data)
 	}
 	else
 	{
+		DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mIndex=%d\n", thisindex + totalsize);
 		return -1;	// Buffer is full. Since it is being used live at the point of the upload we cannot do much here but to abort.
 	}
 }
