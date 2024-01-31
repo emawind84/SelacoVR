@@ -105,6 +105,20 @@ void MapLoader::LoadStrifeConversations (MapData *map, const char *mapname)
 	}
 	else
 	{
+		// additive dialogues via MAPINFO
+		bool addedDialogues = false;
+		for (const FString &addd : gameinfo.AddDialogues)
+		{
+			if (!LoadScriptFile(addd, true, 0))
+			{
+				continue;
+			}
+			else
+			{
+				addedDialogues = true;
+			}
+		}
+
 		if (strnicmp (mapname, "MAP", 3) == 0)
 		{
 			char scriptname_b[9] = { 'S','C','R','I','P','T',mapname[3],mapname[4],0 };
@@ -121,6 +135,10 @@ void MapLoader::LoadStrifeConversations (MapData *map, const char *mapname)
 		{
 			if (LoadScriptFile(gameinfo.Dialogue, false, 0))
 			{
+				if (addedDialogues)
+				{
+					Printf(TEXTCOLOR_RED "Warning! Dialogue was mixed with AddDialogues! Previous AddDialogues have been overwritten\n");
+				}
 				return;
 			}
 		}
@@ -328,7 +346,7 @@ FStrifeDialogueNode *MapLoader::ReadRetailNode (const char *name, FileReader &lu
 	for (j = 0; j < 3; ++j)
 	{
 		auto inv = GetStrifeType(speech.ItemCheck[j]);
-		if (!inv->IsDescendantOf(NAME_Inventory)) inv = nullptr;
+		if (inv == NULL || !inv->IsDescendantOf(NAME_Inventory)) inv = nullptr;
 		node->ItemCheck[j].Item = inv;
 		node->ItemCheck[j].Amount = -1;
 	}
@@ -499,7 +517,7 @@ void MapLoader::ParseReplies (const char *name, int pos, FStrifeDialogueReply **
 		for (k = 0; k < 3; ++k)
 		{
 			auto inv = GetStrifeType(rsp->Item[k]);
-			if (!inv->IsDescendantOf(NAME_Inventory)) inv = nullptr;
+			if (inv == NULL || !inv->IsDescendantOf(NAME_Inventory)) inv = nullptr;
 			reply->ItemCheck[k].Item = inv;
 			reply->ItemCheck[k].Amount = rsp->Count[k];
 		}
