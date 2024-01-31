@@ -1119,7 +1119,6 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 	ActiveColors = 0;
 	SpaceWidth = 0;
 	FontHeight = 0;
-	int FixedWidth = 0; // hack
 	uint8_t pp = 0;
 	for (auto &p : PatchRemap) p = pp++;
 	translateUntranslated = false;
@@ -1183,24 +1182,12 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 						sc.MustGetValue(false);
 						FontHeight = sc.Number;
 					}
-					else if (sc.Compare("CellSize")) // hack
-					{
-						sc.MustGetValue(false);
-						FixedWidth = sc.Number;
-						sc.MustGetToken(',');
-						sc.MustGetValue(false);
-						FontHeight = sc.Number;
-					}
 				}
 			}
 		}
 	}
 	
-	if (FixedWidth > 0)
-	{
-		FontName = FName("badfont"); // hack
-	}
-
+	
 	if (nametemplate != nullptr)
 	{
 		for (i = 0; i < lcount; i++)
@@ -1305,7 +1292,6 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 			Chars[i].XMove = INT_MIN;
 		}
 	}
-
 	if (SpaceWidth == 0) // An explicit override from the .inf file must always take precedence
 	{
 		if (spacewidth != -1)
