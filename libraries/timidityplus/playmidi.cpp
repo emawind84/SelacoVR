@@ -26,6 +26,7 @@
 
 #include <string.h>
 #include <math.h>
+#include <mutex>
 #include "timidity.h"
 #include "common.h"
 #include "instrum.h"

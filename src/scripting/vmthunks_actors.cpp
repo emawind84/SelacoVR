@@ -689,7 +689,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, RestoreDamage, RestoreDamage)
 
 static int PlayerNumber(AActor *self)
 {
-	return self->player ? int(self->player - players) : 0;
+	return self->player ? self->Level->PlayerNum(self->player) : 0;
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, PlayerNumber, PlayerNumber)
@@ -1370,26 +1370,26 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, GetSpriteIndex, ZS_GetSpriteIndex)
 
 static PClassActor *ZS_GetReplacement(PClassActor *c)
 {
-	return c->GetReplacement();
+	return c->GetReplacement(currentVMLevel);
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, GetReplacement, ZS_GetReplacement)
 {
 	PARAM_PROLOGUE;
 	PARAM_POINTER(c, PClassActor);
-	ACTION_RETURN_POINTER(c->GetReplacement());
+	ACTION_RETURN_POINTER(ZS_GetReplacement(c));
 }
 
 static PClassActor *ZS_GetReplacee(PClassActor *c)
 {
-	return c->GetReplacee();
+	return c->GetReplacee(currentVMLevel);
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, GetReplacee, ZS_GetReplacee)
 {
 	PARAM_PROLOGUE;
 	PARAM_POINTER(c, PClassActor);
-	ACTION_RETURN_POINTER(c->GetReplacee());
+	ACTION_RETURN_POINTER(ZS_GetReplacee(c));
 }
 
 static void DrawSplash(AActor *self, int count, double angle, int kind)
@@ -1836,34 +1836,6 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, isFrozen, isFrozen)
 	ACTION_RETURN_BOOL(isFrozen(self));
 }
 
-
-//=====================================================================================
-//
-// compat flags. These two are the only ones that get checked in script code
-// so anything more complex isn't really needed.
-//
-//=====================================================================================
-static int compat_limitpain_(AActor *self)
-{
-	return self->Level->i_compatflags & COMPATF_LIMITPAIN;
-}
-
-static int compat_mushroom_(AActor *self)
-{
-	return self->Level->i_compatflags & COMPATF_MUSHROOM;
-}
-
-DEFINE_ACTION_FUNCTION_NATIVE(AActor, compat_limitpain, compat_limitpain_)
-{
-	PARAM_SELF_PROLOGUE(AActor);
-	ACTION_RETURN_INT(compat_limitpain_(self));
-}
-
-DEFINE_ACTION_FUNCTION_NATIVE(AActor, compat_mushroom, compat_mushroom_)
-{
-	PARAM_SELF_PROLOGUE(AActor);
-	ACTION_RETURN_INT(compat_mushroom_(self));
-}
 
 //===========================================================================
 //

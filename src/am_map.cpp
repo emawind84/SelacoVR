@@ -47,6 +47,7 @@
 #include "d_player.h"
 #include "p_blockmap.h"
 #include "g_game.h"
+#include "v_video.h"
 
 #include "m_cheat.h"
 #include "c_dispatch.h"
@@ -130,8 +131,8 @@ CVAR(Int, am_showsubsector, -1, 0);
 
 CUSTOM_CVAR(Int, am_showalllines, -1, CVAR_NOINITCALL)	// This is a cheat so don't save it.
 {
-	if (currentUILevel && currentUILevel->automap)
-		currentUILevel->automap->UpdateShowAllLines();
+	if (primaryLevel && primaryLevel->automap)
+		primaryLevel->automap->UpdateShowAllLines();
 }
 
 EXTERN_CVAR(Bool, sv_cheats)
@@ -172,9 +173,9 @@ CUSTOM_CVAR(Int, am_emptyspacemargin, 0, CVAR_ARCHIVE)
 		self = 90;
 	}
 
-	if (nullptr != StatusBar && currentUILevel && currentUILevel->automap)
+	if (nullptr != StatusBar && primaryLevel && primaryLevel->automap)
 	{
-		currentUILevel->automap->NewResolution();
+		primaryLevel->automap->NewResolution();
 	}
 }
 
@@ -196,8 +197,8 @@ CVAR(Int, am_markcolor, CR_GREY, CVAR_ARCHIVE)
 CCMD(am_togglefollow)
 {
 	am_followplayer = !am_followplayer;
-	if (currentUILevel && currentUILevel->automap)
-		currentUILevel->automap->ResetFollowLocation();
+	if (primaryLevel && primaryLevel->automap)
+		primaryLevel->automap->ResetFollowLocation();
 	Printf("%s\n", GStrings(am_followplayer ? "AMSTR_FOLLOWON" : "AMSTR_FOLLOWOFF"));
 }
 
@@ -215,9 +216,9 @@ CCMD(am_toggletexture)
 
 CCMD(am_setmark)
 {
-	if (currentUILevel && currentUILevel->automap)
+	if (primaryLevel && primaryLevel->automap)
 	{
-		int m = currentUILevel->automap->addMark();
+		int m = primaryLevel->automap->addMark();
 		if (m >= 0)
 		{
 			Printf("%s %d\n", GStrings("AMSTR_MARKEDSPOT"), m);
@@ -227,7 +228,7 @@ CCMD(am_setmark)
 
 CCMD(am_clearmarks)
 {
-	if (currentUILevel && currentUILevel->automap && currentUILevel->automap->clearMarks())
+	if (primaryLevel && primaryLevel->automap && primaryLevel->automap->clearMarks())
 	{
 		Printf("%s\n", GStrings("AMSTR_MARKSCLEARED"));
 	}
@@ -235,8 +236,8 @@ CCMD(am_clearmarks)
 
 CCMD(am_gobig)
 {
-	if (currentUILevel && currentUILevel->automap)
-		currentUILevel->automap->GoBig();
+	if (primaryLevel && primaryLevel->automap)
+		primaryLevel->automap->GoBig();
 }
 
 CCMD(togglemap)
@@ -3064,7 +3065,7 @@ void DAutomap::drawMarks ()
 
 			if (font == nullptr)
 			{
-				DrawMarker (TexMan.GetTexture(marknums[i], true), markpoints[i].x, markpoints[i].y, -3, 0,
+				DrawMarker(TexMan.GetTexture(marknums[i], true), markpoints[i].x, markpoints[i].y, -3, 0,
 					1, 1, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
 			}
 			else
@@ -3352,7 +3353,7 @@ void AM_ToggleMap()
 		return;
 
 	// ... or if there is no automap.
-	if (!currentUILevel || !currentUILevel->automap)
+	if (!primaryLevel || !primaryLevel->automap)
 		return;
 
 	if (!automapactive)
@@ -3365,7 +3366,7 @@ void AM_ToggleMap()
 		Button_AM_ZoomIn.Reset();
 		Button_AM_ZoomOut.Reset();
 
-		currentUILevel->automap->startDisplay();
+		primaryLevel->automap->startDisplay();
 		automapactive = true;
 		viewactive = (am_overlay != 0.f);
 	}

@@ -194,9 +194,7 @@ uint8_t*			zdembodyend;			// end of ZDEM BODY chunk
 bool 			singledemo; 			// quit after playing a demo from cmdline 
  
 bool 			precache = true;		// if true, load all graphics at start 
- 
-wbstartstruct_t wminfo; 				// parms for world map / intermission 
- 
+  
 short			consistancy[MAXPLAYERS][BACKUPTICS];
  
  
@@ -888,7 +886,7 @@ void G_AddViewPitch (int look, bool mouse)
 		return;
 	}
 	look = LookAdjust(look);
-	if (!currentUILevel->IsFreelookAllowed())
+	if (!primaryLevel->IsFreelookAllowed())
 	{
 		LocalViewPitch = 0;
 	}
@@ -1074,7 +1072,7 @@ bool G_Responder (event_t *ev)
 	{
 		if (ST_Responder (ev))
 			return true;		// status window ate it
-		if (!viewactive && currentUILevel->automap->Responder (ev, false))
+		if (!viewactive && primaryLevel->automap->Responder (ev, false))
 			return true;		// automap ate it
 	}
 	else if (gamestate == GS_FINALE)
@@ -1105,7 +1103,7 @@ bool G_Responder (event_t *ev)
 	// the events *last* so that any bound keys get precedence.
 
 	if (gamestate == GS_LEVEL && viewactive)
-		return currentUILevel->automap->Responder (ev, true);
+		return primaryLevel->automap->Responder (ev, true);
 
 	return (ev->type == EV_KeyDown ||
 			ev->type == EV_Mouse);
@@ -1133,7 +1131,7 @@ void G_Ticker ()
 			}
 			if (players[i].playerstate == PST_REBORN || players[i].playerstate == PST_ENTER)
 			{
-				level.DoReborn(i, false);
+				primaryLevel->DoReborn(i, false);
 			}
 		}
 	}
@@ -1234,7 +1232,7 @@ void G_Ticker ()
 	uint32_t rngsum = FRandom::StaticSumSeeds ();
 
 	//Added by MC: For some of that bot stuff. The main bot function.
-	level.BotInfo.Main (&level);
+	primaryLevel->BotInfo.Main (primaryLevel);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1293,7 +1291,7 @@ void G_Ticker ()
 	}
 
 	// [ZZ] also tick the UI part of the events
-	E_UiTick();
+	primaryLevel->localEventManager->UiTick();
 	C_RunDelayedCommands();
 
 	// do main actions
@@ -1301,7 +1299,7 @@ void G_Ticker ()
 	{
 	case GS_LEVEL:
 		P_Ticker ();
-		currentUILevel->automap->Ticker ();
+		primaryLevel->automap->Ticker ();
 		break;
 
 	case GS_TITLELEVEL:
@@ -1333,7 +1331,7 @@ void G_Ticker ()
 	}
 
 	// [MK] Additional ticker for UI events right after all others
-	E_PostUiTick();
+	primaryLevel->localEventManager->PostUiTick();
 }
 
 
@@ -1829,7 +1827,7 @@ void G_DoPlayerPop(int playernum)
 	auto mo = players[playernum].mo;
 	mo->Level->Behaviors.StopMyScripts(mo);
 	// [ZZ] fire player disconnect hook
-	E_PlayerDisconnected(playernum);
+	mo->Level->localEventManager->PlayerDisconnected(playernum);
 	// [RH] Let the scripts know the player left
 	mo->Level->Behaviors.StartTypedScripts(SCRIPT_Disconnect, mo, true, playernum, true);
 	if (mo != NULL)
@@ -2041,7 +2039,7 @@ void G_DoLoadGame ()
 	// Read intermission data for hubs
 	G_SerializeHub(arc);
 
-	level.BotInfo.RemoveAllBots(&level, true);
+	primaryLevel->BotInfo.RemoveAllBots(primaryLevel, true);
 
 	FString cvar;
 	arc("importantcvars", cvar);
@@ -2205,14 +2203,14 @@ void G_DoAutoSave ()
 	file = G_BuildSaveName ("auto", nextautosave);
 
 	// The hint flag is only relevant on the primary level.
-	if (!(currentUILevel->flags2 & LEVEL2_NOAUTOSAVEHINT))
+	if (!(primaryLevel->flags2 & LEVEL2_NOAUTOSAVEHINT))
 	{
 		nextautosave = (nextautosave + 1) % count;
 	}
 	else
 	{
 		// This flag can only be used once per level
-		currentUILevel->flags2 &= ~LEVEL2_NOAUTOSAVEHINT;
+		primaryLevel->flags2 &= ~LEVEL2_NOAUTOSAVEHINT;
 	}
 
 	readableTime = myasctime ();
@@ -2258,9 +2256,9 @@ static void PutSaveWads (FSerializer &arc)
 	arc.AddString("Game WAD", name);
 
 	// Name of wad the map resides in
-	if (Wads.GetLumpFile (level.lumpnum) > Wads.GetIwadNum())
+	if (Wads.GetLumpFile (primaryLevel->lumpnum) > Wads.GetIwadNum())
 	{
-		name = Wads.GetWadName (Wads.GetLumpFile (level.lumpnum));
+		name = Wads.GetWadName (Wads.GetLumpFile (primaryLevel->lumpnum));
 		arc.AddString("Map WAD", name);
 	}
 }
@@ -2274,12 +2272,11 @@ static void PutSaveComment (FSerializer &arc)
 	arc.AddString("Creation Time", comment);
 
 	// Get level name
-	//strcpy (comment, level.level_name);
-	comment.Format("%s - %s\n", level.MapName.GetChars(), level.LevelName.GetChars());
+	comment.Format("%s - %s\n", primaryLevel->MapName.GetChars(), primaryLevel->LevelName.GetChars());
 
 	// Append elapsed time
 	const char *const time = GStrings("SAVECOMMENT_TIME");
-	levelTime = level.time / TICRATE;
+	levelTime = primaryLevel->time / TICRATE;
 	comment.AppendFormat("%s: %02d:%02d:%02d", time, levelTime/3600, (levelTime%3600)/60, levelTime%60);
 
 	// Write out the comment
@@ -2310,7 +2307,7 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 
 	// Do not even try, if we're not in a level. (Can happen after
 	// a demo finishes playback.)
-	if (level.lines.Size() == 0 || level.sectors.Size() == 0 || gamestate != GS_LEVEL)
+	if (primaryLevel->lines.Size() == 0 || primaryLevel->sectors.Size() == 0 || gamestate != GS_LEVEL)
 	{
 		return;
 	}
@@ -2361,7 +2358,7 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 	// put some basic info into the PNG so that this isn't lost when the image gets extracted.
 	M_AppendPNGText(&savepic, "Software", buf);
 	M_AppendPNGText(&savepic, "Title", description);
-	M_AppendPNGText(&savepic, "Current Map", level.MapName);
+	M_AppendPNGText(&savepic, "Current Map", primaryLevel->MapName);
 	M_FinishPNG(&savepic);
 
 	int ver = SAVEVER;
@@ -2369,7 +2366,7 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 		.AddString("Engine", GAMESIG)
 		("Save Version", ver)
 		.AddString("Title", description)
-		.AddString("Current Map", level.MapName);
+		.AddString("Current Map", primaryLevel->MapName);
 
 
 	PutSaveWads (savegameinfo);
@@ -2585,7 +2582,7 @@ void G_BeginRecording (const char *startmap)
 
 	if (startmap == NULL)
 	{
-		startmap = level.MapName;
+		startmap = primaryLevel->MapName;
 	}
 	demo_p = demobuffer;
 
@@ -2911,7 +2908,7 @@ void G_DoPlayDemo (void)
 		{
 			G_InitNew (mapname, false);
 		}
-		else if (level.sectors.Size() == 0)
+		else if (primaryLevel->sectors.Size() == 0)
 		{
 			I_Error("Cannot play demo without its savegame\n");
 		}
@@ -3105,6 +3102,7 @@ DEFINE_GLOBAL_NAMED(Skins, PlayerSkins)
 DEFINE_GLOBAL(consoleplayer)
 DEFINE_GLOBAL_NAMED(PClass::AllClasses, AllClasses)
 DEFINE_GLOBAL_NAMED(PClassActor::AllActorClasses, AllActorClasses)
+DEFINE_GLOBAL_NAMED(primaryLevel, Level)
 DEFINE_GLOBAL(validcount)
 DEFINE_GLOBAL(multiplayer)
 DEFINE_GLOBAL(gameaction)

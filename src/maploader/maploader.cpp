@@ -78,6 +78,7 @@
 #include "fragglescript/t_fs.h"
 #include "swrenderer/r_swrenderer.h"
 #include "hwrenderer/data/flatvertices.h"
+#include "xlat/xlat.h"
 #include "vm.h"
 
 enum
@@ -1080,7 +1081,7 @@ void MapLoader::LoadSectors (MapData *map, FMissingTextureTracker &missingtex)
 		if (map->HasBehavior)
 			ss->special = LittleShort(ms->special);
 		else	// [RH] Translate to new sector special
-			ss->special = P_TranslateSectorSpecial (LittleShort(ms->special));
+			ss->special = Level->TranslateSectorSpecial (LittleShort(ms->special));
 		Level->tagManager.AddSectorTag(i, LittleShort(ms->tag));
 		ss->thinglist = nullptr;
 		ss->touching_thinglist = nullptr;		// phares 3/14/98
@@ -2871,7 +2872,7 @@ void MapLoader::LoadBehavior(MapData * map)
 {
 	if (map->Size(ML_BEHAVIOR) > 0)
 	{
-		Level->Behaviors.LoadModule(-1, &map->Reader(ML_BEHAVIOR), map->Size(ML_BEHAVIOR));
+		Level->Behaviors.LoadModule(-1, &map->Reader(ML_BEHAVIOR), map->Size(ML_BEHAVIOR), map->lumpnum);
 	}
 	if (!Level->Behaviors.CheckAllGood())
 	{
@@ -2986,7 +2987,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 				translator = gameinfo.translator.GetChars();
 			}
 		}
-		P_LoadTranslator(translator);
+		Level->Translator = P_LoadTranslator(translator);
 		Level->maptype = MAPTYPE_DOOM;
 	}
 	if (map->isText)
@@ -3019,7 +3020,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 	LoadMapinfoACSLump();
 
 
-	P_LoadStrifeConversations(Level, map, lumpname);
+	LoadStrifeConversations(map, lumpname);
 
 	FMissingTextureTracker missingtex;
 

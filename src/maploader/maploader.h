@@ -4,6 +4,9 @@
 #include "g_levellocals.h"
 
 class FileReader;
+struct FStrifeDialogueNode;
+struct FStrifeDialogueReply;
+struct Response;
 
 struct EDMapthing
 {
@@ -98,6 +101,7 @@ struct MapData;
 class MapLoader
 {
 	friend class UDMFParser;
+	friend class USDFParser;
 	void *level;	// this is to hide the global variable and produce an error for referencing it.
 public:
 	FLevelLocals *Level;
@@ -169,11 +173,22 @@ private:
 	void InitVertexData();
 	void GetSideVertices(int sdnum, DVector2 *v1, DVector2 *v2);
 	void PrepareSegs();
+	void FloodSectorStacks();
 	void InitRenderInfo();
 	void FixMinisegReferences();
 	void FixHoles();
 	void ReportUnpairedMinisegs();
 	void CalcIndices();
+	
+	// Strife dialogue
+	void LoadStrifeConversations (MapData *map, const char *mapname);
+	bool LoadScriptFile (const char *name, bool include, int type);
+	bool LoadScriptFile(const char *name, int lumpnum, FileReader &lump, int numnodes, bool include, int type);
+	FStrifeDialogueNode *ReadRetailNode (const char *name, FileReader &lump, uint32_t &prevSpeakerType);
+	FStrifeDialogueNode *ReadTeaserNode (const char *name, FileReader &lump, uint32_t &prevSpeakerType);
+	void ParseReplies (const char *name, int pos, FStrifeDialogueReply **replyptr, Response *responses);
+	
+	bool ParseUSDF(int lumpnum, FileReader &lump, int lumplen);
 	
 	// Specials
 	void SpawnSpecials();

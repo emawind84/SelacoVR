@@ -31,8 +31,10 @@
 #include "c_cvars.h"
 #include "g_levellocals.h"
 #include "flatvertices.h"
+#include "v_video.h"
 #include "cmdlib.h"
 #include "hwrenderer/data/buffers.h"
+#include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/scene/hw_renderstate.h"
 
 //==========================================================================
@@ -368,6 +370,7 @@ std::pair<FFlatVertex *, unsigned int> FFlatVertexBuffer::AllocVertices(unsigned
 		// If a single scene needs 2'000'000 vertices there must be something very wrong. 
 		I_FatalError("Out of vertex memory. Tried to allocate more than %u vertices for a single frame", index + count);
 	}
+	vertexbuffer_curindex = mCurIndex;
 	return std::make_pair(p, index);
 }
 

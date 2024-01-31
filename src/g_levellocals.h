@@ -95,6 +95,8 @@ struct FStrifeDialogueNode;
 class DAutomapBase;
 struct wbstartstruct_t;
 class DSectorMarker;
+struct FTranslator;
+struct EventManager;
 
 typedef TMap<int, int> FDialogueIDMap;				// maps dialogue IDs to dialogue array index (for ACS)
 typedef TMap<FName, int> FDialogueMap;				// maps actor class names to dialogue array index
@@ -104,15 +106,8 @@ struct FLevelLocals
 {
 	void *level;
 	void *Level;	// bug catchers.
-	FLevelLocals() : Behaviors(this), tagManager(this)
-	{
-		// Make sure that these point to the right data all the time.
-		// This will be needed for as long as it takes to completely separate global UI state from per-level play state.
-		for (int i = 0; i < MAXPLAYERS; i++)
-		{
-			Players[i] = &players[i];
-		}
-	}
+	FLevelLocals();
+	~FLevelLocals();
 
 	friend class MapLoader;
 
@@ -127,6 +122,7 @@ struct FLevelLocals
 	void FormatMapName(FString &mapname, const char *mapnamecolor);
 	void ClearAllSubsectorLinks();
 	void TranslateLineDef (line_t *ld, maplinedef_t *mld, int lineindexforid = -1);
+	int TranslateSectorSpecial(int special);
 	bool IsTIDUsed(int tid);
 	int FindUniqueTID(int start_tid, int limit);
 	int GetConversation(int conv_id);
@@ -148,7 +144,13 @@ private:
 	void AddDisplacementForPortal(FLinePortal *portal);
 	bool ConnectPortalGroups();
 
+	void SerializePlayers(FSerializer &arc, bool skipload);
+	void CopyPlayer(player_t *dst, player_t *src, const char *name);
+	void ReadOnePlayer(FSerializer &arc, bool skipload);
+	void ReadMultiplePlayers(FSerializer &arc, int numPlayers, int numPlayersNow, bool skipload);
+	void SerializeSounds(FSerializer &arc);
 	void PlayerSpawnPickClass (int playernum);
+
 public:
 	void SnapshotLevel();
 	void UnSnapshotLevel(bool hubLoad);
@@ -439,6 +441,7 @@ public:
 	TArray<FLinePortalSpan> linePortalSpans;
 	FSectionContainer sections;
 	FCanvasTextureInfo canvasTextureInfo;
+	EventManager *localEventManager = nullptr;
 
 	// [ZZ] Destructible geometry information
 	TMap<int, FHealthGroup> healthGroups;
@@ -494,6 +497,7 @@ public:
 	FString		NextSecretMap;		// map to go to when used secret exit
 	FString		AuthorName;
 	FString		F1Pic;
+	FTranslator *Translator;
 	EMapType	maptype;
 	FTagManager tagManager;
 	FInterpolator interpolator;
@@ -506,8 +510,8 @@ public:
 	int bodyqueslot;
 	
 	// For now this merely points to the global player array, but with this in place, access to this array can be moved over to the level.
-	// As things progress each level needs to be able to point to different players,
-	// but even then the level will not own the player - the player merely links to the level.
+	// As things progress each level needs to be able to point to different players, even if they are just null if the second level is merely a skybox or camera target.
+	// But even if it got a real player, the level will not own it - the player merely links to the level.
 	// This should also be made a real object eventually.
 	player_t *Players[MAXPLAYERS];
 	
@@ -539,6 +543,26 @@ public:
 	bool isPrimaryLevel() const
 	{
 		return true;
+	}
+	
+	// Gets the console player without having the calling code be aware of the level's state.
+	player_t *GetConsolePlayer() const
+	{
+		return isPrimaryLevel()? Players[consoleplayer] : nullptr;
+	}
+	
+	bool isConsolePlayer(AActor *mo) const
+	{
+		auto p = GetConsolePlayer();
+		if (!p) return false;
+		return p->mo == mo;
+	}
+
+	bool isCamera(AActor *mo) const
+	{
+		auto p = GetConsolePlayer();
+		if (!p) return false;
+		return p->camera == mo;
 	}
 
 	int NumMapSections;
@@ -585,7 +609,6 @@ public:
 	int			airsupply;
 	int			DefaultEnvironment;		// Default sound environment.
 
-	int ActiveSequences;
 	DSeqNode *SequenceListHead;
 
 	// [RH] particle globals
@@ -603,7 +626,7 @@ public:
 	bool		FromSnapshot;			// The current map was restored from a snapshot
 	bool		HasHeightSecs;			// true if some Transfer_Heights effects are present in the map. If this is false, some checks in the renderer can be shortcut.
 	bool		HasDynamicLights;		// Another render optimization for maps with no lights at all.
-	int			frozenstate;
+	int		frozenstate;
 
 	double		teamdamage;
 
@@ -634,9 +657,47 @@ public:
 
 	TObjPtr<DSpotState *> SpotState = nullptr;
 
-	bool		IsJumpingAllowed() const;
-	bool		IsCrouchingAllowed() const;
-	bool		IsFreelookAllowed() const;
+	//==========================================================================
+	//
+	//
+	//==========================================================================
+
+	bool IsJumpingAllowed() const
+	{
+		if (dmflags & DF_NO_JUMP)
+			return false;
+		if (dmflags & DF_YES_JUMP)
+			return true;
+		return !(flags & LEVEL_JUMP_NO);
+	}
+
+	//==========================================================================
+	//
+	//
+	//==========================================================================
+
+	bool IsCrouchingAllowed() const
+	{
+		if (dmflags & DF_NO_CROUCH)
+			return false;
+		if (dmflags & DF_YES_CROUCH)
+			return true;
+		return !(flags & LEVEL_CROUCH_NO);
+	}
+
+	//==========================================================================
+	//
+	//
+	//==========================================================================
+
+	bool IsFreelookAllowed() const
+	{
+		if (dmflags & DF_NO_FREELOOK)
+			return false;
+		if (dmflags & DF_YES_FREELOOK)
+			return true;
+		return !(flags & LEVEL_FREELOOK_NO);
+	}
 
 	node_t		*HeadNode() const
 	{
@@ -657,7 +718,8 @@ public:
 
 
 extern FLevelLocals level;
-extern FLevelLocals *currentUILevel;	// level for which to display the user interface. This will always be the one the current consoleplayer is in.
+extern FLevelLocals *primaryLevel;	// level for which to display the user interface. This will always be the one the current consoleplayer is in.
+extern FLevelLocals *currentVMLevel;
 
 inline FSectorPortal *line_t::GetTransferredPortal()
 {
@@ -758,5 +820,5 @@ inline bool line_t::hitSkyWall(AActor* mo) const
 // It is meant for code that needs to iterate over all levels to make some global changes, e.g. configuation CCMDs.
 inline TArrayView<FLevelLocals *> AllLevels()
 {
-	return TArrayView<FLevelLocals *>(&currentUILevel, 1);
+	return TArrayView<FLevelLocals *>(&primaryLevel, 1);
 }

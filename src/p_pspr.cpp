@@ -653,10 +653,6 @@ void P_BobWeapon (player_t *player, float *x, float *y, double ticfrac)
 
 static void P_CheckWeaponButtons (player_t *player, int hand = 0)
 {
-	if (player->Bot == nullptr && bot_observer)
-	{
-		return;
-	}
 	auto weapon = hand ? player->OffhandWeapon : player->ReadyWeapon;
 	if (weapon == nullptr)
 	{

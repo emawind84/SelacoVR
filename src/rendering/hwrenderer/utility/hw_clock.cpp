@@ -80,6 +80,7 @@ void ResetProfilingData()
 
 	flatvertices=flatprimitives=vertexcount=0;
 	render_texsplit=render_vertexsplit=rendered_lines=rendered_flats=rendered_sprites=rendered_decals=rendered_portals = 0;
+	lightbuffer_curindex = vertexbuffer_curindex = 0;
 }
 
 //-----------------------------------------------------------------------------

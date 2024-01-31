@@ -323,7 +323,7 @@ void cht_DoCheat (player_t *player, int cheat)
 	case CHT_MASSACRE:
 	case CHT_MASSACRE2:
 		{
-			int killcount = currentUILevel->Massacre (cheat == CHT_MASSACRE2);
+			int killcount = primaryLevel->Massacre (cheat == CHT_MASSACRE2);
 			// killough 3/22/98: make more intelligent about plural
 			if (killcount == 1)
 			{

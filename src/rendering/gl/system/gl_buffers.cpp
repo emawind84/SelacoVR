@@ -27,6 +27,7 @@
 #include "gl_load/gl_system.h"
 #include "gl_buffers.h"
 #include "gl/renderer/gl_renderstate.h"
+#include "v_video.h"
 
 namespace OpenGLRenderer
 {
@@ -67,7 +68,6 @@ void GLBuffer::Bind()
 
 void GLBuffer::SetData(size_t size, const void *data, bool staticdata)
 {
-	assert(nomap);	// once it's mappable, it cannot be recreated anymore.
 	Bind();
 	if (data != nullptr)
 	{

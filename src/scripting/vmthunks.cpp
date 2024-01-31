@@ -48,6 +48,9 @@
 #include "p_setup.h"
 #include "i_music.h"
 #include "am_map.h"
+#include "v_video.h"
+#include "gi.h"
+#include "intermission/intermission.h"
 #include "fontinternals.h"
 
 #include <time.h>
@@ -1798,6 +1801,76 @@ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, SetXOffset, SetXOffset)
 //
 //=====================================================================================
 
+ static int IsJumpingAllowed(FLevelLocals *self)
+ {
+	 return self->IsJumpingAllowed();
+ }
+
+ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, IsJumpingAllowed, IsJumpingAllowed)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	 ACTION_RETURN_BOOL(self->IsJumpingAllowed());
+ }
+
+ //==========================================================================
+ //
+ //
+ //==========================================================================
+
+ static int IsCrouchingAllowed(FLevelLocals *self)
+ {
+	 return self->IsCrouchingAllowed();
+ }
+
+
+ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, IsCrouchingAllowed, IsCrouchingAllowed)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	 ACTION_RETURN_BOOL(self->IsCrouchingAllowed());
+ }
+
+ //==========================================================================
+ //
+ //
+ //==========================================================================
+
+ static int IsFreelookAllowed(FLevelLocals *self)
+ {
+	 return self->IsFreelookAllowed();
+ }
+
+ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, IsFreelookAllowed, IsFreelookAllowed)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	 ACTION_RETURN_BOOL(self->IsFreelookAllowed());
+ }
+ 
+ //==========================================================================
+//
+// ZScript counterpart to ACS ChangeSky, uses TextureIDs
+//
+//==========================================================================
+ DEFINE_ACTION_FUNCTION(FLevelLocals, ChangeSky)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	 PARAM_INT(sky1);
+	 PARAM_INT(sky2);
+	 self->skytexture1 = FSetTextureID(sky1);
+	 self->skytexture2 = FSetTextureID(sky2);
+	 InitSkyMap(self);
+	 return 0;
+ }
+
+ DEFINE_ACTION_FUNCTION(FLevelLocals, StartIntermission)
+ {
+	 PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	 PARAM_NAME(seq);
+	 PARAM_INT(state);
+	 F_StartIntermission(seq, (uint8_t)state);
+	 return 0;
+ }
+
+
  // This is needed to convert the strings to char pointers.
  static void ReplaceTextures(FLevelLocals *self, const FString &from, const FString &to, int flags)
  {
@@ -2560,7 +2633,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(DBaseStatusBar, SetClipRect, SBar_SetClipRect)
 
 static void GetGlobalACSString(int index, FString *result)
 {
-	*result = currentUILevel->Behaviors.LookupString(ACS_GlobalVars[index]);
+	*result = primaryLevel->Behaviors.LookupString(ACS_GlobalVars[index]);
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(DBaseStatusBar, GetGlobalACSString, GetGlobalACSString)
@@ -2574,7 +2647,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(DBaseStatusBar, GetGlobalACSString, GetGlobalACSSt
 
 static void GetGlobalACSArrayString(int arrayno, int index, FString *result)
 {
-	*result = currentUILevel->Behaviors.LookupString(ACS_GlobalVars[index]);
+	*result = primaryLevel->Behaviors.LookupString(ACS_GlobalVars[index]);
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(DBaseStatusBar, GetGlobalACSArrayString, GetGlobalACSArrayString)
@@ -3246,8 +3319,7 @@ DEFINE_FIELD_X(LevelInfo, level_info_t, RedirectType)
 DEFINE_FIELD_X(LevelInfo, level_info_t, RedirectMapName)
 DEFINE_FIELD_X(LevelInfo, level_info_t, teamdamage)
 
-DEFINE_GLOBAL(level);
-DEFINE_GLOBAL(currentUILevel);
+DEFINE_GLOBAL_NAMED(currentVMLevel, level)
 DEFINE_FIELD(FLevelLocals, sectors)
 DEFINE_FIELD(FLevelLocals, lines)
 DEFINE_FIELD(FLevelLocals, sides)

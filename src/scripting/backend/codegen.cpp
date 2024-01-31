@@ -48,6 +48,7 @@
 #include "w_wad.h"
 #include "doomstat.h"
 #include "g_levellocals.h"
+#include "v_video.h"
 #include "utf8.h"
 
 extern FRandom pr_exrandom;
@@ -5262,7 +5263,7 @@ static DObject *BuiltinNew(PClass *cls, int outerside, int backwardscompatible)
 	}
 	else
 	{
-		object = level.CreateThinker(cls);
+		object = currentVMLevel->CreateThinker(cls);
 	}
 	return object;
 }
@@ -8770,7 +8771,7 @@ FxExpression *FxActionSpecialCall::Resolve(FCompileContext& ctx)
 
 int BuiltinCallLineSpecial(int special, AActor *activator, int arg1, int arg2, int arg3, int arg4, int arg5)
 {
-	return P_ExecuteSpecial(special, nullptr, activator, 0, arg1, arg2, arg3, arg4, arg5);
+	return P_ExecuteSpecial(currentVMLevel , special, nullptr, activator, 0, arg1, arg2, arg3, arg4, arg5);
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(DObject, BuiltinCallLineSpecial, BuiltinCallLineSpecial)
@@ -8784,7 +8785,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(DObject, BuiltinCallLineSpecial, BuiltinCallLineSp
 	PARAM_INT(arg4);
 	PARAM_INT(arg5);
 
-	ACTION_RETURN_INT(P_ExecuteSpecial(special, nullptr, activator, 0, arg1, arg2, arg3, arg4, arg5));
+	ACTION_RETURN_INT(P_ExecuteSpecial(currentVMLevel, special, nullptr, activator, 0, arg1, arg2, arg3, arg4, arg5));
 }
 
 ExpEmit FxActionSpecialCall::Emit(VMFunctionBuilder *build)

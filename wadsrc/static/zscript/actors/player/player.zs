@@ -371,12 +371,6 @@ class PlayerPawn : Actor
 	{
 		let player = self.player;
 		
-		// [SO] 9/2/02: People were able to do an awful lot of damage
-		// when they were observers...
-		if (player.Bot == null && bot_observer)
-		{
-			return;
-		}
 		if (hand == 1 && player.WeaponState & WF_TWOHANDSTABILIZED)
 		{
 			return;
@@ -410,12 +404,6 @@ class PlayerPawn : Actor
 
 	virtual void FireWeaponAlt (State stat, int hand = 0)
 	{
-		// [SO] 9/2/02: People were able to do an awful lot of damage
-		// when they were observers...
-		if (player.Bot == null && bot_observer)
-		{
-			return;
-		}
 		if (hand == 1 && player.WeaponState & WF_TWOHANDSTABILIZED)
 		{
 			return;
@@ -2086,7 +2074,7 @@ class PlayerPawn : Actor
 
 	override int GetMaxHealth(bool withupgrades) const
 	{
-		int ret = MaxHealth > 0? MaxHealth : ((compatflags & COMPATF_DEHHEALTH)? 100 : deh.MaxHealth);
+		int ret = MaxHealth > 0? MaxHealth : ((Level.compatflags & COMPATF_DEHHEALTH)? 100 : deh.MaxHealth);
 		if (withupgrades) ret += stamina + BonusHealth;
 		return ret;
 	}

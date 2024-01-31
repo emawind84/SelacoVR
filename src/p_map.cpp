@@ -549,10 +549,7 @@ bool	P_TeleportMove(AActor* thing, const DVector3 &pos, bool telefrag, bool modi
 			thing->AdjustFloorClip();
 		}
 
-		if (thing == players[consoleplayer].camera)
-		{
-			R_ResetViewInterpolation();
-		}
+		thing->renderflags |= RF_NOINTERPOLATEVIEW;
 
 		// If this teleport was caused by a move, P_TryMove() will handle the
 		// sector transition messages better than we can here.
@@ -2536,7 +2533,7 @@ bool P_TryMove(AActor *thing, const DVector2 &pos,
 			}
 			// if this is the current camera we need to store the point where the portal was crossed and the exit
 			// so that the renderer can properly calculate an interpolated position along the movement path.
-			if (thing == players[consoleplayer].camera)
+			if (thing->Level->isCamera(thing))
 			{
 				divline_t dl1 = { besthit.Oldrefpos.X,besthit.Oldrefpos.Y, besthit.Refpos.X - besthit.Oldrefpos.X, besthit.Refpos.Y - besthit.Oldrefpos.Y };
 				DVector3a hit = { {dl1.x + dl1.dx * bestfrac, dl1.y + dl1.dy * bestfrac, 0.},0. };
@@ -2551,7 +2548,8 @@ bool P_TryMove(AActor *thing, const DVector2 &pos,
 				{
 					P_TranslatePortalXY(ld, hit.pos.X, hit.pos.Y);
 					P_TranslatePortalZ(ld, hit.pos.Z);
-					players[consoleplayer].viewz += hit.pos.Z;	// needs to be done here because otherwise the renderer will not catch the change.
+					auto p = thing->Level->GetConsolePlayer();
+					if (p) p->viewz += hit.pos.Z;	// needs to be done here because otherwise the renderer will not catch the change.
 					P_TranslatePortalAngle(ld, hit.angle);
 				}
 				R_AddInterpolationPoint(hit);
@@ -4575,7 +4573,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	}
 
 	// We need to check the defaults of the replacement here
-	AActor *puffDefaults = GetDefaultByType(pufftype->GetReplacement());
+	AActor *puffDefaults = GetDefaultByType(pufftype->GetReplacement(t1->Level));
 	AActor *weapon;
 	if (t1->player != nullptr)
 	{
@@ -4605,7 +4603,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 
 		AActor *tempuff = NULL;
 		if (pufftype != NULL)
-			tempuff = Spawn(pufftype, t1->Pos(), ALLOW_REPLACE);
+			tempuff = Spawn(t1->Level, pufftype, t1->Pos(), ALLOW_REPLACE);
 		if (tempuff != NULL)
 		{
 			TData.PuffSpecies = tempuff->GetSpecies();
@@ -5414,7 +5412,7 @@ void P_RailAttack(FRailParams *p)
 	int flags;
 
 	assert(puffclass != NULL);		// Because we set it to a default above
-	AActor *puffDefaults = GetDefaultByType(puffclass->GetReplacement()); //Contains all the flags such as FOILINVUL, etc.
+	AActor *puffDefaults = GetDefaultByType(puffclass->GetReplacement(source->Level)); //Contains all the flags such as FOILINVUL, etc.
 
 	// disabled because not complete yet.
 	flags = (puffDefaults->flags6 & MF6_NOTRIGGER) ? TRACE_ReportPortals : TRACE_PCross | TRACE_Impact | TRACE_ReportPortals;
@@ -5440,7 +5438,7 @@ void P_RailAttack(FRailParams *p)
 	// used as damage inflictor
 	AActor *thepuff = NULL;
 	
-	if (puffclass != NULL) thepuff = Spawn(puffclass, source->Pos(), ALLOW_REPLACE);
+	if (puffclass != NULL) thepuff = Spawn(source->Level, puffclass, source->Pos(), ALLOW_REPLACE);
 		rail_data.PuffSpecies = (thepuff != NULL) ? thepuff->GetSpecies() : NAME_None;
 
 	if (thepuff)
@@ -6521,7 +6519,7 @@ void P_DoCrunch(AActor *thing, FChangePosition *cpos)
 				{
 					AActor *mo;
 
-					mo = Spawn(bloodcls, thing->PosPlusZ(thing->Height / 2), ALLOW_REPLACE);
+					mo = Spawn(thing->Level, bloodcls, thing->PosPlusZ(thing->Height / 2), ALLOW_REPLACE);
 
 					if (mo == nullptr) goto noblood;
 					mo->Vel.X = pr_crunch.Random2() / 16.;
@@ -6613,7 +6611,7 @@ int P_PushUp(AActor *thing, FChangePosition *cpos)
 		if (cpos->instant)
 		{
 			intersect->Prev.Z += intersect->Z() - oldz;
-			if (intersect->CheckLocalView()) R_ResetViewInterpolation();
+			intersect->renderflags |= RF_NOINTERPOLATEVIEW;
 		}
 
 		intersect->UpdateRenderSectorList();
@@ -6710,7 +6708,7 @@ void PIT_FloorDrop(AActor *thing, FChangePosition *cpos)
 			if (cpos->instant)
 			{
 				thing->Prev.Z += thing->floorz - oldz;
-				if (thing->CheckLocalView()) R_ResetViewInterpolation();
+				thing->renderflags |= RF_NOINTERPOLATEVIEW;
 			}
 			thing->SetZ(thing->floorz);
 			P_CheckFakeFloorTriggers(thing, oldz);
@@ -6724,7 +6722,7 @@ void PIT_FloorDrop(AActor *thing, FChangePosition *cpos)
 			if (cpos->instant)
 			{
 				thing->Prev.Z += -oldfloorz + thing->floorz;
-				if (thing->CheckLocalView()) R_ResetViewInterpolation();
+				thing->renderflags |= RF_NOINTERPOLATEVIEW;
 			}
 			thing->AddZ(-oldfloorz + thing->floorz);
 			P_CheckFakeFloorTriggers(thing, oldz);
@@ -6764,7 +6762,7 @@ void PIT_FloorRaise(AActor *thing, FChangePosition *cpos)
 		if (cpos->instant)
 		{
 			thing->Prev.Z += thing->floorz - thing->Z();
-			if (thing->CheckLocalView()) R_ResetViewInterpolation();
+			thing->renderflags |= RF_NOINTERPOLATEVIEW;
 		}
 
 		thing->SetZ(thing->floorz);
@@ -6778,7 +6776,7 @@ void PIT_FloorRaise(AActor *thing, FChangePosition *cpos)
 			if (cpos->instant)
 			{
 				thing->Prev.Z += -oldfloorz + thing->floorz;
-				if (thing->CheckLocalView()) R_ResetViewInterpolation();
+				thing->renderflags |= RF_NOINTERPOLATEVIEW;
 			}
 		}
 		else return;
@@ -7170,7 +7168,7 @@ bool P_ActivateThingSpecial(AActor * thing, AActor * trigger, bool death)
 	// Run the special, if any
 	if (thing->special)
 	{
-		res = !!P_ExecuteSpecial(thing->special, NULL,
+		res = !!P_ExecuteSpecial(thing->Level, thing->special, NULL,
 			// TriggerActs overrides the level flag, which only concerns thing activated by death
 			(((death && thing->Level->flags & LEVEL_ACTOWNSPECIAL && !(thing->activationtype & THINGSPEC_TriggerActs))
 			|| (thing->activationtype & THINGSPEC_ThingActs)) // Who triggers?

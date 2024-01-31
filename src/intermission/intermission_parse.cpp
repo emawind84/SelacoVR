@@ -38,8 +38,8 @@
 #include "intermission/intermission.h"
 #include "g_level.h"
 #include "w_wad.h"
-#include "c_dispatch.h"
 #include "gstrings.h"
+#include "c_dispatch.h"
 #include "gi.h"
 
 

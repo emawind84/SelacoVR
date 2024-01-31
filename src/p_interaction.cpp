@@ -348,7 +348,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 	}
 
 	// [ZZ] Fire WorldThingDied script hook.
-	E_WorldThingDied(this, inflictor);
+	Level->localEventManager->WorldThingDied(this, inflictor);
 
 	// [JM] Fire KILL type scripts for actor. Not needed for players, since they have the "DEATH" script type.
 	if (!player && !(flags7 & MF7_NOKILLSCRIPTS) && ((flags7 & MF7_USEKILLSCRIPTS) || gameinfo.forcekillscripts))
@@ -402,7 +402,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 		// fair to count them toward a player's score.
 		if (player && Level->maptime)
 		{
-			source->player->frags[player - players]++;
+			source->player->frags[Level->PlayerNum(player)]++;
 			if (player == source->player)	// [RH] Cumulative frag count
 			{
 				char buff[256];
@@ -561,7 +561,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 		ClientObituary (this, inflictor, source, dmgflags, MeansOfDeath);
 
 		// [ZZ] fire player death hook
-		E_PlayerDied(int(player - players));
+		Level->localEventManager->PlayerDied(Level->PlayerNum(player));
 
 		// Death script execution, care of Skull Tag
 		Level->Behaviors.StartTypedScripts (SCRIPT_Death, this, true);
@@ -594,7 +594,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 		// count environment kills against you
 		if (!source)
 		{
-			player->frags[player - players]++;
+			player->frags[Level->PlayerNum(player)]++;
 			player->fragcount--;	// [RH] Cumulative frag count
 		}
 						
@@ -619,7 +619,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 			}
 		}
 
-		if (this == players[consoleplayer].camera && automapactive)
+		if (Level->isCamera(this) && automapactive)
 		{
 			// don't die in auto map, switch view prior to dying
 			AM_Stop ();
@@ -1356,7 +1356,7 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 			player->damagecount = 100;	// teleport stomp does 10k points...
 		}
 		temp = damage < 100 ? damage : 100;
-		if (player == &players[consoleplayer])
+		if (player == target->Level->GetConsolePlayer() )
 		{
 			//Haptic feedback when hurt - level indicates amount of damage
 			float level = (float)(0.4 + (0.6 * (temp / 100.0)));
@@ -1528,7 +1528,7 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 			}
 
 			const int realdamage = MAX(0, damage);
-			E_WorldThingDamaged(target, inflictor, source, realdamage, mod, flags, angle);
+			target->Level->localEventManager->WorldThingDamaged(target, inflictor, source, realdamage, mod, flags, angle);
 			needevent = false;
 
 			target->CallDie (source, inflictor, flags, MeansOfDeath);
@@ -1549,7 +1549,7 @@ static int DoDamageMobj(AActor *target, AActor *inflictor, AActor *source, int d
 	if (realdamage > 0 && needevent)
 	{
 		// [ZZ] event handlers only need the resultant damage (they can't do anything about it anyway)
-		E_WorldThingDamaged(target, inflictor, source, realdamage, mod, flags, angle);
+		target->Level->localEventManager->WorldThingDamaged(target, inflictor, source, realdamage, mod, flags, angle);
 	}
 
 	return MAX(0, realdamage);

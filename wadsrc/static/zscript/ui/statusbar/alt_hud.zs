@@ -31,11 +31,6 @@
 **
 */
 
-/*
-
-DVector2 AM_GetPosition();
-*/
-
 class AltHud ui
 {
 	TextureID tnt1a0;
@@ -205,17 +200,17 @@ class AltHud ui
 			// work in cooperative hub games
 			if (hud_showsecrets)
 			{
-				DrawStatLine(x, y, "S:", String.Format("%i/%i ", multiplayer? CPlayer.secretcount : level.found_secrets, level.total_secrets));
+				DrawStatLine(x, y, "S:", String.Format("%i/%i ", multiplayer? CPlayer.secretcount : Level.found_secrets, Level.total_secrets));
 			}
 			
 			if (hud_showitems)
 			{
-				DrawStatLine(x, y, "I:", String.Format("%i/%i ", multiplayer? CPlayer.itemcount : level.found_items, level.total_items));
+				DrawStatLine(x, y, "I:", String.Format("%i/%i ", multiplayer? CPlayer.itemcount : Level.found_items, Level.total_items));
 			}
 			
 			if (hud_showmonsters)
 			{
-				DrawStatLine(x, y, "K:", String.Format("%i/%i ", multiplayer? CPlayer.killcount : level.killed_monsters, level.total_monsters));
+				DrawStatLine(x, y, "K:", String.Format("%i/%i ", multiplayer? CPlayer.killcount : Level.killed_monsters, Level.total_monsters));
 			}
 		}
 	}
@@ -680,7 +675,7 @@ class AltHud ui
 					{
 						double trans = rover == CPlayer.mo.InvSel ? 1.0 : 0.4;
 
-						DrawImageToBox(AltIcon.isValid()? AltIcon : rover.Icon, x, y, 19, 25, trans);
+						DrawImageToBox(AltIcon.isValid()? AltIcon : rover.Icon, x, y, 19, 25, trans, true);
 						if (rover.Amount > 1)
 						{
 							int xx;
@@ -746,7 +741,7 @@ class AltHud ui
 		else 
 		{
 			pos.xy = Level.GetAutomapPosition();
-			pos.z = Sector.PointInSector(pos.xy).floorplane.ZatPoint(pos.xy);
+			pos.z = Level.PointInSector(pos.xy).floorplane.ZatPoint(pos.xy);
 		}
 
 		int xpos = hudwidth - SmallFont.StringWidth("X: -00000")-6;
@@ -801,10 +796,10 @@ class AltHud ui
 			{
 				int timeTicks =
 					hud_showtime < 4
-						? level.maptime
+						? Level.maptime
 						: (hud_showtime < 6
-							? level.time
-							: level.totaltime);
+							? Level.time
+							: Level.totaltime);
 				timeSeconds = Thinker.Tics2Seconds(timeTicks);
 
 				int hours   =  timeSeconds / 3600;
@@ -816,7 +811,7 @@ class AltHud ui
 
 				if (showMillis)
 				{
-					int millis  = (level.time % Thinker.TICRATE) * (1000 / Thinker.TICRATE);
+					int millis  = (Level.time % Thinker.TICRATE) * (1000 / Thinker.TICRATE);
 					timeString = String.Format("%02i:%02i:%02i.%03i", hours, minutes, seconds, millis);
 				}
 				else if (showSeconds)
@@ -956,23 +951,23 @@ class AltHud ui
 
 		if (am_showtotaltime)
 		{
-			DrawTimeString(SmallFont, hudcolor_ttim, level.totaltime, hudwidth-2, bottom, 1);
+			DrawTimeString(SmallFont, hudcolor_ttim, Level.totaltime, hudwidth-2, bottom, 1);
 			bottom -= fonth;
 		}
 
 		if (am_showtime)
 		{
-			if (level.clusterflags & level.CLUSTER_HUB)
+			if (Level.clusterflags & Level.CLUSTER_HUB)
 			{
-				DrawTimeString(SmallFont, hudcolor_time, level.time, hudwidth-2, bottom, 1);
+				DrawTimeString(SmallFont, hudcolor_time, Level.time, hudwidth-2, bottom, 1);
 				bottom -= fonth;
 			}
 
 			// Single level time for hubs
-			DrawTimeString(SmallFont, hudcolor_ltim, level.maptime, hudwidth-2, bottom, 1);
+			DrawTimeString(SmallFont, hudcolor_ltim, Level.maptime, hudwidth-2, bottom, 1);
 		}
 
-		screen.DrawText(SmallFont, 0, 1, hudheight - fonth - 1, level.FormatMapName(hudcolor_titl),
+		screen.DrawText(SmallFont, 0, 1, hudheight - fonth - 1, Level.FormatMapName(hudcolor_titl),
 			DTA_KeepRatio, true,
 			DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight);
 

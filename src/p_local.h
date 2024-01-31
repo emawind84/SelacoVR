@@ -56,11 +56,6 @@ struct FLinePortal;
 
 #define STEEPSLOPE		(46342/65536.)	// [RH] Minimum floorplane.c value for walking
 
-// Inspired by Maes
-extern int bmapnegx;
-extern int bmapnegy;
-
-//#define GRAVITY 		FRACUNIT
 #define MAXMOVE 		(30.)
 
 #define TALKRANGE		(128.)
@@ -152,7 +147,8 @@ PClassActor *P_GetSpawnableType(int spawnnum);
 void InitSpawnablesFromMapinfo();
 int P_Thing_CheckInputNum(player_t *p, int inputnum);
 int P_Thing_Warp(AActor *caller, AActor *reference, double xofs, double yofs, double zofs, DAngle angle, int flags, double heightoffset, double radiusoffset, DAngle pitch);
-int P_Thing_CheckProximity(AActor *self, PClass *classname, double distance, int count, int flags, int ptr, bool counting = false);
+struct FLevelLocals;
+int P_Thing_CheckProximity(FLevelLocals *Level, AActor *self, PClass *classname, double distance, int count, int flags, int ptr, bool counting = false);
 
 enum
 {

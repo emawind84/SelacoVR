@@ -150,6 +150,7 @@ public:
 	EColorRange mFontColor;
 	EColorRange mFontColor2;
 	bool mCenter;
+	bool mFromEngine;
 	bool mForceList;
 
 	void Reset()
@@ -166,6 +167,7 @@ public:
 		mFont = NULL;
 		mFontColor = CR_UNTRANSLATED;
 		mFontColor2 = CR_UNTRANSLATED;
+		mFromEngine = false;
 	}
 	
 	size_t PropagateMark() override;
@@ -345,6 +347,7 @@ void M_ActivateMenu(DMenu *menu);
 void M_ClearMenus ();
 void M_PreviousMenu ();
 void M_ParseMenuDefs();
+void M_StartupEpisodeMenu(FGameStartup *gs);
 void M_StartupSkillMenu(FGameStartup *gs);
 void M_StartControlPanel (bool makeSound);
 void M_SetMenu(FName menu, int param = -1);

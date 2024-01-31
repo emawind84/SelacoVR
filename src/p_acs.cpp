@@ -1916,7 +1916,7 @@ void DPlaneWatcher::Tick ()
 	if ((LastD < WatchD && newd >= WatchD) ||
 		(LastD > WatchD && newd <= WatchD))
 	{
-		P_ExecuteSpecial(Special, Line, Activator, LineSide, Args[0], Args[1], Args[2], Args[3], Args[4]);
+		P_ExecuteSpecial(Level, Special, Line, Activator, LineSide, Args[0], Args[1], Args[2], Args[3], Args[4]);
 		Destroy ();
 	}
 
@@ -2326,7 +2326,7 @@ bool FBehavior::Init(FLevelLocals *Level, int lumpnum, FileReader * fr, int len,
 		StringTable += LittleLong(((uint32_t *)(Data + StringTable))[0]) * 12 + 4;
 		UnescapeStringTable(Data + StringTable, Data, false);
 		// If this is an original Hexen BEHAVIOR, set up some localization info for it. Original Hexen BEHAVIORs are always in the old format.
-		if ((level.flags2 & LEVEL2_HEXENHACK) && gameinfo.gametype == GAME_Hexen && lumpnum == -1 && reallumpnum > 0)
+		if ((Level->flags2 & LEVEL2_HEXENHACK) && gameinfo.gametype == GAME_Hexen && lumpnum == -1 && reallumpnum > 0)
 		{
 			int fileno = Wads.GetLumpFile(reallumpnum);
 			const char * filename = Wads.GetWadName(fileno);
@@ -3277,7 +3277,7 @@ const char *FBehavior::LookupString (uint32_t index, bool forprint) const
 			token.Substitute(" ", "");
 			token.Truncate(5);
 
-			FStringf label("TXT_ACS_%s_%d_%.5s", level.MapName.GetChars(), index, token.GetChars());
+			FStringf label("TXT_ACS_%s_%d_%.5s", Level->MapName.GetChars(), index, token.GetChars());
 			auto p = GStrings[label];
 			if (p) return p;
 		}
@@ -3701,7 +3701,7 @@ do_count:
 	{
 		// Again, with decorate replacements
 		replacemented = true;
-		PClassActor *newkind = kind->GetReplacement();
+		PClassActor *newkind = kind->GetReplacement(Level);
 		if (newkind != kind)
 		{
 			kind = newkind;
@@ -3789,7 +3789,7 @@ int DLevelScript::DoSpawn (int type, const DVector3 &pos, int tid, DAngle angle,
 
 	if (info != NULL)
 	{
-		info = info->GetReplacement ();
+		info = info->GetReplacement (Level);
 
 		if ((GetDefaultByType (info)->flags3 & MF3_ISMONSTER) &&
 			((dmflags & DF_NO_MONSTERS) || (Level->flags2 & LEVEL2_NOMONSTERS)))
@@ -3797,7 +3797,7 @@ int DLevelScript::DoSpawn (int type, const DVector3 &pos, int tid, DAngle angle,
 			return 0;
 		}
 
-		actor = Spawn (info, pos, ALLOW_REPLACE);
+		actor = Spawn (Level, info, pos, ALLOW_REPLACE);
 		if (actor != NULL)
 		{
 			ActorFlags2 oldFlags2 = actor->flags2;
@@ -5041,7 +5041,8 @@ int DLevelScript::SetUserCVar(int playernum, const char *cvarname, int value, bo
 	{
 		return 0;
 	}
-	FBaseCVar **cvar_p = Level->Players[playernum]->userinfo.CheckKey(FName(cvarname, true));
+	auto player = Level->Players[playernum];
+	FBaseCVar **cvar_p = player->userinfo.CheckKey(FName(cvarname, true));
 	FBaseCVar *cvar;
 	// Only mod-created cvars may be set.
 	if (cvar_p == NULL || (cvar = *cvar_p) == NULL || (cvar->GetFlags() & CVAR_IGNORE) || !(cvar->GetFlags() & CVAR_MOD))
@@ -5051,7 +5052,7 @@ int DLevelScript::SetUserCVar(int playernum, const char *cvarname, int value, bo
 	DoSetCVar(cvar, value, is_string);
 
 	// If we are this player, then also reflect this change in the local version of this cvar.
-	if (playernum == consoleplayer && Level->isPrimaryLevel())
+	if (player && player == Level->GetConsolePlayer())
 	{
 		FBaseCVar *cvar = FindCVar(cvarname, NULL);
 		// If we can find it in the userinfo, then we should also be able to find it in the normal cvar list,
@@ -5394,7 +5395,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 				AActor *ptr = Level->SingleActorFromTID(args[1], activator);
 				if (argCount > 2)
 				{
-					ptr = COPY_AAPTR(ptr, args[2]);
+					ptr = COPY_AAPTREX(Level, ptr, args[2]);
 				}
 				if (ptr == activator) ptr = NULL;
 				ASSIGN_AAPTR(activator, args[0], ptr, (argCount > 3) ? args[3] : 0);
@@ -5805,7 +5806,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args)
 				int arg2 = argCount > 2 ? args[2] : 0;
 				int arg3 = argCount > 3 ? args[3] : 0;
 				int arg4 = argCount > 4 ? args[4] : 0;
-				return P_ExecuteSpecial(NamedACSToNormalACS[funcIndex - ACSF_ACS_NamedExecute],
+				return P_ExecuteSpecial(Level, NamedACSToNormalACS[funcIndex - ACSF_ACS_NamedExecute],
 					activationline, activator, backSide,
 					scriptnum, arg1, arg2, arg3, arg4);
 			}
@@ -6364,7 +6365,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 				actor = Level->SingleActorFromTID(tid1, activator);
 				AActor * actor2 = tid2 == tid1 ? actor : Level->SingleActorFromTID(tid2, activator);
 
-				return COPY_AAPTR(actor, args[0]) == COPY_AAPTR(actor2, args[1]);
+				return COPY_AAPTREX(Level, actor, args[0]) == COPY_AAPTREX(Level, actor2, args[1]);
 			}
 			break;
 
@@ -6542,7 +6543,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			int count = argCount >= 4 ? args[3] : 1;
 			int flags = argCount >= 5 ? args[4] : 0;
 			int ptr = argCount >= 6 ? args[5] : AAPTR_DEFAULT;
-			return P_Thing_CheckProximity(actor, classname, distance, count, flags, ptr);
+			return P_Thing_CheckProximity(Level, actor, classname, distance, count, flags, ptr);
 		}
 
 		case ACSF_CheckActorState:
@@ -6566,8 +6567,8 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 		case ACSF_DamageActor: // [arookas] wrapper around P_DamageMobj
 		{
 			// (target, ptr_select1, inflictor, ptr_select2, amount, damagetype)
-			AActor* target = COPY_AAPTR(Level->SingleActorFromTID(args[0], activator), args[1]);
-			AActor* inflictor = COPY_AAPTR(Level->SingleActorFromTID(args[2], activator), args[3]);
+			AActor* target = COPY_AAPTREX(Level, Level->SingleActorFromTID(args[0], activator), args[1]);
+			AActor* inflictor = COPY_AAPTREX(Level, Level->SingleActorFromTID(args[2], activator), args[3]);
 			FName damagetype(Level->Behaviors.LookupString(args[5]));
 			return P_DamageMobj(target, inflictor, inflictor, args[4], damagetype);
 		}
@@ -7041,20 +7042,20 @@ int DLevelScript::RunScript()
 			break;
 
 		case PCD_LSPEC1:
-			P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+			P_ExecuteSpecial(Level, NEXTBYTE, activationline, activator, backSide,
 									STACK(1) & specialargmask, 0, 0, 0, 0);
 			sp -= 1;
 			break;
 
 		case PCD_LSPEC2:
-			P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+			P_ExecuteSpecial(Level, NEXTBYTE, activationline, activator, backSide,
 									STACK(2) & specialargmask,
 									STACK(1) & specialargmask, 0, 0, 0);
 			sp -= 2;
 			break;
 
 		case PCD_LSPEC3:
-			P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+			P_ExecuteSpecial(Level, NEXTBYTE, activationline, activator, backSide,
 									STACK(3) & specialargmask,
 									STACK(2) & specialargmask,
 									STACK(1) & specialargmask, 0, 0);
@@ -7062,7 +7063,7 @@ int DLevelScript::RunScript()
 			break;
 
 		case PCD_LSPEC4:
-			P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+			P_ExecuteSpecial(Level, NEXTBYTE, activationline, activator, backSide,
 									STACK(4) & specialargmask,
 									STACK(3) & specialargmask,
 									STACK(2) & specialargmask,
@@ -7071,7 +7072,7 @@ int DLevelScript::RunScript()
 			break;
 
 		case PCD_LSPEC5:
-			P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+			P_ExecuteSpecial(Level, NEXTBYTE, activationline, activator, backSide,
 									STACK(5) & specialargmask,
 									STACK(4) & specialargmask,
 									STACK(3) & specialargmask,
@@ -7081,7 +7082,7 @@ int DLevelScript::RunScript()
 			break;
 
 		case PCD_LSPEC5RESULT:
-			STACK(5) = P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+			STACK(5) = P_ExecuteSpecial(Level, NEXTBYTE, activationline, activator, backSide,
 									STACK(5) & specialargmask,
 									STACK(4) & specialargmask,
 									STACK(3) & specialargmask,
@@ -7091,7 +7092,7 @@ int DLevelScript::RunScript()
 			break;
 
 		case PCD_LSPEC5EX:
-			P_ExecuteSpecial(NEXTWORD, activationline, activator, backSide,
+			P_ExecuteSpecial(Level, NEXTWORD, activationline, activator, backSide,
 									STACK(5) & specialargmask,
 									STACK(4) & specialargmask,
 									STACK(3) & specialargmask,
@@ -7101,7 +7102,7 @@ int DLevelScript::RunScript()
 			break;
 
 		case PCD_LSPEC5EXRESULT:
-			STACK(5) = P_ExecuteSpecial(NEXTWORD, activationline, activator, backSide,
+			STACK(5) = P_ExecuteSpecial(Level, NEXTWORD, activationline, activator, backSide,
 									STACK(5) & specialargmask,
 									STACK(4) & specialargmask,
 									STACK(3) & specialargmask,
@@ -7112,14 +7113,14 @@ int DLevelScript::RunScript()
 
 		case PCD_LSPEC1DIRECT:
 			temp = NEXTBYTE;
-			P_ExecuteSpecial(temp, activationline, activator, backSide,
+			P_ExecuteSpecial(Level, temp, activationline, activator, backSide,
 								uallong(pc[0]) & specialargmask ,0, 0, 0, 0);
 			pc += 1;
 			break;
 
 		case PCD_LSPEC2DIRECT:
 			temp = NEXTBYTE;
-			P_ExecuteSpecial(temp, activationline, activator, backSide,
+			P_ExecuteSpecial(Level, temp, activationline, activator, backSide,
 								uallong(pc[0]) & specialargmask,
 								uallong(pc[1]) & specialargmask, 0, 0, 0);
 			pc += 2;
@@ -7127,7 +7128,7 @@ int DLevelScript::RunScript()
 
 		case PCD_LSPEC3DIRECT:
 			temp = NEXTBYTE;
-			P_ExecuteSpecial(temp, activationline, activator, backSide,
+			P_ExecuteSpecial(Level, temp, activationline, activator, backSide,
 								uallong(pc[0]) & specialargmask,
 								uallong(pc[1]) & specialargmask,
 								uallong(pc[2]) & specialargmask, 0, 0);
@@ -7136,7 +7137,7 @@ int DLevelScript::RunScript()
 
 		case PCD_LSPEC4DIRECT:
 			temp = NEXTBYTE;
-			P_ExecuteSpecial(temp, activationline, activator, backSide,
+			P_ExecuteSpecial(Level, temp, activationline, activator, backSide,
 								uallong(pc[0]) & specialargmask,
 								uallong(pc[1]) & specialargmask,
 								uallong(pc[2]) & specialargmask,
@@ -7146,7 +7147,7 @@ int DLevelScript::RunScript()
 
 		case PCD_LSPEC5DIRECT:
 			temp = NEXTBYTE;
-			P_ExecuteSpecial(temp, activationline, activator, backSide,
+			P_ExecuteSpecial(Level, temp, activationline, activator, backSide,
 								uallong(pc[0]) & specialargmask,
 								uallong(pc[1]) & specialargmask,
 								uallong(pc[2]) & specialargmask,
@@ -7157,32 +7158,32 @@ int DLevelScript::RunScript()
 
 		// Parameters for PCD_LSPEC?DIRECTB are by definition bytes so never need and-ing.
 		case PCD_LSPEC1DIRECTB:
-			P_ExecuteSpecial(((uint8_t *)pc)[0], activationline, activator, backSide,
+			P_ExecuteSpecial(Level, ((uint8_t *)pc)[0], activationline, activator, backSide,
 				((uint8_t *)pc)[1], 0, 0, 0, 0);
 			pc = (int *)((uint8_t *)pc + 2);
 			break;
 
 		case PCD_LSPEC2DIRECTB:
-			P_ExecuteSpecial(((uint8_t *)pc)[0], activationline, activator, backSide,
+			P_ExecuteSpecial(Level, ((uint8_t *)pc)[0], activationline, activator, backSide,
 				((uint8_t *)pc)[1], ((uint8_t *)pc)[2], 0, 0, 0);
 			pc = (int *)((uint8_t *)pc + 3);
 			break;
 
 		case PCD_LSPEC3DIRECTB:
-			P_ExecuteSpecial(((uint8_t *)pc)[0], activationline, activator, backSide,
+			P_ExecuteSpecial(Level, ((uint8_t *)pc)[0], activationline, activator, backSide,
 				((uint8_t *)pc)[1], ((uint8_t *)pc)[2], ((uint8_t *)pc)[3], 0, 0);
 			pc = (int *)((uint8_t *)pc + 4);
 			break;
 
 		case PCD_LSPEC4DIRECTB:
-			P_ExecuteSpecial(((uint8_t *)pc)[0], activationline, activator, backSide,
+			P_ExecuteSpecial(Level, ((uint8_t *)pc)[0], activationline, activator, backSide,
 				((uint8_t *)pc)[1], ((uint8_t *)pc)[2], ((uint8_t *)pc)[3],
 				((uint8_t *)pc)[4], 0);
 			pc = (int *)((uint8_t *)pc + 5);
 			break;
 
 		case PCD_LSPEC5DIRECTB:
-			P_ExecuteSpecial(((uint8_t *)pc)[0], activationline, activator, backSide,
+			P_ExecuteSpecial(Level, ((uint8_t *)pc)[0], activationline, activator, backSide,
 				((uint8_t *)pc)[1], ((uint8_t *)pc)[2], ((uint8_t *)pc)[3],
 				((uint8_t *)pc)[4], ((uint8_t *)pc)[5]);
 			pc = (int *)((uint8_t *)pc + 6);
@@ -8724,8 +8725,7 @@ scriptwait:
 				{
 					screen = screen->target;
 				}
-				if (pcd == PCD_ENDHUDMESSAGEBOLD || screen == NULL ||
-					players[consoleplayer].mo == screen)
+				if (Level->isPrimaryLevel() && (pcd == PCD_ENDHUDMESSAGEBOLD || screen == NULL || Level->isConsolePlayer(screen)))
 				{
 					int type = Stack[optstart-6];
 					int id = Stack[optstart-5];
@@ -9408,7 +9408,7 @@ scriptwait:
 			break;
 
 		case PCD_LOCALSETMUSIC:
-			if (activator == players[consoleplayer].mo)
+			if (Level->isConsolePlayer(activator))
 			{
 				S_ChangeMusic (Level->Behaviors.LookupString (STACK(3)), STACK(2));
 			}
@@ -9416,7 +9416,7 @@ scriptwait:
 			break;
 
 		case PCD_LOCALSETMUSICDIRECT:
-			if (activator == players[consoleplayer].mo)
+			if (Level->isConsolePlayer(activator))
 			{
 				S_ChangeMusic (Level->Behaviors.LookupString (TAGSTR(uallong(pc[0]))), uallong(pc[1]));
 			}
@@ -9752,7 +9752,7 @@ scriptwait:
 			}
 			else
 			{
-				PushToStack (int(activator->player - players));
+				PushToStack (Level->PlayerNum(activator->player));
 			}
 			break;
 
@@ -10465,7 +10465,7 @@ static void addDefered (level_info_t *i, acsdefered_t::EType type, int script, c
 		}
 		if (who != NULL && who->player != NULL)
 		{
-			def.playernum = int(who->player - players);
+			def.playernum = who->Level->PlayerNum(who->player);
 		}
 		else
 		{
@@ -10516,7 +10516,7 @@ int P_StartScript (FLevelLocals *Level, AActor *who, line_t *where, int script, 
 		}
 		else
 		{
-			if (!(flags & ACS_NET) || (who && who->player == &players[consoleplayer]))
+			if (!(flags & ACS_NET) || (who && Level->isConsolePlayer(who->player->mo))) // The indirection is necessary here.
 			{
 				DPrintf(DMSG_WARNING, "P_StartScript: Unknown %s\n", ScriptPresentation(script).GetChars());
 			}
