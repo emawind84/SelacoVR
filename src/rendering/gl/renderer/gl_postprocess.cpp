@@ -161,8 +161,11 @@ void FGLRenderer::Flush()
 			glScissor(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
 
 			//Only adjust HUD if we are 3D and not showing menu (otherwise we are rendering to a cylinder compositor layer)
-			vrmode->mEyes[eye_ix]->AdjustBlend(nullptr);
-			screen->Draw2D(true);
+			if (vrmode->IsVR())
+			{
+				vrmode->mEyes[eye_ix]->AdjustBlend(nullptr);
+				screen->Draw2D(true);
+			}
 			if (!is2D && !getMenuState())
 			{
 				vrmode->mEyes[eye_ix]->AdjustHud();
