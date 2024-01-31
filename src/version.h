@@ -91,9 +91,9 @@ const char *GetVersionString();
 #define OPTIONALWAD "game_support.pk3"
 
 // More stuff that needs to be different for derivatives.
-#define GAMENAME "GZDoom"
-#define WGAMENAME L"GZDoom"
-#define GAMENAMELOWERCASE "gzdoom"
+#define GAMENAME "LZDoom"
+#define WGAMENAME L"LZDoom"
+#define GAMENAMELOWERCASE "lzdoom"
 #define FORUM_URL "http://forum.zdoom.org/"
 #define BUGS_FORUM_URL	"http://forum.zdoom.org/viewforum.php?f=2"
 
