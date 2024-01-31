@@ -320,6 +320,7 @@ IWad
 		          "DPHOOF","BFGGA0","HEADA1","CYBRA1","SPIDA1D1", "E4M2",
 		          "DMENUPIC", "M_ACPT", "M_CAN", "M_EXITO", "M_CHG"
 	BannerColors = "54 54 54", "a8 a8 a8"
+	IgnoreTitlePatches = 1
 }
 
 IWad
@@ -351,7 +352,7 @@ IWad
 	Compatibility = "Shorttex"
 	MustContain = "SMOOSHED", "ANIMDEFS", "LANGUAGE", "MAPINFO", "ENDOOM", "M_DOOM", "TITLEPIC", "TEXTURES"
 	BannerColors = "a8 00 00", "a8 a8 a8"
-	FixUnityStatusBar = 1
+	IgnoreTitlePatches = 1
 }
 
 IWad
@@ -382,6 +383,7 @@ IWad
 		          "E3M1","E3M2","E3M3","E3M4","E3M5","E3M6","E3M7","E3M8","E3M9",
 		          "DPHOOF","BFGGA0","HEADA1","CYBRA1","SPIDA1D1", "E4M2"
 	BannerColors = "54 54 54", "a8 a8 a8"
+	IgnoreTitlePatches = 1
 }
 
 IWad
@@ -397,6 +399,7 @@ IWad
 		          "E3M1","E3M2","E3M3","E3M4","E3M5","E3M6","E3M7","E3M8","E3M9",
 		          "DPHOOF","BFGGA0","HEADA1","CYBRA1","SPIDA1D1"
 	BannerColors = "54 54 54", "a8 a8 a8"
+	IgnoreTitlePatches = 1
 }
 
 IWad
@@ -409,6 +412,7 @@ IWad
 	Compatibility = "Shareware", "Shorttex"
 	MustContain = "E1M1"
 	BannerColors = "54 54 54", "a8 a8 a8"
+	IgnoreTitlePatches = 1
 }
 
 IWad
@@ -436,6 +440,7 @@ IWad
 	Compatibility = "Shorttex", "Stairs"
 	MustContain = "MAP01", "REDTNT2"
 	BannerColors = "a8 00 00", "a8 a8 a8"
+	IgnoreTitlePatches = 1
 }
 
 IWad
@@ -463,6 +468,7 @@ IWad
 	Compatibility = "Shorttex"
 	MustContain = "MAP01", "CAMO1"
 	BannerColors = "a8 00 00", "a8 a8 a8"
+	IgnoreTitlePatches = 1
 }
 
 IWad
@@ -492,9 +498,10 @@ IWad
 	MustContain = "MAP01", "DMENUPIC", "M_ACPT", "M_CAN", "M_EXITO", "M_CHG"
 	BannerColors = "a8 00 00", "a8 a8 a8"
 	Load = "nerve.wad"
+	IgnoreTitlePatches = 1
 }
 
-// Doom 2 must be last to be checked becaude MAP01 is its only requirement
+// Doom 2 must be last to be checked because MAP01 is its only requirement
 IWad
 {
 	Name = "DOOM 2: Unity Edition"
@@ -549,6 +556,7 @@ IWad
 	MustContain = "MAP01"
 	BannerColors = "a8 00 00", "a8 a8 a8"
 	Load = "nerve.wad"
+	IgnoreTitlePatches = 1
 }
 	
 

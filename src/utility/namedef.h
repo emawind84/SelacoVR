@@ -758,6 +758,7 @@ xx(Pagename)
 
 // Special menus
 xx(Mainmenu)
+xx(MainmenuTextOnly)
 xx(Episodemenu)
 xx(Playerclassmenu)
 xx(HexenDefaultPlayerclassmenu)

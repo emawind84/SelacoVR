@@ -1311,6 +1311,10 @@ TXT_IMSUCKS = "Sucks";
 TXT_IMSCRT = "Scrt";
 TXT_IMPAR = "Par";
 
+// For testing the extended characters' positioning.
+//TXT_IMKILLS			= "AÀÁÂÃÄÅÆÇÈÉÊËÌÍÎ";
+//TXT_IMITEMS			= "OÐÏÑÒÓÔÕÖØÙÚÛÜÝÞß";
+
 RAVENQUITMSG = "ARE YOU SURE YOU WANT TO QUIT?";
 
 // Friendly names
@@ -1730,6 +1734,7 @@ OPTMNU_DEFAULTS				= "Reset to defaults";
 OPTMNU_RESETTOSAVED			= "Reset to last saved";
 OPTMNU_CONSOLE				= "Go to console";
 OPTMNU_REVERB				= "Reverb environment editor";
+OPTMNU_LANGUAGE				= "Language";
 OS_TITLE					= "Option Search";
 OS_ANY						= "Search for any term";
 OS_ALL						= "Search for all terms";

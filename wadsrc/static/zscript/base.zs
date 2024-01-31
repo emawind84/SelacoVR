@@ -123,7 +123,7 @@ struct TexMan
 	native static Vector2 GetScaledSize(TextureID tex);
 	native static Vector2 GetScaledOffset(TextureID tex);
 	native static int CheckRealHeight(TextureID tex);
-	static bool OkForLocalization(TextureID patch, String textSubstitute) { return false; } // hack hack
+	native static bool OkForLocalization(TextureID patch, String textSubstitute);
 
 	native static void SetCameraToTexture(Actor viewpoint, String texture, double fov);
 }

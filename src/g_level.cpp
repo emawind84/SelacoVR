@@ -81,6 +81,7 @@
 #include "a_dynlight.h"
 #include "p_conversation.h"
 #include "p_effect.h"
+#include "stringtable.h"
 
 #include "gi.h"
 
@@ -822,6 +823,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, SecretExitLevel, LevelLocals_SecretE
 //
 //
 //==========================================================================
+static wbstartstruct_t staticWmInfo;
 
 void G_DoCompleted (void)
 {
@@ -854,7 +856,7 @@ void G_DoCompleted (void)
 		SN_StopAllSequences(Level);
 	}
 
-	if (primaryLevel->DoCompleted(nextlevel, wminfo))
+	if (primaryLevel->DoCompleted(nextlevel, staticWmInfo))
 	{
 		gamestate = GS_INTERMISSION;
 		viewactive = false;
@@ -864,10 +866,16 @@ void G_DoCompleted (void)
 		//	if (statcopy)
 		//		memcpy (statcopy, &wminfo, sizeof(wminfo));
 		
-		WI_Start (&wminfo);
+		WI_Start (&staticWmInfo);
 	}
 }
 
+//==========================================================================
+//
+// Prepare the level to be exited and
+// set up the wminfo struct for the coming intermission screen
+//
+//==========================================================================
 
 bool FLevelLocals::DoCompleted (FString nextlevel, wbstartstruct_t &wminfo)
 {
@@ -877,16 +885,19 @@ bool FLevelLocals::DoCompleted (FString nextlevel, wbstartstruct_t &wminfo)
 	if (!(flags & LEVEL_CHANGEMAPCHEAT))
 		FindLevelInfo (MapName)->flags |= LEVEL_VISITED;
 	
+	uint32_t langtable[2] = {};
 	wminfo.finished_ep = cluster - 1;
 	wminfo.LName0 = TexMan.CheckForTexture(info->PName, ETextureType::MiscPatch);
+	wminfo.thisname = info->LookupLevelName(&langtable[0]);	// re-get the name so we have more info about its origin.
 	wminfo.current = MapName;
 
 	if (deathmatch &&
-		(dmflags & DF_SAME_LEVEL) &&
+		(*dmflags & DF_SAME_LEVEL) &&
 		!(flags & LEVEL_CHANGEMAPCHEAT))
 	{
 		wminfo.next = MapName;
 		wminfo.LName1 = wminfo.LName0;
+		wminfo.nextname = wminfo.thisname;
 		wminfo.nextauthor = wminfo.thisauthor;
 	}
 	else
@@ -894,14 +905,16 @@ bool FLevelLocals::DoCompleted (FString nextlevel, wbstartstruct_t &wminfo)
 		level_info_t *nextinfo = FindLevelInfo (nextlevel, false);
 		if (nextinfo == NULL || strncmp (nextlevel, "enDSeQ", 6) == 0)
 		{
-			wminfo.next = nextlevel;
+			wminfo.next = "";
 			wminfo.LName1.SetInvalid();
+			wminfo.nextname = "";
 			wminfo.nextauthor = "";
 		}
 		else
 		{
 			wminfo.next = nextinfo->MapName;
 			wminfo.LName1 = TexMan.CheckForTexture(nextinfo->PName, ETextureType::MiscPatch);
+			wminfo.nextname = nextinfo->LookupLevelName(&langtable[1]);
 			if (!(nextinfo->flags3 & LEVEL3_HIDEAUTHORNAME)) wminfo.nextauthor = nextinfo->AuthorName;
 		}
 	}
@@ -1694,68 +1707,6 @@ void FLevelLocals::Init()
 //
 //==========================================================================
 
-bool FLevelLocals::IsJumpingAllowed() const
-{
-	if (dmflags & DF_NO_JUMP)
-		return false;
-	if (dmflags & DF_YES_JUMP)
-		return true;
-	return !(flags & LEVEL_JUMP_NO);
-}
-
-DEFINE_ACTION_FUNCTION(FLevelLocals, IsJumpingAllowed)
-{
-	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
-	ACTION_RETURN_BOOL(self->IsJumpingAllowed());
-}
-
-
-//==========================================================================
-//
-//
-//==========================================================================
-
-bool FLevelLocals::IsCrouchingAllowed() const
-{
-	if (dmflags & DF_NO_CROUCH)
-		return false;
-	if (dmflags & DF_YES_CROUCH)
-		return true;
-	return !(flags & LEVEL_CROUCH_NO);
-}
-
-DEFINE_ACTION_FUNCTION(FLevelLocals, IsCrouchingAllowed)
-{
-	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
-	ACTION_RETURN_BOOL(self->IsCrouchingAllowed());
-}
-
-//==========================================================================
-//
-//
-//==========================================================================
-
-bool FLevelLocals::IsFreelookAllowed() const
-{
-	if (dmflags & DF_NO_FREELOOK)
-		return false;
-	if (dmflags & DF_YES_FREELOOK)
-		return true;
-	return !(flags & LEVEL_FREELOOK_NO);
-}
-
-DEFINE_ACTION_FUNCTION(FLevelLocals, IsFreelookAllowed)
-{
-	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
-	ACTION_RETURN_BOOL(self->IsFreelookAllowed());
-}
-
-
-//==========================================================================
-//
-//
-//==========================================================================
-
 FString CalcMapName (int episode, int level)
 {
 	FString lumpname;
@@ -1787,89 +1738,6 @@ void FLevelLocals::AirControlChanged ()
 	{
 		// Friction is inversely proportional to the amount of control
 		airfriction = aircontrol * -0.0941 + 1.0004;
-	}
-}
-
-//==========================================================================
-//
-// Archives the current level
-//
-//==========================================================================
-
-void FLevelLocals::SnapshotLevel ()
-{
-	info->Snapshot.Clean();
-
-	if (info->isValid())
-	{
-		FSerializer arc(this);
-
-		if (arc.OpenWriter(save_formatted))
-		{
-			SaveVersion = SAVEVER;
-			Serialize(arc, false);
-			info->Snapshot = arc.GetCompressedOutput();
-		}
-	}
-}
-
-//==========================================================================
-//
-// Unarchives the current level based on its snapshot
-// The level should have already been loaded and setup.
-//
-//==========================================================================
-
-void FLevelLocals::UnSnapshotLevel (bool hubLoad)
-{
-	if (info->Snapshot.mBuffer == nullptr)
-		return;
-
-	if (info->isValid())
-	{
-		FSerializer arc(this);
-		if (!arc.OpenReader(&info->Snapshot))
-		{
-			I_Error("Failed to load savegame");
-			return;
-		}
-
-		Serialize (arc, hubLoad);
-		FromSnapshot = true;
-
-		auto it = GetThinkerIterator<AActor>(NAME_PlayerPawn);
-		AActor *pawn, *next;
-
-		next = it.Next();
-		while ((pawn = next) != 0)
-		{
-			next = it.Next();
-			if (pawn->player == nullptr || pawn->player->mo == nullptr || !PlayerInGame(pawn->player))
-			{
-				int i;
-
-				// If this isn't the unmorphed original copy of a player, destroy it, because it's extra.
-				for (i = 0; i < MAXPLAYERS; ++i)
-				{
-					if (PlayerInGame(i) && Players[i]->morphTics && Players[i]->mo->alternative == pawn)
-					{
-						break;
-					}
-				}
-				if (i == MAXPLAYERS)
-				{
-					pawn->Destroy ();
-				}
-			}
-		}
-		arc.Close();
-	}
-	// No reason to keep the snapshot around once the level's been entered.
-	info->Snapshot.Clean();
-	if (hubLoad)
-	{
-		// Unlock ACS global strings that were locked when the snapshot was made.
-		Behaviors.UnlockLevelVarStrings(levelnum);
 	}
 }
 
@@ -2015,23 +1883,6 @@ void G_ReadVisited(FSerializer &arc)
 			arc(key, players[i].cls);
 		}
 		arc.EndObject();
-	}
-}
-
-//==========================================================================
-//
-//
-//==========================================================================
-
-CCMD(listsnapshots)
-{
-	for (unsigned i = 0; i < wadlevelinfos.Size(); ++i)
-	{
-		FCompressedBuffer *snapshot = &wadlevelinfos[i].Snapshot;
-		if (snapshot->mBuffer != nullptr)
-		{
-			Printf("%s (%u -> %u bytes)\n", wadlevelinfos[i].MapName.GetChars(), snapshot->mCompressedSize, snapshot->mSize);
-		}
 	}
 }
 
@@ -2376,75 +2227,6 @@ int IsPointInMap(FLevelLocals *Level, double x, double y, double z)
 
 	return true;
 }
-
-//==========================================================================
-//
-// Lists all currently defined maps
-//
-//==========================================================================
-
-CCMD(listmaps)
-{
-	for(unsigned i = 0; i < wadlevelinfos.Size(); i++)
-	{
-		level_info_t *info = &wadlevelinfos[i];
-		MapData *map = P_OpenMapData(info->MapName, true);
-
-		if (map != NULL)
-		{
-			if (argv.argc() == 1 
-			    || CheckWildcards(argv[1], info->MapName.GetChars()) 
-			    || CheckWildcards(argv[1], info->LookupLevelName().GetChars())
-			    || CheckWildcards(argv[1], Wads.GetWadName(Wads.GetLumpFile(map->lumpnum))))
-			{
-				Printf("%s: '%s' (%s)\n", info->MapName.GetChars(), info->LookupLevelName().GetChars(),
-					Wads.GetWadName(Wads.GetLumpFile(map->lumpnum)));
-			}
-			delete map;
-		}
-	}
-}
-
-//==========================================================================
-//
-// For testing sky fog sheets
-//
-//==========================================================================
-CCMD(skyfog)
-{
-	if (argv.argc()>1)
-	{
-		// Do this only on the primary level.
-		primaryLevel->skyfog = MAX(0, (int)strtoull(argv[1], NULL, 0));
-	}
-}
-
-
-//==========================================================================
-//
-// ZScript counterpart to ACS ChangeSky, uses TextureIDs
-//
-//==========================================================================
-DEFINE_ACTION_FUNCTION(FLevelLocals, ChangeSky)
-{
-	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
-	PARAM_INT(sky1);
-	PARAM_INT(sky2);
-	self->skytexture1 = FSetTextureID(sky1);
-	self->skytexture2 = FSetTextureID(sky2);
-	InitSkyMap(self);
-	return 0;
-}
-
-DEFINE_ACTION_FUNCTION(FLevelLocals, StartIntermission)
-{
-	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
-	PARAM_NAME(seq);
-	PARAM_INT(state);
-	F_StartIntermission(seq, (uint8_t)state);
-	return 0;
-}
-
 
 void FLevelLocals::SetMusic()
 {

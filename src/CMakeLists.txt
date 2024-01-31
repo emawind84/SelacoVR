@@ -568,6 +568,7 @@ file( GLOB HEADER_FILES
 	g_statusbar/*.h
 	gamedata/*.h
 	gamedata/resourcefiles/*.h
+	gamedata/fonts/*.h
 	gamedata/textures/*.h
 	gamedata/textures/hires/hqnx/*.h
 	gamedata/textures/hires/hqnx_asm/*.h
@@ -600,7 +601,7 @@ file( GLOB HEADER_FILES
 	scripting/vm/*.h
 	sound/midisources/*.h
 	sound/thirdparty/*.h
-	xlat/*.h
+	rendering/2d/*.h
 	rendering/swrenderer/*.h
 	rendering/swrenderer/textures/*.h
 	rendering/swrenderer/drawers/*.h
@@ -800,7 +801,6 @@ set (PCH_SOURCES
 	c_expr.cpp
 	c_functions.cpp
 	ct_chat.cpp
-	cycler.cpp
 	d_iwad.cpp
 	d_main.cpp
 	d_anonstats.cpp
@@ -811,7 +811,6 @@ set (PCH_SOURCES
 	dobjgc.cpp
 	dobjtype.cpp
 	doomstat.cpp
-	f_wipe.cpp
 	g_cvars.cpp
 	g_dumpinfo.cpp
 	g_game.cpp
@@ -843,7 +842,6 @@ set (PCH_SOURCES
 	p_states.cpp
 	p_things.cpp
 	p_tick.cpp
-	p_usdf.cpp
 	p_user.cpp
 	r_utility.cpp
 	r_sky.cpp
@@ -858,16 +856,8 @@ set (PCH_SOURCES
 	serializer.cpp
 	scriptutil.cpp
 	st_stuff.cpp
-	statistics.cpp
-	stats.cpp
-	v_2ddrawer.cpp
-	v_blend.cpp
-	v_draw.cpp
-	v_font.cpp
 	v_framebuffer.cpp
 	v_palette.cpp
-	v_pfx.cpp
-	v_text.cpp
 	v_video.cpp
 	wi_stuff.cpp
 	gamedata/a_keys.cpp
@@ -884,6 +874,7 @@ set (PCH_SOURCES
 	gamedata/info.cpp
 	gamedata/keysections.cpp
 	gamedata/p_terrain.cpp
+	gamedata/statistics.cpp
 	gamedata/teaminfo.cpp
 	g_shared/a_pickups.cpp
 	g_shared/a_action.cpp
@@ -924,6 +915,11 @@ set (PCH_SOURCES
 	g_statusbar/sbarinfo.cpp
 	g_statusbar/sbar_mugshot.cpp
 	g_statusbar/shared_sbar.cpp
+	rendering/2d/f_wipe.cpp
+	rendering/2d/v_2ddrawer.cpp
+	rendering/2d/v_drawtext.cpp
+	rendering/2d/v_blend.cpp
+	rendering/2d/v_draw.cpp
 	rendering/gl/renderer/gl_renderer.cpp
 	rendering/gl/renderer/gl_renderstate.cpp
 	rendering/gl/renderer/gl_renderbuffers.cpp
@@ -970,6 +966,8 @@ set (PCH_SOURCES
 	maploader/slopes.cpp
 	maploader/glnodes.cpp
 	maploader/udmf.cpp
+	maploader/usdf.cpp
+	maploader/strifedialogue.cpp
 	maploader/polyobjects.cpp
 	maploader/renderinfo.cpp
 	maploader/compatibility.cpp
@@ -1020,6 +1018,12 @@ set (PCH_SOURCES
 	gamedata/textures/formats/tgatexture.cpp
 	gamedata/textures/hires/hqresize.cpp
 	gamedata/textures/hires/hirestex.cpp
+	gamedata/fonts/singlelumpfont.cpp
+	gamedata/fonts/singlepicfont.cpp
+	gamedata/fonts/specialfont.cpp
+	gamedata/fonts/font.cpp
+	gamedata/fonts/v_font.cpp
+	gamedata/fonts/v_text.cpp	
 	gamedata/p_xlat.cpp
 	gamedata/xlat/parse_xlat.cpp
 	gamedata/xlat/parsecontext.cpp
@@ -1035,6 +1039,7 @@ set (PCH_SOURCES
 	intermission/intermission.cpp
 	intermission/intermission_parse.cpp
 	r_data/colormaps.cpp
+	r_data/cycler.cpp
 	r_data/gldefs.cpp
 	r_data/a_dynlightdata.cpp
 	r_data/r_translate.cpp
@@ -1095,6 +1100,7 @@ set (PCH_SOURCES
 	utility/nodebuilder/nodebuild_gl.cpp
 	utility/nodebuilder/nodebuild_utility.cpp
 	utility/sc_man.cpp
+	utility/stats.cpp
 	utility/cmdlib.cpp
 	utility/colormatcher.cpp
 	utility/configfile.cpp
@@ -1175,7 +1181,9 @@ include_directories( .
 	g_shared
 	gamedata
 	gamedata/textures
+	gamedata/fonts
 	rendering
+	rendering/2d
 	sound
 	sound/music
 	sound/backend
@@ -1288,6 +1296,7 @@ source_group("External\\SFMT" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/s
 source_group("FraggleScript" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/fragglescript/.+")
 source_group("Game Data" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gamedata/.+")
 source_group("Game Data\\Resource Files" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gamedata/resourcefiles/.+")
+source_group("Game Data\\Fonts" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gamedata/fonts/.+")
 source_group("Game Data\\Textures" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gamedata/textures/.+")
 source_group("Game Data\\Textures\\Hires" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gamedata/textures/hires/.+")
 source_group("Game Data\\Textures\\Hires\\HQ Resize" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gamedata/textures/hires/hqnx/.+")
@@ -1298,6 +1307,7 @@ source_group("Intermission" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/int
 source_group("Map Loader" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/maploader/.+")
 source_group("Menu" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/menu/.+")
 source_group("Rendering" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rendering/.+")
+source_group("Rendering\\2D" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rendering/2d/.+")
 source_group("Rendering\\Hardware Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/.+")
 source_group("Rendering\\Hardware Renderer\\Data" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rendering/hwrenderer/data/.+")
 source_group("Rendering\\Hardware Renderer\\Dynamic Lights" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rendering/hwrenderer/dynlights/.+")

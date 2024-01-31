@@ -320,7 +320,7 @@ class ListMenuItemTextItem : ListMenuItemSelectable
 class ListMenuItemPatchItem : ListMenuItemSelectable
 {
 	TextureID mTexture;
-
+	
 	void Init(ListMenuDescriptor desc, TextureID patch, String hotkey, Name child, int param = 0)
 	{
 		Super.Init(desc.mXpos, desc.mYpos, desc.mLinespacing, child, param);
