@@ -199,7 +199,6 @@ CUSTOM_CVAR (Int, fraglimit, 0, CVAR_SERVERINFO)
 CVAR (Float, timelimit, 0.f, CVAR_SERVERINFO);
 CVAR (Int, wipetype, 1, CVAR_ARCHIVE);
 CVAR (Int, snd_drawoutput, 0, 0);
-CVAR (Bool, fixunitystatusbar, false, 0);
 CUSTOM_CVAR (String, vid_cursor, "None", CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
 	bool res = false;
@@ -2669,9 +2668,6 @@ static int D_DoomMain_Internal (void)
 		if (!batchrun) Printf ("Texman.Init: Init texture manager.\n");
 		TexMan.Init();
 		C_InitConback();
-
-		if (gameinfo.flags & GI_ALWAYSCENTERSBAR)
-			fixunitystatusbar = true;
 
 		StartScreen->Progress();
 		V_InitFonts();
