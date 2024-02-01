@@ -560,28 +560,11 @@ CVAR (Flag, sv_alwaysspawnmulti,	dmflags2, DF2_ALWAYS_SPAWN_MULTI);
 
 EXTERN_CVAR(Int, compatmode)
 
-static int GetCompatibility(FLevelLocals *Level, int mask)
-{
-	if (Level->info == nullptr) return mask;
-	else return (mask & ~Level->info->compatmask) | (Level->info->compatflags & Level->info->compatmask);
-}
-
-static int GetCompatibility2(FLevelLocals *Level, int mask)
-{
-	return (Level->info == nullptr) ? mask
-		: (mask & ~Level->info->compatmask2) | (Level->info->compatflags2 & Level->info->compatmask2);
-}
-
 CUSTOM_CVAR (Int, compatflags, 0, CVAR_ARCHIVE|CVAR_SERVERINFO | CVAR_NOINITCALL)
 {
 	for (auto Level : AllLevels())
 	{
-		int old = Level->i_compatflags;
-		Level->i_compatflags = GetCompatibility(Level, self) | Level->ii_compatflags;
-		if ((old ^ Level->i_compatflags) & COMPATF_POLYOBJ)
-		{
-			Level->ClearAllSubsectorLinks();
-		}
+		Level->ApplyCompatibility();
 	}
 }
 
@@ -589,7 +572,7 @@ CUSTOM_CVAR (Int, compatflags2, 0, CVAR_ARCHIVE|CVAR_SERVERINFO | CVAR_NOINITCAL
 {
 	for (auto Level : AllLevels())
 	{
-		Level->i_compatflags2 = GetCompatibility2(Level, self) | Level->ii_compatflags2;
+		Level->ApplyCompatibility2();
 		Level->SetCompatLineOnSide(true);
 	}
 }
@@ -924,7 +907,7 @@ void D_Display ()
 			screen->DrawTexture (tex, x, 4, DTA_CleanNoMove, true, TAG_DONE);
 			if (paused && multiplayer)
 			{
-				pstring += players[paused - 1].userinfo.GetName();
+				pstring << ' ' << players[paused - 1].userinfo.GetName();
 				screen->DrawText(SmallFont, CR_RED,
 					(screen->GetWidth() - SmallFont->StringWidth(pstring)*CleanXfac) / 2,
 					(tex->GetDisplayHeight() * CleanYfac) + 4, pstring, DTA_CleanNoMove, true, TAG_DONE);

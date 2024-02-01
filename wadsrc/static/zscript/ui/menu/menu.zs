@@ -298,7 +298,7 @@ class Menu : Object native ui version("2.4")
 		S_StartSound (snd, CHAN_VOICE, CHANF_MAYBE_LOCAL|CHAN_UI, snd_menuvolume, ATTN_NONE);
 	}
 	
-	static void DrawConText (int color, int x, int y, String str)
+	deprecated("4.0") static void DrawConText (int color, int x, int y, String str)
 	{
 		screen.DrawText (ConFont, color, x, y, str, DTA_CellX, 8 * CleanXfac, DTA_CellY, 8 * CleanYfac);
 	}

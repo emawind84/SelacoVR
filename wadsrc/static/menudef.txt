@@ -1166,6 +1166,7 @@ OptionMenu "VideoOptions" protected
 
 	Submenu "$DSPLYMNU_GLOPT", 			"OpenGLOptions"
 	Submenu "$DSPLYMNU_SWOPT", 			"SWROptions"
+	Submenu "$GLMNU_TEXOPT", 			"GLTextureGLOptions"
 	Submenu "$GLMNU_DYNLIGHT",			"GLLightOptions"
 	StaticText " "
 	Slider "$DSPLYMNU_SCREENSIZE",				"screenblocks", 				3.0, 12.0, 1.0, 0
@@ -2932,7 +2933,6 @@ OptionMenu "GLLightOptions" protected
 OptionMenu "OpenGLOptions" protected
 {
 	Title "$GLMNU_TITLE"
-	Submenu "$GLMNU_TEXOPT",					"GLTextureGLOptions"
 	Submenu "$GLPREFMNU_VRMODE",				"VR3DMenu"
 	Submenu "$GLMNU_POSTPROCESS",				"PostProcessMenu"
 	StaticText " "
