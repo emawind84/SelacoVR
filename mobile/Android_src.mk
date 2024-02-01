@@ -24,20 +24,21 @@ LOCAL_C_INCLUDES := \
  $(TOP_DIR)/ \
  ${TOP_DIR}/OpenXR-SDK/include \
  ${TOP_DIR}/OpenXR-SDK/src/common \
-	$(GZDOOM_TOP_PATH)/src/  \
+	 $(GZDOOM_TOP_PATH)/src/g_statusbar \
+	$(GZDOOM_TOP_PATH)/src/g_shared \
+	$(GZDOOM_TOP_PATH)/src/gamedata \
+	$(GZDOOM_TOP_PATH)/src/gamedata/textures \
+	$(GZDOOM_TOP_PATH)/src/gamedata/fonts \
+	$(GZDOOM_TOP_PATH)/src/rendering \
+	$(GZDOOM_TOP_PATH)/src/rendering/2d \
 	$(GZDOOM_TOP_PATH)/src/sound \
 	$(GZDOOM_TOP_PATH)/src/sound/music \
 	$(GZDOOM_TOP_PATH)/src/sound/backend \
 	$(GZDOOM_TOP_PATH)/src/xlat \
 	$(GZDOOM_TOP_PATH)/src/utility \
 	$(GZDOOM_TOP_PATH)/src/utility/nodebuilder \
-	$(GZDOOM_TOP_PATH)/src/textures \
-	$(GZDOOM_TOP_PATH)/src/g_inventory \
-	$(GZDOOM_TOP_PATH)/src/g_shared \
-	$(GZDOOM_TOP_PATH)/src/g_statusbar \
 	$(GZDOOM_TOP_PATH)/src/scripting \
 	$(GZDOOM_TOP_PATH)/src/scripting/vm \
-	$(GZDOOM_TOP_PATH)/src/rendering \
 	$(GZDOOM_TOP_PATH)/src/../libraries/gdtoa \
     $(GZDOOM_TOP_PATH)/src/../libraries/bzip2 \
 	$(GZDOOM_TOP_PATH)/src/../libraries/game-music-emu/ \
@@ -54,8 +55,7 @@ LOCAL_C_INCLUDES := \
  $(SUPPORT_LIBS)/libmpg123 \
  $(SUPPORT_LIBS)/jpeg8d \
  $(GZDOOM_TOP_PATH)/mobile/src/extrafiles  \
- $(GZDOOM_TOP_PATH)/mobile/src \
- $(GL4ES_PATH)
+ $(GZDOOM_TOP_PATH)/mobile/src
 
 
 #############################################################################
@@ -87,12 +87,12 @@ FASTMATH_SOURCES = \
 	rendering/polyrenderer/poly_all.cpp \
 	sound/music/music_midi_base.cpp \
 	sound/backend/oalsound.cpp \
-	textures/hires/hqnx/init.cpp \
-	textures/hires/hqnx/hq2x.cpp \
-	textures/hires/hqnx/hq3x.cpp \
-	textures/hires/hqnx/hq4x.cpp \
-	textures/hires/xbr/xbrz.cpp \
-	textures/hires/xbr/xbrz_old.cpp \
+	gamedata/textures/hires/hqnx/init.cpp \
+	gamedata/textures/hires/hqnx/hq2x.cpp \
+	gamedata/textures/hires/hqnx/hq3x.cpp \
+	gamedata/textures/hires/hqnx/hq4x.cpp \
+	gamedata/textures/hires/xbr/xbrz.cpp \
+	gamedata/textures/hires/xbr/xbrz_old.cpp \
 	rendering/gl_load/gl_load.c \
 	rendering/hwrenderer/dynlights/hw_dynlightdata.cpp \
 	rendering/hwrenderer/scene/hw_bsp.cpp \
@@ -117,7 +117,6 @@ FASTMATH_SOURCES = \
 
 
 PCH_SOURCES = \
-	actorptrselect.cpp \
 	am_map.cpp \
 	b_bot.cpp \
 	b_func.cpp \
@@ -133,51 +132,29 @@ PCH_SOURCES = \
 	c_dispatch.cpp \
 	c_expr.cpp \
 	c_functions.cpp \
-	cmdlib.cpp \
-	colormatcher.cpp \
-	configfile.cpp \
 	ct_chat.cpp \
-	cycler.cpp \
-	d_dehacked.cpp \
 	d_iwad.cpp \
 	d_main.cpp \
 	d_anonstats.cpp \
 	d_net.cpp \
 	d_netinfo.cpp \
 	d_protocol.cpp \
-	decallib.cpp \
 	dobject.cpp \
 	dobjgc.cpp \
 	dobjtype.cpp \
 	doomstat.cpp \
-	dsectoreffect.cpp \
-	dthinker.cpp \
-	f_wipe.cpp \
 	g_cvars.cpp \
-	g_doomedmap.cpp \
 	g_dumpinfo.cpp \
 	g_game.cpp \
 	g_hub.cpp \
 	g_level.cpp \
-	g_mapinfo.cpp \
-	g_skill.cpp \
 	gameconfigfile.cpp \
-	gi.cpp \
 	gitinfo.cpp \
 	hu_scores.cpp \
 	i_net.cpp \
-	i_time.cpp \
-	info.cpp \
-	keysections.cpp \
-	m_alloc.cpp \
-	m_argv.cpp \
-	m_bbox.cpp \
 	m_cheat.cpp \
 	m_joy.cpp \
 	m_misc.cpp \
-	name.cpp \
-	p_3dfloors.cpp \
-	p_3dmidtex.cpp \
 	p_acs.cpp \
 	p_actionfunctions.cpp \
 	p_conversation.cpp \
@@ -185,7 +162,6 @@ PCH_SOURCES = \
 	p_effect.cpp \
 	p_enemy.cpp \
 	p_interaction.cpp \
-	p_linkedsectors.cpp \
 	p_lnspec.cpp \
 	p_map.cpp \
 	p_maputl.cpp \
@@ -193,25 +169,12 @@ PCH_SOURCES = \
 	p_openmap.cpp \
 	p_pspr.cpp \
 	p_saveg.cpp \
-	p_secnodes.cpp \
-	p_sectors.cpp \
 	p_setup.cpp \
-	p_sight.cpp \
 	p_spec.cpp \
 	p_states.cpp \
-	p_switch.cpp \
-	p_tags.cpp \
-	p_teleport.cpp \
-	p_terrain.cpp \
 	p_things.cpp \
 	p_tick.cpp \
-	p_trace.cpp \
-	p_usdf.cpp \
 	p_user.cpp \
-	p_xlat.cpp \
-	parsecontext.cpp \
-	po_man.cpp \
-	portal.cpp \
 	r_utility.cpp \
 	r_sky.cpp \
 	r_videoscale.cpp \
@@ -222,34 +185,33 @@ PCH_SOURCES = \
 	sound/s_doomsound.cpp \
 	sound/s_sound.cpp \
 	sound/s_music.cpp \
-	s_playlist.cpp \
 	serializer.cpp \
 	scriptutil.cpp \
 	st_stuff.cpp \
-	statistics.cpp \
-	stats.cpp \
-	stringtable.cpp \
-	teaminfo.cpp \
-	umapinfo.cpp \
-	v_2ddrawer.cpp \
-	v_blend.cpp \
-	v_collection.cpp \
-	v_draw.cpp \
-	v_font.cpp \
 	v_framebuffer.cpp \
 	v_palette.cpp \
-	v_pfx.cpp \
-	v_text.cpp \
 	v_video.cpp \
-	w_wad.cpp \
 	wi_stuff.cpp \
-	utf8.cpp \
-	zstrformat.cpp \
-	g_inventory/a_keys.cpp \
-	g_inventory/a_pickups.cpp \
-	g_inventory/a_weapons.cpp \
+	gamedata/a_keys.cpp \
+	gamedata/a_weapons.cpp \
+	gamedata/decallib.cpp \
+	gamedata/g_mapinfo.cpp \
+	gamedata/g_skill.cpp \
+	gamedata/gi.cpp \
+	gamedata/stringtable.cpp \
+	gamedata/umapinfo.cpp \
+	gamedata/w_wad.cpp \
+	gamedata/d_dehacked.cpp \
+	gamedata/g_doomedmap.cpp \
+	gamedata/info.cpp \
+	gamedata/keysections.cpp \
+	gamedata/p_terrain.cpp \
+	gamedata/statistics.cpp \
+	gamedata/teaminfo.cpp \
+	g_shared/a_pickups.cpp \
 	g_shared/a_action.cpp \
 	g_shared/a_decals.cpp \
+	g_shared/a_decalfx.cpp \
 	g_shared/a_doors.cpp \
 	g_shared/a_dynlight.cpp \
 	g_shared/a_flashfader.cpp \
@@ -265,11 +227,31 @@ PCH_SOURCES = \
 	g_shared/a_plats.cpp \
 	g_shared/a_pusher.cpp \
 	g_shared/a_scroll.cpp \
+	g_shared/dsectoreffect.cpp \
+	g_shared/p_secnodes.cpp \
+	g_shared/p_sectors.cpp \
+	g_shared/p_sight.cpp \
+	g_shared/p_switch.cpp \
+	g_shared/p_tags.cpp \
+	g_shared/p_teleport.cpp \
+	g_shared/actorptrselect.cpp \
+	g_shared/dthinker.cpp \
+	g_shared/p_3dfloors.cpp \
+	g_shared/p_3dmidtex.cpp \
+	g_shared/p_linkedsectors.cpp \
+	g_shared/p_trace.cpp \
+	g_shared/po_man.cpp \
+	g_shared/portal.cpp \
 	g_statusbar/hudmessages.cpp \
 	g_statusbar/shared_hud.cpp \
 	g_statusbar/sbarinfo.cpp \
 	g_statusbar/sbar_mugshot.cpp \
 	g_statusbar/shared_sbar.cpp \
+	rendering/2d/f_wipe.cpp \
+	rendering/2d/v_2ddrawer.cpp \
+	rendering/2d/v_drawtext.cpp \
+	rendering/2d/v_blend.cpp \
+	rendering/2d/v_draw.cpp \
 	rendering/gl/renderer/gl_renderer.cpp \
 	rendering/gl/renderer/gl_renderstate.cpp \
 	rendering/gl/renderer/gl_renderbuffers.cpp \
@@ -317,6 +299,8 @@ PCH_SOURCES = \
 	maploader/slopes.cpp \
 	maploader/glnodes.cpp \
 	maploader/udmf.cpp \
+	maploader/usdf.cpp \
+	maploader/strifedialogue.cpp \
 	maploader/polyobjects.cpp \
 	maploader/renderinfo.cpp \
 	maploader/compatibility.cpp \
@@ -329,46 +313,54 @@ PCH_SOURCES = \
 	menu/playermenu.cpp \
 	menu/resolutionmenu.cpp \
 	menu/profiledef.cpp \
-	resourcefiles/ancientzip.cpp \
-	resourcefiles/file_7z.cpp \
-	resourcefiles/file_grp.cpp \
-	resourcefiles/file_lump.cpp \
-	resourcefiles/file_rff.cpp \
-	resourcefiles/file_wad.cpp \
-	resourcefiles/file_zip.cpp \
-	resourcefiles/file_pak.cpp \
-	resourcefiles/file_directory.cpp \
-	resourcefiles/resourcefile.cpp \
-	textures/animations.cpp \
-	textures/anim_switches.cpp \
-	textures/bitmap.cpp \
-	textures/texture.cpp \
-	textures/image.cpp \
-	textures/imagetexture.cpp \
-	textures/texturemanager.cpp \
-	textures/multipatchtexturebuilder.cpp \
-	textures/skyboxtexture.cpp \
-	textures/formats/automaptexture.cpp \
-	textures/formats/brightmaptexture.cpp \
-	textures/formats/buildtexture.cpp \
-	textures/formats/canvastexture.cpp \
-	textures/formats/ddstexture.cpp \
-	textures/formats/flattexture.cpp \
-	textures/formats/fontchars.cpp \
-	textures/formats/imgztexture.cpp \
-	textures/formats/jpegtexture.cpp \
-	textures/formats/md5check.cpp \
-	textures/formats/multipatchtexture.cpp \
-	textures/formats/patchtexture.cpp \
-	textures/formats/pcxtexture.cpp \
-	textures/formats/pngtexture.cpp \
-	textures/formats/rawpagetexture.cpp \
-	textures/formats/emptytexture.cpp \
-	textures/formats/shadertexture.cpp \
-	textures/formats/tgatexture.cpp \
-	textures/hires/hqresize.cpp \
-	textures/hires/hirestex.cpp \
-	xlat/parse_xlat.cpp \
+	gamedata/resourcefiles/ancientzip.cpp \
+	gamedata/resourcefiles/file_7z.cpp \
+	gamedata/resourcefiles/file_grp.cpp \
+	gamedata/resourcefiles/file_lump.cpp \
+	gamedata/resourcefiles/file_rff.cpp \
+	gamedata/resourcefiles/file_wad.cpp \
+	gamedata/resourcefiles/file_zip.cpp \
+	gamedata/resourcefiles/file_pak.cpp \
+	gamedata/resourcefiles/file_directory.cpp \
+	gamedata/resourcefiles/resourcefile.cpp \
+	gamedata/textures/animations.cpp \
+	gamedata/textures/anim_switches.cpp \
+	gamedata/textures/bitmap.cpp \
+	gamedata/textures/texture.cpp \
+	gamedata/textures/image.cpp \
+	gamedata/textures/imagetexture.cpp \
+	gamedata/textures/texturemanager.cpp \
+	gamedata/textures/multipatchtexturebuilder.cpp \
+	gamedata/textures/skyboxtexture.cpp \
+	gamedata/textures/formats/automaptexture.cpp \
+	gamedata/textures/formats/brightmaptexture.cpp \
+	gamedata/textures/formats/buildtexture.cpp \
+	gamedata/textures/formats/canvastexture.cpp \
+	gamedata/textures/formats/ddstexture.cpp \
+	gamedata/textures/formats/flattexture.cpp \
+	gamedata/textures/formats/fontchars.cpp \
+	gamedata/textures/formats/imgztexture.cpp \
+	gamedata/textures/formats/jpegtexture.cpp \
+	gamedata/textures/formats/md5check.cpp \
+	gamedata/textures/formats/multipatchtexture.cpp \
+	gamedata/textures/formats/patchtexture.cpp \
+	gamedata/textures/formats/pcxtexture.cpp \
+	gamedata/textures/formats/pngtexture.cpp \
+	gamedata/textures/formats/rawpagetexture.cpp \
+	gamedata/textures/formats/emptytexture.cpp \
+	gamedata/textures/formats/shadertexture.cpp \
+	gamedata/textures/formats/tgatexture.cpp \
+	gamedata/textures/hires/hqresize.cpp \
+	gamedata/textures/hires/hirestex.cpp \
+	gamedata/fonts/singlelumpfont.cpp \
+	gamedata/fonts/singlepicfont.cpp \
+	gamedata/fonts/specialfont.cpp \
+	gamedata/fonts/font.cpp \
+	gamedata/fonts/v_font.cpp \
+	gamedata/fonts/v_text.cpp \
+	gamedata/p_xlat.cpp \
+	gamedata/xlat/parse_xlat.cpp \
+	gamedata/xlat/parsecontext.cpp \
 	fragglescript/t_func.cpp \
 	fragglescript/t_load.cpp \
 	fragglescript/t_oper.cpp \
@@ -381,6 +373,7 @@ PCH_SOURCES = \
 	intermission/intermission.cpp \
 	intermission/intermission_parse.cpp \
 	r_data/colormaps.cpp \
+	r_data/cycler.cpp \
 	r_data/gldefs.cpp \
 	r_data/a_dynlightdata.cpp \
 	r_data/r_translate.cpp \
@@ -441,6 +434,20 @@ PCH_SOURCES = \
 	utility/nodebuilder/nodebuild_gl.cpp \
 	utility/nodebuilder/nodebuild_utility.cpp \
 	utility/sc_man.cpp \
+	utility/stats.cpp \
+	utility/cmdlib.cpp \
+	utility/colormatcher.cpp \
+	utility/configfile.cpp \
+	utility/i_module.cpp \
+	utility/i_time.cpp \
+	utility/m_alloc.cpp \
+	utility/m_argv.cpp \
+	utility/m_bbox.cpp \
+	utility/name.cpp \
+	utility/s_playlist.cpp \
+	utility/v_collection.cpp \
+	utility/utf8.cpp \
+	utility/zstrformat.cpp \
 	
 
 QZDOOM_SRC = \
@@ -455,16 +462,16 @@ QZDOOM_SRC = \
 
 
 LOCAL_SRC_FILES = \
-    __autostart.cpp \
-    $(QZDOOM_SRC) \
-    $(ANDROID_SRC_FILES) \
-    $(PLAT_POSIX_SOURCES) \
-    $(PLAT_NOSDL_SOURCES) \
-    $(FASTMATH_SOURCES) \
-    $(PCH_SOURCES) \
-	x86.cpp \
+	__autostart.cpp \
+	$(QZDOOM_SRC) \
+	$(ANDROID_SRC_FILES) \
+	$(PLAT_POSIX_SOURCES) \
+	$(PLAT_NOSDL_SOURCES) \
+	$(FASTMATH_SOURCES) \
+	$(PCH_SOURCES) \
+	utility/x86.cpp \
 	utility/strnatcmp.c \
-	zstring.cpp \
+	utility/zstring.cpp \
 	dictionary.cpp \
 	utility/math/asin.c \
 	utility/math/atan.c \
@@ -484,7 +491,7 @@ LOCAL_SRC_FILES = \
 	utility/math/tan.c \
 	utility/math/tanh.c \
 	utility/math/fastsin.cpp \
-	zzautozend.cpp
+	zzautozend.cpp \
 
 
 # Turn down optimisation of this file so clang doesnt produce ldrd instructions which are missaligned

@@ -40,7 +40,6 @@
 #include "i_video.h"
 #include "m_argv.h"
 #include "v_video.h"
-#include "v_pfx.h"
 #include "stats.h"
 #include "version.h"
 #include "c_console.h"
@@ -184,14 +183,6 @@ SystemGLFrameBuffer::~SystemGLFrameBuffer ()
 
 
 void SystemGLFrameBuffer::InitializeState() 
-{
-}
-
-void SystemGLFrameBuffer::SetGammaTable(uint16_t *tbl)
-{
-}
-
-void SystemGLFrameBuffer::ResetGammaTable()
 {
 }
 
