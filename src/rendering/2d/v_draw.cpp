@@ -1020,14 +1020,6 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 			parms->burn = true;
 			break;
 
-		case DTA_Monospace:
-			parms->monospace = ListGetInt(tags);
-			break;
-
-		case DTA_Spacing:
-			parms->spacing = ListGetInt(tags);
-			break;
-
 		}
 		tag = ListGetInt(tags);
 	}

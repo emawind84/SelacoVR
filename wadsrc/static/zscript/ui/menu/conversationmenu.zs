@@ -505,7 +505,7 @@ class ConversationMenu : Menu
 					else if (colr == Font.CR_GREY) cursorTexColor = color(0xCC, 0xCC, 0xCC);
 
 					x = (50 + 3 - 160) * CleanXfac + screen.GetWidth() / 2;
-					int yy = (y + fontheight / 2 - 5 - 100) * CleanYfac + screen.GetHeight() / 2;
+					int yy = (y + ReplyLineHeight / 2 - 5 - 100) * CleanYfac + screen.GetHeight() / 2;
 
 					// use a custom graphic (intentionally long-named to reduce collision with existing mods), with the ConFont version as the fallback
 					let cursorTex = TexMan.CheckForTexture("graphics/DialogReplyCursor.png", TexMan.Type_MiscPatch);
