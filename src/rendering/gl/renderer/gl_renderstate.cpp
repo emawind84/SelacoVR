@@ -167,7 +167,7 @@ bool FGLRenderState::ApplyShader()
 	activeShader->muLightIndex.Set(-1);
 	activeShader->muClipSplit.Set(mClipSplit);
 	activeShader->muSpecularMaterial.Set(mGlossiness, mSpecularLevel);
-	activeShader->muAddColor.Set(mAddColor); // Can this be done without a shader?
+	activeShader->muAddColor.Set(mAddColor);
 	activeShader->muDetailParms.Set(mDetailParms.vec);
 	activeShader->muGlobalFadeMode.Set(mGlobalFadeMode);
 	activeShader->muGlobalFade.Set(gl_global_fade ? 1 : 0);

@@ -1330,7 +1330,6 @@ void C_FullConsole ()
 		S_Start ();
 		S_StartMusic();
 		P_FreeLevelData ();
-		V_SetBlend (0,0,0,0);
 	}
 	else
 	{

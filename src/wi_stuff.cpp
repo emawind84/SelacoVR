@@ -779,7 +779,6 @@ void WI_Start(wbstartstruct_t *wbstartstruct)
 		}
 	}
 	
-	V_SetBlend(0, 0, 0, 0);
 	WI_Screen = cls->CreateNew();
 	IFVIRTUALPTRNAME(WI_Screen, "StatusScreen", Start)
 	{
