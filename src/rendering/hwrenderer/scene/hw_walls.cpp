@@ -167,7 +167,7 @@ void HWWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 	}
 	state.SetMaterial(gltexture, flags & 3, 0, -1);
 
-	if (flags & HWWall::GLWF_CLAMPY && (type == RENDERWALL_M2S || type == RENDERWALL_M2SNF))
+	if (flags & HWWall::HWF_CLAMPY && (type == RENDERWALL_M2S || type == RENDERWALL_M2SNF))
 	{
 		state.SetTextureMode(tmode | TM_CLAMPY);
 	}
