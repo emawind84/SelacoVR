@@ -250,6 +250,8 @@ struct EventManager
 	~EventManager() { Shutdown(); }
 	bool ShouldCallStatic(bool forplay);
 
+	// for use after loading a savegame. The old handler explicitly reinstalled all handlers instead of doing a list deserialization which resulted in OnRegister being called even when a save was loaded.
+	void CallOnRegister();
 	// register
 	bool RegisterHandler(DStaticEventHandler* handler);
 	// unregister
@@ -346,5 +348,4 @@ struct EventManager
 
 };
 
-extern EventManager eventManager;
-extern EventManager staticEventManager;
+ extern EventManager staticEventManager;
