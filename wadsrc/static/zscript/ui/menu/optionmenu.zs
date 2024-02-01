@@ -471,7 +471,7 @@ class OptionMenu : Menu
 		int indent = GetIndent();
 
 		int ytop = y + mDesc.mScrollTop * 8 * CleanYfac_1;
-		int lastrow = screen.GetHeight() - SmallFont.GetHeight() * CleanYfac_1;
+		int lastrow = screen.GetHeight() - OptionHeight() * CleanYfac_1;
 
 		int i;
 		for (i = 0; i < mDesc.mItems.Size() && y <= lastrow; i++)
@@ -488,7 +488,7 @@ class OptionMenu : Menu
 			{
 				if (((MenuTime() % 8) < 6) || GetCurrentMenu() != self)
 				{
-					DrawConText(OptionMenuSettings.mFontColorSelection, cur_indent + 3 * CleanXfac_1, y+fontheight-9*CleanYfac_1, "\xd");
+					DrawOptionText(cur_indent + 3 * CleanXfac_1, y, Font.CR_UNTRANSLATED, "◄");
 				}
 			}
 			y += fontheight;
@@ -500,11 +500,11 @@ class OptionMenu : Menu
 
 		if (CanScrollUp)
 		{
-			DrawConText(Font.CR_ORANGE, 3 * CleanXfac_1, ytop, "\x1a");
+			DrawOptionText(screen.GetWidth() - 11 * CleanXfac_1, ytop, Font.CR_UNTRANSLATED, "▲");
 		}
 		if (CanScrollDown)
 		{
-			DrawConText(Font.CR_ORANGE, 3 * CleanXfac_1, y - 8*CleanYfac_1, "\x1b");
+			DrawOptionText(screen.GetWidth() - 11 * CleanXfac_1 , y - 8*CleanYfac_1, Font.CR_UNTRANSLATED, "▼");
 		}
 		Super.Drawer();
 	}
@@ -539,8 +539,8 @@ class GameplayMenu : OptionMenu
 		Super.Drawer();
 
 		String s = String.Format("dmflags = %d   dmflags2 = %d", dmflags, dmflags2);
-		screen.DrawText (SmallFont, OptionMenuSettings.mFontColorValue,
-			(screen.GetWidth() - SmallFont.StringWidth (s) * CleanXfac_1) / 2, 0, s,
+		screen.DrawText (OptionFont(), OptionMenuSettings.mFontColorValue,
+			(screen.GetWidth() - OptionWidth (s) * CleanXfac_1) / 2, 35 * CleanXfac_1, s,
 			DTA_CleanNoMove_1, true);
 	}
 }
@@ -552,8 +552,8 @@ class CompatibilityMenu : OptionMenu
 		Super.Drawer();
 
 		String s = String.Format("compatflags = %d  compatflags2 = %d", compatflags, compatflags2);
-		screen.DrawText (SmallFont, OptionMenuSettings.mFontColorValue,
-			(screen.GetWidth() - SmallFont.StringWidth (s) * CleanXfac_1) / 2, 0, s,
+		screen.DrawText (OptionFont(), OptionMenuSettings.mFontColorValue,
+			(screen.GetWidth() - OptionWidth (s) * CleanXfac_1) / 2, 35 * CleanXfac_1, s,
 			DTA_CleanNoMove_1, true);
 	}
 }

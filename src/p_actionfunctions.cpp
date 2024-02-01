@@ -1311,7 +1311,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Print)
 			con_midtime = float(time);
 		}
 		FString formatted = strbin1(text);
-		C_MidPrint(font != NULL ? font : SmallFont, formatted.GetChars());
+		C_MidPrint(font, formatted.GetChars());
 		con_midtime = saved;
 	}
 	return 0;
@@ -1343,7 +1343,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_PrintBold)
 		con_midtime = float(time);
 	}
 	FString formatted = strbin1(text);
-	C_MidPrint(font != NULL ? font : SmallFont, formatted.GetChars(), true);
+	C_MidPrint(font, formatted.GetChars(), true);
 	con_midtime = saved;
 	return 0;
 }

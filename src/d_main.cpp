@@ -831,7 +831,7 @@ void D_Display ()
 		screen->DrawBlend(viewsec);
 		if (automapactive)
 		{
-			primaryLevel->automap->Drawer (hud_althud? viewheight : StatusBar->GetTopOfStatusbar());
+			primaryLevel->automap->Drawer ((hud_althud && viewheight == SCREENHEIGHT) ? viewheight : StatusBar->GetTopOfStatusbar());
 		}
 		
 		// for timing the statusbar code.

@@ -536,8 +536,6 @@
 
 
 
-extern FILE *Logfile;
-
 FRandom pr_acs ("ACS");
 
 // I imagine this much stack space is probably overkill, but it could
@@ -707,7 +705,7 @@ protected:
 	TObjPtr<AActor*>	activator;
 	line_t			*activationline;
 	bool			backSide;
-	FFont			*activefont;
+	FFont			*activefont = nullptr;
 	int				hudwidth, hudheight;
 	int				ClipRectLeft, ClipRectTop, ClipRectWidth, ClipRectHeight;
 	int				WrapWidth;
@@ -776,7 +774,7 @@ protected:
 
 
 private:
-	DLevelScript();
+	DLevelScript() = default;
 
 	friend class DACSThinker;
 };
@@ -3508,11 +3506,6 @@ void DLevelScript::Serialize(FSerializer &arc)
 	}
 }
 
-DLevelScript::DLevelScript ()
-{
-	activefont = SmallFont;
-}
-
 void DLevelScript::Unlink ()
 {
 	DACSThinker *controller = Level->ACSThinker;
@@ -3925,10 +3918,6 @@ void DLevelScript::DoSetFont (int fontnum)
 {
 	const char *fontname = Level->Behaviors.LookupString (fontnum);
 	activefont = V_GetFont (fontname);
-	if (activefont == NULL)
-	{
-		activefont = SmallFont;
-	}
 }
 
 int DLevelScript::DoSetMaster (AActor *self, AActor *master)
@@ -8663,7 +8652,7 @@ scriptwait:
 				if (pcd == PCD_ENDPRINTBOLD || screen == NULL ||
 					screen->CheckLocalView())
 				{
-					C_MidPrint(activefont, work, pcd == PCD_ENDPRINTBOLD && (gameinfo.correctprintbold || (Level->flags2 & LEVEL2_HEXENHACK)));
+					C_MidPrint (activefont, work, pcd == PCD_ENDPRINTBOLD && (gameinfo.correctprintbold || (Level->flags2 & LEVEL2_HEXENHACK)));
 				}
 				STRINGBUILDER_FINISH(work);
 			}
@@ -8713,17 +8702,18 @@ scriptwait:
 						color = CLAMPCOLOR(Stack[optstart-4]);
 					}
 
+					FFont *font = activefont ? activefont : SmallFont;
 					switch (type & 0xFF)
 					{
 					default:	// normal
 						alpha = (optstart < sp) ? ACSToFloat(Stack[optstart]) : 1.f;
-						msg = Create<DHUDMessage> (activefont, work, x, y, hudwidth, hudheight, color, holdTime);
+						msg = Create<DHUDMessage> (font, work, x, y, hudwidth, hudheight, color, holdTime);
 						break;
 					case 1:		// fade out
 						{
 							float fadeTime = (optstart < sp) ? ACSToFloat(Stack[optstart]) : 0.5f;
 							alpha = (optstart < sp-1) ? ACSToFloat(Stack[optstart+1]) : 1.f;
-							msg = Create<DHUDMessageFadeOut> (activefont, work, x, y, hudwidth, hudheight, color, holdTime, fadeTime);
+							msg = Create<DHUDMessageFadeOut> (font, work, x, y, hudwidth, hudheight, color, holdTime, fadeTime);
 						}
 						break;
 					case 2:		// type on, then fade out
@@ -8731,7 +8721,7 @@ scriptwait:
 							float typeTime = (optstart < sp) ? ACSToFloat(Stack[optstart]) : 0.05f;
 							float fadeTime = (optstart < sp-1) ? ACSToFloat(Stack[optstart+1]) : 0.5f;
 							alpha = (optstart < sp-2) ? ACSToFloat(Stack[optstart+2]) : 1.f;
-							msg = Create<DHUDMessageTypeOnFadeOut> (activefont, work, x, y, hudwidth, hudheight, color, typeTime, holdTime, fadeTime);
+							msg = Create<DHUDMessageTypeOnFadeOut> (font, work, x, y, hudwidth, hudheight, color, typeTime, holdTime, fadeTime);
 						}
 						break;
 					case 3:		// fade in, then fade out
@@ -8739,7 +8729,7 @@ scriptwait:
 							float inTime = (optstart < sp) ? ACSToFloat(Stack[optstart]) : 0.5f;
 							float outTime = (optstart < sp-1) ? ACSToFloat(Stack[optstart+1]) : 0.5f;
 							alpha = (optstart < sp-2) ? ACSToFloat(Stack[optstart + 2]) : 1.f;
-							msg = Create<DHUDMessageFadeInOut> (activefont, work, x, y, hudwidth, hudheight, color, holdTime, inTime, outTime);
+							msg = Create<DHUDMessageFadeInOut> (font, work, x, y, hudwidth, hudheight, color, holdTime, inTime, outTime);
 						}
 						break;
 					}
@@ -8765,17 +8755,8 @@ scriptwait:
 						(type & HUDMSG_LAYER_MASK) >> HUDMSG_LAYER_SHIFT);
 					if (type & HUDMSG_LOG)
 					{
-						static const char bar[] = TEXTCOLOR_ORANGE "\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
-					"\36\36\36\36\36\36\36\36\36\36\36\36\37" TEXTCOLOR_NORMAL "\n";
-						char consolecolor[3];
-
-						consolecolor[0] = '\x1c';
-						consolecolor[1] = color >= CR_BRICK && color <= CR_YELLOW ? color + 'A' : '-';
-						consolecolor[2] = '\0';
-						AddToConsole (-1, bar);
-						AddToConsole (-1, consolecolor);
-						AddToConsole (-1, work);
-						AddToConsole (-1, bar);
+						int consolecolor = color >= CR_BRICK && color <= CR_YELLOW ? color + 'A' : '-';
+						Printf(PRINT_NONOTIFY, "\n" TEXTCOLOR_ESCAPESTR "%c%s\n%s\n%s\n", consolecolor, console_bar, work.GetChars(), console_bar);
 					}
 				}
 			}
@@ -10333,7 +10314,6 @@ DLevelScript::DLevelScript (FLevelLocals *l, AActor *who, line_t *where, int num
 	activator = who;
 	activationline = where;
 	backSide = flags & ACS_BACKSIDE;
-	activefont = SmallFont;
 	hudwidth = hudheight = 0;
 	ClipRectLeft = ClipRectTop = ClipRectWidth = ClipRectHeight = WrapWidth = 0;
 	HandleAspect = true;

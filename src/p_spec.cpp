@@ -601,12 +601,12 @@ void P_GiveSecret(FLevelLocals *Level, AActor *actor, bool printmessage, bool pl
 		{
 			if (printmessage)
 			{
-				if (!showsecretsector || sectornum < 0) C_MidPrint(SmallFont, GStrings["SECRETMESSAGE"]);
+				if (!showsecretsector || sectornum < 0) C_MidPrint(nullptr, GStrings["SECRETMESSAGE"]);
 				else
 				{
 					FString s = GStrings["SECRETMESSAGE"];
 					s.AppendFormat(" (Sector %d)", sectornum);
-					C_MidPrint(SmallFont, s);
+					C_MidPrint(nullptr, s);
 				}
 			}
 			if (playsound) S_Sound (CHAN_AUTO, CHANF_UI, "misc/secret", 1, ATTN_NORM);
