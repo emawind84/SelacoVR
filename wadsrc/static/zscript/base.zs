@@ -49,6 +49,7 @@ struct _ native	// These are the global variables, the struct is only here to av
 	deprecated("3.8", "Use Actor.isFrozen() or Level.isFrozen() instead") native readonly bool globalfreeze;
 	native int LocalViewPitch;
 	native readonly @MusPlayingInfo musplaying;
+	native readonly bool generic_hud;
 	native readonly bool generic_ui;
 	native readonly int GameTicRate;
 	native readonly double NotifyFontScale;

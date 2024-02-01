@@ -217,6 +217,10 @@ class DIntermissionScreenText : public DIntermissionScreen
 	int mTextDelay;
 	int mTextLen;
 	EColorRange mTextColor;
+	bool usesDefault;
+	
+	void MeasureText(bool posisfixed);
+	FString RemoveLineFeeds(const char *text);
 
 public:
 

@@ -411,7 +411,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 					PronounMessage (GStrings("SPREEKILLSELF"), buff,
 						player->userinfo.GetGender(), player->userinfo.GetName(),
 						player->userinfo.GetName());
-					StatusBar->AttachMessage (Create<DHUDMessageFadeOut>(SmallFont, buff,
+					StatusBar->AttachMessage (Create<DHUDMessageFadeOut>(nullptr, buff,
 							1.5f, 0.2f, 0, 0, CR_WHITE, 3.f, 0.5f), MAKE_ID('K','S','P','R'));
 				}
 			}
@@ -468,7 +468,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 						{
 							PronounMessage (GStrings("SPREEOVER"), buff, player->userinfo.GetGender(),
 								player->userinfo.GetName(), source->player->userinfo.GetName());
-							StatusBar->AttachMessage (Create<DHUDMessageFadeOut> (SmallFont, buff,
+							StatusBar->AttachMessage (Create<DHUDMessageFadeOut> (nullptr, buff,
 								1.5f, 0.2f, 0, 0, CR_WHITE, 3.f, 0.5f), MAKE_ID('K','S','P','R'));
 						}
 					}
@@ -478,7 +478,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 						{
 							PronounMessage (spreemsg, buff, player->userinfo.GetGender(),
 								player->userinfo.GetName(), source->player->userinfo.GetName());
-							StatusBar->AttachMessage (Create<DHUDMessageFadeOut> (SmallFont, buff,
+							StatusBar->AttachMessage (Create<DHUDMessageFadeOut> (nullptr, buff,
 								1.5f, 0.2f, 0, 0, CR_WHITE, 3.f, 0.5f), MAKE_ID('K','S','P','R'));
 						}
 					}
@@ -528,7 +528,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 							{
 								PronounMessage (multimsg, buff, player->userinfo.GetGender(),
 									player->userinfo.GetName(), source->player->userinfo.GetName());
-								StatusBar->AttachMessage (Create<DHUDMessageFadeOut> (SmallFont, buff,
+								StatusBar->AttachMessage (Create<DHUDMessageFadeOut> (nullptr, buff,
 									1.5f, 0.8f, 0, 0, CR_RED, 3.f, 0.5f), MAKE_ID('M','K','I','L'));
 							}
 						}
