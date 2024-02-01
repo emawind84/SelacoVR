@@ -174,7 +174,6 @@ CUSTOM_CVAR (Bool, vid_vsync, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 // [RH] Set true when vid_setmode command has been executed
 bool	setmodeneeded = false;
-bool generic_ui = false; // hack hack
 
 //==========================================================================
 //

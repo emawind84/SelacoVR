@@ -606,11 +606,6 @@ CUSTOM_CVAR (Int, msgmidcolor2, 4, CVAR_ARCHIVE)
 	setmsgcolor (PRINTLEVELS+1, self);
 }
 
-FFont * C_GetDefaultHUDFont()
-{
-	return SmallFont;
-}
-
 EColorRange C_GetDefaultFontColor()
 {
 	// Ideally this should analyze the SmallFont and pick a matching color.
