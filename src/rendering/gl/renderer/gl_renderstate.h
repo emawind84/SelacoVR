@@ -136,6 +136,7 @@ public:
 	void ResetFadeColor()
 	{
 		mFadeColor = gl_global_fade_color;
+		mStreamData.uFadeColor = mFadeColor;
 	}
 
 	void EnableDrawBuffers(int count) override

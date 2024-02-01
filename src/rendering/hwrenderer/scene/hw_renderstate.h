@@ -159,6 +159,7 @@ struct StreamData
 	FVector4 uDynLightColor;
 	FVector4PalEntry uAddColor;
 	FVector4PalEntry uFogColor;
+	FVector4PalEntry uFadeColor;
 	float uDesaturationFactor;
 	float uInterpolationFactor;
 	float timer;

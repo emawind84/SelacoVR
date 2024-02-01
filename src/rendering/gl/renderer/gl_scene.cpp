@@ -210,7 +210,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 		{
 			PostProcess.Clock();
 
-			GLSkyInfo skyinfo;
+			HWSkyInfo skyinfo;
 			skyinfo.init(di, mainvp.sector->sky, mainvp.sector->Colormap.FadeColor);
 			if (skyinfo.texture[0])
 			{

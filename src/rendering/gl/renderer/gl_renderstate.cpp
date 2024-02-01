@@ -171,7 +171,7 @@ bool FGLRenderState::ApplyShader()
 	activeShader->muGlobalFade.Set(gl_global_fade ? 1 : 0);
 	activeShader->muGlobalFadeDensity.Set(gl_global_fade_density);
 	activeShader->muGlobalFadeGradient.Set(gl_global_fade_gradient);
-	activeShader->muGlobalFadeColor.Set(mFadeColor);
+	activeShader->muGlobalFadeColor.Set(mStreamData.uFadeColor);
 	activeShader->muLightRangeLimit.Set(gl_light_range_limit);
 
 	if (mGlowEnabled || activeShader->currentglowstate)
