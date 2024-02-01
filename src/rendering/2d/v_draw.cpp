@@ -619,7 +619,7 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 	parms->srcwidth = 1.;
 	parms->srcheight = 1.;
 	parms->burn = false;
-	parms->monospace = EMonospacing::MOff;
+	parms->monospace = EMonospacing::Off;
 	parms->spacing = 0;
 	parms->fsscalemode = -1;
 	parms->patchscalex = parms->patchscaley = 1;
@@ -1007,7 +1007,15 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 		case DTA_CellY:
 			parms->celly = ListGetInt(tags);
 			break;
-		
+
+		case DTA_Monospace:
+			parms->monospace = ListGetInt(tags);
+			break;
+
+		case DTA_Spacing:
+			parms->spacing = ListGetInt(tags);
+			break;
+
 		case DTA_Burn:
 			parms->burn = true;
 			break;

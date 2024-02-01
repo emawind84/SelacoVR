@@ -49,7 +49,6 @@ struct _ native	// These are the global variables, the struct is only here to av
 	deprecated("3.8", "Use Actor.isFrozen() or Level.isFrozen() instead") native readonly bool globalfreeze;
 	native int LocalViewPitch;
 	native readonly @MusPlayingInfo musplaying;
-	native readonly bool generic_hud;
 	native readonly bool generic_ui;
 	native readonly int GameTicRate;
 	native readonly double NotifyFontScale;
@@ -193,6 +192,7 @@ enum DrawTextureTags
 	DTA_SrcWidth,
 	DTA_SrcHeight,
 	DTA_LegacyRenderStyle,	// takes an old-style STYLE_* constant instead of an FRenderStyle
+	DTA_Internal3,
 	DTA_Spacing,			// Strings only: Additional spacing between characters
 	DTA_Monospace,			// Strings only: Use a fixed distance between characters.
 

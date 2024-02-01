@@ -412,17 +412,17 @@ class NewPlayerMenu : OptionMenu
 	int mRotation;
 	PlayerMenuPlayerDisplay mPlayerDisplay;
 	
-	const PLAYERDISPLAY_X = 70;
+	const PLAYERDISPLAY_X = 170;
 	const PLAYERDISPLAY_Y = 60;
-	const PLAYERDISPLAY_W = 72;
-	const PLAYERDISPLAY_H = 80;
-	const PLAYERDISPLAY_SPACE = 90;
+	const PLAYERDISPLAY_W = 144;
+	const PLAYERDISPLAY_H = 160;
+	const PLAYERDISPLAY_SPACE = 180;
 	
 	override void Init(Menu parent, OptionMenuDescriptor desc)
 	{
 		Super.Init(parent, desc);
-		let BaseColor = gameinfo.gametype == GAME_Hexen? 0x000700 : 0x200000;
-		let AddColor = gameinfo.gametype == GAME_Hexen? 0x405340 : 0x800040;
+		let BaseColor = gameinfo.gametype == GAME_Hexen? 0x200000 : 0x000700;
+		let AddColor = gameinfo.gametype == GAME_Hexen? 0x800040 : 0x405340;
 		mPlayerDisplay = new("PlayerMenuPlayerDisplay");
 		mPlayerDisplay.init(BaseColor, AddColor);
 		PickPlayerClass();
@@ -439,7 +439,7 @@ class NewPlayerMenu : OptionMenu
 
 	override int GetIndent()
 	{
-		return Super.GetIndent() - 35*CleanXfac_1;
+		return Super.GetIndent() - 75*CleanXfac_1;
 	}
 	
 
@@ -552,10 +552,10 @@ class NewPlayerMenu : OptionMenu
 		int x = screen.GetWidth()/(CleanXfac_1*2) + PLAYERDISPLAY_X + PLAYERDISPLAY_W/2;
 		int y = PLAYERDISPLAY_Y + PLAYERDISPLAY_H + 5;
 		String str = Stringtable.Localize("$PLYRMNU_PRESSSPACE");
-		screen.DrawText (SmallFont, Font.CR_GOLD, x - SmallFont.StringWidth(str)/2, y, str, DTA_VirtualWidth, CleanWidth_1, DTA_VirtualHeight, CleanHeight_1, DTA_KeepRatio, true);
+		screen.DrawText (NewSmallFont, Font.CR_GOLD, x - NewSmallFont.StringWidth(str)/2, y, str, DTA_VirtualWidth, CleanWidth_1, DTA_VirtualHeight, CleanHeight_1, DTA_KeepRatio, true);
 		str = Stringtable.Localize(mRotation ? "$PLYRMNU_SEEFRONT" : "$PLYRMNU_SEEBACK");
-		y += SmallFont.GetHeight();
-		screen.DrawText (SmallFont, Font.CR_GOLD,x - SmallFont.StringWidth(str)/2, y, str, DTA_VirtualWidth, CleanWidth_1, DTA_VirtualHeight, CleanHeight_1, DTA_KeepRatio, true);
+		y += NewSmallFont.GetHeight();
+		screen.DrawText (NewSmallFont, Font.CR_GOLD,x - NewSmallFont.StringWidth(str)/2, y, str, DTA_VirtualWidth, CleanWidth_1, DTA_VirtualHeight, CleanHeight_1, DTA_KeepRatio, true);
 
 	}	
 }

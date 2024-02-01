@@ -301,6 +301,7 @@ void DFrameBuffer::DrawTextCommon(FFont *font, int normalcolor, double x, double
 	else if (parms.monospace == EMonospacing::CellRight)
 		cx += parms.spacing;
 
+
 	auto currentcolor = normalcolor;
 	while (ch - string < parms.maxstrlen)
 	{
@@ -347,7 +348,7 @@ void DFrameBuffer::DrawTextCommon(FFont *font, int normalcolor, double x, double
 
 			DrawTextureParms(pic, parms);
 		}
-		if (parms.monospace == EMonospacing::MOff)
+		if (parms.monospace == EMonospacing::Off)
 		{
 			cx += (w + kerning + parms.spacing) * parms.scalex;
 		}

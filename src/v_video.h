@@ -250,7 +250,7 @@ enum
 
 enum EMonospacing : int
 {
-	MOff = 0,
+	Off = 0,
 	CellLeft = 1,
 	CellCenter = 2,
 	CellRight = 3

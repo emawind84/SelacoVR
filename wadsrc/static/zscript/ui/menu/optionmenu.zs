@@ -431,9 +431,10 @@ class OptionMenu : Menu
 
 	virtual int DrawCaption(String title, int y, bool drawit)
 	{
-		let font = !mDesc.mFont ? SmallFont : mDesc.mFont;
+		let font = generic_ui || !mDesc.mFont ? NewSmallFont : mDesc.mFont;
 		if (font && mDesc.mTitle.Length() > 0)
 		{
+			let font = generic_ui || !mDesc.mFont ? NewSmallFont : mDesc.mFont;
 			if (drawit)
 			{
 				let tt = Stringtable.Localize(title);
