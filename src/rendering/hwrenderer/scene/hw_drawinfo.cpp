@@ -407,9 +407,9 @@ void HWViewpointUniforms::SetDefaults()
 //
 //-----------------------------------------------------------------------------
 
-GLDecal *HWDrawInfo::AddDecal(bool onmirror)
+HWDecal *HWDrawInfo::AddDecal(bool onmirror)
 {
-	auto decal = (GLDecal*)RenderDataAllocator.Alloc(sizeof(GLDecal));
+	auto decal = (HWDecal*)RenderDataAllocator.Alloc(sizeof(HWDecal));
 	Decals[onmirror ? 1 : 0].Push(decal);
 	return decal;
 }
@@ -577,6 +577,16 @@ void HWDrawInfo::RenderPortal(HWPortal *p, FRenderState &state, bool usestencil)
 
 void HWDrawInfo::EndDrawScene(sector_t * viewsector, FRenderState &state)
 {
+	state.ResetFadeColor();
+	HWSkyInfo skyinfo;
+	skyinfo.init(this, viewsector->sky, viewsector->Colormap.FadeColor);
+	if (skyinfo.texture[0])
+	{
+		PalEntry pe = skyinfo.texture[0]->tex->GetSkyCapColor(false);
+		state.SetSceneColor(pe);
+	}
+	state.InitSceneClearColor();
+
 	state.EnableFog(false);
 
 	auto vrmode = VRMode::GetVRMode(true);

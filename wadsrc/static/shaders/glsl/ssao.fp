@@ -1,5 +1,5 @@
 
-in vec2 TexCoord;
+layout(location=0) in vec2 TexCoord;
 layout(location=0) out vec4 FragColor;
 
 layout(binding=0) uniform sampler2D DepthTexture;
@@ -13,10 +13,6 @@ layout(binding=1) uniform sampler2D NormalTexture;
 #if defined(USE_RANDOM_TEXTURE)
 layout(binding=2) uniform sampler2D RandomTexture;
 #endif
-
-uniform int uGlobalFade;
-uniform float uGlobalFadeDensity;
-uniform float uGlobalFadeGradient;
 
 #define PI 3.14159265358979323846
 
@@ -123,10 +119,10 @@ void main()
 	vec3 viewNormal = FetchNormal(TexCoord);
 	float occlusion = viewNormal != vec3(0.0) ? ComputeAO(viewPosition, viewNormal) * AOStrength + (1.0 - AOStrength) : 1.0;
 
-	if (uGlobalFade == 1)
+	if (GlobalFade == 1)
 	{
 		float fogdist = length(viewPosition.xyz);
-		float visibility = exp(-pow((fogdist * uGlobalFadeDensity), uGlobalFadeGradient));
+		float visibility = exp(-pow((fogdist * GlobalFadeDensity), GlobalFadeGradient));
 		visibility = clamp(visibility, 0.0, 1.0);
 		FragColor = vec4(mix(1.0, occlusion, visibility), viewPosition.z, 0.0, 1.0);
 	}
