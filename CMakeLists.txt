@@ -195,7 +195,7 @@ target_architecture(ZDOOM_TARGET_ARCH)
 
 if( ${ZDOOM_TARGET_ARCH} MATCHES "x86_64" )
 	set( HAVE_VM_JIT ON )
-	set( HAVE_VULKAN ON )
+	option (HAVE_VULKAN "Enable Vulkan support" ON)
 endif()
 
 # no, we're not using external asmjit for now, we made too many modifications to our's.
@@ -222,9 +222,9 @@ if( MSVC )
 	# Function-level linking
 	# Disable run-time type information
 	if ( HAVE_VULKAN )
-		set( ALL_C_FLAGS "/GF /Gy /GR- /DHAVE_VULKAN" )
+		set( ALL_C_FLAGS "/GF /Gy /GR- /permissive- /DHAVE_VULKAN" )
 	else()
-		set( ALL_C_FLAGS "/GF /Gy /GR-" )
+		set( ALL_C_FLAGS "/GF /Gy /GR- /permissive-" )
 	endif()
 
 	# Use SSE 2 as minimum always as the true color drawers needs it for __vectorcall
@@ -462,6 +462,7 @@ add_subdirectory( wadsrc )
 add_subdirectory( wadsrc_bm )
 add_subdirectory( wadsrc_lights )
 add_subdirectory( wadsrc_extra )
+add_subdirectory( wadsrc_hacxextra )
 add_subdirectory( src )
 
 if( NOT CMAKE_CROSSCOMPILING )

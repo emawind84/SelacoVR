@@ -56,6 +56,7 @@ class FLightDefaults;
 struct FSection;
 struct FLevelLocals;
 struct FDynamicLight;
+
 //
 // NOTES: AActor
 //

@@ -66,6 +66,27 @@ private:
 };
 
 
+class ADLMIDIDevice : public SoftSynthMIDIDevice
+{
+	struct ADL_MIDIPlayer *Renderer;
+public:
+	ADLMIDIDevice(const char *args);
+	~ADLMIDIDevice();
+	
+	int Open(MidiCallback, void *userdata);
+	int GetDeviceType() const override { return MDEV_ADL; }
+	
+protected:
+	
+	void HandleEvent(int status, int parm1, int parm2);
+	void HandleLongEvent(const uint8_t *data, int len);
+	void ComputeOutput(float *buffer, int len);
+	
+private:
+	int LoadCustomBank(const char *bankfile);
+};
+
+
 enum
 {
 	ME_NOTEOFF = 0x80,

@@ -9778,6 +9778,7 @@ scriptwait:
 			break;
 
 		case PCD_GETCVAR:
+			// This should not use Level->PlayerNum!
 			STACK(1) = DoGetCVar(GetCVar(activator && activator->player? int(activator->player - players) : -1, Level->Behaviors.LookupString(STACK(1))), false);
 			break;
 

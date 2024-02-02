@@ -95,7 +95,7 @@
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
-void CreateCrashLog (char *custominfo, DWORD customsize, HWND richedit);
+void CreateCrashLog (const char *custominfo, DWORD customsize, HWND richedit);
 void DisplayCrashLog ();
 void I_FlushBufferedConsoleStuff();
 void DestroyCustomCursor();

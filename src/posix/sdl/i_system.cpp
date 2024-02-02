@@ -48,8 +48,6 @@
 
 #include "gameconfigfile.h"
 
-EXTERN_CVAR (String, language)
-
 extern "C"
 {
 	double		SecondsPerCycle = 1e-8;
