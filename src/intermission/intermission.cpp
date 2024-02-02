@@ -84,7 +84,7 @@ void DrawFullscreenSubtitle(const char *text)
 	if (!text || !*text || !inter_subtitles) return;
 
 	// This uses the same scaling as regular HUD messages
-	auto scale = active_con_scaletext();
+	auto scale = active_con_scaletext(generic_ui);
 	int hudwidth = SCREENWIDTH / scale;
 	int hudheight = SCREENHEIGHT / scale;
 	FFont *font = C_GetDefaultHUDFont();
@@ -236,6 +236,7 @@ void DIntermissionScreen::Drawer ()
 		if (CheckOverlay(i))
 			screen->DrawTexture (TexMan.GetTexture(mOverlays[i].mPic), mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, TAG_DONE);
 	}
+	if (!mFlatfill) screen->FillBorder (NULL);
 	if (mSubtitle)
 	{
 		const char *sub = mSubtitle.GetChars();
