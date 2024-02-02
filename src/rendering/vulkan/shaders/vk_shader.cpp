@@ -119,6 +119,7 @@ static const char *shaderBindings = R"(
 		vec4 uDynLightColor;
 		vec4 uAddColor;
 		vec4 uFogColor;
+		vec4 uGlobalFadeColor;
 		float uDesaturationFactor;
 		float uInterpolationFactor;
 		float timer; // timer data for material shaders
@@ -169,6 +170,11 @@ static const char *shaderBindings = R"(
 		float uLightFactor;
 		float uLightDist;
 		int uFogEnabled;
+		int uGlobalFade;
+		int uGlobalFadeMode;
+		float uGlobalFadeDensity;
+		float uGlobalFadeGradient;
+		int uLightRangeLimit;
 
 		// dynamic lights
 		int uLightIndex;
@@ -206,6 +212,7 @@ static const char *shaderBindings = R"(
 	#define uDynLightColor data[uDataIndex].uDynLightColor
 	#define uAddColor data[uDataIndex].uAddColor
 	#define uFogColor data[uDataIndex].uFogColor
+	#define uGlobalFadeColor data[uDataIndex].uGlobalFadeColor
 	#define uDesaturationFactor data[uDataIndex].uDesaturationFactor
 	#define uInterpolationFactor data[uDataIndex].uInterpolationFactor
 	#define timer data[uDataIndex].timer

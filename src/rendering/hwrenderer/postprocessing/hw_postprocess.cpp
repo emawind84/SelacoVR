@@ -696,6 +696,9 @@ void PPAmbientOcclusion::Render(PPRenderState *renderstate, float m5, int sceneW
 	ssaoUniforms.AOStrength = aoStrength;
 	ssaoUniforms.Scale = sceneScale;
 	ssaoUniforms.Offset = sceneOffset;
+	ssaoUniforms.GlobalFade = gl_global_fade ? 1 : 0;
+	ssaoUniforms.GlobalFadeDensity = gl_global_fade_density;
+	ssaoUniforms.GlobalFadeGradient = gl_global_fade_gradient;
 
 	DepthBlurUniforms blurUniforms;
 	blurUniforms.BlurSharpness = blurSharpness;

@@ -159,7 +159,7 @@ struct StreamData
 	FVector4 uDynLightColor;
 	FVector4PalEntry uAddColor;
 	FVector4PalEntry uFogColor;
-	FVector4PalEntry uFadeColor;
+	FVector4PalEntry uGlobalFadeColor;
 	float uDesaturationFactor;
 	float uInterpolationFactor;
 	float timer;
@@ -272,6 +272,8 @@ public:
 		mModelMatrix.loadIdentity();
 		mTextureMatrix.loadIdentity();
 		ClearClipSplit();
+
+		ResetFadeColor();
 	}
 
 	void SetNormal(FVector3 norm)
@@ -637,6 +639,9 @@ public:
 	{
 		SetColorMask(on, on, on, on);
 	}
+
+	void ResetFadeColor();
+	void InitSceneClearColor();
 
 };
 
