@@ -2118,9 +2118,10 @@ DEFINE_ACTION_FUNCTION_NATIVE(FFont, GetMaxAscender, GetMaxAscender)
 	ACTION_RETURN_INT(GetMaxAscender(self, str));
 }
 
-static int CanPrint(FFont *font, const FString &str) // hack hack
+static int CanPrint(FFont *font, const FString &str)
 {
-	return 1;
+	const char *txt = str[0] == '$' ? GStrings(&str[1]) : str.GetChars();
+	return font->CanPrint(txt);
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(FFont, CanPrint, CanPrint)
