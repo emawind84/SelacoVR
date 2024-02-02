@@ -114,6 +114,7 @@ struct FIWADInfo
 	bool nokeyboardcheats = false;		// disable keyboard cheats
 	TArray<FString> Load;	// Wads to be loaded with this one.
 	TArray<FString> Lumps;	// Lump names for identification
+	TArray<FString> DeleteLumps;	// Lumps which must be deleted from the directory.
 	int flags = 0;
 	int LoadWidescreen = -1;
 	int LoadBrightmaps = -1;

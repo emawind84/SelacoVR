@@ -46,9 +46,6 @@ protected:
 	SDL_GLContext GLContext;
 
 	void UpdateColors ();
-
-	static const int MIN_WIDTH = 320;
-	static const int MIN_HEIGHT = 200;
 };
 
 #endif // __POSIX_SDL_GL_SYSFB_H__

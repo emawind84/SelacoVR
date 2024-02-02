@@ -120,20 +120,8 @@ class AltHud ui
 	void DrawHudText(Font fnt, int color, String text, int x, int y, double trans = 0.75)
 	{
 		int zerowidth = fnt.GetCharWidth("0");
-
-		x += zerowidth / 2;
-		for(int i=0; i < text.length(); i++)
-		{
-			int c = text.ByteAt(i);
-			int width = fnt.GetCharWidth(c);
-			double offset = fnt.GetBottomAlignOffset(c);
-
-			screen.DrawChar(fnt, color, x, y, c,
-				DTA_KeepRatio, true,
-				DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight, DTA_Alpha, trans, 
-				DTA_LeftOffset, width/2, DTA_TopOffsetF, offset);
-			x += zerowidth;
-		}
+		screen.DrawText(fnt, color, x, y-fnt.GetHeight(), text, DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight,
+			 DTA_KeepRatio, true, DTA_Alpha, trans, DTA_Monospace, MONO_CellCenter, DTA_Spacing, zerowidth);
 	}
 
 
@@ -159,7 +147,7 @@ class AltHud ui
 		let seconds = Thinker.Tics2Seconds(timer);
 		String s = String.Format("%02i:%02i:%02i", seconds / 3600, (seconds % 3600) / 60, seconds % 60);
 		int length = 8 * fnt.GetCharWidth("0");
-		DrawHudText(SmallFont, color, s, x-length, y, trans);
+		DrawHudText(fnt, color, s, x-length, y, trans);
 	}
 	
 	//===========================================================================
@@ -170,30 +158,14 @@ class AltHud ui
 
 	virtual void DrawStatLine(int x, in out int y, String prefix, String text)
 	{
-		if (!hud_althudfont)
-		{
-			y -= SmallFont.GetHeight()-1;
-			screen.DrawText(SmallFont, hudcolor_statnames, x, y, prefix, 
-				DTA_KeepRatio, true,
-				DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight, DTA_Alpha, 0.75);
+		y -= SmallFont.GetHeight()-1;
+		screen.DrawText(SmallFont, hudcolor_statnames, x, y, prefix, 
+			DTA_KeepRatio, true,
+			DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight, DTA_Alpha, 0.75);
 
-			screen.DrawText(SmallFont, hudcolor_stats, x+statspace, y, text,
-				DTA_KeepRatio, true,
-				DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight, DTA_Alpha, 0.75);
-		}
-		else
-		{
-			double horzscale = 1.5;
-			int downscale = 2;
-			y -= NewSmallFont.GetHeight() / downscale;
-			screen.DrawText(NewSmallFont, hudcolor_statnames, x * horzscale, y * downscale, prefix, 
-				DTA_KeepRatio, true,
-				DTA_VirtualWidthF, hudwidth * horzscale, DTA_VirtualHeight, hudheight * downscale, DTA_Alpha, 0.75);
-
-			screen.DrawText(NewSmallFont, hudcolor_stats, (x+statspace) * horzscale, y * downscale, text,
-				DTA_KeepRatio, true,
-				DTA_VirtualWidthF, hudwidth * horzscale, DTA_VirtualHeight, hudheight * downscale, DTA_Alpha, 0.75);
-		}
+		screen.DrawText(SmallFont, hudcolor_stats, x+statspace, y, text,
+			DTA_KeepRatio, true,
+			DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight, DTA_Alpha, 0.75);
 	}
 
 	virtual void DrawStatus(PlayerInfo CPlayer, int x, int y)
@@ -765,15 +737,18 @@ class AltHud ui
 
 		if (withmapname)
 		{
-			screen.DrawText(SmallFont, hudcolor_titl, hudwidth - 6 - SmallFont.StringWidth(level.MapName), ypos, level.MapName,
+			let font = generic_ui? NewSmallFont : SmallFont;
+			int hh = font.GetHeight();
+
+			screen.DrawText(font, hudcolor_titl, hudwidth - 6 - font.StringWidth(Level.MapName), ypos, Level.MapName,
 				DTA_KeepRatio, true,
 				DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight);
 
-			screen.DrawText(SmallFont, hudcolor_titl, hudwidth - 6 - SmallFont.StringWidth(level.LevelName), ypos + h, level.LevelName,
+			screen.DrawText(font, hudcolor_titl, hudwidth - 6 - font.StringWidth(Level.LevelName), ypos + hh, Level.LevelName,
 				DTA_KeepRatio, true,
 				DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight);
 	
-			ypos += 3 * h;
+			ypos += 2 * hh + h;
 		}
 		
 		DrawCoordinateEntry(xpos, ypos, String.Format("X: %.0f", pos.X));
@@ -962,12 +937,14 @@ class AltHud ui
 
 	virtual void DrawAutomap(PlayerInfo CPlayer)
 	{
-		int fonth=SmallFont.GetHeight() + 1;
+		let font = generic_ui? NewSmallFont : SmallFont;
+
+		int fonth = font.GetHeight() + 1;
 		int bottom = hudheight - 1;
 
 		if (am_showtotaltime)
 		{
-			DrawTimeString(SmallFont, hudcolor_ttim, Level.totaltime, hudwidth-2, bottom, 1);
+			DrawTimeString(font, hudcolor_ttim, Level.totaltime, hudwidth-2, bottom, 1);
 			bottom -= fonth;
 		}
 
@@ -975,15 +952,15 @@ class AltHud ui
 		{
 			if (Level.clusterflags & Level.CLUSTER_HUB)
 			{
-				DrawTimeString(SmallFont, hudcolor_time, Level.time, hudwidth-2, bottom, 1);
+				DrawTimeString(font, hudcolor_time, Level.time, hudwidth-2, bottom, 1);
 				bottom -= fonth;
 			}
 
 			// Single level time for hubs
-			DrawTimeString(SmallFont, hudcolor_ltim, Level.maptime, hudwidth-2, bottom, 1);
+			DrawTimeString(font, hudcolor_ltim, Level.maptime, hudwidth-2, bottom, 1);
 		}
 
-		screen.DrawText(SmallFont, 0, 1, hudheight - fonth - 1, Level.FormatMapName(hudcolor_titl),
+		screen.DrawText(font, Font.CR_BRICK, 2, hudheight - fonth - 1, Level.FormatMapName(hudcolor_titl),
 			DTA_KeepRatio, true,
 			DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight);
 

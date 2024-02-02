@@ -563,28 +563,11 @@ CVAR (Flag, sv_alwaysspawnmulti,	dmflags2, DF2_ALWAYS_SPAWN_MULTI);
 
 EXTERN_CVAR(Int, compatmode)
 
-static int GetCompatibility(FLevelLocals *Level, int mask)
-{
-	if (Level->info == nullptr) return mask;
-	else return (mask & ~Level->info->compatmask) | (Level->info->compatflags & Level->info->compatmask);
-}
-
-static int GetCompatibility2(FLevelLocals *Level, int mask)
-{
-	return (Level->info == nullptr) ? mask
-		: (mask & ~Level->info->compatmask2) | (Level->info->compatflags2 & Level->info->compatmask2);
-}
-
 CUSTOM_CVAR (Int, compatflags, 0, CVAR_ARCHIVE|CVAR_SERVERINFO | CVAR_NOINITCALL)
 {
 	for (auto Level : AllLevels())
 	{
-		int old = Level->i_compatflags;
-		Level->i_compatflags = GetCompatibility(Level, self) | Level->ii_compatflags;
-		if ((old ^ Level->i_compatflags) & COMPATF_POLYOBJ)
-		{
-			Level->ClearAllSubsectorLinks();
-		}
+		Level->ApplyCompatibility();
 	}
 }
 
@@ -592,7 +575,7 @@ CUSTOM_CVAR (Int, compatflags2, 0, CVAR_ARCHIVE|CVAR_SERVERINFO | CVAR_NOINITCAL
 {
 	for (auto Level : AllLevels())
 	{
-		Level->i_compatflags2 = GetCompatibility2(Level, self) | Level->ii_compatflags2;
+		Level->ApplyCompatibility2();
 		Level->SetCompatLineOnSide(true);
 	}
 }
@@ -932,9 +915,10 @@ void D_Display ()
 			screen->DrawTexture (tex, x, 4, DTA_CleanNoMove, true, TAG_DONE);
 			if (paused && multiplayer)
 			{
-				pstring += players[paused - 1].userinfo.GetName();
-				screen->DrawText(SmallFont, CR_RED,
-					(screen->GetWidth() - SmallFont->StringWidth(pstring)*CleanXfac) / 2,
+				FFont *font = generic_ui? NewSmallFont : SmallFont;
+				pstring << ' ' << players[paused - 1].userinfo.GetName();
+				screen->DrawText(font, CR_RED,
+					(screen->GetWidth() - font->StringWidth(pstring)*CleanXfac) / 2,
 					(tex->GetDisplayHeight() * CleanYfac) + 4, pstring, DTA_CleanNoMove, true, TAG_DONE);
 			}
 		}
@@ -1156,13 +1140,6 @@ void D_PageDrawer (void)
 			DTA_Masked, false,
 			DTA_BilinearFilter, true,
 			TAG_DONE);
-	}
-	else
-	{
-		if (!PageBlank)
-		{
-			screen->DrawText (SmallFont, CR_WHITE, 0, 0, "Page graphic goes here", TAG_DONE);
-		}
 	}
 	if (Subtitle != nullptr)
 	{
@@ -2631,7 +2608,7 @@ static int D_DoomMain_Internal (void)
 		}
 
 		if (!batchrun) Printf ("W_Init: Init WADfiles.\n");
-		Wads.InitMultipleFiles (allwads);
+		Wads.InitMultipleFiles (allwads, iwad_info->DeleteLumps);
 		allwads.Clear();
 		allwads.ShrinkToFit();
 		SetMapxxFlag();

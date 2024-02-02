@@ -179,7 +179,7 @@ void hw_GetDynModelLight(AActor *self, FDynLightData &modellightdata)
 				{
 					int group = subsector->sector->PortalGroup;
 					DVector3 pos = light->PosRelative(group);
-					float radius = light->GetRadius() + actorradius;
+					float radius = (float)(light->GetRadius() + actorradius);
 					double dx = pos.X - x;
 					double dy = pos.Y - y;
 					double dz = pos.Z - z;

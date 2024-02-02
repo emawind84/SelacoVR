@@ -808,6 +808,7 @@ int stripaccent(int code)
 			return 'z';
 		if (code == 0x9f)	// Latin capital letter Y with diaeresis
 			return 'Y';
+		if (code == 0xab || code == 0xbb) return '"';	// typographic quotation marks.
 		if (code == 0xff)	// Latin small letter Y with diaeresis
 			return 'y';
 		// Every other accented character has the high two bits set.
@@ -857,10 +858,53 @@ int stripaccent(int code)
 		static const uint16_t u200map[] = {0xc4, 0xe4, 0xc2, 0xe2, 0xcb, 0xeb, 0xca, 0xea, 0xcf, 0xef, 0xce, 0xee, 0xd6, 0xf6, 0xd4, 0xe4, 'R', 'r', 'R', 'r', 0xdc, 0xfc, 0xdb, 0xfb, 0x15e, 0x15f, 0x162, 0x163};
 		return u200map[code - 0x200];
 	}
-	else if (code == 0x201d)
+	else switch (code)
 	{
-		// Map the typographic upper quotation mark to the generic form
-		code = '"';
+		case 0x2014:
+			return '-';	// long hyphen
+			
+		case 0x201c:
+		case 0x201d:
+		case 0x201e:
+			return '"';	// typographic quotation marks
+			
+			// Cyrillic characters with equivalents in the Latin alphabet.
+		case 0x400:
+			return 0xc8;
+			
+		case 0x401:
+			return 0xcb;
+			
+		case 0x405:
+			return 'S';
+			
+		case 0x406:
+			return 'I';
+			
+		case 0x407:
+			return 0xcf;
+			
+		case 0x408:
+			return 'J';
+
+		case 0x450:
+			return 0xe8;
+			
+		case 0x451:
+			return 0xeb;
+			
+		case 0x455:
+			return 's';
+			
+		case 0x456:
+			return 'i';
+			
+		case 0x457:
+			return 0xef;
+			
+		case 0x458:
+			return 'j';
+
 	}
 	
 	// skip the rest of Latin characters because none of them are relevant for modern languages.
@@ -1125,15 +1169,6 @@ void V_InitFontColors ()
 
 	while ((lump = Wads.FindLump ("TEXTCOLO", &lastlump)) != -1)
 	{
-		if (gameinfo.flags & GI_NOTEXTCOLOR)
-		{
-			// Chex3 contains a bad TEXTCOLO lump, probably to force all text to be green.
-			// This renders the Gray, Gold, Red and Yellow color range inoperable, some of
-			// which are used by the menu. So we have no choice but to skip this lump so that
-			// all colors work properly.
-			// The text colors should be the end user's choice anyway.
-			if (Wads.GetLumpFile(lump) == Wads.GetIwadNum()) continue;
-		}
 		FScanner sc(lump);
 		while (sc.GetString())
 		{

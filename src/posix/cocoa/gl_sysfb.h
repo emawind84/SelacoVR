@@ -91,8 +91,6 @@ private:
 
 	int GetTitleBarHeight() const;
 
-	static const int MINIMUM_WIDTH  = 320;
-	static const int MINIMUM_HEIGHT = 200;
 };
 
 #endif // COCOA_GL_SYSFB_H_INCLUDED

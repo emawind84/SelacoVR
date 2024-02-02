@@ -1188,7 +1188,7 @@ OptionValue Contrast
 {
 	0.0, "$OPTVAL_OFF"
 	1.0, "$OPTVAL_ON"
-	2.0, "$OPTVAL_SMOOTH"
+	2.0, "$OPTVAL_SMOOTH_1"
 }
 
 OptionValue Fuzziness
@@ -1255,6 +1255,7 @@ OptionMenu "VideoOptions" protected
 
 	Submenu "$DSPLYMNU_GLOPT", 			"OpenGLOptions"
 	Submenu "$DSPLYMNU_SWOPT", 			"SWROptions"
+	Submenu "$GLMNU_TEXOPT", 			"GLTextureGLOptions"
 	Submenu "$GLMNU_DYNLIGHT",			"GLLightOptions"
 	StaticText " "
 	Option "Refresh Rate",                      "vid_refreshrate", "RefreshRate"
@@ -2622,8 +2623,8 @@ OptionValue ScaleModes
 {
 	0, "$OPTVAL_SCALENEAREST"
 	1, "$OPTVAL_SCALELINEAR"
-	2, "320x200"
-	3, "640x400"
+	2, "640x400"
+	3, "960x600"
 	4, "1280x800"
 	5, "$OPTVAL_CUSTOM"
 	6, "$OPTVAL_LOWEST"
@@ -2679,7 +2680,6 @@ OptionMenu CustomResolutionMenu protected
 	StaticText "$VIDMNU_RESPRESETHEAD"
 	StaticText ""
 	StaticText "$VIDMNU_ASPECT43"
-	Command "320x240", "menu_resolution_set_custom 320 240"
 	Command "640x480", "menu_resolution_set_custom 640 480"
 	Command "1024x768", "menu_resolution_set_custom 1024 768"
 	Command "1280x960", "menu_resolution_set_custom 1280 960"
@@ -3012,7 +3012,7 @@ OptionValue "Particles"
 {
 	0, "$OPTVAL_SQUARE"
 	1, "$OPTVAL_ROUND"
-	2, "$OPTVAL_SMOOTH"
+	2, "$OPTVAL_SMOOTH_2"
 }
 
 OptionValue "HqResizeModes"
@@ -3161,7 +3161,6 @@ OptionMenu "GLLightOptions" protected
 OptionMenu "OpenGLOptions" protected
 {
 	Title "$GLMNU_TITLE"
-	Submenu "$GLMNU_TEXOPT",					"GLTextureGLOptions"
 	Submenu "$GLPREFMNU_VRMODE",				"VR3DMenu"
 	Submenu "$GLMNU_POSTPROCESS",				"PostProcessMenu"
 	StaticText " "
@@ -3337,12 +3336,16 @@ OptionMenu "ReverbSave" protected
 OptionString "LanguageOptions"
 {
 	"auto", "Auto"
+	"default", "English (US)"
 	"eng", "English (UK)"
-	"enu", "English (US)"
-	"fr", "Français (FR)"
-	"ita", "Italiano (ITA)"
-	"ptb", "Português do Brasil (PTB)"
-	"rus", "Русский (RU)"
+	"de", "Deutsch"
+	"es", "Español (España)"
+	"esm", "Español (Latino)"
+	"fr", "Français"
+	"ko", "한국의 (Korean)"
+	"it", "Italiano"
+	"pt", "Portugues do Brasil"
+	"ru", "Русский (Russian)"
 }
 
 /*=======================================

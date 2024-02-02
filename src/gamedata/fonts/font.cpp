@@ -80,7 +80,6 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 
 	noTranslate = notranslate;
 	Lump = fdlump;
-	FontHeight = 0;
 	GlobalKerning = false;
 	FontName = name;
 	Next = FirstFont;
@@ -111,9 +110,8 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 		// For anything else, each folder is being treated as an atomic, self-contained unit and mixing from different glyph sets is blocked.
 		Wads.GetLumpsInFolder(path, folderdata, nametemplate == nullptr);
 		
-		if (nametemplate == nullptr)
+		//if (nametemplate == nullptr)
 		{
-			// Only take font.inf from the actual folder we are processing but not from an older folder that may have been superseded.
 			FStringf infpath("fonts/%s/font.inf", filetemplate);
 			
 			unsigned index = folderdata.FindEx([=](const FolderEntry &entry)
@@ -710,6 +708,15 @@ int FFont::GetCharCode(int code, bool needpic) const
 	{
 		return code;
 	}
+	
+	// Special handling for the ß which may only exist as lowercase, so for this we need an additional upper -> lower check for all fonts aside from the generic substitution logic.
+	if (code == 0x1e9e)
+	{
+		if (LastChar <= 0xdf && (!needpic || Chars[0xdf - FirstChar].TranslatedPic != nullptr))
+		{
+			return 0xdf;
+		}
+	}
 
 	// Use different substitution logic based on the fonts content:
 	// In a font which has both upper and lower case, prefer unaccented small characters over capital ones.
@@ -782,23 +789,15 @@ int FFont::GetCharCode(int code, bool needpic) const
 
 FTexture *FFont::GetChar (int code, int translation, int *const width, bool *redirected) const
 {
-	code = GetCharCode(code, false);
+	code = GetCharCode(code, true);
 	int xmove = SpaceWidth;
 
 	if (code >= 0)
 	{
 		code -= FirstChar;
 		xmove = Chars[code].XMove;
-		if (Chars[code].TranslatedPic == nullptr)
-		{
-			code = GetCharCode(code + FirstChar, true);
-			if (code >= 0)
-			{
-				code -= FirstChar;
-				xmove = Chars[code].XMove;
-			}
-		}
 	}
+	
 	if (width != nullptr)
 	{
 		*width = xmove;
@@ -829,8 +828,9 @@ FTexture *FFont::GetChar (int code, int translation, int *const width, bool *red
 
 int FFont::GetCharWidth (int code) const
 {
-	code = GetCharCode(code, false);
-	return (code < 0) ? SpaceWidth : Chars[code - FirstChar].XMove;
+	code = GetCharCode(code, true);
+	if (code >= 0) return Chars[code - FirstChar].XMove;
+	return SpaceWidth;
 }
 
 //==========================================================================

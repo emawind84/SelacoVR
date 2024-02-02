@@ -116,22 +116,32 @@ class ConversationMenu : Menu
 		mShowGold = false;
 		ConversationPauseTic = gametic + 20;
 		DontDim = true;
-
-		let tex = TexMan.CheckForTexture (CurNode.Backdrop, TexMan.Type_MiscPatch);
-		mHasBackdrop = tex.isValid();
-		DontBlur = !mHasBackdrop;
-
-		displayFont = SmallFont;
-		displayWidth = CleanWidth;
-		displayHeight = CleanHeight;
-		fontScale = CleanXfac;
-		refwidth = 320;
-		refheight = 200;
-		ReplyWidth = 320-50-10;
-		SpeechWidth = screen.GetWidth()/CleanXfac - 24*2;
-		ReplyLineHeight = LineHeight = displayFont.GetHeight();
-		mConfineTextToBackdrop = false; // hack hack
-		speechDisplayWidth = displayWidth;
+		if (!generic_ui)
+		{
+			displayFont = SmallFont;
+			displayWidth = CleanWidth;
+			displayHeight = CleanHeight;
+			fontScale = CleanXfac;
+			refwidth = 320;
+			refheight = 200;
+			ReplyWidth = 320-50-10;
+			SpeechWidth = screen.GetWidth()/CleanXfac - 24*2;
+			ReplyLineHeight = LineHeight = displayFont.GetHeight();
+		}
+		else
+		{
+			displayFont = NewSmallFont;
+			fontScale = (CleanXfac+1) / 2;
+			displayWidth = screen.GetWidth() / fontScale;
+			displayHeight = screen.GetHeight() / fontScale;
+			refwidth = 640;
+			refheight = 400;
+			ReplyWidth = 640-100-20;
+			SpeechWidth = screen.GetWidth()/fontScale - (24*2 * CleanXfac / fontScale);
+			LineHeight = displayFont.GetHeight() + 2;
+			ReplyLineHeight = LineHeight * fontScale / CleanYfac;
+		}
+		
 
 		FormatSpeakerMessage();
 		return FormatReplies(activereply);
@@ -168,7 +178,7 @@ class ConversationMenu : Menu
 				let amount = String.Format("%u", reply.PrintAmount);
 				ReplyText.Replace("%u", amount);
 			}
-			let ReplyLines = SmallFont.BreakLines (ReplyText, ReplyWidth);
+			let ReplyLines = displayFont.BreakLines (ReplyText, ReplyWidth);
 
 			mResponses.Push(mResponseLines.Size());
 			for (j = 0; j < ReplyLines.Count(); ++j)
@@ -198,8 +208,8 @@ class ConversationMenu : Menu
 		mResponseLines.Push(goodbyestr);
 
 		// Determine where the top of the reply list should be positioned.
-		mYpos = MIN (140, 192 - mResponseLines.Size() * LineHeight);
-		i = 44 + mResponseLines.Size() * LineHeight;
+		mYpos = MIN (140, 192 - mResponseLines.Size() * ReplyLineHeight);
+		i = 44 + mResponseLines.Size() * ReplyLineHeight;
 		if (mYpos - 100 < i - screen.GetHeight() / CleanYfac / 2)
 		{
 			mYpos = i - screen.GetHeight() / CleanYfac / 2 + 100;
@@ -237,7 +247,7 @@ class ConversationMenu : Menu
 		{
 			toSay = ".";
 		}
-		mDialogueLines = SmallFont.BreakLines(toSay, SpeechWidth);
+		mDialogueLines = displayFont.BreakLines(toSay, SpeechWidth);
 	}
 	
 	//=============================================================================
@@ -332,7 +342,7 @@ class ConversationMenu : Menu
 		int fh = LineHeight;
 
 		// convert x/y from screen to virtual coordinates, according to CleanX/Yfac use in DrawTexture
-		x = ((x - (screen.GetWidth() / 2)) / CleanXfac) + 160;
+		x = ((x - (screen.GetWidth() / 2)) / fontScale) + refWidth/2;
 
 		if (x >= 24 && x <= refWidth-24)
 		{
@@ -404,7 +414,7 @@ class ConversationMenu : Menu
 	virtual void DrawSpeakerText(bool dimbg)
 	{
 		String speakerName;
-		int linesize = LineHeight * CleanYfac;
+		int linesize = LineHeight * fontScale;
 		int cnt = mDialogueLines.Count();
 
 		// Who is talking to you?
@@ -434,13 +444,13 @@ class ConversationMenu : Menu
 
 		if (speakerName.Length() > 0)
 		{
-			screen.DrawText(SmallFont, Font.CR_WHITE, x, y, speakerName, DTA_CleanNoMove, true);
+			screen.DrawText(displayFont, Font.CR_WHITE, x / fontScale, y / fontScale, speakerName, DTA_KeepRatio, true, DTA_VirtualWidth, displayWidth, DTA_VirtualHeight, displayHeight);
 			y += linesize * 3 / 2;
 		}
 		x = 24 * screen.GetWidth() / 320;
 		for (int i = 0; i < cnt; ++i)
 		{
-			screen.DrawText(SmallFont, Font.CR_UNTRANSLATED, x, y, mDialogueLines.StringAt(i), DTA_CleanNoMove, true);
+			screen.DrawText(displayFont, Font.CR_UNTRANSLATED, x / fontScale, y / fontScale, mDialogueLines.StringAt(i), DTA_KeepRatio, true, DTA_VirtualWidth, displayWidth, DTA_VirtualHeight, displayHeight);
 			y += linesize;
 		}
 	}
@@ -456,23 +466,24 @@ class ConversationMenu : Menu
 	{
 		// Dim the screen behind the PC's choices.
 		screen.Dim(0, 0.45, (24 - 160) * CleanXfac + screen.GetWidth() / 2, (mYpos - 2 - 100) * CleanYfac + screen.GetHeight() / 2,
-			272 * CleanXfac, MIN(mResponseLines.Size() * LineHeight + 4, 200 - mYpos) * CleanYfac);
+			272 * CleanXfac, MIN(mResponseLines.Size() * ReplyLineHeight + 4, 200 - mYpos) * CleanYfac);
+
 
 		int y = mYpos;
-		int fontheight = LineHeight;
 
 		int response = 0;
 		ypositions.Clear();
 		for (int i = 0; i < mResponseLines.Size(); i++)
 		{
-			int width = SmallFont.StringWidth(mResponseLines[i]);
+			int width = displayFont.StringWidth(mResponseLines[i]);
 			int x = 64;
 
 			double sx = (x - 160.0) * CleanXfac + (screen.GetWidth() * 0.5);
 			double sy = (y - 100.0) * CleanYfac + (screen.GetHeight() * 0.5);
 
 			ypositions.Push(sy);
-			screen.DrawText(SmallFont, Font.CR_GREEN, x, y, mResponseLines[i], DTA_Clean, true);
+
+			screen.DrawText(displayFont, Font.CR_GREEN, sx / fontScale, sy / fontScale, mResponseLines[i], DTA_KeepRatio, true, DTA_VirtualWidth, displayWidth, DTA_VirtualHeight, displayHeight);
 
 			if (i == mResponses[response])
 			{
@@ -480,8 +491,9 @@ class ConversationMenu : Menu
 
 				response++;
 				tbuf = String.Format("%d.", response);
-				x = 50 - SmallFont.StringWidth(tbuf);
-				screen.DrawText(SmallFont, Font.CR_GREY, x, y, tbuf, DTA_Clean, true);
+				x = 50 - displayFont.StringWidth(tbuf);
+				sx = (x - 160.0) * CleanXfac + (screen.GetWidth() * 0.5);
+				screen.DrawText(displayFont, Font.CR_GREY, sx / fontScale, sy / fontScale, tbuf, DTA_KeepRatio, true, DTA_VirtualWidth, displayWidth, DTA_VirtualHeight, displayHeight);
 
 				if (response == mSelection + 1)
 				{
@@ -493,7 +505,7 @@ class ConversationMenu : Menu
 					else if (colr == Font.CR_GREY) cursorTexColor = color(0xCC, 0xCC, 0xCC);
 
 					x = (50 + 3 - 160) * CleanXfac + screen.GetWidth() / 2;
-					int yy = (y + fontheight / 2 - 5 - 100) * CleanYfac + screen.GetHeight() / 2;
+					int yy = (y + ReplyLineHeight / 2 - 5 - 100) * CleanYfac + screen.GetHeight() / 2;
 
 					// use a custom graphic (intentionally long-named to reduce collision with existing mods), with the ConFont version as the fallback
 					let cursorTex = TexMan.CheckForTexture("graphics/DialogReplyCursor.png", TexMan.Type_MiscPatch);
@@ -508,7 +520,7 @@ class ConversationMenu : Menu
 					}
 				}
 			}
-			y += fontheight;
+			y += ReplyLineHeight;
 		}
 		double sy = (y - 100.0) * CleanYfac + (screen.GetHeight() * 0.5);
 		ypositions.Push(sy);

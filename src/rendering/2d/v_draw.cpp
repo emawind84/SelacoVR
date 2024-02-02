@@ -106,7 +106,7 @@ int GetUIScale(int altval)
 int GetConScale(int altval)
 {
 	int scaleval;
-	if (altval > 0) scaleval = altval;
+	if (altval > 0) scaleval = (altval+1) / 2;
 	else if (uiscale == 0)
 	{
 		// Default should try to scale to 640x400
@@ -114,7 +114,7 @@ int GetConScale(int altval)
 		int hscale = screen->GetWidth() / 1280;
 		scaleval = clamp(vscale, 1, hscale);
 	}
-	else scaleval = uiscale / 2;
+	else scaleval = (uiscale+1) / 2;
 
 	// block scales that result in something larger than the current screen.
 	int vmax = screen->GetHeight() / 400;
@@ -634,7 +634,7 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 	parms->srcwidth = 1.;
 	parms->srcheight = 1.;
 	parms->burn = false;
-	parms->monospace = EMonospacing::MOff;
+	parms->monospace = EMonospacing::Off;
 	parms->spacing = 0;
 	parms->fsscalemode = -1;
 	parms->patchscalex = parms->patchscaley = 1;
@@ -1022,10 +1022,6 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 		case DTA_CellY:
 			parms->celly = ListGetInt(tags);
 			break;
-		
-		case DTA_Burn:
-			parms->burn = true;
-			break;
 
 		case DTA_Monospace:
 			parms->monospace = ListGetInt(tags);
@@ -1033,6 +1029,10 @@ bool DFrameBuffer::ParseDrawTextureTags(FTexture *img, double x, double y, uint3
 
 		case DTA_Spacing:
 			parms->spacing = ListGetInt(tags);
+			break;
+
+		case DTA_Burn:
+			parms->burn = true;
 			break;
 
 		}
