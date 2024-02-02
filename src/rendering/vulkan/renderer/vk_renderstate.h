@@ -43,7 +43,7 @@ public:
 	void EnableDrawBuffers(int count) override;
 
 	void BeginFrame();
-	void SetRenderTarget(VulkanImageView *view, int width, int height, VkSampleCountFlagBits samples);
+	void SetRenderTarget(VulkanImageView *view, VulkanImageView *depthStencilView, int width, int height, VkFormat Format, VkSampleCountFlagBits samples);
 	void Bind(int bindingpoint, uint32_t offset);
 	void EndRenderPass();
 	void EndFrame();
@@ -91,11 +91,9 @@ protected:
 	PushConstants mPushConstants = {};
 
 	uint32_t mLastViewpointOffset = 0xffffffff;
-	uint32_t mLastLightBufferOffset = 0xffffffff;
 	uint32_t mLastMatricesOffset = 0xffffffff;
 	uint32_t mLastStreamDataOffset = 0xffffffff;
 	uint32_t mViewpointOffset = 0;
-	uint32_t mLightBufferOffset = 0;
 	uint32_t mMatricesOffset = 0;
 	uint32_t mDataIndex = -1;
 	uint32_t mStreamDataOffset = 0;
@@ -114,8 +112,10 @@ protected:
 	struct RenderTarget
 	{
 		VulkanImageView *View = nullptr;
+		VulkanImageView *DepthStencil = nullptr;
 		int Width = 0;
 		int Height = 0;
+		VkFormat Format = VK_FORMAT_R16G16B16A16_SFLOAT;
 		VkSampleCountFlagBits Samples = VK_SAMPLE_COUNT_1_BIT;
 		int DrawBuffers = 1;
 	} mRenderTarget;

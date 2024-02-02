@@ -61,7 +61,7 @@ class os_Query
 
 	private static bool contains(string str, string substr)
 	{
-		let lowerstr = str.MakeLower();
+		let lowerstr    = str   .MakeLower();
 		let lowersubstr = substr.MakeLower();
 
 		bool contains = (lowerstr.IndexOf(lowersubstr) != -1);

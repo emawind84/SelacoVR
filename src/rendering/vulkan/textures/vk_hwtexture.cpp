@@ -36,6 +36,7 @@
 #include "vulkan/textures/vk_samplers.h"
 #include "vulkan/renderer/vk_renderpass.h"
 #include "vulkan/renderer/vk_postprocess.h"
+#include "vulkan/renderer/vk_renderbuffers.h"
 #include "vk_hwtexture.h"
 
 VkHardwareTexture *VkHardwareTexture::First = nullptr;
@@ -53,32 +54,41 @@ VkHardwareTexture::~VkHardwareTexture()
 	if (Prev) Prev->Next = Next;
 	else First = Next;
 
-	auto fb = GetVulkanFrameBuffer();
-	if (fb)
-	{
-		auto &deleteList = fb->FrameDeleteList;
-		for (auto &it : mDescriptorSets)
-		{
-			deleteList.Descriptors.push_back(std::move(it.descriptor));
-			it.descriptor = nullptr;
-		}
-		mDescriptorSets.clear();
-		if (mImage) deleteList.Images.push_back(std::move(mImage));
-		if (mImageView) deleteList.ImageViews.push_back(std::move(mImageView));
-		if (mStagingBuffer) deleteList.Buffers.push_back(std::move(mStagingBuffer));
-	}
+	Reset();
+}
+
+void VkHardwareTexture::ResetAll()
+{
+	for (VkHardwareTexture *cur = VkHardwareTexture::First; cur; cur = cur->Next)
+		cur->Reset();
 }
 
 void VkHardwareTexture::Reset()
 {
-	mDescriptorSets.clear();
-	mImage.reset();
-	mImageView.reset();
-	mStagingBuffer.reset();
+	if (auto fb = GetVulkanFrameBuffer())
+	{
+		ResetDescriptors();
+
+		auto &deleteList = fb->FrameDeleteList;
+		if (mImage) deleteList.Images.push_back(std::move(mImage));
+		if (mImageView) deleteList.ImageViews.push_back(std::move(mImageView));
+		if (mDepthStencil) deleteList.Images.push_back(std::move(mDepthStencil));
+		if (mDepthStencilView) deleteList.ImageViews.push_back(std::move(mDepthStencilView));
+	}
 }
 
 void VkHardwareTexture::ResetDescriptors()
 {
+	if (auto fb = GetVulkanFrameBuffer())
+	{
+		auto &deleteList = fb->FrameDeleteList;
+
+		for (auto &it : mDescriptorSets)
+		{
+			deleteList.Descriptors.push_back(std::move(it.descriptor));
+		}
+	}
+
 	mDescriptorSets.clear();
 }
 
@@ -167,6 +177,36 @@ VulkanImageView *VkHardwareTexture::GetImageView(FTexture *tex, int translation,
 	return mImageView.get();
 }
 
+VulkanImageView *VkHardwareTexture::GetDepthStencilView(FTexture *tex)
+{
+	if (!mDepthStencilView)
+	{
+		auto fb = GetVulkanFrameBuffer();
+
+		VkFormat format = fb->GetBuffers()->SceneDepthStencilFormat;
+		int w = tex->GetWidth();
+		int h = tex->GetHeight();
+
+		ImageBuilder builder;
+		builder.setSize(w, h);
+		builder.setSamples(VK_SAMPLE_COUNT_1_BIT);
+		builder.setFormat(format);
+		builder.setUsage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+		mDepthStencil = builder.create(fb->device);
+		mDepthStencil->SetDebugName("VkHardwareTexture.DepthStencil");
+
+		ImageViewBuilder viewbuilder;
+		viewbuilder.setImage(mDepthStencil.get(), format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+		mDepthStencilView = viewbuilder.create(fb->device);
+		mDepthStencilView->SetDebugName("VkHardwareTexture.DepthStencilView");
+
+		PipelineBarrier barrier;
+		barrier.addImage(mDepthStencil.get(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+		barrier.execute(fb->GetTransferCommands(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+	}
+	return mDepthStencilView.get();
+}
+
 void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 {
 	if (!tex->isHardwareCanvas())
@@ -221,12 +261,12 @@ void VkHardwareTexture::CreateTexture(int w, int h, int pixelsize, VkFormat form
 	BufferBuilder bufbuilder;
 	bufbuilder.setSize(totalSize);
 	bufbuilder.setUsage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-	mStagingBuffer = bufbuilder.create(fb->device);
-	mStagingBuffer->SetDebugName("VkHardwareTexture.mStagingBuffer");
+	std::unique_ptr<VulkanBuffer> stagingBuffer = bufbuilder.create(fb->device);
+	stagingBuffer->SetDebugName("VkHardwareTexture.mStagingBuffer");
 
-	uint8_t *data = (uint8_t*)mStagingBuffer->Map(0, totalSize);
+	uint8_t *data = (uint8_t*)stagingBuffer->Map(0, totalSize);
 	memcpy(data, pixels, totalSize);
-	mStagingBuffer->Unmap();
+	stagingBuffer->Unmap();
 
 	ImageBuilder imgbuilder;
 	imgbuilder.setFormat(format);
@@ -252,7 +292,9 @@ void VkHardwareTexture::CreateTexture(int w, int h, int pixelsize, VkFormat form
 	region.imageExtent.depth = 1;
 	region.imageExtent.width = w;
 	region.imageExtent.height = h;
-	cmdbuffer->copyBufferToImage(mStagingBuffer->buffer, mImage->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+	cmdbuffer->copyBufferToImage(stagingBuffer->buffer, mImage->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+	fb->FrameDeleteList.Buffers.push_back(std::move(stagingBuffer));
 
 	GenerateMipmaps(mImage.get(), cmdbuffer);
 }
@@ -314,6 +356,11 @@ int VkHardwareTexture::GetMipLevels(int w, int h)
 
 void VkHardwareTexture::AllocateBuffer(int w, int h, int texelsize)
 {
+	if (mImage && (mImage->width != w || mImage->height != h || mTexelsize != texelsize))
+	{
+		Reset();
+	}
+
 	if (!mImage)
 	{
 		auto fb = GetVulkanFrameBuffer();
@@ -323,8 +370,11 @@ void VkHardwareTexture::AllocateBuffer(int w, int h, int texelsize)
 		ImageBuilder imgbuilder;
 		imgbuilder.setFormat(format);
 		imgbuilder.setSize(w, h);
-		imgbuilder.setUsage(VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT);
 		imgbuilder.setLinearTiling();
+		imgbuilder.setUsage(VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_UNKNOWN, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT);
+		imgbuilder.setMemoryType(
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		mImage = imgbuilder.create(fb->device);
 		mImage->SetDebugName("VkHardwareTexture.mImage");
 		mImageLayout = VK_IMAGE_LAYOUT_GENERAL;

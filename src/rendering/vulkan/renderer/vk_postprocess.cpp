@@ -34,7 +34,7 @@ void VkPostprocess::SetActiveRenderTarget()
 	imageTransition.addImage(buffers->PipelineImage[mCurrentPipelineImage].get(), &buffers->PipelineLayout[mCurrentPipelineImage], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, false);
 	imageTransition.execute(fb->GetDrawCommands());
 
-	fb->GetRenderState()->SetRenderTarget(buffers->PipelineView[mCurrentPipelineImage].get(), buffers->GetWidth(), buffers->GetHeight(), VK_SAMPLE_COUNT_1_BIT);
+	fb->GetRenderState()->SetRenderTarget(buffers->PipelineView[mCurrentPipelineImage].get(), nullptr, buffers->GetWidth(), buffers->GetHeight(), VK_FORMAT_R16G16B16A16_SFLOAT, VK_SAMPLE_COUNT_1_BIT);
 }
 
 void VkPostprocess::PostProcessScene(int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D)
@@ -422,6 +422,16 @@ FString VkPPShader::LoadShaderCode(const FString &lumpName, const FString &defin
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+void VkPPRenderState::PushGroup(const FString &name)
+{
+	GetVulkanFrameBuffer()->PushGroup(name);
+}
+
+void VkPPRenderState::PopGroup()
+{
+	GetVulkanFrameBuffer()->PopGroup();
+}
 
 void VkPPRenderState::Draw()
 {

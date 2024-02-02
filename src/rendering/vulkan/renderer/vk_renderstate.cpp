@@ -210,6 +210,7 @@ void VkRenderState::ApplyRenderPass(int dt)
 	passKey.StencilPassOp = mStencilOp;
 	passKey.ColorMask = mColorMask;
 	passKey.CullMode = mCullMode;
+	passKey.DrawBufferFormat = mRenderTarget.Format;
 	passKey.Samples = mRenderTarget.Samples;
 	passKey.DrawBuffers = mRenderTarget.DrawBuffers;
 	passKey.NumTextureLayers = mMaterial.mMaterial ? mMaterial.mMaterial->GetLayers() : 0;
@@ -382,7 +383,7 @@ void VkRenderState::ApplyPushConstants()
 	if (mMaterial.mMaterial && mMaterial.mMaterial->tex)
 		mPushConstants.uSpecularMaterial = { mMaterial.mMaterial->tex->Glossiness, mMaterial.mMaterial->tex->SpecularLevel };
 
-	mPushConstants.uLightIndex = screen->mLights->BindUBO(mLightIndex);
+	mPushConstants.uLightIndex = mLightIndex;
 	mPushConstants.uDataIndex = mDataIndex;
 
 	auto fb = GetVulkanFrameBuffer();
@@ -482,16 +483,15 @@ void VkRenderState::ApplyMaterial()
 
 void VkRenderState::ApplyDynamicSet()
 {
-	if (mViewpointOffset != mLastViewpointOffset || mLightBufferOffset != mLastLightBufferOffset || mMatricesOffset != mLastMatricesOffset || mStreamDataOffset != mLastStreamDataOffset)
+	if (mViewpointOffset != mLastViewpointOffset || mMatricesOffset != mLastMatricesOffset || mStreamDataOffset != mLastStreamDataOffset)
 	{
 		auto fb = GetVulkanFrameBuffer();
 		auto passManager = fb->GetRenderPassManager();
 
-		uint32_t offsets[4] = { mViewpointOffset, mLightBufferOffset, mMatricesOffset, mStreamDataOffset };
-		mCommandBuffer->bindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, passManager->GetPipelineLayout(mRenderPassKey.NumTextureLayers), 0, passManager->DynamicSet.get(), 4, offsets);
+		uint32_t offsets[3] = { mViewpointOffset, mMatricesOffset, mStreamDataOffset };
+		mCommandBuffer->bindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, passManager->GetPipelineLayout(mRenderPassKey.NumTextureLayers), 0, passManager->DynamicSet.get(), 3, offsets);
 
 		mLastViewpointOffset = mViewpointOffset;
-		mLastLightBufferOffset = mLightBufferOffset;
 		mLastMatricesOffset = mMatricesOffset;
 		mLastStreamDataOffset = mStreamDataOffset;
 	}
@@ -502,11 +502,6 @@ void VkRenderState::Bind(int bindingpoint, uint32_t offset)
 	if (bindingpoint == VIEWPOINT_BINDINGPOINT)
 	{
 		mViewpointOffset = offset;
-		mNeedApply = true;
-	}
-	else if (bindingpoint == LIGHTBUF_BINDINGPOINT)
-	{
-		mLightBufferOffset = offset;
 		mNeedApply = true;
 	}
 }
@@ -526,7 +521,6 @@ void VkRenderState::EndRenderPass()
 		mRenderPassKey = {};
 
 		mLastViewpointOffset = 0xffffffff;
-		mLastLightBufferOffset = 0xffffffff;
 		mLastVertexBuffer = nullptr;
 		mLastIndexBuffer = nullptr;
 		mLastModelMatrixEnabled = true;
@@ -550,13 +544,15 @@ void VkRenderState::EnableDrawBuffers(int count)
 	}
 }
 
-void VkRenderState::SetRenderTarget(VulkanImageView *view, int width, int height, VkSampleCountFlagBits samples)
+void VkRenderState::SetRenderTarget(VulkanImageView *view, VulkanImageView *depthStencilView, int width, int height, VkFormat format, VkSampleCountFlagBits samples)
 {
 	EndRenderPass();
 
 	mRenderTarget.View = view;
+	mRenderTarget.DepthStencil = depthStencilView;
 	mRenderTarget.Width = width;
 	mRenderTarget.Height = height;
+	mRenderTarget.Format = format;
 	mRenderTarget.Samples = samples;
 }
 
@@ -579,7 +575,7 @@ void VkRenderState::BeginRenderPass(const VkRenderPassKey &key, VulkanCommandBuf
 		if (key.DrawBuffers > 2)
 			builder.addAttachment(buffers->SceneNormalView.get());
 		if (key.UsesDepthStencil())
-			builder.addAttachment(buffers->SceneDepthStencilView.get());
+			builder.addAttachment(mRenderTarget.DepthStencil);
 		framebuffer = builder.create(GetVulkanFrameBuffer()->device);
 		framebuffer->SetDebugName("VkRenderPassSetup.Framebuffer");
 	}

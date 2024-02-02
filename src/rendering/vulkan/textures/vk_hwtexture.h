@@ -23,6 +23,7 @@ public:
 	VkHardwareTexture();
 	~VkHardwareTexture();
 
+	static void ResetAll();
 	void Reset();
 
 	void Precache(FMaterial *mat, int translation, int flags);
@@ -37,12 +38,9 @@ public:
 	// Wipe screen
 	void CreateWipeTexture(int w, int h, const char *name);
 
-	static VkHardwareTexture *First;
-	VkHardwareTexture *Prev = nullptr;
-	VkHardwareTexture *Next = nullptr;
-
 	VulkanImage *GetImage(FTexture *tex, int translation, int flags);
 	VulkanImageView *GetImageView(FTexture *tex, int translation, int flags);
+	VulkanImageView *GetDepthStencilView(FTexture *tex);
 
 	static void ResetAllDescriptors();
 
@@ -54,6 +52,10 @@ private:
 	static int GetMipLevels(int w, int h);
 
 	void ResetDescriptors();
+
+	static VkHardwareTexture *First;
+	VkHardwareTexture *Prev = nullptr;
+	VkHardwareTexture *Next = nullptr;
 
 	struct DescriptorEntry
 	{
@@ -72,7 +74,9 @@ private:
 	std::vector<DescriptorEntry> mDescriptorSets;
 	std::unique_ptr<VulkanImage> mImage;
 	std::unique_ptr<VulkanImageView> mImageView;
-	std::unique_ptr<VulkanBuffer> mStagingBuffer;
 	VkImageLayout mImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	int mTexelsize = 4;
+
+	std::unique_ptr<VulkanImage> mDepthStencil;
+	std::unique_ptr<VulkanImageView> mDepthStencilView;
 };

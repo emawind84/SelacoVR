@@ -33,6 +33,15 @@ void VkRenderPassManager::RenderBuffersReset()
 
 void VkRenderPassManager::TextureSetPoolReset()
 {
+	if (auto fb = GetVulkanFrameBuffer())
+	{
+		auto &deleteList = fb->FrameDeleteList;
+
+		for (auto &desc : TextureDescriptorPools)
+		{
+			deleteList.DescriptorPools.push_back(std::move(desc));
+		}
+	}
 	TextureDescriptorPools.clear();
 	TextureDescriptorSetsLeft = 0;
 	TextureDescriptorsLeft = 0;
@@ -88,7 +97,7 @@ void VkRenderPassManager::CreateDynamicSetLayout()
 {
 	DescriptorSetLayoutBuilder builder;
 	builder.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
-	builder.addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
+	builder.addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
 	builder.addBinding(2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 	builder.addBinding(3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 	builder.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -138,7 +147,7 @@ void VkRenderPassManager::CreateDescriptorPool()
 {
 	DescriptorPoolBuilder builder;
 	builder.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 3);
-	builder.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1);
+	builder.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
 	builder.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
 	builder.setMaxSets(1);
 	DynamicDescriptorPool = builder.create(GetVulkanFrameBuffer()->device);
@@ -158,7 +167,7 @@ void VkRenderPassManager::UpdateDynamicSet()
 
 	WriteDescriptors update;
 	update.addBuffer(DynamicSet.get(), 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, fb->ViewpointUBO->mBuffer.get(), 0, sizeof(HWViewpointUniforms));
-	update.addBuffer(DynamicSet.get(), 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, fb->LightBufferSSO->mBuffer.get(), 0, fb->GetLightBufferBlockSize());
+	update.addBuffer(DynamicSet.get(), 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, fb->LightBufferSSO->mBuffer.get());
 	update.addBuffer(DynamicSet.get(), 2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, fb->MatricesUBO->mBuffer.get(), 0, sizeof(MatricesUBO));
 	update.addBuffer(DynamicSet.get(), 3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, fb->StreamUBO->mBuffer.get(), 0, sizeof(StreamUBO));
 	update.addCombinedImageSampler(DynamicSet.get(), 4, fb->GetBuffers()->ShadowmapView.get(), fb->GetBuffers()->ShadowmapSampler.get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -199,17 +208,23 @@ void VkRenderPassSetup::CreateRenderPass(const VkRenderPassKey &key)
 	VkFormat drawBufferFormats[] = { VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_A2R10G10B10_UNORM_PACK32 };
 
 	RenderPassBuilder builder;
-	for (int i = 0; i < key.DrawBuffers; i++)
+
+	builder.addAttachment(
+		key.DrawBufferFormat, (VkSampleCountFlagBits)key.Samples,
+		(key.ClearTargets & CT_Color) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+	for (int i = 1; i < key.DrawBuffers; i++)
 	{
 		builder.addAttachment(
-			drawBufferFormats[i], i == 0 ? (VkSampleCountFlagBits)key.Samples : buffers->GetSceneSamples(),
+			drawBufferFormats[i], buffers->GetSceneSamples(),
 			(key.ClearTargets & CT_Color) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
 	if (key.UsesDepthStencil())
 	{
 		builder.addDepthStencilAttachment(
-			buffers->SceneDepthStencilFormat, buffers->GetSceneSamples(),
+			buffers->SceneDepthStencilFormat, key.DrawBufferFormat == VK_FORMAT_R8G8B8A8_UNORM ? VK_SAMPLE_COUNT_1_BIT : buffers->GetSceneSamples(),
 			(key.ClearTargets & CT_Depth) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
 			(key.ClearTargets & CT_Stencil) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
@@ -246,7 +261,7 @@ void VkRenderPassSetup::CreatePipeline(const VkRenderPassKey &key)
 	VkShaderProgram *program;
 	if (key.SpecialEffect != EFF_NONE)
 	{
-		program = fb->GetShaderManager()->GetEffect(key.SpecialEffect);
+		program = fb->GetShaderManager()->GetEffect(key.SpecialEffect, key.DrawBuffers > 1 ? GBUFFER_PASS : NORMAL_PASS);
 	}
 	else
 	{
