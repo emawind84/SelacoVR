@@ -170,8 +170,6 @@ public:
 	void AddPixel(int x1, int y1, int palcolor, uint32_t color);
 
 	void Clear();
-	// TODO
-	void SwapColors();
 
 	bool mIsFirstPass = true;
 };

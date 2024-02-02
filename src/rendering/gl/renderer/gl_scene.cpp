@@ -246,8 +246,7 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 		}
 		di->EndDrawInfo();
 		eye->TearDown();
-		if (eyeCount - eye_ix > 1)
-			mBuffers->NextEye(eyeCount);
+		mBuffers->NextEye(eyeCount);
 	}
 	vrmode->TearDown();
 	return mainvp.sector;

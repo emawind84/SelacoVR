@@ -734,19 +734,3 @@ void F2DDrawer::Clear()
 	mData.Clear();
 	mIsFirstPass = true;
 }
-
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void F2DDrawer::SwapColors()
-{
-	for (auto& v : mVertices)
-	{
-		// Change from BGRA to RGBA
-		std::swap(v.color0.r, v.color0.b);
-	}
-}

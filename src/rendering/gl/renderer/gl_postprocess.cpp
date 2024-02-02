@@ -151,27 +151,26 @@ void FGLRenderer::Flush()
 	{
 		const bool is2D = (gamestate != GS_LEVEL) || cinemamode;
 		if (is2D) vrmode->SetUp();
-		// Change from BGRA to RGBA
-		screen->SwapColors();
 		// Render 2D to eye textures
 		int eyeCount = vrmode->mEyeCount;
+		mBuffers->CurrentEye() = 0; 
 		for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
 		{
-			//Only adjust HUD if we are 3D and not showing menu (otherwise we are rendering to a cylinder compositor layer)
+			const auto &eye = vrmode->mEyes[mBuffers->CurrentEye()];
 			if (vrmode->IsVR())
 			{
-				vrmode->mEyes[eye_ix]->AdjustBlend(nullptr);
+				eye->AdjustBlend(nullptr);
 				screen->Draw2D(true);
 			}
 			if (!is2D && !getMenuState())
 			{
-				vrmode->mEyes[eye_ix]->AdjustHud();
+				eye->AdjustHud();
 			}
 
 			screen->Draw2D(false);
-			if (eyeCount - eye_ix > 1)
-				mBuffers->NextEye(eyeCount);
+			mBuffers->NextEye(eyeCount);
 		}
+		mBuffers->BlitToEyeTexture(mBuffers->CurrentEye(), false);
 		screen->Clear2D();
 
 		FGLPostProcessState savedState;

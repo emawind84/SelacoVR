@@ -102,8 +102,6 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 		const auto &mScreenViewport = screen->mScreenViewport;
 		state.SetViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
 		screen->mViewpoints->Set2D(state, screen->GetWidth(), screen->GetHeight());
-		// TODO
-		//drawer->SwapColors();
 	}
 
 	state.EnableDepthTest(false);
@@ -120,7 +118,6 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 		return;
 	}
 
-	// TODO
 	if (drawer->mIsFirstPass)
 	{
 		for (auto &v : vertices)
