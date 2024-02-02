@@ -555,7 +555,7 @@ void FDynamicLight::CollectWithinRadius(const DVector3 &opos, FSection *section,
 		if (collected_ss.Size() >= (unsigned int)gl_light_max_collected_subsectors)
 			break;
 
-		auto &pos = collected_ss[i].pos;
+		auto pos = collected_ss[i].pos;
 		section = collected_ss[i].sect;
 
 		touching_sector = AddLightNode(&section->lighthead, section, this, touching_sector);

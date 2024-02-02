@@ -174,10 +174,12 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 	// Fixme. The view offsetting should be done with a static table and not require setup of the entire render state for the mode.
 	auto vrmode = VRMode::GetVRMode(mainview && toscreen);
 	vrmode->SetUp();
-	for (int eye_ix = 0; eye_ix < vrmode->mEyeCount; ++eye_ix)
+	const int eyeCount = vrmode->mEyeCount;
+	mBuffers->CurrentEye() = 0;  // always begin at zero, in case eye count changed
+	for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
 	{
 		flatVerticesPerEye = wallVerticesPerEye = portalsPerEye = 0;
-		const auto &eye = vrmode->mEyes[eye_ix];
+		const auto &eye = vrmode->mEyes[mBuffers->CurrentEye()];
 		eye->SetUp();
 		screen->SetViewportRects(bounds);
 
@@ -243,11 +245,9 @@ sector_t * FGLRenderer::RenderViewpoint (FRenderViewpoint &mainvp, AActor * came
 			PostProcess.Unclock();
 		}
 		di->EndDrawInfo();
-		if (vrmode->mEyeCount > 1)
-		{
-			mBuffers->BlitToEyeTexture(eye_ix);
-		}
 		eye->TearDown();
+		if (eyeCount - eye_ix > 1)
+			mBuffers->NextEye(eyeCount);
 	}
 	vrmode->TearDown();
 	return mainvp.sector;

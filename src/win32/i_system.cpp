@@ -1156,9 +1156,7 @@ TArray<FString> I_GetSteamPath()
 		"hexen deathkings of the dark citadel/base",
 		"ultimate doom/base",
 		"DOOM 3 BFG Edition/base/wads",
-		"Strife",
-		"Ultimate Doom/rerelease/DOOM_Data/StreamingAssets",
-		"Doom 2/rerelease/DOOM II_Data/StreamingAssets"
+		"Strife"
 	};
 
 	FString path;

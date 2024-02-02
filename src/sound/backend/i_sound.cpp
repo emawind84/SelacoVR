@@ -50,7 +50,7 @@
 
 
 EXTERN_CVAR (Float, snd_sfxvolume)
-EXTERN_CVAR(Float, snd_musicvolume)
+EXTERN_CVAR (Float, snd_musicvolume)
 CVAR (Int, snd_samplerate, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Int, snd_buffersize, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Int, snd_hrtf, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)

@@ -171,6 +171,8 @@ public:
 
 	void Clear();
 	void SwapColors();
+
+	bool mIsFirstPass = true;
 };
 
 

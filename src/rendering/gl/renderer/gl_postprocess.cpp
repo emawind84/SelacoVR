@@ -120,7 +120,13 @@ void FGLRenderer::BlurScene(float gameinfobluramount)
 	mBuffers->CompileEffectShaders();
 	mBuffers->UpdateEffectTextures();
 
-	mBuffers->RenderEffect("BlurScene");
+	auto vrmode = VRMode::GetVRMode(true);
+	int eyeCount = vrmode->mEyeCount;
+	for (int i = 0; i < eyeCount; ++i)
+	{
+		mBuffers->RenderEffect("BlurScene");
+		if (eyeCount - i > 1) mBuffers->NextEye(eyeCount);
+	}
 }
 
 void FGLRenderer::ClearTonemapPalette()
@@ -137,29 +143,20 @@ void FGLRenderer::ClearTonemapPalette()
 void FGLRenderer::Flush()
 {
 	auto vrmode = VRMode::GetVRMode(true);
-
 	if (vrmode->mEyeCount == 1)
 	{
 		CopyToBackbuffer(nullptr, true);
 	}
 	else
 	{
-		vrmode->AdjustViewport(screen);
-		const auto &mSceneViewport = screen->mSceneViewport;
-		const auto &mScreenViewport = screen->mScreenViewport;
-		
 		const bool is2D = (gamestate != GS_LEVEL) || cinemamode;
 		if (is2D) vrmode->SetUp();
 		// Change from BGRA to RGBA
 		screen->SwapColors();
 		// Render 2D to eye textures
-		for (int eye_ix = 0; eye_ix < vrmode->mEyeCount; ++eye_ix)
+		int eyeCount = vrmode->mEyeCount;
+		for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
 		{
-			FGLDebug::PushGroup("Eye2D");
-			mBuffers->BindEyeFB(eye_ix);
-			glViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
-			glScissor(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
-
 			//Only adjust HUD if we are 3D and not showing menu (otherwise we are rendering to a cylinder compositor layer)
 			if (vrmode->IsVR())
 			{
@@ -172,7 +169,8 @@ void FGLRenderer::Flush()
 			}
 
 			screen->Draw2D(false);
-			FGLDebug::PopGroup();
+			if (eyeCount - eye_ix > 1)
+				mBuffers->NextEye(eyeCount);
 		}
 		screen->Clear2D();
 

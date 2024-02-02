@@ -732,6 +732,7 @@ void F2DDrawer::Clear()
 	mVertices.Clear();
 	mIndices.Clear();
 	mData.Clear();
+	mIsFirstPass = true;
 }
 
 

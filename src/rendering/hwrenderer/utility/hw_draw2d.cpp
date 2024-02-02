@@ -103,7 +103,7 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 		state.SetViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
 		screen->mViewpoints->Set2D(state, screen->GetWidth(), screen->GetHeight());
 
-		drawer->SwapColors();
+		//drawer->SwapColors();
 	}
 
 	state.EnableDepthTest(false);
@@ -120,6 +120,14 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 		return;
 	}
 
+	if (drawer->mIsFirstPass)
+	{
+		for (auto &v : vertices)
+		{
+			// Change from BGRA to RGBA
+			std::swap(v.color0.r, v.color0.b);
+		}
+	}
 	F2DVertexBuffer vb;
 	vb.UploadData(&vertices[0], vertices.Size(), &indices[0], indices.Size());
 	state.SetVertexBuffer(&vb);
@@ -228,5 +236,6 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 	state.SetTextureMode(TM_NORMAL);
 	state.EnableFog(false);
 	state.ResetColor();
+	drawer->mIsFirstPass = false;
 	twoD.Unclock();
 }

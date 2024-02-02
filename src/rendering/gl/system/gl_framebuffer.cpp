@@ -456,9 +456,7 @@ void OpenGLFrameBuffer::Draw2D(bool outside2D)
 	if (GLRenderer != nullptr)
 	{
 		FGLDebug::PushGroup("Draw2D");
-		if (VRMode::GetVRMode(true)->mEyeCount == 1)
-			GLRenderer->mBuffers->BindCurrentFB();
-
+		GLRenderer->mBuffers->BindCurrentFB();
 		::Draw2D(&m2DDrawer, gl_RenderState, outside2D);
 		FGLDebug::PopGroup();
 	}

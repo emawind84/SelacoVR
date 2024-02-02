@@ -337,6 +337,7 @@ void DIntermissionScreenText::Init(FIntermissionAction *desc, bool first)
 		mTextX = (320 - width) / 2;
 	}
 
+
 	mTextLen = (int)mText.CharacterCount();
 	mTextDelay = static_cast<FIntermissionActionTextscreen*>(desc)->mTextDelay;
 	mTextColor = static_cast<FIntermissionActionTextscreen*>(desc)->mTextColor;

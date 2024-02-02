@@ -1596,7 +1596,7 @@ FLevelLocals::FLevelLocals() : Behaviors(this), tagManager(this)
 	{
 		Players[i] = &players[i];
 	}
-	localEventManager = new EventManager;
+	localEventManager = new EventManager(this);
 }
 
 FLevelLocals::~FLevelLocals()
@@ -1617,6 +1617,7 @@ void FLevelLocals::Init()
 
 	gravity = sv_gravity * 35/TICRATE;
 	aircontrol = sv_aircontrol;
+	AirControlChanged();
 	teamdamage = ::teamdamage;
 	flags = 0;
 	flags2 = 0;
