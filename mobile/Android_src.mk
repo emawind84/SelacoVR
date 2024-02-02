@@ -31,6 +31,7 @@ LOCAL_C_INCLUDES := \
 	$(GZDOOM_TOP_PATH)/src/gamedata/fonts \
 	$(GZDOOM_TOP_PATH)/src/rendering \
 	$(GZDOOM_TOP_PATH)/src/rendering/2d \
+	$(GZDOOM_TOP_PATH)/src/r_data \
 	$(GZDOOM_TOP_PATH)/src/sound \
 	$(GZDOOM_TOP_PATH)/src/sound/music \
 	$(GZDOOM_TOP_PATH)/src/sound/backend \
@@ -39,6 +40,8 @@ LOCAL_C_INCLUDES := \
 	$(GZDOOM_TOP_PATH)/src/utility/nodebuilder \
 	$(GZDOOM_TOP_PATH)/src/scripting \
 	$(GZDOOM_TOP_PATH)/src/scripting/vm \
+	$(GZDOOM_TOP_PATH)/src/rendering \
+	$(GZDOOM_TOP_PATH)/src/rendering/vulkan/thirdparty \
 	$(GZDOOM_TOP_PATH)/src/../libraries/gdtoa \
     $(GZDOOM_TOP_PATH)/src/../libraries/bzip2 \
 	$(GZDOOM_TOP_PATH)/src/../libraries/game-music-emu/ \
@@ -79,6 +82,22 @@ PLAT_NOSDL_SOURCES = \
 	posix/nosdl/i_input.cpp \
 	posix/nosdl/glvideo.cpp \
 	posix/nosdl/st_start.cpp
+
+VULKAN_SOURCES = \
+	rendering/vulkan/system/vk_device.cpp \
+	rendering/vulkan/system/vk_swapchain.cpp \
+	rendering/vulkan/system/vk_builders.cpp \
+	rendering/vulkan/system/vk_framebuffer.cpp \
+	rendering/vulkan/system/vk_buffers.cpp \
+	rendering/vulkan/renderer/vk_renderstate.cpp \
+	rendering/vulkan/renderer/vk_renderpass.cpp \
+	rendering/vulkan/renderer/vk_postprocess.cpp \
+	rendering/vulkan/renderer/vk_renderbuffers.cpp \
+	rendering/vulkan/shaders/vk_shader.cpp \
+	rendering/vulkan/textures/vk_samplers.cpp \
+	rendering/vulkan/textures/vk_hwtexture.cpp \
+	rendering/vulkan/thirdparty/volk/volk.c \
+	rendering/vulkan/thirdparty/vk_mem_alloc/vk_mem_alloc.cpp \
 
 
 FASTMATH_SOURCES = \
@@ -261,7 +280,6 @@ PCH_SOURCES = \
 	rendering/gl/renderer/gl_scene.cpp \
 	rendering/gl/shaders/gl_shader.cpp \
 	rendering/gl/shaders/gl_shaderprogram.cpp \
-	rendering/gl/shaders/gl_postprocessshader.cpp \
 	gl/stereo3d/gl_openxrdevice.cpp \
 	rendering/gl_load/gl_interface.cpp \
 	rendering/gl/system/gl_framebuffer.cpp \
@@ -282,9 +300,6 @@ PCH_SOURCES = \
 	rendering/hwrenderer/postprocessing/hw_postprocess.cpp \
 	rendering/hwrenderer/postprocessing/hw_postprocess_cvars.cpp \
 	rendering/hwrenderer/postprocessing/hw_postprocessshader.cpp \
-	rendering/hwrenderer/postprocessing/hw_shadowmapshader.cpp \
-	rendering/hwrenderer/postprocessing/hw_presentshader.cpp \
-	rendering/hwrenderer/postprocessing/hw_present3dRowshader.cpp \
 	rendering/hwrenderer/textures/hw_material.cpp \
 	rendering/hwrenderer/textures/hw_precache.cpp \
 	rendering/hwrenderer/utility/hw_clock.cpp \
