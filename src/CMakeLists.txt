@@ -1234,10 +1234,11 @@ include_directories( .
 	scripting
 	scripting/vm
 	rendering/vulkan/thirdparty
-	../glslang/glslang/Public
-	../glslang/spirv
 	../libraries/gdtoa
-	${CMAKE_BINARY_DIR}/libraries/gdtoa
+	../libraries/dumb/include
+	../libraries/glslang/glslang/Public
+	../libraries/glslang/spirv
+	${CMAKE_BINARY_DIR}/gdtoa
 	${SYSTEM_SOURCES_DIR} )
 
 add_dependencies( zdoom revision_check )
