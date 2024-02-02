@@ -172,7 +172,7 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 		{
 			state.SetTextureMode(TM_FIXEDCOLORMAP);
 			state.SetObjectColor(cmd.mSpecialColormap[0]);
-			state.SetObjectColor2(cmd.mSpecialColormap[1]);
+			state.SetAddColor(cmd.mSpecialColormap[1]);
 		}
 		state.SetFog(cmd.mColor1, 0);
 		state.SetColor(1, 1, 1, 1, cmd.mDesaturate); 

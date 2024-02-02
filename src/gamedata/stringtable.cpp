@@ -44,8 +44,6 @@
 #include "gi.h"
 #include "d_player.h"
 #include "xlsxread/xlsxio_read.h"
-#include "c_cvars.h"
-#include "gstrings.h"
 
 EXTERN_CVAR(String, language)
 
@@ -152,13 +150,15 @@ bool FStringTable::readSheetIntoTable(xlsxioreader reader, const char *sheetname
 		int column = 0;
 		char *value;
 		table.Reserve(1);
+		auto myisspace = [](int ch) { return ch == '\t' || ch == '\r' || ch == '\n' || ch == ' '; };
+
 		while ((value = xlsxioread_sheet_next_cell(sheet)) != nullptr)
 		{
 			auto vcopy = value;
 			if (table.Size() <= (unsigned)row) table.Reserve(1);
-			while (*vcopy && iswspace((unsigned char)*vcopy)) vcopy++;	// skip over leaading whitespace;
+			while (*vcopy && myisspace((unsigned char)*vcopy)) vcopy++;	// skip over leaading whitespace;
 			auto vend = vcopy + strlen(vcopy);
-			while (vend > vcopy && iswspace((unsigned char)vend[-1])) *--vend = 0;	// skip over trailing whitespace
+			while (vend > vcopy && myisspace((unsigned char)vend[-1])) *--vend = 0;	// skip over trailing whitespace
 			ProcessEscapes(vcopy);
 			table[row].Push(vcopy);
 			column++;
@@ -563,22 +563,4 @@ const char *StringMap::MatchString (const char *string) const
 		}
 	}
 	return nullptr;
-}
-
-CCMD(printlocalized)
-{
-	if (argv.argc() > 1)
-	{
-		if (argv.argc() > 2)
-		{
-			FString lang = argv[2];
-			lang.ToLower();
-			if (lang.Len() >= 2)
-			{
-				Printf("%s\n", GStrings.GetLanguageString(argv[1], MAKE_ID(lang[0], lang[1], lang[2], 0)));
-				return;
-			}
-		}
-		Printf("%s\n", GStrings(argv[1]));
-	}
 }

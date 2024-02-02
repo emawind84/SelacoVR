@@ -60,6 +60,7 @@ public:
 	void BindBase()
 	{
 		mBuffer->BindBase();
+		mLastMappedIndex = UINT_MAX;
 	}
 
 };

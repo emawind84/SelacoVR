@@ -130,7 +130,7 @@ namespace swrenderer
 			DrawerThreads::ResetDebugDrawPos();
 		}
 
-		RenderActorView(player->mo);
+		RenderActorView(player->mo, true, false);
 
 		auto copyqueue = std::make_shared<DrawerCommandQueue>(MainThread()->FrameMemory.get());
 		copyqueue->Push<MemcpyCommand>(videobuffer, target->GetPixels(), target->GetWidth(), target->GetHeight(), target->GetPitch(), target->IsBgra() ? 4 : 1);
@@ -141,7 +141,7 @@ namespace swrenderer
 		DrawerWaitCycles.Unclock();
 	}
 
-	void RenderScene::RenderActorView(AActor *actor, bool dontmaplines)
+	void RenderScene::RenderActorView(AActor *actor, bool renderPlayerSprites, bool dontmaplines)
 	{
 		WallCycles.Reset();
 		PlaneCycles.Reset();
@@ -179,7 +179,8 @@ namespace swrenderer
 		if (r_modelscene && r_models_carmack)
 			MainThread()->Viewport->SetupPolyViewport(MainThread());
 
-		RenderPSprites();
+		if (renderPlayerSprites)
+			RenderPSprites();
 
 		MainThread()->Viewport->viewpoint.camera->renderflags = savedflags;
 	}
@@ -374,7 +375,7 @@ namespace swrenderer
 			PolyTriangleDrawer::ResizeBuffers(viewport->RenderTarget);
 
 		// Render:
-		RenderActorView(actor, dontmaplines);
+		RenderActorView(actor, false, dontmaplines);
 		DrawerWaitCycles.Clock();
 		DrawerThreads::WaitForWorkers();
 		DrawerWaitCycles.Unclock();

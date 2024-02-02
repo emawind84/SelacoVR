@@ -839,7 +839,7 @@ void D_Display ()
 		}
 		if (automapactive)
 		{
-			primaryLevel->automap->Drawer (hud_althud? viewheight : StatusBar->GetTopOfStatusbar());
+			primaryLevel->automap->Drawer ((hud_althud && viewheight == SCREENHEIGHT) ? viewheight : StatusBar->GetTopOfStatusbar());
 		}
 		
 		// for timing the statusbar code.
@@ -1335,7 +1335,6 @@ void D_DoAdvanceDemo (void)
 		return;
 	}
 
-	V_SetBlend (0,0,0,0);
 	players[consoleplayer].playerstate = PST_LIVE;	// not reborn
 	usergame = false;				// no save / end game here
 	paused = 0;
@@ -2930,8 +2929,6 @@ static int D_DoomMain_Internal (void)
 		}
 		else
 		{
-			// let the renderer reinitialize some stuff if needed
-			screen->InitPalette();
 			// These calls from inside V_Init2 are still necessary
 			C_NewModeAdjust();
 			D_StartTitle ();				// start up intro loop

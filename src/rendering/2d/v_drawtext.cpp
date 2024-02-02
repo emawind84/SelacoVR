@@ -38,6 +38,7 @@
 #include <wctype.h>
 
 #include "v_text.h"
+#include "utf8.h"
 
 
 #include "v_video.h"
@@ -250,10 +251,14 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawChar)
 //
 //==========================================================================
 
-void DFrameBuffer::DrawTextCommon(FFont *font, int normalcolor, double x, double y, const char *string, DrawParms &parms)
+// This is only needed as a dummy. The code using wide strings does not need color control.
+EColorRange V_ParseFontColor(const char32_t *&color_value, int normalcolor, int boldcolor) { return CR_UNTRANSLATED; } 
+
+template<class chartype>
+void DFrameBuffer::DrawTextCommon(FFont *font, int normalcolor, double x, double y, const chartype *string, DrawParms &parms)
 {
 	int 		w;
-	const uint8_t *ch;
+	const chartype *ch;
 	int 		c;
 	double 		cx;
 	double 		cy;
@@ -276,7 +281,7 @@ void DFrameBuffer::DrawTextCommon(FFont *font, int normalcolor, double x, double
 
 	kerning = font->GetDefaultKerning();
 
-	ch = (const uint8_t *)string;
+	ch = string;
 	cx = x;
 	cy = y;
 
@@ -286,7 +291,7 @@ void DFrameBuffer::DrawTextCommon(FFont *font, int normalcolor, double x, double
 		cx += parms.spacing;
 
 	auto currentcolor = normalcolor;
-	while ((const char *)ch - string < parms.maxstrlen)
+	while (ch - string < parms.maxstrlen)
 	{
 		c = GetCharFromString(ch);
 		if (!c)
@@ -358,6 +363,24 @@ void DFrameBuffer::DrawText(FFont *font, int normalcolor, double x, double y, co
 	{
 		return;
 	}
+	DrawTextCommon(font, normalcolor, x, y, (const uint8_t*)string, parms);
+}
+
+void DFrameBuffer::DrawText(FFont *font, int normalcolor, double x, double y, const char32_t *string, int tag_first, ...)
+{
+	Va_List tags;
+	DrawParms parms;
+
+	if (font == NULL || string == NULL)
+		return;
+
+	va_start(tags.list, tag_first);
+	bool res = ParseDrawTextureTags(nullptr, 0, 0, tag_first, tags, &parms, true);
+	va_end(tags.list);
+	if (!res)
+	{
+		return;
+	}
 	DrawTextCommon(font, normalcolor, x, y, string, parms);
 }
 
@@ -374,13 +397,13 @@ void DFrameBuffer::DrawText(FFont *font, int normalcolor, double x, double y, co
 	{
 		return;
 	}
-	DrawTextCommon(font, normalcolor, x, y, string, parms);
+	DrawTextCommon(font, normalcolor, x, y, (const uint8_t*)string, parms);
 }
 
 DEFINE_ACTION_FUNCTION(_Screen, DrawText)
 {
 	PARAM_PROLOGUE;
-	PARAM_POINTER(font, FFont);
+	PARAM_POINTER_NOT_NULL(font, FFont);
 	PARAM_INT(cr);
 	PARAM_FLOAT(x);
 	PARAM_FLOAT(y);

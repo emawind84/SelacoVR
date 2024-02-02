@@ -2228,7 +2228,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 
 	case DEM_CENTERPRINT:
 		s = ReadString (stream);
-		C_MidPrint (SmallFont, s);
+		C_MidPrint (nullptr, s);
 		break;
 
 	case DEM_UINFCHANGED:

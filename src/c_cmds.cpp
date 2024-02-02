@@ -1353,7 +1353,7 @@ static void PrintSecretString(const char *string, bool thislevel)
 				else colstr = TEXTCOLOR_GREEN;
 			}
 		}
-		auto brok = V_BreakLines(ConFont, screen->GetWidth()*95/100, *string == '$' ? GStrings(++string) : string);
+		auto brok = V_BreakLines(CurrentConsoleFont, screen->GetWidth()*95/100, *string == '$' ? GStrings(++string) : string);
 
 		for (auto &line : brok)
 		{
