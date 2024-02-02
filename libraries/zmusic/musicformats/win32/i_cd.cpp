@@ -38,7 +38,6 @@
 #include <mmsystem.h>
 #include <stdlib.h>
 #include "helperthread.h"
-#include "atterm.h"
 #include "i_cd.h"
 
 extern HWND Window;
