@@ -33,6 +33,7 @@
 
 #include "i_common.h"
 #include "s_sound.h"
+#include "atterm.h"
 
 #include <sys/sysctl.h>
 

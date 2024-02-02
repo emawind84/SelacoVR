@@ -56,6 +56,7 @@
 #include "doomerrors.h"
 #include "i_system.h"
 #include "g_game.h"
+#include "atterm.h"
 
 // MACROS ------------------------------------------------------------------
 

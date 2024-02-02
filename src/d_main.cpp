@@ -101,6 +101,7 @@
 #include "i_system.h"
 #include "g_cvars.h"
 #include "r_data/r_vanillatrans.h"
+#include "atterm.h"
 #include "s_music.h"
 #include "swrenderer/r_swcolormaps.h"
 
@@ -905,7 +906,8 @@ void D_Display ()
 			if (paused && multiplayer)
 			{
 				FFont *font = generic_ui? NewSmallFont : SmallFont;
-				pstring << ' ' << players[paused - 1].userinfo.GetName();
+				FString pstring = GStrings("TXT_BY");
+				pstring.Substitute("%s", players[paused - 1].userinfo.GetName());
 				screen->DrawText(font, CR_RED,
 					(screen->GetWidth() - font->StringWidth(pstring)*CleanXfac) / 2,
 					(tex->GetDisplayHeight() * CleanYfac) + 4, pstring, DTA_CleanNoMove, true, TAG_DONE);

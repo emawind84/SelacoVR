@@ -97,6 +97,13 @@ public:
 	CFatalError(const char *message) : CDoomError(message) {}
 };
 
+class CVulkanError : public CDoomError
+{
+public:
+	CVulkanError() : CDoomError() {}
+	CVulkanError(const char *message) : CDoomError(message) {}
+};
+
 class CExitEvent : public std::exception
 {
 	int m_reason;

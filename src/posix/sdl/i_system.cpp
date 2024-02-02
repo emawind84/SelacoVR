@@ -40,6 +40,21 @@
 #include "version.h"
 #include "x86.h"
 
+#include "d_main.h"
+#include "d_net.h"
+#include "g_game.h"
+#include "c_dispatch.h"
+#include "atterm.h"
+
+#include "gameconfigfile.h"
+
+EXTERN_CVAR (String, language)
+
+extern "C"
+{
+	double		SecondsPerCycle = 1e-8;
+	double		CyclesPerSecond = 1e8;
+}
 
 #ifndef NO_GTK
 bool I_GtkAvailable ();
