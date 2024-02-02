@@ -869,6 +869,7 @@ void AddToConsole (int printlevel, const char *text)
 	conbuffer->AddText(printlevel, MakeUTF8(text));
 }
 
+
 #ifdef __ANDROID__
 #include <android/log.h>
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO,"Gzdoom", __VA_ARGS__))
@@ -918,6 +919,7 @@ int PrintString (int iprintlevel, const char *outline)
 #ifdef __ANDROID__
 	LOGI("PrintString: %s",outline);
 #endif
+
 	int printlevel = iprintlevel & PRINT_TYPES;
 	if (printlevel < msglevel || *outline == '\0')
 	{
