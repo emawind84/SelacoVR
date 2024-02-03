@@ -2,8 +2,6 @@ name: Continuous Integration
 
 on:
   push:
-    branches:
-      - g3.3mgw*
   pull_request:
 
   # Allows you to run this workflow manually from the Actions tab
