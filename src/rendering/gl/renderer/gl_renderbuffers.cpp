@@ -300,7 +300,7 @@ PPGLTexture FGLRenderBuffers::Create2DTexture(const char *name, GLuint format, i
 	case GL_RGBA32F:			dataformat = GL_RGBA; datatype = GL_FLOAT; break;
 	case GL_RGBA16_SNORM:		dataformat = GL_RGBA; datatype = GL_SHORT; break;
 	case GL_R32F:				dataformat = GL_RED; datatype = GL_FLOAT; break;
-	case GL_R16F:				dataformat = GL_RED; datatype = GL_HALF_FLOAT; break;
+	case GL_R16F:				dataformat = GL_RED; datatype = GL_FLOAT; break;
 	case GL_RG32F:				dataformat = GL_RG; datatype = GL_FLOAT; break;
 	case GL_RG16F:				dataformat = GL_RG; datatype = GL_FLOAT; break;
 	case GL_RGB10_A2:			dataformat = GL_RGBA; datatype = GL_UNSIGNED_INT_10_10_10_2; break;
@@ -311,7 +311,7 @@ PPGLTexture FGLRenderBuffers::Create2DTexture(const char *name, GLuint format, i
 	}
 
 #ifdef __MOBILE__ // FIXME
-    LOGI("Create2DTexture  0x%0x 0x%0x 0x%0x",format,dataformat,datatype);
+    //LOGI("Create2DTexture  0x%0x 0x%0x 0x%0x",format,dataformat,datatype);
 
     if( format == GL_RGBA16F )
     {
