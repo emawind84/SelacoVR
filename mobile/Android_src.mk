@@ -96,6 +96,7 @@ VULKAN_SOURCES = \
 	rendering/vulkan/shaders/vk_shader.cpp \
 	rendering/vulkan/textures/vk_samplers.cpp \
 	rendering/vulkan/textures/vk_hwtexture.cpp \
+	rendering/vulkan/textures/vk_imagetransition.cpp \
 	rendering/vulkan/thirdparty/volk/volk.c \
 	rendering/vulkan/thirdparty/vk_mem_alloc/vk_mem_alloc.cpp \
 
@@ -451,6 +452,7 @@ PCH_SOURCES = \
 	utility/nodebuilder/nodebuild_utility.cpp \
 	utility/sc_man.cpp \
 	utility/stats.cpp \
+	utility/atterm.cpp \
 	utility/cmdlib.cpp \
 	utility/colormatcher.cpp \
 	utility/configfile.cpp \
