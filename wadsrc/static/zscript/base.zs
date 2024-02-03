@@ -335,7 +335,7 @@ struct Font native
 	native int GetMaxAscender(String code);
 	native bool CanPrint(String code);
 	native int GetHeight();
-	int GetDisplacement() { return 0; } // hack hack
+	native int GetDisplacement();
 	native String GetCursor();
 
 	native static int FindFontColor(Name color);

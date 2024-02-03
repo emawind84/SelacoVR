@@ -281,4 +281,3 @@ public:
 	bool explicitpitch;
 
 };
-
