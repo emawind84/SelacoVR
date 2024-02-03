@@ -335,9 +335,9 @@ option(FORCE_INTERNAL_ASMJIT "Use internal asmjit" ON)
 mark_as_advanced( FORCE_INTERNAL_ASMJIT )
 
 if (HAVE_VULKAN)
-	add_subdirectory( glslang/glslang)
-	add_subdirectory( glslang/spirv )
-	add_subdirectory( glslang/OGLCompilersDLL )
+	add_subdirectory( libraries/glslang/glslang)
+	add_subdirectory( libraries/glslang/spirv )
+	add_subdirectory( libraries/glslang/OGLCompilersDLL )
 endif()
 
 # Fast math flags, required by some subprojects

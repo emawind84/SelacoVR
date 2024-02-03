@@ -514,7 +514,6 @@ static uint8_t HexToByte (const char *hex)
 UCVarValue FBaseCVar::FromString (const char *value, ECVarType type)
 {
 	UCVarValue ret;
-	int i;
 
 	switch (type)
 	{
