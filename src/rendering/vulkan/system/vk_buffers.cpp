@@ -29,6 +29,12 @@ VKBuffer::~VKBuffer()
 		fb->FrameDeleteList.Buffers.push_back(std::move(mBuffer));
 }
 
+void VKBuffer::ResetAll()
+{
+	for (VKBuffer *cur = VKBuffer::First; cur; cur = cur->Next)
+		cur->Reset();
+}
+
 void VKBuffer::Reset()
 {
 	if (mBuffer && map)
@@ -70,7 +76,10 @@ void VKBuffer::SetData(size_t size, const void *data, bool staticdata)
 		mPersistent = screen->BuffersArePersistent();
 
 		BufferBuilder builder;
-		builder.setUsage(mBufferType, VMA_MEMORY_USAGE_CPU_TO_GPU, mPersistent ? VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT : 0);
+		builder.setUsage(mBufferType, VMA_MEMORY_USAGE_UNKNOWN, mPersistent ? VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT : 0);
+		builder.setMemoryType(
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		builder.setSize(size);
 		mBuffer = builder.create(fb->device);
 
@@ -121,7 +130,10 @@ void VKBuffer::Resize(size_t newsize)
 
 	// Create new buffer
 	BufferBuilder builder;
-	builder.setUsage(mBufferType, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT);
+	builder.setUsage(mBufferType, VMA_MEMORY_USAGE_UNKNOWN, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT);
+	builder.setMemoryType(
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	builder.setSize(newsize);
 	mBuffer = builder.create(fb->device);
 	buffersize = newsize;
@@ -192,12 +204,9 @@ void VKVertexBuffer::SetFormat(int numBindingPoints, int numAttributes, size_t s
 
 /////////////////////////////////////////////////////////////////////////////
 
-void VKDataBuffer::BindRange(size_t start, size_t length)
+
+void VKDataBuffer::BindRange(FRenderState* state, size_t start, size_t length)
 {
-	GetVulkanFrameBuffer()->GetRenderState()->Bind(bindingpoint, (uint32_t)start);
+	static_cast<VkRenderState*>(state)->Bind(bindingpoint, (uint32_t)start);
 }
 
-void VKDataBuffer::BindBase()
-{
-	GetVulkanFrameBuffer()->GetRenderState()->Bind(bindingpoint, 0);
-}

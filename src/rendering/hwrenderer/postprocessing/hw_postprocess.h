@@ -78,6 +78,9 @@ class PPRenderState
 public:
 	virtual ~PPRenderState() = default;
 
+	virtual void PushGroup(const FString &name) = 0;
+	virtual void PopGroup() = 0;
+
 	virtual void Draw() = 0;
 
 	void Clear()
@@ -238,7 +241,7 @@ public:
 		if (Next) Next->Prev = this;
 	}
 
-	~PPResource()
+	virtual ~PPResource()
 	{
 		if (Next) Next->Prev = Prev;
 		if (Prev) Prev->Next = Next;
@@ -765,16 +768,17 @@ public:
 struct ShadowMapUniforms
 {
 	float ShadowmapQuality;
-	float Padding0, Padding1, Padding2;
+	int NodesCount;
+	float Padding0, Padding1;
 
 	static std::vector<UniformFieldDesc> Desc()
 	{
 		return
 		{
 			{ "ShadowmapQuality", UniformType::Float, offsetof(ShadowMapUniforms, ShadowmapQuality) },
+			{ "NodesCount", UniformType::Int, offsetof(ShadowMapUniforms, NodesCount) },
 			{ "Padding0", UniformType::Float, offsetof(ShadowMapUniforms, Padding0) },
 			{ "Padding1", UniformType::Float, offsetof(ShadowMapUniforms, Padding1) },
-			{ "Padding2", UniformType::Float, offsetof(ShadowMapUniforms, Padding2) },
 		};
 	}
 };

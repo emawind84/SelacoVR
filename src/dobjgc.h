@@ -210,7 +210,7 @@ public:
 	{
 		return GC::ReadBarrier(pp);
 	}
-	
+
 	operator T() throw()
 	{
 		return GC::ReadBarrier(pp);

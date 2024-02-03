@@ -10544,7 +10544,7 @@ CCMD (scriptstat)
 {
 	for (auto Level : AllLevels())
 	{
-		Printf("Script status for %s", Level->MapName.GetChars());
+		Printf("Script status for %s\n", Level->MapName.GetChars());
 		if (Level->ACSThinker == nullptr)
 		{
 			Printf("No scripts are running.\n");

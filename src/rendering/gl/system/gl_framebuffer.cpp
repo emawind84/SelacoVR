@@ -126,7 +126,7 @@ void OpenGLFrameBuffer::InitializeState()
 	glslversion = gl.glslversion;
 	uniformblockalignment = gl.uniformblockalignment;
 	maxuniformblock = gl.maxuniformblock;
-	gl_vendorstring = gl.vendorstring;
+	vendorstring = gl.vendorstring;
 
 	if (first)
 	{
@@ -160,11 +160,13 @@ void OpenGLFrameBuffer::InitializeState()
 
 	mVertexData = new FFlatVertexBuffer(GetWidth(), GetHeight());
 	mSkyData = new FSkyVertexBuffer;
-	mViewpoints = new GLViewpointBuffer;
+	mViewpoints = new HWViewpointBuffer;
 	mLights = new FLightBuffer();
 
 	GLRenderer = new FGLRenderer(this);
 	GLRenderer->Initialize(GetWidth(), GetHeight());
+
+	static_cast<GLDataBuffer*>(mLights->GetBuffer())->BindBase();
 
 	mDebug = std::make_shared<FGLDebug>();
 	mDebug->Update();
@@ -453,10 +455,8 @@ void OpenGLFrameBuffer::Draw2D(bool outside2D)
 {
 	if (GLRenderer != nullptr)
 	{
-		FGLDebug::PushGroup("Draw2D");
 		GLRenderer->mBuffers->BindCurrentFB();
 		::Draw2D(&m2DDrawer, gl_RenderState, outside2D);
-		FGLDebug::PopGroup();
 	}
 }
 

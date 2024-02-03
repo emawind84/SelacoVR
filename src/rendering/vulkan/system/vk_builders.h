@@ -42,11 +42,13 @@ public:
 	void setSamples(VkSampleCountFlagBits samples);
 	void setFormat(VkFormat format);
 	void setUsage(VkImageUsageFlags imageUsage, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY, VmaAllocationCreateFlags allocFlags = 0);
+	void setMemoryType(VkMemoryPropertyFlags requiredFlags, VkMemoryPropertyFlags preferredFlags, uint32_t memoryTypeBits = 0);
 	void setLinearTiling();
 
 	bool isFormatSupported(VulkanDevice *device);
 
-	std::unique_ptr<VulkanImage> create(VulkanDevice *device);
+	std::unique_ptr<VulkanImage> create(VulkanDevice *device, VkDeviceSize* allocatedBytes = nullptr);
+	std::unique_ptr<VulkanImage> tryCreate(VulkanDevice *device);
 
 private:
 	VkImageCreateInfo imageInfo = {};
@@ -92,6 +94,7 @@ public:
 
 	void setSize(size_t size);
 	void setUsage(VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY, VmaAllocationCreateFlags allocFlags = 0);
+	void setMemoryType(VkMemoryPropertyFlags requiredFlags, VkMemoryPropertyFlags preferredFlags, uint32_t memoryTypeBits = 0);
 
 	std::unique_ptr<VulkanBuffer> create(VulkanDevice *device);
 
@@ -157,6 +160,19 @@ public:
 private:
 	FixedSizeVector<VkDescriptorPoolSize, 8> poolSizes;
 	VkDescriptorPoolCreateInfo poolInfo = {};
+};
+
+class QueryPoolBuilder
+{
+public:
+	QueryPoolBuilder();
+
+	void setQueryType(VkQueryType type, int count, VkQueryPipelineStatisticFlags pipelineStatistics = 0);
+
+	std::unique_ptr<VulkanQueryPool> create(VulkanDevice *device);
+
+private:
+	VkQueryPoolCreateInfo poolInfo = {};
 };
 
 class FramebufferBuilder
@@ -387,6 +403,13 @@ inline void ImageBuilder::setUsage(VkImageUsageFlags usage, VmaMemoryUsage memor
 	allocInfo.flags = allocFlags;
 }
 
+inline void ImageBuilder::setMemoryType(VkMemoryPropertyFlags requiredFlags, VkMemoryPropertyFlags preferredFlags, uint32_t memoryTypeBits)
+{
+	allocInfo.requiredFlags = requiredFlags;
+	allocInfo.preferredFlags = preferredFlags;
+	allocInfo.memoryTypeBits = memoryTypeBits;
+}
+
 inline bool ImageBuilder::isFormatSupported(VulkanDevice *device)
 {
 	VkImageFormatProperties properties = { };
@@ -401,14 +424,33 @@ inline bool ImageBuilder::isFormatSupported(VulkanDevice *device)
 	return true;
 }
 
-inline std::unique_ptr<VulkanImage> ImageBuilder::create(VulkanDevice *device)
+inline std::unique_ptr<VulkanImage> ImageBuilder::create(VulkanDevice *device, VkDeviceSize* allocatedBytes)
+{
+	VkImage image;
+	VmaAllocation allocation;
+
+	VkResult result = vmaCreateImage(device->allocator, &imageInfo, &allocInfo, &image, &allocation, nullptr);
+	CheckVulkanError(result, "Could not create vulkan image");
+
+	if (allocatedBytes != nullptr)
+	{
+		VmaAllocationInfo allocatedInfo;
+		vmaGetAllocationInfo(device->allocator, allocation, &allocatedInfo);
+
+		*allocatedBytes = allocatedInfo.size;
+	}
+
+	return std::make_unique<VulkanImage>(device, image, allocation, imageInfo.extent.width, imageInfo.extent.height, imageInfo.mipLevels);
+}
+
+inline std::unique_ptr<VulkanImage> ImageBuilder::tryCreate(VulkanDevice *device)
 {
 	VkImage image;
 	VmaAllocation allocation;
 
 	VkResult result = vmaCreateImage(device->allocator, &imageInfo, &allocInfo, &image, &allocation, nullptr);
 	if (result != VK_SUCCESS)
-		I_FatalError("Could not create vulkan image");
+		return nullptr;
 
 	return std::make_unique<VulkanImage>(device, image, allocation, imageInfo.extent.width, imageInfo.extent.height, imageInfo.mipLevels);
 }
@@ -437,8 +479,7 @@ inline std::unique_ptr<VulkanImageView> ImageViewBuilder::create(VulkanDevice *d
 {
 	VkImageView view;
 	VkResult result = vkCreateImageView(device->device, &viewInfo, nullptr, &view);
-	if (result != VK_SUCCESS)
-		I_FatalError("Could not create texture image view");
+	CheckVulkanError(result, "Could not create texture image view");
 
 	return std::make_unique<VulkanImageView>(device, view);
 }
@@ -509,8 +550,7 @@ inline std::unique_ptr<VulkanSampler> SamplerBuilder::create(VulkanDevice *devic
 {
 	VkSampler sampler;
 	VkResult result = vkCreateSampler(device->device, &samplerInfo, nullptr, &sampler);
-	if (result != VK_SUCCESS)
-		I_FatalError("Could not create texture sampler");
+	CheckVulkanError(result, "Could not create texture sampler");
 	return std::make_unique<VulkanSampler>(device, sampler);
 }
 
@@ -534,14 +574,20 @@ inline void BufferBuilder::setUsage(VkBufferUsageFlags bufferUsage, VmaMemoryUsa
 	allocInfo.flags = allocFlags;
 }
 
+inline void BufferBuilder::setMemoryType(VkMemoryPropertyFlags requiredFlags, VkMemoryPropertyFlags preferredFlags, uint32_t memoryTypeBits)
+{
+	allocInfo.requiredFlags = requiredFlags;
+	allocInfo.preferredFlags = preferredFlags;
+	allocInfo.memoryTypeBits = memoryTypeBits;
+}
+
 inline std::unique_ptr<VulkanBuffer> BufferBuilder::create(VulkanDevice *device)
 {
 	VkBuffer buffer;
 	VmaAllocation allocation;
 
 	VkResult result = vmaCreateBuffer(device->allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
-	if (result != VK_SUCCESS)
-		I_FatalError("could not allocate memory for vulkan buffer");
+	CheckVulkanError(result, "Could not allocate memory for vulkan buffer");
 
 	return std::make_unique<VulkanBuffer>(device, buffer, allocation, bufferInfo.size);
 }
@@ -600,8 +646,7 @@ inline std::unique_ptr<VulkanDescriptorSetLayout> DescriptorSetLayoutBuilder::cr
 {
 	VkDescriptorSetLayout layout;
 	VkResult result = vkCreateDescriptorSetLayout(device->device, &layoutInfo, nullptr, &layout);
-	if (result != VK_SUCCESS)
-		I_FatalError("Could not create descriptor set layout");
+	CheckVulkanError(result, "Could not create descriptor set layout");
 	return std::make_unique<VulkanDescriptorSetLayout>(device, layout);
 }
 
@@ -634,9 +679,30 @@ inline std::unique_ptr<VulkanDescriptorPool> DescriptorPoolBuilder::create(Vulka
 {
 	VkDescriptorPool descriptorPool;
 	VkResult result = vkCreateDescriptorPool(device->device, &poolInfo, nullptr, &descriptorPool);
-	if (result != VK_SUCCESS)
-		I_FatalError("Could not create descriptor pool");
+	CheckVulkanError(result, "Could not create descriptor pool");
 	return std::make_unique<VulkanDescriptorPool>(device, descriptorPool);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+inline QueryPoolBuilder::QueryPoolBuilder()
+{
+	poolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+}
+
+inline void QueryPoolBuilder::setQueryType(VkQueryType type, int count, VkQueryPipelineStatisticFlags pipelineStatistics)
+{
+	poolInfo.queryType = type;
+	poolInfo.queryCount = count;
+	poolInfo.pipelineStatistics = pipelineStatistics;
+}
+
+inline std::unique_ptr<VulkanQueryPool> QueryPoolBuilder::create(VulkanDevice *device)
+{
+	VkQueryPool queryPool;
+	VkResult result = vkCreateQueryPool(device->device, &poolInfo, nullptr, &queryPool);
+	CheckVulkanError(result, "Could not create query pool");
+	return std::make_unique<VulkanQueryPool>(device, queryPool);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -678,8 +744,7 @@ inline std::unique_ptr<VulkanFramebuffer> FramebufferBuilder::create(VulkanDevic
 {
 	VkFramebuffer framebuffer = 0;
 	VkResult result = vkCreateFramebuffer(device->device, &framebufferInfo, nullptr, &framebuffer);
-	if (result != VK_SUCCESS)
-		I_FatalError("Failed to create framebuffer");
+	CheckVulkanError(result, "Could not create framebuffer");
 	return std::make_unique<VulkanFramebuffer>(device, framebuffer);
 }
 
@@ -693,7 +758,7 @@ inline GraphicsPipelineBuilder::GraphicsPipelineBuilder()
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pRasterizationState = &rasterizer;
 	pipelineInfo.pMultisampleState = &multisampling;
-	pipelineInfo.pDepthStencilState = nullptr;
+	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = &dynamicState;
 	pipelineInfo.subpass = 0;
@@ -823,8 +888,6 @@ inline void GraphicsPipelineBuilder::setDepthStencilEnable(bool test, bool write
 	depthStencil.depthTestEnable = test ? VK_TRUE : VK_FALSE;
 	depthStencil.depthWriteEnable = write ? VK_TRUE : VK_FALSE;
 	depthStencil.stencilTestEnable = stencil ? VK_TRUE : VK_FALSE;
-
-	pipelineInfo.pDepthStencilState = (test || write || stencil) ? &depthStencil : nullptr;
 }
 
 inline void GraphicsPipelineBuilder::setStencil(VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp, uint32_t compareMask, uint32_t writeMask, uint32_t reference)
@@ -971,8 +1034,7 @@ inline std::unique_ptr<VulkanPipeline> GraphicsPipelineBuilder::create(VulkanDev
 {
 	VkPipeline pipeline = 0;
 	VkResult result = vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
-	if (result != VK_SUCCESS)
-		I_FatalError("Could not create graphics pipeline");
+	CheckVulkanError(result, "Could not create graphics pipeline");
 	return std::make_unique<VulkanPipeline>(device, pipeline);
 }
 
@@ -1005,8 +1067,7 @@ inline std::unique_ptr<VulkanPipelineLayout> PipelineLayoutBuilder::create(Vulka
 {
 	VkPipelineLayout pipelineLayout;
 	VkResult result = vkCreatePipelineLayout(device->device, &pipelineLayoutInfo, nullptr, &pipelineLayout);
-	if (result != VK_SUCCESS)
-		I_FatalError("Could not create pipeline layout");
+	CheckVulkanError(result, "Could not create pipeline layout");
 	return std::make_unique<VulkanPipelineLayout>(device, pipelineLayout);
 }
 
@@ -1101,8 +1162,7 @@ inline std::unique_ptr<VulkanRenderPass> RenderPassBuilder::create(VulkanDevice 
 {
 	VkRenderPass renderPass = 0;
 	VkResult result = vkCreateRenderPass(device->device, &renderPassInfo, nullptr, &renderPass);
-	if (result != VK_SUCCESS)
-		I_FatalError("Could not create render pass");
+	CheckVulkanError(result, "Could not create render pass");
 	return std::make_unique<VulkanRenderPass>(device, renderPass);
 }
 
@@ -1234,8 +1294,7 @@ inline void QueueSubmit::addSignal(VulkanSemaphore *semaphore)
 inline void QueueSubmit::execute(VulkanDevice *device, VkQueue queue, VulkanFence *fence)
 {
 	VkResult result = vkQueueSubmit(device->graphicsQueue, 1, &submitInfo, fence ? fence->fence : VK_NULL_HANDLE);
-	if (result < VK_SUCCESS)
-		I_FatalError("Failed to submit command buffer");
+	CheckVulkanError(result, "Could not submit command buffer");
 }
 
 /////////////////////////////////////////////////////////////////////////////

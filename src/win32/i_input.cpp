@@ -92,6 +92,7 @@
 #include "events.h"
 #include "doomerrors.h"
 #include "g_levellocals.h"
+#include "atterm.h"
 
 
 // Compensate for w32api's lack

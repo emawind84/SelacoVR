@@ -806,6 +806,7 @@ set (VULKAN_SOURCES
 	rendering/vulkan/shaders/vk_shader.cpp
 	rendering/vulkan/textures/vk_samplers.cpp
 	rendering/vulkan/textures/vk_hwtexture.cpp
+	rendering/vulkan/textures/vk_imagetransition.cpp
 	rendering/vulkan/thirdparty/volk/volk.c
 	rendering/vulkan/thirdparty/vk_mem_alloc/vk_mem_alloc.cpp
 )
@@ -1131,6 +1132,7 @@ set (PCH_SOURCES
 	utility/nodebuilder/nodebuild_utility.cpp
 	utility/sc_man.cpp
 	utility/stats.cpp
+	utility/atterm.cpp
 	utility/cmdlib.cpp
 	utility/colormatcher.cpp
 	utility/configfile.cpp
@@ -1292,14 +1294,11 @@ endif()
 if( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 	# Need to enable intrinsics for these files.
 	if( SSE_MATTERS )
-		set_source_files_properties( x86.cpp PROPERTIES COMPILE_FLAGS "-msse2 -mmmx" )
-		if( TC_USE_SSE2 )
-			set_source_files_properties(
-				gl/system/gl_swframebuffer.cpp
-				polyrenderer/poly_all.cpp
-				swrenderer/r_all.cpp
-				PROPERTIES COMPILE_FLAGS "-msse2 -mmmx" )
-		endif()
+		set_source_files_properties(
+			rendering/polyrenderer/poly_all.cpp
+			rendering/swrenderer/r_all.cpp
+			utility/x86.cpp
+			PROPERTIES COMPILE_FLAGS "-msse2 -mmmx" )
 	endif()
 endif()
 

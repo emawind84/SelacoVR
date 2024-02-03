@@ -861,7 +861,6 @@ DEFINE_ACTION_FUNCTION_NATIVE(FDynArray_Obj, Find, ArrayFind<FDynArray_Obj COMMA
 
 int ObjArrayPush(FDynArray_Obj *self, DObject *obj)
 {
-    if (self == nullptr) NullParam("\"self\"");
 	GC::WriteBarrier(obj);
 	return self->Push(obj);
 }

@@ -32,6 +32,7 @@
 #include "gl/renderer/gl_renderbuffers.h"
 #include "gl/renderer/gl_postprocessstate.h"
 #include "gl/shaders/gl_shaderprogram.h"
+#include "gl/system/gl_buffers.h"
 #include <random>
 
 CVAR(Int, gl_multisample, 1, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
@@ -872,8 +873,6 @@ FShaderProgram *GLPPRenderState::GetGLShader(PPShader *shader)
 
 void GLPPRenderState::Draw()
 {
-	//FGLDebug::PushGroup(name.GetChars());
-
 	FGLPostProcessState savedState;
 
 	// Bind input textures
@@ -972,7 +971,7 @@ void GLPPRenderState::Draw()
 		if (!shader->Uniforms)
 			shader->Uniforms.reset(screen->CreateDataBuffer(POSTPROCESS_BINDINGPOINT, false, false));
 		shader->Uniforms->SetData(Uniforms.Data.Size(), Uniforms.Data.Data());
-		shader->Uniforms->BindBase();
+		static_cast<GLDataBuffer*>(shader->Uniforms.get())->BindBase();
 	}
 
 	// Set shader
@@ -986,8 +985,16 @@ void GLPPRenderState::Draw()
 		buffers->NextTexture();
 
 	glViewport(screen->mScreenViewport.left, screen->mScreenViewport.top, screen->mScreenViewport.width, screen->mScreenViewport.height);
+}
 
-	//FGLDebug::PopGroup();
+void GLPPRenderState::PushGroup(const FString &name)
+{
+	FGLDebug::PushGroup(name.GetChars());
+}
+
+void GLPPRenderState::PopGroup()
+{
+	FGLDebug::PopGroup();
 }
 
 
