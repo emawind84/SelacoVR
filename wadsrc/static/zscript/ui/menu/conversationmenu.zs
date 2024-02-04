@@ -127,7 +127,6 @@ class ConversationMenu : Menu
 			displayWidth = CleanWidth;
 			displayHeight = CleanHeight;
 			fontScale = CleanXfac;
-			fontFactor = 1;
 			refwidth = 320;
 			refheight = 200;
 			ReplyWidth = 320-50-10;
@@ -140,7 +139,6 @@ class ConversationMenu : Menu
 		{
 			displayFont = NewSmallFont;
 			fontScale = (CleanXfac+1) / 2;
-			fontFactor = double(CleanXfac) / fontScale;
 			refwidth = 640;
 			refheight = 400;
 			ReplyWidth = 640-100-20;
