@@ -188,22 +188,10 @@ short			consistancy[MAXPLAYERS][BACKUPTICS];
  
 #define TURBOTHRESHOLD	12800
 
-CUSTOM_CVAR (Int, turnspeedwalkfast, 640, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-{
-	if (self <= 0) self = 1;
-}
-CUSTOM_CVAR (Int, turnspeedsprintfast, 1280, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-{
-	if (self <= 0) self = 1;
-}
-CUSTOM_CVAR (Int, turnspeedwalkslow, 320, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-{
-	if (self <= 0) self = 1;
-}
-CUSTOM_CVAR (Int, turnspeedsprintslow, 320, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-{
-	if (self <= 0) self = 1;
-}
+EXTERN_CVAR (Int, turnspeedwalkfast)
+EXTERN_CVAR (Int, turnspeedsprintfast)
+EXTERN_CVAR (Int, turnspeedwalkslow)
+EXTERN_CVAR (Int, turnspeedsprintslow)
 
 int				forwardmove[2], sidemove[2];
 FIntCVar		*angleturn[4] = {&turnspeedwalkfast, &turnspeedsprintfast, &turnspeedwalkslow, &turnspeedsprintslow};

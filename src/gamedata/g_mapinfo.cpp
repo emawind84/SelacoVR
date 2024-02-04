@@ -2215,7 +2215,7 @@ void FMapInfoParser::ParseMapInfo (int lump, level_info_t &gamedefaults, level_i
 
 	if (ParsedLumps.Find(lump) != ParsedLumps.Size())
 	{
-		sc.ScriptMessage("MAPINFO file is processed more that once\n");
+		sc.ScriptMessage("MAPINFO file is processed more than once\n");
 	}
 	else
 	{
