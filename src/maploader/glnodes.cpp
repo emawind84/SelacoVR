@@ -1202,13 +1202,9 @@ UNSAFE_CCMD(clearnodecache)
 	FString path = M_GetCachePath(false);
 	path += "/";
 
-	try
+	if (!ScanDirectory(list, path))
 	{
-		ScanDirectory(list, path);
-	}
-	catch (CRecoverableError &err)
-	{
-		Printf("%s\n", err.GetMessage());
+		Printf("Unable to scan node cache directory %s\n", path.GetChars());
 		return;
 	}
 
