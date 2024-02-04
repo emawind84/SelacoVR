@@ -102,9 +102,12 @@ FSpecialFont::FSpecialFont (const char *name, int first, int count, FTexture **l
 
 		if (charlumps[i] != nullptr)
 		{
-			charlumps[i]->SetUseType(ETextureType::FontChar);
+			auto pic = charlumps[i];
+			Chars[i].OriginalPic = new FImageTexture(pic->GetImage(), "");
+			Chars[i].OriginalPic->SetUseType(ETextureType::FontChar);
+			Chars[i].OriginalPic->CopySize(pic);
+			TexMan.AddTexture(Chars[i].OriginalPic);
 
-			Chars[i].OriginalPic = charlumps[i];
 			if (!noTranslate)
 			{
 				Chars[i].TranslatedPic = new FImageTexture(new FFontChar1 (charlumps[i]->GetImage()), "");

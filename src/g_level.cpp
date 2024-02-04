@@ -71,7 +71,6 @@
 #include "d_netinf.h"
 #include "menu/menu.h"
 #include "a_sharedglobal.h"
-#include "r_renderer.h"
 #include "r_utility.h"
 #include "p_spec.h"
 #include "serializer.h"
@@ -883,12 +882,13 @@ bool FLevelLocals::DoCompleted (FString nextlevel, wbstartstruct_t &wminfo)
 
 	// [RH] Mark this level as having been visited
 	if (!(flags & LEVEL_CHANGEMAPCHEAT))
-		FindLevelInfo (MapName)->flags |= LEVEL_VISITED;
+		info->flags |= LEVEL_VISITED;
 	
 	uint32_t langtable[2] = {};
 	wminfo.finished_ep = cluster - 1;
 	wminfo.LName0 = TexMan.CheckForTexture(info->PName, ETextureType::MiscPatch);
 	wminfo.thisname = info->LookupLevelName(&langtable[0]);	// re-get the name so we have more info about its origin.
+	if (!wminfo.LName0.isValid() || !(info->flags3 & LEVEL3_HIDEAUTHORNAME)) wminfo.thisauthor = info->AuthorName;
 	wminfo.current = MapName;
 
 	if (deathmatch &&
@@ -915,7 +915,30 @@ bool FLevelLocals::DoCompleted (FString nextlevel, wbstartstruct_t &wminfo)
 			wminfo.next = nextinfo->MapName;
 			wminfo.LName1 = TexMan.CheckForTexture(nextinfo->PName, ETextureType::MiscPatch);
 			wminfo.nextname = nextinfo->LookupLevelName(&langtable[1]);
-			if (!(nextinfo->flags3 & LEVEL3_HIDEAUTHORNAME)) wminfo.nextauthor = nextinfo->AuthorName;
+			if (!wminfo.LName1.isValid() || !(nextinfo->flags3 & LEVEL3_HIDEAUTHORNAME)) wminfo.nextauthor = nextinfo->AuthorName;
+		}
+	}
+
+	// This cannot use any common localization logic because it may not replace user content at all.
+	// Unlike the menus, replacements here do not merely change the style but also the content.
+	// On the other hand, the IWAD lumps may always be replaced with text, because they are the same style as the BigFont.
+	if (gameinfo.flags & GI_IGNORETITLEPATCHES)
+	{
+		FTextureID *texids[] = { &wminfo.LName0, &wminfo.LName1 };
+		for (int i = 0; i < 2; i++)
+		{
+			if (texids[i]->isValid() && langtable[i] != FStringTable::default_table)
+			{
+				FTexture *tex = TexMan.GetTexture(*texids[i]);
+				if (tex != nullptr)
+				{
+					int filenum = Wads.GetLumpFile(tex->GetSourceLump());
+					if (filenum >= 0 && filenum <= Wads.GetMaxIwadNum())
+					{
+						texids[i]->SetInvalid();
+					}
+				}
+			}
 		}
 	}
 

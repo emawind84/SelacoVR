@@ -64,7 +64,6 @@
 #include "p_acs.h"
 #include "p_effect.h"
 #include "m_joy.h"
-#include "r_renderer.h"
 #include "r_utility.h"
 #include "a_morph.h"
 #include "p_spec.h"
@@ -1093,7 +1092,7 @@ void G_Ticker ()
 			G_DoLoadGame ();
 			break;
 		case ga_savegame:
-			G_DoSaveGame (doquicksave, false, savegamefile, savedescription);
+			G_DoSaveGame (true, false, savegamefile, savedescription);
 			gameaction = ga_nothing;
 			savegamefile = "";
 			savedescription = "";
@@ -2139,7 +2138,7 @@ void G_DoAutoSave ()
 
 	readableTime = myasctime ();
 	description.Format("Autosave %s", readableTime);
-	G_DoSaveGame (doquicksave, false, file, description);
+	G_DoSaveGame (false, false, file, description);
 }
 
 void G_DoQuickSave ()
@@ -2150,7 +2149,7 @@ void G_DoQuickSave ()
 	UCVarValue num;
 	const char *readableTime;
 	int count = quicksaverotationcount != 0 ? quicksaverotationcount : 1;
-
+	
 	if (quicksavenum < 0) 
 	{
 		lastquicksave = 0;
@@ -2167,7 +2166,7 @@ void G_DoQuickSave ()
 
 	readableTime = myasctime ();
 	description.Format("Quicksave %s", readableTime);
-	G_DoSaveGame (doquicksave, true, file, description);
+	G_DoSaveGame (true, true, file, description);
 }
 
 

@@ -344,6 +344,7 @@ if( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 	if( WIN32 )
 		set( CMAKE_CXX_FLAGS "-Wno-unknown-pragmas -Wno-comment -Wno-format ${CMAKE_CXX_FLAGS}" )
 		set( CMAKE_CXX_FLAGS "-D_UNICODE -DUNICODE ${CMAKE_CXX_FLAGS}" )
+		set( CMAKE_CXX_FLAGS "-D_WIN32_WINNT=0x0600 ${CMAKE_CXX_FLAGS}" )
 		set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -municode" )
 	endif()
 
@@ -601,10 +602,6 @@ file( GLOB HEADER_FILES
 	utility/sfmt/*.h
 	utility/math./*h
 	utility/*.h
-	textures/*.h
-	textures/hires/hqnx/*.h
-	textures/hires/hqnx_asm/*.h
-	textures/hires/xbr/*.h
 	scripting/*.h
 	scripting/backend/*.h
 	scripting/decorate/*.h
@@ -612,6 +609,7 @@ file( GLOB HEADER_FILES
 	scripting/vm/*.h
 	sound/midisources/*.h
 	sound/thirdparty/*.h
+	rendering/*.h
 	rendering/2d/*.h
 	rendering/swrenderer/*.h
 	rendering/swrenderer/textures/*.h
@@ -809,6 +807,7 @@ set (VULKAN_SOURCES
 	rendering/vulkan/system/vk_buffers.cpp
 	rendering/vulkan/renderer/vk_renderstate.cpp
 	rendering/vulkan/renderer/vk_renderpass.cpp
+	rendering/vulkan/renderer/vk_streambuffer.cpp
 	rendering/vulkan/renderer/vk_postprocess.cpp
 	rendering/vulkan/renderer/vk_renderbuffers.cpp
 	rendering/vulkan/shaders/vk_shader.cpp
@@ -862,7 +861,7 @@ set (PCH_SOURCES
 	m_cheat.cpp
 	m_joy.cpp
 	m_misc.cpp
-	p_acs.cpp
+	playsim/p_acs.cpp
 	playsim/p_actionfunctions.cpp
 	p_conversation.cpp
 	playsim/p_destructible.cpp
@@ -882,9 +881,9 @@ set (PCH_SOURCES
 	playsim/p_things.cpp
 	p_tick.cpp
 	playsim/p_user.cpp
-	r_utility.cpp
-	r_sky.cpp
-	r_videoscale.cpp
+	rendering/r_utility.cpp
+	rendering/r_sky.cpp
+	rendering/r_videoscale.cpp
 	sound/s_advsound.cpp
 	sound/s_environment.cpp
 	sound/s_reverbedit.cpp
@@ -895,9 +894,9 @@ set (PCH_SOURCES
 	serializer.cpp
 	scriptutil.cpp
 	st_stuff.cpp
-	v_framebuffer.cpp
-	v_palette.cpp
-	v_video.cpp
+	rendering/v_framebuffer.cpp
+	r_data/v_palette.cpp
+	rendering/v_video.cpp
 	wi_stuff.cpp
 	gamedata/a_keys.cpp
 	gamedata/a_weapons.cpp
@@ -1224,21 +1223,22 @@ include_directories( .
 	gamedata/fonts
 	rendering
 	rendering/2d
+	r_data
 	sound
 	sound/music
 	sound/backend
-	textures
 	xlat
 	utility
 	utility/nodebuilder
 	scripting
 	scripting/vm
+	rendering
 	rendering/vulkan/thirdparty
 	../libraries/gdtoa
 	../libraries/dumb/include
 	../libraries/glslang/glslang/Public
 	../libraries/glslang/spirv
-	${CMAKE_BINARY_DIR}/gdtoa
+	${CMAKE_BINARY_DIR}/libraries/gdtoa
 	${SYSTEM_SOURCES_DIR} )
 
 add_dependencies( zdoom revision_check )
@@ -1311,8 +1311,14 @@ if( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 endif()
 
 if( APPLE )
+	set( LINK_FRAMEWORKS "-framework Cocoa -framework IOKit -framework OpenGL")
+
+	if( HAVE_VULKAN )
+		set( LINK_FRAMEWORKS "${LINK_FRAMEWORKS} -framework QuartzCore" )
+	endif()
+
 	set_target_properties(zdoom PROPERTIES
-		LINK_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL"
+		LINK_FLAGS "${LINK_FRAMEWORKS}"
 		MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/posix/osx/zdoom-info.plist"
 		XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "" )
 

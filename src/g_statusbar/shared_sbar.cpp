@@ -86,7 +86,7 @@ EXTERN_CVAR (Int, con_scaletext)
 EXTERN_CVAR(Bool, vid_fps)
 EXTERN_CVAR(Bool, inter_subtitles)
 CVAR(Int, hud_scale, 0, CVAR_ARCHIVE);
-
+CVAR(Bool, log_vgafont, false, CVAR_ARCHIVE)
 
 DBaseStatusBar *StatusBar;
 
@@ -447,6 +447,7 @@ void DBaseStatusBar::OnDestroy ()
 		while (msg)
 		{
 			DHUDMessageBase *next = msg->Next;
+			msg->Next = nullptr;
 			msg->Destroy();
 			msg = next;
 		}
@@ -604,6 +605,7 @@ void DBaseStatusBar::DoDrawAutomapHUD(int crdefault, int highlight)
 
 	if (am_showtime)
 	{
+		if (vid_fps) y += (NewConsoleFont->GetHeight() * active_con_scale() + 5) / scale;
 		sec = Tics2Seconds(primaryLevel->time);
 		textbuffer.Format("%02d:%02d:%02d", sec / 3600, (sec % 3600) / 60, sec % 60);
 		screen->DrawText(font, crdefault, vwidth - zerowidth * 8 - textdist, y, textbuffer, DTA_VirtualWidth, vwidth, DTA_VirtualHeight, vheight,
@@ -647,6 +649,11 @@ void DBaseStatusBar::DoDrawAutomapHUD(int crdefault, int highlight)
 	}
 
 	FormatMapName(primaryLevel, crdefault, &textbuffer);
+
+	if (!generic_ui)
+	{
+		if (!font->CanPrint(textbuffer)) font = OriginalSmallFont;
+	}
 
 	auto lines = V_BreakLines(font, vwidth - 32, textbuffer, true);
 	auto numlines = lines.Size();
@@ -726,7 +733,6 @@ void DBaseStatusBar::Tick ()
 	for (size_t i = 0; i < countof(Messages); ++i)
 	{
 		DHUDMessageBase *msg = Messages[i];
-		TObjPtr<DHUDMessageBase *>*prev = &Messages[i];
 
 		while (msg)
 		{
@@ -734,12 +740,8 @@ void DBaseStatusBar::Tick ()
 
 			if (msg->CallTick ())
 			{
-				*prev = next;
+				DetachMessage(msg);
 				msg->Destroy();
-			}
-			else
-			{
-				prev = &msg->Next;
 			}
 			msg = next;
 		}
@@ -1227,13 +1229,12 @@ void DBaseStatusBar::DrawLog ()
 	if (text.IsNotEmpty())
 	{
 		// This uses the same scaling as regular HUD messages
-		auto scale = active_con_scaletext(generic_ui);
+		auto scale = active_con_scaletext(generic_ui || log_vgafont);
 		hudwidth = SCREENWIDTH / scale;
 		hudheight = SCREENHEIGHT / scale;
-		FFont *font = C_GetDefaultHUDFont();
+		FFont *font = (generic_ui || log_vgafont)? NewSmallFont : SmallFont;
 
 		int linelen = hudwidth<640? Scale(hudwidth,9,10)-40 : 560;
-		const FString & text = (inter_subtitles && CPlayer->SubtitleCounter) ? CPlayer->SubtitleText : CPlayer->LogText;
 		auto lines = V_BreakLines (font, linelen, text[0] == '$'? GStrings(text.GetChars()+1) : text.GetChars());
 		int height = 20;
 

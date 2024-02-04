@@ -64,9 +64,9 @@ class DoomStatusBar : BaseStatusBar
 			DrawImage("STFBANY", (143, 168), DI_ITEM_OFFSETS|DI_TRANSLATABLE);
 		}
 		
-		if (CPlayer.mo.InvSel != null && !level.NoInventoryBar)
+		if (CPlayer.mo.InvSel != null && !Level.NoInventoryBar)
 		{
-			DrawInventoryIcon(CPlayer.mo.InvSel, (160, 198), DI_DIMDEPLETED);
+			DrawInventoryIcon(CPlayer.mo.InvSel, (160, 198));
 			if (CPlayer.mo.InvSel.Amount > 1)
 			{
 				DrawString(mAmountFont, FormatNumber(CPlayer.mo.InvSel.Amount), (175, 198-mIndexFont.mFont.GetHeight()), DI_TEXT_ALIGN_RIGHT, Font.CR_GOLD);

@@ -705,10 +705,6 @@ class LevelCompatibility : LevelPostProcessor
 			{
 				// Missing texture
 				SetWallTexture(648, Line.back, Side.bottom, "PIPES");
-				// Change locked door at last room to a repeatable Door_LockedRaise
-				// instead of a one-shot Door_Open (red keycard only on deathmatch)
-				SetLineSpecial(632, Door_LockedRaise, 0, 16, 150, 129);
-				SetLineFlags(632, Line.ML_REPEAT_SPECIAL);
 				// Remove erroneous tag for teleporter at the south building
 				ClearSectorTags(149);
 				break;
@@ -793,14 +789,15 @@ class LevelCompatibility : LevelPostProcessor
 			case 'B5506B1E8F2FC272AD0C77B9E0DF5491': // doom2.wad map19
 			{
 				// missing textures
+				SetWallTexture(355, Line.back, Side.top, "STONE2");
+				SetWallTexture(736, Line.front, Side.top, "SLADWALL");
+				SetWallTexture(1181, Line.back, Side.top, "MARBLE1");
+
 				TextureID step4 = TexMan.CheckForTexture("STEP4", TexMan.Type_Wall);
 				for(int i=0; i<3; i++)
 				{
 					SetWallTextureID(286+i, Line.back, Side.bottom, STEP4);
 				}
-				SetWallTexture(355, Line.back, Side.top, "STONE2");
-				SetWallTexture(736, Line.front, Side.top, "SLADWALL");
-				SetWallTexture(1181, Line.back, Side.top, "MARBLE1");
 				// Southwest teleporter in the teleporter room now works on
 				// easier difficulties
 				SetThingSkills(112, 31);

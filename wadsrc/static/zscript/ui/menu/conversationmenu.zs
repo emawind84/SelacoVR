@@ -78,7 +78,7 @@ class ConversationMenu : Menu
 	Array<uint> mResponses;
 	bool mShowGold;
 	bool mHasBackdrop;
-	bool mConfineTextToBackdrop; // hack hack
+	bool mConfineTextToBackdrop;
 	StrifeDialogueNode mCurNode;
 	int mYpos;
 	PlayerInfo mPlayer;
@@ -116,28 +116,51 @@ class ConversationMenu : Menu
 		mShowGold = false;
 		ConversationPauseTic = gametic + 20;
 		DontDim = true;
-		if (!generic_ui)
+		
+		let tex = TexMan.CheckForTexture (CurNode.Backdrop, TexMan.Type_MiscPatch);
+		mHasBackdrop = tex.isValid();
+		DontBlur = !mHasBackdrop;
+		
+		if (!generic_ui && !dlg_vgafont)
 		{
 			displayFont = SmallFont;
 			displayWidth = CleanWidth;
 			displayHeight = CleanHeight;
 			fontScale = CleanXfac;
+			fontFactor = 1;
 			refwidth = 320;
 			refheight = 200;
 			ReplyWidth = 320-50-10;
 			SpeechWidth = screen.GetWidth()/CleanXfac - 24*2;
 			ReplyLineHeight = LineHeight = displayFont.GetHeight();
+			mConfineTextToBackdrop = false;
+			speechDisplayWidth = displayWidth;
 		}
 		else
 		{
 			displayFont = NewSmallFont;
 			fontScale = (CleanXfac+1) / 2;
-			displayWidth = screen.GetWidth() / fontScale;
-			displayHeight = screen.GetHeight() / fontScale;
+			fontFactor = double(CleanXfac) / fontScale;
 			refwidth = 640;
 			refheight = 400;
 			ReplyWidth = 640-100-20;
-			SpeechWidth = screen.GetWidth()/fontScale - (24*2 * CleanXfac / fontScale);
+			displayWidth = screen.GetWidth() / fontScale;
+			displayHeight = screen.GetHeight() / fontScale;
+			let aspect = Screen.GetAspectRatio();
+			if (!mHasBackdrop || aspect <= 1.3334)
+			{
+				SpeechWidth = screen.GetWidth()/fontScale - (24*3 * CleanXfac / fontScale);
+				mConfineTextToBackdrop = false;
+				speechDisplayWidth = displayWidth;
+			}
+			else
+			{
+				let formatWidth = Screen.GetHeight() * 1.3333;
+				SpeechWidth = formatWidth / fontScale - (24*3 * CleanXfac / fontScale);
+				mConfineTextToBackdrop = true;
+				speechDisplayWidth = formatWidth / fontScale;
+			}
+			
 			LineHeight = displayFont.GetHeight() + 2;
 			ReplyLineHeight = LineHeight * fontScale / CleanYfac;
 		}
@@ -444,13 +467,13 @@ class ConversationMenu : Menu
 
 		if (speakerName.Length() > 0)
 		{
-			screen.DrawText(displayFont, Font.CR_WHITE, x / fontScale, y / fontScale, speakerName, DTA_KeepRatio, true, DTA_VirtualWidth, displayWidth, DTA_VirtualHeight, displayHeight);
+			screen.DrawText(displayFont, Font.CR_WHITE, x / fontScale, y / fontScale, speakerName, DTA_KeepRatio, !mConfineTextToBackdrop, DTA_VirtualWidth, speechDisplayWidth, DTA_VirtualHeight, displayHeight);
 			y += linesize * 3 / 2;
 		}
 		x = 24 * screen.GetWidth() / 320;
 		for (int i = 0; i < cnt; ++i)
 		{
-			screen.DrawText(displayFont, Font.CR_UNTRANSLATED, x / fontScale, y / fontScale, mDialogueLines.StringAt(i), DTA_KeepRatio, true, DTA_VirtualWidth, displayWidth, DTA_VirtualHeight, displayHeight);
+			screen.DrawText(displayFont, Font.CR_UNTRANSLATED, x / fontScale, y / fontScale, mDialogueLines.StringAt(i), DTA_KeepRatio, !mConfineTextToBackdrop, DTA_VirtualWidth, speechDisplayWidth, DTA_VirtualHeight, displayHeight);
 			y += linesize;
 		}
 	}

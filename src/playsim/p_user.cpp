@@ -78,7 +78,6 @@
 #include "c_dispatch.h"
 #include "d_net.h"
 #include "serializer.h"
-#include "r_renderer.h"
 #include "d_player.h"
 #include "r_utility.h"
 #include "p_blockmap.h"
@@ -443,6 +442,8 @@ DEFINE_ACTION_FUNCTION(_PlayerInfo, SetLogText)
 void player_t::SetSubtitle(int num, FSoundID soundid)
 {
 	char lumpname[36];
+
+	if (gameinfo.flags & GI_SHAREWARE) return;	// Subtitles are only for the full game.
 
 	// Do we have a subtitle for this log entry's voice file?
 	mysnprintf(lumpname, countof(lumpname), "$TXT_SUB_LOG%d", num);
@@ -847,7 +848,7 @@ static int SetupCrouchSprite(AActor *self, int crouchsprite)
 		int wadnorm = Wads.GetLumpFile(spritenorm);
 		int wadcrouch = Wads.GetLumpFile(spritenorm);
 
-		if (wadnorm > Wads.GetIwadNum() && wadcrouch <= Wads.GetIwadNum())
+		if (wadnorm > Wads.GetMaxIwadNum() && wadcrouch <= Wads.GetMaxIwadNum())
 		{
 			// Question: Add an option / disable crouching or do what?
 			return false;
