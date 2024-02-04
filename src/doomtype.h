@@ -237,7 +237,6 @@ inline double RAD2DEG(double deg)
 	return deg * (180. / M_PI);
 }
 
-
 // Auto-registration sections for GCC.
 // Apparently, you cannot do string concatenation inside section attributes.
 #ifdef __MACH__
