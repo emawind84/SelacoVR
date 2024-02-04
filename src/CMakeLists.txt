@@ -1140,7 +1140,6 @@ set (PCH_SOURCES
 	utility/atterm.cpp
 	utility/cmdlib.cpp
 	utility/configfile.cpp
-	utility/i_module.cpp
 	utility/i_time.cpp
 	utility/m_alloc.cpp
 	utility/m_argv.cpp
@@ -1240,7 +1239,6 @@ include_directories( .
 	rendering
 	rendering/vulkan/thirdparty
 	../libraries/gdtoa
-	../libraries/dumb/include
 	../libraries/glslang/glslang/Public
 	../libraries/glslang/spirv
 	${CMAKE_BINARY_DIR}/libraries/gdtoa
