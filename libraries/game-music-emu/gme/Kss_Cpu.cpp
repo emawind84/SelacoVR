@@ -1,4 +1,4 @@
-// Game_Music_Emu 0.6.0. http://www.slack.net/~ant/
+// Game_Music_Emu https://bitbucket.org/mpyne/game-music-emu/
 
 /*
 Last validated with zexall 2006.11.14 2:19 PM
@@ -161,11 +161,6 @@ static byte const ed_dd_timing [0x100] = {
 0x00,0x06,0x00,0x0F,0x00,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,
 };
-
-// even on x86, using short and unsigned char was slower
-typedef int         fint16;
-typedef unsigned    fuint16;
-typedef unsigned    fuint8;
 
 bool Kss_Cpu::run( cpu_time_t end_time )
 {
@@ -501,7 +496,7 @@ possibly_out_of_time:
 	add_hl_data: {
 		blargg_ulong sum = rp.hl + data;
 		data ^= rp.hl;
-		rp.hl = (uint16_t)sum;
+		rp.hl = sum;
 		flags = (flags & (S80 | Z40 | V04)) |
 				(sum >> 16) |
 				(sum >> 8 & (F20 | F08)) |
@@ -1083,7 +1078,7 @@ possibly_out_of_time:
 			blargg_ulong sum = temp + (flags & C01);
 			flags = ~data >> 2 & N02;
 			if ( flags )
-				sum = (blargg_ulong)-(blargg_long)sum;
+				sum = -sum;
 			sum += rp.hl;
 			temp ^= rp.hl;
 			temp ^= sum;
@@ -1091,7 +1086,7 @@ possibly_out_of_time:
 					(temp >> 8 & H10) |
 					(sum >> 8 & (S80 | F20 | F08)) |
 					((temp - -0x8000) >> 14 & V04);
-			rp.hl = (uint16_t)sum;
+			rp.hl = sum;
 			if ( (uint16_t) sum )
 				goto loop;
 			flags |= Z40;

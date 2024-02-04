@@ -382,8 +382,10 @@ void FSavegameManager::NotifyNewSave(const FString &file, const FString &title, 
 	{
 		if (quickSaveSlot == nullptr || quickSaveSlot == (FSaveGameNode*)1 || forceQuicksave) quickSaveSlot = node;
 	}
-	if (!strstr(node->SaveTitle.GetChars(),"Autosave")) LastAccessed = LastSaved = index;
-	else LastAccessed = ++LastSaved;
+	else
+	{
+		LastAccessed = ++LastSaved;
+	}
 }
 
 //=============================================================================
