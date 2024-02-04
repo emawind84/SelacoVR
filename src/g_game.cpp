@@ -143,7 +143,6 @@ bool			sendsave;				// send a save event next tic
 bool			sendturn180;			// [RH] send a 180 degree turn next tic
 bool 			usergame;				// ok to save / end game
 bool			insave;					// Game is saving - used to block exit commands
-bool			doquicksave = false;
 
 bool			timingdemo; 			// if true, exit with report on completion 
 bool 			nodrawers;				// for comparative timing purposes 
@@ -1086,7 +1085,6 @@ void G_Ticker ()
 			savedescription = "";
 			break;
 		case ga_autosave:
-			doquicksave = false;
 			G_DoAutoSave ();
 			gameaction = ga_nothing;
 			break;
@@ -2102,7 +2100,7 @@ void G_DoAutoSave ()
 	UCVarValue num;
 	const char *readableTime;
 	int count = autosavecount != 0 ? autosavecount : 1;
-
+	
 	if (nextautosave == -1) 
 	{
 		nextautosave = (autosavenum + 1) % count;

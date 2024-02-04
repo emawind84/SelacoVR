@@ -124,7 +124,6 @@ void G_AddViewAngle (int yaw, bool mouse = false);
 
 extern const AActor *SendItemUse, *SendItemDrop;
 extern int SendItemDropAmount;
-extern bool doquicksave;
 
 const int SAVEPICWIDTH = 216;
 const int SAVEPICHEIGHT = 162;
