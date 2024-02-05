@@ -895,8 +895,8 @@ class StatusScreen abstract play version("2.5")
 		enteringPatch = TexMan.CheckForTexture("WIENTER", TexMan.Type_MiscPatch);	// "entering"
 		finishedPatch = TexMan.CheckForTexture("WIF", TexMan.Type_MiscPatch);			// "finished"
 
-		lnametexts[0] = wbstartstruct.thisname;		
-		lnametexts[1] = wbstartstruct.nextname;
+		lnametexts[0] = StringTable.Localize(wbstartstruct.thisname);		
+		lnametexts[1] = StringTable.Localize(wbstartstruct.nextname);
 		authortexts[0] = StringTable.Localize(wbstartstruct.thisauthor);
 		authortexts[1] = StringTable.Localize(wbstartstruct.nextauthor);
 

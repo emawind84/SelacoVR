@@ -266,6 +266,25 @@ void R_InitColormaps (bool allowCustomColormap)
 		}
 	}
 
+	// some of us really don't like Doom's idea of an invulnerability sphere colormap
+	// this hack will override that
+	if (allowCustomColormap && cl_customizeinvulmap)
+	{
+		uint32_t color1 = cl_custominvulmapcolor1;
+		uint32_t color2 = cl_custominvulmapcolor2;
+		float r1 = (float)((color1 & 0xff0000) >> 16) / 128.f;
+		float g1 = (float)((color1 & 0x00ff00) >> 8) / 128.f;
+		float b1 = (float)((color1 & 0x0000ff) >> 0) / 128.f;
+		float r2 = (float)((color2 & 0xff0000) >> 16) / 128.f;
+		float g2 = (float)((color2 & 0x00ff00) >> 8) / 128.f;
+		float b2 = (float)((color2 & 0x0000ff) >> 0) / 128.f;
+		SpecialColormapParms[0] = {{r1, g1, b1}, {r2, g2, b2}};
+	}
+	else
+	{
+		SpecialColormapParms[0] = {{1.0, 1.0, 1.0}, {0.0, 0.0, 0.0}};
+	}
+
 	// build default special maps (e.g. invulnerability)
 
 	for (unsigned i = 0; i < countof(SpecialColormapParms); ++i)

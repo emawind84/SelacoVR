@@ -746,17 +746,6 @@ set( VM_JIT_SOURCES
 	scripting/vm/jit_store.cpp
 )
 
-set( VM_JIT_SOURCES
-	scripting/vm/jit.cpp
-	scripting/vm/jit_runtime.cpp
-	scripting/vm/jit_call.cpp
-	scripting/vm/jit_flow.cpp
-	scripting/vm/jit_load.cpp
-	scripting/vm/jit_math.cpp
-	scripting/vm/jit_move.cpp
-	scripting/vm/jit_store.cpp
-)
-
 # This is disabled for now because I cannot find a way to give the .pch file a different name.
 # Visual C++ 2015 seems hell-bent on only allowing one .pch file with the same name as the executable.
 #enable_precompiled_headers( g_pch2.h FASTMATH_PCH_SOURCES )
@@ -1005,6 +994,7 @@ set (PCH_SOURCES
 	maploader/polyobjects.cpp
 	maploader/renderinfo.cpp
 	maploader/compatibility.cpp
+	maploader/postprocessor.cpp
 	menu/joystickmenu.cpp
 	menu/loadsavemenu.cpp
 	menu/menu.cpp
