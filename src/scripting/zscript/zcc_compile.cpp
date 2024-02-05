@@ -153,6 +153,8 @@ void ZCCCompiler::ProcessClass(ZCC_Class *cnode, PSymbolTreeNode *treenode)
 	}
 
 	auto node = cnode->Body;
+	auto origNextNode = cnode->Body;
+	ZCC_MixinDef *mixinDef = nullptr;
 	PSymbolTreeNode *childnode;
 	ZCC_Enum *enumType = nullptr;
 
@@ -325,6 +327,12 @@ void ZCCCompiler::ProcessClass(ZCC_Class *cnode, PSymbolTreeNode *treenode)
 		}
 
 		node = node->SiblingNext;
+
+		if (mixinDef != nullptr && node == mixinDef->Body)
+		{
+			node = origNextNode;
+			mixinDef = nullptr;
+		}
 	}
 	while (node != cnode->Body);
 }
