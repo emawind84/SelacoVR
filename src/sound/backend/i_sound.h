@@ -37,7 +37,7 @@
 
 #include <vector>
 #include "i_soundinternal.h"
-#include "zstring.h"
+#include "utility/zstring.h"
 #include "zmusic/zmusic.h"
 
 class FileReader;
