@@ -634,8 +634,6 @@ class LevelCompatibility : LevelPostProcessor
 				SetWallTextureID(328, Line.front, Side.bottom, stone4);
 				SetWallTextureID(338, Line.front, Side.bottom, stone4);
 				SetWallTextureID(339, Line.front, Side.bottom, stone4);
-				// Stuck shotgun guy
-				SetThingXY(85, 960, 904);
 				break;
 			}
 
@@ -745,7 +743,8 @@ class LevelCompatibility : LevelPostProcessor
 					SetWallTextureID(1137+i, Line.back, Side.top, BSTONE1);
 					SetWallTextureID(1140+i, Line.back, Side.top, BSTONE1);
 				}
-				// Raise floor between lifts to fix HOMs
+				
+				// Raise floor between lifts to correspond with others.
 				OffsetSectorPlane(106, Sector.floor, 16);
 				break;
 			}
@@ -780,8 +779,8 @@ class LevelCompatibility : LevelPostProcessor
 			case '0D491365C1B88B7D1B603890100DD03E': // doom2.wad map18
 			{
 				// missing textures
-				SetWallTexture(451, Line.front, Side.mid, "doorstop");
-				SetWallTexture(459, Line.front, Side.mid, "doorstop");
+				SetWallTexture(451, Line.front, Side.mid, "metal");
+				SetWallTexture(459, Line.front, Side.mid, "metal");
 				SetWallTexture(574, Line.front, Side.top, "grayvine");
 				break;
 			}
@@ -792,7 +791,7 @@ class LevelCompatibility : LevelPostProcessor
 				SetWallTexture(355, Line.back, Side.top, "STONE2");
 				SetWallTexture(736, Line.front, Side.top, "SLADWALL");
 				SetWallTexture(1181, Line.back, Side.top, "MARBLE1");
-
+				
 				TextureID step4 = TexMan.CheckForTexture("STEP4", TexMan.Type_Wall);
 				for(int i=0; i<3; i++)
 				{
@@ -968,7 +967,7 @@ class LevelCompatibility : LevelPostProcessor
 			case 'CA3773ED313E8899311F3DD0CA195A68': // heretic.wad e3m6
 			{
 				// Quartz flask outside of map
-				SetThingXY(373, -384, 1088);
+				SetThingSkills(373, 0);
 				// Missing wall torch on hard difficulty
 				SetThingSkills(448, 31);
 				// Missing textures
