@@ -22,36 +22,6 @@
 
 #pragma once
 
-#include <vector>
+class PolyTriangleThreadData;
 
-struct TriVertex;
-
-class PolyZBuffer
-{
-public:
-	static PolyZBuffer *Instance();
-	void Resize(int newwidth, int newheight);
-	int Width() const { return width; }
-	int Height() const { return height; }
-	float *Values() { return values.data(); }
-
-private:
-	int width;
-	int height;
-	std::vector<float> values;
-};
-
-class PolyStencilBuffer
-{
-public:
-	static PolyStencilBuffer *Instance();
-	void Resize(int newwidth, int newheight);
-	int Width() const { return width; }
-	int Height() const { return height; }
-	uint8_t *Values() { return values.data(); }
-
-private:
-	int width;
-	int height;
-	std::vector<uint8_t> values;
-};
+void SelectFragmentShader(PolyTriangleThreadData* thread);

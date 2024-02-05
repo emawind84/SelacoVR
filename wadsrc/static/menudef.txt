@@ -1215,6 +1215,12 @@ OptionValue GPUSwitch
 	2.0, "$OPTVAL_INTEGRATED"
 }
 
+OptionValue PreferBackend
+{
+	0, "$OPTVAL_OPENGL"
+	1, "$OPTVAL_VULKAN"
+	2, "$OPTVAL_SOFTPOLY"
+}
 
 OptionMenu "TrueColorOptions" protected
 {
@@ -2187,34 +2193,6 @@ OptionValue BufferCounts
 }
 
 
-OptionString SoundOutputsWindows
-{
-	"Default",		"$OPTVAL_DEFAULT"
-	"DirectSound",	"$OPTSTR_DIRECTSOUND"
-	"WASAPI",		"$OPTSTR_WASAPI"
-	"ASIO",			"$OPTSTR_ASIO"
-	"WaveOut",		"$OPTSTR_WAVEOUT"
-	"No sound",		"$OPTSTR_NOSOUND"
-}
-
-
-OptionString SoundOutputsUnix
-{
-	"Default",		"$OPTVAL_DEFAULT"
-	"OSS",			"$OPTSTR_OSS"
-	"ALSA",			"$OPTSTR_ALSA"
-	"SDL",			"$OPTSTR_SDL"
-	"ESD",			"$OPTSTR_ESD"
-	"PulseAudio",	"$OPTSTR_PULSEAUDIO"
-	"No sound",		"$OPTSTR_NOSOUND"
-}
-
-OptionString SoundOutputsMac
-{
-	"Core Audio",		"$OPTSTR_COREAUDIO"
-	"No sound",			"$OPTSTR_NOSOUND"
-}
-
 OptionString ALDevices
 {
 	// filled in by the sound code
@@ -2649,6 +2627,8 @@ OptionMenu VideoModeMenu protected
 {
 	Title "$VIDMNU_TITLE"
 
+	Option "$VIDMNU_PREFERBACKEND",		"vid_preferbackend", "PreferBackend"
+	StaticText " "
 	Option "$VIDMNU_RENDERMODE",		"vid_rendermode", "RenderMode"
 	Option "$VIDMNU_FULLSCREEN",		"fullscreen", "YesNo"
 
@@ -3588,7 +3568,6 @@ OptionMenu "vkoptions"
 	StaticText "$VK_WARNING"
 	StaticText "$VK_RESTART"
 	StaticText ""
-	Option "$VKMNU_ENABLE",				"vid_enablevulkan", "OnOff"
 	TextField "$VKMNU_DEVICE",			vk_device
 	Option "$VKMNU_HDR",				"vk_hdr", "OnOff"
 }

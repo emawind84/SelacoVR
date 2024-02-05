@@ -22,17 +22,8 @@
 
 #pragma once
 
-#include "polyrenderer/drawers/poly_triangle.h"
+struct TriDrawTriangleArgs;
+class PolyTriangleThreadData;
 
-class RenderPolyDecal
-{
-public:
-	static void RenderWallDecals(PolyRenderThread *thread, const seg_t *line, uint32_t stencilValue);
-
-private:
-	void Render(PolyRenderThread *thread, DBaseDecal *decal, const seg_t *line, uint32_t stencilValue);
-
-	void GetDecalSectors(DBaseDecal *decal, const seg_t *line, sector_t **front, sector_t **back);
-	double GetDecalZ(DBaseDecal *decal, const seg_t *line, sector_t *front, sector_t *back);
-	void GetWallZ(DBaseDecal *decal, const seg_t *line, sector_t *front, sector_t *back, double &walltopz, double &wallbottomz);
-};
+void WriteW(int y, int x0, int x1, const TriDrawTriangleArgs* args, PolyTriangleThreadData* thread);
+void WriteVaryings(int y, int x0, int x1, const TriDrawTriangleArgs* args, PolyTriangleThreadData* thread);

@@ -104,13 +104,7 @@ void SoundEngine::Shutdown ()
 		delete chan;
 	}
 	FreeChannels = NULL;
-
-	if (GSnd != NULL)
-	{
-		I_CloseSound();
-	}
 }
-
 
 //==========================================================================
 //
@@ -1279,7 +1273,6 @@ void SoundEngine::UpdateSounds(int time)
 		}
 		chan->ChanFlags &= ~CHANF_JUSTSTARTED;
 	}
-
 
 	GSnd->UpdateListener(&listener);
 	GSnd->UpdateSounds();
