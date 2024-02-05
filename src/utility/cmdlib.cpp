@@ -34,12 +34,8 @@
 #include <fts.h>
 #endif
 #endif
-#include "doomtype.h"
 #include "cmdlib.h"
 #include "i_system.h"
-#include "doomerrors.h"
-#include "v_text.h"
-#include "sc_man.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -329,40 +325,6 @@ FString ExtractFileBase (const char *path, bool include_extension)
 
 //==========================================================================
 //
-// ParseHex
-//
-//==========================================================================
-
-int ParseHex (const char *hex, FScriptPosition *sc)
-{
-	const char *str;
-	int num;
-
-	num = 0;
-	str = hex;
-
-	while (*str)
-	{
-		num <<= 4;
-		if (*str >= '0' && *str <= '9')
-			num += *str-'0';
-		else if (*str >= 'a' && *str <= 'f')
-			num += 10 + *str-'a';
-		else if (*str >= 'A' && *str <= 'F')
-			num += 10 + *str-'A';
-		else {
-			if (!sc) Printf ("Bad hex number: %s\n",hex);
-			else sc->Message(MSG_WARNING, "Bad hex number: %s", hex);
-			return 0;
-		}
-		str++;
-	}
-
-	return num;
-}
-
-//==========================================================================
-//
 // IsNum
 //
 // [RH] Returns true if the specified string is a valid decimal number
@@ -436,7 +398,7 @@ bool CheckWildcards (const char *pattern, const char *text)
 
 void FormatGUID (char *buffer, size_t buffsize, const GUID &guid)
 {
-	mysnprintf (buffer, buffsize, "{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
+	snprintf (buffer, buffsize, "{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
 		(uint32_t)guid.Data1, guid.Data2, guid.Data3,
 		guid.Data4[0], guid.Data4[1],
 		guid.Data4[2], guid.Data4[3],
@@ -492,7 +454,7 @@ void DoCreatePath(const char *fn)
 		return;
 	}
 
-	char path[PATH_MAX];
+	char path[_MAX_PATH];
 	_makepath_s(path, sizeof path, drive, dir, nullptr, nullptr);
 
 	if ('\0' == *path)
@@ -794,36 +756,6 @@ FString strbin1 (const char *start)
 
 //==========================================================================
 //
-// CleanseString
-//
-// Does some mild sanity checking on a string: If it ends with an incomplete
-// color escape, the escape is removed.
-//
-//==========================================================================
-
-char *CleanseString(char *str)
-{
-	char *escape = strrchr(str, TEXTCOLOR_ESCAPE);
-	if (escape != NULL)
-	{
-		if (escape[1] == '\0')
-		{
-			*escape = '\0';
-		}
-		else if (escape[1] == '[')
-		{
-			char *close = strchr(escape + 2, ']');
-			if (close == NULL)
-			{
-				*escape = '\0';
-			}
-		}
-	}
-	return str;
-}
-
-//==========================================================================
-//
 // ExpandEnvVars
 //
 // Expands environment variable references in a string. Intended primarily
@@ -952,7 +884,7 @@ FString NicePath(const char *path)
 //
 //==========================================================================
 
-void ScanDirectory(TArray<FFileList> &list, const char *dirpath)
+bool ScanDirectory(TArray<FFileList> &list, const char *dirpath)
 {
 	findstate_t find;
 	FString dirmatch;
@@ -962,7 +894,7 @@ void ScanDirectory(TArray<FFileList> &list, const char *dirpath)
 	auto handle = I_FindFirst(dirmatch.GetChars(), &find);
 	if (handle == ((void*)(-1)))
 	{
-		I_Error("Could not scan '%s': %s\n", dirpath, strerror(errno));
+		return false;
 	}
 	else
 	{
@@ -1004,6 +936,7 @@ void ScanDirectory(TArray<FFileList> &list, const char *dirpath)
 		while (I_FindNext(handle, &find) == 0);
 		I_FindClose(handle);
 	}
+	return true;
 }
 
 
@@ -1021,4 +954,34 @@ bool IsAbsPath(const char *name)
     if (isalpha(name[0]) && name[1] == ':')    return true;
 #endif /* _WIN32 */
     return 0;
+}
+
+//
+// M_ZlibError
+//
+FString M_ZLibError(int zerr)
+{
+	if (zerr >= 0)
+	{
+		return "OK";
+	}
+	else if (zerr < -6)
+	{
+		FString out;
+		out.Format("%d", zerr);
+		return out;
+	}
+	else
+	{
+		static const char* errs[6] =
+		{
+			"Errno",
+			"Stream Error",
+			"Data Error",
+			"Memory Error",
+			"Buffer Error",
+			"Version Error"
+		};
+		return errs[-zerr - 1];
+	}
 }

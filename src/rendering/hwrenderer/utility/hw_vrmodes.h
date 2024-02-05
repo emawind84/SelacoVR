@@ -1,7 +1,7 @@
 #pragma once
 
 #include "r_utility.h"
-#include "r_data/matrix.h"
+#include "matrix.h"
 
 class DFrameBuffer;
 

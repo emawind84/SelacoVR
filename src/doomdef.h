@@ -72,6 +72,13 @@ enum
 
 extern "C" int getGameState();
 
+inline int Tics2Seconds(int tics)
+{
+	return tics / TICRATE;
+}
+
+
+
 typedef float skill_t;
 
 /*

@@ -186,5 +186,7 @@ struct FScriptPosition
 	}
 };
 
+int ParseHex(const char* hex, FScriptPosition* sc);
+
 
 #endif //__SC_MAN_H__
