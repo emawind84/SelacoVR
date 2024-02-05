@@ -19,17 +19,6 @@
 //-----------------------------------------------------------------------------
 //
 
-#include "i_system.h"
-
-#include <dirent.h>
-#include <sys/wait.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <fnmatch.h>
-#include <unistd.h>
-
-#include <stdarg.h>
 #include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
@@ -37,21 +26,10 @@
 #include <SDL.h>
 
 #include "d_main.h"
+#include "i_system.h"
 #include "version.h"
 #include "x86.h"
 
-#include "d_main.h"
-#include "d_net.h"
-#include "g_game.h"
-#include "c_dispatch.h"
-
-#include "gameconfigfile.h"
-
-extern "C"
-{
-	double		SecondsPerCycle = 1e-8;
-	double		CyclesPerSecond = 1e8;
-}
 
 #ifndef NO_GTK
 bool I_GtkAvailable ();

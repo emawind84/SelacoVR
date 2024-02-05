@@ -143,10 +143,6 @@ void ReplaceString (char **ptr, const char *str)
 */
 
 
-#ifdef _WIN32
-int my_wstat64(const wchar_t *path, struct _stat64 *buffer);
-#endif
-
 //==========================================================================
 //
 // FileExists
