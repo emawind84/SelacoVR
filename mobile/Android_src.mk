@@ -94,6 +94,7 @@ VULKAN_SOURCES = \
 	rendering/vulkan/system/vk_buffers.cpp \
 	rendering/vulkan/renderer/vk_renderstate.cpp \
 	rendering/vulkan/renderer/vk_renderpass.cpp \
+	rendering/vulkan/renderer/vk_streambuffer.cpp \
 	rendering/vulkan/renderer/vk_postprocess.cpp \
 	rendering/vulkan/renderer/vk_renderbuffers.cpp \
 	rendering/vulkan/shaders/vk_shader.cpp \
@@ -178,7 +179,7 @@ PCH_SOURCES = \
 	m_cheat.cpp \
 	m_joy.cpp \
 	m_misc.cpp \
-	p_acs.cpp \
+	playsim/p_acs.cpp \
 	playsim/p_actionfunctions.cpp \
 	p_conversation.cpp \
 	playsim/p_destructible.cpp \
@@ -198,9 +199,9 @@ PCH_SOURCES = \
 	playsim/p_things.cpp \
 	p_tick.cpp \
 	playsim/p_user.cpp \
-	r_utility.cpp \
-	r_sky.cpp \
-	r_videoscale.cpp \
+	rendering/r_utility.cpp \
+	rendering/r_sky.cpp \
+	rendering/r_videoscale.cpp \
 	sound/s_advsound.cpp \
 	sound/s_environment.cpp \
 	sound/s_reverbedit.cpp \
@@ -211,9 +212,9 @@ PCH_SOURCES = \
 	serializer.cpp \
 	scriptutil.cpp \
 	st_stuff.cpp \
-	v_framebuffer.cpp \
-	v_palette.cpp \
-	v_video.cpp \
+	rendering/v_framebuffer.cpp \
+	r_data/v_palette.cpp \
+	rendering/v_video.cpp \
 	wi_stuff.cpp \
 	gamedata/a_keys.cpp \
 	gamedata/a_weapons.cpp \
