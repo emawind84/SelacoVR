@@ -64,7 +64,6 @@
 #include "actorinlines.h"
 #include "g_game.h"
 #include "i_system.h"
-#include "atterm.h"
 
 #include <QzDoom/VrCommon.h>
 

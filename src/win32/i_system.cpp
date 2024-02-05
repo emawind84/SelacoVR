@@ -84,7 +84,6 @@
 #include "doomstat.h"
 #include "i_system.h"
 #include "textures/bitmap.h"
-#include "atterm.h"
 
 // MACROS ------------------------------------------------------------------
 

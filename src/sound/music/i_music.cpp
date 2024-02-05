@@ -56,7 +56,6 @@
 #include "filereadermusicinterface.h"
 
 
-
 void I_InitSoundFonts();
 
 EXTERN_CVAR (Int, snd_samplerate)

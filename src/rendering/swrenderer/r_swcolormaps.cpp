@@ -55,7 +55,6 @@
 #include "templates.h"
 #include "r_utility.h"
 #include "swrenderer/r_renderer.h"
-#include "atterm.h"
 #include <atomic>
 
 FDynamicColormap NormalLight;

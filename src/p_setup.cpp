@@ -77,7 +77,6 @@
 #include "i_system.h"
 #include "v_video.h"
 #include "fragglescript/t_script.h"
-#include "atterm.h"
 #include "s_music.h"
 
 extern AActor *SpawnMapThing (int index, FMapThing *mthing, int position);
@@ -590,7 +589,7 @@ void P_Init ()
 }
 
 void P_Shutdown ()
-{	
+{
 	for (auto Level : AllLevels())
 	{
 		Level->Thinkers.DestroyThinkersInList(STAT_STATIC);
