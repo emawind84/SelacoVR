@@ -379,6 +379,7 @@ IWad
 		          "E3M1","E3M2","E3M3","E3M4","E3M5","E3M6","E3M7","E3M8","E3M9",
 		          "DPHOOF","BFGGA0","HEADA1","CYBRA1","SPIDA1D1", "E4M2", "E1M10", "SEWERS"
 	BannerColors = "18 18 18", "a8 a8 a8"
+	IgnoreTitlePatches = 1
 }
 
 IWad
@@ -524,6 +525,36 @@ IWad
 	MustContain = "MAP01", "DMENUPIC"
 	BannerColors = "00 7c 00", "a8 a8 a8"
 	IgnoreTitlePatches = 1
+	Load = "nerveunity.wad"
+}
+
+IWad
+{
+	Name = "DOOM 2: XBox Edition"
+	Autoname = "doom.id.doom2.commercial.xbox"
+	Game = "Doom"
+	Config = "Doom"
+	IWADName = "doom2.wad", 1
+	Mapinfo = "mapinfo/doom2xbox.txt"
+	Compatibility = "Shorttex"
+	MustContain = "MAP01", "MAP33", "CWILV32"
+	BannerColors = "18 18 18", "a8 a8 a8"
+	IgnoreTitlePatches = 1
+	Load = "nerve.wad"
+	DeleteLumps = "M_EPI1", "M_EPI2", "M_EPISOD"
+}
+
+IWad
+{
+	Name = "DOOM 2: L'Enfer sur Terre"
+	Autoname = "doom.id.doom2.commercial.french"
+	Game = "Doom"
+	Config = "Doom"
+	IWADName = "doom2f.wad", 1
+	Mapinfo = "mapinfo/doom2.txt"
+	Compatibility = "Shorttex"
+	MustContain = "MAP01", "WIOBJ"
+	BannerColors = "ff ff ff", "a8 00 00"
 }
 
 // Doom 2 must be last to be checked because MAP01 is its only requirement
