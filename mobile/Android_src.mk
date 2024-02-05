@@ -24,7 +24,8 @@ LOCAL_C_INCLUDES := \
  $(TOP_DIR)/ \
  ${TOP_DIR}/OpenXR-SDK/include \
  ${TOP_DIR}/OpenXR-SDK/src/common \
-	 $(GZDOOM_TOP_PATH)/src/g_statusbar \
+	$(GZDOOM_TOP_PATH)/src/  \
+	$(GZDOOM_TOP_PATH)/src/g_statusbar \
 	$(GZDOOM_TOP_PATH)/src/console \
 	$(GZDOOM_TOP_PATH)/src/playsim \
 	$(GZDOOM_TOP_PATH)/src/playsim/bots \
@@ -48,7 +49,6 @@ LOCAL_C_INCLUDES := \
 	$(GZDOOM_TOP_PATH)/src/../libraries/gdtoa \
     $(GZDOOM_TOP_PATH)/src/../libraries/bzip2 \
 	$(GZDOOM_TOP_PATH)/src/../libraries/game-music-emu/ \
-	$(GZDOOM_TOP_PATH)/src/../libraries/dumb/include \
 	$(GZDOOM_TOP_PATH)/src/../libraries/glslang/glslang/Public \
 	$(GZDOOM_TOP_PATH)/src/../libraries/glslang/spirv \
 	$(GZDOOM_TOP_PATH)/src/../libraries/lzma/C \
@@ -460,7 +460,6 @@ PCH_SOURCES = \
 	utility/atterm.cpp \
 	utility/cmdlib.cpp \
 	utility/configfile.cpp \
-	utility/i_module.cpp \
 	utility/i_time.cpp \
 	utility/m_alloc.cpp \
 	utility/m_argv.cpp \
