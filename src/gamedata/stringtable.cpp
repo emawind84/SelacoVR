@@ -337,13 +337,6 @@ void FStringTable::LoadLanguage (int lumpnum, const TArray<uint8_t> &buffer)
 					errordone = true;
 					return;
 				}
-				FString str(sc.String);
-				if (str.CompareNoCase("identifier") == 0 || str.CompareNoCase("default") == 0)
-				{
-					if (!errordone) Printf("Skipping CSV 'LANGUAGE' lump.\n"); 
-					errordone = true;
-					return;
-				}
 				sc.ScriptError ("Found a string without a language specified.");
 			}
 
