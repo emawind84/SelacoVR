@@ -7,7 +7,7 @@
 #include "r_defs.h"
 #include "resourcefiles/file_zip.h"
 #include "tflags.h"
-#include "dictionary.h"
+#include "utility/dictionary.h"
 
 extern bool save_full;
 

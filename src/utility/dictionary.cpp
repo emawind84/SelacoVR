@@ -1,4 +1,4 @@
-#include "dictionary.h"
+#include "utility/dictionary.h"
 
 #include "scripting/vm/vm.h"
 #include "serializer.h"
@@ -43,7 +43,7 @@ void Dictionary::Serialize(FSerializer &arc)
 		Dictionary *pointerToDeserializedDictionary;
 		arc(key, pointerToDeserializedDictionary);
 		Map.TransferFrom(pointerToDeserializedDictionary->Map);
-		pointerToDeserializedDictionary->Destroy();
+		delete pointerToDeserializedDictionary;
 	}
 }
 

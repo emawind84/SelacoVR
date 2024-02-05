@@ -124,7 +124,7 @@ struct islope_t
 //=============================================================================
 
 CVAR(Bool, am_textured, false, CVAR_ARCHIVE)
-CVAR(Bool, am_thingrenderstyles, true, CVAR_ARCHIVE)  // 0090925fac05a17fbaf69b9bc15207dc511b1053
+CVAR(Bool, am_thingrenderstyles, true, CVAR_ARCHIVE)
 CVAR(Int, am_showsubsector, -1, 0);
 
 
@@ -2066,10 +2066,10 @@ void DAutomap::drawSubsectors()
 				if (roverz < cmpz)
 				{
 					maptex = *(rover->top.texture);
-					flatcolor = *(rover->top.flatcolor);
 					floorplane = rover->top.plane;
 					sector_t *model = rover->top.model;
 					int selector = (rover->flags & FF_INVERTPLANES) ? sector_t::floor : sector_t::ceiling;
+					flatcolor = model->SpecialColors[selector];
 					rotation = -model->GetAngle(selector);
 					scalex = model->GetXScale(selector);
 					scaley = model->GetYScale(selector);

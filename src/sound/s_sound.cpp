@@ -1549,7 +1549,6 @@ int SoundEngine::AddSoundLump(const char* logicalname, int lump, int CurrentPitc
 	return (int)S_sfx.Size()-1;
 }
 
-
 //==========================================================================
 //
 // S_FindSoundTentative

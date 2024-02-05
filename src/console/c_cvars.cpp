@@ -58,6 +58,8 @@
 		if (strcmp(CurrentFindCVar, #name) == 0) \
 			blacklisted = true;
 
+#include "version.h"
+
 struct FLatchedValue
 {
 	FBaseCVar *Variable;

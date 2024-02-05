@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/emawind84/gzdoom/actions/workflows/continuous_integration.yml/badge.svg?branch=questzdoom)](https://github.com/emawind84/gzdoom/actions/workflows/continuous_integration.yml)
 
-## LZDoom is a fork of GZDoom 3.3 which keeps the old DDRAW and D3D backends and still supports GL2 for compatibility. Also runs on older non SSE2 cpus.
+## GZDoom is a modder-friendly OpenGL and Vulkan source port based on the DOOM engine
 
 Copyright (c) 1998-2021 ZDoom + GZDoom teams, and contributors
 

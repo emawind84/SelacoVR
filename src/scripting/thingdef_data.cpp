@@ -56,7 +56,7 @@
 #include "wi_stuff.h"
 #include "a_dynlight.h"
 #include "types.h"
-#include "dictionary.h"
+#include "utility/dictionary.h"
 
 static TArray<FPropertyInfo*> properties;
 static TArray<AFuncDesc> AFTable;

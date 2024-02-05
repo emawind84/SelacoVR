@@ -87,7 +87,6 @@ CCMD (snd_listmididevices)
 	}
 }
 
-
 CUSTOM_CVAR (Int, snd_mididevice, DEF_MIDIDEV, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 {
 	int amount;
