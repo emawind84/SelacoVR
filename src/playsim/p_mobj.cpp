@@ -6182,7 +6182,7 @@ foundone:
 	const bool dealDamageOnLand = thing->player
 		&& Terrains[terrainnum].DamageOnLand
 		&& Terrains[terrainnum].DamageAmount
-		&& (level.time & Terrains[terrainnum].DamageTimeMask);
+		&& (thing->Level->time & Terrains[terrainnum].DamageTimeMask);
 	if (dealDamageOnLand)
 		P_DamageMobj(thing, nullptr, nullptr, Terrains[terrainnum].DamageAmount, Terrains[terrainnum].DamageMOD);
 
