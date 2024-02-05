@@ -104,6 +104,14 @@ VULKAN_SOURCES = \
 	rendering/vulkan/thirdparty/volk/volk.c \
 	rendering/vulkan/thirdparty/vk_mem_alloc/vk_mem_alloc.cpp \
 
+POLYBACKEND_SOURCES = \
+	rendering/polyrenderer/drawers/poly_triangle.cpp \
+	rendering/polyrenderer/drawers/poly_thread.cpp \
+	rendering/polyrenderer/drawers/screen_triangle.cpp \
+	rendering/polyrenderer/drawers/screen_scanline_setup.cpp \
+	rendering/polyrenderer/drawers/screen_shader.cpp \
+	rendering/polyrenderer/drawers/screen_blend.cpp \
+	rendering/polyrenderer/math/gpu_types.cpp \
 
 FASTMATH_SOURCES = \
 	rendering/swrenderer/r_all.cpp \

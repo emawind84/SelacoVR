@@ -32,7 +32,7 @@
 #include "poly_hwtexture.h"
 #include "doomerrors.h"
 
-void Draw2D(F2DDrawer *drawer, FRenderState &state);
+void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D = false);
 void DoWriteSavePic(FileWriter *file, ESSType ssformat, uint8_t *scr, int width, int height, sector_t *viewsector, bool upsidedown);
 
 EXTERN_CVAR(Bool, r_drawvoxels)
@@ -251,7 +251,7 @@ sector_t *PolyFrameBuffer::RenderView(player_t *player)
 			fovratio = ratio;
 		}
 
-		retsec = RenderViewpoint(r_viewpoint, player->camera, NULL, r_viewpoint.FieldOfView.Degrees, ratio, fovratio, true, true);
+		retsec = RenderViewpoint(r_viewpoint, player->camera, NULL, r_viewpoint.FieldOfView().Degrees, ratio, fovratio, true, true);
 	}
 	All.Unclock();
 	return retsec;
@@ -292,12 +292,12 @@ sector_t *PolyFrameBuffer::RenderViewpoint(FRenderViewpoint &mainvp, AActor * ca
 		di->Set3DViewport(*GetRenderState());
 		di->SetViewArea();
 		auto cm = di->SetFullbrightFlags(mainview ? vp.camera->player : nullptr);
-		di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
+		//di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
 
 		// Stereo mode specific perspective projection
-		di->VPUniforms.mProjectionMatrix = eye.GetProjection(fov, ratio, fovratio);
+		di->VPUniforms.mProjectionMatrix = eye->GetProjection(fov, ratio, fovratio);
 		// Stereo mode specific viewpoint adjustment
-		vp.Pos += eye.GetViewShift(vp.HWAngles.Yaw.Degrees);
+		vp.Pos += eye->GetViewShift(vp);
 		di->SetupView(*GetRenderState(), vp.Pos.X, vp.Pos.Y, vp.Pos.Z, false, false);
 
 		// std::function until this can be done better in a cross-API fashion.
@@ -567,9 +567,9 @@ void PolyFrameBuffer::BeginFrame()
 		next_random = 0;
 }
 
-void PolyFrameBuffer::Draw2D()
+void PolyFrameBuffer::Draw2D(bool outside2D)
 {
-	::Draw2D(&m2DDrawer, *mRenderState);
+	::Draw2D(&m2DDrawer, *mRenderState, outside2D);
 }
 
 unsigned int PolyFrameBuffer::GetLightBufferBlockSize() const
