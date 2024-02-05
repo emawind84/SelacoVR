@@ -713,8 +713,8 @@ int FIWadManager::IdentifyVersion (TArray<FString> &wadfiles, const char *iwad, 
 	}
 	int pick = 0;
 
-	// Present the IWAD selection box.
-	if (picks.Size() > 0 && !iwadparm)
+	// We got more than one so present the IWAD selection box.
+	if (picks.Size() > 1)
 	{
 		// Locate the user's prefered IWAD, if it was found.
 		if (defaultiwad[0] != '\0')
@@ -729,7 +729,7 @@ int FIWadManager::IdentifyVersion (TArray<FString> &wadfiles, const char *iwad, 
 				}
 			}
 		}
-		if (picks.Size() > 0)
+		if (picks.Size() > 1)
 		{
 			if (!havepicked)
 			{
