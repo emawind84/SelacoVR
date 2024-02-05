@@ -84,7 +84,7 @@ namespace
 			if (sx <= 0. || sy <= 0.)
 				return 1.; // prevent x/0 error
 			// set absolute minimum scale to fill the entire screen but get as close to 640x400 as possible
-			float ssx = (float)(min_width) / sx, ssy = (float)(min_height) / sy;
+			float ssx = (float)(VID_MIN_UI_WIDTH) / sx, ssy = (float)(VID_MIN_UI_HEIGHT) / sy;
 			result = (ssx < ssy) ? ssy : ssx;
 			lastsx = sx;
 			lastsy = sy;
@@ -144,7 +144,7 @@ namespace
 	};
 	bool isOutOfBounds(int x)
 	{
-		return (x < 0 || x >= NUMSCALEMODES || vScaleTable[x].isValid == false);
+		return (x < 0 || x >= int(NUMSCALEMODES) || vScaleTable[x].isValid == false);
 	}
 }
 

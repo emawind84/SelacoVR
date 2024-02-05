@@ -365,9 +365,12 @@ void ZCCCompiler::ProcessMixin(ZCC_MixinDef *cnode, PSymbolTreeNode *treenode)
 			case AST_EnumTerminator:
 			case AST_States:
 			case AST_FuncDeclarator:
-			case AST_Default:
 			case AST_StaticArrayStatement:
 				break;
+
+			case AST_Default:
+				Error(node, "Default blocks currently disabled in mixins");
+				return;
 
 			default:
 				assert(0 && "Unhandled AST node type");
