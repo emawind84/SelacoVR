@@ -317,6 +317,8 @@ void HWFlat::DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent)
 	di->SetFog(state, lightlevel, rel, di->isFullbrightScene(), &Colormap, false);
 	state.SetObjectColor(FlatColor | 0xff000000);
 	state.SetAddColor(AddColor | 0xff000000);
+	state.ApplyTextureManipulation(TextureFx);
+
 
 	if (hacktype & SSRF_PLANEHACK)
 	{
@@ -344,7 +346,6 @@ void HWFlat::DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent)
 			flatvertices += 4;
 			flatprimitives++;
 		}
-		state.SetObjectColor(0xffffffff);
 	}
 	else
 	{
@@ -366,9 +367,10 @@ void HWFlat::DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent)
 			state.EnableTextureMatrix(false);
 		}
 		state.SetRenderStyle(DefaultRenderStyle());
-		state.SetObjectColor(0xffffffff);
 	}
+	state.SetObjectColor(0xffffffff);
 	state.SetAddColor(0);
+	state.ApplyTextureManipulation(nullptr);
 }
 
 //==========================================================================
@@ -459,12 +461,14 @@ void HWFlat::SetFrom3DFloor(F3DFloor *rover, bool top, bool underside)
 		Colormap.LightColor = light->extra_colormap.FadeColor;
 		FlatColor = 0xffffffff;
 		AddColor = 0;
+		TextureFx = nullptr;
 	}
 	else
 	{
 		Colormap.CopyFrom3DLight(light);
-		FlatColor = *plane.flatcolor;
-		// AddColor = sector->SpecialColors[sector_t::add];
+		FlatColor = plane.model->SpecialColors[plane.isceiling];
+		AddColor = plane.model->AdditiveColors[plane.isceiling];
+		TextureFx = &plane.model->planes[plane.isceiling].TextureFx;
 	}
 
 
@@ -520,6 +524,8 @@ void HWFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector, int which)
 		Colormap = frontsector->Colormap;
 		FlatColor = frontsector->SpecialColors[sector_t::floor];
 		AddColor = frontsector->AdditiveColors[sector_t::floor];
+		TextureFx = &frontsector->planes[sector_t::floor].TextureFx;
+
 		port = frontsector->ValidatePortal(sector_t::floor);
 		if ((stack = (port != NULL)))
 		{
@@ -576,6 +582,7 @@ void HWFlat::ProcessSector(HWDrawInfo *di, sector_t * frontsector, int which)
 		Colormap = frontsector->Colormap;
 		FlatColor = frontsector->SpecialColors[sector_t::ceiling];
 		AddColor = frontsector->AdditiveColors[sector_t::ceiling];
+		TextureFx = &frontsector->planes[sector_t::ceiling].TextureFx;
 		port = frontsector->ValidatePortal(sector_t::ceiling);
 		if ((stack = (port != NULL)))
 		{

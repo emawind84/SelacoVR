@@ -142,6 +142,9 @@ bool FGLRenderState::ApplyShader()
 	activeShader->muClipSplit.Set(mClipSplit);
 	activeShader->muSpecularMaterial.Set(mGlossiness, mSpecularLevel);
 	activeShader->muAddColor.Set(mStreamData.uAddColor);
+	activeShader->muTextureAddColor.Set(mStreamData.uTextureAddColor);
+	activeShader->muTextureModulateColor.Set(mStreamData.uTextureModulateColor);
+	activeShader->muTextureBlendColor.Set(mStreamData.uTextureBlendColor);
 	activeShader->muDetailParms.Set(&mStreamData.uDetailParms.X);
 	activeShader->muGlobalFadeMode.Set(gl_global_fade_debug ? 2 : -1);
 	activeShader->muGlobalFade.Set(gl_global_fade ? 1 : 0);
