@@ -871,7 +871,7 @@ possibly_out_of_time:
 	case 0xD6: // DEC zp,x
 		data = uint8_t (data + x);
 	case 0xC6: // DEC zp
-		nz = (uint16_t) -1;
+		nz = (unsigned) -1;
 	add_nz_zp:
 		nz += READ_LOW( data );
 	write_nz_zp:
@@ -896,7 +896,7 @@ possibly_out_of_time:
 	case 0xCE: // DEC abs
 		data = GET_ADDR();
 	dec_ptr:
-		nz = (uint16_t) -1;
+		nz = (unsigned) -1;
 	inc_common:
 		FLUSH_TIME();
 		nz += READ( data );
@@ -1033,7 +1033,7 @@ possibly_out_of_time:
 // Flags
 
 	case 0x38: // SEC
-		c = (uint16_t) ~0;
+		c = (unsigned) ~0;
 		goto loop;
 
 	case 0x18: // CLC
@@ -1147,7 +1147,7 @@ possibly_out_of_time:
 		goto loop;
 
 	case 0xF4: { // SET
-		//uint16_t operand = GET_MSB();
+		//fuint16 operand = GET_MSB();
 		debug_printf( "SET not handled\n" );
 		//switch ( data )
 		//{

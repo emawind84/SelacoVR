@@ -162,7 +162,6 @@ void VkRenderState::Apply(int dt)
 	mApplyCount++;
 	if (mApplyCount >= vk_submit_size)
 	{
-		EndRenderPass();
 		GetVulkanFrameBuffer()->FlushCommands(false);
 		mApplyCount = 0;
 	}
@@ -445,7 +444,6 @@ void VkRenderState::ApplyDynamicSet()
 
 void VkRenderState::WaitForStreamBuffers()
 {
-	EndRenderPass();
 	GetVulkanFrameBuffer()->WaitForCommands(false);
 	mApplyCount = 0;
 	mStreamBufferWriter.Reset();

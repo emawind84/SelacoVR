@@ -1462,6 +1462,34 @@ class LevelCompatibility : LevelPostProcessor
 				break;
 			}
 
+			case 'A7C4FC8CAEB3E375B7214E35C6298B03': // Illusions of Home e1m6
+			{
+				// Convert zero-tagged GR door into regular open-stay door to fix map
+				SetLineActivation(37, SPAC_Use);
+				SetLineSpecial(37, Door_Open, 0, 16);
+				SetLineActivation(203, SPAC_Use);
+				SetLineSpecial(203, Door_Open, 0, 16);
+				break;
+			}
+			case '5084755C29FB0A1912113E36F37C958A': // Illusions of Home e3m4
+			{
+				// Fix action of final switch
+				SetLineSpecial(765, Door_Open, 6, 16);
+				break;
+			}
+			case '0EF86635676FD512CE0E962040125553': // Illusions of Home e3m7
+			{
+				// Fix red key and red key area door
+				// Also fix missing texture in red key area
+				SetThingFlags(247, 2016);
+				SetThingSkills(247, 31);
+				SetLineActivation(49, SPAC_Use);
+				SetLineSpecial(49, Door_Raise, 0, 16, 150, 0);
+				SetLineFlags(49, Line.ML_REPEAT_SPECIAL);
+				SetWallTexture(608, Line.back, Side.bottom, "GRAY5");
+				break;
+			}
+
 			case '63BDD083A98A48C04B8CD58AA857F77D': // Scythe MAP22
 			{
 				// Wall behind start creates HOM in software renderer due to weird sector
