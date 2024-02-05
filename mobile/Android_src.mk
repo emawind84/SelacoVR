@@ -502,7 +502,7 @@ LOCAL_SRC_FILES = \
 	utility/x86.cpp \
 	utility/strnatcmp.c \
 	utility/zstring.cpp \
-	dictionary.cpp \
+	utility/dictionary.cpp \
 	utility/math/asin.c \
 	utility/math/atan.c \
 	utility/math/const.c \
