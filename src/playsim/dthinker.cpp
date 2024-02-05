@@ -38,7 +38,6 @@
 #include "p_effect.h"
 #include "serializer.h"
 #include "d_player.h"
-#include "r_renderer.h"
 #include "vm.h"
 #include "c_dispatch.h"
 #include "v_text.h"

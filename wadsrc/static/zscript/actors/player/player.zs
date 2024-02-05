@@ -2029,7 +2029,7 @@ class PlayerPawn : Actor
 							// This problem is only detectable when it's too late to do something about it...
 							ThrowAbortException("Cannot give morph item '%s' when starting a game!", di.Name);
 						}
-						}
+					}
 					let weap = Weapon(item);
 					if (weap != NULL && weap.CheckAmmo(Weapon.EitherFire, false))
 					{
