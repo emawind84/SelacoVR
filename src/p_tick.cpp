@@ -151,7 +151,6 @@ void P_Ticker (void)
 	for (auto Level : AllLevels())
 	{
 		// todo: set up a sandbox for secondary levels here.
-
 		auto it = Level->GetThinkerIterator<AActor>();
 		AActor *ac;
 
@@ -159,6 +158,7 @@ void P_Ticker (void)
 		{
 			ac->ClearInterpolation();
 		}
+
 		P_ThinkParticles(Level);	// [RH] make the particles think
 
 		for (i = 0; i < MAXPLAYERS; i++)

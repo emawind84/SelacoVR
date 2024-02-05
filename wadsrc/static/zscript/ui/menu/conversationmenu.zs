@@ -153,10 +153,9 @@ class ConversationMenu : Menu
 			}
 			else
 			{
-				let formatWidth = Screen.GetHeight() * 1.3333;
-				SpeechWidth = formatWidth / fontScale - (24*3 * CleanXfac / fontScale);
+				speechDisplayWidth = int(Screen.GetHeight() * 1.3333 / fontScale);
+				SpeechWidth = speechDisplayWidth - (24*3 * CleanXfac / fontScale);
 				mConfineTextToBackdrop = true;
-				speechDisplayWidth = formatWidth / fontScale;
 			}
 			
 			LineHeight = displayFont.GetHeight() + 2;
