@@ -1479,13 +1479,9 @@ class LevelCompatibility : LevelPostProcessor
 			}
 			case '0EF86635676FD512CE0E962040125553': // Illusions of Home e3m7
 			{
-				// Fix red key and red key area door
-				// Also fix missing texture in red key area
+				// Fix red key and missing texture in red key area
 				SetThingFlags(247, 2016);
 				SetThingSkills(247, 31);
-				SetLineActivation(49, SPAC_Use);
-				SetLineSpecial(49, Door_Raise, 0, 16, 150, 0);
-				SetLineFlags(49, Line.ML_REPEAT_SPECIAL);
 				SetWallTexture(608, Line.back, Side.bottom, "GRAY5");
 				break;
 			}
@@ -1535,21 +1531,13 @@ class LevelCompatibility : LevelPostProcessor
 
 			case '0E379EEBEB189F294ED122BC60D10A68': // Hellbound MAP29
 			{
-				// The ceiling to the teleporters is just a little too low, blocking
-				// the cyberdemons from teleporting. Raise the ceilings by 64 units so
-				// there's enough room to get through. These use specials that stop
-				// the floor a small distance above the ground itself, affecting
-				// both the monster closets AND accessible map parts. This means
-				// the height is not tall enough for the cyberdemons to pass through.
-				double val = 64;
-				OffsetSectorPlane(3243, Sector.ceiling, val);
-				OffsetSectorPlane(3235, Sector.ceiling, val);
-				OffsetSectorPlane(3251, Sector.ceiling, val);
-				OffsetSectorPlane(3239, Sector.ceiling, val);
-				OffsetSectorPlane(3045, Sector.ceiling, val);
-				OffsetSectorPlane(990,	Sector.ceiling, val);
-				OffsetSectorPlane(245,	Sector.ceiling, val);
-				OffsetSectorPlane(3044,	Sector.ceiling, val);
+				// Remove the cyberdemons stuck in the closet boxes that cannot teleport.
+				SetThingFlags(2970,0);
+				SetThingFlags(2969,0);
+				SetThingFlags(2968,0);
+				SetThingFlags(2169,0);
+				SetThingFlags(2168,0);
+				SetThingFlags(2167,0);
 				break;
 			}
 

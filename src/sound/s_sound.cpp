@@ -104,7 +104,13 @@ void SoundEngine::Shutdown ()
 		delete chan;
 	}
 	FreeChannels = NULL;
+
+	if (GSnd != NULL)
+	{
+		I_CloseSound();
+	}
 }
+
 
 //==========================================================================
 //

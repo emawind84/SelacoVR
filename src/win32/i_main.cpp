@@ -748,7 +748,7 @@ int DoMain (HINSTANCE hInstance)
 	int height, width, x, y;
 	RECT cRect;
 	TIMECAPS tc;
-	DEVMODEA displaysettings;
+	DEVMODE displaysettings;
 	
 	// Do not use the multibyte __argv here because we want UTF-8 arguments
 	// and those can only be done by converting the Unicode variants.
@@ -867,7 +867,7 @@ int DoMain (HINSTANCE hInstance)
 	// element. DEVMODE is not one of those structures.
 	memset (&displaysettings, 0, sizeof(displaysettings));
 	displaysettings.dmSize = sizeof(displaysettings);
-	EnumDisplaySettingsA (NULL, ENUM_CURRENT_SETTINGS, &displaysettings);
+	EnumDisplaySettings (NULL, ENUM_CURRENT_SETTINGS, &displaysettings);
 	x = (displaysettings.dmPelsWidth - width) / 2;
 	y = (displaysettings.dmPelsHeight - height) / 2;
 	
@@ -896,7 +896,7 @@ int DoMain (HINSTANCE hInstance)
 	}
 	
 	/* create window */
-	FStringf caption("" GAMENAME " %s " X64 " (%s)", GetVersionString(), GetGitTime());
+	FStringf caption("" GAMESIG " %s " X64 " (%s)", GetVersionString(), GetGitTime());
 	std::wstring wcaption = caption.WideString();
 	Window = CreateWindowExW(
 							 WS_EX_APPWINDOW,

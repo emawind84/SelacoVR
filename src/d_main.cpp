@@ -100,7 +100,6 @@
 #include "i_system.h"
 #include "g_cvars.h"
 #include "r_data/r_vanillatrans.h"
-#include "atterm.h"
 #include "s_music.h"
 #include "swrenderer/r_swcolormaps.h"
 
@@ -2334,7 +2333,6 @@ static void CheckCmdLine()
 	}
 }
 
-
 //==========================================================================
 //
 // I_Error
@@ -2609,8 +2607,26 @@ static int D_DoomMain_Internal (void)
 			I_Init ();
 		}
 
+		// [RH] Initialize palette management
+		InitPalette ();
+		
 		if (!batchrun) Printf ("V_Init: allocate screen.\n");
-		V_Init (!!restart);
+		if (!restart)
+		{
+			V_InitScreenSize();
+		}
+		
+		if (!restart)
+		{
+			// This allocates a dummy framebuffer as a stand-in until V_Init2 is called.
+			V_InitScreen ();
+		}
+		
+		if (restart)
+		{
+			// Update screen palette when restarting
+			screen->UpdatePalette();
+		}
 
 		// Base systems have been inited; enable cvar callbacks
 		FBaseCVar::EnableCallbacks ();
@@ -2894,13 +2910,11 @@ static int D_DoomMain_Internal (void)
 	while (1);
 }
 
-
 int D_DoomMain()
 {
 	int ret = 0;
 	GameTicRate = TICRATE;
 	I_InitTime();
-	
 	try
 	{
 		ret = D_DoomMain_Internal();
@@ -2962,9 +2976,9 @@ void D_Cleanup()
 	// clean up game state
 	D_ErrorCleanup ();
 	P_Shutdown();
-
+	
 	M_SaveDefaults(NULL);			// save config before the restart
-
+	
 	// delete all data that cannot be left until reinitialization
 	if (screen) screen->CleanForRestart();
 	V_ClearFonts();					// must clear global font pointers
@@ -2978,14 +2992,14 @@ void D_Cleanup()
 	DestroyCVarsFlagged(CVAR_MOD);	// Delete any cvar left by mods
 	DeinitMenus();
 	LightDefaults.DeleteAndClear();			// this can leak heap memory if it isn't cleared.
-
+	
 	// delete DoomStartupInfo data
 	DoomStartupInfo.Name = "";
 	DoomStartupInfo.BkColor = DoomStartupInfo.FgColor = DoomStartupInfo.Type = 0;
 	DoomStartupInfo.LoadConpics = DoomStartupInfo.LoadWidescreen = DoomStartupInfo.LoadLights = DoomStartupInfo.LoadBrightmaps = -1;
 
 	GC::FullGC();					// clean up before taking down the object list.
-
+	
 	// Delete the reference to the VM functions here which were deleted and will be recreated after the restart.
 	FAutoSegIterator probe(ARegHead, ARegTail);
 	while (*++probe != NULL)
@@ -2993,15 +3007,15 @@ void D_Cleanup()
 		AFuncDesc *afunc = (AFuncDesc *)*probe;
 		*(afunc->VMPointer) = NULL;
 	}
-
+	
 	GC::DelSoftRootHead();
-
+	
 	PClass::StaticShutdown();
-
+	
 	GC::FullGC();					// perform one final garbage collection after shutdown
-
+	
 	assert(GC::Root == nullptr);
-
+	
 	restart++;
 	PClass::bShutdown = false;
 	PClass::bVMOperational = false;

@@ -3190,6 +3190,7 @@ int CheckBossDeath (AActor *actor)
 		  // [RH] Frozen bosses don't count as dead until they shatter
 			return false;
 		}
+		
 	}
 	// The boss death is good
 	return true;
