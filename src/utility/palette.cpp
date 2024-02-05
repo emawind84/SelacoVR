@@ -32,6 +32,10 @@
 **
 */
 
+#include <string.h>
+#include <float.h>
+#include <math.h>
+
 #include "palette.h"
 #include "palentry.h"
 

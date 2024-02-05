@@ -136,7 +136,7 @@ FASTMATH_SOURCES = \
 	rendering/hwrenderer/scene/hw_walls_vertex.cpp \
 	rendering/hwrenderer/scene/hw_weapon.cpp \
 	r_data/models/models.cpp \
-	r_data/matrix.cpp \
+	utility/matrix.cpp \
 
 
 
@@ -442,6 +442,7 @@ PCH_SOURCES = \
 	rendering/swrenderer/textures/warptexture.cpp \
 	rendering/swrenderer/textures/swcanvastexture.cpp \
 	events.cpp \
+	utility/palette.cpp \
 	utility/files.cpp \
 	utility/files_decompress.cpp \
 	utility/m_png.cpp \
@@ -458,7 +459,6 @@ PCH_SOURCES = \
 	utility/stats.cpp \
 	utility/atterm.cpp \
 	utility/cmdlib.cpp \
-	utility/colormatcher.cpp \
 	utility/configfile.cpp \
 	utility/i_module.cpp \
 	utility/i_time.cpp \
