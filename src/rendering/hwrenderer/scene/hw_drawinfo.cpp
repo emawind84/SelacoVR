@@ -128,7 +128,8 @@ void HWDrawInfo::StartScene(FRenderViewpoint &parentvp, HWViewpointUniforms *uni
 	mClipper = &staticClipper;
 
 	Viewpoint = parentvp;
-	lightmode = Level->lightMode;
+	if (Level != nullptr)
+		lightmode = Level->lightMode;
 	if (uniforms)
 	{
 		VPUniforms = *uniforms;
