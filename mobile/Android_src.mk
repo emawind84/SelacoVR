@@ -60,6 +60,7 @@ LOCAL_C_INCLUDES := \
  $(SUPPORT_LIBS)/libsndfile-android/jni/ \
  $(SUPPORT_LIBS)/libmpg123 \
  $(SUPPORT_LIBS)/jpeg8d \
+ $(SUPPORT_LIBS)/ZMusic/include  \
  $(GZDOOM_TOP_PATH)/mobile/src/extrafiles  \
  $(GZDOOM_TOP_PATH)/mobile/src
 
@@ -111,7 +112,6 @@ POLYBACKEND_SOURCES = \
 	rendering/polyrenderer/drawers/screen_scanline_setup.cpp \
 	rendering/polyrenderer/drawers/screen_shader.cpp \
 	rendering/polyrenderer/drawers/screen_blend.cpp \
-	rendering/polyrenderer/math/gpu_types.cpp \
 
 FASTMATH_SOURCES = \
 	rendering/swrenderer/r_all.cpp \
@@ -452,6 +452,7 @@ PCH_SOURCES = \
 	rendering/swrenderer/textures/warptexture.cpp \
 	rendering/swrenderer/textures/swcanvastexture.cpp \
 	events.cpp \
+	utility/i_module.cpp \
 	utility/palette.cpp \
 	utility/files.cpp \
 	utility/files_decompress.cpp \
@@ -535,8 +536,8 @@ LOCAL_LDLIBS +=  -lEGL
 # This is stop a linker warning for mp123 lib failing build
 #LOCAL_LDLIBS += -Wl,--no-warn-shared-textrel
 
-LOCAL_STATIC_LIBRARIES :=  sndfile mpg123 fluidsynth-static libjpeg zlib_lz lzma_lz gdtoa_lz dumb_lz gme_lz bzip2_lz zmusic_lz
-LOCAL_SHARED_LIBRARIES :=  openal openxr_loader
+LOCAL_STATIC_LIBRARIES :=  libjpeg zlib_lz lzma_lz gdtoa_lz bzip2_lz
+LOCAL_SHARED_LIBRARIES :=  openal openxr_loader zmusic
 
 LOCAL_STATIC_LIBRARIES +=
 
