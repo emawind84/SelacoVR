@@ -2022,7 +2022,7 @@ static FString ParseGameInfo(TArray<FString> &pwads, const char *fn, const char 
 		else if (!nextKey.CompareNoCase("LOADWIDESCREEN"))
 		{
 			sc.MustGetNumber();
-			DoomStartupInfo.LoadWidescreen = !!sc.Number;
+			GameStartupInfo.LoadWidescreen = !!sc.Number;
 		}
 		else
 		{
@@ -2159,7 +2159,7 @@ static void AddAutoloadFiles(const char *autoname)
 			if (bmwad)
 				D_AddFile (allwads, bmwad, true, -1, GameConfig);
 		}
-		if (DoomStartupInfo.LoadWidescreen == 1 || (DoomStartupInfo.LoadWidescreen != 0 && autoloadwidescreen))
+		if (GameStartupInfo.LoadWidescreen == 1 || (GameStartupInfo.LoadWidescreen != 0 && autoloadwidescreen))
 		{
 			const char *wswad = BaseFileSearch ("game_widescreen_gfx.pk3", NULL, true, GameConfig);
 			if (wswad)

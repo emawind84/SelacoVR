@@ -69,7 +69,7 @@
 #include "sbar.h"
 #include "actorinlines.h"
 #include "types.h"
-#include "r_data/models/models.h"
+#include "model.h"
 
 static FRandom pr_camissile ("CustomActorfire");
 static FRandom pr_cabullet ("CustomBullet");

@@ -30,6 +30,7 @@
 #include "gl_interface.h"
 #include "hw_cvars.h"
 #include "flatvertices.h"
+#include "c_dispatch.h"
 #include "gl_shader.h"
 #include "gl/renderer/gl_renderer.h"
 #include "hw_lightbuffer.h"

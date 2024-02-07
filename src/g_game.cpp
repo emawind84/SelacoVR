@@ -75,7 +75,7 @@
 #include "i_system.h"
 #include "p_conversation.h"
 #include "v_palette.h"
-#include "r_data/models/models.h"
+#include "model.h"
 
 #include "v_video.h"
 #include "g_hub.h"

@@ -28,8 +28,7 @@
 #include "actorinlines.h"
 #include "a_dynlight.h"
 #include "hw_dynlightdata.h"
-#include"hw_cvars.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_cvars.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
 
 // If we want to share the array to avoid constant allocations it needs to be thread local unless it'd be littered with expensive synchronization.
