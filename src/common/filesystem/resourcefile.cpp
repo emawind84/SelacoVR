@@ -365,7 +365,7 @@ void FResourceFile::PostProcessArchive(void *lumps, size_t lumpsize, LumpFilterI
 		max -= FilterLumps(LumpFilter.Left(len), lumps, lumpsize, max);
 		lastpos = len;
 	}
-	max -= FilterLumps(LumpFilterIWAD, lumps, lumpsize, max);
+	max -= FilterLumps(LumpFilter, lumps, lumpsize, max);
 
 	JunkLeftoverFilters(lumps, lumpsize, max);
 }

@@ -158,8 +158,6 @@ FKeyBindings Bindings;
 FKeyBindings DoubleBindings;
 FKeyBindings AutomapBindings;
 
-DEFINE_GLOBAL(DoubleBindings)
-
 static unsigned int DClickTime[NUM_KEYS];
 static FixedBitArray<NUM_KEYS> DClicked;
 
@@ -784,35 +782,6 @@ CCMD(controlpreset)
 	if (v < 0 || v > 2) return;
 	cl_defaultconfiguration = v;
 	C_BindDefaults();
-}
-
-void C_BindDefaults ()
-{
-	int lump, lastlump = 0;
-	FString defbinds;
-
-	switch (k_modern)
-	{
-	case 0:
-		defbinds = "DEFBIND0";
-		break;
-	case 1:
-		defbinds = "DEFBIND1";
-		break;
-	case 2:
-		defbinds = "DEFBIND2";
-		break;
-	case 3:
-		defbinds = "DEFBIND3";
-		break;
-	}
-
-	while ((lump = Wads.FindLump("DEFBINDS", &lastlump)) != -1)
-		C_BindLump(lump);
-	lump = 0;
-	lastlump = 0;
-	while ((lump = Wads.FindLump(defbinds, &lastlump)) != -1)
-		C_BindLump(lump);
 }
 
 CCMD(binddefaults)
