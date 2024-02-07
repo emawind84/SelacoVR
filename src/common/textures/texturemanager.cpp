@@ -1128,7 +1128,7 @@ void FTextureManager::AddLocalizedVariants()
 // FTextureManager :: Init
 //
 //==========================================================================
-FTexture *CreateShaderTexture(bool, bool);
+FGameTexture *CreateShaderTexture(bool, bool);
 void InitBuildTiles();
 FImageSource* CreateEmptyTexture();
 

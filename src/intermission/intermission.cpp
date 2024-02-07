@@ -804,12 +804,12 @@ void DIntermissionScreenScroller::Drawer ()
 		ypos1 *= scale;
 		ypos2 *= scale;
 
-		DrawTexture(tex, drect.left, drect.top + ypos1,
+		DrawTexture(twod, tex, drect.left, drect.top + ypos1,
 			DTA_DestWidthF, fwidth * scale,
 			DTA_DestHeightF, aheight * scale,
 			DTA_Masked, false,
 			TAG_DONE);
-		DrawTexture(tex2, drect.left, drect.top + ypos2,
+		DrawTexture(twod, tex2, drect.left, drect.top + ypos2,
 			DTA_DestWidthF, fwidth2 * scale,
 			DTA_DestHeightF, aheight * scale,
 			DTA_Masked, false,

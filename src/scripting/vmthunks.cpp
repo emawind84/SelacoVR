@@ -3689,6 +3689,7 @@ DEFINE_FIELD(DHUDFont, mFont);
 DEFINE_GLOBAL(StatusBar);
 
 DEFINE_GLOBAL(Bindings)
+DEFINE_GLOBAL(DoubleBindings)
 DEFINE_GLOBAL(AutomapBindings)
 
 DEFINE_GLOBAL_NAMED(mus_playing, musplaying);

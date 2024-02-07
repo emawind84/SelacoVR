@@ -103,8 +103,6 @@ class Menu : Object native ui version("2.4")
 	native void ActivateMenu();
 	native static void UpdateColorsets(PlayerClass cls);
 	native static void UpdateSkinOptions(PlayerClass cls);
-
-	private native static void MakeScreenShot();
 	
 	//=============================================================================
 	//
@@ -212,11 +210,6 @@ class Menu : Object native ui version("2.4")
 				res |= MouseEvent(MOUSE_Release, ev.MouseX, y);
 			}
 		}
-		else if (ev.type == UIEvent.Type_KeyDown || ev.KeyChar == UiEvent.Key_SysRq)
-		{
-			checkPrintScreen(ev);
-		}
-
 		return false; 
 	}
 
