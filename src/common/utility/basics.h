@@ -70,6 +70,14 @@ using BITFIELD = uint32_t;
 
 const double M_PI = 3.14159265358979323846;	// matches value in gcc v2 math.h
 
+#ifdef DEG2RAD
+#undef DEG2RAD
+#endif
+
+#ifdef RAD2DEG
+#undef RAD2DEG
+#endif
+
 inline float DEG2RAD(float deg)
 {
 	return deg * float(M_PI / 180.0);

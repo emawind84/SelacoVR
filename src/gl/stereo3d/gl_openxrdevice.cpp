@@ -38,7 +38,8 @@
 #include "g_game.h" // G_Add...
 #include "p_local.h" // P_TryMove
 #include "gl/renderer/gl_renderer.h"
-#include "gl/renderer/gl_renderbuffers.h"
+#include "gl_renderstate.h"
+#include "gl_renderbuffers.h"
 #include "hwrenderer/models/hw_models.h"
 #include "r_utility.h"
 #include "v_video.h"
@@ -47,7 +48,6 @@
 #include "c_cvars.h"
 #include "cmdlib.h"
 #include "LSMatrix.h"
-#include "w_wad.h"
 #include "d_gui.h"
 #include "d_event.h"
 #include "doomstat.h"

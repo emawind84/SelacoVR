@@ -36,6 +36,8 @@
 #include "gl/stereo3d/gl_openxrdevice.h"
 #include "gl/renderer/gl_renderer.h"
 
+using namespace OpenGLRenderer;
+
 // Set up 3D-specific console variables:
 CVAR(Int, vr_mode, 15, 0)
 

@@ -27,7 +27,7 @@
 #ifndef VR_LS_MATRIX_H_
 #define VR_LS_MATRIX_H_
 
-#include "utility/matrix.h"
+#include "matrix.h"
 
 class LSVec3
 {

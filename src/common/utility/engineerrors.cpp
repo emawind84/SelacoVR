@@ -73,6 +73,10 @@ void I_Error(const char *error, ...)
 	va_end(argptr);
 	I_DebugPrint(errortext);
 
+#ifdef __ANDROID__
+	LOGI("ERROR: %s", errortext);
+#endif
+
 	throw CRecoverableError(errortext);
 }
 

@@ -28,7 +28,7 @@
 #ifndef _GL_OCULUSQUEST_H
 #define _GL_OCULUSQUEST_H
 
-#include "hwrenderer/utility/hw_vrmodes.h"
+#include "hw_vrmodes.h"
 
 
 /* stereoscopic 3D API */

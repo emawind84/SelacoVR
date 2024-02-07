@@ -1855,7 +1855,7 @@ void P_PoisonDamage (player_t *player, AActor *source, int damage, bool playPain
 		QzDoom_Vibrate(500, 0, level); // left
 		QzDoom_Vibrate(500, 1, level); // right
 
-		VR_HapticEvent(player->poisontype, 0, 100 * C_GetExternalHapticLevelValue("poison"), 0, 0);
+		VR_HapticEvent(player->poisontype.GetChars(), 0, 100 * C_GetExternalHapticLevelValue("poison"), 0, 0);
 	}
 
 	if (player->health < 50 && !deathmatch)

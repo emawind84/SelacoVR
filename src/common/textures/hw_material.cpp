@@ -31,6 +31,10 @@
 
 IHardwareTexture* CreateHardwareTexture();
 
+#ifdef __MOBILE__
+EXTERN_CVAR(Bool, gl_customshader)
+#endif
+
 //===========================================================================
 //
 // Constructor
@@ -110,7 +114,9 @@ FMaterial::FMaterial(FGameTexture * tx, int scaleflags)
 		{
 			mTextureLayers.Push({ placeholder->GetTexture(), 0 });
 		}
-
+#ifdef __MOBILE__
+		if( gl_customshader )
+#endif
 		auto index = tx->GetShaderIndex();
 		if (index >= FIRST_USER_SHADER)
 		{

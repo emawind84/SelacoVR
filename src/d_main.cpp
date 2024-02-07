@@ -116,7 +116,7 @@
 #include "texturemanager.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
-#include "hwrenderer/utility/hw_vrmodes.h"
+#include "hw_vrmodes.h"
 
 #include <QzDoom/VrCommon.h>
 
@@ -3717,7 +3717,7 @@ int GameMain()
 void VR_DoomMain(int argc, char** argv)
 {
     Args = new FArgs(argc, argv);
-    D_DoomMain ();
+    GameMain ();
 }
 
 //==========================================================================

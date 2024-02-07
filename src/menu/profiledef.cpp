@@ -2,6 +2,7 @@
 #include "i_system.h"
 #include "gameconfigfile.h"
 #include "c_cvars.h"
+#include "findfile.h"
 #include "profiledef.h"
 #include <algorithm>
 

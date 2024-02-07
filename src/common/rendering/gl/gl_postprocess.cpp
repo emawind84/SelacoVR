@@ -36,6 +36,8 @@
 #include "templates.h"
 #include "hw_vrmodes.h"
 #include "v_draw.h"
+#include "doomstat.h"
+#include "gamestate.h"
 
 extern bool vid_hdr_active;
 extern bool cinemamode;

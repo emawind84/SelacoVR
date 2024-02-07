@@ -33,7 +33,11 @@ enum
 	Button_ShowScores,
 	Button_Speed,	
 	Button_Use,		
-	Button_MoveUp,	
+	Button_MoveUp,
+	Button_MH_Reload, 
+	Button_OH_Reload,
+	Button_OH_Attack, 
+	Button_OH_AltAttack,
 	NUM_ACTIONS
 };
 

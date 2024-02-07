@@ -43,7 +43,7 @@
 #include "i_time.h"
 #include "texturemanager.h"
 #include "modelrenderer.h"
-#include "hwrenderer/utility/hw_vrmodes.h"
+#include "hw_vrmodes.h"
 
 
 #ifdef _MSC_VER

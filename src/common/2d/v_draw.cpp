@@ -121,13 +121,13 @@ int AspectMultiplier(float aspect)
 		return (int)round(200.0f / (AspectBaseHeight(aspect) / 3.0f) * 48.0f);
 }
 
-int VR_GetUIScale(int altval)
+int VR_GetUIScale(F2DDrawer *drawer, int altval)
 {
 	int scaleval;
 	if (altval > 0) scaleval = altval;
 	else if (uiscale == 0)
 	{
-		scaleval = screen->GetHeight() / 320;
+		scaleval = drawer->GetHeight() / 320;
 	}
 	else scaleval = uiscale;
 
@@ -136,7 +136,7 @@ int VR_GetUIScale(int altval)
 
 int GetUIScale(F2DDrawer *drawer, int altval)
 {
-	return VR_GetUIScale(altval);
+	return VR_GetUIScale(drawer, altval);
 	/*
 	int scaleval;
 	if (altval > 0) scaleval = altval;

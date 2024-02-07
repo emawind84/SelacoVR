@@ -43,6 +43,9 @@
 #include "gstrings.h"
 #include "vm.h"
 #include "printf.h"
+#include "v_video.h"
+#include "gamestate.h"
+#include "version.h"
 
 int ListGetInt(VMVa_List &tags);
 
@@ -424,6 +427,7 @@ DEFINE_ACTION_FUNCTION(_Screen, DrawText)
 
 void DFrameBuffer::DrawVersionString ()
 {
+	auto drawer = twod;
 	static uint64_t first = screen->FrameTime;
 
 	//Only show version string for 5 seconds
@@ -436,10 +440,10 @@ void DFrameBuffer::DrawVersionString ()
 			gamestate == GS_DEMOSCREEN) {
 		char buff[60];
 
-		int textScale = active_con_scale();
+		int textScale = active_con_scale(drawer);
 
 		mysnprintf(buff, countof(buff), "%s", GetVersionString());
-		DrawText(ConFont, CR_WHITE, 0, 0, (char *) &buff[0],
+		DrawText(drawer, ConFont, CR_WHITE, 0, 0, (char *) &buff[0],
 				 DTA_VirtualWidth, screen->GetWidth() / textScale,
 				 DTA_VirtualHeight, screen->GetHeight() / textScale,
 				 DTA_KeepRatio, true, TAG_DONE);

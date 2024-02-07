@@ -3335,6 +3335,17 @@ DEFINE_ACTION_FUNCTION(DOptionMenuItemCommand, DoCommand)
 	return 0;
 }
 
+DEFINE_ACTION_FUNCTION(DOptionMenuItemCommandInput, DoCommand)
+{
+	if (CurrentMenu == nullptr) return 0;
+	PARAM_PROLOGUE;
+	PARAM_STRING(cmd);
+	PARAM_BOOL(unsafe);
+	UnsafeExecutionScope scope(unsafe);
+	C_DoCommand(cmd);
+	return 0;
+}
+
 DEFINE_ACTION_FUNCTION(_Console, MidPrint)
 {
 	PARAM_PROLOGUE;

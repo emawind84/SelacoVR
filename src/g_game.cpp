@@ -84,7 +84,7 @@
 #include "c_buttons.h"
 #include "d_buttons.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
-#include "hwrenderer/utility/hw_vrmodes.h"
+#include "hw_vrmodes.h"
 
 #include <QzDoom/VrCommon.h>
 #include <cmath>
@@ -762,10 +762,10 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (buttonMap.ButtonDown(Button_Crouch))		cmd->ucmd.buttons |= BT_CROUCH;
 	if (buttonMap.ButtonDown(Button_Zoom))			cmd->ucmd.buttons |= BT_ZOOM;
 	if (buttonMap.ButtonDown(Button_Reload))		cmd->ucmd.buttons |= BT_RELOAD;
-	if (buttonMap.ButtonDown(Button_MH_Reload.bDown))		cmd->ucmd.buttons |= BT_MAINHANDRELOAD;
-	if (buttonMap.ButtonDown(Button_OH_Reload.bDown))		cmd->ucmd.buttons |= BT_OFFHANDRELOAD;
-	if (buttonMap.ButtonDown(Button_OH_Attack.bDown))		cmd->ucmd.buttons |= BT_OFFHANDATTACK;
-	if (buttonMap.ButtonDown(Button_OH_AltAttack.bDown))	cmd->ucmd.buttons |= BT_OFFHANDALTATTACK;
+	if (buttonMap.ButtonDown(Button_MH_Reload))		cmd->ucmd.buttons |= BT_MAINHANDRELOAD;
+	if (buttonMap.ButtonDown(Button_OH_Reload))		cmd->ucmd.buttons |= BT_OFFHANDRELOAD;
+	if (buttonMap.ButtonDown(Button_OH_Attack))		cmd->ucmd.buttons |= BT_OFFHANDATTACK;
+	if (buttonMap.ButtonDown(Button_OH_AltAttack))	cmd->ucmd.buttons |= BT_OFFHANDALTATTACK;
 
 	if (buttonMap.ButtonDown(Button_User1))			cmd->ucmd.buttons |= BT_USER1;
 	if (buttonMap.ButtonDown(Button_User2))			cmd->ucmd.buttons |= BT_USER2;

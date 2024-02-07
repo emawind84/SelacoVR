@@ -195,6 +195,9 @@ public:
 	// Changes the vsync setting, if supported by the device.
 	virtual void SetVSync (bool vsync);
 
+	// Tells the device to recreate itself with the new setting from vid_refreshrate.
+	virtual void NewRefreshRate () {};
+
 	// Delete any resources that need to be deleted after restarting with a different IWAD
 	virtual void SetTextureFilterMode() {}
 	virtual IHardwareTexture *CreateHardwareTexture() { return nullptr; }
@@ -247,7 +250,7 @@ public:
 
 	void ScaleCoordsFromWindow(int16_t &x, int16_t &y);
 
-	virtual void Draw2D() {}
+	virtual void Draw2D(bool outside2D = false) {}
 
 	virtual void SetViewportRects(IntRect *bounds);
 	int ScreenToWindowX(int x);
@@ -260,11 +263,15 @@ public:
 	// points to the last row in the buffer, which will be the first row output.
 	virtual TArray<uint8_t> GetScreenshotBuffer(int &pitch, ESSType &color_type, float &gamma) { return TArray<uint8_t>(); }
 
-	static float GetZNear() { return 5.f; }
+	//TODO this was 0.5f in gl_renderer.h from questzdoom branch ????
+	static float GetZNear() { return 0.5f; }
 	static float GetZFar() { return 65536.f; }
 
 	// The original size of the framebuffer as selected in the video menu.
 	uint64_t FrameTime = 0;
+
+protected:
+	void DrawVersionString ();
 
 private:
 	uint64_t fpsLimitTime = 0;

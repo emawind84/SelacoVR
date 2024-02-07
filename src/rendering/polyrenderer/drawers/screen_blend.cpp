@@ -22,7 +22,7 @@
 
 #include "screen_blend.h"
 #include "poly_thread.h"
-#include "r_data/renderstyle.h"
+#include "renderstyle.h"
 
 static const int shiftTable[] = {
 	0, 0, 0, 0, // STYLEALPHA_Zero
