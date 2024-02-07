@@ -315,14 +315,6 @@ FString C_NameKeys (int *keys, int count, bool colors)
 	return result;
 }
 
-DEFINE_ACTION_FUNCTION(FKeyBindings, NameAllKeys)
-{
-	PARAM_PROLOGUE;
-	PARAM_POINTER(array, TArray<int>);
-	auto buffer = C_NameKeys(array->Data(), array->Size(), true);
-	ACTION_RETURN_STRING(buffer);
-}
-
 //=============================================================================
 //
 //
@@ -509,22 +501,6 @@ TArray<int> FKeyBindings::GetKeysForCommand (const char *cmd)
 		i++;
 	}
 	return result;
-}
-
-DEFINE_ACTION_FUNCTION(FKeyBindings, GetAllKeysForCommand)
-{
-	PARAM_SELF_STRUCT_PROLOGUE(FKeyBindings);
-	PARAM_POINTER(array, TArray<int>);
-	PARAM_STRING(cmd);
-	*array = self->GetKeysForCommand(cmd);
-	return 0;
-}
-
-DEFINE_ACTION_FUNCTION(FKeyBindings, GetBinding)
-{
-	PARAM_SELF_STRUCT_PROLOGUE(FKeyBindings);
-	PARAM_INT(key);
-	ACTION_RETURN_STRING(self->GetBinding(key));
 }
 
 //=============================================================================

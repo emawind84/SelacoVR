@@ -2,10 +2,8 @@
 struct KeyBindings native version("2.4")
 {
 	native static String NameKeys(int k1, int k2);
-	native static String NameAllKeys(array<int> list);
 
 	native int, int GetKeysForCommand(String cmd);
-	native void GetAllKeysForCommand(out array<int> list, String cmd);
 	native String GetBinding(int key);
 
 	native void SetBind(int key, String cmd);
