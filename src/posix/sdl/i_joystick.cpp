@@ -32,10 +32,11 @@
 */
 #include <SDL.h>
 
-#include "doomdef.h"
-#include "version.h"
+#include "basics.h"
 #include "templates.h"
 #include "m_joy.h"
+#include "keydef.h"
+#include "version.h"
 
 // Very small deadzone so that floating point magic doesn't happen
 #define MIN_DEADZONE 0.000001f
@@ -161,7 +162,7 @@ public:
 	FString GetIdentifier()
 	{
 		char id[16];
-		mysnprintf(id, countof(id), "JS:%d", DeviceIndex);
+		snprintf(id, countof(id), "JS:%d", DeviceIndex);
 		return id;
 	}
 

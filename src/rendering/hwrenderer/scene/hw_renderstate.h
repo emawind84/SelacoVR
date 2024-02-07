@@ -6,7 +6,7 @@
 #include "hw_drawstructs.h"
 #include "hw_drawlist.h"
 #include "matrix.h"
-#include "hwrenderer/textures/hw_material.h"
+#include "hw_material.h"
 
 struct FColormap;
 class IVertexBuffer;
@@ -258,6 +258,7 @@ public:
 		mStreamData.uFogColor = mFogColor;
 		mTextureMode = -1;
 		mTextureModeFlags = 0;
+		mStreamData.uDesaturationFactor = 0.0f;
 		mAlphaThreshold = 0.5f;
 		mModelMatrixEnabled = false;
 		mTextureMatrixEnabled = false;
@@ -531,7 +532,7 @@ public:
 		else mAlphaThreshold = thresh - 0.001f;
 	}
 
-	void SetPlaneTextureRotation(HWSectorPlane *plane, FMaterial *texture)
+	void SetPlaneTextureRotation(HWSectorPlane *plane, FGameTexture *texture)
 	{
 		if (hw_SetPlaneTextureRotation(plane, texture, mTextureMatrix))
 		{
@@ -576,6 +577,12 @@ public:
 		mMaterial.mOverrideShader = overrideshader;
 		mMaterial.mChanged = true;
 		mTextureModeFlags = mat->GetLayerFlags();
+	}
+
+	void SetMaterial(FGameTexture* tex, EUpscaleFlags upscalemask, int scaleflags, int clampmode, int translation, int overrideshader)
+	{
+		if (shouldUpscale(tex, upscalemask)) scaleflags |= CTF_Upscale;
+		SetMaterial(FMaterial::ValidateTexture(tex, scaleflags), clampmode, translation, overrideshader);
 	}
 
 	void SetClipSplit(float bottom, float top)

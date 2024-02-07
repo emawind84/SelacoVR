@@ -29,8 +29,8 @@
 #include "doomstat.h"
 #include "c_dispatch.h"
 #include "r_data/colormaps.h"
-#include "gl_load/gl_system.h"
-#include "gl_load/gl_interface.h"
+#include "gl_system.h"
+#include "gl_interface.h"
 #include "hwrenderer/utility/hw_cvars.h"
 #include "hwrenderer/data/flatvertices.h"
 #include "hwrenderer/scene/hw_skydome.h"
@@ -129,7 +129,7 @@ bool FGLRenderState::ApplyShader()
 	activeShader->muFogEnabled.Set(fogset);
 
 	int f = mTextureModeFlags;
-	if (!mBrightmapEnabled) f &= TEXF_Detailmap;
+	if (!mBrightmapEnabled) f &= ~(TEXF_Brightmap | TEXF_Glowmap);
 	activeShader->muTextureMode.Set((mTextureMode == TM_NORMAL && mTempTM == TM_OPAQUE ? TM_OPAQUE : mTextureMode) | f);
 	activeShader->muLightParms.Set(mLightParms);
 	activeShader->muFogColor.Set(mStreamData.uFogColor);
@@ -176,6 +176,7 @@ bool FGLRenderState::ApplyShader()
 		activeShader->muSplitBottomPlane.Set(&mStreamData.uSplitBottomPlane.X);
 		activeShader->currentsplitstate = mSplitEnabled;
 	}
+
 
 	if (mTextureMatrixEnabled)
 	{
@@ -304,7 +305,7 @@ void FGLRenderState::Apply()
 
 void FGLRenderState::ApplyMaterial(FMaterial *mat, int clampmode, int translation, int overrideshader)
 {
-	if (mat->tex->isHardwareCanvas())
+	if (mat->Source()->isHardwareCanvas())
 	{
 		mTempTM = TM_OPAQUE;
 	}
@@ -312,15 +313,13 @@ void FGLRenderState::ApplyMaterial(FMaterial *mat, int clampmode, int translatio
 	{
 		mTempTM = TM_NORMAL;
 	}
+	auto tex = mat->Source();
 	mEffectState = overrideshader >= 0 ? overrideshader : mat->GetShaderIndex();
-	mShaderTimer = mat->tex->shaderspeed;
-	mTextureModeFlags = mat->GetLayerFlags();
-	SetSpecular(mat->tex->Glossiness, mat->tex->SpecularLevel);
+	mShaderTimer = tex->GetShaderSpeed();
+	SetSpecular(tex->GetGlossiness(), tex->GetSpecularLevel());
+	if (tex->isHardwareCanvas()) static_cast<FCanvasTexture*>(tex->GetTexture())->NeedUpdate();
 
-	auto tex = mat->tex;
-	if (tex->UseType == ETextureType::SWCanvas) clampmode = CLAMP_NOFILTER;
-	if (tex->isHardwareCanvas()) clampmode = CLAMP_CAMTEX;
-	else if ((tex->isWarped() || tex->shaderindex >= FIRST_USER_SHADER) && clampmode <= CLAMP_XY) clampmode = CLAMP_NONE;
+	clampmode = tex->GetClampMode(clampmode);
 	
 	// avoid rebinding the same texture multiple times.
 	if (mat == lastMaterial && lastClamp == clampmode && translation == lastTranslation) return;
@@ -331,17 +330,17 @@ void FGLRenderState::ApplyMaterial(FMaterial *mat, int clampmode, int translatio
 	int usebright = false;
 	int maxbound = 0;
 
-	int flags = mat->isExpanded() ? CTF_Expand : 0;
-	int numLayers = mat->GetLayers();
-	auto base = static_cast<FHardwareTexture*>(mat->GetLayer(0, translation));
+	int numLayers = mat->NumLayers();
+	MaterialLayerInfo* layer;
+	auto base = static_cast<FHardwareTexture*>(mat->GetLayer(0, translation, &layer));
 
-	if (base->BindOrCreate(tex, 0, clampmode, translation, flags))
+	if (base->BindOrCreate(tex->GetTexture(), 0, clampmode, translation, layer->scaleFlags))
 	{
 		for (int i = 1; i<numLayers; i++)
 		{
-			FTexture *layer;
 			auto systex = static_cast<FHardwareTexture*>(mat->GetLayer(i, 0, &layer));
-			systex->BindOrCreate(layer, i, clampmode, 0, mat->isExpanded() ? CTF_Expand : 0);
+			// fixme: Upscale flags must be disabled for certain layers.
+			systex->BindOrCreate(layer->layerTexture, i, clampmode, 0, layer->scaleFlags);
 			maxbound = i;
 		}
 	}
@@ -361,7 +360,7 @@ void FGLRenderState::ApplyMaterial(FMaterial *mat, int clampmode, int translatio
 
 void FGLRenderState::ApplyBlendMode()
 {
-	static int blendstyles[] = { GL_ZERO, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR, GL_DST_COLOR, GL_ONE_MINUS_DST_COLOR, };
+	static int blendstyles[] = { GL_ZERO, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR, GL_DST_COLOR, GL_ONE_MINUS_DST_COLOR, GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA };
 	static int renderops[] = { 0, GL_FUNC_ADD, GL_FUNC_SUBTRACT, GL_FUNC_REVERSE_SUBTRACT, -1, -1, -1, -1,
 		-1, -1, -1, -1, -1, -1, -1, -1 };
 

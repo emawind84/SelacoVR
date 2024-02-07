@@ -26,8 +26,9 @@
 **
 **/
 
-#include "w_wad.h"
+#include "filesystem.h"
 #include "r_data/models/models.h"
+#include "texturemanager.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244) // warning C4244: conversion from 'double' to 'float', possible loss of data
@@ -170,7 +171,7 @@ bool FDMDModel::Load(const char * path, int lumpnum, const char * buffer, int le
 void FDMDModel::LoadGeometry()
 {
 	static int axis[3] = { VX, VY, VZ };
-	FMemLump lumpdata = Wads.ReadLump(mLumpNum);
+	FileData lumpdata = fileSystem.ReadFile(mLumpNum);
 	const char *buffer = (const char *)lumpdata.GetMem();
 	texCoords = new FTexCoord[info.numTexCoords];
 	memcpy(texCoords, buffer + info.offsetTexCoords, info.numTexCoords * sizeof(FTexCoord));
@@ -357,14 +358,14 @@ int FDMDModel::FindFrame(const char * name)
 //
 //===========================================================================
 
-void FDMDModel::RenderFrame(FModelRenderer *renderer, FTexture * skin, int frameno, int frameno2, double inter, int translation, const FTextureID*)
+void FDMDModel::RenderFrame(FModelRenderer *renderer, FGameTexture * skin, int frameno, int frameno2, double inter, int translation, const FTextureID*)
 {
 	if (frameno >= info.numFrames || frameno2 >= info.numFrames) return;
 
 	if (!skin)
 	{
 		if (info.numSkins == 0 || !skins[0].isValid()) return;
-		skin = TexMan.GetTexture(skins[0], true);
+		skin = TexMan.GetGameTexture(skins[0], true);
 		if (!skin) return;
 	}
 
@@ -496,7 +497,7 @@ void FMD2Model::LoadGeometry()
 {
 	static int axis[3] = { VX, VY, VZ };
 	uint8_t   *md2_frames;
-	FMemLump lumpdata = Wads.ReadLump(mLumpNum);
+	FileData lumpdata = fileSystem.ReadFile(mLumpNum);
 	const char *buffer = (const char *)lumpdata.GetMem();
 
 	texCoords = new FTexCoord[info.numTexCoords];

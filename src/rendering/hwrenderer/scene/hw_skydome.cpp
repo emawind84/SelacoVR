@@ -55,15 +55,15 @@
 */
 #include "doomtype.h"
 #include "g_level.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "r_state.h"
 #include "r_utility.h"
 #include "g_levellocals.h"
 #include "r_sky.h"
 #include "cmdlib.h"
 
-#include "textures/skyboxtexture.h"
-#include "hwrenderer/textures/hw_material.h"
+#include "skyboxtexture.h"
+#include "hw_material.h"
 #include "hw_skydome.h"
 #include "hw_renderstate.h"
 #include "hw_drawinfo.h"
@@ -282,19 +282,20 @@ void FSkyVertexBuffer::CreateDome()
 //
 //-----------------------------------------------------------------------------
 
-void FSkyVertexBuffer::SetupMatrices(HWDrawInfo *di, FMaterial *tex, float x_offset, float y_offset, bool mirror, int mode, VSMatrix &modelMatrix, VSMatrix &textureMatrix)
+void FSkyVertexBuffer::SetupMatrices(HWDrawInfo *di, FGameTexture *tex, float x_offset, float y_offset, bool mirror, int mode, VSMatrix &modelMatrix, VSMatrix &textureMatrix)
 {
-	int texw = tex->TextureWidth();
-	int texh = tex->TextureHeight();
+	int texw = tex->GetDisplayWidth();
+	int texh = tex->GetDisplayHeight();
 
 	modelMatrix.loadIdentity();
 	modelMatrix.rotate(-180.0f + x_offset, 0.f, 1.f, 0.f);
 
 	float xscale = texw < 1024.f ? floorf(1024.f / float(texw)) : 1.f;
 	float yscale = 1.f;
+	auto texskyoffset = tex->GetSkyOffset() + skyoffset;
 	if (texh <= 128 && (di->Level->flags & LEVEL_FORCETILEDSKY))
 	{
-		modelMatrix.translate(0.f, (-40 + tex->tex->GetSkyOffset() + skyoffset)*skyoffsetfactor, 0.f);
+		modelMatrix.translate(0.f, (-40 + texskyoffset)*skyoffsetfactor, 0.f);
 		modelMatrix.scale(1.f, 1.2f * 1.17f, 1.f);
 		yscale = 240.f / texh;
 	}
@@ -312,12 +313,12 @@ void FSkyVertexBuffer::SetupMatrices(HWDrawInfo *di, FMaterial *tex, float x_off
 	}
 	else if (texh <= 240)
 	{
-		modelMatrix.translate(0.f, (200 - texh + tex->tex->GetSkyOffset() + skyoffset)*skyoffsetfactor, 0.f);
+		modelMatrix.translate(0.f, (200 - texh + texskyoffset)*skyoffsetfactor, 0.f);
 		modelMatrix.scale(1.f, 1.f + ((texh - 200.f) / 200.f) * 1.17f, 1.f);
 	}
 	else
 	{
-		modelMatrix.translate(0.f, (-40 + tex->tex->GetSkyOffset() + skyoffset)*skyoffsetfactor, 0.f);
+		modelMatrix.translate(0.f, (-40 + texskyoffset)*skyoffsetfactor, 0.f);
 		modelMatrix.scale(1.f, 1.2f * 1.17f, 1.f);
 		yscale = 240.f / texh;
 	}

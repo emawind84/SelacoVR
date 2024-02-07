@@ -5,8 +5,8 @@
 //
 //==========================================================================
 #include "r_defs.h"
-#include "r_data/renderstyle.h"
-#include "textures/textures.h"
+#include "renderstyle.h"
+#include "textures.h"
 #include "r_data/colormaps.h"
 
 #ifdef _MSC_VER
@@ -152,7 +152,7 @@ public:
 	friend class HWPortal;
 
 	vertex_t * vertexes[2];				// required for polygon splitting
-	FMaterial *gltexture;
+	FGameTexture *texture;
 	TArray<lightlist_t> *lightlist;
 
 	HWSeg glseg;
@@ -296,7 +296,7 @@ class HWFlat
 public:
 	sector_t * sector;
 	FSection *section;
-	FMaterial *gltexture;
+	FGameTexture *texture;
 	TextureManipulation* TextureFx;
 
 	float z; // the z position of the flat (only valid for non-sloped planes)
@@ -370,7 +370,7 @@ public:
 	float trans;
 	int dynlightindex;
 
-	FMaterial *gltexture;
+	FGameTexture *texture;
 	AActor * actor;
 	particle_t * particle;
 	TArray<lightlist_t> *lightlist;
@@ -402,7 +402,7 @@ struct DecalVertex
 
 struct HWDecal
 {
-	FMaterial *gltexture;
+	FGameTexture *texture;
 	TArray<lightlist_t> *lightlist;
 	DBaseDecal *decal;
 	DecalVertex dv[4];
@@ -427,7 +427,7 @@ inline float Dist2(float x1,float y1,float x2,float y2)
 	return sqrtf((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
 
-bool hw_SetPlaneTextureRotation(const HWSectorPlane * secplane, FMaterial * gltexture, VSMatrix &mat);
+bool hw_SetPlaneTextureRotation(const HWSectorPlane * secplane, FGameTexture * gltexture, VSMatrix &mat);
 void hw_GetDynModelLight(AActor *self, FDynLightData &modellightdata);
 
 extern const float LARGE_VALUE;

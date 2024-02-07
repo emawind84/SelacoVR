@@ -3,10 +3,12 @@
 
 #include <memory>
 
-#include "utility/vectors.h"
+#include "vectors.h"
 #include "matrix.h"
 #include "name.h"
 #include "hwrenderer/scene/hw_renderstate.h"
+
+#define SHADER_MIN_REQUIRED_TEXTURE_LAYERS 8
 
 class VulkanDevice;
 class VulkanShader;

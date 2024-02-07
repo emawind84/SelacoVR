@@ -20,9 +20,10 @@
 //--------------------------------------------------------------------------
 //
 
-#include "w_wad.h"
+#include "filesystem.h"
 #include "cmdlib.h"
 #include "r_data/models/models.h"
+#include "texturemanager.h"
 
 #define MAX_QPATH 64
 
@@ -185,7 +186,7 @@ bool FMD3Model::Load(const char * path, int lumpnum, const char * buffer, int le
 
 void FMD3Model::LoadGeometry()
 {
-	FMemLump lumpdata = Wads.ReadLump(mLumpNum);
+	FileData lumpdata = fileSystem.ReadFile(mLumpNum);
 	const char *buffer = (const char *)lumpdata.GetMem();
 	md3_header_t * hdr = (md3_header_t *)buffer;
 	md3_surface_t * surf = (md3_surface_t*)(buffer + LittleLong(hdr->Ofs_Surfaces));
@@ -341,7 +342,7 @@ int FMD3Model::FindFrame(const char * name)
 //
 //===========================================================================
 
-void FMD3Model::RenderFrame(FModelRenderer *renderer, FTexture * skin, int frameno, int frameno2, double inter, int translation, const FTextureID* surfaceskinids)
+void FMD3Model::RenderFrame(FModelRenderer *renderer, FGameTexture * skin, int frameno, int frameno2, double inter, int translation, const FTextureID* surfaceskinids)
 {
 	if ((unsigned)frameno >= Frames.Size() || (unsigned)frameno2 >= Frames.Size()) return;
 
@@ -352,16 +353,16 @@ void FMD3Model::RenderFrame(FModelRenderer *renderer, FTexture * skin, int frame
 
 		// [BB] In case no skin is specified via MODELDEF, check if the MD3 has a skin for the current surface.
 		// Note: Each surface may have a different skin.
-		FTexture *surfaceSkin = skin;
+		FGameTexture *surfaceSkin = skin;
 		if (!surfaceSkin)
 		{
 			if (surfaceskinids && surfaceskinids[i].isValid())
 			{
-				surfaceSkin = TexMan.GetTexture(surfaceskinids[i], true);
+				surfaceSkin = TexMan.GetGameTexture(surfaceskinids[i], true);
 			}
 			else if (surf->numSkins > 0 && surf->Skins[0].isValid())
 			{
-				surfaceSkin = TexMan.GetTexture(surf->Skins[0], true);
+				surfaceSkin = TexMan.GetGameTexture(surf->Skins[0], true);
 			}
 
 			if (!surfaceSkin)

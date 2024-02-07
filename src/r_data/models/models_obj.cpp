@@ -19,8 +19,9 @@
 //
 //--------------------------------------------------------------------------
 
-#include "w_wad.h"
+#include "filesystem.h"
 #include "r_data/models/models_obj.h"
+#include "texturemanager.h"
 
 /**
  * Load an OBJ model
@@ -33,7 +34,7 @@
  */
 bool FOBJModel::Load(const char* fn, int lumpnum, const char* buffer, int length)
 {
-	FString objName = Wads.GetLumpFullPath(lumpnum);
+	FString objName = fileSystem.GetFileFullPath(lumpnum);
 	FString objBuf(buffer, length);
 
 	// Do some replacements before we parse the OBJ string
@@ -624,22 +625,22 @@ int FOBJModel::FindFrame(const char* name)
  * @param inter Unused
  * @param translation The translation for the skin
  */
-void FOBJModel::RenderFrame(FModelRenderer *renderer, FTexture * skin, int frameno, int frameno2, double inter, int translation, const FTextureID* surfaceskinids)
+void FOBJModel::RenderFrame(FModelRenderer *renderer, FGameTexture * skin, int frameno, int frameno2, double inter, int translation, const FTextureID* surfaceskinids)
 {
 	for (unsigned int i = 0; i < surfaces.Size(); i++)
 	{
 		OBJSurface *surf = &surfaces[i];
 
-		FTexture *userSkin = skin;
+		FGameTexture *userSkin = skin;
 		if (!userSkin)
 		{
 			if (surfaceskinids && surfaceskinids[i].isValid())
 			{
-				userSkin = TexMan.GetTexture(surfaceskinids[i], true);
+				userSkin = TexMan.GetGameTexture(surfaceskinids[i], true);
 			}
 			else if (surf->skin.isValid())
 			{
-				userSkin = TexMan.GetTexture(surf->skin, true);
+				userSkin = TexMan.GetGameTexture(surf->skin, true);
 			}
 		}
 

@@ -38,7 +38,7 @@
 #include "m_random.h"
 #include "m_swap.h"
 
-#include "w_wad.h"
+#include "filesystem.h"
 #include "g_level.h"
 #include "s_sound.h"
 #include "doomstat.h"
@@ -54,6 +54,7 @@
 #include "cmdlib.h"
 #include "g_levellocals.h"
 #include "vm.h"
+#include "texturemanager.h"
 
 #define ScaleToFit43 3
 
@@ -140,7 +141,7 @@ class DInterBackground : public DObject
 		int 		period;	// period in tics between animations
 		yahpt_t 	loc;	// location of animation
 		int 		data;	// ALWAYS: n/a, RANDOM: period deviation (<256)
-		TArray<FTexture*>	frames;	// actual graphics for frames of animations
+		TArray<FGameTexture*>	frames;	// actual graphics for frames of animations
 
 									// following must be initialized to zero before use!
 		int 		nexttic;	// next value of bcnt (used in conjunction with period)
@@ -163,9 +164,9 @@ private:
 	TArray<lnode_t> lnodes;
 	TArray<in_anim_t> anims;
 	int				bcnt = 0;				// used for timing of background animation
-	TArray<FTexture *> yah; 		// You Are Here graphic
-	FTexture* 		splat = nullptr;		// splat
-	FTexture		*background = nullptr;
+	TArray<FGameTexture *> yah; 		// You Are Here graphic
+	FGameTexture* 	splat = nullptr;		// splat
+	FGameTexture	*background = nullptr;
 	wbstartstruct_t *wbs;
 	level_info_t	*exitlevel;
 	int			bgwidth = -1;
@@ -213,15 +214,15 @@ private:
 	//
 	//====================================================================
 
-	void drawOnLnode(int   n, FTexture * c[], int numc, double backwidth, double backheight)
+	void drawOnLnode(int   n, FGameTexture * c[], int numc, double backwidth, double backheight)
 	{
 		int   i;
 		for (i = 0; i<numc; i++)
 		{
-			int            left;
-			int            top;
-			int            right;
-			int            bottom;
+			double            left;
+			double            top;
+			double            right;
+			double            bottom;
 
 
 			right = c[i]->GetDisplayWidth();
@@ -233,7 +234,7 @@ private:
 
 			if (left >= 0 && right < 320 && top >= 0 && bottom < 200)
 			{
-				screen->DrawTexture(c[i], lnodes[n].x, lnodes[n].y, DTA_FullscreenScale, ScaleToFit43, DTA_VirtualWidthF, backwidth, DTA_VirtualHeightF, backheight, TAG_DONE);
+				DrawTexture(twod, c[i], lnodes[n].x, lnodes[n].y, DTA_FullscreenScale, ScaleToFit43, DTA_VirtualWidthF, backwidth, DTA_VirtualHeightF, backheight, TAG_DONE);
 				break;
 			}
 		}
@@ -375,7 +376,7 @@ bool DInterBackground::LoadBackground(bool isenterpic)
 	}
 	else
 	{
-		int lumpnum = Wads.CheckNumForFullName(lumpname + 1, true);
+		int lumpnum = fileSystem.CheckNumForFullName(lumpname + 1, true);
 		if (lumpnum >= 0)
 		{
 			FScanner sc(lumpnum);
@@ -392,13 +393,13 @@ bool DInterBackground::LoadBackground(bool isenterpic)
 
 				case 1:		// Splat
 					sc.MustGetString();
-					splat = TexMan.GetTextureByName(sc.String);
+					splat = TexMan.GetGameTextureByName(sc.String);
 					break;
 
 				case 2:		// Pointers
 					while (sc.GetString() && !sc.Crossed)
 					{
-						yah.Push(TexMan.GetTextureByName(sc.String));
+						yah.Push(TexMan.GetGameTextureByName(sc.String));
 					}
 					if (sc.Crossed)
 						sc.UnGet();
@@ -497,14 +498,14 @@ bool DInterBackground::LoadBackground(bool isenterpic)
 						if (!sc.CheckString("{"))
 						{
 							sc.MustGetString();
-							an.frames.Push(TexMan.GetTextureByName(sc.String));
+							an.frames.Push(TexMan.GetGameTextureByName(sc.String));
 						}
 						else
 						{
 							while (!sc.CheckString("}"))
 							{
 								sc.MustGetString();
-								an.frames.Push(TexMan.GetTextureByName(sc.String));
+								an.frames.Push(TexMan.GetGameTextureByName(sc.String));
 							}
 						}
 						an.ctr = -1;
@@ -519,7 +520,7 @@ bool DInterBackground::LoadBackground(bool isenterpic)
 						an.loc.y = sc.Number;
 						sc.MustGetString();
 						an.frames.Reserve(1);	// allocate exactly one element
-						an.frames[0] = TexMan.GetTextureByName(sc.String);
+						an.frames[0] = TexMan.GetGameTextureByName(sc.String);
 						anims.Push(an);
 						break;
 
@@ -535,7 +536,7 @@ bool DInterBackground::LoadBackground(bool isenterpic)
 			texture = TexMan.GetTextureID("INTERPIC", ETextureType::MiscPatch);
 		}
 	}
-	background = TexMan.GetTexture(texture);
+	background = TexMan.GetGameTexture(texture);
 	return noautostartmap;
 }
 
@@ -616,16 +617,16 @@ void DInterBackground::drawBackground(int state, bool drawsplat, bool snl_pointe
 				animheight = background->GetDisplayHeight();
 				if (animheight == 200) animwidth = 320;	// deal with widescreen replacements that keep the original coordinates.
 			}
-			screen->DrawTexture(background, 0, 0, DTA_FullscreenEx, ScaleToFit43, TAG_DONE);
+			DrawTexture(twod, background, 0, 0, DTA_FullscreenEx, ScaleToFit43, TAG_DONE);
 		}
 		else
 		{
-			screen->FlatFill(0, 0, SCREENWIDTH, SCREENHEIGHT, background);
+			twod->AddFlatFill(0, 0, twod->GetWidth(), twod->GetHeight(), background);
 		}
 	}
 	else
 	{
-		screen->Clear(0, 0, SCREENWIDTH, SCREENHEIGHT, 0, 0);
+		ClearRect(twod, 0, 0, twod->GetWidth(), twod->GetHeight(), 0, 0);
 	}
 
 	for (i = 0; i<anims.Size(); i++)
@@ -671,7 +672,7 @@ void DInterBackground::drawBackground(int state, bool drawsplat, bool snl_pointe
 			break;
 		}
 		if (a->ctr >= 0)
-			screen->DrawTexture(a->frames[a->ctr], a->loc.x, a->loc.y,
+			DrawTexture(twod, a->frames[a->ctr], a->loc.x, a->loc.y,
 				DTA_VirtualWidthF, animwidth, DTA_VirtualHeightF, animheight, DTA_FullscreenScale, ScaleToFit43, TAG_DONE);
 	}
 
@@ -740,11 +741,11 @@ void WI_Drawer()
 		ScaleOverrider s;
 		IFVIRTUALPTRNAME(WI_Screen, "StatusScreen", Drawer)
 		{
-			screen->FillBorder(nullptr);
-			screen->ClearClipRect();
+			FillBorder(twod, nullptr);
+			twod->ClearClipRect();
 			VMValue self = WI_Screen;
 			VMCall(func, &self, 1, nullptr, 0);
-			screen->ClearClipRect();	// make sure the scripts don't leave a valid clipping rect behind.
+			twod->ClearClipRect();	// make sure the scripts don't leave a valid clipping rect behind.
 
 			// The internal handling here is somewhat poor. After being set to 'LeavingIntermission'
 			// the screen is needed for one more draw operation so we cannot delete it right away but only here.

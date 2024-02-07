@@ -36,6 +36,8 @@ class FSerializer;
 
 #include "s_soundinternal.h"
 #include "s_doomsound.h"
+#include "name.h"
+#include "tarray.h"
 
 enum SndUserFlags
 {
@@ -54,6 +56,8 @@ enum // This cannot be remain as this, but for now it has to suffice.
 // Per level startup code.
 // Kills playing sounds at start of level and starts new music.
 //
+typedef TMap<FName, FName> MusicAliasMap;
+extern MusicAliasMap MusicAliases;
 
 // Called after a level is loaded. Ensures that most sounds are loaded.
 

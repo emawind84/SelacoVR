@@ -228,7 +228,8 @@ void VkRenderState::ApplyRenderPass(int dt)
 	pipelineKey.StencilPassOp = mStencilOp;
 	pipelineKey.ColorMask = mColorMask;
 	pipelineKey.CullMode = mCullMode;
-	pipelineKey.NumTextureLayers = mMaterial.mMaterial ? mMaterial.mMaterial->GetLayers() : 1; // Always force minimum 1 texture as the shader requires it
+	pipelineKey.NumTextureLayers = mMaterial.mMaterial ? mMaterial.mMaterial->NumLayers() : 0;
+	pipelineKey.NumTextureLayers = std::max(pipelineKey.NumTextureLayers, SHADER_MIN_REQUIRED_TEXTURE_LAYERS);// Always force minimum 8 textures as the shader requires it
 	if (mSpecialEffect > EFF_NONE)
 	{
 		pipelineKey.SpecialEffect = mSpecialEffect;
@@ -336,8 +337,8 @@ void VkRenderState::ApplyStreamData()
 
 	mStreamData.useVertexData = passManager->GetVertexFormat(static_cast<VKVertexBuffer*>(mVertexBuffer)->VertexFormat)->UseVertexData;
 
-	if (mMaterial.mMaterial && mMaterial.mMaterial->tex)
-		mStreamData.timer = static_cast<float>((double)(screen->FrameTime - firstFrame) * (double)mMaterial.mMaterial->tex->shaderspeed / 1000.);
+	if (mMaterial.mMaterial && mMaterial.mMaterial->Source())
+		mStreamData.timer = static_cast<float>((double)(screen->FrameTime - firstFrame) * (double)mMaterial.mMaterial->Source()->GetShaderSpeed() / 1000.);
 	else
 		mStreamData.timer = 0.0f;
 
@@ -368,12 +369,12 @@ void VkRenderState::ApplyPushConstants()
 	}
 
 	int tempTM = TM_NORMAL;
-	if (mMaterial.mMaterial && mMaterial.mMaterial->tex && mMaterial.mMaterial->tex->isHardwareCanvas())
+	if (mMaterial.mMaterial && mMaterial.mMaterial->Source()->isHardwareCanvas())
 		tempTM = TM_OPAQUE;
 
 	mPushConstants.uFogEnabled = fogset;
 	int f = mTextureModeFlags;
-	if (!mBrightmapEnabled) f &= TEXF_Detailmap;
+	if (!mBrightmapEnabled) f &= ~(TEXF_Brightmap|TEXF_Glowmap);
 	mPushConstants.uTextureMode = (mTextureMode == TM_NORMAL && tempTM == TM_OPAQUE ? TM_OPAQUE : mTextureMode) | f;
 	mPushConstants.uLightDist = mLightParms[0];
 	mPushConstants.uLightFactor = mLightParms[1];
@@ -388,8 +389,11 @@ void VkRenderState::ApplyPushConstants()
 	mPushConstants.uGlobalFadeGradient = gl_global_fade_gradient;
 	mPushConstants.uLightRangeLimit = gl_light_range_limit;
 
-	if (mMaterial.mMaterial && mMaterial.mMaterial->tex)
-		mPushConstants.uSpecularMaterial = { mMaterial.mMaterial->tex->Glossiness, mMaterial.mMaterial->tex->SpecularLevel };
+	if (mMaterial.mMaterial)
+	{
+		auto source = mMaterial.mMaterial->Source();
+		mPushConstants.uSpecularMaterial = { source->GetGlossiness(), source->GetSpecularLevel() };
+	}
 
 	mPushConstants.uLightIndex = mLightIndex;
 	mPushConstants.uDataIndex = mStreamBufferWriter.DataIndex();
@@ -436,8 +440,7 @@ void VkRenderState::ApplyMaterial()
 		auto fb = GetVulkanFrameBuffer();
 		auto passManager = fb->GetRenderPassManager();
 
-		VkHardwareTexture* base = mMaterial.mMaterial ? static_cast<VkHardwareTexture*>(mMaterial.mMaterial->GetLayer(0, mMaterial.mTranslation)) : nullptr;
-		VulkanDescriptorSet* descriptorset = base ? base->GetDescriptorSet(mMaterial) : passManager->GetNullTextureDescriptorSet();
+		VulkanDescriptorSet* descriptorset = mMaterial.mMaterial ? static_cast<VkMaterial*>(mMaterial.mMaterial)->GetDescriptorSet(mMaterial) : passManager->GetNullTextureDescriptorSet();
 
 		mCommandBuffer->bindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, passManager->GetPipelineLayout(mPipelineKey.NumTextureLayers), 1, descriptorset);
 		mMaterial.mChanged = false;

@@ -51,6 +51,8 @@
 #include "cmdlib.h"
 #include "v_text.h"
 #include "m_argv.h"
+#include "keydef.h"
+#include "printf.h"
 
 #define SAFE_RELEASE(x)		{ if (x != NULL) { x->Release(); x = NULL; } }
 
@@ -658,7 +660,7 @@ bool FDInputJoystick::ReorderAxisPair(const GUID &xid, const GUID &yid, int pos)
 	}
 	if (x == pos + 1 && y == pos)
 	{ // Xbox 360 Controllers return them in this order.
-		swapvalues(Axes[pos], Axes[pos + 1]);
+		std::swap(Axes[pos], Axes[pos + 1]);
 	}
 	else if (x != pos || y != pos + 1)
 	{

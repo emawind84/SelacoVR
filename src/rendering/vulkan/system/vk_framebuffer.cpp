@@ -29,7 +29,7 @@
 #include "actor.h"
 #include "i_time.h"
 #include "g_game.h"
-#include "gamedata/fonts/v_text.h"
+#include "v_text.h"
 
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_vrmodes.h"
@@ -58,7 +58,7 @@
 #include "vulkan/textures/vk_hwtexture.h"
 #include "vulkan/system/vk_builders.h"
 #include "vulkan/system/vk_swapchain.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 
 void Draw2D(F2DDrawer *drawer, FRenderState &state);
 void DoWriteSavePic(FileWriter *file, ESSType ssformat, uint8_t *scr, int width, int height, sector_t *viewsector, bool upsidedown);
@@ -515,12 +515,9 @@ sector_t *VulkanFrameBuffer::RenderViewpoint(FRenderViewpoint &mainvp, AActor * 
 
 void VulkanFrameBuffer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV)
 {
-	// This doesn't need to clear the fake flat cache. It can be shared between camera textures and the main view of a scene.
-	FMaterial *mat = FMaterial::ValidateTexture(tex, false);
-	auto BaseLayer = static_cast<VkHardwareTexture*>(mat->GetLayer(0, 0));
+	auto BaseLayer = static_cast<VkHardwareTexture*>(tex->GetHardwareTexture(0, 0));
 
-	int width = mat->TextureWidth();
-	int height = mat->TextureHeight();
+	float ratio = tex->aspectRatio;
 	VkTextureImage *image = BaseLayer->GetImage(tex, 0, 0);
 	VkTextureImage *depthStencil = BaseLayer->GetDepthStencil(tex);
 
@@ -534,11 +531,11 @@ void VulkanFrameBuffer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint
 
 	IntRect bounds;
 	bounds.left = bounds.top = 0;
-	bounds.width = MIN(mat->GetWidth(), image->Image->width);
-	bounds.height = MIN(mat->GetHeight(), image->Image->height);
+	bounds.width = std::min(tex->GetWidth(), image->Image->width);
+	bounds.height = std::min(tex->GetHeight(), image->Image->height);
 
 	FRenderViewpoint texvp;
-	RenderViewpoint(texvp, Viewpoint, &bounds, FOV, (float)width / height, (float)width / height, false, false);
+	RenderViewpoint(texvp, Viewpoint, &bounds, FOV, ratio, ratio, false, false);
 
 	mRenderState->EndRenderPass();
 
@@ -648,19 +645,29 @@ void VulkanFrameBuffer::CleanForRestart()
 
 void VulkanFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 {
-	auto tex = mat->tex;
-	if (tex->isSWCanvas()) return;
+	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return;
 
-	// Textures that are already scaled in the texture lump will not get replaced by hires textures.
-	int flags = mat->isExpanded() ? CTF_Expand : 0;
-	auto base = static_cast<VkHardwareTexture*>(mat->GetLayer(0, translation));
+	MaterialLayerInfo* layer;
 
-	base->Precache(mat, translation, flags);
+	auto systex = static_cast<VkHardwareTexture*>(mat->GetLayer(0, translation, &layer));
+	systex->GetImage(layer->layerTexture, translation, layer->scaleFlags);
+
+	int numLayers = mat->NumLayers();
+	for (int i = 1; i < numLayers; i++)
+	{
+		auto systex = static_cast<VkHardwareTexture*>(mat->GetLayer(i, 0, &layer));
+		systex->GetImage(layer->layerTexture, 0, layer->scaleFlags);
+	}
 }
 
 IHardwareTexture *VulkanFrameBuffer::CreateHardwareTexture()
 {
 	return new VkHardwareTexture();
+}
+
+FMaterial* VulkanFrameBuffer::CreateMaterial(FGameTexture* tex, int scaleflags)
+{
+	return new VkMaterial(tex, scaleflags);
 }
 
 FModelRenderer *VulkanFrameBuffer::CreateModelRenderer(int mli) 
@@ -707,7 +714,7 @@ void VulkanFrameBuffer::TextureFilterChanged()
 	if (mSamplerManager)
 	{
 		// Destroy the texture descriptors as they used the old samplers
-		VkHardwareTexture::ResetAllDescriptors();
+		VkMaterial::ResetAllDescriptors();
 
 		mSamplerManager->SetTextureFilterMode();
 	}
@@ -716,7 +723,7 @@ void VulkanFrameBuffer::TextureFilterChanged()
 void VulkanFrameBuffer::StartPrecaching()
 {
 	// Destroy the texture descriptors to avoid problems with potentially stale textures.
-	VkHardwareTexture::ResetAllDescriptors();
+	VkMaterial::ResetAllDescriptors();
 }
 
 void VulkanFrameBuffer::BlurScene(float amount)

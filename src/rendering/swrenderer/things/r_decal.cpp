@@ -30,7 +30,7 @@
 #include "r_sky.h"
 #include "v_video.h"
 #include "m_swap.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "stats.h"
 #include "a_sharedglobal.h"
 #include "d_net.h"
@@ -41,6 +41,7 @@
 #include "swrenderer/drawers/r_draw.h"
 #include "v_palette.h"
 #include "r_data/colormaps.h"
+#include "texturemanager.h"
 #include "swrenderer/line/r_wallsetup.h"
 #include "swrenderer/line/r_walldraw.h"
 #include "swrenderer/segments/r_drawsegment.h"
@@ -122,13 +123,11 @@ namespace swrenderer
 			}
 		}
 
-		FTexture *tex = TexMan.GetPalettedTexture(decal->PicNum, true);
-
-		if (tex == NULL || !tex->isValid())
+		FSoftwareTexture *WallSpriteTile = GetPalettedSWTexture(decal->PicNum, true);
+		if (WallSpriteTile == NULL)
 		{
 			return;
 		}
-		FSoftwareTexture *WallSpriteTile = tex->GetSoftwareTexture();
 
 		// Determine left and right edges of sprite. Since this sprite is bound
 		// to a wall, we use the wall's angle instead of the decal's. This is

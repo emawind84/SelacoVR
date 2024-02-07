@@ -26,7 +26,7 @@
 **
 **/
 
-#include "w_wad.h"
+#include "filesystem.h"
 #include "g_game.h"
 #include "doomstat.h"
 #include "g_level.h"
@@ -35,7 +35,7 @@
 #include "g_levellocals.h"
 #include "i_time.h"
 #include "cmdlib.h"
-#include "hwrenderer/textures/hw_material.h"
+#include "hw_material.h"
 #include "hwrenderer/data/buffers.h"
 #include "hwrenderer/data/flatvertices.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
@@ -112,10 +112,9 @@ void FHWModelRenderer::SetInterpolation(double inter)
 	state.SetInterpolationFactor((float)inter);
 }
 
-void FHWModelRenderer::SetMaterial(FTexture *skin, bool clampNoFilter, int translation)
+void FHWModelRenderer::SetMaterial(FGameTexture *skin, bool clampNoFilter, int translation)
 {
-	FMaterial * tex = FMaterial::ValidateTexture(skin, false);
-	state.SetMaterial(tex, clampNoFilter ? CLAMP_NOFILTER : CLAMP_NONE, translation, -1);
+	state.SetMaterial(skin, UF_None, 0, clampNoFilter ? CLAMP_NOFILTER : CLAMP_NONE, translation, -1);
 	state.SetLightIndex(modellightindex);
 }
 

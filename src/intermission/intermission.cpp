@@ -35,7 +35,7 @@
 #include "doomtype.h"
 #include "g_game.h"
 #include "d_event.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "gi.h"
 #include "v_video.h"
 #include "d_main.h"
@@ -52,6 +52,7 @@
 #include "utf8.h"
 #include "templates.h"
 #include "s_music.h"
+#include "texturemanager.h"
 
 FIntermissionDescriptorList IntermissionDescriptors;
 
@@ -82,9 +83,9 @@ void DrawFullscreenSubtitle(const char *text)
 	if (!text || !*text || !inter_subtitles) return;
 
 	// This uses the same scaling as regular HUD messages
-	auto scale = active_con_scaletext(generic_ui);
-	int hudwidth = SCREENWIDTH / scale;
-	int hudheight = SCREENHEIGHT / scale;
+	auto scale = active_con_scaletext(twod, generic_ui);
+	int hudwidth = twod->GetWidth() / scale;
+	int hudheight = twod->GetHeight() / scale;
 	FFont *font = generic_ui? NewSmallFont : SmallFont;
 
 	int linelen = hudwidth < 640 ? Scale(hudwidth, 9, 10) - 40 : 560;
@@ -108,13 +109,13 @@ void DrawFullscreenSubtitle(const char *text)
 		if (y < 0) y = 0;
 		w = 600;
 	}
-	screen->Dim(0, 0.5f, Scale(x, SCREENWIDTH, hudwidth), Scale(y, SCREENHEIGHT, hudheight),
-		Scale(w, SCREENWIDTH, hudwidth), Scale(height, SCREENHEIGHT, hudheight));
+	Dim(twod, 0, 0.5f, Scale(x, twod->GetWidth(), hudwidth), Scale(y, twod->GetHeight(), hudheight),
+		Scale(w, twod->GetWidth(), hudwidth), Scale(height, twod->GetHeight(), hudheight));
 	x += 20;
 	y += 10;
 	for (const FBrokenLines &line : lines)
 	{
-		screen->DrawText(font, CR_UNTRANSLATED, x, y, line.Text,
+		DrawText(twod, font, CR_UNTRANSLATED, x, y, line.Text,
 			DTA_KeepRatio, true,
 			DTA_VirtualWidth, hudwidth, DTA_VirtualHeight, hudheight, TAG_DONE);
 		y += font->GetHeight();
@@ -215,21 +216,21 @@ void DIntermissionScreen::Drawer ()
 	{
 		if (!mFlatfill)
 		{
-			screen->DrawTexture (TexMan.GetTexture(mBackground), 0, 0, DTA_Fullscreen, true, TAG_DONE);
+			DrawTexture(twod, TexMan.GetGameTexture(mBackground), 0, 0, DTA_Fullscreen, true, TAG_DONE);
 		}
 		else
 		{
-			screen->FlatFill (0,0, SCREENWIDTH, SCREENHEIGHT, TexMan.GetTexture(mBackground));
+			twod->AddFlatFill(0,0, twod->GetWidth(), twod->GetHeight(), TexMan.GetGameTexture(mBackground));
 		}
 	}
 	else
 	{
-		screen->Clear (0, 0, SCREENWIDTH, SCREENHEIGHT, 0, 0);
+		ClearRect(twod, 0, 0, twod->GetWidth(), twod->GetHeight(), 0, 0);
 	}
 	for (unsigned i=0; i < mOverlays.Size(); i++)
 	{
 		if (CheckOverlay(i))
-			screen->DrawTexture (TexMan.GetTexture(mOverlays[i].mPic), mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, TAG_DONE);
+			DrawTexture(twod, TexMan.GetGameTexture(mOverlays[i].mPic), mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, TAG_DONE);
 	}
 	if (mSubtitle)
 	{
@@ -286,11 +287,11 @@ void DIntermissionScreenFader::Drawer ()
 		if (mType == FADE_In) factor = 1.0 - factor;
 		int color = MAKEARGB(int(factor*255), 0,0,0);
 
-		screen->DrawTexture (TexMan.GetTexture(mBackground), 0, 0, DTA_Fullscreen, true, DTA_ColorOverlay, color, TAG_DONE);
+		DrawTexture(twod, TexMan.GetGameTexture(mBackground), 0, 0, DTA_Fullscreen, true, DTA_ColorOverlay, color, TAG_DONE);
 		for (unsigned i=0; i < mOverlays.Size(); i++)
 		{
 			if (CheckOverlay(i))
-				screen->DrawTexture (TexMan.GetTexture(mOverlays[i].mPic), mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, DTA_ColorOverlay, color, TAG_DONE);
+				DrawTexture(twod, TexMan.GetGameTexture(mOverlays[i].mPic), mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, DTA_ColorOverlay, color, TAG_DONE);
 		}
 	}
 }
@@ -373,7 +374,7 @@ void DIntermissionScreenText::Drawer ()
 	Super::Drawer();
 	if (mTicker >= mTextDelay)
 	{
-		FTexture *pic;
+		FGameTexture *pic;
 		int w;
 		size_t count;
 		int c;
@@ -383,9 +384,9 @@ void DIntermissionScreenText::Drawer ()
 		// line feed characters.
 		int numrows;
 		auto font = generic_ui ? NewSmallFont : SmallFont;
-		auto fontscale = MAX(generic_ui ? MIN(screen->GetWidth() / 640, screen->GetHeight() / 400) : MIN(screen->GetWidth() / 400, screen->GetHeight() / 250), 1);
-		int cleanwidth = screen->GetWidth() / fontscale;
-		int cleanheight = screen->GetHeight() / fontscale;
+		auto fontscale = MAX(generic_ui ? MIN(twod->GetWidth() / 640, twod->GetHeight() / 400) : MIN(twod->GetWidth() / 400, twod->GetHeight() / 250), 1);
+		int cleanwidth = twod->GetWidth() / fontscale;
+		int cleanheight = twod->GetHeight() / fontscale;
 		int refwidth = generic_ui ? 640 : 320;
 		int refheight = generic_ui ? 400 : 200;
 		const int kerning = font->GetDefaultKerning();
@@ -398,29 +399,29 @@ void DIntermissionScreenText::Drawer ()
 		int rowheight = font->GetHeight() * fontscale;
 		int rowpadding = (generic_ui? 2 : ((gameinfo.gametype & (GAME_DoomStrifeChex) ? 3 : -1))) * fontscale;
 
-		int cx = (mTextX - refwidth/2) * fontscale + screen->GetWidth() / 2;
-		int cy = (mTextY - refheight/2) * fontscale + screen->GetHeight() / 2;
+		int cx = (mTextX - refwidth/2) * fontscale + twod->GetWidth() / 2;
+		int cy = (mTextY - refheight/2) * fontscale + twod->GetHeight() / 2;
 		cx = MAX<int>(0, cx);
 		int startx = cx;
 
 		if (usesDefault)
 		{
 			int allheight;
-			while ((allheight = numrows * (rowheight + rowpadding)), allheight > screen->GetHeight() && rowpadding > 0)
+			while ((allheight = numrows * (rowheight + rowpadding)), allheight > twod->GetHeight() && rowpadding > 0)
 			{
 				rowpadding--;
 			}
 			allheight = numrows * (rowheight + rowpadding);
-			if (screen->GetHeight() - cy - allheight < cy)
+			if (twod->GetHeight() - cy - allheight < cy)
 			{
-				cy = (screen->GetHeight() - allheight) / 2;
+				cy = (twod->GetHeight() - allheight) / 2;
 				if (cy < 0) cy = 0;
 			}
 		}
 		else
 		{
 			// Does this text fall off the end of the screen? If so, try to eliminate some margins first.
-			while (rowpadding > 0 && cy + numrows * (rowheight + rowpadding) - rowpadding > screen->GetHeight())
+			while (rowpadding > 0 && cy + numrows * (rowheight + rowpadding) - rowpadding > twod->GetHeight())
 			{
 				rowpadding--;
 			}
@@ -446,10 +447,10 @@ void DIntermissionScreenText::Drawer ()
 			pic = font->GetChar (c, mTextColor, &w);
 			w += kerning;
 			w *= fontscale;
-			if (cx + w > SCREENWIDTH)
+			if (cx + w > twod->GetWidth())
 				continue;
 
-			screen->DrawChar(font, mTextColor, cx/fontscale, cy/fontscale, c, DTA_KeepRatio, true, DTA_VirtualWidth, cleanwidth, DTA_VirtualHeight, cleanheight, TAG_DONE);
+			DrawChar(twod, font, mTextColor, cx/fontscale, cy/fontscale, c, DTA_KeepRatio, true, DTA_VirtualWidth, cleanwidth, DTA_VirtualHeight, cleanheight, TAG_DONE);
 			cx += w;
 		}
 	}
@@ -628,7 +629,6 @@ int DIntermissionScreenCast::Ticker ()
 void DIntermissionScreenCast::Drawer ()
 {
 	spriteframe_t*		sprframe;
-	FTexture*			pic;
 
 	Super::Drawer();
 
@@ -637,9 +637,9 @@ void DIntermissionScreenCast::Drawer ()
 	{
 		auto font = generic_ui ? NewSmallFont : SmallFont;
 		if (*name == '$') name = GStrings(name+1);
-		screen->DrawText (font, CR_UNTRANSLATED,
-			(SCREENWIDTH - font->StringWidth (name) * CleanXfac)/2,
-			(SCREENHEIGHT * 180) / 200,
+		DrawText(twod, font, CR_UNTRANSLATED,
+			(twod->GetWidth() - font->StringWidth (name) * CleanXfac)/2,
+			(twod->GetHeight() * 180) / 200,
 			name,
 			DTA_CleanNoMove, true, TAG_DONE);
 	}
@@ -675,13 +675,13 @@ void DIntermissionScreenCast::Drawer ()
 		}
 
 		sprframe = &SpriteFrames[sprites[castsprite].spriteframes + caststate->GetFrame()];
-		pic = TexMan.GetTexture(sprframe->Texture[0], true);
+		auto pic = TexMan.GetGameTexture(sprframe->Texture[0], true);
 
-		screen->DrawTexture (pic, 160, 170,
+		DrawTexture(twod, pic, 160, 170,
 			DTA_320x200, true,
 			DTA_FlipX, sprframe->Flip & 1,
-			DTA_DestHeightF, pic->GetDisplayHeightDouble() * castscale.Y,
-			DTA_DestWidthF, pic->GetDisplayWidthDouble() * castscale.X,
+			DTA_DestHeightF, pic->GetDisplayHeight() * castscale.Y,
+			DTA_DestWidthF, pic->GetDisplayWidth() * castscale.X,
 			DTA_RenderStyle, mDefaults->RenderStyle,
 			DTA_Alpha, mDefaults->Alpha,
 			DTA_TranslationIndex, casttranslation,
@@ -718,8 +718,8 @@ int DIntermissionScreenScroller::Responder (event_t *ev)
 
 void DIntermissionScreenScroller::Drawer ()
 {
-	FTexture *tex = TexMan.GetTexture(mFirstPic);
-	FTexture *tex2 = TexMan.GetTexture(mSecondPic);
+	auto tex = TexMan.GetGameTexture(mFirstPic);
+	auto tex2 = TexMan.GetGameTexture(mSecondPic);
 
 	// These must round down to the nearest full pixel to cover seams between the two textures.
 	int fwidth = (int)tex->GetDisplayWidth();
@@ -763,12 +763,12 @@ void DIntermissionScreenScroller::Drawer ()
 		xpos1 *= scale;
 		xpos2 *= scale;
 
-		screen->DrawTexture(tex, xpos1 + drect.left, drect.top,
+		DrawTexture(twod, tex, xpos1 + drect.left, drect.top,
 			DTA_DestWidthF, fwidth * scale,
 			DTA_DestHeightF, aheight * scale,
 			DTA_Masked, false,
 			TAG_DONE);
-		screen->DrawTexture(tex2, xpos2 + drect.left, drect.top,
+		DrawTexture(twod, tex2, xpos2 + drect.left, drect.top,
 			DTA_DestWidthF, fwidth2 * scale,
 			DTA_DestHeightF, aheight * scale,
 			DTA_Masked, false,
@@ -983,7 +983,7 @@ void DIntermissionController::Drawer ()
 {
 	if (mScreen != NULL)
 	{
-		screen->FillBorder(nullptr);
+		FillBorder(twod, nullptr);
 		mScreen->Drawer();
 	}
 }

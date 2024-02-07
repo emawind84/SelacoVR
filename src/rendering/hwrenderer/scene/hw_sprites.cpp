@@ -41,6 +41,8 @@
 #include "matrix.h"
 #include "r_data/models/models.h"
 #include "vectors.h"
+#include "texturemanager.h"
+#include "basics.h"
 
 #include "hwrenderer/models/hw_models.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
@@ -51,7 +53,7 @@
 #include "hwrenderer/utility/hw_cvars.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_lighting.h"
-#include "hwrenderer/textures/hw_material.h"
+#include "hw_material.h"
 #include "hwrenderer/dynlights/hw_dynlightdata.h"
 #include "hwrenderer/dynlights/hw_lightbuffer.h"
 #include "hw_renderstate.h"
@@ -92,7 +94,7 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 		// Optionally use STYLE_ColorBlend in place of STYLE_Add for fullbright items.
 		if (RenderStyle == LegacyRenderStyles[STYLE_Add] && trans > 1.f - FLT_EPSILON &&
 			gl_usecolorblending && !di->isFullbrightScene() && actor &&
-			fullbright && gltexture && !gltexture->tex->GetTranslucency())
+			fullbright && texture && !texture->GetTranslucency())
 		{
 			RenderStyle = LegacyRenderStyles[STYLE_ColorAdd];
 		}
@@ -104,7 +106,7 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 		{
 			state.AlphaFunc(Alpha_GEqual, 0.f);
 		}
-		else if (!gltexture || !gltexture->tex->GetTranslucency()) state.AlphaFunc(Alpha_GEqual, gl_mask_sprite_threshold);
+		else if (!texture || !texture->GetTranslucency()) state.AlphaFunc(Alpha_GEqual, gl_mask_sprite_threshold);
 		else state.AlphaFunc(Alpha_Greater, 0.f);
 
 		if (RenderStyle.BlendOp == STYLEOP_Shadow)
@@ -195,7 +197,8 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 		state.SetFog(0, 0);
 	}
 
-	if (gltexture) state.SetMaterial(gltexture, CLAMP_XY, translation, OverrideShader);
+	uint32_t spritetype = actor? uint32_t(actor->renderflags & RF_SPRITETYPEMASK) : 0;
+	if (texture) state.SetMaterial(texture, UF_Sprite, (spritetype == RF_FACESPRITE) ? CTF_Expand : 0, CLAMP_XY, translation, OverrideShader);
 	else if (!modelframe) state.EnableTexture(false);
 
 	//SetColor(lightlevel, rel, Colormap, trans);
@@ -223,7 +226,7 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 
 			FColormap thiscm;
 			thiscm.CopyFog(Colormap);
-			thiscm.CopyFrom3DLight(&(*lightlist)[i]);
+			CopyFrom3DLight(thiscm, &(*lightlist)[i]);
 			if (di->Level->flags3 & LEVEL3_NOCOLOREDSPRITELIGHTING)
 			{
 				thiscm.Decolorize();
@@ -792,8 +795,6 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	else
 		Angles = thing->Angles;
 
-	FloatRect r;
-
 	if (sector->sectornum != thing->Sector->sectornum && !thruportal)
 	{
 		// This cannot create a copy in the fake sector cache because it'd interfere with the main thread, so provide a local buffer for the copy.
@@ -835,17 +836,44 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 
 	if (!modelframe)
 	{
-		bool mirror;
+		bool mirror = false;
 		DAngle ang = (thingpos - vp.Pos).Angle();
 		FTextureID patch;
 		// [ZZ] add direct picnum override
 		if (isPicnumOverride)
 		{
 			// Animate picnum overrides.
-			auto tex = TexMan.GetTexture(thing->picnum, true);
+			auto tex = TexMan.GetGameTexture(thing->picnum, true);
 			if (tex == nullptr) return;
+
+			if (tex->GetRotations() != 0xFFFF)
+			{
+				// choose a different rotation based on player view
+				spriteframe_t* sprframe = &SpriteFrames[tex->GetRotations()];
+				DAngle sprang = thing->GetSpriteAngle(ang, vp.TicFrac);
+				angle_t rot;
+				if (sprframe->Texture[0] == sprframe->Texture[1])
+				{
+					if (thing->flags7 & MF7_SPRITEANGLE)
+						rot = (thing->SpriteAngle + 45.0 / 2 * 9).BAMs() >> 28;
+					else
+						rot = (sprang - (thing->Angles.Yaw + thing->SpriteRotation) + 45.0 / 2 * 9).BAMs() >> 28;
+				}
+				else
+				{
+					if (thing->flags7 & MF7_SPRITEANGLE)
+						rot = (thing->SpriteAngle + (45.0 / 2 * 9 - 180.0 / 16)).BAMs() >> 28;
+					else
+						rot = (sprang - (thing->Angles.Yaw + thing->SpriteRotation) + (45.0 / 2 * 9 - 180.0 / 16)).BAMs() >> 28;
+				}
+				auto picnum = sprframe->Texture[rot];
+				if (sprframe->Flip & (1 << rot))
+				{
+					mirror = true;
+				}
+			}
+
 			patch =  tex->GetID();
-			mirror = false;
 		}
 		else
 		{
@@ -867,15 +895,15 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 
 		if (!patch.isValid()) return;
 		int type = thing->renderflags & RF_SPRITETYPEMASK;
-		gltexture = FMaterial::ValidateTexture(patch, (type == RF_FACESPRITE), false);
-		if (!gltexture)
-			return;
+		auto tex = TexMan.GetGameTexture(patch, false);
+		if (!tex || !tex->isValid()) return;
+		auto& spi = tex->GetSpritePositioning(type == RF_FACESPRITE);
 
-		vt = gltexture->GetSpriteVT();
-		vb = gltexture->GetSpriteVB();
+		vt = spi.GetSpriteVT();
+		vb = spi.GetSpriteVB();
 		if (thing->renderflags & RF_YFLIP) std::swap(vt, vb);
 
-		gltexture->GetSpriteRect(&r);
+		auto r = spi.GetSpriteRect();
 
 		// [SP] SpriteFlip
 		if (thing->renderflags & RF_SPRITEFLIP)
@@ -884,14 +912,18 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		if (mirror ^ !!(thing->renderflags & RF_XFLIP))
 		{
 			r.left = -r.width - r.left;	// mirror the sprite's x-offset
-			ul = gltexture->GetSpriteUL();
-			ur = gltexture->GetSpriteUR();
+			ul = spi.GetSpriteUL();
+			ur = spi.GetSpriteUR();
 		}
 		else
 		{
-			ul = gltexture->GetSpriteUR();
-			ur = gltexture->GetSpriteUL();
+			ul = spi.GetSpriteUR();
+			ur = spi.GetSpriteUL();
 		}
+
+		texture = TexMan.GetGameTexture(patch, false);
+		if (!texture || !texture->isValid())
+			return;
 
 		if (thing->renderflags & RF_SPRITEFLIP) // [SP] Flip back
 			thing->renderflags ^= RF_XFLIP;
@@ -959,7 +991,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		x1 = x2 = x;
 		y1 = y2 = y;
 		z1 = z2 = z;
-		gltexture = nullptr;
+		texture = nullptr;
 	}
 
 	depth = (float)((x - vp.Pos.X) * vp.TanCos + (y - vp.Pos.Y) * vp.TanSin);
@@ -972,7 +1004,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	// allow disabling of the fullbright flag by a brightmap definition
 	// (e.g. to do the gun flashes of Doom's zombies correctly.
 	fullbright = (thing->flags5 & MF5_BRIGHT) ||
-		((thing->renderflags & RF_FULLBRIGHT) && (!gltexture || !gltexture->tex->isFullbrightDisabled()));
+		((thing->renderflags & RF_FULLBRIGHT) && (!texture || !texture->isFullbrightDisabled()));
 
 	lightlevel = fullbright ? 255 :
 		hw_ClampLight(rendersector->GetTexture(sector_t::ceiling) == skyflatnum ?
@@ -1091,7 +1123,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			RenderStyle.DestAlpha = STYLEALPHA_InvSrc;
 		}
 	}
-	if ((gltexture && gltexture->tex->GetTranslucency()) || (RenderStyle.Flags & STYLEF_RedIsAlpha) || (modelframe && thing->RenderStyle != DefaultRenderStyle()))
+	if ((texture && texture->GetTranslucency()) || (RenderStyle.Flags & STYLEF_RedIsAlpha) || (modelframe && thing->RenderStyle != DefaultRenderStyle()))
 	{
 		if (hw_styleflags == STYLEHW_Solid)
 		{
@@ -1245,7 +1277,7 @@ void HWSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	ThingColor.a = 255;
 
 	modelframe=nullptr;
-	gltexture=nullptr;
+	texture=nullptr;
 	topclip = LARGE_VALUE;
 	bottomclip = -LARGE_VALUE;
 	index = 0;
@@ -1270,15 +1302,14 @@ void HWSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 
 		if (lump.isValid())
 		{
-			gltexture = FMaterial::ValidateTexture(lump, true, false);
 			translation = 0;
+			//auto tex = TexMan.GetGameTexture(lump, false);
 
-			ul = gltexture->GetUL();
-			ur = gltexture->GetUR();
-			vt = gltexture->GetVT();
-			vb = gltexture->GetVB();
-			FloatRect r;
-			gltexture->GetSpriteRect(&r);
+			ul = 0;
+			ur = 1;
+			vt = 0;
+			vb = 1;
+			texture = TexMan.GetGameTexture(lump, false);
 		}
 	}
 

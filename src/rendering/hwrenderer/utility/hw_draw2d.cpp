@@ -96,7 +96,7 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state)
 
 	const auto &mScreenViewport = screen->mScreenViewport;
 	state.SetViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
-	screen->mViewpoints->Set2D(state, screen->GetWidth(), screen->GetHeight());
+	screen->mViewpoints->Set2D(state, twod->GetWidth(), twod->GetHeight());
 
 	state.EnableDepthTest(false);
 	state.EnableMultisampling(false);
@@ -162,12 +162,10 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state)
 
 		state.AlphaFunc(Alpha_GEqual, 0.f);
 
-		if (cmd.mTexture != nullptr)
+		if (cmd.mTexture != nullptr && cmd.mTexture->isValid())
 		{
-			auto mat = FMaterial::ValidateTexture(cmd.mTexture, false);
-			if (mat == nullptr) continue;
-
-			state.SetMaterial(mat, cmd.mFlags & F2DDrawer::DTF_Wrap ? CLAMP_NONE : CLAMP_XY_NOMIP, cmd.mTranslationId, -1);
+			auto flags = cmd.mTexture->GetUseType() >= ETextureType::Special? UF_None : cmd.mTexture->GetUseType() == ETextureType::FontChar? UF_Font : UF_Texture;
+			state.SetMaterial(cmd.mTexture, flags, 0, cmd.mFlags & F2DDrawer::DTF_Wrap ? CLAMP_NONE : CLAMP_XY_NOMIP, cmd.mTranslationId, -1);
 			state.EnableTexture(true);
 
 			// Canvas textures are stored upside down

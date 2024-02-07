@@ -280,14 +280,14 @@ void PolyRenderState::Apply()
 		mDrawCommands->SetShader(EFF_NONE, mTextureEnabled ? effectState : SHADER_NoTexture, mAlphaThreshold >= 0.f, false);
 	}
 
-	if (mMaterial.mMaterial && mMaterial.mMaterial->tex)
-		mStreamData.timer = static_cast<float>((double)(screen->FrameTime - firstFrame) * (double)mMaterial.mMaterial->tex->shaderspeed / 1000.);
+	if (mMaterial.mMaterial && mMaterial.mMaterial->Source())
+		mStreamData.timer = static_cast<float>((double)(screen->FrameTime - firstFrame) * (double)mMaterial.mMaterial->Source()->GetShaderSpeed() / 1000.);
 	else
 		mStreamData.timer = 0.0f;
 
 	PolyPushConstants constants;
 	constants.uFogEnabled = fogset;
-	constants.uTextureMode = mTextureMode == TM_NORMAL && mTempTM == TM_OPAQUE ? TM_OPAQUE : mTextureMode;
+	constants.uTextureMode = (mTextureMode == TM_NORMAL && mTempTM == TM_OPAQUE ? TM_OPAQUE : mTextureMode);
 	constants.uLightDist = mLightParms[0];
 	constants.uLightFactor = mLightParms[1];
 	constants.uFogDensity = mLightParms[2];
@@ -312,21 +312,21 @@ void PolyRenderState::ApplyMaterial()
 {
 	if (mMaterial.mChanged && mMaterial.mMaterial)
 	{
-		mTempTM = mMaterial.mMaterial->tex->isHardwareCanvas() ? TM_OPAQUE : TM_NORMAL;
+		mTempTM = mMaterial.mMaterial->Source()->isHardwareCanvas() ? TM_OPAQUE : TM_NORMAL;
 
-		auto base = static_cast<PolyHardwareTexture*>(mMaterial.mMaterial->GetLayer(0, mMaterial.mTranslation));
+		MaterialLayerInfo* layer;
+		auto base = static_cast<PolyHardwareTexture*>(mMaterial.mMaterial->GetLayer(0, mMaterial.mTranslation, &layer));
 		if (base)
 		{
-			DCanvas *texcanvas = base->GetImage(mMaterial);
+			DCanvas *texcanvas = base->GetImage(layer->layerTexture, mMaterial.mTranslation, layer->scaleFlags);
 			mDrawCommands->SetTexture(0, texcanvas->GetPixels(), texcanvas->GetWidth(), texcanvas->GetHeight(), texcanvas->IsBgra());
 
-			int numLayers = mMaterial.mMaterial->GetLayers();
+			int numLayers = mMaterial.mMaterial->NumLayers();
 			for (int i = 1; i < numLayers; i++)
 			{
-				FTexture* layer;
 				auto systex = static_cast<PolyHardwareTexture*>(mMaterial.mMaterial->GetLayer(i, 0, &layer));
 
-				texcanvas = systex->GetImage(layer, 0, mMaterial.mMaterial->isExpanded() ? CTF_Expand : 0);
+				texcanvas = systex->GetImage(layer->layerTexture, 0, layer->scaleFlags);
 				mDrawCommands->SetTexture(i, texcanvas->GetPixels(), texcanvas->GetWidth(), texcanvas->GetHeight(), texcanvas->IsBgra());
 			}
 		}

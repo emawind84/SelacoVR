@@ -27,7 +27,7 @@
 #include "actor.h"
 #include "i_time.h"
 #include "g_game.h"
-#include "gamedata/fonts/v_text.h"
+#include "v_text.h"
 
 #include "rendering/i_video.h"
 
@@ -51,7 +51,7 @@
 #include "poly_buffers.h"
 #include "poly_renderstate.h"
 #include "poly_hwtexture.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 
 void Draw2D(F2DDrawer *drawer, FRenderState &state);
 void DoWriteSavePic(FileWriter *file, ESSType ssformat, uint8_t *scr, int width, int height, sector_t *viewsector, bool upsidedown);
@@ -377,22 +377,20 @@ sector_t *PolyFrameBuffer::RenderViewpoint(FRenderViewpoint &mainvp, AActor * ca
 void PolyFrameBuffer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV)
 {
 	// This doesn't need to clear the fake flat cache. It can be shared between camera textures and the main view of a scene.
-	FMaterial *mat = FMaterial::ValidateTexture(tex, false);
-	auto BaseLayer = static_cast<PolyHardwareTexture*>(mat->GetLayer(0, 0));
+	auto BaseLayer = static_cast<PolyHardwareTexture*>(tex->GetHardwareTexture(0, 0));
 
-	int width = mat->TextureWidth();
-	int height = mat->TextureHeight();
+	float ratio = tex->aspectRatio;
 	DCanvas *image = BaseLayer->GetImage(tex, 0, 0);
 	PolyDepthStencil *depthStencil = BaseLayer->GetDepthStencil(tex);
 	mRenderState->SetRenderTarget(image, depthStencil, false);
 
 	IntRect bounds;
 	bounds.left = bounds.top = 0;
-	bounds.width = MIN(mat->GetWidth(), image->GetWidth());
-	bounds.height = MIN(mat->GetHeight(), image->GetHeight());
+	bounds.width = std::min(tex->GetWidth(), image->GetWidth());
+	bounds.height = std::min(tex->GetHeight(), image->GetHeight());
 
 	FRenderViewpoint texvp;
-	RenderViewpoint(texvp, Viewpoint, &bounds, FOV, (float)width / height, (float)width / height, false, false);
+	RenderViewpoint(texvp, Viewpoint, &bounds, FOV, ratio, ratio, false, false);
 
 	FlushDrawCommands();
 	DrawerThreads::WaitForWorkers();
@@ -535,13 +533,18 @@ void PolyFrameBuffer::CleanForRestart()
 
 void PolyFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 {
-	auto tex = mat->tex;
-	if (tex->isSWCanvas()) return;
+	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return;
 
-	int flags = mat->isExpanded() ? CTF_Expand : 0;
-	auto base = static_cast<PolyHardwareTexture*>(mat->GetLayer(0, translation));
+	MaterialLayerInfo* layer;
+	auto systex = static_cast<PolyHardwareTexture*>(mat->GetLayer(0, translation, &layer));
+	systex->GetImage(layer->layerTexture, translation, layer->scaleFlags);
 
-	base->Precache(mat, translation, flags);
+	int numLayers = mat->NumLayers();
+	for (int i = 1; i < numLayers; i++)
+	{
+		auto systex = static_cast<PolyHardwareTexture*>(mat->GetLayer(i, 0, &layer));
+		systex->GetImage(layer->layerTexture, 0, layer->scaleFlags);	// fixme: Upscale flags must be disabled for certain layers.
+	}
 }
 
 IHardwareTexture *PolyFrameBuffer::CreateHardwareTexture()
@@ -578,10 +581,6 @@ void PolyFrameBuffer::SetTextureFilterMode()
 }
 
 void PolyFrameBuffer::TextureFilterChanged()
-{
-}
-
-void PolyFrameBuffer::StartPrecaching()
 {
 }
 

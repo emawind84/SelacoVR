@@ -22,14 +22,14 @@
 
 #include "doomtype.h"
 #include "g_level.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "r_state.h"
 #include "r_utility.h"
 #include "g_levellocals.h"
 #include "hwrenderer/scene/hw_skydome.h"
 #include "hwrenderer/scene/hw_portal.h"
 #include "hwrenderer/scene/hw_renderstate.h"
-#include "textures/skyboxtexture.h"
+#include "skyboxtexture.h"
 
 
 
@@ -50,11 +50,11 @@ void HWSkyPortal::RenderRow(HWDrawInfo *di, FRenderState &state, EDrawType prim,
 //
 //-----------------------------------------------------------------------------
 
-void HWSkyPortal::RenderDome(HWDrawInfo *di, FRenderState &state, FMaterial * tex, float x_offset, float y_offset, bool mirror, int mode)
+void HWSkyPortal::RenderDome(HWDrawInfo *di, FRenderState &state, FGameTexture * tex, float x_offset, float y_offset, bool mirror, int mode)
 {
 	if (tex)
 	{
-		state.SetMaterial(tex, CLAMP_NONE, 0, -1);
+		state.SetMaterial(tex, UF_Texture, 0, CLAMP_NONE, 0, -1);
 		state.EnableModelMatrix(true);
 		state.EnableTextureMatrix(true);
 
@@ -66,13 +66,12 @@ void HWSkyPortal::RenderDome(HWDrawInfo *di, FRenderState &state, FMaterial * te
 	// The caps only get drawn for the main layer but not for the overlay.
 	if (mode == FSkyVertexBuffer::SKYMODE_MAINLAYER && tex != NULL)
 	{
-		PalEntry pe = tex->tex->GetSkyCapColor(false);
-		state.SetObjectColor(pe);
+		auto &col = R_GetSkyCapColor(tex);
+		state.SetObjectColor(col.first);
 		state.EnableTexture(false);
 		RenderRow(di, state, DT_TriangleFan, 0);
 
-		pe = tex->tex->GetSkyCapColor(true);
-		state.SetObjectColor(pe);
+		state.SetObjectColor(col.second);
 		RenderRow(di, state, DT_TriangleFan, rc);
 		state.EnableTexture(true);
 	}
@@ -94,60 +93,52 @@ void HWSkyPortal::RenderDome(HWDrawInfo *di, FRenderState &state, FMaterial * te
 //
 //-----------------------------------------------------------------------------
 
-void HWSkyPortal::RenderBox(HWDrawInfo *di, FRenderState &state, FTextureID texno, FMaterial * gltex, float x_offset, bool sky2)
+void HWSkyPortal::RenderBox(HWDrawInfo *di, FRenderState &state, FTextureID texno, FSkyBox * tex, float x_offset, bool sky2)
 {
-	FSkyBox * sb = static_cast<FSkyBox*>(gltex->tex);
 	int faces;
-	FMaterial * tex;
 
 	state.EnableModelMatrix(true);
 	state.mModelMatrix.loadIdentity();
+	state.mModelMatrix.scale(1, 1 / di->Level->info->pixelstretch, 1); // Undo the map's vertical scaling as skyboxes are true cubes.
 
 	if (!sky2)
         state.mModelMatrix.rotate(-180.0f+x_offset, di->Level->info->skyrotatevector.X, di->Level->info->skyrotatevector.Z, di->Level->info->skyrotatevector.Y);
 	else
         state.mModelMatrix.rotate(-180.0f+x_offset, di->Level->info->skyrotatevector2.X, di->Level->info->skyrotatevector2.Z, di->Level->info->skyrotatevector2.Y);
 
-	if (sb->faces[5]) 
+	if (tex->GetSkyFace(5))
 	{
 		faces=4;
 
 		// north
-		tex = FMaterial::ValidateTexture(sb->faces[0], false);
-		state.SetMaterial(tex, CLAMP_XY, 0, -1);
+		state.SetMaterial(tex->GetSkyFace(0), UF_Texture, 0, CLAMP_XY, 0, -1);
 		state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(0), 4);
 
 		// east
-		tex = FMaterial::ValidateTexture(sb->faces[1], false);
-		state.SetMaterial(tex, CLAMP_XY, 0, -1);
+		state.SetMaterial(tex->GetSkyFace(1), UF_Texture, 0, CLAMP_XY, 0, -1);
 		state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(1), 4);
 
 		// south
-		tex = FMaterial::ValidateTexture(sb->faces[2], false);
-		state.SetMaterial(tex, CLAMP_XY, 0, -1);
+		state.SetMaterial(tex->GetSkyFace(2), UF_Texture, 0, CLAMP_XY, 0, -1);
 		state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(2), 4);
 
 		// west
-		tex = FMaterial::ValidateTexture(sb->faces[3], false);
-		state.SetMaterial(tex, CLAMP_XY, 0, -1);
+		state.SetMaterial(tex->GetSkyFace(3), UF_Texture, 0, CLAMP_XY, 0, -1);
 		state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(3), 4);
 	}
 	else 
 	{
 		faces=1;
-		tex = FMaterial::ValidateTexture(sb->faces[0], false);
-		state.SetMaterial(tex, CLAMP_XY, 0, -1);
+		state.SetMaterial(tex->GetSkyFace(0), UF_Texture, 0, CLAMP_XY, 0, -1);
 		state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(-1), 10);
 	}
 
 	// top
-	tex = FMaterial::ValidateTexture(sb->faces[faces], false);
-	state.SetMaterial(tex, CLAMP_XY, 0, -1);
-	state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(sb->fliptop ? 6 : 5), 4);
+	state.SetMaterial(tex->GetSkyFace(faces), UF_Texture, 0, CLAMP_XY, 0, -1);
+	state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(tex->GetSkyFlip() ? 6 : 5), 4);
 
 	// bottom
-	tex = FMaterial::ValidateTexture(sb->faces[faces+1], false);
-	state.SetMaterial(tex, CLAMP_XY, 0, -1);
+	state.SetMaterial(tex->GetSkyFace(faces+1), UF_Texture, 0, CLAMP_XY, 0, -1);
 	state.Draw(DT_TriangleStrip, vertexBuffer->FaceStart(4), 4);
 
 	state.EnableModelMatrix(false);
@@ -181,9 +172,10 @@ void HWSkyPortal::DrawContents(HWDrawInfo *di, FRenderState &state)
 	di->SetupView(state, 0, 0, 0, !!(mState->MirrorFlag & 1), !!(mState->PlaneMirrorFlag & 1));
 
 	state.SetVertexBuffer(vertexBuffer);
-	if (origin->texture[0] && origin->texture[0]->tex->isSkybox())
+	auto skybox = origin->texture[0] ? dynamic_cast<FSkyBox*>(origin->texture[0]->GetTexture()) : nullptr;
+	if (skybox)
 	{
-		RenderBox(di, state, origin->skytexno1, origin->texture[0], origin->x_offset[0], origin->sky2);
+		RenderBox(di, state, origin->skytexno1, skybox, origin->x_offset[0], origin->sky2);
 	}
 	else
 	{
