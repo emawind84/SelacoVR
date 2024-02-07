@@ -53,11 +53,12 @@ CUSTOM_CVAR(Int, gl_fogmode, 1, CVAR_ARCHIVE | CVAR_NOINITCALL)
 // OpenGL stuff moved here
 // GL related CVARs
 CVAR(Bool, gl_portals, true, 0)
-CVAR(Bool,gl_mirrors,true,0)	// This is for debugging only!
+CVAR(Bool, gl_mirrors, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
+CVAR(Bool, gl_mirror_player, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 CVAR(Bool,gl_mirror_envmap, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 CVAR(Bool, gl_seamless, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
-CUSTOM_CVAR(Int, r_mirror_recursions,4,CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
+CUSTOM_CVAR(Int, r_mirror_recursions,2,CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 {
 	if (self<0) self=0;
 	if (self>10) self=10;
@@ -124,7 +125,7 @@ CUSTOM_CVARD(Float, gl_texture_filter_anisotropic, 8, CVAR_ARCHIVE | CVAR_GLOBAL
 	screen->TextureFilterChanged();
 }
 
-CUSTOM_CVARD(Int, gl_texture_filter, 4, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL, "changes the texture filtering settings")
+CUSTOM_CVARD(Int, gl_texture_filter, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL, "changes the texture filtering settings")
 {
 	if (self < 0 || self > 6) self=4;
 	screen->TextureFilterChanged();
@@ -137,3 +138,18 @@ CUSTOM_CVAR(Int, gl_shadowmap_filter, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
 	if (self < 0 || self > 8) self = 1;
 }
+
+CVAR(Bool, gl_global_fade, false, CVAR_ARCHIVE)
+
+CUSTOM_CVAR(Float, gl_global_fade_density, 0.001f, CVAR_ARCHIVE)
+{
+	if (self < 0.0001f) self = 0.0001f;
+	if (self > 0.005f) self = 0.005f;
+}
+CUSTOM_CVAR(Float, gl_global_fade_gradient, 1.5f, CVAR_ARCHIVE)
+{
+	if (self < 0.1f) self = 0.1f;
+	if (self > 2.f) self = 2.f;
+}
+CVAR(Color, gl_global_fade_color, 0x3f3f3f, CVAR_ARCHIVE | CVAR_NOINITCALL)
+CVAR(Bool, gl_global_fade_debug, false, 0)

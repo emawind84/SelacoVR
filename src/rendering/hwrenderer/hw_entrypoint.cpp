@@ -53,6 +53,10 @@
 EXTERN_CVAR(Bool, cl_capfps)
 extern bool NoInterpolateView;
 
+extern int flatVerticesPerEye;
+extern int wallVerticesPerEye;
+extern int portalsPerEye;
+
 static SWSceneDrawer *swdrawer;
 
 void CleanSWDrawer()
@@ -128,6 +132,7 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 	screen->FirstEye();
 	for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
 	{
+		flatVerticesPerEye = wallVerticesPerEye = portalsPerEye = 0;
 		const auto& eye = vrmode->mEyes[eye_ix];
 		screen->SetViewportRects(bounds);
 

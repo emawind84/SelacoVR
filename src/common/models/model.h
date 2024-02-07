@@ -17,13 +17,15 @@ extern TArray<FSpriteModelFrame> SpriteModelFrames;
 
 #define MAX_MODELS_PER_FRAME 4
 #define MD3_MAX_SURFACES	32
+#define MIN_MODELS	4
 
 struct FSpriteModelFrame
 {
-	int modelIDs[MAX_MODELS_PER_FRAME];
-	FTextureID skinIDs[MAX_MODELS_PER_FRAME];
-	FTextureID surfaceskinIDs[MAX_MODELS_PER_FRAME][MD3_MAX_SURFACES];
-	int modelframes[MAX_MODELS_PER_FRAME];
+	uint8_t modelsAmount = 0;
+	TArray<int> modelIDs;
+	TArray<FTextureID> skinIDs;
+	TArray<FTextureID> surfaceskinIDs;
+	TArray<int> modelframes;
 	float xscale, yscale, zscale;
 	// [BB] Added zoffset, rotation parameters and flags.
 	// Added xoffset, yoffset
@@ -59,9 +61,9 @@ public:
 
 	virtual bool Load(const char * fn, int lumpnum, const char * buffer, int length) = 0;
 	virtual int FindFrame(const char * name) = 0;
-	virtual void RenderFrame(FModelRenderer *renderer, FGameTexture * skin, int frame, int frame2, double inter, int translation=0) = 0;
+	virtual void RenderFrame(FModelRenderer *renderer, FGameTexture * skin, int frame, int frame2, double inter, int translation, const FTextureID* surfaceskinids) = 0;
 	virtual void BuildVertexBuffer(FModelRenderer *renderer) = 0;
-	virtual void AddSkins(uint8_t *hitlist) = 0;
+	virtual void AddSkins(uint8_t *hitlist, const FTextureID* surfaceskinids) = 0;
 	virtual float getAspectFactor(float vscale) { return 1.f; }
 
 	void SetVertexBuffer(int type, IModelVertexBuffer *buffer) { mVBuf[type] = buffer; }

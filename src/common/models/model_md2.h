@@ -113,9 +113,9 @@ public:
 
 	virtual bool Load(const char * fn, int lumpnum, const char * buffer, int length);
 	virtual int FindFrame(const char * name);
-	virtual void RenderFrame(FModelRenderer *renderer, FGameTexture * skin, int frame, int frame2, double inter, int translation=0);
+	virtual void RenderFrame(FModelRenderer *renderer, FGameTexture * skin, int frame, int frame2, double inter, int translation, const FTextureID* surfaceskinids);
 	virtual void LoadGeometry();
-	virtual void AddSkins(uint8_t *hitlist);
+	virtual void AddSkins(uint8_t *hitlist, const FTextureID* surfaceskinids);
 
 	void UnloadGeometry();
 	void BuildVertexBuffer(FModelRenderer *renderer);
