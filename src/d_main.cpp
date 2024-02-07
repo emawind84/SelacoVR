@@ -258,7 +258,6 @@ CVAR (Bool, disableautoload, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBAL
 CVAR (Bool, autoloadbrightmaps, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 CVAR (Bool, autoloadlights, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 CVAR (Bool, autoloadwidescreen, true, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
-CVAR (Bool, autoloadconpics, true, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 CVAR (Bool, r_debug_disable_vis_filter, false, 0)
 
 bool hud_toggled = false;
@@ -1857,11 +1856,6 @@ static FString ParseGameInfo(TArray<FString> &pwads, const char *fn, const char 
 			sc.MustGetNumber();
 			DoomStartupInfo.LoadWidescreen = !!sc.Number;
 		}
-		else if (!nextKey.CompareNoCase("LOADCONPICS"))
-		{
-			sc.MustGetNumber();
-			DoomStartupInfo.LoadConpics = !!sc.Number;
-		}
 		else
 		{
 			// Silently ignore unknown properties
@@ -2002,12 +1996,6 @@ static void AddAutoloadFiles(const char *autoname)
 			const char *wswad = BaseFileSearch ("game_widescreen_gfx.pk3", NULL, true, GameConfig);
 			if (wswad)
 				D_AddFile (allwads, wswad, true, -1, GameConfig);
-		}
-		if (DoomStartupInfo.LoadConpics == 1 || (DoomStartupInfo.LoadConpics != 0 && autoloadconpics))
-		{
-			const char *conpicswad = BaseFileSearch ("game_conpics_gfx.pk3", NULL, true, GameConfig);
-			if (conpicswad)
-				D_AddFile (allwads, conpicswad);
 		}
 	}
 
@@ -3465,7 +3453,7 @@ void D_Cleanup()
 	// delete DoomStartupInfo data
 	DoomStartupInfo.Name = "";
 	DoomStartupInfo.BkColor = DoomStartupInfo.FgColor = DoomStartupInfo.Type = 0;
-	DoomStartupInfo.LoadConpics = DoomStartupInfo.LoadWidescreen = DoomStartupInfo.LoadLights = DoomStartupInfo.LoadBrightmaps = -1;
+	DoomStartupInfo.LoadWidescreen = DoomStartupInfo.LoadLights = DoomStartupInfo.LoadBrightmaps = -1;
 
 	GC::FullGC();					// clean up before taking down the object list.
 	
