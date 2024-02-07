@@ -1,58 +1,71 @@
-// 
-//---------------------------------------------------------------------------
-//
-// Copyright(C) 2010-2016 Christoph Oelckers
-// All rights reserved.
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/
-//
-//--------------------------------------------------------------------------
-//
 /*
 ** gl_framebuffer.cpp
 ** Implementation of the non-hardware specific parts of the
 ** OpenGL frame buffer
 **
-*/
+**---------------------------------------------------------------------------
+** Copyright 2010-2020 Christoph Oelckers
+** All rights reserved.
+**
+** Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions
+** are met:
+**
+** 1. Redistributions of source code must retain the above copyright
+**    notice, this list of conditions and the following disclaimer.
+** 2. Redistributions in binary form must reproduce the above copyright
+**    notice, this list of conditions and the following disclaimer in the
+**    documentation and/or other materials provided with the distribution.
+** 3. The name of the author may not be used to endorse or promote products
+**    derived from this software without specific prior written permission.
+**
+** THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+** IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+** OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+** IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+** INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+** NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+**---------------------------------------------------------------------------
+**
+*/ 
 
-#include "gl_load/gl_system.h"
+#include "gl_system.h"
 #include "v_video.h"
 #include "m_png.h"
 #include "templates.h"
+#include "i_time.h"
 
-#include "gl_load/gl_interface.h"
+#include "gl_interface.h"
 #include "gl/system/gl_framebuffer.h"
 #include "gl/renderer/gl_renderer.h"
-#include "gl/renderer/gl_renderbuffers.h"
-#include "gl/textures/gl_samplers.h"
+#include "gl_renderbuffers.h"
+#include "gl_samplers.h"
 #include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/utility/hw_vrmodes.h"
+#include "hw_vrmodes.h"
 #include "hwrenderer/models/hw_models.h"
-#include "hwrenderer/scene/hw_skydome.h"
+#include "hw_skydome.h"
+#include "hwrenderer/scene/hw_fakeflat.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
-#include "gl/shaders/gl_shaderprogram.h"
+#include "hw_lightbuffer.h"
+#include "gl_shaderprogram.h"
 #include "gl_debug.h"
 #include "r_videoscale.h"
 #include "gl_buffers.h"
+#include "swrenderer/r_swscene.h"
+#include "gl_postprocessstate.h"
+#include "v_draw.h"
 
-#include "hwrenderer/data/flatvertices.h"
+#include "flatvertices.h"
+#include "hw_cvars.h"
 
 EXTERN_CVAR (Bool, vid_vsync)
 EXTERN_CVAR(Bool, r_drawvoxels)
 EXTERN_CVAR(Int, gl_tonemap)
-EXTERN_CVAR(Bool, gl_texture_usehires)
+EXTERN_CVAR(Bool, cl_capfps)
 
 void gl_LoadExtensions();
 void gl_PrintStartupLog();
@@ -162,10 +175,8 @@ void OpenGLFrameBuffer::InitializeState()
 	mSkyData = new FSkyVertexBuffer;
 	mViewpoints = new HWViewpointBuffer;
 	mLights = new FLightBuffer();
-
 	GLRenderer = new FGLRenderer(this);
 	GLRenderer->Initialize(GetWidth(), GetHeight());
-
 	static_cast<GLDataBuffer*>(mLights->GetBuffer())->BindBase();
 
 	mDebug = std::make_shared<FGLDebug>();
@@ -193,18 +204,42 @@ void OpenGLFrameBuffer::Update()
 	Super::Update();
 }
 
+void OpenGLFrameBuffer::CopyScreenToBuffer(int width, int height, uint8_t* scr)
+{
+	IntRect bounds;
+	bounds.left = 0;
+	bounds.top = 0;
+	bounds.width = width;
+	bounds.height = height;
+	GLRenderer->CopyToBackbuffer(&bounds, false);
+
+	// strictly speaking not needed as the glReadPixels should block until the scene is rendered, but this is to safeguard against shitty drivers
+	glFinish();
+	glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, scr);
+}
+
 //===========================================================================
 //
-// Render the view to a savegame picture
+// Camera texture rendering
 //
 //===========================================================================
 
-void OpenGLFrameBuffer::WriteSavePic(player_t *player, FileWriter *file, int width, int height)
+void OpenGLFrameBuffer::RenderTextureView(FCanvasTexture* tex, std::function<void(IntRect &)> renderFunc)
+
 {
-	if (!V_IsHardwareRenderer())
-		Super::WriteSavePic(player, file, width, height);
-	else if (GLRenderer != nullptr)
-		GLRenderer->WriteSavePic(player, file, width, height);
+	GLRenderer->StartOffscreen();
+	GLRenderer->BindToFrameBuffer(tex);
+
+	IntRect bounds;
+	bounds.left = bounds.top = 0;
+	bounds.width = FHardwareTexture::GetTexDimension(tex->GetWidth());
+	bounds.height = FHardwareTexture::GetTexDimension(tex->GetHeight());
+
+	renderFunc(bounds);
+	GLRenderer->EndOffscreen();
+
+	tex->SetUpdated(true);
+	static_cast<OpenGLFrameBuffer*>(screen)->camtexcount++;
 }
 
 //===========================================================================
@@ -212,38 +247,6 @@ void OpenGLFrameBuffer::WriteSavePic(player_t *player, FileWriter *file, int wid
 // 
 //
 //===========================================================================
-
-sector_t *OpenGLFrameBuffer::RenderView(player_t *player)
-{
-	if (GLRenderer != nullptr)
-		return GLRenderer->RenderView(player);
-	return nullptr;
-}
-
-
-
-//===========================================================================
-//
-// 
-//
-//===========================================================================
-
-uint32_t OpenGLFrameBuffer::GetCaps()
-{
-	if (!V_IsHardwareRenderer())
-		return Super::GetCaps();
-
-	// describe our basic feature set
-	ActorRenderFeatureFlags FlagSet = RFF_FLATSPRITES | RFF_MODELS | RFF_SLOPE3DFLOORS |
-		RFF_TILTPITCH | RFF_ROLLSPRITES | RFF_POLYGONAL | RFF_MATSHADER | RFF_POSTSHADER | RFF_BRIGHTMAP;
-	if (r_drawvoxels)
-		FlagSet |= RFF_VOXELS;
-
-	if (gl_tonemap != 5) // not running palette tonemap shader
-		FlagSet |= RFF_TRUECOLOR;
-
-	return (uint32_t)FlagSet;
-}
 
 const char* OpenGLFrameBuffer::DeviceName() const 
 {
@@ -299,12 +302,6 @@ void OpenGLFrameBuffer::SetVSync(bool vsync)
 //
 //===========================================================================
 
-void OpenGLFrameBuffer::CleanForRestart()
-{
-	if (GLRenderer)
-		GLRenderer->ResetSWScene();
-}
-
 void OpenGLFrameBuffer::SetTextureFilterMode()
 {
 	if (GLRenderer != nullptr && GLRenderer->mSamplerManager != nullptr) GLRenderer->mSamplerManager->SetTextureFilterMode();
@@ -317,30 +314,23 @@ IHardwareTexture *OpenGLFrameBuffer::CreateHardwareTexture()
 
 void OpenGLFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 {
-	auto tex = mat->tex;
-	if (tex->isSWCanvas()) return;
+	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return;
 
-	// Textures that are already scaled in the texture lump will not get replaced by hires textures.
-	int flags = mat->isExpanded() ? CTF_Expand : (gl_texture_usehires && !tex->isScaled()) ? CTF_CheckHires : 0;
-	int numLayers = mat->GetLayers();
-	auto base = static_cast<FHardwareTexture*>(mat->GetLayer(0, translation));
+	int flags = mat->GetScaleFlags();
+	int numLayers = mat->NumLayers();
+	MaterialLayerInfo* layer;
+	auto base = static_cast<FHardwareTexture*>(mat->GetLayer(0, translation, &layer));
 
-	if (base->BindOrCreate(tex, 0, CLAMP_NONE, translation, flags))
+	if (base->BindOrCreate(layer->layerTexture, 0, CLAMP_NONE, translation, layer->scaleFlags))
 	{
 		for (int i = 1; i < numLayers; i++)
 		{
-			FTexture *layer;
 			auto systex = static_cast<FHardwareTexture*>(mat->GetLayer(i, 0, &layer));
-			systex->BindOrCreate(layer, i, CLAMP_NONE, 0, mat->isExpanded() ? CTF_Expand : 0);
+			systex->BindOrCreate(layer->layerTexture, i, CLAMP_NONE, 0, layer->scaleFlags);
 		}
 	}
 	// unbind everything. 
 	FHardwareTexture::UnbindAll();
-}
-
-FModelRenderer *OpenGLFrameBuffer::CreateModelRenderer(int mli)
-{
-	return new FHWModelRenderer(nullptr, gl_RenderState, mli);
 }
 
 IVertexBuffer *OpenGLFrameBuffer::CreateVertexBuffer()
@@ -384,6 +374,79 @@ void OpenGLFrameBuffer::UpdatePalette()
 		GLRenderer->ClearTonemapPalette();
 }
 
+FRenderState* OpenGLFrameBuffer::RenderState()
+{
+	return &gl_RenderState;
+}
+
+void OpenGLFrameBuffer::AmbientOccludeScene(float m5)
+{
+	gl_RenderState.EnableDrawBuffers(1);
+	GLRenderer->AmbientOccludeScene(m5);
+	glViewport(screen->mSceneViewport.left, mSceneViewport.top, mSceneViewport.width, mSceneViewport.height);
+	GLRenderer->mBuffers->BindSceneFB(true);
+	gl_RenderState.EnableDrawBuffers(gl_RenderState.GetPassDrawBufferCount());
+	gl_RenderState.Apply();
+}
+
+void OpenGLFrameBuffer::FirstEye()
+{
+	GLRenderer->mBuffers->CurrentEye() = 0;  // always begin at zero, in case eye count changed
+}
+
+void OpenGLFrameBuffer::NextEye(int eyecount)
+{
+	GLRenderer->mBuffers->NextEye(eyecount);
+}
+
+void OpenGLFrameBuffer::SetSceneRenderTarget(bool useSSAO)
+{
+	GLRenderer->mBuffers->BindSceneFB(useSSAO);
+}
+
+void OpenGLFrameBuffer::UpdateShadowMap()
+{
+	if (mShadowMap.PerformUpdate())
+	{
+		FGLDebug::PushGroup("ShadowMap");
+
+		FGLPostProcessState savedState;
+
+		static_cast<GLDataBuffer*>(screen->mShadowMap.mLightList)->BindBase();
+		static_cast<GLDataBuffer*>(screen->mShadowMap.mNodesBuffer)->BindBase();
+		static_cast<GLDataBuffer*>(screen->mShadowMap.mLinesBuffer)->BindBase();
+
+		GLRenderer->mBuffers->BindShadowMapFB();
+
+		GLRenderer->mShadowMapShader->Bind();
+		GLRenderer->mShadowMapShader->Uniforms->ShadowmapQuality = gl_shadowmap_quality;
+		GLRenderer->mShadowMapShader->Uniforms->NodesCount = screen->mShadowMap.NodesCount();
+		GLRenderer->mShadowMapShader->Uniforms.SetData();
+		static_cast<GLDataBuffer*>(GLRenderer->mShadowMapShader->Uniforms.GetBuffer())->BindBase();
+
+		glViewport(0, 0, gl_shadowmap_quality, 1024);
+		GLRenderer->RenderScreenQuad();
+
+		const auto& viewport = screen->mScreenViewport;
+		glViewport(viewport.left, viewport.top, viewport.width, viewport.height);
+
+		GLRenderer->mBuffers->BindShadowMapTexture(16);
+		FGLDebug::PopGroup();
+		screen->mShadowMap.FinishUpdate();
+	}
+}
+
+void OpenGLFrameBuffer::WaitForCommands(bool finish)
+{
+	glFinish();
+}
+
+void OpenGLFrameBuffer::SetSaveBuffers(bool yes)
+{
+	if (!GLRenderer) return;
+	if (yes) GLRenderer->mBuffers = GLRenderer->mSaveBuffers;
+	else GLRenderer->mBuffers = GLRenderer->mScreenBuffers;
+}
 
 //===========================================================================
 //
@@ -445,7 +508,7 @@ TArray<uint8_t> OpenGLFrameBuffer::GetScreenshotBuffer(int &pitch, ESSType &colo
 
 	// Screenshot should not use gamma correction if it was already applied to rendered image
 	gamma = 1;
-	if (vid_hdr_active && fullscreen)
+	if (vid_hdr_active && vid_fullscreen)
 		gamma *= 2.2f;
 	return ScreenshotBuffer;
 }
@@ -461,12 +524,13 @@ void OpenGLFrameBuffer::Draw2D(bool outside2D)
 	if (GLRenderer != nullptr)
 	{
 		GLRenderer->mBuffers->BindCurrentFB();
-		::Draw2D(&m2DDrawer, gl_RenderState, outside2D);
+		::Draw2D(twod, gl_RenderState, outside2D);
 	}
 }
 
-void OpenGLFrameBuffer::PostProcessScene(int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D)
+void OpenGLFrameBuffer::PostProcessScene(bool swscene, int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D)
 {
+	if (!swscene) GLRenderer->mBuffers->BlitSceneToTexture(); // Copy the resulting scene to the current post process texture
 	GLRenderer->PostProcessScene(fixedcm, afterBloomDrawEndScene2D);
 }
 
@@ -485,7 +549,7 @@ FTexture *OpenGLFrameBuffer::WipeStartScreen()
 	const auto &viewport = screen->mScreenViewport;
 
 	auto tex = new FWrapperTexture(viewport.width, viewport.height, 1);
-	tex->GetSystemTexture()->CreateTexture(nullptr, viewport.width, viewport.height, 0, false, 0, "WipeStartScreen");
+	tex->GetSystemTexture()->CreateTexture(nullptr, viewport.width, viewport.height, 0, false, "WipeStartScreen");
 	glFinish();
 	static_cast<FHardwareTexture*>(tex->GetSystemTexture())->Bind(0, false);
 
@@ -507,7 +571,7 @@ FTexture *OpenGLFrameBuffer::WipeEndScreen()
 	GLRenderer->Flush();
 	const auto &viewport = screen->mScreenViewport;
 	auto tex = new FWrapperTexture(viewport.width, viewport.height, 1);
-	tex->GetSystemTexture()->CreateTexture(NULL, viewport.width, viewport.height, 0, false, 0, "WipeEndScreen");
+	tex->GetSystemTexture()->CreateTexture(NULL, viewport.width, viewport.height, 0, false, "WipeEndScreen");
 	glFinish();
 	static_cast<FHardwareTexture*>(tex->GetSystemTexture())->Bind(0, false);
 	GLRenderer->mBuffers->BindCurrentFB();

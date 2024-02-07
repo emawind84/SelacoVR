@@ -35,8 +35,8 @@
 
 #include "vectors.h"
 #include "doomdef.h"
-#include "textures/textures.h"
-#include "r_data/renderstyle.h"
+#include "textures.h"
+#include "renderstyle.h"
 
 #define FX_ROCKET			0x00000001
 #define FX_GRENADE			0x00000002

@@ -168,6 +168,7 @@ ADD_STAT(bufferstats)
 static int printstats;
 static bool switchfps;
 static uint64_t waitstart;
+extern uint64_t LastCount;
 EXTERN_CVAR(Bool, vid_fps)
 
 void CheckBench()
@@ -189,7 +190,7 @@ void CheckBench()
 		AppendRenderTimes(compose);
 		AppendLightStats(compose);
 		//AppendMissingTextureStats(compose);
-		compose.AppendFormat("%llu fps\n\n", (unsigned long long)screen->GetLastFPS());
+		compose.AppendFormat("%llu fps\n\n", (unsigned long long)LastCount);
 
 		FILE *f = fopen("benchmarks.txt", "at");
 		if (f != NULL)

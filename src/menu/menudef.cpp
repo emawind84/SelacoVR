@@ -34,7 +34,7 @@
 #include <float.h>
 
 #include "menu/menu.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "c_bind.h"
 #include "i_music.h"
 #include "gi.h"
@@ -52,6 +52,7 @@
 #include "r_data/sprites.h"
 #include "menu/profiledef.h"
 #include <zmusic.h>
+#include "texturemanager.h"
 
 
 CUSTOM_CVAR(Bool, menu_showexperimental, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
@@ -83,6 +84,37 @@ PClass *DefaultOptionMenuClass;
 
 void I_BuildALDeviceList(FOptionValues *opt);
 void I_BuildALResamplersList(FOptionValues *opt);
+
+
+//==========================================================================
+//
+// Defines how graphics substitution is handled.
+// 0: Never replace a text-containing graphic with a font-based text.
+// 1: Always replace, regardless of any missing information. Useful for testing the substitution without providing full data.
+// 2: Only replace for non-default texts, i.e. if some language redefines the string's content, use it instead of the graphic. Never replace a localized graphic.
+// 3: Only replace if the string is not the default and the graphic comes from the IWAD. Never replace a localized graphic.
+// 4: Like 1, but lets localized graphics pass.
+//
+// The default is 3, which only replaces known content with non-default texts.
+//
+//==========================================================================
+
+CUSTOM_CVAR(Int, cl_gfxlocalization, 3, CVAR_ARCHIVE)
+{
+	if (self < 0 || self > 4) self = 0;
+}
+
+bool OkForLocalization(FTextureID texnum, const char* substitute)
+{
+	if (!texnum.isValid()) return false;
+
+	// First the unconditional settings, 0='never' and 1='always'.
+	if (cl_gfxlocalization == 1 || gameinfo.forcetextinmenus) return false;
+	if (cl_gfxlocalization == 0 || gameinfo.forcenogfxsubstitution) return true;
+	return TexMan.OkForLocalization(texnum, substitute, cl_gfxlocalization);
+}
+
+
 
 DEFINE_GLOBAL_NAMED(OptionSettings, OptionMenuSettings)
 
@@ -720,7 +752,7 @@ static void ParseListMenu(FScanner &sc)
 	desc->mWLeft = 0;
 	desc->mWRight = 0;
 	desc->mCenter = false;
-	desc->mFromEngine = Wads.GetLumpFile(sc.LumpNum) == 0;	// flags menu if the definition is from the IWAD.
+	desc->mFromEngine = fileSystem.GetFileContainer(sc.LumpNum) == 0;	// flags menu if the definition is from the IWAD.
 	desc->mForceList = false;
 
 	ParseListMenuBody(sc, desc, -1);
@@ -1176,9 +1208,9 @@ void M_ParseMenuDefs()
 	DefaultListMenuSettings->Reset();
 	DefaultOptionMenuSettings->Reset();
 
-	int IWADMenu = Wads.CheckNumForName("MENUDEF", ns_global, Wads.GetIwadNum());
+	int IWADMenu = fileSystem.CheckNumForName("MENUDEF", ns_global, fileSystem.GetIwadNum());
 
-	while ((lump = Wads.FindLump ("MENUDEF", &lastlump)) != -1)
+	while ((lump = fileSystem.FindLump ("MENUDEF", &lastlump)) != -1)
 	{
 		FScanner sc(lump);
 
@@ -1251,7 +1283,7 @@ void M_ParseMenuDefs()
 //
 //=============================================================================
 
-void M_StartupEpisodeMenu(FGameStartup *gs)
+void M_StartupEpisodeMenu(FNewGameStartup *gs)
 {
 	// Build episode menu
 	bool success = false;
@@ -1311,7 +1343,7 @@ void M_StartupEpisodeMenu(FGameStartup *gs)
 					if (AllEpisodes[i].mPicName.IsNotEmpty())
 					{
 						FTextureID tex = GetMenuTexture(AllEpisodes[i].mPicName);
-						if (AllEpisodes[i].mEpisodeName.IsEmpty() || TexMan.OkForLocalization(tex, AllEpisodes[i].mEpisodeName))
+						if (AllEpisodes[i].mEpisodeName.IsEmpty() || OkForLocalization(tex, AllEpisodes[i].mEpisodeName))
 							continue;	// We do not measure patch based entries. They are assumed to fit
 					}
 					const char *c = AllEpisodes[i].mEpisodeName;
@@ -1327,7 +1359,7 @@ void M_StartupEpisodeMenu(FGameStartup *gs)
 					if (AllEpisodes[i].mPicName.IsNotEmpty())
 					{
 						FTextureID tex = GetMenuTexture(AllEpisodes[i].mPicName);
-						if (AllEpisodes[i].mEpisodeName.IsEmpty() || TexMan.OkForLocalization(tex, AllEpisodes[i].mEpisodeName))
+						if (AllEpisodes[i].mEpisodeName.IsEmpty() || OkForLocalization(tex, AllEpisodes[i].mEpisodeName))
 							it = CreateListMenuItemPatch(posx, posy, ld->mLinespacing, AllEpisodes[i].mShortcut, tex, NAME_Skillmenu, i);
 					}
 					if (it == nullptr)
@@ -1546,7 +1578,7 @@ static void InitCrosshairsList()
 	pair->Value = 0;
 	pair->Text = "None";
 
-	while ((lump = Wads.FindLump("XHAIRS", &lastlump)) != -1)
+	while ((lump = fileSystem.FindLump("XHAIRS", &lastlump)) != -1)
 	{
 		FScanner sc(lump);
 		while (sc.GetNumber())
@@ -1828,7 +1860,7 @@ DEFINE_ACTION_FUNCTION(DMenu, UpdateSkinOptions)
 //=============================================================================
 extern int restart;
 
-void M_StartupSkillMenu(FGameStartup *gs)
+void M_StartupSkillMenu(FNewGameStartup *gs)
 {
 	static int done = -1;
 	bool success = false;
@@ -1943,7 +1975,7 @@ void M_StartupSkillMenu(FGameStartup *gs)
 				if (skill.PicName.Len() != 0 && pItemText == nullptr)
 				{
 					FTextureID tex = GetMenuTexture(skill.PicName);
-					if (skill.MenuName.IsEmpty() || TexMan.OkForLocalization(tex, skill.MenuName))
+					if (skill.MenuName.IsEmpty() || OkForLocalization(tex, skill.MenuName))
 						continue;
 				}
 				const char *c = pItemText ? pItemText->GetChars() : skill.MenuName.GetChars();
@@ -1972,7 +2004,7 @@ void M_StartupSkillMenu(FGameStartup *gs)
 				if (skill.PicName.Len() != 0 && pItemText == nullptr)
 				{
 					FTextureID tex = GetMenuTexture(skill.PicName);
-					if (skill.MenuName.IsEmpty() || TexMan.OkForLocalization(tex, skill.MenuName))
+					if (skill.MenuName.IsEmpty() || OkForLocalization(tex, skill.MenuName))
 						li = CreateListMenuItemPatch(posx, y, ld->mLinespacing, skill.Shortcut, tex, action, SkillIndices[i]);
 				}
 				if (li == nullptr)

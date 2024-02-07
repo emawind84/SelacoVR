@@ -24,25 +24,24 @@
 #include "m_png.h"
 #include "templates.h"
 #include "r_videoscale.h"
-#include "actor.h"
 #include "i_time.h"
 #include "g_game.h"
-#include "gamedata/fonts/v_text.h"
-
-#include "rendering/i_video.h"
+#include "v_text.h"
+#include "i_video.h"
+#include "v_draw.h"
 
 #include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/utility/hw_vrmodes.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_vrmodes.h"
+#include "hw_cvars.h"
 #include "hwrenderer/models/hw_models.h"
-#include "hwrenderer/scene/hw_skydome.h"
+#include "hw_skydome.h"
 #include "hwrenderer/scene/hw_fakeflat.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_portal.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
-#include "hwrenderer/data/flatvertices.h"
+#include "flatvertices.h"
 #include "hwrenderer/data/shaderuniforms.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "hw_lightbuffer.h"
 #include "hwrenderer/postprocessing/hw_postprocess.h"
 
 #include "swrenderer/r_swscene.h"
@@ -51,18 +50,15 @@
 #include "poly_buffers.h"
 #include "poly_renderstate.h"
 #include "poly_hwtexture.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 
 void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D = false);
-void DoWriteSavePic(FileWriter *file, ESSType ssformat, uint8_t *scr, int width, int height, sector_t *viewsector, bool upsidedown);
 
 EXTERN_CVAR(Bool, r_drawvoxels)
 EXTERN_CVAR(Int, gl_tonemap)
 EXTERN_CVAR(Int, screenblocks)
 EXTERN_CVAR(Bool, cl_capfps)
-EXTERN_CVAR(Bool, gl_no_skyclear)
 
-extern bool NoInterpolateView;
 extern int rendered_commandbuffers;
 extern int current_rendered_commandbuffers;
 
@@ -176,7 +172,7 @@ void PolyFrameBuffer::Update()
 	Flush3D.Clock();
 
 	Draw2D();
-	Clear2D();
+	twod->Clear();
 
 	Flush3D.Unclock();
 
@@ -220,178 +216,20 @@ void PolyFrameBuffer::Update()
 }
 
 
-void PolyFrameBuffer::WriteSavePic(player_t *player, FileWriter *file, int width, int height)
+void PolyFrameBuffer::RenderTextureView(FCanvasTexture* tex, std::function<void(IntRect &)> renderFunc)
 {
-	if (!V_IsHardwareRenderer())
-	{
-		Super::WriteSavePic(player, file, width, height);
-	}
-	else
-	{
-	}
-}
+	auto BaseLayer = static_cast<PolyHardwareTexture*>(tex->GetHardwareTexture(0, 0));
 
-sector_t *PolyFrameBuffer::RenderView(player_t *player)
-{
-	// To do: this is virtually identical to FGLRenderer::RenderView and should be merged.
-
-	mRenderState->SetVertexBuffer(mVertexData);
-	mVertexData->Reset();
-
-	sector_t *retsec;
-	if (!V_IsHardwareRenderer())
-	{
-		if (!swdrawer) swdrawer.reset(new SWSceneDrawer);
-		retsec = swdrawer->RenderView(player);
-	}
-	else
-	{
-		hw_ClearFakeFlat();
-
-		iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
-
-		CheckBenchActive();
-
-		// reset statistics counters
-		ResetProfilingData();
-
-		// Get this before everything else
-		if (cl_capfps || r_NoInterpolate) r_viewpoint.TicFrac = 1.;
-		else r_viewpoint.TicFrac = I_GetTimeFrac();
-
-		mLights->Clear();
-		mViewpoints->Clear();
-
-		// NoInterpolateView should have no bearing on camera textures, but needs to be preserved for the main view below.
-		bool saved_niv = NoInterpolateView;
-		NoInterpolateView = false;
-
-		// Shader start time does not need to be handled per level. Just use the one from the camera to render from.
-		GetRenderState()->CheckTimer(player->camera->Level->ShaderStartTime);
-		// prepare all camera textures that have been used in the last frame.
-		// This must be done for all levels, not just the primary one!
-		for (auto Level : AllLevels())
-		{
-			Level->canvasTextureInfo.UpdateAll([&](AActor *camera, FCanvasTexture *camtex, double fov)
-			{
-				RenderTextureView(camtex, camera, fov);
-			});
-		}
-		NoInterpolateView = saved_niv;
-
-		// now render the main view
-		float fovratio;
-		float ratio = r_viewwindow.WidescreenRatio;
-		if (r_viewwindow.WidescreenRatio >= 1.3f)
-		{
-			fovratio = 1.333333f;
-		}
-		else
-		{
-			fovratio = ratio;
-		}
-
-		retsec = RenderViewpoint(r_viewpoint, player->camera, NULL, r_viewpoint.FieldOfView().Degrees, ratio, fovratio, true, true);
-	}
-	All.Unclock();
-	return retsec;
-}
-
-sector_t *PolyFrameBuffer::RenderViewpoint(FRenderViewpoint &mainvp, AActor * camera, IntRect * bounds, float fov, float ratio, float fovratio, bool mainview, bool toscreen)
-{
-	// To do: this is virtually identical to FGLRenderer::RenderViewpoint and should be merged.
-
-	R_SetupFrame(mainvp, r_viewwindow, camera);
-
-	if (mainview && toscreen)
-		UpdateShadowMap();
-
-	// Update the attenuation flag of all light defaults for each viewpoint.
-	// This function will only do something if the setting differs.
-	FLightDefaults::SetAttenuationForLevel(!!(camera->Level->flags3 & LEVEL3_ATTENUATE));
-
-	// Render (potentially) multiple views for stereo 3d
-	// Fixme. The view offsetting should be done with a static table and not require setup of the entire render state for the mode.
-	auto vrmode = VRMode::GetVRMode(mainview && toscreen);
-	for (int eye_ix = 0; eye_ix < vrmode->mEyeCount; ++eye_ix)
-	{
-		const auto &eye = vrmode->mEyes[eye_ix];
-		SetViewportRects(bounds);
-
-		if (mainview) // Bind the scene frame buffer and turn on draw buffers used by ssao
-		{
-			//mRenderState->SetRenderTarget(GetBuffers()->SceneColor.View.get(), GetBuffers()->SceneDepthStencil.View.get(), GetBuffers()->GetWidth(), GetBuffers()->GetHeight(), Poly_FORMAT_R16G16B16A16_SFLOAT, GetBuffers()->GetSceneSamples());
-			bool useSSAO = (gl_ssao != 0);
-			GetRenderState()->SetPassType(useSSAO ? GBUFFER_PASS : NORMAL_PASS);
-			GetRenderState()->EnableDrawBuffers(GetRenderState()->GetPassDrawBufferCount());
-		}
-
-		auto di = HWDrawInfo::StartDrawInfo(mainvp.ViewLevel, nullptr, mainvp, nullptr);
-		auto &vp = di->Viewpoint;
-
-		di->Set3DViewport(*GetRenderState());
-		di->SetViewArea();
-		auto cm = di->SetFullbrightFlags(mainview ? vp.camera->player : nullptr);
-		//di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
-
-		// Stereo mode specific perspective projection
-		di->VPUniforms.mProjectionMatrix = eye->GetProjection(fov, ratio, fovratio);
-		// Stereo mode specific viewpoint adjustment
-		vp.Pos += eye->GetViewShift(vp);
-		di->SetupView(*GetRenderState(), vp.Pos.X, vp.Pos.Y, vp.Pos.Z, false, false);
-
-		// std::function until this can be done better in a cross-API fashion.
-		di->ProcessScene(toscreen, [&](HWDrawInfo *di, int mode) {
-			DrawScene(di, mode);
-		});
-
-		if (mainview)
-		{
-			PostProcess.Clock();
-			if (toscreen) di->EndDrawScene(mainvp.sector, *GetRenderState()); // do not call this for camera textures.
-
-			if (GetRenderState()->GetPassType() == GBUFFER_PASS) // Turn off ssao draw buffers
-			{
-				GetRenderState()->SetPassType(NORMAL_PASS);
-				GetRenderState()->EnableDrawBuffers(1);
-			}
-
-			//mPostprocess->BlitSceneToPostprocess(); // Copy the resulting scene to the current post process texture
-
-			PostProcessScene(cm, [&]() { di->DrawEndScene2D(mainvp.sector, *GetRenderState()); });
-
-			PostProcess.Unclock();
-		}
-		di->EndDrawInfo();
-
-#if 0
-		if (vrmode->mEyeCount > 1)
-			mBuffers->BlitToEyeTexture(eye_ix);
-#endif
-	}
-
-	return mainvp.sector;
-}
-
-void PolyFrameBuffer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV)
-{
-	// This doesn't need to clear the fake flat cache. It can be shared between camera textures and the main view of a scene.
-	FMaterial *mat = FMaterial::ValidateTexture(tex, false);
-	auto BaseLayer = static_cast<PolyHardwareTexture*>(mat->GetLayer(0, 0));
-
-	int width = mat->TextureWidth();
-	int height = mat->TextureHeight();
 	DCanvas *image = BaseLayer->GetImage(tex, 0, 0);
 	PolyDepthStencil *depthStencil = BaseLayer->GetDepthStencil(tex);
 	mRenderState->SetRenderTarget(image, depthStencil, false);
 
 	IntRect bounds;
 	bounds.left = bounds.top = 0;
-	bounds.width = MIN(mat->GetWidth(), image->GetWidth());
-	bounds.height = MIN(mat->GetHeight(), image->GetHeight());
+	bounds.width = std::min(tex->GetWidth(), image->GetWidth());
+	bounds.height = std::min(tex->GetHeight(), image->GetHeight());
 
-	FRenderViewpoint texvp;
-	RenderViewpoint(texvp, Viewpoint, &bounds, FOV, (float)width / height, (float)width / height, false, false);
+	renderFunc(bounds);
 
 	FlushDrawCommands();
 	DrawerThreads::WaitForWorkers();
@@ -400,66 +238,12 @@ void PolyFrameBuffer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, 
 	tex->SetUpdated(true);
 }
 
-void PolyFrameBuffer::DrawScene(HWDrawInfo *di, int drawmode)
-{
-	// To do: this is virtually identical to FGLRenderer::DrawScene and should be merged.
-
-	static int recursion = 0;
-	static int ssao_portals_available = 0;
-	const auto &vp = di->Viewpoint;
-
-	bool applySSAO = false;
-	if (drawmode == DM_MAINVIEW)
-	{
-		ssao_portals_available = gl_ssao_portals;
-		applySSAO = true;
-	}
-	else if (drawmode == DM_OFFSCREEN)
-	{
-		ssao_portals_available = 0;
-	}
-	else if (drawmode == DM_PORTAL && ssao_portals_available > 0)
-	{
-		applySSAO = true;
-		ssao_portals_available--;
-	}
-
-	if (vp.camera != nullptr)
-	{
-		ActorRenderFlags savedflags = vp.camera->renderflags;
-		di->CreateScene(drawmode == DM_MAINVIEW);
-		vp.camera->renderflags = savedflags;
-	}
-	else
-	{
-		di->CreateScene(false);
-	}
-
-	GetRenderState()->SetDepthMask(true);
-	if (!gl_no_skyclear) mPortalState->RenderFirstSkyPortal(recursion, di, *GetRenderState());
-
-	di->RenderScene(*GetRenderState());
-
-	if (applySSAO && GetRenderState()->GetPassType() == GBUFFER_PASS)
-	{
-		//mPostprocess->AmbientOccludeScene(di->VPUniforms.mProjectionMatrix.get()[5]);
-		//mViewpoints->Bind(*GetRenderState(), di->vpIndex);
-	}
-
-	// Handle all portals after rendering the opaque objects but before
-	// doing all translucent stuff
-	recursion++;
-	mPortalState->EndFrame(di, *GetRenderState());
-	recursion--;
-	di->RenderTranslucent(*GetRenderState());
-}
-
 static uint8_t ToIntColorComponent(float v)
 {
 	return clamp((int)(v * 255.0f + 0.5f), 0, 255);
 }
 
-void PolyFrameBuffer::PostProcessScene(int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D)
+void PolyFrameBuffer::PostProcessScene(bool swscene, int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D)
 {
 	afterBloomDrawEndScene2D();
 
@@ -504,54 +288,37 @@ void PolyFrameBuffer::PostProcessScene(int fixedcm, const std::function<void()> 
 	}
 }
 
-uint32_t PolyFrameBuffer::GetCaps()
-{
-	if (!V_IsHardwareRenderer())
-		return Super::GetCaps();
-
-	// describe our basic feature set
-	ActorRenderFeatureFlags FlagSet = RFF_FLATSPRITES | RFF_MODELS | RFF_SLOPE3DFLOORS |
-		RFF_TILTPITCH | RFF_ROLLSPRITES | RFF_POLYGONAL | RFF_MATSHADER | RFF_POSTSHADER | RFF_BRIGHTMAP;
-	if (r_drawvoxels)
-		FlagSet |= RFF_VOXELS;
-
-	if (gl_tonemap != 5) // not running palette tonemap shader
-		FlagSet |= RFF_TRUECOLOR;
-
-	return (uint32_t)FlagSet;
-}
 
 void PolyFrameBuffer::SetVSync(bool vsync)
 {
 	cur_vsync = vsync;
 }
 
-void PolyFrameBuffer::CleanForRestart()
-{
-	// force recreation of the SW scene drawer to ensure it gets a new set of resources.
-	swdrawer.reset();
+FRenderState* PolyFrameBuffer::RenderState()
+{ 
+	return mRenderState.get(); 
 }
+
 
 void PolyFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 {
-	auto tex = mat->tex;
-	if (tex->isSWCanvas()) return;
+	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return;
 
-	// Textures that are already scaled in the texture lump will not get replaced by hires textures.
-	int flags = mat->isExpanded() ? CTF_Expand : (gl_texture_usehires && !tex->isScaled()) ? CTF_CheckHires : 0;
-	auto base = static_cast<PolyHardwareTexture*>(mat->GetLayer(0, translation));
+	MaterialLayerInfo* layer;
+	auto systex = static_cast<PolyHardwareTexture*>(mat->GetLayer(0, translation, &layer));
+	systex->GetImage(layer->layerTexture, translation, layer->scaleFlags);
 
-	base->Precache(mat, translation, flags);
+	int numLayers = mat->NumLayers();
+	for (int i = 1; i < numLayers; i++)
+	{
+		auto systex = static_cast<PolyHardwareTexture*>(mat->GetLayer(i, 0, &layer));
+		systex->GetImage(layer->layerTexture, 0, layer->scaleFlags);	// fixme: Upscale flags must be disabled for certain layers.
+	}
 }
 
 IHardwareTexture *PolyFrameBuffer::CreateHardwareTexture()
 {
 	return new PolyHardwareTexture();
-}
-
-FModelRenderer *PolyFrameBuffer::CreateModelRenderer(int mli) 
-{
-	return new FHWModelRenderer(nullptr, *GetRenderState(), mli);
 }
 
 IVertexBuffer *PolyFrameBuffer::CreateVertexBuffer()
@@ -581,10 +348,6 @@ void PolyFrameBuffer::TextureFilterChanged()
 {
 }
 
-void PolyFrameBuffer::StartPrecaching()
-{
-}
-
 void PolyFrameBuffer::BlurScene(float amount)
 {
 }
@@ -608,7 +371,7 @@ FTexture *PolyFrameBuffer::WipeStartScreen()
 FTexture *PolyFrameBuffer::WipeEndScreen()
 {
 	Draw2D();
-	Clear2D();
+	twod->Clear();
 
 	auto tex = new FWrapperTexture(mScreenViewport.width, mScreenViewport.height, 1);
 	auto systex = static_cast<PolyHardwareTexture*>(tex->GetSystemTexture());
@@ -663,7 +426,7 @@ void PolyFrameBuffer::BeginFrame()
 
 void PolyFrameBuffer::Draw2D(bool outside2D)
 {
-	::Draw2D(&m2DDrawer, *mRenderState, outside2D);
+	::Draw2D(twod, *mRenderState, outside2D);
 }
 
 unsigned int PolyFrameBuffer::GetLightBufferBlockSize() const
@@ -673,4 +436,9 @@ unsigned int PolyFrameBuffer::GetLightBufferBlockSize() const
 
 void PolyFrameBuffer::UpdateShadowMap()
 {
+}
+
+void PolyFrameBuffer::AmbientOccludeScene(float m5)
+{
+	//mPostprocess->AmbientOccludeScene(m5);
 }

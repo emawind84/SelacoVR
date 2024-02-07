@@ -25,11 +25,12 @@
 **
 */
 
+#include "g_levellocals.h"
 #include "hw_renderstate.h"
 #include "hw_drawstructs.h"
 #include "hw_portal.h"
 #include "hwrenderer/utility/hw_lighting.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_cvars.h"
 
 
 //==========================================================================
@@ -118,7 +119,7 @@ void HWDrawInfo::SetFog(FRenderState &state, int lightlevel, int rellight, bool 
 	}
 
 	// Make fog a little denser when inside a skybox
-	if (screen->mPortalState->inskybox) fogdensity += fogdensity / 2;
+	if (portalState.inskybox) fogdensity += fogdensity / 2;
 
 
 	// no fog in enhanced vision modes!
@@ -155,15 +156,6 @@ void HWDrawInfo::SetFog(FRenderState &state, int lightlevel, int rellight, bool 
 			state.SetSoftLightLevel(255);
 		}
 	}
-}
-
-
-void FRenderState::CheckTimer(uint64_t ShaderStartTime)
-{
-	// if firstFrame is not yet initialized, initialize it to current time
-	// if we're going to overflow a float (after ~4.6 hours, or 24 bits), re-init to regain precision
-	if ((firstFrame == 0) || (screen->FrameTime - firstFrame >= 1 << 24) || ShaderStartTime >= firstFrame)
-		firstFrame = screen->FrameTime;
 }
 
 void FRenderState::ResetFadeColor()

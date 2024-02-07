@@ -50,7 +50,7 @@
 #include "decallib.h"
 #include "p_local.h"
 #include "c_console.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 #include "a_sharedglobal.h"
 #include "v_font.h"
 #include "doomstat.h"
@@ -69,7 +69,7 @@
 #include "sbar.h"
 #include "actorinlines.h"
 #include "types.h"
-#include "r_data/models/models.h"
+#include "model.h"
 
 static FRandom pr_camissile ("CustomActorfire");
 static FRandom pr_cabullet ("CustomBullet");
@@ -730,13 +730,13 @@ DEFINE_ACTION_FUNCTION(AActor, A_PlaySoundEx)
 
 	if (!looping)
 	{
-		S_Sound (self, int(channel) - NAME_Auto, 0, soundid, 1, attenuation);
+		S_Sound (self, channel.GetIndex() - NAME_Auto, 0, soundid, 1, attenuation);
 	}
 	else
 	{
-		if (!S_IsActorPlayingSomething (self, int(channel) - NAME_Auto, soundid))
+		if (!S_IsActorPlayingSomething (self, channel.GetIndex() - NAME_Auto, soundid))
 		{
-			S_Sound (self, (int(channel) - NAME_Auto), CHANF_LOOP, soundid, 1, attenuation);
+			S_Sound (self, (channel.GetIndex() - NAME_Auto), CHANF_LOOP, soundid, 1, attenuation);
 		}
 	}
 	return 0;
@@ -749,7 +749,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_StopSoundEx)
 
 	if (channel > NAME_Auto && channel <= NAME_SoundSlot7)
 	{
-		S_StopSound (self, int(channel) - NAME_Auto);
+		S_StopSound (self, channel.GetIndex() - NAME_Auto);
 	}
 	return 0;
 }
@@ -1343,7 +1343,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Print)
 		
 		if (fontname != NAME_None)
 		{
-			font = V_GetFont(fontname);
+			font = V_GetFont(fontname.GetChars());
 		}
 		if (time > 0)
 		{
@@ -1375,7 +1375,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_PrintBold)
 	if (text[0] == '$') text = GStrings(&text[1]);
 	if (fontname != NAME_None)
 	{
-		font = V_GetFont(fontname);
+		font = V_GetFont(fontname.GetChars());
 	}
 	if (time > 0)
 	{

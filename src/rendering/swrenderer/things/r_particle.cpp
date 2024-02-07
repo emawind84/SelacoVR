@@ -27,7 +27,7 @@
 #include "doomdef.h"
 #include "m_swap.h"
 
-#include "w_wad.h"
+#include "filesystem.h"
 #include "c_console.h"
 #include "c_cvars.h"
 #include "c_dispatch.h"
@@ -47,7 +47,7 @@
 #include "v_palette.h"
 #include "r_data/r_translate.h"
 #include "r_data/colormaps.h"
-#include "r_data/voxels.h"
+#include "voxels.h"
 #include "p_local.h"
 #include "p_maputl.h"
 #include "r_voxel.h"

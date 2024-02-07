@@ -26,7 +26,7 @@
 **
 **/
 
-#include "w_wad.h"
+#include "filesystem.h"
 #include "g_game.h"
 #include "doomstat.h"
 #include "g_level.h"
@@ -35,11 +35,11 @@
 #include "g_levellocals.h"
 #include "i_time.h"
 #include "cmdlib.h"
-#include "hwrenderer/textures/hw_material.h"
+#include "hw_material.h"
 #include "hwrenderer/data/buffers.h"
-#include "hwrenderer/data/flatvertices.h"
+#include "flatvertices.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
-#include "hwrenderer/scene/hw_renderstate.h"
+#include "hw_renderstate.h"
 #include "hwrenderer/scene/hw_portal.h"
 #include "hw_models.h"
 
@@ -54,7 +54,7 @@ VSMatrix FHWModelRenderer::GetViewToWorldMatrix()
 	return objectToWorldMatrix;
 }
 
-void FHWModelRenderer::BeginDrawModel(AActor *actor, FSpriteModelFrame *smf, const VSMatrix &objectToWorldMatrix, bool mirrored)
+void FHWModelRenderer::BeginDrawModel(FRenderStyle style, FSpriteModelFrame *smf, const VSMatrix &objectToWorldMatrix, bool mirrored)
 {
 	state.SetDepthFunc(DF_LEqual);
 	state.EnableTexture(true);
@@ -62,24 +62,24 @@ void FHWModelRenderer::BeginDrawModel(AActor *actor, FSpriteModelFrame *smf, con
 	// This solves a few of the problems caused by the lack of depth sorting.
 	// [Nash] Don't do back face culling if explicitly specified in MODELDEF
 	// TO-DO: Implement proper depth sorting.
-	if (!(actor->RenderStyle == DefaultRenderStyle()) && !(smf->flags & MDL_DONTCULLBACKFACES))
+	if (!(style == DefaultRenderStyle()) && !(smf->flags & MDL_DONTCULLBACKFACES))
 	{
-		state.SetCulling((mirrored ^ screen->mPortalState->isMirrored()) ? Cull_CCW : Cull_CW);
+		state.SetCulling((mirrored ^ portalState.isMirrored()) ? Cull_CCW : Cull_CW);
 	}
 
 	state.mModelMatrix = objectToWorldMatrix;
 	state.EnableModelMatrix(true);
 }
 
-void FHWModelRenderer::EndDrawModel(AActor *actor, FSpriteModelFrame *smf)
+void FHWModelRenderer::EndDrawModel(FRenderStyle style, FSpriteModelFrame *smf)
 {
 	state.EnableModelMatrix(false);
 	state.SetDepthFunc(DF_Less);
-	if (!(actor->RenderStyle == DefaultRenderStyle()) && !(smf->flags & MDL_DONTCULLBACKFACES))
+	if (!(style == DefaultRenderStyle()) && !(smf->flags & MDL_DONTCULLBACKFACES))
 		state.SetCulling(Cull_None);
 }
 
-void FHWModelRenderer::BeginDrawHUDModel(AActor *actor, const VSMatrix &objectToWorldMatrix, bool mirrored)
+void FHWModelRenderer::BeginDrawHUDModel(FRenderStyle style, const VSMatrix &objectToWorldMatrix, bool mirrored)
 {
 	state.SetDepthFunc(DF_LEqual);
 	
@@ -91,21 +91,21 @@ void FHWModelRenderer::BeginDrawHUDModel(AActor *actor, const VSMatrix &objectTo
 	// [BB] In case the model should be rendered translucent, do back face culling.
 	// This solves a few of the problems caused by the lack of depth sorting.
 	// TO-DO: Implement proper depth sorting.
-	if (!(actor->RenderStyle == DefaultRenderStyle()))
+	if (!(style == DefaultRenderStyle()))
 	{
-		state.SetCulling((mirrored ^ screen->mPortalState->isMirrored()) ? Cull_CW : Cull_CCW);
+		state.SetCulling((mirrored ^ portalState.isMirrored()) ? Cull_CW : Cull_CCW);
 	}
 
 	state.mModelMatrix = objectToWorldMatrix;
 	state.EnableModelMatrix(true);
 }
 
-void FHWModelRenderer::EndDrawHUDModel(AActor *actor)
+void FHWModelRenderer::EndDrawHUDModel(FRenderStyle style)
 {
 	state.EnableModelMatrix(false);
 
 	state.SetDepthFunc(DF_Less);
-	if (!(actor->RenderStyle == DefaultRenderStyle()))
+	if (!(style == DefaultRenderStyle()))
 		state.SetCulling(Cull_None);
 
 	state.SetDepthRange(gldepthmin, gldepthmax);
@@ -121,10 +121,9 @@ void FHWModelRenderer::SetInterpolation(double inter)
 	state.SetInterpolationFactor((float)inter);
 }
 
-void FHWModelRenderer::SetMaterial(FTexture *skin, bool clampNoFilter, int translation)
+void FHWModelRenderer::SetMaterial(FGameTexture *skin, bool clampNoFilter, int translation)
 {
-	FMaterial * tex = FMaterial::ValidateTexture(skin, false);
-	state.SetMaterial(tex, clampNoFilter ? CLAMP_NOFILTER : CLAMP_NONE, translation, -1);
+	state.SetMaterial(skin, UF_None, 0, clampNoFilter ? CLAMP_NOFILTER : CLAMP_NONE, translation, -1);
 	state.SetLightIndex(modellightindex);
 }
 
@@ -144,88 +143,10 @@ void FHWModelRenderer::DrawElements(int numIndices, size_t offset)
 //
 //===========================================================================
 
-FModelVertexBuffer::FModelVertexBuffer(bool needindex, bool singleframe)
+void FHWModelRenderer::SetupFrame(FModel *model, unsigned int frame1, unsigned int frame2, unsigned int size)
 {
-	mVertexBuffer = screen->CreateVertexBuffer();
-	mIndexBuffer = needindex ? screen->CreateIndexBuffer() : nullptr;
-
-	static const FVertexBufferAttribute format[] = {
-		{ 0, VATTR_VERTEX, VFmt_Float3, (int)myoffsetof(FModelVertex, x) },
-		{ 0, VATTR_TEXCOORD, VFmt_Float2, (int)myoffsetof(FModelVertex, u) },
-		{ 0, VATTR_NORMAL, VFmt_Packed_A2R10G10B10, (int)myoffsetof(FModelVertex, packedNormal) },
-		{ 1, VATTR_VERTEX2, VFmt_Float3, (int)myoffsetof(FModelVertex, x) },
-		{ 1, VATTR_NORMAL2, VFmt_Packed_A2R10G10B10, (int)myoffsetof(FModelVertex, packedNormal) }
-	};
-	mVertexBuffer->SetFormat(2, 5, sizeof(FModelVertex), format);
+	auto mdbuff = static_cast<FModelVertexBuffer*>(model->GetVertexBuffer(GetType()));
+	state.SetVertexBuffer(mdbuff->vertexBuffer(), frame1, frame2);
+	if (mdbuff->indexBuffer()) state.SetIndexBuffer(mdbuff->indexBuffer());
 }
 
-//===========================================================================
-//
-//
-//
-//===========================================================================
-
-FModelVertexBuffer::~FModelVertexBuffer()
-{
-	if (mIndexBuffer) delete mIndexBuffer;
-	delete mVertexBuffer;
-}
-
-//===========================================================================
-//
-//
-//
-//===========================================================================
-
-FModelVertex *FModelVertexBuffer::LockVertexBuffer(unsigned int size)
-{
-	return static_cast<FModelVertex*>(mVertexBuffer->Lock(size * sizeof(FModelVertex)));
-}
-
-//===========================================================================
-//
-//
-//
-//===========================================================================
-
-void FModelVertexBuffer::UnlockVertexBuffer()
-{
-	mVertexBuffer->Unlock();
-}
-
-//===========================================================================
-//
-//
-//
-//===========================================================================
-
-unsigned int *FModelVertexBuffer::LockIndexBuffer(unsigned int size)
-{
-	if (mIndexBuffer) return static_cast<unsigned int*>(mIndexBuffer->Lock(size * sizeof(unsigned int)));
-	else return nullptr;
-}
-
-//===========================================================================
-//
-//
-//
-//===========================================================================
-
-void FModelVertexBuffer::UnlockIndexBuffer()
-{
-	if (mIndexBuffer) mIndexBuffer->Unlock();
-}
-
-
-//===========================================================================
-//
-//
-//
-//===========================================================================
-
-void FModelVertexBuffer::SetupFrame(FModelRenderer *renderer, unsigned int frame1, unsigned int frame2, unsigned int size)
-{
-	auto &state = static_cast<FHWModelRenderer*>(renderer)->state;
-	state.SetVertexBuffer(mVertexBuffer, frame1, frame2);
-	if (mIndexBuffer) state.SetIndexBuffer(mIndexBuffer);
-}

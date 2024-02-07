@@ -2,10 +2,8 @@
 struct KeyBindings native version("2.4")
 {
 	native static String NameKeys(int k1, int k2);
-	native static String NameAllKeys(array<int> list);
 
 	native int, int GetKeysForCommand(String cmd);
-	native void GetAllKeysForCommand(out array<int> list, String cmd);
 	native String GetBinding(int key);
 
 	native void SetBind(int key, String cmd);
@@ -105,8 +103,6 @@ class Menu : Object native ui version("2.4")
 	native void ActivateMenu();
 	native static void UpdateColorsets(PlayerClass cls);
 	native static void UpdateSkinOptions(PlayerClass cls);
-
-	private native static void MakeScreenShot();
 	
 	//=============================================================================
 	//
@@ -214,11 +210,6 @@ class Menu : Object native ui version("2.4")
 				res |= MouseEvent(MOUSE_Release, ev.MouseX, y);
 			}
 		}
-		else if (ev.type == UIEvent.Type_KeyDown || ev.KeyChar == UiEvent.Key_SysRq)
-		{
-			checkPrintScreen(ev);
-		}
-
 		return false; 
 	}
 
@@ -324,67 +315,7 @@ class Menu : Object native ui version("2.4")
 		int overlay = grayed? Color(96,48,0,0) : 0;
 		screen.DrawText (OptionFont(), color, x, y, text, DTA_CleanNoMove_1, true, DTA_ColorOverlay, overlay);
 	}
-	
-	private static bool uiKeyIsInputKey(UiEvent ev, int inputKey)
-	{
-		int convertedKey;
 
-		switch (ev.KeyChar)
-		{
-		case UiEvent.Key_Home:			convertedKey = InputEvent.Key_Home;		break;
-		case UiEvent.Key_End:			convertedKey = InputEvent.Key_End;		break;
-		case UiEvent.Key_Tab:			convertedKey = InputEvent.Key_Tab;		break;
-		case UiEvent.Key_Del:			convertedKey = InputEvent.Key_Del;		break;
-		case UiEvent.Key_SysRq:			convertedKey = InputEvent.Key_SysRq;	break;
-
-		case UiEvent.Key_F1:			convertedKey = InputEvent.Key_F1;		break;
-		case UiEvent.Key_F2:			convertedKey = InputEvent.Key_F2;		break;
-		case UiEvent.Key_F3:			convertedKey = InputEvent.Key_F3;		break;
-		case UiEvent.Key_F4:			convertedKey = InputEvent.Key_F4;		break;
-		case UiEvent.Key_F5:			convertedKey = InputEvent.Key_F5;		break;
-		case UiEvent.Key_F6:			convertedKey = InputEvent.Key_F6;		break;
-		case UiEvent.Key_F7:			convertedKey = InputEvent.Key_F7;		break;
-		case UiEvent.Key_F8:			convertedKey = InputEvent.Key_F8;		break;
-		case UiEvent.Key_F9:			convertedKey = InputEvent.Key_F9;		break;
-		case UiEvent.Key_F10:			convertedKey = InputEvent.Key_F10;		break;
-		case UiEvent.Key_F11:			convertedKey = InputEvent.Key_F11;		break;
-		case UiEvent.Key_F12:			convertedKey = InputEvent.Key_F12;		break;
-
-		default:
-			// either used by menu or not present in EDoomInputKeys
-			convertedKey = 0;
-		}
-
-		if (ev.IsShift) convertedKey = InputEvent.Key_LShift;
-		else if (ev.IsCtrl) convertedKey = InputEvent.Key_LCtrl;
-		else if (ev.IsAlt) convertedKey = InputEvent.Key_LAlt;
-
-		if (convertedKey)
-		{
-			return convertedKey == inputKey;
-		}
-
-		String inputKeyName = KeyBindings.NameKeys(inputKey, 0);
-		if (inputKeyName.length() == 1)
-		{
-			return inputKeyName.ByteAt(0) == ev.KeyChar;
-		}
-
-		return false;
-	}
-
-	private void checkPrintScreen(UiEvent ev)
-	{
-		if (self is "TextEnterMenu") { return; }
-
-		int screenshotKey1, screenshotKey2;
-		[screenshotKey1, screenshotKey2] = Bindings.GetKeysForCommand("screenshot");
-
-		if (uiKeyIsInputKey(ev, screenshotKey1) || uiKeyIsInputKey(ev, screenshotKey2))
-		{
-			MakeScreenshot();
-		}
-	}
 }
 
 class MenuDescriptor : Object native ui version("2.4")

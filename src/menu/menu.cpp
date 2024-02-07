@@ -53,8 +53,10 @@
 #include "events.h"
 #include "v_video.h"
 #include "i_system.h"
-#include "scripting/types.h"
-#include "m_misc.h"
+#include "c_buttons.h"
+#include "types.h"
+#include "texturemanager.h"
+#include "v_draw.h"
 
 int DMenu::InMenu;
 static ScaleOverrider *CurrentScaleOverrider;
@@ -106,7 +108,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(DMenu, MenuTime, GetMenuTime)
 	ACTION_RETURN_INT(MenuTime);
 }
 
-FGameStartup GameStartupInfo;
+FNewGameStartup NewGameStartupInfo;
 EMenuState		menuactive;
 bool			M_DemoNoPlay;
 FButtonStatus	MenuButtons[NUM_MKEYS];
@@ -126,6 +128,8 @@ void D_ToggleHud();
 
 #define KEY_REPEAT_DELAY	(TICRATE*5/12)
 #define KEY_REPEAT_RATE		(3)
+
+bool OkForLocalization(FTextureID texnum, const char* substitute);
 
 //============================================================================
 //
@@ -147,7 +151,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(DMenuDescriptor, GetDescriptor, GetMenuDescriptor)
 {
 	PARAM_PROLOGUE;
 	PARAM_NAME(name);
-	ACTION_RETURN_OBJECT(GetMenuDescriptor(name));
+	ACTION_RETURN_OBJECT(GetMenuDescriptor(name.GetIndex()));
 }
 
 size_t DListMenuDescriptor::PropagateMark()
@@ -328,7 +332,7 @@ void DMenu::CallDrawer()
 	{
 		VMValue params[] = { (DObject*)this };
 		VMCall(func, params, 1, nullptr, 0);
-		screen->ClearClipRect();	// make sure the scripts don't leave a valid clipping rect behind.
+		twod->ClearClipRect();	// make sure the scripts don't leave a valid clipping rect behind.
 	}
 }
 
@@ -374,13 +378,17 @@ void M_StartControlPanel (bool makeSound, bool scaleoverride)
 	}
 	BackbuttonTime = 0;
 	BackbuttonAlpha = 0;
-	if (scaleoverride && !CurrentScaleOverrider) CurrentScaleOverrider = new ScaleOverrider;
-	else if (!scaleoverride && CurrentScaleOverrider) delete CurrentScaleOverrider;
+	if (scaleoverride && !CurrentScaleOverrider) CurrentScaleOverrider = new ScaleOverrider(twod);
+	else if (!scaleoverride && CurrentScaleOverrider)
+	{
+		delete CurrentScaleOverrider;
+		CurrentScaleOverrider = nullptr;
+	}
 }
 
 void M_ResetButtonStates()
 {
-	ResetButtonStates ();
+	buttonMap.ResetButtonStates ();
 	for (int i = 0; i < NUM_MKEYS; ++i)
 	{
 		MenuButtons[i].ReleaseKey(0);
@@ -417,12 +425,6 @@ DEFINE_ACTION_FUNCTION(DMenu, ActivateMenu)
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION(DMenu, MakeScreenShot)
-{
-	M_ScreenShot(nullptr);
-	return 0;
-}
-
 //=============================================================================
 //
 //
@@ -435,7 +437,7 @@ EXTERN_CVAR(Int, cl_gfxlocalization)
 void M_SetMenu(FName menu, int param)
 {
 	// some menus need some special treatment
-	switch (menu)
+	switch (menu.GetIndex())
 	{
 	case NAME_Mainmenu:
 		if (gameinfo.gametype & GAME_DoomStrifeChex)	// Raven's games always used text based menus
@@ -458,7 +460,7 @@ void M_SetMenu(FName menu, int param)
 							// This assumes that replacing one graphic will replace all of them.
 							// So this only checks the "New game" entry for localization capability.
 							FTextureID texid = TexMan.CheckForTexture("M_NGAME", ETextureType::MiscPatch);
-							if (!TexMan.OkForLocalization(texid, "$MNU_NEWGAME"))
+							if (!OkForLocalization(texid, "$MNU_NEWGAME"))
 							{
 								menu = NAME_MainmenuTextOnly;
 							}
@@ -470,12 +472,12 @@ void M_SetMenu(FName menu, int param)
 		break;
 	case NAME_Episodemenu:
 		// sent from the player class menu
-		GameStartupInfo.Skill = -1;
-		GameStartupInfo.Episode = -1;
-		GameStartupInfo.PlayerClass = 
+		NewGameStartupInfo.Skill = -1;
+		NewGameStartupInfo.Episode = -1;
+		NewGameStartupInfo.PlayerClass = 
 			param == -1000? nullptr :
 			param == -1? "Random" : GetPrintableDisplayName(PlayerClasses[param].Type).GetChars();
-		M_StartupEpisodeMenu(&GameStartupInfo);	// needs player class name from class menu (later)
+		M_StartupEpisodeMenu(&NewGameStartupInfo);	// needs player class name from class menu (later)
 		break;
 
 	case NAME_Skillmenu:
@@ -488,14 +490,14 @@ void M_SetMenu(FName menu, int param)
 			return;
 		}
 
-		GameStartupInfo.Episode = param;
-		M_StartupSkillMenu(&GameStartupInfo);	// needs player class name from class menu (later)
+		NewGameStartupInfo.Episode = param;
+		M_StartupSkillMenu(&NewGameStartupInfo);	// needs player class name from class menu (later)
 		break;
 
 	case NAME_StartgameConfirm:
 	{
 		// sent from the skill menu for a skill that needs to be confirmed
-		GameStartupInfo.Skill = param;
+		NewGameStartupInfo.Skill = param;
 
 		const char *msg = AllSkills[param].MustConfirmText;
 		if (*msg==0) msg = GStrings("NIGHTMARE");
@@ -506,10 +508,10 @@ void M_SetMenu(FName menu, int param)
 	case NAME_Startgame:
 		// sent either from skill menu or confirmation screen. Skill gets only set if sent from skill menu
 		// Now we can finally start the game. Ugh...
-		GameStartupInfo.Skill = param;
+		NewGameStartupInfo.Skill = param;
 	case NAME_StartgameConfirmed:
 
-		G_DeferedInitNew (&GameStartupInfo);
+		G_DeferedInitNew (&NewGameStartupInfo);
 		if (gamestate == GS_FULLCONSOLE)
 		{
 			gamestate = GS_HIDECONSOLE;
@@ -903,7 +905,7 @@ static void M_Dim()
 		amount = gameinfo.dimamount;
 	}
 
-	screen->Dim(dimmer, amount, 0, 0, screen->GetWidth(), screen->GetHeight());
+	Dim(twod, dimmer, amount, 0, 0, twod->GetWidth(), twod->GetHeight());
 }
 
 
@@ -977,6 +979,7 @@ void M_Init (void)
 	try
 	{
 		M_ParseMenuDefs();
+		GC::AddMarkerFunc(M_MarkMenus);
 	}
 	catch (CVMAbortException &err)
 	{

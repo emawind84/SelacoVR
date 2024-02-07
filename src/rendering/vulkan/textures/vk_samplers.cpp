@@ -24,11 +24,12 @@
 #include "c_cvars.h"
 #include "v_video.h"
 
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_cvars.h"
 #include "vulkan/system/vk_device.h"
 #include "vulkan/system/vk_builders.h"
 #include "vk_samplers.h"
-#include "hwrenderer/textures/hw_material.h"
+#include "hw_material.h"
+#include "i_interface.h"
 
 struct VkTexFilter
 {
@@ -83,7 +84,7 @@ void VkSamplerManager::SetTextureFilterMode()
 
 void VkSamplerManager::Create()
 {
-	int filter = V_IsHardwareRenderer() ? gl_texture_filter : 0;
+	int filter = sysCallbacks && sysCallbacks->DisableTextureFilter && sysCallbacks->DisableTextureFilter()? 0 : gl_texture_filter;
 	
 	for(int i = 0; i < 7; i++)
 	{

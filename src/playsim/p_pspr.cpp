@@ -39,7 +39,8 @@
 #include "templates.h"
 #include "g_level.h"
 #include "d_player.h"
-#include "serializer.h"
+#include "serializer_doom.h"
+#include "serialize_obj.h"
 #include "v_text.h"
 #include "cmdlib.h"
 #include "g_levellocals.h"
@@ -1253,14 +1254,14 @@ void P_SetupPsprites(player_t *player, bool startweaponup)
 	// Spawn the ready weapon
 	if (player->ReadyWeapon != nullptr)
 	{
-		player->PendingWeapon = !startweaponup ? player->ReadyWeapon : WP_NOCHANGE;
+		player->PendingWeapon = !startweaponup ? player->ReadyWeapon : (AActor*)WP_NOCHANGE;
 		P_BringUpWeapon (player);
 	}
 
 	// Spawn the offhand weapon
 	if (player->OffhandWeapon != nullptr)
 	{
-		player->PendingWeapon = !startweaponup ? player->OffhandWeapon : WP_NOCHANGE;
+		player->PendingWeapon = !startweaponup ? player->OffhandWeapon : (AActor*)WP_NOCHANGE;
 		P_BringUpWeapon (player);
 	}
 }

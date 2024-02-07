@@ -210,7 +210,7 @@ TArray<FName> &MakeStateNameList(const char * fname)
 	// Handle the old names for the existing death states
 	char *name = copystring(fname);
 	firstpart = strtok(name, ".");
-	switch (firstpart)
+	switch (firstpart.GetIndex())
 	{
 	case NAME_Burn:
 		firstpart = NAME_Death;
@@ -528,7 +528,7 @@ static int labelcmp(const void *a, const void *b)
 {
 	FStateLabel *A = (FStateLabel *)a;
 	FStateLabel *B = (FStateLabel *)b;
-	return ((int)A->Label - (int)B->Label);
+	return ((int)A->Label.GetIndex() - (int)B->Label.GetIndex());
 }
 
 FStateLabels *FStateDefinitions::CreateStateLabelList(TArray<FStateDefine> & statelist)

@@ -24,32 +24,16 @@
 
 #include "tarray.h"
 #include "p_pspr.h"
-#include "r_data/voxels.h"
-#include "r_data/models/models.h"
+#include "voxels.h"
+#include "models.h"
 #include "hwrenderer/data/buffers.h"
+#include "hw_modelvertexbuffer.h"
+#include "modelrenderer.h"
 
 class HWSprite;
 struct HWDrawInfo;
 class FRenderState;
 
-class FModelVertexBuffer : public IModelVertexBuffer
-{
-	IVertexBuffer *mVertexBuffer;
-	IIndexBuffer *mIndexBuffer;
-
-public:
-
-	FModelVertexBuffer(bool needindex, bool singleframe);
-	~FModelVertexBuffer();
-
-	FModelVertex *LockVertexBuffer(unsigned int size) override;
-	void UnlockVertexBuffer() override;
-
-	unsigned int *LockIndexBuffer(unsigned int size) override;
-	void UnlockIndexBuffer() override;
-
-	void SetupFrame(FModelRenderer *renderer, unsigned int frame1, unsigned int frame2, unsigned int size) override;
-};
 
 class FHWModelRenderer : public FModelRenderer
 {
@@ -61,15 +45,17 @@ public:
 	FHWModelRenderer(HWDrawInfo *d, FRenderState &st, int mli) : modellightindex(mli), di(d), state(st)
 	{}
 	ModelRendererType GetType() const override { return GLModelRendererType; }
-	void BeginDrawModel(AActor *actor, FSpriteModelFrame *smf, const VSMatrix &objectToWorldMatrix, bool mirrored) override;
-	void EndDrawModel(AActor *actor, FSpriteModelFrame *smf) override;
+	void BeginDrawModel(FRenderStyle style, FSpriteModelFrame *smf, const VSMatrix &objectToWorldMatrix, bool mirrored) override;
+	void EndDrawModel(FRenderStyle style, FSpriteModelFrame *smf) override;
 	IModelVertexBuffer *CreateVertexBuffer(bool needindex, bool singleframe) override;
 	VSMatrix GetViewToWorldMatrix() override;
-	void BeginDrawHUDModel(AActor *actor, const VSMatrix &objectToWorldMatrix, bool mirrored) override;
-	void EndDrawHUDModel(AActor *actor) override;
+	void BeginDrawHUDModel(FRenderStyle style, const VSMatrix &objectToWorldMatrix, bool mirrored) override;
+	void EndDrawHUDModel(FRenderStyle style) override;
 	void SetInterpolation(double interpolation) override;
-	void SetMaterial(FTexture *skin, bool clampNoFilter, int translation) override;
+	void SetMaterial(FGameTexture *skin, bool clampNoFilter, int translation) override;
 	void DrawArrays(int start, int count) override;
 	void DrawElements(int numIndices, size_t offset) override;
+	void SetupFrame(FModel *model, unsigned int frame1, unsigned int frame2, unsigned int size) override;
+
 };
 

@@ -29,13 +29,13 @@
 #include "vulkan/system/vk_swapchain.h"
 #include "vulkan/renderer/vk_renderstate.h"
 #include "vulkan/textures/vk_imagetransition.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_cvars.h"
 #include "hwrenderer/postprocessing/hw_postprocess.h"
 #include "hwrenderer/postprocessing/hw_postprocess_cvars.h"
-#include "hwrenderer/utility/hw_vrmodes.h"
-#include "hwrenderer/data/flatvertices.h"
+#include "hw_vrmodes.h"
+#include "flatvertices.h"
 #include "r_videoscale.h"
-#include "w_wad.h"
+#include "filesystem.h"
 
 EXTERN_CVAR(Int, gl_dither_bpc)
 
@@ -201,7 +201,7 @@ void VkPostprocess::DrawPresentTexture(const IntRect &box, bool applyGamma, bool
 	}
 	else
 	{
-		uniforms.InvGamma = 1.0f / clamp<float>(Gamma, 0.1f, 4.f);
+		uniforms.InvGamma = 1.0f / clamp<float>(vid_gamma, 0.1f, 4.f);
 		uniforms.Contrast = clamp<float>(vid_contrast, 0.1f, 3.f);
 		uniforms.Brightness = clamp<float>(vid_brightness, -0.8f, 0.8f);
 		uniforms.Saturation = clamp<float>(vid_saturation, -15.0f, 15.f);
@@ -451,9 +451,9 @@ VkPPShader::VkPPShader(PPShader *shader)
 
 FString VkPPShader::LoadShaderCode(const FString &lumpName, const FString &defines, int version)
 {
-	int lump = Wads.CheckNumForFullName(lumpName);
+	int lump = fileSystem.CheckNumForFullName(lumpName);
 	if (lump == -1) I_FatalError("Unable to load '%s'", lumpName.GetChars());
-	FString code = Wads.ReadLump(lump).GetString().GetChars();
+	FString code = fileSystem.ReadFile(lump).GetString().GetChars();
 
 	FString patchedCode;
 	patchedCode.AppendFormat("#version %d\n", 450);

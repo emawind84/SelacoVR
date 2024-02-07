@@ -837,7 +837,7 @@ void P_DoNewChaseDir (AActor *actor, double deltax, double deltay)
 	{
 		if ((pr_newchasedir() > 200 || fabs(deltay) > fabs(deltax)))
 		{
-			swapvalues (d[0], d[1]);
+			std::swap (d[0], d[1]);
 		}
 
 		if (d[0] == turnaround)
@@ -984,8 +984,8 @@ void P_NewChaseDir(AActor * actor)
 		while ((line = it.Next()))
 		{
 			if (line->backsector  && // Ignore one-sided linedefs
-				box.inRange(line) &&
-				box.BoxOnLineSide(line) == -1)
+				inRange(box, line) &&
+				BoxOnLineSide(box, line) == -1)
 		    {
 				double front = line->frontsector->floorplane.ZatPoint(actor->PosRelative(line));
 				double back  = line->backsector->floorplane.ZatPoint(actor->PosRelative(line));
@@ -1150,7 +1150,7 @@ void P_RandomChaseDir (AActor *actor)
 				// try other directions
 				if (pr_newchasedir() > 200 || fabs(delta.Y) > fabs(delta.X))
 				{
-					swapvalues (d[1], d[2]);
+					std::swap (d[1], d[2]);
 				}
 
 				if (d[1] == turnaround)
@@ -3133,13 +3133,13 @@ DEFINE_ACTION_FUNCTION(AActor, A_Pain)
 		{
 			FString pain_sound = pain_amount;
 			pain_sound += '-';
-			pain_sound += self->player->LastDamageType;
+			pain_sound += self->player->LastDamageType.GetChars();
 			sfx_id = pain_sound;
 			if (sfx_id == 0)
 			{
 				// Try again without a specific pain amount.
 				pain_sound = "*pain-";
-				pain_sound += self->player->LastDamageType;
+				pain_sound += self->player->LastDamageType.GetChars();
 				sfx_id = pain_sound;
 			}
 		}

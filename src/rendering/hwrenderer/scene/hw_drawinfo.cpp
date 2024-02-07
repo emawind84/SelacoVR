@@ -35,19 +35,26 @@
 #include "hw_renderstate.h"
 #include "hw_drawinfo.h"
 #include "po_man.h"
-#include "r_data/models/models.h"
+#include "models.h"
 #include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/utility/hw_cvars.h"
-#include "hwrenderer/data/hw_viewpointbuffer.h"
-#include "hwrenderer/data/flatvertices.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
-#include "hwrenderer/utility/hw_vrmodes.h"
+#include "hw_cvars.h"
+#include "hw_viewpointbuffer.h"
+#include "flatvertices.h"
+#include "hw_lightbuffer.h"
+#include "hw_vrmodes.h"
 #include "hw_clipper.h"
+#include "v_draw.h"
 
 EXTERN_CVAR(Float, r_visibility)
 EXTERN_CVAR(Int, gl_max_portals);
 CVAR(Bool, gl_bandedswlight, false, CVAR_ARCHIVE)
 CVAR(Bool, gl_sort_textures, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_no_skyclear, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, gl_enhanced_nv_stealth, 3, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+CVAR(Bool, gl_texture, true, 0)
+CVAR(Float, gl_mask_threshold, 0.5f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, gl_mask_sprite_threshold, 0.5f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 extern int portalsPerEye;
 
@@ -91,7 +98,6 @@ HWDrawInfo *FDrawInfoList::GetNew()
 
 void FDrawInfoList::Release(HWDrawInfo * di)
 {
-	di->DrawScene = nullptr;
 	di->ClearBuffers();
 	di->Level = nullptr;
 	mList.Push(di);
@@ -106,7 +112,6 @@ void FDrawInfoList::Release(HWDrawInfo * di)
 HWDrawInfo *HWDrawInfo::StartDrawInfo(FLevelLocals *lev, HWDrawInfo *parent, FRenderViewpoint &parentvp, HWViewpointUniforms *uniforms)
 {
 	HWDrawInfo *di = di_list.GetNew();
-	if (parent) di->DrawScene = parent->DrawScene;
 	di->Level = lev;
 	di->StartScene(parentvp, uniforms);
 	return di;
@@ -137,7 +142,17 @@ void HWDrawInfo::StartScene(FRenderViewpoint &parentvp, HWViewpointUniforms *uni
 		VPUniforms.mClipLine.X = -1000001.f;
 		VPUniforms.mClipHeight = 0;
 	}
-	else VPUniforms.SetDefaults(this);
+	else
+	{
+		VPUniforms.mProjectionMatrix.loadIdentity();
+		VPUniforms.mViewMatrix.loadIdentity();
+		VPUniforms.mNormalViewMatrix.loadIdentity();
+		VPUniforms.mViewHeight = viewheight;
+		VPUniforms.mGlobVis = (float)R_GetGlobVis(r_viewwindow, r_visibility) / 32.f;
+		VPUniforms.mPalLightLevels = static_cast<int>(gl_bandedswlight) | (static_cast<int>(gl_fogmode) << 8) | ((int)lightmode << 16);
+		VPUniforms.mClipLine.X = -10000000.0f;
+		VPUniforms.mShadowmapFilter = gl_shadowmap_filter;
+	}
 	mClipper->SetViewpoint(Viewpoint);
 
 	ClearBuffers();
@@ -273,7 +288,7 @@ int HWDrawInfo::SetFullbrightFlags(player_t *player)
 		int cm = CM_DEFAULT;
 		if (cplayer->extralight == INT_MIN)
 		{
-			cm = CM_FIRSTSPECIALCOLORMAP + INVERSECOLORMAP;
+			cm = CM_FIRSTSPECIALCOLORMAP + REALINVERSECOLORMAP;
 			Viewpoint.extralight = 0;
 			FullbrightFlags = Fullbright;
 			// This does never set stealth vision.
@@ -389,26 +404,6 @@ HWPortal * HWDrawInfo::FindPortal(const void * src)
 //
 //-----------------------------------------------------------------------------
 
-void HWViewpointUniforms::SetDefaults(HWDrawInfo *drawInfo)
-{
-	mProjectionMatrix.loadIdentity();
-	mViewMatrix.loadIdentity();
-	mNormalViewMatrix.loadIdentity();
-	mViewHeight = viewheight;
-	mGlobVis = (float)R_GetGlobVis(r_viewwindow, r_visibility) / 32.f;
-	const int lightMode = drawInfo == nullptr ? static_cast<int>(*gl_lightmode) : static_cast<int>(drawInfo->lightmode);
-	mPalLightLevels = static_cast<int>(gl_bandedswlight) | (static_cast<int>(gl_fogmode) << 8) | (lightMode << 16);
-	mClipLine.X = -10000000.0f;
-	mShadowmapFilter = gl_shadowmap_filter;
-
-}
-
-//-----------------------------------------------------------------------------
-//
-//
-//
-//-----------------------------------------------------------------------------
-
 HWDecal *HWDrawInfo::AddDecal(bool onmirror)
 {
 	auto decal = (HWDecal*)RenderDataAllocator.Alloc(sizeof(HWDecal));
@@ -431,7 +426,7 @@ void HWDrawInfo::CreateScene(bool drawpsprites)
 	mClipper->SafeAddClipRangeRealAngles(vp.Angles.Yaw.BAMs() + a1, vp.Angles.Yaw.BAMs() - a1);
 
 	// reset the portal manager
-	screen->mPortalState->StartFrame();
+	portalState.StartFrame();
 
 	ProcessAll.Clock();
 
@@ -583,8 +578,8 @@ void HWDrawInfo::EndDrawScene(sector_t * viewsector, FRenderState &state)
 	skyinfo.init(this, viewsector->sky, viewsector->Colormap.FadeColor);
 	if (skyinfo.texture[0])
 	{
-		PalEntry pe = skyinfo.texture[0]->tex->GetSkyCapColor(false);
-		state.SetSceneColor(pe);
+		auto& col = R_GetSkyCapColor(skyinfo.texture[0]);
+		state.SetSceneColor(col.first);
 	}
 	state.InitSceneClearColor();
 
@@ -668,18 +663,80 @@ void HWDrawInfo::Set3DViewport(FRenderState &state)
 
 //-----------------------------------------------------------------------------
 //
+// gl_drawscene - this function renders the scene from the current
+// viewpoint, including mirrors and skyboxes and other portals
+// It is assumed that the HWPortal::EndFrame returns with the 
+// stencil, z-buffer and the projection matrix intact!
+//
+//-----------------------------------------------------------------------------
+
+void HWDrawInfo::DrawScene(int drawmode)
+{
+	static int recursion = 0;
+	static int ssao_portals_available = 0;
+	const auto& vp = Viewpoint;
+
+	bool applySSAO = false;
+	if (drawmode == DM_MAINVIEW)
+	{
+		ssao_portals_available = gl_ssao_portals;
+		applySSAO = true;
+	}
+	else if (drawmode == DM_OFFSCREEN)
+	{
+		ssao_portals_available = 0;
+	}
+	else if (drawmode == DM_PORTAL && ssao_portals_available > 0)
+	{
+		applySSAO = true;
+		ssao_portals_available--;
+	}
+
+	if (vp.camera != nullptr)
+	{
+		ActorRenderFlags savedflags = vp.camera->renderflags;
+		CreateScene(drawmode == DM_MAINVIEW);
+		vp.camera->renderflags = savedflags;
+	}
+	else
+	{
+		CreateScene(false);
+	}
+	auto& RenderState = *screen->RenderState();
+
+	RenderState.SetDepthMask(true);
+	if (!gl_no_skyclear) portalState.RenderFirstSkyPortal(recursion, this, RenderState);
+
+	RenderScene(RenderState);
+
+	if (applySSAO && RenderState.GetPassType() == GBUFFER_PASS)
+	{
+		screen->AmbientOccludeScene(VPUniforms.mProjectionMatrix.get()[5]);
+		screen->mViewpoints->Bind(RenderState, vpIndex);
+	}
+
+	// Handle all portals after rendering the opaque objects but before
+	// doing all translucent stuff
+	recursion++;
+	portalState.EndFrame(this, RenderState);
+	recursion--;
+	RenderTranslucent(RenderState);
+}
+
+
+//-----------------------------------------------------------------------------
+//
 // R_RenderView - renders one view - either the screen or a camera texture
 //
 //-----------------------------------------------------------------------------
 
-void HWDrawInfo::ProcessScene(bool toscreen, const std::function<void(HWDrawInfo *,int)> &drawScene)
+void HWDrawInfo::ProcessScene(bool toscreen)
 {
-	screen->mPortalState->BeginScene();
+	portalState.BeginScene();
 
 	int mapsection = Level->PointInRenderSubsector(Viewpoint.Pos)->mapsection;
 	CurrentMapSections.Set(mapsection);
-	DrawScene = drawScene;
-	DrawScene(this, toscreen ? DM_MAINVIEW : DM_OFFSCREEN);
+	DrawScene(toscreen ? DM_MAINVIEW : DM_OFFSCREEN);
 
 }
 
@@ -694,7 +751,7 @@ void HWDrawInfo::AddSubsectorToPortal(FSectorPortalGroup *ptg, subsector_t *sub)
 	auto portal = FindPortal(ptg);
 	if (!portal)
 	{
-        portal = new HWSectorStackPortal(screen->mPortalState, ptg);
+        portal = new HWSectorStackPortal(&portalState, ptg);
 		Portals.Push(portal);
 	}
     auto ptl = static_cast<HWSectorStackPortal*>(portal);

@@ -30,6 +30,8 @@
 
 #include "doomtype.h"
 #include "gametype.h"
+#include "startupinfo.h"
+#include "c_cvars.h"
 
 struct event_t;
 
@@ -45,10 +47,7 @@ struct CRestartException
 	char dummy;
 };
 
-
 void VR_DoomMain(int argc, char** argv);
-int D_DoomMain (void);
-
 
 void D_Display ();
 
@@ -60,7 +59,6 @@ void D_PageTicker (void);
 void D_PageDrawer (void);
 void D_AdvanceDemo (void);
 void D_StartTitle (void);
-bool D_AddFile (TArray<FString> &wadfiles, const char *file, bool check = true, int position = -1);
 
 
 // [RH] Set this to something to draw an icon during the next screen refresh.
@@ -69,33 +67,6 @@ extern const char *D_DrawIcon;
 // [SP] Store the capabilities of the renderer in a global variable, to prevent excessive per-frame processing
 extern uint32_t r_renderercaps;
 
-
-struct WadStuff
-{
-	FString Path;
-	FString Name;
-};
-
-struct FStartupInfo
-{
-	FString Name;
-	uint32_t FgColor;			// Foreground color for title banner
-	uint32_t BkColor;			// Background color for title banner
-	FString Song;
-	int Type;
-	int LoadLights = -1;
-	int LoadBrightmaps = -1;
-	int LoadWidescreen = -1;
-	int LoadConpics = -1;
-	enum
-	{
-		DefaultStartup,
-		DoomStartup,
-		HereticStartup,
-		HexenStartup,
-		StrifeStartup,
-	};
-};
 
 struct FIWADInfo
 {
@@ -134,8 +105,6 @@ struct FFoundWadInfo
 	}
 };
 
-extern FStartupInfo DoomStartupInfo;
-
 //==========================================================================
 //
 // IWAD identifier class
@@ -172,6 +141,19 @@ public:
 		else return 0;
 	}
 
+
 };
+
+EXTERN_CVAR(Int, vid_rendermode)
+
+inline bool V_IsHardwareRenderer()
+{
+	return vid_rendermode == 4;
+}
+
+inline bool V_IsTrueColor()
+{
+	return vid_rendermode == 1 || vid_rendermode == 4;
+}
 
 #endif

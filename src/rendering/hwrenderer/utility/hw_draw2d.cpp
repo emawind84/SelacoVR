@@ -30,13 +30,14 @@
 #include "cmdlib.h"
 #include "r_defs.h"
 #include "hwrenderer/data/buffers.h"
-#include "hwrenderer/data/flatvertices.h"
+#include "flatvertices.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 #include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/utility/hw_cvars.h"
 #include "hwrenderer/utility/hw_vrmodes.h"
-#include "hwrenderer/scene/hw_renderstate.h"
+#include "hw_cvars.h"
+#include "hw_renderstate.h"
 #include "r_videoscale.h"
+#include "v_draw.h"
 
 
 //===========================================================================
@@ -101,7 +102,7 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 	{
 		const auto &mScreenViewport = screen->mScreenViewport;
 		state.SetViewport(mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
-		screen->mViewpoints->Set2D(state, screen->GetWidth(), screen->GetHeight());
+		screen->mViewpoints->Set2D(state, twod->GetWidth(), twod->GetHeight());
 	}
 
 	state.EnableDepthTest(false);
@@ -176,13 +177,10 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 
 		state.AlphaFunc(Alpha_GEqual, 0.f);
 
-		if (cmd.mTexture != nullptr)
+		if (cmd.mTexture != nullptr && cmd.mTexture->isValid())
 		{
-			auto mat = FMaterial::ValidateTexture(cmd.mTexture, false);
-			if (mat == nullptr) continue;
-
-			if (gltrans == -1 && cmd.mTranslation != nullptr) gltrans = cmd.mTranslation->GetUniqueIndex();
-			state.SetMaterial(mat, cmd.mFlags & F2DDrawer::DTF_Wrap ? CLAMP_NONE : CLAMP_XY_NOMIP, -gltrans, -1);
+			auto flags = cmd.mTexture->GetUseType() >= ETextureType::Special? UF_None : cmd.mTexture->GetUseType() == ETextureType::FontChar? UF_Font : UF_Texture;
+			state.SetMaterial(cmd.mTexture, flags, 0, cmd.mFlags & F2DDrawer::DTF_Wrap ? CLAMP_NONE : CLAMP_XY_NOMIP, cmd.mTranslationId, -1);
 			state.EnableTexture(true);
 
 			// Canvas textures are stored upside down
@@ -205,6 +203,7 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D)
 
 		switch (cmd.mType)
 		{
+		default:
 		case F2DDrawer::DrawTypeTriangles:
 			state.DrawIndexed(DT_Triangles, cmd.mIndexIndex, cmd.mIndexCount);
 			break;
