@@ -55,6 +55,7 @@
 #include "g_levellocals.h"
 #include "vm.h"
 #include "texturemanager.h"
+#include "v_draw.h"
 
 #define ScaleToFit43 3
 
@@ -718,7 +719,7 @@ void WI_Ticker()
 {
 	if (WI_Screen)
 	{
-		ScaleOverrider s;
+		ScaleOverrider s(twod);
 		IFVIRTUALPTRNAME(WI_Screen, "StatusScreen", Ticker)
 		{
 			VMValue self = WI_Screen;
@@ -738,7 +739,7 @@ void WI_Drawer()
 {
 	if (WI_Screen)
 	{
-		ScaleOverrider s;
+		ScaleOverrider s(twod);
 		IFVIRTUALPTRNAME(WI_Screen, "StatusScreen", Drawer)
 		{
 			FillBorder(twod, nullptr);
@@ -783,7 +784,7 @@ void WI_Start(wbstartstruct_t *wbstartstruct)
 	}
 	
 	WI_Screen = cls->CreateNew();
-	ScaleOverrider s;
+	ScaleOverrider s(twod);
 	IFVIRTUALPTRNAME(WI_Screen, "StatusScreen", Start)
 	{
 		VMValue val[2] = { WI_Screen, wbstartstruct };

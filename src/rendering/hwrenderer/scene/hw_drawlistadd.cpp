@@ -20,12 +20,13 @@
 //--------------------------------------------------------------------------
 //
 
-#include "hwrenderer/dynlights/hw_dynlightdata.h"
-#include "hwrenderer/utility/hw_cvars.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "hw_dynlightdata.h"
+#include "hw_cvars.h"
+#include "hw_lightbuffer.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hw_material.h"
+#include "actor.h"
 
 //==========================================================================
 //

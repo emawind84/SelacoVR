@@ -52,7 +52,7 @@
 #include "v_palette.h"
 #include "r_data/r_translate.h"
 #include "r_data/colormaps.h"
-#include "r_data/voxels.h"
+#include "voxels.h"
 #include "p_local.h"
 #include "p_maputl.h"
 #include "r_voxel.h"
@@ -66,6 +66,7 @@
 #include "swrenderer/r_memory.h"
 #include "swrenderer/r_renderthread.h"
 #include "g_levellocals.h"
+#include "v_draw.h"
 
 EXTERN_CVAR(Bool, r_drawplayersprites)
 EXTERN_CVAR(Bool, r_deathcamera)

@@ -46,13 +46,14 @@
 #include "scene/r_3dfloors.h"
 #include "scene/r_portal.h"
 #include "textures.h"
-#include "r_data/voxels.h"
+#include "voxels.h"
 #include "drawers/r_draw_rgba.h"
 #include "p_setup.h"
 #include "g_levellocals.h"
 #include "image.h"
 #include "imagehelpers.h"
 #include "texturemanager.h"
+#include "d_main.h"
 
 // [BB] Use ZDoom's freelook limit for the sotfware renderer.
 // Note: ZDoom's limit is chosen such that the sky is rendered properly.

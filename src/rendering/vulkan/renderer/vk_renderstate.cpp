@@ -29,12 +29,12 @@
 #include "templates.h"
 #include "doomstat.h"
 #include "r_data/colormaps.h"
-#include "hwrenderer/scene/hw_skydome.h"
-#include "hwrenderer/scene/hw_viewpointuniforms.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_skydome.h"
+#include "hw_viewpointuniforms.h"
+#include "hw_lightbuffer.h"
+#include "hw_cvars.h"
 #include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/data/flatvertices.h"
+#include "flatvertices.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 #include "hwrenderer/data/shaderuniforms.h"
 
@@ -440,6 +440,8 @@ void VkRenderState::ApplyMaterial()
 		auto fb = GetVulkanFrameBuffer();
 		auto passManager = fb->GetRenderPassManager();
 
+		if (mMaterial.mMaterial && mMaterial.mMaterial->Source()->isHardwareCanvas()) static_cast<FCanvasTexture*>(mMaterial.mMaterial->Source()->GetTexture())->NeedUpdate();
+
 		VulkanDescriptorSet* descriptorset = mMaterial.mMaterial ? static_cast<VkMaterial*>(mMaterial.mMaterial)->GetDescriptorSet(mMaterial) : passManager->GetNullTextureDescriptorSet();
 
 		mCommandBuffer->bindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, passManager->GetPipelineLayout(mPipelineKey.NumTextureLayers), 1, descriptorset);
@@ -510,7 +512,7 @@ void VkRenderState::EndFrame()
 	mStreamBufferWriter.Reset();
 }
 
-void VkRenderState::EnableDrawBuffers(int count)
+void VkRenderState::EnableDrawBuffers(int count, bool apply)
 {
 	if (mRenderTarget.DrawBuffers != count)
 	{

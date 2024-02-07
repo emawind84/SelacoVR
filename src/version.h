@@ -95,6 +95,7 @@ const char *GetVersionString();
 #define BASEWAD "lzdoom.pk3"
 #define OPTIONALWAD "game_support.pk3"
 #define GZDOOM 1
+#define VR3D_ENABLED
 
 // More stuff that needs to be different for derivatives.
 #define GAMENAME "LZDoom"
@@ -108,6 +109,11 @@ const char *GetVersionString();
 #else
 #define GAME_DIR ".config/" GAMENAMELOWERCASE
 #endif
+
+const int SAVEPICWIDTH = 216;
+const int SAVEPICHEIGHT = 162;
+const int VID_MIN_WIDTH = 320;
+const int VID_MIN_HEIGHT = 200;
 
 
 #endif //__VERSION_H__

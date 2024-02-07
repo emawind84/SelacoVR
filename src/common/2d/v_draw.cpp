@@ -1275,7 +1275,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(_Screen, DrawThickLine, DrawThickLine)
 
 //==========================================================================
 //
-// DCanvas :: Clear
+// ClearRect
 //
 // Set an area to a specified color.
 //
@@ -1334,7 +1334,7 @@ DEFINE_ACTION_FUNCTION(_Screen, Clear)
 
 //==========================================================================
 //
-// DCanvas :: Dim
+// DoDim
 //
 // Applies a colored overlay to an area of the screen.
 //
@@ -1435,5 +1435,11 @@ void DrawFrame(F2DDrawer* twod, PalEntry color, int left, int top, int width, in
 	twod->AddColorOnlyQuad(left - offset, top - offset, offset, height + 2 * offset, color);
 	twod->AddColorOnlyQuad(left, bottom, width, offset, color);
 	twod->AddColorOnlyQuad(right, top - offset, offset, height + 2 * offset, color);
+}
+
+void V_CalcCleanFacs(int designwidth, int designheight, int realwidth, int realheight, int* cleanx, int* cleany, int* _cx1, int* _cx2)
+{
+	if (designheight < 240 && realheight >= 480) designheight = 240;
+	*cleanx = *cleany = std::min(realwidth / designwidth, realheight / designheight);
 }
 

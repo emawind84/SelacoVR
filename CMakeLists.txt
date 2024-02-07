@@ -214,9 +214,9 @@ if( MSVC )
 	# Function-level linking
 	# Disable run-time type information
 	if ( HAVE_VULKAN )
-		set( ALL_C_FLAGS "/GF /Gy /permissive- /DHAVE_VULKAN" )
+		set( ALL_C_FLAGS "/GF /Gy /permissive- /DHAVE_VULKAN /DHAVE_SOFTPOLY" )
 	else()
-		set( ALL_C_FLAGS "/GF /Gy /permissive-" )
+		set( ALL_C_FLAGS "/GF /Gy /permissive- /DHAVE_SOFTPOLY" )
 	endif()
 
 	# Use SSE 2 as minimum always as the true color drawers needs it for __vectorcall
@@ -252,9 +252,9 @@ if( MSVC )
 else()
 	set( REL_LINKER_FLAGS "" )
 	if ( HAVE_VULKAN )
-		set( ALL_C_FLAGS "-ffp-contract=off -DHAVE_VULKAN" )
+		set( ALL_C_FLAGS "-ffp-contract=off -DHAVE_VULKAN -DHAVE_SOFTPOLY" )
 	else()
-		set( ALL_C_FLAGS "-ffp-contract=off" )
+		set( ALL_C_FLAGS "-ffp-contract=off -DHAVE_SOFTPOLY" )
 	endif()
 
 	if ( UNIX )

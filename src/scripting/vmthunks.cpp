@@ -58,6 +58,7 @@
 #include "c_dispatch.h"
 #include "s_music.h"
 #include "texturemanager.h"
+#include "v_draw.h"
 
 DVector2 AM_GetPosition();
 int Net_GetLatency(int *ld, int *ad);
@@ -3374,6 +3375,16 @@ DEFINE_ACTION_FUNCTION(DObject, S_ChangeMusic)
 }
 
 
+DEFINE_ACTION_FUNCTION(_Screen, GetViewWindow)
+{
+	PARAM_PROLOGUE;
+	if (numret > 0) ret[0].SetInt(viewwindowx);
+	if (numret > 1) ret[1].SetInt(viewwindowy);
+	if (numret > 2) ret[2].SetInt(viewwidth);
+	if (numret > 3) ret[3].SetInt(viewheight);
+	return MIN(numret, 4);
+}
+
 //==========================================================================
 //
 //
@@ -3704,3 +3715,4 @@ DEFINE_FIELD_X(MusPlayingInfo, MusPlayingInfo, name);
 DEFINE_FIELD_X(MusPlayingInfo, MusPlayingInfo, baseorder);
 DEFINE_FIELD_X(MusPlayingInfo, MusPlayingInfo, loop);
 
+DEFINE_GLOBAL(generic_ui)

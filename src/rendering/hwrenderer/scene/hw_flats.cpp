@@ -26,6 +26,7 @@
 */
 
 #include "a_sharedglobal.h"
+#include "a_dynlight.h"
 #include "r_defs.h"
 #include "r_sky.h"
 #include "r_utility.h"
@@ -35,14 +36,14 @@
 #include "actorinlines.h"
 #include "p_lnspec.h"
 #include "matrix.h"
-#include "hwrenderer/dynlights/hw_dynlightdata.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_dynlightdata.h"
+#include "hw_cvars.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_lighting.h"
 #include "hw_material.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
-#include "hwrenderer/data/flatvertices.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "flatvertices.h"
+#include "hw_lightbuffer.h"
 #include "hw_drawstructs.h"
 #include "hw_renderstate.h"
 #include "texturemanager.h"
@@ -93,6 +94,15 @@ bool hw_SetPlaneTextureRotation(const HWSectorPlane * secplane, FGameTexture * g
 	}
 	return false;
 }
+
+void SetPlaneTextureRotation(FRenderState &state, HWSectorPlane* plane, FGameTexture* texture)
+{
+	if (hw_SetPlaneTextureRotation(plane, texture, state.mTextureMatrix))
+	{
+		state.EnableTextureMatrix(true);
+	}
+}
+
 
 
 //==========================================================================
@@ -172,7 +182,7 @@ void HWFlat::SetupLights(HWDrawInfo *di, FLightNode * node, FDynLightData &light
 		}
 
 		p.Set(plane.plane.Normal(), plane.plane.fD());
-		draw_dlightf += lightdata.GetLight(portalgroup, p, light, false);
+		draw_dlightf += GetLight(lightdata, portalgroup, p, light, false);
 		node = node->nextLight;
 	}
 
@@ -334,7 +344,7 @@ void HWFlat::DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent)
 		if (sector->special != GLSector_Skybox)
 		{
 			state.SetMaterial(texture, UF_Texture, 0, CLAMP_NONE, 0, -1);
-			state.SetPlaneTextureRotation(&plane, texture);
+			SetPlaneTextureRotation(state, &plane, texture);
 			DrawSubsectors(di, state);
 			state.EnableTextureMatrix(false);
 		}
@@ -363,7 +373,7 @@ void HWFlat::DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent)
 			if (!texture->GetTranslucency()) state.AlphaFunc(Alpha_GEqual, gl_mask_threshold);
 			else state.AlphaFunc(Alpha_GEqual, 0.f);
 			state.SetMaterial(texture, UF_Texture, 0, CLAMP_NONE, 0, -1);
-			state.SetPlaneTextureRotation(&plane, texture);
+			SetPlaneTextureRotation(state, &plane, texture);
 			DrawSubsectors(di, state);
 			state.EnableTextureMatrix(false);
 		}

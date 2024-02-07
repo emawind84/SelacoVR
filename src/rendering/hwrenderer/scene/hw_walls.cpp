@@ -22,6 +22,7 @@
 
 #include "p_local.h"
 #include "p_lnspec.h"
+#include "a_dynlight.h"
 #include "a_sharedglobal.h"
 #include "r_defs.h"
 #include "r_sky.h"
@@ -31,21 +32,50 @@
 #include "g_levellocals.h"
 #include "actorinlines.h"
 #include "texturemanager.h"
-#include "hwrenderer/dynlights/hw_dynlightdata.h"
+#include "hw_dynlightdata.h"
 #include "hw_material.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_cvars.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_lighting.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/scene/hw_portal.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "hw_lightbuffer.h"
 #include "hw_renderstate.h"
 #include "hw_skydome.h"
 
 EXTERN_CVAR(Int, gl_max_vertices)
 
 extern int wallVerticesPerEye;
+
+
+void SetGlowPlanes(FRenderState &state, const secplane_t& top, const secplane_t& bottom)
+{
+	auto& tn = top.Normal();
+	auto& bn = bottom.Normal();
+	FVector4 tp = { (float)tn.X, (float)tn.Y, (float)top.negiC, (float)top.fD() };
+	FVector4 bp = { (float)bn.X, (float)bn.Y, (float)bottom.negiC, (float)bottom.fD() };
+	state.SetGlowPlanes(tp, bp);
+}
+
+void SetGradientPlanes(FRenderState& state, const secplane_t& top, const secplane_t& bottom)
+{
+	auto& tn = top.Normal();
+	auto& bn = bottom.Normal();
+	FVector4 tp = { (float)tn.X, (float)tn.Y, (float)top.negiC, (float)top.fD() };
+	FVector4 bp = { (float)bn.X, (float)bn.Y, (float)bottom.negiC, (float)bottom.fD() };
+	state.SetGradientPlanes(tp, bp);
+}
+
+void SetSplitPlanes(FRenderState& state, const secplane_t& top, const secplane_t& bottom)
+{
+	auto& tn = top.Normal();
+	auto& bn = bottom.Normal();
+	FVector4 tp = { (float)tn.X, (float)tn.Y, (float)top.negiC, (float)top.fD() };
+	FVector4 bp = { (float)bn.X, (float)bn.Y, (float)bottom.negiC, (float)bottom.fD() };
+	state.SetSplitPlanes(tp, bp);
+}
+
 
 //==========================================================================
 //
@@ -164,7 +194,7 @@ void HWWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 	{
 		state.EnableGlow(true);
 		state.SetGlowParams(topglowcolor, bottomglowcolor);
-		state.SetGlowPlanes(frontsector->ceilingplane, frontsector->floorplane);
+		SetGlowPlanes(state, frontsector->ceilingplane, frontsector->floorplane);
 	}
 	state.SetMaterial(texture, UF_Texture, 0, flags & 3, 0, -1);
 
@@ -201,20 +231,20 @@ void HWWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 				{
 					if (tierndx == side_t::top)
 					{
-						state.SetGradientPlanes(frontsector->ceilingplane, backsector->ceilingplane);
+						SetGradientPlanes(state, frontsector->ceilingplane, backsector->ceilingplane);
 					}
 					else if (tierndx == side_t::mid)
 					{
-						state.SetGradientPlanes(backsector->ceilingplane, backsector->floorplane);
+						SetGradientPlanes(state, backsector->ceilingplane, backsector->floorplane);
 					}
 					else // side_t::bottom:
 					{
-						state.SetGradientPlanes(backsector->floorplane, frontsector->floorplane);
+						SetGradientPlanes(state, backsector->floorplane, frontsector->floorplane);
 					}
 				}
 				else
 				{
-					state.SetGradientPlanes(frontsector->ceilingplane, frontsector->floorplane);
+					SetGradientPlanes(state, frontsector->ceilingplane, frontsector->floorplane);
 				}
 			}
 		}
@@ -247,7 +277,7 @@ void HWWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 				CopyFrom3DLight(thiscm, &(*lightlist)[i]);
 				di->SetColor(state, thisll, rel, false, thiscm, absalpha);
 				if (type != RENDERWALL_M2SNF) di->SetFog(state, thisll, rel, false, &thiscm, RenderStyle == STYLE_Add);
-				state.SetSplitPlanes((*lightlist)[i].plane, lowplane);
+				SetSplitPlanes(state, (*lightlist)[i].plane, lowplane);
 				RenderWall(di, state, rflags);
 			}
 			if (low1 <= zbottom[0] && low2 <= zbottom[1]) break;
@@ -423,7 +453,7 @@ void HWWall::SetupLights(HWDrawInfo *di, FDynLightData &lightdata)
 				}
 				if (outcnt[0]!=4 && outcnt[1]!=4 && outcnt[2]!=4 && outcnt[3]!=4) 
 				{
-					draw_dlight += lightdata.GetLight(seg->frontsector->PortalGroup, p, node->lightsource, true);
+					draw_dlight += GetLight(lightdata, seg->frontsector->PortalGroup, p, node->lightsource, true);
 				}
 			}
 		}
@@ -470,8 +500,10 @@ void HWWall::PutWall(HWDrawInfo *di, bool translucent)
 		Colormap.Clear();
 	}
     
-    if (di->isFullbrightScene() || (Colormap.LightColor.isWhite() && lightlevel == 255))
-        flags &= ~HWF_GLOW;
+	if (di->isFullbrightScene() || (Colormap.LightColor.isWhite() && lightlevel == 255))
+	{
+		flags &= ~HWF_GLOW;
+	}
     
 	if (!screen->BuffersArePersistent())
 	{
@@ -506,7 +538,6 @@ void HWWall::PutWall(HWDrawInfo *di, bool translucent)
 
 void HWWall::PutPortal(HWDrawInfo *di, int ptype, int plane)
 {
-	auto pstate = screen->mPortalState;
 	HWPortal * portal = nullptr;
 
 	MakeVertices(di, false);
@@ -515,11 +546,11 @@ void HWWall::PutPortal(HWDrawInfo *di, int ptype, int plane)
 		// portals don't go into the draw list.
 		// Instead they are added to the portal manager
 	case PORTALTYPE_HORIZON:
-		horizon = pstate->UniqueHorizons.Get(horizon);
+		horizon = portalState.UniqueHorizons.Get(horizon);
 		portal = di->FindPortal(horizon);
 		if (!portal)
 		{
-			portal = new HWHorizonPortal(pstate, horizon, di->Viewpoint);
+			portal = new HWHorizonPortal(&portalState, horizon, di->Viewpoint);
 			di->Portals.Push(portal);
 		}
 		portal->AddLine(this);
@@ -530,10 +561,10 @@ void HWWall::PutPortal(HWDrawInfo *di, int ptype, int plane)
 		if (!portal)
 		{
 			// either a regular skybox or an Eternity-style horizon
-			if (secportal->mType != PORTS_SKYVIEWPOINT) portal = new HWEEHorizonPortal(pstate, secportal);
+			if (secportal->mType != PORTS_SKYVIEWPOINT) portal = new HWEEHorizonPortal(&portalState, secportal);
 			else
 			{
-				portal = new HWSkyboxPortal(pstate, secportal);
+				portal = new HWSkyboxPortal(&portalState, secportal);
 				di->Portals.Push(portal);
 			}
 		}
@@ -544,20 +575,20 @@ void HWWall::PutPortal(HWDrawInfo *di, int ptype, int plane)
 		portal = di->FindPortal(this->portal);
 		if (!portal)
 		{
-			portal = new HWSectorStackPortal(pstate, this->portal);
+			portal = new HWSectorStackPortal(&portalState, this->portal);
 			di->Portals.Push(portal);
 		}
 		portal->AddLine(this);
 		break;
 
 	case PORTALTYPE_PLANEMIRROR:
-		if (pstate->PlaneMirrorMode * planemirror->fC() <= 0)
+		if (portalState.PlaneMirrorMode * planemirror->fC() <= 0)
 		{
-			planemirror = pstate->UniquePlaneMirrors.Get(planemirror);
+			planemirror = portalState.UniquePlaneMirrors.Get(planemirror);
 			portal = di->FindPortal(planemirror);
 			if (!portal)
 			{
-				portal = new HWPlaneMirrorPortal(pstate, planemirror);
+				portal = new HWPlaneMirrorPortal(&portalState, planemirror);
 				di->Portals.Push(portal);
 			}
 			portal->AddLine(this);
@@ -568,7 +599,7 @@ void HWWall::PutPortal(HWDrawInfo *di, int ptype, int plane)
 		portal = di->FindPortal(seg->linedef);
 		if (!portal)
 		{
-			portal = new HWMirrorPortal(pstate, seg->linedef);
+			portal = new HWMirrorPortal(&portalState, seg->linedef);
 			di->Portals.Push(portal);
 		}
 		portal->AddLine(this);
@@ -590,18 +621,18 @@ void HWWall::PutPortal(HWDrawInfo *di, int ptype, int plane)
 			{
 				di->ProcessActorsInPortal(otherside->getPortal()->mGroup, di->in_area);
 			}
-			portal = new HWLineToLinePortal(pstate, lineportal);
+			portal = new HWLineToLinePortal(&portalState, lineportal);
 			di->Portals.Push(portal);
 		}
 		portal->AddLine(this);
 		break;
 
 	case PORTALTYPE_SKY:
-		sky = pstate->UniqueSkies.Get(sky);
+		sky = portalState.UniqueSkies.Get(sky);
 		portal = di->FindPortal(sky);
 		if (!portal)
 		{
-			portal = new HWSkyPortal(screen->mSkyData, pstate, sky);
+			portal = new HWSkyPortal(screen->mSkyData, &portalState, sky);
 			di->Portals.Push(portal);
 		}
 		portal->AddLine(this);

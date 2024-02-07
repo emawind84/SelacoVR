@@ -30,19 +30,21 @@
 #include "i_time.h"
 #include "g_game.h"
 #include "v_text.h"
+#include "version.h"
+#include "v_draw.h"
 
 #include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/utility/hw_vrmodes.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_vrmodes.h"
+#include "hw_cvars.h"
 #include "hwrenderer/models/hw_models.h"
-#include "hwrenderer/scene/hw_skydome.h"
+#include "hw_skydome.h"
 #include "hwrenderer/scene/hw_fakeflat.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_portal.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
-#include "hwrenderer/data/flatvertices.h"
+#include "flatvertices.h"
 #include "hwrenderer/data/shaderuniforms.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "hw_lightbuffer.h"
 
 #include "swrenderer/r_swscene.h"
 
@@ -61,15 +63,12 @@
 #include "engineerrors.h"
 
 void Draw2D(F2DDrawer *drawer, FRenderState &state);
-void DoWriteSavePic(FileWriter *file, ESSType ssformat, uint8_t *scr, int width, int height, sector_t *viewsector, bool upsidedown);
 
 EXTERN_CVAR(Bool, r_drawvoxels)
 EXTERN_CVAR(Int, gl_tonemap)
 EXTERN_CVAR(Int, screenblocks)
 EXTERN_CVAR(Bool, cl_capfps)
-EXTERN_CVAR(Bool, gl_no_skyclear)
 
-extern bool NoInterpolateView;
 extern int rendered_commandbuffers;
 int current_rendered_commandbuffers;
 
@@ -194,7 +193,7 @@ void VulkanFrameBuffer::Update()
 	GetPostprocess()->SetActiveRenderTarget();
 
 	Draw2D();
-	Clear2D();
+	twod->Clear();
 
 	mRenderState->EndRenderPass();
 	mRenderState->EndFrame();
@@ -319,205 +318,10 @@ void VulkanFrameBuffer::WaitForCommands(bool finish)
 	}
 }
 
-void VulkanFrameBuffer::WriteSavePic(player_t *player, FileWriter *file, int width, int height)
-{
-	if (!V_IsHardwareRenderer())
-	{
-		Super::WriteSavePic(player, file, width, height);
-	}
-	else
-	{
-		IntRect bounds;
-		bounds.left = 0;
-		bounds.top = 0;
-		bounds.width = width;
-		bounds.height = height;
-
-		// we must be sure the GPU finished reading from the buffer before we fill it with new data.
-		WaitForCommands(false);
-
-		// Switch to render buffers dimensioned for the savepic
-		mActiveRenderBuffers = mSaveBuffers.get();
-
-		mPostprocess->ImageTransitionScene(true);
-
-		hw_ClearFakeFlat();
-		GetRenderState()->SetVertexBuffer(screen->mVertexData);
-		screen->mVertexData->Reset();
-		screen->mLights->Clear();
-		screen->mViewpoints->Clear();
-
-		// This shouldn't overwrite the global viewpoint even for a short time.
-		FRenderViewpoint savevp;
-		sector_t *viewsector = RenderViewpoint(savevp, players[consoleplayer].camera, &bounds, r_viewpoint.FieldOfView.Degrees, 1.6f, 1.6f, true, false);
-		GetRenderState()->EnableStencil(false);
-		GetRenderState()->SetNoSoftLightLevel();
-
-		int numpixels = width * height;
-		uint8_t * scr = (uint8_t *)M_Malloc(numpixels * 3);
-		CopyScreenToBuffer(width, height, scr);
-
-		DoWriteSavePic(file, SS_RGB, scr, width, height, viewsector, false);
-		M_Free(scr);
-
-		// Switch back the screen render buffers
-		screen->SetViewportRects(nullptr);
-		mActiveRenderBuffers = mScreenBuffers.get();
-	}
-}
-
-sector_t *VulkanFrameBuffer::RenderView(player_t *player)
-{
-	// To do: this is virtually identical to FGLRenderer::RenderView and should be merged.
-
-	mRenderState->SetVertexBuffer(screen->mVertexData);
-	screen->mVertexData->Reset();
-
-	sector_t *retsec;
-	if (!V_IsHardwareRenderer())
-	{
-		mPostprocess->SetActiveRenderTarget();
-
-		if (!swdrawer) swdrawer.reset(new SWSceneDrawer);
-		retsec = swdrawer->RenderView(player);
-	}
-	else
-	{
-		hw_ClearFakeFlat();
-
-		iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
-
-		CheckBenchActive();
-
-		// reset statistics counters
-		ResetProfilingData();
-
-		// Get this before everything else
-		if (cl_capfps || r_NoInterpolate) r_viewpoint.TicFrac = 1.;
-		else r_viewpoint.TicFrac = I_GetTimeFrac();
-
-		screen->mLights->Clear();
-		screen->mViewpoints->Clear();
-
-		// NoInterpolateView should have no bearing on camera textures, but needs to be preserved for the main view below.
-		bool saved_niv = NoInterpolateView;
-		NoInterpolateView = false;
-
-		// Shader start time does not need to be handled per level. Just use the one from the camera to render from.
-		if (player->camera)
-			GetRenderState()->CheckTimer(player->camera->Level->ShaderStartTime);
-		// prepare all camera textures that have been used in the last frame.
-		// This must be done for all levels, not just the primary one!
-		for (auto Level : AllLevels())
-		{
-			Level->canvasTextureInfo.UpdateAll([&](AActor *camera, FCanvasTexture *camtex, double fov)
-			{
-				RenderTextureView(camtex, camera, fov);
-			});
-		}
-		NoInterpolateView = saved_niv;
-
-		// now render the main view
-		float fovratio;
-		float ratio = r_viewwindow.WidescreenRatio;
-		if (r_viewwindow.WidescreenRatio >= 1.3f)
-		{
-			fovratio = 1.333333f;
-		}
-		else
-		{
-			fovratio = ratio;
-		}
-
-		mPostprocess->ImageTransitionScene(true); // This is the only line that differs compared to FGLRenderer::RenderView
-
-		retsec = RenderViewpoint(r_viewpoint, player->camera, NULL, r_viewpoint.FieldOfView.Degrees, ratio, fovratio, true, true);
-	}
-	All.Unclock();
-	return retsec;
-}
-
-sector_t *VulkanFrameBuffer::RenderViewpoint(FRenderViewpoint &mainvp, AActor * camera, IntRect * bounds, float fov, float ratio, float fovratio, bool mainview, bool toscreen)
-{
-	// To do: this is virtually identical to FGLRenderer::RenderViewpoint and should be merged.
-
-	R_SetupFrame(mainvp, r_viewwindow, camera);
-
-	if (mainview && toscreen)
-		UpdateShadowMap();
-
-	// Update the attenuation flag of all light defaults for each viewpoint.
-	// This function will only do something if the setting differs.
-	FLightDefaults::SetAttenuationForLevel(!!(camera->Level->flags3 & LEVEL3_ATTENUATE));
-
-	// Render (potentially) multiple views for stereo 3d
-	// Fixme. The view offsetting should be done with a static table and not require setup of the entire render state for the mode.
-	auto vrmode = VRMode::GetVRMode(mainview && toscreen);
-	for (int eye_ix = 0; eye_ix < vrmode->mEyeCount; ++eye_ix)
-	{
-		const auto &eye = vrmode->mEyes[eye_ix];
-		screen->SetViewportRects(bounds);
-
-		if (mainview) // Bind the scene frame buffer and turn on draw buffers used by ssao
-		{
-			mRenderState->SetRenderTarget(&GetBuffers()->SceneColor, GetBuffers()->SceneDepthStencil.View.get(), GetBuffers()->GetWidth(), GetBuffers()->GetHeight(), VK_FORMAT_R16G16B16A16_SFLOAT, GetBuffers()->GetSceneSamples());
-			bool useSSAO = (gl_ssao != 0);
-			GetRenderState()->SetPassType(useSSAO ? GBUFFER_PASS : NORMAL_PASS);
-			GetRenderState()->EnableDrawBuffers(GetRenderState()->GetPassDrawBufferCount());
-		}
-
-		auto di = HWDrawInfo::StartDrawInfo(mainvp.ViewLevel, nullptr, mainvp, nullptr);
-		auto &vp = di->Viewpoint;
-
-		di->Set3DViewport(*GetRenderState());
-		di->SetViewArea();
-		auto cm = di->SetFullbrightFlags(mainview ? vp.camera->player : nullptr);
-		di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
-
-		// Stereo mode specific perspective projection
-		di->VPUniforms.mProjectionMatrix = eye.GetProjection(fov, ratio, fovratio);
-		// Stereo mode specific viewpoint adjustment
-		vp.Pos += eye.GetViewShift(vp.HWAngles.Yaw.Degrees);
-		di->SetupView(*GetRenderState(), vp.Pos.X, vp.Pos.Y, vp.Pos.Z, false, false);
-
-		// std::function until this can be done better in a cross-API fashion.
-		di->ProcessScene(toscreen, [&](HWDrawInfo *di, int mode) {
-			DrawScene(di, mode);
-		});
-
-		if (mainview)
-		{
-			PostProcess.Clock();
-			if (toscreen) di->EndDrawScene(mainvp.sector, *GetRenderState()); // do not call this for camera textures.
-
-			if (GetRenderState()->GetPassType() == GBUFFER_PASS) // Turn off ssao draw buffers
-			{
-				GetRenderState()->SetPassType(NORMAL_PASS);
-				GetRenderState()->EnableDrawBuffers(1);
-			}
-
-			mPostprocess->BlitSceneToPostprocess(); // Copy the resulting scene to the current post process texture
-
-			PostProcessScene(cm, [&]() { di->DrawEndScene2D(mainvp.sector, *GetRenderState()); });
-
-			PostProcess.Unclock();
-		}
-		di->EndDrawInfo();
-
-#if 0
-		if (vrmode->mEyeCount > 1)
-			mBuffers->BlitToEyeTexture(eye_ix);
-#endif
-	}
-
-	return mainvp.sector;
-}
-
-void VulkanFrameBuffer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV)
+void VulkanFrameBuffer::RenderTextureView(FCanvasTexture* tex, std::function<void(IntRect &)> renderFunc)
 {
 	auto BaseLayer = static_cast<VkHardwareTexture*>(tex->GetHardwareTexture(0, 0));
 
-	float ratio = tex->aspectRatio;
 	VkTextureImage *image = BaseLayer->GetImage(tex, 0, 0);
 	VkTextureImage *depthStencil = BaseLayer->GetDepthStencil(tex);
 
@@ -534,8 +338,7 @@ void VulkanFrameBuffer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint
 	bounds.width = std::min(tex->GetWidth(), image->Image->width);
 	bounds.height = std::min(tex->GetHeight(), image->Image->height);
 
-	FRenderViewpoint texvp;
-	RenderViewpoint(texvp, Viewpoint, &bounds, FOV, ratio, ratio, false, false);
+	renderFunc(bounds);
 
 	mRenderState->EndRenderPass();
 
@@ -548,80 +351,10 @@ void VulkanFrameBuffer::RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint
 	tex->SetUpdated(true);
 }
 
-void VulkanFrameBuffer::DrawScene(HWDrawInfo *di, int drawmode)
+void VulkanFrameBuffer::PostProcessScene(bool swscene, int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D)
 {
-	// To do: this is virtually identical to FGLRenderer::DrawScene and should be merged.
-
-	static int recursion = 0;
-	static int ssao_portals_available = 0;
-	const auto &vp = di->Viewpoint;
-
-	bool applySSAO = false;
-	if (drawmode == DM_MAINVIEW)
-	{
-		ssao_portals_available = gl_ssao_portals;
-		applySSAO = true;
-	}
-	else if (drawmode == DM_OFFSCREEN)
-	{
-		ssao_portals_available = 0;
-	}
-	else if (drawmode == DM_PORTAL && ssao_portals_available > 0)
-	{
-		applySSAO = true;
-		ssao_portals_available--;
-	}
-
-	if (vp.camera != nullptr)
-	{
-		ActorRenderFlags savedflags = vp.camera->renderflags;
-		di->CreateScene(drawmode == DM_MAINVIEW);
-		vp.camera->renderflags = savedflags;
-	}
-	else
-	{
-		di->CreateScene(false);
-	}
-
-	GetRenderState()->SetDepthMask(true);
-	if (!gl_no_skyclear) screen->mPortalState->RenderFirstSkyPortal(recursion, di, *GetRenderState());
-
-	di->RenderScene(*GetRenderState());
-
-	if (applySSAO && GetRenderState()->GetPassType() == GBUFFER_PASS)
-	{
-		mPostprocess->AmbientOccludeScene(di->VPUniforms.mProjectionMatrix.get()[5]);
-		screen->mViewpoints->Bind(*GetRenderState(), di->vpIndex);
-	}
-
-	// Handle all portals after rendering the opaque objects but before
-	// doing all translucent stuff
-	recursion++;
-	screen->mPortalState->EndFrame(di, *GetRenderState());
-	recursion--;
-	di->RenderTranslucent(*GetRenderState());
-}
-
-void VulkanFrameBuffer::PostProcessScene(int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D)
-{
+	if (!swscene) mPostprocess->BlitSceneToPostprocess(); // Copy the resulting scene to the current post process texture
 	mPostprocess->PostProcessScene(fixedcm, afterBloomDrawEndScene2D);
-}
-
-uint32_t VulkanFrameBuffer::GetCaps()
-{
-	if (!V_IsHardwareRenderer())
-		return Super::GetCaps();
-
-	// describe our basic feature set
-	ActorRenderFeatureFlags FlagSet = RFF_FLATSPRITES | RFF_MODELS | RFF_SLOPE3DFLOORS |
-		RFF_TILTPITCH | RFF_ROLLSPRITES | RFF_POLYGONAL | RFF_MATSHADER | RFF_POSTSHADER | RFF_BRIGHTMAP;
-	if (r_drawvoxels)
-		FlagSet |= RFF_VOXELS;
-
-	if (gl_tonemap != 5) // not running palette tonemap shader
-		FlagSet |= RFF_TRUECOLOR;
-
-	return (uint32_t)FlagSet;
 }
 
 const char* VulkanFrameBuffer::DeviceName() const
@@ -635,12 +368,6 @@ void VulkanFrameBuffer::SetVSync(bool vsync)
 {
 	// This is handled in VulkanSwapChain::AcquireImage.
 	cur_vsync = vsync;
-}
-
-void VulkanFrameBuffer::CleanForRestart()
-{
-	// force recreation of the SW scene drawer to ensure it gets a new set of resources.
-	swdrawer.reset();
 }
 
 void VulkanFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
@@ -668,11 +395,6 @@ IHardwareTexture *VulkanFrameBuffer::CreateHardwareTexture()
 FMaterial* VulkanFrameBuffer::CreateMaterial(FGameTexture* tex, int scaleflags)
 {
 	return new VkMaterial(tex, scaleflags);
-}
-
-FModelRenderer *VulkanFrameBuffer::CreateModelRenderer(int mli) 
-{
-	return new FHWModelRenderer(nullptr, *GetRenderState(), mli);
 }
 
 IVertexBuffer *VulkanFrameBuffer::CreateVertexBuffer()
@@ -754,7 +476,7 @@ FTexture *VulkanFrameBuffer::WipeEndScreen()
 {
 	GetPostprocess()->SetActiveRenderTarget();
 	Draw2D();
-	Clear2D();
+	twod->Clear();
 
 	auto tex = new FWrapperTexture(mScreenViewport.width, mScreenViewport.height, 1);
 	auto systex = static_cast<VkHardwareTexture*>(tex->GetSystemTexture());
@@ -764,7 +486,7 @@ FTexture *VulkanFrameBuffer::WipeEndScreen()
 	return tex;
 }
 
-void VulkanFrameBuffer::CopyScreenToBuffer(int w, int h, void *data)
+void VulkanFrameBuffer::CopyScreenToBuffer(int w, int h, uint8_t *data)
 {
 	VkTextureImage image;
 
@@ -812,6 +534,12 @@ void VulkanFrameBuffer::CopyScreenToBuffer(int w, int h, void *data)
 	}
 	staging->Unmap();
 }
+
+void VulkanFrameBuffer::SetActiveRenderTarget()
+{
+	mPostprocess->SetActiveRenderTarget();
+}
+
 
 TArray<uint8_t> VulkanFrameBuffer::GetScreenshotBuffer(int &pitch, ESSType &color_type, float &gamma)
 {
@@ -911,7 +639,7 @@ void VulkanFrameBuffer::UpdateGpuStats()
 
 void VulkanFrameBuffer::Draw2D()
 {
-	::Draw2D(&m2DDrawer, *mRenderState);
+	::Draw2D(twod, *mRenderState);
 }
 
 VulkanCommandBuffer *VulkanFrameBuffer::GetTransferCommands()
@@ -994,4 +722,31 @@ void VulkanFrameBuffer::CreateFanToTrisIndexBuffer()
 void VulkanFrameBuffer::UpdateShadowMap()
 {
 	mPostprocess->UpdateShadowMap();
+}
+
+void VulkanFrameBuffer::SetSaveBuffers(bool yes)
+{
+	if (yes) mActiveRenderBuffers = mSaveBuffers.get();
+	else mActiveRenderBuffers = mScreenBuffers.get();
+}
+
+void VulkanFrameBuffer::ImageTransitionScene(bool unknown)
+{
+	mPostprocess->ImageTransitionScene(unknown);
+}
+
+
+FRenderState* VulkanFrameBuffer::RenderState()
+{
+	return mRenderState.get();
+}
+
+void VulkanFrameBuffer::AmbientOccludeScene(float m5)
+{
+	mPostprocess->AmbientOccludeScene(m5);
+}
+
+void VulkanFrameBuffer::SetSceneRenderTarget(bool useSSAO)
+{
+	mRenderState->SetRenderTarget(&GetBuffers()->SceneColor, GetBuffers()->SceneDepthStencil.View.get(), GetBuffers()->GetWidth(), GetBuffers()->GetHeight(), VK_FORMAT_R16G16B16A16_SFLOAT, GetBuffers()->GetSceneSamples());
 }

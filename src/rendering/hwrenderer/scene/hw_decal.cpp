@@ -30,12 +30,12 @@
 #include "r_utility.h"
 #include "g_levellocals.h"
 #include "hw_material.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_cvars.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/utility/hw_lighting.h"
 #include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/data/flatvertices.h"
+#include "flatvertices.h"
 #include "hw_renderstate.h"
 #include "texturemanager.h"
 
@@ -108,7 +108,7 @@ void HWDecal::DrawDecal(HWDrawInfo *di, FRenderState &state)
 				di->SetColor(state, thisll, rellight, di->isFullbrightScene(), thiscm, alpha);
 				if (di->Level->flags3 & LEVEL3_NOCOLOREDSPRITELIGHTING) thiscm.Decolorize();
 				di->SetFog(state, thisll, rellight, di->isFullbrightScene(), &thiscm, false);
-				state.SetSplitPlanes(lightlist[k].plane, lowplane);
+				SetSplitPlanes(state, lightlist[k].plane, lowplane);
 
 				state.Draw(DT_TriangleStrip, vertindex, 4);
 			}

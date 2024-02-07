@@ -26,6 +26,7 @@
 */
 
 #include "a_sharedglobal.h"
+#include "a_dynlight.h"
 #include "r_utility.h"
 #include "r_sky.h"
 #include "g_levellocals.h"
@@ -36,9 +37,9 @@
 #include "hw_drawstructs.h"
 #include "hw_fakeflat.h"
 #include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/dynlights/hw_dynlightdata.h"
-#include "hwrenderer/data/flatvertices.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "hw_dynlightdata.h"
+#include "flatvertices.h"
+#include "hw_lightbuffer.h"
 #include "hwrenderer/scene/hw_portal.h"
 #include "hw_fakeflat.h"
 
@@ -129,7 +130,7 @@ int HWDrawInfo::SetupLightsForOtherPlane(subsector_t * sub, FDynLightData &light
 			iter_dlightf++;
 
 			p.Set(plane->Normal(), plane->fD());
-			draw_dlightf += lightdata.GetLight(sub->sector->PortalGroup, p, light, true);
+			draw_dlightf += GetLight(lightdata, sub->sector->PortalGroup, p, light, true);
 			node = node->nextLight;
 		}
 

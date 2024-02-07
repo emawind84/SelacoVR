@@ -24,8 +24,6 @@ public:
 
 	unsigned int GetLightBufferBlockSize() const;
 
-	std::unique_ptr<SWSceneDrawer> swdrawer;
-
 	PolyFrameBuffer(void *hMonitor, bool fullscreen);
 	~PolyFrameBuffer();
 
@@ -35,20 +33,18 @@ public:
 
 	void InitializeState() override;
 
-	void CleanForRestart() override;
+	FRenderState* RenderState() override;
 	void PrecacheMaterial(FMaterial *mat, int translation) override;
 	void UpdatePalette() override;
-	uint32_t GetCaps() override;
-	void WriteSavePic(player_t *player, FileWriter *file, int width, int height) override;
-	sector_t *RenderView(player_t *player) override;
 	void SetTextureFilterMode() override;
 	void TextureFilterChanged() override;
 	void BeginFrame() override;
 	void BlurScene(float amount) override;
-	void PostProcessScene(int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D) override;
+	void PostProcessScene(bool swscene, int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D) override;
+	void AmbientOccludeScene(float m5) override;
+	//void SetSceneRenderTarget(bool useSSAO) override;
 
 	IHardwareTexture *CreateHardwareTexture() override;
-	FModelRenderer *CreateModelRenderer(int mli) override;
 	IVertexBuffer *CreateVertexBuffer() override;
 	IIndexBuffer *CreateIndexBuffer() override;
 	IDataBuffer *CreateDataBuffer(int bindingpoint, bool ssbo, bool needsresize) override;
@@ -68,9 +64,7 @@ public:
 	} FrameDeleteList;
 
 private:
-	sector_t *RenderViewpoint(FRenderViewpoint &mainvp, AActor * camera, IntRect * bounds, float fov, float ratio, float fovratio, bool mainview, bool toscreen);
-	void RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV);
-	void DrawScene(HWDrawInfo *di, int drawmode);
+	void RenderTextureView(FCanvasTexture* tex, std::function<void(IntRect &)> renderFunc) override;
 	void UpdateShadowMap();
 
 	void CheckCanvas();

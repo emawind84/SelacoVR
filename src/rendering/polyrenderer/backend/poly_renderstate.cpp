@@ -26,12 +26,12 @@
 #include "templates.h"
 #include "doomstat.h"
 #include "r_data/colormaps.h"
-#include "hwrenderer/scene/hw_skydome.h"
-#include "hwrenderer/scene/hw_viewpointuniforms.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_skydome.h"
+#include "hw_viewpointuniforms.h"
+#include "hw_lightbuffer.h"
+#include "hw_cvars.h"
 #include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/data/flatvertices.h"
+#include "flatvertices.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 #include "hwrenderer/data/shaderuniforms.h"
 #include "swrenderer/r_swcolormaps.h"
@@ -200,7 +200,7 @@ void PolyRenderState::EnableLineSmooth(bool on)
 {
 }
 
-void PolyRenderState::EnableDrawBuffers(int count)
+void PolyRenderState::EnableDrawBuffers(int count, bool apply)
 {
 }
 
@@ -313,6 +313,8 @@ void PolyRenderState::ApplyMaterial()
 	if (mMaterial.mChanged && mMaterial.mMaterial)
 	{
 		mTempTM = mMaterial.mMaterial->Source()->isHardwareCanvas() ? TM_OPAQUE : TM_NORMAL;
+
+		if (mMaterial.mMaterial->Source()->isHardwareCanvas()) static_cast<FCanvasTexture*>(mMaterial.mMaterial->Source()->GetTexture())->NeedUpdate();
 
 		MaterialLayerInfo* layer;
 		auto base = static_cast<PolyHardwareTexture*>(mMaterial.mMaterial->GetLayer(0, mMaterial.mTranslation, &layer));

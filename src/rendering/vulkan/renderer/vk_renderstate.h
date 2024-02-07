@@ -9,7 +9,7 @@
 #include "name.h"
 
 #include "hwrenderer/scene/hw_drawstructs.h"
-#include "hwrenderer/scene/hw_renderstate.h"
+#include "hw_renderstate.h"
 #include "hw_material.h"
 
 class VkRenderPassSetup;
@@ -42,7 +42,7 @@ public:
 	void EnableDepthTest(bool on) override;
 	void EnableMultisampling(bool on) override;
 	void EnableLineSmooth(bool on) override;
-	void EnableDrawBuffers(int count) override;
+	void EnableDrawBuffers(int count, bool apply) override;
 
 	void BeginFrame();
 	void SetRenderTarget(VkTextureImage *image, VulkanImageView *depthStencilView, int width, int height, VkFormat Format, VkSampleCountFlagBits samples);

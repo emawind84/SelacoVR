@@ -30,12 +30,13 @@
 #include "cmdlib.h"
 #include "r_defs.h"
 #include "hwrenderer/data/buffers.h"
-#include "hwrenderer/data/flatvertices.h"
+#include "flatvertices.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 #include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/utility/hw_cvars.h"
-#include "hwrenderer/scene/hw_renderstate.h"
+#include "hw_cvars.h"
+#include "hw_renderstate.h"
 #include "r_videoscale.h"
+#include "v_draw.h"
 
 
 //===========================================================================
@@ -188,6 +189,7 @@ void Draw2D(F2DDrawer *drawer, FRenderState &state)
 
 		switch (cmd.mType)
 		{
+		default:
 		case F2DDrawer::DrawTypeTriangles:
 			state.DrawIndexed(DT_Triangles, cmd.mIndexIndex, cmd.mIndexCount);
 			break;

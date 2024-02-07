@@ -33,7 +33,7 @@
 #include "r_sky.h"
 #include "g_levellocals.h"
 #include "hw_renderstate.h"
-#include "hwrenderer/data/flatvertices.h"
+#include "flatvertices.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_lighting.h"
 #include "texturemanager.h"
@@ -45,6 +45,8 @@ EXTERN_CVAR(Bool, gl_mirror_player)
 EXTERN_CVAR(Bool, gl_portals)
 
 extern int portalsPerEye;
+
+void SetPlaneTextureRotation(FRenderState& state, HWSectorPlane* plane, FGameTexture* texture);
 
 //-----------------------------------------------------------------------------
 //
@@ -76,6 +78,7 @@ CCMD(gl_portalinfo)
 }
 
 static FString indent;
+FPortalSceneState portalState;
 
 //-----------------------------------------------------------------------------
 //
@@ -984,7 +987,7 @@ void HWHorizonPortal::DrawContents(HWDrawInfo *di, FRenderState &state)
 	state.SetMaterial(texture, UF_Texture, 0, CLAMP_NONE, 0, -1);
 	state.SetObjectColor(origin->specialcolor);
 
-	state.SetPlaneTextureRotation(sp, texture);
+	SetPlaneTextureRotation(state, sp, texture);
 	state.AlphaFunc(Alpha_GEqual, 0.f);
 	state.SetRenderStyle(STYLE_Source);
 

@@ -36,6 +36,8 @@
 #include "image.h"
 #include "engineerrors.h"
 #include "texturemanager.h"
+#include "d_main.h"
+#include "v_draw.h"
 
 // [RH] Base blending values (for e.g. underwater)
 int BaseBlendR, BaseBlendG, BaseBlendB;
@@ -121,11 +123,11 @@ sector_t *SWSceneDrawer::RenderView(player_t *player)
 		auto map = swrenderer::CameraLight::Instance()->ShaderColormap();
 		DrawTexture(twod, fbtex.get(), 0, 0, DTA_SpecialColormap, map, TAG_DONE);
 		screen->Draw2D();
-		screen->Clear2D();
-		screen->PostProcessScene(CM_DEFAULT, [&]() {
+		twod->Clear();
+		screen->PostProcessScene(true, CM_DEFAULT, [&]() {
 			SWRenderer->DrawRemainingPlayerSprites();
 			screen->Draw2D();
-			screen->Clear2D();
+			twod->Clear();
 		});
 	}
 	else
@@ -138,11 +140,11 @@ sector_t *SWSceneDrawer::RenderView(player_t *player)
 		int cm = CM_DEFAULT;
 		auto map = swrenderer::CameraLight::Instance()->ShaderColormap();
 		if (map) cm = (int)(ptrdiff_t)(map - SpecialColormaps.Data()) + CM_FIRSTSPECIALCOLORMAP;
-		screen->PostProcessScene(cm, [&]() { });
+		screen->PostProcessScene(true, cm, [&]() { });
 
 		SWRenderer->DrawRemainingPlayerSprites();
 		screen->Draw2D();
-		screen->Clear2D();
+		twod->Clear();
 	}
 
 	return r_viewpoint.sector;

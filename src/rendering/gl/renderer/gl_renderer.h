@@ -6,9 +6,9 @@
 #include "vectors.h"
 #include "swrenderer/r_renderer.h"
 #include "matrix.h"
-#include "gl/renderer/gl_renderbuffers.h"
+#include "gl_renderbuffers.h"
 #include "hwrenderer/scene/hw_portal.h"
-#include "hwrenderer/dynlights/hw_shadowmap.h"
+#include "hw_shadowmap.h"
 #include <functional>
 
 #ifdef _MSC_VER
@@ -19,7 +19,6 @@ struct particle_t;
 class FCanvasTexture;
 class FFlatVertexBuffer;
 class FSkyVertexBuffer;
-class FShaderManager;
 class HWPortal;
 class FLightBuffer;
 class DPSprite;
@@ -32,6 +31,7 @@ struct FRenderViewpoint;
 
 namespace OpenGLRenderer
 {
+	class FShaderManager;
 	class FSamplerManager;
 	class OpenGLFrameBuffer;
 	class FPresentShaderBase;
@@ -52,7 +52,6 @@ public:
 	FSamplerManager *mSamplerManager = nullptr;
 	unsigned int mFBID;
 	unsigned int mVAOID;
-	unsigned int PortalQueryObject;
 	unsigned int mStencilValue = 0;
 
 	int mOldFBID;
@@ -68,16 +67,12 @@ public:
 
 	//FRotator mAngles;
 
-	SWSceneDrawer *swdrawer = nullptr;
-
 	FGLRenderer(OpenGLFrameBuffer *fb);
 	~FGLRenderer() ;
 
 	void Initialize(int width, int height);
 
 	void ClearBorders();
-
-	void ResetSWScene();
 
 	void PresentStereo();
 	void RenderScreenQuad();
@@ -89,23 +84,15 @@ public:
 	void DrawPresentTexture(const IntRect &box, bool applyGamma);
 	void Flush();
 	void Draw2D(F2DDrawer *data);
-	void RenderTextureView(FCanvasTexture *tex, AActor *Viewpoint, double FOV);
-	void WriteSavePic(player_t *player, FileWriter *file, int width, int height);
-	sector_t *RenderView(player_t *player);
 	void BeginFrame();
     
-    sector_t *RenderViewpoint (FRenderViewpoint &mainvp, AActor * camera, IntRect * bounds, float fov, float ratio, float fovratio, bool mainview, bool toscreen);
-
-
 	bool StartOffscreen();
 	void EndOffscreen();
-	void UpdateShadowMap();
 
-	void BindToFrameBuffer(FTexture *mat);
+	void BindToFrameBuffer(FTexture* tex);
 
 private:
 
-	void DrawScene(HWDrawInfo *di, int drawmode);
 	bool QuadStereoCheckInitialRenderContextState();
 	void PresentAnaglyph(bool r, bool g, bool b);
 	void PresentSideBySide();

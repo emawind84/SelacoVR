@@ -7,7 +7,7 @@
 #include "name.h"
 
 #include "hwrenderer/scene/hw_drawstructs.h"
-#include "hwrenderer/scene/hw_renderstate.h"
+#include "hw_renderstate.h"
 #include "hw_material.h"
 
 struct HWViewpointUniforms;
@@ -38,7 +38,7 @@ public:
 	void EnableDepthTest(bool on) override;
 	void EnableMultisampling(bool on) override;
 	void EnableLineSmooth(bool on) override;
-	void EnableDrawBuffers(int count) override;
+	void EnableDrawBuffers(int count, bool apply) override;
 
 	void SetRenderTarget(DCanvas *canvas, PolyDepthStencil *depthStencil, bool topdown);
 	void Bind(PolyDataBuffer *buffer, uint32_t offset, uint32_t length);

@@ -39,7 +39,7 @@
 #include "actorinlines.h"
 #include "r_data/r_vanillatrans.h"
 #include "matrix.h"
-#include "r_data/models/models.h"
+#include "models.h"
 #include "vectors.h"
 #include "texturemanager.h"
 #include "basics.h"
@@ -49,13 +49,13 @@
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_fakeflat.h"
 #include "hwrenderer/scene/hw_portal.h"
-#include "hwrenderer/data/flatvertices.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "flatvertices.h"
+#include "hw_cvars.h"
 #include "hwrenderer/utility/hw_clock.h"
 #include "hwrenderer/utility/hw_lighting.h"
 #include "hw_material.h"
-#include "hwrenderer/dynlights/hw_dynlightdata.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "hw_dynlightdata.h"
+#include "hw_lightbuffer.h"
 #include "hw_renderstate.h"
 
 extern TArray<spritedef_t> sprites;
@@ -67,6 +67,26 @@ const float LARGE_VALUE = 1e19f;
 EXTERN_CVAR(Bool, r_debug_disable_vis_filter)
 EXTERN_CVAR(Float, transsouls)
 
+
+//==========================================================================
+//
+// Sprite CVARs
+//
+//==========================================================================
+
+CVAR(Bool, gl_usecolorblending, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_sprite_blend, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_spriteclip, 1, CVAR_ARCHIVE)
+CVAR(Float, gl_sclipthreshold, 10.0, CVAR_ARCHIVE)
+CVAR(Float, gl_sclipfactor, 1.8f, CVAR_ARCHIVE)
+CVAR(Int, gl_particles_style, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // 0 = square, 1 = round, 2 = smooth
+CVAR(Int, gl_billboard_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_billboard_faces_camera, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_billboard_particles, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CUSTOM_CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
+{
+	if (self < 0 || self > 8) self = 0;
+}
 
 //==========================================================================
 //
@@ -237,11 +257,11 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 			{
 				di->SetFog(state, thislight, rel, di->isFullbrightScene(), &thiscm, additivefog);
 			}
-			state.SetSplitPlanes(*topplane, *lowplane);
+			SetSplitPlanes(state, *topplane, *lowplane);
 		}
 		else if (clipping)
 		{
-			state.SetSplitPlanes(topp, bottomp);
+			SetSplitPlanes(state, topp, bottomp);
 		}
 
 		if (!modelframe)
@@ -273,7 +293,7 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 		else
 		{
 			FHWModelRenderer renderer(di, state, dynlightindex);
-			renderer.RenderModel(x, y, z, modelframe, actor, di->Viewpoint.TicFrac);
+			RenderModel(&renderer, x, y, z, modelframe, actor, di->Viewpoint.TicFrac);
 			state.SetVertexBuffer(screen->mVertexData);
 		}
 	}

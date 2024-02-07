@@ -31,20 +31,20 @@
 #include "doomstat.h"
 #include "d_player.h"
 #include "g_levellocals.h"
-#include "r_data/models/models.h"
+#include "models.h"
 #include "hw_weapon.h"
 #include "hw_fakeflat.h"
 #include "texturemanager.h"
 
 #include "hwrenderer/models/hw_models.h"
-#include "hwrenderer/dynlights/hw_dynlightdata.h"
+#include "hw_dynlightdata.h"
 #include "hw_material.h"
 #include "hwrenderer/utility/hw_lighting.h"
-#include "hwrenderer/utility/hw_cvars.h"
+#include "hw_cvars.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
-#include "hwrenderer/data/flatvertices.h"
-#include "hwrenderer/dynlights/hw_lightbuffer.h"
+#include "flatvertices.h"
+#include "hw_lightbuffer.h"
 #include "hw_renderstate.h"
 
 EXTERN_CVAR(Float, transsouls)
@@ -89,7 +89,7 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 		state.AlphaFunc(Alpha_GEqual, 0);
 
 		FHWModelRenderer renderer(this, state, huds->lightindex);
-		renderer.RenderHUDModel(huds->weapon, huds->mx, huds->my);
+		RenderHUDModel(&renderer, huds->weapon, huds->mx, huds->my);
 		state.SetVertexBuffer(screen->mVertexData);
 	}
 	else
