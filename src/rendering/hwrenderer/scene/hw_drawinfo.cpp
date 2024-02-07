@@ -577,9 +577,8 @@ void HWDrawInfo::EndDrawScene(sector_t * viewsector, FRenderState &state)
 	skyinfo.init(this, viewsector->sky, viewsector->Colormap.FadeColor);
 	if (skyinfo.texture[0])
 	{
-		// TODO fix later
-		//PalEntry pe = R_GetSkyCapColor(skyinfo.texture[0]);
-		//state.SetSceneColor(pe);
+		auto& col = R_GetSkyCapColor(skyinfo.texture[0]);
+		state.SetSceneColor(col.first);
 	}
 	state.InitSceneClearColor();
 
