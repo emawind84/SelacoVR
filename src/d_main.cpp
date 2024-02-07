@@ -2001,7 +2001,7 @@ static void AddAutoloadFiles(const char *autoname)
 		{
 			const char *wswad = BaseFileSearch ("game_widescreen_gfx.pk3", NULL, true, GameConfig);
 			if (wswad)
-				D_AddFile (allwads, wswad);
+				D_AddFile (allwads, wswad, true, -1, GameConfig);
 		}
 		if (DoomStartupInfo.LoadConpics == 1 || (DoomStartupInfo.LoadConpics != 0 && autoloadconpics))
 		{

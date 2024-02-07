@@ -88,6 +88,8 @@ enum
 	DTA_Monospace,			// Fonts only: Use a fixed distance between characters.
 
 	DTA_FullscreenEx,
+	DTA_ScaleX,
+	DTA_ScaleY,
 };
 
 enum EMonospacing : int
@@ -155,6 +157,7 @@ struct DrawParms
 	uint8_t fsscalemode;
 	double srcx, srcy;
 	double srcwidth, srcheight;
+	double patchscalex, patchscaley;
 };
 
 struct Va_List

@@ -55,7 +55,7 @@
 #include "swrenderer/r_renderthread.h"
 #include "g_levellocals.h"
 
-extern int sskyoffset;
+extern int skyoffset;
 
 CVAR(Bool, r_linearsky, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 EXTERN_CVAR(Int, r_skymode)

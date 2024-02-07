@@ -1991,20 +1991,21 @@ void HWWall::Process(HWDrawInfo *di, seg_t *seg, sector_t * frontsector, sector_
 
 	if (isculled)
 	{
-		if (frontsector->GetTexture(sector_t::ceiling) == skyflatnum)
-		{
-			SkyNormal(di, frontsector, v1, v2);
-		}
-		else
-		{
-			gltexture = FMaterial::ValidateTexture(frontsector->GetTexture(sector_t::ceiling), false, true);
-			if (gltexture)
-			{
-				DoTexture(di, RENDERWALL_TOP, seg, true,
-					crefz, frefz,
-					fch1, fch2, ffh1, ffh2, 0);
-			}
-		}
+		// TODO fix later
+		// if (frontsector->GetTexture(sector_t::ceiling) == skyflatnum)
+		// {
+		// 	SkyNormal(di, frontsector, v1, v2);
+		// }
+		// else
+		// {
+		// 	texture = FMaterial::ValidateTexture(frontsector->GetTexture(sector_t::ceiling), false, true);
+		// 	if (texture)
+		// 	{
+		// 		DoTexture(di, RENDERWALL_TOP, seg, true,
+		// 			crefz, frefz,
+		// 			fch1, fch2, ffh1, ffh2, 0);
+		// 	}
+		// }
 		return;
 	}
 
