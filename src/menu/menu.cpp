@@ -410,12 +410,6 @@ DEFINE_ACTION_FUNCTION(DMenu, ActivateMenu)
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION(DMenu, MakeScreenShot)
-{
-	M_ScreenShot(nullptr);
-	return 0;
-}
-
 //=============================================================================
 //
 //
