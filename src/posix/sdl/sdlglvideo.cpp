@@ -190,10 +190,6 @@ namespace Priv
 
 	void SetupPixelFormat(int multisample, const int *glver)
 	{
-		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -432,10 +428,10 @@ SDLVideo::SDLVideo ()
 	}
 #endif // !SDL2_STATIC_LIBRARY
 
+	Priv::softpolyEnabled = vid_preferbackend == 2;
 #ifdef HAVE_VULKAN
 	Priv::vulkanEnabled = vid_preferbackend == 1
 		&& Priv::Vulkan_GetDrawableSize && Priv::Vulkan_GetInstanceExtensions && Priv::Vulkan_CreateSurface;
-	Priv::softpolyEnabled = vid_preferbackend == 2;
 
 	if (Priv::vulkanEnabled)
 	{
@@ -446,11 +442,11 @@ SDLVideo::SDLVideo ()
 			Priv::vulkanEnabled = false;
 		}
 	}
-	else if (Priv::softpolyEnabled)
+#endif
+	if (Priv::softpolyEnabled)
 	{
 		Priv::CreateWindow(SDL_WINDOW_HIDDEN);
 	}
-#endif
 }
 
 SDLVideo::~SDLVideo ()

@@ -129,17 +129,14 @@ void DrawFullscreenSubtitle(const char *text)
 
 void DIntermissionScreen::Init(FIntermissionAction *desc, bool first)
 {
-	if (desc->mCdTrack == 0 || !S_ChangeCDMusic (desc->mCdTrack, desc->mCdId))
+	if (desc->mMusic.IsEmpty())
 	{
-		if (desc->mMusic.IsEmpty())
-		{
-			// only start the default music if this is the first action in an intermission
-			if (first) S_ChangeMusic (gameinfo.finaleMusic, gameinfo.finaleOrder, desc->mMusicLooping);
-		}
-		else
-		{
-			S_ChangeMusic (desc->mMusic, desc->mMusicOrder, desc->mMusicLooping);
-		}
+		// only start the default music if this is the first action in an intermission
+		if (first) S_ChangeMusic (gameinfo.finaleMusic, gameinfo.finaleOrder, desc->mMusicLooping);
+	}
+	else
+	{
+		S_ChangeMusic (desc->mMusic, desc->mMusicOrder, desc->mMusicLooping);
 	}
 	mDuration = desc->mDuration;
 
@@ -234,7 +231,6 @@ void DIntermissionScreen::Drawer ()
 		if (CheckOverlay(i))
 			screen->DrawTexture (TexMan.GetTexture(mOverlays[i].mPic), mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, TAG_DONE);
 	}
-	if (!mFlatfill) screen->FillBorder (NULL);
 	if (mSubtitle)
 	{
 		const char *sub = mSubtitle.GetChars();
@@ -296,7 +292,6 @@ void DIntermissionScreenFader::Drawer ()
 			if (CheckOverlay(i))
 				screen->DrawTexture (TexMan.GetTexture(mOverlays[i].mPic), mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, DTA_ColorOverlay, color, TAG_DONE);
 		}
-		screen->FillBorder (NULL);
 	}
 }
 
@@ -382,7 +377,6 @@ void DIntermissionScreenText::Drawer ()
 		int w;
 		size_t count;
 		int c;
-		const FRemapTable *range;
 		const uint8_t *ch = (const uint8_t*)mText.GetChars();
 
 		// Count number of rows in this text. Since it does not word-wrap, we just count
@@ -436,7 +430,6 @@ void DIntermissionScreenText::Drawer ()
 
 		// draw some of the text onto the screen
 		count = (mTicker - mTextDelay) / mTextSpeed;
-		range = font->GetColorTranslation (mTextColor);
 
 		for ( ; count > 0 ; count-- )
 		{

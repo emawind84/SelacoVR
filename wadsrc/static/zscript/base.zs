@@ -457,11 +457,11 @@ class Object native
 	native static String G_SkillName();
 	native static int G_SkillPropertyInt(int p);
 	native static double G_SkillPropertyFloat(int p);
-	deprecated("3.8") static vector3, int G_PickDeathmatchStart()
+	deprecated("3.8", "Use Level.PickDeathMatchStart() instead") static vector3, int G_PickDeathmatchStart()
 	{
 		return level.PickDeathmatchStart();
 	}
-	deprecated("3.8") static vector3, int G_PickPlayerStart(int pnum, int flags = 0)
+	deprecated("3.8", "Use Level.PickPlayerStart() instead") static vector3, int G_PickPlayerStart(int pnum, int flags = 0)
 	{
 		return level.PickPlayerStart(pnum, flags);
 	}
@@ -551,7 +551,7 @@ class ThinkerIterator : Object native
 
 class ActorIterator : Object native
 {
-	deprecated("3.8") static ActorIterator Create(int tid, class<Actor> type = "Actor")
+	deprecated("3.8", "Use Level.CreateActorIterator() instead") static ActorIterator Create(int tid, class<Actor> type = "Actor")
 	{
 		return level.CreateActorIterator(tid, type);
 	}
@@ -808,7 +808,7 @@ struct LevelLocals native
 	native static void MakeScreenShot();
 	native static void MakeAutoSave();
 	native void WorldDone();
-    deprecated("3.8") static void RemoveAllBots(bool fromlist) { /* intentionally left as no-op. */ }
+	deprecated("3.8", "This function does nothing") static void RemoveAllBots(bool fromlist) { /* intentionally left as no-op. */ }
 	native ui Vector2 GetAutomapPosition();
 	native void SetInterMusic(String nextmap);
 	native String FormatMapName(int mapnamecolor);
@@ -829,7 +829,7 @@ struct LevelLocals native
 	native clearscope Sector PointInSector(Vector2 pt) const;
 
 	native clearscope bool IsPointInLevel(vector3 p) const;
-	deprecated("3.8") clearscope static bool IsPointInMap(vector3 p)
+	deprecated("3.8", "Use Level.IsPointInLevel() instead") clearscope static bool IsPointInMap(vector3 p)
 	{
 		return level.IsPointInLevel(p);
 	}
@@ -1075,7 +1075,7 @@ class Floor : MovingFloor native
 		genFloorChg
 	};
 
-	deprecated("3.8") static bool CreateFloor(sector sec, int floortype, line ln, double speed, double height = 0, int crush = -1, int change = 0, bool crushmode = false, bool hereticlower = false)
+	deprecated("3.8", "Use Level.CreateFloor() instead") static bool CreateFloor(sector sec, int floortype, line ln, double speed, double height = 0, int crush = -1, int change = 0, bool crushmode = false, bool hereticlower = false)
 	{
 		return level.CreateFloor(sec, floortype, ln, speed, height, crush, change, crushmode, hereticlower);
 	}
@@ -1121,7 +1121,7 @@ class Ceiling : MovingCeiling native
 		crushSlowdown = 2
 	}
 	
-	deprecated("3.8") static bool CreateCeiling(sector sec, int type, line ln, double speed, double speed2, double height = 0, int crush = -1, int silent = 0, int change = 0, int crushmode = crushDoom)
+	deprecated("3.8", "Use Level.CreateCeiling() instead") static bool CreateCeiling(sector sec, int type, line ln, double speed, double speed2, double height = 0, int crush = -1, int silent = 0, int change = 0, int crushmode = crushDoom)
 	{
 		return level.CreateCeiling(sec, type, ln, speed, speed2, height, crush, silent, change, crushmode);
 	}

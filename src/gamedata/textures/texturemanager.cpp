@@ -1187,7 +1187,7 @@ void FTextureManager::Init()
 	FTexture::InitGrayMap();
 
 	// Texture 0 is a dummy texture used to indicate "no texture"
-	auto nulltex = new FImageTexture(nullptr);
+	auto nulltex = new FImageTexture(nullptr, "");
 	nulltex->SetUseType(ETextureType::Null);
 	AddTexture (nulltex);
 	// This is for binding to unused texture units, because accessing an unbound texture unit is undefined. It's a one pixel empty texture.
@@ -1554,7 +1554,7 @@ void FTextureManager::GenerateGlobalBrightmapFromColormap()
 	if (lump == -1) return;
 	FMemLump cmap = Wads.ReadLump(lump);
 	uint8_t palbuffer[768];
-	ReadPalette(Wads.CheckNumForName("PLAYPAL"), palbuffer);
+	ReadPalette(Wads.GetNumForName("PLAYPAL"), palbuffer);
 
 	const unsigned char *cmapdata = (const unsigned char *)cmap.GetMem();
 	const uint8_t *paldata = palbuffer;

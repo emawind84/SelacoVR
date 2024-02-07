@@ -132,7 +132,7 @@ VulkanDescriptorSet *VkHardwareTexture::GetDescriptorSet(const FMaterialState &s
 	else if ((tex->isWarped() || tex->shaderindex >= FIRST_USER_SHADER) && clampmode <= CLAMP_XY) clampmode = CLAMP_NONE;
 
 	// Textures that are already scaled in the texture lump will not get replaced by hires textures.
-	int flags = state.mMaterial->isExpanded() ? CTF_Expand : (gl_texture_usehires && !tex->isScaled() && clampmode <= CLAMP_XY) ? CTF_CheckHires : 0;
+	int flags = state.mMaterial->isExpanded() ? CTF_Expand : 0;
 
 	if (tex->isHardwareCanvas()) static_cast<FCanvasTexture*>(tex)->NeedUpdate();
 
@@ -207,15 +207,8 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 {
 	if (!tex->isHardwareCanvas())
 	{
-		if (translation <= 0)
-		{
-			translation = -translation;
-		}
-		else
-		{
-			auto remap = TranslationToTable(translation);
-			translation = remap == nullptr ? 0 : remap->GetUniqueIndex();
-		}
+		auto remap = TranslationToTable(translation);
+		translation = remap == nullptr ? 0 : remap->GetUniqueIndex();
 
 		FTextureBuffer texbuffer = tex->CreateTexBuffer(translation, flags | CTF_ProcessData);
 		CreateTexture(texbuffer.mWidth, texbuffer.mHeight, 4, VK_FORMAT_B8G8R8A8_UNORM, texbuffer.mBuffer);

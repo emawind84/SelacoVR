@@ -204,24 +204,7 @@ void I_DetectOS(void)
 	{
 	case VER_PLATFORM_WIN32_NT:
 		osname = "NT";
-		if (info.dwMajorVersion == 5)
-		{
-			if (info.dwMinorVersion == 0)
-			{
-				osname = "2000";
-			}
-			if (info.dwMinorVersion == 1)
-			{
-				osname = "XP";
-				sys_ostype = 1; // legacy OS
-			}
-			else if (info.dwMinorVersion == 2)
-			{
-				osname = "Server 2003";
-				sys_ostype = 1; // legacy OS
-			}
-		}
-		else if (info.dwMajorVersion == 6)
+		if (info.dwMajorVersion == 6)
 		{
 			if (info.dwMinorVersion == 0)
 			{

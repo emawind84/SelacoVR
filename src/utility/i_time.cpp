@@ -37,10 +37,6 @@
 #include <thread>
 #include <assert.h>
 #include "i_time.h"
-#include "doomdef.h"
-#include "c_cvars.h"
-#include "doomstat.h"
-#include "doomtype.h"
 
 //==========================================================================
 //
@@ -54,26 +50,7 @@ static uint64_t CurrentFrameStartTime;
 static uint64_t FreezeTime;
 int GameTicRate = 35;	// make sure it is not 0, even if the client doesn't set it.
 
-static double TimeScale = 1.0;
-
-CUSTOM_CVAR(Float, i_timescale, 1.0f, CVAR_NOINITCALL | CVAR_VIRTUAL)
-{
-	if (netgame)
-	{
-		Printf("Time scale cannot be changed in net games.\n");
-		self = 1.0f;
-	}
-	else if (self >= 0.05f)
-	{
-		I_FreezeTime(true);
-		TimeScale = self;
-		I_FreezeTime(false);
-	}
-	else
-	{
-		Printf("Time scale must be at least 0.05!\n");
-	}
-}
+double TimeScale = 1.0;
 
 static uint64_t GetTimePoint()
 {
