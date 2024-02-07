@@ -42,6 +42,7 @@
 #include "superfasthash.h"
 #include "s_music.h"
 #include "m_random.h"
+#include "printf.h"
 
 
 enum

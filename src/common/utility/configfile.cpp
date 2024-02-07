@@ -40,7 +40,7 @@
 #include "files.h"
 
 #include "cmdlib.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 
 #define READBUFFERSIZE	256
 

@@ -91,6 +91,8 @@ enum
 	DTA_FullscreenScale,
 	DTA_ScaleX,
 	DTA_ScaleY,
+
+	DTA_CleanTop,			// Like DTA_Clean but aligns to the top of the screen instead of the center.
 };
 
 enum EMonospacing : int

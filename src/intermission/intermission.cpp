@@ -741,8 +741,9 @@ void DIntermissionScreenScroller::Drawer ()
 		// Now set a clipping rectangle for the intended viewport
 		double displayratio = atotalwidth / double(aheight) - 4./3.;
 		double displaywidth = aheight * displayratio;
-		screen->CalcFullscreenScale(displaywidth, aheight, gameinfo.fullscreenautoaspect, drect);
-		screen->SetClipRect(int(drect.left), int(drect.top), int(drect.width), int(drect.height));
+		// TODO fix later
+		//CalcFullscreenScale(displaywidth, aheight, gameinfo.fullscreenautoaspect, drect);
+		twod->SetClipRect(int(drect.left), int(drect.top), int(drect.width), int(drect.height));
 
 		int ticker = clamp(mTicker - mScrollDelay, 0, mScrollTime);
 
@@ -775,13 +776,14 @@ void DIntermissionScreenScroller::Drawer ()
 			TAG_DONE);
 
 
-		screen->ClearClipRect();
+		twod->ClearClipRect();
 	}
 	else
 	{
+		// TODO fix later
 		// guesstimate the intended aspect ratio.
-		screen->CalcFullscreenScale(fwidth, aheight, gameinfo.fullscreenautoaspect, drect);
-		screen->SetClipRect(int(drect.left), int(drect.top), int(drect.width), int(drect.height));
+		//CalcFullscreenScale(fwidth, aheight, gameinfo.fullscreenautoaspect, drect);
+		twod->SetClipRect(int(drect.left), int(drect.top), int(drect.width), int(drect.height));
 
 		int ticker = clamp(mTicker - mScrollDelay, 0, mScrollTime);
 
@@ -802,19 +804,19 @@ void DIntermissionScreenScroller::Drawer ()
 		ypos1 *= scale;
 		ypos2 *= scale;
 
-		screen->DrawTexture(tex, drect.left, drect.top + ypos1,
+		DrawTexture(tex, drect.left, drect.top + ypos1,
 			DTA_DestWidthF, fwidth * scale,
 			DTA_DestHeightF, aheight * scale,
 			DTA_Masked, false,
 			TAG_DONE);
-		screen->DrawTexture(tex2, drect.left, drect.top + ypos2,
+		DrawTexture(tex2, drect.left, drect.top + ypos2,
 			DTA_DestWidthF, fwidth2 * scale,
 			DTA_DestHeightF, aheight * scale,
 			DTA_Masked, false,
 			TAG_DONE);
 
 
-		screen->ClearClipRect();
+		twod->ClearClipRect();
 	}
 	mBackground = mSecondPic;
 }
