@@ -300,6 +300,17 @@ void HWDrawInfo::AddLine (seg_t *seg, bool portalclip)
 
 	if (IsDistanceCulled(seg))
 	{
+		if (multithread)
+		{
+			jobQueue.AddJob(RenderJob::WallJob, currentsubsector, seg);
+		}
+		else
+		{
+			HWWall wall;
+			wall.sub = currentsubsector;
+			wall.Process(this, seg, seg->frontsector, seg->backsector, true);
+		}
+		clipper.SafeAddClipRange(startAngle, endAngle);
 		return;
 	}
 

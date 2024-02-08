@@ -48,6 +48,7 @@ EXTERN_CVAR(Int, gl_max_vertices)
 
 extern int wallVerticesPerEye;
 
+bool IsDistanceCulled(seg_t *line);
 
 void SetGlowPlanes(FRenderState &state, const secplane_t& top, const secplane_t& bottom)
 {
@@ -1882,7 +1883,7 @@ void HWWall::DoFFloorBlocks(HWDrawInfo *di, seg_t * seg, sector_t * frontsector,
 			InverseFloors(di, seg, frontsector, topleft, topright, bottomleft, bottomright);
 	}
 }
-	
+
 //==========================================================================
 //
 // 
@@ -2020,23 +2021,22 @@ void HWWall::Process(HWDrawInfo *di, seg_t *seg, sector_t * frontsector, sector_
 		return;
 	}
 
-	if (isculled)
+	if (isculled || IsDistanceCulled(seg))
 	{
-		// TODO fix later
-		// if (frontsector->GetTexture(sector_t::ceiling) == skyflatnum)
-		// {
-		// 	SkyNormal(di, frontsector, v1, v2);
-		// }
-		// else
-		// {
-		// 	texture = FMaterial::ValidateTexture(frontsector->GetTexture(sector_t::ceiling), false, true);
-		// 	if (texture)
-		// 	{
-		// 		DoTexture(di, RENDERWALL_TOP, seg, true,
-		// 			crefz, frefz,
-		// 			fch1, fch2, ffh1, ffh2, 0);
-		// 	}
-		// }
+		if (frontsector->GetTexture(sector_t::ceiling) == skyflatnum)
+		{
+			SkyNormal(di, frontsector, v1, v2);
+		}
+		else
+		{
+			texture = TexMan.GetGameTexture(frontsector->GetTexture(sector_t::ceiling), true);
+			if (texture && texture->isValid())
+			{
+				DoTexture(di, RENDERWALL_TOP, seg, (seg->linedef->flags & (ML_DONTPEGTOP)) == 0,
+					crefz, frefz,
+					fch1, fch2, ffh1, ffh2, 0);
+			}
+		}
 		return;
 	}
 
