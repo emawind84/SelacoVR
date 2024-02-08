@@ -2751,6 +2751,7 @@ static const char *DoomButtons[] =
 	"right" ,
 	"zoom" ,
 	"back" ,
+	"oh_attack",
 	"am_zoomin",
 	"reload" ,
 	"lookdown" ,
@@ -2763,12 +2764,14 @@ static const char *DoomButtons[] =
 	"movedown" ,
 	"altattack" ,
 	"moveleft" ,
+	"oh_reload",
 	"moveright" ,
 	"am_panright",
 	"am_panup" ,
 	"mlook" ,
 	"crouch" ,
 	"left" ,
+	"oh_altatk",
 	"lookup" ,
 	"user3" ,
 	"strafe" ,
@@ -2776,6 +2779,7 @@ static const char *DoomButtons[] =
 	"showscores" ,
 	"speed" ,
 	"use" ,
+	"mh_reload",
 	"moveup" };
 
 CVAR(Bool, lookspring, true, CVAR_ARCHIVE);	// Generate centerview when -mlook encountered?
