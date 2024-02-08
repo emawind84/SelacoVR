@@ -36,14 +36,12 @@
 
 #include <unistd.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <termios.h>
 
 #include "st_start.h"
-#include "doomdef.h"
 #include "i_system.h"
 #include "c_cvars.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 
 #ifdef __ANDROID__
 #include <android/log.h>

@@ -114,10 +114,11 @@ FMaterial::FMaterial(FGameTexture * tx, int scaleflags)
 		{
 			mTextureLayers.Push({ placeholder->GetTexture(), 0 });
 		}
+
+		auto index = tx->GetShaderIndex();
 #ifdef __MOBILE__
 		if( gl_customshader )
 #endif
-		auto index = tx->GetShaderIndex();
 		if (index >= FIRST_USER_SHADER)
 		{
 			const UserShaderDesc &usershader = usershaders[index - FIRST_USER_SHADER];

@@ -27,6 +27,7 @@
 #include "i_system.h"
 #include "version.h"
 #include "x86.h"
+#include "i_interface.h"
 
 
 #ifndef NO_GTK
@@ -67,7 +68,7 @@ void Linux_I_FatalError(const char* errortext)
 	if((str=getenv("KDE_FULL_SESSION")) && strcmp(str, "true") == 0)
 	{
 		FString cmd;
-		cmd << "kdialog --title \"" GAMESIG " " << GetVersionString()
+		cmd << "kdialog --title \"" GAMENAME " " << GetVersionString()
 			<< "\" --msgbox \"" << errortext << "\"";
 		popen(cmd, "r");
 	}
@@ -82,6 +83,11 @@ void Linux_I_FatalError(const char* errortext)
 		FString title;
 		title << GAMESIG " " << GetVersionString();
 
+#ifdef __ANDROID__
+        LOGI("FATAL ERROR: %s", errortext);
+        //LogWritter_Write(errortext);
+#endif
+
 		// if (SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title, errortext, NULL) < 0)
 		// {
 		// 	printf("\n%s\n", errortext);
@@ -94,7 +100,8 @@ void Linux_I_FatalError(const char* errortext)
 void I_ShowFatalError(const char *message)
 {
 #ifdef __ANDROID__
-	LOGI("FATAL ERROR: %s", message);
+        LOGI("ERROR: %s", message);
+        //LogWritter_Write(message);
 #endif
 
 #ifdef __APPLE__
@@ -107,10 +114,6 @@ void I_ShowFatalError(const char *message)
 }
 
 void CalculateCPUSpeed()
-{
-}
-
-void I_DebugPrint(const char *cp)
 {
 }
 
@@ -152,7 +155,7 @@ int I_PickIWad (WadStuff *wads, int numwads, bool showwin, int defaultiwad)
 	const char *str;
 	if((str=getenv("KDE_FULL_SESSION")) && strcmp(str, "true") == 0)
 	{
-		FString cmd("kdialog --title \"" GAMESIG " ");
+		FString cmd("kdialog --title \"" GAMENAME " ");
 		cmd << GetVersionString() << ": Select an IWAD to use\""
 					" --menu \"" GAMENAME " found more than one IWAD\n"
 					"Select from the list below to determine which one to use:\"";

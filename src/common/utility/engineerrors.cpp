@@ -53,6 +53,7 @@ void I_DebugPrint(const char *cp)
 #endif
 
 #include "engineerrors.h"
+#include "doomtype.h"
 
 //==========================================================================
 //

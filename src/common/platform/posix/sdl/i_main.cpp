@@ -99,18 +99,12 @@ void I_DetectOS()
 void I_StartupJoysticks();
 
 #ifdef __ANDROID__
-
-#include <android/log.h>
-#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO,"JNITouchControlsUtils", __VA_ARGS__))
-#include "LogWritter.h"
-
 int main_android (int argc, char **argv)
-{
 #else
 int main (int argc, char **argv)
-{
 #endif
-#if !defined (__APPLE__) && !defined (__ANDROID__)
+{
+#if !defined (__APPLE__)
 	{
 		int s[4] = { SIGSEGV, SIGILL, SIGFPE, SIGBUS };
 		cc_install_handlers(argc, argv, 4, s, GAMENAMELOWERCASE "-crash.log", GetCrashInfo);
@@ -136,7 +130,6 @@ int main (int argc, char **argv)
 
 	printf("\n");
 	
-
 	Args = new FArgs(argc, argv);
 
 	// Should we even be doing anything with progdir on Unix systems?
@@ -158,12 +151,12 @@ int main (int argc, char **argv)
 
 	const int result = GameMain();
 
-
 	SDL_Quit();
 
-#ifdef __ANDROID__ // So it it properly reset next time it starts up
-	usleep(1000 * 500);
+#ifdef __ANDROID__
+	usleep(500* 1000);
 	exit(0);
 #endif
+
 	return result;
 }

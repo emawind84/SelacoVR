@@ -74,7 +74,7 @@ void I_StartupJoysticks()
 {
 	JoystickManager = new NoSDLInputJoystickManager();
 }
-void I_ShutdownJoysticks()
+void I_ShutdownInput()
 {
 	if(JoystickManager)
 	{

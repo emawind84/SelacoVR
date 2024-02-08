@@ -115,27 +115,6 @@ FString M_GetAutoexecPath()
 
 //===========================================================================
 //
-// M_GetCajunPath														Unix
-//
-// Returns the location of the Cajun Bot definitions.
-//
-//===========================================================================
-
-FString M_GetCajunPath(const char *botfilename)
-{
-	FString path = NicePath("./user_files/bots/");
-
-	path << botfilename;
-	if (!FileExists(path))
-	{
-		path = "";
-	}
-
-	return path;
-}
-
-//===========================================================================
-//
 // M_GetConfigPath														Unix
 //
 // Returns the path to the config file. On Windows, this can vary for reading
