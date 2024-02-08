@@ -34,8 +34,8 @@
 #include "g_levellocals.h"
 #include "hw_renderstate.h"
 #include "flatvertices.h"
-#include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/utility/hw_lighting.h"
+#include "hw_clock.h"
+#include "hw_lighting.h"
 #include "texturemanager.h"
 
 CVAR(Int, gl_max_portals, -1, CVAR_ARCHIVE);

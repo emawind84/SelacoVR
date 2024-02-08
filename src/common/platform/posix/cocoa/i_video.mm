@@ -53,12 +53,12 @@
 #include "version.h"
 #include "printf.h"
 
-#include "gl/system/gl_framebuffer.h"
+#include "gl_framebuffer.h"
 #ifdef HAVE_VULKAN
 #include "vulkan/system/vk_framebuffer.h"
 #endif
 #ifdef HAVE_SOFTPOLY
-#include "rendering/polyrenderer/backend/poly_framebuffer.h"
+#include "poly_framebuffer.h"
 #endif
 
 extern bool ToggleFullscreen;

@@ -35,8 +35,7 @@
 
 #include "hw_drawinfo.h"
 #include "hw_drawstructs.h"
-#include "hw_fakeflat.h"
-#include "hwrenderer/utility/hw_clock.h"
+#include "hw_clock.h"
 #include "hw_dynlightdata.h"
 #include "flatvertices.h"
 #include "hw_lightbuffer.h"

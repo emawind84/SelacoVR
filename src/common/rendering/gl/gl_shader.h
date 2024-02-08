@@ -312,8 +312,8 @@ public:
 	FShader *BindEffect(int effect, EPassType passType);
 	FShader *Get(unsigned int eff, bool alphateston, EPassType passType);
 
-private:
 	void SetActiveShader(FShader *sh);
+private:
 
 	FShader *mActiveShader = nullptr;
 	TArray<FShaderCollection*> mPassShaders;
