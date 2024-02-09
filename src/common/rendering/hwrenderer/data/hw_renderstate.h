@@ -4,6 +4,7 @@
 #include "matrix.h"
 #include "hw_material.h"
 #include "texmanip.h"
+#include "version.h"
 
 struct FColormap;
 class IVertexBuffer;
@@ -199,6 +200,9 @@ struct StreamData
 	FVector4 uSplitBottomPlane;
 
 	FVector4 uDetailParms;
+#ifdef NPOT_EMULATION
+	FVector2 uNpotEmulation;
+#endif
 };
 
 class FRenderState
@@ -292,7 +296,9 @@ public:
 		mStreamData.uSplitBottomPlane = { 0.0f, 0.0f, 0.0f, 0.0f };
 		mStreamData.uDynLightColor = { 0.0f, 0.0f, 0.0f, 0.0f };
 		mStreamData.uDetailParms = { 0.0f, 0.0f, 0.0f, 0.0f };
-
+#ifdef NPOT_EMULATION
+		mStreamData.uNpotEmulation = { 0,0 };
+#endif
 		mModelMatrix.loadIdentity();
 		mTextureMatrix.loadIdentity();
 		ClearClipSplit();
@@ -480,6 +486,13 @@ public:
 	void SetAddColor(PalEntry pe)
 	{
 		mStreamData.uAddColor = pe;
+	}
+
+	void SetNpotEmulation(float factor, float offset)
+	{
+#ifdef NPOT_EMULATION
+		mStreamData.uNpotEmulation = { offset, factor };
+#endif
 	}
 
 	void ApplyTextureManipulation(TextureManipulation* texfx)

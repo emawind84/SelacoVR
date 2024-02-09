@@ -1643,3 +1643,22 @@ CCMD (archivecvar)
 	}
 }
 
+void C_ListCVarsWithoutDescription()
+{
+	FBaseCVar* var = CVars;
+	int count = 0;
+
+	while (var)
+	{
+		if (var->GetDescription().IsEmpty())
+		{
+			Printf("%s\n", var->GetName());
+		}
+		var = var->m_Next;
+	}
+}
+
+CCMD(listcvarswithoutdescription)
+{
+	C_ListCVarsWithoutDescription();
+}
