@@ -111,8 +111,6 @@ extern uint8_t globalfreeze, globalchangefreeze;
 #define RCLS_ID			MAKE_ID('r','c','L','s')
 #define PCLS_ID			MAKE_ID('p','c','L','s')
 
-CVAR(Int, sv_alwaystally, 0, CVAR_ARCHIVE | CVAR_SERVERINFO)
-
 void G_VerifySkill();
 void I_UpdateWindowTitle();
 
