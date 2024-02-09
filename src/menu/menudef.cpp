@@ -1322,7 +1322,8 @@ void M_StartupEpisodeMenu(FNewGameStartup *gs)
 					{
 						ld->mItems[i]->OffsetPositionY(topdelta);
 					}
-					posy -= topdelta;
+					posy += topdelta;
+					ld->mYpos += topdelta;
 				}
 
 				if (!isOld) ld->mSelectedItem = ld->mItems.Size();
@@ -1919,7 +1920,7 @@ void M_StartupSkillMenu(FNewGameStartup *gs)
 						{
 							ld->mItems[i]->OffsetPositionY(topdelta);
 						}
-						ld->mYpos = y = posy - topdelta;
+						ld->mYpos = y = posy + topdelta;
 					}
 				}
 				else

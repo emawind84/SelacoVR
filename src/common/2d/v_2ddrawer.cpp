@@ -45,7 +45,7 @@ F2DDrawer* twod = &drawer;
 
 EXTERN_CVAR(Float, transsouls)
 CVAR(Float, classic_scaling_factor, 1.0, CVAR_ARCHIVE)
-CVAR(Float, classic_scaling_pixelaspect, 1.2, CVAR_ARCHIVE)
+CVAR(Float, classic_scaling_pixelaspect, 1.2f, CVAR_ARCHIVE)
 
 IMPLEMENT_CLASS(DShape2DTransform, false, false)
 
@@ -397,6 +397,7 @@ void F2DDrawer::SetColorOverlay(PalEntry color, float alpha, PalEntry &vertexcol
 void F2DDrawer::AddTexture(FGameTexture* img, DrawParms& parms)
 {
 	if (parms.style.BlendOp == STYLEOP_None) return;	// not supposed to be drawn.
+	assert(img && img->isValid());
 
 	double xscale = parms.destwidth / parms.texwidth;
 	double yscale = parms.destheight / parms.texheight;
