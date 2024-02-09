@@ -1367,7 +1367,7 @@ void DoDim(F2DDrawer *drawer, PalEntry color, float amount, int x1, int y1, int 
 	{
 		amount = 1;
 	}
-	drawer->AddColorOnlyQuad(x1, y1, w, h, (color.d & 0xffffff) | (int(amount * 255) << 24), style, true);
+	drawer->AddColorOnlyQuad(x1, y1, w, h, (color.d & 0xffffff) | (int(amount * 255) << 24), style, false, true);
 }
 
 void Dim(F2DDrawer *drawer, PalEntry color, float damount, int x1, int y1, int w, int h, FRenderStyle *style)
