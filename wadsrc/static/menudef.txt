@@ -636,6 +636,8 @@ OptionMenu "ActionDoubleControlsMenu" protected
 	StaticText ""
 	DoubleControl    "$CNTRLMNU_ATTACK"           , "+attack"
 	DoubleControl    "$CNTRLMNU_ALTATTACK"        , "+altattack"
+	DoubleControl    "$CNTRLMNU_OH_ATTACK"        , "+oh_attack"
+	DoubleControl    "$CNTRLMNU_OH_ALTATTACK"     , "+oh_altatk"
 	DoubleControl    "$CNTRLMNU_RELOAD"           , "+reload"
 	DoubleControl    "$CNTRLMNU_ZOOM"             , "+zoom"
 
