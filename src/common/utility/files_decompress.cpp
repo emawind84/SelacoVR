@@ -40,6 +40,7 @@
 #include <zlib.h>
 #include <bzlib.h>
 #include <algorithm>
+#include <stdexcept>
 
 #include "files.h"
 #include "templates.h"
