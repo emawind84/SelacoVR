@@ -46,7 +46,6 @@
 #include "i_system.h"
 #include "v_video.h"
 #include "gstrings.h"
-#include "menu/profiledef.h"
 #include <zmusic.h>
 #include "texturemanager.h"
 #include "printf.h"

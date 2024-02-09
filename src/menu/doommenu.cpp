@@ -64,6 +64,7 @@
 #include "gameconfigfile.h"
 #include "d_player.h"
 #include "teaminfo.h"
+#include "profiledef.h"
 
 EXTERN_CVAR(Int, cl_gfxlocalization)
 EXTERN_CVAR(Bool, m_quickexit)

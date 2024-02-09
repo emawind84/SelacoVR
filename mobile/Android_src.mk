@@ -199,7 +199,6 @@ PCH_SOURCES = \
 	hu_scores.cpp \
 	i_net.cpp \
 	m_cheat.cpp \
-	m_joy.cpp \
 	m_misc.cpp \
 	playsim/p_acs.cpp \
 	playsim/p_actionfunctions.cpp \
@@ -224,7 +223,6 @@ PCH_SOURCES = \
 	rendering/r_utility.cpp \
 	rendering/r_sky.cpp \
 	sound/s_advsound.cpp \
-	sound/s_reverbedit.cpp \
 	sound/s_sndseq.cpp \
 	sound/s_doomsound.cpp \
 	serializer_doom.cpp \
@@ -310,13 +308,14 @@ PCH_SOURCES = \
 	maploader/compatibility.cpp \
 	maploader/postprocessor.cpp \
 	menu/joystickmenu.cpp \
-	menu/loadsavemenu.cpp \
 	menu/menu.cpp \
-	menu/menudef.cpp \
 	menu/messagebox.cpp \
 	menu/optionmenu.cpp \
-	menu/playermenu.cpp \
 	menu/resolutionmenu.cpp \
+	menu/doommenu.cpp \
+	menu/loadsavemenu.cpp \
+	menu/playermenu.cpp \
+	menu/menudef.cpp \
 	menu/profiledef.cpp \
 	gamedata/textures/animations.cpp \
 	gamedata/textures/anim_switches.cpp \
@@ -367,6 +366,7 @@ PCH_SOURCES = \
 	common/audio/sound/oalsound.cpp \
 	common/audio/sound/s_environment.cpp \
 	common/audio/sound/s_sound.cpp \
+	common/audio/sound/s_reverbedit.cpp \
 	common/audio/music/music_midi_base.cpp \
 	common/audio/music/music.cpp \
 	common/audio/music/i_music.cpp \
@@ -461,6 +461,7 @@ PCH_SOURCES = \
 	common/filesystem/file_directory.cpp \
 	common/filesystem/resourcefile.cpp \
 	common/engine/cycler.cpp \
+	common/engine/d_event.cpp \
 	common/engine/stats.cpp \
 	common/engine/sc_man.cpp \
 	common/engine/palettecontainer.cpp \
@@ -469,6 +470,7 @@ PCH_SOURCES = \
 	common/engine/renderstyle.cpp \
 	common/engine/v_colortables.cpp \
 	common/engine/serializer.cpp \
+	common/engine/m_joy.cpp \
 	common/engine/m_random.cpp \
 	common/objects/dobject.cpp \
 	common/objects/dobjgc.cpp \
@@ -515,6 +517,7 @@ PCH_SOURCES = \
 	common/scripting/vm/vmexec.cpp \
 	common/scripting/vm/vmframe.cpp \
 	common/scripting/interface/stringformat.cpp \
+	common/scripting/interface/vmnatives.cpp \
 	common/scripting/frontend/ast.cpp \
 	common/scripting/frontend/zcc_compile.cpp \
 	common/scripting/frontend/zcc_parser.cpp \

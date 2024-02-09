@@ -88,6 +88,7 @@
 #include "hw_vrmodes.h"
 
 #include <QzDoom/VrCommon.h>
+#include <cmath>
 
 
 static FRandom pr_dmspawn ("DMSpawn");
