@@ -45,6 +45,7 @@
 #include "sc_man.h"
 #include "image.h"
 #include "vectors.h"
+#include "animtexture.h"
 #include "formats/multipatchtexture.h"
 
 FTextureManager TexMan;
@@ -106,7 +107,7 @@ void FTextureManager::DeleteAll()
 // This must not, under any circumstances, delete the wipe textures, because
 // all CCMDs triggering a flush can be executed while a wipe is in progress
 //
-// This now also deletes the software textures because having the software
+// This now also deletes the software textures because the software
 // renderer can also use the texture scalers and that is the
 // main reason to call this outside of the destruction code.
 //
@@ -120,8 +121,8 @@ void FTextureManager::FlushAll()
 		{
 			Textures[i].Texture->CleanHardwareData();
 			delete Textures[i].Texture->GetSoftwareTexture();
-			Textures[i].Texture->SetSoftwareTexture(nullptr);
 			calcShouldUpscale(Textures[i].Texture);
+			Textures[i].Texture->SetSoftwareTexture(nullptr);
 		}
 	}
 }
@@ -625,9 +626,12 @@ void FTextureManager::AddHiresTextures (int wadnum)
 							auto gtex = MakeGameTexture(newtex, nullptr, ETextureType::Override);
 							gtex->SetWorldPanning(true);
 							gtex->SetDisplaySize(oldtex->GetDisplayWidth(), oldtex->GetDisplayHeight());
-
-							gtex->SetOffsets(0, xs_RoundToInt(oldtex->GetDisplayLeftOffset(0) * gtex->GetScaleX()), xs_RoundToInt(oldtex->GetDisplayTopOffset(0) * gtex->GetScaleY()));
-							gtex->SetOffsets(1, xs_RoundToInt(oldtex->GetDisplayLeftOffset(1) * gtex->GetScaleX()), xs_RoundToInt(oldtex->GetDisplayTopOffset(1) * gtex->GetScaleY()));
+							double xscale1 = oldtex->GetTexelLeftOffset(0) * gtex->GetScaleX() / oldtex->GetScaleX();
+							double xscale2 = oldtex->GetTexelLeftOffset(1) * gtex->GetScaleX() / oldtex->GetScaleX();
+							double yscale1 = oldtex->GetTexelTopOffset(0) * gtex->GetScaleY() / oldtex->GetScaleY();
+							double yscale2 = oldtex->GetTexelTopOffset(1) * gtex->GetScaleY() / oldtex->GetScaleY();
+							gtex->SetOffsets(0, xs_RoundToInt(xscale1), xs_RoundToInt(yscale1));
+							gtex->SetOffsets(1, xs_RoundToInt(xscale2), xs_RoundToInt(yscale2));
 							ReplaceTexture(tlist[i], gtex, true);
 						}
 					}
@@ -722,8 +726,12 @@ void FTextureManager::ParseTextureDef(int lump, FMultipatchTextureBuilder &build
 							auto gtex = MakeGameTexture(newtex, nullptr, ETextureType::Override);
 							gtex->SetWorldPanning(true);
 							gtex->SetDisplaySize(oldtex->GetDisplayWidth(), oldtex->GetDisplayHeight());
-							gtex->SetOffsets(0, xs_RoundToInt(oldtex->GetDisplayLeftOffset(0) * gtex->GetScaleX()), xs_RoundToInt(oldtex->GetDisplayTopOffset(0) * gtex->GetScaleY()));
-							gtex->SetOffsets(1, xs_RoundToInt(oldtex->GetDisplayLeftOffset(1) * gtex->GetScaleX()), xs_RoundToInt(oldtex->GetDisplayTopOffset(1) * gtex->GetScaleY()));
+							double xscale1 = oldtex->GetTexelLeftOffset(0) * gtex->GetScaleX() / oldtex->GetScaleX();
+							double xscale2 = oldtex->GetTexelLeftOffset(1) * gtex->GetScaleX() / oldtex->GetScaleX();
+							double yscale1 = oldtex->GetTexelTopOffset(0) * gtex->GetScaleY() / oldtex->GetScaleY();
+							double yscale2 = oldtex->GetTexelTopOffset(1) * gtex->GetScaleY() / oldtex->GetScaleY();
+							gtex->SetOffsets(0, xs_RoundToInt(xscale1), xs_RoundToInt(yscale1));
+							gtex->SetOffsets(1, xs_RoundToInt(xscale2), xs_RoundToInt(yscale2));
 							ReplaceTexture(tlist[i], gtex, true);
 						}
 					}
@@ -775,23 +783,23 @@ void FTextureManager::ParseTextureDef(int lump, FMultipatchTextureBuilder &build
 		}
 		else if (sc.Compare("texture"))
 		{
-			build.ParseTexture(sc, ETextureType::Override);
+			build.ParseTexture(sc, ETextureType::Override, lump);
 		}
 		else if (sc.Compare("sprite"))
 		{
-			build.ParseTexture(sc, ETextureType::Sprite);
+			build.ParseTexture(sc, ETextureType::Sprite, lump);
 		}
 		else if (sc.Compare("walltexture"))
 		{
-			build.ParseTexture(sc, ETextureType::Wall);
+			build.ParseTexture(sc, ETextureType::Wall, lump);
 		}
 		else if (sc.Compare("flat"))
 		{
-			build.ParseTexture(sc, ETextureType::Flat);
+			build.ParseTexture(sc, ETextureType::Flat, lump);
 		}
 		else if (sc.Compare("graphic"))
 		{
-			build.ParseTexture(sc, ETextureType::MiscPatch);
+			build.ParseTexture(sc, ETextureType::MiscPatch, lump);
 		}
 		else if (sc.Compare("#include"))
 		{
@@ -1151,6 +1159,9 @@ void FTextureManager::Init(void (*progressFunc_)(), void (*checkForHacks)(BuildI
 	AddGameTexture(CreateShaderTexture(false, true));
 	AddGameTexture(CreateShaderTexture(true, false));
 	AddGameTexture(CreateShaderTexture(true, true));
+	// Add two animtexture entries so that movie playback can call functions using texture IDs.
+	AddGameTexture(MakeGameTexture(new AnimTexture(), "AnimTextureFrame1", ETextureType::Override));
+	AddGameTexture(MakeGameTexture(new AnimTexture(), "AnimTextureFrame2", ETextureType::Override));
 
 	int wadcnt = fileSystem.GetNumWads();
 

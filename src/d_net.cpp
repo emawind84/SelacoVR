@@ -32,7 +32,7 @@
 #include <thread>
 
 #include "version.h"
-#include "menu/menu.h"
+#include "menu.h"
 #include "i_video.h"
 #include "i_net.h"
 #include "g_game.h"

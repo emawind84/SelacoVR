@@ -149,6 +149,9 @@ bool FGLRenderState::ApplyShader()
 	activeShader->muGlobalFadeGradient.Set(gl_global_fade_gradient);
 	activeShader->muGlobalFadeColor.Set(mStreamData.uGlobalFadeColor);
 	activeShader->muLightRangeLimit.Set(gl_light_range_limit);
+#ifdef NPOT_EMULATION
+	activeShader->muNpotEmulation.Set(&mStreamData.uNpotEmulation.X);
+#endif
 
 	if (mGlowEnabled || activeShader->currentglowstate)
 	{

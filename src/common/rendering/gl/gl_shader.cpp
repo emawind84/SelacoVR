@@ -40,6 +40,7 @@
 #include "hw_lightbuffer.h"
 #include "i_specialpaths.h"
 #include "printf.h"
+#include "version.h"
 
 #include "gl_interface.h"
 #include "gl_debug.h"
@@ -241,114 +242,115 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 			float uClipHeightDirection;
 			int uShadowmapFilter;
 		};
+
+		uniform int uTextureMode;
+		uniform vec2 uClipSplit;
+		uniform float uAlphaThreshold;
+
+		// colors
+		uniform vec4 uObjectColor;
+		uniform vec4 uObjectColor2;
+		uniform vec4 uDynLightColor;
+		uniform vec4 uAddColor;
+		uniform vec4 uTextureBlendColor;
+		uniform vec4 uTextureModulateColor;
+		uniform vec4 uTextureAddColor;
+		uniform vec4 uBlendColor;
+		uniform vec4 uFogColor;
+		uniform float uDesaturationFactor;
+		uniform float uInterpolationFactor;
+
+		// Glowing walls stuff
+		uniform vec4 uGlowTopPlane;
+		uniform vec4 uGlowTopColor;
+		uniform vec4 uGlowBottomPlane;
+		uniform vec4 uGlowBottomColor;
+
+		uniform vec4 uGradientTopPlane;
+		uniform vec4 uGradientBottomPlane;
+
+		uniform vec4 uSplitTopPlane;
+		uniform vec4 uSplitBottomPlane;
+
+		uniform vec4 uDetailParms;
+		// Lighting + Fog
+		uniform vec4 uLightAttr;
+		#define uLightLevel uLightAttr.a
+		#define uFogDensity uLightAttr.b
+		#define uLightFactor uLightAttr.g
+		#define uLightDist uLightAttr.r
+		uniform int uFogEnabled;
+		uniform int uGlobalFade;
+		uniform int uGlobalFadeMode;
+		uniform float uGlobalFadeDensity;
+		uniform float uGlobalFadeGradient;
+		uniform vec4 uGlobalFadeColor;
+		uniform int uLightRangeLimit;
+
+		// dynamic lights
+		uniform int uLightIndex;
+
+		// Blinn glossiness and specular level
+		uniform vec2 uSpecularMaterial;
+
+		// matrices
+		uniform mat4 ModelMatrix;
+		uniform mat4 NormalModelMatrix;
+		uniform mat4 TextureMatrix;
+
+		// light buffers
+		#ifdef SHADER_STORAGE_LIGHTS
+		layout(std430, binding = 1) buffer LightBufferSSO
+		{
+			vec4 lights[];
+		};
+		#elif defined NUM_UBO_LIGHTS
+		uniform LightBufferUBO
+		{
+			vec4 lights[NUM_UBO_LIGHTS];
+		};
+		#endif
+
+		// textures
+		uniform sampler2D tex;
+		uniform sampler2D ShadowMap;
+		uniform sampler2D texture2;
+		uniform sampler2D texture3;
+		uniform sampler2D texture4;
+		uniform sampler2D texture5;
+		uniform sampler2D texture6;
+		uniform sampler2D texture7;
+		uniform sampler2D texture8;
+		uniform sampler2D texture9;
+		uniform sampler2D texture10;
+		uniform sampler2D texture11;
+
+		// timer data
+		uniform float timer;
+
+		// material types
+		#if defined(SPECULAR)
+		#define normaltexture texture2
+		#define speculartexture texture3
+		#define brighttexture texture4
+		#define detailtexture texture5
+		#define glowtexture texture6
+		#elif defined(PBR)
+		#define normaltexture texture2
+		#define metallictexture texture3
+		#define roughnesstexture texture4
+		#define aotexture texture5
+		#define brighttexture texture6
+		#define detailtexture texture7
+		#define glowtexture texture8
+		#else
+		#define brighttexture texture2
+		#define detailtexture texture3
+		#define glowtexture texture4
+		#endif
+
 	)";
 	
-	i_data += "uniform int uTextureMode;\n";
-	i_data += "uniform vec2 uClipSplit;\n";
-	i_data += "uniform float uAlphaThreshold;\n";
-
-	// colors
-	i_data += "uniform vec4 uObjectColor;\n";
-	i_data += "uniform vec4 uObjectColor2;\n";
-	i_data += "uniform vec4 uDynLightColor;\n";
-	i_data += "uniform vec4 uAddColor;\n";
-	i_data += "uniform vec4 uTextureBlendColor;\n";
-	i_data += "uniform vec4 uTextureModulateColor;\n";
-	i_data += "uniform vec4 uTextureAddColor;\n";
-	i_data += "uniform vec4 uBlendColor;\n";
-	i_data += "uniform vec4 uFogColor;\n";
-	i_data += "uniform float uDesaturationFactor;\n";
-	i_data += "uniform float uInterpolationFactor;\n";
-
-	// Glowing walls stuff
-	i_data += "uniform vec4 uGlowTopPlane;\n";
-	i_data += "uniform vec4 uGlowTopColor;\n";
-	i_data += "uniform vec4 uGlowBottomPlane;\n";
-	i_data += "uniform vec4 uGlowBottomColor;\n";
-
-	i_data += "uniform vec4 uGradientTopPlane;\n";
-	i_data += "uniform vec4 uGradientBottomPlane;\n";
-
-	i_data += "uniform vec4 uSplitTopPlane;\n";
-	i_data += "uniform vec4 uSplitBottomPlane;\n";
-
-	i_data += "uniform vec4 uDetailParms;\n";
-
-	// Lighting + Fog
-	i_data += "uniform vec4 uLightAttr;\n";
-	i_data += "#define uLightLevel uLightAttr.a\n";
-	i_data += "#define uFogDensity uLightAttr.b\n";
-	i_data += "#define uLightFactor uLightAttr.g\n";
-	i_data += "#define uLightDist uLightAttr.r\n";
-	i_data += "uniform int uFogEnabled;\n";
-	i_data += "uniform int uGlobalFade;\n";
-	i_data += "uniform int uGlobalFadeMode;\n";
-	i_data += "uniform float uGlobalFadeDensity;\n";
-	i_data += "uniform float uGlobalFadeGradient;\n";
-	i_data += "uniform vec4 uGlobalFadeColor;\n";
-	i_data += "uniform int uLightRangeLimit;\n";
-
-	// dynamic lights
-	i_data += "uniform int uLightIndex;\n";
-
-	// Blinn glossiness and specular level
-	i_data += "uniform vec2 uSpecularMaterial;\n";
-
-	// matrices
-	i_data += "uniform mat4 ModelMatrix;\n";
-	i_data += "uniform mat4 NormalModelMatrix;\n";
-	i_data += "uniform mat4 TextureMatrix;\n";
-
-	// light buffers
-	i_data += "#ifdef SHADER_STORAGE_LIGHTS\n";
-	i_data += "layout(std430, binding = 1) buffer LightBufferSSO\n";
-	i_data += "{\n";
-	i_data += "    vec4 lights[];\n";
-	i_data += "};\n";
-	i_data += "#elif defined NUM_UBO_LIGHTS\n";
-	i_data += "uniform LightBufferUBO\n";
-	i_data += "{\n";
-	i_data += "    vec4 lights[NUM_UBO_LIGHTS];\n";
-	i_data += "};\n";
-	i_data += "#endif\n";
-
-	// textures
-	i_data += "uniform sampler2D tex;\n";
-	i_data += "uniform sampler2D ShadowMap;\n";
-	i_data += "uniform sampler2D texture2;\n";
-	i_data += "uniform sampler2D texture3;\n";
-	i_data += "uniform sampler2D texture4;\n";
-	i_data += "uniform sampler2D texture5;\n";
-	i_data += "uniform sampler2D texture6;\n";
-	i_data += "uniform sampler2D texture7;\n";
-	i_data += "uniform sampler2D texture8;\n";
-	i_data += "uniform sampler2D texture9;\n";
-	i_data += "uniform sampler2D texture10;\n";
-	i_data += "uniform sampler2D texture11;\n";
-
-	// timer data
-	i_data += "uniform float timer;\n";
-
-	// material types
-	i_data += "#if defined(SPECULAR)\n";
-	i_data += "#define normaltexture texture2\n";
-	i_data += "#define speculartexture texture3\n";
-	i_data += "#define brighttexture texture4\n";
-	i_data += "#define detailtexture texture5\n";
-	i_data += "#define glowtexture texture6\n";
-	i_data += "#elif defined(PBR)\n";
-	i_data += "#define normaltexture texture2\n";
-	i_data += "#define metallictexture texture3\n";
-	i_data += "#define roughnesstexture texture4\n";
-	i_data += "#define aotexture texture5\n";
-	i_data += "#define brighttexture texture6\n";
-	i_data += "#define detailtexture texture7\n";
-	i_data += "#define glowtexture texture8\n";
-	i_data += "#else\n";
-	i_data += "#define brighttexture texture2\n";
-	i_data += "#define detailtexture texture3\n";
-	i_data += "#define glowtexture texture4\n";
-	i_data += "#endif\n";
 
 #ifdef __APPLE__
 	// The noise functions are completely broken in macOS OpenGL drivers
@@ -359,6 +361,10 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	i_data += "#define noise3(unused) vec3(0)\n";
 	i_data += "#define noise4(unused) vec4(0)\n";
 #endif // __APPLE__
+
+#ifdef NPOT_EMULATION
+	i_data += "#define NPOT_EMULATION\nuniform vec2 uNpotEmulation;\n";
+#endif
 
 	int vp_lump = fileSystem.CheckNumForFullName(vert_prog_lump, 0);
 	if (vp_lump == -1) I_Error("Unable to load '%s'", vert_prog_lump);
@@ -405,14 +411,16 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		vp_comb << "#define SUPPORTS_SHADOWMAPS\n";
 	}
 
-	vp_comb << defines << i_data.GetChars();
 	FString fp_comb = vp_comb;
+	vp_comb << defines << i_data.GetChars();
+	fp_comb << "$placeholder$\n" << defines << i_data.GetChars();
 
 	vp_comb << "#line 1\n";
 	fp_comb << "#line 1\n";
 
 	vp_comb << RemoveLayoutLocationDecl(vp_data.GetString(), "out").GetChars() << "\n";
 	fp_comb << RemoveLayoutLocationDecl(fp_data.GetString(), "in").GetChars() << "\n";
+	FString placeholder = "\n";
 
 	if (proc_prog_lump != NULL)
 	{
@@ -474,9 +482,8 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 			if (pp_data.GetString().IndexOf("ProcessMaterial") >= 0 && pp_data.GetString().IndexOf("SetupMaterial") < 0)
 			{
 				// This reactivates the old logic and disables all features that cannot be supported with that method.
-				fp_comb.Insert(0, "#define LEGACY_USER_SHADER\n");
+				placeholder << "#define LEGACY_USER_SHADER\n";
 			}
-
 		}
 		else
 		{
@@ -484,6 +491,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 			fp_comb << proc_prog_lump + 1;
 		}
 	}
+	fp_comb.Substitute("$placeholder$", placeholder);
 
 	if (light_fragprog)
 	{
@@ -601,6 +609,9 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	muSplitBottomPlane.Init(hShader, "uSplitBottomPlane");
 	muSplitTopPlane.Init(hShader, "uSplitTopPlane");
 	muDetailParms.Init(hShader, "uDetailParms");
+#ifdef NPOT_EMULATION
+	muNpotEmulation.Init(hShader, "uNpotEmulation");
+#endif
 	muInterpolationFactor.Init(hShader, "uInterpolationFactor");
 	muAlphaThreshold.Init(hShader, "uAlphaThreshold");
 	muSpecularMaterial.Init(hShader, "uSpecularMaterial");

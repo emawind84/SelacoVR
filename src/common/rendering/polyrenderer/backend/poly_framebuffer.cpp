@@ -232,7 +232,7 @@ static uint8_t ToIntColorComponent(float v)
 	return clamp((int)(v * 255.0f + 0.5f), 0, 255);
 }
 
-void PolyFrameBuffer::PostProcessScene(bool swscene, int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D)
+void PolyFrameBuffer::PostProcessScene(bool swscene, int fixedcm, float flash, const std::function<void()> &afterBloomDrawEndScene2D)
 {
 	afterBloomDrawEndScene2D();
 
@@ -305,7 +305,7 @@ void PolyFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 	}
 }
 
-IHardwareTexture *PolyFrameBuffer::CreateHardwareTexture()
+IHardwareTexture *PolyFrameBuffer::CreateHardwareTexture(int numchannels)
 {
 	return new PolyHardwareTexture();
 }
@@ -329,11 +329,6 @@ IDataBuffer *PolyFrameBuffer::CreateDataBuffer(int bindingpoint, bool ssbo, bool
 }
 
 void PolyFrameBuffer::SetTextureFilterMode()
-{
-	TextureFilterChanged();
-}
-
-void PolyFrameBuffer::TextureFilterChanged()
 {
 }
 

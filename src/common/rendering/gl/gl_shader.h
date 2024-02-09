@@ -269,6 +269,9 @@ class FShader
 	FBufferedUniform1f muGlobalFadeGradient;
 	FBufferedUniformPE muGlobalFadeColor;
 	FBufferedUniform1i muLightRangeLimit;
+#ifdef NPOT_EMULATION
+	FBufferedUniform2f muNpotEmulation;
+#endif
 
 	int lights_index;
 	int modelmatrix_index;

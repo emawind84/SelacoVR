@@ -54,7 +54,7 @@
 #include "cmdlib.h"
 #include "hardware.h"
 #include "m_png.h"
-#include "menu/menu.h"
+#include "menu.h"
 #include "vm.h"
 #include "r_videoscale.h"
 #include "i_time.h"
@@ -79,7 +79,7 @@ CUSTOM_CVAR(Int, vid_maxfps, 200, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 	{
 		self = GameTicRate;
 	}
-	else if (vid_maxfps > 1000)
+	else if (self > 1000)
 	{
 		self = 1000;
 	}
@@ -466,11 +466,6 @@ DEFINE_GLOBAL(CleanXfac_1)
 DEFINE_GLOBAL(CleanYfac_1)
 DEFINE_GLOBAL(CleanWidth_1)
 DEFINE_GLOBAL(CleanHeight_1)
-
-IHardwareTexture* CreateHardwareTexture()
-{
-	return screen->CreateHardwareTexture();
-}
 
 //==========================================================================
 //

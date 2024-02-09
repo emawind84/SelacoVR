@@ -48,9 +48,11 @@
 #include "formats/multipatchtexture.h"
 #include "texturemanager.h"
 #include "c_cvars.h"
+#include "imagehelpers.h"
+#include "v_video.h"
 
 // Wrappers to keep the definitions of these classes out of here.
-IHardwareTexture* CreateHardwareTexture();
+IHardwareTexture* CreateHardwareTexture(int numchannels);
 
 // Make sprite offset adjustment user-configurable per renderer.
 int r_spriteadjustSW, r_spriteadjustHW;
@@ -76,7 +78,7 @@ FTexture::FTexture (int lumpnum)
 //
 //===========================================================================
 
-FBitmap FTexture::GetBgraBitmap(const PalEntry *remap, int *ptrans)
+FBitmap FTexture::GetBgraBitmap(const PalEntry* remap, int* ptrans)
 {
 	FBitmap bmp;
 	bmp.Create(Width, Height);
@@ -116,9 +118,9 @@ int FTexture::CheckRealHeight()
 //
 //===========================================================================
 
-bool FTexture::FindHoles(const unsigned char * buffer, int w, int h)
+bool FTexture::FindHoles(const unsigned char* buffer, int w, int h)
 {
-	const unsigned char * li;
+	const unsigned char* li;
 	int y, x;
 	int startdraw, lendraw;
 	int gaps[5][2];
@@ -134,11 +136,11 @@ bool FTexture::FindHoles(const unsigned char * buffer, int w, int h)
 
 	startdraw = -1;
 	lendraw = 0;
-	for (y = 0; y<h; y++)
+	for (y = 0; y < h; y++)
 	{
 		li = buffer + w * y * 4 + 3;
 
-		for (x = 0; x<w; x++, li += 4)
+		for (x = 0; x < w; x++, li += 4)
 		{
 			if (*li != 0) break;
 		}
@@ -204,15 +206,15 @@ bool FTexture::FindHoles(const unsigned char * buffer, int w, int h)
 //
 //----------------------------------------------------------------------------
 
-void FTexture::CheckTrans(unsigned char * buffer, int size, int trans)
+void FTexture::CheckTrans(unsigned char* buffer, int size, int trans)
 {
 	if (bTranslucent == -1)
 	{
 		bTranslucent = trans;
 		if (trans == -1)
 		{
-			uint32_t * dwbuf = (uint32_t*)buffer;
-			for (int i = 0; i<size; i++)
+			uint32_t* dwbuf = (uint32_t*)buffer;
+			for (int i = 0; i < size; i++)
 			{
 				uint32_t alpha = dwbuf[i] >> 24;
 
@@ -244,13 +246,13 @@ void FTexture::CheckTrans(unsigned char * buffer, int size, int trans)
 
 #define CHKPIX(ofs) (l1[(ofs)*4+MSB]==255 ? (( ((uint32_t*)l1)[0] = ((uint32_t*)l1)[ofs]&SOME_MASK), trans=true ) : false)
 
-bool FTexture::SmoothEdges(unsigned char * buffer, int w, int h)
+bool FTexture::SmoothEdges(unsigned char* buffer, int w, int h)
 {
 	int x, y;
 	bool trans = buffer[MSB] == 0; // If I set this to false here the code won't detect textures 
 								   // that only contain transparent pixels.
 	bool semitrans = false;
-	unsigned char * l1;
+	unsigned char* l1;
 
 	if (h <= 1 || w <= 1) return false;  // makes (a) no sense and (b) doesn't work with this code!
 
@@ -258,42 +260,42 @@ bool FTexture::SmoothEdges(unsigned char * buffer, int w, int h)
 
 
 	if (l1[MSB] == 0 && !CHKPIX(1)) CHKPIX(w);
-	else if (l1[MSB]<255) semitrans = true;
+	else if (l1[MSB] < 255) semitrans = true;
 	l1 += 4;
-	for (x = 1; x<w - 1; x++, l1 += 4)
+	for (x = 1; x < w - 1; x++, l1 += 4)
 	{
 		if (l1[MSB] == 0 && !CHKPIX(-1) && !CHKPIX(1)) CHKPIX(w);
-		else if (l1[MSB]<255) semitrans = true;
+		else if (l1[MSB] < 255) semitrans = true;
 	}
 	if (l1[MSB] == 0 && !CHKPIX(-1)) CHKPIX(w);
-	else if (l1[MSB]<255) semitrans = true;
+	else if (l1[MSB] < 255) semitrans = true;
 	l1 += 4;
 
-	for (y = 1; y<h - 1; y++)
+	for (y = 1; y < h - 1; y++)
 	{
 		if (l1[MSB] == 0 && !CHKPIX(-w) && !CHKPIX(1)) CHKPIX(w);
-		else if (l1[MSB]<255) semitrans = true;
+		else if (l1[MSB] < 255) semitrans = true;
 		l1 += 4;
-		for (x = 1; x<w - 1; x++, l1 += 4)
+		for (x = 1; x < w - 1; x++, l1 += 4)
 		{
 			if (l1[MSB] == 0 && !CHKPIX(-w) && !CHKPIX(-1) && !CHKPIX(1) && !CHKPIX(-w - 1) && !CHKPIX(-w + 1) && !CHKPIX(w - 1) && !CHKPIX(w + 1)) CHKPIX(w);
-			else if (l1[MSB]<255) semitrans = true;
+			else if (l1[MSB] < 255) semitrans = true;
 		}
 		if (l1[MSB] == 0 && !CHKPIX(-w) && !CHKPIX(-1)) CHKPIX(w);
-		else if (l1[MSB]<255) semitrans = true;
+		else if (l1[MSB] < 255) semitrans = true;
 		l1 += 4;
 	}
 
 	if (l1[MSB] == 0 && !CHKPIX(-w)) CHKPIX(1);
-	else if (l1[MSB]<255) semitrans = true;
+	else if (l1[MSB] < 255) semitrans = true;
 	l1 += 4;
-	for (x = 1; x<w - 1; x++, l1 += 4)
+	for (x = 1; x < w - 1; x++, l1 += 4)
 	{
 		if (l1[MSB] == 0 && !CHKPIX(-w) && !CHKPIX(-1)) CHKPIX(1);
-		else if (l1[MSB]<255) semitrans = true;
+		else if (l1[MSB] < 255) semitrans = true;
 	}
 	if (l1[MSB] == 0 && !CHKPIX(-w)) CHKPIX(-1);
-	else if (l1[MSB]<255) semitrans = true;
+	else if (l1[MSB] < 255) semitrans = true;
 
 	return trans || semitrans;
 }
@@ -304,7 +306,7 @@ bool FTexture::SmoothEdges(unsigned char * buffer, int w, int h)
 //
 //===========================================================================
 
-bool FTexture::ProcessData(unsigned char * buffer, int w, int h, bool ispatch)
+bool FTexture::ProcessData(unsigned char* buffer, int w, int h, bool ispatch)
 {
 	if (Masked)
 	{
@@ -323,65 +325,82 @@ bool FTexture::ProcessData(unsigned char * buffer, int w, int h, bool ispatch)
 FTextureBuffer FTexture::CreateTexBuffer(int translation, int flags)
 {
 	FTextureBuffer result;
-
-	unsigned char * buffer = nullptr;
-	int W, H;
-	int isTransparent = -1;
-	bool checkonly = !!(flags & CTF_CheckOnly);
-
-	int exx = !!(flags & CTF_Expand);
-
-	W = GetWidth() + 2 * exx;
-	H = GetHeight() + 2 * exx;
-
-	if (!checkonly)
+	if (flags & CTF_Indexed)
 	{
-		buffer = new unsigned char[W*(H + 1) * 4];
-		memset(buffer, 0, W * (H + 1) * 4);
+		// Indexed textures will never be translated and never be scaled.
+		int w = GetWidth(), h = GetHeight();
 
-		auto remap = translation <= 0 ? nullptr : GPalette.TranslationToTable(translation);
-		if (remap) translation = remap->Index;
-		FBitmap bmp(buffer, W * 4, W, H);
+		auto store = Get8BitPixels(false);
+		const uint8_t* p = store.Data();
 
-		int trans;
-		auto Pixels = GetBgraBitmap(remap? remap->Palette : nullptr, &trans);
-		bmp.Blit(exx, exx, Pixels);
+		result.mBuffer = new uint8_t[w * h];
+		result.mWidth = w;
+		result.mHeight = h;
+		result.mContentId = 0;
+		ImageHelpers::FlipNonSquareBlock(result.mBuffer, p, h, w, h);
+	}
+	else
+	{
+		unsigned char* buffer = nullptr;
+		int W, H;
+		int isTransparent = -1;
+		bool checkonly = !!(flags & CTF_CheckOnly);
 
-		if (remap == nullptr)
+		int exx = !!(flags & CTF_Expand);
+
+		W = GetWidth() + 2 * exx;
+		H = GetHeight() + 2 * exx;
+
+		if (!checkonly)
 		{
-			CheckTrans(buffer, W*H, trans);
-			isTransparent = bTranslucent;
+			buffer = new unsigned char[W * (H + 1) * 4];
+			memset(buffer, 0, W * (H + 1) * 4);
+
+			auto remap = translation <= 0 ? nullptr : GPalette.TranslationToTable(translation);
+			if (remap) translation = remap->Index;
+			FBitmap bmp(buffer, W * 4, W, H);
+
+			int trans;
+			auto Pixels = GetBgraBitmap(remap ? remap->Palette : nullptr, &trans);
+			bmp.Blit(exx, exx, Pixels);
+
+			if (remap == nullptr)
+			{
+				CheckTrans(buffer, W * H, trans);
+				isTransparent = bTranslucent;
+			}
+			else
+			{
+				isTransparent = 0;
+				// A translated image is not conclusive for setting the texture's transparency info.
+			}
 		}
-		else
+
+		if (GetImage())
 		{
-			isTransparent = 0;
-			// A translated image is not conclusive for setting the texture's transparency info.
+			FContentIdBuilder builder;
+			builder.id = 0;
+			builder.imageID = GetImage()->GetId();
+			builder.translation = MAX(0, translation);
+			builder.expand = exx;
+			result.mContentId = builder.id;
+		}
+		else result.mContentId = 0;	// for non-image backed textures this has no meaning so leave it at 0.
+
+		result.mBuffer = buffer;
+		result.mWidth = W;
+		result.mHeight = H;
+
+		// Only do postprocessing for image-backed textures. (i.e. not for the burn texture which can also pass through here.)
+		if (GetImage() && flags & CTF_ProcessData)
+		{
+			if (flags & CTF_Upscale) CreateUpsampledTextureBuffer(result, !!isTransparent, checkonly);
+
+			if (!checkonly) ProcessData(result.mBuffer, result.mWidth, result.mHeight, false);
 		}
 	}
-
-	if (GetImage())
-	{
-		FContentIdBuilder builder;
-		builder.id = 0;
-		builder.imageID = GetImage()->GetId();
-		builder.translation = MAX(0, translation);
-		builder.expand = exx;
-		result.mContentId = builder.id;
-	}
-	else result.mContentId = 0;	// for non-image backed textures this has no meaning so leave it at 0.
-
-	result.mBuffer = buffer;
-	result.mWidth = W;
-	result.mHeight = H;
-
-	// Only do postprocessing for image-backed textures. (i.e. not for the burn texture which can also pass through here.)
-	if (GetImage() && flags & CTF_ProcessData) 
-	{
-		if (flags & CTF_Upscale) CreateUpsampledTextureBuffer(result, !!isTransparent, checkonly);
-		if (!checkonly) ProcessData(result.mBuffer, result.mWidth, result.mHeight, false);
-	}
-
 	return result;
+
 }
 
 //===========================================================================
@@ -392,8 +411,8 @@ FTextureBuffer FTexture::CreateTexBuffer(int translation, int flags)
 
 bool FTexture::DetermineTranslucency()
 {
-	// This will calculate all we need, so just discard the result.
-	CreateTexBuffer(0);
+		// This will calculate all we need, so just discard the result.
+		CreateTexBuffer(0);
 	return !!bTranslucent;
 }
 
@@ -512,10 +531,10 @@ IHardwareTexture* FTexture::GetHardwareTexture(int translation, int scaleflags)
 	{
 		IHardwareTexture* hwtex = SystemTextures.GetHardwareTexture(translation, scaleflags);
 		if (hwtex == nullptr)
-		{
-			hwtex = CreateHardwareTexture();
+	{
+			hwtex = screen->CreateHardwareTexture(4);
 			SystemTextures.AddHardwareTexture(translation, scaleflags, hwtex);
-		}
+	}
 		return hwtex;
 	}
 	return nullptr;
@@ -534,9 +553,8 @@ FWrapperTexture::FWrapperTexture(int w, int h, int bits)
 	Height = h;
 	Format = bits;
 	//bNoCompress = true;
-	auto hwtex = CreateHardwareTexture();
+	auto hwtex = screen->CreateHardwareTexture(4);
 	// todo: Initialize here.
 	SystemTextures.AddHardwareTexture(0, false, hwtex);
 }
-
 

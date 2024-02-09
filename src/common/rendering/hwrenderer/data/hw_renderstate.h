@@ -4,6 +4,7 @@
 #include "matrix.h"
 #include "hw_material.h"
 #include "texmanip.h"
+#include "version.h"
 
 struct FColormap;
 class IVertexBuffer;
@@ -154,7 +155,7 @@ struct FVector4PalEntry
 		r = newvalue.r * normScale;
 		g = newvalue.g * normScale;
 		b = newvalue.b * normScale;
-		a = 1;
+		a = newvalue.a;
 		return *this;
 	}
 
@@ -199,6 +200,9 @@ struct StreamData
 	FVector4 uSplitBottomPlane;
 
 	FVector4 uDetailParms;
+#ifdef NPOT_EMULATION
+	FVector2 uNpotEmulation;
+#endif
 };
 
 class FRenderState
@@ -292,7 +296,9 @@ public:
 		mStreamData.uSplitBottomPlane = { 0.0f, 0.0f, 0.0f, 0.0f };
 		mStreamData.uDynLightColor = { 0.0f, 0.0f, 0.0f, 0.0f };
 		mStreamData.uDetailParms = { 0.0f, 0.0f, 0.0f, 0.0f };
-
+#ifdef NPOT_EMULATION
+		mStreamData.uNpotEmulation = { 0,0 };
+#endif
 		mModelMatrix.loadIdentity();
 		mTextureMatrix.loadIdentity();
 		ClearClipSplit();
@@ -482,6 +488,13 @@ public:
 		mStreamData.uAddColor = pe;
 	}
 
+	void SetNpotEmulation(float factor, float offset)
+	{
+#ifdef NPOT_EMULATION
+		mStreamData.uNpotEmulation = { offset, factor };
+#endif
+	}
+
 	void ApplyTextureManipulation(TextureManipulation* texfx)
 	{
 		if (!texfx || texfx->AddColor.a == 0)
@@ -496,6 +509,12 @@ public:
 			mStreamData.uTextureModulateColor.SetFlt(pe.r * pe.a / 255.f, pe.g * pe.a / 255.f, pe.b * pe.a / 255.f, texfx->DesaturationFactor);
 			mStreamData.uTextureBlendColor = texfx->BlendColor;
 		}
+	}
+	void SetTextureColors(float* modColor, float* addColor, float* blendColor)
+	{
+		mStreamData.uTextureAddColor.SetFlt(addColor[0], addColor[1], addColor[2], addColor[3]);
+		mStreamData.uTextureModulateColor.SetFlt(modColor[0], modColor[1], modColor[2], modColor[3]);
+		mStreamData.uTextureBlendColor.SetFlt(blendColor[0], blendColor[1], blendColor[2], blendColor[3]);
 	}
 
 	void SetFog(PalEntry c, float d)
@@ -560,6 +579,8 @@ public:
 		mMaterial.mOverrideShader = overrideshader;
 		mMaterial.mChanged = true;
 		mTextureModeFlags = mat->GetLayerFlags();
+		auto scale = mat->GetDetailScale();
+		mStreamData.uDetailParms = { scale.X, scale.Y, 0, 0 };
 	}
 
 	void SetMaterial(FGameTexture* tex, EUpscaleFlags upscalemask, int scaleflags, int clampmode, int translation, int overrideshader)

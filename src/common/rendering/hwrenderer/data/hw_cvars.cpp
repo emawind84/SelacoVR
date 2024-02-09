@@ -40,7 +40,8 @@
 #include "c_dispatch.h"
 #include "v_video.h"
 #include "hw_cvars.h"
-#include "menu/menu.h"
+#include "menu.h"
+#include "printf.h"
 
 
 CUSTOM_CVAR(Int, gl_fogmode, 1, CVAR_ARCHIVE | CVAR_NOINITCALL)
@@ -122,13 +123,13 @@ CVAR(Int, gl_satformula, 1, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 //==========================================================================
 CUSTOM_CVARD(Float, gl_texture_filter_anisotropic, 4, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL, "changes the OpenGL texture anisotropy setting")
 {
-	screen->TextureFilterChanged();
+	screen->SetTextureFilterMode();
 }
 
 CUSTOM_CVARD(Int, gl_texture_filter, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL, "changes the texture filtering settings")
 {
 	if (self < 0 || self > 6) self=4;
-	screen->TextureFilterChanged();
+	screen->SetTextureFilterMode();
 }
 
 CVAR(Bool, gl_precache, true, CVAR_ARCHIVE)

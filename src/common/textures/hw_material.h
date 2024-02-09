@@ -12,6 +12,7 @@ struct MaterialLayerInfo
 {
 	FTexture* layerTexture;
 	int scaleFlags;
+	int clampflags;
 };
 
 //===========================================================================
@@ -37,10 +38,19 @@ public:
 	int GetShaderIndex() const { return mShaderIndex; }
 	int GetScaleFlags() const { return mScaleFlags; }
 	virtual void DeleteDescriptors() { }
+	FVector2 GetDetailScale() const
+	{
+		return sourcetex->GetDetailScale();
+	}
 
 	FGameTexture* Source() const
 	{
 		return sourcetex;
+	}
+
+	void ClearLayers()
+	{
+		mTextureLayers.Resize(1);
 	}
 
 	void AddTextureLayer(FTexture *tex, bool allowscale)

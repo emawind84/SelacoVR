@@ -25,7 +25,6 @@
 **
 */
 
-#include "gl_system.h"
 #include "gi.h"
 #include "a_dynlight.h"
 #include "m_png.h"
@@ -78,7 +77,7 @@ void CollectLights(FLevelLocals* Level)
 	for (auto light = Level->lights; light; light = light->next)
 	{
 		IShadowMap::LightsProcessed++;
-		if (light->shadowmapped && light->IsActive() && lightindex < 1024 * 4)
+		if (light->shadowmapped && light->IsActive() && lightindex < 1024)
 		{
 			IShadowMap::LightsShadowmapped++;
 
@@ -152,6 +151,7 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 		di->Set3DViewport(RenderState);
 		di->SetViewArea();
 		auto cm = di->SetFullbrightFlags(mainview ? vp.camera->player : nullptr);
+		float flash = 1.f;
 		//di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
 
 		// Stereo mode specific perspective projection
@@ -173,7 +173,7 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 				RenderState.EnableDrawBuffers(1);
 			}
 
-			screen->PostProcessScene(false, cm, [&]() { di->DrawEndScene2D(mainvp.sector, RenderState); });
+			screen->PostProcessScene(false, cm, flash, [&]() { di->DrawEndScene2D(mainvp.sector, RenderState); });
 
 			eye->AdjustBlend(di);
 			V_DrawBlend(mainvp.sector);

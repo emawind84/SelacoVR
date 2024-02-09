@@ -132,6 +132,7 @@ public:
 		FRenderStyle mRenderStyle;
 		PalEntry mColor1;	// Overlay color
 		ETexMode mDrawMode;
+		uint8_t mLightLevel;
 		uint8_t mFlags;
 		//When a render command should run in VR on the whole screen, not just center qued used for 2D rendering. Used e.g. for nightvision
 		bool mOutside2D = false;
@@ -154,6 +155,7 @@ public:
 				mRenderStyle == other.mRenderStyle &&
 				mDrawMode == other.mDrawMode &&
 				mFlags == other.mFlags &&
+				mLightLevel == other.mLightLevel &&
 				mColor1.d == other.mColor1.d;
 
 		}

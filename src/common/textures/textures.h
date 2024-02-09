@@ -3,7 +3,7 @@
 **
 **---------------------------------------------------------------------------
 ** Copyright 2005-2016 Randy Heit
-** Copyright 2005-2016 Christoph Oelckers
+** Copyright 2005-2019 Christoph Oelckers
 ** All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
@@ -54,12 +54,16 @@ class IHardwareTexture;
 enum
 {
 	CLAMP_NONE = 0,
-	CLAMP_X = 1,
-	CLAMP_Y = 2,
-	CLAMP_XY = 3,
-	CLAMP_XY_NOMIP = 4,
-	CLAMP_NOFILTER = 5,
-	CLAMP_CAMTEX = 6,
+	CLAMP_X,
+	CLAMP_Y,
+	CLAMP_XY,
+	CLAMP_XY_NOMIP,
+	CLAMP_NOFILTER,
+	CLAMP_NOFILTER_X,
+	CLAMP_NOFILTER_Y,
+	CLAMP_NOFILTER_XY,
+	CLAMP_CAMTEX,
+	NUMSAMPLERS
 };
 
 enum MaterialShaderIndex
@@ -203,8 +207,9 @@ class FTexture : public RefCountedBase
 {
 	friend class FGameTexture;	// only for the porting work
 
-protected:
+public:
 	FHardwareTextureContainer SystemTextures;
+protected:
 	FloatRect* areas = nullptr;
 	int SourceLump;
 	uint16_t Width = 0, Height = 0;
@@ -248,8 +253,8 @@ public:
 	bool isCanvas() const { return bHasCanvas; }
 	
 	int GetSourceLump() { return SourceLump; }	// needed by the scripted GetName method.
+	void SetSourceLump(int sl) { SourceLump  = sl; }
 	bool FindHoles(const unsigned char * buffer, int w, int h);
-
 
 	void CopySize(FTexture* BaseTexture)
 	{

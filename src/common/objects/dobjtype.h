@@ -46,6 +46,7 @@ public:
 	int FindVirtualIndex(FName name, PFunction::Variant *variant, PFunction *parentfunc, bool exactReturnType);
 	PSymbol *FindSymbol(FName symname, bool searchparents) const;
 	PField *AddField(FName name, PType *type, uint32_t flags);
+	void InitializeDefaults();
 
 	static void StaticInit();
 	static void StaticShutdown();

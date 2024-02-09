@@ -9546,7 +9546,7 @@ scriptwait:
 				{
 					translation = new FRemapTable;
 					translation->MakeIdentity();
-					transi = i + 1;
+					transi = i - 1;
 				}
 			}
 			break;

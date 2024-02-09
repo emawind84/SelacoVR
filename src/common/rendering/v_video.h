@@ -200,10 +200,9 @@ public:
 
 	// Delete any resources that need to be deleted after restarting with a different IWAD
 	virtual void SetTextureFilterMode() {}
-	virtual IHardwareTexture *CreateHardwareTexture() { return nullptr; }
+	virtual IHardwareTexture *CreateHardwareTexture(int numchannels) { return nullptr; }
 	virtual void PrecacheMaterial(FMaterial *mat, int translation) {}
 	virtual FMaterial* CreateMaterial(FGameTexture* tex, int scaleflags);
-	virtual void TextureFilterChanged() {}
 	virtual void BeginFrame() {}
 	virtual void SetWindowSize(int w, int h) {}
 	virtual void StartPrecaching() {}
@@ -246,7 +245,7 @@ public:
 	virtual FTexture *WipeStartScreen();
 	virtual FTexture *WipeEndScreen();
 
-	virtual void PostProcessScene(bool swscene, int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D) { if (afterBloomDrawEndScene2D) afterBloomDrawEndScene2D(); }
+	virtual void PostProcessScene(bool swscene, int fixedcm, float flash, const std::function<void()> &afterBloomDrawEndScene2D) { if (afterBloomDrawEndScene2D) afterBloomDrawEndScene2D(); }
 
 	void ScaleCoordsFromWindow(int16_t &x, int16_t &y);
 

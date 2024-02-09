@@ -29,8 +29,6 @@
 #include "c_cvars.h"
 #include "v_video.h"
 
-IHardwareTexture* CreateHardwareTexture();
-
 #ifdef __MOBILE__
 EXTERN_CVAR(Bool, gl_customshader)
 #endif
@@ -46,7 +44,7 @@ FMaterial::FMaterial(FGameTexture * tx, int scaleflags)
 	mShaderIndex = SHADER_Default;
 	sourcetex = tx;
 	auto imgtex = tx->GetTexture();
-	mTextureLayers.Push({ imgtex, scaleflags });
+	mTextureLayers.Push({ imgtex, scaleflags, -1 });
 
 	if (tx->GetUseType() == ETextureType::SWCanvas && static_cast<FWrapperTexture*>(imgtex)->GetColorFormat() == 0)
 	{
@@ -58,7 +56,8 @@ FMaterial::FMaterial(FGameTexture * tx, int scaleflags)
 		{
 			mShaderIndex = tx->GetShaderIndex();
 		}
-		// no brightmap for cameratexture
+		mTextureLayers.Last().clampflags = CLAMP_CAMTEX;
+		// no additional layers for cameratexture
 	}
 	else
 	{
@@ -71,7 +70,7 @@ FMaterial::FMaterial(FGameTexture * tx, int scaleflags)
 		{
 			for (auto &texture : { tx->Normal.get(), tx->Specular.get() })
 			{
-				mTextureLayers.Push({ texture, 0 });
+				mTextureLayers.Push({ texture, 0, -1 });
 			}
 			mShaderIndex = SHADER_Specular;
 		}
@@ -79,7 +78,7 @@ FMaterial::FMaterial(FGameTexture * tx, int scaleflags)
 		{
 			for (auto &texture : { tx->Normal.get(), tx->Metallic.get(), tx->Roughness.get(), tx->AmbientOcclusion.get() })
 			{
-				mTextureLayers.Push({ texture, 0 });
+				mTextureLayers.Push({ texture, 0, -1 });
 			}
 			mShaderIndex = SHADER_PBR;
 		}
@@ -89,30 +88,30 @@ FMaterial::FMaterial(FGameTexture * tx, int scaleflags)
 		auto placeholder = TexMan.GameByIndex(1);
 		if (tx->Brightmap.get())
 		{
-			mTextureLayers.Push({ tx->Brightmap.get(), scaleflags });
+			mTextureLayers.Push({ tx->Brightmap.get(), scaleflags, -1 });
 			mLayerFlags |= TEXF_Brightmap;
 		}
 		else	
 		{ 
-			mTextureLayers.Push({ placeholder->GetTexture(), 0 });
+			mTextureLayers.Push({ placeholder->GetTexture(), 0, -1 });
 		}
 		if (tx->Detailmap.get())
 		{
-			mTextureLayers.Push({ tx->Detailmap.get(), 0 });
+			mTextureLayers.Push({ tx->Detailmap.get(), 0, CLAMP_NONE });
 			mLayerFlags |= TEXF_Detailmap;
 		}
 		else
 		{
-			mTextureLayers.Push({ placeholder->GetTexture(), 0 });
+			mTextureLayers.Push({ placeholder->GetTexture(), 0, -1 });
 		}
 		if (tx->Glowmap.get())
 		{
-			mTextureLayers.Push({ tx->Glowmap.get(), scaleflags });
+			mTextureLayers.Push({ tx->Glowmap.get(), scaleflags, -1 });
 			mLayerFlags |= TEXF_Glowmap;
 		}
 		else
 		{
-			mTextureLayers.Push({ placeholder->GetTexture(), 0 });
+			mTextureLayers.Push({ placeholder->GetTexture(), 0, -1 });
 		}
 
 		auto index = tx->GetShaderIndex();

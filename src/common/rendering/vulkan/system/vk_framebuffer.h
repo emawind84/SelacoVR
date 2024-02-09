@@ -77,11 +77,10 @@ public:
 	const char* DeviceName() const override;
 	int Backend() override { return 1; }
 	void SetTextureFilterMode() override;
-	void TextureFilterChanged() override;
 	void StartPrecaching() override;
 	void BeginFrame() override;
 	void BlurScene(float amount) override;
-	void PostProcessScene(bool swscene, int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D) override;
+	void PostProcessScene(bool swscene, int fixedcm, float flash, const std::function<void()> &afterBloomDrawEndScene2D) override;
 	void AmbientOccludeScene(float m5) override;
 	void SetSceneRenderTarget(bool useSSAO) override;
 	void UpdateShadowMap() override;
@@ -89,7 +88,7 @@ public:
 	void ImageTransitionScene(bool unknown) override;
 	void SetActiveRenderTarget() override;
 
-	IHardwareTexture *CreateHardwareTexture() override;
+	IHardwareTexture *CreateHardwareTexture(int numchannels) override;
 	FMaterial* CreateMaterial(FGameTexture* tex, int scaleflags) override;
 	IVertexBuffer *CreateVertexBuffer() override;
 	IIndexBuffer *CreateIndexBuffer() override;

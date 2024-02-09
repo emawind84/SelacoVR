@@ -56,6 +56,7 @@
 #include "gl_postprocessstate.h"
 #include "v_draw.h"
 #include "printf.h"
+#include "gl_hwtexture.h"
 
 #include "flatvertices.h"
 #include "hw_cvars.h"
@@ -87,9 +88,9 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, bool fullscreen) :
 	// SetVSync needs to be at the very top to workaround a bug in Nvidia's OpenGL driver.
 	// If wglSwapIntervalEXT is called after glBindFramebuffer in a frame the setting is not changed!
 	Super::SetVSync(vid_vsync);
+	FHardwareTexture::InitGlobalState();
 
 	// Make sure all global variables tracking OpenGL context state are reset..
-	FHardwareTexture::InitGlobalState();
 	gl_RenderState.Reset();
 
 	GLRenderer = nullptr;
@@ -221,7 +222,6 @@ void OpenGLFrameBuffer::CopyScreenToBuffer(int width, int height, uint8_t* scr)
 //===========================================================================
 
 void OpenGLFrameBuffer::RenderTextureView(FCanvasTexture* tex, std::function<void(IntRect &)> renderFunc)
-
 {
 	GLRenderer->StartOffscreen();
 	GLRenderer->BindToFrameBuffer(tex);
@@ -269,6 +269,7 @@ void OpenGLFrameBuffer::Swap()
 	Finish.Unclock();
 	camtexcount = 0;
 	FHardwareTexture::UnbindAll();
+	gl_RenderState.ClearLastMaterial();
 	mDebug->Update();
 }
 
@@ -303,9 +304,9 @@ void OpenGLFrameBuffer::SetTextureFilterMode()
 	if (GLRenderer != nullptr && GLRenderer->mSamplerManager != nullptr) GLRenderer->mSamplerManager->SetTextureFilterMode();
 }
 
-IHardwareTexture *OpenGLFrameBuffer::CreateHardwareTexture() 
+IHardwareTexture *OpenGLFrameBuffer::CreateHardwareTexture(int numchannels) 
 { 
-	return new FHardwareTexture(true/*tex->bNoCompress*/);
+	return new FHardwareTexture(numchannels);
 }
 
 void OpenGLFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
@@ -327,6 +328,7 @@ void OpenGLFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 	}
 	// unbind everything. 
 	FHardwareTexture::UnbindAll();
+	gl_RenderState.ClearLastMaterial();
 }
 
 IVertexBuffer *OpenGLFrameBuffer::CreateVertexBuffer()
@@ -342,11 +344,6 @@ IIndexBuffer *OpenGLFrameBuffer::CreateIndexBuffer()
 IDataBuffer *OpenGLFrameBuffer::CreateDataBuffer(int bindingpoint, bool ssbo, bool needsresize)
 {
 	return new GLDataBuffer(bindingpoint, ssbo);
-}
-
-void OpenGLFrameBuffer::TextureFilterChanged()
-{
-	if (GLRenderer != NULL && GLRenderer->mSamplerManager != NULL) GLRenderer->mSamplerManager->SetTextureFilterMode();
 }
 
 void OpenGLFrameBuffer::BlurScene(float amount)
@@ -524,10 +521,10 @@ void OpenGLFrameBuffer::Draw2D(bool outside2D)
 	}
 }
 
-void OpenGLFrameBuffer::PostProcessScene(bool swscene, int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D)
+void OpenGLFrameBuffer::PostProcessScene(bool swscene, int fixedcm, float flash, const std::function<void()> &afterBloomDrawEndScene2D)
 {
 	if (!swscene) GLRenderer->mBuffers->BlitSceneToTexture(); // Copy the resulting scene to the current post process texture
-	GLRenderer->PostProcessScene(fixedcm, afterBloomDrawEndScene2D);
+	GLRenderer->PostProcessScene(fixedcm, flash, afterBloomDrawEndScene2D);
 }
 
 //==========================================================================

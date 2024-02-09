@@ -94,7 +94,7 @@ class ConversationMenu : Menu
 	int refwidth;
 	int refheight;
 	Array<double> ypositions;
-
+	
 	int SpeechWidth;
 	int ReplyWidth;
 	
@@ -363,7 +363,7 @@ class ConversationMenu : Menu
 
 		// convert x/y from screen to virtual coordinates, according to CleanX/Yfac use in DrawTexture
 		x = ((x - (screen.GetWidth() / 2)) / fontScale) + refWidth/2;
-
+		
 		if (x >= 24 && x <= refWidth-24)
 		{
 			for (int i = 0; i < ypositions.Size()-1; i++)
@@ -374,10 +374,6 @@ class ConversationMenu : Menu
 					break;
 				}
 			}
-		}
-		if (sel != -1 && sel != mSelection)
-		{
-			//S_Sound (CHAN_VOICE, CHANF_UI, "menu/cursor", snd_menuvolume, ATTN_NONE);
 		}
 		mSelection = sel;
 		if (type == MOUSE_Release)

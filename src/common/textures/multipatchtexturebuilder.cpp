@@ -141,7 +141,7 @@ void FMultipatchTextureBuilder::MakeTexture(BuildInfo &buildinfo, ETextureType u
 	buildinfo.texture->SetSize(buildinfo.Width, buildinfo.Height);
 	buildinfo.texture->SetOffsets(0, buildinfo.LeftOffset[0], buildinfo.TopOffset[0]);	// These are needed for construction of other multipatch textures.
 	buildinfo.texture->SetOffsets(1, buildinfo.LeftOffset[1], buildinfo.TopOffset[1]);
-	buildinfo.texture->SetScale((float)buildinfo.Scale.X, (float)buildinfo.Scale.X);
+	buildinfo.texture->SetScale((float)buildinfo.Scale.X, (float)buildinfo.Scale.Y);
 	buildinfo.texture->SetWorldPanning(buildinfo.bWorldPanning);
 	buildinfo.texture->SetNoDecals(buildinfo.bNoDecals);
 	TexMan.AddGameTexture(buildinfo.texture);
@@ -606,7 +606,7 @@ void FMultipatchTextureBuilder::ParsePatch(FScanner &sc, BuildInfo &info, TexPar
 //
 //==========================================================================
 
-void FMultipatchTextureBuilder::ParseTexture(FScanner &sc, ETextureType UseType)
+void FMultipatchTextureBuilder::ParseTexture(FScanner &sc, ETextureType UseType, int deflump)
 {
 	BuildInfo &buildinfo = BuiltTextures[BuiltTextures.Reserve(1)];
 
@@ -637,6 +637,7 @@ void FMultipatchTextureBuilder::ParseTexture(FScanner &sc, ETextureType UseType)
 	sc.MustGetStringName(",");
 	sc.MustGetNumber();
 	buildinfo.Height = sc.Number;
+	buildinfo.DefinitionLump = deflump;
 
 	bool offset2set = false;
 	if (sc.CheckString("{"))
@@ -778,13 +779,10 @@ void FMultipatchTextureBuilder::ResolvePatches(BuildInfo &buildinfo)
 			TexMan.ListTextures(buildinfo.Inits[i].TexName, list, true);
 			for (int i = list.Size() - 1; i >= 0; i--)
 			{
-				if (list[i] != buildinfo.texture->GetID())
+				auto gtex = TexMan.GetGameTexture(list[i]);
+				if (gtex && gtex != buildinfo.texture && gtex->GetTexture() && gtex->GetTexture()->GetImage() && !dynamic_cast<FMultiPatchTexture*>(gtex->GetTexture()->GetImage()))
 				{
-					auto gtex = TexMan.GetGameTexture(list[i]);
-					if (gtex && !dynamic_cast<FMultiPatchTexture*>(gtex->GetTexture()))
-					{
-						texno = list[i];
-					}
+					texno = list[i];
 					break;
 				}
 			}
@@ -873,7 +871,6 @@ void FMultipatchTextureBuilder::ResolveAllPatches()
 		for (int i = BuiltTextures.Size()-1; i>= 0; i--)
 		{
 			auto &buildinfo = BuiltTextures[i];
-
 			bool hasEmpty = false;
 
 			for (unsigned j = 0; j < buildinfo.Inits.Size(); j++)
@@ -912,6 +909,7 @@ void FMultipatchTextureBuilder::ResolveAllPatches()
 				{
 					auto img = new FMultiPatchTexture(buildinfo.Width, buildinfo.Height, buildinfo.Parts, buildinfo.bComplex, buildinfo.textual);
 					auto itex = new FImageTexture(img);
+					itex->SetSourceLump(buildinfo.DefinitionLump);
 					AddImageToTexture(itex, buildinfo);
 				}
 				BuiltTextures.Delete(i);
@@ -924,7 +922,10 @@ void FMultipatchTextureBuilder::ResolveAllPatches()
 			for (auto &b : BuiltTextures)
 			{
 				Printf("%s\n", b.Name.GetChars());
+				// make it hard to find but also ensure that it references valid backing data.
 				b.texture->SetUseType(ETextureType::Null);
+				b.texture->SetBase(TexMan.GameByIndex(0)->GetTexture());
+				b.texture->SetName("");
 			}
 			break;
 		}

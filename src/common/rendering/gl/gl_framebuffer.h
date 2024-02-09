@@ -41,9 +41,8 @@ public:
 	void UpdatePalette() override;
 	const char* DeviceName() const override;
 	void SetTextureFilterMode() override;
-	IHardwareTexture *CreateHardwareTexture() override;
+	IHardwareTexture *CreateHardwareTexture(int numchannels) override;
 	void PrecacheMaterial(FMaterial *mat, int translation) override;
-	void TextureFilterChanged() override;
 	void BeginFrame() override;
 	void SetViewportRects(IntRect *bounds) override;
 	void BlurScene(float amount) override;
@@ -62,7 +61,7 @@ public:
 	void SetVSync(bool vsync);
 
 	void Draw2D(bool outside2D = false) override;
-	void PostProcessScene(bool swscene, int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D) override;
+	void PostProcessScene(bool swscene, int fixedcm, float flash, const std::function<void()> &afterBloomDrawEndScene2D) override;
 
 	bool HWGammaActive = false;			// Are we using hardware or software gamma?
 	std::shared_ptr<FGLDebug> mDebug;	// Debug API

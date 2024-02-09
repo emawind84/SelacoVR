@@ -85,8 +85,8 @@ void Mac_I_FatalError(const char* errortext);
 #include "LogWritter.h"
 #endif
 
-#ifdef __linux__
-void Linux_I_FatalError(const char* errortext)
+#ifdef __unix__
+void Unix_I_FatalError(const char* errortext)
 {
 	// Close window or exit fullscreen and release mouse capture
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
@@ -133,8 +133,8 @@ void I_ShowFatalError(const char *message)
 
 #ifdef __APPLE__
 	Mac_I_FatalError(message);
-#elif defined __linux__
-	Linux_I_FatalError(message);
+#elif defined __unix__
+	Unix_I_FatalError(message);
 #else
 	// ???
 #endif
