@@ -416,7 +416,7 @@ DEFINE_ACTION_FUNCTION(DMenu, ActivateMenu)
 //
 //=============================================================================
 
-bool M_SetSpecialMenu(FName menu, int param);	// game specific checks
+bool M_SetSpecialMenu(FName& menu, int param);	// game specific checks
 
 void M_SetMenu(FName menu, int param)
 {
@@ -745,7 +745,7 @@ void M_Drawer (void)
 
 	if (CurrentMenu != nullptr && menuactive != MENU_Off) 
 	{
-		if (!CurrentMenu->DontBlur) screen->BlurScene(0);
+		if (!CurrentMenu->DontBlur) screen->BlurScene(menuBlurAmount);
 		if (!CurrentMenu->DontDim)
 		{
 			if (sysCallbacks && sysCallbacks->MenuDim) sysCallbacks->MenuDim();

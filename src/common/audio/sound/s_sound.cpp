@@ -1540,6 +1540,7 @@ int SoundEngine::AddSoundLump(const char* logicalname, int lump, int CurrentPitc
 	newsfx.lumpnum = lump;
 	newsfx.next = 0;
 	newsfx.PitchMask = CurrentPitchMask;
+	newsfx.DefPitch = 0.0;
 	newsfx.NearLimit = nearlimit;
 	newsfx.ResourceId = resid;
 

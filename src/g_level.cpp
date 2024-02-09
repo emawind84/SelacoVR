@@ -153,7 +153,7 @@ CUSTOM_CVAR(Int, gl_lightmode, 3, CVAR_ARCHIVE | CVAR_NOINITCALL)
 	}
 }
 
-
+CVAR(Int, sv_alwaystally, 0, CVAR_SERVERINFO)
 
 static FRandom pr_classchoice ("RandomPlayerClassChoice");
 
@@ -587,14 +587,14 @@ static bool		unloading;
 
 EXTERN_CVAR(Bool, sv_singleplayerrespawn)
 
-bool ShouldDoIntermission(cluster_info_t* nextcluster, cluster_info_t* thiscluster)
+bool FLevelLocals::ShouldDoIntermission(cluster_info_t* nextcluster, cluster_info_t* thiscluster)
 {
 	// this is here to remove some code duplication
 
 	if ((sv_alwaystally == 2) || (deathmatch))
 		return true;
 
-	if ((sv_alwaystally == 0) && (level.flags & LEVEL_NOINTERMISSION))
+	if ((sv_alwaystally == 0) && (flags & LEVEL_NOINTERMISSION))
 		return false;
 
 	bool withinSameCluster = (nextcluster == thiscluster);

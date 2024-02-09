@@ -90,7 +90,7 @@ CUSTOM_CVAR(Bool, menu_showdoublebindings, false, CVAR_NOINITCALL)
 FNewGameStartup NewGameStartupInfo;
 
 
-bool M_SetSpecialMenu(FName menu, int param)
+bool M_SetSpecialMenu(FName& menu, int param)
 {
 	// some menus need some special treatment
 	switch (menu.GetIndex())
