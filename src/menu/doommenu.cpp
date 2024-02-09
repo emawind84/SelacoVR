@@ -79,6 +79,15 @@ void I_WaitVBL(int count);
 
 extern bool hud_toggled;
 
+CUSTOM_CVAR(Bool, menu_showexperimental, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
+{
+	DeinitMenus();
+	M_Init();
+	M_StartControlPanel (true);
+	M_SetMenu(NAME_Optionsmenu, -1);
+	Printf("Experimental menu has been %s\n", self ? "enabled" : "disabled");
+}
+
 
 FNewGameStartup NewGameStartupInfo;
 
@@ -885,6 +894,25 @@ static void InitKeySections()
 	}
 }
 
+static void InitCommandLineProfileMenu()
+{
+	profileManager.CollectProfiles();
+	auto cmdlineProfiles = profileManager.GetList();
+	DMenuDescriptor **menu = MenuDescriptors.CheckKey("CommandLineProfileMenu");
+	if (menu != nullptr)
+	{
+		if (cmdlineProfiles.Size() > 0)
+		{
+			for (FCommandLineInfo &entry : cmdlineProfiles)
+			{
+				auto it = CreateOptionMenuItemCommand(entry.mTitle, FStringf("%s \"%s\"", "cmdlineprofile", entry.mName.GetChars()), true);
+				static_cast<DOptionMenuDescriptor*>(*menu)->mItems.Push(it);
+				GC::WriteBarrier(*menu, it);
+			}
+		}
+	}
+}
+
 
 //=============================================================================
 //
@@ -897,6 +925,7 @@ void M_CreateGameMenus()
 	BuildPlayerclassMenu();
 	InitCrosshairsList();
 	InitKeySections();
+	InitCommandLineProfileMenu();
 
 	auto opt = OptionValues.CheckKey(NAME_PlayerTeam);
 	if (opt != nullptr)
@@ -1244,6 +1273,7 @@ bool CheckSkipGameOptionBlock(FScanner &sc)
 	bool filter = false;
 	if (sc.Compare("ReadThis")) filter |= gameinfo.drawreadthis;
 	else if (sc.Compare("Swapmenu")) filter |= gameinfo.swapmenu;
+	else if (sc.Compare("Experimental")) filter |= menu_showexperimental;
 	return filter;
 }
 
