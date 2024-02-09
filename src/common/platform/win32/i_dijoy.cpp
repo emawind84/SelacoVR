@@ -52,6 +52,7 @@
 #include "m_argv.h"
 #include "keydef.h"
 #include "printf.h"
+#include "version.h"
 
 #define SAFE_RELEASE(x)		{ if (x != NULL) { x->Release(); x = NULL; } }
 

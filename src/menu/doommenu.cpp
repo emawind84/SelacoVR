@@ -79,6 +79,13 @@ void I_WaitVBL(int count);
 
 extern bool hud_toggled;
 
+CUSTOM_CVAR(Bool, menu_showdoublebindings, false, CVAR_NOINITCALL)
+{
+	DeinitMenus();
+	M_Init();
+	M_StartControlPanel (true);
+	M_SetMenu(NAME_CustomizeControls, -1);
+}
 
 FNewGameStartup NewGameStartupInfo;
 
@@ -191,6 +198,10 @@ bool M_SetSpecialMenu(FName menu, int param)
 
 	case NAME_Playermenu:
 		menu = NAME_NewPlayerMenu;	// redirect the old player menu to the new one.
+		break;
+
+	case NAME_OptionsmenuFull:
+		menu = NAME_Optionsmenu;
 		break;
 	}
 
@@ -508,6 +519,11 @@ CCMD(reset2saved)
 	GameConfig->DoGameSetup (gameinfo.ConfigName);
 	GameConfig->DoModSetup (gameinfo.ConfigName);
 	R_SetViewSize (screenblocks);
+}
+
+CCMD(resetb2defaults)
+{
+	C_SetDefaultBindings ();
 }
 
 
@@ -1244,6 +1260,7 @@ bool CheckSkipGameOptionBlock(FScanner &sc)
 	bool filter = false;
 	if (sc.Compare("ReadThis")) filter |= gameinfo.drawreadthis;
 	else if (sc.Compare("Swapmenu")) filter |= gameinfo.swapmenu;
+	else if (sc.Compare("DoubleBindingMenu")) filter |= menu_showdoublebindings;
 	return filter;
 }
 
