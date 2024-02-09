@@ -631,7 +631,7 @@ bool D_SendServerInfoChange (FBaseCVar *cvar, UCVarValue value, ECVarType type)
 	{
 		if (netgame && !players[consoleplayer].settings_controller)
 		{
-			Printf("Only setting controllers can change %s\n", cvar->GetName());
+			Printf("Only setting controllers can change server CVAR %s\n", cvar->GetName());
 			cvar->MarkSafe();
 			return true;
 		}
@@ -661,7 +661,10 @@ bool D_SendServerFlagChange (FBaseCVar *cvar, int bitnum, bool set, bool silent)
 	{
 		if (netgame && !players[consoleplayer].settings_controller)
 		{
-			if (!silent) Printf("Only setting controllers can change %s\n", cvar->GetName());
+			if (!silent)
+			{
+				Printf("Only setting controllers can change server CVAR %s\n", cvar->GetName());
+			}
 			return true;
 		}
 
