@@ -103,9 +103,3 @@ DEFINE_ACTION_FUNCTION(DMenu, StartMessage)
 	M_StartMessage(msg, mode, action);
 	return 0;
 }
-
-UNSAFE_CCMD (quickunsetslot)
-{
-	if (savegameManager.quickSaveSlot != NULL) savegameManager.quickSaveSlot = (FSaveGameNode*)1;
-	Printf("Quicksave slot unset.\n");
-}
