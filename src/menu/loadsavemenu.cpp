@@ -131,22 +131,14 @@ int FSavegameManager::InsertSaveNode(FSaveGameNode *node)
 		unsigned int i = 0;
 		if (!oldsaveorder)
 		{
-			if (!strstr(node->Filename.GetChars(),"auto") && !strstr(node->Filename.GetChars(),"quick"))
+			if (!strstr(node->Filename.GetChars(),"auto"))
 			{
 				for (i; i < SaveGames.Size(); i++)
 				{
-					if (!strstr(SaveGames[i]->Filename.GetChars(),"auto") && !strstr(SaveGames[i]->Filename.GetChars(),"quick") 
-						&& node->Filename.CompareNoCase(SaveGames[i]->Filename) >= 0)
+					if (!strstr(SaveGames[i]->Filename.GetChars(),"auto") && node->Filename.CompareNoCase(SaveGames[i]->Filename) >= 0)
 					{
 						break;
 					}
-				}
-			}
-			else
-			{
-				if (strstr(node->Filename.GetChars(),"quick"))
-				{
-					for (i; i < SaveGames.Size() && strstr(SaveGames[i]->Filename.GetChars(),"auto"); i++) {}
 				}
 			}
 		}
