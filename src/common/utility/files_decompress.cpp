@@ -36,6 +36,7 @@
 // Caution: LzmaDec also pulls in windows.h!
 #define NOMINMAX
 #include "LzmaDec.h"
+#include <stdexcept>
 #include <zlib.h>
 #include <bzlib.h>
 #include <algorithm>
