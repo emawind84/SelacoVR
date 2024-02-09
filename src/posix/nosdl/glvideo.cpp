@@ -46,11 +46,9 @@
 
 #include "glvideo.h"
 #include "gl_sysfb.h"
-//#include "gl/system/gl_system.h"
 #include "r_defs.h"
-//#include "gl/gl_intern.h"
 
-#include "gl/system/gl_framebuffer.h"
+#include "gl_framebuffer.h"
 
 //#include <QzDoom/VrCommon.h>
 

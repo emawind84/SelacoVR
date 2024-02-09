@@ -33,8 +33,8 @@
 #include "i_interface.h"
 #include "menu/menu.h"
 #include "gl_load/gl_system.h"
+#include "gl_renderer.h"
 #include "gl/stereo3d/gl_openxrdevice.h"
-#include "gl/renderer/gl_renderer.h"
 
 using namespace OpenGLRenderer;
 

@@ -45,6 +45,9 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/hwrenderer/data \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl_load \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl \
+    	$(GZDOOM_TOP_PATH)/src/common/rendering/vulkan/thirdparty \
+    	$(GZDOOM_TOP_PATH)/src/common/rendering/polyrenderer/backend \
+    	$(GZDOOM_TOP_PATH)/src/common/rendering/polyrenderer/drawers \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/vm \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/jit \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/core \
@@ -60,17 +63,18 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/gamedata/textures \
     	$(GZDOOM_TOP_PATH)/src/gamedata/fonts \
     	$(GZDOOM_TOP_PATH)/src/rendering \
+    	$(GZDOOM_TOP_PATH)/src/rendering/hwrenderer \
     	$(GZDOOM_TOP_PATH)/src/rendering/2d \
     	$(GZDOOM_TOP_PATH)/src/r_data \
     	$(GZDOOM_TOP_PATH)/src/sound \
     	$(GZDOOM_TOP_PATH)/src/sound/backend \
     	$(GZDOOM_TOP_PATH)/src/xlat \
     	$(GZDOOM_TOP_PATH)/src/utility \
+    	$(GZDOOM_TOP_PATH)/src/menu \
     	$(GZDOOM_TOP_PATH)/src/utility/nodebuilder \
     	$(GZDOOM_TOP_PATH)/src/scripting \
     	$(GZDOOM_TOP_PATH)/src/scripting/zscript \
     	$(GZDOOM_TOP_PATH)/src/rendering \
-		$(GZDOOM_TOP_PATH)/src/rendering/vulkan/thirdparty \
     	$(GZDOOM_TOP_PATH)/src/../libraries/gdtoa \
     	$(GZDOOM_TOP_PATH)/src/../libraries/glslang/glslang/Public \
     	$(GZDOOM_TOP_PATH)/src/../libraries/glslang/spirv   	 \
@@ -111,35 +115,33 @@ PLAT_NOSDL_SOURCES = \
 	posix/nosdl/st_start.cpp
 
 VULKAN_SOURCES = \
-	rendering/vulkan/system/vk_device.cpp \
-	rendering/vulkan/system/vk_swapchain.cpp \
-	rendering/vulkan/system/vk_builders.cpp \
-	rendering/vulkan/system/vk_framebuffer.cpp \
-	rendering/vulkan/system/vk_buffers.cpp \
-	rendering/vulkan/renderer/vk_renderstate.cpp \
-	rendering/vulkan/renderer/vk_renderpass.cpp \
-	rendering/vulkan/renderer/vk_streambuffer.cpp \
-	rendering/vulkan/renderer/vk_postprocess.cpp \
-	rendering/vulkan/renderer/vk_renderbuffers.cpp \
-	rendering/vulkan/shaders/vk_shader.cpp \
-	rendering/vulkan/textures/vk_samplers.cpp \
-	rendering/vulkan/textures/vk_hwtexture.cpp \
-	rendering/vulkan/textures/vk_imagetransition.cpp \
-	rendering/vulkan/thirdparty/volk/volk.c \
-	rendering/vulkan/thirdparty/vk_mem_alloc/vk_mem_alloc.cpp \
+	common/rendering/vulkan/system/vk_device.cpp \
+	common/rendering/vulkan/system/vk_swapchain.cpp \
+	common/rendering/vulkan/system/vk_builders.cpp \
+	common/rendering/vulkan/system/vk_framebuffer.cpp \
+	common/rendering/vulkan/system/vk_buffers.cpp \
+	common/rendering/vulkan/renderer/vk_renderstate.cpp \
+	common/rendering/vulkan/renderer/vk_renderpass.cpp \
+	common/rendering/vulkan/renderer/vk_streambuffer.cpp \
+	common/rendering/vulkan/renderer/vk_postprocess.cpp \
+	common/rendering/vulkan/renderer/vk_renderbuffers.cpp \
+	common/rendering/vulkan/shaders/vk_shader.cpp \
+	common/rendering/vulkan/textures/vk_samplers.cpp \
+	common/rendering/vulkan/textures/vk_hwtexture.cpp \
+	common/rendering/vulkan/textures/vk_imagetransition.cpp \
+	common/rendering/vulkan/thirdparty/volk/volk.c \
+	common/rendering/vulkan/thirdparty/vk_mem_alloc/vk_mem_alloc.cpp \
 
 POLYBACKEND_SOURCES = \
-	rendering/polyrenderer/drawers/poly_triangle.cpp \
-	rendering/polyrenderer/drawers/poly_thread.cpp \
-	rendering/polyrenderer/drawers/screen_triangle.cpp \
-	rendering/polyrenderer/drawers/screen_scanline_setup.cpp \
-	rendering/polyrenderer/drawers/screen_shader.cpp \
-	rendering/polyrenderer/drawers/screen_blend.cpp \
+	common/rendering/polyrenderer/backend/poly_framebuffer.cpp \
+	common/rendering/polyrenderer/backend/poly_buffers.cpp \
+	common/rendering/polyrenderer/backend/poly_hwtexture.cpp \
+	common/rendering/polyrenderer/backend/poly_renderstate.cpp \
 
 FASTMATH_SOURCES = \
 	rendering/swrenderer/r_all.cpp \
 	rendering/swrenderer/r_swscene.cpp \
-	rendering/polyrenderer/poly_all.cpp \
+	common/rendering/polyrenderer/poly_all.cpp \
 	common/textures/hires/hqnx/init.cpp \
 	common/textures/hires/hqnx/hq2x.cpp \
 	common/textures/hires/hqnx/hq3x.cpp \
@@ -147,7 +149,7 @@ FASTMATH_SOURCES = \
 	common/textures/hires/xbr/xbrz.cpp \
 	common/textures/hires/xbr/xbrz_old.cpp \
 	common/rendering/gl_load/gl_load.c \
-	rendering/hwrenderer/dynlights/hw_dynlightdata.cpp \
+	rendering/hwrenderer/hw_dynlightdata.cpp \
 	rendering/hwrenderer/scene/hw_bsp.cpp \
 	rendering/hwrenderer/scene/hw_fakeflat.cpp \
 	rendering/hwrenderer/scene/hw_decal.cpp \
@@ -285,21 +287,16 @@ PCH_SOURCES = \
 	g_statusbar/shared_sbar.cpp \
 	rendering/2d/f_wipe.cpp \
 	rendering/2d/v_blend.cpp \
-	rendering/gl/renderer/gl_renderer.cpp \
-	rendering/gl/renderer/gl_stereo3d.cpp \
-	rendering/gl/system/gl_framebuffer.cpp \
-	gl/stereo3d/gl_openxrdevice.cpp \
 	rendering/hwrenderer/hw_entrypoint.cpp \
-	rendering/hwrenderer/data/hw_vertexbuilder.cpp \
-	rendering/hwrenderer/dynlights/doom_aabbtree.cpp \
-	rendering/hwrenderer/models/hw_models.cpp \
+	rendering/hwrenderer/hw_vertexbuilder.cpp \
+	rendering/hwrenderer/doom_aabbtree.cpp \
+	rendering/hwrenderer/hw_models.cpp \
+	rendering/hwrenderer/hw_postprocessshader.cpp \
+	rendering/hwrenderer/hw_precache.cpp \
+	rendering/hwrenderer/scene/hw_lighting.cpp \
 	rendering/hwrenderer/scene/hw_drawlistadd.cpp \
-	rendering/hwrenderer/scene/hw_renderstate.cpp \
-	rendering/hwrenderer/postprocessing/hw_postprocessshader.cpp \
-	rendering/hwrenderer/textures/hw_precache.cpp \
-	rendering/hwrenderer/utility/hw_clock.cpp \
-	rendering/hwrenderer/utility/hw_draw2d.cpp \
-	rendering/hwrenderer/utility/hw_lighting.cpp \
+	rendering/hwrenderer/scene/hw_setcolor.cpp \
+	gl/stereo3d/gl_openxrdevice.cpp \
 	maploader/edata.cpp \
 	maploader/specials.cpp \
 	maploader/maploader.cpp \
@@ -339,7 +336,6 @@ PCH_SOURCES = \
 	intermission/intermission.cpp \
 	intermission/intermission_parse.cpp \
 	r_data/colormaps.cpp \
-	r_data/cycler.cpp \
 	r_data/gldefs.cpp \
 	r_data/a_dynlightdata.cpp \
 	r_data/r_translate.cpp \
@@ -399,6 +395,7 @@ PCH_SOURCES = \
 	common/textures/multipatchtexturebuilder.cpp \
 	common/textures/skyboxtexture.cpp \
 	common/textures/animtexture.cpp \
+	common/textures/v_collection.cpp \
 	common/textures/formats/automaptexture.cpp \
 	common/textures/formats/brightmaptexture.cpp \
 	common/textures/formats/buildtexture.cpp \
@@ -448,7 +445,7 @@ PCH_SOURCES = \
 	common/utility/s_playlist.cpp \
 	common/utility/zstrformat.cpp \
 	common/utility/name.cpp \
-	common/utility/m_bbox.cpp \
+	common/utility/r_memory.cpp \
 	common/thirdparty/md5.cpp \
  	common/thirdparty/superfasthash.cpp \
 	common/filesystem/filesystem.cpp \
@@ -463,6 +460,7 @@ PCH_SOURCES = \
 	common/filesystem/file_whres.cpp \
 	common/filesystem/file_directory.cpp \
 	common/filesystem/resourcefile.cpp \
+	common/engine/cycler.cpp \
 	common/engine/stats.cpp \
 	common/engine/sc_man.cpp \
 	common/engine/palettecontainer.cpp \
@@ -477,7 +475,10 @@ PCH_SOURCES = \
 	common/objects/dobjtype.cpp \
 	common/rendering/v_framebuffer.cpp \
 	common/rendering/v_video.cpp \
+	common/rendering/r_thread.cpp \
 	common/rendering/r_videoscale.cpp \
+	common/rendering/hwrenderer/hw_draw2d.cpp \
+	common/rendering/hwrenderer/data/hw_clock.cpp \
 	common/rendering/hwrenderer/data/hw_skydome.cpp \
 	common/rendering/hwrenderer/data/flatvertices.cpp \
 	common/rendering/hwrenderer/data/hw_viewpointbuffer.cpp \
@@ -491,6 +492,9 @@ PCH_SOURCES = \
 	common/rendering/hwrenderer/postprocessing/hw_postprocess.cpp \
 	common/rendering/hwrenderer/postprocessing/hw_postprocess_cvars.cpp \
 	common/rendering/gl_load/gl_interface.cpp \
+	common/rendering/gl/gl_renderer.cpp \
+	common/rendering/gl/gl_stereo3d.cpp \
+	common/rendering/gl/gl_framebuffer.cpp \
 	common/rendering/gl/gl_renderstate.cpp \
 	common/rendering/gl/gl_renderbuffers.cpp \
 	common/rendering/gl/gl_postprocess.cpp \
@@ -522,7 +526,6 @@ PCH_SOURCES = \
 	utility/nodebuilder/nodebuild_extract.cpp \
 	utility/nodebuilder/nodebuild_gl.cpp \
 	utility/nodebuilder/nodebuild_utility.cpp \
-	utility/v_collection.cpp \
 	
 
 QZDOOM_SRC = \

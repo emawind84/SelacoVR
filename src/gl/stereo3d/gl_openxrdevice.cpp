@@ -37,10 +37,9 @@
 #include "d_player.h"
 #include "g_game.h" // G_Add...
 #include "p_local.h" // P_TryMove
-#include "gl/renderer/gl_renderer.h"
+#include "gl_renderer.h"
 #include "gl_renderstate.h"
 #include "gl_renderbuffers.h"
-#include "hwrenderer/models/hw_models.h"
 #include "r_utility.h"
 #include "v_video.h"
 #include "g_levellocals.h" // pixelstretch
@@ -52,6 +51,8 @@
 #include "d_event.h"
 #include "doomstat.h"
 #include "c_console.h"
+#include "hw_models.h"
+#include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/data/flatvertices.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 
