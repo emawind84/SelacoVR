@@ -199,8 +199,6 @@ void OpenGLFrameBuffer::Update()
 	Flush3D.Unclock();
 
 	Swap();
-	DrawVersionString();
-
 	Super::Update();
 }
 

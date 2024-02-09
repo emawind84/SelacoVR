@@ -270,9 +270,6 @@ public:
 	// The original size of the framebuffer as selected in the video menu.
 	uint64_t FrameTime = 0;
 
-protected:
-	void DrawVersionString ();
-
 private:
 	uint64_t fpsLimitTime = 0;
 
