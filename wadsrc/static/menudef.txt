@@ -723,11 +723,11 @@ OptionMenu "ActionDoubleControlsMenu" protected
 	DoubleControl    "$CNTRLMNU_LAND"             , "land"
 
 	StaticText ""
-	Control    "$CNTRLMNU_MOUSELOOK"        , "+mlook"
-	Control    "$CNTRLMNU_KEYBOARDLOOK"     , "+klook"
-	Control    "$CNTRLMNU_LOOKUP"           , "+lookup"
-	Control    "$CNTRLMNU_LOOKDOWN"         , "+lookdown"
-	Control    "$CNTRLMNU_CENTERVIEW"       , "centerview"
+	DoubleControl    "$CNTRLMNU_MOUSELOOK"        , "+mlook"
+	DoubleControl    "$CNTRLMNU_KEYBOARDLOOK"     , "+klook"
+	DoubleControl    "$CNTRLMNU_LOOKUP"           , "+lookup"
+	DoubleControl    "$CNTRLMNU_LOOKDOWN"         , "+lookdown"
+	DoubleControl    "$CNTRLMNU_CENTERVIEW"       , "centerview"
 
 	StaticText ""
 	DoubleControl    "$CNTRLMNU_RUN"              , "+speed"
