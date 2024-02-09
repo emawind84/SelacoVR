@@ -41,9 +41,8 @@ public:
 	void UpdatePalette() override;
 	const char* DeviceName() const override;
 	void SetTextureFilterMode() override;
-	IHardwareTexture *CreateHardwareTexture() override;
+	IHardwareTexture *CreateHardwareTexture(int numchannels) override;
 	void PrecacheMaterial(FMaterial *mat, int translation) override;
-	void TextureFilterChanged() override;
 	void BeginFrame() override;
 	void SetViewportRects(IntRect *bounds) override;
 	void BlurScene(float amount) override;

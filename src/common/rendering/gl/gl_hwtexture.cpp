@@ -44,12 +44,13 @@
 #include "gl_renderer.h"
 #include "gl_renderstate.h"
 #include "gl_samplers.h"
+#include "gl_hwtexture.h"
 
 namespace OpenGLRenderer
 {
 
 
-TexFilter_s TexFilter[]={
+TexFilter_s TexFilter[] = {
 	{GL_NEAREST,					GL_NEAREST,		false},
 	{GL_NEAREST_MIPMAP_NEAREST,		GL_NEAREST,		true},
 	{GL_LINEAR,						GL_LINEAR,		false},
@@ -58,20 +59,6 @@ TexFilter_s TexFilter[]={
 	{GL_NEAREST_MIPMAP_LINEAR,		GL_NEAREST,		true},
 	{GL_LINEAR_MIPMAP_LINEAR,		GL_NEAREST,		true},
 };
-
-int TexFormat[]={
-	GL_RGBA8,
-	GL_RGB5_A1,
-	GL_RGBA4,
-	GL_RGBA2,
-	// [BB] Added compressed texture formats.
-	GL_COMPRESSED_RGBA_ARB,
-	GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
-	GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,
-	GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,
-};
-
-
 
 //===========================================================================
 // 
@@ -251,11 +238,6 @@ unsigned int FHardwareTexture::Bind(int texunit, bool needmipmap)
 	return 0;
 }
 
-unsigned int FHardwareTexture::GetTextureHandle(int translation)
-{
-	return glTexID;
-}
-
 void FHardwareTexture::Unbind(int texunit)
 {
 	if (lastbound[texunit] != 0)
@@ -273,7 +255,6 @@ void FHardwareTexture::UnbindAll()
 	{
 		Unbind(texunit);
 	}
-	gl_RenderState.ClearLastMaterial();
 }
 
 //===========================================================================
@@ -322,12 +303,16 @@ bool FHardwareTexture::BindOrCreate(FTexture *tex, int texunit, int clampmode, i
 {
 	int usebright = false;
 
-	bool needmipmap = (clampmode <= CLAMP_XY);
+	bool needmipmap = (clampmode <= CLAMP_XY) && !forcenofilter;
 
 	// Bind it to the system.
 	if (!Bind(texunit, needmipmap))
 	{
-
+		if (flags & CTF_Indexed)
+		{
+			glTextureBytes = 1;
+			forcenofilter = true;
+		}
 		int w = 0, h = 0;
 
 		// Create this texture
@@ -351,6 +336,7 @@ bool FHardwareTexture::BindOrCreate(FTexture *tex, int texunit, int clampmode, i
 			return false;
 		}
 	}
+	if (forcenofilter && clampmode <= CLAMP_XY) clampmode += CLAMP_NOFILTER - CLAMP_NONE;
 	GLRenderer->mSamplerManager->Bind(texunit, clampmode, 255);
 	return true;
 }

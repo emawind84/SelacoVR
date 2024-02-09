@@ -37,14 +37,13 @@ public:
 	void PrecacheMaterial(FMaterial *mat, int translation) override;
 	void UpdatePalette() override;
 	void SetTextureFilterMode() override;
-	void TextureFilterChanged() override;
 	void BeginFrame() override;
 	void BlurScene(float amount) override;
 	void PostProcessScene(bool swscene, int fixedcm, const std::function<void()> &afterBloomDrawEndScene2D) override;
 	void AmbientOccludeScene(float m5) override;
 	//void SetSceneRenderTarget(bool useSSAO) override;
 
-	IHardwareTexture *CreateHardwareTexture() override;
+	IHardwareTexture *CreateHardwareTexture(int numchannels) override;
 	IVertexBuffer *CreateVertexBuffer() override;
 	IIndexBuffer *CreateIndexBuffer() override;
 	IDataBuffer *CreateDataBuffer(int bindingpoint, bool ssbo, bool needsresize) override;
