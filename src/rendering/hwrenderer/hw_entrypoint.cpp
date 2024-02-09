@@ -37,7 +37,7 @@
 #include "swrenderer/r_swscene.h"
 #include "swrenderer/r_renderer.h"
 #include "hw_dynlightdata.h"
-#include "hwrenderer/utility/hw_clock.h"
+#include "hw_clock.h"
 #include "flatvertices.h"
 #include "v_palette.h"
 #include "d_main.h"
@@ -115,10 +115,10 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 	if (mainview && toscreen)
 	{
 		screen->SetAABBTree(camera->Level->aabbTree);
-		screen->UpdateShadowMap();
 		screen->mShadowMap.SetCollectLights([=] {
 			CollectLights(camera->Level);
 		});
+		screen->UpdateShadowMap();
 	}
 
 	// Update the attenuation flag of all light defaults for each viewpoint.

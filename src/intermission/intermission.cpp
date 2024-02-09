@@ -73,6 +73,8 @@ extern int		NoWipe;
 CVAR(Bool, nointerscrollabort, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR(Bool, inter_subtitles, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
+CVAR(Bool, inter_classic_scaling, true, CVAR_ARCHIVE);
+
 //==========================================================================
 //
 // This also gets used by the title loop.
@@ -221,7 +223,7 @@ void DIntermissionScreen::Drawer ()
 		}
 		else
 		{
-			twod->AddFlatFill(0,0, twod->GetWidth(), twod->GetHeight(), TexMan.GetGameTexture(mBackground));
+			twod->AddFlatFill(0,0, twod->GetWidth(), twod->GetHeight(), TexMan.GetGameTexture(mBackground), (inter_classic_scaling ? -1 : 0));
 		}
 	}
 	else
@@ -920,15 +922,6 @@ bool DIntermissionController::Responder (event_t *ev)
 					M_SetMenu(NAME_Mainmenu, -1);
 					return true;
 				}
-			}
-
-			// The following is needed to be able to enter main menu with a controller,
-			// by pressing buttons that are usually assigned to this action, Start and Back by default
-			if (!stricmp(cmd, "menu_main") || !stricmp(cmd, "pause"))
-			{
-				M_StartControlPanel(true);
-				M_SetMenu(NAME_Mainmenu, -1);
-				return true;
 			}
 		}
 

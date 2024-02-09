@@ -114,7 +114,7 @@
 #include "scriptutil.h"
 #include "v_palette.h"
 #include "texturemanager.h"
-#include "hwrenderer/utility/hw_clock.h"
+#include "hw_clock.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hw_vrmodes.h"
 
@@ -198,7 +198,7 @@ extern bool insave;
 extern TDeletingArray<FLightDefaults *> LightDefaults;
 
 const char* iwad_folders[13] = { "flats/", "textures/", "hires/", "sprites/", "voxels/", "colormaps/", "acs/", "maps/", "voices/", "patches/", "graphics/", "sounds/", "music/" };
-const char* iwad_reserved[12] = { "mapinfo", "zmapinfo", "gameinfo", "sndinfo", "sbarinfo", "menudef", "gldefs", "animdefs", "decorate", "zscript", "iwadinfo" "maps/" };
+const char* iwad_reserved[12] = { "mapinfo", "zmapinfo", "gameinfo", "sndinfo", "sbarinfo", "menudef", "gldefs", "animdefs", "decorate", "zscript", "iwadinfo", "maps/" };
 
 
 CUSTOM_CVAR(Float, i_timescale, 1.0f, CVAR_NOINITCALL)
@@ -2952,6 +2952,16 @@ IntRect System_GetSceneRect()
 	mSceneViewport.height = height;
 	return mSceneViewport;
 }
+
+FString System_GetLocationDescription()
+{
+	auto& vp = r_viewpoint;
+	auto Level = vp.ViewLevel;
+	return FStringf("Map %s: \"%s\",\nx = %1.4f, y = %1.4f, z = %1.4f, angle = %1.4f, pitch = %1.4f\n%llu fps\n\n",
+		Level->MapName.GetChars(), Level->LevelName.GetChars(), vp.Pos.X, vp.Pos.Y, vp.Pos.Z, vp.Angles.Yaw.Degrees, vp.Angles.Pitch.Degrees, (unsigned long long)LastCount);
+
+}
+
 //==========================================================================
 //
 // DoomSpecificInfo
@@ -3160,6 +3170,7 @@ static int D_DoomMain_Internal (void)
 		System_DisableTextureFilter,
 		System_OnScreenSizeChanged,
 		System_GetSceneRect,
+		System_GetLocationDescription,
 	};
 	sysCallbacks = &syscb;
 	
@@ -3486,6 +3497,7 @@ static int D_DoomMain_Internal (void)
 
 		StartScreen->Progress();
 		V_InitFonts();
+		V_LoadTranslations();
 		UpdateGenericUI(false);
 
 		// [CW] Parse any TEAMINFO lumps.
@@ -3646,6 +3658,9 @@ static int D_DoomMain_Internal (void)
 
 			V_Init2();
 			twod->fullscreenautoaspect = gameinfo.fullscreenautoaspect;
+			// Initialize the size of the 2D drawer so that an attempt to access it outside the draw code won't crash.
+			twod->Begin(screen->GetWidth(), screen->GetHeight());
+			twod->End();
 			//UpdateJoystickMenu(NULL);
 			UpdateVRModes();
 

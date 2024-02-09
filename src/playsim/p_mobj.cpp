@@ -5101,8 +5101,6 @@ void StaticPointerSubstitution(AActor* old, AActor* notOld)
 	}
 }
 
-
-
 void FLevelLocals::PlayerSpawnPickClass (int playernum)
 {
 	auto p = Players[playernum];
@@ -5149,7 +5147,7 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 {
 	player_t *p;
 	AActor *mobj, *oldactor;
-	uint8_t state;
+	uint8_t	  state;
 	DVector3 spawn;
 	DAngle SpawnAngle;
 
@@ -5158,7 +5156,7 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 		return NULL;
 	}
 	// not playing?
-	if ((unsigned)playernum >= (unsigned)MAXPLAYERS || !playeringame[playernum])
+	if ((unsigned)playernum >= (unsigned)MAXPLAYERS || !PlayerInGame(playernum) )
 		return NULL;
 
 	// Old lerp data needs to go
@@ -5167,7 +5165,7 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 		P_PredictionLerpReset();
 	}
 
-	p = &players[playernum];
+	p = Players[playernum];
 
 	PlayerSpawnPickClass(playernum);
 

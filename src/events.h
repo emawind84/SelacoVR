@@ -9,6 +9,9 @@
 
 class DStaticEventHandler;
 struct EventManager;
+struct line_t;
+struct sector_t;
+struct FLevelLocals;
 
 enum class EventHandlerType
 {

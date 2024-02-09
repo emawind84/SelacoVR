@@ -44,20 +44,20 @@
 #include "texturemanager.h"
 #include "basics.h"
 
-#include "hwrenderer/models/hw_models.h"
+#include "hw_models.h"
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/scene/hw_fakeflat.h"
 #include "hwrenderer/scene/hw_portal.h"
 #include "flatvertices.h"
 #include "hw_cvars.h"
-#include "hwrenderer/utility/hw_clock.h"
-#include "hwrenderer/utility/hw_lighting.h"
-#include "hw_vrmodes.h"
+#include "hw_clock.h"
+#include "hw_lighting.h"
 #include "hw_material.h"
 #include "hw_dynlightdata.h"
 #include "hw_lightbuffer.h"
 #include "hw_renderstate.h"
+#include "hw_vrmodes.h"
 
 extern TArray<spritedef_t> sprites;
 extern TArray<spriteframe_t> SpriteFrames;

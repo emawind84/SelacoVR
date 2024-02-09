@@ -29,7 +29,7 @@
 #include "hw_lightbuffer.h"
 #include "hw_dynlightdata.h"
 #include "shaderuniforms.h"
-#include "hwrenderer/utility/hw_clock.h"
+#include "hw_clock.h"
 
 CVAR(Int, gl_max_lights, 40000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CUSTOM_CVAR (Int, gl_light_buffer_type, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)

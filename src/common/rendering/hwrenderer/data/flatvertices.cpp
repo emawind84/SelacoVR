@@ -38,7 +38,7 @@
 #include "cmdlib.h"
 #include "printf.h"
 #include "hwrenderer/data/buffers.h"
-#include "hwrenderer/utility/hw_clock.h"
+#include "hw_clock.h"
 
 //==========================================================================
 //

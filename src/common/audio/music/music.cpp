@@ -38,8 +38,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdexcept>
-#include <memory>
-
 
 #include "i_sound.h"
 #include "i_music.h"
