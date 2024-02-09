@@ -1342,6 +1342,8 @@ OptionMenu "ScalingOptions" protected
 	Option "$SCALEMNU_BORDER",					"ui_screenborder_classic_scaling", "OnOff"
 	Slider "$SCALEMNU_FACTOR",					"classic_scaling_factor", 1.0, 3.0, 0.2, 1
 	Slider "$SCALEMNU_RATIO",					"classic_scaling_pixelaspect", 1.0, 1.2, 0.2, 1
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar inter_classic_scaling ui_screenborder_classic_scaling classic_scaling_factor classic_scaling_pixelaspect"
 }
 //-------------------------------------------------------------------------------------------
 //
