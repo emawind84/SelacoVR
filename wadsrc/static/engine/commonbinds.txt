@@ -1,4 +1,4 @@
-/* Default keybindings for all games */
+// These bindings are valid for all configurations
 
 ` toggleconsole
 1 "slot 1"
@@ -17,8 +17,7 @@ mwheelleft invprev
 mwheelright invnext
 - sizedown
 = sizeup
-shift +speed
-space +use
+shift +spee`d
 mouse1 +attack
 capslock "toggle cl_run"
 f1 menu_help

@@ -68,8 +68,14 @@ EXTERN_CVAR (Int, gl_texture_hqresizemult)
 EXTERN_CVAR (Int, vid_preferbackend)
 EXTERN_CVAR (Float, vid_scale_custompixelaspect)
 EXTERN_CVAR (Bool, vid_scale_linear)
+EXTERN_CVAR(Float, m_sensitivity_x)
+EXTERN_CVAR(Float, m_sensitivity_y)
 EXTERN_CVAR(Int, adl_volume_model)
 EXTERN_CVAR(Int, wipetype)
+
+#ifdef _WIN32
+EXTERN_CVAR(Int, in_mouse)
+#endif
 
 FGameConfigFile::FGameConfigFile ()
 {
@@ -297,15 +303,30 @@ void FGameConfigFile::DoGlobalSetup ()
 		if (lastver != NULL)
 		{
 			double last = atof (lastver);
-			/* spc_amp no longer exists
-			if (last < 206)
-			{ // spc_amp is now a float, not an int.
-				if (spc_amp > 16)
+			if (last < 202)
+			{
+				// Make sure the Hexen hotkeys are accessible by default.
+				if (SetSection ("Hexen.Bindings"))
 				{
-					spc_amp = spc_amp / 16.f;
+					SetValueForKey ("\\", "use ArtiHealth");
+					SetValueForKey ("scroll", "+showscores");
+					SetValueForKey ("0", "useflechette");
+					SetValueForKey ("9", "use ArtiBlastRadius");
+					SetValueForKey ("8", "use ArtiTeleport");
+					SetValueForKey ("7", "use ArtiTeleportOther");
+					SetValueForKey ("6", "use ArtiPork");
+					SetValueForKey ("5", "use ArtiInvulnerability2");
 				}
 			}
-			*/
+			if (last < 204)
+			{ // The old default for vsync was true, but with an unlimited framerate
+			  // now, false is a better default.
+				FBaseCVar *vsync = FindCVar ("vid_vsync", NULL);
+				if (vsync != NULL)
+				{
+					vsync->ResetToDefault ();
+				}
+			}
 			if (last < 207)
 			{ // Now that snd_midiprecache works again, you probably don't want it on.
 				FBaseCVar *precache = FindCVar ("snd_midiprecache", NULL);
@@ -545,6 +566,31 @@ void FGameConfigFile::DoGlobalSetup ()
 					UCVarValue v = var->GetGenericRep(CVAR_Bool);
 					vid_fullscreen = v.Float;
 				}
+			}
+			if (last < 221)
+			{
+				// Transfer the messed up mouse scaling config to something sane and consistent.
+#ifndef _WIN32
+				double xfact = 3, yfact = 2;
+#else
+				double xfact = in_mouse == 1? 1.5 : 4, yfact = 1;
+#endif
+				auto var = FindCVar("m_noprescale", NULL);
+				if (var != NULL)
+				{
+					UCVarValue v = var->GetGenericRep(CVAR_Bool);
+					if (v.Bool) xfact = yfact = 1;
+				}
+
+				var = FindCVar("mouse_sensitivity", NULL);
+				if (var != NULL)
+				{
+					UCVarValue v = var->GetGenericRep(CVAR_Float);
+					xfact *= v.Float;
+					yfact *= v.Float;
+				}
+				m_sensitivity_x = (float)xfact;
+				m_sensitivity_y = (float)yfact;
 
 			}
 		}

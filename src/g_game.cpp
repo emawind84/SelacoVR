@@ -207,16 +207,14 @@ CVAR (Bool,		invertmouse,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Invert mous
 CVAR (Bool,		invertmousex,	false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Invert mouse look left/right?
 CVAR (Bool,		freelook,		true,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always mlook?
 CVAR (Bool,		lookstrafe,		false,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Always strafe with mouse?
-CVAR (Float,	m_pitch,		1.f,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)		// Mouse speeds
-CVAR (Float,	m_yaw,			1.f,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 CVAR (Float,	m_forward,		1.f,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 CVAR (Float,	m_side,			2.f,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
  
 int 			turnheld;								// for accelerative turning 
  
 // mouse values are used once 
-int 			mousex;
-int 			mousey; 		
+float 			mousex;
+float 			mousey; 		
 
 FString			savegamefile;
 FString			savedescription;
@@ -724,7 +722,7 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	// Handle mice.
 	if (!buttonMap.ButtonDown(Button_Mlook) && !freelook)
 	{
-		forward += (int)((float)mousey * m_forward);
+		forward += xs_CRoundToInt(mousey * m_forward);
 	}
 
 	cmd->ucmd.pitch = LocalViewPitch >> 16;
@@ -736,7 +734,7 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	}
 
 	if (strafe || lookstrafe)
-		side += (int)((float)mousex * m_side);
+		side += xs_CRoundToInt(mousex * m_side);
 
 	mousex = mousey = 0;
 
@@ -1038,8 +1036,8 @@ bool G_Responder (event_t *ev)
 
 	// [RH] mouse buttons are sent as key up/down events
 	case EV_Mouse: 
-		mousex = (int)(ev->x * mouse_sensitivity);
-		mousey = (int)(ev->y * mouse_sensitivity);
+		mousex = ev->x;
+		mousey = ev->y;
 		break;
 	}
 

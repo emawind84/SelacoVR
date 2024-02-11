@@ -368,7 +368,6 @@ void D_GrabCVarDefaults()
 			}
 
 			CurrentFindCVar = sc.String;
-
 			if (lumpversion < 220)
 			{
 				CurrentFindCVar.ToLower();
@@ -387,9 +386,19 @@ void D_GrabCVarDefaults()
 				if (strcmp(CurrentFindCVar, "cd_drive") == 0)
 					break;
 			}
+			if (lumpversion < 221)
+			{
+				// removed cvar
+				// this one doesn't matter as much, since it depended on platform-specific values,
+				// and is something the user should change anyhow, so, let's just throw this value
+				// out.
+				if (strcmp(CurrentFindCVar, "mouse_sensitivity") == 0)
+					break;
+				if (strcmp(CurrentFindCVar, "m_noprescale") == 0)
+					break;
+			}
 
 			var = FindCVar(CurrentFindCVar, NULL);
-
 			if (var != NULL)
 			{
 				if (var->GetFlags() & CVAR_ARCHIVE)
@@ -449,47 +458,8 @@ CCMD(togglehud)
 	D_ToggleHud();
 }
 
-//==========================================================================
-//
-// D_PostEvent
-//
-// Called by the I/O functions when input is detected.
-//
-//==========================================================================
-
-void D_PostEvent (const event_t *ev)
-{
-	// Do not post duplicate consecutive EV_DeviceChange events.
-	if (ev->type == EV_DeviceChange && events[eventhead].type == EV_DeviceChange)
-	{
-		return;
-	}
-	events[eventhead] = *ev;
-	if (ev->type == EV_Mouse && menuactive == MENU_Off && ConsoleState != c_down && ConsoleState != c_falling && !primaryLevel->localEventManager->Responder(ev) && !paused)
-	{
-		if (buttonMap.ButtonDown(Button_Mlook) || freelook)
-		{
-			int look = int(ev->y * m_pitch * mouse_sensitivity * 16.0);
-			if (invertmouse)
-				look = -look;
-			G_AddViewPitch (look, true);
-			events[eventhead].y = 0;
-		}
-		if (!buttonMap.ButtonDown(Button_Strafe) && !lookstrafe)
-		{
-			int turn = int(ev->x * m_yaw * mouse_sensitivity * 8.0);
-			if (invertmousex)
-				turn = -turn;
-			G_AddViewAngle (turn, true);
-			events[eventhead].x = 0;
-		}
-		if ((events[eventhead].x | events[eventhead].y) == 0)
-		{
-			return;
-		}
-	}
-	eventhead = (eventhead+1)&(MAXEVENTS-1);
-}
+CVAR(Float, m_pitch, 1.f, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)		// Mouse speeds
+CVAR(Float, m_yaw, 1.f, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
 
 //==========================================================================
 //
@@ -2768,6 +2738,33 @@ bool System_WantLeftButton()
 	return (gamestate == GS_DEMOSCREEN || gamestate == GS_TITLELEVEL);
 }
 
+static bool System_DispatchEvent(event_t* ev)
+{
+	if (ev->type == EV_Mouse && menuactive == MENU_Off && ConsoleState != c_down && ConsoleState != c_falling && !primaryLevel->localEventManager->Responder(ev) && !paused)
+	{
+		if (buttonMap.ButtonDown(Button_Mlook) || freelook)
+		{
+			int look = int(ev->y * m_pitch * 16.0);
+			if (invertmouse) look = -look;
+			G_AddViewPitch(look, true);
+			ev->y = 0;
+		}
+		if (!buttonMap.ButtonDown(Button_Strafe) && !lookstrafe)
+		{
+			int turn = int(ev->x * m_yaw * 8.0);
+			if (invertmousex)
+				turn = -turn;
+			G_AddViewAngle(turn, true);
+			ev->x = 0;
+		}
+		if (ev->x == 0 && ev->y == 0)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 bool System_NetGame()
 {
 	return netgame;
@@ -3100,6 +3097,7 @@ static int D_DoomMain_Internal (void)
 		System_GetLocationDescription,
 		System_M_Dim,
 		System_GetPlayerName,
+		System_DispatchEvent,
 	};
 	sysCallbacks = &syscb;
 	
