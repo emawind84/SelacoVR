@@ -36,6 +36,8 @@ class CoopStatusScreen : StatusScreen
 			dofrags += fragSum (i);
 		}
 
+		cnt_otherkills = 0;
+
 		dofrags = !!dofrags;
 	}
 
@@ -52,7 +54,7 @@ class CoopStatusScreen : StatusScreen
 		int fsum;
 		bool stillticking;
 
-		if (acceleratestage && ng_state != 10)
+		if ((acceleratestage || autoskip) && ng_state != 12)
 		{
 			acceleratestage = 0;
 
@@ -68,8 +70,13 @@ class CoopStatusScreen : StatusScreen
 				if (dofrags)
 					cnt_frags[i] = fragSum (i);
 			}
+			cnt_otherkills = otherkills;
+
+			cnt_time = Thinker.Tics2Seconds(Plrs[me].stime);
+			cnt_total_time = Thinker.Tics2Seconds(wbs.totaltime);
+
 			PlaySound("intermission/nextstage");
-			ng_state = 10;
+			ng_state = 12;
 		}
 
 		if (ng_state == 2)
@@ -91,7 +98,14 @@ class CoopStatusScreen : StatusScreen
 				else
 					stillticking = true;
 			}
-		
+
+			cnt_otherkills += 2;
+
+			if (cnt_otherkills > otherkills)
+				cnt_otherkills = otherkills;
+			else
+				stillticking = true;
+
 			if (!stillticking)
 			{
 				PlaySound("intermission/nextstage");
@@ -145,10 +159,35 @@ class CoopStatusScreen : StatusScreen
 			if (!stillticking)
 			{
 				PlaySound("intermission/nextstage");
-				ng_state += 1 + 2*!dofrags;
+				ng_state ++;
 			}
 		}
 		else if (ng_state == 8)
+		{
+			if (!(bcnt&3))
+				PlaySound("intermission/tick");
+
+			stillticking = false;
+
+			cnt_time += 3;
+			cnt_total_time += 3;
+
+			int sec = Thinker.Tics2Seconds(Plrs[me].stime);
+			if (cnt_time > sec)
+			{
+				cnt_time = sec;
+				cnt_total_time = Thinker.Tics2Seconds(wbs.totaltime);
+			}
+			else
+				stillticking = true;
+
+			if (!stillticking)
+			{
+				PlaySound("intermission/nextstage");
+				ng_state += 1 + 2*!dofrags;
+			}
+		}
+		else if (ng_state == 10)
 		{
 			if (!(bcnt&3))
 				PlaySound("intermission/tick");
@@ -174,7 +213,7 @@ class CoopStatusScreen : StatusScreen
 				ng_state++;
 			}
 		}
-		else if (ng_state == 10)
+		else if (ng_state == 12)
 		{
 			if (acceleratestage)
 			{
@@ -286,8 +325,14 @@ class CoopStatusScreen : StatusScreen
 			y += lineheight + CleanYfac;
 		}
 
-		// Draw "MISSED" line
+		// Draw "OTHER" line
 		y += 3 * CleanYfac;
+		drawTextScaled(displayFont, name_x, y, Stringtable.Localize("$SCORE_OTHER"), FontScale, Font.CR_DARKGRAY);
+		drawPercentScaled(displayFont, kills_x, y, cnt_otherkills, wbs.maxkills, FontScale, Font.CR_DARKGRAY);
+		missed_kills -= cnt_otherkills;
+
+		// Draw "MISSED" line
+		y += height + 3 * CleanYfac;
 		drawTextScaled(displayFont, name_x, y, Stringtable.Localize("$SCORE_MISSED"), FontScale, Font.CR_DARKGRAY);
 		drawPercentScaled(displayFont, kills_x, y, missed_kills, wbs.maxkills, FontScale, Font.CR_DARKGRAY);
 		if (ng_state >= 4)
@@ -310,6 +355,16 @@ class CoopStatusScreen : StatusScreen
 			{
 				drawNumScaled(displayFont, secret_x, y, FontScale, wbs.maxsecret, 0, textcolor);
 			}
+		}
+
+		// Draw "TIME" line
+		y += height + 3 * CleanYfac;
+		drawTextScaled(displayFont, name_x, y, Stringtable.Localize("$TXT_IMTIME"), FontScale, textcolor);
+
+		if (ng_state >= 8)
+		{
+			drawTimeScaled(displayFont, kills_x, y, cnt_time, FontScale, textcolor);
+			drawTimeScaled(displayFont, secret_x, y, cnt_total_time, FontScale, textcolor);
 		}
 	}
 }
