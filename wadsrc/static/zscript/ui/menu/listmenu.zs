@@ -34,14 +34,6 @@ class ListMenuDescriptor : MenuDescriptor native
 		if (mVirtWidth == OptCleanScale) return m_cleanscale ? CleanScale : 200;
 		return mVirtHeight;
 	}
-	int DisplayWidth()
-	{
-		return CleanScale;
-	}
-	int DisplayHeight()
-	{
-		return CleanScale;
-	}
 }
 
 //=============================================================================

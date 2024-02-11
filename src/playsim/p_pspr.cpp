@@ -964,44 +964,6 @@ DEFINE_ACTION_FUNCTION(AActor, A_OverlayTranslation)
 
 //---------------------------------------------------------------------------
 //
-// PROC A_OverlayTranslation
-//
-//---------------------------------------------------------------------------
-
-DEFINE_ACTION_FUNCTION(AActor, A_OverlayTranslation)
-{
-	PARAM_ACTION_PROLOGUE(AActor);
-	PARAM_INT(layer);
-	PARAM_NAME(trname);
-
-	if (!ACTION_CALL_FROM_PSPRITE())
-		return 0;
-
-	DPSprite* pspr = self->player->FindPSprite(((layer != 0) ? layer : stateinfo->mPSPIndex));
-	if (pspr != nullptr)
-	{
-		// There is no constant for the empty name...
-		if (trname.GetChars()[0] == 0)
-		{
-			// an empty string resets to the default
-			// (unlike AActor::SetTranslation, there is no Default block for PSprites, so just set the translation to 0)
-			pspr->Translation = 0;
-			return 0;
-		}
-
-		int tnum = R_FindCustomTranslation(trname);
-		if (tnum >= 0)
-		{
-			pspr->Translation = tnum;
-		}
-		// silently ignore if the name does not exist, this would create some insane message spam otherwise.
-	}
-
-	return 0;
-}
-
-//---------------------------------------------------------------------------
-//
 // PROC OverlayX/Y
 // Action function to return the X/Y of an overlay.
 //---------------------------------------------------------------------------

@@ -132,7 +132,6 @@ enum
 	DTA_Indexed,			// Use an indexed texture combined with the given translation.
 	DTA_CleanTop,			// Like DTA_Clean but aligns to the top of the screen instead of the center.
 
-	DTA_CleanTop,			// Like DTA_Clean but aligns to the top of the screen instead of the center.
 };
 
 enum EMonospacing : int
