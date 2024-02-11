@@ -817,66 +817,6 @@ static void ParseAddListMenu(FScanner& sc)
 
 //=============================================================================
 //
-// [Player701] Common function for figuring out where to insert items
-// for AddListMenu and AddOptionMenu
-//
-//=============================================================================
-
-static int GetInsertIndex(FScanner& sc, DMenuDescriptor* desc)
-{
-	bool before = sc.CheckString("BEFORE");
-	bool after = sc.CheckString("AFTER");
-
-	int insertIndex = -1;
-
-	if (before || after)
-	{
-		// Find an existing menu item to use as insertion point
-		sc.MustGetString();
-
-		int n = desc->mItems.Size();
-		for (int i = 0; i < n; i++)
-		{
-			auto item = desc->mItems[i];
-
-			if (item->mAction == FName(sc.String))
-			{
-				insertIndex = before ? i : i + 1;
-				break;
-			}
-		}
-
-		// Inserting after the last item is the same as inserting at the end
-		if (insertIndex == n) insertIndex = -1;
-
-		// Don't error out if we haven't found a suitable item
-		// to avoid backwards compatibility issues.
-	}
-
-	return insertIndex;
-}
-
-//=============================================================================
-//
-// [Player701] Allow extending list menus
-//
-//=============================================================================
-
-static void ParseAddListMenu(FScanner& sc)
-{
-	sc.MustGetString();
-
-	DMenuDescriptor** pOld = MenuDescriptors.CheckKey(sc.String);
-	if (pOld == nullptr || *pOld == nullptr || !(*pOld)->IsKindOf(RUNTIME_CLASS(DListMenuDescriptor)))
-	{
-		sc.ScriptError("%s is not a list menu that can be extended", sc.String);
-		return;
-	}
-	ParseListMenuBody(sc, (DListMenuDescriptor*)(*pOld), GetInsertIndex(sc, *pOld));
-}
-
-//=============================================================================
-//
 //
 //
 //=============================================================================
