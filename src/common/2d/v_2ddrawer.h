@@ -156,7 +156,8 @@ public:
 				mDrawMode == other.mDrawMode &&
 				mFlags == other.mFlags &&
 				mLightLevel == other.mLightLevel &&
-				mColor1.d == other.mColor1.d;
+				mColor1.d == other.mColor1.d &&
+				mOutside2D == other.mOutside2D;
 
 		}
 	};
