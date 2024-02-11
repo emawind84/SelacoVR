@@ -292,7 +292,7 @@ static void ParseListMenuBody(FScanner &sc, DListMenuDescriptor *desc, int inser
 			if (!CheckSkipGameBlock(sc, false))
 			{
 				// recursively parse sub-block
-				ParseListMenuBody(sc, desc);
+				ParseListMenuBody(sc, desc, insertIndex);
 			}
 		}
 		else if (sc.Compare("ifoption"))
@@ -945,7 +945,7 @@ static void ParseOptionMenuBody(FScanner &sc, DOptionMenuDescriptor *desc, int i
 			if (!CheckSkipGameBlock(sc, false))
 			{
 				// recursively parse sub-block
-				ParseOptionMenuBody(sc, desc);
+				ParseOptionMenuBody(sc, desc, insertIndex);
 			}
 		}
 		else if (sc.Compare("ifoption"))

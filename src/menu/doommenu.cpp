@@ -1260,7 +1260,7 @@ bool  CheckSkipGameOptionBlock(const char *str)
 	bool filter = false;
 	if (!stricmp(str, "ReadThis")) filter |= gameinfo.drawreadthis;
 	else if (!stricmp(str, "Swapmenu")) filter |= gameinfo.swapmenu;
-	else if (!stricmp("DoubleBindingMenu")) filter |= menu_showdoublebindings;
+	else if (!stricmp(str, "DoubleBindingMenu")) filter |= menu_showdoublebindings;
 	return filter;
 }
 
