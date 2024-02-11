@@ -15,7 +15,11 @@ int I_GetTime();
 // same, but using nanoseconds
 uint64_t I_GetTimeNS();
 
+// Called by Build games in lieu of totalclock, returns current time in tics at ticrate of 120.
+int I_GetBuildTime();
+
 double I_GetTimeFrac();
+double I_GetBuildTimeFrac();
 
 // like I_GetTime, except it waits for a new tic before returning
 int I_WaitForTic(int);

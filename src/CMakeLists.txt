@@ -1029,6 +1029,7 @@ set (PCH_SOURCES
 	common/textures/skyboxtexture.cpp
 	common/textures/animtexture.cpp
 	common/textures/v_collection.cpp
+	common/textures/animlib.cpp
 	common/textures/formats/automaptexture.cpp
 	common/textures/formats/brightmaptexture.cpp
 	common/textures/formats/buildtexture.cpp
@@ -1047,6 +1048,7 @@ set (PCH_SOURCES
 	common/textures/formats/shadertexture.cpp
 	common/textures/formats/tgatexture.cpp
 	common/textures/formats/stbtexture.cpp
+	common/textures/formats/anmtexture.cpp
 	common/textures/hires/hqresize.cpp
 	common/models/models_md3.cpp
 	common/models/models_md2.cpp
@@ -1079,6 +1081,7 @@ set (PCH_SOURCES
 	common/utility/zstrformat.cpp
 	common/utility/name.cpp
 	common/utility/r_memory.cpp
+	common/thirdparty/base64.cpp
 	common/thirdparty/md5.cpp
  	common/thirdparty/superfasthash.cpp
 	common/filesystem/filesystem.cpp

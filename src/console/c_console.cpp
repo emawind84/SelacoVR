@@ -123,6 +123,12 @@ int			ConBottom, ConScroll, RowAdjust;
 uint64_t	CursorTicker;
 constate_e	ConsoleState = c_up;
 
+double NotifyFontScale = 1;
+
+void C_SetNotifyFontScale(double scale)
+{
+	NotifyFontScale = scale;
+}
 
 static int TopLine, InsertLine;
 
@@ -154,6 +160,7 @@ CUSTOM_CVAR(Int, con_scaletext, 0, CVAR_ARCHIVE)		// Scale notify text at high r
 {
 	if (self < 0) self = 0;
 }
+CVAR(Bool, con_pulsetext, false, CVAR_ARCHIVE)
 
 CUSTOM_CVAR(Int, con_scale, 0, CVAR_ARCHIVE)
 {
@@ -940,6 +947,11 @@ int PrintString (int iprintlevel, const char *outline)
 	return 0;	// Don't waste time on calculating this if nothing at all was printed...
 }
 
+void C_ClearMessages()
+{
+	NotifyStrings.Clear();
+}
+
 int VPrintf (int printlevel, const char *format, va_list parms)
 {
 	FString outline;
@@ -1116,6 +1128,10 @@ void FNotifyBuffer::Draw()
 				continue;
 
 			double alpha = (j < NOTIFYFADETIME) ? 1. * j / NOTIFYFADETIME : 1;
+			if (con_pulsetext)
+			{
+				alpha *= 0.7 + 0.3 * sin(I_msTime() / 100.);
+			}
 
 			if (notify.PrintLevel >= PRINTLEVELS)
 				color = CR_UNTRANSLATED;

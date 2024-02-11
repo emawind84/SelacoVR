@@ -2952,6 +2952,7 @@ static void CheckForHacks(BuildInfo& buildinfo)
 	{ 
 		// This must alter the size of both the texture image and the game texture.
 		buildinfo.Height = buildinfo.Parts[0].TexImage->GetImage()->GetHeight();
+		buildinfo.texture->SetSize(buildinfo.Width, buildinfo.Height);
 		return;
 	}
 
@@ -3843,7 +3844,7 @@ void I_UpdateWindowTitle()
 	switch (I_FriendlyWindowTitle)
 	{
 	case 1:
-		if (level.LevelName && level.LevelName.GetChars()[0])
+		if (level.LevelName.IsNotEmpty())
 		{
 			titlestr.Format("%s - %s", level.LevelName.GetChars(), GameStartupInfo.Name.GetChars());
 			break;
