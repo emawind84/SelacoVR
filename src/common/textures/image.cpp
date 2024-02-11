@@ -97,13 +97,11 @@ PalettedPixels FImageSource::GetCachedPalettedPixels(int conversion)
 
 		if (cache->RefCount > 1)
 		{
-			//Printf("returning reference to %s, refcount = %d\n", name.GetChars(), cache->RefCount);
 			ret.Pixels.Set(cache->Pixels.Data(), cache->Pixels.Size());
 			cache->RefCount--;
 		}
 		else if (cache->Pixels.Size() > 0)
 		{
-			//Printf("returning contents of %s, refcount = %d\n", name.GetChars(), cache->RefCount);
 			ret.PixelStore = std::move(cache->Pixels);
 			ret.Pixels.Set(ret.PixelStore.Data(), ret.PixelStore.Size());
 			precacheDataPaletted.Delete(index);
@@ -120,13 +118,11 @@ PalettedPixels FImageSource::GetCachedPalettedPixels(int conversion)
 		if (!info || info->second <= 1 || conversion != normal)
 		{
 			// This is either the only copy needed or some access outside the caching block. In these cases create a new one and directly return it.
-			//Printf("returning fresh copy of %s\n", name.GetChars());
 			ret.PixelStore = CreatePalettedPixels(conversion);
 			ret.Pixels.Set(ret.PixelStore.Data(), ret.PixelStore.Size());
 		}
 		else
 		{
-			//Printf("creating cached entry for %s, refcount = %d\n", name.GetChars(), info->second);
 			// This is the first time it gets accessed and needs to be placed in the cache.
 			PrecacheDataPaletted *pdp = &precacheDataPaletted[precacheDataPaletted.Reserve(1)];
 

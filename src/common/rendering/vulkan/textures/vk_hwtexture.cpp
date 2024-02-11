@@ -182,13 +182,11 @@ void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManag
 		return; // We cannot reset the loaded image on a different thread
 	}
 
-	//auto bufManager = fb->GetBGCommands();
 	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, fb->device->uploadFamilySupportsGraphics);
 
 	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
 	if (bufManager->TransferDeleteList->TotalSize > 1) {
 		bufManager->WaitForCommands(false, true);
-		//hwState = READY;
 	}
 }
 
