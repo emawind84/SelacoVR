@@ -832,7 +832,6 @@ set (PCH_SOURCES
 	gameconfigfile.cpp
 	gitinfo.cpp
 	hu_scores.cpp
-	i_net.cpp
 	m_cheat.cpp
 	m_misc.cpp
 	playsim/p_acs.cpp
@@ -1094,6 +1093,7 @@ set (PCH_SOURCES
 	common/filesystem/file_zip.cpp
 	common/filesystem/file_pak.cpp
 	common/filesystem/file_whres.cpp
+	common/filesystem/file_ssi.cpp
 	common/filesystem/file_directory.cpp
 	common/filesystem/resourcefile.cpp
 	common/engine/cycler.cpp
@@ -1102,6 +1102,7 @@ set (PCH_SOURCES
 	common/engine/sc_man.cpp
 	common/engine/palettecontainer.cpp
 	common/engine/stringtable.cpp
+	common/engine/i_net.cpp
 	common/engine/i_interface.cpp
 	common/engine/renderstyle.cpp
 	common/engine/v_colortables.cpp
