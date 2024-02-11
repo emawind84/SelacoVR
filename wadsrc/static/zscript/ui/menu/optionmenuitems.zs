@@ -127,7 +127,7 @@ class OptionMenuItemSubmenu : OptionMenuItem
 
 	override bool Activate()
 	{
-		Menu.MenuSound("menu/choose");
+		Menu.MenuSound("menu/advance");
 		Menu.SetMenu(mAction, mParam);
 		return true;
 	}
