@@ -1,6 +1,6 @@
 // this file has the simplified menu here.
 // this file is *only* for options that are relevant to a novice user of GZDoom
-// this file needs to be regularly pruned, with options coalesced as much as possible. any and all verbosity should go to the classic menus.
+// this file needs to be regularly pruned, with options coalesced as much as possible. any and all verbosity should go to the "full" menus.
 
 OptionMenu "OptionsMenuSimple" protected
 {
@@ -11,14 +11,17 @@ OptionMenu "OptionsMenuSimple" protected
 	StaticText " "
 	Submenu "$OPTMNU_SOUND",			"SoundOptionsSimple"
 	Submenu "$OPTMNU_DISPLAY",			"VideoOptionsSimple"
-	Submenu "$HUDMNU_SCALEOPT",				"ScalingOptionsSimple"
+	Submenu "$HUDMNU_SCALEOPT",			"ScalingOptionsSimple"
+	StaticText " "
+	Submenu "$OPTMNU_MISCELLANEOUS",	"MiscOptionsSimple"	
 	StaticText " "
 	Submenu "$OS_TITLE", "os_Menu"
 	StaticText " "
 	Submenu "$OPTMNU_FULLOPTIONS", "OptionsMenuFull"
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS",	"reset2defaults"
+	SafeCommand	"$OPTMNU_DEFAULTS",		"reset2defaults"
 	SafeCommand	"$OPTMNU_RESETTOSAVED",	"reset2saved"
+	SafeCommand	"$OPTMNU_WRITEINI",		"writeini"
 	Command "$OPTMNU_CONSOLE",			"menuconsole"
 	StaticText " "
 }
@@ -39,7 +42,7 @@ OptionMenu SoundOptionsSimple protected
 
 OptionMenu VideoOptionsSimple protected
 {
-	Title "$VIDMNU_TITLE"
+	Title "$DSPLYMNU_TITLE"
 
 	Option "$VIDMNU_PREFERBACKEND",		"vid_preferbackend", "PreferBackend"
 	Option "$VIDMNU_RENDERMODE",		"vid_rendermode", "RenderMode"
@@ -82,4 +85,16 @@ OptionMenu ScalingOptionsSimple protected
 	StaticText "$VIDMNU_TITLE"
 	Option "$VIDMNU_SCALEMODE",			"vid_scalemode", "ScaleModes"
 	Slider "$VIDMNU_SCALEFACTOR",		"vid_scalefactor", 0.25, 2.0, 0.25, 2
+}
+
+OptionMenu MiscOptionsSimple protected
+{
+	Title "$MISCMNU_TITLE"
+	Option "$MISCMNU_QUERYIWAD",				"queryiwad", "OnOff"
+	Option "$MISCMNU_NOCHEATS",					"nocheats", "OnOff"
+	Option "$MISCMNU_ALLCHEATS",				"allcheats", "OnOff"
+	Option "$MISCMNU_ENABLEAUTOSAVES",			"disableautosave", "Autosave"
+	Option "$MISCMNU_DEHLOAD",					"dehload", "dehopt"
+	Option "$MISCMNU_ENABLESCRIPTSCREENSHOTS",	"enablescriptscreenshot", "OnOff"
+	Option "$OPTMNU_LANGUAGE",					"language", "LanguageOptions"
 }

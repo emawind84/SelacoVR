@@ -267,7 +267,7 @@ static bool CheckSkipOptionBlock(FScanner &sc)
 //
 //=============================================================================
 
-static void ParseListMenuBody(FScanner &sc, DListMenuDescriptor *desc, bool &sizeset, bool &sizecompatible)
+static void DoParseListMenuBody(FScanner &sc, DListMenuDescriptor *desc, bool &sizecompatible, int insertIndex)
 {
 	sc.MustGetStringName("{");
 	while (!sc.CheckString("}"))
@@ -282,7 +282,7 @@ static void ParseListMenuBody(FScanner &sc, DListMenuDescriptor *desc, bool &siz
 			if (!CheckSkipGameBlock(sc))
 			{
 				// recursively parse sub-block
-				ParseListMenuBody(sc, desc, sizeset, sizecompatible);
+				DoParseListMenuBody(sc, desc, sizecompatible, insertIndex);
 			}
 		}
 		else if (sc.Compare("ifnotgame"))
@@ -290,7 +290,7 @@ static void ParseListMenuBody(FScanner &sc, DListMenuDescriptor *desc, bool &siz
 			if (!CheckSkipGameBlock(sc, false))
 			{
 				// recursively parse sub-block
-				ParseListMenuBody(sc, desc, sizeset, sizecompatible);
+				DoParseListMenuBody(sc, desc, sizecompatible, insertIndex);
 			}
 		}
 		else if (sc.Compare("ifoption"))
@@ -298,7 +298,7 @@ static void ParseListMenuBody(FScanner &sc, DListMenuDescriptor *desc, bool &siz
 			if (!CheckSkipOptionBlock(sc))
 			{
 				// recursively parse sub-block
-				ParseListMenuBody(sc, desc, sizeset, sizecompatible);
+				DoParseListMenuBody(sc, desc, sizecompatible, insertIndex);
 			}
 		}
 		else if (sc.Compare("Class"))
@@ -380,7 +380,7 @@ static void ParseListMenuBody(FScanner &sc, DListMenuDescriptor *desc, bool &siz
 		}
 		else if (sc.Compare("size"))
 		{
-			sizeset = true;
+			desc->mCustomSizeSet = true;
 			if (sc.CheckNumber())
 			{
 				desc->mVirtWidth = sc.Number;
@@ -589,6 +589,18 @@ static void ParseListMenuBody(FScanner &sc, DListMenuDescriptor *desc, bool &siz
 	}
 }
 
+static void ParseListMenuBody(FScanner& sc, DListMenuDescriptor* desc, int insertIndex)
+{
+	bool sizecompatible = true;
+	DoParseListMenuBody(sc, desc, sizecompatible, insertIndex);
+	if (!desc->mCustomSizeSet && !sizecompatible)
+	{
+		// No custom size and incompatible items, 
+		// so force clean scaling for this menu
+		desc->mVirtWidth = -1;
+	}
+}
+
 //=============================================================================
 //
 //
@@ -736,17 +748,71 @@ static void ParseListMenu(FScanner &sc)
 	desc->mCenter = false;
 	desc->mFromEngine = fileSystem.GetFileContainer(sc.LumpNum) == 0;	// flags menu if the definition is from the IWAD.
 	desc->mVirtWidth = -2;
+	desc->mCustomSizeSet = false;
 	desc->mForceList = false;
 
-	bool sizeset = false;
-	bool sizecompatible = true;
-	ParseListMenuBody(sc, desc, sizeset, sizecompatible);
-	if (!sizeset && sizecompatible) // allow unclean scaling on this menu
+	ParseListMenuBody(sc, desc, -1);
+	ReplaceMenu(sc, desc);
+}
+
+//=============================================================================
+//
+// [Player701] Common function for figuring out where to insert items
+// for AddListMenu and AddOptionMenu
+//
+//=============================================================================
+
+static int GetInsertIndex(FScanner& sc, DMenuDescriptor* desc)
+{
+	bool before = sc.CheckString("BEFORE");
+	bool after = sc.CheckString("AFTER");
+
+	int insertIndex = -1;
+
+	if (before || after)
 	{
-		desc->mVirtWidth = -2;
+		// Find an existing menu item to use as insertion point
+		sc.MustGetString();
+
+		auto n = desc->mItems.Size();
+		for (unsigned int i = 0; i < n; i++)
+		{
+			auto item = desc->mItems[i];
+
+			if (item->mAction == sc.String)
+			{
+				insertIndex = before ? i : i + 1;
+				break;
+			}
+		}
+
+		// Inserting after the last item is the same as inserting at the end
+		if (insertIndex == n) insertIndex = -1;
+
+		// Don't error out if we haven't found a suitable item
+		// to avoid backwards compatibility issues.
 	}
 
-	ReplaceMenu(sc, desc);
+	return insertIndex;
+}
+
+//=============================================================================
+//
+// [Player701] Allow extending list menus
+//
+//=============================================================================
+
+static void ParseAddListMenu(FScanner& sc)
+{
+	sc.MustGetString();
+
+	DMenuDescriptor** pOld = MenuDescriptors.CheckKey(sc.String);
+	if (pOld == nullptr || *pOld == nullptr || !(*pOld)->IsKindOf(RUNTIME_CLASS(DListMenuDescriptor)))
+	{
+		sc.ScriptError("%s is not a list menu that can be extended", sc.String);
+		return;
+	}
+	ParseListMenuBody(sc, (DListMenuDescriptor*)(*pOld), GetInsertIndex(sc, *pOld));
 }
 
 //=============================================================================
@@ -1435,7 +1501,7 @@ void M_ParseMenuDefs()
 			else if (sc.Compare("DEFAULTLISTMENU"))
 			{
 				bool s = false;
-				ParseListMenuBody(sc, DefaultListMenuSettings, s, s);
+				DoParseListMenuBody(sc, DefaultListMenuSettings, s, -1);
 				if (DefaultListMenuSettings->mItems.Size() > 0)
 				{
 					I_FatalError("You cannot add menu items to the menu default settings.");

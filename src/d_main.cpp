@@ -2089,7 +2089,7 @@ static void AddAutoloadFiles(const char *autoname)
 		}
 		if (GameStartupInfo.LoadWidescreen == 1 || (GameStartupInfo.LoadWidescreen != 0 && autoloadwidescreen))
 		{
-			const char *wswad = BaseFileSearch ("game_widescreen_gfx.pk3", NULL, true, GameConfig);
+			const char *wswad = BaseFileSearch ("game_widescreen_gfx.pk3", NULL, false, GameConfig);
 			if (wswad)
 				D_AddFile (allwads, wswad, true, -1, GameConfig);
 		}
