@@ -315,11 +315,6 @@ void FLevelLocals::ClearLevelData()
 	DialogueRoots.Clear();
 	ClassRoots.Clear();
 
-	// delete allocated data in the level arrays.
-	if (sectors.Size() > 0)
-	{
-		delete[] sectors[0].e;
-	}
 	for (auto &sub : subsectors)
 	{
 		if (sub.BSP != nullptr) delete sub.BSP;
@@ -336,6 +331,7 @@ void FLevelLocals::ClearLevelData()
 	canvasTextureInfo.EmptyList();
 	sections.Clear();
 	segs.Clear();
+	extsectors.Clear();
 	sectors.Clear();
 	linebuffer.Clear();
 	subsectorbuffer.Clear();

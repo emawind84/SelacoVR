@@ -1597,6 +1597,7 @@ class PlayerPawn : Actor
 	virtual void PlayerThink()
 	{
 		let player = self.player;
+		prevBob = player.bob;
 		UserCmd cmd = player.cmd;
 		
 		CheckFOV();

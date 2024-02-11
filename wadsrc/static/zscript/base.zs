@@ -128,6 +128,30 @@ struct TexMan
 	native static void SetCameraToTexture(Actor viewpoint, String texture, double fov);
 }
 
+enum EScaleMode
+{
+	FSMode_None = 0,
+	FSMode_ScaleToFit = 1,
+	FSMode_ScaleToFill = 2,
+	FSMode_ScaleToFit43 = 3,
+	FSMode_ScaleToScreen = 4,
+	FSMode_ScaleToFit43Top = 5,
+	FSMode_ScaleToFit43Bottom = 6,
+	FSMode_ScaleToHeight = 7,
+
+
+	FSMode_Max,
+
+	// These all use ScaleToFit43, their purpose is to cut down on verbosity because they imply the virtual screen size.
+	FSMode_Predefined = 1000,
+	FSMode_Fit320x200 = 1000,
+	FSMode_Fit320x240,
+	FSMode_Fit640x400,
+	FSMode_Fit640x480,
+	FSMode_Fit320x200Top,
+	FSMode_Predefined_Max,
+};
+
 enum DrawTextureTags
 {
 	TAG_USER = (1<<30),
@@ -262,6 +286,8 @@ struct Screen native
 	native static void ClearClipRect();
 	native static int, int, int, int GetClipRect();
 	native static int, int, int, int GetViewWindow();
+	native static double, double, double, double GetFullscreenRect(double vwidth, double vheight, int fsmode);
+
 	
 	
 	// This is a leftover of the abandoned Inventory.DrawPowerup method.

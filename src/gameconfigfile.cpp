@@ -592,6 +592,7 @@ void FGameConfigFile::DoGlobalSetup ()
 				m_sensitivity_x = (float)xfact;
 				m_sensitivity_y = (float)yfact;
 
+				adl_volume_model = 0;
 			}
 		}
 	}

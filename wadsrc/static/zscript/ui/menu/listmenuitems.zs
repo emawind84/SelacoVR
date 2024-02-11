@@ -35,14 +35,32 @@
 
 class ListMenuItem : MenuItemBase
 {
-	protected void DrawText(ListMenuDescriptor desc, Font fnt, int color, double x, double y, String text, bool ontop = false) // hack
+	protected void DrawText(ListMenuDescriptor desc, Font fnt, int color, double x, double y, String text, bool ontop = false)
 	{
-		screen.DrawText(fnt, color, x, y, text, DTA_Clean, true);
+		int w = desc ? desc.DisplayWidth() : ListMenuDescriptor.CleanScale;
+		int h = desc ? desc.DisplayHeight() : -1;
+		if (w == ListMenuDescriptor.CleanScale)
+		{
+			screen.DrawText(fnt, color, x, y, text, ontop? DTA_CleanTop : DTA_Clean, true);
+		}
+		else
+		{
+			screen.DrawText(fnt, color, x, y, text, DTA_VirtualWidth, w, DTA_VirtualHeight, h, DTA_FullscreenScale, FSMode_ScaleToFit43);
+		}
 	}
 
-	protected void DrawTexture(ListMenuDescriptor desc, TextureID tex, double x, double y, bool ontop = false) // hack
+	protected void DrawTexture(ListMenuDescriptor desc, TextureID tex, double x, double y, bool ontop = false)
 	{
-		screen.DrawTexture(tex, true, x, y, DTA_Clean, true);
+		int w = desc ? desc.DisplayWidth() : ListMenuDescriptor.CleanScale;
+		int h = desc ? desc.DisplayHeight() : -1;
+		if (w == ListMenuDescriptor.CleanScale)
+		{
+			screen.DrawTexture(tex, true, x, y, ontop ? DTA_CleanTop : DTA_Clean, true);
+		}
+		else
+		{
+			screen.DrawTexture(tex, true, x, y, DTA_VirtualWidth, w, DTA_VirtualHeight, h, DTA_FullscreenScale, FSMode_ScaleToFit43);
+		}
 	}
 
 	virtual void DrawSelector(double xofs, double yofs, TextureID tex, ListMenuDescriptor desc = null)
@@ -51,18 +69,12 @@ class ListMenuItem : MenuItemBase
 		{
 			if ((Menu.MenuTime() % 8) < 6)
 			{
-				screen.DrawText(ConFont, OptionMenuSettings.mFontColorSelection,
-					(mXpos + xofs - 160) * CleanXfac + screen.GetWidth() / 2,
-					(mYpos + yofs - 100) * CleanYfac + screen.GetHeight() / 2,
-					"\xd",
-					DTA_CellX, 8 * CleanXfac,
-					DTA_CellY, 8 * CleanYfac
-					);
+				DrawText(desc, ConFont, OptionMenuSettings.mFontColorSelection, mXpos + xofs, mYpos + yofs + 8, "\xd");
 			}
 		}
 		else
 		{
-			screen.DrawTexture (tex, true, mXpos + xofs, mYpos + yofs, DTA_Clean, true);
+			DrawTexture(desc, tex, mXpos + xofs, mYpos + yofs);
 		}
 	}
 
@@ -105,36 +117,19 @@ class ListMenuItemStaticPatch : ListMenuItem
 			return;
 		}
 
-		let font = generic_ui? NewSmallFont : mFont;
-
 		double x = mXpos;
 		Vector2 vec = TexMan.GetScaledSize(mTexture);
-		if (mYpos >= 0)
+
+		if (mSubstitute == "" || TexMan.OkForLocalization(mTexture, mSubstitute))
 		{
-			if (mSubstitute == "" || TexMan.OkForLocalization(mTexture, mSubstitute))
-			{
-				if (mCentered) x -= vec.X / 2;
-				screen.DrawTexture (mTexture, true, x, mYpos, DTA_Clean, true);
-			}
-			else
-			{
-				if (mCentered) x -= font.StringWidth(mSubstitute)/2;
-				screen.DrawText(font, mColor, x, mYpos, mSubstitute, DTA_Clean, true);
-			}
+			if (mCentered) x -= vec.X / 2;
+			DrawTexture(desc, mTexture, x, abs(mYpos), mYpos < 0);
 		}
 		else
 		{
-			x = (mXpos - 160) * CleanXfac + (Screen.GetWidth()>>1);
-			if (mSubstitute == "" || TexMan.OkForLocalization(mTexture, mSubstitute))
-			{
-				if (mCentered) x -= (vec.X * CleanXfac)/2;
-				screen.DrawTexture (mTexture, true, x, -mYpos*CleanYfac, DTA_CleanNoMove, true);
-			}
-			else
-			{
-				if (mCentered) x -= (font.StringWidth(mSubstitute) * CleanXfac)/2;
-				screen.DrawText(font, mColor, x, mYpos, mSubstitute, DTA_CleanNoMove, true);
-			}
+			let font = generic_ui ? NewSmallFont : mFont;
+			if (mCentered) x -= font.StringWidth(mSubstitute) / 2;
+			DrawText(desc, font, mColor, x, abs(mYpos), mSubstitute, mYpos < 0);
 		}
 	}
 }
@@ -185,18 +180,10 @@ class ListMenuItemStaticText : ListMenuItem
 			let font = generic_ui? NewSmallFont : mFont;
 
 			String text = Stringtable.Localize(mText);
-			if (mYpos >= 0)
-			{
-				double x = mXpos;
-				if (mCentered) x -= font.StringWidth(text)/2;
-				screen.DrawText(font, mColor, x, mYpos, text, DTA_Clean, true);
-			}
-			else
-			{
-				double x = (mXpos - 160) * CleanXfac + (Screen.GetWidth() >> 1);
-				if (mCentered) x -= (font.StringWidth(text) * CleanXfac)/2;
-				screen.DrawText (font, mColor, x, -mYpos*CleanYfac, text, DTA_CleanNoMove, true);
-			}
+
+			double x = mXpos;
+			if (mCentered) x -= font.StringWidth(text) / 2;
+			DrawText(desc, font, mColor, x, abs(mYpos), text, mYpos < 0);
 		}
 	}
 }
@@ -306,8 +293,8 @@ class ListMenuItemTextItem : ListMenuItemSelectable
 	
 	override void Draw(bool selected, ListMenuDescriptor desc)
 	{
-		let font = generic_ui? NewSmallFont : mFont;
-		screen.DrawText(font, selected ? mColorSelected : mColor, mXpos, mYpos, mText, DTA_Clean, true);
+		let font = generic_ui ? NewSmallFont : mFont;
+		DrawText(desc, font, selected ? mColorSelected : mColor, mXpos, mYpos, mText);
 	}
 	
 	override int GetWidth()
@@ -343,7 +330,7 @@ class ListMenuItemPatchItem : ListMenuItemSelectable
 	
 	override void Draw(bool selected, ListMenuDescriptor desc)
 	{
-		screen.DrawTexture (mTexture, true, mXpos, mYpos, DTA_Clean, true);
+		DrawTexture(desc, mTexture, mXpos, mYpos);
 	}
 	
 	override int GetWidth()

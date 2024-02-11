@@ -88,6 +88,8 @@ public:
 	EColorRange mFontColor2;
 	bool mCenter;
 	bool mFromEngine;
+	int mVirtWidth;
+	int mVirtHeight;
 	bool mForceList;
 
 	void Reset();
