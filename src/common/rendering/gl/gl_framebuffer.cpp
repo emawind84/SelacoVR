@@ -159,9 +159,37 @@ bool GlTexLoadThread::loadResource(GlTexLoadIn & input, GlTexLoadOut & output) {
 	// Load pixels directly with the reader we copied on the main thread
 	auto* src = input.imgSource;
 	FBitmap pixels;
-	pixels.Create(src->GetWidth(), src->GetHeight());	// TODO: Error checking
 
-	output.isTranslucent = src->ReadPixels(params, &pixels);
+	int exx = input.spi.shouldExpand;
+	int srcWidth = src->GetWidth();
+	int srcHeight = src->GetHeight();
+	int buffWidth = src->GetWidth() + 2 * exx;
+	int buffHeight = src->GetHeight() + 2 * exx;
+
+	pixels.Create(buffWidth, buffHeight);	// TODO: Error checking
+
+	if (exx) {
+		// This is incredibly wasteful, but necessary for now since we can't read the bitmap with an offset into a larger buffer
+		// Read into a buffer and blit 
+		FBitmap srcBitmap;
+		srcBitmap.Create(srcWidth, srcHeight);
+		output.isTranslucent = src->ReadPixels(params, &srcBitmap);
+		pixels.Blit(exx, exx, srcBitmap);
+
+		// If we need sprite positioning info, generate it here and assign it in the main thread later
+		if (input.spi.generateSpi) {
+			FGameTexture::GenerateInitialSpriteData(output.spi.info, &srcBitmap, input.spi.shouldExpand, input.spi.notrimming);
+		}
+	}
+	else {
+		output.isTranslucent = src->ReadPixels(params, &pixels);
+
+		if (input.spi.generateSpi) {
+			FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+		}
+	}
+
+	//output.isTranslucent = src->ReadPixels(params, &pixels);
 
 	delete input.params;
 
@@ -170,9 +198,9 @@ bool GlTexLoadThread::loadResource(GlTexLoadIn & input, GlTexLoadOut & output) {
 	output.tex->BackgroundCreateTexture(pixels.GetPixels(), pixels.GetWidth(), pixels.GetHeight(), input.texUnit, mipmap, indexed, "GlTexLoadThread::loadResource()");
 
 	// If we need sprite positioning info, generate it here and assign it in the main thread later
-	if (input.spi.generateSpi) {
+	/*if (input.spi.generateSpi) {
 		FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
-	}
+	}*/
 
 	// Always return true, because failed images need to be marked as unloadable
 	// TODO: Mark failed images as unloadable so they don't keep coming back to the queue
@@ -251,6 +279,7 @@ bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, int translation,
 	FResourceLump* rLump = lump >= 0 ? fileSystem.GetFileAt(lump) : nullptr;
 	FImageLoadParams* params = nullptr;
 	GlTexLoadSpi spi = {};
+	bool shouldExpand = mat->sourcetex->ShouldExpandSprite() && (layer->scaleFlags & CTF_Expand);
 
 	// If the texture is already submitted to the cache, find it and move it to the normal queue to reprioritize it
 	if (rLump && !secondary && systex->GetState(0) == IHardwareTexture::HardwareState::CACHING) {
@@ -277,14 +306,9 @@ bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, int translation,
 		if (params != nullptr) {
 			if (makeSPI) {
 				// Only generate SPI if it's not already there
-				if (!mat->sourcetex->HasSpritePositioning()) {
-					spi.generateSpi = true;
-					spi.notrimming = mat->sourcetex->GetNoTrimming();
-					spi.shouldExpand = mat->sourcetex->ShouldExpandSprite();
-				}
-				else {
-					spi.generateSpi = false;
-				}
+				spi.generateSpi = !mat->sourcetex->HasSpritePositioning();
+				spi.notrimming = mat->sourcetex->GetNoTrimming();
+				spi.shouldExpand = shouldExpand;
 			}
 			else {
 				spi.generateSpi = false;
@@ -344,7 +368,7 @@ bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, int translation,
 					layer->layerTexture->GetImage(),
 					params,
 					{
-						false, false, false
+						false, shouldExpand, true
 					},
 					syslayer,
 					nullptr,

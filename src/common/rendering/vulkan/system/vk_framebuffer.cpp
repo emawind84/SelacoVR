@@ -695,7 +695,7 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 	FImageLoadParams *params;
 	VkTexLoadSpi spi = {};
 
-	bool shouldExpand = mat->sourcetex->ShouldExpandSprite() && (layer->scaleFlags & CTF_Expand);;
+	bool shouldExpand = mat->sourcetex->ShouldExpandSprite() && (layer->scaleFlags & CTF_Expand);
 
 	// If the texture is already submitted to the cache, find it and move it to the normal queue to reprioritize it
 	if (rLump && !secondary && systex->GetState() == IHardwareTexture::HardwareState::CACHING) {
