@@ -3074,13 +3074,6 @@ static int D_DoomMain_Internal (void)
 	buttonMap.GetButton(Button_Mlook)->bReleaseLock = true;
 	buttonMap.GetButton(Button_Klook)->bReleaseLock = true;
 
-	static StringtableCallbacks stblcb =
-	{
-		StrTable_ValidFilter,
-		StrTable_GetGender
-	};
-	GStrings.SetCallbacks(&stblcb);
-
 	sysCallbacks = {
 		System_WantGuiCapture,
 		System_WantLeftButton,
@@ -3097,6 +3090,9 @@ static int D_DoomMain_Internal (void)
 		System_M_Dim,
 		System_GetPlayerName,
 		System_DispatchEvent,
+		StrTable_ValidFilter,
+		StrTable_GetGender
+
 	};
 
 	
@@ -3183,16 +3179,6 @@ static int D_DoomMain_Internal (void)
 	}
 
 	// reinit from here
-
-	ConsoleCallbacks cb = {
-		D_UserInfoChanged,
-		D_SendServerInfoChange,
-		D_SendServerFlagChange,
-		G_GetUserCVar,
-		[]() { return gamestate != GS_FULLCONSOLE && gamestate != GS_STARTUP; }
-	};
-
-	C_InstallHandlers(&cb);
 
 	do
 	{
@@ -3682,6 +3668,17 @@ int GameMain()
 	int ret = 0;
 	GameTicRate = TICRATE;
 	I_InitTime();
+
+	ConsoleCallbacks cb = {
+		D_UserInfoChanged,
+		D_SendServerInfoChange,
+		D_SendServerFlagChange,
+		G_GetUserCVar,
+		[]() { return gamestate != GS_FULLCONSOLE && gamestate != GS_STARTUP; }
+	};
+
+	C_InstallHandlers(&cb);
+
 	try
 	{
 		ret = D_DoomMain_Internal();

@@ -1012,6 +1012,7 @@ CCMD(undocolorpic)
 DEFINE_GLOBAL(menuactive)
 DEFINE_GLOBAL(BackbuttonTime)
 DEFINE_GLOBAL(BackbuttonAlpha)
+DEFINE_GLOBAL(GameTicRate)
 
 DEFINE_FIELD(DMenu, mParentMenu)
 DEFINE_FIELD(DMenu, mMouseCapture);
