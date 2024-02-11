@@ -627,6 +627,17 @@ class StatusScreen abstract play version("2.5")
 	//
 	//====================================================================
 
+	bool autoSkip()
+	{
+		return wi_autoadvance > 0 && bcnt > (wi_autoadvance * Thinker.TICRATE);
+	}
+
+	//====================================================================
+	//
+	//
+	//
+	//====================================================================
+
 	protected virtual void initNoState ()
 	{
 		CurState = NoState;
@@ -657,7 +668,7 @@ class StatusScreen abstract play version("2.5")
 					noauto |= players[i].GetNoAutostartMap();
 				}
 			}
-			if (!noauto)
+			if (!noauto || autoSkip())
 			{
 				cnt--;
 			}
