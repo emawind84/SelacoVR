@@ -178,7 +178,10 @@ DPSprite::DPSprite(player_t *owner, AActor *caller, int id)
   Sprite(0),
   Frame(0),
   ID(id),
-  processPending(true)
+  processPending(true),
+  HAlign(0),
+  VAlign(0),
+  InterpolateTic(false)
 {
 	rotation = 0.;
 	scale = {1.0, 1.0};

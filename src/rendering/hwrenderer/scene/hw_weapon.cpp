@@ -451,7 +451,6 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 	y1 = viewwindowy + vh / 2 - (ftexturemid * scale);
 	y2 = y1 + (r.height * scale) + 1;
 
-
 	const bool flip = (psp->Flags & PSPF_FLIP);
 	if (!(mirror) != !(flip))
 	{
@@ -566,7 +565,6 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 		Vert.v[3].X < vw))
 		return false;
 	*/
-
 	auto verts = screen->mVertexData->AllocVertices(4);
 	mx = verts.second;
 
@@ -654,12 +652,12 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 		}
 		else
 		{
-			if (!hudsprite.GetWeaponRect(this, psp, spos.X, spos.Y, player, r_viewpoint.TicFrac)) continue;
+			if (!hudsprite.GetWeaponRect(this, psp, spos.X, spos.Y, player, vp.TicFrac)) continue;
 		}
 		hudsprites.Push(hudsprite);
 	}
 	lightmode = oldlightmode;
-	PrepareTargeterSprites(r_viewpoint.TicFrac);
+	PrepareTargeterSprites(vp.TicFrac);
 }
 
 
@@ -701,6 +699,7 @@ void HWDrawInfo::PrepareTargeterSprites(double ticfrac)
 		if (psp->GetState() != nullptr && (psp->GetID() != PSP_TARGETCENTER || CrosshairImage == nullptr))
 		{
 			hudsprite.weapon = psp;
+			
 			if (hudsprite.GetWeaponRect(this, psp, psp->x, psp->y, player, ticfrac))
 			{
 				hudsprites.Push(hudsprite);

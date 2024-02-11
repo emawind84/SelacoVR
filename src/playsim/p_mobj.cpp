@@ -5371,7 +5371,6 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 	return mobj;
 }
 
-
 //
 // P_SpawnMapThing
 // The fields of the mapthing should

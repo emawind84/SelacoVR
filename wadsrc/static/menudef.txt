@@ -382,6 +382,8 @@ OptionMenu "OptionsMenu" protected
 	Submenu "$OPTMNU_VIDEO",			"VideoModeMenu"
 	StaticText " "
 	Submenu "$OS_TITLE", "os_Menu"
+	Option "$OPTMNU_SIMPLEON",			"m_simpleoptions", "OnOff"
+	
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS",	"reset2defaults"
 	SafeCommand	"$OPTMNU_RESETTOSAVED",	"reset2saved"

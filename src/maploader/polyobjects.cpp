@@ -415,4 +415,3 @@ void MapLoader::PO_Init (void)
 		}
 	}
 }
-

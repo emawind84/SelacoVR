@@ -2035,7 +2035,7 @@ int P_TestMobjZ(AActor *actor, bool quick, AActor **pOnmobj)
 		{
 			continue;
 		}
-		if (actor->ThruBits & thing->ThruBits)
+		if ((actor->ThruBits & thing->ThruBits) && ((actor->flags8 | thing->flags8) & MF8_ALLOWTHRUBITS))
 		{
 			continue;
 		}
@@ -4525,7 +4525,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	{
 		TData.ThruSpecies = (puffDefaults && (puffDefaults->flags6 & MF6_THRUSPECIES));
 		TData.ThruActors = (puffDefaults && (puffDefaults->flags2 & MF2_THRUACTORS));
-		TData.UseThruBits = true;
+		
 		// [MC] Because this is a one-hit trace event, we need to spawn the puff, get the species
 		// and destroy it. Assume there is no species unless tempuff isn't NULL. We cannot get
 		// a proper species the same way as puffDefaults flags it appears...
