@@ -743,8 +743,7 @@ void DIntermissionScreenScroller::Drawer ()
 		// Now set a clipping rectangle for the intended viewport
 		double displayratio = atotalwidth / double(aheight) - 4./3.;
 		double displaywidth = aheight * displayratio;
-		// TODO fix later
-		//CalcFullscreenScale(displaywidth, aheight, gameinfo.fullscreenautoaspect, drect);
+		GetFullscreenRect(displaywidth, aheight, FSMode_ScaleToFit43, &drect);
 		twod->SetClipRect(int(drect.left), int(drect.top), int(drect.width), int(drect.height));
 
 		int ticker = clamp(mTicker - mScrollDelay, 0, mScrollTime);
@@ -782,9 +781,8 @@ void DIntermissionScreenScroller::Drawer ()
 	}
 	else
 	{
-		// TODO fix later
 		// guesstimate the intended aspect ratio.
-		//CalcFullscreenScale(fwidth, aheight, gameinfo.fullscreenautoaspect, drect);
+		GetFullscreenRect(fwidth, aheight, FSMode_ScaleToFit43, &drect);
 		twod->SetClipRect(int(drect.left), int(drect.top), int(drect.width), int(drect.height));
 
 		int ticker = clamp(mTicker - mScrollDelay, 0, mScrollTime);
