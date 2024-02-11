@@ -116,6 +116,8 @@ constate_e	ConsoleState = c_up;
 
 double NotifyFontScale = 1;
 
+DEFINE_GLOBAL(NotifyFontScale)
+
 void C_SetNotifyFontScale(double scale)
 {
 	NotifyFontScale = scale;

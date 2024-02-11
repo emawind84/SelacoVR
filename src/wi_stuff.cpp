@@ -57,8 +57,6 @@
 #include "texturemanager.h"
 #include "v_draw.h"
 
-#define ScaleToFit43 3
-
 CVAR(Bool, wi_percents, true, CVAR_ARCHIVE)
 CVAR(Bool, wi_showtotaltime, true, CVAR_ARCHIVE)
 CVAR(Bool, wi_noautostartmap, false, CVAR_USERINFO | CVAR_ARCHIVE)
