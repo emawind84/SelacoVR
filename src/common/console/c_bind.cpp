@@ -752,7 +752,25 @@ CVAR(Int, cl_defaultconfiguration, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 void C_BindDefaults()
 {
 	// TODO fix later for QZD
-	C_SetDefaultKeys(cl_defaultconfiguration == 1 ? "engine/origbinds.txt" : cl_defaultconfiguration == 2 ? "engine/leftbinds.txt" : "engine/defbinds.txt");
+	FString defbinds;
+
+	switch (cl_defaultconfiguration)
+	{
+	case 0:
+		defbinds = "engine/defbind0.txt";
+		break;
+	case 1:
+		defbinds = "engine/defbind1.txt";
+		break;
+	case 2:
+		defbinds = "engine/defbind2.txt";
+		break;
+	case 3:
+		defbinds = "engine/defbind3.txt";
+		break;
+	}
+
+	C_SetDefaultKeys(defbinds);
 }
 
 void C_SetDefaultBindings()
