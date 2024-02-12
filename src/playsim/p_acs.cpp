@@ -6319,7 +6319,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 				int tid1 = 0, tid2 = 0;
 				switch (argCount)
 				{
-				case 4: tid2 = args[3];
+				case 4: tid2 = args[3]; [[fallthrough]];
 				case 3: tid1 = args[2];
 				}
 
@@ -6727,7 +6727,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 					int logNum = args[0];
 					FSoundID sid = 0;
 
-					const char* lookup = level.Behaviors.LookupString(args[1]);
+					const char* lookup = Level->Behaviors.LookupString(args[1]);
 					if (lookup != nullptr)
 					{
 						sid = lookup;
@@ -8150,6 +8150,7 @@ int DLevelScript::RunScript()
 
 		case PCD_SETRESULTVALUE:
 			resultValue = STACK(1);
+			[[fallthrough]];
 		case PCD_DROP: //fall through.
 			sp--;
 			break;
@@ -8619,7 +8620,7 @@ scriptwait:
 			lookup = Level->Behaviors.LookupString (STACK(1));
 			if (lookup != NULL)
 			{
-				int key1 = 0, key2 = 0;
+				int key1, key2;
 
 				Bindings.GetKeysForCommand ((char *)lookup, &key1, &key2);
 
@@ -9090,15 +9091,19 @@ scriptwait:
 			break;
 
 		case PCD_FIXEDMUL:
-			STACK(2) = FixedMul (STACK(2), STACK(1));
+			STACK(2) = MulScale(STACK(2), STACK(1), 16);
 			sp--;
 			break;
 
 		case PCD_FIXEDDIV:
-			STACK(2) = FixedDiv (STACK(2), STACK(1));
+		{
+			int a = STACK(2), b = STACK(1);
+			// Overflow check.
+			if ((uint32_t)abs(a) >> (31 - 16) >= (uint32_t)abs(b)) STACK(2) = (a ^ b) < 0 ? FIXED_MIN : FIXED_MAX;
+			else STACK(2) = DivScale(STACK(2), STACK(1), 16);
 			sp--;
 			break;
-
+		}
 		case PCD_SETGRAVITY:
 			Level->gravity = ACSToDouble(STACK(1));
 			sp--;

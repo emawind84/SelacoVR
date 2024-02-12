@@ -147,6 +147,7 @@ CUSTOM_CVAR (Int, displaynametags, 0, CVAR_ARCHIVE)
 
 CVAR(Int, nametagcolor, CR_GOLD, CVAR_ARCHIVE)
 
+extern bool playedtitlemusic;
 
 gameaction_t	gameaction;
 gamestate_t 	gamestate = GS_STARTUP;
@@ -1257,6 +1258,7 @@ void G_Ticker ()
 			G_CheckDemoStatus();
 			G_RecordDemo(newdemoname);
 			G_BeginRecording(newdemomap);
+			[[fallthrough]];
 		case ga_newgame2:	// Silence GCC (see above)
 		case ga_newgame:
 			G_DoNewGame ();
@@ -1279,7 +1281,7 @@ void G_Ticker ()
 		case ga_loadgameplaydemo:
 			G_DoLoadGame ();
 			// fallthrough
-		case ga_playdemo:
+		case  ga_playdemo:
 			G_DoPlayDemo ();
 			break;
 		case ga_completed:
@@ -1907,6 +1909,7 @@ void G_DoPlayerPop(int playernum)
 	FString message = GStrings(deathmatch? "TXT_LEFTWITHFRAGS" : "TXT_LEFTTHEGAME");
 	message.Substitute("%s", players[playernum].userinfo.GetName());
 	message.Substitute("%d", FStringf("%d", players[playernum].fragcount));
+	Printf("%s\n", message.GetChars());
 
 	// [RH] Revert each player to their own view if spying through the player who left
 	for (int ii = 0; ii < MAXPLAYERS; ++ii)
@@ -3059,6 +3062,7 @@ void G_DoPlayDemo (void)
 
 		usergame = false;
 		demoplayback = true;
+		playedtitlemusic = false;
 	}
 }
 

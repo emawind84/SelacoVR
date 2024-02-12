@@ -134,7 +134,6 @@ VRMode::VRMode(int eyeCount, float horizontalViewportScale,
 
 const VRMode *VRMode::GetVRMode(bool toscreen)
 {
-#ifdef VR3D_ENABLED
 	int mode = !toscreen || (sysCallbacks.DisableTextureFilter && sysCallbacks.DisableTextureFilter()) ? 0 : vr_mode;
 
 	switch (mode)
@@ -147,6 +146,7 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 	case VR_REDCYAN:
 	case VR_QUADSTEREO:
 	case VR_AMBERBLUE:
+	case VR_SIDEBYSIDELETTERBOX:
 		return &vrmi_stereo;
 
 	case VR_SIDEBYSIDESQUISHED:
@@ -172,9 +172,6 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 	case VR_OPENVR:
 		return &s3d::OpenXRDeviceMode::getInstance();
 	}
-#else
-	return &vrmi_mono;
-#endif
 }
 
 void VRMode::AdjustViewport(DFrameBuffer *screen) const

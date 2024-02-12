@@ -5,6 +5,7 @@
 #include "hw_material.h"
 #include "texmanip.h"
 #include "version.h"
+#include "i_interface.h"
 
 struct FColormap;
 class IVertexBuffer;
@@ -200,9 +201,8 @@ struct StreamData
 	FVector4 uSplitBottomPlane;
 
 	FVector4 uDetailParms;
-#ifdef NPOT_EMULATION
-	FVector2 uNpotEmulation;
-#endif
+	FVector4 uNpotEmulation;
+	FVector4 padding1, padding2, padding3;
 };
 
 class FRenderState
@@ -297,7 +297,7 @@ public:
 		mStreamData.uDynLightColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 		mStreamData.uDetailParms = { 0.0f, 0.0f, 0.0f, 0.0f };
 #ifdef NPOT_EMULATION
-		mStreamData.uNpotEmulation = { 0,0 };
+		mStreamData.uNpotEmulation = { 0,0,0,0 };
 #endif
 		mModelMatrix.loadIdentity();
 		mTextureMatrix.loadIdentity();
@@ -499,7 +499,7 @@ public:
 	void SetNpotEmulation(float factor, float offset)
 	{
 #ifdef NPOT_EMULATION
-		mStreamData.uNpotEmulation = { offset, factor };
+		mStreamData.uNpotEmulation = { offset, factor, 0, 0 };
 #endif
 	}
 
@@ -565,20 +565,31 @@ public:
 		mRenderStyle = rs;
 	}
 
+	auto GetDepthBias()
+	{
+		return mBias;
+	}
+
 	void SetDepthBias(float a, float b)
 	{
+		mBias.mChanged = mBias.mFactor != a || mBias.mUnits != b;
 		mBias.mFactor = a;
 		mBias.mUnits = b;
-		mBias.mChanged = true;
+	}
+
+	void SetDepthBias(FDepthBiasState& bias)
+	{
+		SetDepthBias(bias.mFactor, bias.mUnits);
 	}
 
 	void ClearDepthBias()
 	{
+		mBias.mChanged = mBias.mFactor != 0 || mBias.mUnits != 0;
 		mBias.mFactor = 0;
 		mBias.mUnits = 0;
-		mBias.mChanged = true;
 	}
 
+private:
 	void SetMaterial(FMaterial *mat, int clampmode, int translation, int overrideshader)
 	{
 		mMaterial.mMaterial = mat;
@@ -591,10 +602,16 @@ public:
 		mStreamData.uDetailParms = { scale.X, scale.Y, 2, 0 };
 	}
 
+public:
 	void SetMaterial(FGameTexture* tex, EUpscaleFlags upscalemask, int scaleflags, int clampmode, int translation, int overrideshader)
 	{
-		if (shouldUpscale(tex, upscalemask)) scaleflags |= CTF_Upscale;
-		SetMaterial(FMaterial::ValidateTexture(tex, scaleflags), clampmode, translation, overrideshader);
+		if (!sysCallbacks.PreBindTexture || !sysCallbacks.PreBindTexture(this, tex, upscalemask, scaleflags, clampmode, translation, overrideshader))
+		{
+			if (shouldUpscale(tex, upscalemask)) scaleflags |= CTF_Upscale;
+		}
+		auto mat = FMaterial::ValidateTexture(tex, scaleflags);
+		assert(mat);
+		SetMaterial(mat, clampmode, translation, overrideshader);
 	}
 
 	void SetClipSplit(float bottom, float top)

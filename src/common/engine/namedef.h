@@ -527,6 +527,7 @@ xx(ZDoom)
 xx(ZDoomTranslated)
 xx(Vavoom)
 xx(GZDoom)
+xx(Eternity)
 
 xx(Xpanningfloor)
 xx(Ypanningfloor)
@@ -1111,4 +1112,5 @@ xy(menu_change, "menu/change")
 xy(menu_advance, "menu/advance")
 
 xx(zoomsize)
-
+xx(ScreenJobRunner)
+xx(RazeStatusBar)

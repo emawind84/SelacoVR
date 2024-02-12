@@ -204,7 +204,7 @@ const char* iwad_folders[13] = { "flats/", "textures/", "hires/", "sprites/", "v
 const char* iwad_reserved[12] = { "mapinfo", "zmapinfo", "gameinfo", "sndinfo", "sbarinfo", "menudef", "gldefs", "animdefs", "decorate", "zscript", "iwadinfo", "maps/" };
 
 
-CUSTOM_CVAR(Float, i_timescale, 1.0f, CVAR_NOINITCALL)
+CUSTOM_CVAR(Float, i_timescale, 1.0f, CVAR_NOINITCALL | CVAR_VIRTUAL)
 {
 	if (netgame)
 	{
@@ -319,6 +319,7 @@ FStartupInfo GameStartupInfo;
 FString lastIWAD;
 int restart = 0;
 bool AppActive = true;
+bool playedtitlemusic;
 
 cycle_t FrameCycles;
 
@@ -1595,6 +1596,7 @@ void D_DoAdvanceDemo (void)
 			break;
 		}
 		// fall through to case 1 if no advisory notice
+		[[fallthrough]];
 
 	case 1:
 		Advisory = NULL;
@@ -1616,13 +1618,15 @@ void D_DoAdvanceDemo (void)
 				break;
 			}
 		}
+		[[fallthrough]];
 
 	default:
 	case 0:
 		gamestate = GS_DEMOSCREEN;
 		pagename = gameinfo.TitlePage;
 		pagetic = (int)(gameinfo.titleTime * TICRATE);
-		S_ChangeMusic (gameinfo.titleMusic, gameinfo.titleOrder, false);
+		if (!playedtitlemusic) S_ChangeMusic (gameinfo.titleMusic, gameinfo.titleOrder, false);
+		playedtitlemusic = true;
 		demosequence = 3;
 		pagecount = 0;
 		C_HideConsole ();
@@ -1655,6 +1659,7 @@ void D_DoAdvanceDemo (void)
 
 void D_StartTitle (void)
 {
+	playedtitlemusic = false;
 	gameaction = ga_nothing;
 	demosequence = -1;
 	D_AdvanceDemo ();
@@ -2131,7 +2136,7 @@ static void AddAutoloadFiles(const char *autoname)
 		}
 		if (GameStartupInfo.LoadWidescreen == 1 || (GameStartupInfo.LoadWidescreen != 0 && autoloadwidescreen))
 		{
-			const char *wswad = BaseFileSearch ("game_widescreen_gfx.pk3", NULL, false, GameConfig);
+			const char *wswad = BaseFileSearch ("game_widescreen_gfx.pk3", NULL, true, GameConfig);
 			if (wswad)
 				D_AddFile (allwads, wswad, true, -1, GameConfig);
 		}
@@ -2526,7 +2531,7 @@ void RenameNerve(FileSystem& fileSystem)
 	if (gameinfo.gametype != GAME_Doom)
 		return;
 
-	const int numnerveversions = 2;
+	const int numnerveversions = 4;
 
 	bool found = false;
 	uint8_t cksum[16];
@@ -2534,9 +2539,13 @@ void RenameNerve(FileSystem& fileSystem)
 			{ 0x96, 0x7d, 0x5a, 0xe2, 0x3d, 0xaf, 0x45, 0x19,
 				0x62, 0x12, 0xae, 0x1b, 0x60, 0x5d, 0xa3, 0xb0 },
 			{ 0x42, 0x14, 0xc4, 0x76, 0x51, 0xb6, 0x3e, 0xe2,
-				0x25, 0x7b, 0x1c, 0x24, 0x90, 0xa5, 0x18, 0xc9 }
+				0x25, 0x7b, 0x1c, 0x24, 0x90, 0xa5, 0x18, 0xc9 },
+			{ 0x35, 0x44, 0xe1, 0x90, 0x30, 0x91, 0xc5, 0x0b,
+				0xa5, 0x00, 0x49, 0xdb, 0x74, 0xcd, 0x7d, 0x25 },
+			{ 0x91, 0x43, 0xb3, 0x92, 0x39, 0x2a, 0x7a, 0xc8,
+				0x70, 0xc2, 0xca, 0x36, 0xac, 0x65, 0xaf, 0x45 }
 	};
-	size_t nervesize[numnerveversions] = { 3819855, 3821966 }; // NERVE.WAD's file size
+	size_t nervesize[numnerveversions] = { 3819855, 3821966, 3821885, 4003409 }; // NERVE.WAD's file size
 	int w = fileSystem.GetIwadNum();
 	while (++w < fileSystem.GetNumWads())
 	{
@@ -3821,12 +3830,10 @@ void D_Cleanup()
 	GC::FullGC();					// clean up before taking down the object list.
 	
 	// Delete the reference to the VM functions here which were deleted and will be recreated after the restart.
-	FAutoSegIterator probe(ARegHead, ARegTail);
-	while (*++probe != NULL)
+	AutoSegs::ActionFunctons.ForEach([](AFuncDesc *afunc)
 	{
-		AFuncDesc *afunc = (AFuncDesc *)*probe;
 		*(afunc->VMPointer) = NULL;
-	}
+	});
 	
 	GC::DelSoftRootHead();
 	
@@ -3909,6 +3916,7 @@ void I_UpdateWindowTitle()
 			titlestr.Format("%s - %s", level.LevelName.GetChars(), GameStartupInfo.Name.GetChars());
 			break;
 		}
+		[[fallthrough]];
 	case 2:
 		titlestr = GameStartupInfo.Name;
 		break;

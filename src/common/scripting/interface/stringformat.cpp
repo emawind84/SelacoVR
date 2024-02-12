@@ -564,7 +564,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(FStringStruct, Substitute, StringSubst)
 	return 0;
 }
 
-static void StringSplit(FString *self, TArray<FString> *tokens, const FString &delimiter, int keepEmpty)
+static void StringSplit(FString* self, TArray<FString>* tokens, const FString& delimiter, int keepEmpty)
 {
 	self->Split(*tokens, delimiter, static_cast<FString::EmptyTokenType>(keepEmpty));
 }

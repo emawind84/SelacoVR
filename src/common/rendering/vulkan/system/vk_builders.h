@@ -45,7 +45,7 @@ public:
 	void setMemoryType(VkMemoryPropertyFlags requiredFlags, VkMemoryPropertyFlags preferredFlags, uint32_t memoryTypeBits = 0);
 	void setLinearTiling();
 
-	bool isFormatSupported(VulkanDevice *device);
+	bool isFormatSupported(VulkanDevice *device, VkFormatFeatureFlags bufferFeatures = 0);
 
 	std::unique_ptr<VulkanImage> create(VulkanDevice *device, VkDeviceSize* allocatedBytes = nullptr);
 	std::unique_ptr<VulkanImage> tryCreate(VulkanDevice *device);
@@ -144,7 +144,7 @@ public:
 
 private:
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-	FixedSizeVector<VkDescriptorSetLayoutBinding, 8> bindings;
+	TArray<VkDescriptorSetLayoutBinding> bindings;
 };
 
 class DescriptorPoolBuilder
@@ -410,7 +410,7 @@ inline void ImageBuilder::setMemoryType(VkMemoryPropertyFlags requiredFlags, VkM
 	allocInfo.memoryTypeBits = memoryTypeBits;
 }
 
-inline bool ImageBuilder::isFormatSupported(VulkanDevice *device)
+inline bool ImageBuilder::isFormatSupported(VulkanDevice *device, VkFormatFeatureFlags bufferFeatures)
 {
 	VkImageFormatProperties properties = { };
 	VkResult result = vkGetPhysicalDeviceImageFormatProperties(device->PhysicalDevice.Device, imageInfo.format, imageInfo.imageType, imageInfo.tiling, imageInfo.usage, imageInfo.flags, &properties);
@@ -421,6 +421,13 @@ inline bool ImageBuilder::isFormatSupported(VulkanDevice *device)
 	if (imageInfo.mipLevels > properties.maxMipLevels) return false;
 	if (imageInfo.arrayLayers > properties.maxArrayLayers) return false;
 	if ((imageInfo.samples & properties.sampleCounts) != imageInfo.samples) return false;
+	if (bufferFeatures != 0)
+	{
+		VkFormatProperties formatProperties = { };
+		vkGetPhysicalDeviceFormatProperties(device->PhysicalDevice.Device, imageInfo.format, &formatProperties);
+		if ((formatProperties.bufferFeatures & bufferFeatures) != bufferFeatures)
+			return false;
+	}
 	return true;
 }
 
@@ -636,10 +643,10 @@ inline void DescriptorSetLayoutBuilder::addBinding(int index, VkDescriptorType t
 	binding.descriptorCount = arrayCount;
 	binding.stageFlags = stageFlags;
 	binding.pImmutableSamplers = nullptr;
-	bindings.push_back(binding);
+	bindings.Push(binding);
 
-	layoutInfo.bindingCount = (uint32_t)bindings.size();
-	layoutInfo.pBindings = bindings.data();
+	layoutInfo.bindingCount = (uint32_t)bindings.Size();
+	layoutInfo.pBindings = &bindings[0];
 }
 
 inline std::unique_ptr<VulkanDescriptorSetLayout> DescriptorSetLayoutBuilder::create(VulkanDevice *device)

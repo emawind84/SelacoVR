@@ -16,6 +16,7 @@ struct LumpFilterInfo
 	// The following are for checking if the root directory of a zip can be removed.
 	TArray<FString> reservedFolders;
 	TArray<FString> requiredPrefixes;
+	TArray<FString> embeddings;
 	std::function<void()> postprocessFunc;
 };
 
@@ -112,7 +113,7 @@ public:
 	virtual int GetIndexNum() const { return -1; }
 	virtual int GetNamespace() const { return 0; }
 	void LumpNameSetup(FString iname);
-	void CheckEmbedded();
+	void CheckEmbedded(LumpFilterInfo* lfi);
 	virtual FCompressedBuffer GetRawData();
 
 	void *Lock(); // validates the cache and increases the refcount.

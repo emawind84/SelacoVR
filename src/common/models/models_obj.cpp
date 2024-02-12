@@ -635,7 +635,7 @@ void FOBJModel::RenderFrame(FModelRenderer *renderer, FGameTexture * skin, int f
 		OBJSurface *surf = &surfaces[i];
 
 		FGameTexture *userSkin = skin;
-		if (!userSkin)
+		if (!userSkin && curSpriteMDLFrame)
 		{
 			if (surfaceskinids && surfaceskinids[i].isValid())
 			{

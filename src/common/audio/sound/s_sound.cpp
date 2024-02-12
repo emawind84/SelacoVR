@@ -528,7 +528,7 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 
 	// sound is paused and a non-looped sound is being started.
 	// Such a sound would play right after unpausing which wouldn't sound right.
-	if (!(chanflags & CHANF_LOOP) && !(chanflags & (CHANF_UI|CHANF_NOPAUSE)) && SoundPaused)
+	if (!(chanflags & CHANF_LOOP) && !(chanflags & (CHANF_UI|CHANF_NOPAUSE|CHANF_FORCE)) && SoundPaused)
 	{
 		return NULL;
 	}
@@ -929,12 +929,7 @@ void SoundEngine::StopSound(int sourcetype, const void* actor, int channel, int 
 void SoundEngine::StopActorSounds(int sourcetype, const void* actor, int chanmin, int chanmax)
 {
 	const bool all = (chanmin == 0 && chanmax == 0);
-	if (!all && chanmax > chanmin)
-	{
-		const int temp = chanmax;
-		chanmax = chanmin;
-		chanmin = temp;
-	}
+	if (chanmax < chanmin) std::swap(chanmin, chanmax);
 
 	FSoundChan* chan = Channels;
 	while (chan != nullptr)

@@ -128,7 +128,6 @@ void FPortalSceneState::EndFrame(HWDrawInfo *di, FRenderState &state)
 //-----------------------------------------------------------------------------
 bool FPortalSceneState::RenderFirstSkyPortal(int recursion, HWDrawInfo *outer_di, FRenderState &state)
 {
-	HWPortal * p;
 	HWPortal * best = nullptr;
 	unsigned bestindex = 0;
 
@@ -138,7 +137,7 @@ bool FPortalSceneState::RenderFirstSkyPortal(int recursion, HWDrawInfo *outer_di
 	auto &portals = outer_di->Portals;
 	for (int i = portals.Size() - 1; i >= 0; --i)
 	{
-		p = portals[i];
+		auto p = portals[i];
 		if (p->lines.Size() > 0 && p->IsSky())
 		{
 			// Cannot clear the depth buffer inside a portal recursion
@@ -723,6 +722,7 @@ void HWSkyboxPortal::Shutdown(HWDrawInfo *di, FRenderState &rstate)
 }
 
 const char *HWSkyboxPortal::GetName() { return "Skybox"; }
+bool HWSkyboxPortal::AllowSSAO() { return false; }	// [MK] sector skyboxes don't allow SSAO by default
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

@@ -197,8 +197,9 @@ target_architecture(ZDOOM_TARGET_ARCH)
 
 if( ${ZDOOM_TARGET_ARCH} MATCHES "x86_64" )
 	set( HAVE_VM_JIT ON )
-	option (HAVE_VULKAN "Enable Vulkan support" ON)
 endif()
+
+option (HAVE_VULKAN "Enable Vulkan support" ON)
 
 # no, we're not using external asmjit for now, we made too many modifications to our's.
 # if the asmjit author uses our changes then we'll update this.
@@ -339,6 +340,7 @@ if( HAVE_VM_JIT AND UNIX )
 		else( HAVE_LIBEXECINFO )
 			set( HAVE_VM_JIT NO )
 		endif( HAVE_LIBEXECINFO )
+		set( CMAKE_REQUIRED_FLAGS )
 	endif( NOT HAVE_BACKTRACE )
 endif( HAVE_VM_JIT AND UNIX )
 

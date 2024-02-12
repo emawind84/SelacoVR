@@ -20,6 +20,8 @@ else()
 	find_package( ZMusic REQUIRED )
 endif()
 
+message("Building for target architecture: ${ZDOOM_TARGET_ARCH}")
+
 if( MSVC AND NOT ZMUSIC_FOUND )
 	# Use prebuilt library
 	set( ZMUSIC_ROOT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../bin/windows/zmusic" )
@@ -27,6 +29,8 @@ if( MSVC AND NOT ZMUSIC_FOUND )
 	set( ZMUSIC_LIBRARIES zmusic )
 	if( ${ZDOOM_TARGET_ARCH} MATCHES "x86_64" )
 		link_directories( ${ZMUSIC_ROOT_PATH}/64bit )
+	elseif( ${ZDOOM_TARGET_ARCH} MATCHES "arm" )
+		link_directories( ${ZMUSIC_ROOT_PATH}/arm64 )
 	else()
 		link_directories( ${ZMUSIC_ROOT_PATH}/32bit )
 	endif()
@@ -97,7 +101,6 @@ if( WIN32 )
 	endif()
 
 	set( ZDOOM_LIBS
-		opengl32
 		wsock32
 		winmm
 		"${DX_dinput8_LIBRARY}"
@@ -319,16 +322,6 @@ if( ZD_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 	set( CMAKE_C_FLAGS "-Wall -Wextra -Wno-unused -Wno-unused-parameter -Wno-missing-field-initializers -ffp-contract=off ${CMAKE_C_FLAGS}" )
 	set( CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused -Wno-unused-parameter -Wno-missing-field-initializers -ffp-contract=off ${CMAKE_CXX_FLAGS}" )
 
-	# ARM processors (Raspberry Pi, et al) - enable ARM NEON support.
-	if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
-		set (USE_ARMV8 0 CACHE BOOL "Use ARMv8 instructions - Raspberry Pi 3")
-		if (USE_ARMV8)
-			set( CMAKE_CXX_FLAGS "-mcpu=cortex-a53 -mfpu=neon-fp-armv8 -mtune=cortex-a53 -mhard-float -DNO_SSE ${CMAKE_CXX_FLAGS}" )
-		else ()
-			set( CMAKE_CXX_FLAGS "-mcpu=cortex-a7 -mfpu=neon-vfpv4 -mtune=cortex-a7 -mhard-float -DNO_SSE ${CMAKE_CXX_FLAGS}" )
-		endif ()
-	endif ()
-
 	if( NOT X64 AND NOT CAN_DO_MFPMATH )
 		set( CMAKE_C_FLAGS "-DNO_SSE ${CMAKE_C_FLAGS}" )
 		set( CMAKE_CXX_FLAGS "-DNO_SSE ${CMAKE_CXX_FLAGS}" )
@@ -430,7 +423,6 @@ endif()
 set( PLAT_WIN32_SOURCES
 	win32/i_steam.cpp
 	common/platform/win32/hardware.cpp
-	common/platform/win32/i_crash.cpp
 	common/platform/win32/i_input.cpp
 	common/platform/win32/i_keyboard.cpp
 	common/platform/win32/i_mouse.cpp
@@ -450,6 +442,16 @@ set( PLAT_WIN32_SOURCES
 
 if (HAVE_VULKAN)
 	set (PLAT_WIN32_SOURCES ${PLAT_WIN32_SOURCES} common/platform/win32/win32vulkanvideo.cpp )
+endif()
+
+# todo: implement an actual crash catcher for ARM
+# for now this is purely experimental
+if (NOT ${ZDOOM_TARGET_ARCH} MATCHES "arm" )
+	set (PLAT_WIN32_SOURCES ${PLAT_WIN32_SOURCES} common/platform/win32/i_crash.cpp )
+endif()
+if (MSVC AND ${ZDOOM_TARGET_ARCH} MATCHES "arm")
+	set (PLAT_WIN32_SOURCES ${PLAT_WIN32_SOURCES} common/platform/win32/i_crash_arm.cpp )
+	add_definitions( -DNO_SSE -D__ARM__ -DRAPIDJSON_ENDIAN=RAPIDJSON_LITTLEENDIAN)
 endif()
 	
 set( PLAT_POSIX_SOURCES
@@ -593,6 +595,7 @@ file( GLOB HEADER_FILES
 	common/utility/*.h
 	common/engine/*.h
 	common/menu/*.h
+	common/statusbar/*.h
 	common/fonts/*.h
 	common/objects/*.h
 	common/filesystem/*.h
@@ -999,6 +1002,7 @@ set (PCH_SOURCES
 	common/2d/v_2ddrawer.cpp
 	common/2d/v_drawtext.cpp
 	common/2d/v_draw.cpp
+	common/thirdparty/gain_analysis.cpp
 	common/thirdparty/sfmt/SFMT.cpp
 	common/fonts/singlelumpfont.cpp
 	common/fonts/singlepicfont.cpp
@@ -1106,6 +1110,7 @@ set (PCH_SOURCES
 	common/engine/serializer.cpp
 	common/engine/m_joy.cpp
 	common/engine/m_random.cpp
+	common/objects/autosegs.cpp
 	common/objects/dobject.cpp
 	common/objects/dobjgc.cpp
 	common/objects/dobjtype.cpp
@@ -1116,6 +1121,7 @@ set (PCH_SOURCES
 	common/menu/resolutionmenu.cpp
 	common/menu/menudef.cpp
 	common/menu/savegamemanager.cpp
+	common/statusbar/base_sbar.cpp
 	
 	common/rendering/v_framebuffer.cpp
 	common/rendering/v_video.cpp
@@ -1190,7 +1196,6 @@ endif()
 add_executable( zdoom WIN32 MACOSX_BUNDLE
 	${HEADER_FILES}
 	${NOT_COMPILED_SOURCE_FILES}
-	__autostart.cpp
 	${SYSTEM_SOURCES}
 	${FASTMATH_SOURCES}
 	${PCH_SOURCES}
@@ -1216,7 +1221,6 @@ add_executable( zdoom WIN32 MACOSX_BUNDLE
 	common/thirdparty/math/tan.c
 	common/thirdparty/math/tanh.c
 	common/thirdparty/math/fastsin.cpp
-	zzautozend.cpp
 	QzDoom/mathlib.c
 )
 
@@ -1255,6 +1259,7 @@ include_directories( .
 	common/console
 	common/engine
 	common/menu
+	common/statusbar
 	common/fonts
 	common/objects
 	common/rendering

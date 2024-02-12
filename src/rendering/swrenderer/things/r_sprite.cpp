@@ -269,8 +269,7 @@ namespace swrenderer
 		{
 			RenderTranslucentPass *translucentPass = thread->TranslucentPass.get();
 			short portalfloorclip[MAXWIDTH];
-			int x2 = wallc.sx2;
-			for (int x = wallc.sx1; x < x2; x++)
+			for (int x = x1; x < x2; x++)
 			{
 				if (translucentPass->ClipSpriteColumnWithPortals(x, this))
 					portalfloorclip[x] = mceilingclip[x];
@@ -278,12 +277,9 @@ namespace swrenderer
 					portalfloorclip[x] = mfloorclip[x];
 			}
 
-			thread->PrepareTexture(pic, RenderStyle);
-
 			ProjectedWallLight mlight;
 			mlight.SetSpriteLight();
 
-			drawerargs.SetBaseColormap(Light.BaseColormap);
 			drawerargs.DrawMasked(thread, gzt - floorclip, SpriteScale, renderflags & RF_XFLIP, renderflags & RF_YFLIP, wallc, x1, x2, mlight, pic, portalfloorclip, mceilingclip, RenderStyle);
 		}
 	}

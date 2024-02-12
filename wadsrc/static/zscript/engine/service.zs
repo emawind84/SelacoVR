@@ -3,56 +3,14 @@
  */
 class Service abstract
 {
-	deprecated("4.6.1", "Use GetString() instead") virtual play String Get(String request)
+	virtual play String Get(String request)
 	{
 		return "";
 	}
 
-	deprecated("4.6.1", "Use GetStringUI() instead") virtual ui String UiGet(String request)
+	virtual ui String UiGet(String request)
 	{
 		return "";
-	}
-
-	// Play variants
-	virtual play String GetString(String request, string stringArg = "", int intArg = 0, double doubleArg = 0, Object objectArg = null)
-	{
-		return "";
-	}
-
-	virtual play int GetInt(String request, string stringArg = "", int intArg = 0, double doubleArg = 0, Object objectArg = null)
-	{
-		return 0;
-	}
-
-	virtual play double GetDouble(String request, string stringArg = "", int intArg = 0, double doubleArg = 0, Object objectArg = null)
-	{
-		return 0.0;
-	}
-
-	virtual play Object GetObject(String request, string stringArg = "", int intArg = 0, double doubleArg = 0, Object objectArg = null)
-	{
-		return null;
-	}
-
-	// UI variants
-	virtual ui String GetStringUI(String request, string stringArg = "", int intArg = 0, double doubleArg = 0, Object objectArg = null)
-	{
-		return "";
-	}
-
-	virtual ui int GetIntUI(String request, string stringArg = "", int intArg = 0, double doubleArg = 0, Object objectArg = null)
-	{
-		return 0;
-	}
-
-	virtual ui double GetDoubleUI(String request, string stringArg = "", int intArg = 0, double doubleArg = 0, Object objectArg = null)
-	{
-		return 0.0;
-	}
-
-	virtual ui Object GetObjectUI(String request, string stringArg = "", int intArg = 0, double doubleArg = 0, Object objectArg = null)
-	{
-		return null;
 	}
 }
 

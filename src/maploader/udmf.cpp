@@ -764,6 +764,10 @@ public:
 					ReadUserKey(ukey);
 					loader->MapThingsUserData.Push(ukey);
 				}
+				else if (stricmp("comment", key.GetChars()))
+				{
+					DPrintf(DMSG_WARNING, "Unknown UDMF thing key %s\n", key.GetChars());
+				}
 				break;
 			}
 		}
@@ -948,6 +952,8 @@ public:
 				continue;
 
 			default:
+				if (!stricmp("comment", key.GetChars()))
+					continue;
 				break;
 			}
 
@@ -1119,6 +1125,8 @@ public:
 				break;
 
 			default:
+				if (strnicmp("user_", key.GetChars(), 5))
+					DPrintf(DMSG_WARNING, "Unknown UDMF linedef key %s\n", key.GetChars());
 				break;
 			}
 
@@ -1232,6 +1240,8 @@ public:
 				continue;
 
 			default:
+				if (!stricmp("comment", key.GetChars()))
+					continue;
 				break;
 			}
 
@@ -1418,8 +1428,8 @@ public:
 				break;
 
 			case NAME_useowncoloradd_top:
-				Flag(sd->textures[side_t::top].flags, side_t::part::UseOwnAdditiveColor, key);
-				sd->Flags |= WALLF_EXTCOLOR;
+				if (Flag(sd->textures[side_t::top].flags, side_t::part::UseOwnAdditiveColor, key))
+					sd->Flags |= WALLF_EXTCOLOR;
 				break;
 
 			case NAME_useowncoloradd_mid:
@@ -1433,6 +1443,8 @@ public:
 				break;
 
 			default:
+				if (strnicmp("user_", key.GetChars(), 5))
+					DPrintf(DMSG_WARNING, "Unknown UDMF sidedef key %s\n", key.GetChars());
 				break;
 
 			}
@@ -1549,6 +1561,8 @@ public:
 				continue;
 
 			default:
+				if (!stricmp("comment", key.GetChars()))
+					continue;
 				break;
 			}
 
@@ -1937,6 +1951,8 @@ public:
 					break;
 					
 				default:
+					if (strnicmp("user_", key.GetChars(), 5))
+						DPrintf(DMSG_WARNING, "Unknown UDMF sector key %s\n", key.GetChars());
 					break;
 			}
 			if ((namespace_bits & (Zd | Zdt)) && !strnicmp("user_", key.GetChars(), 5))
@@ -2187,6 +2203,7 @@ public:
 			switch(namespc.GetIndex())
 			{
 			case NAME_ZDoom:
+			case NAME_Eternity:
 				namespace_bits = Zd;
 				isTranslated = false;
 				break;
@@ -2318,10 +2335,10 @@ public:
 		// Create the real sectors
 		Level->sectors.Alloc(ParsedSectors.Size());
 		memcpy(&Level->sectors[0], &ParsedSectors[0], Level->sectors.Size() * sizeof(sector_t));
-		Level->sectors[0].e = new extsector_t[Level->sectors.Size()];
+		Level->extsectors.Alloc(Level->sectors.Size());
 		for(unsigned i = 0; i < Level->sectors.Size(); i++)
 		{
-			Level->sectors[i].e = &Level->sectors[0].e[i];
+			Level->sectors[i].e = &Level->extsectors[i];
 		}
 		// Now create the scrollers.
 		for (auto &scroll : UDMFScrollers)

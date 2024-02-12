@@ -78,6 +78,7 @@ typedef void(*hfunc)();
 DMenu* CreateMessageBoxMenu(DMenu* parent, const char* message, int messagemode, bool playsound, FName action = NAME_None, hfunc handler = nullptr);
 bool OkForLocalization(FTextureID texnum, const char* substitute);
 void I_WaitVBL(int count);
+void InitMenuDelegate();
 
 CUSTOM_CVAR(Bool, menu_showexperimental, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
@@ -91,6 +92,7 @@ CUSTOM_CVAR(Bool, menu_showexperimental, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
 CUSTOM_CVAR(Bool, menu_showdoublebindings, false, CVAR_NOINITCALL)
 {
 	DeinitMenus();
+	InitMenuDelegate();
 	M_Init();
 	M_StartControlPanel (true);
 	M_SetMenu(NAME_CustomizeControls, -1);
@@ -174,6 +176,7 @@ bool M_SetSpecialMenu(FName& menu, int param)
 		// sent either from skill menu or confirmation screen. Skill gets only set if sent from skill menu
 		// Now we can finally start the game. Ugh...
 		NewGameStartupInfo.Skill = param;
+		[[fallthrough]];
 	case NAME_StartgameConfirmed:
 
 		G_DeferedInitNew (&NewGameStartupInfo);
@@ -496,13 +499,13 @@ CCMD (togglemessages)
 {
 	if (show_messages)
 	{
-		Printf("%s\n", GStrings("MSGOFF"));
+		Printf(TEXTCOLOR_RED "%s\n", GStrings("MSGOFF"));
 		show_messages = false;
 	}
 	else
 	{
-		Printf("%s\n", GStrings("MSGON"));
 		show_messages = true;
+		Printf(TEXTCOLOR_RED "%s\n", GStrings("MSGON"));
 	}
 }
 
@@ -1299,6 +1302,13 @@ bool  CheckSkipGameOptionBlock(const char *str)
 	return filter;
 }
 
+void InitMenuDelegate()
+{
+	if (menuDelegate != nullptr) return;
+	auto cls = PClass::FindClass("DoomMenuDelegate");
+	menuDelegate = cls->CreateNew();
+}
+
 void SetDefaultMenuColors()
 {
 	OptionSettings.mTitleColor = V_FindFontColor(gameinfo.mTitleColor);
@@ -1309,8 +1319,7 @@ void SetDefaultMenuColors()
 	OptionSettings.mFontColorHighlight = V_FindFontColor(gameinfo.mFontColorHighlight);
 	OptionSettings.mFontColorSelection = V_FindFontColor(gameinfo.mFontColorSelection);
 
-	auto cls = PClass::FindClass("DoomMenuDelegate");
-	menuDelegate = cls->CreateNew();
+	InitMenuDelegate();
 }
 
 CCMD (menu_main)

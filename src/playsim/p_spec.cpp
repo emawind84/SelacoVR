@@ -345,6 +345,7 @@ bool P_TestActivateLine (line_t *line, AActor *mo, int side, int activationType,
 					{
 						break;
 					}
+					[[fallthrough]];
 				case Teleport:
 				case Teleport_NoFog:
 				case Teleport_Line:
@@ -427,8 +428,6 @@ void P_PlayerInSpecialSector (player_t *player, sector_t * sector)
 	}
 
 	// Has hit ground.
-	if (sector->damageinterval <= 0)
-		sector->damageinterval = 32; // repair invalid damageinterval values
 
 	auto Level = sector->Level;
 
@@ -457,7 +456,7 @@ void P_PlayerInSpecialSector (player_t *player, sector_t * sector)
 		}
 
 		if (sector->Flags & SECF_ENDGODMODE) player->cheats &= ~CF_GODMODE;
-		if (ironfeet == 0 || (ironfeet < 2 && pr_playerinspecialsector() < sector->leakydamage))
+		if ((ironfeet == 0 || (ironfeet < 2 && pr_playerinspecialsector() < sector->leakydamage)))
 		{
 			if (sector->Flags & SECF_HAZARD)
 			{

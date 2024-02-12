@@ -195,6 +195,7 @@ void FLevelLocals::TranslateLineDef (line_t *ld, maplinedef_t *mld, int lineinde
 			{
 			case WalkMany:
 				flags |= ML_REPEAT_SPECIAL;
+				[[fallthrough]];
 			case WalkOnce:
 				ld->activation = SPAC_Cross;
 				break;
@@ -202,6 +203,7 @@ void FLevelLocals::TranslateLineDef (line_t *ld, maplinedef_t *mld, int lineinde
 			case SwitchMany:
 			case PushMany:
 				flags |= ML_REPEAT_SPECIAL;
+				[[fallthrough]];
 			case SwitchOnce:
 			case PushOnce:
 				if (passthrough)
@@ -212,6 +214,7 @@ void FLevelLocals::TranslateLineDef (line_t *ld, maplinedef_t *mld, int lineinde
 
 			case GunMany:
 				flags |= ML_REPEAT_SPECIAL;
+				[[fallthrough]];
 			case GunOnce:
 				ld->activation = SPAC_Impact;
 				break;
