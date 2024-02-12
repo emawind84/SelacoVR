@@ -1176,7 +1176,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	{
 		RenderStyle = STYLE_Stencil;
 		ThingColor = MAKEARGB(255, 0, 0, 0);
-		trans *= 0.5f;
+		trans = 0.5f;
 		hw_styleflags = STYLEHW_NoAlphaTest;
 	}
 
