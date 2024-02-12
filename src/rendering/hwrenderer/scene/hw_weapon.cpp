@@ -138,14 +138,15 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 			FTextureID lump = sprites[spawn->sprite].GetSpriteFrame(0, 0, 0., &mirror);
 			if (!lump.isValid()) return;
 
-			FMaterial* tex = FMaterial::ValidateTexture(TexMan.GetGameTexture(lump, false), true, false);
+			auto gtex = TexMan.GetGameTexture(lump, false);
+			FMaterial* tex = FMaterial::ValidateTexture(gtex, true, false);
 			if (!tex) return;
 
 			float vw = (float)viewwidth;
 			float vh = (float)viewheight;
 
 			state.AlphaFunc(Alpha_GEqual, 1);
-			state.SetMaterial(tex, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
+			state.SetMaterial(gtex, UF_Sprite, CTF_Expand, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
 			
 			auto spi = TexMan.GetGameTexture(lump, false)->GetSpritePositioning(0);
 

@@ -7,7 +7,7 @@ LOCAL_MODULE    := qzdoom
 
 LOCAL_CFLAGS   :=  -D__MOBILE__ -DNO_PIX_BUFF -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
 
-LOCAL_CPPFLAGS := -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++14 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security \
+LOCAL_CPPFLAGS := -include g_pch.h -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++17 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security \
     -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
 
 LOCAL_CFLAGS  += -DNO_SEND_STATS
@@ -54,6 +54,7 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/interface \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/frontend \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/backend \
+    	$(GZDOOM_TOP_PATH)/src/common/statusbar \
     	$(GZDOOM_TOP_PATH)/src/g_statusbar \
     	$(GZDOOM_TOP_PATH)/src/console \
     	$(GZDOOM_TOP_PATH)/src/playsim \
@@ -368,6 +369,7 @@ PCH_SOURCES = \
 	common/2d/v_2ddrawer.cpp \
 	common/2d/v_drawtext.cpp \
 	common/2d/v_draw.cpp \
+	common/thirdparty/gain_analysis.cpp \
 	common/thirdparty/sfmt/SFMT.cpp \
 	common/fonts/singlelumpfont.cpp \
 	common/fonts/singlepicfont.cpp \
@@ -475,6 +477,7 @@ PCH_SOURCES = \
 	common/engine/serializer.cpp \
 	common/engine/m_joy.cpp \
 	common/engine/m_random.cpp \
+	common/objects/autosegs.cpp \
 	common/objects/dobject.cpp \
 	common/objects/dobjgc.cpp \
 	common/objects/dobjtype.cpp \
@@ -485,6 +488,7 @@ PCH_SOURCES = \
 	common/menu/resolutionmenu.cpp \
 	common/menu/menudef.cpp \
 	common/menu/savegamemanager.cpp \
+	common/statusbar/base_sbar.cpp \
 	common/rendering/v_framebuffer.cpp \
 	common/rendering/v_video.cpp \
 	common/rendering/r_thread.cpp \
@@ -553,7 +557,6 @@ QZDOOM_SRC = \
 
 
 LOCAL_SRC_FILES = \
-	__autostart.cpp \
 	$(QZDOOM_SRC) \
 	$(ANDROID_SRC_FILES) \
 	$(PLAT_POSIX_SOURCES) \
@@ -582,7 +585,6 @@ LOCAL_SRC_FILES = \
 	common/thirdparty/math/tan.c \
 	common/thirdparty/math/tanh.c \
 	common/thirdparty/math/fastsin.cpp \
-	zzautozend.cpp \
 
 
 # Turn down optimisation of this file so clang doesnt produce ldrd instructions which are missaligned

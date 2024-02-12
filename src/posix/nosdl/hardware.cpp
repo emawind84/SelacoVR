@@ -33,30 +33,17 @@
 */
 
 #include <signal.h>
-#include <time.h>
 
-#include "version.h"
-#include "hardware.h"
-#include "i_video.h"
 #include "i_system.h"
-#include "c_console.h"
-#include "c_cvars.h"
+#include "hardware.h"
 #include "c_dispatch.h"
-#include "video.h"
 #include "v_text.h"
-#include "doomstat.h"
 #include "m_argv.h"
-#include "glvideo.h"
-#include "swrenderer/r_swrenderer.h"
-
-EXTERN_CVAR (Bool, ticker)
-EXTERN_CVAR (Bool, fullscreen)
-EXTERN_CVAR (Bool, swtruecolor)
-EXTERN_CVAR (Float, vid_winscale)
+#include "c_console.h"
+#include "printf.h"
 
 IVideo *Video;
 
-bool V_DoModeSetup (int width, int height, int bits);
 void I_RestartRenderer();
 
 
@@ -79,26 +66,7 @@ void I_InitGraphics ()
 	
 	if (Video == NULL)
 		I_FatalError ("Failed to initialize display");
-
-	//atterm (I_ShutdownGraphics);
 }
-
-/** Remaining code is common to Win32 and Linux **/
-
-// VIDEO WRAPPERS ---------------------------------------------------------
-
-
-//==========================================================================
-//
-// SetFPSLimit
-//
-// Initializes an event timer to fire at a rate of <limit>/sec. The video
-// update will wait for this timer to trigger before updating.
-//
-// Pass 0 as the limit for unlimited.
-// Pass a negative value for the limit to use the value of vid_maxfps.
-//
-//==========================================================================
 
 EXTERN_CVAR(Int, vid_maxfps);
 EXTERN_CVAR(Bool, cl_capfps);
