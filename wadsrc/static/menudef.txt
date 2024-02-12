@@ -3157,3 +3157,10 @@ OptionMenu "vkoptions"
 	TextField "$VKMNU_DEVICE",			vk_device
 	Option "$VKMNU_HDR",				"vk_hdr", "OnOff"
 }
+
+OptionValue "SpriteShadowModes"
+{
+	0, "$OPTVAL_OFF"
+	1, "$OPTVAL_DEFAULT"
+	2, "$OPTVAL_SPRSHADALWAYS"
+}

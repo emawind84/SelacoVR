@@ -32,6 +32,7 @@
 #include "vm.h"
 #include "r_defs.h"
 #include "g_levellocals.h"
+#include "gamedata/g_mapinfo.h"
 #include "s_sound.h"
 #include "p_local.h"
 #include "v_font.h"
@@ -2501,7 +2502,6 @@ DEFINE_ACTION_FUNCTION(_Console, MidPrint)
 	C_MidPrint(fnt, txt, bold);
 	return 0;
 }
-
 
 //==========================================================================
 //

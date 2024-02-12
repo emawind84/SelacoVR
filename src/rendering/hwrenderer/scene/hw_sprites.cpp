@@ -839,6 +839,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	{
 		z = thing->floorz;
 	}
+
 	// [RH] Make floatbobbing a renderer-only effect.
 	else if (thing->flags2 & MF2_FLOATBOB)
 	{
@@ -949,7 +950,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			thing->renderflags ^= RF_XFLIP;
 
 		r.Scale(sprscale.X, isSpriteShadow ? sprscale.Y * 0.15 : sprscale.Y);
-
+		
 		float SpriteOffY = thing->SpriteOffset.Y;
 		float rightfac = -r.left - thing->SpriteOffset.X;
 		float leftfac = rightfac - r.width;
@@ -1443,6 +1444,7 @@ void HWDrawInfo::ProcessActorsInPortal(FLinePortalSpan *glport, area_t in_area)
 						spr.Process(this, th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), in_area, 2, true);
 					}
 
+					// This is called from the worker thread and must not alter the fake sector cache.
 					spr.Process(this, th, hw_FakeFlat(th->Sector, in_area, false, &fakesector), in_area, 2);
 					th->Angles.Yaw = savedangle;
 					th->SetXYZ(savedpos);
