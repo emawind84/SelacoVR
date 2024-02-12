@@ -120,7 +120,7 @@ void MapLoader::SpawnLinePortal(line_t* line)
 	// portal destination is special argument #0
 	line_t* dst = nullptr;
 
-	if (line->args[2] >= PORTT_VISUAL && line->args[2] <= PORTT_LINKED)
+	if ((line->args[2] >= PORTT_VISUAL && line->args[2] <= PORTT_LINKED) || line->special == Line_QuickPortal)
 	{
 		int type = (line->special != Line_QuickPortal) ? line->args[2] : line->args[0] == 0 ? PORTT_LINKED : PORTT_VISUAL;
 		int tag = (line->special == Line_QuickPortal) ? Level->tagManager.GetFirstLineID(line) : line->args[0];
@@ -131,7 +131,7 @@ void MapLoader::SpawnLinePortal(line_t* line)
 
 		port->mOrigin = line;
 		port->mDestination = dst;
-		port->mType = uint8_t(line->args[2]);	// range check is done above.
+		port->mType = uint8_t(type);	// range check is done above.
 
 		if (port->mType == PORTT_LINKED)
 		{
@@ -140,7 +140,8 @@ void MapLoader::SpawnLinePortal(line_t* line)
 		}
 		else
 		{
-			port->mAlign = uint8_t(line->args[3] >= PORG_ABSOLUTE && line->args[3] <= PORG_CEILING ? line->args[3] : PORG_ABSOLUTE);
+			int flags = (line->special == Line_QuickPortal) ? PORG_ABSOLUTE : line->args[3];
+			port->mAlign = uint8_t(flags >= PORG_ABSOLUTE && flags <= PORG_CEILING ? flags : PORG_ABSOLUTE);
 			if (port->mType == PORTT_INTERACTIVE && port->mAlign != PORG_ABSOLUTE)
 			{
 				// Due to the way z is often handled, these pose a major issue for parts of the code that needs to transparently handle interactive portals.
@@ -756,6 +757,7 @@ void MapLoader::SpawnSpecials ()
 			break;
 
 		case Line_SetPortal:
+		case Line_QuickPortal:
 			SpawnLinePortal(&line);
 			break;
 
