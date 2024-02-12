@@ -380,7 +380,7 @@ void G_NewInit ()
 
 	// Destroy thinkers that may remain after change level failure
 	// Usually, the list contains just a sentinel when such error occurred
-	level.Thinkers.DestroyThinkersInList(STAT_TRAVELLING);
+	primaryLevel->Thinkers.DestroyThinkersInList(STAT_TRAVELLING);
 
 	G_ClearSnapshots ();
 	netgame = false;

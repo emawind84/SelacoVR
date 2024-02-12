@@ -50,8 +50,6 @@
 #include "vm.h"
 #include "actorinlines.h"
 #include "a_ceiling.h"
-#include "p_tags.h"
-#include "doomstat.h"
 
 #include "gi.h"
 
@@ -265,49 +263,49 @@ void P_NoiseAlert (AActor *emitter, AActor *target, bool splash, double maxdist)
 //
 //----------------------------------------------------------------------------
 
-bool AActor::CheckMeleeRange (double range)
+int P_CheckMeleeRange (AActor* actor, double range)
 {
-	AActor *pl = target;
+	AActor *pl = actor->target;
 
 	double dist;
 		
-	if (!pl || (Sector->Flags & SECF_NOATTACK))
+	if (!pl || (actor->Sector->Flags & SECF_NOATTACK))
 		return false;
 				
-	dist = Distance2D (pl);
-	if (range < 0) range = meleerange;
+	dist = actor->Distance2D (pl);
+	if (range < 0) range = actor->meleerange;
 
 	if (dist >= range + pl->radius)
 		return false;
 
 	// [RH] If moving toward goal, then we've reached it.
-	if (pl == goal)
+	if (pl == actor->goal)
 		return true;
 
 	// [RH] Don't melee things too far above or below actor.
-	if (!(flags5 & MF5_NOVERTICALMELEERANGE))
+	if (!(actor->flags5 & MF5_NOVERTICALMELEERANGE))
 	{
-		if (pl->Z() > Top())
+		if (pl->Z() > actor->Top())
 			return false;
-		if (pl->Top() < Z())
+		if (pl->Top() < actor->Z())
 			return false;
 	}
 
 	// killough 7/18/98: friendly monsters don't attack other friends
-	if (IsFriend(pl))
+	if (actor->IsFriend(pl))
 		return false;
 		
-	if (!P_CheckSight (this, pl, 0))
+	if (!P_CheckSight (actor, pl, 0))
 		return false;
 														
 	return true;				
 }
 
-DEFINE_ACTION_FUNCTION(AActor, CheckMeleeRange)
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, CheckMeleeRange, P_CheckMeleeRange)
 {
 	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_FLOAT(range);
-	ACTION_RETURN_INT(self->CheckMeleeRange(range));
+	ACTION_RETURN_INT(P_CheckMeleeRange(self, range));
 }
 
 //=============================================================================
@@ -315,7 +313,8 @@ DEFINE_ACTION_FUNCTION(AActor, CheckMeleeRange)
 // P_CheckMissileRange
 //
 //=============================================================================
-bool P_CheckMissileRange (AActor *actor)
+
+static int P_CheckMissileRange (AActor *actor)
 {
 	double dist;
 		
@@ -363,32 +362,24 @@ bool P_CheckMissileRange (AActor *actor)
 	if (actor->MeleeState == NULL)
 		dist -= 128;	// no melee attack, so fire more
 
-	return actor->SuggestMissileAttack (dist);
+
+	if (actor->maxtargetrange > 0 && dist > actor->maxtargetrange)
+		return false;	// The Arch Vile's special behavior turned into a property
+
+	if (actor->MeleeState != nullptr && dist < actor->meleethreshold)
+		return false;	// From the Revenant: close enough for fist attack
+
+	if (actor->flags4 & MF4_MISSILEMORE) dist *= 0.5;
+	if (actor->flags4 & MF4_MISSILEEVENMORE) dist *= 0.125;
+
+	int mmc = int(actor->MinMissileChance * G_SkillProperty(SKILLP_Aggressiveness));
+	return pr_checkmissilerange() >= min(int(dist), mmc);
 }
 
-DEFINE_ACTION_FUNCTION(AActor, CheckMissileRange)
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, CheckMissileRange, P_CheckMissileRange)
 {
 	PARAM_SELF_PROLOGUE(AActor);
 	ACTION_RETURN_BOOL(P_CheckMissileRange(self));
-}
-
-bool AActor::SuggestMissileAttack (double dist)
-{
-	// new version encapsulates the different behavior in flags instead of virtual functions
-	// The advantage is that this allows inheriting the missile attack attributes from the
-	// various Doom monsters by custom monsters
-	
-	if (maxtargetrange > 0 && dist > maxtargetrange)
-		return false;	// The Arch Vile's special behavior turned into a property
-		
-	if (MeleeState != NULL && dist < meleethreshold)
-		return false;	// From the Revenant: close enough for fist attack
-
-	if (flags4 & MF4_MISSILEMORE) dist *= 0.5;
-	if (flags4 & MF4_MISSILEEVENMORE) dist *= 0.125;
-	
-	int mmc = int(MinMissileChance * G_SkillProperty(SKILLP_Aggressiveness));
-	return pr_checkmissilerange() >= MIN<int> (int(dist), mmc);
 }
 
 //=============================================================================
@@ -481,8 +472,9 @@ static int P_IsUnderDamage(AActor* actor)
 
 bool P_CheckTags(sector_t* sec1, sector_t* sec2)
 {
-	if (!level.SectorHasTags(sec1) || !level.SectorHasTags(sec2)) return sec1 == sec2;
-	if (level.GetFirstSectorTag(sec1) == level.GetFirstSectorTag(sec2)) return true;
+	auto Level = sec1->Level;
+	if (!Level->SectorHasTags(sec1) || !Level->SectorHasTags(sec2)) return sec1 == sec2;
+	if (Level->GetFirstSectorTag(sec1) == Level->GetFirstSectorTag(sec2)) return true;
 	// todo: check secondary tags as well.
 	return false;
 }
@@ -2493,7 +2485,7 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 	{
 		AActor * savedtarget = actor->target;
 		actor->target = actor->goal;
-		bool result = actor->CheckMeleeRange();
+		bool result = P_CheckMeleeRange(actor);
 		actor->target = savedtarget;
 
 		if (result)
@@ -2577,7 +2569,7 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 		pr_scaredycat() < 43)
 	{
 		// check for melee attack
-		if (meleestate && actor->CheckMeleeRange ())
+		if (meleestate && P_CheckMeleeRange(actor))
 		{
 			if (actor->AttackSound)
 				S_Sound (actor, CHAN_WEAPON, 0, actor->AttackSound, 1, ATTN_NORM);

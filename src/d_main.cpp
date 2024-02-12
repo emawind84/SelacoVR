@@ -908,6 +908,7 @@ static void End2DAndUpdate()
 	twod->End();
 	CheckBench();
 	screen->Update();
+	twod->OnFrameDone();
 }
 
 //==========================================================================
@@ -1919,10 +1920,10 @@ static FString ParseGameInfo(TArray<FString> &pwads, const char *fn, const char 
 		else if (!nextKey.CompareNoCase("STARTUPCOLORS"))
 		{
 			sc.MustGetString();
-			GameStartupInfo.FgColor = V_GetColor(NULL, sc);
+			GameStartupInfo.FgColor = V_GetColor(sc);
 			sc.MustGetStringName(",");
 			sc.MustGetString();
-			GameStartupInfo.BkColor = V_GetColor(NULL, sc);
+			GameStartupInfo.BkColor = V_GetColor(sc);
 		}
 		else if (!nextKey.CompareNoCase("STARTUPTYPE"))
 		{
@@ -2131,8 +2132,8 @@ static void AddAutoloadFiles(const char *autoname)
 		// Add common (global) wads
 		D_AddConfigFiles(allwads, "Global.Autoload", "*.wad", GameConfig);
 
-		long len;
-		int lastpos = -1;
+		ptrdiff_t len;
+		ptrdiff_t lastpos = -1;
 
 		while ((len = LumpFilterIWAD.IndexOf('.', lastpos+1)) > 0)
 		{
@@ -2858,7 +2859,7 @@ FString System_GetLocationDescription()
 {
 	auto& vp = r_viewpoint;
 	auto Level = vp.ViewLevel;
-	return FStringf("Map %s: \"%s\",\nx = %1.4f, y = %1.4f, z = %1.4f, angle = %1.4f, pitch = %1.4f\n%llu fps\n\n",
+	return Level == nullptr ? FString() : FStringf("Map %s: \"%s\",\nx = %1.4f, y = %1.4f, z = %1.4f, angle = %1.4f, pitch = %1.4f\n%llu fps\n\n",
 		Level->MapName.GetChars(), Level->LevelName.GetChars(), vp.Pos.X, vp.Pos.Y, vp.Pos.Z, vp.Angles.Yaw.Degrees, vp.Angles.Pitch.Degrees, (unsigned long long)LastCount);
 
 }

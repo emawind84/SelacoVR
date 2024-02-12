@@ -192,6 +192,7 @@ void FThinkerCollection::RunThinkers(FLevelLocals *Level)
 		recreateLights();
 		if (dolights)
 		{
+			recreateLights();
 			// Also profile the internal dynamic lights, even though they are not implemented as thinkers.
 			auto &prof = Profiles[NAME_InternalDynamicLight];
 			prof.timer.Clock();
