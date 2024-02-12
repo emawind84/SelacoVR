@@ -347,7 +347,7 @@ public:
 		mTextureMode = mode;
 	}
 
-	void SetTextureMode(FRenderStyle style)
+	void SetTextureMode(FRenderStyle style, bool clampy = false)
 	{
 		if (style.Flags & STYLEF_RedIsAlpha)
 		{
@@ -361,6 +361,7 @@ public:
 		{
 			SetTextureMode(TM_INVERSE);
 		}
+		if (clampy) mTextureMode |= TM_CLAMPY;
 	}
 
 	int GetTextureMode()

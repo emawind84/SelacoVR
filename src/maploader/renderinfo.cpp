@@ -402,6 +402,10 @@ void MapLoader::InitVertexData()
 
 	for(auto &line : Level->lines)
 	{
+		if (line.Index() == 13380)
+		{
+			int a = 0;
+		}
 		for(int j = 0; j < 2; ++j)
 		{
 			vertex_t * v = j==0? line.v1 : line.v2;
