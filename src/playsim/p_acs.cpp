@@ -4313,9 +4313,9 @@ void DLevelScript::DoSetActorProperty (AActor *actor, int property, int value)
 		{
 			if (actor->player != nullptr)
 			{
-				actor->player->SoundClass = level.Behaviors.LookupString(value);
+				actor->player->SoundClass = Level->Behaviors.LookupString(value);
 			}
-		}
+		}	
 		break;
 
 	default:

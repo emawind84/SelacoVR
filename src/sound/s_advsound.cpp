@@ -1697,6 +1697,7 @@ void S_MarkPlayerSounds (AActor *player)
 			PlayerSounds[listidx].MarkUsed();
 		}
 	}
+	
 }
 
 //==========================================================================
