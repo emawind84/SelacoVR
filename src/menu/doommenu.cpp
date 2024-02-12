@@ -77,10 +77,12 @@ typedef void(*hfunc)();
 DMenu* CreateMessageBoxMenu(DMenu* parent, const char* message, int messagemode, bool playsound, FName action = NAME_None, hfunc handler = nullptr);
 bool OkForLocalization(FTextureID texnum, const char* substitute);
 void I_WaitVBL(int count);
+void InitMenuDelegate();
 
 CUSTOM_CVAR(Bool, menu_showdoublebindings, false, CVAR_NOINITCALL)
 {
 	DeinitMenus();
+	InitMenuDelegate();
 	M_Init();
 	M_StartControlPanel (true);
 	M_SetMenu(NAME_CustomizeControls, -1);
@@ -1269,6 +1271,13 @@ bool  CheckSkipGameOptionBlock(const char *str)
 	return filter;
 }
 
+void InitMenuDelegate()
+{
+	if (menuDelegate != nullptr) return;
+	auto cls = PClass::FindClass("DoomMenuDelegate");
+	menuDelegate = cls->CreateNew();
+}
+
 void SetDefaultMenuColors()
 {
 	OptionSettings.mTitleColor = V_FindFontColor(gameinfo.mTitleColor);
@@ -1279,8 +1288,7 @@ void SetDefaultMenuColors()
 	OptionSettings.mFontColorHighlight = V_FindFontColor(gameinfo.mFontColorHighlight);
 	OptionSettings.mFontColorSelection = V_FindFontColor(gameinfo.mFontColorSelection);
 
-	auto cls = PClass::FindClass("DoomMenuDelegate");
-	menuDelegate = cls->CreateNew();
+	InitMenuDelegate();
 }
 
 CCMD (menu_main)
