@@ -227,6 +227,10 @@ protected:
 	float mAlphaThreshold;
 	float mClipSplit[2];
 
+
+	int mColorMapSpecial;
+	float mColorMapFlash;
+
 	StreamData mStreamData = {};
 	PalEntry mFogColor;
 	PalEntry mFadeColor;
@@ -280,6 +284,9 @@ public:
 		mMaterial.Reset();
 		mBias.Reset();
 		mPassType = NORMAL_PASS;
+
+		mColorMapSpecial = 0;
+		mColorMapFlash = 1;
 
 		mVertexBuffer = nullptr;
 		mVertexOffsets[0] = mVertexOffsets[1] = 0;
@@ -685,6 +692,12 @@ public:
 	EPassType GetPassType()
 	{
 		return mPassType;
+	}
+
+	void SetSpecialColormap(int cm, float flash)
+	{
+		mColorMapSpecial = cm;
+		mColorMapFlash = flash;
 	}
 
 	// API-dependent render interface
