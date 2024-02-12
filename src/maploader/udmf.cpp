@@ -932,6 +932,7 @@ public:
 				continue;
 
 			case NAME_Blocklandmonsters:
+				// This is from MBF21 so it may later be needed for a lower level namespace.
 				CHECK_N(St | Zd | Zdt | Va)
 				Flag(ld->flags2, ML2_BLOCKLANDMONSTERS, key);
 				continue;
