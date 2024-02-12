@@ -64,6 +64,7 @@
 #include "v_palette.h"
 #include "v_draw.h"
 #include "m_fixed.h"
+#include "hw_vrmodes.h"
 
 #include "../version.h"
 
@@ -1004,7 +1005,8 @@ void DBaseStatusBar::RefreshBackground () const
 
 void DBaseStatusBar::DrawCrosshair ()
 {
-	if (!crosshairon)
+	auto vrmode = VRMode::GetVRMode(true);
+	if (!crosshairon || vrmode->IsVR())
 	{
 		return;
 	}
