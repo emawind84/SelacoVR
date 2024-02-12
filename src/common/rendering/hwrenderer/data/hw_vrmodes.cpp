@@ -31,7 +31,7 @@
 #include "v_video.h"
 #include "version.h"
 #include "i_interface.h"
-#include "menu/menu.h"
+#include "menu.h"
 #include "gl_load/gl_system.h"
 #include "gl_renderer.h"
 #include "gl/stereo3d/gl_openxrdevice.h"
