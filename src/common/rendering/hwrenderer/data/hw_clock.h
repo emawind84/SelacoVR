@@ -2,7 +2,7 @@
 #define __GL_CLOCK_H
 
 #include "stats.h"
-#include "i_time.h"
+#include "m_fixed.h"
 
 extern glcycle_t RenderWall,SetupWall,ClipWall;
 extern glcycle_t RenderFlat,SetupFlat;
