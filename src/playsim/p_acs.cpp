@@ -6723,7 +6723,7 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 					int logNum = args[0];
 					FSoundID sid = 0;
 
-					const char* lookup = level.Behaviors.LookupString(args[1]);
+					const char* lookup = Level->Behaviors.LookupString(args[1]);
 					if (lookup != nullptr)
 					{
 						sid = lookup;
