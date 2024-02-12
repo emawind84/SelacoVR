@@ -155,6 +155,7 @@ void P_Shutdown();
 void M_SaveDefaultsFinal();
 void R_Shutdown();
 void I_ShutdownInput();
+void SetConsoleNotifyBuffer();
 
 const FIWADInfo *D_FindIWAD(TArray<FString> &wadfiles, const char *iwad, const char *basewad);
 
@@ -371,7 +372,6 @@ void D_GrabCVarDefaults()
 			}
 
 			CurrentFindCVar = sc.String;
-
 			if (lumpversion < 220)
 			{
 				CurrentFindCVar.ToLower();
@@ -390,9 +390,19 @@ void D_GrabCVarDefaults()
 				if (strcmp(CurrentFindCVar, "cd_drive") == 0)
 					break;
 			}
+			if (lumpversion < 221)
+			{
+				// removed cvar
+				// this one doesn't matter as much, since it depended on platform-specific values,
+				// and is something the user should change anyhow, so, let's just throw this value
+				// out.
+				if (strcmp(CurrentFindCVar, "mouse_sensitivity") == 0)
+					break;
+				if (strcmp(CurrentFindCVar, "m_noprescale") == 0)
+					break;
+			}
 
 			var = FindCVar(CurrentFindCVar, NULL);
-
 			if (var != NULL)
 			{
 				if (var->GetFlags() & CVAR_ARCHIVE)
@@ -452,47 +462,8 @@ CCMD(togglehud)
 	D_ToggleHud();
 }
 
-//==========================================================================
-//
-// D_PostEvent
-//
-// Called by the I/O functions when input is detected.
-//
-//==========================================================================
-
-void D_PostEvent (const event_t *ev)
-{
-	// Do not post duplicate consecutive EV_DeviceChange events.
-	if (ev->type == EV_DeviceChange && events[eventhead].type == EV_DeviceChange)
-	{
-		return;
-	}
-	events[eventhead] = *ev;
-	if (ev->type == EV_Mouse && menuactive == MENU_Off && ConsoleState != c_down && ConsoleState != c_falling && !primaryLevel->localEventManager->Responder(ev) && !paused)
-	{
-		if (buttonMap.ButtonDown(Button_Mlook) || freelook)
-		{
-			int look = int(ev->y * m_pitch * mouse_sensitivity * 16.0);
-			if (invertmouse)
-				look = -look;
-			G_AddViewPitch (look, true);
-			events[eventhead].y = 0;
-		}
-		if (!buttonMap.ButtonDown(Button_Strafe) && !lookstrafe)
-		{
-			int turn = int(ev->x * m_yaw * mouse_sensitivity * 8.0);
-			if (invertmousex)
-				turn = -turn;
-			G_AddViewAngle (turn, true);
-			events[eventhead].x = 0;
-		}
-		if ((events[eventhead].x | events[eventhead].y) == 0)
-		{
-			return;
-		}
-	}
-	eventhead = (eventhead+1)&(MAXEVENTS-1);
-}
+CVAR(Float, m_pitch, 1.f, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)		// Mouse speeds
+CVAR(Float, m_yaw, 1.f, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
 
 //==========================================================================
 //
@@ -1160,6 +1131,7 @@ void D_Display ()
 		switch (gamestate)
 		{
 			case GS_FULLCONSOLE:
+				D_PageDrawer();
 				C_DrawConsole ();
 				M_Drawer ();
 				End2DAndUpdate ();
@@ -2159,7 +2131,7 @@ static void AddAutoloadFiles(const char *autoname)
 		}
 		if (GameStartupInfo.LoadWidescreen == 1 || (GameStartupInfo.LoadWidescreen != 0 && autoloadwidescreen))
 		{
-			const char *wswad = BaseFileSearch ("game_widescreen_gfx.pk3", NULL, true, GameConfig);
+			const char *wswad = BaseFileSearch ("game_widescreen_gfx.pk3", NULL, false, GameConfig);
 			if (wswad)
 				D_AddFile (allwads, wswad, true, -1, GameConfig);
 		}
@@ -2832,6 +2804,33 @@ bool System_WantLeftButton()
 	return (gamestate == GS_DEMOSCREEN || gamestate == GS_TITLELEVEL);
 }
 
+static bool System_DispatchEvent(event_t* ev)
+{
+	if (ev->type == EV_Mouse && menuactive == MENU_Off && ConsoleState != c_down && ConsoleState != c_falling && !primaryLevel->localEventManager->Responder(ev) && !paused)
+	{
+		if (buttonMap.ButtonDown(Button_Mlook) || freelook)
+		{
+			int look = int(ev->y * m_pitch * 16.0);
+			if (invertmouse) look = -look;
+			G_AddViewPitch(look, true);
+			ev->y = 0;
+		}
+		if (!buttonMap.ButtonDown(Button_Strafe) && !lookstrafe)
+		{
+			int turn = int(ev->x * m_yaw * 8.0);
+			if (invertmousex)
+				turn = -turn;
+			G_AddViewAngle(turn, true);
+			ev->x = 0;
+		}
+		if (ev->x == 0 && ev->y == 0)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 bool System_NetGame()
 {
 	return netgame;
@@ -2916,6 +2915,17 @@ FString System_GetLocationDescription()
 	return FStringf("Map %s: \"%s\",\nx = %1.4f, y = %1.4f, z = %1.4f, angle = %1.4f, pitch = %1.4f\n%llu fps\n\n",
 		Level->MapName.GetChars(), Level->LevelName.GetChars(), vp.Pos.X, vp.Pos.Y, vp.Pos.Z, vp.Angles.Yaw.Degrees, vp.Angles.Pitch.Degrees, (unsigned long long)LastCount);
 
+}
+
+FString System_GetPlayerName(int node)
+{
+	return players[node].userinfo.GetName();
+}
+
+void System_ConsoleToggled(int state)
+{
+	if (state == c_falling && hud_toggled)
+		D_ToggleHud();
 }
 
 //==========================================================================
@@ -3016,6 +3026,7 @@ static void CheckForHacks(BuildInfo& buildinfo)
 	{ 
 		// This must alter the size of both the texture image and the game texture.
 		buildinfo.Height = buildinfo.Parts[0].TexImage->GetImage()->GetHeight();
+		buildinfo.texture->SetSize(buildinfo.Width, buildinfo.Height);
 		return;
 	}
 
@@ -3047,6 +3058,19 @@ static void CheckForHacks(BuildInfo& buildinfo)
 		buildinfo.Parts[0].OriginY = 0;
 		buildinfo.Parts[1].OriginY = 0;
 		return;
+	}
+}
+
+static void FixWideStatusBar()
+{
+	FGameTexture* sbartex = TexMan.FindGameTexture("stbar", ETextureType::MiscPatch);
+
+	// only adjust offsets if none already exist and if the texture is not scaled. For scaled textures a proper offset is needed.
+	if (sbartex && sbartex->GetTexelWidth() > 320 && sbartex->GetScaleX() == 1 &&
+		!sbartex->GetTexelLeftOffset(0) && !sbartex->GetTexelTopOffset(0))
+	{
+		sbartex->SetOffsets(0, (sbartex->GetTexelWidth() - 320) / 2, 0);
+		sbartex->SetOffsets(1, (sbartex->GetTexelWidth() - 320) / 2, 0);
 	}
 }
 
@@ -3082,6 +3106,9 @@ static void GC_MarkGameRoots()
 	// NextToThink must not be freed while thinkers are ticking.
 	GC::Mark(NextToThink);
 }
+
+bool  CheckSkipGameOptionBlock(const char* str);
+
 //==========================================================================
 //
 // D_DoomMain
@@ -3107,15 +3134,7 @@ static int D_DoomMain_Internal (void)
 	buttonMap.GetButton(Button_Mlook)->bReleaseLock = true;
 	buttonMap.GetButton(Button_Klook)->bReleaseLock = true;
 
-	static StringtableCallbacks stblcb =
-	{
-		StrTable_ValidFilter,
-		StrTable_GetGender
-	};
-	GStrings.SetCallbacks(&stblcb);
-
-	static SystemCallbacks syscb =
-	{
+	sysCallbacks = {
 		System_WantGuiCapture,
 		System_WantLeftButton,
 		System_NetGame,
@@ -3129,8 +3148,15 @@ static int D_DoomMain_Internal (void)
 		System_GetSceneRect,
 		System_GetLocationDescription,
 		System_M_Dim,
+		System_GetPlayerName,
+		System_DispatchEvent,
+		StrTable_ValidFilter,
+		StrTable_GetGender,
+		nullptr,
+		CheckSkipGameOptionBlock,
+		System_ConsoleToggled,
 	};
-	sysCallbacks = &syscb;
+
 	
 	std::set_new_handler(NewFailure);
 	const char *batchout = Args->CheckValue("-errorlog");
@@ -3216,16 +3242,6 @@ static int D_DoomMain_Internal (void)
 
 	// reinit from here
 
-	ConsoleCallbacks cb = {
-		D_UserInfoChanged,
-		D_SendServerInfoChange,
-		D_SendServerFlagChange,
-		G_GetUserCVar,
-		[]() { return gamestate != GS_FULLCONSOLE && gamestate != GS_STARTUP; }
-	};
-
-	C_InstallHandlers(&cb);
-
 	do
 	{
 		PClass::StaticInit();
@@ -3258,7 +3274,6 @@ static int D_DoomMain_Internal (void)
 		gameinfo.nokeyboardcheats = iwad_info->nokeyboardcheats;
 		gameinfo.ConfigName = iwad_info->Configname;
 		lastIWAD = iwad;
-		endoomName = gameinfo.Endoom;
 
 
 		if ((gameinfo.flags & GI_SHAREWARE) && pwads.Size() > 0)
@@ -3441,6 +3456,8 @@ static int D_DoomMain_Internal (void)
 		if (!batchrun) Printf ("G_ParseMapInfo: Load map definitions.\n");
 		G_ParseMapInfo (iwad_info->MapInfo);
 		MessageBoxClass = gameinfo.MessageBoxClass;
+		endoomName = gameinfo.Endoom;
+		menuBlurAmount = gameinfo.bluramount;
 		ReadStatistics();
 
 		// MUSINFO must be parsed after MAPINFO
@@ -3452,7 +3469,9 @@ static int D_DoomMain_Internal (void)
 		TexMan.Init([]() { StartScreen->Progress(); }, CheckForHacks);
 		PatchTextures();
 		TexAnim.Init();
-		C_InitConback();
+		C_InitConback(TexMan.CheckForTexture(gameinfo.BorderFlat, ETextureType::Flat), true, 0.25);
+
+		FixWideStatusBar();
 
 		StartScreen->Progress();
 		V_InitFonts();
@@ -3519,6 +3538,7 @@ static int D_DoomMain_Internal (void)
 		FinishDehPatch();
 
 		if (!batchrun) Printf("M_Init: Init menus.\n");
+		SetDefaultMenuColors();
 		M_Init();
 		M_CreateGameMenus();
 
@@ -3709,6 +3729,18 @@ int GameMain()
 	int ret = 0;
 	GameTicRate = TICRATE;
 	I_InitTime();
+
+	ConsoleCallbacks cb = {
+		D_UserInfoChanged,
+		D_SendServerInfoChange,
+		D_SendServerFlagChange,
+		G_GetUserCVar,
+		[]() { return gamestate != GS_FULLCONSOLE && gamestate != GS_STARTUP; }
+	};
+
+	C_InstallHandlers(&cb);
+	SetConsoleNotifyBuffer();
+
 	try
 	{
 		ret = D_DoomMain_Internal();
@@ -3872,7 +3904,7 @@ void I_UpdateWindowTitle()
 	switch (I_FriendlyWindowTitle)
 	{
 	case 1:
-		if (level.LevelName && level.LevelName.GetChars()[0])
+		if (level.LevelName.IsNotEmpty())
 		{
 			titlestr.Format("%s - %s", level.LevelName.GetChars(), GameStartupInfo.Name.GetChars());
 			break;

@@ -241,7 +241,6 @@ class OptionMenu : Menu
 					{
 						y = DrawCaption(mDesc.mTitle, -y, false);
 					}
-					y *= CleanYfac_1;
 					int	rowheight = OptionMenuSettings.mLinespacing * CleanYfac_1;
 					int maxitems = (screen.GetHeight() - rowheight - y) / rowheight + 1;
 
@@ -430,18 +429,10 @@ class OptionMenu : Menu
 
 	virtual int DrawCaption(String title, int y, bool drawit)
 	{
-		let font = generic_ui || !mDesc.mFont ? NewSmallFont : mDesc.mFont;
+		let font = menuDelegate.PickFont(mDesc.mFont);
 		if (font && mDesc.mTitle.Length() > 0)
 		{
-			let font = generic_ui || !mDesc.mFont ? NewSmallFont : mDesc.mFont;
-			if (drawit)
-			{
-				let tt = Stringtable.Localize(title);
-				screen.DrawText(font, OptionMenuSettings.mTitleColor,
-					(screen.GetWidth() - font.StringWidth(tt) * CleanXfac_1) / 2, 10 * CleanYfac_1,
-					tt, DTA_CleanNoMove_1, true);
-			}
-			return y + font.GetHeight();
+			return menuDelegate.DrawCaption(title, font, y, drawit);
 		}
 		else
 		{
@@ -464,9 +455,8 @@ class OptionMenu : Menu
 		{
 			y = DrawCaption(mDesc.mTitle, -y, true);
 		}
-		mDesc.mDrawTop = y;
+		mDesc.mDrawTop = y / CleanYfac_1; // mouse checks are done in clean space.
 		int fontheight = OptionMenuSettings.mLinespacing * CleanYfac_1;
-		y *= CleanYfac_1;
 
 		int indent = GetIndent();
 
@@ -531,32 +521,6 @@ class OptionMenu : Menu
 	}
 }
 
-
-class GameplayMenu : OptionMenu
-{
-	override void Drawer ()
-	{
-		Super.Drawer();
-
-		String s = String.Format("dmflags = %d   dmflags2 = %d", dmflags, dmflags2);
-		screen.DrawText (OptionFont(), OptionMenuSettings.mFontColorValue,
-			(screen.GetWidth() - OptionWidth (s) * CleanXfac_1) / 2, 35 * CleanXfac_1, s,
-			DTA_CleanNoMove_1, true);
-	}
-}
-
-class CompatibilityMenu : OptionMenu
-{
-	override void Drawer ()
-	{
-		Super.Drawer();
-
-		String s = String.Format("compatflags = %d  compatflags2 = %d", compatflags, compatflags2);
-		screen.DrawText (OptionFont(), OptionMenuSettings.mFontColorValue,
-			(screen.GetWidth() - OptionWidth (s) * CleanXfac_1) / 2, 35 * CleanXfac_1, s,
-			DTA_CleanNoMove_1, true);
-	}
-}
 
 class GLTextureGLOptions : OptionMenu
 {

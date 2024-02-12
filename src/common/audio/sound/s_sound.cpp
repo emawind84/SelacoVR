@@ -1542,6 +1542,7 @@ int SoundEngine::AddSoundLump(const char* logicalname, int lump, int CurrentPitc
 	newsfx.PitchMask = CurrentPitchMask;
 	newsfx.NearLimit = nearlimit;
 	newsfx.ResourceId = resid;
+	newsfx.bTentative = false;
 
 	if (resid >= 0) ResIdMap[resid] = S_sfx.Size() - 1;
 	return (int)S_sfx.Size()-1;

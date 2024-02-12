@@ -2,8 +2,10 @@
 struct KeyBindings native version("2.4")
 {
 	native static String NameKeys(int k1, int k2);
+	native static String NameAllKeys(array<int> list);
 
 	native int, int GetKeysForCommand(String cmd);
+	native void GetAllKeysForCommand(out array<int> list, String cmd);
 	native String GetBinding(int key);
 
 	native void SetBind(int key, String cmd);
@@ -93,6 +95,8 @@ class Menu : Object native ui version("2.4")
 	native bool mBackbuttonSelected;
 	native bool DontDim;
 	native bool DontBlur;
+	native bool AnimatedTransition;
+	native bool Animated;
 
 	native static int MenuTime();
 	native static Menu GetCurrentMenu();
@@ -101,8 +105,6 @@ class Menu : Object native ui version("2.4")
 	native static void SetMouseCapture(bool on);
 	native void Close();
 	native void ActivateMenu();
-	native static void UpdateColorsets(PlayerClass cls);
-	native static void UpdateSkinOptions(PlayerClass cls);
 	
 	//=============================================================================
 	//
@@ -117,6 +119,8 @@ class Menu : Object native ui version("2.4")
 		mBackbuttonSelected = false;
 		DontDim = false;
 		DontBlur = false;
+		AnimatedTransition = false;
+		Animated = false;
 	}
 	
 	//=============================================================================
@@ -130,9 +134,13 @@ class Menu : Object native ui version("2.4")
 		switch (mkey)
 		{
 		case MKEY_Back:
+		{
 			Close();
-			MenuSound (GetCurrentMenu() != null? "menu/backup" : "menu/clear");
+			let m = GetCurrentMenu();
+			MenuSound(m != null ? "menu/backup" : "menu/clear");
+			if (!m) menuDelegate.MenuDismissed();
 			return true;
+		}
 		}
 		return false;
 	}
@@ -192,7 +200,7 @@ class Menu : Object native ui version("2.4")
 		}
 		else if (ev.type == UIEvent.Type_MouseMove)
 		{
-			BackbuttonTime = 4*Thinker.TICRATE;
+			BackbuttonTime = 4*GameTicRate;
 			if (mMouseCapture || m_use_mouse == 1)
 			{
 				res = MouseEventBack(MOUSE_Move, ev.MouseX, y);
@@ -238,11 +246,11 @@ class Menu : Object native ui version("2.4")
 				int y = (!(m_show_backbutton&2))? 0:screen.GetHeight() - h;
 				if (mBackbuttonSelected && (mMouseCapture || m_use_mouse == 1))
 				{
-					screen.DrawTexture(tex, true, x, y, DTA_CleanNoMove, true, DTA_ColorOverlay, Color(40, 255,255,255));
+					screen.DrawTexture(tex, true, x, y, DTA_CleanNoMove, true, DTA_ColorOverlay, Color(40, 255,255,255), DTA_NOOFFSET, true);
 				}
 				else
 				{
-					screen.DrawTexture(tex, true, x, y, DTA_CleanNoMove, true, DTA_Alpha, BackbuttonAlpha);
+					screen.DrawTexture(tex, true, x, y, DTA_CleanNoMove, true, DTA_Alpha, BackbuttonAlpha, DTA_NOOFFSET, true);
 				}
 			}
 		}
@@ -284,9 +292,9 @@ class Menu : Object native ui version("2.4")
 	//
 	//=============================================================================
 
-	static void MenuSound(Sound snd)
+	static void MenuSound(Name snd)
 	{
-		S_StartSound (snd, CHAN_VOICE, CHANF_MAYBE_LOCAL|CHAN_UI, snd_menuvolume, ATTN_NONE);
+		menuDelegate.PlaySound(snd);
 	}
 	
 	deprecated("4.0") static void DrawConText (int color, int x, int y, String str)

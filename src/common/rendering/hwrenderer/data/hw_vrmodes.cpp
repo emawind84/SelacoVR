@@ -135,7 +135,7 @@ VRMode::VRMode(int eyeCount, float horizontalViewportScale,
 const VRMode *VRMode::GetVRMode(bool toscreen)
 {
 #ifdef VR3D_ENABLED
-	int mode = !toscreen || (sysCallbacks && sysCallbacks->DisableTextureFilter && sysCallbacks->DisableTextureFilter()) ? 0 : vr_mode;
+	int mode = !toscreen || (sysCallbacks.DisableTextureFilter && sysCallbacks.DisableTextureFilter()) ? 0 : vr_mode;
 
 	switch (mode)
 	{

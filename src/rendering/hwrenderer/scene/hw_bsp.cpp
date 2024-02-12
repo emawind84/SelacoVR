@@ -238,7 +238,7 @@ void HWDrawInfo::UnclipSubsector(subsector_t *sub)
 
 CVAR(Float, gl_line_distance_cull, 4000.0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
-inline bool IsDistanceCulled(seg_t *line)
+bool IsDistanceCulled(seg_t *line)
 {
 	double dist3 = gl_line_distance_cull * gl_line_distance_cull;
 	if (dist3 <= 0.0)

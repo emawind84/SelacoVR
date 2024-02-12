@@ -1,9 +1,10 @@
 cmake_minimum_required( VERSION 3.1.0 )
-project(LZDoom)
+project(GZDoom)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF) 
+
 
 if( COMMAND cmake_policy )
 	if( POLICY CMP0011 )
@@ -277,6 +278,7 @@ else()
 
 
 	if( APPLE )
+		set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9")
 		if( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" )
 			# If we're compiling with a custom GCC on the Mac (which we know since g++-4.2 doesn't support C++11) statically link libgcc.
 			set( ALL_C_FLAGS "-static-libgcc" )
@@ -401,6 +403,7 @@ add_subdirectory( wadsrc )
 add_subdirectory( wadsrc_bm )
 add_subdirectory( wadsrc_lights )
 add_subdirectory( wadsrc_extra )
+add_subdirectory( wadsrc_widescreen )
 add_subdirectory( src )
 
 # Update gitinfo.h

@@ -683,7 +683,7 @@ void HWSprite::PerformSpriteClipAdjustment(AActor *thing, const DVector2 &thingp
 
 CVAR(Float, gl_sprite_distance_cull, 2000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
-inline bool IsDistanceCulled(AActor* thing)
+bool IsDistanceCulled(AActor* thing)
 {
 	double culldist = gl_sprite_distance_cull * gl_sprite_distance_cull;
 	if (culldist <= 0.0)

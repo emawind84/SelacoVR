@@ -33,6 +33,13 @@
 EXTERN_CVAR(Bool, gl_customshader)
 #endif
 
+static IHardwareTexture* (*layercallback)(int layer, int translation);
+
+void FMaterial::SetLayerCallback(IHardwareTexture* (*cb)(int layer, int translation))
+{
+	layercallback = cb;
+}
+
 //===========================================================================
 //
 // Constructor
@@ -48,6 +55,11 @@ FMaterial::FMaterial(FGameTexture * tx, int scaleflags)
 
 	if (tx->GetUseType() == ETextureType::SWCanvas && static_cast<FWrapperTexture*>(imgtex)->GetColorFormat() == 0)
 	{
+		mShaderIndex = SHADER_Paletted;
+	}
+	else if (scaleflags & CTF_Indexed)
+	{
+		mTextureLayers[0].scaleFlags |= CTF_Indexed;
 		mShaderIndex = SHADER_Paletted;
 	}
 	else if (tx->isHardwareCanvas())
@@ -156,12 +168,25 @@ FMaterial::~FMaterial()
 //
 //===========================================================================
 
-IHardwareTexture *FMaterial::GetLayer(int i, int translation, MaterialLayerInfo **pLayer) const
+IHardwareTexture* FMaterial::GetLayer(int i, int translation, MaterialLayerInfo** pLayer) const
 {
-	auto &layer = mTextureLayers[i];
-	if (pLayer) *pLayer = &layer;
-	
-	if (layer.layerTexture) return layer.layerTexture->GetHardwareTexture(translation, layer.scaleFlags);
+	if ((mScaleFlags & CTF_Indexed) && i > 0 && layercallback)
+	{
+		static MaterialLayerInfo deflayer = { nullptr, 0, CLAMP_XY };
+		if (i == 1 || i == 2)
+		{
+			if (pLayer) *pLayer = &deflayer;
+			//This must be done with a user supplied callback because we cannot set up the rules for palette data selection here
+			return layercallback(i, translation);
+		}
+	}
+	else
+	{
+		auto& layer = mTextureLayers[i];
+		if (pLayer) *pLayer = &layer;
+		if (mScaleFlags & CTF_Indexed) translation = -1;
+		if (layer.layerTexture) return layer.layerTexture->GetHardwareTexture(translation, layer.scaleFlags);
+	}
 	return nullptr;
 }
 
@@ -176,6 +201,7 @@ FMaterial * FMaterial::ValidateTexture(FGameTexture * gtex, int scaleflags, bool
 {
 	if (gtex && gtex->isValid())
 	{
+		if (scaleflags & CTF_Indexed) scaleflags = CTF_Indexed;
 		if (!gtex->expandSprites()) scaleflags &= ~CTF_Expand;
 
 		FMaterial *hwtex = gtex->Material[scaleflags];

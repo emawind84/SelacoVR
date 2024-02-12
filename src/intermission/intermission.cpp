@@ -55,6 +55,7 @@
 #include "texturemanager.h"
 #include "v_draw.h"
 #include "doommenu.h"
+#include "sbar.h"
 
 FIntermissionDescriptorList IntermissionDescriptors;
 
@@ -236,12 +237,9 @@ void DIntermissionScreen::Drawer ()
 		if (CheckOverlay(i))
 			DrawTexture(twod, TexMan.GetGameTexture(mOverlays[i].mPic), mOverlays[i].x, mOverlays[i].y, DTA_320x200, true, TAG_DONE);
 	}
-	if (mSubtitle)
-	{
-		const char *sub = mSubtitle.GetChars();
-		if (sub && *sub == '$') sub = GStrings[sub + 1];
-		if (sub) DrawFullscreenSubtitle(sub);
-	}
+	const char *sub = mSubtitle.GetChars();
+	if (sub && *sub == '$') sub = GStrings[sub + 1];
+	if (sub) DrawFullscreenSubtitle(sub);
 }
 
 void DIntermissionScreen::OnDestroy()
@@ -745,8 +743,7 @@ void DIntermissionScreenScroller::Drawer ()
 		// Now set a clipping rectangle for the intended viewport
 		double displayratio = atotalwidth / double(aheight) - 4./3.;
 		double displaywidth = aheight * displayratio;
-		// TODO fix later
-		//CalcFullscreenScale(displaywidth, aheight, gameinfo.fullscreenautoaspect, drect);
+		GetFullscreenRect(displaywidth, aheight, FSMode_ScaleToFit43, &drect);
 		twod->SetClipRect(int(drect.left), int(drect.top), int(drect.width), int(drect.height));
 
 		int ticker = clamp(mTicker - mScrollDelay, 0, mScrollTime);
@@ -784,9 +781,8 @@ void DIntermissionScreenScroller::Drawer ()
 	}
 	else
 	{
-		// TODO fix later
 		// guesstimate the intended aspect ratio.
-		//CalcFullscreenScale(fwidth, aheight, gameinfo.fullscreenautoaspect, drect);
+		GetFullscreenRect(fwidth, aheight, FSMode_ScaleToFit43, &drect);
 		twod->SetClipRect(int(drect.left), int(drect.top), int(drect.width), int(drect.height));
 
 		int ticker = clamp(mTicker - mScrollDelay, 0, mScrollTime);

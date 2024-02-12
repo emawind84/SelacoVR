@@ -47,6 +47,7 @@
 #include "templates.h"
 #include "zstring.h"
 #include "name.h"
+#include <inttypes.h>
 #include "filesystem.h"
 
 // MACROS ------------------------------------------------------------------
@@ -300,6 +301,12 @@ void FScanner :: OpenLumpNum (int lump)
 
 void FScanner::PrepareScript ()
 {
+	// If the file got a UTF-8 byte order mark, remove that.
+	if (ScriptBuffer.Len() > 3 && ScriptBuffer[0] == (char)0xEF && ScriptBuffer[1] == (char)0xBB && ScriptBuffer[2] == (char)0xBF)
+	{
+		ScriptBuffer = ScriptBuffer.Mid(3);
+	}
+
 	// The scanner requires the file to end with a '\n', so add one if
 	// it doesn't already.
 	if (ScriptBuffer.Len() == 0 || ScriptBuffer.Back() != '\n')
@@ -400,6 +407,13 @@ void FScanner::RestorePos (const FScanner::SavedPos &pos)
 	Crossed = false;
 }
 
+long long FScanner::mystrtoll(const char* p, char** endp, int base)
+{
+	// Do not treat a leading 0 as an octal identifier if so desired.
+	if (NoOctals && *p == '0' && p[1] != 'x' && p[1] != 'X' && base == 0) base = 10;
+	return strtoll(p, endp, base);
+}
+
 //==========================================================================
 //
 // FScanner :: isText
@@ -491,6 +505,7 @@ bool FScanner::ScanString (bool tokens)
 	const char *marker, *tok;
 	bool return_val;
 
+	ParseError = false;
 	CheckOpen();
 	if (AlreadyGot)
 	{
@@ -514,7 +529,7 @@ bool FScanner::ScanString (bool tokens)
 	LastGotLine = Line;
 
 	// In case the generated scanner does not use marker, avoid compiler warnings.
-	marker;
+	// marker;
 #include "sc_man_scanner.h"
 	LastGotToken = tokens;
 	return return_val;
@@ -590,7 +605,7 @@ bool FScanner::CheckString (const char *name)
 //
 //==========================================================================
 
-bool FScanner::GetToken ()
+bool FScanner::GetToken (bool evaluate)
 {
 	if (ScanString (true))
 	{
@@ -613,7 +628,7 @@ bool FScanner::GetToken ()
 			}
 			else
 			{
-				BigNumber = strtoll(String, &stopper, 0);
+				BigNumber = mystrtoll(String, &stopper, 0);
 				Number = (int)BigNumber;// clamp<int64_t>(BigNumber, 0, UINT_MAX);
 				Float = Number;
 			}
@@ -625,7 +640,19 @@ bool FScanner::GetToken ()
 		}
 		else if (TokenType == TK_StringConst)
 		{
-			StringLen = strbin(String);
+			StringLen = strbin(const_cast<char*>(String));
+		}
+		else if (TokenType == TK_Identifier && evaluate && symbols.CountUsed() > 0)
+		{
+			auto sym = symbols.CheckKey(String);
+			if (sym)
+			{
+				TokenType = sym->tokenType;
+				BigNumber = sym->Number;
+				Number = (int)sym->Number;
+				Float = sym->Float;
+				// String will retain the actual symbol name.
+			}
 		}
 		return true;
 	}
@@ -638,9 +665,9 @@ bool FScanner::GetToken ()
 //
 //==========================================================================
 
-void FScanner::MustGetAnyToken (void)
+void FScanner::MustGetAnyToken (bool evaluate)
 {
-	if (GetToken () == false)
+	if (GetToken (evaluate) == false)
 	{
 		ScriptError ("Missing token (unexpected end of file).");
 	}
@@ -668,9 +695,9 @@ void FScanner::TokenMustBe (int token)
 //
 //==========================================================================
 
-void FScanner::MustGetToken (int token)
+void FScanner::MustGetToken (int token, bool evaluate)
 {
-	MustGetAnyToken ();
+	MustGetAnyToken (evaluate);
 	TokenMustBe(token);
 }
 
@@ -683,9 +710,9 @@ void FScanner::MustGetToken (int token)
 //
 //==========================================================================
 
-bool FScanner::CheckToken (int token)
+bool FScanner::CheckToken (int token, bool evaluate)
 {
-	if (GetToken ())
+	if (GetToken (evaluate))
 	{
 		if (TokenType == token)
 		{
@@ -702,7 +729,7 @@ bool FScanner::CheckToken (int token)
 //
 //==========================================================================
 
-bool FScanner::GetNumber ()
+bool FScanner::GetNumber (bool evaluate)
 {
 	char *stopper;
 
@@ -715,11 +742,25 @@ bool FScanner::GetNumber ()
 		}
 		else
 		{
-			BigNumber = strtoll(String, &stopper, 0);
+			BigNumber = mystrtoll(String, &stopper, 0);
 			Number = (int)BigNumber;// clamp<int64_t>(BigNumber, 0, UINT_MAX);
 			if (*stopper != 0)
 			{
+				if (evaluate && symbols.CountUsed())
+				{
+					auto sym = symbols.CheckKey(String);
+					if (sym && sym->tokenType == TK_IntConst)
+					{
+						BigNumber = sym->Number;
+						Number = (int)sym->Number;
+						Float = sym->Float;
+						// String will retain the actual symbol name.
+						return true;
+					}
+
+				}
 				ScriptError ("SC_GetNumber: Bad numeric constant \"%s\".", String);
+				return false;
 			}
 		}
 		Float = Number;
@@ -737,9 +778,9 @@ bool FScanner::GetNumber ()
 //
 //==========================================================================
 
-void FScanner::MustGetNumber ()
+void FScanner::MustGetNumber (bool evaluate)
 {
-	if (GetNumber() == false)
+	if (GetNumber(evaluate) == false)
 	{
 		ScriptError ("Missing integer (unexpected end of file).");
 	}
@@ -754,7 +795,7 @@ void FScanner::MustGetNumber ()
 //
 //==========================================================================
 
-bool FScanner::CheckNumber ()
+bool FScanner::CheckNumber (bool evaluate)
 {
 	char *stopper;
 
@@ -772,10 +813,23 @@ bool FScanner::CheckNumber ()
 		}
 		else
 		{
-			BigNumber = strtoll (String, &stopper, 0);
+			BigNumber = mystrtoll (String, &stopper, 0);
 			Number = (int)BigNumber;// clamp<int64_t>(BigNumber, 0, UINT_MAX);
 			if (*stopper != 0)
 			{
+				if (evaluate && symbols.CountUsed())
+				{
+					auto sym = symbols.CheckKey(String);
+					if (sym && sym->tokenType == TK_IntConst)
+					{
+						BigNumber = sym->Number;
+						Number = (int)sym->Number;
+						Float = sym->Float;
+						// String will retain the actual symbol name.
+						return true;
+					}
+
+				}
 				UnGet();
 				return false;
 			}
@@ -797,7 +851,7 @@ bool FScanner::CheckNumber ()
 //
 //==========================================================================
 
-bool FScanner::CheckFloat ()
+bool FScanner::CheckFloat (bool evaluate)
 {
 	char *stopper;
 
@@ -812,6 +866,20 @@ bool FScanner::CheckFloat ()
 		Float = strtod (String, &stopper);
 		if (*stopper != 0)
 		{
+			if (evaluate && symbols.CountUsed())
+			{
+				auto sym = symbols.CheckKey(String);
+				if (sym && sym->tokenType == TK_IntConst && sym->tokenType != TK_FloatConst)
+				{
+					BigNumber = sym->Number;
+					Number = (int)sym->Number;
+					Float = sym->Float;
+					// String will retain the actual symbol name.
+					return true;
+				}
+
+			}
+
 			UnGet();
 			return false;
 		}
@@ -830,7 +898,7 @@ bool FScanner::CheckFloat ()
 //
 //==========================================================================
 
-bool FScanner::GetFloat ()
+bool FScanner::GetFloat (bool evaluate)
 {
 	char *stopper;
 
@@ -840,7 +908,21 @@ bool FScanner::GetFloat ()
 		Float = strtod (String, &stopper);
 		if (*stopper != 0)
 		{
+			if (evaluate && symbols.CountUsed())
+			{
+				auto sym = symbols.CheckKey(String);
+				if (sym && sym->tokenType == TK_IntConst && sym->tokenType != TK_FloatConst)
+				{
+					BigNumber = sym->Number;
+					Number = (int)sym->Number;
+					Float = sym->Float;
+					// String will retain the actual symbol name.
+					return true;
+				}
+			}
+
 			ScriptError ("SC_GetFloat: Bad numeric constant \"%s\".", String);
+			return false;
 		}
 		Number = (int)Float;
 		return true;
@@ -857,9 +939,9 @@ bool FScanner::GetFloat ()
 //
 //==========================================================================
 
-void FScanner::MustGetFloat ()
+void FScanner::MustGetFloat (bool evaluate)
 {
-	if (GetFloat() == false)
+	if (GetFloat(evaluate) == false)
 	{
 		ScriptError ("Missing floating-point number (unexpected end of file).");
 	}
@@ -943,44 +1025,54 @@ bool FScanner::Compare (const char *text)
 //
 //==========================================================================
 
-bool FScanner::ScanValue(bool allowfloat)
+bool FScanner::ScanValue(bool allowfloat, bool evaluate)
 {
 	bool neg = false;
-	if (!GetToken()) 
+	if (!GetToken(evaluate)) 
 	{
 		return false;
 	}
 	if (TokenType == '-' || TokenType == '+')
 	{
 		neg = TokenType == '-';
-		if (!GetToken())
+		if (!GetToken(evaluate))
 		{
 			return false;
 		}
 	}
-	if (TokenType != TK_IntConst && (TokenType != TK_FloatConst || !allowfloat)) 
-	{
+
+	if (TokenType == TK_FloatConst && !allowfloat)
 		return false;
+
+	if (TokenType != TK_IntConst && TokenType != TK_FloatConst) 
+	{
+		auto d = constants.CheckKey(String);
+		if (!d) return false;
+		if (!allowfloat && int64_t(*d) != *d) return false;
+		BigNumber = int64_t(*d);
+		Number = int(*d);
+		Float = *d;
 	}
 	if (neg)
 	{
+		BigNumber = -BigNumber;
 		Number = -Number;
 		Float = -Float;
 	}
 	return true;
 }
 
-bool FScanner::CheckValue(bool allowfloat) 
+bool FScanner::CheckValue(bool allowfloat, bool evaluate) 
 { 
 	auto savedstate = SavePos();
-	bool res = ScanValue(allowfloat);
+	bool res = ScanValue(allowfloat, evaluate);
 	if (!res) RestorePos(savedstate);
 	return res;
 }
 
-void FScanner::MustGetValue(bool allowfloat)
+void FScanner::MustGetValue(bool allowfloat, bool evaluate)
 {
-	if (!ScanValue(allowfloat)) ScriptError(allowfloat ? "Numeric constant expected" : "Integer constant expected");
+	if (!ScanValue(allowfloat, evaluate)) ScriptError(allowfloat ? "Numeric constant expected" : "Integer constant expected");
 }
 
 bool FScanner::CheckBoolToken()
@@ -1084,6 +1176,12 @@ void FScanner::ScriptError (const char *message, ...)
 		va_end (arglist);
 	}
 
+	if (NoFatalErrors)
+	{
+		Printf(TEXTCOLOR_RED "Script error, \"%s\"" TEXTCOLOR_RED " line %d:\n" TEXTCOLOR_RED "%s\n", ScriptName.GetChars(),
+			AlreadyGot ? AlreadyGotLine : Line, composed.GetChars());
+		return;
+	}
 	I_Error ("Script error, \"%s\" line %d:\n%s\n", ScriptName.GetChars(),
 		AlreadyGot? AlreadyGotLine : Line, composed.GetChars());
 }
@@ -1126,6 +1224,72 @@ void FScanner::CheckOpen()
 	{
 		I_Error ("SC_ call before SC_Open().");
 	}
+}
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+
+void FScanner::AddSymbol(const char *name, int64_t value)
+{
+	Symbol sym;
+	sym.tokenType = TK_IntConst;
+	sym.Number = int(value);
+	sym.Float = double(value);
+	symbols.Insert(name, sym);
+}
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+
+void FScanner::AddSymbol(const char* name, uint64_t value)
+{
+	Symbol sym;
+	sym.tokenType = TK_UIntConst;
+	sym.Number = value;
+	sym.Float = (double)value;
+	symbols.Insert(name, sym);
+}
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+
+void FScanner::SkipToEndOfBlock()
+{
+	int depth = 0;
+	while (1)
+	{
+		MustGetString(); // this will abort if it reaches the end of the file
+		if (Compare("{")) depth++;
+		else if (Compare("}"))
+		{
+			depth--;
+			if (depth < 0) return;
+		}
+	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void FScanner::AddSymbol(const char* name, double value)
+{
+	Symbol sym;
+	sym.tokenType = TK_FloatConst;
+	sym.Number = (int64_t)value;
+	sym.Float = value;
+	symbols.Insert(name, sym);
 }
 
 //==========================================================================

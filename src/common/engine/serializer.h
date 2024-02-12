@@ -95,6 +95,7 @@ public:
 	virtual FSerializer &Sprite(const char *key, int32_t &spritenum, int32_t *def);
 	// This is only needed by the type system.
 	virtual FSerializer& StatePointer(const char* key, void* ptraddr, bool *res);
+	FSerializer& SerializeMemory(const char* key, void* mem, size_t length);
 
 	FSerializer &StringPtr(const char *key, const char *&charptr);	// This only retrieves the address but creates no permanent copy of the string unlike the regular char* serializer.
 	FSerializer &AddString(const char *key, const char *charptr);
@@ -122,6 +123,12 @@ public:
 	FSerializer &operator()(const char *key, T &obj, T &def)
 	{
 		return Serialize(*this, key, obj, save_full? nullptr : &def);
+	}
+
+	template<class T>
+	FSerializer& operator()(const char* key, T& obj, T* def)
+	{
+		return Serialize(*this, key, obj, !def || save_full ? nullptr : def);
 	}
 
 	template<class T>
@@ -165,6 +172,29 @@ public:
 			for (int i = 0; i < count; i++)
 			{
 				Serialize(*this, nullptr, obj[i], def ? &def[i] : nullptr);
+			}
+			EndArray();
+		}
+		return *this;
+	}
+
+	template<class T, class Map>
+	FSerializer &SparseArray(const char *key, T *obj, int count, const Map &map, bool fullcompare = false)
+	{
+		if (BeginArray(key))
+		{
+			int max = count;
+			if (isReading())
+			{
+				max = ArraySize();
+			}
+			for (int i = 0; i < count; i++)
+			{
+				if (map[i])
+				{
+					Serialize(*this, nullptr, obj[i], (T*)nullptr);
+					if (--max < 0) break;
+				}
 			}
 			EndArray();
 		}
@@ -219,7 +249,7 @@ FSerializer &Serialize(FSerializer &arc, const char *key, TArray<T, TT> &value, 
 {
 	if (arc.isWriting())
 	{
-		if (value.Size() == 0) return arc;	// do not save empty arrays
+		if (value.Size() == 0 && key) return arc;	// do not save empty arrays
 	}
 	bool res = arc.BeginArray(key);
 	if (arc.isReading())
@@ -237,6 +267,12 @@ FSerializer &Serialize(FSerializer &arc, const char *key, TArray<T, TT> &value, 
 	}
 	arc.EndArray();
 	return arc;
+}
+
+template<int size> 
+FSerializer& Serialize(FSerializer& arc, const char* key, FixedBitArray<size>& value, FixedBitArray<size>* def)
+{
+	return arc.SerializeMemory(key, value.Storage(), value.StorageSize());
 }
 
 template<> FSerializer& Serialize(FSerializer& arc, const char* key, PClass*& clst, PClass** def);

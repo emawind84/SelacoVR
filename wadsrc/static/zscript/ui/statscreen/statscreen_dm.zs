@@ -33,7 +33,7 @@ class DeathmatchStatusScreen : StatusScreen
 		total_deaths = 0;
 
 		ng_state = 1;
-		cnt_pause = Thinker.TICRATE;
+		cnt_pause = GameTicRate;
 
 		for (i=0 ; i<MAXPLAYERS ; i++)
 		{
@@ -55,8 +55,9 @@ class DeathmatchStatusScreen : StatusScreen
 
 		int i;
 		bool stillticking;
+		bool doautoskip = autoSkip();
 
-		if (acceleratestage && ng_state != 6)
+		if ((acceleratestage || doautoskip) && ng_state != 6)
 		{
 			acceleratestage = 0;
 
@@ -123,7 +124,16 @@ class DeathmatchStatusScreen : StatusScreen
 		}
 		else if (ng_state == 6)
 		{
-			if (acceleratestage)
+			int i;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				// If the player is in the game and not ready, stop checking
+				if (playeringame[i] && players[i].Bot == NULL && !playerready[i])
+					break;
+			}
+
+			// All players are ready; proceed.
+			if ((i == MAXPLAYERS && acceleratestage) || doautoskip)
 			{
 				PlaySound("intermission/pastdmstats");
 				initShowNextLoc();
@@ -134,7 +144,7 @@ class DeathmatchStatusScreen : StatusScreen
 			if (!--cnt_pause)
 			{
 				ng_state++;
-				cnt_pause = Thinker.TICRATE;
+				cnt_pause = GameTicRate;
 			}
 		}
 	}
