@@ -106,7 +106,7 @@ void HWDrawInfo::SetFog(FRenderState &state, int lightlevel, int rellight, bool 
 		fogdensity = 70;
 		fogcolor = 0x808080;
 	}
-	else if (cmap != NULL && !fullbright)
+	else if (cmap != nullptr && !fullbright)
 	{
 		fogcolor = cmap->FadeColor;
 		fogdensity = GetFogDensity(lightlevel, fogcolor, cmap->FogDensity, cmap->BlendFactor);

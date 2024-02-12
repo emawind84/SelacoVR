@@ -61,8 +61,6 @@ CVAR(Bool, r_linearsky, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 EXTERN_CVAR(Int, r_skymode)
 EXTERN_CVAR(Bool, cl_oldfreelooklimit)
 
-std::pair<PalEntry, PalEntry>& R_GetSkyCapColor(FGameTexture* tex);
-
 namespace swrenderer
 {
 	static FSoftwareTexture *GetSWTex(FTextureID texid, bool allownull = true)
@@ -218,9 +216,6 @@ namespace swrenderer
 
 		drawerargs.SetStyle();
 
-		Thread->PrepareTexture(frontskytex, DefaultRenderStyle());
-		Thread->PrepareTexture(backskytex, DefaultRenderStyle());
-
 		DrawSky(pl);
 	}
 
@@ -257,6 +252,8 @@ namespace swrenderer
 		angle1 = UMulScale16(ang, frontcyl) + frontpos;
 		angle2 = UMulScale16(ang, backcyl) + backpos;
 
+		auto skycapcolors = Thread->GetSkyCapColor(frontskytex);
+
 		drawerargs.SetFrontTexture(Thread, frontskytex, angle1);
 		drawerargs.SetBackTexture(Thread, backskytex, angle2);
 		drawerargs.SetTextureVStep(uv_step);
@@ -264,9 +261,8 @@ namespace swrenderer
 		drawerargs.SetDest(viewport, start_x, y1);
 		drawerargs.SetCount(y2 - y1);
 		drawerargs.SetFadeSky(r_skymode == 2 && !(Level->flags & LEVEL_FORCETILEDSKY));
-		auto& col = R_GetSkyCapColor(frontskytex->GetTexture());
-		drawerargs.SetSolidTop(col.first);
-		drawerargs.SetSolidBottom(col.second);
+		drawerargs.SetSolidTop(skycapcolors.first);
+		drawerargs.SetSolidBottom(skycapcolors.second);
 
 		if (!backskytex)
 			drawerargs.DrawSingleSkyColumn(Thread);
