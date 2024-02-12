@@ -43,6 +43,7 @@
 #include "g_levellocals.h"
 #include "a_dynlight.h"
 #include "v_video.h"
+#include "g_cvars.h"
 #include "d_main.h"
 
 static int ThinkCount;
@@ -192,7 +193,6 @@ void FThinkerCollection::RunThinkers(FLevelLocals *Level)
 		recreateLights();
 		if (dolights)
 		{
-			recreateLights();
 			// Also profile the internal dynamic lights, even though they are not implemented as thinkers.
 			auto &prof = Profiles[NAME_InternalDynamicLight];
 			prof.timer.Clock();

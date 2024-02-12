@@ -594,7 +594,7 @@ bool AActor::SetState (FState *newstate, bool nofunction)
 	if (GetInfo()->LightAssociations.Size() || (state && state->Light > 0) || (oldstate && oldstate->Light > 0))
 	{
 		flags8 |= MF8_RECREATELIGHTS;
-		level.flags3 |= LEVEL3_LIGHTCREATED;
+		Level->flags3 |= LEVEL3_LIGHTCREATED;
 	}
 	return true;
 }
@@ -4800,7 +4800,7 @@ void AActor::PostBeginPlay ()
 	if (GetInfo()->LightAssociations.Size() || (state && state->Light > 0))
 	{
 		flags8 |= MF8_RECREATELIGHTS;
-		level.flags3 |= LEVEL3_LIGHTCREATED;
+		Level->flags3 |= LEVEL3_LIGHTCREATED;
 	}
 }
 
