@@ -34,6 +34,8 @@
 #include "menu.h"
 #include "gl_load/gl_system.h"
 #include "gl_renderer.h"
+#include "d_player.h"
+#include "gl/stereo3d/LSMatrix.h"
 #include "gl/stereo3d/gl_openxrdevice.h"
 
 using namespace OpenGLRenderer;
@@ -97,6 +99,8 @@ CVAR(Float, vr_automap_rotate, 13.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_automap_fixed_pitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_automap_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
+EXTERN_CVAR(Bool, puristmode);
+CVAR(Bool, vr_force_override_weap_pos, 0, 0);
 
 #define isqrt2 0.7071067812f
 
@@ -263,6 +267,59 @@ DVector3 VREyeInfo::GetViewShift(FRenderViewpoint& vp) const
 		double dx = -cos(DEG2RAD(yaw)) * vr_vunits_per_meter * getShift();
 		double dy = sin(DEG2RAD(yaw)) * vr_vunits_per_meter * getShift();
 		return { dx, dy, 0 };
+	}
+}
+
+//Fishbiter's Function.. Thank-you!!
+static DVector3 MapWeaponDir(AActor* actor, DAngle yaw, DAngle pitch, int hand = 0)
+{
+	LSMatrix44 mat;
+	auto vrmode = VRMode::GetVRMode(true);
+	if (!vrmode->GetWeaponTransform(&mat, hand))
+	{
+		double pc = pitch.Cos();
+		DVector3 direction = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
+		return direction;
+	}
+
+	yaw -= actor->Angles.Yaw;
+	pitch -= actor->Angles.Pitch;
+
+	double pc = pitch.Cos();
+
+	LSVec3 local = { (float)(pc * yaw.Cos()), (float)(pc * yaw.Sin()), (float)(-pitch.Sin()), 0.0f };
+
+	DVector3 dir;
+	dir.X = local.x * -mat[2][0] + local.y * -mat[0][0] + local.z * -mat[1][0];
+	dir.Y = local.x * -mat[2][2] + local.y * -mat[0][2] + local.z * -mat[1][2];
+	dir.Z = local.x * -mat[2][1] + local.y * -mat[0][1] + local.z * -mat[1][1];
+	dir.MakeUnit();
+
+	return dir;
+}
+
+static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
+{
+	return MapWeaponDir(actor, yaw, pitch, 0);
+}
+
+static DVector3 MapOffhandDir(AActor* actor, DAngle yaw, DAngle pitch)
+{
+	return MapWeaponDir(actor, yaw, pitch, 1);
+}
+
+void VRMode::SetUp() const
+{
+	player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+	if (player && player->mo)
+	{
+		player->mo->OverrideAttackPosDir = !puristmode && (IsVR() || vr_force_override_weap_pos);
+		player->mo->AttackDir = MapAttackDir;
+		player->mo->OffhandDir = MapOffhandDir;
+		double shootz = player->mo->Center() - player->mo->Floorclip + player->mo->AttackOffset();
+		player->mo->AttackPos = player->mo->OffhandPos = player->mo->PosAtZ(shootz);
+		player->mo->AttackAngle = player->mo->OffhandAngle = r_viewpoint.Angles.Yaw.Degrees - 90;
+		player->mo->AttackPitch = player->mo->OffhandPitch = - r_viewpoint.Angles.Pitch.Degrees;
 	}
 }
 

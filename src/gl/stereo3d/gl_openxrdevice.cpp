@@ -58,12 +58,10 @@
 
 using namespace OpenGLRenderer;
 
-EXTERN_CVAR(Bool, puristmode);
 EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Float, movebob);
 EXTERN_CVAR(Bool, cl_noprediction)
 EXTERN_CVAR(Bool, gl_billboard_faces_camera);
-EXTERN_CVAR(Int, gl_multisample);
 EXTERN_CVAR(Float, vr_vunits_per_meter)
 EXTERN_CVAR(Float, vr_height_adjust)
 
@@ -493,49 +491,6 @@ namespace s3d
         return int(m);
     }
 
-
-    //Fishbiter's Function.. Thank-you!!
-    static DVector3 MapWeaponDir(AActor* actor, DAngle yaw, DAngle pitch, int hand = 0)
-    {
-        LSMatrix44 mat;
-        auto vrmode = VRMode::GetVRMode(true);
-        if (!vrmode->GetWeaponTransform(&mat, hand))
-        {
-            double pc = pitch.Cos();
-
-            DVector3 direction = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
-            return direction;
-        }
-
-        yaw -= actor->Angles.Yaw;
-
-        //ignore specified pitch(would need to compensate for auto aimand no(vanilla) Doom weapon varies this)
-		pitch -= actor->Angles.Pitch;
-		//pitch.Degrees = 0;
-
-        double pc = pitch.Cos();
-
-        LSVec3 local = { (float)(pc * yaw.Cos()), (float)(pc * yaw.Sin()), (float)(-pitch.Sin()), 0.0f };
-
-        DVector3 dir;
-        dir.X = local.x * -mat[2][0] + local.y * -mat[0][0] + local.z * -mat[1][0];
-        dir.Y = local.x * -mat[2][2] + local.y * -mat[0][2] + local.z * -mat[1][2];
-        dir.Z = local.x * -mat[2][1] + local.y * -mat[0][1] + local.z * -mat[1][1];
-        dir.MakeUnit();
-
-        return dir;
-    }
-
-    static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
-    {
-        return MapWeaponDir(actor, yaw, pitch, 0);
-    }
-
-    static DVector3 MapOffhandDir(AActor* actor, DAngle yaw, DAngle pitch)
-    {
-        return MapWeaponDir(actor, yaw, pitch, 1);
-    }
-
     bool OpenXRDeviceMode::GetTeleportLocation(DVector3 &out) const
     {
         player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
@@ -618,8 +573,6 @@ namespace s3d
 
                 //Weapon firing tracking - Thanks Fishbiter for the inspiration of how/where to use this!
                 {
-                    player->mo->OverrideAttackPosDir = !puristmode;
-
                     player->mo->AttackPitch = cinemamode ? -weaponangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees
                             : -weaponangles[PITCH];
 
@@ -630,8 +583,6 @@ namespace s3d
                     player->mo->AttackPos.Y = player->mo->Y() - (weaponoffset[2] * vr_vunits_per_meter);
                     player->mo->AttackPos.Z = r_viewpoint.CenterEyePos.Z + (((hmdPosition[1] + weaponoffset[1] + vr_height_adjust) * vr_vunits_per_meter) / pixelstretch) -
                             getDoomPlayerHeightWithoutCrouch(player); // Fixes wrong shot height when in water
-
-                    player->mo->AttackDir = MapAttackDir;
                 }
 
                 {
@@ -645,8 +596,6 @@ namespace s3d
                     player->mo->OffhandPos.Y = player->mo->Y() - (offhandoffset[2] * vr_vunits_per_meter);
                     player->mo->OffhandPos.Z = r_viewpoint.CenterEyePos.Z + (((hmdPosition[1] + offhandoffset[1] + vr_height_adjust) * vr_vunits_per_meter) / pixelstretch) -
                             getDoomPlayerHeightWithoutCrouch(player); // Fixes wrong shot height when in water
-
-                    player->mo->OffhandDir = MapOffhandDir;
                 }
 
                 if (vr_teleport && player->mo->health > 0) {

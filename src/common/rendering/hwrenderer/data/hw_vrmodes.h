@@ -66,7 +66,7 @@ struct VRMode
 	VSMatrix GetHUDSpriteProjection() const;
 
 	/* hooks for setup and cleanup operations for each stereo mode */
-	virtual void SetUp() const {};
+	virtual void SetUp() const;
 	virtual void TearDown() const {};
 
 	virtual bool IsMono() const { return mEyeCount == 1; }
