@@ -48,7 +48,7 @@
 #include "win32basevideo.h"
 #include "cmdlib.h"
 
-CVAR(Int, vid_adapter, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, vid_adapter, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 //==========================================================================
 //
@@ -126,6 +126,7 @@ void Win32BaseVideo::GetDisplayDeviceName()
 	{
 		mes.hFoundMonitor = GetPrimaryMonitorHandle();
 	}
+
 	// Could also use EnumDisplayDevices, I guess. That might work.
 	else EnumDisplayMonitors(0, 0, &GetDisplayDeviceNameMonitorEnumProc, LPARAM(&mes));
 
@@ -143,6 +144,7 @@ void Win32BaseVideo::GetDisplayDeviceName()
 			m_hMonitor = mes.hFoundMonitor;
 		}
 	}
+
 }
 
 //==========================================================================

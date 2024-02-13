@@ -431,3 +431,5 @@ inline int S_FindSound(const char* name)
 {
 	return soundEngine->FindSound(name);
 }
+
+int SoundEnabled();

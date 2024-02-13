@@ -117,6 +117,7 @@
 #include "texturemanager.h"
 #include "hw_clock.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
+#include "doomfont.h"
 #include "hw_vrmodes.h"
 
 #include <QzDoom/VrCommon.h>
@@ -172,6 +173,7 @@ void D_Cleanup();
 void FreeSBarInfoScript();
 void I_UpdateWindowTitle();
 void S_ParseMusInfo();
+void D_GrabCVarDefaults();
 
 // PRIVATE FUNCTION PROTOTYPES ---------------------------------------------
 
@@ -333,99 +335,6 @@ static int demosequence;
 static int pagetic;
 
 // CODE --------------------------------------------------------------------
-
-void D_GrabCVarDefaults()
-{
-	int lump, lastlump = 0;
-	int lumpversion, gamelastrunversion;
-	gamelastrunversion = atoi(LASTRUNVERSION);
-
-	while ((lump = fileSystem.FindLump("DEFCVARS", &lastlump)) != -1)
-	{
-		// don't parse from wads
-		if (lastlump > fileSystem.GetLastEntry(fileSystem.GetMaxIwadNum()))
-		{
-			// would rather put this in a modal of some sort, but this will have to do.
-			Printf(TEXTCOLOR_RED "Cannot load DEFCVARS from a wadfile!\n");
-			break;
-		}
-
-		FScanner sc(lump);
-
-		sc.MustGetString();
-		if (!sc.Compare("version"))
-			sc.ScriptError("Must declare version for defcvars! (currently: %i)", gamelastrunversion);
-		sc.MustGetNumber();
-		lumpversion = sc.Number;
-		if (lumpversion > gamelastrunversion)
-			sc.ScriptError("Unsupported version %i (%i supported)", lumpversion, gamelastrunversion);
-		if (lumpversion < 219)
-			sc.ScriptError("Version must be at least 219 (current version %i)", gamelastrunversion);
-
-		FBaseCVar* var;
-		FString CurrentFindCVar;
-
-		while (sc.GetString())
-		{
-			if (sc.Compare("set"))
-			{
-				sc.MustGetString();
-			}
-
-			CurrentFindCVar = sc.String;
-			if (lumpversion < 220)
-			{
-				CurrentFindCVar.ToLower();
-
-				// these two got renamed
-				if (strcmp(CurrentFindCVar, "gamma") == 0)
-				{
-					CurrentFindCVar = "vid_gamma";
-				}
-				if (strcmp(CurrentFindCVar, "fullscreen") == 0)
-				{
-					CurrentFindCVar = "vid_fullscreen";
-				}
-
-				// this was removed
-				if (strcmp(CurrentFindCVar, "cd_drive") == 0)
-					break;
-			}
-			if (lumpversion < 221)
-			{
-				// removed cvar
-				// this one doesn't matter as much, since it depended on platform-specific values,
-				// and is something the user should change anyhow, so, let's just throw this value
-				// out.
-				if (strcmp(CurrentFindCVar, "mouse_sensitivity") == 0)
-					break;
-				if (strcmp(CurrentFindCVar, "m_noprescale") == 0)
-					break;
-			}
-
-			var = FindCVar(CurrentFindCVar, NULL);
-			if (var != NULL)
-			{
-				if (var->GetFlags() & CVAR_ARCHIVE)
-				{
-					UCVarValue val;
-
-					sc.MustGetString();
-					val.String = const_cast<char*>(sc.String);
-					var->SetGenericRepDefault(val, CVAR_String);
-				}
-				else
-				{
-					sc.ScriptError("Cannot set cvar default for non-config cvar '%s'", sc.String);
-				}
-			}
-			else
-			{
-				sc.ScriptError("Unknown cvar '%s'", sc.String);
-			}
-		}
-	}
-}
 
 //==========================================================================
 //
@@ -944,6 +853,7 @@ static void End2DAndUpdate()
 	twod->End();
 	CheckBench();
 	screen->Update();
+	twod->OnFrameDone();
 }
 
 //==========================================================================
@@ -1960,10 +1870,10 @@ static FString ParseGameInfo(TArray<FString> &pwads, const char *fn, const char 
 		else if (!nextKey.CompareNoCase("STARTUPCOLORS"))
 		{
 			sc.MustGetString();
-			GameStartupInfo.FgColor = V_GetColor(NULL, sc);
+			GameStartupInfo.FgColor = V_GetColor(sc);
 			sc.MustGetStringName(",");
 			sc.MustGetString();
-			GameStartupInfo.BkColor = V_GetColor(NULL, sc);
+			GameStartupInfo.BkColor = V_GetColor(sc);
 		}
 		else if (!nextKey.CompareNoCase("STARTUPTYPE"))
 		{
@@ -2172,8 +2082,8 @@ static void AddAutoloadFiles(const char *autoname)
 		// Add common (global) wads
 		D_AddConfigFiles(allwads, "Global.Autoload", "*.wad", GameConfig);
 
-		long len;
-		int lastpos = -1;
+		ptrdiff_t len;
+		ptrdiff_t lastpos = -1;
 
 		while ((len = LumpFilterIWAD.IndexOf('.', lastpos+1)) > 0)
 		{
@@ -2921,7 +2831,7 @@ FString System_GetLocationDescription()
 {
 	auto& vp = r_viewpoint;
 	auto Level = vp.ViewLevel;
-	return FStringf("Map %s: \"%s\",\nx = %1.4f, y = %1.4f, z = %1.4f, angle = %1.4f, pitch = %1.4f\n%llu fps\n\n",
+	return Level == nullptr ? FString() : FStringf("Map %s: \"%s\",\nx = %1.4f, y = %1.4f, z = %1.4f, angle = %1.4f, pitch = %1.4f\n%llu fps\n\n",
 		Level->MapName.GetChars(), Level->LevelName.GetChars(), vp.Pos.X, vp.Pos.Y, vp.Pos.Z, vp.Angles.Yaw.Degrees, vp.Angles.Pitch.Degrees, (unsigned long long)LastCount);
 
 }
@@ -3116,6 +3026,11 @@ static void GC_MarkGameRoots()
 	GC::Mark(NextToThink);
 }
 
+static void System_ToggleFullConsole()
+{
+	gameaction = ga_fullconsole;
+}
+
 bool  CheckSkipGameOptionBlock(const char* str);
 
 //==========================================================================
@@ -3164,6 +3079,10 @@ static int D_DoomMain_Internal (void)
 		nullptr,
 		CheckSkipGameOptionBlock,
 		System_ConsoleToggled,
+		nullptr, 
+		nullptr,
+		System_ToggleFullConsole,
+		nullptr,
 	};
 
 	
@@ -3484,6 +3403,7 @@ static int D_DoomMain_Internal (void)
 
 		StartScreen->Progress();
 		V_InitFonts();
+		InitDoomFonts();
 		V_LoadTranslations();
 		UpdateGenericUI(false);
 

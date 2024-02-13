@@ -40,6 +40,7 @@
 #include "flatvertices.h"
 #include "v_palette.h"
 #include "d_main.h"
+#include "g_cvars.h"
 
 #include "hw_lightbuffer.h"
 #include "hw_cvars.h"
@@ -111,13 +112,19 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 
 	R_SetupFrame(mainvp, r_viewwindow, camera);
 
-	if (mainview && toscreen)
+	if (mainview && toscreen && !(camera->Level->flags3 & LEVEL3_NOSHADOWMAP) && camera->Level->HasDynamicLights && gl_light_shadowmap && screen->allowSSBO() && (screen->hwcaps & RFL_SHADER_STORAGE_BUFFER))
 	{
 		screen->SetAABBTree(camera->Level->aabbTree);
 		screen->mShadowMap.SetCollectLights([=] {
 			CollectLights(camera->Level);
 		});
 		screen->UpdateShadowMap();
+	}
+	else
+	{
+		// null all references to the level if we do not need a shadowmap. This will shortcut all internal calculations without further checks.
+		screen->SetAABBTree(nullptr);
+		screen->mShadowMap.SetCollectLights(nullptr);
 	}
 
 	// Update the attenuation flag of all light defaults for each viewpoint.
@@ -152,6 +159,10 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 		di->SetViewArea();
 		auto cm = di->SetFullbrightFlags(mainview ? vp.camera->player : nullptr);
 		float flash = 1.f;
+
+		// Only used by the GLES2 renderer
+		RenderState.SetSpecialColormap(cm, flash);
+
 		//di->Viewpoint.FieldOfView = fov;	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
 
 		// Stereo mode specific perspective projection
@@ -179,6 +190,9 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 			V_DrawBlend(mainvp.sector);
 			PostProcess.Unclock();
 		}
+		// Reset colormap so 2D drawing isn't affected
+		RenderState.SetSpecialColormap(CM_DEFAULT, 1);
+
 		di->EndDrawInfo();
 		eye->TearDown();
 		screen->NextEye(eyeCount);
@@ -267,8 +281,8 @@ void WriteSavePic(player_t* player, FileWriter* file, int width, int height)
 		screen->ImageTransitionScene(true);
 
 		hw_ClearFakeFlat();
-		RenderState.SetVertexBuffer(screen->mVertexData);
 		screen->mVertexData->Reset();
+		RenderState.SetVertexBuffer(screen->mVertexData);
 		screen->mLights->Clear();
 		screen->mViewpoints->Clear();
 

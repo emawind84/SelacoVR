@@ -43,6 +43,7 @@
 #include "g_levellocals.h"
 #include "a_dynlight.h"
 #include "v_video.h"
+#include "g_cvars.h"
 #include "d_main.h"
 
 static int ThinkCount;

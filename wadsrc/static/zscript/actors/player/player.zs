@@ -343,8 +343,8 @@ class PlayerPawn : Actor
 			if (player.ReadyWeapon == NULL || player.ReadyWeapon.bWimpy_Weapon)
 			{
 				let best = BestWeapon (ammotype);
-				if (best != NULL && !best.bNoAutoSwitchTo && (player.ReadyWeapon == NULL ||
-					best.SelectionOrder < player.ReadyWeapon.SelectionOrder))
+				if (best != NULL && !best.bNoAutoSwitchTo && 
+					(player.ReadyWeapon == NULL || best.SelectionOrder < player.ReadyWeapon.SelectionOrder))
 				{
 					player.PendingWeapon = best;
 				}
@@ -352,8 +352,8 @@ class PlayerPawn : Actor
 			else if (player.OffhandWeapon == NULL || player.OffhandWeapon.bWimpy_Weapon)
 			{
 				let best = BestWeapon (ammotype, 1);
-				if (best != NULL && !best.bNoAutoSwitchTo && (player.OffhandWeapon == NULL ||
-					best.SelectionOrder < player.OffhandWeapon.SelectionOrder))
+				if (best != NULL && !best.bNoAutoSwitchTo && 
+					(player.OffhandWeapon == NULL || best.SelectionOrder < player.OffhandWeapon.SelectionOrder))
 				{
 					player.PendingWeapon = best;
 				}

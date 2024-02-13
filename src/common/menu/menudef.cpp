@@ -344,6 +344,10 @@ static void DoParseListMenuBody(FScanner &sc, DListMenuDescriptor *desc, bool &s
 		{
 			desc->mAnimatedTransition = true;
 		}
+		else if (sc.Compare("animated"))
+		{
+			desc->mAnimated = true;
+		}
 		else if (sc.Compare("MouseWindow"))
 		{
 			sc.MustGetNumber();
@@ -463,7 +467,7 @@ static void DoParseListMenuBody(FScanner &sc, DListMenuDescriptor *desc, bool &s
 						}
 						else if (args[i] == TypeColor)
 						{
-							params.Push(V_GetColor(nullptr, sc));
+							params.Push(V_GetColor(sc));
 						}
 						else if (args[i] == TypeFont)
 						{
@@ -1039,7 +1043,7 @@ static void ParseOptionMenuBody(FScanner &sc, DOptionMenuDescriptor *desc, int i
 						}
 						else if (args[i] == TypeColor)
 						{
-							params.Push(V_GetColor(nullptr, sc));
+							params.Push(V_GetColor(sc));
 						}
 						else if (args[i] == TypeFont)
 						{
@@ -1241,6 +1245,10 @@ static void ParseImageScrollerBody(FScanner& sc, DImageScrollerDescriptor* desc)
 		{
 			desc->mAnimatedTransition = true;
 		}
+		else if (sc.Compare("animated"))
+		{
+			desc->mAnimated = true;
+		}
 		else if (sc.Compare("textBackground"))
 		{
 			sc.MustGetString();
@@ -1303,7 +1311,7 @@ static void ParseImageScrollerBody(FScanner& sc, DImageScrollerDescriptor* desc)
 						}
 						else if (args[i] == TypeColor)
 						{
-							params.Push(V_GetColor(nullptr, sc));
+							params.Push(V_GetColor(sc));
 						}
 						else if (args[i]->isIntCompatible())
 						{

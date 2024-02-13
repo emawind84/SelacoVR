@@ -219,6 +219,10 @@ void HWWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 	}
 #endif
 
+	if (flags & HWWall::HWF_CLAMPY && (type == RENDERWALL_M2S || type == RENDERWALL_M2SNF))
+	{
+		state.SetTextureClamp(true);
+	}
 
 	if (flags & HWWall::HWF_CLAMPY && (type == RENDERWALL_M2S || type == RENDERWALL_M2SNF))
 	{
@@ -312,6 +316,7 @@ void HWWall::RenderTexturedWall(HWDrawInfo *di, FRenderState &state, int rflags)
 	state.SetObjectColor2(0);
 	state.SetAddColor(0);
 	state.SetTextureMode(tmode);
+	state.SetTextureClamp(false);
 	state.EnableGlow(false);
 	state.EnableGradient(false);
 	state.ApplyTextureManipulation(nullptr);
@@ -1945,7 +1950,7 @@ void HWWall::Process(HWDrawInfo *di, seg_t *seg, sector_t * frontsector, sector_
 	sector_t * segback;
 
 #ifdef _DEBUG
-	if (seg->linedef->Index() == 14454)
+	if (seg->linedef->Index() == 759)
 	{
 		int a = 0;
 	}

@@ -29,9 +29,9 @@
 #include "c_cvars.h"
 #include "v_video.h"
 
-#ifdef __MOBILE__
-EXTERN_CVAR(Bool, gl_customshader)
-#endif
+
+CVAR(Bool, gl_customshader, true, 0);
+
 
 static IHardwareTexture* (*layercallback)(int layer, int translation);
 TArray<UserShaderDesc> usershaders;
@@ -128,20 +128,20 @@ FMaterial::FMaterial(FGameTexture * tx, int scaleflags)
 		}
 
 		auto index = tx->GetShaderIndex();
-#ifdef __MOBILE__
-		if( gl_customshader )
-#endif
-		if (index >= FIRST_USER_SHADER)
+		if (gl_customshader)
 		{
-			const UserShaderDesc &usershader = usershaders[index - FIRST_USER_SHADER];
-			if (usershader.shaderType == mShaderIndex) // Only apply user shader if it matches the expected material
+			if (index >= FIRST_USER_SHADER)
 			{
-				for (auto &texture : tx->CustomShaderTextures)
+				const UserShaderDesc& usershader = usershaders[index - FIRST_USER_SHADER];
+				if (usershader.shaderType == mShaderIndex) // Only apply user shader if it matches the expected material
 				{
-					if (texture == nullptr) continue;
-					mTextureLayers.Push({ texture.get(), 0 });	// scalability should be user-definable.
+					for (auto& texture : tx->CustomShaderTextures)
+					{
+						if (texture == nullptr) continue;
+						mTextureLayers.Push({ texture.get(), 0 });	// scalability should be user-definable.
+					}
+					mShaderIndex = index;
 				}
-				mShaderIndex = index;
 			}
 		}
 	}

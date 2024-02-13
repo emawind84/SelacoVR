@@ -747,7 +747,7 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 			continue;
 		}
 		if (!psp->GetState()) continue;
-		FSpriteModelFrame *smf = psp->GetCaller() != nullptr ? FindModelFrame(psp->GetCaller()->GetClass(), psp->GetSprite(), psp->GetFrame(), false): nullptr;
+		FSpriteModelFrame *smf = psp->Caller != nullptr ? FindModelFrame(psp->Caller->GetClass(), psp->GetSprite(), psp->GetFrame(), false) : nullptr;
 		const bool hudModelStep = smf != nullptr;
 
 		HUDSprite hudsprite;
