@@ -83,6 +83,7 @@ void InitMenuDelegate();
 CUSTOM_CVAR(Bool, menu_showexperimental, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
 	DeinitMenus();
+	InitMenuDelegate();
 	M_Init();
 	M_StartControlPanel (true);
 	M_SetMenu(NAME_Optionsmenu, -1);
