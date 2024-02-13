@@ -7,7 +7,7 @@ LOCAL_MODULE    := qzdoom
 
 LOCAL_CFLAGS   :=  -D__MOBILE__ -DNO_PIX_BUFF -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM  -DLZDOOM -DNO_VBO -D__STDINT_LIMITS -DENGINE_NAME=\"lzdoom\"
 
-LOCAL_CPPFLAGS := -include g_pch.h -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++17 -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security \
+LOCAL_CPPFLAGS := -include g_pch.h -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++17  -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security \
     -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
 
 LOCAL_CFLAGS  += -DNO_SEND_STATS
@@ -45,6 +45,7 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/hwrenderer/data \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl_load \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl \
+    	$(GZDOOM_TOP_PATH)/src/common/rendering/gles \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/vulkan/thirdparty \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/polyrenderer/backend \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/polyrenderer/drawers \
@@ -133,11 +134,27 @@ VULKAN_SOURCES = \
 	common/rendering/vulkan/thirdparty/volk/volk.c \
 	common/rendering/vulkan/thirdparty/vk_mem_alloc/vk_mem_alloc.cpp \
 
+GLES_SOURCES = \
+	common/rendering/gles/gles_system.cpp \
+	common/rendering/gles/gles_renderer.cpp \
+	common/rendering/gles/gles_framebuffer.cpp \
+	common/rendering/gles/gles_renderstate.cpp \
+	common/rendering/gles/gles_renderbuffers.cpp \
+	common/rendering/gles/gles_postprocess.cpp \
+	common/rendering/gles/gles_postprocessstate.cpp \
+	common/rendering/gles/gles_buffers.cpp \
+	common/rendering/gles/gles_hwtexture.cpp \
+	common/rendering/gles/gles_shader.cpp \
+	common/rendering/gles/gles_shaderprogram.cpp \
+	common/rendering/gles/gles_samplers.cpp \
+
 POLYBACKEND_SOURCES = \
 	common/rendering/polyrenderer/backend/poly_framebuffer.cpp \
 	common/rendering/polyrenderer/backend/poly_buffers.cpp \
 	common/rendering/polyrenderer/backend/poly_hwtexture.cpp \
-	common/rendering/polyrenderer/backend/poly_renderstate.cpp \
+	common/rendering/polyrenderer/backend/poly_renderstate.cpp
+
+
 
 FASTMATH_SOURCES = \
 	rendering/swrenderer/r_all.cpp \
@@ -185,6 +202,7 @@ PCH_SOURCES = \
 	ct_chat.cpp \
 	d_iwad.cpp \
 	d_main.cpp \
+	d_defcvars.cpp \
 	d_anonstats.cpp \
 	d_net.cpp \
 	d_netinfo.cpp \
@@ -563,6 +581,7 @@ LOCAL_SRC_FILES = \
 	$(PLAT_NOSDL_SOURCES) \
 	$(FASTMATH_SOURCES) \
 	$(PCH_SOURCES) \
+	$(GLES_SOURCES) \
 	common/utility/x86.cpp \
 	common/thirdparty/strnatcmp.c \
 	common/utility/zstring.cpp \

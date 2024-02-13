@@ -67,7 +67,7 @@ EXTERN_CVAR(Int, gl_pipeline_depth);
 
 EXTERN_CVAR(Bool, gl_sort_textures);
 
-void Draw2D(F2DDrawer *drawer, FRenderState &state);
+void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D = false);
 
 extern bool vid_hdr_active;
 
@@ -433,12 +433,12 @@ TArray<uint8_t> OpenGLFrameBuffer::GetScreenshotBuffer(int &pitch, ESSType &colo
 //
 //===========================================================================
 
-void OpenGLFrameBuffer::Draw2D()
+void OpenGLFrameBuffer::Draw2D(bool outside2D)
 {
 	if (GLRenderer != nullptr)
 	{
 		GLRenderer->mBuffers->BindCurrentFB();
-		::Draw2D(twod, gl_RenderState);
+		::Draw2D(twod, gl_RenderState, outside2D);
 	}
 }
 

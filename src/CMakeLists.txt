@@ -806,7 +806,6 @@ if (HAVE_GLES2)
 		common/rendering/gles/gles_shader.cpp
 		common/rendering/gles/gles_shaderprogram.cpp
 		common/rendering/gles/gles_samplers.cpp
-		common/rendering/gles/glad/src/glad.c
 	)
 
 	set (FASTMATH_SOURCES ${FASTMATH_SOURCES} ${GLES_SOURCES})
@@ -1289,8 +1288,6 @@ include_directories( .
 	common/rendering/gl_load
 	common/rendering/gl
 	common/rendering/gles
-	common/rendering/gles/glad/include
-	common/rendering/gles/Mali_OpenGL_ES_Emulator/include
 	common/rendering/vulkan/thirdparty
 	common/rendering/polyrenderer/backend
 	common/rendering/polyrenderer/drawers
