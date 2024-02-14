@@ -45,7 +45,7 @@
 #include "poly_hwtexture.h"
 #include "engineerrors.h"
 
-void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D = false);
+void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D);
 
 extern int rendered_commandbuffers;
 extern int current_rendered_commandbuffers;

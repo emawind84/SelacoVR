@@ -24,6 +24,8 @@
 #define __GLC_DYNLIGHT_H
 
 #include "tarray.h"
+#include "a_dynlight.h"
+#include "r_utility.h"
 
 struct FDynLightData
 {

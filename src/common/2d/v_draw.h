@@ -326,4 +326,4 @@ public:
 	}
 };
 
-void Draw2D(F2DDrawer* drawer, FRenderState& state);
+void Draw2D(F2DDrawer* drawer, FRenderState& state, bool outside2D = false);
