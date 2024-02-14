@@ -35,6 +35,7 @@
 #include "gl_load/gl_system.h"
 #include "gl_renderer.h"
 #include "d_player.h"
+#include "actorinlines.h"
 #include "gl/stereo3d/LSMatrix.h"
 #include "gl/stereo3d/gl_openxrdevice.h"
 
