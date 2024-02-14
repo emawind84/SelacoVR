@@ -2450,6 +2450,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(FLevelLocals, SphericalCoords, SphericalCoords)
 	ACTION_RETURN_VEC3(result);
 }
 
+
 static int isFrozen(FLevelLocals *self)
 {
 	return self->isFrozen();

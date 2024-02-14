@@ -212,9 +212,6 @@ void HWDrawInfo::WorkerThread()
 
 
 
-
-EXTERN_CVAR(Float, r_actorspriteshadowdist)
-
 EXTERN_CVAR(Bool, gl_render_segs)
 
 CVAR(Bool, gl_render_things, true, 0)

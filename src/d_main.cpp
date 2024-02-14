@@ -125,7 +125,6 @@
 #endif // __unix__
 
 EXTERN_CVAR(Bool, hud_althud)
-EXTERN_CVAR(Bool, cl_customizeinvulmap)
 EXTERN_CVAR(Int, vr_mode)
 EXTERN_CVAR(Bool, cl_customizeinvulmap)
 EXTERN_CVAR(Bool, log_vgafont)
