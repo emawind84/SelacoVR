@@ -109,7 +109,6 @@ static inline bool P_IsThingSpecial(int specnum)
 	return (specnum >= Thing_Projectile && specnum <= Thing_SpawnNoFog) ||
 			specnum == Thing_SpawnFacing || specnum == Thing_ProjectileIntercept || specnum == Thing_ProjectileAimed;
 }
-
 namespace
 {
 	enum
@@ -126,7 +125,6 @@ namespace
 		// namespace for each game
 	};
 }
-
 #define CHECK_N(f) if (!(namespace_bits&(f))) break;
 
 //===========================================================================

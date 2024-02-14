@@ -83,7 +83,7 @@ public:
 
 	//
 	void WorldLoaded();
-	void WorldUnloaded();
+	void WorldUnloaded(const FString& nextmap);
 	void WorldThingSpawned(AActor* actor);
 	void WorldThingDied(AActor* actor, AActor* inflictor);
 	void WorldThingGround(AActor* actor, FState* st);
@@ -149,6 +149,7 @@ struct FWorldEvent
 	// for loaded/unloaded
 	bool IsSaveGame = false;
 	bool IsReopen = false;
+	FString NextMap;
 	// for thingspawned, thingdied, thingdestroyed
 	AActor* Thing = nullptr; // for thingdied
 	AActor* Inflictor = nullptr; // can be null - for damagemobj
@@ -237,7 +238,7 @@ struct EventManager
 	// called right after the map has loaded (approximately same time as OPEN ACS scripts)
 	void WorldLoaded();
 	// called when the map is about to unload (approximately same time as UNLOADING ACS scripts)
-	void WorldUnloaded();
+	void WorldUnloaded(const FString& nextmap);
 	// called around PostBeginPlay of each actor.
 	void WorldThingSpawned(AActor* actor);
 	// called after AActor::Die of each actor.

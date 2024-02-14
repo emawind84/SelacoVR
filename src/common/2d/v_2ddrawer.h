@@ -246,7 +246,7 @@ public:
 	bool mIsFirstPass = true;
 };
 
-struct DShape2DBufferInfo : NoVirtualRefCountedBase
+struct DShape2DBufferInfo : RefCountedBase
 {
 	TArray<F2DVertexBuffer> buffers;
 	bool needsVertexUpload = true;
