@@ -281,7 +281,7 @@ void MarkArray(DObject **obj, size_t count)
 static size_t CalcStepSize()
 {
 	int time_passed = CheckTime - LastCollectTime;
-	auto alloc = MIN(LastCollectAlloc, Estimate);
+	auto alloc = min(LastCollectAlloc, Estimate);
 	size_t bytes_gained = AllocBytes > alloc ? AllocBytes - alloc : 0;
 	return (StepMul > 0 && time_passed > 0)
 		? std::max<size_t>(GCSTEPSIZE, bytes_gained / time_passed * StepMul / 100)
@@ -417,7 +417,7 @@ void Step()
 	// since we started sweeping because we don't want to fall behind.
 	// However, we also don't want to go slower than what was decided upon
 	// when the sweep began if the rate of allocation has slowed.
-	size_t lim = MAX(CalcStepSize(), MinStepSize);
+	size_t lim = max(CalcStepSize(), MinStepSize);
 	do
 	{
 		size_t done = SingleStep();

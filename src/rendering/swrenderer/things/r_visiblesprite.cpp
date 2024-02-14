@@ -290,7 +290,7 @@ namespace swrenderer
 		}
 
 		// Make sure bottom clipping stays within the view size
-		botclip = MIN<short>(botclip, viewheight);
+		botclip = min<short>(botclip, viewheight);
 
 		if (topclip >= botclip)
 		{
