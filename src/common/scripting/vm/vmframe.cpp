@@ -37,7 +37,7 @@
 #include "v_text.h"
 #include "stats.h"
 #include "c_dispatch.h"
-#include "templates.h"
+
 #include "vmintern.h"
 #include "types.h"
 #include "jit.h"
@@ -747,7 +747,7 @@ ADD_STAT(VM)
 	for (auto d : VMCycles)
 	{
 		added += d.TimeMS();
-		peak = MAX<double>(peak, d.TimeMS());
+		peak = max<double>(peak, d.TimeMS());
 	}
 	for (auto d : VMCalls) addedc += d;
 	memmove(&VMCycles[1], &VMCycles[0], 9 * sizeof(cycle_t));
