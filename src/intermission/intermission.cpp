@@ -144,12 +144,7 @@ void DrawFullscreenSubtitle(FFont* font, const char *text)
 
 void DIntermissionScreen::Init(FIntermissionAction *desc, bool first)
 {
-	if (desc->mMusic.IsEmpty())
-	{
-		// only start the default music if this is the first action in an intermission
-		if (first) S_ChangeMusic (gameinfo.finaleMusic, gameinfo.finaleOrder, desc->mMusicLooping);
-	}
-	else
+	if (!first && desc->mMusic.IsNotEmpty())
 	{
 		S_ChangeMusic (desc->mMusic, desc->mMusicOrder, desc->mMusicLooping);
 	}
@@ -193,8 +188,27 @@ void DIntermissionScreen::Init(FIntermissionAction *desc, bool first)
 	}
 	mTicker = 0;
 	mSubtitle = desc->mSubtitle;
+	mFirst = first;
+	// If this is the first element of an intermission we must delay starting the music until Start() is called.
+	mMusic = desc->mMusic;
+	mMusicLooping = desc->mMusicLooping;
+	mMusicOrder = desc->mMusicOrder;
 }
 
+void DIntermissionScreen::Start()
+{
+	if (mFirst)
+	{
+		if (mMusic.IsEmpty())
+		{
+			S_ChangeMusic(gameinfo.finaleMusic, gameinfo.finaleOrder, mMusicLooping);
+		}
+		else
+		{
+			S_ChangeMusic(mMusic, mMusicOrder, mMusicLooping);
+		}
+	}
+}
 
 int DIntermissionScreen::Responder (FInputEvent *ev)
 {
@@ -834,7 +848,7 @@ void DIntermissionScreenScroller::Drawer ()
 //
 //==========================================================================
 
-DIntermissionController::DIntermissionController(FIntermissionDescriptor *Desc, bool DeleteDesc)
+DIntermissionController::DIntermissionController(FIntermissionDescriptor *Desc, bool DeleteDesc, bool ending)
 {
 	mDesc = Desc;
 	mDeleteDesc = DeleteDesc;
@@ -843,6 +857,7 @@ DIntermissionController::DIntermissionController(FIntermissionDescriptor *Desc, 
 	mSentAdvance = false;
 	mScreen = nullptr;
 	mFirst = true;
+	mEndGame = ending;
 }
 
 bool DIntermissionController::NextPage ()
@@ -852,8 +867,8 @@ bool DIntermissionController::NextPage ()
 
 	if (mIndex == (int)mDesc->mActions.Size() && mDesc->mLink == NAME_None)
 	{
-		// last page
-		return false;
+		// last page (must block when ending the game.)
+		return mEndGame;
 	}
 	bg.SetInvalid();
 
@@ -872,7 +887,7 @@ again:
 		}
 		else if (action->mClass == TITLE_ID)
 		{
-			continue;
+			return false;
 		}
 		else
 		{
@@ -897,6 +912,11 @@ again:
 		}
 	}
 	return false;
+}
+
+void DIntermissionController::Start()
+{
+	if (mScreen) mScreen->Start();
 }
 
 bool DIntermissionController::Responder (FInputEvent *ev)
@@ -980,19 +1000,20 @@ void DIntermissionController::OnDestroy ()
 //
 //==========================================================================
 
-DIntermissionController* F_StartIntermission(FIntermissionDescriptor *desc, bool deleteme)
+DIntermissionController* F_StartIntermission(FIntermissionDescriptor *desc, bool deleteme, bool ending)
 {
 	ScaleOverrider s(twod);
 	S_StopAllChannels ();
 	gameaction = ga_nothing;
 	gamestate = GS_FINALE;
 	//if (state == FSTATE_InLevel) wipegamestate = GS_FINALE;	// don't wipe when within a level.
-	auto CurrentIntermission = Create<DIntermissionController>(desc, deleteme);
+	auto CurrentIntermission = Create<DIntermissionController>(desc, deleteme, ending);
 
 	// If the intermission finishes straight away then cancel the wipe.
 	if (!CurrentIntermission->NextPage())
 	{
 		CurrentIntermission->Destroy();
+		return nullptr;
 	}
 
 	GC::WriteBarrier(CurrentIntermission);
@@ -1041,10 +1062,17 @@ DEFINE_ACTION_FUNCTION(DIntermissionController, Ticker)
 	ACTION_RETURN_BOOL(self->Ticker());
 }
 
+DEFINE_ACTION_FUNCTION(DIntermissionController, Start)
+{
+	PARAM_SELF_PROLOGUE(DIntermissionController);
+	self->Start();
+	return 0;
+}
+
 DEFINE_ACTION_FUNCTION(DIntermissionController, Drawer)
 {
 	PARAM_SELF_PROLOGUE(DIntermissionController);
-	self->Drawer	();
+	self->Drawer();
 	return 0;
 }
 

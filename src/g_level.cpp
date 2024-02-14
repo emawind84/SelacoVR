@@ -905,7 +905,6 @@ DIntermissionController* FLevelLocals::CreateIntermission()
 					ext->mDefined & FExitText::DEF_LOOKUP,
 					false);
 			}
-			if (controller) controller->mEndGame = false;
 			return controller;
 		}
 
@@ -937,14 +936,11 @@ DIntermissionController* FLevelLocals::CreateIntermission()
 			}
 		}
 	}
-	if (controller) controller->mEndGame = endgame;
 	return controller;
 }
 
 void RunIntermission(DIntermissionController* intermissionScreen, DObject* statusScreen, std::function<void(bool)> completionf)
 {
-			D_StartTitle();
-
 	if (!intermissionScreen && !statusScreen)
 	{
 		completionf(false);
@@ -1015,12 +1011,12 @@ void G_DoCompleted (void)
 		
 		statusScreen = WI_Start (&staticWmInfo);
 	}
-	bool endgame = intermissionScreen && intermissionScreen->mEndGame;
+	bool endgame = strncmp(nextlevel, "enDSeQ", 6) == 0;
 	intermissionScreen = primaryLevel->CreateIntermission();
 	RunIntermission(intermissionScreen, statusScreen, [=](bool)
 	{
 		if (!endgame) primaryLevel->WorldDone();
-		else if (!intermissionScreen) D_StartTitle();
+		else D_StartTitle();
 	});
 }
 

@@ -1994,7 +1994,7 @@ OptionMenu "CompatActorMenu" protected
 {
 	Position -35
 	Title "$CMPTMNU_ACTORBEHAVIOR"
-	Option "$CMPTMNU_CORPSEGIBS",					"compat_CORPSEGIBS", "YesNo"
+	Option "$CMPTMNU_VILEGHOSTS",					"compat_VILEGHOSTS", "YesNo"
 	Option "$CMPTMNU_NOBLOCKFRIENDS",				"compat_NOBLOCKFRIENDS", "YesNo"
 	Option "$CMPTMNU_LIMITPAIN",					"compat_LIMITPAIN", "YesNo"
 	Option "$CMPTMNU_MBFMONSTERMOVE",				"compat_MBFMONSTERMOVE", "YesNo"
@@ -2073,7 +2073,6 @@ OptionMenu "CompatSoundMenu" protected
 	Option "$CMPTMNU_SILENTPICKUP",					"compat_SILENTPICKUP", "YesNo"
 	Option "$CMPTMNU_SILENTINSTANTFLOORS",			"compat_silentinstantfloors", "YesNo"
 	Option "$CMPTMNU_SECTORSOUNDS",					"compat_SECTORSOUNDS", "YesNo"
-	Option "$CMPTMNU_SOUNDCUTOFF",					"compat_soundcutoff", "YesNo"
 	Option "$CMPTMNU_SOUNDTARGET",					"compat_SOUNDTARGET", "YesNo"
 	Class "CompatibilityMenu"
 }
@@ -3109,6 +3108,7 @@ OptionString "LanguageOptions"
 	"eo", "Esperanto"
 	"fi", "Suomi (Finnish)"
 	"fr", "Français (French)"
+	"hu", "Magyar (Hungarian)"
 	"it", "Italiano (Italian)"
 	"jp", "日本語 (Japanese)"
 	"ko", "한국어 (Korean)"
