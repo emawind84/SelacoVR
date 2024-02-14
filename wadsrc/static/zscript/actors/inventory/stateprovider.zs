@@ -125,6 +125,23 @@ class StateProvider : Inventory
 		if (!(flags & FBF_NOPITCH)) bslope = BulletSlope(aimflags: alflags);
 		bangle = Angle;
 
+		double _bangle = bangle;
+		double _bslope = bslope;
+		if (weapon && player.mo.OverrideAttackPosDir)
+		{
+			Vector3 dir;
+			if (weapon.bOffhandWeapon)
+			{
+				dir = player.mo.OffhandDir(self, bangle, bslope);
+			}
+			else
+			{
+				dir = player.mo.AttackDir(self, bangle, bslope);
+			}
+			_bangle = dir.x;
+			_bslope = dir.y;
+		}
+
 		if (pufftype == NULL) pufftype = 'BulletPuff';
 
 		if ((numbullets == 1 && !player.refire) || numbullets == 0)
@@ -152,8 +169,8 @@ class StateProvider : Inventory
 					{
 						// Arbitary portals will make angle and pitch calculations unreliable.
 						// So use the angle and pitch we passed instead.
-						proj.Angle = bangle;
-						proj.Pitch = bslope;
+						proj.Angle = _bangle;
+						proj.Pitch = _bslope;
 						proj.Vel3DFromAngle(proj.Speed, proj.Angle, proj.Pitch);
 					}
 				}
@@ -202,8 +219,8 @@ class StateProvider : Inventory
 						{
 							// Arbitary portals will make angle and pitch calculations unreliable.
 							// So use the angle and pitch we passed instead.
-							proj.Angle = bangle;
-							proj.Pitch = bslope;
+							proj.Angle = _bangle;
+							proj.Pitch = _bslope;
 							proj.Vel3DFromAngle(proj.Speed, proj.Angle, proj.Pitch);
 						}
 					}
