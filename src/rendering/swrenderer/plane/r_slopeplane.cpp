@@ -206,7 +206,7 @@ namespace swrenderer
 	{
 		drawerargs.DrawTiltedSpan(Thread, y, x1, x2, plane_sz, plane_su, plane_sv, plane_shade, lightlevel, foggy, planelightfloat, pviewx, pviewy, basecolormap);
 
-		if (r_modelscene && r_models_carmack)
+		if (r_modelscene)
 		{
 			double viewZ = 1.0;
 			double viewX1 = Thread->Viewport->ScreenToViewX(x1, viewZ);

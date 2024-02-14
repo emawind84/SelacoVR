@@ -68,7 +68,6 @@ EXTERN_CVAR(Int, r_debug_draw)
 
 CVAR(Int, r_scene_multithreaded, 1, 0);
 CVAR(Bool, r_models, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
-CVAR(Bool, r_models_carmack, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
 bool r_modelscene = false;
 
@@ -163,7 +162,7 @@ namespace swrenderer
 
 		R_UpdateFuzzPosFrameStart();
 
-		if (r_modelscene && r_models_carmack)
+		if (r_modelscene)
 			MainThread()->Viewport->SetupPolyViewport(MainThread());
 
 		FRenderViewpoint origviewpoint = MainThread()->Viewport->viewpoint;
@@ -179,7 +178,7 @@ namespace swrenderer
 
 		// Mirrors fail to restore the original viewpoint -- we need it for the HUD weapon to draw correctly.
 		MainThread()->Viewport->viewpoint = origviewpoint;
-		if (r_modelscene && r_models_carmack)
+		if (r_modelscene)
 			MainThread()->Viewport->SetupPolyViewport(MainThread());
 
 		if (renderPlayerSprites)
