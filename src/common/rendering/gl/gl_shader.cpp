@@ -51,9 +51,7 @@
 
 
 EXTERN_CVAR(Bool, r_skipmats)
-#ifdef __MOBILE__
 EXTERN_CVAR(Bool, gl_customshader)
-#endif
 
 
 namespace OpenGLRenderer
@@ -821,10 +819,8 @@ void FShaderCollection::CompileShaders(EPassType passType)
 			mMaterialShadersNAT.Push(shc1);
 		}
 	}
-
-#ifdef __MOBILE__
-    if( gl_customshader )
-#endif
+	
+	if( gl_customshader )
 	for(unsigned i = 0; i < usershaders.Size(); i++)
 	{
 		FString name = ExtractFileBase(usershaders[i].shader);
