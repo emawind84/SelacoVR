@@ -329,7 +329,6 @@ public:
 	virtual FString GetStats()
 		{
 		FString stats;
-		size_t pos = 0, len = 0;
 		ALfloat volume;
 		ALint offset;
 		ALint processed;
@@ -1726,7 +1725,7 @@ void OpenALSoundRenderer::UpdateListener(SoundListener *listener)
 
 		const_cast<ReverbContainer*>(env)->Modified = false;
 	}
-	
+
 	// NOTE: Moving into and out of water will undo pitch variations on sounds.
 	if(listener->underwater || env->SoftwareWater)
 	{
@@ -1772,7 +1771,7 @@ void OpenALSoundRenderer::UpdateListener(SoundListener *listener)
 	}
 	else if(WasInWater)
 	{
-		
+
 		WasInWater = false;
 
 		if(EnvSlot != 0)

@@ -352,7 +352,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		#endif
 
 	)";
-	
+
 
 #ifdef __APPLE__
 	// The noise functions are completely broken in macOS OpenGL drivers
@@ -650,7 +650,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	{
 		char stringbuf[20];
 		mysnprintf(stringbuf, 20, "texture%d", i);
-		int tempindex = glGetUniformLocation(hShader, stringbuf);
+		tempindex = glGetUniformLocation(hShader, stringbuf);
 #ifdef __ANDROID__
 		if (tempindex >= 0) glUniform1i(tempindex, i - 1);
 #else
@@ -820,8 +820,8 @@ void FShaderCollection::CompileShaders(EPassType passType)
 		mMaterialShaders.Push(shc);
 		if (i < SHADER_NoTexture)
 		{
-			FShader *shc = Compile(defaultshaders[i].ShaderName, defaultshaders[i].gettexelfunc, defaultshaders[i].lightfunc, defaultshaders[i].Defines, false, passType);
-			mMaterialShadersNAT.Push(shc);
+			FShader *shc1 = Compile(defaultshaders[i].ShaderName, defaultshaders[i].gettexelfunc, defaultshaders[i].lightfunc, defaultshaders[i].Defines, false, passType);
+			mMaterialShadersNAT.Push(shc1);
 		}
 	}
 

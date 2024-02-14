@@ -240,7 +240,6 @@ void gl_PrintStartupLog()
 #ifndef __MOBILE__
 	glGetIntegerv(GL_MAX_VARYING_FLOATS, &v);
 	Printf ("Max. varying: %d\n", v);
-#endif
 	if (gl.flags & RFL_SHADER_STORAGE_BUFFER)
 	{
 		glGetIntegerv(GL_MAX_COMBINED_SHADER_STORAGE_BLOCKS, &v);

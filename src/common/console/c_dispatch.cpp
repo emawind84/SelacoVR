@@ -258,7 +258,7 @@ void C_DoCommand (const char *cmd, int keynum)
 			return;
 		}
 	}
-	
+
 	// Parse it as a normal command
 	// Checking for matching commands follows this search order:
 	//	1. Check the Commands[] hash table
@@ -287,8 +287,8 @@ void C_DoCommand (const char *cmd, int keynum)
 			}
 			else
 			{
-				auto cmd = new FStoredCommand(com, beg);
-				delayedCommandQueue.AddCommand(cmd);
+				auto command = new FStoredCommand(com, beg);
+				delayedCommandQueue.AddCommand(command);
 			}
 		}
 	}
@@ -378,8 +378,8 @@ void AddCommandString (const char *text, int keynum)
 						  // Note that deferred commands lose track of which key
 						  // (if any) they were pressed from.
 							*brkpt = ';';
-							auto cmd = new FWaitingCommand(brkpt, tics, UnsafeExecutionContext);
-							delayedCommandQueue.AddCommand(cmd);
+							auto command = new FWaitingCommand(brkpt, tics, UnsafeExecutionContext);
+							delayedCommandQueue.AddCommand(command);
 						}
 						return;
 					}
@@ -856,8 +856,8 @@ CCMD (key)
 
 		for (i = 1; i < argv.argc(); ++i)
 		{
-			unsigned int key = MakeKey (argv[i]);
-			Printf (" 0x%08x\n", key);
+			unsigned int hash = MakeKey (argv[i]);
+			Printf (" 0x%08x\n", hash);
 		}
 	}
 }
@@ -1019,7 +1019,6 @@ void FExecList::AddPullins(TArray<FString> &wads, FConfigFile *config) const
 FExecList *C_ParseExecFile(const char *file, FExecList *exec)
 {
 	char cmd[4096];
-	int retval = 0;
 
 	FileReader fr;
 

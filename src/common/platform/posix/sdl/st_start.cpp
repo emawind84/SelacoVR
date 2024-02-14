@@ -258,7 +258,7 @@ void FTTYStartupScreen::NetMessage(const char *format, ...)
 {
 	FString str;
 	va_list argptr;
-	
+
 	va_start (argptr, format);
 	str.VFormat (format, argptr);
 	va_end (argptr);
