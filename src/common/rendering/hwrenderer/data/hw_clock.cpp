@@ -167,7 +167,6 @@ ADD_STAT(bufferstats)
 static int printstats;
 static bool switchfps;
 static uint64_t waitstart;
-extern uint64_t LastCount;
 EXTERN_CVAR(Bool, vid_fps)
 
 void CheckBench()

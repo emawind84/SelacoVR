@@ -165,7 +165,7 @@ void HWFlat::SetupLights(HWDrawInfo *di, FLightNode * node, FDynLightData &light
 	{
 		FDynamicLight * light = node->lightsource;
 
-		if (!light->IsActive() || gl_IsDistanceCulled(light))
+		if (!light->IsActive() || light->DontLightMap() || gl_IsDistanceCulled(light))
 		{
 			node = node->nextLight;
 			continue;

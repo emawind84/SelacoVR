@@ -374,9 +374,10 @@ void AActor::Serialize(FSerializer &arc)
 		A("friction", Friction)
 		A("SpriteOffset", SpriteOffset)
 		("viewpos", ViewPos)
+		A("lightlevel", LightLevel)
 		A("userlights", UserLights)
 		A("WorldOffset", WorldOffset)
-		A("modelData", modelData);
+		("modelData", modelData);
 
 		SerializeTerrain(arc, "floorterrain", floorterrain, &def->floorterrain);
 		SerializeArgs(arc, "args", args, def->args, special);
@@ -4296,7 +4297,7 @@ void AActor::CheckSectorTransition(sector_t *oldsec)
 //
 //==========================================================================
 
-int AActor::UpdateWaterDepth(bool splash)
+double AActor::UpdateWaterDepth(bool splash)
 {
 	double fh = -FLT_MAX;
 	bool reset = false;
@@ -4411,9 +4412,9 @@ void AActor::SplashCheck()
 
 bool AActor::UpdateWaterLevel(bool dosplash)
 {
-	int oldlevel = waterlevel;
-
 	if (dosplash) SplashCheck();
+
+	int oldlevel = waterlevel;
 	UpdateWaterDepth(false);
 
 	// Play surfacing and diving sounds, as appropriate.
