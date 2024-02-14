@@ -70,6 +70,7 @@
 #include "vm.h"
 #include "gstrings.h"
 #include "s_music.h"
+#include "screenjob.h"
 
 EXTERN_CVAR (Int, disableautosave)
 EXTERN_CVAR (Int, autosavecount)
@@ -1853,7 +1854,7 @@ void TryRunTics (void)
 	int 		counts;
 	int 		numplaying;
 
-	bool doWait = (cl_capfps || pauseext || (r_NoInterpolate && !M_IsAnimated() /*&& gamestate != GS_INTERMISSION && gamestate != GS_INTRO*/));
+	bool doWait = (cl_capfps || pauseext || (r_NoInterpolate && !M_IsAnimated()));
 
 	// get real tics
 	if (doWait)
@@ -2698,10 +2699,6 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 		players[player].MaxPitch = (double)ReadByte(stream);		// down
 		break;
 
-	case DEM_ADVANCEINTER:
-		F_AdvanceIntermission();
-		break;
-
 	case DEM_REVERTCAMERA:
 		players[player].camera = players[player].mo;
 		break;
@@ -2723,6 +2720,10 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 		}
 		break;
 
+	case DEM_ENDSCREENJOB:
+		EndScreenJob();
+		break;
+		
 	default:
 		I_Error ("Unknown net command: %d", type);
 		break;
