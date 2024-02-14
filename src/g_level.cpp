@@ -384,7 +384,6 @@ void G_NewInit ()
 	primaryLevel->Thinkers.DestroyThinkersInList(STAT_TRAVELLING);
 
 	G_ClearSnapshots ();
-	netgame = false;
 	multiplayer = multiplayernext;
 	multiplayernext = false;
 	if (demoplayback)
