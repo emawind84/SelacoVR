@@ -915,7 +915,7 @@ static void ParseOptionSettings(FScanner &sc)
 		else if (sc.Compare("Linespacing"))
 		{
 			sc.MustGetNumber();
-			OptionSettings.mLinespacing = sc.Number;
+			// ignored
 		}
 		else if (sc.Compare("LabelOffset"))
 		{
@@ -1431,6 +1431,7 @@ void M_ParseMenuDefs()
 	DefaultOptionMenuSettings = Create<DOptionMenuDescriptor>();
 	DefaultListMenuSettings->Reset();
 	DefaultOptionMenuSettings->Reset();
+	OptionSettings.mLinespacing = 17;
 
 	int IWADMenu = fileSystem.CheckNumForName("MENUDEF", ns_global, fileSystem.GetIwadNum());
 

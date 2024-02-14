@@ -2098,7 +2098,7 @@ class PlayerPawn : Actor
 			item.PreTravelled();
 		}
 	}
-	
+	 
 	//===========================================================================
 	//
 	// FWeaponSlot :: PickWeapon

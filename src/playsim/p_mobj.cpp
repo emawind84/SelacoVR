@@ -503,7 +503,7 @@ int AActor::GetTics(FState * newstate)
 bool AActor::SetState (FState *newstate, bool nofunction)
 {
 	if (debugfile && player && (player->cheats & CF_PREDICTING))
-		fprintf (debugfile, "for pl %td: SetState while predicting!\n", Level->PlayerNum(player));
+		fprintf (debugfile, "for pl %d: SetState while predicting!\n", Level->PlayerNum(player));
 	
 	auto oldstate = state;
 	do
