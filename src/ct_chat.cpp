@@ -56,8 +56,6 @@ EXTERN_CVAR (Bool, sb_cooperative_enable)
 EXTERN_CVAR (Bool, sb_deathmatch_enable)
 EXTERN_CVAR (Bool, sb_teamdeathmatch_enable)
 
-CVAR (Bool, chat_self, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-
 int active_con_scaletext();
 
 // Public data
@@ -509,7 +507,7 @@ static bool DoSubstitution (FString &out, const char *in)
 
 CCMD (messagemode)
 {
-	if (menuactive == MENU_Off && (multiplayer || chat_self))
+	if (menuactive == MENU_Off)
 	{
 		buttonMap.ResetButtonStates();
 		chatmodeon = 1;
@@ -532,7 +530,7 @@ CCMD (say)
 
 CCMD (messagemode2)
 {
-	if (menuactive == MENU_Off && (multiplayer || chat_self))
+	if (menuactive == MENU_Off)
 	{
 		buttonMap.ResetButtonStates();
 		chatmodeon = 2;
