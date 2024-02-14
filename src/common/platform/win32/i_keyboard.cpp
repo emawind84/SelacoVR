@@ -57,7 +57,7 @@ class FDInputKeyboard : public FKeyboard
 public:
 	FDInputKeyboard();
 	~FDInputKeyboard();
-	
+
 	bool GetDevice();
 	void ProcessInput();
 

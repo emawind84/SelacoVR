@@ -693,9 +693,7 @@ void ThrowAbortException(EVMAbortException reason, const char *moreinfo, ...)
 {
 	va_list ap;
 	va_start(ap, moreinfo);
-	CVMAbortException err(reason, moreinfo, ap);
-	va_end(ap);
-	throw err;
+	throw CVMAbortException(reason, moreinfo, ap);
 }
 
 void ThrowAbortException(VMScriptFunction *sfunc, VMOP *line, EVMAbortException reason, const char *moreinfo, ...)

@@ -395,7 +395,7 @@ void FKeyBindings::PerformBind(FCommandLine &argv, const char *msg)
 	else
 	{
 		Printf ("%s:\n", msg);
-		
+
 		for (i = 0; i < NUM_KEYS; i++)
 		{
 			if (!Binds[i].IsEmpty())
@@ -698,7 +698,7 @@ void ReadBindings(int lump, bool override)
 			}
 			continue;
 		}
-		
+
 		// bind destination is optional and is the same as the console command
 		if (sc.Compare("bind"))
 		{

@@ -204,7 +204,6 @@ struct System native
 		}
 		return false;
 	}
-	 	
 }
 
 struct MusPlayingInfo native
