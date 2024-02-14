@@ -151,7 +151,7 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 			auto spi = TexMan.GetGameTexture(lump, false)->GetSpritePositioning(0);
 
 			float z1 = 0.0f;
-			float z2 = (huds->y2 - huds->y1) * MIN(3, spi.spriteWidth / spi.spriteHeight);
+			float z2 = (huds->y2 - huds->y1) * std::min(3, spi.spriteWidth / spi.spriteHeight);
 
 			if (!(mirror) != !(psp->Flags & PSPF_FLIP))
 			{

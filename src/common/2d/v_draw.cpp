@@ -146,7 +146,7 @@ int VR_GetUIScale(F2DDrawer *drawer, int altval)
 	}
 	else scaleval = uiscale;
 
-	return MAX(1, scaleval);
+	return std::max(1, scaleval);
 }
 
 int GetUIScale(F2DDrawer *drawer, int altval)
