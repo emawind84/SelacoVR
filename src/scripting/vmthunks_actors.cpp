@@ -1852,7 +1852,6 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, isFrozen, isFrozen)
 	ACTION_RETURN_BOOL(isFrozen(self));
 }
 
-
 //===========================================================================
 //
 // PlayerPawn functions
@@ -1878,7 +1877,31 @@ DEFINE_ACTION_FUNCTION_NATIVE(APlayerPawn, GetPrintableDisplayName, GetPrintable
 	ACTION_RETURN_STRING(type->GetDisplayName());
 }
 
+static void SetViewPos(AActor *self, double x, double y, double z, int flags)
+{
+	if (!self->ViewPos)
+	{
+		self->ViewPos = Create<FViewPosition>();
+	}
 
+	DVector3 pos = { x,y,z };
+	self->ViewPos->Set(pos, flags);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, SetViewPos, SetViewPos)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_FLOAT(x);
+	PARAM_FLOAT(y);
+	PARAM_FLOAT(z);
+	PARAM_INT(flags);
+	SetViewPos(self, x, y, z, flags);
+	return 0;
+}
+
+IMPLEMENT_CLASS(FViewPosition, false, false);
+DEFINE_FIELD_X(ViewPosition, FViewPosition, Offset)
+DEFINE_FIELD_X(ViewPosition, FViewPosition, Flags)
 
 DEFINE_FIELD(DThinker, Level)
 DEFINE_FIELD(AActor, snext)
@@ -2059,6 +2082,7 @@ DEFINE_FIELD(AActor, friendlyseeblocks)
 DEFINE_FIELD(AActor, SpawnTime)
 DEFINE_FIELD(AActor, InventoryID)
 DEFINE_FIELD(AActor, ThruBits)
+DEFINE_FIELD(AActor, ViewPos)
 DEFINE_FIELD(AActor, OverrideAttackPosDir)
 DEFINE_FIELD(AActor, AttackPos)
 DEFINE_FIELD(AActor, AttackPitch)
