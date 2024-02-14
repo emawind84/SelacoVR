@@ -35,7 +35,7 @@
 #include "doomtype.h"
 #include "s_soundinternal.h"
 #include "sc_man.h"
-#include "templates.h"
+
 #include "cmdlib.h"
 
 

@@ -113,3 +113,4 @@ enum EStateUseFlags
 
 using std::min;
 using std::max;
+using std::clamp;

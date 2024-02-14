@@ -35,7 +35,7 @@
 //
 
 #include <QzDoom/VrCommon.h>
-#include "templates.h"
+
 #include "p_local.h"
 #include "t_script.h"
 #include "sbar.h"

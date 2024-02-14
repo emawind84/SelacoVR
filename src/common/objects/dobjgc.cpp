@@ -59,7 +59,7 @@
 #include <limits>
 
 #include "dobject.h"
-#include "templates.h"
+
 #include "c_dispatch.h"
 #include "menu.h"
 #include "stats.h"
@@ -281,7 +281,7 @@ void MarkArray(DObject **obj, size_t count)
 static size_t CalcStepSize()
 {
 	int time_passed = CheckTime - LastCollectTime;
-	auto alloc = MIN(LastCollectAlloc, Estimate);
+	auto alloc = min(LastCollectAlloc, Estimate);
 	size_t bytes_gained = AllocBytes > alloc ? AllocBytes - alloc : 0;
 	return (StepMul > 0 && time_passed > 0)
 		? std::max<size_t>(GCSTEPSIZE, bytes_gained / time_passed * StepMul / 100)
@@ -386,7 +386,7 @@ static size_t SingleStep()
 			State = GCS_Finalize;
 		}
 		//assert(old >= AllocBytes);
-		Estimate -= MAX<size_t>(0, old - AllocBytes);
+		Estimate -= max<size_t>(0, old - AllocBytes);
 		return (GCSWEEPMAX - finalize_count) * GCSWEEPCOST + finalize_count * GCFINALIZECOST;
 	  }
 
@@ -417,7 +417,7 @@ void Step()
 	// since we started sweeping because we don't want to fall behind.
 	// However, we also don't want to go slower than what was decided upon
 	// when the sweep began if the rate of allocation has slowed.
-	size_t lim = MAX(CalcStepSize(), MinStepSize);
+	size_t lim = max(CalcStepSize(), MinStepSize);
 	do
 	{
 		size_t done = SingleStep();
@@ -658,7 +658,7 @@ CCMD(gc)
 		}
 		else
 		{
-			GC::Pause = MAX(1,atoi(argv[2]));
+			GC::Pause = max(1,atoi(argv[2]));
 		}
 	}
 	else if (stricmp(argv[1], "stepmul") == 0)
@@ -669,7 +669,7 @@ CCMD(gc)
 		}
 		else
 		{
-			GC::StepMul = MAX(100, atoi(argv[2]));
+			GC::StepMul = max(100, atoi(argv[2]));
 		}
 	}
 }
