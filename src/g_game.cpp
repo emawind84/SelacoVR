@@ -3259,3 +3259,4 @@ DEFINE_GLOBAL(automapactive);
 DEFINE_GLOBAL(Net_Arbitrator);
 DEFINE_GLOBAL(netgame);
 DEFINE_GLOBAL(paused);
+DEFINE_GLOBAL(Terrains);
