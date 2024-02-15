@@ -436,7 +436,7 @@ void HWWall::SetupLights(HWDrawInfo *di, FDynLightData &lightdata)
 	// Iterate through all dynamic lights which touch this wall and render them
 	while (node && (!gl_light_wall_max_lights || iter_dlight < gl_light_wall_max_lights))
 	{
-		if (node->lightsource->IsActive() && !gl_IsDistanceCulled(node->lightsource))
+		if (node->lightsource->IsActive() && !node->lightsource->DontLightMap() && !gl_IsDistanceCulled(node->lightsource))
 		{
 			iter_dlight++;
 

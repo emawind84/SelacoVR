@@ -40,6 +40,7 @@
 
 #include "i_input.h"
 #include "d_eventbase.h"
+#include "i_mainwindow.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -86,7 +87,6 @@ protected:
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
-extern HWND Window;
 extern LPDIRECTINPUT8 g_pdi;
 extern LPDIRECTINPUT g_pdi3;
 extern bool GUICapture;
@@ -346,7 +346,7 @@ ufailit:
 		return false;
 	}
 
-	hr = Device->SetCooperativeLevel(Window, DISCL_NONEXCLUSIVE | DISCL_BACKGROUND);
+	hr = Device->SetCooperativeLevel(mainwindow.GetHandle(), DISCL_NONEXCLUSIVE | DISCL_BACKGROUND);
 	if (FAILED(hr))
 	{
 		goto ufailit;
@@ -378,7 +378,7 @@ void FDInputKeyboard::ProcessInput()
 	DIDEVICEOBJECTDATA od;
 	DWORD dwElements;
 	HRESULT hr;
-	bool foreground = (GetForegroundWindow() == Window);
+	bool foreground = (GetForegroundWindow() == mainwindow.GetHandle());
 
 	for (;;)
 	{
@@ -447,7 +447,7 @@ bool FRawKeyboard::GetDevice()
 	rid.usUsagePage = HID_GENERIC_DESKTOP_PAGE;
 	rid.usUsage = HID_GDP_KEYBOARD;
 	rid.dwFlags = RIDEV_INPUTSINK;
-	rid.hwndTarget = Window;
+	rid.hwndTarget = mainwindow.GetHandle();
 	if (!RegisterRawInputDevices(&rid, 1, sizeof(rid)))
 	{
 		return false;

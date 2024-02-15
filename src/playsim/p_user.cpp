@@ -156,13 +156,6 @@ FPlayerClass::FPlayerClass ()
 	Flags = 0;
 }
 
-FPlayerClass::FPlayerClass (const FPlayerClass &other)
-{
-	Type = other.Type;
-	Flags = other.Flags;
-	Skins = other.Skins;
-}
-
 FPlayerClass::~FPlayerClass ()
 {
 }

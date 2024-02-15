@@ -255,6 +255,7 @@ class Actor : Thinker native
 	native int RenderHidden;
 	native int RenderRequired;
 	native int FriendlySeeBlocks;
+	native int16 lightlevel;
 	native readonly int SpawnTime;
 	private native int InventoryID;	// internal counter.
 	native readonly vector3 AttackPos;
@@ -365,6 +366,7 @@ class Actor : Thinker native
 	property RenderRequired: RenderRequired;
 	property FriendlySeeBlocks: FriendlySeeBlocks;
 	property ThruBits: ThruBits;
+	property LightLevel: LightLevel;
 	
 	// need some definition work first
 	//FRenderStyle RenderStyle;
@@ -389,6 +391,7 @@ class Actor : Thinker native
 	
 	Default
 	{
+		LightLevel -1; 
 		Scale 1;
 		Health DEFAULT_HEALTH;
 		Reactiontime 8;

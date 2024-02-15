@@ -56,6 +56,8 @@ CVAR(Bool, gl_texture, true, 0)
 CVAR(Float, gl_mask_threshold, 0.5f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, gl_mask_sprite_threshold, 0.5f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
+std::pair<PalEntry, PalEntry>& R_GetSkyCapColor(FGameTexture* tex);
+
 extern int portalsPerEye;
 
 //==========================================================================

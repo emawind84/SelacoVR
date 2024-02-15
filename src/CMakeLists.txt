@@ -451,10 +451,10 @@ set( PLAT_WIN32_SOURCES
 	common/platform/win32/i_rawps2.cpp
 	common/platform/win32/i_xinput.cpp
 	common/platform/win32/i_main.cpp
+	common/platform/win32/i_mainwindow.cpp
 	common/platform/win32/i_system.cpp
 	common/platform/win32/i_specialpaths.cpp
 	common/platform/win32/st_start.cpp
-	common/platform/win32/st_start_util.cpp
 	common/platform/win32/gl_sysfb.cpp
 	common/platform/win32/base_sysfb.cpp
 	common/platform/win32/win32basevideo.cpp
@@ -626,6 +626,7 @@ file( GLOB HEADER_FILES
 	common/platform/win32/*.h
 	common/models/*.h
 	common/textures/*.h
+	common/startscreen/*.h
 	common/textures/hires/hqnx/*.h
 	common/textures/hires/hqnx_asm/*.h
 	common/textures/hires/xbr/*.h
@@ -1050,6 +1051,12 @@ set (PCH_SOURCES
 	common/2d/wipe.cpp
 	common/thirdparty/gain_analysis.cpp
 	common/thirdparty/sfmt/SFMT.cpp
+	common/startscreen/startscreen.cpp
+	common/startscreen/startscreen_heretic.cpp
+	common/startscreen/startscreen_hexen.cpp
+	common/startscreen/startscreen_strife.cpp
+	common/startscreen/startscreen_generic.cpp
+	common/startscreen/endoom.cpp
 	common/fonts/singlelumpfont.cpp
 	common/fonts/singlepicfont.cpp
 	common/fonts/specialfont.cpp
@@ -1091,6 +1098,7 @@ set (PCH_SOURCES
 	common/textures/formats/tgatexture.cpp
 	common/textures/formats/stbtexture.cpp
 	common/textures/formats/anmtexture.cpp
+	common/textures/formats/startscreentexture.cpp
 	common/textures/hires/hqresize.cpp
 	common/models/models_md3.cpp
 	common/models/models_md2.cpp
@@ -1321,6 +1329,7 @@ include_directories( .
 	common/statusbar
 	common/fonts
 	common/objects
+	common/startscreen
 	common/rendering
 	common/rendering/hwrenderer/data
 	common/rendering/gl_load
