@@ -3432,7 +3432,7 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 		// Initialize the size of the 2D drawer so that an attempt to access it outside the draw code won't crash.
 		twod->Begin(screen->GetWidth(), screen->GetHeight());
 		twod->End();
-		UpdateJoystickMenu(NULL);
+		//UpdateJoystickMenu(NULL);
 		UpdateVRModes();
 
 		v = Args->CheckValue ("-loadgame");
@@ -3587,8 +3587,8 @@ static int D_DoomMain_Internal (void)
 
 	D_DoomInit();
 
-	extern void D_ConfirmSendStats();
-	D_ConfirmSendStats();
+	//extern void D_ConfirmSendStats();
+	//D_ConfirmSendStats();
 
 	FString basewad = wad;
 
