@@ -84,10 +84,9 @@ LOCAL_C_INCLUDES := \
 		$(GZDOOM_TOP_PATH)/src/posix/nosdl \
     	$(GZDOOM_TOP_PATH)/libraries/lzma/C \
         $(GZDOOM_TOP_PATH)/libraries/bzip2 \
- $(SUPPORT_LIBS)/fluidsynth-lite/include \
+        $(GZDOOM_TOP_PATH)/libraries/discordrpc/include \
+\
  $(SUPPORT_LIBS)/openal/include/AL \
- $(SUPPORT_LIBS)/libsndfile-android/jni/ \
- $(SUPPORT_LIBS)/libmpg123 \
  $(SUPPORT_LIBS)/jpeg8d \
  $(SUPPORT_LIBS)/ZMusic/include  \
  $(GZDOOM_TOP_PATH)/mobile/src/extrafiles  \
@@ -189,6 +188,7 @@ FASTMATH_SOURCES = \
 
 
 PCH_SOURCES = \
+	common/thirdparty/richpresence.cpp \
 	am_map.cpp \
 	playsim/bots/b_bot.cpp \
 	playsim/bots/b_func.cpp \
