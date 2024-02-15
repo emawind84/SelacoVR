@@ -110,7 +110,7 @@ CVAR(Bool, vr_automap_fixed_pitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_automap_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 EXTERN_CVAR(Bool, puristmode);
-CVAR(Bool, vr_force_override_weap_pos, 0, 0);
+CVAR(Bool, debug_override_weap_pos, 0, 0);
 
 #define isqrt2 0.7071067812f
 
@@ -323,7 +323,7 @@ void VRMode::SetUp() const
 	player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 	if (player && player->mo)
 	{
-		player->mo->OverrideAttackPosDir = !puristmode && (IsVR() || vr_force_override_weap_pos);
+		player->mo->OverrideAttackPosDir = !puristmode && (IsVR() || debug_override_weap_pos);
 		player->mo->AttackDir = MapAttackDir;
 		player->mo->OffhandDir = MapOffhandDir;
 		double shootz = player->mo->Center() - player->mo->Floorclip + player->mo->AttackOffset();

@@ -108,48 +108,47 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 	{
 		float thresh = (huds->texture->GetTranslucency() || huds->OverrideShader != -1) ? 0.f : gl_mask_sprite_threshold;
 		state.AlphaFunc(Alpha_GEqual, thresh);
-		auto vrmode = VRMode::GetVRMode(true);
-		if (vrmode->IsMono() || (r_PlayerSprites3DMode != ITEM_ONLY && r_PlayerSprites3DMode != FAT_ITEM))
+		uint32_t trans = huds->weapon->GetTranslation() != 0 ? huds->weapon->GetTranslation() : 0;
+		if ((huds->weapon->Flags & PSPF_PLAYERTRANSLATED)) trans = huds->owner->Translation;
+		
+		if (r_PlayerSprites3DMode != ITEM_ONLY && r_PlayerSprites3DMode != FAT_ITEM)
 		{
-			uint32_t trans = huds->weapon->GetTranslation() != 0 ? huds->weapon->GetTranslation() : 0;
-			if ((huds->weapon->Flags & PSPF_PLAYERTRANSLATED)) trans = huds->owner->Translation;
 			state.SetMaterial(huds->texture, UF_Sprite, CTF_Expand, CLAMP_XY_NOMIP, trans, huds->OverrideShader);
 			state.Draw(DT_TriangleStrip, huds->mx, 4);
 		}
 		
+		auto vrmode = VRMode::GetVRMode(true);
 		DPSprite* psp = huds->weapon;
-		bool alphatexture = huds->RenderStyle.Flags & STYLEF_RedIsAlpha;
-		float sy;
+		FTextureID lump;
+		bool mirror;
+		if (psp->GetCaller() != nullptr)
+		{
+			FState* spawn = psp->GetCaller()->FindState(NAME_Spawn);
+			lump = sprites[spawn->sprite].GetSpriteFrame(0, 0, 0., &mirror);
+		}
+		else lump.SetNull();
+
+		auto gtex = TexMan.GetGameTexture(lump, false);
+		FMaterial* tex = FMaterial::ValidateTexture(gtex, true, false);
 
 		//TODO Cleanup code for rendering weapon models from sprites in VR mode
-		if ((psp->GetID() == PSP_WEAPON || psp->GetID() == PSP_OFFHANDWEAPON) && vrmode->RenderPlayerSpritesCrossed())
+		if ((psp->GetID() == PSP_WEAPON || psp->GetID() == PSP_OFFHANDWEAPON) 
+		&& vrmode->RenderPlayerSpritesCrossed()
+		&& r_PlayerSprites3DMode != BACK_ONLY
+		&& psp->GetCaller() != nullptr
+		&& tex != nullptr
+		&& lump.isValid())
 		{
-			if (r_PlayerSprites3DMode == BACK_ONLY)
-				return;
-
-			float fU1, fV1;
-			float fU2, fV2;
-
-			if (psp->GetCaller() == nullptr)
-				return;
-
-			bool mirror;
-			FState* spawn = psp->GetCaller()->FindState(NAME_Spawn);
-			FTextureID lump = sprites[spawn->sprite].GetSpriteFrame(0, 0, 0., &mirror);
-			if (!lump.isValid()) return;
-
-			auto gtex = TexMan.GetGameTexture(lump, false);
-			FMaterial* tex = FMaterial::ValidateTexture(gtex, true, false);
-			if (!tex) return;
-
 			float vw = (float)viewwidth;
 			float vh = (float)viewheight;
 
 			state.AlphaFunc(Alpha_GEqual, 1);
-			state.SetMaterial(gtex, UF_Sprite, CTF_Expand, CLAMP_XY_NOMIP, 0, huds->OverrideShader);
+			state.SetMaterial(gtex, UF_Sprite, CTF_Expand, CLAMP_XY_NOMIP, trans, huds->OverrideShader);
 			
-			auto spi = TexMan.GetGameTexture(lump, false)->GetSpritePositioning(0);
+			auto spi = gtex->GetSpritePositioning(0);
 
+			float fU1, fV1;
+			float fU2, fV2;
 			float z1 = 0.0f;
 			float z2 = (huds->y2 - huds->y1) * std::min(3, spi.spriteWidth / spi.spriteHeight);
 
@@ -188,6 +187,7 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 			}
 			else
 			{
+				float sy;
 				float crossAt;
 				if (r_PlayerSprites3DMode == ITEM_ONLY)
 				{
@@ -243,15 +243,15 @@ void HWDrawInfo::DrawPlayerSprites(bool hudModelStep, FRenderState &state)
 {
 	auto vrmode = VRMode::GetVRMode(true);
 	auto oldlightmode = lightmode;
-	if (!hudModelStep && isSoftwareLighting()) SetFallbackLightMode();	// Software lighting cannot handle 2D content.
 	for (auto &hudsprite : hudsprites)
 	{
-		hudModelStep = hudsprite.mframe != nullptr;
-		if (!hudModelStep) vrmode->AdjustPlayerSprites(hudsprite.weapon->GetCaller() == hudsprite.owner->player->OffhandWeapon);
+		if (!vrmode->IsVR() && (!!hudsprite.mframe) != hudModelStep) continue;
+		if (!!hudsprite.mframe && isSoftwareLighting()) SetFallbackLightMode();	// Software lighting cannot handle 2D content.
+		if (!!hudsprite.mframe) vrmode->AdjustPlayerSprites(hudsprite.weapon->GetCaller() == hudsprite.owner->player->OffhandWeapon);
 		DrawPSprite(&hudsprite, state);
-		if (!hudModelStep) vrmode->UnAdjustPlayerSprites();
+		if (!!hudsprite.mframe) vrmode->UnAdjustPlayerSprites();
+		lightmode = oldlightmode;
 	}
-	lightmode = oldlightmode;
 }
 
 
