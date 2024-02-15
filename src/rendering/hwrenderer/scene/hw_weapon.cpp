@@ -106,7 +106,8 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 	}
 	else
 	{
-		float thresh = (huds->texture->GetTranslucency() || huds->OverrideShader != -1) ? 0.f : gl_mask_sprite_threshold;
+		auto vrmode = VRMode::GetVRMode(true);
+		float thresh = (huds->texture->GetTranslucency() || huds->OverrideShader != -1) && !vrmode->IsVR() ? 0.f : gl_mask_sprite_threshold;
 		state.AlphaFunc(Alpha_GEqual, thresh);
 		uint32_t trans = huds->weapon->GetTranslation() != 0 ? huds->weapon->GetTranslation() : 0;
 		if ((huds->weapon->Flags & PSPF_PLAYERTRANSLATED)) trans = huds->owner->Translation;
@@ -117,7 +118,6 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 			state.Draw(DT_TriangleStrip, huds->mx, 4);
 		}
 		
-		auto vrmode = VRMode::GetVRMode(true);
 		DPSprite* psp = huds->weapon;
 		FTextureID lump;
 		bool mirror;
@@ -182,7 +182,7 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 					vp[2].Set(x, huds->y1, -z2, fU2, fV1);
 					vp[3].Set(x, huds->y2, -z2, fU2, fV2);
 					screen->mVertexData->Unmap();
-					state.Draw(DT_TriangleStrip, vert.second, 4);
+					state.Draw(DT_TriangleStrip, vert.second, 4, x == x1);
 				}
 			}
 			else
@@ -219,8 +219,8 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 				vp2[3].Set(vw / 2 - sy / 2, y2, -z2, fU2, fV2);
 				
 				screen->mVertexData->Unmap();
-				state.Draw(DT_TriangleStrip, vert.second, 4);
-				state.Draw(DT_TriangleStrip, vert2.second, 4);
+				state.Draw(DT_TriangleStrip, vert.second, 4, true);
+				state.Draw(DT_TriangleStrip, vert2.second, 4, false);
 			}
 		}
 	}
@@ -246,10 +246,10 @@ void HWDrawInfo::DrawPlayerSprites(bool hudModelStep, FRenderState &state)
 	for (auto &hudsprite : hudsprites)
 	{
 		if (!vrmode->IsVR() && (!!hudsprite.mframe) != hudModelStep) continue;
-		if (!!hudsprite.mframe && isSoftwareLighting()) SetFallbackLightMode();	// Software lighting cannot handle 2D content.
-		if (!!hudsprite.mframe) vrmode->AdjustPlayerSprites(hudsprite.weapon->GetCaller() == hudsprite.owner->player->OffhandWeapon);
+		if (!hudsprite.mframe && isSoftwareLighting()) SetFallbackLightMode();	// Software lighting cannot handle 2D content.
+		if (!hudsprite.mframe) vrmode->AdjustPlayerSprites(hudsprite.weapon->GetCaller() == hudsprite.owner->player->OffhandWeapon);
 		DrawPSprite(&hudsprite, state);
-		if (!!hudsprite.mframe) vrmode->UnAdjustPlayerSprites();
+		if (!hudsprite.mframe) vrmode->UnAdjustPlayerSprites();
 		lightmode = oldlightmode;
 	}
 }
