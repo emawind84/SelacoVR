@@ -1233,6 +1233,7 @@ DAngle P_BulletSlope (AActor *mo, FTranslatedLineTarget *pLineTarget, int aimfla
 	DAngle pitch;
 	FTranslatedLineTarget scratch;
 
+	aimflags &= ~ALF_IGNORENOAUTOAIM; // just to be safe.
 	if (pLineTarget == NULL) pLineTarget = &scratch;
 	// see which target is to be aimed at
 	i = 2;
