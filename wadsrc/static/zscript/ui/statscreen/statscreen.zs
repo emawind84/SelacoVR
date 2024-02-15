@@ -1,6 +1,6 @@
 // Note that the status screen needs to run in 'play' scope!
 
-class InterBackground native play version("2.5")
+class InterBackground native ui version("2.5")
 {
 	native static InterBackground Create(wbstartstruct wbst);
 	native virtual bool LoadBackground(bool isenterpic);
@@ -9,7 +9,7 @@ class InterBackground native play version("2.5")
 }
 
 // This is obsolete. Hopefully this was never used...
-struct PatchInfo play version("2.5")
+struct PatchInfo ui version("2.5")
 {
 	Font mFont;
 	deprecated("3.8") TextureID mPatch;
@@ -39,7 +39,7 @@ struct PatchInfo play version("2.5")
 };
 
 
-class StatusScreen abstract play version("2.5")
+class StatusScreen abstract ui version("2.5")
 {
 	enum EValues
 	{
@@ -796,25 +796,19 @@ class StatusScreen abstract play version("2.5")
 	//
 	// ====================================================================
 
-	protected void checkForAccelerate(void)
+	virtual bool Responder(InputEvent evt)
 	{
-		int i;
-
-		// check for button presses to skip delays
-		for (i = 0; i < MAXPLAYERS; i++)
+		if (evt.type == InputEvent.Type_KeyDown)
 		{
-			PlayerInfo player = players[i];
-			if (playeringame[i])
-			{
-				if ((player.cmd.buttons ^ player.oldbuttons) &&
-					((player.cmd.buttons & player.oldbuttons) == player.oldbuttons) && player.Bot == NULL)
-				{
-					acceleratestage = 1;
-					playerready[i] = true;
-				}
-				player.oldbuttons = player.buttons;
-			}
+			accelerateStage = 1;
+			return true;
 		}
+		return false;
+	}
+
+	void checkForAccelerate()
+	{
+		// no longer used, but still needed for old content.
 	}
 	
 	// ====================================================================
@@ -847,7 +841,6 @@ class StatusScreen abstract play version("2.5")
 			StartMusic();
 		}
 	
-		checkForAccelerate();
 		bg.updateAnimatedBack();
 	
 		switch (CurState)

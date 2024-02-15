@@ -64,6 +64,7 @@
 #include "gameconfigfile.h"
 #include "d_player.h"
 #include "teaminfo.h"
+#include "i_time.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "profiledef.h"
 
@@ -78,7 +79,6 @@ CVAR(Bool, m_simpleoptions, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 typedef void(*hfunc)();
 DMenu* CreateMessageBoxMenu(DMenu* parent, const char* message, int messagemode, bool playsound, FName action = NAME_None, hfunc handler = nullptr);
 bool OkForLocalization(FTextureID texnum, const char* substitute);
-void I_WaitVBL(int count);
 void InitMenuDelegate();
 
 CUSTOM_CVAR(Bool, menu_showexperimental, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
@@ -101,6 +101,7 @@ CUSTOM_CVAR(Bool, menu_showdoublebindings, false, CVAR_NOINITCALL)
 }
 
 FNewGameStartup NewGameStartupInfo;
+int LastSkill = -1;
 
 
 bool M_SetSpecialMenu(FName& menu, int param)
@@ -167,6 +168,7 @@ bool M_SetSpecialMenu(FName& menu, int param)
 	{
 		// sent from the skill menu for a skill that needs to be confirmed
 		NewGameStartupInfo.Skill = param;
+		LastSkill = param;
 
 		const char *msg = AllSkills[param].MustConfirmText;
 		if (*msg==0) msg = GStrings("NIGHTMARE");
@@ -177,6 +179,7 @@ bool M_SetSpecialMenu(FName& menu, int param)
 	case NAME_Startgame:
 		// sent either from skill menu or confirmation screen. Skill gets only set if sent from skill menu
 		// Now we can finally start the game. Ugh...
+		LastSkill = param;
 		NewGameStartupInfo.Skill = param;
 		[[fallthrough]];
 	case NAME_StartgameConfirmed:
@@ -1088,7 +1091,7 @@ void M_StartupSkillMenu(FNewGameStartup *gs)
 	}
 	if (MenuSkills.Size() == 0) I_Error("No valid skills for menu found. At least one must be defined.");
 
-	int defskill = DefaultSkill;
+	int defskill = LastSkill > -1? LastSkill : DefaultSkill; // use the last selected skill, if available.
 	if ((unsigned int)defskill >= MenuSkills.Size())
 	{
 		defskill = SkillIndices[(MenuSkills.Size() - 1) / 2];

@@ -758,6 +758,12 @@ static void ParseListMenu(FScanner &sc)
 	desc->mVirtWidth = -2;
 	desc->mCustomSizeSet = false;
 	desc->mForceList = false;
+	if (DefaultListMenuSettings->mCustomSizeSet)
+	{
+		desc->mVirtHeight = DefaultListMenuSettings->mVirtHeight;
+		desc->mVirtWidth = DefaultListMenuSettings->mVirtWidth;
+		desc->mCustomSizeSet = true;
+	}
 
 	ParseListMenuBody(sc, desc, -1);
 	ReplaceMenu(sc, desc);

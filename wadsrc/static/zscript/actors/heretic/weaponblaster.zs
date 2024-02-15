@@ -68,6 +68,11 @@ class Blaster : HereticWeapon
 		if (player.refire)
 		{
 			ang += Random2[FireBlaster]() * (5.625 / 256);
+
+			if (GetCVar ("vertspread") && !sv_novertspread)
+			{
+				pitch += Random2[FireBlaster]() * (3.549 / 256);
+			}
 		}
 		LineAttack (ang, PLAYERMISSILERANGE, pitch, damage, 'Hitscan', "BlasterPuff", laflags);
 		A_StartSound ("weapons/blastershoot", CHAN_WEAPON);
