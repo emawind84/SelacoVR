@@ -76,7 +76,6 @@ class FTTYStartupScreen : public FStartupScreen
 		void Progress();
 		void NetInit(const char *message, int num_players);
 		void NetProgress(int count);
-		void NetMessage(const char *format, ...);	// cover for printf
 		void NetDone();
 		bool NetLoop(bool (*timer_callback)(void *), void *userdata);
 	protected:
@@ -88,21 +87,8 @@ class FTTYStartupScreen : public FStartupScreen
 
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
-// PUBLIC FUNCTION PROTOTYPES ----------------------------------------------
-
-// PRIVATE FUNCTION PROTOTYPES ---------------------------------------------
-
-// EXTERNAL DATA DECLARATIONS ----------------------------------------------
-
-// PUBLIC DATA DEFINITIONS -------------------------------------------------
-
-FStartupScreen *StartScreen;
-
-CUSTOM_CVAR(Int, showendoom, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-{
-	if (self < 0) self = 0;
-	else if (self > 2) self=2;
-}
+extern void RedrawProgressBar(int CurPos, int MaxPos);
+extern void CleanProgressBar();
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
@@ -119,7 +105,7 @@ static const char SpinnyProgressChars[4] = { '|', '/', '-', '\\' };
 //
 //==========================================================================
 
-FStartupScreen *FStartupScreen::CreateInstance(int max_progress)
+FStartupScreen *FStartupScreen::CreateInstance(int max_progress, bool)
 {
 	return new FTTYStartupScreen(max_progress);
 }
@@ -159,13 +145,15 @@ FTTYStartupScreen::~FTTYStartupScreen()
 //
 // FTTYStartupScreen :: Progress
 //
-// If there was a progress bar, this would move it. But the basic TTY
-// startup screen doesn't have one, so this function does nothing.
-//
 //===========================================================================
 
 void FTTYStartupScreen::Progress()
 {
+	// if (CurPos < MaxPos)
+	// {
+	// 	++CurPos;
+	// }
+	// RedrawProgressBar(CurPos, MaxPos);
 }
 
 //===========================================================================
@@ -183,6 +171,7 @@ void FTTYStartupScreen::NetInit(const char *message, int numplayers)
 	{
 		termios rawtermios;
 
+		//CleanProgressBar();
 		fprintf (stderr, "Press 'Q' to abort network game synchronization.");
 		// Set stdin to raw mode so we can get keypresses in ST_CheckNetAbort()
 		// immediately without waiting for an EOL.
@@ -192,6 +181,9 @@ void FTTYStartupScreen::NetInit(const char *message, int numplayers)
 		tcsetattr (STDIN_FILENO, TCSANOW, &rawtermios);
 		DidNetInit = true;
 
+#ifdef __ANDROID__
+		//openConsoleBox( "Network synchronization" );
+#endif
 	}
 	if (numplayers == 1)
 	{
@@ -218,35 +210,19 @@ void FTTYStartupScreen::NetInit(const char *message, int numplayers)
 //===========================================================================
 
 void FTTYStartupScreen::NetDone()
-{
+{	
+	//CleanProgressBar();
 	// Restore stdin settings
 	if (DidNetInit)
 	{
 		tcsetattr (STDIN_FILENO, TCSANOW, &OldTermIOS);
 		printf ("\n");
 		DidNetInit = false;
+
+#ifdef __ANDROID__
+		//closeConsoleBox();
+#endif
 	}
-}
-
-//===========================================================================
-//
-// FTTYStartupScreen :: NetMessage
-//
-// Call this between NetInit() and NetDone() instead of Printf() to
-// display messages, because the progress meter is mixed in the same output
-// stream as normal messages.
-//
-//===========================================================================
-
-void FTTYStartupScreen::NetMessage(const char *format, ...)
-{
-	FString str;
-	va_list argptr;
-	
-	va_start (argptr, format);
-	str.VFormat (format, argptr);
-	va_end (argptr);
-	fprintf (stderr, "\r%-40s\n", str.GetChars());
 }
 
 //===========================================================================
@@ -350,7 +326,3 @@ bool FTTYStartupScreen::NetLoop(bool (*timer_callback)(void *), void *userdata)
 	}
 }
 
-void ST_Endoom()
-{
-    throw CExitEvent(0);
-}

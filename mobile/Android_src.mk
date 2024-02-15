@@ -43,6 +43,7 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/menu \
     	$(GZDOOM_TOP_PATH)/src/common/fonts \
     	$(GZDOOM_TOP_PATH)/src/common/objects \
+    	$(GZDOOM_TOP_PATH)/src/common/startscreen \
     	$(GZDOOM_TOP_PATH)/src/common/rendering \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/hwrenderer/data \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl_load \
@@ -391,6 +392,12 @@ PCH_SOURCES = \
 	common/2d/wipe.cpp \
 	common/thirdparty/gain_analysis.cpp \
 	common/thirdparty/sfmt/SFMT.cpp \
+	common/startscreen/startscreen.cpp \
+	common/startscreen/startscreen_heretic.cpp \
+	common/startscreen/startscreen_hexen.cpp \
+	common/startscreen/startscreen_strife.cpp \
+	common/startscreen/startscreen_generic.cpp \
+	common/startscreen/endoom.cpp \
 	common/fonts/singlelumpfont.cpp \
 	common/fonts/singlepicfont.cpp \
 	common/fonts/specialfont.cpp \
@@ -432,6 +439,7 @@ PCH_SOURCES = \
 	common/textures/formats/tgatexture.cpp \
 	common/textures/formats/stbtexture.cpp \
 	common/textures/formats/anmtexture.cpp \
+	common/textures/formats/startscreentexture.cpp \
 	common/textures/hires/hqresize.cpp \
 	common/models/models_md3.cpp \
 	common/models/models_md2.cpp \
