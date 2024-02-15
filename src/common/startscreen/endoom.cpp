@@ -53,6 +53,7 @@
 #include "i_time.h"
 #include "g_input.h"
 #include "d_eventbase.h"
+#include "g_game.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -148,6 +149,7 @@ void FEndoomScreen::Update()
 
 int RunEndoom()
 {
+	gamestate = GS_MENUSCREEN;
 	if (showendoom == 0 || endoomName.Len() == 0)
 	{
 		return 0;
@@ -179,7 +181,7 @@ int RunEndoom()
 			event_t *ev = &events[eventtail];
 			eventtail = (eventtail + 1) & (MAXEVENTS - 1);
 
-			if (ev->type == EV_KeyDown || ev->type == EV_KeyUp)
+			if (ev->type == EV_KeyDown)
 			{
 				return 0;
 			}

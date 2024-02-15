@@ -123,7 +123,7 @@ void FGLRenderer::Flush()
 		if (is2D) vrmode->SetUp();
 		// Render 2D to eye textures
 		int eyeCount = vrmode->mEyeCount;
-		mBuffers->CurrentEye() = 0; 
+		screen->FirstEye();
 		for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
 		{
 			const auto &eye = vrmode->mEyes[mBuffers->CurrentEye()];
