@@ -83,7 +83,7 @@ namespace swrenderer
 				SortedSprites[i] = Sprites[first + count - i - 1];
 		}
 
-		if (r_modelscene && r_models_carmack)
+		if (r_modelscene)
 		{
 			for (unsigned int i = 0; i < count; i++)
 			{

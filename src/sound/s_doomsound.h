@@ -12,7 +12,7 @@ void S_Shutdown();
 
 void S_UpdateSounds(AActor* listenactor);
 
-void S_PrecacheLevel (FLevelLocals *l);
+void S_PrecacheLevel(FLevelLocals* l);
 
 // Start sound for thing at <ent>
 void S_Sound(int channel, EChanFlags flags, FSoundID sfxid, float volume, float attenuation);
@@ -23,7 +23,7 @@ void S_Sound (AActor *ent, int channel, EChanFlags flags, FSoundID sfxid, float 
 void S_SoundMinMaxDist (AActor *ent, int channel, EChanFlags flags, FSoundID sfxid, float volume, float mindist, float maxdist);
 void S_Sound (const FPolyObj *poly, int channel, EChanFlags flags, FSoundID sfxid, float volume, float attenuation);
 void S_Sound (const sector_t *sec, int channel, EChanFlags flags, FSoundID sfxid, float volume, float attenuation);
-void S_Sound (FLevelLocals *Level, const DVector3 &pos, int channel, EChanFlags flags, FSoundID sfxid, float volume, float attenuation);
+void S_Sound(FLevelLocals *Level, const DVector3 &pos, int channel, EChanFlags flags, FSoundID sfxid, float volume, float attenuation);
 
 void S_SoundPitchActor (AActor *ent, int channel, EChanFlags flags, FSoundID sfxid, float volume, float attenuation, float pitch, float startTime = 0.f);
 

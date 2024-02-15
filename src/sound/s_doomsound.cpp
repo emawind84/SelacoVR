@@ -347,7 +347,7 @@ void S_Start()
 //
 //==========================================================================
 
-void S_PrecacheLevel (FLevelLocals *Level)
+void S_PrecacheLevel(FLevelLocals* Level)
 {
 	if (GSnd && Level == primaryLevel)
 	{
@@ -810,13 +810,13 @@ void S_UpdateSounds (AActor *listenactor)
 {
 	// should never happen
 	S_SetListener(listenactor);
-
+	
 	for (auto Level : AllLevels())
 	{
 		SN_UpdateActiveSequences(Level);
 	}
 
-	soundEngine->UpdateSounds(level.time);
+	soundEngine->UpdateSounds(primaryLevel->time);
 }
 
 //==========================================================================
@@ -1077,7 +1077,7 @@ void DoomSoundEngine::CalcPosVel(int type, const void* source, const float pt[3]
 		//      on static analysis.
 		if (type == SOURCE_Unattached)
 		{
-			sector_t *sec = primaryLevel->PointInSector(pt[0], pt[2]);
+			sector_t* sec = primaryLevel->PointInSector(pt[0], pt[2]);
 			DVector2 disp = primaryLevel->Displacements.getOffset(pgroup, sec->PortalGroup);
 			pos->X = pt[0] - (float)disp.X;
 			pos->Y = !(chanflags & CHANF_LISTENERZ) ? pt[1] : (float)listenpos.Z;
@@ -1360,7 +1360,7 @@ void DoomSoundEngine::NoiseDebug()
 		DrawText(twod, NewConsoleFont, color, 520, y, temp, TAG_DONE);
 
 
-		y += 8;
+		y += NewConsoleFont->GetHeight();
 		if (chan->PrevChan == &Channels)
 		{
 			break;
