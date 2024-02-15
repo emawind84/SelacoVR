@@ -119,24 +119,6 @@ PLAT_NOSDL_SOURCES = \
 	posix/nosdl/glvideo.cpp \
 	posix/nosdl/st_start.cpp
 
-VULKAN_SOURCES = \
-	common/rendering/vulkan/system/vk_device.cpp \
-	common/rendering/vulkan/system/vk_swapchain.cpp \
-	common/rendering/vulkan/system/vk_builders.cpp \
-	common/rendering/vulkan/system/vk_framebuffer.cpp \
-	common/rendering/vulkan/system/vk_buffers.cpp \
-	common/rendering/vulkan/renderer/vk_renderstate.cpp \
-	common/rendering/vulkan/renderer/vk_renderpass.cpp \
-	common/rendering/vulkan/renderer/vk_streambuffer.cpp \
-	common/rendering/vulkan/renderer/vk_postprocess.cpp \
-	common/rendering/vulkan/renderer/vk_renderbuffers.cpp \
-	common/rendering/vulkan/shaders/vk_shader.cpp \
-	common/rendering/vulkan/textures/vk_samplers.cpp \
-	common/rendering/vulkan/textures/vk_hwtexture.cpp \
-	common/rendering/vulkan/textures/vk_imagetransition.cpp \
-	common/rendering/vulkan/thirdparty/volk/volk.c \
-	common/rendering/vulkan/thirdparty/vk_mem_alloc/vk_mem_alloc.cpp \
-
 GLES_SOURCES = \
 	common/rendering/gles/gles_system.cpp \
 	common/rendering/gles/gles_renderer.cpp \
@@ -309,6 +291,7 @@ PCH_SOURCES = \
 	rendering/hwrenderer/hw_entrypoint.cpp \
 	rendering/hwrenderer/hw_vertexbuilder.cpp \
 	rendering/hwrenderer/doom_aabbtree.cpp \
+	rendering/hwrenderer/doom_levelmesh.cpp \
 	rendering/hwrenderer/hw_models.cpp \
 	rendering/hwrenderer/hw_precache.cpp \
 	rendering/hwrenderer/scene/hw_lighting.cpp \
