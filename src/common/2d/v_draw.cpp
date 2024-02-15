@@ -151,8 +151,6 @@ int VR_GetUIScale(F2DDrawer *drawer, int altval)
 
 int GetUIScale(F2DDrawer *drawer, int altval)
 {
-	return VR_GetUIScale(drawer, altval);
-	/*
 	int scaleval;
 	if (altval > 0) scaleval = altval;
 	else if (uiscale == 0)
@@ -169,7 +167,6 @@ int GetUIScale(F2DDrawer *drawer, int altval)
 	int hmax = drawer->GetWidth() / 320;
 	int max = std::max(vmax, hmax);
 	return std::max(1,min(scaleval, max));
-	*/
 }
 
 // The new console font is twice as high, so the scaling calculation must factor that in.
