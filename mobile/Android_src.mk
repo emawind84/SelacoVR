@@ -28,6 +28,8 @@ LOCAL_C_INCLUDES := \
 		$(GZDOOM_TOP_PATH)/src/common/audio/sound \
     	$(GZDOOM_TOP_PATH)/src/common/audio/music \
     	$(GZDOOM_TOP_PATH)/src/common/2d \
+		$(GZDOOM_TOP_PATH)/src/common/cutscenes \
+		$(GZDOOM_TOP_PATH)/src/common/thirdparty/libsmackerdec/include \
     	$(GZDOOM_TOP_PATH)/src/common/thirdparty \
     	$(GZDOOM_TOP_PATH)/src/common/textures \
     	$(GZDOOM_TOP_PATH)/src/common/textures/formats \
@@ -88,6 +90,7 @@ LOCAL_C_INCLUDES := \
 \
  $(SUPPORT_LIBS)/openal/include/AL \
  $(SUPPORT_LIBS)/jpeg8d \
+ $(SUPPORT_LIBS)/libvpx\include \
  $(SUPPORT_LIBS)/ZMusic/include  \
  $(GZDOOM_TOP_PATH)/mobile/src/extrafiles  \
  $(GZDOOM_TOP_PATH)/mobile/src
@@ -301,7 +304,6 @@ PCH_SOURCES = \
 	g_statusbar/sbarinfo.cpp \
 	g_statusbar/sbar_mugshot.cpp \
 	g_statusbar/shared_sbar.cpp \
-	rendering/2d/f_wipe.cpp \
 	rendering/2d/v_blend.cpp \
 	rendering/hwrenderer/hw_entrypoint.cpp \
 	rendering/hwrenderer/hw_vertexbuilder.cpp \
@@ -386,6 +388,7 @@ PCH_SOURCES = \
 	common/2d/v_2ddrawer.cpp \
 	common/2d/v_drawtext.cpp \
 	common/2d/v_draw.cpp \
+	common/2d/wipe.cpp \
 	common/thirdparty/gain_analysis.cpp \
 	common/thirdparty/sfmt/SFMT.cpp \
 	common/fonts/singlelumpfont.cpp \
@@ -448,6 +451,9 @@ PCH_SOURCES = \
 	common/console/c_notifybufferbase.cpp \
 	common/console/c_tabcomplete.cpp \
 	common/console/c_expr.cpp \
+	common/cutscenes/playmve.cpp \
+	common/cutscenes/movieplayer.cpp \
+	common/cutscenes/screenjob.cpp \
 	common/utility/engineerrors.cpp \
 	common/utility/i_module.cpp \
 	common/utility/m_alloc.cpp \
@@ -467,6 +473,11 @@ PCH_SOURCES = \
 	common/thirdparty/base64.cpp \
 	common/thirdparty/md5.cpp \
  	common/thirdparty/superfasthash.cpp \
+	common/thirdparty/libsmackerdec/src/BitReader.cpp \
+	common/thirdparty/libsmackerdec/src/FileStream.cpp \
+	common/thirdparty/libsmackerdec/src/HuffmanVLC.cpp \
+	common/thirdparty/libsmackerdec/src/LogError.cpp \
+	common/thirdparty/libsmackerdec/src/SmackerDecoder.cpp \
 	common/filesystem/filesystem.cpp \
 	common/filesystem/ancientzip.cpp \
 	common/filesystem/file_7z.cpp \
@@ -618,7 +629,7 @@ LOCAL_LDLIBS +=  -lEGL
 # This is stop a linker warning for mp123 lib failing build
 #LOCAL_LDLIBS += -Wl,--no-warn-shared-textrel
 
-LOCAL_STATIC_LIBRARIES :=  libjpeg zlib_lz lzma_lz gdtoa_lz bzip2_lz
+LOCAL_STATIC_LIBRARIES :=  libjpeg zlib_lz lzma_lz gdtoa_lz bzip2_lz vpx_player
 LOCAL_SHARED_LIBRARIES :=  openal openxr_loader zmusic
 
 LOCAL_STATIC_LIBRARIES +=
