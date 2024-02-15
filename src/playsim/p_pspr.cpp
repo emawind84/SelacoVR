@@ -142,6 +142,7 @@ DEFINE_FIELD(DPSprite, x)
 DEFINE_FIELD(DPSprite, y)
 DEFINE_FIELD(DPSprite, oldx)
 DEFINE_FIELD(DPSprite, oldy)
+DEFINE_FIELD(DPSprite, baseScale)
 DEFINE_FIELD(DPSprite, pivot)
 DEFINE_FIELD(DPSprite, scale)
 DEFINE_FIELD(DPSprite, rotation)
@@ -190,6 +191,7 @@ DPSprite::DPSprite(player_t *owner, AActor *caller, int id)
   ID(id),
   processPending(true)
 {
+	baseScale = {1.0, 1.2};
 	rotation = 0.;
 	scale = {1.0, 1.0};
 	pivot = {0.0, 0.0};
@@ -266,6 +268,26 @@ DEFINE_ACTION_FUNCTION(_PlayerInfo, FindPSprite)	// the underscore is needed to 
 //
 //------------------------------------------------------------------------
 
+static DPSprite *P_CreatePsprite(player_t *player, AActor *caller, int layer)
+{
+	DPSprite *pspr = Create<DPSprite>(player, caller, layer);
+
+	// [XA] apply WeaponScaleX/WeaponScaleY properties for weapon psprites
+	if (caller != nullptr && caller->IsKindOf(NAME_Weapon))
+	{
+		pspr->baseScale.X = caller->FloatVar(NAME_WeaponScaleX);
+		pspr->baseScale.Y = caller->FloatVar(NAME_WeaponScaleY);
+	}
+
+	return pspr;
+}
+
+//------------------------------------------------------------------------
+//
+//
+//
+//------------------------------------------------------------------------
+
 void P_SetPsprite(player_t *player, PSPLayers id, FState *state, bool pending, AActor *newcaller)
 {
 	if (player == nullptr) return;
@@ -314,7 +336,7 @@ DPSprite *player_t::GetPSprite(PSPLayers layer, AActor *newcaller)
 	DPSprite *pspr = FindPSprite(layer);
 	if (pspr == nullptr)
 	{
-		pspr = Create<DPSprite>(this, newcaller, layer);
+		pspr = P_CreatePsprite(this, newcaller, layer);
 	}
 	else
 	{
@@ -1145,7 +1167,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Overlay)
 	}
 
 	DPSprite *pspr;
-	pspr = Create<DPSprite>(player, stateowner, layer);
+	pspr = P_CreatePsprite(player, stateowner, layer);
 	pspr->SetState(state);
 	ACTION_RETURN_BOOL(true);
 }
@@ -1296,7 +1318,8 @@ void DPSprite::Serialize(FSerializer &arc)
 		("rotation", rotation)
 		("halign", HAlign)
 		("valign", VAlign)
-		("renderstyle_", Renderstyle);	// The underscore is intentional to avoid problems with old savegames which had this as an ERenderStyle (which is not future proof.)
+		("renderstyle_", Renderstyle)	// The underscore is intentional to avoid problems with old savegames which had this as an ERenderStyle (which is not future proof.)
+		("baseScale", baseScale);
 }
 
 //------------------------------------------------------------------------
