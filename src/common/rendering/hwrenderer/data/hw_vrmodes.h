@@ -80,7 +80,6 @@ struct VRMode
 
 	virtual bool GetHandTransform(int hand, VSMatrix* out) const { return false; }
 	virtual bool GetWeaponTransform(VSMatrix* out, int hand = 0) const { return false; }
-	virtual bool RenderPlayerSpritesCrossed() const { return false; }
 	virtual bool RenderPlayerSpritesInScene() const { return false; }
 	virtual bool GetTeleportLocation(DVector3 &out) const { return false; }
 	virtual bool IsInitialized() const { return true; }

@@ -133,7 +133,7 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 
 		//TODO Cleanup code for rendering weapon models from sprites in VR mode
 		if ((psp->GetID() == PSP_WEAPON || psp->GetID() == PSP_OFFHANDWEAPON) 
-		&& vrmode->RenderPlayerSpritesCrossed()
+		&& vrmode->IsVR()
 		&& r_PlayerSprites3DMode != BACK_ONLY
 		&& psp->GetCaller() != nullptr
 		&& tex != nullptr
