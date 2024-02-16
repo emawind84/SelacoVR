@@ -286,6 +286,7 @@ enum EFxType
 	EFX_SwitchStatement,
 	EFX_CaseStatement,
 	EFX_VectorValue,
+	EFX_VectorPlusZ,
 	EFX_VectorBuiltin,
 	EFX_TypeCheck,
 	EFX_DynamicCast,
@@ -307,6 +308,7 @@ enum EFxType
 	EFX_FontCast,
 	EFX_LocalArrayDeclaration,
 	EFX_OutVarDereference,
+	EFX_ToVector,
 	EFX_COUNT
 };
 
@@ -338,9 +340,10 @@ public:
 	bool IsFloat() const { return ValueType->isFloat(); }
 	bool IsInteger() const { return ValueType->isNumeric() && ValueType->isIntCompatible(); }
 	bool IsPointer() const { return ValueType->isPointer(); }
-	bool IsVector() const { return ValueType == TypeVector2 || ValueType == TypeVector3 || ValueType == TypeFVector2 || ValueType == TypeFVector3; };
+	bool IsVector() const { return IsVector2() || IsVector3() || IsVector4(); };
 	bool IsVector2() const { return ValueType == TypeVector2 || ValueType == TypeFVector2; };
 	bool IsVector3() const { return ValueType == TypeVector3 || ValueType == TypeFVector3; };
+	bool IsVector4() const { return ValueType == TypeVector4 || ValueType == TypeFVector4; };
 	bool IsBoolCompat() const { return ValueType->isScalar(); }
 	bool IsObject() const { return ValueType->isObjectPointer(); }
 	bool IsArray() const { return ValueType->isArray() || (ValueType->isPointer() && ValueType->toPointer()->PointedType->isArray()); }
@@ -553,20 +556,23 @@ public:
 
 class FxVectorValue : public FxExpression
 {
-	FxExpression *xyz[3];
+	constexpr static int maxVectorDimensions = 4;
+
+	FxExpression *xyzw[maxVectorDimensions];
 	bool isConst;	// gets set to true if all element are const (used by function defaults parser)
 
 public:
 
 	friend class ZCCCompiler;
 
-	FxVectorValue(FxExpression *x, FxExpression *y, FxExpression *z, const FScriptPosition &sc);
+	FxVectorValue(FxExpression *x, FxExpression *y, FxExpression *z, FxExpression* w, const FScriptPosition &sc);
 	~FxVectorValue();
 	FxExpression *Resolve(FCompileContext&);
 	bool isConstVector(int dim)
 	{
-		if (!isConst) return false;
-		return dim == 2 ? xyz[2] == nullptr : xyz[2] != nullptr;
+		if (!isConst)
+			return false;
+		return dim >= 0 && dim <= maxVectorDimensions && xyzw[dim - 1] && (dim == maxVectorDimensions || !xyzw[dim]);
 	}
 
 	ExpEmit Emit(VMFunctionBuilder *build);
@@ -1608,6 +1614,44 @@ public:
 	~FxVectorBuiltin();
 	FxExpression *Resolve(FCompileContext&);
 	ExpEmit Emit(VMFunctionBuilder *build);
+};
+
+//==========================================================================
+//
+//	FxPlusZ
+//
+//==========================================================================
+
+class FxVectorPlusZ : public FxExpression
+{
+	FName Function;
+	FxExpression* Self;
+	FxExpression* Z;
+
+public:
+
+	FxVectorPlusZ(FxExpression* self, FName name, FxExpression*);
+	~FxVectorPlusZ();
+	FxExpression* Resolve(FCompileContext&);
+	ExpEmit Emit(VMFunctionBuilder* build);
+};
+
+//==========================================================================
+//
+//	FxPlusZ
+//
+//==========================================================================
+
+class FxToVector : public FxExpression
+{
+	FxExpression* Self;
+
+public:
+
+	FxToVector(FxExpression* self);
+	~FxToVector();
+	FxExpression* Resolve(FCompileContext&);
+	ExpEmit Emit(VMFunctionBuilder* build);
 };
 
 //==========================================================================
