@@ -45,6 +45,7 @@
 #include "findfile.h"
 #include "i_interface.h"
 #include "configfile.h"
+#include "printf.h"
 
 //==========================================================================
 //
