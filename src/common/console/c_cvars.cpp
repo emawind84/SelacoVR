@@ -43,6 +43,7 @@
 #include "engineerrors.h"
 #include "printf.h"
 #include "palutil.h"
+#include "i_interface.h"
 
 #define SHOULD_BLACKLIST(name) \
 	if (#name[0]==CurrentFindCVar[0]) \
@@ -1466,7 +1467,7 @@ EXTERN_CVAR(Bool, sv_cheats);
 
 void FBaseCVar::CmdSet (const char *newval)
 {
-	if ((GetFlags() & CVAR_CHEAT) && CheckCheatmode ())
+	if ((GetFlags() & CVAR_CHEAT) && sysCallbacks.CheckCheatmode && sysCallbacks.CheckCheatmode(true, false))
 		return;
 
 	MarkUnsafe();
