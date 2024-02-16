@@ -3428,10 +3428,29 @@ void AActor::SetPitch(DAngle p, int fflags)
 
 	if (p != Angles.Pitch)
 	{
-		Angles.Pitch = p;
-		if (player != nullptr && (fflags & SPF_INTERPOLATE))
+		if (player != nullptr)
 		{
-			player->cheats |= CF_INTERPVIEW;
+			const bool mustLerp = !P_NoInterpolation(player, this);
+
+			if ((fflags & SPF_INTERPOLATE) || ((fflags & SPF_SCALEDNOLERP) && mustLerp))
+			{
+				Angles.Pitch = p;
+				player->cheats |= CF_INTERPVIEW;
+			}
+			else if ((fflags & SPF_SCALEDNOLERP) && !mustLerp)
+			{
+				player->angleTargets.Pitch = deltaangle(Angles.Pitch, p);
+				player->angleAppliedAmounts.Pitch = nullAngle;
+				player->cheats |= CF_SCALEDNOLERP;
+			}
+			else
+			{
+				Angles.Pitch = p;
+			}
+		}
+		else
+		{
+			Angles.Pitch = p;
 		}
 	}
 	
@@ -3441,10 +3460,29 @@ void AActor::SetAngle(DAngle ang, int fflags)
 {
 	if (ang != Angles.Yaw)
 	{
-		Angles.Yaw = ang;
-		if (player != nullptr && (fflags & SPF_INTERPOLATE))
+		if (player != nullptr)
 		{
-			player->cheats |= CF_INTERPVIEW;
+			const bool mustLerp = !P_NoInterpolation(player, this);
+
+			if ((fflags & SPF_INTERPOLATE) || ((fflags & SPF_SCALEDNOLERP) && mustLerp))
+			{
+				Angles.Yaw = ang;
+				player->cheats |= CF_INTERPVIEW;
+			}
+			else if ((fflags & SPF_SCALEDNOLERP) && !mustLerp)
+			{
+				player->angleTargets.Yaw = deltaangle(Angles.Yaw, ang);
+				player->angleAppliedAmounts.Yaw = nullAngle;
+				player->cheats |= CF_SCALEDNOLERP;
+			}
+			else
+			{
+				Angles.Yaw = ang;
+			}
+		}
+		else
+		{
+			Angles.Yaw = ang;
 		}
 	}
 	
@@ -3454,10 +3492,29 @@ void AActor::SetRoll(DAngle r, int fflags)
 {
 	if (r != Angles.Roll)
 	{
-		Angles.Roll = r;
-		if (player != nullptr && (fflags & SPF_INTERPOLATE))
+		if (player != nullptr)
 		{
-			player->cheats |= CF_INTERPVIEW;
+			const bool mustLerp = !P_NoInterpolation(player, this);
+
+			if ((fflags & SPF_INTERPOLATE) || ((fflags & SPF_SCALEDNOLERP) && mustLerp))
+			{
+				Angles.Roll = r;
+				player->cheats |= CF_INTERPVIEW;
+			}
+			else if ((fflags & SPF_SCALEDNOLERP) && !mustLerp)
+			{
+				player->angleTargets.Roll = deltaangle(Angles.Roll, r);
+				player->angleAppliedAmounts.Roll = nullAngle;
+				player->cheats |= CF_SCALEDNOLERP;
+			}
+			else
+			{
+				Angles.Roll = r;
+			}
+		}
+		else
+		{
+			Angles.Roll = r;
 		}
 	}
 }
@@ -3474,7 +3531,7 @@ void AActor::SetViewPitch(DAngle p, int fflags)
 		ViewAngles.Pitch = p;
 		if (player != nullptr && (fflags & SPF_INTERPOLATE))
 		{
-			player->cheats |= CF_INTERPVIEW;
+			player->cheats |= CF_INTERPVIEWANGLES;
 		}
 	}
 
@@ -3487,7 +3544,7 @@ void AActor::SetViewAngle(DAngle ang, int fflags)
 		ViewAngles.Yaw = ang;
 		if (player != nullptr && (fflags & SPF_INTERPOLATE))
 		{
-			player->cheats |= CF_INTERPVIEW;
+			player->cheats |= CF_INTERPVIEWANGLES;
 		}
 	}
 
@@ -3500,7 +3557,7 @@ void AActor::SetViewRoll(DAngle r, int fflags)
 		ViewAngles.Roll = r;
 		if (player != nullptr && (fflags & SPF_INTERPOLATE))
 		{
-			player->cheats |= CF_INTERPVIEW;
+			player->cheats |= CF_INTERPVIEWANGLES;
 		}
 	}
 }
