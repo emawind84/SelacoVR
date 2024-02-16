@@ -1352,7 +1352,7 @@ bool PSound::ReadValue(FSerializer &ar, const char *key, void *addr) const
 	}
 	else
 	{
-		*(FSoundID *)addr = FSoundID(cptr);
+		*(FSoundID *)addr = S_FindSound(cptr);
 		return true;
 	}
 }
