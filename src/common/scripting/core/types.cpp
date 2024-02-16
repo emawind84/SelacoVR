@@ -919,7 +919,7 @@ void PFloat::SetValue(void *addr, double val)
 
 int PFloat::GetValueInt(void *addr) const
 {
-	return xs_ToInt(GetValueFloat(addr));
+	return int(GetValueFloat(addr));
 }
 
 //==========================================================================

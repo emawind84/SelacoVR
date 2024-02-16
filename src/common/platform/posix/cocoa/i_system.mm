@@ -170,17 +170,25 @@ unsigned int I_MakeRNGSeed()
 	return static_cast<unsigned int>(arc4random());
 }
 
-void I_OpenShellFolder(const char* folder)
+FString I_GetCWD()
 {
-	std::string x = (std::string)"open " + (std::string)folder;
-	Printf("Opening folder: %s\n", folder);
-	std::system(x.c_str());
+	NSString *currentpath = [[NSFileManager defaultManager] currentDirectoryPath];
+	return currentpath.UTF8String;
 }
 
-void I_OpenShellFile(const char* file)
+bool I_ChDir(const char* path)
 {
-	std::string x = (std::string)"open " + (std::string)file;
-	x.erase(x.find_last_of('/'), std::string::npos);
-	Printf("Opening folder to file: %s\n", file);
-	std::system(x.c_str());
+	return [[NSFileManager defaultManager] changeCurrentDirectoryPath:[NSString stringWithUTF8String:path]];
 }
+
+void I_OpenShellFolder(const char* folder)
+{
+	NSFileManager *filemgr = [NSFileManager defaultManager];
+	NSString *currentpath = [filemgr currentDirectoryPath];
+
+	[filemgr changeCurrentDirectoryPath:[NSString stringWithUTF8String:folder]];
+	Printf("Opening folder: %s\n", folder);
+	std::system("open .");
+	[filemgr changeCurrentDirectoryPath:currentpath];
+}
+
