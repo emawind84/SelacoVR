@@ -189,7 +189,6 @@ PCH_SOURCES = \
 	g_hub.cpp \
 	g_level.cpp \
 	gameconfigfile.cpp \
-	gitinfo.cpp \
 	hu_scores.cpp \
 	m_cheat.cpp \
 	m_misc.cpp \
@@ -438,6 +437,7 @@ PCH_SOURCES = \
 	common/cutscenes/screenjob.cpp \
 	common/utility/engineerrors.cpp \
 	common/utility/i_module.cpp \
+	common/utility/gitinfo.cpp \
 	common/utility/m_alloc.cpp \
 	common/utility/utf8.cpp \
 	common/utility/palette.cpp \
