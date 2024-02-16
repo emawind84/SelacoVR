@@ -50,8 +50,6 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gles \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/vulkan/thirdparty \
-    	$(GZDOOM_TOP_PATH)/src/common/rendering/polyrenderer/backend \
-    	$(GZDOOM_TOP_PATH)/src/common/rendering/polyrenderer/drawers \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/vm \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/jit \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/core \
@@ -133,18 +131,9 @@ GLES_SOURCES = \
 	common/rendering/gles/gles_shaderprogram.cpp \
 	common/rendering/gles/gles_samplers.cpp \
 
-POLYBACKEND_SOURCES = \
-	common/rendering/polyrenderer/backend/poly_framebuffer.cpp \
-	common/rendering/polyrenderer/backend/poly_buffers.cpp \
-	common/rendering/polyrenderer/backend/poly_hwtexture.cpp \
-	common/rendering/polyrenderer/backend/poly_renderstate.cpp
-
-
-
 FASTMATH_SOURCES = \
 	rendering/swrenderer/r_all.cpp \
 	rendering/swrenderer/r_swscene.cpp \
-	common/rendering/polyrenderer/poly_all.cpp \
 	common/textures/hires/hqnx/init.cpp \
 	common/textures/hires/hqnx/hq2x.cpp \
 	common/textures/hires/hqnx/hq3x.cpp \
@@ -263,6 +252,7 @@ PCH_SOURCES = \
 	playsim/mapthinkers/dsectoreffect.cpp \
 	playsim/a_pickups.cpp \
 	playsim/a_action.cpp \
+	playsim/a_corona.cpp \
 	playsim/a_decals.cpp \
 	playsim/a_dynlight.cpp \
 	playsim/a_flashfader.cpp \
