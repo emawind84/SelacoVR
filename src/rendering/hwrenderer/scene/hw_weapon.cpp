@@ -172,7 +172,8 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 				float x1 = vw / 2 + (huds->x1 - vw / 2) * gl_fatItemWidth;
 				float x2 = vw / 2 + (huds->x2 - vw / 2) * gl_fatItemWidth;
 
-				for (float x = x1; x < x2; x += 1)
+				float inc = (x2 - x1) / 12.0f;
+				for (float x = x1; x < x2; x += inc)
 				{
 					screen->mVertexData->Map();
 					auto vert = screen->mVertexData->AllocVertices(4);
