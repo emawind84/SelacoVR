@@ -54,6 +54,7 @@
 #include <process.h>
 #include <time.h>
 #include <map>
+#include <codecvt>
 
 #include <stdarg.h>
 
@@ -960,20 +961,42 @@ void I_SetThreadNumaNode(std::thread &thread, int numaNode)
 	}
 }
 
-void I_OpenShellFolder(const char* folder)
+FString I_GetCWD()
 {
-	FString proc = folder;
-	proc.ReplaceChars('/', '\\');
-	Printf("Opening folder: %s\n", proc.GetChars());
-	ShellExecuteW(NULL, L"open", L"explorer.exe", proc.WideString().c_str(), NULL, SW_SHOWNORMAL);
+	auto len = GetCurrentDirectoryW(0, nullptr);
+	TArray<wchar_t> curdir(len + 1, true);
+	if (!GetCurrentDirectoryW(len + 1, curdir.Data()))
+	{
+		return "";
+	}
+	FString returnv(curdir.Data());
+	FixPathSeperator(returnv);
+	return returnv;
 }
 
-void I_OpenShellFile(const char* file)
+bool I_ChDir(const char* path)
 {
-	FString proc = file;
-	proc.ReplaceChars('/', '\\');
-	Printf("Opening folder to file: %s\n", proc.GetChars());
-	proc.Format("/select,%s", proc.GetChars());
-	ShellExecuteW(NULL, L"open", L"explorer.exe", proc.WideString().c_str(), NULL, SW_SHOWNORMAL);
+	return SetCurrentDirectoryW(WideString(path).c_str());
+}
+
+
+void I_OpenShellFolder(const char* infolder)
+{
+	auto len = GetCurrentDirectoryW(0, nullptr);
+	TArray<wchar_t> curdir(len + 1, true);
+	if (!GetCurrentDirectoryW(len + 1, curdir.Data()))
+	{
+		Printf("Unable to retrieve current directory\n");
+	}
+	else if (SetCurrentDirectoryW(WideString(infolder).c_str()))
+	{
+		Printf("Opening folder: %s\n", infolder);
+		ShellExecuteW(NULL, L"open", L"explorer.exe", L".", NULL, SW_SHOWNORMAL);
+		SetCurrentDirectoryW(curdir.Data());
+	}
+	else
+	{
+		Printf("Unable to open directory '%s\n", infolder);
+	}
 }
 
