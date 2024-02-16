@@ -273,7 +273,7 @@ DVector3 VREyeInfo::GetViewShift(FRenderViewpoint& vp) const
 	}
 	else
 	{
-		float yaw = vp.HWAngles.Yaw.Degrees;
+		float yaw = vp.HWAngles.Yaw.Degrees();
 		double dx = -cos(DEG2RAD(yaw)) * vr_vunits_per_meter * getShift();
 		double dy = sin(DEG2RAD(yaw)) * vr_vunits_per_meter * getShift();
 		return { dx, dy, 0 };
@@ -328,8 +328,8 @@ void VRMode::SetUp() const
 		player->mo->OffhandDir = MapOffhandDir;
 		double shootz = player->mo->Center() - player->mo->Floorclip + player->mo->AttackOffset();
 		player->mo->AttackPos = player->mo->OffhandPos = player->mo->PosAtZ(shootz);
-		player->mo->AttackAngle = player->mo->OffhandAngle = r_viewpoint.Angles.Yaw.Degrees - 90;
-		player->mo->AttackPitch = player->mo->OffhandPitch = - r_viewpoint.Angles.Pitch.Degrees;
+		player->mo->AttackAngle = player->mo->OffhandAngle = r_viewpoint.Angles.Yaw - DAngle::fromDeg(90.);
+		player->mo->AttackPitch = player->mo->OffhandPitch = - r_viewpoint.Angles.Pitch;
 	}
 }
 

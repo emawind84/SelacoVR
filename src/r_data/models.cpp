@@ -210,7 +210,7 @@ void RenderHUDModel(FModelRenderer *renderer, DPSprite *psp, float ofsX, float o
 	{
 		DVector3 pos = playermo->Pos();
 		objectToWorldMatrix.translate(pos.X, pos.Z + 40, pos.Y);
-		objectToWorldMatrix.rotate(-playermo->Angles.Yaw.Degrees - 90, 0, 1, 0);
+		objectToWorldMatrix.rotate(-playermo->Angles.Yaw.Degrees() - 90, 0, 1, 0);
 	}
 
 	// [Nash] Optional scale weapon FOV

@@ -6897,7 +6897,7 @@ AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target, DAn
 	{
 		if (source->player == NULL || !source->player->mo->OverrideAttackPosDir)
 		{
-			pitch = P_AimLineAttack(source, angle, 1024., NULL, 0., aimflags);
+			pitch = P_AimLineAttack(source, angle, 1024., NULL, nullAngle, aimflags);
 		}
 		other->Vel.Z = -other->Speed * pitch.Sin();
 		return other;
@@ -6912,7 +6912,7 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnSubMissile)
 	PARAM_OBJECT_NOT_NULL(target, AActor);
 	PARAM_INT(aimflags);
 	PARAM_ANGLE(angle);
-	if (angle == 1e37) angle = self->Angles.Yaw;
+	if (angle == DAngle::fromDeg(1e37)) angle = self->Angles.Yaw;
 	ACTION_RETURN_OBJECT(P_SpawnSubMissile(self, cls, target, angle, aimflags));
 }
 /*
@@ -7008,8 +7008,8 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 			pos = source->player->mo->OffhandPos;
 			dir = source->player->mo->OffhandDir(source, angle, pitch);
 			xoffsetDir = source->player->mo->OffhandDir(source, source->Angles.Yaw, source->Angles.Pitch);
-			yoffsetDir = source->player->mo->OffhandDir(source, source->Angles.Yaw - 90, source->Angles.Pitch);
-			zoffsetDir = source->player->mo->OffhandDir(source, source->Angles.Yaw, source->Angles.Pitch + 90);
+			yoffsetDir = source->player->mo->OffhandDir(source, source->Angles.Yaw - DAngle::fromDeg(90.), source->Angles.Pitch);
+			zoffsetDir = source->player->mo->OffhandDir(source, source->Angles.Yaw, source->Angles.Pitch + DAngle::fromDeg(90.));
 			an = dir.Angle();
 			pitch = dir.Pitch();
 		}
@@ -7018,8 +7018,8 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 			pos = source->player->mo->AttackPos;
 			dir = source->player->mo->AttackDir(source, angle, pitch);
 			xoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch);
-			yoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw - 90, source->Angles.Pitch);
-			zoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch + 90);
+			yoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw - DAngle::fromDeg(90.), source->Angles.Pitch);
+			zoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch + DAngle::fromDeg(90.));
 			an = dir.Angle();
 			pitch = dir.Pitch();
 		}
@@ -7102,8 +7102,8 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnPlayerMissile)
 	PARAM_INT(aimflags);
 	PARAM_ANGLE(pitch);
 	AActor *missileactor;
-	if (angle == DAngle::fromDeg(1e37))) angle = self->Angles.Yaw;
-	if (pitch == DAngle::fromDeg(1e37))) pitch = self->Angles.Pitch;
+	if (angle == DAngle::fromDeg(1e37)) angle = self->Angles.Yaw;
+	if (pitch == DAngle::fromDeg(1e37)) pitch = self->Angles.Pitch;
 	AActor *misl = P_SpawnPlayerMissile(self, x, y, z, type, angle, pitch, lt, &missileactor, nofreeaim, noautoaim, aimflags);
 	if (numret > 0) ret[0].SetObject(misl);
 	if (numret > 1) ret[1].SetObject(missileactor), numret = 2;

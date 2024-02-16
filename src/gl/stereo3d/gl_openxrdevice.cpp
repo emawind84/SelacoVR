@@ -160,7 +160,7 @@ float getViewpointYaw()
 {
     if (cinemamode)
     {
-        return r_viewpoint.Angles.Yaw.Degrees;
+        return r_viewpoint.Angles.Yaw.Degrees();
     }
 
     return doomYaw;
@@ -190,7 +190,7 @@ namespace s3d
         outViewShift[0] = outViewShift[1] = outViewShift[2] = 0;
 
         vec3_t angles;
-        VectorSet(angles, vp.HWAngles.Pitch.Degrees,  getViewpointYaw(), vp.HWAngles.Roll.Degrees);
+        VectorSet(angles, vp.HWAngles.Pitch.Degrees(),  getViewpointYaw(), vp.HWAngles.Roll.Degrees());
 
         vec3_t v_forward, v_right, v_up;
         AngleVectors(angles, v_forward, v_right, v_up);
@@ -416,8 +416,8 @@ namespace s3d
 
                 if (cinemamode)
                 {
-                    mat->rotate(-90 + r_viewpoint.Angles.Yaw.Degrees  + (weaponangles[YAW]- playerYaw), 0, 1, 0);
-                    mat->rotate(-weaponangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees, 1, 0, 0);
+                    mat->rotate(-90 + r_viewpoint.Angles.Yaw.Degrees()  + (weaponangles[YAW]- playerYaw), 0, 1, 0);
+                    mat->rotate(-weaponangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees(), 1, 0, 0);
                 } else {
                     mat->rotate(-90 + doomYaw + (weaponangles[YAW]- hmdorientation[YAW]), 0, 1, 0);
                     mat->rotate(-weaponangles[PITCH], 1, 0, 0);
@@ -432,8 +432,8 @@ namespace s3d
 
                 if (cinemamode)
                 {
-                    mat->rotate(-90 + r_viewpoint.Angles.Yaw.Degrees  + (offhandangles[YAW]- playerYaw), 0, 1, 0);
-                    mat->rotate(-offhandangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees, 1, 0, 0);
+                    mat->rotate(-90 + r_viewpoint.Angles.Yaw.Degrees()  + (offhandangles[YAW]- playerYaw), 0, 1, 0);
+                    mat->rotate(-offhandangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees(), 1, 0, 0);
                 } else {
                     mat->rotate(-90 + doomYaw + (offhandangles[YAW]- hmdorientation[YAW]), 0, 1, 0);
                     mat->rotate(-offhandangles[PITCH], 1, 0, 0);
@@ -550,7 +550,7 @@ namespace s3d
         }
         else if (getGameState() == GS_LEVEL && resetDoomYaw && r_viewpoint.camera != nullptr)
         {
-            doomYaw = (float)r_viewpoint.camera->Angles.Yaw.Degrees;
+            doomYaw = (float)r_viewpoint.camera->Angles.Yaw.Degrees();
             resetDoomYaw = false;
         }
 
@@ -573,11 +573,11 @@ namespace s3d
 
                 //Weapon firing tracking - Thanks Fishbiter for the inspiration of how/where to use this!
                 {
-                    player->mo->AttackPitch = cinemamode ? -weaponangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees
-                            : -weaponangles[PITCH];
+                    player->mo->AttackPitch = DAngle::fromDeg(cinemamode ? -weaponangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees()
+                            : -weaponangles[PITCH]);
 
-                    player->mo->AttackAngle = -90 + getViewpointYaw() + (weaponangles[YAW]- playerYaw);
-                    player->mo->AttackRoll = weaponangles[ROLL];
+                    player->mo->AttackAngle = DAngle::fromDeg(-90 + getViewpointYaw() + (weaponangles[YAW]- playerYaw));
+                    player->mo->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
 
                     player->mo->AttackPos.X = player->mo->X() - (weaponoffset[0] * vr_vunits_per_meter);
                     player->mo->AttackPos.Y = player->mo->Y() - (weaponoffset[2] * vr_vunits_per_meter);
@@ -586,11 +586,11 @@ namespace s3d
                 }
 
                 {
-                    player->mo->OffhandPitch = cinemamode ? -offhandangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees
-                            : -offhandangles[PITCH];
+                    player->mo->OffhandPitch = DAngle::fromDeg(cinemamode ? -offhandangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees()
+                            : -offhandangles[PITCH]);
 
-                    player->mo->OffhandAngle = -90 + getViewpointYaw() + (offhandangles[YAW]- playerYaw);
-                    player->mo->OffhandRoll = offhandangles[ROLL];
+                    player->mo->OffhandAngle = DAngle::fromDeg(-90 + getViewpointYaw() + (offhandangles[YAW]- playerYaw));
+                    player->mo->OffhandRoll = DAngle::fromDeg(offhandangles[ROLL]);
 
                     player->mo->OffhandPos.X = player->mo->X() - (offhandoffset[0] * vr_vunits_per_meter);
                     player->mo->OffhandPos.Y = player->mo->Y() - (offhandoffset[2] * vr_vunits_per_meter);
@@ -600,8 +600,8 @@ namespace s3d
 
                 if (vr_teleport && player->mo->health > 0) {
 
-                    DAngle yaw((doomYaw - hmdorientation[YAW]) + offhandangles[YAW]);
-                    DAngle pitch(offhandangles[PITCH]);
+                    DAngle yaw = DAngle::fromDeg(doomYaw - hmdorientation[YAW] + offhandangles[YAW]);
+                    DAngle pitch = DAngle::fromDeg(offhandangles[PITCH]);
                     double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 
                     // Teleport Logic
@@ -696,7 +696,7 @@ namespace s3d
         {
             if (resetPreviousPitch)
             {
-                previousPitch = vp.HWAngles.Pitch.Degrees;
+                previousPitch = vp.HWAngles.Pitch.Degrees();
                 resetPreviousPitch = false;
             }
 
@@ -713,8 +713,8 @@ namespace s3d
             if (getGameState() == GS_LEVEL && getMenuState() == MENU_Off)
             {
                 doomYaw += hmdYawDeltaDegrees;
-                vp.HWAngles.Roll = roll;
-                vp.HWAngles.Pitch = pitch;
+                vp.HWAngles.Roll = FAngle::fromDeg(roll);
+                vp.HWAngles.Pitch = FAngle::fromDeg(pitch);
             }
 
             {
@@ -723,7 +723,7 @@ namespace s3d
                     viewYaw += 360.0;
                 while (viewYaw > 180.0)
                     viewYaw -= 360.0;
-                vp.Angles.Yaw.Degrees = viewYaw;
+                vp.Angles.Yaw = DAngle::fromDeg(viewYaw);
             }
         }
     }

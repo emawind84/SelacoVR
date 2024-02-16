@@ -124,7 +124,7 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 		if (psp->GetCaller() != nullptr)
 		{
 			FState* spawn = psp->GetCaller()->FindState(NAME_Spawn);
-			lump = sprites[spawn->sprite].GetSpriteFrame(0, 0, 0., &mirror);
+			lump = sprites[spawn->sprite].GetSpriteFrame(0, 0, nullAngle, &mirror);
 		}
 		else lump.SetNull();
 

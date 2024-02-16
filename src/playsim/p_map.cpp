@@ -4580,15 +4580,15 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 		{
 			fromPos = t1->player->mo->OffhandPos;
 			direction = t1->player->mo->OffhandDir(t1, angle, pitch);
-			yoffsetDir = t1->player->mo->OffhandDir(t1, angle - 90, pitch);
-			zoffsetDir = t1->player->mo->OffhandDir(t1, angle, pitch + 90);
+			yoffsetDir = t1->player->mo->OffhandDir(t1, angle - DAngle::fromDeg(90.), pitch);
+			zoffsetDir = t1->player->mo->OffhandDir(t1, angle, pitch + DAngle::fromDeg(90.));
 		}
 		else 
 		{
 			fromPos = t1->player->mo->AttackPos;
 			direction = t1->player->mo->AttackDir(t1, angle, pitch);
-			yoffsetDir = t1->player->mo->AttackDir(t1, angle - 90, pitch);
-			zoffsetDir = t1->player->mo->AttackDir(t1, angle, pitch + 90);
+			yoffsetDir = t1->player->mo->AttackDir(t1, angle - DAngle::fromDeg(90.), pitch);
+			zoffsetDir = t1->player->mo->AttackDir(t1, angle, pitch + DAngle::fromDeg(90.));
 		}
 	}
 	else
@@ -5874,7 +5874,7 @@ void P_UseLines(player_t *player)
 		if (!used)
 		{
 			start = player->mo->AttackPos.XY();
-			aimAngle = player->mo->AttackAngle + 90;
+			aimAngle = player->mo->AttackAngle + DAngle::fromDeg(90.);
 			useRange = player->ReadyWeapon != nullptr ? player->ReadyWeapon->FloatVar(NAME_UseRange) : 48;
 			end = start + aimAngle.ToVector(useRange);
 			used = P_UseTraverse(player->mo, start, end, foundline);
@@ -5883,7 +5883,7 @@ void P_UseLines(player_t *player)
 		if (!used)
 		{
 			start = player->mo->OffhandPos.XY();
-			aimAngle = player->mo->OffhandAngle + 90;
+			aimAngle = player->mo->OffhandAngle + DAngle::fromDeg(90.);
 			useRange = player->OffhandWeapon != nullptr ? player->OffhandWeapon->FloatVar(NAME_UseRange) : 48;
 			end = start + aimAngle.ToVector(useRange);
 			used = P_UseTraverse(player->mo, start, end, foundline);
@@ -5995,7 +5995,7 @@ int P_UsePuzzleItem(AActor *PuzzleItemUser, int PuzzleItemType)
 		if (!used)
 		{
 			start = player->mo->AttackPos.XY();
-			aimAngle = player->mo->AttackAngle + 90;
+			aimAngle = player->mo->AttackAngle + DAngle::fromDeg(90.);
 			useRange = player->ReadyWeapon != nullptr ? player->ReadyWeapon->FloatVar(NAME_UseRange) : 48;
 			end = aimAngle.ToVector(useRange);
 			used |= P_UsePuzzleItem(PuzzleItemUser, PuzzleItemType, start.X, start.Y, end.X, end.Y);
@@ -6004,7 +6004,7 @@ int P_UsePuzzleItem(AActor *PuzzleItemUser, int PuzzleItemType)
 		if (!used)
 		{
 			start = player->mo->OffhandPos.XY();
-			aimAngle = player->mo->OffhandAngle + 90;
+			aimAngle = player->mo->OffhandAngle + DAngle::fromDeg(90.);
 			useRange = player->OffhandWeapon != nullptr ? player->OffhandWeapon->FloatVar(NAME_UseRange) : 48;
 			end = aimAngle.ToVector(useRange);
 			used |= P_UsePuzzleItem(PuzzleItemUser, PuzzleItemType, start.X, start.Y, end.X, end.Y);

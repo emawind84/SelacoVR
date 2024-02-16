@@ -5310,7 +5310,7 @@ DEFINE_ACTION_FUNCTION(AActor, AttackDir)
 	PARAM_ANGLE(yaw);
 	PARAM_ANGLE(pitch);
 	DVector3 dir = self->AttackDir(source, yaw, pitch);
-	ACTION_RETURN_VEC3(DVector3(dir.Angle().Degrees, dir.Pitch().Degrees, 0.));
+	ACTION_RETURN_VEC3(DVector3(dir.Angle().Degrees(), dir.Pitch().Degrees(), 0.));
 }
 
 DEFINE_ACTION_FUNCTION(AActor, OffhandDir)
@@ -5320,5 +5320,5 @@ DEFINE_ACTION_FUNCTION(AActor, OffhandDir)
 	PARAM_ANGLE(yaw);
 	PARAM_ANGLE(pitch);
 	DVector3 dir = self->OffhandDir(source, yaw, pitch);
-	ACTION_RETURN_VEC3(DVector3(dir.Angle().Degrees, dir.Pitch().Degrees, 0.));
+	ACTION_RETURN_VEC3(DVector3(dir.Angle().Degrees(), dir.Pitch().Degrees(), 0.));
 }

@@ -1422,29 +1422,29 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
                 {
                     VR_HapticEvent("melee", 0,
                                        100 * C_GetExternalHapticLevelValue("damage_projectile"),
-                                       attackAngle.Normalized360().Degrees, 0);
+                                       attackAngle.Normalized360().Degrees(), 0);
                 }
                 else if (strcasestr(mod.GetChars(), "burn") ||
                         strcasestr(mod.GetChars(), "flame"))
                 {
                     VR_HapticEvent("fireball", 0,
                                        100 * C_GetExternalHapticLevelValue("damage_projectile"),
-                                       attackAngle.Normalized360().Degrees, 0);
+                                       attackAngle.Normalized360().Degrees(), 0);
                 }
                 else  // Just pick on based on damage intensity
                 {
                     if (damage >= 20) {
                         VR_HapticEvent("fireball", 0,
                                            100 * C_GetExternalHapticLevelValue("damage_projectile"),
-                                           attackAngle.Normalized360().Degrees, 0);
+                                           attackAngle.Normalized360().Degrees(), 0);
                     } else if (damage >= 10) {
                         VR_HapticEvent("shotgun", 0,
                                            100 * C_GetExternalHapticLevelValue("damage_projectile"),
-                                           attackAngle.Normalized360().Degrees, 0);
+                                           attackAngle.Normalized360().Degrees(), 0);
                     } else {
                         VR_HapticEvent("bullet", 0,
                                            100 * C_GetExternalHapticLevelValue("damage_projectile"),
-                                           attackAngle.Normalized360().Degrees, 0);
+                                           attackAngle.Normalized360().Degrees(), 0);
                     }
                 }
             }
