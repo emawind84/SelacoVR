@@ -52,13 +52,13 @@
 
 CVAR(Bool, gl_aalines, false, CVAR_ARCHIVE) 
 
-void Draw2D(F2DDrawer* drawer, FRenderState& state)
+void Draw2D(F2DDrawer* drawer, FRenderState& state, bool outside2D)
 {
 	const auto& mScreenViewport = screen->mScreenViewport;
-	Draw2D(drawer, state, mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
+	Draw2D(drawer, state, mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height, outside2D);
 }
 
-void Draw2D(F2DDrawer* drawer, FRenderState& state, int x, int y, int width, int height)
+void Draw2D(F2DDrawer* drawer, FRenderState& state, int x, int y, int width, int height, bool outside2D)
 {
 	twoD.Clock();
 
