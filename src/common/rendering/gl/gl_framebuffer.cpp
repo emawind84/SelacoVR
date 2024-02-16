@@ -490,6 +490,7 @@ void OpenGLFrameBuffer::SetSaveBuffers(bool yes)
 void OpenGLFrameBuffer::BeginFrame()
 {
 	SetViewportRects(nullptr);
+	mViewpoints->Clear();
 	if (GLRenderer != nullptr)
 		GLRenderer->BeginFrame();
 }

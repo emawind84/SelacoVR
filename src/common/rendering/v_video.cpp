@@ -104,12 +104,10 @@ CUSTOM_CVAR(Int, vid_preferbackend, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_N
 	{
 #ifdef HAVE_GLES2
 	case 3:
+	case 2:
 		Printf("Selecting OpenGLES 2.0 backend...\n");
 		break;
 #endif
-	case 2:
-		Printf("Selecting SoftPoly backend...\n");
-		break;
 #ifdef HAVE_VULKAN
 	case 1:
 		Printf("Selecting Vulkan backend...\n");
@@ -120,6 +118,14 @@ CUSTOM_CVAR(Int, vid_preferbackend, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_N
 	}
 
 	Printf("Changing the video backend requires a restart for " GAMENAME ".\n");
+}
+
+int V_GetBackend()
+{
+	int v = vid_preferbackend;
+	if (v == 3) v = 2;
+	else if (v < 0 || v > 3) v = 0;
+	return v;
 }
 
 
