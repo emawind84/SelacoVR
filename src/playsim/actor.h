@@ -684,6 +684,7 @@ public:
 	TArray<int>			modelIDs;
 	TArray<FTextureID>	skinIDs;
 	TArray<FTextureID>	surfaceSkinIDs;
+	TArray<int>			animationIDs;
 	TArray<int>			modelFrameGenerators;
 
 	DActorModelData() = default;
