@@ -488,7 +488,7 @@ class Actor : Thinker native
 	virtual native int TakeSpecialDamage (Actor inflictor, Actor source, int damage, Name damagetype);
 	virtual native void Die(Actor source, Actor inflictor, int dmgflags = 0, Name MeansOfDeath = 'none');
 	virtual native bool Slam(Actor victim);
-	virtual native void Touch(Actor toucher);
+	virtual void Touch(Actor toucher) {}
 	virtual native void FallAndSink(double grav, double oldfloorz);
 	private native void Substitute(Actor replacement);
 	native ui void DisplayNameTag();
@@ -1373,6 +1373,9 @@ class Actor : Thinker native
 	GenericCrush:
 		POL5 A -1;
 		Stop;
+	DieFromSpawn:
+		TNT1 A 1;
+		TNT1 A 1 { self.Die(null, null); }
 	}
 
 	// Internal functions
