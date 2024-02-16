@@ -85,22 +85,18 @@ void I_SetIWADInfo()
 {
 }
 
-static bool I_KDialogAvailable()
+extern "C" int I_FileAvailable(const char* filename)
 {
-	// Is KDE running?
-	const char* str = getenv("KDE_FULL_SESSION");
-	if (str && strcmp(str, "true") == 0)
+	FString cmd = "which {0} >/dev/null 2>&1";
+	cmd.Substitute("{0}", filename);
+
+	if (FILE* f = popen(cmd.GetChars(), "r"))
 	{
-		// Is kdialog available?
-		FILE* f = popen("which kdialog >/dev/null 2>&1", "r");
-		if (f != NULL)
-		{
-			int status = pclose(f);
-			return WIFEXITED(status) && WEXITSTATUS(status) == 0;
-		}
+		int status = pclose(f);
+		return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 	}
 
-	return false;
+	return 0;
 }
 
 //
@@ -124,8 +120,7 @@ void Unix_I_FatalError(const char* errortext)
 	// Close window or exit fullscreen and release mouse capture
 	//SDL_QuitSubSystem(SDL_INIT_VIDEO);
 
-	const char *str;
-	if((str=getenv("KDE_FULL_SESSION")) && strcmp(str, "true") == 0)
+	if(I_FileAvailable("kdialog"))
 	{
 		FString cmd;
 		cmd << "kdialog --title \"" GAMENAME " " << GetVersionString()
@@ -142,7 +137,6 @@ void Unix_I_FatalError(const char* errortext)
 	{
 		FString title;
 		title << GAMENAME " " << GetVersionString();
-
 #ifdef __ANDROID__
         LOGI("FATAL ERROR: %s", errortext);
         //LogWritter_Write(errortext);
@@ -262,6 +256,10 @@ void RedrawProgressBar(int CurPos, int MaxPos)
 
 void I_PrintStr(const char *cp)
 {
+#ifdef __ANDROID__
+        //LOGI("GZDOOM: %s", cp);
+        //LogWritter_Write(cp);
+#endif
 	const char * srcp = cp;
 	FString printData = "";
 	bool terminal = isatty(STDOUT_FILENO);
@@ -330,7 +328,7 @@ int I_PickIWad (WadStuff *wads, int numwads, bool showwin, int defaultiwad)
 	}
 
 #ifndef __APPLE__
-	if(I_KDialogAvailable())
+	if(I_FileAvailable("kdialog"))
 	{
 		FString cmd("kdialog --title \"" GAMENAME " ");
 		cmd << GetVersionString() << ": Select an IWAD to use\""
@@ -429,6 +427,16 @@ FString I_GetFromClipboard (bool use_primary_selection)
 	return "";
 }
 
+FString I_GetCWD()
+{
+	return "";
+}
+
+bool I_ChDir(const char* path)
+{
+	return chdir(path) == 0;
+}
+
 // Return a random seed, preferably one with lots of entropy.
 unsigned int I_MakeRNGSeed()
 {
@@ -451,18 +459,7 @@ unsigned int I_MakeRNGSeed()
 	return seed;
 }
 
-void I_OpenShellFolder(const char* folder)
+void I_OpenShellFolder(const char* infolder)
 {
-	std::string x = (std::string)"xdg-open " + (std::string)folder;
-	Printf("Opening folder: %s\n", folder);
-	std::system(x.c_str());
-}
-
-void I_OpenShellFile(const char* file)
-{
-	std::string x = (std::string)"xdg-open " + (std::string)file;
-	x.erase(x.find_last_of('/'), std::string::npos);
-	Printf("Opening folder to file: %s\n", file);
-	std::system(x.c_str());
 }
 
