@@ -432,7 +432,7 @@ bool HWSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 		// [fgsfds] calculate yaw vectors
 		float yawvecX = 0, yawvecY = 0, rollDegrees = 0;
 		float angleRad = (FAngle::fromDeg(270.) - HWAngles.Yaw).Radians();
-		if (actor || drawRollParticle)	rollDegrees = Angles.Roll.Degrees;
+		if (actor || drawRollParticle)	rollDegrees = Angles.Roll.Degrees();
 		if (isFlatSprite)
 		{
 			yawvecX = Angles.Yaw.Cos();
@@ -1362,7 +1362,7 @@ void HWSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	if(particle->doRoll)
 	{
 		float rvf = (particle->RollVel) * timefrac;
-		Angles.Roll = particle->Roll + rvf;
+		Angles.Roll = TAngle<double>::fromDeg(particle->Roll + rvf);
 	}
 
 	float factor;
