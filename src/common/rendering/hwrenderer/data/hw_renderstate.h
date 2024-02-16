@@ -313,8 +313,6 @@ public:
 		mModelMatrix.loadIdentity();
 		mTextureMatrix.loadIdentity();
 		ClearClipSplit();
-
-		ResetFadeColor();
 	}
 
 	void SetNormal(FVector3 norm)
