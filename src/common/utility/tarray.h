@@ -339,7 +339,7 @@ public:
 
 	unsigned IndexOf(const T* elem) const
 	{
-		return elem - Array;
+		return unsigned(elem - Array);
 	}
 
     unsigned int Find(const T& item) const
