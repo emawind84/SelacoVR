@@ -258,6 +258,7 @@ class Actor : Thinker native
 	native int16 lightlevel;
 	native readonly int SpawnTime;
 	private native int InventoryID;	// internal counter.
+	native uint freezetics;
 	native readonly vector3 AttackPos;
 	native readonly double AttackPitch;
 	native readonly double AttackRoll;

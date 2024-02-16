@@ -161,6 +161,7 @@ void R_Shutdown();
 void I_ShutdownInput();
 void SetConsoleNotifyBuffer();
 void I_UpdateDiscordPresence(bool SendPresence, const char* curstatus, const char* appid, const char* steamappid);
+bool M_SetSpecialMenu(FName& menu, int param);	// game specific checks
 
 const FIWADInfo *D_FindIWAD(TArray<FString> &wadfiles, const char *iwad, const char *basewad);
 
@@ -179,6 +180,8 @@ void I_UpdateWindowTitle();
 void S_ParseMusInfo();
 void D_GrabCVarDefaults();
 void LoadHexFont(const char* filename);
+void InitBuildTiles();
+bool OkForLocalization(FTextureID texnum, const char* substitute);
 
 // PRIVATE FUNCTION PROTOTYPES ---------------------------------------------
 
@@ -199,6 +202,7 @@ EXTERN_CVAR (Bool, sv_unlimited_pickup)
 EXTERN_CVAR (Bool, r_drawplayersprites)
 EXTERN_CVAR (Bool, show_messages)
 EXTERN_CVAR(Bool, ticker)
+EXTERN_CVAR(Bool, vid_fps)
 
 extern bool setmodeneeded;
 extern bool demorecording;
@@ -301,7 +305,6 @@ CVAR(Bool, autoloadbrightmaps, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOB
 CVAR(Bool, autoloadlights, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 CVAR(Bool, autoloadwidescreen, true, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 CVAR(Bool, r_debug_disable_vis_filter, false, 0)
-CVAR(Bool, vid_fps, false, 0)
 CVAR(Int, vid_showpalette, 0, 0)
 
 CUSTOM_CVAR (Bool, i_discordrpc, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
@@ -332,10 +335,9 @@ FTextureID Advisory;
 FTextureID Page;
 const char *Subtitle;
 bool nospriterename;
-FStartupInfo GameStartupInfo;
 FString lastIWAD;
 int restart = 0;
-bool AppActive = true;
+extern bool AppActive;
 bool playedtitlemusic;
 
 FStartScreen* StartScreen;
@@ -568,6 +570,7 @@ CVAR (Flag, sv_respawnsuper,		dmflags2, DF2_RESPAWN_SUPER);
 CVAR (Flag, sv_nothingspawn,		dmflags2, DF2_NO_COOP_THING_SPAWN);
 CVAR (Flag, sv_alwaysspawnmulti,	dmflags2, DF2_ALWAYS_SPAWN_MULTI);
 CVAR (Flag, sv_novertspread,		dmflags2, DF2_NOVERTSPREAD);
+CVAR (Flag, sv_noextraammo,			dmflags2, DF2_NO_EXTRA_AMMO);
 
 //==========================================================================
 //
@@ -2835,6 +2838,16 @@ void System_ConsoleToggled(int state)
 		D_ToggleHud();
 }
 
+void System_LanguageChanged(const char* lang)
+{
+	for (auto Level : AllLevels())
+	{
+		// does this even make sense on secondary levels...?
+		if (Level->info != nullptr) Level->LevelName = Level->info->LookupLevelName();
+	}
+	I_UpdateWindowTitle();
+}
+
 //==========================================================================
 //
 // DoomSpecificInfo
@@ -3028,6 +3041,14 @@ static void System_SetTransition(int type)
 	if (type != wipe_None) wipegamestate = type == wipe_Burn? GS_FORCEWIPEBURN : type == wipe_Fade? GS_FORCEWIPEFADE : GS_FORCEWIPEMELT;
 }
 
+static void System_HudScaleChanged()
+{
+	if (StatusBar)
+	{
+		StatusBar->SetScale();
+		setsizeneeded = true;
+	}
+}
 
 bool  CheckSkipGameOptionBlock(const char* str);
 
@@ -3279,7 +3300,7 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	{ 
 		StartWindow->Progress(); 
 		if (StartScreen) StartScreen->Progress(1); 
-	}, CheckForHacks);
+	}, CheckForHacks, InitBuildTiles);
 	PatchTextures();
 	TexAnim.Init();
 	C_InitConback(TexMan.CheckForTexture(gameinfo.BorderFlat, ETextureType::Flat), true, 0.25);
@@ -3572,6 +3593,7 @@ static int D_DoomMain_Internal (void)
 	buttonMap.GetButton(Button_Klook)->bReleaseLock = true;
 
 	sysCallbacks = {
+		G_Responder,
 		System_WantGuiCapture,
 		System_WantLeftButton,
 		System_NetGame,
@@ -3597,6 +3619,14 @@ static int D_DoomMain_Internal (void)
 		System_ToggleFullConsole,
 		System_StartCutscene,
 		System_SetTransition,
+		CheckCheatmode,
+		System_HudScaleChanged,
+		M_SetSpecialMenu,
+		OnMenuOpen,
+		System_LanguageChanged,
+		OkForLocalization,
+		[]() ->FConfigFile* { return GameConfig; }
+
 	};
 
 	

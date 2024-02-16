@@ -89,6 +89,7 @@
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "doommenu.h"
 #include "screenjob.h"
+#include "i_interface.h"
 #include "hw_vrmodes.h"
 
 #include <QzDoom/VrCommon.h>
@@ -152,15 +153,12 @@ CVAR(Int, nametagcolor, CR_GOLD, CVAR_ARCHIVE)
 extern bool playedtitlemusic;
 
 gameaction_t	gameaction;
-gamestate_t 	gamestate = GS_STARTUP;
 
 int getGameState()
 {
 	return (int)gamestate;
 }
 
-int 			paused;
-bool			pauseext;
 bool 			sendpause;				// send a pause event next tic 
 bool			sendsave;				// send a save event next tic 
 bool			sendturn180;			// [RH] send a 180 degree turn next tic

@@ -308,6 +308,7 @@ public:
 	void MarkUsed(int num);
 	void CacheMarkedSounds();
 	TArray<FSoundChan*> AllActiveChannels();
+	virtual void SetSoundPaused(int state) {}
 
 	void MarkAllUnused()
 	{

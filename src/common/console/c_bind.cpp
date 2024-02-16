@@ -49,10 +49,6 @@
 
 #include "d_eventbase.h"
 
-extern int chatmodeon;
-
-CVAR (Int, k_modern, 1, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-
 const char *KeyNames[NUM_KEYS] =
 {
 	// We use the DirectInput codes and assume a qwerty keyboard layout.
