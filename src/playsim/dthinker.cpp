@@ -274,7 +274,7 @@ void FThinkerCollection::RunThinkers(FLevelLocals *Level)
 //
 //==========================================================================
 
-void FThinkerCollection::DestroyAllThinkers()
+void FThinkerCollection::DestroyAllThinkers(bool fullgc)
 {
 	int i;
 	bool error = false;
@@ -288,11 +288,12 @@ void FThinkerCollection::DestroyAllThinkers()
 		}
 	}
 	error |= Thinkers[MAX_STATNUM + 1].DoDestroyThinkers();
-	GC::FullGC();
+	if (fullgc) GC::FullGC();
 	if (error)
 	{
 		ClearGlobalVMStack();
-		I_Error("DestroyAllThinkers failed");
+		if (fullgc) I_Error("DestroyAllThinkers failed");
+		else I_FatalError("DestroyAllThinkers failed");
 	}
 }
 
