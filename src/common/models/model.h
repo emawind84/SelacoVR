@@ -12,6 +12,7 @@ struct FSpriteModelFrame;
 
 FTextureID LoadSkin(const char* path, const char* fn);
 void FlushModels();
+extern TArray<FString> savedModelFiles;
 extern TDeletingArray<FModel*> Models;
 extern TArray<FSpriteModelFrame> SpriteModelFrames;
 
@@ -68,10 +69,6 @@ public:
 	void SetVertexBuffer(int type, IModelVertexBuffer *buffer) { mVBuf[type] = buffer; }
 	IModelVertexBuffer *GetVertexBuffer(int type) const { return mVBuf[type]; }
 	void DestroyVertexBuffer();
-
-	const FSpriteModelFrame *curSpriteMDLFrame;
-	int curMDLIndex;
-	void PushSpriteMDLFrame(const FSpriteModelFrame *smf, int index) { curSpriteMDLFrame = smf; curMDLIndex = index; };
 
 	FString mFileName;
 

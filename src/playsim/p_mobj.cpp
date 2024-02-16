@@ -4412,9 +4412,9 @@ void AActor::SplashCheck()
 
 bool AActor::UpdateWaterLevel(bool dosplash)
 {
-	if (dosplash) SplashCheck();
-
 	int oldlevel = waterlevel;
+
+	if (dosplash) SplashCheck();
 	UpdateWaterDepth(false);
 
 	// Play surfacing and diving sounds, as appropriate.
