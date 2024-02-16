@@ -1252,7 +1252,7 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 	{
 		IFVIRTUALPTR(target, AActor, ApplyKickback)
 		{
-			VMValue params[] = { target, inflictor, source, damage, angle.Degrees, mod.GetIndex(), flags };
+			VMValue params[] = { target, inflictor, source, damage, angle.Degrees(), mod.GetIndex(), flags };
 			VMCall(func, params, countof(params), nullptr, 0);
 		}
 	}
@@ -1513,7 +1513,7 @@ DEFINE_ACTION_FUNCTION(AActor, DamageMobj)
 	PARAM_INT(damage);
 	PARAM_NAME(mod);
 	PARAM_INT(flags);
-	PARAM_FLOAT(angle);
+	PARAM_ANGLE(angle);
 	ACTION_RETURN_INT(DoDamageMobj(self, inflictor, source, damage, mod, flags, angle));
 }
 
@@ -1521,7 +1521,7 @@ int P_DamageMobj(AActor *target, AActor *inflictor, AActor *source, int damage, 
 {
 	IFVIRTUALPTR(target, AActor, DamageMobj)
 	{
-		VMValue params[7] = { target, inflictor, source, damage, mod.GetIndex(), flags, angle.Degrees };
+		VMValue params[7] = { target, inflictor, source, damage, mod.GetIndex(), flags, angle.Degrees() };
 		VMReturn ret;
 		int retval;
 		ret.IntAt(&retval);
