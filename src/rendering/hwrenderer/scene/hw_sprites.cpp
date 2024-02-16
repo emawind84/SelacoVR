@@ -353,12 +353,12 @@ bool HWSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 		// Tilt the actor up or down based on pitch (increase 'somersaults' forward).
 		// Then counteract the roll and DO A BARREL ROLL.
 
-		FAngle pitch = (float)-Angles.Pitch.Degrees;
+		FAngle pitch = FAngle::fromDeg(-Angles.Pitch.Degrees());
 		pitch.Normalized180();
 
 		mat.Translate(x, z, y);
-		mat.Rotate(0, 1, 0, 270. - Angles.Yaw.Degrees);
-		mat.Rotate(1, 0, 0, pitch.Degrees);
+		mat.Rotate(0, 1, 0, 270. - Angles.Yaw.Degrees());
+		mat.Rotate(1, 0, 0, pitch.Degrees());
 
 		if (actor->renderflags & RF_ROLLCENTER)
 		{
@@ -366,12 +366,12 @@ bool HWSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 			float cy = (y1 + y2) * 0.5;
 
 			mat.Translate(cx - x, 0, cy - y);
-			mat.Rotate(0, 1, 0, - Angles.Roll.Degrees);
+			mat.Rotate(0, 1, 0, - Angles.Roll.Degrees());
 			mat.Translate(-cx, -z, -cy);
 		}
 		else
 		{
-			mat.Rotate(0, 1, 0, - Angles.Roll.Degrees);
+			mat.Rotate(0, 1, 0, - Angles.Roll.Degrees());
 			mat.Translate(-x, -z, -y);
 		}
 		v[0] = mat * FVector3(x2, z, y2);
@@ -424,7 +424,7 @@ bool HWSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 			float xrel = xcenter - vp->X;
 			float yrel = ycenter - vp->Y;
 			float absAngleDeg = RAD2DEG(atan2(-yrel, xrel));
-			float counterRotationDeg = 270. - HWAngles.Yaw.Degrees; // counteracts existing sprite rotation
+			float counterRotationDeg = 270. - HWAngles.Yaw.Degrees(); // counteracts existing sprite rotation
 			float relAngleDeg = counterRotationDeg + absAngleDeg;
 
 			mat.Rotate(0, 1, 0, relAngleDeg);
@@ -432,8 +432,8 @@ bool HWSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 
 		// [fgsfds] calculate yaw vectors
 		float yawvecX = 0, yawvecY = 0, rollDegrees = 0;
-		float angleRad = (270. - HWAngles.Yaw).Radians();
-		if (actor || drawRollParticle)	rollDegrees = Angles.Roll.Degrees;
+		float angleRad = (FAngle::fromDeg(270.) - HWAngles.Yaw).Radians();
+		if (actor || drawRollParticle)	rollDegrees = Angles.Roll.Degrees();
 		if (isFlatSprite)
 		{
 			yawvecX = Angles.Yaw.Cos();
@@ -456,7 +456,7 @@ bool HWSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 			if (useOffsets) mat.Translate(xx, zz, yy);
 			if (drawWithXYBillboard)
 			{
-				mat.Rotate(-sin(angleRad), 0, cos(angleRad), -HWAngles.Pitch.Degrees);
+				mat.Rotate(-sin(angleRad), 0, cos(angleRad), -HWAngles.Pitch.Degrees());
 			}
 			mat.Rotate(cos(angleRad), 0, sin(angleRad), rollDegrees);
 			if (useOffsets) mat.Translate(-xx, -zz, -yy);
@@ -466,7 +466,7 @@ bool HWSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 			// Rotate the sprite about the vector starting at the center of the sprite
 			// triangle strip and with direction orthogonal to where the player is looking
 			// in the x/y plane.
-			mat.Rotate(-sin(angleRad), 0, cos(angleRad), -HWAngles.Pitch.Degrees);
+			mat.Rotate(-sin(angleRad), 0, cos(angleRad), -HWAngles.Pitch.Degrees());
 		}
 
 		mat.Translate(-xcenter, -zcenter, -ycenter); // retreat from sprite center
@@ -902,16 +902,16 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				if (sprframe->Texture[0] == sprframe->Texture[1])
 				{
 					if (thing->flags7 & MF7_SPRITEANGLE)
-						rot = (thing->SpriteAngle + 45.0 / 2 * 9).BAMs() >> 28;
+						rot = (thing->SpriteAngle + DAngle::fromDeg(45.0 / 2 * 9)).BAMs() >> 28;
 					else
-						rot = (sprang - (thing->Angles.Yaw + thing->SpriteRotation) + 45.0 / 2 * 9).BAMs() >> 28;
+						rot = (sprang - (thing->Angles.Yaw + thing->SpriteRotation) + DAngle::fromDeg(45.0 / 2 * 9)).BAMs() >> 28;
 				}
 				else
 				{
 					if (thing->flags7 & MF7_SPRITEANGLE)
-						rot = (thing->SpriteAngle + (45.0 / 2 * 9 - 180.0 / 16)).BAMs() >> 28;
+						rot = (thing->SpriteAngle + DAngle::fromDeg(45.0 / 2 * 9 - 180.0 / 16)).BAMs() >> 28;
 					else
-						rot = (sprang - (thing->Angles.Yaw + thing->SpriteRotation) + (45.0 / 2 * 9 - 180.0 / 16)).BAMs() >> 28;
+						rot = (sprang - (thing->Angles.Yaw + thing->SpriteRotation) + DAngle::fromDeg(45.0 / 2 * 9 - 180.0 / 16)).BAMs() >> 28;
 				}
 				auto picnum = sprframe->Texture[rot];
 				if (sprframe->Flip & (1 << rot))
@@ -934,7 +934,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			else
 			{
 				// Flat sprites cannot rotate in a predictable manner.
-				sprangle = 0.;
+				sprangle = nullAngle;
 				rot = 0;
 			}
 			if (thing == camera && screen->stencilValue > 0)
@@ -1378,7 +1378,7 @@ void HWSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	if(particle->doRoll)
 	{
 		float rvf = (particle->RollVel) * timefrac;
-		Angles.Roll = particle->Roll + rvf;
+		Angles.Roll = TAngle<double>::fromDeg(particle->Roll + rvf);
 	}
 
 	float factor;
