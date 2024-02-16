@@ -407,7 +407,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	else
 	{
 #ifdef __MOBILE__
-		vp_comb.Format("#version 300 es\n#define SHADER_STORAGE_LIGHTS\n");
+		vp_comb.Format("#version 310 es\n#define SHADER_STORAGE_LIGHTS\n#define SHADER_STORAGE_BONES\n");
 #else
 		// This differentiation is for Intel which do not seem to expose the full extension, even if marked as required.
 		if (gl.glslversion < 4.3f)
