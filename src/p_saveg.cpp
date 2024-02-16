@@ -61,6 +61,7 @@
 #include "version.h"
 #include "fragglescript/t_script.h"
 #include "s_music.h"
+#include "model.h"
 
 EXTERN_CVAR(Bool, save_formatted)
 

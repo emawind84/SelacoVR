@@ -236,7 +236,7 @@ class StateProvider : Inventory
 	//
 	//==========================================================================
 
-	action Actor A_FireProjectile(class<Actor> missiletype, double angle = 0, bool useammo = true, double spawnofs_xy = 0, double spawnheight = 0, int flags = 0, double pitch = 0)	
+	action Actor, Actor A_FireProjectile(class<Actor> missiletype, double angle = 0, bool useammo = true, double spawnofs_xy = 0, double spawnheight = 0, int flags = 0, double pitch = 0)	
 	{
 		let player = self.player;
 		if (!player) return null;
@@ -268,13 +268,15 @@ class StateProvider : Inventory
 
 			if (flags & FPF_AIMATANGLE) shootangle += angle;
 
-			let misl = SpawnPlayerMissile (missiletype, shootangle, ofs.X, ofs.Y, spawnheight, t, false, (flags & FPF_NOAUTOAIM) != 0, alflags, self.Pitch + pitch);
+			Actor misl, realmisl;
+			[misl, realmisl] = SpawnPlayerMissile (missiletype, shootangle, ofs.X, ofs.Y, spawnheight, t, false, (flags & FPF_NOAUTOAIM) != 0, alflags, self.Pitch + pitch);
+
+			if (realmisl && flags & FPF_TRANSFERTRANSLATION)
+				realmisl.Translation = Translation;
 
 			// automatic handling of seeker missiles
 			if (misl)
 			{
-				if (flags & FPF_TRANSFERTRANSLATION)
-					misl.Translation = Translation;
 				if (t.linetarget && !t.unlinked && misl.bSeekerMissile)
 					misl.tracer = t.linetarget;
 				if (!(flags & FPF_AIMATANGLE))
@@ -302,9 +304,9 @@ class StateProvider : Inventory
 					}
 				}
 			}
-			return misl;
+			return misl, realmisl;
 		}
-		return null;
+		return null, null;
 	}
 
 //==========================================================================
