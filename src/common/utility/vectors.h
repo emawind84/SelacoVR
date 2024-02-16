@@ -237,6 +237,12 @@ struct TVector2
 	{
 		return X*X + Y*Y;
 	}
+	
+	double Sum() const
+	{
+		return abs(X) + abs(Y);
+	}
+
 
 	// Return a unit vector facing the same direction as this one
 	TVector2 Unit() const
@@ -304,13 +310,13 @@ struct TVector2
 	}
 
 	// Returns a vector rotated 90 degrees clockwise.
-	TVector2 Rotated90CW()
+	TVector2 Rotated90CW() const
 	{
 		return TVector2(Y, -X);
 	}
 
 	// Returns a vector rotated 90 degrees counterclockwise.
-	TVector2 Rotated90CCW()
+	TVector2 Rotated90CCW() const
 	{
 		return TVector2(-Y, X);
 	}
@@ -601,6 +607,12 @@ struct TVector3
 	{
 		return X*X + Y*Y + Z*Z;
 	}
+	
+	double Sum() const
+	{
+		return abs(X) + abs(Y) + abs(Z);
+	}
+
 
 	// Return a unit vector facing the same direction as this one
 	TVector3 Unit() const
@@ -650,6 +662,11 @@ struct TVector3
 	vec_t operator | (const TVector3 &other) const
 	{
 		return X*other.X + Y*other.Y + Z*other.Z;
+	}
+
+	vec_t dot (const TVector3& other) const
+	{
+		return X * other.X + Y * other.Y + Z * other.Z;
 	}
 
 	// Cross product
@@ -900,6 +917,12 @@ struct TVector4
 	{
 		return X*X + Y*Y + Z*Z + W*W;
 	}
+	
+	double Sum() const
+	{
+		return abs(X) + abs(Y) + abs(Z) + abs(W);
+	}
+	
 
 	// Return a unit vector facing the same direction as this one
 	TVector4 Unit() const
@@ -1606,7 +1629,7 @@ struct TRotator
 	TRotator &operator/= (const Angle &scalar)
 	{
 		Angle mul(1 / scalar.Degrees_);
-		Pitch *= scalar, Yaw *= scalar, Roll *= scalar;
+		Pitch *= mul, Yaw *= mul, Roll *= mul;
 		return *this;
 	}
 
@@ -1693,6 +1716,7 @@ constexpr DAngle nullAngle = DAngle::fromDeg(0.);
 constexpr DAngle minAngle = DAngle::fromDeg(1. / 65536.);
 constexpr FAngle nullFAngle = FAngle::fromDeg(0.);
 
+constexpr DAngle DAngle1 = DAngle::fromDeg(1);
 constexpr DAngle DAngle22_5 = DAngle::fromDeg(22.5);
 constexpr DAngle DAngle45 = DAngle::fromDeg(45);
 constexpr DAngle DAngle60 = DAngle::fromDeg(60);

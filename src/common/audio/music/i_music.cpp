@@ -221,11 +221,11 @@ void I_InitMusic(void)
 {
     I_InitSoundFonts();
 
-	snd_musicvolume.Callback ();
+	snd_musicvolume->Callback ();
 
 	nomusic = !!Args->CheckParm("-nomusic") || !!Args->CheckParm("-nosound");
 
-	snd_mididevice.Callback();
+	snd_mididevice->Callback();
 
 	ZMusicCallbacks callbacks{};
 
@@ -256,7 +256,7 @@ void I_SetRelativeVolume(float vol)
 {
 	relative_volume = (float)vol;
 	ChangeMusicSetting(zmusic_relative_volume, nullptr, (float)vol);
-	snd_musicvolume.Callback();
+	snd_musicvolume->Callback();
 }
 //==========================================================================
 //

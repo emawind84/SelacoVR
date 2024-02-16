@@ -562,6 +562,12 @@ void STAT_Serialize(FSerializer &arc)
 }
 
 
+FString STAT_EpisodeName()
+{
+	if (StartEpisode == nullptr) return "";
+	return StartEpisode->mEpisodeName;
+}
+
 //==========================================================================
 //
 // show statistics
