@@ -38,6 +38,7 @@
 #include "shaderuniforms.h"
 #include "hw_viewpointuniforms.h"
 #include "hw_lightbuffer.h"
+#include "hw_bonebuffer.h"
 #include "i_specialpaths.h"
 #include "printf.h"
 #include "version.h"
@@ -286,6 +287,9 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		// dynamic lights
 		uniform int uLightIndex;
 
+		// bone animation
+		uniform int uBoneIndexBase;
+
 		// Blinn glossiness and specular level
 		uniform vec2 uSpecularMaterial;
 
@@ -304,6 +308,19 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		uniform LightBufferUBO
 		{
 			vec4 lights[NUM_UBO_LIGHTS];
+		};
+		#endif
+
+		// bone matrix buffers
+		#ifdef SHADER_STORAGE_BONES
+		layout(std430, binding = 7) buffer BoneBufferSSO
+		{
+			mat4 bones[];
+		};
+		#elif defined NUM_UBO_BONES
+		uniform BoneBufferUBO
+		{
+			mat4 bones[NUM_UBO_BONES];
 		};
 		#endif
 
@@ -379,27 +396,28 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	FString vp_comb;
 
 	assert(screen->mLights != NULL);
+	assert(screen->mBones != NULL);
 
 	bool lightbuffertype = screen->mLights->GetBufferType();
 	unsigned int lightbuffersize = screen->mLights->GetBlockSize();
 	if (!lightbuffertype)
 	{
 #ifdef __MOBILE__
-		vp_comb.Format("#version 310 es\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
+		vp_comb.Format("#version 310 es\n#define NUM_UBO_LIGHTS %d\n#define NUM_UBO_BONES %d\n", lightbuffersize, screen->mBones->GetBlockSize());
 #else
-		vp_comb.Format("#version 330 core\n#define NUM_UBO_LIGHTS %d\n", lightbuffersize);
+		vp_comb.Format("#version 330 core\n#define NUM_UBO_LIGHTS %d\n#define NUM_UBO_BONES %d\n", lightbuffersize, screen->mBones->GetBlockSize());
 #endif
 	}
 	else
 	{
 #ifdef __MOBILE__
-		vp_comb.Format("#version 300 es\n#define SHADER_STORAGE_LIGHTS\n");
+		vp_comb.Format("#version 310 es\n#define SHADER_STORAGE_LIGHTS\n#define SHADER_STORAGE_BONES\n");
 #else
 		// This differentiation is for Intel which do not seem to expose the full extension, even if marked as required.
 		if (gl.glslversion < 4.3f)
-			vp_comb = "#version 400 core\n#extension GL_ARB_shader_storage_buffer_object : require\n#define SHADER_STORAGE_LIGHTS\n";
+			vp_comb = "#version 400 core\n#extension GL_ARB_shader_storage_buffer_object : require\n#define SHADER_STORAGE_LIGHTS\n#define SHADER_STORAGE_BONES\n";
 		else
-			vp_comb = "#version 430 core\n#define SHADER_STORAGE_LIGHTS\n";
+			vp_comb = "#version 430 core\n#define SHADER_STORAGE_LIGHTS\n#define SHADER_STORAGE_BONES\n";
 #endif
 	}
 
@@ -594,6 +612,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	muLightParms.Init(hShader, "uLightAttr");
 	muClipSplit.Init(hShader, "uClipSplit");
 	muLightIndex.Init(hShader, "uLightIndex");
+	muBoneIndexBase.Init(hShader, "uBoneIndexBase");
 	muFogColor.Init(hShader, "uFogColor");
 	muDynLightColor.Init(hShader, "uDynLightColor");
 	muObjectColor.Init(hShader, "uObjectColor");
@@ -634,6 +653,9 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	{
 		int tempindex = glGetUniformBlockIndex(hShader, "LightBufferUBO");
 		if (tempindex != -1) glUniformBlockBinding(hShader, tempindex, LIGHTBUF_BINDINGPOINT);
+
+		tempindex = glGetUniformBlockIndex(hShader, "BoneBufferUBO");
+		if (tempindex != -1) glUniformBlockBinding(hShader, tempindex, BONEBUF_BINDINGPOINT);
 	}
 	int tempindex = glGetUniformBlockIndex(hShader, "ViewpointUBO");
 	if (tempindex != -1) glUniformBlockBinding(hShader, tempindex, VIEWPOINT_BINDINGPOINT);

@@ -397,6 +397,7 @@ void VkRenderState::ApplyPushConstants()
 	}
 
 	mPushConstants.uLightIndex = mLightIndex;
+	mPushConstants.uBoneIndexBase = mBoneIndexBase;
 	mPushConstants.uDataIndex = mStreamBufferWriter.DataIndex();
 
 	auto passManager = fb->GetRenderPassManager();
