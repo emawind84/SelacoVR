@@ -427,9 +427,23 @@ FString I_GetFromClipboard (bool use_primary_selection)
 	return "";
 }
 
+char *get_current_dir_name(void)
+{
+	char *cwd = (char *)malloc(PATH_MAX);
+	getcwd(cwd, PATH_MAX);
+	return cwd;
+}
+
 FString I_GetCWD()
 {
-	return "";
+	char* curdir = get_current_dir_name();
+	if (!curdir) 
+	{
+		return "";
+	}
+	FString ret(curdir);
+	free(curdir);
+	return ret;
 }
 
 bool I_ChDir(const char* path)
@@ -461,5 +475,18 @@ unsigned int I_MakeRNGSeed()
 
 void I_OpenShellFolder(const char* infolder)
 {
+	char* curdir = get_current_dir_name();
+
+	if (!chdir(infolder))
+	{
+		Printf("Opening folder: %s\n", infolder);
+		std::system("xdg-open .");
+		chdir(curdir);
+	}
+	else
+	{
+		Printf("Unable to open directory '%s\n", infolder);
+	}
+	free(curdir);
 }
 
