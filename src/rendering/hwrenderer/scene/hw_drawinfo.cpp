@@ -451,7 +451,6 @@ void HWDrawInfo::CreateScene(bool drawpsprites)
 	// clip the scene and fill the drawlists
 	screen->mVertexData->Map();
 	screen->mLights->Map();
-	screen->mBones->Map();
 
 	RenderBSP(Level->HeadNode(), drawpsprites);
 
@@ -464,7 +463,6 @@ void HWDrawInfo::CreateScene(bool drawpsprites)
 	PrepareUnhandledMissingTextures();
 	DispatchRenderHacks();
 	screen->mLights->Unmap();
-	screen->mBones->Unmap();
 	screen->mVertexData->Unmap();
 
 	ProcessAll.Unclock();
@@ -742,7 +740,9 @@ void HWDrawInfo::EndDrawScene(sector_t * viewsector, FRenderState &state)
 		{
 			// [BB] The HUD model should be drawn over everything else already drawn.
 			state.Clear(CT_Depth);
+			screen->mBones->Map();
 			DrawPlayerSprites(true, state);
+			screen->mBones->Unmap();
 		}
 	}
 
@@ -820,6 +820,7 @@ void HWDrawInfo::Set3DViewport(FRenderState &state)
 
 void HWDrawInfo::DrawScene(int drawmode)
 {
+	screen->mBones->Map();
 	static int recursion = 0;
 	static int ssao_portals_available = 0;
 	const auto& vp = Viewpoint;
@@ -875,6 +876,7 @@ void HWDrawInfo::DrawScene(int drawmode)
 	portalState.EndFrame(this, RenderState);
 	recursion--;
 	RenderTranslucent(RenderState);
+	screen->mBones->Unmap();
 }
 
 

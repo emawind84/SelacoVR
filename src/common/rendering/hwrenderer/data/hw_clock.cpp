@@ -55,7 +55,7 @@ int vertexcount, flatvertices, flatprimitives;
 
 int rendered_lines,rendered_flats,rendered_sprites,render_vertexsplit,render_texsplit,rendered_decals, rendered_portals, rendered_commandbuffers;
 int iter_dlightf, iter_dlight, draw_dlight, draw_dlightf;
-int lightbuffer_curindex, vertexbuffer_curindex;
+int lightbuffer_curindex, vertexbuffer_curindex, bonebuffer_curindex;
 
 void ResetProfilingData()
 {
@@ -79,7 +79,7 @@ void ResetProfilingData()
 
 	flatvertices=flatprimitives=vertexcount=0;
 	render_texsplit=render_vertexsplit=rendered_lines=rendered_flats=rendered_sprites=rendered_decals=rendered_portals = 0;
-	lightbuffer_curindex = vertexbuffer_curindex = 0;
+	lightbuffer_curindex = vertexbuffer_curindex = bonebuffer_curindex = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -126,7 +126,7 @@ static void AppendLightStats(FString &out)
 
 static void AppendBufferStats(FString &out)
 {
-	out.AppendFormat("Buffers: vertexbuffer=%d, lightbuffer=%d", vertexbuffer_curindex, lightbuffer_curindex);
+	out.AppendFormat("Buffers: vertexbuffer=%d, lightbuffer=%d, bonebuffer=%d", vertexbuffer_curindex, lightbuffer_curindex, bonebuffer_curindex);
 }
 
 ADD_STAT(rendertimes)
