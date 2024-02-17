@@ -137,10 +137,11 @@ void gl_LoadExtensions()
 	float gl_version = (float)strtod(version, NULL) + 0.01f;
 
 #ifdef __MOBILE__
-    gl_version = 3.31;
-    gl.flags |= RFL_NO_CLIP_PLANES;
-    //gl.flags |= RFL_INVALIDATE_BUFFER;
-    //gl.flags |= RFL_DOUBLE_BUFFER_VBO;
+	gl_version = 3.31;
+	gl.flags |= RFL_NO_CLIP_PLANES;
+	gl.flags |= RFL_INVALIDATE_BUFFER;
+	if (gl_light_buffer_type == 1)
+		gl.flags |= RFL_SHADER_STORAGE_BUFFER;
 #endif
 	// Don't even start if it's lower than 2.0 or no framebuffers are available (The framebuffer extension is needed for glGenerateMipmapsEXT!)
 	if (gl_version < 3.3f)
@@ -188,6 +189,9 @@ void gl_LoadExtensions()
 		// Assume that everything works without problems on GL 4.5 drivers where these things are core features.
 		gl.flags |= RFL_SHADER_STORAGE_BUFFER | RFL_BUFFER_STORAGE;
 	}
+
+	// TODO testing mobile
+	gl.flags &= ~RFL_BUFFER_STORAGE;
 
 	// Mesa implements shader storage only for fragment shaders.
 	// Just disable the feature there. The light buffer may just use a uniform buffer without any adverse effects.
