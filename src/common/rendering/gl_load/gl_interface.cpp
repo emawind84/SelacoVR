@@ -199,6 +199,9 @@ void gl_LoadExtensions()
 	if (gl_light_buffer_type != 1)
 		gl.flags &= ~RFL_SHADER_STORAGE_BUFFER;
 
+	if (gl_no_buffer_storage)
+		gl.flags &= ~RFL_BUFFER_STORAGE;
+
 	if (gl_version >= 4.3f || CheckExtension("GL_ARB_invalidate_subdata")) gl.flags |= RFL_INVALIDATE_BUFFER;
 	if (gl_version >= 4.3f || CheckExtension("GL_KHR_debug")) gl.flags |= RFL_DEBUG;
 
