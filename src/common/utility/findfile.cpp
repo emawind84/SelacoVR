@@ -465,13 +465,13 @@ const char* BaseFileSearch(const char* file, const char* ext, bool lookfirstinpr
 	}
 
 #ifdef __MOBILE__
-	char wad[128];
-	mysnprintf(wad, countof(wad), "./res/%s", file);
-	if (DirEntryExists(wad))
+	BFSwad.Format("./res/%s", file);
+	if (DirEntryExists(BFSwad))
 	{
-		return wad;
+		return BFSwad.GetChars();
 	}
 #endif
+
 	// Retry, this time with a default extension
 	if (ext != nullptr)
 	{
