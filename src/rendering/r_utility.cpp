@@ -449,7 +449,7 @@ bool P_NoInterpolation(player_t const *player, AActor const *actor)
 		player - players == consoleplayer &&
 		actor == player->mo &&
 		!demoplayback &&
-		!(player->cheats & (CF_TOTALLYFROZEN | CF_FROZEN)) &&
+		//!(player->cheats & (CF_TOTALLYFROZEN | CF_FROZEN)) &&
 		player->playerstate == PST_LIVE &&
 		player->mo->reactiontime == 0 &&
 		!NoInterpolateView &&
