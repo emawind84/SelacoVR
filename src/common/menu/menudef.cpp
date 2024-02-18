@@ -1257,6 +1257,16 @@ static void ParseImageScrollerBody(FScanner& sc, DImageScrollerDescriptor* desc)
 				ParseImageScrollerBody(sc, desc);
 			}
 		}
+		else if (sc.Compare("Class"))
+		{
+			sc.MustGetString();
+			PClass* cls = PClass::FindClass(sc.String);
+			if (cls == nullptr || !cls->IsDescendantOf("ImageScrollerMenu"))
+			{
+				sc.ScriptError("Unknown menu class '%s'", sc.String);
+			}
+			desc->mClass = cls;
+		}
 		else if (sc.Compare("animatedtransition"))
 		{
 			desc->mAnimatedTransition = true;
@@ -1328,6 +1338,24 @@ static void ParseImageScrollerBody(FScanner& sc, DImageScrollerDescriptor* desc)
 						else if (args[i] == TypeColor)
 						{
 							params.Push(V_GetColor(sc));
+						}
+						else if (args[i] == TypeFont)
+						{
+							auto f = V_GetFont(sc.String);
+							if (f == nullptr)
+							{
+								sc.ScriptError("Unknown font %s", sc.String);
+							}
+							params.Push(f);
+						}
+						else if (args[i] == TypeTextureID)
+						{
+							auto f = TexMan.CheckForTexture(sc.String, ETextureType::MiscPatch);
+							if (!f.Exists())
+							{
+								sc.ScriptMessage("Unknown texture %s", sc.String);
+							}
+							params.Push(f.GetIndex());
 						}
 						else if (args[i]->isIntCompatible())
 						{

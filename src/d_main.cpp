@@ -1262,6 +1262,7 @@ void D_DoomLoop ()
 			}
 			// Update display, next frame, with current state.
 			I_StartTic ();
+			D_ProcessEvents();
 			D_Display ();
 			S_UpdateMusic();
 			if (wantToRestart)
