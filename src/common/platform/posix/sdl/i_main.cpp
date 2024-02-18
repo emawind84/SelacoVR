@@ -178,7 +178,9 @@ int main (int argc, char **argv)
 
 	Args = new FArgs(argc, argv);
 
-	// Should we even be doing anything with progdir on Unix systems?
+#ifdef PROGDIR
+	progdir = PROGDIR;
+#else
 	char program[PATH_MAX];
 	if (realpath (argv[0], program) == NULL)
 		strcpy (program, argv[0]);
@@ -192,6 +194,7 @@ int main (int argc, char **argv)
 	{
 		progdir = "./";
 	}
+#endif
 
 	I_StartupJoysticks();
 
