@@ -820,7 +820,6 @@ void HWDrawInfo::Set3DViewport(FRenderState &state)
 
 void HWDrawInfo::DrawScene(int drawmode)
 {
-	screen->mBones->Map();
 	static int recursion = 0;
 	static int ssao_portals_available = 0;
 	const auto& vp = Viewpoint;
@@ -876,7 +875,6 @@ void HWDrawInfo::DrawScene(int drawmode)
 	portalState.EndFrame(this, RenderState);
 	recursion--;
 	RenderTranslucent(RenderState);
-	screen->mBones->Unmap();
 }
 
 
@@ -892,8 +890,9 @@ void HWDrawInfo::ProcessScene(bool toscreen)
 
 	int mapsection = Level->PointInRenderSubsector(Viewpoint.Pos)->mapsection;
 	CurrentMapSections.Set(mapsection);
+	screen->mBones->Map();
 	DrawScene(toscreen ? DM_MAINVIEW : DM_OFFSCREEN);
-
+	screen->mBones->Unmap();
 }
 
 //==========================================================================
