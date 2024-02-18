@@ -17,7 +17,7 @@ mwheelleft invprev
 mwheelright invnext
 - sizedown
 = sizeup
-shift +spee`d
+shift +speed
 mouse1 +attack
 capslock "toggle cl_run"
 f1 menu_help
