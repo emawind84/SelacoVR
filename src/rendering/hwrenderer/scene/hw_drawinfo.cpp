@@ -858,7 +858,7 @@ void HWDrawInfo::DrawScene(int drawmode)
 	RenderScene(RenderState);
 
 	auto vrmode = VRMode::GetVRMode(true);
-	if (vrmode->RenderPlayerSpritesInScene())
+	if (drawmode == DM_MAINVIEW && vrmode->RenderPlayerSpritesInScene())
 	{
 		DrawPlayerSprites(IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player), RenderState);
 	}
