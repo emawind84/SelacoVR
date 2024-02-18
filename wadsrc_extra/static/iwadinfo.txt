@@ -561,47 +561,6 @@ IWad
 // Doom 2 must be last to be checked because MAP01 is its only requirement
 IWad
 {
-	Name = "DOOM 2: Unity Edition"
-	Autoname = "doom.id.doom2.unity"
-	Game = "Doom"
-	Config = "Doom"
-	IWADName = "doom2unity.wad"
-	Mapinfo = "mapinfo/doom2unity.txt"
-	Compatibility = "Shorttex"
-	MustContain = "MAP01", "DMENUPIC"
-	BannerColors = "00 7c 00", "a8 a8 a8"
-	Load = "nerveunity.wad"
-}
-
-IWad
-{
-	Name = "DOOM 2: XBox Edition"
-	Autoname = "doom.id.doom2.commercial.xbox"
-	Game = "Doom"
-	Config = "Doom"
-	IWADName = "doom2.wad", 1
-	Mapinfo = "mapinfo/doom2xbox.txt"
-	Compatibility = "Shorttex"
-	MustContain = "MAP01", "MAP33", "CWILV32"
-	BannerColors = "18 18 18", "a8 a8 a8"
-	Load = "nerve.wad"
-}
-
-IWad
-{
-	Name = "DOOM 2: L'Enfer sur Terre"
-	Autoname = "doom.id.doom2.commercial.french"
-	Game = "Doom"
-	Config = "Doom"
-	IWADName = "doom2f.wad", 1
-	Mapinfo = "mapinfo/doom2.txt"
-	Compatibility = "Shorttex"
-	MustContain = "MAP01", "WIOBJ"
-	BannerColors = "ff ff ff", "a8 00 00"
-}
-
-IWad
-{
 	Name = "DOOM 2: Hell on Earth"
 	Autoname = "doom.id.doom2.commercial"
 	Game = "Doom"
