@@ -1799,7 +1799,7 @@ bool P_SeekerMissile (AActor *actor, DAngle thresh, DAngle turnMax, bool precise
 #define STOPSPEED			(0x1000/65536.)
 #define CARRYSTOPSPEED		((0x1000*32/3)/65536.)
 
-static double P_XYMovement (AActor *mo, DVector2 scroll) 
+double P_XYMovement (AActor *mo, DVector2 scroll) 
 {
 	static int pushtime = 0;
 	bool bForceSlide = !scroll.isZero();

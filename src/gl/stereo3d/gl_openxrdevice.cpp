@@ -246,7 +246,7 @@ namespace s3d
         VSMatrix new_projection;
         new_projection.loadIdentity();
 
-        float stereo_separation = (vr_ipd * 0.5) * vr_vunits_per_meter * getHUDValue<FFloatCVar>(vr_automap_stereo, vr_hud_stereo) * (eye == 1 ? -1.0 : 1.0);
+        float stereo_separation = (vr_ipd * 0.5) * vr_vunits_per_meter * getHUDValue<FFloatCVarRef>(vr_automap_stereo, vr_hud_stereo) * (eye == 1 ? -1.0 : 1.0);
         new_projection.translate(stereo_separation, 0, 0);
 
         // doom_units from meters
@@ -257,14 +257,14 @@ namespace s3d
         double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
         new_projection.scale(1.0, pixelstretch, 1.0); // Doom universe is scaled by 1990s pixel aspect ratio
 
-        if (getHUDValue<FBoolCVar>(vr_automap_fixed_roll,vr_hud_fixed_roll))
+        if (getHUDValue<FBoolCVarRef>(vr_automap_fixed_roll,vr_hud_fixed_roll))
         {
             new_projection.rotate(-hmdorientation[ROLL], 0, 0, 1);
         }
 
-        new_projection.rotate(getHUDValue<FFloatCVar>(vr_automap_rotate, vr_hud_rotate), 1, 0, 0);
+        new_projection.rotate(getHUDValue<FFloatCVarRef>(vr_automap_rotate, vr_hud_rotate), 1, 0, 0);
 
-        if (getHUDValue<FBoolCVar>(vr_automap_fixed_pitch, vr_hud_fixed_pitch))
+        if (getHUDValue<FBoolCVarRef>(vr_automap_fixed_pitch, vr_hud_fixed_pitch))
         {
             new_projection.rotate(-hmdorientation[PITCH], 1, 0, 0);
         }
@@ -273,7 +273,7 @@ namespace s3d
         // const float weapon_distance_meters = 0.55f;
         // const float weapon_width_meters = 0.3f;
         new_projection.translate(0.0, 0.0, 1.0);
-        double vr_scale = getHUDValue<FFloatCVar>(vr_automap_scale, vr_hud_scale);
+        double vr_scale = getHUDValue<FFloatCVarRef>(vr_automap_scale, vr_hud_scale);
         new_projection.scale(
                 -vr_scale,
                 vr_scale,
