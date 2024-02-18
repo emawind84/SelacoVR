@@ -124,7 +124,7 @@ class LoadSaveMenu : ListMenu
 	{
 		bool aspect43 = true;
 		int Width43 = screen.GetHeight() * 4 / 3;
-		if ((screen.GetWidth() / screen.GetHeight()) < 1)
+		if ((screen.GetWidth() / screen.GetHeight()) < 1.3)
 			Width43 = screen.GetWidth();
 		int Left43 = (screen.GetWidth() - Width43) / 2;
 
