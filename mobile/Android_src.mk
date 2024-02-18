@@ -28,8 +28,6 @@ LOCAL_C_INCLUDES := \
 		$(GZDOOM_TOP_PATH)/src/common/audio/sound \
     	$(GZDOOM_TOP_PATH)/src/common/audio/music \
     	$(GZDOOM_TOP_PATH)/src/common/2d \
-		$(GZDOOM_TOP_PATH)/src/common/cutscenes \
-		$(GZDOOM_TOP_PATH)/src/common/thirdparty/libsmackerdec/include \
     	$(GZDOOM_TOP_PATH)/src/common/thirdparty \
     	$(GZDOOM_TOP_PATH)/src/common/textures \
     	$(GZDOOM_TOP_PATH)/src/common/textures/formats \
@@ -38,13 +36,15 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/models \
     	$(GZDOOM_TOP_PATH)/src/common/filesystem \
     	$(GZDOOM_TOP_PATH)/src/common/utility \
+    	$(GZDOOM_TOP_PATH)/src/common/cutscenes \
+    	$(GZDOOM_TOP_PATH)/src/common/startscreen \
     	$(GZDOOM_TOP_PATH)/src/common/console \
     	$(GZDOOM_TOP_PATH)/src/common/engine \
     	$(GZDOOM_TOP_PATH)/src/common/menu \
     	$(GZDOOM_TOP_PATH)/src/common/fonts \
     	$(GZDOOM_TOP_PATH)/src/common/objects \
-    	$(GZDOOM_TOP_PATH)/src/common/startscreen \
     	$(GZDOOM_TOP_PATH)/src/common/rendering \
+    	$(GZDOOM_TOP_PATH)/src/common/thirdparty/libsmackerdec/include \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/hwrenderer/data \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl_load \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl \
@@ -616,7 +616,9 @@ LOCAL_LDLIBS +=  -lEGL
 LOCAL_STATIC_LIBRARIES :=  libjpeg zlib_lz lzma_lz gdtoa_lz bzip2_lz vpx_player
 LOCAL_SHARED_LIBRARIES :=  openal openxr_loader zmusic
 
-LOCAL_STATIC_LIBRARIES +=
+#Strip unused functions/data
+LOCAL_CFLAGS += -fvisibility=hidden -fdata-sections -ffunction-sections  -fPIC
+LOCAL_LDFLAGS += -Wl,--gc-sections -flto
 
 include $(BUILD_SHARED_LIBRARY)
 
