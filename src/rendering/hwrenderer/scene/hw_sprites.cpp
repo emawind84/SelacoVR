@@ -1313,7 +1313,7 @@ void HWSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	}
 
 	trans=particle->alpha;
-	
+
 	if(particle->style != STYLE_None)
 	{
 		RenderStyle = particle->style;
@@ -1382,7 +1382,7 @@ void HWSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 		float rvf = (particle->RollVel) * timefrac;
 		Angles.Roll = TAngle<double>::fromDeg(particle->Roll + rvf);
 	}
-
+	
 	float factor;
 	if (particle_style == 1) factor = 1.3f / 7.f;
 	else if (particle_style == 2) factor = 2.5f / 7.f;

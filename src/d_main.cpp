@@ -31,10 +31,6 @@
 #include <direct.h>
 #endif
 
-#ifdef HAVE_FPU_CONTROL
-#include <fpu_control.h>
-#endif
-
 #if defined(__unix__) || defined(__APPLE__)
 #include <unistd.h>
 #endif
@@ -1226,7 +1222,7 @@ void D_DoomLoop ()
 	Subtitle = nullptr;
 	Advisory.SetInvalid();
 
-	vid_cursor.Callback();
+	vid_cursor->Callback();
 
 	for (;;)
 	{
@@ -1276,14 +1272,14 @@ void D_DoomLoop ()
 		{
 			if (error.GetMessage ())
 			{
-				Printf (PRINT_BOLD, "\n%s\n", error.GetMessage());
+				Printf (PRINT_NONOTIFY | PRINT_BOLD, "\n%s\n", error.GetMessage());
 			}
 			D_ErrorCleanup ();
 		}
 		catch (CVMAbortException &error)
 		{
 			error.MaybePrintMessage();
-			Printf("%s", error.stacktrace.GetChars());
+			Printf(PRINT_NONOTIFY, "%s", error.stacktrace.GetChars());
 			D_ErrorCleanup();
 		}
 	}
@@ -2240,6 +2236,7 @@ static void InitShutdown()
 	I_ShutdownInput();
 	M_SaveDefaultsFinal();
 	DeleteStartupScreen();
+	C_UninitCVars(); // must come last so that nothing will access the CVARs anymore after deletion.
 	delete Args;
 	Args = nullptr;
 }
@@ -3093,6 +3090,7 @@ static FILE* D_GetHashFile()
 
 static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArray<FString>& pwads)
 {
+	SavegameFolder = iwad_info->Autoname;
 	gameinfo.gametype = iwad_info->gametype;
 	gameinfo.flags = iwad_info->flags;
 	gameinfo.nokeyboardcheats = iwad_info->nokeyboardcheats;
@@ -3500,10 +3498,8 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 		v = Args->CheckValue ("-loadgame");
 		if (v)
 		{
-			FString file(v);
-			FixPathSeperator (file);
-			DefaultExtension (file, "." SAVEGAME_EXT);
-			G_LoadGame (file);
+			FString file = G_BuildSaveName(v);
+			G_LoadGame(file);
 		}
 
 		v = Args->CheckValue("-playdemo");
@@ -3684,9 +3680,7 @@ static int D_DoomMain_Internal (void)
 	v = Args->CheckValue("-loadgame");
 	if (v)
 	{
-		FString file(v);
-		FixPathSeperator(file);
-		DefaultExtension(file, "." SAVEGAME_EXT);
+		FString file = G_BuildSaveName(v);
 		if (!FileExists(file))
 		{
 			I_FatalError("Cannot find savegame %s", file.GetChars());
@@ -3763,7 +3757,7 @@ int GameMain()
 		G_GetUserCVar,
 		[]() { return gamestate != GS_FULLCONSOLE && gamestate != GS_STARTUP; }
 	};
-
+	C_InitCVars(0);
 	C_InstallHandlers(&cb);
 	SetConsoleNotifyBuffer();
 
