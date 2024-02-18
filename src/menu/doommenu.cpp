@@ -714,6 +714,9 @@ void M_StartupEpisodeMenu(FNewGameStartup *gs)
 		od->mScrollTop = 0;
 		od->mIndent = 160;
 		od->mDontDim = false;
+		od->mDontBlur = false;
+		od->mAnimatedTransition = false;
+		od->mAnimated = false;
 		GC::WriteBarrier(od);
 		for(unsigned i = 0; i < AllEpisodes.Size(); i++)
 		{
@@ -849,6 +852,9 @@ static void BuildPlayerclassMenu()
 		od->mScrollTop = 0;
 		od->mIndent = 160;
 		od->mDontDim = false;
+		od->mDontBlur = false;
+		od->mAnimatedTransition = false;
+		od->mAnimated = false;
 		od->mNetgameMessage = "$NEWGAME";
 		GC::WriteBarrier(od);
 		for (unsigned i = 0; i < PlayerClasses.Size (); i++)
@@ -1292,6 +1298,9 @@ fail:
 		od->mScrollTop = 0;
 		od->mIndent = 160;
 		od->mDontDim = false;
+		od->mDontBlur = false;
+		od->mAnimatedTransition = false;
+		od->mAnimated = false;
 		GC::WriteBarrier(od);
 	}
 	else
