@@ -243,6 +243,7 @@ class BaseStatusBar : StatusBarCore native
 
 	// These functions are kept native solely for performance reasons. They get called repeatedly and can drag down performance easily if they get too slow.
 	native static TextureID, bool GetInventoryIcon(Inventory item, int flags);
+
 	//---------------------------------------------------------------------------
 	//
 	// ValidateInvFirst

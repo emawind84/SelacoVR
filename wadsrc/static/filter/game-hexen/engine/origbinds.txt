@@ -1,5 +1,6 @@
 /* Default keybindings for Hexen */
 
+/ +jump
 backspace invuseall
 \ "use ArtiHealth"
 0 useflechette

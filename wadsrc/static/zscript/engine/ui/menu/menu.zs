@@ -358,6 +358,7 @@ class Menu : Object native ui version("2.4")
 		screen.DrawText (OptionFont(), color, x, y, text, DTA_CleanNoMove_1, true, DTA_ColorOverlay, overlay);
 	}
 
+
 }
 
 class MenuDescriptor : Object native ui version("2.4")

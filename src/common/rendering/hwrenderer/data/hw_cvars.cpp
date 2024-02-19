@@ -149,3 +149,5 @@ CUSTOM_CVAR(Float, gl_global_fade_gradient, 1.5f, CVAR_ARCHIVE)
 }
 CVAR(Color, gl_global_fade_color, 0x3f3f3f, CVAR_ARCHIVE)
 CVAR(Bool, gl_global_fade_debug, false, 0)
+
+CVARD(Bool, gl_no_buffer_storage, false, 0, "Only used to test mobile buffer")
