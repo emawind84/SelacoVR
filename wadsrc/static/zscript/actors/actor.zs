@@ -248,6 +248,7 @@ class Actor : Thinker native
 	native double ViewAngle, ViewPitch, ViewRoll;
 	native double RadiusDamageFactor;		// Radius damage factor
 	native double SelfDamageFactor;
+	native double ShadowAimFactor, ShadowPenaltyFactor;
 	native double StealthAlpha;
 	native int WoundHealth;		// Health needed to enter wound state
 	native readonly color BloodColor;
@@ -361,6 +362,8 @@ class Actor : Thinker native
 	property FriendlySeeBlocks: FriendlySeeBlocks;
 	property ThruBits: ThruBits;
 	property LightLevel: LightLevel;
+	property ShadowAimFactor: ShadowAimFactor;
+	property ShadowPenaltyFactor: ShadowPenaltyFactor;
 	
 	// need some definition work first
 	//FRenderStyle RenderStyle;
@@ -438,6 +441,8 @@ class Actor : Thinker native
 		FastSpeed -1;
 		RadiusDamageFactor 1;
 		SelfDamageFactor 1;
+		ShadowAimFactor 1;
+		ShadowPenaltyFactor 1;
 		StealthAlpha 0;
 		WoundHealth 6;
 		GibHealth int.min;
@@ -1186,7 +1191,7 @@ class Actor : Thinker native
 	native void A_CustomComboAttack(class<Actor> missiletype, double spawnheight, int damage, sound meleesound = "", name damagetype = "none", bool bleed = true);
 	native void A_Burst(class<Actor> chunktype);
 	native void A_RadiusDamageSelf(int damage = 128, double distance = 128, int flags = 0, class<Actor> flashtype = null);
-	native int GetRadiusDamage(Actor thing, int damage, int distance, int fulldmgdistance = 0, bool oldradiusdmg = false);
+	native int GetRadiusDamage(Actor thing, int damage, int distance, int fulldmgdistance = 0, bool oldradiusdmg = false, bool circular = false);
 	native int RadiusAttack(Actor bombsource, int bombdamage, int bombdistance, Name bombmod = 'none', int flags = RADF_HURTSOURCE, int fulldamagedistance = 0, name species = "None");
 	
 	native void A_Respawn(int flags = 1);
@@ -1208,7 +1213,7 @@ class Actor : Thinker native
 	deprecated("2.3", "User variables are deprecated in ZScript. Actor variables are directly accessible") native void A_SetUserVarFloat(name varname, double value);
 	deprecated("2.3", "User variables are deprecated in ZScript. Actor variables are directly accessible") native void A_SetUserArrayFloat(name varname, int index, double value);
 	native void A_Quake(double intensity, int duration, int damrad, int tremrad, sound sfx = "world/quake");
-	native void A_QuakeEx(double intensityX, double intensityY, double intensityZ, int duration, int damrad, int tremrad, sound sfx = "world/quake", int flags = 0, double mulWaveX = 1, double mulWaveY = 1, double mulWaveZ = 1, int falloff = 0, int highpoint = 0, double rollIntensity = 0, double rollWave = 0);
+	native void A_QuakeEx(double intensityX, double intensityY, double intensityZ, int duration, int damrad, int tremrad, sound sfx = "world/quake", int flags = 0, double mulWaveX = 1, double mulWaveY = 1, double mulWaveZ = 1, int falloff = 0, int highpoint = 0, double rollIntensity = 0, double rollWave = 0, double damageMultiplier = 1, double thrustMultiplier = 0.5, int damage = 0);
 	action native void A_SetTics(int tics);
 	native void A_DamageSelf(int amount, name damagetype = "none", int flags = 0, class<Actor> filter = null, name species = "None", int src = AAPTR_DEFAULT, int inflict = AAPTR_DEFAULT);
 	native void A_DamageTarget(int amount, name damagetype = "none", int flags = 0, class<Actor> filter = null, name species = "None", int src = AAPTR_DEFAULT, int inflict = AAPTR_DEFAULT);

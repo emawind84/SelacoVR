@@ -1302,7 +1302,8 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, GetRadiusDamage, P_GetRadiusDamage)
 	PARAM_INT(distance);
 	PARAM_INT(fulldmgdistance);
 	PARAM_BOOL(oldradiusdmg);
-	ACTION_RETURN_INT(P_GetRadiusDamage(self, thing, damage, distance, fulldmgdistance, oldradiusdmg));
+	PARAM_BOOL(circular);
+	ACTION_RETURN_INT(P_GetRadiusDamage(self, thing, damage, distance, fulldmgdistance, oldradiusdmg, circular));
 }
 
 static int RadiusAttack(AActor *self, AActor *bombsource, int bombdamage, int bombdistance, int damagetype, int flags, int fulldamagedistance, int species)
@@ -2108,6 +2109,8 @@ DEFINE_FIELD_NAMED(AActor, ViewAngles.Yaw, viewangle)
 DEFINE_FIELD_NAMED(AActor, ViewAngles.Pitch, viewpitch)
 DEFINE_FIELD_NAMED(AActor, ViewAngles.Roll, viewroll)
 DEFINE_FIELD(AActor, LightLevel)
+DEFINE_FIELD(AActor, ShadowAimFactor)
+DEFINE_FIELD(AActor, ShadowPenaltyFactor)
 
 DEFINE_FIELD_X(FCheckPosition, FCheckPosition, thing);
 DEFINE_FIELD_X(FCheckPosition, FCheckPosition, pos);
