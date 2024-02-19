@@ -49,7 +49,6 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl_load \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gles \
-    	$(GZDOOM_TOP_PATH)/src/common/rendering/vulkan/thirdparty \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/vm \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/jit \
     	$(GZDOOM_TOP_PATH)/src/common/scripting/core \
