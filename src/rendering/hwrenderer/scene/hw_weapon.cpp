@@ -315,13 +315,17 @@ static WeaponPosition2D GetWeaponPosition2D(player_t *player, double ticFrac, DP
 	return w;
 }
 
-static WeaponPosition3D GetWeaponPosition3D(player_t *player, double ticFrac)
+static WeaponPosition3D GetWeaponPosition3D(player_t *player, double ticFrac, DPSprite *psp)
 {
 	WeaponPosition3D w;
 	P_BobWeapon3D(player, &w.translation, &w.rotation, ticFrac);
 
+	DPSprite *readyWeaponPsp = player->FindPSprite(PSP_WEAPON);
+	DPSprite *offhandWeaponPsp = player->FindPSprite(PSP_OFFHANDWEAPON);
+
 	// Interpolate the main weapon layer once so as to be able to add it to other layers.
-	if ((w.weapon = player->FindPSprite(PSP_WEAPON)) != nullptr)
+	w.weapon = psp->GetCaller() == player->ReadyWeapon ? readyWeaponPsp : offhandWeaponPsp;
+	if (w.weapon != nullptr)
 	{
 		if (w.weapon->firstTic)
 		{
@@ -807,7 +811,6 @@ void HWDrawInfo::PreparePlayerSprites2D(sector_t * viewsector, area_t in_area)
 
 	AActor *camera = vp.camera;
 
-	WeaponPosition2D weap = GetWeaponPosition2D(camera->player, vp.TicFrac);
 	WeaponLighting light = GetWeaponLighting(viewsector, vp.Pos, isFullbrightScene(), in_area, camera->Pos());
 
 	// hack alert! Rather than changing everything in the underlying lighting code let's just temporarily change
@@ -831,6 +834,7 @@ void HWDrawInfo::PreparePlayerSprites2D(sector_t * viewsector, area_t in_area)
 
 		if (!hudsprite.GetWeaponRenderStyle(psp, camera, viewsector, light)) continue;
 
+		WeaponPosition2D weap = GetWeaponPosition2D(camera->player, vp.TicFrac, psp);
 		FVector2 spos = BobWeapon2D(weap, psp, vp.TicFrac);
 
 		hudsprite.dynrgb[0] = hudsprite.dynrgb[1] = hudsprite.dynrgb[2] = 0;
@@ -856,16 +860,12 @@ void HWDrawInfo::PreparePlayerSprites3D(sector_t * viewsector, area_t in_area)
 
 	AActor *camera = vp.camera;
 
-	WeaponPosition3D weap = GetWeaponPosition3D(camera->player, vp.TicFrac);
 	WeaponLighting light = GetWeaponLighting(viewsector, vp.Pos, isFullbrightScene(), in_area, camera->Pos());
 
 	// hack alert! Rather than changing everything in the underlying lighting code let's just temporarily change
 	// light mode here to draw the weapon sprite.
 	auto oldlightmode = lightmode;
 	if (isSoftwareLighting()) SetFallbackLightMode();
-
-	DPSprite *readyWeaponPsp = camera->player->FindPSprite(PSP_WEAPON);
-	DPSprite *offhandWeaponPsp = camera->player->FindPSprite(PSP_OFFHANDWEAPON);
 
 	for (DPSprite *psp = player->psprites; psp != nullptr && psp->GetID() < PSP_TARGETCENTER; psp = psp->GetNext())
 	{
@@ -888,6 +888,7 @@ void HWDrawInfo::PreparePlayerSprites3D(sector_t * viewsector, area_t in_area)
 
 		//FVector2 spos = BobWeapon3D(weap, psp, hudsprite.translation, hudsprite.rotation, hudsprite.pivot, vp.TicFrac);
 
+		WeaponPosition3D weap = GetWeaponPosition3D(camera->player, vp.TicFrac, psp);
 		FVector2 spos = BobWeapon3D(weap, psp, hudsprite.translation, hudsprite.rotation, hudsprite.pivot, vp.TicFrac);
 
 		hudsprite.dynrgb[0] = hudsprite.dynrgb[1] = hudsprite.dynrgb[2] = 0;
@@ -933,16 +934,8 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 		(r_deathcamera && camera->health <= 0))
 		return;
 
-	const bool hudModelStep = IsHUDModelForPlayerAvailable(camera->player);
-	
-	if(hudModelStep)
-	{
-		PreparePlayerSprites3D(viewsector,in_area);
-	}
-	else
-	{
-		PreparePlayerSprites2D(viewsector,in_area);
-	}
+	PreparePlayerSprites3D(viewsector,in_area);
+	PreparePlayerSprites2D(viewsector,in_area);
 
 	PrepareTargeterSprites(vp.TicFrac);
 }
