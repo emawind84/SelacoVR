@@ -82,6 +82,7 @@ public:
 	void OnUnregister();
 
 	//
+	void OnEngineInitialize();
 	void WorldLoaded();
 	void WorldUnloaded(const FString& nextmap);
 	void WorldThingSpawned(AActor* actor);
@@ -235,6 +236,8 @@ struct EventManager
 	// shutdown handlers
 	void Shutdown();
 
+	// after the engine is done creating data
+	void OnEngineInitialize();
 	// called right after the map has loaded (approximately same time as OPEN ACS scripts)
 	void WorldLoaded();
 	// called when the map is about to unload (approximately same time as UNLOADING ACS scripts)
