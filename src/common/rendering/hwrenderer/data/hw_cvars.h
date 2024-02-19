@@ -29,7 +29,6 @@ EXTERN_CVAR(Float, gl_global_fade_gradient);
 EXTERN_CVAR(Float, gl_global_fade_density);
 
 EXTERN_CVAR(Int, gl_fogmode)
-EXTERN_CVAR(Int, gl_lightmode)
 EXTERN_CVAR(Bool,gl_mirror_envmap)
 
 EXTERN_CVAR(Bool,gl_mirrors)
