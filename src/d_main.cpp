@@ -1638,6 +1638,8 @@ void ParseCVarInfo()
 			ECVarType cvartype = CVAR_Dummy;
 			int cvarflags = CVAR_MOD|CVAR_ARCHIVE;
 			FBaseCVar *cvar;
+			bool customCVar = false;
+			FName customCVarClassName;
 
 			// Check for flag tokens.
 			while (sc.TokenType == TK_Identifier)
@@ -1665,6 +1667,14 @@ void ParseCVarInfo()
 				else if (stricmp(sc.String, "nosave") == 0)
 				{
 					cvarflags |= CVAR_CONFIG_ONLY;
+				}
+				else if (stricmp(sc.String, "handlerClass") == 0)
+				{
+					sc.MustGetStringName("(");
+					sc.MustGetString();
+					customCVar = true;
+					customCVarClassName = sc.String;
+					sc.MustGetStringName(")");
 				}
 				else
 				{
@@ -1748,7 +1758,7 @@ void ParseCVarInfo()
 				}
 			}
 			// Now create the cvar.
-			cvar = C_CreateCVar(cvarname, cvartype, cvarflags);
+			cvar = customCVar ? C_CreateZSCustomCVar(cvarname, cvartype, cvarflags, customCVarClassName) : C_CreateCVar(cvarname, cvartype, cvarflags);
 			if (cvardefault != NULL)
 			{
 				UCVarValue val;
@@ -3330,6 +3340,8 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 
 	R_ParseTrnslate();
 	PClassActor::StaticInit ();
+	FBaseCVar::InitZSCallbacks ();
+	
 	Job_Init();
 
 	// [GRB] Initialize player class list
