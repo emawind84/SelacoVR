@@ -639,6 +639,15 @@ void FGameConfigFile::DoGlobalSetup ()
 			}
 			if (last < 225)
 			{
+				if (const auto var = FindCVar("gl_lightmode", NULL))
+				{
+					UCVarValue v = var->GetGenericRep(CVAR_Int);
+					v.Int /= 8; // all legacy modes map to 0, ZDoom software to 1 and Vanilla software to 2.
+					var->SetGenericRep(v, CVAR_Int);
+				}
+			}
+			if (last < 225)
+			{
 				FBaseCVar *var = FindCVar("fluid_patchset", NULL);
 				if (var != NULL) var->ResetToDefault();
 				var = FindCVar("timidity_config", NULL);
