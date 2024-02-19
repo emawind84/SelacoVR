@@ -3065,7 +3065,7 @@ OptionValue "FogMode"
 	2, "$OPTVAL_RADIAL"
 }
 
-OptionValue "LightBuffer"
+OptionValue "StorageBuffer"
 {
 	0, "$OPTVAL_UBO"
 	1, "$OPTVAL_SSBO"
@@ -3158,7 +3158,6 @@ OptionMenu "GLLightOptions" protected
 
 	StaticText ""
 	StaticText "$GLLIGHTMNU_ADVANCED", gold
-	Option "$GLLIGHTMNU_LIGHTBUFFERTYPE",		gl_light_buffer_type,	"LightBuffer"
 	Option "$GLLIGHTMNU_LIGHTSHADOWMAPQUALITY", gl_shadowmap_quality,	"ShadowMapQuality"
 	Option "$GLLIGHTMNU_LIGHTSHADOWMAPFILTER", 	gl_shadowmap_filter,	"ShadowMapFilter"
 	ScaleSlider "$GLLIGHTMNU_LIGHTSCULL",		gl_light_distance_cull, 0.0, 16000.0, 100.0, "Culling disabled"
@@ -3219,6 +3218,8 @@ OptionMenu "OpenGLOptions" protected
 	Option "$GLPREFMNU_ENVIRONMENTMAPMIRROR",	gl_mirror_envmap,				"OnOff"
 	Option "$GLPREFMNU_MIRRORPLAYER",			gl_mirror_player,				"OnOff"
 	Slider "$GLPREFMNU_MIRRORRECURSIONS",		r_mirror_recursions, 0, 10, 1, 0
+	StaticText " "
+	Option "$GLLIGHTMNU_LIGHTBUFFERTYPE",		gl_storage_buffer_type, "StorageBuffer"
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_max_vertices gl_max_portals gl_mirrors gl_mirror_envmap gl_mirror_player r_mirror_recursions"
 }

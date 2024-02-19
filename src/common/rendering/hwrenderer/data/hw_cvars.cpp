@@ -42,7 +42,7 @@
 #include "hw_cvars.h"
 #include "menu.h"
 #include "printf.h"
-
+#include "version.h"
 
 CUSTOM_CVAR(Int, gl_fogmode, 2, CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
@@ -150,4 +150,9 @@ CUSTOM_CVAR(Float, gl_global_fade_gradient, 1.5f, CVAR_ARCHIVE)
 CVAR(Color, gl_global_fade_color, 0x3f3f3f, CVAR_ARCHIVE)
 CVAR(Bool, gl_global_fade_debug, false, 0)
 
-CVARD(Bool, gl_no_buffer_storage, false, 0, "Only used to test mobile buffer")
+CUSTOM_CVAR (Int, gl_storage_buffer_type, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+{
+	Printf("You must restart " GAMENAME " for this change to take effect.\n");
+}
+
+CVARD(Bool, gl_no_persistent_buffer, false, 0, "Only used to test mobile buffer")

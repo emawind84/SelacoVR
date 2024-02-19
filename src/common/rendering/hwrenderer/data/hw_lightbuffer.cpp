@@ -25,17 +25,12 @@
 **
 **/
 
-#include "version.h"
 #include "hw_lightbuffer.h"
 #include "hw_dynlightdata.h"
 #include "shaderuniforms.h"
 #include "hw_clock.h"
 
 CVAR(Int, gl_max_lights, 40000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
-CUSTOM_CVAR (Int, gl_light_buffer_type, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
-{
-	Printf("You must restart " GAMENAME " to switch the light buffer\n");
-}
 
 static const int ELEMENTS_PER_LIGHT = 4;			// each light needs 4 vec4's.
 static const int ELEMENT_SIZE = (4*sizeof(float));
@@ -49,10 +44,7 @@ FLightBuffer::FLightBuffer(int pipelineNbr):
 	mBufferSize = maxNumberOfLights * ELEMENTS_PER_LIGHT;
 	mByteSize = mBufferSize * ELEMENT_SIZE;
 
-	// Hack alert: On Intel's GL driver SSBO's perform quite worse than UBOs.
-	// We only want to disable using SSBOs for lights but not disable the feature entirely.
-	// Note that using an uniform buffer here will limit the number of lights per surface so it isn't done for NVidia and AMD.
-	if (screen->IsVulkan() || screen->IsPoly() || ((screen->hwcaps & RFL_SHADER_STORAGE_BUFFER) && screen->allowSSBO() && !strstr(screen->vendorstring, "Intel")))
+	if (screen->useSSBO())
 	{
 		mBufferType = true;
 		mBlockAlign = 0;
