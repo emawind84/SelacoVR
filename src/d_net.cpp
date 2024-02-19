@@ -1507,7 +1507,9 @@ bool DoArbitrate (void *userdata)
 		netbuffer[1] = consoleplayer;
 		netbuffer[9] = data->gotsetup[0];
 		stream = &netbuffer[10];
-		D_WriteUserInfoStrings (consoleplayer, &stream, true);
+		auto str = D_GetUserInfoStrings (consoleplayer, true);
+		memcpy(stream, str.GetChars(), str.Len() + 1);
+		stream += str.Len();
 		SendSetup (data->playersdetected, data->gotsetup, int(stream - netbuffer));
 	}
 	else
@@ -1522,7 +1524,9 @@ bool DoArbitrate (void *userdata)
 				{
 					netbuffer[1] = j;
 					stream = &netbuffer[9];
-					D_WriteUserInfoStrings (j, &stream, true);
+					auto str = D_GetUserInfoStrings(j, true);
+					memcpy(stream, str.GetChars(), str.Len() + 1);
+					stream += str.Len();
 					HSendPacket (i, int(stream - netbuffer));
 				}
 			}

@@ -723,7 +723,7 @@ FAveragizer::FAveragizer()
 void FAveragizer::AddAlloc(size_t alloc)
 {
 	NewestPos = (NewestPos + 1) & (HistorySize - 1);
-	if (TotalCount < HistorySize)
+	if (TotalCount < (int)HistorySize)
 	{
 		TotalCount++;
 	}
