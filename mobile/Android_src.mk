@@ -45,6 +45,7 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/objects \
     	$(GZDOOM_TOP_PATH)/src/common/rendering \
     	$(GZDOOM_TOP_PATH)/src/common/thirdparty/libsmackerdec/include \
+    	$(GZDOOM_TOP_PATH)/src/common/thirdparty/stb \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/hwrenderer/data \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl_load \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl \
@@ -77,7 +78,6 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/scripting \
     	$(GZDOOM_TOP_PATH)/src/scripting/zscript \
     	$(GZDOOM_TOP_PATH)/src/rendering \
-    	$(GZDOOM_TOP_PATH)/src/../libraries/gdtoa \
     	$(GZDOOM_TOP_PATH)/src/../libraries/glslang/glslang/Public \
     	$(GZDOOM_TOP_PATH)/src/../libraries/glslang/spirv   	 \
     	$(GZDOOM_TOP_PATH)/src/common/platform/posix \
@@ -449,7 +449,6 @@ PCH_SOURCES = \
 	common/utility/i_time.cpp \
 	common/utility/m_argv.cpp \
 	common/utility/s_playlist.cpp \
-	common/utility/zstrformat.cpp \
 	common/utility/name.cpp \
 	common/utility/r_memory.cpp \
 	common/thirdparty/base64.cpp \
@@ -580,6 +579,7 @@ LOCAL_SRC_FILES = \
 	$(GLES_SOURCES) \
 	common/utility/x86.cpp \
 	common/thirdparty/strnatcmp.c \
+	common/thirdparty/stb/stb_sprintf.c \
 	common/utility/zstring.cpp \
 	common/utility/findfile.cpp \
 	common/thirdparty/math/asin.c \
@@ -613,7 +613,7 @@ LOCAL_LDLIBS +=  -lEGL
 # This is stop a linker warning for mp123 lib failing build
 #LOCAL_LDLIBS += -Wl,--no-warn-shared-textrel
 
-LOCAL_STATIC_LIBRARIES :=  libjpeg zlib_lz lzma_lz gdtoa_lz bzip2_lz vpx_player
+LOCAL_STATIC_LIBRARIES :=  libjpeg zlib_lz lzma_lz bzip2_lz vpx_player
 LOCAL_SHARED_LIBRARIES :=  openal openxr_loader zmusic
 
 #Strip unused functions/data
