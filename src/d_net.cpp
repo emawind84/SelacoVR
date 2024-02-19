@@ -1408,7 +1408,6 @@ struct ArbitrateData
 bool DoArbitrate (void *userdata)
 {
 	ArbitrateData *data = (ArbitrateData *)userdata;
-	char *s;
 	uint8_t *stream;
 	int version;
 	int node;
@@ -1470,9 +1469,7 @@ bool DoArbitrate (void *userdata)
 			NetMode = netbuffer[2];
 
 			stream = &netbuffer[3];
-			s = ReadString (&stream);
-			startmap = s;
-			delete[] s;
+			startmap = ReadStringConst(&stream);
 			rngseed = ReadLong (&stream);
 			C_ReadCVars (&stream);
 		}
@@ -2168,7 +2165,7 @@ static int RemoveClass(FLevelLocals *Level, const PClass *cls)
 void Net_DoCommand (int type, uint8_t **stream, int player)
 {
 	uint8_t pos = 0;
-	char *s = NULL;
+	const char* s = nullptr;
 	int i;
 
 	switch (type)
@@ -2178,8 +2175,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 			const char *name = players[player].userinfo.GetName();
 			uint8_t who = ReadByte (stream);
 
-			s = ReadString (stream);
-			CleanseString (s);
+			s = ReadStringConst(stream);
 			if (((who & 1) == 0) || players[player].userinfo.GetTeam() == TEAM_NONE)
 			{ // Said to everyone
 				if (who & 2)
@@ -2208,18 +2204,15 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 		break;
 
 	case DEM_MUSICCHANGE:
-		s = ReadString (stream);
-		S_ChangeMusic (s);
+		S_ChangeMusic(ReadStringConst(stream));
 		break;
 
 	case DEM_PRINT:
-		s = ReadString (stream);
-		Printf ("%s", s);
+		Printf("%s", ReadStringConst(stream));
 		break;
 
 	case DEM_CENTERPRINT:
-		s = ReadString (stream);
-		C_MidPrint (nullptr, s);
+		C_MidPrint(nullptr, ReadStringConst(stream));
 		break;
 
 	case DEM_UINFCHANGED:
@@ -2235,7 +2228,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 		break;
 
 	case DEM_GIVECHEAT:
-		s = ReadString (stream);
+		s = ReadStringConst(stream);
 		cht_Give (&players[player], s, ReadLong (stream));
 		if (player != consoleplayer)
 		{
@@ -2247,12 +2240,12 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 		break;
 
 	case DEM_TAKECHEAT:
-		s = ReadString (stream);
+		s = ReadStringConst(stream);
 		cht_Take (&players[player], s, ReadLong (stream));
 		break;
 
 	case DEM_SETINV:
-		s = ReadString(stream);
+		s = ReadStringConst(stream);
 		i = ReadLong(stream);
 		cht_SetInv(&players[player], s, i, !!ReadByte(stream));
 		break;
@@ -2276,7 +2269,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 		/* intentional fall-through */
 	case DEM_CHANGEMAP:
 		// Change to another map without disconnecting other players
-		s = ReadString (stream);
+		s = ReadStringConst(stream);
 		// Using LEVEL_NOINTERMISSION tends to throw the game out of sync.
 		// That was a long time ago. Maybe it works now?
 		primaryLevel->flags |= LEVEL_CHANGEMAPCHEAT;
@@ -2363,7 +2356,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 			uint8_t special = 0;
 			int args[5];
 
-			s = ReadString (stream);
+			s = ReadStringConst(stream);
 			if (type >= DEM_SUMMON2 && type <= DEM_SUMMONFOE2)
 			{
 				angle = ReadWord(stream);
@@ -2427,12 +2420,12 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 		break;
 
 	case DEM_SPRAY:
-		s = ReadString(stream);
+		s = ReadStringConst(stream);
 		SprayDecal(players[player].mo, s);
 		break;
 
 	case DEM_MDK:
-		s = ReadString(stream);
+		s = ReadStringConst(stream);
 		cht_DoMDK(&players[player], s);
 		break;
 
@@ -2455,11 +2448,8 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 	case DEM_SAVEGAME:
 		if (gamestate == GS_LEVEL)
 		{
-			s = ReadString (stream);
-			savegamefile = s;
-			delete[] s;
-			s = ReadString (stream);
-			savedescription = s;
+			savegamefile = ReadStringConst(stream);
+			savedescription = ReadStringConst(stream);
 			if (player != consoleplayer)
 			{
 				// Paths sent over the network will be valid for the system that sent
@@ -2527,7 +2517,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 
 	case DEM_RUNNAMEDSCRIPT:
 		{
-			s = ReadString(stream);
+			s = ReadStringConst(stream);
 			int argn = ReadByte(stream);
 
 			RunScript(stream, players[player].mo, -FName(s).GetIndex(), argn & 127, (argn & 128) ? ACS_ALWAYS : 0);
@@ -2566,8 +2556,8 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 
 	case DEM_MORPHEX:
 		{
-			s = ReadString (stream);
-			FString msg = cht_Morph (players + player, PClass::FindActor (s), false);
+			s = ReadStringConst(stream);
+			FString msg = cht_Morph (players + player, PClass::FindActor(s), false);
 			if (player == consoleplayer)
 			{
 				Printf ("%s\n", msg[0] != '\0' ? msg.GetChars() : "Morph failed.");
@@ -2597,7 +2587,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 
 	case DEM_KILLCLASSCHEAT:
 		{
-			s = ReadString (stream);
+			s = ReadStringConst(stream);
 			int killcount = 0;
 			PClassActor *cls = PClass::FindActor(s);
 
@@ -2620,7 +2610,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 		break;
 	case DEM_REMOVE:
 	{
-		s = ReadString(stream);
+		s = ReadStringConst(stream);
 		int removecount = 0;
 		PClassActor *cls = PClass::FindActor(s);
 		if (cls != NULL && cls->IsDescendantOf(RUNTIME_CLASS(AActor)))
@@ -2704,7 +2694,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 
 	case DEM_NETEVENT:
 		{
-			s = ReadString(stream);
+			s = ReadStringConst(stream);
 			int argn = ReadByte(stream);
 			int arg[3] = { 0, 0, 0 };
 			for (int i = 0; i < 3; i++)
@@ -2722,9 +2712,6 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 		I_Error ("Unknown net command: %d", type);
 		break;
 	}
-
-	if (s)
-		delete[] s;
 }
 
 // Used by DEM_RUNSCRIPT, DEM_RUNSCRIPT2, and DEM_RUNNAMEDSCRIPT
