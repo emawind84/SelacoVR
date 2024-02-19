@@ -48,6 +48,7 @@
 #include "a_corona.h"
 #include "texturemanager.h"
 #include "actorinlines.h"
+#include "g_levellocals.h"
 
 EXTERN_CVAR(Float, r_visibility)
 EXTERN_CVAR(Int, gl_max_portals);
@@ -169,6 +170,7 @@ void HWDrawInfo::StartScene(FRenderViewpoint &parentvp, HWViewpointUniforms *uni
 		}
 		VPUniforms.mClipLine.X = -10000000.0f;
 		VPUniforms.mShadowmapFilter = gl_shadowmap_filter;
+		VPUniforms.mLightBlendMode = (level.info ? (int)level.info->lightblendmode : 0);
 	}
 	mClipper->SetViewpoint(Viewpoint);
 
