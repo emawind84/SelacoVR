@@ -310,6 +310,7 @@ void AActor::Serialize(FSerializer &arc)
 		A("smokecounter", smokecounter)
 		("blockingmobj", BlockingMobj)
 		A("blockingline", BlockingLine)
+		A("movementblockingline", MovementBlockingLine)
 		A("blocking3dfloor", Blocking3DFloor)
 		A("blockingceiling", BlockingCeiling)
 		A("blockingfloor", BlockingFloor)
@@ -1545,6 +1546,17 @@ void AActor::PlayBounceSound(bool onfloor)
 
 bool AActor::FloorBounceMissile (secplane_t &plane)
 {
+	if (flags & MF_MISSILE)
+	{
+		switch (SpecialBounceHit(nullptr, nullptr, &plane))
+		{
+			// This one is backwards for some reason...
+			case 1:		return false;
+			case 0:		return true;
+			default:	break;
+		}
+	}
+
 	// [ZZ] if bouncing missile hits a damageable sector(plane), it dies
 	if (P_ProjectileHitPlane(this, -1) && bouncecount > 0)
 	{
@@ -1986,7 +1998,7 @@ static double P_XYMovement (AActor *mo, DVector2 scroll)
 		{
 			// blocked move
 			AActor *BlockingMobj = mo->BlockingMobj;
-			line_t *BlockingLine = mo->BlockingLine;
+			line_t *BlockingLine = mo->MovementBlockingLine = mo->BlockingLine;
 
 			// [ZZ] 
 			if (!BlockingLine && !BlockingMobj) // hit floor or ceiling while XY movement - sector actions
@@ -2114,57 +2126,11 @@ static double P_XYMovement (AActor *mo, DVector2 scroll)
 						return Oldfloorz;
 					}
 				}
-				if (BlockingMobj && (BlockingMobj->flags2 & MF2_REFLECTIVE))
+				if (BlockingMobj && P_ReflectOffActor(mo, BlockingMobj))
 				{
-					bool seeker = (mo->flags2 & MF2_SEEKERMISSILE) ? true : false;
-					// Don't change the angle if there's THRUREFLECT on the monster.
-					if (!(BlockingMobj->flags7 & MF7_THRUREFLECT))
-					{
-						DAngle angle = BlockingMobj->AngleTo(mo);
-						bool dontReflect = (mo->AdjustReflectionAngle(BlockingMobj, angle));
-						// Change angle for deflection/reflection
-
-						if (!dontReflect)
-						{
-							bool tg = (mo->target != NULL);
-							bool blockingtg = (BlockingMobj->target != NULL);
-							if ((BlockingMobj->flags7 & MF7_AIMREFLECT) && (tg | blockingtg))
-							{
-								AActor *origin = tg ? mo->target : BlockingMobj->target;
-
-								//dest->x - source->x
-								DVector3 vect = mo->Vec3To(origin);
-								vect.Z += origin->Height / 2;
-								mo->Vel = vect.Resized(mo->Speed);
-							}
-							else
-							{
-								if ((BlockingMobj->flags7 & MF7_MIRRORREFLECT) && (tg | blockingtg))
-								{
-									mo->Angles.Yaw += DAngle::fromDeg(180.);
-									mo->Vel *= -.5;
-								}
-								else
-								{
-									mo->Angles.Yaw = angle;
-									mo->VelFromAngle(mo->Speed / 2);
-									mo->Vel.Z *= -.5;
-								}
-							}
-						}
-						else
-						{
-							goto explode;
-						}						
-					}
-					if (mo->flags2 & MF2_SEEKERMISSILE)
-					{
-						mo->tracer = mo->target;
-					}
-					mo->target = BlockingMobj;
 					return Oldfloorz;
 				}
-explode:
+
 				// explode a missile
 				bool onsky = false;
 				if (tm.ceilingline && tm.ceilingline->hitSkyWall(mo))
@@ -3242,6 +3208,21 @@ int AActor::SpecialMissileHit (AActor *victim)
 	else return -1;
 }
 
+// This virtual method only exists on the script side.
+int AActor::SpecialBounceHit(AActor* bounceMobj, line_t* bounceLine, secplane_t* bouncePlane)
+{
+	IFVIRTUAL(AActor, SpecialBounceHit)
+	{
+		VMValue params[4] = { (DObject*)this, bounceMobj, bounceLine, bouncePlane };
+		VMReturn ret;
+		int retval;
+		ret.IntAt(&retval);
+		VMCall(func, params, 4, &ret, 1);
+		return retval;
+	}
+	else return -1;
+}
+
 bool AActor::AdjustReflectionAngle (AActor *thing, DAngle &angle)
 {
 	if (flags2 & MF2_DONTREFLECT) return true;
@@ -3250,10 +3231,8 @@ bool AActor::AdjustReflectionAngle (AActor *thing, DAngle &angle)
 	if (thing->flags4&MF4_SHIELDREFLECT)
 	{
 		// Shield reflection (from the Centaur)
-		if (absangle(angle, thing->Angles.Yaw) > DAngle::fromDeg(45))
+		if ((flags7 & MF7_NOSHIELDREFLECT) || absangle(angle, thing->Angles.Yaw) > DAngle::fromDeg(45))
 			return true;	// Let missile explode
-
-		if (thing->flags7 & MF7_NOSHIELDREFLECT) return true;
 
 		if (pr_reflect () < 128)
 			angle += DAngle::fromDeg(45);
@@ -4105,6 +4084,7 @@ void AActor::Tick ()
 
 		// Handle X and Y velocities
 		BlockingMobj = nullptr;
+		MovementBlockingLine = nullptr;
 		sector_t* oldBlockingCeiling = BlockingCeiling;
 		sector_t* oldBlockingFloor = BlockingFloor;
 		Blocking3DFloor = nullptr;

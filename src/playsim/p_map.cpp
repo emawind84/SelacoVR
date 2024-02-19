@@ -3519,6 +3519,16 @@ bool FSlide::BounceWall(AActor *mo)
 	}
 	line = bestslideline;
 
+	if (mo->flags & MF_MISSILE)
+	{
+		switch (mo->SpecialBounceHit(nullptr, line, nullptr))
+		{
+			case 1:		return true;
+			case 0:		return false;
+			default:	break;
+		}
+	}
+
 	if (line->special == Line_Horizon || ((mo->BounceFlags & BOUNCE_NotOnSky) && line->hitSkyWall(mo)))
 	{
 		mo->SeeSound = mo->BounceSound = NO_SOUND;	// it might make a sound otherwise
@@ -3604,6 +3614,13 @@ bool P_BounceActor(AActor *mo, AActor *BlockingMobj, bool ontop)
 	if (mo && (mo->flags & MF_MISSILE) && BlockingMobj)
 	{
 		switch (mo->SpecialMissileHit(BlockingMobj))
+		{
+			case 1:		return true;
+			case 0:		return false;
+			default:	break;
+		}
+
+		switch (mo->SpecialBounceHit(BlockingMobj, nullptr, nullptr))
 		{
 			case 1:		return true;
 			case 0:		return false;
@@ -3706,6 +3723,48 @@ bool P_BounceActor(AActor *mo, AActor *BlockingMobj, bool ontop)
 		return true;
 	}
 	return false;
+}
+
+bool P_ReflectOffActor(AActor* mo, AActor* blocking)
+{
+	if (!(blocking->flags2 & MF2_REFLECTIVE))
+		return false;
+
+	// Don't change the angle if there's THRUREFLECT on the monster.
+	if (!(blocking->flags7 & MF7_THRUREFLECT))
+	{
+		DAngle angle = blocking->AngleTo(mo);
+		if (mo->AdjustReflectionAngle(blocking, angle))
+			return false;
+
+		// Change angle for deflection/reflection
+		auto target = mo->target != NULL ? mo->target : blocking->target;
+		if (target && (blocking->flags7 & MF7_AIMREFLECT))
+		{
+			//dest->x - source->x
+			DVector3 vect = mo->Vec3To(target);
+			vect.Z += target->Height * 0.5;
+			mo->Vel = vect.Resized(mo->Speed);
+		}
+		else if (blocking->flags7 & MF7_MIRRORREFLECT)
+		{
+			mo->Angles.Yaw += DAngle::fromDeg(180.0);
+			mo->Vel *= -0.5;
+		}
+		else
+		{
+			mo->Angles.Yaw = angle;
+			mo->VelFromAngle(mo->Speed * 0.5);
+			mo->Vel.Z *= -0.5;
+		}
+	}
+	
+	if (mo->flags2 & MF2_SEEKERMISSILE)
+		mo->tracer = mo->target;
+
+	mo->target = blocking;
+
+	return true;
 }
 
 //============================================================================

@@ -202,6 +202,7 @@ class Actor : Thinker native
 	native int DesignatedTeam;
 	native Actor BlockingMobj;
 	native Line BlockingLine;
+	native Line MovementBlockingLine;
 	native Sector Blocking3DFloor;
 	native Sector BlockingCeiling;
 	native Sector BlockingFloor;
@@ -542,6 +543,12 @@ class Actor : Thinker native
 		return -1;
 	}
 
+	// This is called when a missile bounces off something.
+	virtual int SpecialBounceHit(Actor bounceMobj, Line bounceLine, SecPlane bouncePlane)
+	{
+		return -1;
+	}
+
 	// Called when the player presses 'use' and an actor is found, except if the
 	// UseSpecial flag is set. Use level.ExecuteSpecial to call action specials
 	// instead.
@@ -698,7 +705,7 @@ class Actor : Thinker native
 	native void CheckFakeFloorTriggers (double oldz, bool oldz_has_viewheight = false);
 	native bool CheckFor3DFloorHit(double z, bool trigger);
 	native bool CheckFor3DCeilingHit(double z, bool trigger);
-	native int CheckMonsterUseSpecials();
+	native int CheckMonsterUseSpecials(Line blocking = null);
 	
 	native bool CheckMissileSpawn(double maxdist);
 	native bool CheckPosition(Vector2 pos, bool actorsonly = false, FCheckPosition tm = null);
@@ -819,6 +826,7 @@ class Actor : Thinker native
 	native bool BounceWall(Line l = null);
 	native bool BouncePlane(SecPlane plane);
 	native void PlayBounceSound(bool onFloor);
+	native bool ReflectOffActor(Actor blocking);
 
 	clearscope double PitchTo(Actor target, double zOfs = 0, double targZOfs = 0, bool absolute = false) const
 	{
