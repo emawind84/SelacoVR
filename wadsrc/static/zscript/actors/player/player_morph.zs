@@ -221,6 +221,7 @@ extend class PlayerPawn
 		{
 			p.camera = morphed;
 		}
+		morphed.ClearFOVInterpolation();
 		morphed.ScoreIcon = ScoreIcon;	// [GRB]
 		if (eflash)	
 			eflash.target = morphed;
@@ -337,6 +338,7 @@ extend class PlayerPawn
 		{
 			player.camera = altmo;
 		}
+		altmo.ClearFOVInterpolation();
 
 		// [MH]
 		// If the player that was morphed is the one
