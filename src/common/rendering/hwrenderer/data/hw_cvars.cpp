@@ -150,7 +150,7 @@ CUSTOM_CVAR(Float, gl_global_fade_gradient, 1.5f, CVAR_ARCHIVE)
 CVAR(Color, gl_global_fade_color, 0x3f3f3f, CVAR_ARCHIVE)
 CVAR(Bool, gl_global_fade_debug, false, 0)
 
-CUSTOM_CVAR (Int, gl_storage_buffer_type, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+CUSTOM_CVAR (Int, gl_storage_buffer_type, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	Printf("You must restart " GAMENAME " for this change to take effect.\n");
 }

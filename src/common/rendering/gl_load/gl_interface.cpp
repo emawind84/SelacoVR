@@ -142,7 +142,7 @@ void gl_LoadExtensions()
 	gl_version = 3.31;
 	gl.flags |= RFL_NO_CLIP_PLANES;
 	gl.flags |= RFL_INVALIDATE_BUFFER;
-	if (gl_light_buffer_type == 1)
+	if (gl_storage_buffer_type == 1)
 		gl.flags |= RFL_SHADER_STORAGE_BUFFER;
 #endif
 	// Don't even start if it's lower than 2.0 or no framebuffers are available (The framebuffer extension is needed for glGenerateMipmapsEXT!)
