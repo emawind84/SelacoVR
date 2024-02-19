@@ -33,7 +33,7 @@
 #endif
 
 /************ Begin %include sections from the grammar ************************/
-#line 40 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 40 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 
 // Allocates a new AST node off the parse state's arena.
 #define NEW_AST_NODE(type,name,tok) \
@@ -107,7 +107,7 @@ static void SetNodeLine(ZCC_TreeNode *name, int line)
 		int FuncFlags;
 		int SourceLoc;
 	};
-#line 111 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 111 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 /**************** End of %include directives **********************************/
 /* These constants specify the various numeric values for terminal symbols
 ** in a format understandable to "makeheaders".  This section is blank unless
@@ -1951,9 +1951,9 @@ static void yy_destructor(
     case 157: /* SWITCH */
     case 158: /* CASE */
 {
-#line 117 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 117 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 
-#line 1957 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 1957 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
       break;
 /********* End destructor definitions *****************************************/
@@ -2639,96 +2639,96 @@ static void yy_reduce(
 /********** Begin reduce actions **********************************************/
         YYMINORTYPE yylhsminor;
       case 0: /* main ::= translation_unit */
-#line 173 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 173 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { stat->TopNode = yymsp[0].minor.yy296; DPrintf(DMSG_SPAMMY, "Parse complete\n"); }
-#line 2645 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2645 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 1: /* translation_unit ::= */
       case 30: /*class_innards ::= */ yytestcase(yyruleno==30);
       case 55: /*opt_struct_body ::= */ yytestcase(yyruleno==55);
       case 73: /*mixin_class_body ::= */ yytestcase(yyruleno==73);
-#line 176 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 176 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy296 = NULL; }
-#line 2653 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2653 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 2: /* translation_unit ::= translation_unit external_declaration */
       case 31: /*class_innards ::= class_innards class_member */ yytestcase(yyruleno==31);
       case 74: /*mixin_class_body ::= mixin_class_body mixin_class_member */ yytestcase(yyruleno==74);
-#line 177 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 177 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { SAFE_APPEND(yymsp[-1].minor.yy296,yymsp[0].minor.yy296); }
-#line 2660 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2660 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 3: /* translation_unit ::= error */
       case 56: /*opt_struct_body ::= error */ yytestcase(yyruleno==56);
-#line 179 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 179 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = NULL; }
-#line 2666 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2666 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 4: /* external_declaration ::= mixin_definition */
-#line 182 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 182 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy282; /*X-overwrites-A*/ }
-#line 2671 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2671 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 5: /* external_declaration ::= class_definition */
-#line 183 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 183 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy20; /*X-overwrites-A*/ }
-#line 2676 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2676 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 6: /* external_declaration ::= struct_def */
       case 35: /*class_member ::= struct_def */ yytestcase(yyruleno==35);
       case 77: /*mixin_class_member ::= struct_def */ yytestcase(yyruleno==77);
-#line 184 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 184 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy299; /*X-overwrites-A*/ }
-#line 2683 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2683 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 7: /* external_declaration ::= enum_def */
       case 34: /*class_member ::= enum_def */ yytestcase(yyruleno==34);
       case 59: /*struct_member ::= enum_def */ yytestcase(yyruleno==59);
       case 76: /*mixin_class_member ::= enum_def */ yytestcase(yyruleno==76);
-#line 185 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 185 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy179; /*X-overwrites-A*/ }
-#line 2691 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2691 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 8: /* external_declaration ::= const_def */
       case 38: /*class_member ::= const_def */ yytestcase(yyruleno==38);
       case 60: /*struct_member ::= const_def */ yytestcase(yyruleno==60);
       case 80: /*mixin_class_member ::= const_def */ yytestcase(yyruleno==80);
-#line 186 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 186 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy499; /*X-overwrites-A*/ }
-#line 2699 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2699 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 9: /* external_declaration ::= include_def */
-#line 187 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 187 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = nullptr; }
-#line 2704 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2704 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 10: /* opt_expr ::= */
-#line 198 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 198 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	yymsp[1].minor.yy318 = NULL;
 }
-#line 2711 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2711 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 11: /* include_def ::= INCLUDE string_constant */
 {  yy_destructor(yypParser,51,&yymsp[-1].minor);
-#line 205 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 205 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	AddInclude(yymsp[0].minor.yy471);
 }
-#line 2719 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2719 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 12: /* class_definition ::= class_head class_body */
-#line 219 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 219 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	yymsp[-1].minor.yy20->Body = yymsp[0].minor.yy296;
 	yymsp[-1].minor.yy20 = yymsp[-1].minor.yy20; /*X-overwrites-A*/
 }
-#line 2728 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2728 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 13: /* class_head ::= EXTEND CLASS IDENTIFIER */
 {  yy_destructor(yypParser,52,&yymsp[-2].minor);
-#line 225 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 225 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Class,head,yymsp[-1].minor.yy0);
 	head->NodeName = yymsp[0].minor.yy0.Name();
@@ -2740,11 +2740,11 @@ static void yy_reduce(
 	head->Symbol = nullptr;
 	yymsp[-2].minor.yy20 = head;
 }
-#line 2744 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2744 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 14: /* class_head ::= CLASS IDENTIFIER class_ancestry class_flags */
-#line 239 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 239 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Class,head,yymsp[-3].minor.yy0);
 	head->NodeName = yymsp[-2].minor.yy0.Name();
@@ -2756,66 +2756,66 @@ static void yy_reduce(
 	head->Symbol = nullptr;
 	yylhsminor.yy20 = head;
 }
-#line 2760 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2760 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-3].minor.yy20 = yylhsminor.yy20;
         break;
       case 15: /* class_ancestry ::= */
       case 164: /*class_restrictor ::= */ yytestcase(yyruleno==164);
-#line 252 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 252 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy165 = NULL; }
-#line 2767 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2767 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 16: /* class_ancestry ::= COLON dottable_id */
 {  yy_destructor(yypParser,14,&yymsp[-1].minor);
-#line 253 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 253 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy165 = yymsp[0].minor.yy165; /*yymsp[-1].minor.yy165-overwrites-yymsp[0].minor.yy165*/ }
-#line 2773 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2773 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 17: /* class_flags ::= */
-#line 256 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 256 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy87.Flags = 0; yymsp[1].minor.yy87.Replaces = NULL; yymsp[1].minor.yy87.Version = {0,0}; }
-#line 2779 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2779 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 18: /* class_flags ::= class_flags ABSTRACT */
-#line 257 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 257 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy87.Flags = yymsp[-1].minor.yy87.Flags | ZCC_Abstract; yylhsminor.yy87.Replaces = yymsp[-1].minor.yy87.Replaces; }
-#line 2784 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2784 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,55,&yymsp[0].minor);
   yymsp[-1].minor.yy87 = yylhsminor.yy87;
         break;
       case 19: /* class_flags ::= class_flags NATIVE */
-#line 258 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 258 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy87.Flags = yymsp[-1].minor.yy87.Flags | ZCC_Native; yylhsminor.yy87.Replaces = yymsp[-1].minor.yy87.Replaces; }
-#line 2791 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2791 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,56,&yymsp[0].minor);
   yymsp[-1].minor.yy87 = yylhsminor.yy87;
         break;
       case 20: /* class_flags ::= class_flags UI */
-#line 259 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 259 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy87.Flags = yymsp[-1].minor.yy87.Flags | ZCC_UIFlag; yylhsminor.yy87.Replaces = yymsp[-1].minor.yy87.Replaces; }
-#line 2798 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2798 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,57,&yymsp[0].minor);
   yymsp[-1].minor.yy87 = yylhsminor.yy87;
         break;
       case 21: /* class_flags ::= class_flags PLAY */
-#line 260 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 260 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy87.Flags = yymsp[-1].minor.yy87.Flags | ZCC_Play; yylhsminor.yy87.Replaces = yymsp[-1].minor.yy87.Replaces; }
-#line 2805 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2805 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,58,&yymsp[0].minor);
   yymsp[-1].minor.yy87 = yylhsminor.yy87;
         break;
       case 22: /* class_flags ::= class_flags REPLACES dottable_id */
-#line 261 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 261 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy87.Flags = yymsp[-2].minor.yy87.Flags; yylhsminor.yy87.Replaces = yymsp[0].minor.yy165; }
-#line 2812 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2812 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,59,&yymsp[-1].minor);
   yymsp[-2].minor.yy87 = yylhsminor.yy87;
         break;
       case 23: /* class_flags ::= class_flags VERSION LPAREN STRCONST RPAREN */
-#line 262 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 262 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy87.Flags = yymsp[-4].minor.yy87.Flags | ZCC_Version; yylhsminor.yy87.Replaces = yymsp[-4].minor.yy87.Replaces; yylhsminor.yy87.Version = yymsp[-1].minor.yy0.String->GetChars(); }
-#line 2819 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2819 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,60,&yymsp[-3].minor);
   yy_destructor(yypParser,45,&yymsp[-2].minor);
   yy_destructor(yypParser,62,&yymsp[0].minor);
@@ -2824,135 +2824,135 @@ static void yy_reduce(
       case 24: /* dottable_id ::= IDENTIFIER */
       case 45: /*identifier_list ::= IDENTIFIER */ yytestcase(yyruleno==45);
       case 87: /*states_opt ::= IDENTIFIER */ yytestcase(yyruleno==87);
-#line 270 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 270 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Identifier,id,yymsp[0].minor.yy0);
 	id->Id = yymsp[0].minor.yy0.Name();
 	yylhsminor.yy165 = id;
 }
-#line 2834 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2834 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy165 = yylhsminor.yy165;
         break;
       case 25: /* dottable_id ::= dottable_id DOT IDENTIFIER */
-#line 276 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 276 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Identifier,id2,yymsp[-2].minor.yy165);
 	id2->Id = yymsp[0].minor.yy0.Name();
 	AppendTreeNodeSibling(yymsp[-2].minor.yy165, id2);
 	yymsp[-2].minor.yy165 = yymsp[-2].minor.yy165; /*X-overwrites-A*/
 }
-#line 2845 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2845 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,44,&yymsp[-1].minor);
         break;
       case 26: /* dottable_id ::= dottable_id DOT DEFAULT */
-#line 283 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 283 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Identifier,id2,yymsp[-2].minor.yy165);
 	id2->Id = NAME_Default;
 	AppendTreeNodeSibling(yymsp[-2].minor.yy165, id2);
 	yymsp[-2].minor.yy165 = yymsp[-2].minor.yy165; /*X-overwrites-A*/
 }
-#line 2856 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2856 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,44,&yymsp[-1].minor);
   yy_destructor(yypParser,63,&yymsp[0].minor);
         break;
       case 27: /* dottable_id ::= dottable_id DOT COLOR */
-#line 294 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 294 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Identifier,id2,yymsp[-2].minor.yy165);
 	id2->Id = NAME_Color;
 	AppendTreeNodeSibling(yymsp[-2].minor.yy165, id2);
 	yymsp[-2].minor.yy165 = yymsp[-2].minor.yy165; /*X-overwrites-A*/
 }
-#line 2868 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2868 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,44,&yymsp[-1].minor);
   yy_destructor(yypParser,64,&yymsp[0].minor);
         break;
       case 28: /* class_body ::= SEMICOLON class_innards EOF */
 {  yy_destructor(yypParser,49,&yymsp[-2].minor);
-#line 311 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 311 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-2].minor.yy296 = yymsp[-1].minor.yy296; /*yymsp[-2].minor.yy296-overwrites-yymsp[-1].minor.yy296*/ }
-#line 2876 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2876 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,48,&yymsp[0].minor);
 }
         break;
       case 29: /* class_body ::= LBRACE class_innards RBRACE */
 {  yy_destructor(yypParser,65,&yymsp[-2].minor);
-#line 312 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 312 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-2].minor.yy296 = yymsp[-1].minor.yy296; /*yymsp[-2].minor.yy296-overwrites-yymsp[-1].minor.yy296*/ }
-#line 2884 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2884 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,66,&yymsp[0].minor);
 }
         break;
       case 32: /* class_member ::= declarator */
       case 58: /*struct_member ::= declarator */ yytestcase(yyruleno==58);
       case 75: /*mixin_class_member ::= declarator */ yytestcase(yyruleno==75);
-#line 325 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 325 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy23; /*X-overwrites-A*/ }
-#line 2893 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2893 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 33: /* class_member ::= mixin_statement */
-#line 326 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 326 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy399; /*X-overwrites-A*/ }
-#line 2898 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2898 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 36: /* class_member ::= states_def */
       case 78: /*mixin_class_member ::= states_def */ yytestcase(yyruleno==78);
-#line 329 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 329 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy70; /*X-overwrites-A*/ }
-#line 2904 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2904 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 37: /* class_member ::= default_def */
       case 79: /*mixin_class_member ::= default_def */ yytestcase(yyruleno==79);
-#line 330 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 330 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy431; /*X-overwrites-A*/ }
-#line 2910 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2910 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 39: /* class_member ::= property_def */
       case 81: /*mixin_class_member ::= property_def */ yytestcase(yyruleno==81);
-#line 332 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 332 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy443; /*X-overwrites-A*/ }
-#line 2916 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2916 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 40: /* class_member ::= flag_def */
       case 82: /*mixin_class_member ::= flag_def */ yytestcase(yyruleno==82);
-#line 333 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 333 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy155; /*X-overwrites-A*/ }
-#line 2922 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2922 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 41: /* class_member ::= staticarray_statement */
       case 61: /*struct_member ::= staticarray_statement */ yytestcase(yyruleno==61);
       case 83: /*mixin_class_member ::= staticarray_statement */ yytestcase(yyruleno==83);
-#line 334 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 334 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy296 = yymsp[0].minor.yy106; /*X-overwrites-A*/ }
-#line 2929 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2929 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 42: /* mixin_statement ::= MIXIN IDENTIFIER SEMICOLON */
-#line 339 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 339 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(MixinStmt,stmt,yymsp[-2].minor.yy0);
 	stmt->MixinName = yymsp[-1].minor.yy0.Name();
 	yylhsminor.yy399 = stmt;
 }
-#line 2938 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2938 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
   yymsp[-2].minor.yy399 = yylhsminor.yy399;
         break;
       case 43: /* property_def ::= PROPERTY IDENTIFIER COLON identifier_list SEMICOLON */
-#line 354 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 354 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Property,def,yymsp[-4].minor.yy0);
 	def->NodeName = yymsp[-3].minor.yy0.Name();
 	def->Body = yymsp[-1].minor.yy165;
 	yylhsminor.yy443 = def;
 }
-#line 2950 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2950 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,14,&yymsp[-2].minor);
   yy_destructor(yypParser,49,&yymsp[0].minor);
   yymsp[-4].minor.yy443 = yylhsminor.yy443;
         break;
       case 44: /* flag_def ::= FLAGDEF IDENTIFIER COLON IDENTIFIER COMMA INTCONST SEMICOLON */
-#line 362 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 362 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(FlagDef,def,yymsp[-6].minor.yy0);
 	def->NodeName = yymsp[-5].minor.yy0.Name();
@@ -2960,7 +2960,7 @@ static void yy_reduce(
 	def->BitValue = yymsp[-1].minor.yy0.Int;
 	yylhsminor.yy155 = def;
 }
-#line 2964 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2964 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,14,&yymsp[-4].minor);
   yy_destructor(yypParser,50,&yymsp[-2].minor);
   yy_destructor(yypParser,49,&yymsp[0].minor);
@@ -2968,18 +2968,18 @@ static void yy_reduce(
         break;
       case 46: /* identifier_list ::= states_opt COMMA IDENTIFIER */
       case 88: /*states_opt ::= states_opt COMMA IDENTIFIER */ yytestcase(yyruleno==88);
-#line 379 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 379 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Identifier,id,yymsp[0].minor.yy0);
 	id->Id = yymsp[0].minor.yy0.Name();
 	yymsp[-2].minor.yy165 = yymsp[-2].minor.yy165; /*X-overwrites-A*/
 	AppendTreeNodeSibling(yymsp[-2].minor.yy165, id);
 }
-#line 2979 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2979 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-1].minor);
         break;
       case 47: /* struct_def ::= STRUCT IDENTIFIER struct_flags LBRACE opt_struct_body RBRACE opt_semicolon */
-#line 387 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 387 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Struct,def,yymsp[-6].minor.yy0);
 	def->NodeName = yymsp[-5].minor.yy0.Name();
@@ -2990,14 +2990,14 @@ static void yy_reduce(
 	def->Flags = yymsp[-4].minor.yy87.Flags;
 	yylhsminor.yy299 = def;
 }
-#line 2994 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 2994 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,65,&yymsp[-3].minor);
   yy_destructor(yypParser,66,&yymsp[-1].minor);
   yymsp[-6].minor.yy299 = yylhsminor.yy299;
         break;
       case 48: /* struct_def ::= EXTEND STRUCT IDENTIFIER LBRACE opt_struct_body RBRACE opt_semicolon */
 {  yy_destructor(yypParser,52,&yymsp[-6].minor);
-#line 399 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 399 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Struct,def,yymsp[-5].minor.yy0);
 	def->NodeName = yymsp[-4].minor.yy0.Name();
@@ -3007,60 +3007,60 @@ static void yy_reduce(
 	def->Flags = ZCC_Extension;
 	yymsp[-6].minor.yy299 = def;
 }
-#line 3011 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3011 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,65,&yymsp[-3].minor);
   yy_destructor(yypParser,66,&yymsp[-1].minor);
 }
         break;
       case 49: /* struct_flags ::= */
-#line 410 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 410 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy87.Flags = 0; yymsp[1].minor.yy87.Version = {0, 0}; }
-#line 3019 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3019 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 50: /* struct_flags ::= struct_flags UI */
-#line 411 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 411 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy87.Flags = yymsp[-1].minor.yy87.Flags | ZCC_UIFlag; }
-#line 3024 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3024 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,57,&yymsp[0].minor);
   yymsp[-1].minor.yy87 = yylhsminor.yy87;
         break;
       case 51: /* struct_flags ::= struct_flags PLAY */
-#line 412 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 412 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy87.Flags = yymsp[-1].minor.yy87.Flags | ZCC_Play; }
-#line 3031 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3031 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,58,&yymsp[0].minor);
   yymsp[-1].minor.yy87 = yylhsminor.yy87;
         break;
       case 52: /* struct_flags ::= struct_flags CLEARSCOPE */
-#line 413 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 413 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy87.Flags = yymsp[-1].minor.yy87.Flags | ZCC_ClearScope; }
-#line 3038 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3038 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,72,&yymsp[0].minor);
   yymsp[-1].minor.yy87 = yylhsminor.yy87;
         break;
       case 53: /* struct_flags ::= struct_flags NATIVE */
-#line 414 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 414 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy87.Flags = yymsp[-1].minor.yy87.Flags | ZCC_Native; }
-#line 3045 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3045 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,56,&yymsp[0].minor);
   yymsp[-1].minor.yy87 = yylhsminor.yy87;
         break;
       case 54: /* struct_flags ::= struct_flags VERSION LPAREN STRCONST RPAREN */
-#line 415 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 415 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy87.Flags = yymsp[-4].minor.yy87.Flags | ZCC_Version; yylhsminor.yy87.Version = yymsp[-1].minor.yy0.String->GetChars(); }
-#line 3052 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3052 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,60,&yymsp[-3].minor);
   yy_destructor(yypParser,45,&yymsp[-2].minor);
   yy_destructor(yypParser,62,&yymsp[0].minor);
   yymsp[-4].minor.yy87 = yylhsminor.yy87;
         break;
       case 57: /* struct_body ::= struct_body struct_member */
-#line 423 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 423 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy296 = yymsp[-1].minor.yy296; /*X-overwrites-A*/ AppendTreeNodeSibling(yymsp[-1].minor.yy296, yymsp[0].minor.yy296); }
-#line 3061 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3061 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 62: /* const_def ::= CONST IDENTIFIER EQ expr SEMICOLON */
-#line 433 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 433 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ConstantDef,def,yymsp[-4].minor.yy0);
 	def->NodeName = yymsp[-3].minor.yy0.Name();
@@ -3068,13 +3068,13 @@ static void yy_reduce(
 	def->Symbol = NULL;
 	yylhsminor.yy499 = def;
 }
-#line 3072 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3072 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,1,&yymsp[-2].minor);
   yy_destructor(yypParser,49,&yymsp[0].minor);
   yymsp[-4].minor.yy499 = yylhsminor.yy499;
         break;
       case 63: /* enum_def ::= ENUM IDENTIFIER enum_type LBRACE opt_enum_list RBRACE opt_semicolon */
-#line 450 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 450 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Enum,def,yymsp[-6].minor.yy0);
 	def->NodeName = yymsp[-5].minor.yy0.Name();
@@ -3133,40 +3133,40 @@ static void yy_reduce(
 	}
 	yylhsminor.yy179 = def;
 }
-#line 3137 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3137 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,65,&yymsp[-3].minor);
   yymsp[-6].minor.yy179 = yylhsminor.yy179;
         break;
       case 64: /* enum_type ::= */
-#line 509 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 509 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy0.Int = ZCC_IntAuto; yymsp[1].minor.yy0.SourceLoc = stat->sc->GetMessageLine(); }
-#line 3144 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3144 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 65: /* enum_type ::= COLON int_type */
 {  yy_destructor(yypParser,14,&yymsp[-1].minor);
-#line 510 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 510 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy0 = yymsp[0].minor.yy0; /*yymsp[-1].minor.yy0-overwrites-yymsp[0].minor.yy0*/ }
-#line 3150 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3150 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 66: /* enum_list ::= error */
-#line 512 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 512 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy499 = NULL; }
-#line 3156 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3156 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 67: /* enum_list ::= enum_list COMMA enumerator */
-#line 514 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 514 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-2].minor.yy499 = yymsp[-2].minor.yy499; /*X-overwrites-A*/ AppendTreeNodeSibling(yymsp[-2].minor.yy499, yymsp[0].minor.yy499); }
-#line 3161 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3161 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-1].minor);
         break;
       case 68: /* opt_enum_list ::= */
-#line 516 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 516 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy499 = NULL; }
-#line 3167 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3167 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 69: /* enumerator ::= IDENTIFIER */
-#line 520 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 520 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ConstantDef,node,yymsp[0].minor.yy0);
 	node->NodeName = yymsp[0].minor.yy0.Name();
@@ -3174,11 +3174,11 @@ static void yy_reduce(
 	node->Symbol = NULL;
 	yylhsminor.yy499 = node;
 }
-#line 3178 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3178 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy499 = yylhsminor.yy499;
         break;
       case 70: /* enumerator ::= IDENTIFIER EQ expr */
-#line 528 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 528 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ConstantDef,node,yymsp[-2].minor.yy0);
 	node->NodeName = yymsp[-2].minor.yy0.Name();
@@ -3186,17 +3186,17 @@ static void yy_reduce(
 	node->Symbol = NULL;
 	yylhsminor.yy499 = node;
 }
-#line 3190 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3190 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,1,&yymsp[-1].minor);
   yymsp[-2].minor.yy499 = yylhsminor.yy499;
         break;
       case 71: /* mixin_definition ::= mixin_class_definition */
-#line 542 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 542 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy282 = yymsp[0].minor.yy282; /*X-overwrites-A*/ }
-#line 3197 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3197 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 72: /* mixin_class_definition ::= MIXIN CLASS IDENTIFIER LBRACE mixin_class_body RBRACE */
-#line 549 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 549 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(MixinDef,def,yymsp[-5].minor.yy0);
 	def->Body = yymsp[-1].minor.yy296;
@@ -3205,97 +3205,97 @@ static void yy_reduce(
 	def->Symbol = nullptr;
 	yylhsminor.yy282 = def;
 }
-#line 3209 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3209 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,53,&yymsp[-4].minor);
   yy_destructor(yypParser,65,&yymsp[-2].minor);
   yy_destructor(yypParser,66,&yymsp[0].minor);
   yymsp[-5].minor.yy282 = yylhsminor.yy282;
         break;
       case 84: /* states_def ::= STATES states_opts scanner_mode LBRACE states_body RBRACE */
-#line 598 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 598 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(States,def,yymsp[-5].minor.yy0);
 	def->Flags = yymsp[-4].minor.yy165;
 	def->Body = yymsp[-1].minor.yy266;
 	yylhsminor.yy70 = def;
 }
-#line 3223 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3223 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,65,&yymsp[-2].minor);
   yy_destructor(yypParser,66,&yymsp[0].minor);
   yymsp[-5].minor.yy70 = yylhsminor.yy70;
         break;
       case 85: /* states_opts ::= */
-#line 605 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 605 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy165 = nullptr; }
-#line 3231 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3231 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 86: /* states_opts ::= LPAREN states_opt RPAREN */
 {  yy_destructor(yypParser,45,&yymsp[-2].minor);
-#line 606 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 606 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-2].minor.yy165 = yymsp[-1].minor.yy165; /*yymsp[-2].minor.yy165-overwrites-yymsp[-1].minor.yy165*/ }
-#line 3237 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3237 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,62,&yymsp[0].minor);
 }
         break;
       case 89: /* scanner_mode ::= */
-#line 635 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 635 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { stat->sc->SetStateMode(true); }
-#line 3244 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3244 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 90: /* states_body ::= */
-#line 637 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 637 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy266 = NULL; }
-#line 3249 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3249 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 91: /* states_body ::= error */
-#line 638 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 638 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy266 = NULL; }
-#line 3254 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3254 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 92: /* states_body ::= states_body state_line */
       case 93: /*states_body ::= states_body state_label */ yytestcase(yyruleno==93);
       case 94: /*states_body ::= states_body state_flow */ yytestcase(yyruleno==94);
-#line 639 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 639 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { SAFE_APPEND(yymsp[-1].minor.yy266,yymsp[0].minor.yy266); }
-#line 3261 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3261 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 95: /* state_label ::= NWS COLON */
-#line 644 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 644 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(StateLabel, label, yymsp[-1].minor.yy0);
 	label->Label = yymsp[-1].minor.yy0.Name();
 	yylhsminor.yy266 = label;
 }
-#line 3270 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3270 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,14,&yymsp[0].minor);
   yymsp[-1].minor.yy266 = yylhsminor.yy266;
         break;
       case 96: /* state_flow_type ::= STOP */
-#line 652 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 652 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { NEW_AST_NODE(StateStop, flow, yymsp[0].minor.yy0); yylhsminor.yy266 = flow; }
-#line 3277 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3277 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy266 = yylhsminor.yy266;
         break;
       case 97: /* state_flow_type ::= WAIT */
-#line 653 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 653 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { NEW_AST_NODE(StateWait, flow, yymsp[0].minor.yy0); yylhsminor.yy266 = flow; }
-#line 3283 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3283 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy266 = yylhsminor.yy266;
         break;
       case 98: /* state_flow_type ::= FAIL */
-#line 654 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 654 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { NEW_AST_NODE(StateFail, flow, yymsp[0].minor.yy0); yylhsminor.yy266 = flow; }
-#line 3289 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3289 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy266 = yylhsminor.yy266;
         break;
       case 99: /* state_flow_type ::= LOOP */
-#line 655 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 655 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { NEW_AST_NODE(StateLoop, flow, yymsp[0].minor.yy0); yylhsminor.yy266 = flow; }
-#line 3295 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3295 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy266 = yylhsminor.yy266;
         break;
       case 100: /* state_flow_type ::= GOTO dottable_id state_goto_offset */
-#line 657 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 657 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(StateGoto, flow, yymsp[-2].minor.yy0);
 	flow->Label = yymsp[-1].minor.yy165;
@@ -3303,11 +3303,11 @@ static void yy_reduce(
 	flow->Qualifier = nullptr;
 	yylhsminor.yy266 = flow;
 }
-#line 3307 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3307 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-2].minor.yy266 = yylhsminor.yy266;
         break;
       case 101: /* state_flow_type ::= GOTO IDENTIFIER SCOPE dottable_id state_goto_offset */
-#line 666 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 666 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(StateGoto, flow, yymsp[-4].minor.yy0);
 	flow->Label = yymsp[-1].minor.yy165;
@@ -3318,12 +3318,12 @@ static void yy_reduce(
 	flow->Qualifier =id;
 	yylhsminor.yy266 = flow;
 }
-#line 3322 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3322 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,47,&yymsp[-2].minor);
   yymsp[-4].minor.yy266 = yylhsminor.yy266;
         break;
       case 102: /* state_flow_type ::= GOTO SUPER SCOPE dottable_id state_goto_offset */
-#line 678 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 678 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(StateGoto, flow, yymsp[-4].minor.yy0);
 	flow->Label = yymsp[-1].minor.yy165;
@@ -3334,24 +3334,24 @@ static void yy_reduce(
 	flow->Qualifier =id;
 	yylhsminor.yy266 = flow;
 }
-#line 3338 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3338 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,47,&yymsp[-2].minor);
   yymsp[-4].minor.yy266 = yylhsminor.yy266;
         break;
       case 103: /* state_goto_offset ::= */
-#line 689 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 689 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy318 = NULL; }
-#line 3345 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3345 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 104: /* state_goto_offset ::= ADD expr */
 {  yy_destructor(yypParser,34,&yymsp[-1].minor);
-#line 690 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 690 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy318 = yymsp[0].minor.yy318; /*yymsp[-1].minor.yy318-overwrites-yymsp[0].minor.yy318*/ }
-#line 3351 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3351 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 105: /* state_line ::= NWS NWS expr state_opts state_action */
-#line 693 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 693 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(StateLine, line, yymsp[-4].minor.yy0);
 	line->Sprite = stat->Strings.Alloc(FName(yymsp[-4].minor.yy0.Name()).GetChars());
@@ -3367,64 +3367,64 @@ static void yy_reduce(
 	line->Action = yymsp[0].minor.yy296;
 	yylhsminor.yy266 = line;
 }
-#line 3371 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3371 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-4].minor.yy266 = yylhsminor.yy266;
         break;
       case 106: /* state_opts ::= */
-#line 709 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 709 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { StateOpts opts; opts.Zero(); yymsp[1].minor.yy332 = opts; }
-#line 3377 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3377 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 107: /* state_opts ::= state_opts BRIGHT */
-#line 710 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 710 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy332.Bright = true; yymsp[-1].minor.yy332 = yymsp[-1].minor.yy332; /*X-overwrites-A*/ }
-#line 3382 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3382 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,83,&yymsp[0].minor);
         break;
       case 108: /* state_opts ::= state_opts FAST */
-#line 711 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 711 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy332.Fast = true; yymsp[-1].minor.yy332 = yymsp[-1].minor.yy332; /*X-overwrites-A*/ }
-#line 3388 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3388 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,84,&yymsp[0].minor);
         break;
       case 109: /* state_opts ::= state_opts SLOW */
-#line 712 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 712 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy332.Slow = true; yymsp[-1].minor.yy332 = yymsp[-1].minor.yy332; /*X-overwrites-A*/ }
-#line 3394 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3394 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,85,&yymsp[0].minor);
         break;
       case 110: /* state_opts ::= state_opts NODELAY */
-#line 713 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 713 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy332.NoDelay = true; yymsp[-1].minor.yy332 = yymsp[-1].minor.yy332; /*X-overwrites-A*/ }
-#line 3400 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3400 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,86,&yymsp[0].minor);
         break;
       case 111: /* state_opts ::= state_opts CANRAISE */
-#line 714 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 714 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy332.CanRaise = true; yymsp[-1].minor.yy332 = yymsp[-1].minor.yy332; /*X-overwrites-A*/ }
-#line 3406 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3406 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,87,&yymsp[0].minor);
         break;
       case 112: /* state_opts ::= state_opts OFFSET LPAREN expr COMMA expr RPAREN */
-#line 715 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 715 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-6].minor.yy332.Offset = yymsp[-3].minor.yy318; AppendTreeNodeSibling(yymsp[-3].minor.yy318, yymsp[-1].minor.yy318); yymsp[-6].minor.yy332 = yymsp[-6].minor.yy332; /*X-overwrites-A*/ }
-#line 3412 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3412 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,88,&yymsp[-5].minor);
   yy_destructor(yypParser,45,&yymsp[-4].minor);
   yy_destructor(yypParser,50,&yymsp[-2].minor);
   yy_destructor(yypParser,62,&yymsp[0].minor);
         break;
       case 113: /* state_opts ::= state_opts LIGHT LPAREN light_list RPAREN */
-#line 716 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 716 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-4].minor.yy332 = yymsp[-4].minor.yy332; /*X-overwrites-A*/ yymsp[-4].minor.yy332.Lights = yymsp[-1].minor.yy471; }
-#line 3421 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3421 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,89,&yymsp[-3].minor);
   yy_destructor(yypParser,45,&yymsp[-2].minor);
   yy_destructor(yypParser,62,&yymsp[0].minor);
         break;
       case 114: /* light_list ::= STRCONST */
       case 284: /*string_constant ::= STRCONST */ yytestcase(yyruleno==284);
-#line 721 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 721 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprConstant, strconst, yymsp[0].minor.yy0);
 	strconst->Operation = PEX_ConstValue;
@@ -3432,11 +3432,11 @@ static void yy_reduce(
 	strconst->StringVal = yymsp[0].minor.yy0.String;
 	yylhsminor.yy471 = strconst;
 }
-#line 3436 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3436 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy471 = yylhsminor.yy471;
         break;
       case 115: /* light_list ::= light_list COMMA STRCONST */
-#line 730 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 730 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprConstant, strconst, yymsp[0].minor.yy0);
 	strconst->Operation = PEX_ConstValue;
@@ -3445,51 +3445,51 @@ static void yy_reduce(
 	AppendTreeNodeSibling(yymsp[-2].minor.yy471, strconst); 
 	yymsp[-2].minor.yy471 = yymsp[-2].minor.yy471; /*X-overwrites-A*/
 }
-#line 3449 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3449 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-1].minor);
         break;
       case 116: /* state_action ::= LBRACE statement_list scanner_mode RBRACE */
-#line 741 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 741 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(CompoundStmt,stmt,yymsp[-3].minor.yy0);
 	stmt->Content = yymsp[-2].minor.yy156;
 	yylhsminor.yy296 = stmt;
 }
-#line 3459 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3459 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,66,&yymsp[0].minor);
   yymsp[-3].minor.yy296 = yylhsminor.yy296;
         break;
       case 117: /* state_action ::= LBRACE scanner_mode RBRACE */
 {  yy_destructor(yypParser,65,&yymsp[-2].minor);
-#line 747 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 747 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	yymsp[-2].minor.yy296 = NULL;
 }
-#line 3469 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3469 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,66,&yymsp[0].minor);
 }
         break;
       case 118: /* state_action ::= LBRACE error scanner_mode RBRACE */
 {  yy_destructor(yypParser,65,&yymsp[-3].minor);
-#line 750 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 750 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-3].minor.yy296 = NULL; }
-#line 3477 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3477 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,66,&yymsp[0].minor);
 }
         break;
       case 119: /* state_action ::= state_call scanner_mode SEMICOLON */
-#line 751 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 751 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-2].minor.yy296 = yymsp[-2].minor.yy445; /*X-overwrites-A*/ }
-#line 3484 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3484 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
         break;
       case 120: /* state_call ::= */
-#line 753 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 753 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy445 = NULL; }
-#line 3490 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3490 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 121: /* state_call ::= IDENTIFIER state_call_params */
-#line 755 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 755 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprFuncCall, expr, yymsp[-1].minor.yy0);
 	NEW_AST_NODE(ExprID, func, yymsp[-1].minor.yy0);
@@ -3501,251 +3501,251 @@ static void yy_reduce(
 	expr->Parameters = yymsp[0].minor.yy138;
 	yylhsminor.yy445 = expr;
 }
-#line 3505 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3505 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-1].minor.yy445 = yylhsminor.yy445;
         break;
       case 122: /* state_call_params ::= */
-#line 767 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 767 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy138 = NULL; }
-#line 3511 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3511 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 123: /* state_call_params ::= LPAREN func_expr_list RPAREN */
 {  yy_destructor(yypParser,45,&yymsp[-2].minor);
-#line 768 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 768 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-2].minor.yy138 = yymsp[-1].minor.yy138; /*yymsp[-2].minor.yy138-overwrites-yymsp[-1].minor.yy138*/ }
-#line 3517 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3517 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,62,&yymsp[0].minor);
 }
         break;
       case 124: /* default_def ::= DEFAULT LBRACE RBRACE */
 {  yy_destructor(yypParser,63,&yymsp[-2].minor);
-#line 776 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 776 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Default,stmt,yymsp[-1].minor.yy0);
 	stmt->Content = NULL;
 	yymsp[-2].minor.yy431 = stmt;
 }
-#line 3529 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3529 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,66,&yymsp[0].minor);
 }
         break;
       case 125: /* default_def ::= DEFAULT LBRACE default_statement_list RBRACE */
 {  yy_destructor(yypParser,63,&yymsp[-3].minor);
-#line 782 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 782 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Default,stmt,yymsp[-2].minor.yy0);
 	stmt->Content = yymsp[-1].minor.yy156;
 	yymsp[-3].minor.yy431 = stmt;
 }
-#line 3541 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3541 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,66,&yymsp[0].minor);
 }
         break;
       case 126: /* default_def ::= DEFAULT LBRACE error RBRACE */
 {  yy_destructor(yypParser,63,&yymsp[-3].minor);
-#line 788 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 788 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Default,stmt,yymsp[-2].minor.yy0);
 	stmt->Content = NULL;
 	yymsp[-3].minor.yy431 = stmt;
 }
-#line 3553 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3553 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,66,&yymsp[0].minor);
 }
         break;
       case 127: /* default_statement_list ::= default_statement */
       case 311: /*statement_list ::= statement */ yytestcase(yyruleno==311);
-#line 795 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 795 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	yymsp[0].minor.yy156 = yymsp[0].minor.yy156; /*X-overwrites-A*/
 }
-#line 3563 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3563 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 128: /* default_statement_list ::= default_statement_list default_statement */
       case 312: /*statement_list ::= statement_list statement */ yytestcase(yyruleno==312);
-#line 799 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 799 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	SAFE_APPEND(yymsp[-1].minor.yy156,yymsp[0].minor.yy156);
 }
-#line 3571 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3571 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 129: /* default_statement ::= SEMICOLON */
       case 293: /*statement ::= SEMICOLON */ yytestcase(yyruleno==293);
 {  yy_destructor(yypParser,49,&yymsp[0].minor);
-#line 804 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 804 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy156 = NULL; }
-#line 3578 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3578 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 130: /* default_statement ::= error SEMICOLON */
       case 300: /*statement ::= error SEMICOLON */ yytestcase(yyruleno==300);
-#line 805 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 805 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy156 = NULL; }
-#line 3585 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3585 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
         break;
       case 131: /* default_statement ::= property_statement */
-#line 807 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 807 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy156 = yymsp[0].minor.yy315; /*X-overwrites-A*/ }
-#line 3591 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3591 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 132: /* default_statement ::= flag_statement */
-#line 808 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 808 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy156 = yymsp[0].minor.yy52; /*X-overwrites-A*/ }
-#line 3596 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3596 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 133: /* flag_statement ::= ADD dottable_id */
 {  yy_destructor(yypParser,34,&yymsp[-1].minor);
-#line 813 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 813 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(FlagStmt, type, yymsp[0].minor.yy165);
 	type->set = true;
 	type->name = yymsp[0].minor.yy165;
 	yymsp[-1].minor.yy52 = type;
 }
-#line 3607 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3607 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 134: /* flag_statement ::= SUB dottable_id */
 {  yy_destructor(yypParser,33,&yymsp[-1].minor);
-#line 820 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 820 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(FlagStmt, type, yymsp[0].minor.yy165);
 	type->set = false;
 	type->name = yymsp[0].minor.yy165;
 	yymsp[-1].minor.yy52 = type;
 }
-#line 3619 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3619 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 135: /* property_statement ::= dottable_id expr_list SEMICOLON */
-#line 830 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 830 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(PropertyStmt,stmt,yymsp[-2].minor.yy165);
 	stmt->Prop = yymsp[-2].minor.yy165;
 	stmt->Values = yymsp[-1].minor.yy318;
 	yylhsminor.yy315 = stmt;
 }
-#line 3630 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3630 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
   yymsp[-2].minor.yy315 = yylhsminor.yy315;
         break;
       case 136: /* property_statement ::= dottable_id SEMICOLON */
-#line 838 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 838 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(PropertyStmt,stmt,yymsp[-1].minor.yy165);
 	stmt->Prop = yymsp[-1].minor.yy165;
 	stmt->Values = nullptr;
 	yylhsminor.yy315 = stmt;
 }
-#line 3642 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3642 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
   yymsp[-1].minor.yy315 = yylhsminor.yy315;
         break;
       case 137: /* int_type ::= SBYTE */
-#line 850 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 850 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_SInt8; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3649 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3649 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 138: /* int_type ::= BYTE */
-#line 851 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 851 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_UInt8; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3655 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3655 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 139: /* int_type ::= SHORT */
-#line 852 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 852 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_SInt16; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3661 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3661 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 140: /* int_type ::= USHORT */
-#line 853 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 853 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_UInt16; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3667 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3667 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 141: /* int_type ::= INT */
-#line 854 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 854 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_SInt32; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3673 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3673 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 142: /* int_type ::= UINT */
-#line 855 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 855 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_UInt32; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3679 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3679 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 143: /* type_name1 ::= BOOL */
-#line 857 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 857 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Bool; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3685 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3685 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 144: /* type_name1 ::= FLOAT */
-#line 859 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 859 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_FloatAuto; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3691 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3691 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 145: /* type_name1 ::= DOUBLE */
-#line 860 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 860 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Float64; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3697 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3697 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 146: /* type_name1 ::= VECTOR2 */
-#line 862 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 862 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Vector2; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3703 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3703 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 147: /* type_name1 ::= VECTOR3 */
-#line 863 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 863 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Vector3; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3709 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3709 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 148: /* type_name1 ::= VECTOR4 */
-#line 864 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 864 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Vector4; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3715 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3715 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 149: /* type_name1 ::= NAME */
-#line 865 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 865 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Name; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3721 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3721 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 150: /* type_name1 ::= SOUND */
-#line 866 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 866 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Sound; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3727 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3727 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 151: /* type_name1 ::= STATE */
-#line 867 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 867 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_State; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3733 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3733 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 152: /* type_name1 ::= COLOR */
-#line 868 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 868 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Color; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3739 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3739 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 153: /* type_name1 ::= LET */
-#line 869 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 869 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Let; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 3745 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3745 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 154: /* type_name ::= type_name1 */
-#line 872 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 872 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(BasicType, type, yymsp[0].minor.yy0);
 	type->Type = (EZCCBuiltinType)yymsp[0].minor.yy0.Int;
@@ -3753,11 +3753,11 @@ static void yy_reduce(
 	type->isconst = false;
 	yylhsminor.yy310 = type;
 }
-#line 3757 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3757 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy310 = yylhsminor.yy310;
         break;
       case 155: /* type_name ::= IDENTIFIER */
-#line 880 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 880 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(BasicType, type, yymsp[0].minor.yy0);
 	NEW_AST_NODE(Identifier, id, yymsp[0].minor.yy0);
@@ -3767,12 +3767,12 @@ static void yy_reduce(
 	id->Id = yymsp[0].minor.yy0.Name();
 	yylhsminor.yy310 = type;
 }
-#line 3771 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3771 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy310 = yylhsminor.yy310;
         break;
       case 156: /* type_name ::= ATSIGN IDENTIFIER */
 {  yy_destructor(yypParser,106,&yymsp[-1].minor);
-#line 891 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 891 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(BasicType, type, yymsp[0].minor.yy0);
 	NEW_AST_NODE(Identifier, id, yymsp[0].minor.yy0);
@@ -3782,12 +3782,12 @@ static void yy_reduce(
 	id->Id = yymsp[0].minor.yy0.Name();
 	yymsp[-1].minor.yy310 = type;
 }
-#line 3786 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3786 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 157: /* type_name ::= READONLY LT IDENTIFIER GT */
 {  yy_destructor(yypParser,107,&yymsp[-3].minor);
-#line 902 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 902 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(BasicType, type, yymsp[-1].minor.yy0);
 	NEW_AST_NODE(Identifier, id, yymsp[-1].minor.yy0);
@@ -3797,14 +3797,14 @@ static void yy_reduce(
 	id->Id = yymsp[-1].minor.yy0.Name();
 	yymsp[-3].minor.yy310 = type;
 }
-#line 3801 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3801 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,20,&yymsp[-2].minor);
   yy_destructor(yypParser,21,&yymsp[0].minor);
 }
         break;
       case 158: /* type_name ::= READONLY LT ATSIGN IDENTIFIER GT */
 {  yy_destructor(yypParser,107,&yymsp[-4].minor);
-#line 913 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 913 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(BasicType, type, yymsp[-1].minor.yy0);
 	NEW_AST_NODE(Identifier, id, yymsp[-1].minor.yy0);
@@ -3814,7 +3814,7 @@ static void yy_reduce(
 	id->Id = yymsp[-1].minor.yy0.Name();
 	yymsp[-4].minor.yy310 = type;
 }
-#line 3818 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3818 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,20,&yymsp[-3].minor);
   yy_destructor(yypParser,106,&yymsp[-2].minor);
   yy_destructor(yypParser,21,&yymsp[0].minor);
@@ -3822,7 +3822,7 @@ static void yy_reduce(
         break;
       case 159: /* type_name ::= DOT dottable_id */
 {  yy_destructor(yypParser,44,&yymsp[-1].minor);
-#line 924 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 924 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(BasicType, type, yymsp[0].minor.yy165);
 	type->Type = ZCC_UserType;
@@ -3830,97 +3830,97 @@ static void yy_reduce(
 	type->isconst = false;
 	yymsp[-1].minor.yy310 = type;
 }
-#line 3834 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3834 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 160: /* aggregate_type ::= MAP LT type_or_array COMMA type_or_array GT */
-#line 948 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 948 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(MapType,map,yymsp[-5].minor.yy0);
 	map->KeyType = yymsp[-3].minor.yy104;
 	map->ValueType = yymsp[-1].minor.yy104;
 	yylhsminor.yy104 = map;
 }
-#line 3845 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3845 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,20,&yymsp[-4].minor);
   yy_destructor(yypParser,50,&yymsp[-2].minor);
   yy_destructor(yypParser,21,&yymsp[0].minor);
   yymsp[-5].minor.yy104 = yylhsminor.yy104;
         break;
       case 161: /* aggregate_type ::= MAPITERATOR LT type_or_array COMMA type_or_array GT */
-#line 956 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 956 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(MapIteratorType,map_it,yymsp[-5].minor.yy0);
 	map_it->KeyType = yymsp[-3].minor.yy104;
 	map_it->ValueType = yymsp[-1].minor.yy104;
 	yylhsminor.yy104 = map_it;
 }
-#line 3859 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3859 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,20,&yymsp[-4].minor);
   yy_destructor(yypParser,50,&yymsp[-2].minor);
   yy_destructor(yypParser,21,&yymsp[0].minor);
   yymsp[-5].minor.yy104 = yylhsminor.yy104;
         break;
       case 162: /* aggregate_type ::= ARRAY LT type_or_array GT */
-#line 964 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 964 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(DynArrayType,arr,yymsp[-3].minor.yy0);
 	arr->ElementType = yymsp[-1].minor.yy104;
 	yylhsminor.yy104 = arr;
 }
-#line 3872 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3872 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,20,&yymsp[-2].minor);
   yy_destructor(yypParser,21,&yymsp[0].minor);
   yymsp[-3].minor.yy104 = yylhsminor.yy104;
         break;
       case 163: /* aggregate_type ::= CLASS class_restrictor */
-#line 971 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 971 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ClassType,cls,yymsp[-1].minor.yy0);
 	cls->Restriction = yymsp[0].minor.yy165;
 	yylhsminor.yy104 = cls;
 }
-#line 3884 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3884 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-1].minor.yy104 = yylhsminor.yy104;
         break;
       case 165: /* class_restrictor ::= LT dottable_id GT */
 {  yy_destructor(yypParser,20,&yymsp[-2].minor);
-#line 977 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 977 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-2].minor.yy165 = yymsp[-1].minor.yy165; /*yymsp[-2].minor.yy165-overwrites-yymsp[-1].minor.yy165*/ }
-#line 3891 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3891 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,21,&yymsp[0].minor);
 }
         break;
       case 166: /* type ::= type_name */
-#line 979 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 979 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy104 = yymsp[0].minor.yy310; /*X-overwrites-A*/ yymsp[0].minor.yy104->ArraySize = NULL; }
-#line 3898 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3898 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 167: /* type ::= aggregate_type */
-#line 980 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 980 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy104 = yymsp[0].minor.yy104; /*X-overwrites-A*/ yymsp[0].minor.yy104->ArraySize = NULL; }
-#line 3903 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3903 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 168: /* type_or_array ::= type array_size */
-#line 983 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 983 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy104 = yymsp[-1].minor.yy104; /*X-overwrites-A*/ yymsp[-1].minor.yy104->ArraySize = yymsp[0].minor.yy318; }
-#line 3908 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3908 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 169: /* type_list ::= type_list COMMA type_or_array */
-#line 986 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 986 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-2].minor.yy104 = yymsp[-2].minor.yy104; /*X-overwrites-A*/ AppendTreeNodeSibling(yymsp[-2].minor.yy104, yymsp[0].minor.yy104); }
-#line 3913 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3913 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-1].minor);
         break;
       case 170: /* type_list_or_void ::= VOID */
 {  yy_destructor(yypParser,112,&yymsp[0].minor);
-#line 988 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 988 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy104 = NULL; }
-#line 3920 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3920 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 171: /* array_size_expr ::= LBRACKET opt_expr RBRACKET */
-#line 992 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 992 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	if (yymsp[-1].minor.yy318 == NULL)
 	{
@@ -3934,20 +3934,20 @@ static void yy_reduce(
 		yylhsminor.yy318 = yymsp[-1].minor.yy318;
 	}
 }
-#line 3938 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3938 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,117,&yymsp[0].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 172: /* array_size ::= array_size array_size_expr */
-#line 1007 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1007 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	AppendTreeNodeSibling(yymsp[-1].minor.yy318, yymsp[0].minor.yy318);
 	yymsp[-1].minor.yy318 = yymsp[-1].minor.yy318; /*X-overwrites-A*/
 }
-#line 3948 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 3948 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 173: /* declarator ::= decl_flags type_list_or_void variables_or_function */
-#line 1016 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1016 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	if (yymsp[0].minor.yy432.FuncName == NAME_None && yymsp[0].minor.yy432.VarNames == NULL)
 	{ // An error. yymsp[-2].minor.yy295 message was already printed.
@@ -4000,11 +4000,11 @@ static void yy_reduce(
 		yylhsminor.yy23 = NULL;
 	}
 }
-#line 4004 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4004 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-2].minor.yy23 = yylhsminor.yy23;
         break;
       case 174: /* variables_or_function ::= IDENTIFIER LPAREN func_params RPAREN func_const opt_func_body */
-#line 1071 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1071 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	VarOrFun fun;
 
@@ -4016,13 +4016,13 @@ static void yy_reduce(
 	fun.SourceLoc = yymsp[-5].minor.yy0.SourceLoc;
 	yylhsminor.yy432 = fun;
 }
-#line 4020 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4020 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,45,&yymsp[-4].minor);
   yy_destructor(yypParser,62,&yymsp[-2].minor);
   yymsp[-5].minor.yy432 = yylhsminor.yy432;
         break;
       case 175: /* variables_or_function ::= variable_list SEMICOLON */
-#line 1083 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1083 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	VarOrFun var;
 
@@ -4034,12 +4034,12 @@ static void yy_reduce(
 	var.SourceLoc = yymsp[-1].minor.yy180->SourceLoc;
 	yylhsminor.yy432 = var;
 }
-#line 4038 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4038 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
   yymsp[-1].minor.yy432 = yylhsminor.yy432;
         break;
       case 176: /* variables_or_function ::= error SEMICOLON */
-#line 1095 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1095 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	VarOrFun bad;
 	bad.VarNames = NULL;
@@ -4050,46 +4050,46 @@ static void yy_reduce(
 	bad.SourceLoc = yymsp[0].minor.yy0.SourceLoc;
 	yymsp[-1].minor.yy432 = bad;
 }
-#line 4054 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4054 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 177: /* variable_name ::= IDENTIFIER */
-#line 1112 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1112 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(VarName,var,yymsp[0].minor.yy0);
 	var->Name = ENamedName(yymsp[0].minor.yy0.Int);
 	var->ArraySize = NULL;
 	yylhsminor.yy180 = var;
 }
-#line 4064 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4064 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy180 = yylhsminor.yy180;
         break;
       case 178: /* variable_name ::= IDENTIFIER array_size */
-#line 1119 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1119 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(VarName,var,yymsp[-1].minor.yy0);
 	var->Name = ENamedName(yymsp[-1].minor.yy0.Int);
 	var->ArraySize = yymsp[0].minor.yy318;
 	yylhsminor.yy180 = var;
 }
-#line 4075 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4075 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-1].minor.yy180 = yylhsminor.yy180;
         break;
       case 179: /* variable_list ::= variable_list COMMA variable_name */
-#line 1128 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1128 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	AppendTreeNodeSibling(yymsp[-2].minor.yy180, yymsp[0].minor.yy180);
 	yymsp[-2].minor.yy180 = yymsp[-2].minor.yy180; /*X-overwrites-A*/
 }
-#line 4084 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4084 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-1].minor);
         break;
       case 180: /* decl_flags ::= */
-#line 1134 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1134 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy295 = NULL; }
-#line 4090 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4090 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 181: /* decl_flags ::= decl_flags decl_flag */
-#line 1136 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1136 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	if (yymsp[-1].minor.yy295 == nullptr)
 	{
@@ -4106,11 +4106,11 @@ static void yy_reduce(
 		yylhsminor.yy295->Flags |= yymsp[0].minor.yy0.Int;
 	}
 }
-#line 4110 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4110 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-1].minor.yy295 = yylhsminor.yy295;
         break;
       case 182: /* decl_flags ::= decl_flags ACTION states_opts */
-#line 1155 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1155 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	if (yymsp[-2].minor.yy295 == nullptr)
 	{
@@ -4128,23 +4128,23 @@ static void yy_reduce(
 	}
 	yylhsminor.yy295->Id = yymsp[0].minor.yy165;
 }
-#line 4132 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4132 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-2].minor.yy295 = yylhsminor.yy295;
         break;
       case 183: /* opt_deprecation_message ::= */
-#line 1173 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1173 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy0.String = nullptr; yymsp[1].minor.yy0.SourceLoc = stat->sc->GetMessageLine(); }
-#line 4138 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4138 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 184: /* opt_deprecation_message ::= COMMA STRCONST */
 {  yy_destructor(yypParser,50,&yymsp[-1].minor);
-#line 1174 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1174 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy0 = yymsp[0].minor.yy0; }
-#line 4144 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4144 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 185: /* decl_flags ::= decl_flags DEPRECATED LPAREN STRCONST opt_deprecation_message RPAREN */
-#line 1177 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1177 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	if (yymsp[-5].minor.yy295 == nullptr)
 	{
@@ -4162,13 +4162,13 @@ static void yy_reduce(
 	yylhsminor.yy295->Version = yymsp[-2].minor.yy0.String->GetChars();
 	yylhsminor.yy295->DeprecationMessage = yymsp[-1].minor.yy0.String;
 }
-#line 4166 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4166 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,45,&yymsp[-3].minor);
   yy_destructor(yypParser,62,&yymsp[0].minor);
   yymsp[-5].minor.yy295 = yylhsminor.yy295;
         break;
       case 186: /* decl_flags ::= decl_flags VERSION LPAREN STRCONST RPAREN */
-#line 1196 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1196 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { 
 	if (yymsp[-4].minor.yy295 == nullptr)
 	{
@@ -4186,151 +4186,151 @@ static void yy_reduce(
 	}
 	yylhsminor.yy295->Version = yymsp[-1].minor.yy0.String->GetChars();
 }
-#line 4190 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4190 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,45,&yymsp[-2].minor);
   yy_destructor(yypParser,62,&yymsp[0].minor);
   yymsp[-4].minor.yy295 = yylhsminor.yy295;
         break;
       case 187: /* decl_flag ::= NATIVE */
-#line 1214 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1214 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Native; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4198 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4198 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 188: /* decl_flag ::= STATIC */
-#line 1215 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1215 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Static; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4204 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4204 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 189: /* decl_flag ::= PRIVATE */
-#line 1216 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1216 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Private; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4210 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4210 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 190: /* decl_flag ::= PROTECTED */
-#line 1217 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1217 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Protected; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4216 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4216 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 191: /* decl_flag ::= LATENT */
-#line 1218 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1218 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Latent; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4222 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4222 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 192: /* decl_flag ::= FINAL */
-#line 1219 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1219 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Final; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4228 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4228 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 193: /* decl_flag ::= META */
-#line 1220 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1220 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Meta; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4234 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4234 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 194: /* decl_flag ::= TRANSIENT */
-#line 1221 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1221 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Transient; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4240 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4240 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 195: /* decl_flag ::= READONLY */
-#line 1222 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1222 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_ReadOnly; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4246 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4246 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 196: /* decl_flag ::= INTERNAL */
-#line 1223 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1223 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Internal; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4252 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4252 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 197: /* decl_flag ::= VIRTUAL */
-#line 1224 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1224 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Virtual; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4258 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4258 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 198: /* decl_flag ::= OVERRIDE */
-#line 1225 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1225 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Override; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4264 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4264 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 199: /* decl_flag ::= ABSTRACT */
-#line 1226 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1226 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Abstract; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4270 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4270 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 200: /* decl_flag ::= VARARG */
-#line 1227 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1227 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_VarArg; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 4276 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4276 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 201: /* decl_flag ::= UI */
-#line 1228 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1228 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_UIFlag; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 4282 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4282 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 202: /* decl_flag ::= PLAY */
-#line 1229 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1229 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_Play; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 4288 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4288 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 203: /* decl_flag ::= CLEARSCOPE */
-#line 1230 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1230 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_ClearScope; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 4294 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4294 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 204: /* decl_flag ::= VIRTUALSCOPE */
-#line 1231 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1231 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_VirtualScope; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 4300 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4300 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 205: /* func_const ::= */
-#line 1233 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1233 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy0.Int = 0; yymsp[1].minor.yy0.SourceLoc = stat->sc->GetMessageLine(); }
-#line 4306 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4306 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 206: /* func_const ::= CONST */
-#line 1234 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1234 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = ZCC_FuncConst; yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc; }
-#line 4311 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4311 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 207: /* opt_func_body ::= SEMICOLON */
 {  yy_destructor(yypParser,49,&yymsp[0].minor);
-#line 1236 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1236 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy55 = NULL; }
-#line 4318 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4318 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 208: /* func_params ::= */
-#line 1243 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1243 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy491 = NULL; }
-#line 4324 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4324 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 209: /* func_params ::= VOID */
 {  yy_destructor(yypParser,112,&yymsp[0].minor);
-#line 1244 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1244 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy491 = NULL; }
-#line 4330 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4330 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 210: /* func_params ::= func_param_list COMMA ELLIPSIS */
-#line 1248 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1248 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(FuncParamDecl,parm,stat->sc->GetMessageLine());
 	parm->Type = nullptr;
@@ -4340,18 +4340,18 @@ static void yy_reduce(
 	yymsp[-2].minor.yy491 = yymsp[-2].minor.yy491; /*X-overwrites-A*/ 
 	AppendTreeNodeSibling(yymsp[-2].minor.yy491, parm);
 }
-#line 4344 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4344 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-1].minor);
   yy_destructor(yypParser,132,&yymsp[0].minor);
         break;
       case 211: /* func_param_list ::= func_param_list COMMA func_param */
-#line 1259 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1259 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-2].minor.yy491 = yymsp[-2].minor.yy491; /*X-overwrites-A*/ AppendTreeNodeSibling(yymsp[-2].minor.yy491, yymsp[0].minor.yy491); }
-#line 4351 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4351 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-1].minor);
         break;
       case 212: /* func_param ::= func_param_flags type IDENTIFIER */
-#line 1262 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1262 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(FuncParamDecl,parm,yymsp[-2].minor.yy0.SourceLoc ? yymsp[-2].minor.yy0.SourceLoc : yymsp[-1].minor.yy104->SourceLoc);
 	parm->Type = yymsp[-1].minor.yy104;
@@ -4360,11 +4360,11 @@ static void yy_reduce(
 	parm->Default = nullptr;
 	yylhsminor.yy491 = parm;
 }
-#line 4364 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4364 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-2].minor.yy491 = yylhsminor.yy491;
         break;
       case 213: /* func_param ::= func_param_flags type IDENTIFIER EQ expr */
-#line 1272 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1272 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(FuncParamDecl,parm,yymsp[-4].minor.yy0.SourceLoc ? yymsp[-4].minor.yy0.SourceLoc : yymsp[-3].minor.yy104->SourceLoc);
 	parm->Type = yymsp[-3].minor.yy104;
@@ -4373,35 +4373,35 @@ static void yy_reduce(
 	parm->Default = yymsp[0].minor.yy318;
 	yylhsminor.yy491 = parm;
 }
-#line 4377 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4377 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,1,&yymsp[-1].minor);
   yymsp[-4].minor.yy491 = yylhsminor.yy491;
         break;
       case 214: /* func_param_flags ::= */
-#line 1281 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1281 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy0.Int = 0; yymsp[1].minor.yy0.SourceLoc = 0; }
-#line 4384 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4384 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 215: /* func_param_flags ::= func_param_flags IN */
-#line 1282 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1282 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = yymsp[-1].minor.yy0.Int | ZCC_In; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4389 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4389 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-1].minor.yy0 = yylhsminor.yy0;
         break;
       case 216: /* func_param_flags ::= func_param_flags OUT */
-#line 1283 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1283 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = yymsp[-1].minor.yy0.Int | ZCC_Out; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4395 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4395 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-1].minor.yy0 = yylhsminor.yy0;
         break;
       case 217: /* func_param_flags ::= func_param_flags OPTIONAL */
-#line 1284 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1284 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yylhsminor.yy0.Int = yymsp[-1].minor.yy0.Int | ZCC_Optional; yylhsminor.yy0.SourceLoc =  yymsp[0].minor.yy0.SourceLoc; }
-#line 4401 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4401 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-1].minor.yy0 = yylhsminor.yy0;
         break;
       case 218: /* primary ::= IDENTIFIER */
-#line 1300 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1300 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprID, expr, yymsp[0].minor.yy0);
 	expr->Operation = PEX_ID;
@@ -4409,28 +4409,28 @@ static void yy_reduce(
 	expr->Type = NULL;
 	yylhsminor.yy318 = expr;
 }
-#line 4413 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4413 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy318 = yylhsminor.yy318;
         break;
       case 219: /* primary ::= SUPER */
-#line 1308 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1308 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(Expression, expr, yymsp[0].minor.yy0);
 	expr->Operation = PEX_Super;
 	expr->Type = NULL;
 	yylhsminor.yy318 = expr;
 }
-#line 4424 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4424 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy318 = yylhsminor.yy318;
         break;
       case 220: /* primary ::= constant */
-#line 1314 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1314 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy318 = yymsp[0].minor.yy471; /*X-overwrites-A*/ }
-#line 4430 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4430 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 221: /* primary ::= LPAREN expr COMMA expr COMMA expr COMMA expr RPAREN */
 {  yy_destructor(yypParser,45,&yymsp[-8].minor);
-#line 1316 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1316 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(VectorValue, expr, yymsp[-7].minor.yy318);
 	expr->Operation = PEX_Vector;
@@ -4441,7 +4441,7 @@ static void yy_reduce(
 	expr->W = yymsp[-1].minor.yy318;
 	yymsp[-8].minor.yy318 = expr;
 }
-#line 4445 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4445 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-6].minor);
   yy_destructor(yypParser,50,&yymsp[-4].minor);
   yy_destructor(yypParser,50,&yymsp[-2].minor);
@@ -4450,7 +4450,7 @@ static void yy_reduce(
         break;
       case 222: /* primary ::= LPAREN expr COMMA expr COMMA expr RPAREN */
 {  yy_destructor(yypParser,45,&yymsp[-6].minor);
-#line 1327 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1327 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(VectorValue, expr, yymsp[-5].minor.yy318);
 	expr->Operation = PEX_Vector;
@@ -4461,7 +4461,7 @@ static void yy_reduce(
 	expr->W = nullptr;
 	yymsp[-6].minor.yy318 = expr;
 }
-#line 4465 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4465 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-4].minor);
   yy_destructor(yypParser,50,&yymsp[-2].minor);
   yy_destructor(yypParser,62,&yymsp[0].minor);
@@ -4469,7 +4469,7 @@ static void yy_reduce(
         break;
       case 223: /* primary ::= LPAREN expr COMMA expr RPAREN */
 {  yy_destructor(yypParser,45,&yymsp[-4].minor);
-#line 1338 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1338 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(VectorValue, expr, yymsp[-3].minor.yy318);
 	expr->Operation = PEX_Vector;
@@ -4480,23 +4480,23 @@ static void yy_reduce(
 	expr->W = nullptr;
 	yymsp[-4].minor.yy318 = expr;
 }
-#line 4484 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4484 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-2].minor);
   yy_destructor(yypParser,62,&yymsp[0].minor);
 }
         break;
       case 224: /* primary ::= LPAREN expr RPAREN */
 {  yy_destructor(yypParser,45,&yymsp[-2].minor);
-#line 1349 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1349 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	yymsp[-2].minor.yy318 = yymsp[-1].minor.yy318; /*yymsp[-2].minor.yy318-overwrites-yymsp[-1].minor.yy318*/
 }
-#line 4495 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4495 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,62,&yymsp[0].minor);
 }
         break;
       case 225: /* primary ::= primary LPAREN func_expr_list RPAREN */
-#line 1354 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1354 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprFuncCall, expr, yymsp[-3].minor.yy318);
 	expr->Operation = PEX_FuncCall;
@@ -4505,14 +4505,14 @@ static void yy_reduce(
 	expr->Parameters = yymsp[-1].minor.yy138;
 	yylhsminor.yy318 = expr;
 }
-#line 4509 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4509 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,45,&yymsp[-2].minor);
   yy_destructor(yypParser,62,&yymsp[0].minor);
   yymsp[-3].minor.yy318 = yylhsminor.yy318;
         break;
       case 226: /* primary ::= LPAREN CLASS LT IDENTIFIER GT RPAREN LPAREN func_expr_list RPAREN */
 {  yy_destructor(yypParser,45,&yymsp[-8].minor);
-#line 1363 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1363 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ClassCast, expr, yymsp[-5].minor.yy0);
 	expr->Operation = PEX_ClassCast;
@@ -4520,7 +4520,7 @@ static void yy_reduce(
 	expr->Parameters = yymsp[-1].minor.yy138;
 	yymsp[-8].minor.yy318 = expr;
 }
-#line 4524 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4524 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,53,&yymsp[-7].minor);
   yy_destructor(yypParser,20,&yymsp[-6].minor);
   yy_destructor(yypParser,21,&yymsp[-4].minor);
@@ -4530,7 +4530,7 @@ static void yy_reduce(
 }
         break;
       case 227: /* primary ::= primary LBRACKET expr RBRACKET */
-#line 1371 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1371 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprBinary, expr, yymsp[-1].minor.yy318);
 	expr->Operation = PEX_ArrayAccess;
@@ -4539,13 +4539,13 @@ static void yy_reduce(
 	expr->Right = yymsp[-1].minor.yy318;
 	yylhsminor.yy318 = expr;
 }
-#line 4543 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4543 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,46,&yymsp[-2].minor);
   yy_destructor(yypParser,117,&yymsp[0].minor);
   yymsp[-3].minor.yy318 = yylhsminor.yy318;
         break;
       case 228: /* primary ::= primary DOT IDENTIFIER */
-#line 1380 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1380 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprMemberAccess, expr, yymsp[0].minor.yy0);
 	expr->Operation = PEX_MemberAccess;
@@ -4554,33 +4554,33 @@ static void yy_reduce(
 	expr->Right = ENamedName(yymsp[0].minor.yy0.Int);
 	yylhsminor.yy318 = expr;
 }
-#line 4558 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4558 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,44,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 229: /* primary ::= primary ADDADD */
-#line 1389 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1389 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	UNARY_EXPR(yymsp[-1].minor.yy318,PEX_PostInc);
 	yylhsminor.yy318 = expr1;
 }
-#line 4568 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4568 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,42,&yymsp[0].minor);
   yymsp[-1].minor.yy318 = yylhsminor.yy318;
         break;
       case 230: /* primary ::= primary SUBSUB */
-#line 1394 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1394 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	UNARY_EXPR(yymsp[-1].minor.yy318,PEX_PostDec);
 	yylhsminor.yy318 = expr1;
 }
-#line 4578 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4578 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,43,&yymsp[0].minor);
   yymsp[-1].minor.yy318 = yylhsminor.yy318;
         break;
       case 231: /* unary_expr ::= SUB unary_expr */
 {  yy_destructor(yypParser,33,&yymsp[-1].minor);
-#line 1410 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1410 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	ZCC_ExprConstant *con = static_cast<ZCC_ExprConstant *>(yymsp[0].minor.yy318);
 	if (yymsp[0].minor.yy318->Operation == PEX_ConstValue && (con->Type->isInt() || con->Type->isFloat()))
@@ -4601,12 +4601,12 @@ static void yy_reduce(
 		yymsp[-1].minor.yy318 = expr1;
 	}
 }
-#line 4605 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4605 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 232: /* unary_expr ::= ADD unary_expr */
 {  yy_destructor(yypParser,34,&yymsp[-1].minor);
-#line 1431 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1431 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	// Even though this is really a no-op, we still need to make a node for
 	// it so we can type check that it is being applied to something numeric.
@@ -4622,461 +4622,461 @@ static void yy_reduce(
 		yymsp[-1].minor.yy318 = yymsp[0].minor.yy318;
 	}
 }
-#line 4626 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4626 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 233: /* unary_expr ::= SUBSUB unary_expr */
 {  yy_destructor(yypParser,43,&yymsp[-1].minor);
-#line 1447 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1447 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	UNARY_EXPR(yymsp[0].minor.yy318,PEX_PreDec);
 	yymsp[-1].minor.yy318 = expr1;
 }
-#line 4636 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4636 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 234: /* unary_expr ::= ADDADD unary_expr */
 {  yy_destructor(yypParser,42,&yymsp[-1].minor);
-#line 1452 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1452 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	UNARY_EXPR(yymsp[0].minor.yy318,PEX_PreInc);
 	yymsp[-1].minor.yy318 = expr1;
 }
-#line 4646 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4646 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 235: /* unary_expr ::= TILDE unary_expr */
 {  yy_destructor(yypParser,136,&yymsp[-1].minor);
-#line 1457 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1457 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	UNARY_EXPR(yymsp[0].minor.yy318,PEX_BitNot);
 	yymsp[-1].minor.yy318 = expr1;
 }
-#line 4656 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4656 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 236: /* unary_expr ::= BANG unary_expr */
 {  yy_destructor(yypParser,137,&yymsp[-1].minor);
-#line 1462 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1462 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	UNARY_EXPR(yymsp[0].minor.yy318,PEX_BoolNot);
 	yymsp[-1].minor.yy318 = expr1;
 }
-#line 4666 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4666 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 237: /* unary_expr ::= SIZEOF unary_expr */
 {  yy_destructor(yypParser,138,&yymsp[-1].minor);
-#line 1467 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1467 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	UNARY_EXPR(yymsp[0].minor.yy318,PEX_SizeOf);
 	yymsp[-1].minor.yy318 = expr1;
 }
-#line 4676 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4676 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 238: /* unary_expr ::= ALIGNOF unary_expr */
 {  yy_destructor(yypParser,139,&yymsp[-1].minor);
-#line 1472 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1472 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	UNARY_EXPR(yymsp[0].minor.yy318,PEX_AlignOf);
 	yymsp[-1].minor.yy318 = expr1;
 }
-#line 4686 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4686 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 239: /* expr ::= expr ADD expr */
-#line 1485 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1485 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_Add);
 	yylhsminor.yy318 = expr2;
 }
-#line 4695 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4695 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,34,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 240: /* expr ::= expr SUB expr */
-#line 1490 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1490 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_Sub);
 	yylhsminor.yy318 = expr2;
 }
-#line 4705 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4705 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,33,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 241: /* expr ::= expr MUL expr */
-#line 1495 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1495 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_Mul);
 	yylhsminor.yy318 = expr2;
 }
-#line 4715 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4715 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,35,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 242: /* expr ::= expr DIV expr */
-#line 1500 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1500 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_Div);
 	yylhsminor.yy318 = expr2;
 }
-#line 4725 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4725 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,36,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 243: /* expr ::= expr MOD expr */
-#line 1505 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1505 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_Mod);
 	yylhsminor.yy318 = expr2;
 }
-#line 4735 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4735 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,37,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 244: /* expr ::= expr POW expr */
-#line 1510 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1510 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_Pow);
 	yylhsminor.yy318 = expr2;
 }
-#line 4745 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4745 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,40,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 245: /* expr ::= expr CROSSPROD expr */
-#line 1515 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1515 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_CrossProduct);
 	yylhsminor.yy318 = expr2;
 }
-#line 4755 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4755 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,38,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 246: /* expr ::= expr DOTPROD expr */
-#line 1520 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1520 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_DotProduct);
 	yylhsminor.yy318 = expr2;
 }
-#line 4765 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4765 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,39,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 247: /* expr ::= expr LSH expr */
-#line 1525 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1525 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_LeftShift);
 	yylhsminor.yy318 = expr2;
 }
-#line 4775 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4775 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,30,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 248: /* expr ::= expr RSH expr */
-#line 1530 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1530 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_RightShift);
 	yylhsminor.yy318 = expr2;
 }
-#line 4785 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4785 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,31,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 249: /* expr ::= expr URSH expr */
-#line 1535 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1535 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_URightShift);
 	yylhsminor.yy318 = expr2;
 }
-#line 4795 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4795 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,32,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 250: /* expr ::= expr DOTDOT expr */
-#line 1540 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1540 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_Concat);
 	yylhsminor.yy318 = expr2;
 }
-#line 4805 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4805 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,26,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 251: /* expr ::= expr LT expr */
-#line 1546 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1546 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_LT);
 	yylhsminor.yy318 = expr2;
 }
-#line 4815 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4815 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,20,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 252: /* expr ::= expr GT expr */
-#line 1551 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1551 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_GT);
 	yylhsminor.yy318 = expr2;
 }
-#line 4825 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4825 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,21,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 253: /* expr ::= expr LTEQ expr */
-#line 1556 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1556 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_LTEQ);
 	yylhsminor.yy318 = expr2;
 }
-#line 4835 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4835 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,22,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 254: /* expr ::= expr GTEQ expr */
-#line 1561 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1561 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_GTEQ);
 	yylhsminor.yy318 = expr2;
 }
-#line 4845 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4845 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,23,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 255: /* expr ::= expr LTGTEQ expr */
-#line 1566 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1566 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_LTGTEQ);
 	yylhsminor.yy318 = expr2;
 }
-#line 4855 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4855 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,24,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 256: /* expr ::= expr IS expr */
-#line 1571 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1571 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_Is);
 	yylhsminor.yy318 = expr2;
 }
-#line 4865 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4865 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,25,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 257: /* expr ::= expr EQEQ expr */
-#line 1577 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1577 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_EQEQ);
 	yylhsminor.yy318 = expr2;
 }
-#line 4875 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4875 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,17,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 258: /* expr ::= expr NEQ expr */
-#line 1582 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1582 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_NEQ);
 	yylhsminor.yy318 = expr2;
 }
-#line 4885 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4885 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,18,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 259: /* expr ::= expr APPROXEQ expr */
-#line 1587 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1587 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_APREQ);
 	yylhsminor.yy318 = expr2;
 }
-#line 4895 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4895 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,19,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 260: /* expr ::= expr AND expr */
-#line 1593 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1593 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_BitAnd);
 	yylhsminor.yy318 = expr2;
 }
-#line 4905 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4905 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,29,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 261: /* expr ::= expr XOR expr */
-#line 1598 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1598 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_BitXor);
 	yylhsminor.yy318 = expr2;
 }
-#line 4915 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4915 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,28,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 262: /* expr ::= expr OR expr */
-#line 1603 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1603 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_BitOr);
 	yylhsminor.yy318 = expr2;
 }
-#line 4925 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4925 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,27,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 263: /* expr ::= expr ANDAND expr */
-#line 1608 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1608 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_BoolAnd);
 	yylhsminor.yy318 = expr2;
 }
-#line 4935 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4935 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,16,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 264: /* expr ::= expr OROR expr */
-#line 1613 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1613 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_BoolOr);
 	yylhsminor.yy318 = expr2;
 }
-#line 4945 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4945 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,15,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 265: /* expr ::= expr EQ expr */
-#line 1618 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1618 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_Assign);
 	yylhsminor.yy318 = expr2;
 }
-#line 4955 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4955 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,1,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 266: /* expr ::= expr ADDEQ expr */
-#line 1623 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1623 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_AddAssign);
 	yylhsminor.yy318 = expr2;
 }
-#line 4965 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4965 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,5,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 267: /* expr ::= expr SUBEQ expr */
-#line 1628 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1628 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_SubAssign);
 	yylhsminor.yy318 = expr2;
 }
-#line 4975 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4975 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,6,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 268: /* expr ::= expr MULEQ expr */
-#line 1633 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1633 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_MulAssign);
 	yylhsminor.yy318 = expr2;
 }
-#line 4985 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4985 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,2,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 269: /* expr ::= expr DIVEQ expr */
-#line 1638 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1638 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_DivAssign);
 	yylhsminor.yy318 = expr2;
 }
-#line 4995 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 4995 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,3,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 270: /* expr ::= expr MODEQ expr */
-#line 1643 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1643 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_ModAssign);
 	yylhsminor.yy318 = expr2;
 }
-#line 5005 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5005 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,4,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 271: /* expr ::= expr LSHEQ expr */
-#line 1648 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1648 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_LshAssign);
 	yylhsminor.yy318 = expr2;
 }
-#line 5015 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5015 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,7,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 272: /* expr ::= expr RSHEQ expr */
-#line 1653 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1653 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_RshAssign);
 	yylhsminor.yy318 = expr2;
 }
-#line 5025 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5025 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,8,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 273: /* expr ::= expr URSHEQ expr */
-#line 1658 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1658 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_URshAssign);
 	yylhsminor.yy318 = expr2;
 }
-#line 5035 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5035 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,12,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 274: /* expr ::= expr ANDEQ expr */
-#line 1663 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1663 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_AndAssign);
 	yylhsminor.yy318 = expr2;
 }
-#line 5045 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5045 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,9,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 275: /* expr ::= expr OREQ expr */
-#line 1668 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1668 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_OrAssign);
 	yylhsminor.yy318 = expr2;
 }
-#line 5055 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5055 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,10,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 276: /* expr ::= expr XOREQ expr */
-#line 1673 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1673 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_XorAssign);
 	yylhsminor.yy318 = expr2;
 }
-#line 5065 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5065 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,11,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 277: /* expr ::= expr SCOPE expr */
-#line 1680 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1680 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	BINARY_EXPR(yymsp[-2].minor.yy318,yymsp[0].minor.yy318,PEX_Scope);
 	yylhsminor.yy318 = expr2;
 }
-#line 5075 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5075 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,47,&yymsp[-1].minor);
   yymsp[-2].minor.yy318 = yylhsminor.yy318;
         break;
       case 278: /* expr ::= expr QUESTION expr COLON expr */
-#line 1688 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1688 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprTrinary, expr, yymsp[-4].minor.yy318);
 	expr->Operation = PEX_Trinary;
@@ -5086,22 +5086,22 @@ static void yy_reduce(
 	expr->Right = yymsp[0].minor.yy318;
 	yylhsminor.yy318 = expr;
 }
-#line 5090 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5090 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,13,&yymsp[-3].minor);
   yy_destructor(yypParser,14,&yymsp[-1].minor);
   yymsp[-4].minor.yy318 = yylhsminor.yy318;
         break;
       case 279: /* expr_list ::= expr_list COMMA expr */
-#line 1704 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1704 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	yymsp[-2].minor.yy318 = yymsp[-2].minor.yy318;	/*X-overwrites-A*/
 	AppendTreeNodeSibling(yymsp[-2].minor.yy318, yymsp[0].minor.yy318);
 }
-#line 5101 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5101 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-1].minor);
         break;
       case 280: /* func_expr_list ::= func_expr_list COMMA func_expr_item */
-#line 1720 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1720 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	// Omitted parameters still need to appear as nodes in the list.
 	if (yymsp[-2].minor.yy138 == NULL)
@@ -5121,40 +5121,40 @@ static void yy_reduce(
 	yymsp[-2].minor.yy138 = yymsp[-2].minor.yy138;	/*X-overwrites-A*/
 	AppendTreeNodeSibling(yymsp[-2].minor.yy138, yymsp[0].minor.yy138);
 }
-#line 5125 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5125 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 281: /* func_expr_item ::= */
-#line 1741 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1741 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	yymsp[1].minor.yy138 = NULL;
 }
-#line 5132 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5132 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 282: /* named_expr ::= IDENTIFIER COLON expr */
-#line 1747 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1747 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(FuncParm, parm, yymsp[-2].minor.yy0);
 	parm->Value = yymsp[0].minor.yy318;
 	parm->Label = ENamedName(yymsp[-2].minor.yy0.Int);
 	yylhsminor.yy138 = parm;
 }
-#line 5142 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5142 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,14,&yymsp[-1].minor);
   yymsp[-2].minor.yy138 = yylhsminor.yy138;
         break;
       case 283: /* named_expr ::= expr */
-#line 1754 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1754 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(FuncParm, parm, yymsp[0].minor.yy318);
 	parm->Value = yymsp[0].minor.yy318;
 	parm->Label = NAME_None;
 	yylhsminor.yy138 = parm;
 }
-#line 5154 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5154 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy138 = yylhsminor.yy138;
         break;
       case 285: /* string_constant ::= string_constant STRCONST */
-#line 1775 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1775 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprConstant, strconst, yymsp[-1].minor.yy471);
 	strconst->Operation = PEX_ConstValue;
@@ -5162,29 +5162,29 @@ static void yy_reduce(
 	strconst->StringVal = stat->Strings.Alloc(*(yymsp[-1].minor.yy471->StringVal) + *(yymsp[0].minor.yy0.String));
 	yylhsminor.yy471 = strconst;
 }
-#line 5166 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5166 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-1].minor.yy471 = yylhsminor.yy471;
         break;
       case 286: /* constant ::= INTCONST */
-#line 1785 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1785 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_INTCONST_NODE(intconst, TypeSInt32, yymsp[0].minor.yy0.Int, yymsp[0].minor.yy0);
 	yylhsminor.yy471 = intconst;
 }
-#line 5175 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5175 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy471 = yylhsminor.yy471;
         break;
       case 287: /* constant ::= UINTCONST */
-#line 1790 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1790 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_INTCONST_NODE(intconst, TypeUInt32, yymsp[0].minor.yy0.Int, yymsp[0].minor.yy0);
 	yylhsminor.yy471 = intconst;
 }
-#line 5184 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5184 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy471 = yylhsminor.yy471;
         break;
       case 288: /* constant ::= FLOATCONST */
-#line 1795 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1795 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprConstant, floatconst, yymsp[0].minor.yy0);
 	floatconst->Operation = PEX_ConstValue;
@@ -5192,11 +5192,11 @@ static void yy_reduce(
 	floatconst->DoubleVal = yymsp[0].minor.yy0.Float;
 	yylhsminor.yy471 = floatconst;
 }
-#line 5196 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5196 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy471 = yylhsminor.yy471;
         break;
       case 289: /* constant ::= NAMECONST */
-#line 1803 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1803 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprConstant, floatconst, yymsp[0].minor.yy0);
 	floatconst->Operation = PEX_ConstValue;
@@ -5204,29 +5204,29 @@ static void yy_reduce(
 	floatconst->IntVal = yymsp[0].minor.yy0.Int;
 	yylhsminor.yy471 = floatconst;
 }
-#line 5208 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5208 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy471 = yylhsminor.yy471;
         break;
       case 290: /* constant ::= FALSE */
-#line 1811 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1811 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_INTCONST_NODE(boolconst, TypeBool, false, yymsp[0].minor.yy0);
 	yylhsminor.yy471 = boolconst;
 }
-#line 5217 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5217 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy471 = yylhsminor.yy471;
         break;
       case 291: /* constant ::= TRUE */
-#line 1816 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1816 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_INTCONST_NODE(boolconst, TypeBool, true, yymsp[0].minor.yy0);
 	yylhsminor.yy471 = boolconst;
 }
-#line 5226 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5226 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy471 = yylhsminor.yy471;
         break;
       case 292: /* constant ::= NULLPTR */
-#line 1821 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1821 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExprConstant, nullptrconst, yymsp[0].minor.yy0);
 	nullptrconst->Operation = PEX_ConstValue;
@@ -5234,51 +5234,51 @@ static void yy_reduce(
 	nullptrconst->StringVal = nullptr;
 	yylhsminor.yy471 = nullptrconst;
 }
-#line 5238 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5238 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy471 = yylhsminor.yy471;
         break;
       case 294: /* statement ::= labeled_statement */
-#line 1835 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1835 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy156 = yymsp[0].minor.yy442; /*X-overwrites-A*/ }
-#line 5244 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5244 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 295: /* statement ::= compound_statement */
-#line 1836 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1836 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy156 = yymsp[0].minor.yy55; /*X-overwrites-A*/ }
-#line 5249 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5249 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 296: /* statement ::= expression_statement SEMICOLON */
-#line 1837 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1837 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy156 = yymsp[-1].minor.yy302; /*X-overwrites-A*/ }
-#line 5254 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5254 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
         break;
       case 297: /* statement ::= assign_statement SEMICOLON */
-#line 1842 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1842 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy156 = yymsp[-1].minor.yy271; /*X-overwrites-A*/ }
-#line 5260 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5260 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
         break;
       case 298: /* statement ::= assign_decl_statement SEMICOLON */
-#line 1843 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1843 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy156 = yymsp[-1].minor.yy251; /*X-overwrites-A*/ }
-#line 5266 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5266 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
         break;
       case 299: /* statement ::= local_var SEMICOLON */
-#line 1844 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1844 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-1].minor.yy156 = yymsp[-1].minor.yy66; /*X-overwrites-A*/ }
-#line 5272 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5272 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
         break;
       case 301: /* statement ::= staticarray_statement */
-#line 1846 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1846 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy156 = yymsp[0].minor.yy106; /*X-overwrites-A*/ }
-#line 5278 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5278 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 302: /* staticarray_statement ::= STATICCONST type IDENTIFIER LBRACKET RBRACKET EQ LBRACE expr_list RBRACE SEMICOLON */
 {  yy_destructor(yypParser,146,&yymsp[-9].minor);
-#line 1853 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1853 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(StaticArrayStatement, stmt, yymsp[-8].minor.yy104);
 	stmt->Type = yymsp[-8].minor.yy104;
@@ -5286,7 +5286,7 @@ static void yy_reduce(
 	stmt->Values = yymsp[-2].minor.yy318;
 	yymsp[-9].minor.yy106 = stmt;
 }
-#line 5290 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5290 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,46,&yymsp[-6].minor);
   yy_destructor(yypParser,117,&yymsp[-5].minor);
   yy_destructor(yypParser,1,&yymsp[-4].minor);
@@ -5297,7 +5297,7 @@ static void yy_reduce(
         break;
       case 303: /* staticarray_statement ::= STATICCONST type LBRACKET RBRACKET IDENTIFIER EQ LBRACE expr_list RBRACE SEMICOLON */
 {  yy_destructor(yypParser,146,&yymsp[-9].minor);
-#line 1862 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1862 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(StaticArrayStatement, stmt, yymsp[-8].minor.yy104);
 	stmt->Type = yymsp[-8].minor.yy104;
@@ -5305,7 +5305,7 @@ static void yy_reduce(
 	stmt->Values = yymsp[-2].minor.yy318;
 	yymsp[-9].minor.yy106 = stmt;
 }
-#line 5309 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5309 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,46,&yymsp[-7].minor);
   yy_destructor(yypParser,117,&yymsp[-6].minor);
   yy_destructor(yypParser,1,&yymsp[-4].minor);
@@ -5315,92 +5315,92 @@ static void yy_reduce(
 }
         break;
       case 304: /* jump_statement ::= CONTINUE SEMICOLON */
-#line 1875 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1875 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ContinueStmt, stmt, yymsp[-1].minor.yy0);
 	yylhsminor.yy156 = stmt;
 }
-#line 5324 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5324 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
   yymsp[-1].minor.yy156 = yylhsminor.yy156;
         break;
       case 305: /* jump_statement ::= BREAK SEMICOLON */
-#line 1880 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1880 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(BreakStmt, stmt, yymsp[-1].minor.yy0);
 	yylhsminor.yy156 = stmt;
 }
-#line 5334 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5334 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
   yymsp[-1].minor.yy156 = yylhsminor.yy156;
         break;
       case 306: /* jump_statement ::= RETURN SEMICOLON */
-#line 1885 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1885 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ReturnStmt, stmt, yymsp[-1].minor.yy0);
 	stmt->Values = NULL;
 	yylhsminor.yy156 = stmt;
 }
-#line 5345 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5345 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
   yymsp[-1].minor.yy156 = yylhsminor.yy156;
         break;
       case 307: /* jump_statement ::= RETURN expr_list SEMICOLON */
-#line 1891 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1891 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ReturnStmt, stmt, yymsp[-2].minor.yy0);
 	stmt->Values = yymsp[-1].minor.yy318;
 	yylhsminor.yy156 = stmt;
 }
-#line 5356 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5356 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
   yymsp[-2].minor.yy156 = yylhsminor.yy156;
         break;
       case 308: /* compound_statement ::= LBRACE RBRACE */
-#line 1903 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1903 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(CompoundStmt,stmt,yymsp[-1].minor.yy0);
 	stmt->Content = NULL;
 	yylhsminor.yy55 = stmt;
 }
-#line 5367 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5367 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,66,&yymsp[0].minor);
   yymsp[-1].minor.yy55 = yylhsminor.yy55;
         break;
       case 309: /* compound_statement ::= LBRACE statement_list RBRACE */
-#line 1909 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1909 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(CompoundStmt,stmt,yymsp[-2].minor.yy0);
 	stmt->Content = yymsp[-1].minor.yy156;
 	yylhsminor.yy55 = stmt;
 }
-#line 5378 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5378 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,66,&yymsp[0].minor);
   yymsp[-2].minor.yy55 = yylhsminor.yy55;
         break;
       case 310: /* compound_statement ::= LBRACE error RBRACE */
-#line 1915 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1915 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(CompoundStmt,stmt,yymsp[-2].minor.yy0);
 	stmt->Content = NULL;
 	yylhsminor.yy55 = stmt;
 }
-#line 5389 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5389 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,66,&yymsp[0].minor);
   yymsp[-2].minor.yy55 = yylhsminor.yy55;
         break;
       case 313: /* expression_statement ::= expr */
-#line 1935 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1935 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ExpressionStmt, stmt, yymsp[0].minor.yy318);
 	stmt->Expression = yymsp[0].minor.yy318;
 	yylhsminor.yy302 = stmt;
 }
-#line 5400 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5400 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy302 = yylhsminor.yy302;
         break;
       case 314: /* iteration_statement ::= while_or_until LPAREN expr RPAREN statement */
-#line 1947 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1947 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(IterationStmt, iter, yymsp[-4].minor.yy0);
 	if (yymsp[-4].minor.yy0.Int == ZCC_UNTIL)
@@ -5417,13 +5417,13 @@ static void yy_reduce(
 	iter->CheckAt = ZCC_IterationStmt::Start;
 	yylhsminor.yy156 = iter;
 }
-#line 5421 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5421 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,45,&yymsp[-3].minor);
   yy_destructor(yypParser,62,&yymsp[-1].minor);
   yymsp[-4].minor.yy156 = yylhsminor.yy156;
         break;
       case 315: /* iteration_statement ::= DO statement while_or_until LPAREN expr RPAREN */
-#line 1965 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1965 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(IterationStmt, iter, yymsp[-5].minor.yy0);
 	if (yymsp[-3].minor.yy0.Int == ZCC_UNTIL)
@@ -5440,13 +5440,13 @@ static void yy_reduce(
 	iter->CheckAt = ZCC_IterationStmt::End;
 	yylhsminor.yy156 = iter;
 }
-#line 5444 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5444 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,45,&yymsp[-2].minor);
   yy_destructor(yypParser,62,&yymsp[0].minor);
   yymsp[-5].minor.yy156 = yylhsminor.yy156;
         break;
       case 316: /* iteration_statement ::= FOR LPAREN for_init SEMICOLON opt_expr SEMICOLON for_bump RPAREN statement */
-#line 1983 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1983 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(IterationStmt, iter, yymsp[-8].minor.yy0);
 	iter->LoopCondition = yymsp[-4].minor.yy318;
@@ -5462,7 +5462,7 @@ static void yy_reduce(
 	wrap->Content = yymsp[-6].minor.yy156;
 	yylhsminor.yy156 = wrap;
 }
-#line 5466 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5466 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,45,&yymsp[-7].minor);
   yy_destructor(yypParser,49,&yymsp[-5].minor);
   yy_destructor(yypParser,49,&yymsp[-3].minor);
@@ -5470,7 +5470,7 @@ static void yy_reduce(
   yymsp[-8].minor.yy156 = yylhsminor.yy156;
         break;
       case 317: /* array_iteration_statement ::= FOREACH LPAREN variable_name COLON expr RPAREN statement */
-#line 2002 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2002 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(ArrayIterationStmt, iter, yymsp[-6].minor.yy0);
 	iter->ItName = yymsp[-4].minor.yy180;
@@ -5478,74 +5478,74 @@ static void yy_reduce(
 	iter->LoopStatement = yymsp[0].minor.yy156;
 	yylhsminor.yy156 = iter;
 }
-#line 5482 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5482 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,45,&yymsp[-5].minor);
   yy_destructor(yypParser,14,&yymsp[-3].minor);
   yy_destructor(yypParser,62,&yymsp[-1].minor);
   yymsp[-6].minor.yy156 = yylhsminor.yy156;
         break;
       case 318: /* while_or_until ::= WHILE */
-#line 2011 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2011 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	yylhsminor.yy0.Int = ZCC_WHILE;
 	yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc;
 }
-#line 5494 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5494 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 319: /* while_or_until ::= UNTIL */
-#line 2016 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2016 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	yylhsminor.yy0.Int = ZCC_UNTIL;
 	yylhsminor.yy0.SourceLoc = yymsp[0].minor.yy0.SourceLoc;
 }
-#line 5503 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5503 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 320: /* for_init ::= local_var */
-#line 2022 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2022 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy156 = yymsp[0].minor.yy66 /*X-overwrites-A*/; }
-#line 5509 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5509 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 321: /* for_init ::= for_bump */
-#line 2023 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2023 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy156 = yymsp[0].minor.yy156 /*X-overwrites-A*/; }
-#line 5514 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5514 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 322: /* for_bump ::= */
-#line 2026 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2026 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[1].minor.yy156 = NULL; }
-#line 5519 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5519 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 323: /* for_bump ::= expression_statement */
-#line 2027 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2027 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[0].minor.yy156 = yymsp[0].minor.yy302; /*X-overwrites-A*/ }
-#line 5524 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5524 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 324: /* for_bump ::= for_bump COMMA expression_statement */
-#line 2028 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2028 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { yymsp[-2].minor.yy156 = yymsp[-2].minor.yy156; /*X-overwrites-A*/ AppendTreeNodeSibling(yymsp[-2].minor.yy156, yymsp[0].minor.yy302); }
-#line 5529 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5529 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-1].minor);
         break;
       case 325: /* selection_statement ::= if_front */
-#line 2042 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2042 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	yymsp[0].minor.yy156 = yymsp[0].minor.yy481; /*X-overwrites-A*/
 }
-#line 5537 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5537 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
         break;
       case 326: /* selection_statement ::= if_front ELSE statement */
-#line 2046 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2046 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	yymsp[-2].minor.yy481->FalsePath = yymsp[0].minor.yy156;
 	yymsp[-2].minor.yy156 = yymsp[-2].minor.yy481; /*X-overwrites-A*/
 }
-#line 5545 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5545 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,156,&yymsp[-1].minor);
         break;
       case 327: /* if_front ::= IF LPAREN expr RPAREN statement */
-#line 2052 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2052 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(IfStmt,stmt,yymsp[-4].minor.yy0);
 	stmt->Condition = yymsp[-2].minor.yy318;
@@ -5553,49 +5553,49 @@ static void yy_reduce(
 	stmt->FalsePath = NULL;
 	yylhsminor.yy481 = stmt;
 }
-#line 5557 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5557 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,45,&yymsp[-3].minor);
   yy_destructor(yypParser,62,&yymsp[-1].minor);
   yymsp[-4].minor.yy481 = yylhsminor.yy481;
         break;
       case 328: /* selection_statement ::= SWITCH LPAREN expr RPAREN statement */
-#line 2063 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2063 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(SwitchStmt,stmt,yymsp[-4].minor.yy0);
 	stmt->Condition = yymsp[-2].minor.yy318;
 	stmt->Content = yymsp[0].minor.yy156;
 	yylhsminor.yy156 = stmt;
 }
-#line 5570 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5570 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,45,&yymsp[-3].minor);
   yy_destructor(yypParser,62,&yymsp[-1].minor);
   yymsp[-4].minor.yy156 = yylhsminor.yy156;
         break;
       case 329: /* labeled_statement ::= CASE expr COLON */
-#line 2075 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2075 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(CaseStmt,stmt,yymsp[-2].minor.yy0);
 	stmt->Condition = yymsp[-1].minor.yy318;
 	yylhsminor.yy442 = stmt;
 }
-#line 5582 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5582 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,14,&yymsp[0].minor);
   yymsp[-2].minor.yy442 = yylhsminor.yy442;
         break;
       case 330: /* labeled_statement ::= DEFAULT COLON */
-#line 2081 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2081 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(CaseStmt,stmt,yymsp[-1].minor.yy0);
 	stmt->Condition = NULL;
 	yylhsminor.yy442 = stmt;
 }
-#line 5593 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5593 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,14,&yymsp[0].minor);
   yymsp[-1].minor.yy442 = yylhsminor.yy442;
         break;
       case 331: /* assign_statement ::= LBRACKET expr_list RBRACKET EQ expr */
 {  yy_destructor(yypParser,46,&yymsp[-4].minor);
-#line 2094 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2094 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(AssignStmt,stmt,yymsp[-3].minor.yy318);
 	stmt->AssignOp = ZCC_EQ;
@@ -5603,14 +5603,14 @@ static void yy_reduce(
 	stmt->Sources = yymsp[0].minor.yy318;
 	yymsp[-4].minor.yy271 = stmt;
 }
-#line 5607 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5607 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,117,&yymsp[-2].minor);
   yy_destructor(yypParser,1,&yymsp[-1].minor);
 }
         break;
       case 332: /* assign_decl_statement ::= LET LBRACKET identifier_list RBRACKET EQ expr */
 {  yy_destructor(yypParser,105,&yymsp[-5].minor);
-#line 2105 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2105 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(AssignDeclStmt,stmt,yymsp[-3].minor.yy165);
 	stmt->AssignOp = ZCC_EQ;
@@ -5618,25 +5618,25 @@ static void yy_reduce(
 	stmt->Sources = yymsp[0].minor.yy318;
 	yymsp[-5].minor.yy251 = stmt;
 }
-#line 5622 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5622 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,46,&yymsp[-4].minor);
   yy_destructor(yypParser,117,&yymsp[-2].minor);
   yy_destructor(yypParser,1,&yymsp[-1].minor);
 }
         break;
       case 333: /* local_var ::= type variable_list_with_init */
-#line 2118 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2118 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(LocalVarStmt,vardef,yymsp[-1].minor.yy104);
 	vardef->Type = yymsp[-1].minor.yy104;
 	vardef->Vars = yymsp[0].minor.yy275;
 	yylhsminor.yy66 = vardef;
 }
-#line 5636 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5636 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-1].minor.yy66 = yylhsminor.yy66;
         break;
       case 334: /* var_init ::= IDENTIFIER */
-#line 2127 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2127 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { 
 	NEW_AST_NODE(VarInit,var,yymsp[0].minor.yy0);
 	var->Name = ENamedName(yymsp[0].minor.yy0.Int);
@@ -5645,11 +5645,11 @@ static void yy_reduce(
 	var->InitIsArray = false;
 	yylhsminor.yy275 = var;
 }
-#line 5649 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5649 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[0].minor.yy275 = yylhsminor.yy275;
         break;
       case 335: /* var_init ::= IDENTIFIER array_size */
-#line 2137 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2137 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	NEW_AST_NODE(VarInit,var,yymsp[-1].minor.yy0);
 	var->Name = ENamedName(yymsp[-1].minor.yy0.Int);
@@ -5658,11 +5658,11 @@ static void yy_reduce(
 	var->InitIsArray = false;
 	yylhsminor.yy275 = var;
 }
-#line 5662 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5662 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yymsp[-1].minor.yy275 = yylhsminor.yy275;
         break;
       case 336: /* var_init ::= IDENTIFIER EQ expr */
-#line 2147 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2147 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { 
 	NEW_AST_NODE(VarInit,var,yymsp[-2].minor.yy0);
 	var->Name = ENamedName(yymsp[-2].minor.yy0.Int);
@@ -5671,12 +5671,12 @@ static void yy_reduce(
 	var->InitIsArray = false;
 	yylhsminor.yy275 = var;
 }
-#line 5675 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5675 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,1,&yymsp[-1].minor);
   yymsp[-2].minor.yy275 = yylhsminor.yy275;
         break;
       case 337: /* var_init ::= IDENTIFIER EQ LBRACE expr_list RBRACE */
-#line 2157 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2157 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { 
 	NEW_AST_NODE(VarInit,var,yymsp[-4].minor.yy0);
 	var->Name = ENamedName(yymsp[-4].minor.yy0.Int);
@@ -5685,14 +5685,14 @@ static void yy_reduce(
 	var->InitIsArray = true;
 	yylhsminor.yy275 = var;
 }
-#line 5689 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5689 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,1,&yymsp[-3].minor);
   yy_destructor(yypParser,65,&yymsp[-2].minor);
   yy_destructor(yypParser,66,&yymsp[0].minor);
   yymsp[-4].minor.yy275 = yylhsminor.yy275;
         break;
       case 338: /* var_init ::= IDENTIFIER array_size EQ LBRACE expr_list RBRACE */
-#line 2167 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2167 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { 
 	NEW_AST_NODE(VarInit,var,yymsp[-5].minor.yy0);
 	var->Name = ENamedName(yymsp[-5].minor.yy0.Int);
@@ -5701,7 +5701,7 @@ static void yy_reduce(
 	var->InitIsArray = true;
 	yylhsminor.yy275 = var;
 }
-#line 5705 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5705 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,1,&yymsp[-3].minor);
   yy_destructor(yypParser,65,&yymsp[-2].minor);
   yy_destructor(yypParser,66,&yymsp[0].minor);
@@ -5709,61 +5709,61 @@ static void yy_reduce(
         break;
       case 339: /* var_init ::= IDENTIFIER EQ LBRACE error RBRACE */
 {  yy_destructor(yypParser,54,&yymsp[-4].minor);
-#line 2177 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2177 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 { 
 	yymsp[-4].minor.yy275 = NULL;
 }
-#line 5717 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5717 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,1,&yymsp[-3].minor);
   yy_destructor(yypParser,65,&yymsp[-2].minor);
   yy_destructor(yypParser,66,&yymsp[0].minor);
 }
         break;
       case 340: /* variable_list_with_init ::= variable_list_with_init COMMA var_init */
-#line 2185 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 2185 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 	AppendTreeNodeSibling(yymsp[-2].minor.yy275, yymsp[0].minor.yy275);
 	yymsp[-2].minor.yy275 = yymsp[-2].minor.yy275; /*X-overwrites-A*/
 }
-#line 5729 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5729 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,50,&yymsp[-1].minor);
         break;
       case 341: /* translation_unit ::= translation_unit EOF */
-#line 178 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 178 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 }
-#line 5736 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5736 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,48,&yymsp[0].minor);
         break;
       case 343: /* opt_semicolon ::= SEMICOLON */
 {  yy_destructor(yypParser,49,&yymsp[0].minor);
-#line 191 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 191 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 }
-#line 5744 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5744 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 345: /* opt_comma ::= COMMA */
 {  yy_destructor(yypParser,50,&yymsp[0].minor);
-#line 194 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 194 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 }
-#line 5752 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5752 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 }
         break;
       case 351: /* state_flow ::= state_flow_type scanner_mode SEMICOLON */
-#line 650 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 650 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 }
-#line 5759 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5759 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,49,&yymsp[0].minor);
         break;
       case 361: /* primary ::= LPAREN error RPAREN */
 {  yy_destructor(yypParser,45,&yymsp[-2].minor);
-#line 1352 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 1352 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 {
 }
-#line 5767 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5767 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
   yy_destructor(yypParser,62,&yymsp[0].minor);
 }
         break;
@@ -5837,9 +5837,9 @@ static void yy_parse_failed(
   /* Here code is inserted which will be executed whenever the
   ** parser fails */
 /************ Begin %parse_failure code ***************************************/
-#line 148 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 148 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
  /**failed = true;*/ 
-#line 5843 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5843 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 /************ End %parse_failure code *****************************************/
   ZCCParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
@@ -5856,7 +5856,7 @@ static void yy_syntax_error(
   ZCCParseARG_FETCH;
 #define TOKEN yyminor
 /************ Begin %syntax_error code ****************************************/
-#line 121 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 121 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
 
 	FString unexpected, expecting;
 
@@ -5882,7 +5882,7 @@ static void yy_syntax_error(
 	}
 	stat->sc->ScriptMessage("%s\n%s\n", unexpected.GetChars(), expecting.GetChars());
 	FScriptPosition::ErrorCounter++;
-#line 5886 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5886 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 /************ End %syntax_error code ******************************************/
   ZCCParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
@@ -5911,9 +5911,9 @@ static void yy_accept(
   /* Here code is inserted which will be executed whenever the
   ** parser accepts */
 /*********** Begin %parse_accept code *****************************************/
-#line 147 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
+#line 147 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/scripting/frontend/zcc-parse.lemon"
  DPrintf(DMSG_SPAMMY, "Input accepted\n"); 
-#line 5917 "D:/documents/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
+#line 5917 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/zcc-parse.c"
 /*********** End %parse_accept code *******************************************/
   ZCCParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
