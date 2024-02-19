@@ -399,9 +399,17 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 
 
 	if ((gl.flags & RFL_SHADER_STORAGE_BUFFER) && screen->allowSSBO())
+#ifdef __MOBILE__
+		vp_comb << "#version 310 es\n#define SUPPORTS_SHADOWMAPS\n";
+#else
 		vp_comb << "#version 430 core\n#define SUPPORTS_SHADOWMAPS\n";
+#endif
 	else 
+#ifdef __MOBILE__
+		vp_comb << "#version 310 es\n";
+#else
 		vp_comb << "#version 330 core\n";
+#endif
 
 	bool lightbuffertype = screen->mLights->GetBufferType();
 	if (!lightbuffertype)

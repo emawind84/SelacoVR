@@ -184,7 +184,7 @@ public:
 	// Note that using an uniform buffer here will limit the number of lights per surface so it isn't done for NVidia and AMD.
 	bool useSSBO() 
 	{
-		return IsVulkan();// || ((hwcaps & RFL_SHADER_STORAGE_BUFFER) && allowSSBO() && !strstr(vendorstring, "Intel"));
+		return IsVulkan() || ((hwcaps & RFL_SHADER_STORAGE_BUFFER) && allowSSBO() && !strstr(vendorstring, "Intel"));
 	}
 
 	virtual DCanvas* GetCanvas() { return nullptr; }

@@ -25,17 +25,12 @@
 **
 **/
 
-#include "version.h"
 #include "hw_lightbuffer.h"
 #include "hw_dynlightdata.h"
 #include "shaderuniforms.h"
 #include "hw_clock.h"
 
 CVAR(Int, gl_max_lights, 40000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
-CUSTOM_CVAR (Int, gl_light_buffer_type, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
-{
-	Printf("You must restart " GAMENAME " to switch the light buffer\n");
-}
 
 static const int ELEMENTS_PER_LIGHT = 4;			// each light needs 4 vec4's.
 static const int ELEMENT_SIZE = (4*sizeof(float));

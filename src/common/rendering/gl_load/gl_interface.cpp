@@ -184,10 +184,10 @@ void gl_LoadExtensions()
 	}
 
 
-	if (gl_light_buffer_type != 1)
+	if (gl_storage_buffer_type != 1)
 		gl.flags &= ~RFL_SHADER_STORAGE_BUFFER;
 
-	if (gl_no_buffer_storage)
+	if (gl_no_persistent_buffer)
 		gl.flags &= ~RFL_BUFFER_STORAGE;
 
 	if (gl_version >= 4.3f || CheckExtension("GL_ARB_invalidate_subdata")) gl.flags |= RFL_INVALIDATE_BUFFER;
