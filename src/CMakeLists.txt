@@ -1076,7 +1076,6 @@ set (PCH_SOURCES
 	common/utility/i_time.cpp
 	common/utility/m_argv.cpp
 	common/utility/s_playlist.cpp
-	common/utility/zstrformat.cpp
 	common/utility/name.cpp
 	common/utility/r_memory.cpp
 	common/thirdparty/base64.cpp
@@ -1209,6 +1208,7 @@ add_executable( zdoom WIN32 MACOSX_BUNDLE
 	${PCH_SOURCES}
 	common/utility/x86.cpp
 	common/thirdparty/strnatcmp.c
+	common/thirdparty/stb/stb_sprintf.c
 	common/utility/zstring.cpp
 	common/utility/findfile.cpp
 	common/thirdparty/math/asin.c
@@ -1249,7 +1249,7 @@ if( UNIX )
 	endif()
 endif()
 
-target_link_libraries( zdoom ${PROJECT_LIBRARIES} gdtoa lzma ${ZMUSIC_LIBRARIES} )
+target_link_libraries( zdoom ${PROJECT_LIBRARIES} lzma ${ZMUSIC_LIBRARIES} )
 
 include_directories(
 	BEFORE
@@ -1260,6 +1260,7 @@ include_directories(
 	common/cutscenes
 	common/thirdparty/libsmackerdec/include
 	common/thirdparty
+	common/thirdparty/stb
 	common/textures
 	common/textures/formats
 	common/textures/hires
@@ -1308,9 +1309,7 @@ include_directories(
 	scripting
 	scripting/zscript
 	rendering
-	../libraries/gdtoa
 	../libraries/ZVulkan/include
-	${CMAKE_BINARY_DIR}/libraries/gdtoa
 	${SYSTEM_SOURCES_DIR}
 )
 
@@ -1498,6 +1497,7 @@ source_group("Common\\Third Party" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_D
 source_group("Common\\Third Party\\Math" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/common/thirdparty/math/.+")
 source_group("Common\\Third Party\\RapidJSON" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/common/thirdparty/rapidjson/.+")
 source_group("Common\\Third Party\\SFMT" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/common/thirdparty/sfmt/.+")
+source_group("Common\\Third Party\\stb" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/common/thirdparty/stb/.+")
 source_group("Utility" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/utility/.+")
 source_group("Utility\\Node Builder" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/utility/nodebuilder/.+")
 source_group("Utility\\Smackerdec" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/smackerdec/.+")

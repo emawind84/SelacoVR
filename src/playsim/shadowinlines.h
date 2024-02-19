@@ -17,7 +17,7 @@ extern FRandom pr_spawnmissile;
 extern FRandom pr_facetarget;
 extern FRandom pr_railface;
 extern FRandom pr_crailgun;
-static FRandom pr_shadowaimz("VerticalShadowAim");
+inline FRandom pr_shadowaimz("VerticalShadowAim");
 
 //==========================================================================
 //
@@ -85,7 +85,7 @@ inline bool AffectedByShadows(AActor* self, AActor* other)
 
 inline bool CheckForShadows(AActor* self, AActor* other, DVector3 pos, double& penaltyFactor)
 {
-	return ((other && other->flags & MF_SHADOW) || self->flags9 & MF9_DOSHADOWBLOCK && P_CheckForShadowBlock(self, other, pos, penaltyFactor));
+	return ((other && (other->flags & MF_SHADOW)) || (self->flags9 & MF9_DOSHADOWBLOCK) && P_CheckForShadowBlock(self, other, pos, penaltyFactor));
 }
 
 inline bool PerformShadowChecks(AActor* self, AActor* other, DVector3 pos, double& penaltyFactor)
