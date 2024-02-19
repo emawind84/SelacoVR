@@ -109,8 +109,10 @@ CVAR(Float, vr_automap_rotate, 13.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_automap_fixed_pitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_automap_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
+CVARD(Bool, vr_override_weap_pos, false, 0, "Only used for testing VR environment on PC");
+CVARD(Bool, vr_render_weap_in_scene, false, 0, "Only used for testing VR environment on PC");
+
 EXTERN_CVAR(Bool, puristmode);
-CVAR(Bool, debug_override_weap_pos, false, 0);
 
 #define isqrt2 0.7071067812f
 
@@ -318,12 +320,17 @@ static DVector3 MapOffhandDir(AActor* actor, DAngle yaw, DAngle pitch)
 	return MapWeaponDir(actor, yaw, pitch, 1);
 }
 
+bool VRMode::RenderPlayerSpritesInScene() const
+{
+	return vr_render_weap_in_scene;
+}
+
 void VRMode::SetUp() const
 {
 	player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 	if (player && player->mo)
 	{
-		player->mo->OverrideAttackPosDir = !puristmode && (IsVR() || debug_override_weap_pos);
+		player->mo->OverrideAttackPosDir = !puristmode && (IsVR() || vr_override_weap_pos);
 		player->mo->AttackDir = MapAttackDir;
 		player->mo->OffhandDir = MapOffhandDir;
 		double shootz = player->mo->Center() - player->mo->Floorclip + player->mo->AttackOffset();
