@@ -99,6 +99,7 @@
 #include "actorinlines.h"
 #include "a_dynlight.h"
 #include "fragglescript/t_fs.h"
+#include "shadowinlines.h"
 
 #include <QzDoom/VrCommon.h>
 
@@ -123,7 +124,6 @@ EXTERN_CVAR (Bool, use_action_spawn_yzoffset)
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
 static FRandom pr_explodemissile ("ExplodeMissile");
-FRandom pr_bounce ("Bounce");
 static FRandom pr_reflect ("Reflect");
 static FRandom pr_nightmarerespawn ("NightmareRespawn");
 static FRandom pr_botspawnmobj ("BotSpawnActor");
@@ -136,7 +136,6 @@ static FRandom pr_splat ("FAxeSplatter");
 static FRandom pr_ripperblood ("RipperBlood");
 static FRandom pr_chunk ("Chunk");
 static FRandom pr_checkmissilespawn ("CheckMissileSpawn");
-static FRandom pr_spawnmissile ("SpawnMissile");
 static FRandom pr_missiledamage ("MissileDamage");
 static FRandom pr_multiclasschoice ("MultiClassChoice");
 static FRandom pr_rockettrail("RocketTrail");
@@ -145,6 +144,8 @@ static FRandom pr_uniquetid("UniqueTID");
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
 FRandom pr_spawnmobj ("SpawnActor");
+FRandom pr_bounce("Bounce");
+FRandom pr_spawnmissile("SpawnMissile");
 
 CUSTOM_CVAR (Float, sv_gravity, 800.f, CVAR_SERVERINFO|CVAR_NOSAVE|CVAR_NOINITCALL)
 {
@@ -236,6 +237,7 @@ void AActor::Serialize(FSerializer &arc)
 		A("flags6", flags6)
 		A("flags7", flags7)
 		A("flags8", flags8)
+		A("flags9", flags9)
 		A("weaponspecial", weaponspecial)
 		A("special1", special1)
 		A("special2", special2)
@@ -311,6 +313,7 @@ void AActor::Serialize(FSerializer &arc)
 		A("smokecounter", smokecounter)
 		("blockingmobj", BlockingMobj)
 		A("blockingline", BlockingLine)
+		A("movementblockingline", MovementBlockingLine)
 		A("blocking3dfloor", Blocking3DFloor)
 		A("blockingceiling", BlockingCeiling)
 		A("blockingfloor", BlockingFloor)
@@ -1556,6 +1559,17 @@ void AActor::PlayBounceSound(bool onfloor)
 
 bool AActor::FloorBounceMissile (secplane_t &plane)
 {
+	if (flags & MF_MISSILE)
+	{
+		switch (SpecialBounceHit(nullptr, nullptr, &plane))
+		{
+			// This one is backwards for some reason...
+			case 1:		return false;
+			case 0:		return true;
+			default:	break;
+		}
+	}
+
 	// [ZZ] if bouncing missile hits a damageable sector(plane), it dies
 	if (P_ProjectileHitPlane(this, -1) && bouncecount > 0)
 	{
@@ -1997,7 +2011,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 		{
 			// blocked move
 			AActor *BlockingMobj = mo->BlockingMobj;
-			line_t *BlockingLine = mo->BlockingLine;
+			line_t *BlockingLine = mo->MovementBlockingLine = mo->BlockingLine;
 
 			// [ZZ] 
 			if (!BlockingLine && !BlockingMobj) // hit floor or ceiling while XY movement - sector actions
@@ -2125,57 +2139,11 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 						return Oldfloorz;
 					}
 				}
-				if (BlockingMobj && (BlockingMobj->flags2 & MF2_REFLECTIVE))
+				if (BlockingMobj && P_ReflectOffActor(mo, BlockingMobj))
 				{
-					bool seeker = (mo->flags2 & MF2_SEEKERMISSILE) ? true : false;
-					// Don't change the angle if there's THRUREFLECT on the monster.
-					if (!(BlockingMobj->flags7 & MF7_THRUREFLECT))
-					{
-						DAngle angle = BlockingMobj->AngleTo(mo);
-						bool dontReflect = (mo->AdjustReflectionAngle(BlockingMobj, angle));
-						// Change angle for deflection/reflection
-
-						if (!dontReflect)
-						{
-							bool tg = (mo->target != NULL);
-							bool blockingtg = (BlockingMobj->target != NULL);
-							if ((BlockingMobj->flags7 & MF7_AIMREFLECT) && (tg | blockingtg))
-							{
-								AActor *origin = tg ? mo->target : BlockingMobj->target;
-
-								//dest->x - source->x
-								DVector3 vect = mo->Vec3To(origin);
-								vect.Z += origin->Height / 2;
-								mo->Vel = vect.Resized(mo->Speed);
-							}
-							else
-							{
-								if ((BlockingMobj->flags7 & MF7_MIRRORREFLECT) && (tg | blockingtg))
-								{
-									mo->Angles.Yaw += DAngle::fromDeg(180.);
-									mo->Vel *= -.5;
-								}
-								else
-								{
-									mo->Angles.Yaw = angle;
-									mo->VelFromAngle(mo->Speed / 2);
-									mo->Vel.Z *= -.5;
-								}
-							}
-						}
-						else
-						{
-							goto explode;
-						}						
-					}
-					if (mo->flags2 & MF2_SEEKERMISSILE)
-					{
-						mo->tracer = mo->target;
-					}
-					mo->target = BlockingMobj;
 					return Oldfloorz;
 				}
-explode:
+
 				// explode a missile
 				bool onsky = false;
 				if (tm.ceilingline && tm.ceilingline->hitSkyWall(mo))
@@ -3253,6 +3221,21 @@ int AActor::SpecialMissileHit (AActor *victim)
 	else return -1;
 }
 
+// This virtual method only exists on the script side.
+int AActor::SpecialBounceHit(AActor* bounceMobj, line_t* bounceLine, secplane_t* bouncePlane)
+{
+	IFVIRTUAL(AActor, SpecialBounceHit)
+	{
+		VMValue params[4] = { (DObject*)this, bounceMobj, bounceLine, bouncePlane };
+		VMReturn ret;
+		int retval;
+		ret.IntAt(&retval);
+		VMCall(func, params, 4, &ret, 1);
+		return retval;
+	}
+	else return -1;
+}
+
 bool AActor::AdjustReflectionAngle (AActor *thing, DAngle &angle)
 {
 	if (flags2 & MF2_DONTREFLECT) return true;
@@ -3261,10 +3244,8 @@ bool AActor::AdjustReflectionAngle (AActor *thing, DAngle &angle)
 	if (thing->flags4&MF4_SHIELDREFLECT)
 	{
 		// Shield reflection (from the Centaur)
-		if (absangle(angle, thing->Angles.Yaw) > DAngle::fromDeg(45))
+		if ((flags7 & MF7_NOSHIELDREFLECT) || absangle(angle, thing->Angles.Yaw) > DAngle::fromDeg(45))
 			return true;	// Let missile explode
-
-		if (thing->flags7 & MF7_NOSHIELDREFLECT) return true;
 
 		if (pr_reflect () < 128)
 			angle += DAngle::fromDeg(45);
@@ -4120,6 +4101,7 @@ void AActor::Tick ()
 
 		// Handle X and Y velocities
 		BlockingMobj = nullptr;
+		MovementBlockingLine = nullptr;
 		sector_t* oldBlockingCeiling = BlockingCeiling;
 		sector_t* oldBlockingFloor = BlockingFloor;
 		Blocking3DFloor = nullptr;
@@ -6692,7 +6674,7 @@ AActor *P_SpawnMissileXYZ (DVector3 pos, AActor *source, AActor *dest, PClassAct
 
 	if (dest == nullptr)
 	{
-		Printf ("P_SpawnMissilyXYZ: Tried to shoot %s from %s with no dest\n",
+		Printf ("P_SpawnMissileXYZ: Tried to shoot %s from %s with no destination\n",
 			type->TypeName.GetChars(), source->GetClass()->TypeName.GetChars());
 		return nullptr;
 	}
@@ -6731,21 +6713,8 @@ AActor *P_SpawnMissileXYZ (DVector3 pos, AActor *source, AActor *dest, PClassAct
 	}
 	th->Vel = velocity.Resized(speed);
 
-	// invisible target: rotate velocity vector in 2D
-	// [RC] Now monsters can aim at invisible player as if they were fully visible.
-	if (dest->flags & MF_SHADOW && !(source->flags6 & MF6_SEEINVISIBLE))
-	{
-		DAngle an = DAngle::fromDeg(pr_spawnmissile.Random2() * (22.5 / 256));
-		double c = an.Cos();
-		double s = an.Sin();
-		
-		double newx = th->Vel.X * c - th->Vel.Y * s;
-		double newy = th->Vel.X * s + th->Vel.Y * c;
-
-		th->Vel.X = newx;
-		th->Vel.Y = newy;
-	}
-
+	P_SpawnMissileXYZ_ShadowHandling(source,dest,th,pos);
+	
 	th->AngleFromVel();
 
 	if (th->flags4 & MF4_SPECTRAL)
@@ -6867,14 +6836,11 @@ AActor *P_SpawnMissileZAimed (AActor *source, double z, AActor *dest, PClassActo
 
 	an = source->Angles.Yaw;
 
-	if (dest->flags & MF_SHADOW)
-	{
-		an += DAngle::fromDeg(pr_spawnmissile.Random2() * (16. / 360.));
-	}
 	dist = source->Distance2D (dest);
 	speed = GetDefaultSpeed (type);
 	dist /= speed;
 	vz = dist != 0 ? (dest->Z() - source->Z())/dist : speed;
+	an += P_SpawnMissileZAimed_ShadowHandling(source, dest, vz, speed, source->PosAtZ(z));
 	return P_SpawnMissileAngleZSpeed (source, z, type, an, vz, speed);
 }
 
@@ -7845,6 +7811,9 @@ void PrintMiscActorInfo(AActor *query)
 		Printf("\n   flags8: %x", query->flags8.GetValue());
 		for (flagi = 0; flagi <= 31; flagi++)
 			if (query->flags8 & ActorFlags8::FromInt(1<<flagi)) Printf(" %s", FLAG_NAME(1<<flagi, flags8));
+		Printf("\n   flags9: %x", query->flags9.GetValue());
+		for (flagi = 0; flagi <= 31; flagi++)
+			if (query->flags9 & ActorFlags9::FromInt(1 << flagi)) Printf(" %s", FLAG_NAME(1 << flagi, flags9));
 		Printf("\nBounce flags: %x\nBounce factors: f:%f, w:%f", 
 			query->BounceFlags.GetValue(), query->bouncefactor,
 			query->wallbouncefactor);
