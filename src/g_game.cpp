@@ -352,7 +352,8 @@ CCMD (slot)
 		}
 
 		// [Nash] Option to display the name of the weapon being switched to.
-		if ((paused || pauseext) || players[consoleplayer].playerstate != PST_LIVE) return;
+		if ((paused || pauseext) || players[consoleplayer].playerstate != PST_LIVE)
+			return;
 		auto weapon = hand ? players[consoleplayer].OffhandWeapon : players[consoleplayer].ReadyWeapon;
 		if (SendItemUse != weapon && (displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
 		{
@@ -364,6 +365,8 @@ CCMD (slot)
 
 CCMD (centerview)
 {
+	if ((players[consoleplayer].cheats & CF_TOTALLYFROZEN))
+		return;
 	Net_WriteByte (DEM_CENTERVIEW);
 }
 
