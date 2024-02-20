@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.1.0 )
+cmake_minimum_required( VERSION 3.16.0 )
 
 include(precompiled_headers)
 
@@ -139,7 +139,11 @@ else()
 endif()
 
 if( NOT NO_OPENAL )
-	if ( NOT DYN_OPENAL )	# DYN_OPENAL uses local copies of the headers.
+	if ( "vcpkg-openal-soft" IN_LIST VCPKG_MANIFEST_FEATURES )
+		# Statically link to OpenAL from vcpkg
+		find_package( OpenAL CONFIG REQUIRED )
+		list( APPEND PROJECT_LIBRARIES OpenAL::OpenAL )
+	elseif ( NOT DYN_OPENAL )	# DYN_OPENAL uses local copies of the headers.
 		find_package( OpenAL )
 		mark_as_advanced(CLEAR OPENAL_INCLUDE_DIR)
 		if( OPENAL_INCLUDE_DIR )
@@ -286,10 +290,7 @@ endif()
 	
 # Check for thread_local keyword, it's optional at the moment
 
-CHECK_CXX_SOURCE_COMPILES("thread_local int i; int main() { i = 0; }"
-	HAVE_THREAD_LOCAL)
-
-if( NOT HAVE_THREAD_LOCAL )
+if ( NOT (cxx_thread_local IN_LIST CMAKE_CXX_COMPILE_FEATURES) )
 	message( SEND_ERROR "C++ compiler doesn't support thread_local storage duration specifier" )
 endif()
 
@@ -311,7 +312,7 @@ if( UNIX )
 			add_definitions( -DNO_CLOCK_GETTIME )
 		endif()
 	else()
-		set( PROJECT_LIBRARIES ${PROJECT_LIBRARIES} rt )
+		list( APPEND PROJECT_LIBRARIES rt )
 	endif()
 endif()
 
@@ -321,7 +322,7 @@ endif()
 
 set( PROJECT_LIBRARIES ${PROJECT_LIBRARIES} "${ZLIB_LIBRARIES}" "${JPEG_LIBRARIES}" "${BZIP2_LIBRARIES}" "${CMAKE_DL_LIBS}" "${DRPC_LIBRARIES}")
 if (HAVE_VULKAN)
-	set( PROJECT_LIBRARIES ${PROJECT_LIBRARIES} "zvulkan")
+	list( APPEND PROJECT_LIBRARIES "zvulkan" )
 endif()
 
 # ZMUSIC
@@ -380,6 +381,13 @@ else()
 	message( SEND_ERROR "Could not find libvpx" )
 endif()
 
+if (TARGET WebP::webp)
+	list( APPEND PROJECT_LIBRARIES WebP::webp WebP::webpdemux WebP::libwebpmux )
+	if (TARGET WebP::webpdecoder)
+		list( APPEND PROJECT_LIBRARIES WebP::webpdecoder)
+	endif()
+endif()
+
 include_directories( SYSTEM "${ZLIB_INCLUDE_DIR}" "${BZIP2_INCLUDE_DIR}" "${LZMA_INCLUDE_DIR}" "${JPEG_INCLUDE_DIR}" "${ZMUSIC_INCLUDE_DIR}" "${DRPC_INCLUDE_DIR}")
 
 if( ${HAVE_VM_JIT} )
@@ -410,7 +418,7 @@ set( PLAT_WIN32_SOURCES
 	)
 
 if (HAVE_VULKAN)
-	set (PLAT_WIN32_SOURCES ${PLAT_WIN32_SOURCES} common/platform/win32/win32vulkanvideo.cpp )
+	list (APPEND PLAT_WIN32_SOURCES common/platform/win32/win32vulkanvideo.cpp )
 endif()
 
 # todo: implement an actual crash catcher for ARM
@@ -700,10 +708,6 @@ set( VM_JIT_SOURCES
 	common/scripting/jit/jit_store.cpp
 )
 
-# This is disabled for now because I cannot find a way to give the .pch file a different name.
-# Visual C++ 2015 seems hell-bent on only allowing one .pch file with the same name as the executable.
-#enable_precompiled_headers( g_pch2.h FASTMATH_PCH_SOURCES )
-
 # Enable fast math for some sources
 set( FASTMATH_SOURCES
 	rendering/swrenderer/r_all.cpp
@@ -775,11 +779,11 @@ if (HAVE_GLES2)
 		common/rendering/gles/gles_samplers.cpp
 	)
 
-	set (FASTMATH_SOURCES ${FASTMATH_SOURCES} ${GLES_SOURCES})
+	list (APPEND FASTMATH_SOURCES ${GLES_SOURCES})
 endif()
 
 if (HAVE_VULKAN)
-	set (FASTMATH_SOURCES ${FASTMATH_SOURCES} ${VULKAN_SOURCES})
+	list (APPEND FASTMATH_SOURCES ${VULKAN_SOURCES})
 endif()
 
 set (FASTMATH_SOURCES ${FASTMATH_SOURCES})
@@ -1035,6 +1039,8 @@ set (PCH_SOURCES
 	common/textures/formats/stbtexture.cpp
 	common/textures/formats/anmtexture.cpp
 	common/textures/formats/startscreentexture.cpp
+	common/textures/formats/qoitexture.cpp
+	common/textures/formats/webptexture.cpp
 	common/textures/hires/hqresize.cpp
 	common/models/models_md3.cpp
 	common/models/models_md2.cpp
@@ -1190,14 +1196,7 @@ else()
 	set( NOT_COMPILED_SOURCE_FILES ${NOT_COMPILED_SOURCE_FILES} ${VM_JIT_SOURCES} )
 endif()
 
-if( MSVC )
-	enable_precompiled_headers( g_pch.h PCH_SOURCES )
-else()
-	# Temporary solution for compilers other than MSVC
-	set_source_files_properties( ${PCH_SOURCES} PROPERTIES COMPILE_FLAGS "-include g_pch.h" )
-endif()
-
-add_executable( zdoom WIN32 MACOSX_BUNDLE
+set( ZDOOM_SOURCES
 	${HEADER_FILES}
 	${NOT_COMPILED_SOURCE_FILES}
 	${SYSTEM_SOURCES}
@@ -1229,10 +1228,18 @@ add_executable( zdoom WIN32 MACOSX_BUNDLE
 	QzDoom/mathlib.c
 )
 
+set( ZDOOM_NONPCH_SOURCES ${ZDOOM_SOURCES} )
+list( REMOVE_ITEM ZDOOM_NONPCH_SOURCES ${PCH_SOURCES} )
+
+add_executable( zdoom WIN32 MACOSX_BUNDLE ${ZDOOM_SOURCES} )
+
+target_precompile_headers( zdoom PRIVATE g_pch.h )
+
 set_source_files_properties( ${FASTMATH_SOURCES} PROPERTIES COMPILE_FLAGS ${ZD_FASTMATH_FLAG} )
 set_source_files_properties( xlat/parse_xlat.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/xlat_parser.c" )
 set_source_files_properties( common/engine/sc_man.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/sc_man_scanner.h" )
 set_source_files_properties( ${NOT_COMPILED_SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE )
+set_source_files_properties( ${ZDOOM_NONPCH_SOURCES} common/textures/hires/hqresize.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS TRUE )
 
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "SunOS")
@@ -1368,6 +1375,10 @@ add_custom_command(TARGET zdoom POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
 	${CMAKE_SOURCE_DIR}/fm_banks/gs-by-papiezak-and-sneakernets.wopn $<TARGET_FILE_DIR:zdoom>/fm_banks/gs-by-papiezak-and-sneakernets.wopn
 )
+
+if (VCPKG_TOOLCHAIN)
+	x_vcpkg_install_local_dependencies(TARGETS zdoom DESTINATION ".")
+endif()
 
 if( WIN32 )
 	set( INSTALL_SOUNDFONT_PATH . CACHE STRING "Directory where soundfonts and WOPL/WOPN banks will be placed during install." )
