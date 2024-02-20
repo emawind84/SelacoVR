@@ -74,7 +74,7 @@ CVAR(Float, gl_light_distance_cull, 2000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR(Int, gl_light_max_collected_subsectors, 1000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR(Int, gl_light_flat_max_lights, 1000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR(Int, gl_light_wall_max_lights, 1000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
-CVAR(Int, gl_light_range_limit, 32, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_light_range_limit, 64, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
 extern TArray<FLightDefaults *> StateLights;
 
