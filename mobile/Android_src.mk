@@ -411,6 +411,8 @@ PCH_SOURCES = \
 	common/textures/formats/stbtexture.cpp \
 	common/textures/formats/anmtexture.cpp \
 	common/textures/formats/startscreentexture.cpp \
+	common/textures/formats/qoitexture.cpp \
+	common/textures/formats/webptexture.cpp \
 	common/textures/hires/hqresize.cpp \
 	common/models/models_md3.cpp \
 	common/models/models_md2.cpp \
@@ -613,7 +615,7 @@ LOCAL_LDLIBS +=  -lEGL
 # This is stop a linker warning for mp123 lib failing build
 #LOCAL_LDLIBS += -Wl,--no-warn-shared-textrel
 
-LOCAL_STATIC_LIBRARIES :=  libjpeg zlib_lz lzma_lz bzip2_lz vpx_player
+LOCAL_STATIC_LIBRARIES :=  libjpeg zlib_lz lzma_lz bzip2_lz vpx_player webpmux
 LOCAL_SHARED_LIBRARIES :=  openal openxr_loader zmusic
 
 #Strip unused functions/data
