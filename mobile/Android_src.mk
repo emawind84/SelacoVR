@@ -10,7 +10,7 @@ LOCAL_CFLAGS   := -DNO_SWRENDERER -D__MOBILE__ -DOPNMIDI_DISABLE_GX_EMULATOR -DG
 LOCAL_CPPFLAGS := -include g_pch.h -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++17  -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security \
     -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
 
-LOCAL_CFLAGS  += -DNO_SEND_STATS
+LOCAL_CFLAGS  += -DNO_SEND_STATS -DMINIZ_NO_STDIO
 
 LOCAL_CFLAGS  += -DOPNMIDI_USE_LEGACY_EMULATOR
 LOCAL_CFLAGS  += -DADLMIDI_DISABLE_MUS_SUPPORT -DADLMIDI_DISABLE_XMI_SUPPORT -DADLMIDI_DISABLE_MIDI_SEQUENCER
@@ -115,20 +115,6 @@ PLAT_NOSDL_SOURCES = \
 	posix/nosdl/i_input.cpp \
 	posix/nosdl/glvideo.cpp \
 	posix/nosdl/st_start.cpp
-
-GLES_SOURCES = \
-	common/rendering/gles/gles_system.cpp \
-	common/rendering/gles/gles_renderer.cpp \
-	common/rendering/gles/gles_framebuffer.cpp \
-	common/rendering/gles/gles_renderstate.cpp \
-	common/rendering/gles/gles_renderbuffers.cpp \
-	common/rendering/gles/gles_postprocess.cpp \
-	common/rendering/gles/gles_postprocessstate.cpp \
-	common/rendering/gles/gles_buffers.cpp \
-	common/rendering/gles/gles_hwtexture.cpp \
-	common/rendering/gles/gles_shader.cpp \
-	common/rendering/gles/gles_shaderprogram.cpp \
-	common/rendering/gles/gles_samplers.cpp \
 
 FASTMATH_SOURCES = \
 	rendering/swrenderer/r_all.cpp \
@@ -562,7 +548,6 @@ LOCAL_SRC_FILES = \
 	$(PLAT_NOSDL_SOURCES) \
 	$(FASTMATH_SOURCES) \
 	$(PCH_SOURCES) \
-	$(GLES_SOURCES) \
 	common/utility/x86.cpp \
 	common/thirdparty/strnatcmp.c \
 	common/thirdparty/stb/stb_sprintf.c \
