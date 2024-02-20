@@ -2,6 +2,7 @@
 #include "i_system.h"
 #include "gameconfigfile.h"
 #include "c_cvars.h"
+#include "fs_findfile.h"
 #include "findfile.h"
 #include "profiledef.h"
 #include <algorithm>
@@ -51,9 +52,6 @@ void ProfileManager::ProcessOneProfileFile(const FString &name)
 
 void ProfileManager::CollectProfiles()
 {
-	findstate_t c_file;
-	void *file;
-
 	TArray<FString> mSearchPaths;
 	cmdlineProfiles.Clear();
 	cmdlineProfiles.Push({"", "No profile"});
@@ -77,7 +75,7 @@ void ProfileManager::CollectProfiles()
 	FString dir = NicePath("$PROGDIR");
 	if (dir.Len() > 0) mSearchPaths.Push(dir);
 
-	dir = NicePath("./profiles/");
+	dir = NicePath("$PROGDIR/profiles/");
 	mSearchPaths.Push(dir);
 
 	// Unify and remove trailing slashes
@@ -90,19 +88,16 @@ void ProfileManager::CollectProfiles()
 	// Collect all profiles in the search path
 	for (auto &dir : mSearchPaths)
 	{
-		if (dir.Back() != '/') dir += '/';
-		FString mask = dir + '*';
-		if ((file = I_FindFirst(mask, &c_file)) != ((void *)(-1)))
+		FileSys::FileList list;
+		if (FileSys::ScanDirectory(list, dir, "*", true))
 		{
-			do
+			for (auto& entry : list)
 			{
-				if (!(I_FindAttr(&c_file) & FA_DIREC))
+				if (!entry.isDirectory)
 				{
-					FStringf name("%s%s", dir.GetChars(), I_FindName(&c_file));
-					ProcessOneProfileFile(name);
+					ProcessOneProfileFile(entry.FilePath.c_str());
 				}
-			} while (I_FindNext(file, &c_file) == 0);
-			I_FindClose(file);
+			}
 		}
 	}
 

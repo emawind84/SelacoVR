@@ -34,7 +34,7 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/textures/hires \
     	$(GZDOOM_TOP_PATH)/src/common/textures \
     	$(GZDOOM_TOP_PATH)/src/common/models \
-    	$(GZDOOM_TOP_PATH)/src/common/filesystem \
+    	$(GZDOOM_TOP_PATH)/src/common/filesystem/include \
     	$(GZDOOM_TOP_PATH)/src/common/utility \
     	$(GZDOOM_TOP_PATH)/src/common/cutscenes \
     	$(GZDOOM_TOP_PATH)/src/common/startscreen \
@@ -443,8 +443,6 @@ PCH_SOURCES = \
 	common/utility/m_alloc.cpp \
 	common/utility/utf8.cpp \
 	common/utility/palette.cpp \
-	common/utility/files.cpp \
-	common/utility/files_decompress.cpp \
 	common/utility/memarena.cpp \
 	common/utility/cmdlib.cpp \
 	common/utility/configfile.cpp \
@@ -461,19 +459,6 @@ PCH_SOURCES = \
 	common/thirdparty/libsmackerdec/src/HuffmanVLC.cpp \
 	common/thirdparty/libsmackerdec/src/LogError.cpp \
 	common/thirdparty/libsmackerdec/src/SmackerDecoder.cpp \
-	common/filesystem/filesystem.cpp \
-	common/filesystem/ancientzip.cpp \
-	common/filesystem/file_7z.cpp \
-	common/filesystem/file_grp.cpp \
-	common/filesystem/file_lump.cpp \
-	common/filesystem/file_rff.cpp \
-	common/filesystem/file_wad.cpp \
-	common/filesystem/file_zip.cpp \
-	common/filesystem/file_pak.cpp \
-	common/filesystem/file_whres.cpp \
-	common/filesystem/file_ssi.cpp \
-	common/filesystem/file_directory.cpp \
-	common/filesystem/resourcefile.cpp \
 	common/engine/cycler.cpp \
 	common/engine/d_event.cpp \
 	common/engine/date.cpp \
@@ -602,6 +587,23 @@ LOCAL_SRC_FILES = \
 	common/thirdparty/math/tan.c \
 	common/thirdparty/math/tanh.c \
 	common/thirdparty/math/fastsin.cpp \
+	common/filesystem/source/filesystem.cpp \
+	common/filesystem/source/ancientzip.cpp \
+	common/filesystem/source/file_7z.cpp \
+	common/filesystem/source/file_grp.cpp \
+	common/filesystem/source/file_lump.cpp \
+	common/filesystem/source/file_rff.cpp \
+	common/filesystem/source/file_wad.cpp \
+	common/filesystem/source/file_zip.cpp \
+	common/filesystem/source/file_pak.cpp \
+	common/filesystem/source/file_whres.cpp \
+	common/filesystem/source/file_ssi.cpp \
+	common/filesystem/source/file_directory.cpp \
+	common/filesystem/source/resourcefile.cpp \
+	common/filesystem/source/files.cpp \
+	common/filesystem/source/files_decompress.cpp \
+	common/filesystem/source/fs_findfile.cpp \
+	common/filesystem/source/fs_stringpool.cpp \
 
 
 # Turn down optimisation of this file so clang doesnt produce ldrd instructions which are missaligned
