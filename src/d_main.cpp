@@ -3362,6 +3362,8 @@ static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allw
 	if (!batchrun) Printf ("DecalLibrary: Load decals.\n");
 	DecalLibrary.ReadAllDecals ();
 
+	auto numbasesounds = soundEngine->GetNumSounds();
+
 	// Load embedded Dehacked patches
 	D_LoadDehLumps(FromIWAD);
 
@@ -3390,6 +3392,9 @@ static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allw
 
 	// Create replacements for dehacked pickups
 	FinishDehPatch();
+
+	auto numdehsounds = soundEngine->GetNumSounds();
+	if (numbasesounds < numdehsounds) S_LockLocalSndinfo(); // DSDHacked sounds are not compatible with map-local SNDINFOs.
 
 	if (!batchrun) Printf("M_Init: Init menus.\n");
 	SetDefaultMenuColors();
