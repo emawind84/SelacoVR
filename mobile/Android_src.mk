@@ -397,7 +397,6 @@ PCH_SOURCES = \
 	common/textures/formats/flattexture.cpp \
 	common/textures/formats/fontchars.cpp \
 	common/textures/formats/imgztexture.cpp \
-	common/textures/formats/jpegtexture.cpp \
 	common/textures/formats/md5check.cpp \
 	common/textures/formats/multipatchtexture.cpp \
 	common/textures/formats/patchtexture.cpp \
@@ -617,7 +616,7 @@ LOCAL_LDLIBS +=  -lEGL
 # This is stop a linker warning for mp123 lib failing build
 #LOCAL_LDLIBS += -Wl,--no-warn-shared-textrel
 
-LOCAL_STATIC_LIBRARIES :=  libjpeg zlib_lz lzma_lz bzip2_lz vpx_player webpmux
+LOCAL_STATIC_LIBRARIES :=  zlib_lz lzma_lz bzip2_lz vpx_player webpmux
 LOCAL_SHARED_LIBRARIES :=  openal openxr_loader zmusic
 
 #Strip unused functions/data
