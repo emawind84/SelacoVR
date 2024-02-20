@@ -359,7 +359,8 @@ std::unique_ptr<VulkanShader> VkShaderManager::LoadVertShader(FString shadername
 	code << LoadPrivateShaderLump(vert_lump).GetChars() << "\n";
 
 	return ShaderBuilder()
-		.VertexShader(code.GetChars())
+		.Type(ShaderType::Vertex)
+		.AddSource(shadername.GetChars(), code.GetChars())
 		.DebugName(shadername.GetChars())
 		.Create(shadername.GetChars(), fb->device.get());
 }
@@ -451,7 +452,8 @@ std::unique_ptr<VulkanShader> VkShaderManager::LoadFragShader(FString shadername
 	}
 
 	return ShaderBuilder()
-		.FragmentShader(code.GetChars())
+		.Type(ShaderType::Fragment)
+		.AddSource(shadername.GetChars(), code.GetChars())
 		.DebugName(shadername.GetChars())
 		.Create(shadername.GetChars(), fb->device.get());
 }
