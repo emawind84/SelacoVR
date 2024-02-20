@@ -47,8 +47,8 @@ class FWebPTexture : public FImageSource
 
 public:
 	FWebPTexture(int lumpnum, int w, int h, int xoff, int yoff);
-	PalettedPixels CreatePalettedPixels(int conversion) override;
-	int CopyPixels(FBitmap *bmp, int conversion) override;
+	PalettedPixels CreatePalettedPixels(int conversion, int frame = 0) override;
+	int CopyPixels(FBitmap *bmp, int conversion, int frame = 0) override;
 };
 
 
@@ -57,11 +57,17 @@ FImageSource *WebPImage_TryCreate(FileReader &file, int lumpnum)
 	int width = 0, height = 0;
 	int xoff = 0, yoff = 0;
 	file.Seek(0, FileReader::SeekSet);
+
+	uint8_t header[12];
+	if (file.Read(header, 12) != 12) return nullptr;
+	if (memcmp(header, "RIFF", 4) || memcmp(header + 8, "WEBP", 4)) return nullptr;
+
+	file.Seek(0, FileReader::SeekSet);
 	auto bytes = file.Read();
 
-	if (WebPGetInfo(bytes.Data(), bytes.Size(), &width, &height))
+	if (WebPGetInfo(bytes.data(), bytes.size(), &width, &height))
 	{
-		WebPData data{ bytes.Data(), bytes.Size() };
+		WebPData data{ bytes.data(), bytes.size() };
 		WebPData chunk_data;
 		auto mux = WebPMuxCreate(&data, 0);
 		if (mux)
@@ -76,7 +82,7 @@ FImageSource *WebPImage_TryCreate(FileReader &file, int lumpnum)
 		}
 		return new FWebPTexture(lumpnum, width, height, xoff, yoff);
 	}
-	return NULL;
+	return nullptr;
 }
 
 FWebPTexture::FWebPTexture(int lumpnum, int w, int h, int xoff, int yoff)
@@ -88,7 +94,7 @@ FWebPTexture::FWebPTexture(int lumpnum, int w, int h, int xoff, int yoff)
 	TopOffset = yoff;
 }
 
-PalettedPixels FWebPTexture::CreatePalettedPixels(int conversion)
+PalettedPixels FWebPTexture::CreatePalettedPixels(int conversion, int frame)
 {
 	FBitmap bitmap;
 	bitmap.Create(Width, Height);
@@ -121,11 +127,10 @@ PalettedPixels FWebPTexture::CreatePalettedPixels(int conversion)
 	return Pixels;
 }
 
-int FWebPTexture::CopyPixels(FBitmap *bmp, int conversion)
+int FWebPTexture::CopyPixels(FBitmap *bmp, int conversion, int frame)
 {
 	WebPDecoderConfig config;
-	auto lump = fileSystem.OpenFileReader(SourceLump);
-	auto bytes = lump.Read();
+	auto bytes = fileSystem.ReadFile(SourceLump);
 
 	if (WebPInitDecoderConfig(&config) == false)
 		return 0;
@@ -137,7 +142,7 @@ int FWebPTexture::CopyPixels(FBitmap *bmp, int conversion)
 	config.output.u.RGBA.stride = bmp->GetPitch();
 	config.output.is_external_memory = 1;
 
-	(void)WebPDecode(bytes.Data(), bytes.Size(), &config);
+	(void)WebPDecode(bytes.GetBytes(), bytes.GetSize(), &config);
 
 	return 0;
 }
