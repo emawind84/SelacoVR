@@ -56,8 +56,6 @@
 
 // HEADER FILES ------------------------------------------------------------
 
-#include <limits>
-
 #include "dobject.h"
 
 #include "c_dispatch.h"
