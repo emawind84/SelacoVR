@@ -384,12 +384,6 @@ void VkRenderState::ApplyPushConstants()
 	mPushConstants.uAlphaThreshold = mAlphaThreshold;
 	mPushConstants.uClipSplit = { mClipSplit[0], mClipSplit[1] };
 
-	mPushConstants.uGlobalFade = gl_global_fade ? 1 : 0;
-	mPushConstants.uGlobalFadeMode = gl_global_fade_debug ? 2 : -1;
-	mPushConstants.uGlobalFadeDensity = gl_global_fade_density;
-	mPushConstants.uGlobalFadeGradient = gl_global_fade_gradient;
-	mPushConstants.uLightRangeLimit = gl_light_range_limit;
-
 	if (mMaterial.mMaterial)
 	{
 		auto source = mMaterial.mMaterial->Source();
