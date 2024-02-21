@@ -134,15 +134,15 @@ static PClassActor* FindInfoName(int index, bool mustexist = false)
 	{
 		FStringf name("~Dsdhacked~%d", index);
 		auto cls = PClass::FindActor(name);
-		if (cls)
-		{
-			GetDefaultByType(cls)->flags8 |= MF8_RETARGETAFTERSLAM; // This flag is not a ZDoom default, but it must be a Dehacked default.
-			return cls;
-		}
 		if (!mustexist)
 		{
 			cls = static_cast<PClassActor*>(RUNTIME_CLASS(AActor)->CreateDerivedClass(name.GetChars(), (unsigned)sizeof(AActor)));
 			NewClassType(cls, -1);	// This needs a VM type to work as intended.
+			cls->InitializeDefaults();
+		}
+		if (cls)
+		{
+			GetDefaultByType(cls)->flags8 |= MF8_RETARGETAFTERSLAM; // This flag is not a ZDoom default, but it must be a Dehacked default.
 			return cls;
 		}
 	}
@@ -557,7 +557,7 @@ static FState *FindState (int statenum, bool mustexist)
 	{
 		if (stateacc <= statenum && stateacc + StateMap[i].StateSpan > statenum)
 		{
-			if (StateMap[i].State != NULL)
+			if (StateMap[i].State != nullptr)
 			{
 				if (StateMap[i].OwnerIsPickup)
 				{
@@ -565,23 +565,28 @@ static FState *FindState (int statenum, bool mustexist)
 				}
 				return StateMap[i].State + statenum - stateacc;
 			}
-			else return NULL;
+			else break;
 		}
 		stateacc += StateMap[i].StateSpan;
 	}
-	if (dsdhacked && !mustexist)
+	if (dsdhacked)
 	{
 		auto p = dehExtStates.CheckKey(statenum);
 		if (p) return *p;
-		auto state = (FState*)ClassDataAllocator.Alloc(sizeof(FState));
-		dehExtStates.Insert(statenum, state);
-		memset(state, 0, sizeof(*state));
-		state->Tics = -1;
-		state->NextState = state;
-		state->DehIndex = statenum;
+		if (!mustexist)
+		{
+			auto state = (FState*)ClassDataAllocator.Alloc(sizeof(FState));
+			dehExtStates.Insert(statenum, state);
+			memset(state, 0, sizeof(*state));
+			state->Tics = -1;
+			state->NextState = state;
+			state->DehIndex = statenum;
+			state->UseFlags = SUF_ACTOR | SUF_OVERLAY | SUF_WEAPON | SUF_ITEM; 
+			return state;
+		}
 
 	}
-	return NULL;
+	return nullptr;
 }
 
 int FindStyle (const char *namestr)
@@ -1395,7 +1400,7 @@ static int PatchThing (int thingy)
 			{
 				if (IsNum(strval))
 				{
-					value |= (unsigned long)strtoll(strval, NULL, 10);
+					value |= (uint32_t)strtoll(strval, NULL, 10);
 					vchanged = true;
 				}
 				else
@@ -1521,7 +1526,7 @@ static int PatchThing (int thingy)
 				{
 					if (IsNum (strval))
 					{
-						value[0] |= (unsigned long)strtoll(strval, NULL, 10);
+						value[0] |= (uint32_t)strtoll(strval, NULL, 10);
 						vchanged[0] = true;
 					}
 					else
@@ -1877,7 +1882,7 @@ static int PatchFrame (int frameNum)
 	int tics, misc1, frame;
 	FState *info, dummy;
 
-	info = FindState (frameNum);
+	info = FindState (frameNum, false);
 	if (info)
 	{
 		DPrintf (DMSG_SPAMMY, "Frame %d\n", frameNum);
@@ -1958,7 +1963,7 @@ static int PatchFrame (int frameNum)
 			{
 				if (IsNum(strval))
 				{
-					value |= (unsigned long)strtoll(strval, NULL, 10);
+					value |= (uint32_t)strtoll(strval, NULL, 10);
 					vchanged = true;
 				}
 				else
@@ -2263,7 +2268,7 @@ static int PatchWeapon (int weapNum)
 			{
 				if (IsNum(strval))
 				{
-					value |= (unsigned long)strtoll(strval, NULL, 10);
+					value |= (uint32_t)strtoll(strval, NULL, 10);
 					vchanged = true;
 				}
 				else
@@ -3752,8 +3757,10 @@ void FinishDehPatch ()
 
 		type->ActorInfo()->Replacement = subclass;
 		subclass->ActorInfo()->Replacee = type;
+		subclass->ActorInfo()->LightAssociations = type->ActorInfo()->LightAssociations;
 		// If this actor was already replaced by another actor, copy that
 		// replacement over to this item.
+
 		if (old_replacement != NULL)
 		{
 			subclass->ActorInfo()->Replacement = old_replacement;
