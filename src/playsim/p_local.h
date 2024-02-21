@@ -425,7 +425,7 @@ nodetype *P_AddSecnode(linktype *s, AActor *thing, nodetype *nextnode, nodetype 
 template<class nodetype, class linktype>
 nodetype* P_DelSecnode(nodetype *, nodetype *linktype::*head);
 
-msecnode_t *P_CreateSecNodeList(AActor *thing, double radius, msecnode_t *sector_list, msecnode_t *sector_t::*seclisthead, bool restricted = false);
+msecnode_t *P_CreateSecNodeList(AActor *thing, double radius, msecnode_t *sector_list, msecnode_t *sector_t::*seclisthead);
 double	P_GetMoveFactor(const AActor *mo, double *frictionp);	// phares  3/6/98
 double		P_GetFriction(const AActor *mo, double *frictionfactor);
 
