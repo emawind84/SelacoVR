@@ -252,9 +252,15 @@ static bool CheckSkipOptionBlock(FScanner &sc)
 		}
 		else if (sc.Compare("SWRender"))
 		{
-#ifndef NO_SWRENDERER
-			filter = true;
-#endif
+			#ifndef NO_SWRENDERER
+				filter = true;
+			#endif
+		}
+		else if (sc.Compare("VulkanRender"))
+		{
+			#ifdef HAVE_VULKAN
+				filter = true;
+			#endif
 		}
 	}
 	while (sc.CheckString(","));
