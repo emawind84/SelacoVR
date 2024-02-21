@@ -55,6 +55,7 @@
 
 using namespace FileSys;
 
+
 void I_InitSoundFonts();
 
 EXTERN_CVAR (Int, snd_samplerate)
