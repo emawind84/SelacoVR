@@ -1805,6 +1805,7 @@ OptionMenu MapColorMenuOverlay protected
 	ColorPicker "$MAPCOLORMNU_INTRALEVELCOLOR",			"am_ovtelecolor"
 	ColorPicker "$MAPCOLORMNU_INTERLEVELCOLOR",			"am_ovinterlevelcolor"
 	ColorPicker "$MAPCOLORMNU_SECRETSECTORCOLOR",		"am_ovsecretsectorcolor"
+	ColorPicker "$MAPCOLORMNU_UNEXPLOREDSECRETCOLOR",	"am_ovunexploredsecretcolor"
 	ColorPicker "$MAPCOLORMNU_SPECIALWALLCOLOR",		"am_ovspecialwallcolor"
 	ColorPicker "$MAPCOLORMNU_PORTAL",					"am_ovportalcolor"
 }
@@ -3142,7 +3143,7 @@ OptionMenu "GLLightOptions" protected
 	Slider "$GLLIGHTMNU_MAXCOLLECTEDSS",		gl_light_max_collected_subsectors, 0, 5000, 100, 0
 	ScaleSlider "$GLLIGHTMNU_MAXWALLLIGHTS",	gl_light_wall_max_lights, 0, 10000, 100, "Limit disabled"
 	ScaleSlider "$GLLIGHTMNU_MAXFLATLIGHTS",	gl_light_flat_max_lights, 0, 10000, 100, "Limit disabled"
-	ScaleSlider "$GLLIGHTMNU_LIGHTRANGELIMIT",	gl_light_range_limit, 0, 128, 4, "Limit disabled"
+	ScaleSlider "$GLLIGHTMNU_LIGHTRANGELIMIT",	gl_light_range_limit, 0, 200, 4, "Limit disabled"
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS",				"resetcvar r_dynlights gl_lights gl_lights_checkside gl_light_sprites gl_light_particles gl_light_shadowmap gl_light_buffer_type gl_shadowmap_quality gl_shadowmap_filter gl_light_distance_cull gl_light_max_intensity gl_light_max_collected_subsectors gl_light_wall_max_lights gl_light_flat_max_lights gl_light_range_limit" 
 }
@@ -3196,7 +3197,7 @@ OptionMenu "OpenGLOptions" protected
 	Option "$GLPREFMNU_MIRRORPLAYER",			gl_mirror_player,				"OnOff"
 	Slider "$GLPREFMNU_MIRRORRECURSIONS",		r_mirror_recursions, 0, 10, 1, 0
 	StaticText " "
-	Option "$GLLIGHTMNU_LIGHTBUFFERTYPE",		gl_storage_buffer_type, "StorageBuffer"
+	Option "$GLPREFMNU_BUFFERTYPE",		gl_storage_buffer_type, "StorageBuffer"
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_max_vertices gl_max_portals gl_mirrors gl_mirror_envmap gl_mirror_player r_mirror_recursions"
 }

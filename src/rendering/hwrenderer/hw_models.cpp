@@ -84,6 +84,7 @@ void FHWModelRenderer::EndDrawModel(FRenderStyle style, FSpriteModelFrame *smf)
 void FHWModelRenderer::BeginDrawHUDModel(FRenderStyle style, const VSMatrix &objectToWorldMatrix, bool mirrored)
 {
 	state.SetDepthFunc(DF_LEqual);
+	state.SetDepthClamp(true);
 	
 	/* hack the depth range to prevent view model from poking into walls */
     gldepthmin = 0;
