@@ -1475,7 +1475,6 @@ class LevelCompatibility : LevelPostProcessor
 				SetWallTexture(1926, Line.back, Side.bottom, "MARBLE3");
 				break;
 			}
-
 			case 'A7C4FC8CAEB3E375B7214E35C6298B03': // Illusions of Home e1m6
 			{
 				// Convert zero-tagged GR door into regular open-stay door to fix map
