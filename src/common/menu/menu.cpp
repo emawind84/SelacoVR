@@ -334,8 +334,8 @@ bool DMenu::CallMenuEvent(int mkey, bool fromcontroller)
 
 static void SetMouseCapture(bool on)
 {
-//	if (on) I_SetMouseCapture();
-//	else I_ReleaseMouseCapture();
+	if (on) I_SetMouseCapture();
+	else I_ReleaseMouseCapture();
 }
 DEFINE_ACTION_FUNCTION_NATIVE(DMenu, SetMouseCapture, SetMouseCapture)
 {
@@ -1009,6 +1009,7 @@ CCMD(undocolorpic)
 		}
 	}
 }
+
 
 DEFINE_GLOBAL(menuactive)
 DEFINE_GLOBAL(BackbuttonTime)

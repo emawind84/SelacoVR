@@ -76,6 +76,7 @@ FSamplerManager::FSamplerManager()
 
 	SetTextureFilterMode();
 
+
 	for (int i = 0; i < NUMSAMPLERS; i++)
 	{
 		FString name;
