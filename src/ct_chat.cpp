@@ -235,7 +235,7 @@ void CT_Drawer (void)
 	auto drawer = twod;
 	FFont *displayfont = NewConsoleFont;
 
-	if (players[consoleplayer].camera != nullptr &&
+	if (players[consoleplayer].camera != NULL &&
 		(buttonMap.ButtonDown(Button_ShowScores) ||
 		 players[consoleplayer].camera->health <= 0 ||
 		 SB_ForceActive))

@@ -548,6 +548,7 @@ class USDFParser : public UDMFParserBase
 				}
 			}
 		}
+
 		return true;
 	}
 

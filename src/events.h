@@ -18,11 +18,6 @@ enum class EventHandlerType
 	PerMap
 };
 
-// called inside AActor::Grind just before the corpse is destroyed
-void E_WorldThingGround(AActor* actor, FState* st);
-// this executes at the same time as ENTER scripts
-void E_PlayerSpawned(int num);
-
 // ==============================================
 //
 //  EventHandler - base class
