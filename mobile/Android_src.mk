@@ -84,6 +84,7 @@ LOCAL_C_INCLUDES := \
 		$(GZDOOM_TOP_PATH)/src/posix/nosdl \
     	$(GZDOOM_TOP_PATH)/libraries/lzma/C \
         $(GZDOOM_TOP_PATH)/libraries/bzip2 \
+        $(GZDOOM_TOP_PATH)/libraries/miniz \
         $(GZDOOM_TOP_PATH)/libraries/discordrpc/include \
 \
  $(SUPPORT_LIBS)/openal/include/AL \
@@ -588,6 +589,7 @@ LOCAL_SRC_FILES = \
 	common/filesystem/source/files_decompress.cpp \
 	common/filesystem/source/fs_findfile.cpp \
 	common/filesystem/source/fs_stringpool.cpp \
+	../libraries/miniz/miniz.c \
 
 
 # Turn down optimisation of this file so clang doesnt produce ldrd instructions which are missaligned
@@ -601,7 +603,7 @@ LOCAL_LDLIBS +=  -lEGL
 # This is stop a linker warning for mp123 lib failing build
 #LOCAL_LDLIBS += -Wl,--no-warn-shared-textrel
 
-LOCAL_STATIC_LIBRARIES :=  zlib_lz lzma_lz bzip2_lz vpx_player webpmux
+LOCAL_STATIC_LIBRARIES :=  lzma_lz bzip2_lz vpx_player webpmux
 LOCAL_SHARED_LIBRARIES :=  openal openxr_loader zmusic
 
 #Strip unused functions/data
