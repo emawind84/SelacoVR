@@ -473,6 +473,7 @@ void G_NewInit ()
 	primaryLevel->Thinkers.DestroyThinkersInList(STAT_TRAVELLING);
 
 	G_ClearSnapshots ();
+	netgame = false;
 	multiplayer = multiplayernext;
 	multiplayernext = false;
 	if (demoplayback)
@@ -2433,6 +2434,7 @@ int IsPointInMap(FLevelLocals *Level, double x, double y, double z)
 
 	return true;
 }
+
 
 void FLevelLocals::SetMusic()
 {

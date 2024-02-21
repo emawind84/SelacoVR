@@ -113,8 +113,6 @@ enum
 
 static TMap<FMD5Holder, FCompatValues, FMD5HashTraits> BCompatMap;
 
-CVAR (Bool, sv_njnoautolevelcompat, false, CVAR_SERVERINFO | CVAR_LATCH)
-
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
 static FCompatOption Options[] =

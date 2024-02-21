@@ -1694,51 +1694,6 @@ static int PatchThing (int thingy)
 				DPrintf (DMSG_SPAMMY, "Bits: %d,%d (0x%08x,0x%08x)\n", info->flags.GetValue(), info->flags2.GetValue(),
 													      info->flags.GetValue(), info->flags2.GetValue());
 			}
-			else if (stricmp(Line1, "MBF21 Bits") == 0)
-			{
-				uint32_t value = 0;
-				bool vchanged = false;
-
-				char* strval;
-
-				for (strval = Line2; (strval = strtok(strval, ",+| \t\f\r")); strval = NULL)
-				{
-					if (IsNum(strval))
-					{
-						value |= (unsigned long)strtoll(strval, NULL, 10);
-						vchanged = true;
-					}
-					else
-					{
-						unsigned i;
-						for (i = 0; i < countof(deh_mobjflags_mbf21); i++)
-						{
-							if (!stricmp(strval, deh_mobjflags_mbf21[i].name))
-							{
-								vchanged = true;
-								value |= 1 << i;
-								break;
-							}
-						}
-						if (i == countof(deh_mobjflags_mbf21))
-						{
-							DPrintf(DMSG_ERROR, "Unknown bit mnemonic %s\n", strval);
-						}
-					}
-				}
-				if (vchanged)
-				{
-					ClearBits2Stuff(info);
-					for (size_t i = 0; i < countof(deh_mobjflags_mbf21); i++)
-					{
-						if (value & (1 << i))
-						{
-							deh_mobjflags_mbf21[i].setter(info);
-						}
-					}
-				}
-				DPrintf(DMSG_SPAMMY, "MBF21 Bits: %d (0x%08x)\n", info->flags.GetValue(), info->flags.GetValue());
-			}
 			else if (stricmp (Line1, "ID #") == 0)
 			{
 				*ednum = (int16_t)val;
@@ -3389,6 +3344,7 @@ static bool LoadDehSupp ()
 			return false;
 		}
 		bool gotnames = false;
+
 
 		if (++DehUseCount > 1)
 		{
