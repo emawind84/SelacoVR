@@ -344,6 +344,7 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 				}
 				realthis->CallDie(source, inflictor, dmgflags, MeansOfDeath);
 			}
+
 		}
 	}
 

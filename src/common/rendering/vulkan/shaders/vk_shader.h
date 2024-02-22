@@ -43,11 +43,6 @@ struct PushConstants
 	float uLightFactor;
 	float uLightDist;
 	int uFogEnabled;
-	int uGlobalFade;
-	int uGlobalFadeMode;
-	float uGlobalFadeDensity;
-	float uGlobalFadeGradient;
-	int uLightRangeLimit;
 
 	// dynamic lights
 	int uLightIndex;
@@ -59,7 +54,7 @@ struct PushConstants
 	int uBoneIndexBase;
 
 	int uDataIndex;
-	int padding1, padding2, padding3;
+	int padding2, padding3;
 };
 
 class VkShaderProgram

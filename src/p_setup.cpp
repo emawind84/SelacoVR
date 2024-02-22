@@ -71,7 +71,6 @@
 #include "vm.h"
 #include "a_specialspot.h"
 #include "maploader/maploader.h"
-#include "s_music.h"
 #include "p_acs.h"
 #include "am_map.h"
 #include "i_system.h"
@@ -555,6 +554,7 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	if (precache)
 	{
 		PrecacheLevel(Level);
+		S_PrecacheLevel(Level);
 	}
 
 	if (deathmatch)

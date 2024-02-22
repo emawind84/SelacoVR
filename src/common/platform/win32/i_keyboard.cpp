@@ -42,6 +42,7 @@
 #include "d_eventbase.h"
 #include "i_mainwindow.h"
 
+
 // MACROS ------------------------------------------------------------------
 
 #define DINPUT_BUFFERSIZE	32

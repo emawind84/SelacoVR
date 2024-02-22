@@ -52,9 +52,6 @@ extern cycle_t BotSupportCycles;
 extern cycle_t ActionCycles;
 extern int BotWTG;
 
-EXTERN_CVAR (Bool, gl_lights)
-EXTERN_CVAR (Bool, r_dynlights)
-
 IMPLEMENT_CLASS(DThinker, false, false)
 
 struct ProfileInfo
