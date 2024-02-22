@@ -568,12 +568,16 @@ void FGLRenderState::EnableDepthTest(bool on)
 
 void FGLRenderState::EnableMultisampling(bool on)
 {
+#ifndef __MOBILE__
 	ToggleState(GL_MULTISAMPLE, on);
+#endif
 }
 
 void FGLRenderState::EnableLineSmooth(bool on)
 {
+#ifndef __MOBILE__
 	ToggleState(GL_LINE_SMOOTH, on);
+#endif
 }
 
 //==========================================================================
