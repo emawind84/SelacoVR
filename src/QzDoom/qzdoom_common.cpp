@@ -1,5 +1,7 @@
 #include "VrCommon.h"
 
+EXTERN_CVAR(Float, fov)
+
 //Define all variables here that were externs in the VrCommon.h
 bool qzdoom_initialised;
 long long global_time;
@@ -52,7 +54,7 @@ void QzDoom_GetScreenRes(uint32_t *width, uint32_t *height)
 
 float QzDoom_GetFOV()
 {
-	return 90.;
+	return fov;
 }
 
 void TBXR_submitFrame()

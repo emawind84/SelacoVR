@@ -19,9 +19,7 @@ struct FRenderViewpoint
 {
 	FRenderViewpoint();
 
-    DAngle			FieldOfView() const;	// current field of view
-
-    player_t		*player;		// For which player is this viewpoint being renderered? (can be null for camera textures)
+	player_t		*player;		// For which player is this viewpoint being renderered? (can be null for camera textures)
 	DVector3		Pos;			// Camera position
 	DVector3		CenterEyePos;	// Camera position without view shift
 	DVector3		ActorPos;		// Camera actor's position
@@ -48,6 +46,11 @@ struct FRenderViewpoint
 	bool			NoPortalPath;	// Disable portal interpolation path for actor viewpos.
 
 	void SetViewAngle(const FViewWindow &viewwindow);
+	DAngle GetFieldOfView() const;
+	void SetFieldOfView(DAngle);
+
+private:
+	DAngle			FieldOfView;	// current field of view
 
 };
 
