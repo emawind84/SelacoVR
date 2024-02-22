@@ -5,12 +5,14 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := qzdoom
 
-LOCAL_CFLAGS   := -DNO_SWRENDERER -D__MOBILE__ -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM -D__STDINT_LIMITS -DENGINE_NAME=\"gzdoom\"
+# https://developer.android.com/ndk/guides/android_mk#local_cflags
+LOCAL_CFLAGS   := -D__MOBILE__ -DOPNMIDI_DISABLE_GX_EMULATOR -DGZDOOM -D__STDINT_LIMITS -DENGINE_NAME=\"gzdoom\"
 
-LOCAL_CPPFLAGS := -include g_pch.h -DHAVE_FLUIDSYNTH -DHAVE_MPG123 -DHAVE_SNDFILE -std=c++17  -DHAVE_JWZGLES -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security \
+# https://developer.android.com/ndk/guides/android_mk#local_cppflags
+LOCAL_CPPFLAGS := -include g_pch.h -std=c++17 -Wno-switch -Wno-inconsistent-missing-override -Werror=format-security \
     -fexceptions -fpermissive -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D__forceinline=inline -DNO_GTK -DNO_SSE -fsigned-char
 
-LOCAL_CFLAGS  += -DNO_SEND_STATS -DMINIZ_NO_STDIO
+LOCAL_CFLAGS  += -DNO_SEND_STATS -DMINIZ_NO_STDIO -DVR -DNO_SWRENDERER
 
 LOCAL_CFLAGS  += -DOPNMIDI_USE_LEGACY_EMULATOR
 LOCAL_CFLAGS  += -DADLMIDI_DISABLE_MUS_SUPPORT -DADLMIDI_DISABLE_XMI_SUPPORT -DADLMIDI_DISABLE_MIDI_SEQUENCER
