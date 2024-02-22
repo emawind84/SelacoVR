@@ -53,7 +53,7 @@ using namespace OpenGLRenderer;
 // Set up 3D-specific console variables:
 CUSTOM_CVAR(Int, vr_mode, 0, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 {
-#if defined(__ANDROID__) && defined(__VR__)
+#if defined(__ANDROID__) && defined(VR)
 	if (self != 15)
 		self = 15;
 #endif
