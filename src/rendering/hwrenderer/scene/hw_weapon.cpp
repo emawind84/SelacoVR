@@ -386,7 +386,7 @@ static FVector2 BobWeapon2D(WeaponPosition2D &weap, DPSprite *psp, double ticFra
 		sy += weap.boby;
 	}
 
-	if (psp->Flags & PSPF_ADDWEAPON && psp->GetID() != PSP_WEAPON)
+	if (psp->Flags & PSPF_ADDWEAPON && !(psp->GetID() == PSP_WEAPON || psp->GetID() == PSP_OFFHANDWEAPON))
 	{
 		sx += weap.wx;
 		sy += weap.wy;
@@ -426,7 +426,7 @@ static FVector2 BobWeapon3D(WeaponPosition3D &weap, DPSprite *psp, FVector3 &tra
 		translation = rotation = pivot = FVector3(0,0,0);
 	}
 
-	if (psp->Flags & PSPF_ADDWEAPON && psp->GetID() != PSP_WEAPON)
+	if (psp->Flags & PSPF_ADDWEAPON && !(psp->GetID() == PSP_WEAPON || psp->GetID() == PSP_OFFHANDWEAPON))
 	{
 		sx += weap.wx;
 		sy += weap.wy;
