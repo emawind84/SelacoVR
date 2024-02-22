@@ -235,7 +235,7 @@ include( TargetArch )
 target_architecture(TARGET_ARCHITECTURE)
 
 if( ${TARGET_ARCHITECTURE} MATCHES "x86_64" )
-	option( HAVE_VM_JIT "Enable VM JIT support" NO )
+	option( HAVE_VM_JIT "Enable VM JIT support" ON )
 endif()
 
 option (HAVE_VULKAN "Enable Vulkan support" ON)
