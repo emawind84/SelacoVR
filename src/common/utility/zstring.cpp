@@ -37,7 +37,6 @@
 #include <string.h>
 #include <new>		// for bad_alloc
 
-
 #include "zstring.h"
 #include "utf8.h"
 #include "stb_sprintf.h"

@@ -32,8 +32,8 @@
 #include "flatvertices.h"
 #include "r_videoscale.h"
 #include "v_video.h"
-#include "templates.h"
-//#include "hw_vrmodes.h"
+
+#include "hw_vrmodes.h"
 #include "v_draw.h"
 
 extern bool vid_hdr_active;

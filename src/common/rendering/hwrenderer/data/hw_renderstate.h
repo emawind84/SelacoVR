@@ -617,7 +617,7 @@ public:
 		mBias.mUnits = 0;
 	}
 
-public:
+private:
 	void SetMaterial(FMaterial *mat, int clampmode, int translation, int overrideshader)
 	{
 		mMaterial.mMaterial = mat;

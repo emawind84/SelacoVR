@@ -98,7 +98,6 @@
 #include "i_system.h"
 #include "g_cvars.h"
 #include "r_data/r_vanillatrans.h"
-#include "hwrenderer/data/hw_vrmodes.h"
 #include "s_music.h"
 #include "swrenderer/r_swcolormaps.h"
 #include "findfile.h"
