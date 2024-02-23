@@ -57,6 +57,13 @@ double GetFloatConst(FxExpression *ex, FCompileContext &ctx)
 	return ex ? static_cast<FxConstant*>(ex)->GetValue().GetFloat() : 0;
 }
 
+VMFunction* GetFuncConst(FxExpression* ex, FCompileContext& ctx)
+{
+	ex = new FxTypeCast(ex, TypeVMFunction, false);
+	ex = ex->Resolve(ctx);
+	return static_cast<VMFunction*>(ex ? static_cast<FxConstant*>(ex)->GetValue().GetPointer() : nullptr);
+}
+
 const char * ZCCCompiler::GetStringConst(FxExpression *ex, FCompileContext &ctx)
 {
 	ex = new FxStringCast(ex);
@@ -451,6 +458,11 @@ void ZCCCompiler::ProcessStruct(ZCC_Struct *cnode, PSymbolTreeNode *treenode, ZC
 				cls->Arrays.Push(static_cast<ZCC_StaticArrayStatement *>(node));
 			}
 			break;
+
+		case AST_FlagDef:
+			cls->FlagDefs.Push(static_cast<ZCC_FlagDef*>(node));
+			break;
+
 
 		default:
 			assert(0 && "Unhandled AST node type");
