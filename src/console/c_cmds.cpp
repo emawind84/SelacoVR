@@ -1110,7 +1110,7 @@ CCMD(secret)
 				{
 					FString levelname;
 					level_info_t *info = FindLevelInfo(mapname);
-					const char *ln = !(info->flags & LEVEL_LOOKUPLEVELNAME)? info->LevelName.GetChars() : GStrings[info->LevelName.GetChars()];
+					const char* ln = info->LookupLevelName();
 					levelname.Format("%s - %s", mapname, ln);
 					Printf(TEXTCOLOR_YELLOW "%s\n", levelname.GetChars());
 					size_t llen = levelname.Len();
@@ -1376,3 +1376,85 @@ CCMD(dumpactors)
 		}
 	}
 }
+
+const char* testlocalised(const char* in)
+{
+	const char *out = GStrings.GetLanguageString(in, FStringTable::default_table);
+	if (in[0] == '$')
+		out = GStrings.GetLanguageString(in + 1, FStringTable::default_table);
+	if (out)
+		return out;
+	return in;
+}
+
+CCMD (mapinfo)
+{
+	level_info_t *myLevel = nullptr;
+	if (players[consoleplayer].mo && players[consoleplayer].mo->Level)
+		myLevel = players[consoleplayer].mo->Level->info;
+
+	if (argv.argc() > 1)
+	{
+		if (P_CheckMapData(argv[1]))
+			myLevel = FindLevelInfo(argv[1]);
+		else
+		{
+			Printf("Mapname '%s' not found\n", argv[1]);
+			return;
+		}
+	}
+
+	if (!myLevel)
+	{
+		Printf("Not in a level\n");
+		return;
+	}
+
+	Printf("[ Map Info For: '%s' ]\n\n", myLevel->MapName.GetChars());
+
+	if (myLevel->LevelName.IsNotEmpty())
+		Printf("           LevelName: %s\n", myLevel->LookupLevelName().GetChars());
+
+	if (myLevel->AuthorName.IsNotEmpty())
+		Printf("          AuthorName: %s\n", testlocalised(myLevel->AuthorName));
+
+	if (myLevel->levelnum)
+		Printf("            LevelNum: %i\n", myLevel->levelnum);
+
+	if (myLevel->NextMap.IsNotEmpty())
+		Printf("                Next: %s\n", myLevel->NextMap.GetChars());
+
+	if (myLevel->NextSecretMap.IsNotEmpty())
+		Printf("          SecretNext: %s\n", myLevel->NextSecretMap.GetChars());
+
+	if (myLevel->Music.IsNotEmpty())
+		Printf("               Music: %s%s\n", myLevel->Music[0] == '$'? "D_" : "", testlocalised(myLevel->Music));
+
+		Printf("        PixelStretch: %f\n", myLevel->pixelstretch);
+
+	if (myLevel->RedirectType.GetChars())
+		Printf("     Redirect (Item): %s\n", myLevel->RedirectType.GetChars());
+
+	if (myLevel->RedirectMapName.IsNotEmpty())
+		Printf("      Redirect (Map): %s\n", myLevel->RedirectMapName.GetChars());
+
+	if (myLevel->RedirectCVAR.GetChars())
+		Printf("CVAR_Redirect (CVAR): %s\n", myLevel->RedirectCVAR.GetChars());
+
+	if (myLevel->RedirectCVARMapName.IsNotEmpty())
+		Printf(" CVAR_Redirect (Map): %s\n", myLevel->RedirectCVARMapName.GetChars());
+
+		Printf("           LightMode: %i\n", (int8_t)myLevel->lightmode);
+
+	if (players[consoleplayer].mo && players[consoleplayer].mo->Level)
+	{
+		level_info_t *check = myLevel->CheckLevelRedirect();
+		if (check)
+			Printf("Level IS currently being redirected to '%s'!\n", check->MapName.GetChars());
+		else
+			Printf("Level is currently NOT being redirected!\n");
+	}
+	else
+		Printf("Level redirection is currently not being tested - not in game!\n");
+}
+
