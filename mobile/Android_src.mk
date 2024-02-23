@@ -605,7 +605,7 @@ LOCAL_LDLIBS +=  -lEGL
 # This is stop a linker warning for mp123 lib failing build
 #LOCAL_LDLIBS += -Wl,--no-warn-shared-textrel
 
-LOCAL_STATIC_LIBRARIES :=  lzma_lz bzip2_lz vpx_player webpmux
+LOCAL_STATIC_LIBRARIES :=  lzma_gl3 bzip2_gl3 vpx_player webpmux
 LOCAL_SHARED_LIBRARIES :=  openal openxr_loader zmusic
 
 #Strip unused functions/data
