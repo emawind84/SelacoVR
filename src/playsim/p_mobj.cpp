@@ -4846,12 +4846,12 @@ void AActor::HandleSpawnFlags ()
 		if (flags & MF_COUNTKILL)
 		{
 			flags &= ~MF_COUNTKILL;
-			level.total_monsters--;
+			Level->total_monsters--;
 		}
 		if (flags & MF_COUNTITEM)
 		{
 			flags &= ~MF_COUNTITEM;
-			level.total_items--;
+			Level->total_items--;
 		}
 	}
 }
@@ -5229,15 +5229,6 @@ void FLevelLocals::PlayerSpawnPickClass (int playernum)
 		}
 		p->cls = PlayerClasses[p->CurrentPlayerClass].Type;
 	}
-}
-
-int PlayerNum(player_t *player)
-{
-	for (int i = 0; i < MAXPLAYERS; i++)
-	{
-		if (player == &players[i]) return i;
-	}
-	return -1;
 }
 
 AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
@@ -6676,11 +6667,11 @@ AActor *P_SpawnMissileXYZ (DVector3 pos, AActor *source, AActor *dest, PClassAct
 		return nullptr;
 	}
 
-	if (dest == nullptr)
+	if (dest == NULL)
 	{
 		Printf ("P_SpawnMissileXYZ: Tried to shoot %s from %s with no destination\n",
 			type->TypeName.GetChars(), source->GetClass()->TypeName.GetChars());
-		return nullptr;
+		return NULL;
 	}
 
 	if (pos.Z != ONFLOORZ && pos.Z != ONCEILINGZ)
@@ -6693,7 +6684,7 @@ AActor *P_SpawnMissileXYZ (DVector3 pos, AActor *source, AActor *dest, PClassAct
 	P_PlaySpawnSound(th, source);
 
 	// record missile's originator
-	if (owner == nullptr) owner = source;
+	if (owner == NULL) owner = source;
 	th->target = owner;
 
 	double speed = th->Speed;
@@ -6884,7 +6875,7 @@ AActor *P_SpawnMissileAngleZSpeed (AActor *source, double z,
 
 	if (mo == nullptr) return nullptr;
 	P_PlaySpawnSound(mo, source);
-	if (owner == nullptr) owner = source;
+	if (owner == NULL) owner = source;
 	mo->target = owner;
 	mo->Angles.Yaw = angle;
 	mo->VelFromAngle(speed);

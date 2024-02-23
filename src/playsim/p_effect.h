@@ -35,7 +35,6 @@
 
 #include "vectors.h"
 #include "doomdef.h"
-#include "textures.h"
 #include "renderstyle.h"
 
 enum

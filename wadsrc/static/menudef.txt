@@ -1246,8 +1246,14 @@ OptionMenu "VideoOptions" protected
 	Title "$DSPLYMNU_TITLE"
 
 	Submenu "$DSPLYMNU_GLOPT", 			"OpenGLOptions"
-	Submenu "$DSPLYMNU_SWOPT", 			"SWROptions"
-	Submenu "$DSPLYMNU_VKOPT",			"VKOptions"
+	IfOption(SWRender)
+	{
+		Submenu "$DSPLYMNU_SWOPT", 			"SWROptions"
+	}
+	IfOption(VulkanRender)
+	{
+		Submenu "$DSPLYMNU_VKOPT",			"VKOptions"
+	}
 	Submenu "$GLMNU_TEXOPT", 			"GLTextureGLOptions"
 	Submenu "$GLMNU_DYNLIGHT",			"GLLightOptions"
 	StaticText " "
@@ -3084,6 +3090,7 @@ OptionValue VRMode
 	6, "$OPTVAL_RIGHTEYE"
 	7, "$OPTVAL_QUADBUFFERED"
 	10, "$OPTVAL_OPENVR"
+	15, "$OPTVAL_OPENVR_MOBILE"
 }
 
 OptionValue ShadowMapQuality
@@ -3218,6 +3225,8 @@ OptionMenu "VR3DMenu" protected
 	}
 	Slider "$GLPREFMNU_VRIPD",					vr_ipd,							0.041, 0.073, 0.001, 3
 	Slider "$GLPREFMNU_VRSCREENDIST",			vr_screendist,					0.2, 10.0, 0.1, 1
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_mode vr_enable_quadbuffered vr_ipd vr_screendist"
 }
 
 OptionMenu "PostProcessMenu" protected

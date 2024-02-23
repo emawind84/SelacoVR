@@ -304,7 +304,7 @@ PPGLTexture FGLRenderBuffers::Create2DTexture(const char *name, GLuint format, i
 	case GL_R16F:				dataformat = GL_RED; datatype = GL_FLOAT; break;
 	case GL_RG32F:				dataformat = GL_RG; datatype = GL_FLOAT; break;
 	case GL_RG16F:				dataformat = GL_RG; datatype = GL_FLOAT; break;
-	case GL_RGB10_A2:			dataformat = GL_RGBA; datatype = GL_UNSIGNED_INT_10_10_10_2; break;
+	case GL_RGB10_A2:			dataformat = GL_RGBA; datatype = GL_UNSIGNED_INT_2_10_10_10_REV; break;
 	case GL_DEPTH_COMPONENT24:	dataformat = GL_DEPTH_COMPONENT; datatype = GL_FLOAT; break;
 	case GL_STENCIL_INDEX8:		dataformat = GL_STENCIL_INDEX; datatype = GL_INT; break;
 	case GL_DEPTH24_STENCIL8:	dataformat = GL_DEPTH_STENCIL; datatype = GL_UNSIGNED_INT_24_8; break;
@@ -312,14 +312,25 @@ PPGLTexture FGLRenderBuffers::Create2DTexture(const char *name, GLuint format, i
 	}
 
 #ifdef __MOBILE__ // FIXME
-    //LOGI("Create2DTexture  0x%0x 0x%0x 0x%0x",format,dataformat,datatype);
+	if (format == GL_RGBA16F)
+	{
+		format = GL_RGBA;
+		dataformat = GL_RGBA;
+		datatype = GL_UNSIGNED_BYTE;
+	}
 
-    if( format == GL_RGBA16F )
-    {
-        format = GL_RGBA;
-        dataformat = GL_RGBA;
-        datatype = GL_UNSIGNED_BYTE;
-    }
+	// Mobile does not have GL_RGBA16_SNORM so convert to GL_RGBA8_SNORM
+	// Used for SSAO random texture
+    if (format == GL_RGBA16_SNORM)
+	{
+		format = GL_RGBA8_SNORM;
+		dataformat = GL_RGBA;
+		datatype = GL_BYTE;
+		for(int n = 0; n < width * height; n++)
+		{
+			((int8_t*)data)[n] = ((int16_t*)data)[n] / 256;
+		}
+	}
 #endif
 
 	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, dataformat, datatype, data);
@@ -327,6 +338,11 @@ PPGLTexture FGLRenderBuffers::Create2DTexture(const char *name, GLuint format, i
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+#ifdef __MOBILE__ // This is to fix AO on some devices (P20)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+#endif
 	return tex;
 }
 
@@ -492,9 +508,9 @@ void FGLRenderBuffers::ClearFrameBuffer(bool stencil, bool depth)
 	glGetBooleanv(GL_SCISSOR_TEST, &scissorEnabled);
 	glGetIntegerv(GL_STENCIL_CLEAR_VALUE, &stencilValue);
 #ifdef __MOBILE__
-    GLfloat t;
-    glGetFloatv(GL_DEPTH_CLEAR_VALUE, &t);
-    depthValue = t;
+	GLfloat t;
+	glGetFloatv(GL_DEPTH_CLEAR_VALUE, &t);
+	depthValue = t;
 #else
 	glGetDoublev(GL_DEPTH_CLEAR_VALUE, &depthValue);
 #endif

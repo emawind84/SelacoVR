@@ -28,8 +28,6 @@
 #include <stddef.h>
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include <chrono>
-#include <thread>
 
 #include "version.h"
 #include "menu.h"

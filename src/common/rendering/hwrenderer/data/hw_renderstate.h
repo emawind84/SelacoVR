@@ -6,6 +6,8 @@
 #include "texmanip.h"
 #include "version.h"
 #include "i_interface.h"
+#include "v_video.h"
+#include "hw_cvars.h"
 
 struct FColormap;
 class IVertexBuffer;
@@ -181,7 +183,6 @@ struct StreamData
 	FVector4PalEntry uTextureModulateColor;
 	FVector4PalEntry uTextureBlendColor;
 	FVector4PalEntry uFogColor;
-	FVector4PalEntry uGlobalFadeColor;
 	float uDesaturationFactor;
 	float uInterpolationFactor;
 	float timer;
@@ -202,7 +203,19 @@ struct StreamData
 
 	FVector4 uDetailParms;
 	FVector4 uNpotEmulation;
-	FVector4 padding1, padding2, padding3;
+
+	FVector4PalEntry uGlobalFadeColor;
+	int uGlobalFade;
+	int uGlobalFadeMode;
+	float uGlobalFadeDensity;
+	float uGlobalFadeGradient;
+	int uLightRangeLimit;
+
+	int padding1;
+	int padding2;
+	int padding3;
+
+	FVector4 padding4;
 };
 
 class FRenderState
@@ -310,6 +323,14 @@ public:
 #ifdef NPOT_EMULATION
 		mStreamData.uNpotEmulation = { 0,0,0,0 };
 #endif
+
+		mStreamData.uGlobalFadeColor = 0;
+		mStreamData.uGlobalFade = 0;
+		mStreamData.uGlobalFadeMode = -1;
+		mStreamData.uGlobalFadeDensity = 0.001f;
+		mStreamData.uGlobalFadeGradient = 1.5f;
+		mStreamData.uLightRangeLimit = 64;
+
 		mModelMatrix.loadIdentity();
 		mTextureMatrix.loadIdentity();
 		ClearClipSplit();
@@ -751,8 +772,29 @@ public:
 		SetColorMask(on, on, on, on);
 	}
 
-	void ResetFadeColor();
-	void InitSceneClearColor();
+	void ResetFadeColor()
+	{
+		mFadeColor = gl_global_fade_color;
+		mStreamData.uGlobalFadeColor = mFadeColor;
+		mStreamData.uGlobalFade = gl_global_fade ? 1 : 0;
+		mStreamData.uGlobalFadeMode = gl_global_fade_debug ? 2 : -1;
+		mStreamData.uGlobalFadeDensity = gl_global_fade_density;
+		mStreamData.uGlobalFadeGradient = gl_global_fade_gradient;
+		mStreamData.uLightRangeLimit = gl_light_range_limit;
+	}
+
+	void InitSceneClearColor()
+	{
+		float r, g, b;
+		if (gl_global_fade)
+		{
+			mSceneColor = mFadeColor;
+		}
+		r = g = b = 1.f;
+		screen->mSceneClearColor[0] = mSceneColor.r * r / 255.f;
+		screen->mSceneClearColor[1] = mSceneColor.g * g / 255.f;
+		screen->mSceneClearColor[2] = mSceneColor.b * b / 255.f;
+	}
 
 };
 

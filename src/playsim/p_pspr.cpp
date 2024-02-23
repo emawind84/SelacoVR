@@ -660,6 +660,7 @@ void P_BringUpWeapon (player_t *player)
 
 void P_BobWeapon (player_t *player, float *x, float *y, double ticfrac)
 {
+#ifdef VR
 	IFVIRTUALPTRNAME(player->mo, NAME_PlayerPawn, BobWeapon)
 	{
 		VMValue param[] = { player->mo, ticfrac };
@@ -683,11 +684,13 @@ void P_BobWeapon (player_t *player, float *x, float *y, double ticfrac)
 		*y = (float)result.Y;
 		return;
 	}
+#endif
 	*x = *y = 0;
 }
 
 void P_BobWeapon3D (player_t *player, FVector3 *translation, FVector3 *rotation, double ticfrac)
 {
+#ifdef VR
 	IFVIRTUALPTRNAME(player->mo, NAME_PlayerPawn, BobWeapon3D)
 	{
 		VMValue param[] = { player->mo, ticfrac };
@@ -717,6 +720,7 @@ void P_BobWeapon3D (player_t *player, FVector3 *translation, FVector3 *rotation,
 		rotation->Z = (float)r.Z;
 		return;
 	}
+#endif
 	*translation = *rotation = {};
 }
 

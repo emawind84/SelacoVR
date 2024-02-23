@@ -85,7 +85,6 @@
 #include "vm.h"
 
 #include "decallib.h"
-#include "gi.h"
 
 // State.
 

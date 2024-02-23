@@ -249,7 +249,7 @@ void FSoftwareRenderer::RenderTextureView (FCanvasTexture *camtex, AActor *viewp
 	// These get clobbered by rendering to a camera texture but they need to be preserved so the final rendering can be done with the correct palette.
 	CameraLight savedCameraLight = *CameraLight::Instance();
 
-	DAngle savedfov = cameraViewpoint.FieldOfView();
+	DAngle savedfov = cameraViewpoint.GetFieldOfView();
 	R_SetFOV (cameraViewpoint, DAngle::fromDeg(fov));
 
 	mScene.RenderViewToCanvas(viewpoint, Canvas, 0, 0, tex->GetWidth(), tex->GetHeight(), camtex->bFirstUpdate);

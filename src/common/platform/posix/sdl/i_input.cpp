@@ -182,8 +182,8 @@ void I_SetMouseCapture()
 	SDL_GetRelativeMouseState (NULL, NULL);
 	SDL_SetRelativeMouseMode (SDL_TRUE);
 #ifdef __MOBILE__
-    // Need to clear this again because setting mode above adds relative values
-    SDL_GetRelativeMouseState (NULL, NULL);
+	// Need to clear this again because setting mode above adds relative values
+	SDL_GetRelativeMouseState (NULL, NULL);
 #endif
 }
 

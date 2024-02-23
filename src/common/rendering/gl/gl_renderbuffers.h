@@ -203,6 +203,7 @@ private:
 	int mCurrentShadowMapSize = 0;
 
 	PPGLTexture mDitherTexture;
+
 	static bool FailedCreate;
 
 	friend class GLPPRenderState;

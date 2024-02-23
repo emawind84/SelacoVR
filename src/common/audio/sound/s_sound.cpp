@@ -399,7 +399,7 @@ static float CalcPitch(int pitchmask, float defpitch, float defpitchmax)
 //
 // S_StartSound
 //
-// 0 attenuation means full volume over whole level.
+// 0 attenuation means full volume over whole primaryLevel->
 // 0 < attenuation means to scale the distance by that amount when
 //		calculating volume.
 //
@@ -1560,6 +1560,7 @@ FSoundID SoundEngine::AddSoundLump(const char* logicalname, int lump, int Curren
 	auto id = FSoundID::fromInt(S_sfx.Size() - 1);
 	return id;
 }
+
 
 //==========================================================================
 //

@@ -55,8 +55,6 @@
 #include "swrenderer/r_renderthread.h"
 #include "g_levellocals.h"
 
-extern int skyoffset;
-
 CVAR(Bool, r_linearsky, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 EXTERN_CVAR(Int, r_skymode)
 EXTERN_CVAR(Bool, cl_oldfreelooklimit)
@@ -96,8 +94,8 @@ namespace swrenderer
 			skyiscale = float(r_Yaspect / freelookviewheight);
 			skyscale = freelookviewheight / r_Yaspect;
 
-			skyiscale *= float(thread->Viewport->viewpoint.FieldOfView().Degrees() / 90.);
-			skyscale *= float(90. / thread->Viewport->viewpoint.FieldOfView().Degrees());
+			skyiscale *= float(thread->Viewport->viewpoint.GetFieldOfView().Degrees() / 90.);
+			skyscale *= float(90. / thread->Viewport->viewpoint.GetFieldOfView().Degrees());
 		}
 
 		if (Level->skystretch)

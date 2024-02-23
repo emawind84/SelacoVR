@@ -143,12 +143,12 @@ bool FGLRenderState::ApplyShader()
 	activeShader->muTextureModulateColor.Set(mStreamData.uTextureModulateColor);
 	activeShader->muTextureBlendColor.Set(mStreamData.uTextureBlendColor);
 	activeShader->muDetailParms.Set(&mStreamData.uDetailParms.X);
-	activeShader->muGlobalFadeMode.Set(gl_global_fade_debug ? 2 : -1);
-	activeShader->muGlobalFade.Set(gl_global_fade ? 1 : 0);
-	activeShader->muGlobalFadeDensity.Set(gl_global_fade_density);
-	activeShader->muGlobalFadeGradient.Set(gl_global_fade_gradient);
+	activeShader->muGlobalFadeMode.Set(mStreamData.uGlobalFadeMode);
+	activeShader->muGlobalFade.Set(mStreamData.uGlobalFade);
+	activeShader->muGlobalFadeDensity.Set(mStreamData.uGlobalFadeDensity);
+	activeShader->muGlobalFadeGradient.Set(mStreamData.uGlobalFadeGradient);
 	activeShader->muGlobalFadeColor.Set(mStreamData.uGlobalFadeColor);
-	activeShader->muLightRangeLimit.Set(gl_light_range_limit);
+	activeShader->muLightRangeLimit.Set(mStreamData.uLightRangeLimit);
 #ifdef NPOT_EMULATION
 	activeShader->muNpotEmulation.Set(&mStreamData.uNpotEmulation.X);
 #endif
@@ -568,12 +568,16 @@ void FGLRenderState::EnableDepthTest(bool on)
 
 void FGLRenderState::EnableMultisampling(bool on)
 {
+#ifndef __MOBILE__
 	ToggleState(GL_MULTISAMPLE, on);
+#endif
 }
 
 void FGLRenderState::EnableLineSmooth(bool on)
 {
+#ifndef __MOBILE__
 	ToggleState(GL_LINE_SMOOTH, on);
+#endif
 }
 
 //==========================================================================

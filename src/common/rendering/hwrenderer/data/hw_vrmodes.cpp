@@ -52,7 +52,13 @@
 using namespace OpenGLRenderer;
 
 // Set up 3D-specific console variables:
-CVAR(Int, vr_mode, 15, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
+CUSTOM_CVAR(Int, vr_mode, 0, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
+{
+#if defined(__ANDROID__) && defined(VR)
+	if (self != 15)
+		self = 15;
+#endif
+}
 
 // switch left and right eye views
 CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG   | CVAR_ARCHIVE)

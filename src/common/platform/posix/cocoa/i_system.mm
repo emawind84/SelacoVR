@@ -60,6 +60,7 @@ void CalculateCPUSpeed()
 	}
 }
 
+
 void I_SetIWADInfo()
 {
 	FConsoleWindow::GetInstance().SetTitleText();

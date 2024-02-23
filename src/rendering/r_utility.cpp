@@ -163,18 +163,26 @@ FRenderViewpoint::FRenderViewpoint()
 	TanSin = 0.0;
 	camera = nullptr;
 	sector = nullptr;
-	//FieldOfView =  DAngle::fromDeg(90.); // Angles in the SCREENWIDTH wide window
+	FieldOfView =  DAngle::fromDeg(90.); // Angles in the SCREENWIDTH wide window
 	TicFrac = 0.0;
 	FrameTime = 0;
 	extralight = 0;
 	showviewer = false;
 }
 
-DAngle	FRenderViewpoint::FieldOfView() const
+DAngle FRenderViewpoint::GetFieldOfView() const
 {
-    //Get for VR
-    DAngle fov = DAngle::fromDeg(QzDoom_GetFOV());
-    return fov;
+#if defined(VR)
+	return DAngle::fromDeg(QzDoom_GetFOV());
+#endif
+	return FieldOfView;
+}
+
+void FRenderViewpoint::SetFieldOfView(DAngle newfov)
+{
+#if !defined(VR)
+	FieldOfView = newfov;
+#endif
 }
 
 
@@ -214,11 +222,11 @@ void R_SetFOV (FRenderViewpoint &viewpoint, DAngle fov)
 
 	if (fov < DAngle::fromDeg(5.)) fov =  DAngle::fromDeg(5.);
 	else if (fov > DAngle::fromDeg(170.)) fov = DAngle::fromDeg(170.);
-	// if (fov != viewpoint.FieldOfView)
-	// {
-	// 	viewpoint.FieldOfView = fov;
-	// 	setsizeneeded = true;
-	// }
+	if (fov != viewpoint.GetFieldOfView())
+	{
+		viewpoint.SetFieldOfView(fov);
+		setsizeneeded = true;
+	}
 }
 
 //==========================================================================
@@ -288,7 +296,7 @@ void R_SetWindow (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, int wind
 	}
 
 
-	DAngle fov = viewpoint.FieldOfView();
+	DAngle fov = viewpoint.GetFieldOfView();
 
 	// For widescreen displays, increase the FOV so that the middle part of the
 	// screen that would be visible on a 4:3 display has the requested FOV.

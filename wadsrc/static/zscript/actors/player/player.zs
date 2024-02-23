@@ -1017,16 +1017,19 @@ class PlayerPawn : Actor
 
 		if (!player) return;
 
+		double fov1 = player.ReadyWeapon != NULL ? player.ReadyWeapon.FOVScale : 0;
+		double fov2 = player.OffhandWeapon != NULL ? player.OffhandWeapon.FOVScale : 0;
+		double fovscale = MAX(fov1, fov2);
+
 		// [RH] Zoom the player's FOV
 		float desired = player.DesiredFOV;
 		// Adjust FOV using on the currently held weapon.
 		if (player.playerstate != PST_DEAD &&		// No adjustment while dead.
-			player.ReadyWeapon != NULL &&			// No adjustment if no weapon.
-			player.ReadyWeapon.FOVScale != 0)		// No adjustment if the adjustment is zero.
+			fovscale != 0)		// No adjustment if the adjustment is zero.
 		{
 			// A negative scale is used to prevent G_AddViewAngle/G_AddViewPitch
 			// from scaling with the FOV scale.
-			desired *= abs(player.ReadyWeapon.FOVScale);
+			desired *= abs(fovscale);
 		}
 		if (player.FOV != desired)
 		{

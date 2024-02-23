@@ -268,7 +268,7 @@ FString FShaderProgram::PatchShader(ShaderType type, const FString &code, const 
 	if (maxGlslVersion < 420 && gl.glslversion >= 4.2f) maxGlslVersion = 420;
 	int shaderVersion = min((int)round(gl.glslversion * 10) * 10, maxGlslVersion);
 #ifdef __MOBILE__
-	patchedCode.AppendFormat(ES_VERSION_STR"\n");
+	patchedCode.AppendFormat("#version 310 es\n");
 #else
 	patchedCode.AppendFormat("#version %d\n", shaderVersion);
 #endif
@@ -279,9 +279,10 @@ FString FShaderProgram::PatchShader(ShaderType type, const FString &code, const 
 #ifdef __MOBILE__ // Actually this is needed before the defines
 	patchedCode << "precision highp int;\n";
 	patchedCode << "precision highp float;\n";
-    patchedCode << "precision highp sampler2D;\n";
-    patchedCode << "precision highp samplerCube;\n";
-    patchedCode << "precision highp sampler2DMS;\n";
+	patchedCode << "precision highp sampler2D;\n";
+	patchedCode << "precision highp sampler2DArray;\n";
+	patchedCode << "precision highp samplerCube;\n";
+	patchedCode << "precision highp sampler2DMS;\n";
 #endif
 
 	if (defines)
