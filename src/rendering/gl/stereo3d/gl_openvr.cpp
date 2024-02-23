@@ -82,6 +82,7 @@ namespace openvr {
 void I_StartupOpenVR();
 double P_XYMovement(AActor* mo, DVector2 scroll);
 float I_OpenVRGetYaw();
+float I_OpenVRGetDirectionalMove();
 
 float getDoomPlayerHeightWithoutCrouch(const player_t *player);
 
@@ -548,6 +549,56 @@ namespace s3d
 		return eulerAnglesFromQuat(quatFromMatrix(mat));
 	}
 
+	// rotate quat by pitch
+	// https://stackoverflow.com/questions/4436764/rotating-a-quaternion-on-1-axis/34805024#34805024
+	HmdQuaternion_t makeQuat(float x, float y, float z, float w) {
+		HmdQuaternion_t quat = { x,y,z,w };
+		return quat;
+	}
+	float dot(HmdQuaternion_t a)
+	{
+		return (((a.x * a.x) + (a.y * a.y)) + (a.z * a.z)) + (a.w * a.w);
+	}
+	HmdQuaternion_t normalizeQuat(HmdQuaternion_t q)
+	{
+		float num = dot(q);
+		float inv = 1.0f / (sqrtf(num));
+		return makeQuat(q.x * inv, q.y * inv, q.z * inv, q.w * inv);
+	}
+	HmdQuaternion_t createQuatfromAxisAngle(const float& xx, const float& yy, const float& zz, const float& a)
+	{
+		// Here we calculate the sin( theta / 2) once for optimization
+		float factor = sinf(a / 2.0f);
+
+		HmdQuaternion_t quat;
+		// Calculate the x, y and z of the quaternion
+		quat.x = xx * factor;
+		quat.y = yy * factor;
+		quat.z = zz * factor;
+
+		// Calcualte the w value by cos( theta / 2 )
+		quat.w = cosf(a / 2.0f);
+		return normalizeQuat(quat);
+	}
+	// https://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/code/index.htm
+	static HmdQuaternion_t multiplyQuat(HmdQuaternion_t q1, HmdQuaternion_t q2) {
+		HmdQuaternion_t q;
+		q.x = q1.x * q2.w + q1.y * q2.z - q1.z * q2.y + q1.w * q2.x;
+		q.y = -q1.x * q2.z + q1.y * q2.w + q1.z * q2.x + q1.w * q2.y;
+		q.z = q1.x * q2.y - q1.y * q2.x + q1.z * q2.w + q1.w * q2.z;
+		q.w = -q1.x * q2.x - q1.y * q2.y - q1.z * q2.z + q1.w * q2.w;
+		return q;
+	}
+
+	static HmdVector3d_t eulerAnglesFromQuatPitchRotate(HmdQuaternion_t quat, float pitch) {
+		HmdQuaternion_t qRot = createQuatfromAxisAngle(0, 0, 1, -pitch * (3.14159f / 180.0f));
+		HmdQuaternion_t q = multiplyQuat(quat, qRot);
+		return eulerAnglesFromQuat(q);
+	}
+	static HmdVector3d_t eulerAnglesFromMatrixPitchRotate(HmdMatrix34_t mat, float pitch) {
+		return eulerAnglesFromQuatPitchRotate(quatFromMatrix(mat), pitch);
+	}
+
 	OpenVREyePose::OpenVREyePose(int eye, float shiftFactor, float scaleFactor)
 		: VREyeInfo(0.0f, 1.f)
 		, eye(eye)
@@ -952,7 +1003,6 @@ namespace s3d
 
 	void OpenVRMode::AdjustPlayerSprites(int hand) const
 	{
-
 		GetWeaponTransform(&gl_RenderState.mModelMatrix, hand);
 
 		float scale = 0.00125f * openvr_weaponScale;
@@ -1027,6 +1077,7 @@ namespace s3d
 			LSMatrix44 handToAbs;
 			vSMatrixFromHmdMatrix34(handToAbs, controllers[hand].pose.mDeviceToAbsoluteTracking);
 			mat->multMatrix(handToAbs.transpose());
+			mat->rotate(openvr_weaponRotate, 1, 0, 0);
 
 			return true;
 		}
@@ -1037,7 +1088,7 @@ namespace s3d
 	{
 		int hand = openvr_rightHanded ? 1 : 0;
 		weaponangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
-		weaponangles[PITCH] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[1]);
+		weaponangles[PITCH] = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, openvr_weaponRotate).v[1]);
 		weaponangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
 	}
 
@@ -1045,7 +1096,7 @@ namespace s3d
 	{
 		int hand = openvr_rightHanded ? 0 : 1;
 		offhandangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
-		offhandangles[PITCH] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[1]);
+		offhandangles[PITCH] = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, openvr_weaponRotate).v[1]);
 		offhandangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
 	}
 
@@ -1280,6 +1331,7 @@ namespace s3d
 			}
 		}
 		// Offhand trigger is now bindable (sort of)
+		// TODO: need to fix the bug where it expects another input after pressing trigger in a key inputbox
 		// Offhand trigger = Run, Grip + Offhand trigger = unmapped
 		if (role != DominantHandRole)
 		{
@@ -1315,7 +1367,7 @@ namespace s3d
 		// Y/B
 		// Y = Automap, Grip + Y = Fly Up
 		// B = Jump, Grip + B = Main menu
-		// Y will be defaulted to Menu button if grip combo is disabled
+		// B will be defaulted to Menu button if grip combo is disabled
 		if (dominantGripPushed || !vr_secondary_button_mappings) {
 			HandleVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, KEY_PGUP, role * (KEY_PAD_BACK - KEY_PGUP));
 		}
@@ -1356,19 +1408,18 @@ namespace s3d
 	}
 
 	// Teleport trigger logic. Thanks to DrBeef for the inspiration of how to use this
-	void HandleTeleportTrigger(int role, VRControllerState_t& newState, int vrAxis)
+	void HandleTeleportTrigger()
 	{
 		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
-		int OffHandRole = openvr_rightHanded ? 0 : 1;
 
-		if (vr_teleport && player && gamestate == GS_LEVEL && menuactive == MENU_Off && role == OffHandRole)
+		if (vr_teleport && player && gamestate == GS_LEVEL && menuactive == MENU_Off)
 		{
-			float joyForwardMove = newState.rAxis[vrAxis].y - DEAD_ZONE;
+			float joyDirectionalMove = I_OpenVRGetDirectionalMove();
 
-			if ((joyForwardMove > 0.7f) && !ready_teleport) {
+			if ((joyDirectionalMove > 0.7f) && !ready_teleport) {
 				ready_teleport = true;
 			}
-			else if ((joyForwardMove < 0.6f) && ready_teleport) {
+			else if ((joyDirectionalMove < 0.6f) && ready_teleport) {
 				ready_teleport = false;
 				trigger_teleport = true;
 			}
@@ -1391,7 +1442,7 @@ namespace s3d
 	}
 
 	// Snap-turn logic. Thanks to DrBeef for the codes
-	void HandleSnapTurn(int role, VRControllerState_t& newState, int vrAxis)
+	void HandleSnapTurn()
 	{
 		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 		int MainHandRole = openvr_rightHanded ? 1 : 0;
@@ -1407,22 +1458,21 @@ namespace s3d
 			snap_turning_on = false;
 		}
 
-		if (snap_turning_on && player && gamestate == GS_LEVEL && menuactive == MENU_Off && role == MainHandRole)
+		if (snap_turning_on && player && gamestate == GS_LEVEL && menuactive == MENU_Off)
 		{
-			float joySideMove = newState.rAxis[vrAxis].x;
-			joySideMove = joySideMove > 0 ? joySideMove - DEAD_ZONE : joySideMove + DEAD_ZONE;
+			float joyTurnMove = -I_OpenVRGetYaw();
 
-			if (joySideMove > 0.6f && increaseSnap) {
+			if (joyTurnMove > 0.6f && increaseSnap) {
 				snapTurn -= vr_snapTurn;
 				if (vr_snapTurn > 10.0f) {
 					increaseSnap = false;
 				}
 			}
-			else if (joySideMove < 0.4f) {
+			else if (joyTurnMove < 0.4f) {
 				increaseSnap = true;
 			}
 
-			if (joySideMove < -0.6f && decreaseSnap) {
+			if (joyTurnMove < -0.6f && decreaseSnap) {
 				snapTurn += vr_snapTurn;
 
 				//If snap turn configured for less than 10 degrees
@@ -1430,7 +1480,7 @@ namespace s3d
 					decreaseSnap = false;
 				}
 			}
-			else if (joySideMove > -0.4f) {
+			else if (joyTurnMove > -0.4f) {
 				decreaseSnap = true;
 			}
 
@@ -1615,8 +1665,6 @@ namespace s3d
 						}
 					}
 
-					HandleTeleportTrigger(role, newState, axisJoystick);
-					HandleSnapTurn(role, newState, axisJoystick);
 					if(vr_use_alternate_mapping)
 					{
 						HandleAlternateControllerMapping(i, role, newState);
@@ -1632,7 +1680,7 @@ namespace s3d
 			if (player && player->mo)
 			{
 				LSMatrix44 mat;
-				if (GetWeaponTransform(&mat, VR_MAINHAND))
+				if (GetWeaponTransform(&mat, openvr_rightHanded ? 0 : 1))
 				{
 					player->mo->AttackPos.X = mat[3][0];
 					player->mo->AttackPos.Y = mat[3][2];
@@ -1641,12 +1689,12 @@ namespace s3d
 					getMainHandAngles();
 
 					player->mo->AttackAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - weaponangles[YAW]);
-					player->mo->AttackPitch = DAngle::fromDeg(- weaponangles[PITCH]);
+					player->mo->AttackPitch = DAngle::fromDeg(weaponangles[PITCH]);
 					player->mo->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
 				}
 
 				LSMatrix44 matOffhand;
-				if (GetWeaponTransform(&matOffhand, VR_OFFHAND))
+				if (GetWeaponTransform(&matOffhand, openvr_rightHanded ? 1 : 0))
 				{
 					player->mo->OffhandPos.X = matOffhand[3][0];
 					player->mo->OffhandPos.Y = matOffhand[3][2];
@@ -1655,7 +1703,7 @@ namespace s3d
 					getOffHandAngles();
 
 					player->mo->OffhandAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - offhandangles[YAW]);
-					player->mo->OffhandPitch = DAngle::fromDeg(- offhandangles[PITCH]);
+					player->mo->OffhandPitch = DAngle::fromDeg(offhandangles[PITCH]);
 					player->mo->OffhandRoll = DAngle::fromDeg(offhandangles[ROLL]);
 				}
 
@@ -1744,6 +1792,9 @@ namespace s3d
 
 		G_AddViewAngle(joyint(-1280 * I_OpenVRGetYaw() * delta * 30 / 1000), true);
 		}
+
+		HandleTeleportTrigger();
+		HandleSnapTurn();
 	}
 
 	/* virtual */
