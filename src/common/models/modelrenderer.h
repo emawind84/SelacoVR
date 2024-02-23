@@ -17,7 +17,6 @@ public:
 
 	virtual VSMatrix GetViewToWorldMatrix() = 0;
 
-	virtual void PrepareRenderHUDModel(FSpriteModelFrame* smf, FVector3 translation, FVector3 rotation, FVector3 rotation_pivot, VSMatrix& objectToWorldMatrix);
 	virtual void BeginDrawHUDModel(FRenderStyle style, const VSMatrix &objectToWorldMatrix, bool mirrored) = 0;
 	virtual void EndDrawHUDModel(FRenderStyle style) = 0;
 

@@ -61,6 +61,7 @@
 #include "openvr_include.h"
 
 using namespace openvr;
+using namespace OpenGLRenderer;
 
 float RAD2DEG(float rad)
 {
@@ -79,6 +80,8 @@ namespace openvr {
 void I_StartupOpenVR();
 double P_XYMovement(AActor* mo, DVector2 scroll);
 float I_OpenVRGetYaw();
+
+float getDoomPlayerHeightWithoutCrouch(const player_t *player);
 
 extern class DMenu* CurrentMenu;
 
@@ -194,19 +197,17 @@ bool IsOpenVRPresent()
 
 
 //bit of a hack, assume player is at "normal" height when not crouching
-float getDoomPlayerHeightWithoutCrouch(const player_t* player)
-{
-	static float height = 0;
-	if (height == 0)
-	{
-		// Doom thinks this is where you are
-		height = player->viewheight;
-	}
+// float getDoomPlayerHeightWithoutCrouch(const player_t* player)
+// {
+// 	static float height = 0;
+// 	if (height == 0)
+// 	{
+// 		// Doom thinks this is where you are
+// 		height = player->viewheight;
+// 	}
 
-	return height;
-}
-
-void Draw2D(F2DDrawer* drawer, FRenderState& state, bool outside2D);
+// 	return height;
+// }
 
 // feature toggles, for testing and debugging
 static const bool doTrackHmdYaw = true;
@@ -557,7 +558,7 @@ namespace s3d
 
 
 	/* virtual */
-	DVector3 OpenVREyePose::GetViewShift(FLOATTYPE yaw) const
+	DVector3 OpenVREyePose::GetViewShift(FRenderViewpoint& vp) const
 	{
 
 		if (currentPose == nullptr)
@@ -575,7 +576,7 @@ namespace s3d
 
 		// Pitch and Roll are identical between OpenVR and Doom worlds.
 		// But yaw can differ, depending on starting state, and controller movement.
-		float doomYawDegrees = yaw;
+		float doomYawDegrees = vp.HWAngles.Yaw.Degrees();
 		float openVrYawDegrees = RAD2DEG(-eulerAnglesFromMatrix(hmdPose).v[0]);
 		deltaYawDegrees = doomYawDegrees - openVrYawDegrees;
 		while (deltaYawDegrees > 180)
@@ -736,11 +737,12 @@ namespace s3d
 		return true;
 	}
 
-	void ApplyVPUniforms(HWDrawInfo* di)
-	{
-		di->VPUniforms.CalcDependencies();
-		di->vpIndex = screen->mViewpoints->SetViewpoint(gl_RenderState, &di->VPUniforms);
-	}
+	void ApplyVPUniforms(HWDrawInfo* di);
+	// void ApplyVPUniforms(HWDrawInfo* di)
+	// {
+	// 	di->VPUniforms.CalcDependencies();
+	// 	di->vpIndex = screen->mViewpoints->SetViewpoint(gl_RenderState, &di->VPUniforms);
+	// }
 
 	template<class TYPE>
 	TYPE& getHUDValue(TYPE& automap, TYPE& hud)
@@ -925,10 +927,10 @@ namespace s3d
 		screen->mScreenViewport.height = sceneHeight;
 	}
 
-	void OpenVRMode::AdjustPlayerSprites(HWDrawInfo* di) const
+	void OpenVRMode::AdjustPlayerSprites(int hand) const
 	{
 
-		GetWeaponTransform(&gl_RenderState.mModelMatrix);
+		GetWeaponTransform(&gl_RenderState.mModelMatrix, hand);
 
 		float scale = 0.00125f * openvr_weaponScale;
 		gl_RenderState.mModelMatrix.scale(scale, -scale, scale);
@@ -1008,7 +1010,7 @@ namespace s3d
 		return false;
 	}
 
-	bool OpenVRMode::GetWeaponTransform(VSMatrix* out) const
+	bool OpenVRMode::GetWeaponTransform(VSMatrix* out, int hand_weapon) const
 	{
 		if (GetHandTransform(openvr_rightHanded ? 1 : 0, out))
 		{

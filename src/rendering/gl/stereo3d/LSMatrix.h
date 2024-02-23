@@ -1,3 +1,4 @@
+#pragma once
 //
 //---------------------------------------------------------------------------
 //
@@ -81,7 +82,7 @@ public:
 	FLOATTYPE& w;
 };
 
-LSVec3 operator*(FLOATTYPE s, const LSVec3& rhs) {
+inline LSVec3 operator*(FLOATTYPE s, const LSVec3& rhs) {
 	LSVec3 result = rhs;
 	for (int i = 0; i < 4; ++i)
 		result[i] *= s;

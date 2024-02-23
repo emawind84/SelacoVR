@@ -49,7 +49,6 @@
 #ifdef _MSC_VER
 #pragma warning(disable:4244) // warning C4244: conversion from 'double' to 'float', possible loss of data
 #endif
-#include "hwrenderer/scene/hw_drawinfo.h"
 
 CVAR(Bool, gl_interpolate_model_frames, true, CVAR_ARCHIVE)
 EXTERN_CVAR(Bool, r_drawvoxels)
@@ -58,9 +57,6 @@ EXTERN_CVAR(Float, vr_weaponScale)
 EXTERN_CVAR(Float, vr_3dweaponOffsetX);
 EXTERN_CVAR(Float, vr_3dweaponOffsetY);
 EXTERN_CVAR(Float, vr_3dweaponOffsetZ);
-// TODO gzdoomvr stuff
-CVAR(Float, gl_weaponOfsY, 0.0f, CVAR_ARCHIVE)
-CVAR(Float, gl_weaponOfsZ, 0.0f, CVAR_ARCHIVE)
 
 extern TDeletingArray<FVoxel *> Voxels;
 extern TDeletingArray<FVoxelDef *> VoxelDefs;
@@ -211,20 +207,6 @@ void RenderHUDModel(FModelRenderer *renderer, DPSprite *psp, FVector3 translatio
 	if (smf == nullptr)
 		return;
 
-	VSMatrix objectToWorldMatrix;
-	renderer->PrepareRenderHUDModel(smf, translation, rotation, rotation_pivot, objectToWorldMatrix);
-
-	float orientation = smf->xscale * smf->yscale * smf->zscale;
-
-	renderer->BeginDrawHUDModel(playermo->RenderStyle, objectToWorldMatrix, orientation < 0);
-	uint32_t trans = psp->GetTranslation() != 0 ? psp->GetTranslation() : 0;
-	if ((psp->Flags & PSPF_PLAYERTRANSLATED)) trans = psp->Owner->mo->Translation;
-	RenderFrameModels(renderer, playermo->Level, smf, psp->GetState(), psp->GetTics(), psp->Caller->modelData != nullptr ? psp->Caller->modelData->modelDef != NAME_None ? PClass::FindActor(psp->Caller->modelData->modelDef) : psp->Caller->GetClass() : psp->Caller->GetClass(), trans, psp->Caller);
-	renderer->EndDrawHUDModel(playermo->RenderStyle);
-}
-
-void FModelRenderer::PrepareRenderHUDModel(FSpriteModelFrame* smf, FVector3 translation, FVector3 rotation, FVector3 rotation_pivot, VSMatrix& objectToWorldMatrix)
-{
 	// The model position and orientation has to be drawn independently from the position of the player,
 	// but we need to position it correctly in the world for light to work properly.
 	VSMatrix objectToWorldMatrix = renderer->GetViewToWorldMatrix();

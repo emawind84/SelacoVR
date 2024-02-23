@@ -1399,8 +1399,9 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 		{
 			//Haptic feedback when hurt - level indicates amount of damage
 			float level = (float)(0.4 + (0.6 * (temp / 100.0)));
-			QzDoom_Vibrate(200, 0, level); // left
-			QzDoom_Vibrate(200, 1, level); // right
+			auto vrmode = VRMode::GetVRMode(true);
+			vrmode->Vibrate(200, 0, level);
+			vrmode->Vibrate(200, 1, level);
 #ifdef __MOBILE__
 			if (source == NULL)
             {
@@ -1463,10 +1464,6 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
             }
 #endif
 			//I_Tactile (40,10,40+temp*2);
-			float level = (float)(0.4 + (0.6 * (temp / 100.0)));
-			auto vrmode = VRMode::GetVRMode(true);
-			vrmode->Vibrate(200, 0, level);
-			vrmode->Vibrate(200, 1, level);
 		}
 	}
 	else if (!player)

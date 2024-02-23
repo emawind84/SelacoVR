@@ -59,8 +59,6 @@ CVAR(Float, underwater_fade_scalar, 0.0f, CVAR_ARCHIVE) // [Nash] user-settable 
 CVAR( Float, blood_fade_scalar, 0.0f, CVAR_ARCHIVE )	// [SP] Pulled from Skulltag - changed default from 0.5 to 1.0
 CVAR( Float, pickup_fade_scalar, 0.0f, CVAR_ARCHIVE )	// [SP] Uses same logic as blood_fade_scalar except for pickups
 
-EXTERN_CVAR(Float, vr_pickup_haptic_level)
-
 // [RH] Amount of red flash for up to 114 damage points. Calculated by hand
 //		using a logarithmic scale and my trusty HP48G.
 static uint8_t DamageToAlpha[114] =
@@ -133,6 +131,7 @@ void V_AddPlayerBlend (player_t *CPlayer, float blend[4], float maxinvalpha, int
 
 		//Super short haptic blip on pickup
 		if (vr_pickup_haptic_level > 0.0) {
+			auto vrmode = VRMode::GetVRMode(true);
 			vrmode->Vibrate(50, 0, vr_pickup_haptic_level); // left
 			vrmode->Vibrate(50, 1, vr_pickup_haptic_level); // right
 

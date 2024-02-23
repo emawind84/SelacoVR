@@ -50,7 +50,7 @@ public:
 	OpenVREyePose(int eye, float shiftFactor, float scaleFactor);
 	virtual ~OpenVREyePose() override;
 	virtual VSMatrix GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatio) const override;
-	DVector3 GetViewShift(FLOATTYPE yaw) const override;
+	DVector3 GetViewShift(FRenderViewpoint& vp) const override;
 	virtual void AdjustHud() const override;
 	virtual void AdjustBlend(HWDrawInfo* di) const override;
 
@@ -103,7 +103,7 @@ public:
 	virtual bool IsVR() const override { return true; }
 	virtual void Present() const override;
 	virtual void AdjustViewport(DFrameBuffer* screen) const override;
-	virtual void AdjustPlayerSprites(HWDrawInfo* di) const override;
+	virtual void AdjustPlayerSprites(int hand = 0) const override;
 	virtual void UnAdjustPlayerSprites() const override;
 	virtual void AdjustCrossHair() const override;
 	virtual void UnAdjustCrossHair() const override;
@@ -111,7 +111,7 @@ public:
 	virtual void DrawControllerModels(HWDrawInfo* di, FRenderState& state) const override;
 	
 	virtual bool GetHandTransform(int hand, VSMatrix* out) const override;
-	virtual bool GetWeaponTransform(VSMatrix* out) const override;
+	virtual bool GetWeaponTransform(VSMatrix* out, int hand = 0) const override;
 	virtual bool RenderPlayerSpritesCrossed() const { return true; }
 	virtual bool RenderPlayerSpritesInScene() const { return true; }
 	virtual bool IsInitialized() const { return hmdWasFound; }

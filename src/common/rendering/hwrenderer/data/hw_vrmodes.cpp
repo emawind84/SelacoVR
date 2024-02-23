@@ -38,7 +38,6 @@
 #include "hw_cvars.h"
 #include "hw_vrmodes.h"
 #include "v_video.h"
-#include "gl/stereo3d/gl_openvr.h"
 #include "version.h"
 #include "i_interface.h"
 #include "menu.h"
@@ -46,7 +45,8 @@
 #include "gl_renderer.h"
 #include "d_player.h"
 #include "actorinlines.h"
-#include "gl/stereo3d/LSMatrix.h"
+#include "LSMatrix.h"
+#include "gl/stereo3d/gl_openvr.h"
 #include "gl/stereo3d/gl_openxrdevice.h"
 
 using namespace OpenGLRenderer;
@@ -112,7 +112,7 @@ CVAR(Bool, vr_automap_fixed_pitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_automap_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 // hh79 gzdoomvr stuff
-CVAR(Float, vr_vunits_per_meter, 32.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
+//CVAR(Float, vr_vunits_per_meter, 32.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
 CVAR(Float, vr_floor_offset, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
 CVAR(Bool, openvr_rightHanded, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, openvr_moveFollowsOffHand, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
@@ -127,8 +127,8 @@ EXTERN_CVAR(Bool, puristmode);
 
 // hh gzdoomvr stuff
 CVAR(Bool, vr_enable_haptics, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Float, vr_pickup_haptic_level, 0.25f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Float, vr_quake_haptic_level, 0.8f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+//CVAR(Float, vr_pickup_haptic_level, 0.25f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+//CVAR(Float, vr_quake_haptic_level, 0.8f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_missile_haptic_level, 0.6f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 //HUD control
@@ -228,8 +228,12 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 
 	case VR_CHECKERINTERLEAVED:
 		return &vrmi_checker;
+
 	case VR_OPENVR:
 		return vrmi_openvr.IsInitialized() ? &vrmi_openvr : &vrmi_mono;
+
+	case VR_OPENVR_MOBILE:
+		return &s3d::OpenXRDeviceMode::getInstance();
 	}
 }
 

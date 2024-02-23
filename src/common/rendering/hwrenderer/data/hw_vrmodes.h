@@ -1,11 +1,9 @@
 #pragma once
 
 #include "r_utility.h"
-#include "gl_renderer.h"
 #include "matrix.h"
 
 class DFrameBuffer;
-using namespace OpenGLRenderer;
 
 enum
 {
@@ -24,7 +22,7 @@ enum
 	VR_ROWINTERLEAVED = 12,
 	VR_COLUMNINTERLEAVED = 13,
 	VR_CHECKERINTERLEAVED = 14,
-	VR_OPENVR = 15
+	VR_OPENVR_MOBILE = 15
 };
 
 struct HWDrawInfo;
@@ -64,10 +62,6 @@ struct VRMode
 		float verticalViewportScalem, float weaponProjectionScale, VREyeInfo eyes[2]);
 	virtual ~VRMode() {}
 
-	VRMode(int eyeCount, float horizontalViewportScale, 
-		float verticalViewportScalem, float weaponProjectionScale, VREyeInfo eyes[2]);
-	virtual ~VRMode() {}
-	
 	static const VRMode *GetVRMode(bool toscreen = true);
 	virtual void AdjustViewport(DFrameBuffer *fb) const;
 	VSMatrix GetHUDSpriteProjection() const;

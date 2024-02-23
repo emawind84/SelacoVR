@@ -688,6 +688,7 @@ file( GLOB HEADER_FILES
 	sound/midisources/*.h
 	rendering/*.h
 	rendering/2d/*.h
+	rendering/gl/stereo3d/*.h
 	rendering/swrenderer/*.h
 	rendering/swrenderer/textures/*.h
 	rendering/swrenderer/drawers/*.h
@@ -699,7 +700,6 @@ file( GLOB HEADER_FILES
 	rendering/swrenderer/viewport/*.h
 	rendering/hwrenderer/*.h
 	rendering/hwrenderer/scene/*.h
-	gl/stereo3d/*.h
 	QzDoom/*.h
 	*.h
 )
@@ -1374,6 +1374,7 @@ include_directories(
 	gamedata/fonts
 	rendering
 	rendering/hwrenderer
+	rendering/gl/stereo3d
 	rendering/2d
 	r_data
 	sound

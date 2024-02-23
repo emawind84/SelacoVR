@@ -1085,15 +1085,17 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 			}
 
 			//Haptic Quake
-            if (vr_quake_haptic_level > 0.0) {
-                double left = QuakePower(vr_quake_haptic_level, jiggers.Intensity.X, jiggers.Offset.X);
-                double right = QuakePower(vr_quake_haptic_level, jiggers.Intensity.Y, jiggers.Offset.Y);
-                vrmode->Vibrate(10, 0, (float)left); // left
-                vrmode->Vibrate(10, 1, (float)right); // right
+			if (vr_quake_haptic_level > 0.0) {
+				double left = QuakePower(vr_quake_haptic_level, jiggers.Intensity.X, jiggers.Offset.X);
+				double right = QuakePower(vr_quake_haptic_level, jiggers.Intensity.Y, jiggers.Offset.Y);
 
-                //VR_HapticEvent("rumble_front", 0, 100 * left * C_GetExternalHapticLevelValue("rumble"), 120, 0);
-                //VR_HapticEvent("rumble_back", 0, 100 * right * C_GetExternalHapticLevelValue("rumble"), 120, 0);
-            }
+				auto vrmode = VRMode::GetVRMode(true);
+				vrmode->Vibrate(10, 0, (float)left); // left
+				vrmode->Vibrate(10, 1, (float)right); // right
+
+				//VR_HapticEvent("rumble_front", 0, 100 * left * C_GetExternalHapticLevelValue("rumble"), 120, 0);
+				//VR_HapticEvent("rumble_back", 0, 100 * right * C_GetExternalHapticLevelValue("rumble"), 120, 0);
+			}
 		}
 	}
 
