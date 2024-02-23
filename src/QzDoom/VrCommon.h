@@ -16,8 +16,6 @@ EXTERN_CVAR(Bool, vr_secondary_button_mappings);
 EXTERN_CVAR(Bool, vr_two_handed_weapons);
 EXTERN_CVAR(Bool, vr_crouch_use_button);
 
-extern bool qzdoom_initialised;
-
 extern bool cinemamode;
 extern float cinemamodeYaw;
 extern float cinemamodePitch;
@@ -34,7 +32,6 @@ extern vec3_t worldPosition;
 
 extern vec3_t hmdPosition;
 extern vec3_t hmdorientation;
-extern vec3_t positionDeltaThisFrame;
 
 extern vec3_t weaponangles;
 extern vec3_t weaponoffset;

@@ -1022,39 +1022,39 @@ namespace s3d
 		return false;
 	}
 
-	static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
-	{
-		LSMatrix44 mat;
-		auto vrmode = VRMode::GetVRMode(true);
-		if (!vrmode->GetWeaponTransform(&mat))
-		{
-			double pc = pitch.Cos();
+	// static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
+	// {
+	// 	LSMatrix44 mat;
+	// 	auto vrmode = VRMode::GetVRMode(true);
+	// 	if (!vrmode->GetWeaponTransform(&mat))
+	// 	{
+	// 		double pc = pitch.Cos();
 
-			DVector3 direction = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
-			return direction;
-		}
-		double pc = pitch.Cos();
+	// 		DVector3 direction = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
+	// 		return direction;
+	// 	}
+	// 	double pc = pitch.Cos();
 
-		DVector3 refdirection = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
+	// 	DVector3 refdirection = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
 
-		yaw -= actor->Angles.Yaw;
+	// 	yaw -= actor->Angles.Yaw;
 
-		//ignore specified pitch(would need to compensate for auto aimand no(vanilla) Doom weapon varies this)
-		//pitch -= actor->Angles.Pitch;
-		pitch = pitch.fromDeg(0);
+	// 	//ignore specified pitch(would need to compensate for auto aimand no(vanilla) Doom weapon varies this)
+	// 	//pitch -= actor->Angles.Pitch;
+	// 	pitch = pitch.fromDeg(0);
 				
-		pc = pitch.Cos();
+	// 	pc = pitch.Cos();
 
-		LSVec3 local = { (float)(pc * yaw.Cos()), (float)(pc * yaw.Sin()), (float)(-pitch.Sin()), 0.0f };
+	// 	LSVec3 local = { (float)(pc * yaw.Cos()), (float)(pc * yaw.Sin()), (float)(-pitch.Sin()), 0.0f };
 
-		DVector3 dir;
-		dir.X = local.x * -mat[2][0] + local.y * -mat[0][0] + local.z * -mat[1][0];
-		dir.Y = local.x * -mat[2][2] + local.y * -mat[0][2] + local.z * -mat[1][2];
-		dir.Z = local.x * -mat[2][1] + local.y * -mat[0][1] + local.z * -mat[1][1];
-		dir.MakeUnit();
+	// 	DVector3 dir;
+	// 	dir.X = local.x * -mat[2][0] + local.y * -mat[0][0] + local.z * -mat[1][0];
+	// 	dir.Y = local.x * -mat[2][2] + local.y * -mat[0][2] + local.z * -mat[1][2];
+	// 	dir.Z = local.x * -mat[2][1] + local.y * -mat[0][1] + local.z * -mat[1][1];
+	// 	dir.MakeUnit();
 
-		return dir;
-	}
+	// 	return dir;
+	// }
 
 
 
@@ -1312,8 +1312,8 @@ namespace s3d
 		if (doAdjustVrSettings) {
 			movebob = 0;
 			gl_billboard_faces_camera = true;
-			if (gl_multisample < 2)
-				gl_multisample = 4;
+			// if (gl_multisample < 2)
+			// 	gl_multisample = 4;
 		}
 
 		haptics->ProcessHaptics();
@@ -1436,13 +1436,13 @@ namespace s3d
 			{
 				if (GetWeaponTransform(&mat))
 				{
-					player->mo->OverrideAttackPosDir = true;
+					//player->mo->OverrideAttackPosDir = true;
 
 					player->mo->AttackPos.X = mat[3][0];
 					player->mo->AttackPos.Y = mat[3][2];
 					player->mo->AttackPos.Z = mat[3][1];
 
-					player->mo->AttackDir = MapAttackDir;
+					//player->mo->AttackDir = MapAttackDir;
 				}
 				if (GetHandTransform(openvr_rightHanded ? 0 : 1, &mat) && openvr_moveFollowsOffHand)
 				{

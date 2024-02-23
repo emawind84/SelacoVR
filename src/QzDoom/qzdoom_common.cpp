@@ -1,8 +1,6 @@
 #include "VrCommon.h"
 
 //Define all variables here that were externs in the VrCommon.h
-bool qzdoom_initialised;
-long long global_time;
 float playerYaw;
 bool resetDoomYaw;
 bool resetPreviousPitch;
@@ -12,7 +10,6 @@ float vrFOV;
 vec3_t worldPosition;
 vec3_t hmdPosition;
 vec3_t hmdorientation;
-vec3_t positionDeltaThisFrame;
 vec3_t weaponangles;
 vec3_t weaponoffset;
 bool weaponStabilised;
