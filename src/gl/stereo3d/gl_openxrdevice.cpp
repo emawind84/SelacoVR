@@ -104,7 +104,6 @@ extern vec3_t hmdorientation;
 extern vec3_t weaponoffset;
 extern vec3_t weaponangles;
 extern vec3_t offhandoffset;
-extern vec3_t offhandoffset;
 extern vec3_t offhandangles;
 
 extern float playerYaw;

@@ -113,6 +113,7 @@ public:
 	virtual bool GetHandTransform(int hand, VSMatrix* out) const override;
 	virtual bool RenderPlayerSpritesCrossed() const { return true; }
 	virtual bool RenderPlayerSpritesInScene() const { return true; }
+	virtual bool GetTeleportLocation(DVector3& out) const override;
 	virtual bool IsInitialized() const { return hmdWasFound; }
 
 	virtual void Vibrate(float duration, int channel, float intensity) const
@@ -143,6 +144,9 @@ private:
 	typedef VRMode super;
 	bool hmdWasFound;
 	uint32_t sceneWidth, sceneHeight;
+
+	mutable DVector3        m_TeleportLocation;
+	mutable int             m_TeleportTarget;
 };
 
 } /* namespace st3d */

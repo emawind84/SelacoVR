@@ -32,6 +32,8 @@
 #include <string>
 #include <map>
 #include "gl_load/gl_system.h"
+#include "p_trace.h"
+#include "p_linetracedata.h"
 #include "doomtype.h" // Printf
 #include "d_player.h"
 #include "g_game.h" // G_Add...
@@ -106,6 +108,16 @@ typedef uint32_t(*LVR_GetInitToken)();
 typedef float vec_t;
 typedef vec_t vec3_t[3];
 
+#define PITCH 0
+#define YAW 1
+#define ROLL 2
+
+extern vec3_t weaponangles;
+extern vec3_t offhandangles;
+
+extern bool ready_teleport;
+extern bool trigger_teleport;
+
 #define DEFINE_ENTRY(name) static TReqProc<OpenVRModule, L##name> name{#name};
 DEFINE_ENTRY(VR_InitInternal)
 DEFINE_ENTRY(VR_ShutdownInternal)
@@ -151,6 +163,7 @@ EXTERN_CVAR(Float, vr_ipd);
 
 EXTERN_CVAR(Bool, openvr_rightHanded)
 EXTERN_CVAR(Bool, openvr_moveFollowsOffHand)
+EXTERN_CVAR(Bool, vr_teleport);
 EXTERN_CVAR(Bool, openvr_drawControllers)
 EXTERN_CVAR(Float, openvr_weaponRotate);
 EXTERN_CVAR(Float, openvr_weaponScale);
@@ -422,7 +435,7 @@ namespace s3d
 	}
 
 	using namespace std::chrono;
-	void  OpenVRHaptics::ProcessHaptics() 
+	void  OpenVRHaptics::ProcessHaptics()
 	{
 		if (!vr_enable_haptics) {
 			return;
@@ -437,7 +450,7 @@ namespace s3d
 		for (int i = 0; i < 2; ++i) {
 			if (vibration_channel_duration[i] > 0.0f ||
 				vibration_channel_duration[i] == -1.0f) {
-				
+
 				vrSystem->TriggerHapticPulse(controllerIDs[i], 0, 3999 * vibration_channel_intensity[i]);
 
 				if (vibration_channel_duration[i] != -1.0f) {
@@ -995,39 +1008,58 @@ namespace s3d
 
 			AActor* playermo = player->mo;
 			DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
-		
+
 			double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 
 			mat->loadIdentity();
 			mat->translate(r_viewpoint.Pos.X, r_viewpoint.Pos.Z - getDoomPlayerHeightWithoutCrouch(player), r_viewpoint.Pos.Y);
-			mat->scale(vr_vunits_per_meter, vr_vunits_per_meter / pixelstretch , -vr_vunits_per_meter);
+			mat->scale(vr_vunits_per_meter, vr_vunits_per_meter / pixelstretch, -vr_vunits_per_meter);
 			mat->rotate(-deltaYawDegrees - 180, 0, 1, 0);
 			mat->translate(-openvr_origin.x, -vr_floor_offset, -openvr_origin.z);
 
 			LSMatrix44 handToAbs;
 			vSMatrixFromHmdMatrix34(handToAbs, controllers[hand].pose.mDeviceToAbsoluteTracking);
 			mat->multMatrix(handToAbs.transpose());
-			
+
 			return true;
 		}
 		return false;
 	}
 
-	void GetAnglesFromController(int hand, vec3_t weaponangles)
+	void getMainHandAngles()
 	{
-		weaponangles[0] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
-		weaponangles[1] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[1]);
-		weaponangles[2] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
+		int hand = openvr_rightHanded ? 1 : 0;
+		weaponangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
+		weaponangles[PITCH] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[1]);
+		weaponangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
 	}
 
-	void getMainHandAngles(vec3_t weaponangles)
+	void getOffHandAngles()
 	{
-		GetAnglesFromController(openvr_rightHanded ? 1 : 0, weaponangles);
+		int hand = openvr_rightHanded ? 0 : 1;
+		offhandangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
+		offhandangles[PITCH] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[1]);
+		offhandangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
 	}
 
-	void getOffHandAngles(vec3_t weaponangles)
+	// Teleport trigger logic. Thanks to DrBeef for the inspiration of how/where to use this
+	void HandleTeleportTrigger(int role, VRControllerState_t& newState, int vrAxis)
 	{
-		GetAnglesFromController(openvr_rightHanded ? 0 : 1, weaponangles);
+		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+		int OffHandRole = openvr_rightHanded ? 0 : 1;
+
+		if(vr_teleport && player && gamestate == GS_LEVEL && role == OffHandRole)
+		{
+			float joyForwardMove = newState.rAxis[vrAxis].y - DEAD_ZONE;
+
+			if ((joyForwardMove > 0.7f) && !ready_teleport) {
+				ready_teleport = true;
+			}
+			else if ((joyForwardMove < 0.6f) && ready_teleport) {
+				ready_teleport = false;
+				trigger_teleport = true;
+			}
+		}
 	}
 
 	/* virtual */
@@ -1105,7 +1137,7 @@ namespace s3d
 		// Roll can be local, because it doesn't affect gameplay.
 		if (doTrackHmdRoll)
 			vp.HWAngles.Roll = FAngle::fromDeg(RAD2DEG(-hmdroll));
-		
+
 		// Late-schedule update to renderer angles directly, too
 		if (doLateScheduledRotationTracking) {
 			if (doTrackHmdPitch) {
@@ -1271,6 +1303,21 @@ namespace s3d
 		return false;
 	}
 
+	// Teleport location sprite. Thanks to DrBeef for the codes
+	bool OpenVRMode::GetTeleportLocation(DVector3& out) const
+	{
+		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+		if (vr_teleport &&
+			ready_teleport &&
+			(player && player->mo->health > 0) &&
+			m_TeleportTarget == TRACE_HitFloor) {
+			out = m_TeleportLocation;
+			return true;
+		}
+
+		return false;
+	}
+
 	/* virtual */
 	void OpenVRMode::SetUp() const
 	{
@@ -1318,14 +1365,14 @@ namespace s3d
 		);
 
 		TrackedDevicePose_t& hmdPose0 = poses[k_unTrackedDeviceIndex_Hmd];
-		
+
 		if (hmdPose0.bPoseIsValid) {
 			const HmdMatrix34_t& hmdPose = hmdPose0.mDeviceToAbsoluteTracking;
 			HmdVector3d_t eulerAngles = eulerAnglesFromMatrix(hmdPose);
 			updateHmdPose(r_viewpoint, eulerAngles.v[0], eulerAngles.v[1], eulerAngles.v[2]);
 			leftEyeView->setCurrentHmdPose(&hmdPose0);
 			rightEyeView->setCurrentHmdPose(&hmdPose0);
-			
+
 			player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 
 			// Check for existence of VR motion controllers...
@@ -1397,8 +1444,8 @@ namespace s3d
 						}
 					}
 
+					HandleTeleportTrigger(role, newState, axisJoystick);
 					HandleControllerState(i, role, newState);
-
 
 				}
 			}
@@ -1412,12 +1459,11 @@ namespace s3d
 					player->mo->AttackPos.Y = mat[3][2];
 					player->mo->AttackPos.Z = mat[3][1];
 
-					vec3_t weaponangles;
-					getMainHandAngles(weaponangles);
+					getMainHandAngles();
 
-					player->mo->AttackAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - weaponangles[0]);
-					player->mo->AttackPitch = DAngle::fromDeg(-30 - weaponangles[1]);
-					player->mo->AttackRoll = DAngle::fromDeg(weaponangles[2]);
+					player->mo->AttackAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - weaponangles[YAW]);
+					player->mo->AttackPitch = DAngle::fromDeg(- weaponangles[PITCH]);
+					player->mo->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
 				}
 
 				LSMatrix44 matOffhand;
@@ -1427,13 +1473,56 @@ namespace s3d
 					player->mo->OffhandPos.Y = matOffhand[3][2];
 					player->mo->OffhandPos.Z = matOffhand[3][1];
 
-					vec3_t offhandangles;
-					getOffHandAngles(offhandangles);
+					getOffHandAngles();
 
-					player->mo->OffhandAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - offhandangles[0]);
-					player->mo->OffhandPitch = DAngle::fromDeg(-30 - offhandangles[1]);
-					player->mo->OffhandRoll = DAngle::fromDeg(offhandangles[2]);
+					player->mo->OffhandAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - offhandangles[YAW]);
+					player->mo->OffhandPitch = DAngle::fromDeg(- offhandangles[PITCH]);
+					player->mo->OffhandRoll = DAngle::fromDeg(offhandangles[ROLL]);
 				}
+
+				// Teleport locomotion. Thanks to DrBeef for the codes
+				if (vr_teleport && player->mo->health > 0) {
+
+					DAngle yaw = DAngle::fromDeg(-deltaYawDegrees - 90 - offhandangles[YAW]);
+					DAngle pitch = DAngle::fromDeg(offhandangles[PITCH]); //+ 30);
+					double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+
+					// Teleport Logic
+					if (ready_teleport) {
+						FLineTraceData trace;
+						if (P_LineTrace(player->mo, yaw, 8192, pitch, TRF_ABSOFFSET | TRF_BLOCKUSE | TRF_BLOCKSELF | TRF_SOLIDACTORS,
+							matOffhand[3][1] - player->mo->Z() + vr_floor_offset,
+							0, 0, &trace))
+						{
+							m_TeleportTarget = trace.HitType;
+							m_TeleportLocation = trace.HitLocation;
+						}
+						else {
+							m_TeleportTarget = TRACE_HitNone;
+							m_TeleportLocation = DVector3(0, 0, 0);
+						}
+					}
+					else if (trigger_teleport && m_TeleportTarget == TRACE_HitFloor) {
+						auto vel = player->mo->Vel;
+						player->mo->Vel = DVector3(m_TeleportLocation.X - player->mo->X(),
+							m_TeleportLocation.Y - player->mo->Y(), 0);
+						bool wasOnGround = player->mo->Z() <= player->mo->floorz + 0.1;
+						double oldZ = player->mo->Z();
+						P_XYMovement(player->mo, DVector2(0, 0));
+
+						//if we were on the ground before offsetting, make sure we still are (this fixes not being able to move on lifts)
+						if (player->mo->Z() >= oldZ && wasOnGround) {
+							player->mo->SetZ(player->mo->floorz);
+						}
+						else {
+							player->mo->SetZ(oldZ);
+						}
+						player->mo->Vel = vel;
+					}
+
+					trigger_teleport = false;
+				}
+
 				if (GetHandTransform(openvr_rightHanded ? 0 : 1, &mat) && openvr_moveFollowsOffHand)
 				{
 					player->mo->ThrustAngleOffset = DAngle::fromDeg(RAD2DEG(atan2f(-mat[2][2], -mat[2][0]))) - player->mo->Angles.Yaw;
@@ -1461,7 +1550,7 @@ namespace s3d
 				openvr_origin += openvr_dpos;
 			}
 		}
-		
+
 		I_StartupOpenVR();
 
 		//To feel smooth, yaw changes need to accumulate over the (sub) tic (i.e. render frame, not per tic)
