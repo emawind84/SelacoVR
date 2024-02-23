@@ -58,7 +58,7 @@
 #include "g_game.h"
 #include "c_bind.h"
 #include "cmdlib.h"
-#include "m_png.h"
+#include "common/textures/m_png.h"
 #include "p_setup.h"
 #include "po_man.h"
 #include "actorptrselect.h"
@@ -10748,7 +10748,7 @@ static int sort_by_runs(const void *a_, const void *b_)
 	return b->ProfileData->NumRuns - a->ProfileData->NumRuns;
 }
 
-static void ShowProfileData(TArray<ProfileCollector> &profiles, long ilimit,
+static void ShowProfileData(TArray<ProfileCollector> &profiles, int ilimit,
 	int (*sorter)(const void *, const void *), bool functions)
 {
 	static const char *const typelabels[2] = { "script", "function" };
@@ -10766,7 +10766,7 @@ static void ShowProfileData(TArray<ProfileCollector> &profiles, long ilimit,
 
 	if (ilimit > 0)
 	{
-		Printf(TEXTCOLOR_ORANGE "Top %ld %ss:\n", ilimit, typelabels[functions]);
+		Printf(TEXTCOLOR_ORANGE "Top %lld %ss:\n", ilimit, typelabels[functions]);
 		limit = (unsigned int)ilimit;
 	}
 	else
@@ -10832,7 +10832,7 @@ void ACSProfile(FLevelLocals *Level, FCommandLine &argv)
 	static const uint8_t sort_match_len[] = {   1,     2,     2,     1,      1 };
 
 		TArray<ProfileCollector> ScriptProfiles, FuncProfiles;
-		long limit = 10;
+		int limit = 10;
 	int (*sorter)(const void *, const void *) = sort_by_total_instr;
 
 	assert(countof(sort_names) == countof(sort_match_len));
@@ -10854,7 +10854,7 @@ void ACSProfile(FLevelLocals *Level, FCommandLine &argv)
 		{
 			// If it's a number, set the display limit.
 			char *endptr;
-			long num = strtol(argv[i], &endptr, 0);
+			int num = (int)strtoll(argv[i], &endptr, 0);
 			if (endptr != argv[i])
 			{
 				limit = num;

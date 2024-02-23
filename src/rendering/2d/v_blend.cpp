@@ -47,6 +47,7 @@
 #include "v_palette.h"
 #include "r_utility.h"
 #include "hw_cvars.h"
+#include "hwrenderer/data/hw_vrmodes.h"
 #include "d_main.h"
 #include "v_draw.h"
 
@@ -57,6 +58,8 @@ EXTERN_CVAR(Float, vr_pickup_haptic_level)
 CVAR(Float, underwater_fade_scalar, 0.0f, CVAR_ARCHIVE) // [Nash] user-settable underwater blend intensity
 CVAR( Float, blood_fade_scalar, 0.0f, CVAR_ARCHIVE )	// [SP] Pulled from Skulltag - changed default from 0.5 to 1.0
 CVAR( Float, pickup_fade_scalar, 0.0f, CVAR_ARCHIVE )	// [SP] Uses same logic as blood_fade_scalar except for pickups
+
+EXTERN_CVAR(Float, vr_pickup_haptic_level)
 
 // [RH] Amount of red flash for up to 114 damage points. Calculated by hand
 //		using a logarithmic scale and my trusty HP48G.
@@ -130,10 +133,10 @@ void V_AddPlayerBlend (player_t *CPlayer, float blend[4], float maxinvalpha, int
 
 		//Super short haptic blip on pickup
 		if (vr_pickup_haptic_level > 0.0) {
-			QzDoom_Vibrate(50, 0, vr_pickup_haptic_level); // left
-			QzDoom_Vibrate(50, 1, vr_pickup_haptic_level); // right
+			vrmode->Vibrate(50, 0, vr_pickup_haptic_level); // left
+			vrmode->Vibrate(50, 1, vr_pickup_haptic_level); // right
 
-			VR_HapticEvent("pickup", 0, 100 * C_GetExternalHapticLevelValue("pickup"), 0, 0);
+			//VR_HapticEvent("pickup", 0, 100 * C_GetExternalHapticLevelValue("pickup"), 0, 0);
 		}
 
 		// [SP] Allow player to tone down intensity of pickup flash.

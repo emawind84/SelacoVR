@@ -61,6 +61,7 @@
 #include "g_levellocals.h"
 #include "events.h"
 #include "actorinlines.h"
+#include "hwrenderer/data/hw_vrmodes.h"
 #include "d_main.h"
 
 #include <QzDoom/VrCommon.h>
@@ -1462,6 +1463,10 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
             }
 #endif
 			//I_Tactile (40,10,40+temp*2);
+			float level = (float)(0.4 + (0.6 * (temp / 100.0)));
+			auto vrmode = VRMode::GetVRMode(true);
+			vrmode->Vibrate(200, 0, level);
+			vrmode->Vibrate(200, 1, level);
 		}
 	}
 	else if (!player)

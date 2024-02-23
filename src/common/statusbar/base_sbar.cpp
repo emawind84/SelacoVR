@@ -69,10 +69,11 @@ CUSTOM_CVARD(Float, hud_scalefactor, 1.f, CVAR_ARCHIVE, "changes the hud scale")
 	else if (sysCallbacks.HudScaleChanged) sysCallbacks.HudScaleChanged();
 }
 
-CUSTOM_CVARD(Bool, hud_aspectscale, true, CVAR_ARCHIVE, "enables aspect ratio correction for the status bar")
-{
-	if (sysCallbacks.HudScaleChanged) sysCallbacks.HudScaleChanged();
-}
+//CUSTOM_CVARD(Bool, hud_aspectscale, true, CVAR_ARCHIVE, "enables aspect ratio correction for the status bar")
+//{
+//	if (sysCallbacks.HudScaleChanged) sysCallbacks.HudScaleChanged();
+//}
+EXTERN_CVAR(Bool, hud_aspectscale);
 
 
 void ST_LoadCrosshair(int num, bool alwaysload)

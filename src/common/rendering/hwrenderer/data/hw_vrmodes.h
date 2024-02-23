@@ -1,9 +1,11 @@
 #pragma once
 
 #include "r_utility.h"
+#include "gl_renderer.h"
 #include "matrix.h"
 
 class DFrameBuffer;
+using namespace OpenGLRenderer;
 
 enum
 {
@@ -17,6 +19,7 @@ enum
 	VR_QUADSTEREO = 7,
 	VR_SIDEBYSIDELETTERBOX = 8,
 	VR_AMBERBLUE = 9,
+	VR_OPENVR = 10,
 	VR_TOPBOTTOM = 11,
 	VR_ROWINTERLEAVED = 12,
 	VR_COLUMNINTERLEAVED = 13,
@@ -61,6 +64,10 @@ struct VRMode
 		float verticalViewportScalem, float weaponProjectionScale, VREyeInfo eyes[2]);
 	virtual ~VRMode() {}
 
+	VRMode(int eyeCount, float horizontalViewportScale, 
+		float verticalViewportScalem, float weaponProjectionScale, VREyeInfo eyes[2]);
+	virtual ~VRMode() {}
+	
 	static const VRMode *GetVRMode(bool toscreen = true);
 	virtual void AdjustViewport(DFrameBuffer *fb) const;
 	VSMatrix GetHUDSpriteProjection() const;
@@ -75,6 +82,7 @@ struct VRMode
 	virtual void UnAdjustPlayerSprites() const {};
 	virtual void AdjustCrossHair() const {}
 	virtual void UnAdjustCrossHair() const {}
+	virtual void DrawControllerModels(HWDrawInfo* di, FRenderState& state) const {}
 	
 	virtual void Present() const;
 
@@ -83,4 +91,5 @@ struct VRMode
 	virtual bool RenderPlayerSpritesInScene() const;
 	virtual bool GetTeleportLocation(DVector3 &out) const { return false; }
 	virtual bool IsInitialized() const { return true; }
+	virtual void Vibrate(float duration, int channel, float intensity) const { }
 };

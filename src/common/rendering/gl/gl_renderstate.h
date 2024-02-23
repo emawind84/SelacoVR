@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <string.h>
+#include "gl_system.h"
 #include "gl_interface.h"
 #include "matrix.h"
 #include "hw_renderstate.h"

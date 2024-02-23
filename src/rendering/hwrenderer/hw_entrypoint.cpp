@@ -142,6 +142,7 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 	vrmode->SetUp();
 	const int eyeCount = vrmode->mEyeCount;
 	screen->FirstEye();
+	DVector3 centerPos;
 	for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
 	{
 		flatVerticesPerEye = wallVerticesPerEye = portalsPerEye = 0;

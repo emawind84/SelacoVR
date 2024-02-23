@@ -94,6 +94,8 @@
 #include "r_sky.h"
 #include "g_levellocals.h"
 #include "actorinlines.h"
+#include "hwrenderer/data/hw_vrmodes.h"
+
 #include <shadowinlines.h>
 
 CVAR(Bool, cl_bloodsplats, true, CVAR_ARCHIVE)
@@ -102,6 +104,8 @@ CVAR(Bool, cl_doautoaim, false, CVAR_ARCHIVE)
 CVAR(Int, use_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
 EXTERN_CVAR (Bool, use_action_spawn_yzoffset)
+// TODO gzdoomvr stuff
+EXTERN_CVAR(Bool, openvr_rightHanded)
 
 static void CheckForPushSpecial(line_t *line, int side, AActor *mobj, DVector2 * posforwindowcheck = NULL);
 static void SpawnShootDecal(AActor *t1, AActor *defaults, const FTraceResults &trace, int hand = 0);
@@ -4647,6 +4651,8 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	direction = { pc * angle.Cos(), pc * angle.Sin(), -pitch.Sin() };
 	shootz = t1->Center() - t1->Floorclip + t1->AttackOffset();
 
+	auto vrmode = VRMode::GetVRMode(true);
+
 	if (t1->player != NULL)
 	{
 		// this is coming from a weapon attack function which needs to transfer information to the obituary code,
@@ -4657,11 +4663,11 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
             //Haptics
             long rightHanded = vr_control_scheme < 10;
 			rightHanded = (flags & LAF_ISOFFHAND) ? 1 - rightHanded : rightHanded;
-            QzDoom_Vibrate(150, rightHanded ? 1 : 0, 0.8);
-			VR_HapticEvent("fire_weapon", rightHanded ? 2 : 1, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
+            vrmode->Vibrate(150, rightHanded ? 1 : 0, 0.8);
+			//VR_HapticEvent("fire_weapon", rightHanded ? 2 : 1, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
 
             if (weaponStabilised) {
-                QzDoom_Vibrate(150, rightHanded ? 0 : 1, 0.6);
+                vrmode->Vibrate(150, rightHanded ? 0 : 1, 0.6);
 				VR_HapticEvent("fire_weapon", rightHanded ? 1 : 2, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
 			}
         }
@@ -4757,9 +4763,6 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 		tflags |= TRACE_HitSky;
 	}
 
-	// [MC] Check the flags and set the position according to what is desired.
-	// LAF_ABSPOSITION: Treat the offset parameters as direct coordinates.
-	// LAF_ABSOFFSET: Ignore the angle.
 
 	DVector3 tempos;
 
@@ -4801,9 +4804,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	}
 	else
 	{
-		const double s = angle.Sin();
-		const double c = angle.Cos();
-		tempos = t1->Vec2OffsetZ(offsetforward * c + offsetside * s, offsetforward * s - offsetside * c, shootz);
+		tempos = fromPos;
 	}
 
 	// Perform the trace.

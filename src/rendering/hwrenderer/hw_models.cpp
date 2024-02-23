@@ -43,8 +43,13 @@
 #include "hwrenderer/scene/hw_portal.h"
 #include "hw_bonebuffer.h"
 #include "hw_models.h"
+#include "hw_cvars.h"
+#include "hwrenderer/data/hw_vrmodes.h"
+#include "gl_renderstate.h"
 
 CVAR(Bool, gl_light_models, true, CVAR_ARCHIVE)
+EXTERN_CVAR(Float, gl_weaponOfsY)
+EXTERN_CVAR(Float, gl_weaponOfsZ)
 
 float gldepthmin, gldepthmax;
 
@@ -53,6 +58,66 @@ VSMatrix FHWModelRenderer::GetViewToWorldMatrix()
 	VSMatrix objectToWorldMatrix;
 	di->VPUniforms.mViewMatrix.inverseMatrix(objectToWorldMatrix);
 	return objectToWorldMatrix;
+}
+
+void FHWModelRenderer::PrepareRenderHUDModel(FSpriteModelFrame* smf, FVector3 translation, FVector3 rotation, FVector3 rotation_pivot, VSMatrix &objectToWorldMatrix)
+{
+	auto vrmode = VRMode::GetVRMode(true);
+	if (vrmode->mEyeCount > 1)
+	{
+		//TODO Remove gl_RenderState
+		gl_RenderState.AlphaFunc(GL_GEQUAL, gl_mask_sprite_threshold);
+		// [BB] Render the weapon in worldspace to confirm transforms are all correct
+		gl_RenderState.mModelMatrix.loadIdentity();
+		// Need to reset the normal matrix too
+		di->VPUniforms.mNormalViewMatrix.loadIdentity();
+
+		if (vrmode->GetWeaponTransform(&gl_RenderState.mModelMatrix))
+		{
+			float scale = 0.01f;
+			gl_RenderState.mModelMatrix.scale(scale, scale, scale);
+			gl_RenderState.mModelMatrix.translate(0, 5 + gl_weaponOfsZ, 30 + gl_weaponOfsY);
+		}
+		else
+		{
+			AActor* playermo = players[consoleplayer].camera;
+			DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
+			gl_RenderState.mModelMatrix.translate(pos.X, pos.Z + 40, pos.Y);
+			gl_RenderState.mModelMatrix.rotate(-playermo->Angles.Yaw.Degrees() - 90, 0, 1, 0);
+		}
+
+
+		// Scaling model (y scale for a sprite means height, i.e. z in the world!).
+		gl_RenderState.mModelMatrix.scale(smf->xscale, smf->zscale, smf->yscale);
+
+		// Aplying model offsets (model offsets do not depend on model scalings).
+		gl_RenderState.mModelMatrix.translate(smf->xoffset / smf->xscale, smf->zoffset / smf->zscale, smf->yoffset / smf->yscale);
+		// [BB] Weapon bob, very similar to the normal Doom weapon bob.
+		gl_RenderState.mModelMatrix.translate(rotation_pivot.X, rotation_pivot.Y, rotation_pivot.Z);
+
+		gl_RenderState.mModelMatrix.rotate(rotation.X, 0, 1, 0);
+		gl_RenderState.mModelMatrix.rotate(rotation.Y, 1, 0, 0);
+		gl_RenderState.mModelMatrix.rotate(rotation.Z, 0, 0, 1);
+
+		gl_RenderState.mModelMatrix.translate(-rotation_pivot.X, -rotation_pivot.Y, -rotation_pivot.Z);
+
+		gl_RenderState.mModelMatrix.translate(translation.X, translation.Y, translation.Z);
+
+		// [BB] For some reason the jDoom models need to be rotated.
+		gl_RenderState.mModelMatrix.rotate(90.f, 0, 1, 0);
+
+		// Applying angleoffset, pitchoffset, rolloffset.
+		gl_RenderState.mModelMatrix.rotate(-smf->angleoffset, 0, 1, 0);
+		gl_RenderState.mModelMatrix.rotate(smf->pitchoffset, 0, 0, 1);
+		gl_RenderState.mModelMatrix.rotate(-smf->rolloffset, 1, 0, 0);
+		gl_RenderState.EnableModelMatrix(true);
+		gl_RenderState.EnableModelMatrix(false);
+		objectToWorldMatrix = gl_RenderState.mModelMatrix;
+	}
+	else
+	{
+		FModelRenderer::PrepareRenderHUDModel(smf, translation, rotation, rotation_pivot, objectToWorldMatrix);
+	}
 }
 
 void FHWModelRenderer::BeginDrawModel(FRenderStyle style, FSpriteModelFrame *smf, const VSMatrix &objectToWorldMatrix, bool mirrored)

@@ -44,7 +44,7 @@
 #include "gles_samplers.h"
 #include "gles_renderbuffers.h"
 #include "hw_clock.h"
-#include "hw_vrmodes.h"
+//#include "hw_vrmodes.h"
 #include "hw_skydome.h"
 #include "hw_viewpointbuffer.h"
 #include "hw_lightbuffer.h"
@@ -66,6 +66,8 @@ EXTERN_CVAR(Bool, cl_capfps)
 EXTERN_CVAR(Int, gl_pipeline_depth);
 
 EXTERN_CVAR(Bool, gl_sort_textures);
+
+void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D = false);
 
 extern bool vid_hdr_active;
 
@@ -326,8 +328,8 @@ void OpenGLFrameBuffer::SetViewportRects(IntRect *bounds)
 	Super::SetViewportRects(bounds);
 	if (!bounds)
 	{
-		auto vrmode = VRMode::GetVRMode(true);
-		vrmode->AdjustViewport(this);
+		/*auto vrmode = VRMode::GetVRMode(true);
+		vrmode->AdjustViewport(this);*/
 	}
 }
 

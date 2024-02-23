@@ -67,6 +67,7 @@
 #include "hw_vrmodes.h"
 
 #include "../version.h"
+#include "hwrenderer/data/hw_vrmodes.h"
 
 #define XHAIRSHRINKSIZE		(1./18)
 #define XHAIRPICKUPSIZE		(2+XHAIRSHRINKSIZE)
@@ -118,9 +119,16 @@ CUSTOM_CVAR (Int, st_scale, -1, CVAR_ARCHIVE)
 		setsizeneeded = true;
 	}
 }
+CUSTOM_CVAR(Bool, hud_aspectscale, true, CVAR_ARCHIVE)
+{
+	if (StatusBar)
+	{
+		StatusBar->SetScale();
+		setsizeneeded = true;
+	}
+}
 
 EXTERN_CVAR(Float, hud_scalefactor)
-EXTERN_CVAR(Bool, hud_aspectscale)
 
 CVAR (Bool, crosshairon, false, CVAR_ARCHIVE);
 CVAR (Int, crosshair, 0, CVAR_ARCHIVE)
@@ -469,7 +477,8 @@ void DBaseStatusBar::SetScale ()
 		// the resulting scaling factor needs to be reduced accordingly.
 		int realscale = clamp((320 * GetUIScale(twod, st_scale)) / HorizontalResolution, 1, w / HorizontalResolution);
 
-		double realscaley = realscale * (hud_aspectscale ? 1.2 : 1.);
+		double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+		double realscaley = realscale * (hud_aspectscale ? pixelstretch : 1.0);
 
 		ST_X = (w - HorizontalResolution * realscale) / 2;
 		SBarTop = int(h - RelTop * realscaley);

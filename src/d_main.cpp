@@ -98,6 +98,7 @@
 #include "i_system.h"
 #include "g_cvars.h"
 #include "r_data/r_vanillatrans.h"
+#include "hwrenderer/data/hw_vrmodes.h"
 #include "s_music.h"
 #include "swrenderer/r_swcolormaps.h"
 #include "findfile.h"
@@ -1015,6 +1016,12 @@ void D_Display ()
 	}
 	else
 	{
+		if (vr_mode != 0)
+		{
+			//When wipegamestate differs from gamestate, game cannot be paused
+			//see condition in P_CheckTickerPaused
+			wipegamestate = gamestate;
+		}
 		wipestart = nullptr;
 	}
 	
@@ -1045,7 +1052,7 @@ void D_Display ()
 			{
 				primaryLevel->automap->Drawer ((hud_althud && viewheight == SCREENHEIGHT) ? viewheight : StatusBar->GetTopOfStatusbar());
 			}
-		
+			
 			// for timing the statusbar code.
 			//cycle_t stb;
 			//stb.Reset();
@@ -2479,7 +2486,7 @@ void RenameNerve(FileSystem& fileSystem)
 			continue;
 		}
 		for (int icheck = 0; icheck < numnerveversions; icheck++)
-			if (fr->GetLength() == (long)nervesize[icheck])
+			if (fr->GetLength() == (ptrdiff_t)nervesize[icheck])
 				isizecheck = icheck;
 		if (isizecheck == -1)
 		{
@@ -2540,9 +2547,9 @@ void FixMacHexen(FileSystem& fileSystem)
 	FileReader* reader = fileSystem.GetFileReader(fileSystem.GetIwadNum());
 	auto iwadSize = reader->GetLength();
 
-	static const long DEMO_SIZE = 13596228;
-	static const long BETA_SIZE = 13749984;
-	static const long FULL_SIZE = 21078584;
+	static const ptrdiff_t DEMO_SIZE = 13596228;
+	static const ptrdiff_t BETA_SIZE = 13749984;
+	static const ptrdiff_t FULL_SIZE = 21078584;
 
 	if (DEMO_SIZE != iwadSize
 		&& BETA_SIZE != iwadSize

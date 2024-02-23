@@ -32,6 +32,7 @@
 #include "hwrenderer/postprocessing/hw_postprocess_cvars.h"
 #include "flatvertices.h"
 #include "r_videoscale.h"
+#include "g_game.h"
 #include "v_video.h"
 
 #include "hw_vrmodes.h"
@@ -113,6 +114,7 @@ void FGLRenderer::ClearTonemapPalette()
 void FGLRenderer::Flush()
 {
 	auto vrmode = VRMode::GetVRMode(true);
+	
 	if (vrmode->mEyeCount == 1)
 	{
 		CopyToBackbuffer(nullptr, true);

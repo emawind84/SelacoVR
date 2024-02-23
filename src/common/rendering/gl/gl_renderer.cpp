@@ -51,6 +51,7 @@
 #include "flatvertices.h"
 #include "gl_samplers.h"
 #include "hw_lightbuffer.h"
+#include "hwrenderer/data/hw_viewpointbuffer.h"
 #include "r_videoscale.h"
 #include "model.h"
 #include "gl_postprocessstate.h"
@@ -180,4 +181,41 @@ void FGLRenderer::BeginFrame()
 	mSaveBuffers->Setup(SAVEPICWIDTH, SAVEPICHEIGHT, SAVEPICWIDTH, SAVEPICHEIGHT);
 }
 
+
+
+void FGLRenderer::gl_FillScreen()
+{
+	screen->mViewpoints->Set2D(gl_RenderState, SCREENWIDTH, SCREENHEIGHT);
+	gl_RenderState.AlphaFunc(GL_GEQUAL, 0.f);
+	gl_RenderState.EnableTexture(false);
+	gl_RenderState.Apply();
+	// The fullscreen quad is stored at index 4 in the main vertex buffer.
+	glDrawArrays(GL_TRIANGLE_STRIP, FFlatVertexBuffer::FULLSCREEN_INDEX, 4);
 }
+
+//==========================================================================
+//
+// Draws a blend over the entire view
+//
+//==========================================================================
+void FGLRenderer::DrawBlend(FVector4* blend, PalEntry* modulateColor)
+{
+	if (*modulateColor != 0xffffffff)
+	{
+		gl_RenderState.SetRenderStyle(STYLE_Multiply);
+		gl_RenderState.SetColor(*modulateColor);
+		gl_FillScreen();
+	}
+
+	gl_RenderState.SetTextureMode(TM_NORMAL);
+	gl_RenderState.SetRenderStyle(STYLE_Translucent);
+	if (blend->W > 0.0f)
+	{
+		const PalEntry bcolor(255, uint8_t(blend->X), uint8_t(blend->Y), uint8_t(blend->Z));
+		gl_RenderState.SetColorAlpha(bcolor, blend->W);
+		gl_FillScreen();
+	}
+	gl_RenderState.ResetColor();
+	gl_RenderState.EnableTexture(true);
+}
+} // namespace OpenGLRenderer

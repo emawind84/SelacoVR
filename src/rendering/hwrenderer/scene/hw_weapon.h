@@ -48,6 +48,8 @@ struct HUDSprite
 	int lightlevel;
 	PalEntry ObjectColor;
 
+	player_t* player;
+
 	FRenderStyle RenderStyle;
 	float alpha;
 	int OverrideShader;
