@@ -74,7 +74,6 @@ public:
 	virtual void UnAdjustPlayerSprites() const override;
 
 	virtual bool GetHandTransform(int hand, VSMatrix* out) const override;
-	virtual bool GetWeaponTransform(VSMatrix* out, int hand = 0) const override;
 	virtual bool RenderPlayerSpritesInScene() const { return true; }
 	virtual bool GetTeleportLocation(DVector3 &out) const override;
 

@@ -103,6 +103,9 @@ typedef const char* (*LVR_GetVRInitErrorAsEnglishDescription)(EVRInitError error
 typedef bool (*LVR_IsInterfaceVersionValid)(const char* version);
 typedef uint32_t(*LVR_GetInitToken)();
 
+typedef float vec_t;
+typedef vec_t vec3_t[3];
+
 #define DEFINE_ENTRY(name) static TReqProc<OpenVRModule, L##name> name{#name};
 DEFINE_ENTRY(VR_InitInternal)
 DEFINE_ENTRY(VR_ShutdownInternal)
@@ -1010,53 +1013,22 @@ namespace s3d
 		return false;
 	}
 
-	bool OpenVRMode::GetWeaponTransform(VSMatrix* out, int hand_weapon) const
+	void GetAnglesFromController(int hand, vec3_t weaponangles)
 	{
-		if (GetHandTransform(openvr_rightHanded ? 1 : 0, out))
-		{
-			out->rotate(openvr_weaponRotate, 1, 0, 0);
-			if (!openvr_rightHanded)
-				out->scale(-1.0f, 1.0f, 1.0f);
-			return true;
-		}
-		return false;
+		weaponangles[0] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
+		weaponangles[1] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[1]);
+		weaponangles[2] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
 	}
 
-	// static DVector3 MapAttackDir(AActor* actor, DAngle yaw, DAngle pitch)
-	// {
-	// 	LSMatrix44 mat;
-	// 	auto vrmode = VRMode::GetVRMode(true);
-	// 	if (!vrmode->GetWeaponTransform(&mat))
-	// 	{
-	// 		double pc = pitch.Cos();
+	void getMainHandAngles(vec3_t weaponangles)
+	{
+		GetAnglesFromController(openvr_rightHanded ? 1 : 0, weaponangles);
+	}
 
-	// 		DVector3 direction = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
-	// 		return direction;
-	// 	}
-	// 	double pc = pitch.Cos();
-
-	// 	DVector3 refdirection = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
-
-	// 	yaw -= actor->Angles.Yaw;
-
-	// 	//ignore specified pitch(would need to compensate for auto aimand no(vanilla) Doom weapon varies this)
-	// 	//pitch -= actor->Angles.Pitch;
-	// 	pitch = pitch.fromDeg(0);
-				
-	// 	pc = pitch.Cos();
-
-	// 	LSVec3 local = { (float)(pc * yaw.Cos()), (float)(pc * yaw.Sin()), (float)(-pitch.Sin()), 0.0f };
-
-	// 	DVector3 dir;
-	// 	dir.X = local.x * -mat[2][0] + local.y * -mat[0][0] + local.z * -mat[1][0];
-	// 	dir.Y = local.x * -mat[2][2] + local.y * -mat[0][2] + local.z * -mat[1][2];
-	// 	dir.Z = local.x * -mat[2][1] + local.y * -mat[0][1] + local.z * -mat[1][1];
-	// 	dir.MakeUnit();
-
-	// 	return dir;
-	// }
-
-
+	void getOffHandAngles(vec3_t weaponangles)
+	{
+		GetAnglesFromController(openvr_rightHanded ? 0 : 1, weaponangles);
+	}
 
 	/* virtual */
 	void OpenVRMode::Present() const {
@@ -1430,19 +1402,37 @@ namespace s3d
 
 				}
 			}
-	
-			LSMatrix44 mat;
-			if (player)
-			{
-				if (GetWeaponTransform(&mat))
-				{
-					//player->mo->OverrideAttackPosDir = true;
 
+			if (player && player->mo)
+			{
+				LSMatrix44 mat;
+				if (GetWeaponTransform(&mat, VR_MAINHAND))
+				{
 					player->mo->AttackPos.X = mat[3][0];
 					player->mo->AttackPos.Y = mat[3][2];
 					player->mo->AttackPos.Z = mat[3][1];
 
-					//player->mo->AttackDir = MapAttackDir;
+					vec3_t weaponangles;
+					getMainHandAngles(weaponangles);
+
+					player->mo->AttackAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - weaponangles[0]);
+					player->mo->AttackPitch = DAngle::fromDeg(-30 - weaponangles[1]);
+					player->mo->AttackRoll = DAngle::fromDeg(weaponangles[2]);
+				}
+
+				LSMatrix44 matOffhand;
+				if (GetWeaponTransform(&matOffhand, VR_OFFHAND))
+				{
+					player->mo->OffhandPos.X = matOffhand[3][0];
+					player->mo->OffhandPos.Y = matOffhand[3][2];
+					player->mo->OffhandPos.Z = matOffhand[3][1];
+
+					vec3_t offhandangles;
+					getOffHandAngles(offhandangles);
+
+					player->mo->OffhandAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - offhandangles[0]);
+					player->mo->OffhandPitch = DAngle::fromDeg(-30 - offhandangles[1]);
+					player->mo->OffhandRoll = DAngle::fromDeg(offhandangles[2]);
 				}
 				if (GetHandTransform(openvr_rightHanded ? 0 : 1, &mat) && openvr_moveFollowsOffHand)
 				{

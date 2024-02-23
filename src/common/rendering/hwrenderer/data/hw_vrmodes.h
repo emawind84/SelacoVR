@@ -22,7 +22,10 @@ enum
 	VR_ROWINTERLEAVED = 12,
 	VR_COLUMNINTERLEAVED = 13,
 	VR_CHECKERINTERLEAVED = 14,
-	VR_OPENVR_MOBILE = 15
+	VR_OPENVR_MOBILE = 15,
+
+	VR_MAINHAND = 0,
+	VR_OFFHAND = 1
 };
 
 struct HWDrawInfo;
@@ -81,7 +84,7 @@ struct VRMode
 	virtual void Present() const;
 
 	virtual bool GetHandTransform(int hand, VSMatrix* out) const { return false; }
-	virtual bool GetWeaponTransform(VSMatrix* out, int hand = 0) const { return false; }
+	virtual bool GetWeaponTransform(VSMatrix* out, int hand = 0) const;
 	virtual bool RenderPlayerSpritesInScene() const;
 	virtual bool GetTeleportLocation(DVector3 &out) const { return false; }
 	virtual bool IsInitialized() const { return true; }

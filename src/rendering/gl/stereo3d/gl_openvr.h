@@ -111,7 +111,6 @@ public:
 	virtual void DrawControllerModels(HWDrawInfo* di, FRenderState& state) const override;
 	
 	virtual bool GetHandTransform(int hand, VSMatrix* out) const override;
-	virtual bool GetWeaponTransform(VSMatrix* out, int hand = 0) const override;
 	virtual bool RenderPlayerSpritesCrossed() const { return true; }
 	virtual bool RenderPlayerSpritesInScene() const { return true; }
 	virtual bool IsInitialized() const { return hmdWasFound; }
