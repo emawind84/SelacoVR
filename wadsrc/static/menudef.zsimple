@@ -5,6 +5,10 @@
 OptionMenu "OptionsMenuSimple" protected
 {
 	Title "$OPTMNU_TITLE"
+	Submenu "Info & Credits", 			"InfoAndCreditsMenu"
+	Submenu "Quick Menu",				"QuickMenu"
+	Submenu "VR Options",				"VROptionsMenu"
+	StaticText " "
 	Submenu "$OPTMNU_CONTROLS",			"CustomizeControls"
 	Submenu "$OPTMNU_MOUSE",			"MouseOptionsSimple"
 	Submenu "$OPTMNU_JOYSTICK",			"JoystickOptions"
