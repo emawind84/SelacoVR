@@ -392,7 +392,7 @@ static void ParseModelDefLump(int Lump)
 	{
 		if (sc.Compare("model"))
 		{
-			int preParseFrames = SpriteModelFrames.Size();
+			unsigned int preParseFrames = SpriteModelFrames.Size();
 			int index, surface;
 			FString path = "";
 			sc.MustGetString();

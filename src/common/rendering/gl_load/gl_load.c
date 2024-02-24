@@ -71,6 +71,8 @@ static HMODULE opengl32dll;
 static HGLRC(WINAPI* createcontext)(HDC);
 static BOOL(WINAPI* deletecontext)(HGLRC);
 static BOOL(WINAPI* makecurrent)(HDC, HGLRC);
+static HGLRC(WINAPI* getcontext)();
+static BOOL(WINAPI* sharecontext)(HGLRC, HGLRC);
 static PROC(WINAPI* getprocaddress)(LPCSTR name);
 static void CheckOpenGL(void)
 {
@@ -78,6 +80,8 @@ static void CheckOpenGL(void)
     {
         opengl32dll = LoadLibrary(L"OpenGL32.DLL");
         createcontext = (HGLRC(WINAPI*)(HDC)) GetProcAddress(opengl32dll, "wglCreateContext");
+		getcontext = (HGLRC(WINAPI*)(void)) GetProcAddress(opengl32dll, "wglGetCurrentContext");
+		sharecontext = (BOOL(WINAPI*)(HGLRC, HGLRC)) GetProcAddress(opengl32dll, "wglShareLists");
         deletecontext = (BOOL(WINAPI*)(HGLRC)) GetProcAddress(opengl32dll, "wglDeleteContext");
         makecurrent = (BOOL(WINAPI*)(HDC, HGLRC)) GetProcAddress(opengl32dll, "wglMakeCurrent");
         getprocaddress = (PROC(WINAPI*)(LPCSTR)) GetProcAddress(opengl32dll, "wglGetProcAddress");
@@ -88,6 +92,17 @@ HGLRC zd_wglCreateContext(HDC dc)
 {
     CheckOpenGL();
     return createcontext(dc);
+}
+
+HGLRC zd_wglGetCurrentContext()
+{
+	CheckOpenGL();
+	return getcontext();
+}
+
+BOOL zd_wglShareContext(HGLRC contextA, HGLRC contextB) {
+	CheckOpenGL();
+	return sharecontext(contextA, contextB);
 }
 
 BOOL zd_wglDeleteContext(HGLRC context)

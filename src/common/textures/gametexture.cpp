@@ -300,7 +300,6 @@ void FGameTexture::SetupSpriteData()
 {
 	// Since this is only needed for real sprites it gets allocated on demand.
 	// It also allocates from the image memory arena because it has the same lifetime and to reduce maintenance.
-	//Printf(TEXTCOLOR_CYAN"Generated sprite positioning %sfor: %s : %p", spi != nullptr ? "AGAIN " : " ", GetName(), this);
 	if (spi == nullptr) spi = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
 	for (int i = 0; i < 2; i++)
 	{

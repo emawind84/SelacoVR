@@ -41,6 +41,7 @@ struct VkTexLoadIn {
 	VkTexLoadSpi spi;
 	VkHardwareTexture *tex;		// We can create the texture on the main thread
 	FGameTexture *gtex;
+	bool allowMipmaps;
 };
 
 struct VkTexLoadOut {
@@ -73,9 +74,22 @@ struct VkLoadJobOut{
 
 
 // @Cockatrice - Background loader thread to handle transfer of texture data
-class VkTexLoadThread : public ResourceLoader<VkTexLoadIn, VkTexLoadOut> {
+// TODO: Move the queue outside of the object and have each thread pull from a central queue
+class VkTexLoadThread : public ResourceLoader2<VkTexLoadIn, VkTexLoadOut> {
 public:
-	VkTexLoadThread(VkCommandBufferManager *bgCmd, VulkanDevice *device, int uploadQueueIndex) { 
+	/*VkTexLoadThread(VkCommandBufferManager* bgCmd, VulkanDevice* device, int uploadQueueIndex) {
+		cmd = bgCmd;
+		submits = 0;
+		uploadQueue = device->uploadQueues[uploadQueueIndex];
+
+		for (auto& fence : submitFences)
+			fence.reset(new VulkanFence(device));
+
+		for (int i = 0; i < 8; i++)
+			submitWaitFences[i] = submitFences[i]->fence;
+	}*/
+
+	VkTexLoadThread(VkCommandBufferManager* bgCmd, VulkanDevice* device, int uploadQueueIndex, TSQueue<VkTexLoadIn>* inQueue, TSQueue<VkTexLoadIn>* secondaryQueue, TSQueue<VkTexLoadOut>* outQueue) : ResourceLoader2(inQueue, secondaryQueue, outQueue) {
 		cmd = bgCmd;
 		submits = 0;
 		uploadQueue = device->uploadQueues[uploadQueueIndex];
@@ -90,7 +104,7 @@ public:
 	~VkTexLoadThread() override;
 
 	int getCurrentImageID() { return currentImageID.load(); }
-	bool moveToMainQueue(VkHardwareTexture *tex);
+	//bool moveToMainQueue(VkHardwareTexture *tex);
 	VulkanUploadSlot& getUploadQueue() { return uploadQueue; }
 
 protected:
@@ -193,9 +207,12 @@ public:
 	bool RaytracingEnabled();
 
 	// Cache stats helpers
-	void GetBGQueueSize(int &current, int &max, int &maxSec, int &total);
-	void GetBGStats(double &min, double &max, double &avg);
+	/*void GetBGQueueSize(int& current, int& max, int& maxSec, int& total);
+	void GetBGStats(double &min, double &max, double &avg);*/
+	void GetBGQueueSize(int& current, int& currentSec, int& collisions, int& max, int& maxSec, int& total);
+	void GetBGStats(double& min, double& max, double& avg);
 	void ResetBGStats();
+	int GetNumThreads() { return (int)bgTransferThreads.size(); }
 
 private:
 	void RenderTextureView(FCanvasTexture* tex, std::function<void(IntRect &)> renderFunc) override;
@@ -208,11 +225,14 @@ private:
 		bool generateSPI;
 	};
 
-	inline int findLeastFullSecondaryQueue();
-	inline int findLeastFullPrimaryQueue();
+	//inline int findLeastFullSecondaryQueue();
+	//inline int findLeastFullPrimaryQueue();
 
 	// BG Thread management
 	// TODO: Move these into their own manager object
+	int statMaxQueued = 0, statMaxQueuedSecondary = 0, statCollisions = 0;
+	TSQueue<VkTexLoadIn> primaryTexQueue, secondaryTexQueue;
+	TSQueue<VkTexLoadOut> outputTexQueue;
 	TSQueue<QueuedPatch> patchQueue;									// @Cockatrice - Thread safe queue of textures to create materials for and submit to the bg thread
 	std::vector<std::unique_ptr<VkTexLoadThread>> bgTransferThreads;	// @Cockatrice - Threads that handle the background transfers
 	std::unique_ptr<VulkanFence> bgtFence;								// @Cockatrice - Used to block for tranferring resources between queues

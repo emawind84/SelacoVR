@@ -161,7 +161,7 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	}
 
-	if (mipmap && TexFilter[gl_texture_filter].mipmapping)
+	if (mipmap && TexFilter[gl_texture_filter].mipmapping && !forcenofilter)
 	{
 		glGenerateMipmap(GL_TEXTURE_2D);
 		mipmapped = true;
@@ -169,6 +169,112 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 
 	if (texunit > 0) glActiveTexture(GL_TEXTURE0);
 	else if (texunit == -1) glBindTexture(GL_TEXTURE_2D, textureBinding);
+
+	SetHardwareState(HardwareState::READY, texunit);
+
+	return glTexID;
+}
+
+
+bool FHardwareTexture::SwapToLoadedImage() {
+	if (glInfo.glTexID > 0) {
+		assert(glTexID == 0 && glBufferID == 0);
+
+		glTexID = glInfo.glTexID;
+		glTextureBytes = glInfo.glTextureBytes;
+		mipmapped = glInfo.mipmapped;
+		forcenofilter = glInfo.forcenofilter;
+
+		glInfo = GLLoadInfo();	// Reset
+		
+		return true;
+	}
+
+	return false;
+}
+
+// Remove background loaded image, probably because it finished loading too late
+void FHardwareTexture::DestroyLoadedImage() {
+	if (glInfo.glTexID > 0 && glInfo.glTexID != glTexID) {
+		glDeleteTextures(1, &glInfo.glTexID);
+	}
+	glInfo = GLLoadInfo();
+}
+
+
+// @Cockatrice - For now I am naively assuming that sprite textures do not ever use more than one texunit.
+// I do not yet understand why we use different texture units for material layers, perhaps it's because the tex unit
+// is used as a slot in the shader? 
+// This code will have to be significantly refactored for thread safety if it turns out there will be more than one texture load per glTexID
+unsigned int FHardwareTexture::BackgroundCreateTexture(unsigned char* buffer, int w, int h, int texunit, bool mipmap, bool indexed, const char* name, bool forceNoMips)
+{
+	// See todotodo.txt
+	int rh, rw;
+	int texformat = GL_RGBA8;
+	bool deletebuffer = false;
+
+	glGetError();
+	bool firstCall = glInfo.glTexID == 0;
+	if (firstCall)
+	{
+		glGenTextures(1, &glInfo.glTexID);
+	}
+	auto err = glGetError();
+	assert(err == GL_NO_ERROR);
+	assert(firstCall);
+
+	if (texunit > 0) glActiveTexture(GL_TEXTURE0 + texunit);
+	glBindTexture(GL_TEXTURE_2D, glInfo.glTexID);
+
+	FGLDebug::LabelObject(GL_TEXTURE, glInfo.glTexID, name);
+
+	rw = GetTexDimension(w);
+	rh = GetTexDimension(h);
+	
+	if (rw < w || rh < h)
+	{
+		// The texture is larger than what the hardware can handle so scale it down.
+		unsigned char* scaledbuffer = (unsigned char*)calloc(4, rw * (rh + 1));
+		if (scaledbuffer)
+		{
+			Resize(w, h, rw, rh, buffer, scaledbuffer);
+			deletebuffer = true;
+			buffer = scaledbuffer;
+		}
+	}
+
+	// store the physical size.
+	int sourcetype;
+	if (indexed)
+	{
+		mipmap = false;
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		texformat = GL_R8;
+		sourcetype = GL_RED;
+	}
+	else
+	{
+		sourcetype = GL_BGRA;
+	}
+
+
+	glTexImage2D(GL_TEXTURE_2D, 0, texformat, rw, rh, 0, sourcetype, GL_UNSIGNED_BYTE, buffer);
+
+	if (deletebuffer && buffer) free(buffer);
+
+	if (mipmap && TexFilter[gl_texture_filter].mipmapping && !forceNoMips)
+	{
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glInfo.mipmapped = true;
+	}
+	else if (forceNoMips) {
+		glInfo.forcenofilter = true;
+	}
+
+	if (texunit > 0) glActiveTexture(GL_TEXTURE0);
+
+	glFinish();
+
 	return glTexID;
 }
 
@@ -208,6 +314,7 @@ uint8_t *FHardwareTexture::MapBuffer()
 //===========================================================================
 FHardwareTexture::~FHardwareTexture() 
 { 
+	DestroyLoadedImage();
 	if (glTexID != 0) glDeleteTextures(1, &glTexID);
 	if (glBufferID != 0) glDeleteBuffers(1, &glBufferID);
 }
@@ -227,7 +334,7 @@ unsigned int FHardwareTexture::Bind(int texunit, bool needmipmap)
 		if (texunit != 0) glActiveTexture(GL_TEXTURE0 + texunit);
 		glBindTexture(GL_TEXTURE_2D, glTexID);
 		// Check if we need mipmaps on a texture that was creted without them.
-		if (needmipmap && !mipmapped && TexFilter[gl_texture_filter].mipmapping)
+		if (needmipmap && !mipmapped && TexFilter[gl_texture_filter].mipmapping && !forcenofilter)
 		{
 			glGenerateMipmap(GL_TEXTURE_2D);
 			mipmapped = true;

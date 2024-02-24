@@ -1161,6 +1161,8 @@ static void S_AddSNDINFO (int lump)
 				else if (list.Size() > 1)
 				{ // Only add non-empty random lists
 					soundEngine->AddRandomSound(Owner, list);
+					// @Cockatrice - Increase the default for a random list to 4 instead of 2
+					S_sfx[Owner].NearLimit = 4;
 				}
 				}
 				break;
@@ -1817,6 +1819,29 @@ int GetTicker(struct FAmbientSound *ambient)
 //
 //==========================================================================
 
+inline bool CallWillResume(AActor* self) {
+	IFVIRTUALPTRNAME(self, NAME_AmbientSound, WillResume) {
+		VMValue params[] = { (DObject*)self };
+		int retval;
+		VMReturn ret(&retval);
+		VMCall(func, params, countof(params), &ret, 1);
+		return !!retval;
+	}
+	return true;
+}
+
+inline bool CallWillHalt(AActor* self) {
+	IFVIRTUALPTRNAME(self, NAME_AmbientSound, WillHalt) {
+		VMValue params[] = { (DObject*)self };
+		int retval;
+		VMReturn ret(&retval);
+		VMCall(func, params, countof(params), &ret, 1);
+		return !!retval;
+	}
+	return true;
+}
+
+
 float CalcAttenuationRdm(unsigned int refid) {
 	auto &S_sfx = soundEngine->GetSounds();
 
@@ -1853,6 +1878,130 @@ inline float CalcAttenuation(sfxinfo_t *sfx) {
 }
 
 
+inline bool StartAmbient(AActor* self, FAmbientSound* ambient, bool loop) {
+	// Don't play if we are already playing
+
+	/*if (S_IsActorPlayingSomething(self, CHAN_BODY, -1)) {
+		if (self->special1 == 0 && loop) {
+			// This shouldn't happen, but it's happening so handle it and notify
+			Printf("(%p) ALready playing something on BODY but ready to play again...\n", self);
+		}
+		else {
+			return false;
+		}
+	}*/
+
+	EChanFlags fLoop = loop ? CHANF_LOOP : (EChanFlags)0;
+
+	// The second argument scales the ambient sound's volume.
+	// 0 and 100 are normal volume. The maximum volume level
+	// possible is always 1.
+	float volscale = self->args[1] == 0 ? 1 : self->args[1] / 100.f;
+	float usevol = clamp(ambient->volume * volscale, 0.f, 1.f);
+
+	// The third argument is the minimum distance for audible fading, and
+	// the fourth argument is the maximum distance for audibility. Setting
+	// either of these to 0 or setting  min distance > max distance will
+	// use the standard rolloff.
+	if ((self->args[2] | self->args[3]) == 0 || self->args[2] > self->args[3])
+	{
+		S_Sound(self, CHAN_BODY, fLoop, ambient->sound, usevol, ambient->attenuation);
+	}
+	else
+	{
+		float min = float(self->args[2]), max = float(self->args[3]);
+		// The fifth argument acts as a scalar for the preceding two, if it's non-zero.
+		if (self->args[4] > 0)
+		{
+			min *= self->args[4];
+			max *= self->args[4];
+		}
+		S_SoundMinMaxDist(self, CHAN_BODY, fLoop, ambient->sound, usevol, min, max);
+	}
+	if (!loop)
+	{
+		self->special1 += GetTicker(ambient);
+	}
+	else
+	{
+ 		self->special1 = INT_MAX;
+	}
+
+	return true;
+}
+
+
+// Does not take portals into consideration
+inline double GetRange(AActor *self) {
+	double range = self->args[3];
+
+	FAmbientSound *ambient = Ambients.CheckKey(self->args[0]);
+	if (ambient == NULL) return 0;
+
+	// Determine range based on attenuation
+	if ((self->args[2] | self->args[3]) == 0 || self->args[2] > self->args[3]) {
+		// If we haven't already calculated the max distance, do it now
+		if (ambient->maxHearableDistance < 0) {
+			auto& S_sfx = soundEngine->GetSounds();
+			float attenuation = CalcAttenuation(&S_sfx[ambient->sound]);
+
+			if (ambient->attenuation * attenuation < 0.001) {
+				ambient->maxHearableDistance = 0;
+			}
+			else {
+				ambient->maxHearableDistance = (soundEngine->GlobalRolloff().MaxDistance + 128.0) / (ambient->attenuation * attenuation);
+			}
+		}
+
+		range = ambient->maxHearableDistance;
+	}
+
+	return range;
+}
+
+
+DEFINE_ACTION_FUNCTION(AAmbientSound, GetAudibleRange)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	ACTION_RETURN_FLOAT(GetRange(self));
+}
+
+
+DEFINE_ACTION_FUNCTION(AAmbientSound, IsLooping)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+
+	FAmbientSound* ambient = Ambients.CheckKey(self->args[0]);
+	if (ambient != NULL) {
+		ACTION_RETURN_BOOL((ambient->type & CONTINUOUS) != 0);
+	}
+	ACTION_RETURN_BOOL(false);
+}
+
+
+DEFINE_ACTION_FUNCTION(AAmbientSound, StartPlaying)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+
+	FAmbientSound* ambient = Ambients.CheckKey(self->args[0]);
+	if (ambient != NULL) {
+		ACTION_RETURN_BOOL(StartAmbient(self, ambient, (ambient->type & CONTINUOUS) != 0));
+	}
+
+	ACTION_RETURN_BOOL(false);
+}
+
+
+DEFINE_ACTION_FUNCTION(AAmbientSound, StopPlaying)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+
+	S_StopSound(self, CHAN_BODY);
+	self->special1--;
+
+	return 0;
+}
+
 
 DEFINE_ACTION_FUNCTION(AAmbientSound, AmbientTick)
 {
@@ -1870,7 +2019,8 @@ DEFINE_ACTION_FUNCTION(AAmbientSound, AmbientTick)
 		return 0;
 
 	FAmbientSound *ambient;
-	EChanFlags loop = 0;
+	//EChanFlags loop = 0;
+	bool loop = false;
 
 	ambient = Ambients.CheckKey(self->args[0]);
 	if (ambient == NULL)
@@ -1880,7 +2030,7 @@ DEFINE_ACTION_FUNCTION(AAmbientSound, AmbientTick)
 
 	if ((ambient->type & CONTINUOUS) == CONTINUOUS)
 	{
-		loop = CHANF_LOOP;
+		loop = true;// CHANF_LOOP;
 	}
 
 	if (ambient->sound == FSoundID(0))
@@ -1894,7 +2044,7 @@ DEFINE_ACTION_FUNCTION(AAmbientSound, AmbientTick)
 	// @Cockatrice - If an ambient sound falls in the forest and there is no player around to hear it, does it actually play? 
 	// Not anymore.
 	if (!inRange) {
-		double range = self->args[3];
+		/*double range = self->args[3];
 		
 		// Determine range based on attenuation
 		if ((self->args[2] | self->args[3]) == 0 || self->args[2] > self->args[3]) {
@@ -1912,7 +2062,8 @@ DEFINE_ACTION_FUNCTION(AAmbientSound, AmbientTick)
 			}
 
 			range = ambient->maxHearableDistance;
-		}
+		}*/
+		double range = GetRange(self);
 
 		if (range <= 0) {
 			inRange = true;
@@ -1943,15 +2094,18 @@ DEFINE_ACTION_FUNCTION(AAmbientSound, AmbientTick)
 
 		// If we are already playing, and this is a looping sound but we are not in range, cut the sound
 		if (loop && !inRange && self->special1 == INT_MAX) {
-			S_StopSound(self, CHAN_BODY);
-			self->special1--;
+			if (CallWillHalt(self)) {
+				S_StopSound(self, CHAN_BODY);
+				self->special1--;
+			}
 			
 			return 0;
 		}
 	}
 
-	if (inRange)
+	if (inRange && !(loop && self->special1 == INT_MAX))
 	{
+		/*
 		// The second argument scales the ambient sound's volume.
 		// 0 and 100 are normal volume. The maximum volume level
 		// possible is always 1.
@@ -1984,6 +2138,9 @@ DEFINE_ACTION_FUNCTION(AAmbientSound, AmbientTick)
 		else
 		{
 			self->special1 = INT_MAX;
+		}*/
+		if (CallWillResume(self)) {
+			StartAmbient(self, ambient, loop);
 		}
 	}
 	
@@ -1998,7 +2155,7 @@ DEFINE_ACTION_FUNCTION(AAmbientSound, AmbientTick)
 //
 //==========================================================================
 
-DEFINE_ACTION_FUNCTION(AAmbientSound, Activate)
+DEFINE_ACTION_FUNCTION(AAmbientSound, ActivateAmbient)
 {
 	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_OBJECT(activator, AActor);
@@ -2042,7 +2199,7 @@ DEFINE_ACTION_FUNCTION(AAmbientSound, Activate)
 //
 //==========================================================================
 
-DEFINE_ACTION_FUNCTION(AAmbientSound, Deactivate)
+DEFINE_ACTION_FUNCTION(AAmbientSound, DeactivateAmbient)
 {
 	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_OBJECT(activator, AActor);

@@ -61,6 +61,7 @@ enum EGameTexFlags
 	GTexf_AutoMaterialsAdded = 256,			// AddAutoMaterials has been called on this texture.
 	GTexf_OffsetsNotForFont = 512,			// The offsets must be ignored when using this texture in a font.
 	GTexf_NoTrim = 1024,					// Don't perform trimming on this texture.
+	GTexf_NoMips = 2048						// Mipmaps are not required for this texture. Should be in FTexture, but for practicality purposes it is here now.
 };
 
 // Refactoring helper to allow piece by piece adjustment of the API
@@ -164,7 +165,9 @@ public:
 	bool useWorldPanning() const { return !!(flags & GTexf_WorldPanning);  }
 	void SetWorldPanning(bool on) { if (on) flags |= GTexf_WorldPanning; else flags &= ~GTexf_WorldPanning; }
 	void SetNoTrimming(bool on) { if (on) flags |= GTexf_NoTrim; else flags &= ~GTexf_NoTrim; }
+	void SetNoMipmaps(bool on) { if (on) flags |= GTexf_NoMips; else flags &= ~GTexf_NoMips; }
 	bool GetNoTrimming() { return !!(flags & GTexf_NoTrim); }
+	bool GetNoMipmaps() const { return !!(flags & GTexf_NoMips); }
 	bool allowNoDecals() const { return !!(flags & GTexf_NoDecals);	}
 	void SetNoDecals(bool on) { if (on) flags |= GTexf_NoDecals; else flags &= ~GTexf_NoDecals; }
 	void SetOffsetsNotForFont() { flags |= GTexf_OffsetsNotForFont; }

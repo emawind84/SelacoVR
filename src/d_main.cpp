@@ -123,6 +123,9 @@
 #include "shiftstate.h"
 #include "s_loader.h"
 
+#include "statdb.h"
+
+
 #ifdef __unix__
 #include "i_system.h"  // for SHARE_DIR
 #endif // __unix__
@@ -1226,6 +1229,7 @@ void D_DoomLoop ()
 			}
 			// Update display, next frame, with current state.
 			I_StartTic ();
+			statDatabase.update();
 			D_ProcessEvents();
 			D_Display ();
 			S_UpdateMusic();
@@ -1596,6 +1600,7 @@ void ParseCVarInfo()
 			ECVarType cvartype = CVAR_Dummy;
 			int cvarflags = CVAR_MOD|CVAR_ARCHIVE;
 			FBaseCVar *cvar;
+			bool set_default = false;
 
 			// Check for flag tokens.
 			while (sc.TokenType == TK_Identifier)
@@ -1624,11 +1629,24 @@ void ParseCVarInfo()
 				{
 					cvarflags |= CVAR_CONFIG_ONLY;
 				}
+				else if (stricmp(sc.String, "setdefault") == 0) {
+					set_default = true;
+				}
 				else
 				{
 					sc.ScriptError("Unknown cvar attribute '%s'", sc.String);
 				}
-				sc.MustGetAnyToken();
+
+				if (set_default) {
+					// The next token must be the cvar name.
+					sc.MustGetToken(TK_Identifier);
+					break;
+				} else sc.MustGetAnyToken();
+			}
+
+			// Error out if we are combining any flags with CVAR_REDEFINE_DEFAULT
+			if (set_default && cvarflags != (CVAR_MOD | CVAR_ARCHIVE)) {
+				sc.ScriptError("setdefault cannot be combined with any other flags");
 			}
 
 			// Possibility of defining a cvar as 'server nosave' or 'user nosave' is kept for
@@ -1642,39 +1660,44 @@ void ParseCVarInfo()
 			// Do some sanity checks.
 			// No need to check server-nosave and user-nosave combinations because they
 			// are made impossible right above.
-			if ((cvarflags & (CVAR_SERVERINFO|CVAR_USERINFO|CVAR_CONFIG_ONLY)) == 0 ||
+			if (!set_default && 
+				(cvarflags & (CVAR_SERVERINFO|CVAR_USERINFO|CVAR_CONFIG_ONLY)) == 0 ||
 				(cvarflags & (CVAR_SERVERINFO|CVAR_USERINFO)) == (CVAR_SERVERINFO|CVAR_USERINFO))
 			{
 				sc.ScriptError("One of 'server', 'user', or 'nosave' must be specified");
 			}
+
 			// The next token must be the cvar type.
-			if (sc.TokenType == TK_Bool)
-			{
-				cvartype = CVAR_Bool;
+			if (!set_default) {
+				if (sc.TokenType == TK_Bool)
+				{
+					cvartype = CVAR_Bool;
+				}
+				else if (sc.TokenType == TK_Int)
+				{
+					cvartype = CVAR_Int;
+				}
+				else if (sc.TokenType == TK_Float)
+				{
+					cvartype = CVAR_Float;
+				}
+				else if (sc.TokenType == TK_Color)
+				{
+					cvartype = CVAR_Color;
+				}
+				else if (sc.TokenType == TK_String)
+				{
+					cvartype = CVAR_String;
+				}
+				else
+				{
+					sc.ScriptError("Bad cvar type '%s'", sc.String);
+				}
+				// The next token must be the cvar name.
+				sc.MustGetToken(TK_Identifier);
 			}
-			else if (sc.TokenType == TK_Int)
-			{
-				cvartype = CVAR_Int;
-			}
-			else if (sc.TokenType == TK_Float)
-			{
-				cvartype = CVAR_Float;
-			}
-			else if (sc.TokenType == TK_Color)
-			{
-				cvartype = CVAR_Color;
-			}
-			else if (sc.TokenType == TK_String)
-			{
-				cvartype = CVAR_String;
-			}
-			else
-			{
-				sc.ScriptError("Bad cvar type '%s'", sc.String);
-			}
-			// The next token must be the cvar name.
-			sc.MustGetToken(TK_Identifier);
-			if (FindCVar(sc.String, NULL) != NULL)
+			
+			if (FindCVar(sc.String, NULL) != NULL && !set_default)
 			{
 				sc.ScriptError("cvar '%s' already exists", sc.String);
 			}
@@ -1705,12 +1728,27 @@ void ParseCVarInfo()
 					break;
 				}
 			}
-			// Now create the cvar.
-			cvar = C_CreateCVar(cvarname, cvartype, cvarflags);
-			if (cvardefault != NULL)
+			else if (set_default) {
+				sc.ScriptError("setdefault requires a value");
+			}
+
+			// Now create or modify the cvar.
+			if (set_default) {
+				cvar = FindCVar(cvarname, NULL);
+
+				if (cvar == nullptr) {
+					Printf("Warning: CVAR %s could not be found for setdefault\n", cvarname.GetChars());
+				}
+			} 
+			else {
+				cvar = C_CreateCVar(cvarname, cvartype, cvarflags);
+			}
+
+			if (cvar != nullptr && cvardefault != NULL)
 			{
 				UCVarValue val;
 				val.String = cvardefault;
+
 				cvar->SetGenericRepDefault(val, CVAR_String);
 			}
 			// To be like C and ACS, require a semicolon after everything.
@@ -3333,6 +3371,10 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	V_LoadTranslations();
 	UpdateGenericUI(false);
 
+	// @Cockatrice - Startup stats database
+	statDatabase.init();
+	statDatabase.start();
+
 	// [CW] Parse any TEAMINFO lumps.
 	if (!batchrun) Printf ("ParseTeamInfo: Load team definitions.\n");
 	TeamLibrary.ParseTeamInfo ();
@@ -3755,6 +3797,8 @@ static int D_DoomMain_Internal (void)
 
 		startupClock.Unclock();
 		Printf(TEXTCOLOR_YELLOW "Full startup in %.2fms\n", startupClock.TimeMS());
+		
+		statDatabase.update();	// @Cockatrice - Do at least one update before the game loop
 
 		D_DoAnonStats();
 		I_UpdateWindowTitle();

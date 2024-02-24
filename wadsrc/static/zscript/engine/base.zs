@@ -291,6 +291,7 @@ struct TexMan
 	};
 
 	native static TextureID CheckForTexture(String name, int usetype = Type_Any, int flags = TryAny);
+	native static int FindTextures(String name, out Array<TextureID> output, int usetype = Type_Any, int flags = TryAny);
 	native static String GetName(TextureID tex);
 	native static int, int GetSize(TextureID tex);
 	native static Vector2 GetScaledSize(TextureID tex);
@@ -781,6 +782,7 @@ struct Wads	// todo: make FileSystem an alias to 'Wads'
 
 	native static int GetNumWads();
 	native static string GetWadName(int wadnum);
+	native static bool HasMods();
 }
 
 enum EmptyTokenType
@@ -836,3 +838,12 @@ struct Translation version("2.4")
 	}
 }
 
+struct StatDatabase native play
+{
+	native static clearscope bool isAvailable();
+	native static clearscope bool, int GetAchievement(String key);
+	native static clearscope bool, double GetStat(String key);
+	native static bool SetAchievement(String key, int value);
+	native static bool SetStat(String key, double value);
+	native static bool AddStat(String key, double amount);
+}

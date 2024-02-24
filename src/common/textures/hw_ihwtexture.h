@@ -26,15 +26,15 @@ public:
 	IHardwareTexture() = default;
 	virtual ~IHardwareTexture() = default;
 
-	HardwareState GetState() { return hwState; }
-	void SetHardwareState(HardwareState hws) { hwState = hws; }
+	virtual HardwareState GetState(int texUnit = 0) { return hwState; }
+	virtual void SetHardwareState(HardwareState hws, int texUnit = 0) { hwState = hws; }
 
 	virtual void AllocateBuffer(int w, int h, int texelsize) = 0;
 	virtual uint8_t *MapBuffer() = 0;
 	virtual unsigned int CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, const char *name) = 0;
 
 	// @Cockatrice - Used to determine if the texture is available to used in rendering (loaded/uploaded)
-	virtual bool IsValid() { return hwState == HardwareState::READY; }
+	virtual bool IsValid(int texUnit = 0) { return GetState(texUnit) == HardwareState::READY; }
 
 	void Resize(int swidth, int sheight, int width, int height, unsigned char *src_data, unsigned char *dst_data);
 

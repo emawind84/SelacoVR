@@ -460,7 +460,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 		// We have to do this first so it doesn't get cancelled if the current frame is already loaded
 		// Since the textures added here won't start loading until the next frame we don't have to worry about putting them in front of the right-now texture
 		// TODO: We are adding 5 checks to the list every frame that needs to be cleared out at the global level, somehow we need to check for loaded and skip
-		FState *nextState = psp->GetState();
+		FState* nextState = psp->GetState();
 		for (int x = 0; x < 5; x++) {
 			if (!nextState) break;
 
@@ -480,7 +480,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 			else {
 				screen->BackgroundCacheTextureMaterial(tex, psp->Translation, scaleflags, true);
 			}
-
+			
 			bool foundNewer = false;
 				
 			// We need something to render, go through the last few patches and see if anything is loaded yet that we can grab
@@ -518,8 +518,6 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 
 	psp->LastPatch = lump;
 
-	// @Cockatrice - TODO: Get the sprite positioning data in the bg load function
-	// This function will cause an HDD load and thus cause stuttering
 	auto& spi = tex->GetSpritePositioning(1);
 
 	float vw = (float)viewwidth;

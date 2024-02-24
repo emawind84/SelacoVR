@@ -46,7 +46,7 @@ public:
 	void CreateWipeTexture(int w, int h, const char *name);
 
 	// @Cockatrice - Ready to render when we have a VkTextureImage
-	bool IsValid() override { return hwState == HardwareState::READY && !!mImage->Image; }
+	bool IsValid(int texUnit) override { return GetState(texUnit) == HardwareState::READY && !!mImage->Image; }
 
 	VkTextureImage *GetImage(FTexture *tex, int translation, int flags);
 	VkTextureImage *GetDepthStencil(FTexture *tex);

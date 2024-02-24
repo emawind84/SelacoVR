@@ -105,6 +105,7 @@ public:
 
 	FTextureID CheckForTexture (const char *name, ETextureType usetype, BITFIELD flags=TEXMAN_TryAny);
 	FTextureID GetTextureID (const char *name, ETextureType usetype, BITFIELD flags=0);
+	int FindTextures(const char* search, TArray<FTextureID>* list, ETextureType usetype, BITFIELD flags = TEXMAN_ShortNameOnly);
 	int ListTextures (const char *name, TArray<FTextureID> &list, bool listall = false);
 
 	void AddGroup(int wadnum, int ns, ETextureType usetype);

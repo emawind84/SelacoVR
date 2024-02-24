@@ -2251,6 +2251,13 @@ void G_DoAutoSave ()
 
 void G_DoQuickSave ()
 {
+	// @Cockatrice - Consult the event managers to determine if we are actually allowed to save at this moment
+	if (!staticEventManager.IsSaveAllowed(true)) {
+		if (developer > 0)
+			Printf("Quicksave rejected by event manager.");
+		return;
+	}
+
 	FString description;
 	FString file;
 	// Keeps a rotating set of quicksaves
