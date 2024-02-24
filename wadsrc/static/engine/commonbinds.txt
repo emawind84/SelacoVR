@@ -90,14 +90,24 @@ rthumb meleeButton
 mapbind f am_togglefollow
 mapbind p am_toggletexture
 mapbind c am_clearmarks
-mapbind 0 am_gobig
+mapbind o am_gobig
+mapbind l am_togglelegend
 mapbind rightarrow +am_panright
 mapbind leftarrow +am_panleft
 mapbind uparrow +am_panup
 mapbind downarrow +am_pandown
-mapbind - +am_zoomout
-mapbind = +am_zoomin
-mapbind kp- +am_zoomout
-mapbind kp+ +am_zoomin
+mapbind pgdn +am_zoomout
+mapbind pgup +am_zoomin
 mapbind mwheelup "am_zoom 1.2"
 mapbind mwheeldown "am_zoom -1.2"
+// Controllers
+mapbind pad_b togglemap
+mapbind pad_x am_togglefollow
+mapbind pad_y am_gobig
+mapbind pad_a am_togglelegend
+mapbind rstickright +am_panright
+mapbind rstickleft +am_panleft
+mapbind rstickup +am_panup
+mapbind rstickdown +am_pandown
+mapbind lshoulder +am_zoomout
+mapbind rshoulder +am_zoomin
