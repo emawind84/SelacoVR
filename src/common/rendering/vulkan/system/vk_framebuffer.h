@@ -41,6 +41,7 @@ struct VkTexLoadIn {
 	VkTexLoadSpi spi;
 	VkHardwareTexture *tex;		// We can create the texture on the main thread
 	FGameTexture *gtex;
+	bool allowMipmaps;
 };
 
 struct VkTexLoadOut {

@@ -194,13 +194,10 @@ bool GlTexLoadThread::loadResource(GlTexLoadIn & input, GlTexLoadOut & output) {
 	delete input.params;
 
 	bool indexed = false;	// TODO: Determine this properly
-	bool mipmap = !indexed;
-	output.tex->BackgroundCreateTexture(pixels.GetPixels(), pixels.GetWidth(), pixels.GetHeight(), input.texUnit, mipmap, indexed, "GlTexLoadThread::loadResource()");
+	bool mipmap = !indexed && input.allowMipmaps;
+	output.tex->BackgroundCreateTexture(pixels.GetPixels(), pixels.GetWidth(), pixels.GetHeight(), input.texUnit, mipmap, indexed, "GlTexLoadThread::loadResource()", !input.allowMipmaps);
 
-	// If we need sprite positioning info, generate it here and assign it in the main thread later
-	/*if (input.spi.generateSpi) {
-		FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
-	}*/
+	
 
 	// Always return true, because failed images need to be marked as unloadable
 	// TODO: Mark failed images as unloadable so they don't keep coming back to the queue
@@ -280,6 +277,7 @@ bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, int translation,
 	FImageLoadParams* params = nullptr;
 	GlTexLoadSpi spi = {};
 	bool shouldExpand = mat->sourcetex->ShouldExpandSprite() && (layer->scaleFlags & CTF_Expand);
+	bool allowMipmaps = !mat->sourcetex->GetNoMipmaps();
 
 	// If the texture is already submitted to the cache, find it and move it to the normal queue to reprioritize it
 	if (rLump && !secondary && systex->GetState(0) == IHardwareTexture::HardwareState::CACHING) {
@@ -320,7 +318,8 @@ bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, int translation,
 				spi,
 				systex,
 				mat->sourcetex,
-				0
+				0,
+				allowMipmaps
 			};
 
 			if (secondary) secondaryTexQueue.queue(in);
@@ -372,7 +371,8 @@ bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, int translation,
 					},
 					syslayer,
 					nullptr,
-					i
+					i,
+					allowMipmaps
 				};
 
 				if (secondary) secondaryTexQueue.queue(in);

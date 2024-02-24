@@ -35,6 +35,7 @@ struct GlTexLoadIn {
 	FHardwareTexture* tex;
 	FGameTexture* gtex;
 	int texUnit;
+	bool allowMipmaps;
 };
 
 struct GlTexLoadOut {

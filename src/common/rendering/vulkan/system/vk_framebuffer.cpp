@@ -206,7 +206,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	int buffWidth = src->GetWidth() + 2 * exx;
 	int buffHeight = src->GetHeight() + 2 * exx;
 
-	pixels.Create(buffWidth, buffHeight);	// TODO: Error checking
+	pixels.Create(buffWidth, buffHeight); // TODO: Error checking
 
 	if (exx) {
 		// This is incredibly wasteful, but necessary for now since we can't read the bitmap with an offset into a larger buffer
@@ -242,7 +242,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	// But for now this approach should yield reasonable results
 	VulkanDevice* device = cmd->GetFrameBuffer()->device;
 	bool indexed = false;	// TODO: Determine this properly
-	bool mipmap = !indexed;
+	bool mipmap = !indexed && input.allowMipmaps;
 	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
 	output.tex->BackgroundCreateTexture(cmd, pixels.GetWidth(), pixels.GetHeight(), indexed ? 1 : 4, fmt, pixels.GetPixels(), mipmap);
 	output.createMipmaps = mipmap && !uploadQueue.familySupportsGraphics;
@@ -696,6 +696,7 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 	VkTexLoadSpi spi = {};
 
 	bool shouldExpand = mat->sourcetex->ShouldExpandSprite() && (layer->scaleFlags & CTF_Expand);
+	bool allowMips = !mat->sourcetex->GetNoMipmaps();
 
 	// If the texture is already submitted to the cache, find it and move it to the normal queue to reprioritize it
 	if (rLump && !secondary && systex->GetState() == IHardwareTexture::HardwareState::CACHING) {
@@ -734,7 +735,8 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 				params,
 				spi,
 				systex,
-				mat->sourcetex
+				mat->sourcetex,
+				allowMips
 			};
 
 			if (secondary) secondaryTexQueue.queue(in);
@@ -782,7 +784,8 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 						false, shouldExpand, true
 					},
 					syslayer,
-					nullptr
+					nullptr,
+					allowMips
 				};
 
 				if (secondary) secondaryTexQueue.queue(in);

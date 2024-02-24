@@ -161,7 +161,7 @@ unsigned int FHardwareTexture::CreateTexture(unsigned char * buffer, int w, int 
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	}
 
-	if (mipmap && TexFilter[gl_texture_filter].mipmapping)
+	if (mipmap && TexFilter[gl_texture_filter].mipmapping && !forcenofilter)
 	{
 		glGenerateMipmap(GL_TEXTURE_2D);
 		mipmapped = true;
@@ -206,7 +206,7 @@ void FHardwareTexture::DestroyLoadedImage() {
 // I do not yet understand why we use different texture units for material layers, perhaps it's because the tex unit
 // is used as a slot in the shader? 
 // This code will have to be significantly refactored for thread safety if it turns out there will be more than one texture load per glTexID
-unsigned int FHardwareTexture::BackgroundCreateTexture(unsigned char* buffer, int w, int h, int texunit, bool mipmap, bool indexed, const char* name)
+unsigned int FHardwareTexture::BackgroundCreateTexture(unsigned char* buffer, int w, int h, int texunit, bool mipmap, bool indexed, const char* name, bool forceNoMips)
 {
 	// See todotodo.txt
 	int rh, rw;
@@ -262,10 +262,13 @@ unsigned int FHardwareTexture::BackgroundCreateTexture(unsigned char* buffer, in
 
 	if (deletebuffer && buffer) free(buffer);
 
-	if (mipmap && TexFilter[gl_texture_filter].mipmapping)
+	if (mipmap && TexFilter[gl_texture_filter].mipmapping && !forceNoMips)
 	{
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glInfo.mipmapped = true;
+	}
+	else if (forceNoMips) {
+		glInfo.forcenofilter = true;
 	}
 
 	if (texunit > 0) glActiveTexture(GL_TEXTURE0);
@@ -331,7 +334,7 @@ unsigned int FHardwareTexture::Bind(int texunit, bool needmipmap)
 		if (texunit != 0) glActiveTexture(GL_TEXTURE0 + texunit);
 		glBindTexture(GL_TEXTURE_2D, glTexID);
 		// Check if we need mipmaps on a texture that was creted without them.
-		if (needmipmap && !mipmapped && TexFilter[gl_texture_filter].mipmapping)
+		if (needmipmap && !mipmapped && TexFilter[gl_texture_filter].mipmapping && !forcenofilter)
 		{
 			glGenerateMipmap(GL_TEXTURE_2D);
 			mipmapped = true;

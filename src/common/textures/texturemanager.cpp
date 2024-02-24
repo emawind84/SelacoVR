@@ -928,6 +928,7 @@ void FTextureManager::ParseTextureDef(int lump, FMultipatchTextureBuilder &build
 			name.ToUpper();
 
 			int width = -1, height = -1;
+			bool mips = false;
 
 			if (sc.CheckString(",")) {
 				sc.MustGetNumber();
@@ -985,6 +986,12 @@ void FTextureManager::ParseTextureDef(int lump, FMultipatchTextureBuilder &build
 					{
 						bNoTrim = true;
 					}
+					else if (sc.Compare("NoMips")) {
+						mips = false;
+					}
+					else if (sc.Compare("Mips")) {
+						mips = true;
+					}
 					else if (sc.Compare("Offset"))
 					{
 						sc.MustGetNumber();
@@ -1021,6 +1028,7 @@ void FTextureManager::ParseTextureDef(int lump, FMultipatchTextureBuilder &build
 				tex->SetScale((float)scalex, (float)scaley);
 				tex->SetWorldPanning(bWorldPanning);
 				tex->SetNoTrimming(bNoTrim);
+				tex->SetNoMipmaps(!mips);
 			}
 			
 
