@@ -402,9 +402,9 @@ OptionMenu "OptionsMenu" protected
 	SafeCommand	"$OPTMNU_WRITEINI",		"writeini"
 	
 	Command "$OPTMNU_CONSOLE",			"menuconsole"
-	Command "$OPTMNU_OPENCONFIG",		"openconfig"
-	Command "$OPTMNU_OPENSCREENSHOTS",	"openscreenshots"
-	Command "$OPTMNU_OPENSAVES",		"opensaves"
+	//Command "$OPTMNU_OPENCONFIG",		"openconfig"
+	//Command "$OPTMNU_OPENSCREENSHOTS",	"openscreenshots"
+	//Command "$OPTMNU_OPENSAVES",		"opensaves"
 	StaticText " "
 }
 
@@ -2663,10 +2663,10 @@ OptionMenu VideoModeMenu protected
 	Option "$VIDMNU_SCALEMODE",			"vid_scalemode", "ScaleModes"
 	Slider "$VIDMNU_SCALEFACTOR",		"vid_scalefactor", 0.25, 2.0, 0.25, 2
 
-	StaticText " "
-	Option "$DSPLYMNU_VSYNC",					"vid_vsync", "OnOff"
-	Slider "$VIDMNU_MAXFPS",					"vid_maxfps", 35, 500, 1
-	Option "$DSPLYMNU_CAPFPS",					"cl_capfps", "OffOn"
+	//StaticText " "
+	//Option "$DSPLYMNU_VSYNC",					"vid_vsync", "OnOff"
+	//Slider "$VIDMNU_MAXFPS",					"vid_maxfps", 35, 500, 1
+	//Option "$DSPLYMNU_CAPFPS",					"cl_capfps", "OffOn"
 	
 	StaticText ""
 	StaticText "$VIDMNU_CUSTOMRES"
@@ -3408,7 +3408,7 @@ OptionMenu QuickMenu protected
 	StaticText "May cause issues with some mods.", "Brown"
 	
 	StaticText " "
-	Option "$GLLIGHTMNU_LIGHTBUFFERTYPE", gl_light_buffer_type, "LightBuffer"
+	Option "$GLPREFMNU_BUFFERTYPE", gl_storage_buffer_type, "StorageBuffer"
 	StaticText "Choose UBO for performance and SSBO for stability.", "Brown"
 	
 	StaticText " "
@@ -3444,7 +3444,7 @@ OptionMenu QuickMenu protected
 { 
 	//Title		"QUESTZDOOM INFO AND CREDITS"
 	StaticPatch 52, -20, "QZDOOM"
-	Position 50
+	Position 120
 	Submenu		"INFORMATION AND INSTRUCTIONS", "QuestZDoomInstructions", 0, 1
 	Submenu		"CREDITS", "QuestZDoomCredits", 0, 1
 }
@@ -3453,7 +3453,7 @@ OptionMenu "QuestZDoomInstructions"
 { 
 	//Title		"QUESTZDOOM INFO AND CREDITS"
 	StaticPatch 52, -20, "QZDOOM"
-	Position 50
+	Position 120
 	StaticText	"===== INFORMATION AND INSTRUCTIONS ====="
 	StaticText	""
 	StaticText	"QUESTZDOOM IS AN ENGINE PORT OF THE POPULAR LZDOOM/GZDOOM", "White"
@@ -3490,13 +3490,12 @@ OptionMenu "QuestZDoomCredits"
 { 
 	//Title		"QUESTZDOOM INFO AND CREDITS"
 	StaticPatch 52, -20, "QZDOOM"
-	Position 50
+	Position 120
 	StaticText	"===== CREDITS ====="
 	StaticText	""
 	StaticText	"DRBEEF"
-	StaticText	"QUESTZDOOM", "White"
-	StaticText	""
 	StaticText	"EMANUELE DISCO"
+	StaticText	"ERMAC"
 	StaticText	"QUESTZDOOM", "White"
 	StaticText	""
 	StaticText	"BAGGYG"
@@ -3513,6 +3512,12 @@ OptionMenu "QuestZDoomCredits"
 	StaticText	""
 	StaticText	"CHRIS COLLINS"
 	StaticText	"GENERALUSERGS SOUNDFONT", "White"
+	StaticText	""
+	StaticText	"Fishbiter"
+	StaticText	"HH76"
+	StaticText	"Gerald Buttinger"
+	StaticText	"ERMAC"
+	StaticText	"GZDOOM PCVR PORT", "White"
 	StaticText	""
 	StaticText	"EMILE BELANGER"
 	StaticText	"LZDOOM ANDROID PORT", "White"
