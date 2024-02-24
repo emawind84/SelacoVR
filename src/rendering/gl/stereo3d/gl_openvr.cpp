@@ -163,6 +163,7 @@ EXTERN_CVAR(Int, gl_multisample);
 EXTERN_CVAR(Float, vr_vunits_per_meter)
 EXTERN_CVAR(Float, vr_floor_offset)
 EXTERN_CVAR(Float, vr_ipd);
+EXTERN_CVAR(Float, vr_weaponScale);
 
 EXTERN_CVAR(Bool, openvr_rightHanded);
 EXTERN_CVAR(Bool, vr_use_alternate_mapping);
@@ -178,6 +179,11 @@ EXTERN_CVAR(Float, vr_kill_momentum);
 EXTERN_CVAR(Bool, vr_crouch_use_button);
 EXTERN_CVAR(Bool, vr_snap_turning);
 EXTERN_CVAR(Float, vr_snapTurn);
+
+EXTERN_CVAR(Float, vr_2dweaponScale)
+EXTERN_CVAR(Float, vr_2dweaponOffsetX);
+EXTERN_CVAR(Float, vr_2dweaponOffsetY);
+EXTERN_CVAR(Float, vr_2dweaponOffsetZ);
 
 //HUD control
 EXTERN_CVAR(Float, vr_hud_scale);
@@ -1263,9 +1269,10 @@ namespace s3d
 	static void HandleControllerState(int device, int role, VRControllerState_t& newState)
 	{
 		VRControllerState_t& lastState = controllers[role].lastState;
-		int controller = openvr_rightHanded ? role : 1 - role;
 
 		//trigger (swaps with handedness)
+		int controller = openvr_rightHanded ? role : 1 - role;
+
 		if (CurrentMenu == nullptr) //the quit menu is cancelled by any normal keypress, so don't generate the fire while in menus 
 		{
 			HandleVRAxis(lastState, newState, 1, 0, KEY_JOY4, KEY_JOY4, controller * (KEY_PAD_RTRIGGER - KEY_JOY4));
@@ -1652,18 +1659,18 @@ namespace s3d
 						}
 					}
 
-					if (player && vr_kill_momentum)
-					{
-						if (role == (openvr_rightHanded ? 0 : 1))
-						{
-							if (JustStoppedMoving(controllers[role].lastState, newState, axisTrackpad)
-								|| JustStoppedMoving(controllers[role].lastState, newState, axisJoystick))
-							{
-								player->mo->Vel[0] = 0;
-								player->mo->Vel[1] = 0;
-							}
-						}
-					}
+					// if (player && vr_kill_momentum)
+					// {
+					// 	if (role == (openvr_rightHanded ? 0 : 1))
+					// 	{
+					// 		if (JustStoppedMoving(controllers[role].lastState, newState, axisTrackpad)
+					// 			|| JustStoppedMoving(controllers[role].lastState, newState, axisJoystick))
+					// 		{
+					// 			player->mo->Vel[0] = 0;
+					// 			player->mo->Vel[1] = 0;
+					// 		}
+					// 	}
+					// }
 
 					if(vr_use_alternate_mapping)
 					{
