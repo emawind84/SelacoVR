@@ -44,6 +44,7 @@
 EXTERN_CVAR(Bool, gl_precache)
 EXTERN_CVAR(Bool, gl_precache_actors)
 EXTERN_CVAR(Bool, gl_texture_thread)
+EXTERN_CVAR(Bool, debug_precache_actor)
 
 //==========================================================================
 //
@@ -180,7 +181,7 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 
 		// @Cockatrice - If the texture thread is enabled, and the sprite has a PRECACHE state, only load frames from that state
 		FState *precacheState = cls->FindStateByString("precache", true);
-		if (!precacheState || !gl_texture_thread) {
+		if (!precacheState || !gl_texture_thread || debug_precache_actor) {
 			for (unsigned i = 0; i < cls->GetStateCount(); i++)
 			{
 				auto &state = cls->GetStates()[i];
