@@ -135,7 +135,7 @@ void V_AddPlayerBlend (player_t *CPlayer, float blend[4], float maxinvalpha, int
 			vrmode->Vibrate(50, 0, vr_pickup_haptic_level); // left
 			vrmode->Vibrate(50, 1, vr_pickup_haptic_level); // right
 
-			//VR_HapticEvent("pickup", 0, 100 * C_GetExternalHapticLevelValue("pickup"), 0, 0);
+			VR_HapticEvent("pickup", 0, 100 * C_GetExternalHapticLevelValue("pickup"), 0, 0);
 		}
 
 		// [SP] Allow player to tone down intensity of pickup flash.

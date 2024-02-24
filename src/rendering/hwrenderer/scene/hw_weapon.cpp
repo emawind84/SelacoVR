@@ -1085,7 +1085,6 @@ void HWDrawInfo::PrepareTargeterSprites(double ticfrac)
 	{
 		if (psp->GetState() != nullptr && (psp->GetID() != PSP_TARGETCENTER || CrosshairImage == nullptr))
 		{
-			hudsprite.player = player;
 			hudsprite.weapon = psp;
 			
 			if (hudsprite.GetWeaponRect(this, psp, psp->x, psp->y, player, ticfrac))

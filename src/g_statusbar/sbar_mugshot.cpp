@@ -348,7 +348,7 @@ int FMugShot::UpdateState(player_t *player, StateFlags stateflags)
 					vrmode->Vibrate(80, 0, vr_pickup_haptic_level); // left
 					vrmode->Vibrate(80, 1, vr_pickup_haptic_level);
 
-					//VR_HapticEvent("pickup", 0, 100 * C_GetExternalHapticLevelValue("pickup"), 0, 0);
+					VR_HapticEvent("pickup", 0, 100 * C_GetExternalHapticLevelValue("pickup"), 0, 0);
 				}
 
 				SetState("grin", false);

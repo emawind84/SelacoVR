@@ -123,6 +123,7 @@ void TBXR_finishEyeBuffer(int eye );
 void TBXR_submitFrame();
 
 void QzDoom_setUseScreenLayer(bool use);
+void QzDoom_Vibrate(float duration, int channel, float intensity);
 void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float *hmd_side, float *up, float *yaw, float *pitch, float *roll );
 bool VR_GetVRProjection(int eye, float zNear, float zFar, float* projection);
 void VR_HapticEnable();
@@ -704,6 +705,11 @@ namespace s3d
                 vp.Angles.Yaw = DAngle::fromDeg(viewYaw);
             }
         }
+    }
+
+    void OpenXRDeviceMode::Vibrate(float duration, int channel, float intensity) const
+    {
+        QzDoom_Vibrate(duration, channel, intensity);
     }
 
 /* virtual */

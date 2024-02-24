@@ -1101,8 +1101,8 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 				vrmode->Vibrate(10, 0, (float)left); // left
 				vrmode->Vibrate(10, 1, (float)right); // right
 
-				//VR_HapticEvent("rumble_front", 0, 100 * left * C_GetExternalHapticLevelValue("rumble"), 120, 0);
-				//VR_HapticEvent("rumble_back", 0, 100 * right * C_GetExternalHapticLevelValue("rumble"), 120, 0);
+				VR_HapticEvent("rumble_front", 0, 100 * left * C_GetExternalHapticLevelValue("rumble"), 120, 0);
+				VR_HapticEvent("rumble_back", 0, 100 * right * C_GetExternalHapticLevelValue("rumble"), 120, 0);
 			}
 		}
 	}

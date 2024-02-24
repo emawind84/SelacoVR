@@ -76,6 +76,7 @@ public:
 	virtual bool GetHandTransform(int hand, VSMatrix* out) const override;
 	virtual bool RenderPlayerSpritesInScene() const { return true; }
 	virtual bool GetTeleportLocation(DVector3 &out) const override;
+	virtual void Vibrate(float duration, int channel, float intensity) const override;
 
 protected:
 	OpenXRDeviceMode();
