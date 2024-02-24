@@ -1440,6 +1440,12 @@ bool DAutomap::Responder (event_t *ev, bool last)
 {
 	if (automapactive && (ev->type == EV_KeyDown || ev->type == EV_KeyUp))
 	{
+		// @Cockatrice - Allow ESCAPE to cancel automap instead of opening a menu on top
+		if (ev->type == EV_KeyDown && ev->data1 == KEY_ESCAPE) {
+			AM_Stop();
+			return true;
+		}
+
 		if (am_followplayer)
 		{
 			// check for am_pan* and ignore in follow mode
