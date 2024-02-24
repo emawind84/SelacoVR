@@ -240,7 +240,7 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 	case VR_OPENVR:
 		return vrmi_openvr.IsInitialized() ? &vrmi_openvr : &vrmi_mono;
 
-	case VR_OPENVR_MOBILE:
+	case VR_OPENXR_MOBILE:
 		return &s3d::OpenXRDeviceMode::getInstance();
 	}
 }
