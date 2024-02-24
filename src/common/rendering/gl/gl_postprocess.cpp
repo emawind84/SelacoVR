@@ -42,6 +42,7 @@
 extern bool vid_hdr_active;
 extern bool cinemamode;
 
+EXTERN_CVAR(Int, vr_mode)
 CVAR(Int, gl_dither_bpc, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 
 namespace OpenGLRenderer
@@ -132,7 +133,7 @@ void FGLRenderer::Flush()
 				eye->AdjustBlend(nullptr);
 				screen->Draw2D(true);
 			}
-			if (!is2D && !getMenuState())
+			if (vr_mode == 10 || (!is2D && !getMenuState()))
 			{
 				eye->AdjustHud();
 			}
