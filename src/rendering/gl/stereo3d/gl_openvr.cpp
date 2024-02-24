@@ -164,6 +164,7 @@ EXTERN_CVAR(Float, vr_vunits_per_meter)
 EXTERN_CVAR(Float, vr_floor_offset)
 EXTERN_CVAR(Float, vr_ipd);
 EXTERN_CVAR(Float, vr_weaponScale);
+EXTERN_CVAR(Float, vr_weaponRotate);
 
 EXTERN_CVAR(Bool, openvr_rightHanded);
 EXTERN_CVAR(Bool, vr_use_alternate_mapping);
@@ -171,8 +172,6 @@ EXTERN_CVAR(Bool, vr_secondary_button_mappings);
 EXTERN_CVAR(Bool, openvr_moveFollowsOffHand);
 EXTERN_CVAR(Bool, vr_teleport);
 EXTERN_CVAR(Bool, openvr_drawControllers)
-EXTERN_CVAR(Float, openvr_weaponRotate);
-EXTERN_CVAR(Float, openvr_weaponScale);
 
 EXTERN_CVAR(Bool, vr_enable_haptics);
 EXTERN_CVAR(Float, vr_kill_momentum);
@@ -1011,7 +1010,7 @@ namespace s3d
 	{
 		GetWeaponTransform(&gl_RenderState.mModelMatrix, hand);
 
-		float scale = 0.00125f * openvr_weaponScale;
+		float scale = 0.00125f * vr_weaponScale * vr_2dweaponScale;
 		gl_RenderState.mModelMatrix.scale(scale, -scale, scale);
 		gl_RenderState.mModelMatrix.translate(-viewwidth / 2, -viewheight * 3 / 4, 0.0f);
 
@@ -1083,7 +1082,7 @@ namespace s3d
 			LSMatrix44 handToAbs;
 			vSMatrixFromHmdMatrix34(handToAbs, controllers[hand].pose.mDeviceToAbsoluteTracking);
 			mat->multMatrix(handToAbs.transpose());
-			mat->rotate(openvr_weaponRotate, 1, 0, 0);
+			mat->rotate(vr_weaponRotate, 1, 0, 0);
 
 			return true;
 		}
@@ -1094,7 +1093,7 @@ namespace s3d
 	{
 		int hand = openvr_rightHanded ? 1 : 0;
 		weaponangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
-		weaponangles[PITCH] = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, openvr_weaponRotate).v[1]);
+		weaponangles[PITCH] = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate).v[1]);
 		weaponangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
 	}
 
@@ -1102,7 +1101,7 @@ namespace s3d
 	{
 		int hand = openvr_rightHanded ? 0 : 1;
 		offhandangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
-		offhandangles[PITCH] = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, openvr_weaponRotate).v[1]);
+		offhandangles[PITCH] = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate).v[1]);
 		offhandangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
 	}
 
@@ -1431,7 +1430,7 @@ namespace s3d
 		//touchpad
 		if (axisTrackpad != -1) {
 			HandleVRAxis(lastState, newState, axisTrackpad, 0, KEY_PAD_LTHUMB_LEFT, KEY_PAD_LTHUMB_RIGHT, role * (KEY_PAD_RTHUMB_LEFT - KEY_PAD_LTHUMB_LEFT));
-			HandleVRAxis(lastState, newState, axisTrackpad, 1, KEY_PAD_LTHUMB_DOWN, KEY_PAD_LTHUMB_UP, role * (KEY_PAD_RTHUMB_DOWN - KEY_PAD_LTHUMB_UP));
+			HandleVRAxis(lastState, newState, axisTrackpad, 1, KEY_PAD_LTHUMB_DOWN, KEY_PAD_LTHUMB_UP, role * (KEY_PAD_RTHUMB_DOWN - KEY_PAD_LTHUMB_DOWN));
 			HandleUIVRAxes(lastState, newState, axisTrackpad, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
 		}
 
