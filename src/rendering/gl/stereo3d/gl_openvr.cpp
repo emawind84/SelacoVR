@@ -1062,7 +1062,7 @@ namespace s3d
 	{
 		if (controllers[hand].active)
 		{
-			auto player = r_viewpoint.camera->player;
+			player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 			if (player == nullptr)
 			{
 				return false;
