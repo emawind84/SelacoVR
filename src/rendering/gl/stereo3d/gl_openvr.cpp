@@ -1588,7 +1588,7 @@ namespace s3d
 				const auto& eye = mEyes[GLRenderer->mBuffers->CurrentEye()];
 
 				GLRenderer->mBuffers->BindCurrentFB();
-				glClearColor(0.3f, 0.1f, 0.1f, 1.0f); // draw a dark red universe
+				glClearColor(0.f, 0.f, 0.f, 1.0f); // draw a dark red universe
 				glClear(GL_COLOR_BUFFER_BIT);
 				if (eyeCount - eye_ix > 1)
 					GLRenderer->mBuffers->NextEye(eyeCount);
