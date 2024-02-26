@@ -2762,11 +2762,12 @@ OptionMenu VRHUDOptions protected
 	ScaleSlider "VR Alt-HUD Item Scale","hud_althudscale", 0.0, 8.0, 1.0, "$SCALEMNU_USEUI"
 	StaticText ""
 	Slider "VR HUD Stereo Effect",		"vr_hud_stereo", 0.0, 5.0, 0.1, 2
+	Slider "$VRHUDMNU_HUDDISTANCE",		"vr_hud_distance", 0.4, 3, 0.05, 2
 	Slider "VR HUD Pitch Rotate",		"vr_hud_rotate", 0.0, 50.0, 1.0, 2
 	Option "VR HUD Fix Pitch",		    "vr_hud_fixed_pitch", "OnOff"
 	Option "VR HUD Fix Roll",		    "vr_hud_fixed_roll", "OnOff"
 	StaticText ""
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_hud_scale hud_scale hud_althudscale vr_hud_stereo vr_hud_rotate vr_hud_fixed_pitch vr_hud_fixed_roll"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_hud_scale hud_scale hud_althudscale vr_hud_stereo vr_hud_distance vr_hud_rotate vr_hud_fixed_pitch vr_hud_fixed_roll"
 
 	StaticText ""
 	StaticText "Automap", gold
@@ -2775,11 +2776,12 @@ OptionMenu VRHUDOptions protected
 	StaticText ""
 	Slider "VR Automap Scale",		        "vr_automap_scale", 0.05, 1.0, 0.05, 2
 	Slider "VR Automap Stereo Effect",		"vr_automap_stereo", 0.0, 5.0, 0.1, 2
+	Slider "$VRHUDMNU_AUTOMAPDISTANCE",		"vr_automap_distance", 0.4, 3, 0.05, 2
 	Slider "VR Automap Pitch Rotate",		"vr_automap_rotate", 0.0, 50.0, 1.0, 2
 	Option "VR Automap Fix Pitch",		    "vr_automap_fixed_pitch", "OnOff"
 	Option "VR Automap Fix Roll",		    "vr_automap_fixed_roll", "OnOff"
 	StaticText ""
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_automap_use_hud vr_automap_scale vr_automap_stereo vr_automap_rotate vr_automap_fixed_pitch vr_automap_fixed_roll"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_automap_use_hud vr_automap_scale vr_automap_stereo vr_automap_distance vr_automap_rotate vr_automap_fixed_pitch vr_automap_fixed_roll"
 }
 
 OptionMenu VRWeaponOptions protected
@@ -2832,11 +2834,7 @@ OptionMenu VROptionsMenu protected
 	StaticText "VR Controls", gold
 	Option "Control Scheme",			"vr_control_scheme", "ControlScheme"
 	Option "Switch Thumbsticks",		"vr_switch_sticks", "OnOff"
-	Option "$VRPREFMNU_CONTROLLERMAPPING",	vr_use_alternate_mapping,		"OnOff"
-	StaticText ""
-	Option "$VRPREFMNU_GRIPCOMBO",			vr_secondary_button_mappings,	"OnOff", vr_use_alternate_mapping
-	StaticText "$VRPREFMNU_GRIPCOMBO_TIP", "Brown"
-	StaticText ""
+	Option "Secondary Button Mappings",	"vr_secondary_button_mappings", "OnOff"
 	Option "Two Handed Weapons",		"vr_two_handed_weapons", "OnOff"
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_control_scheme vr_switch_sticks vr_secondary_button_mappings vr_two_handed_weapons"
@@ -2850,8 +2848,7 @@ OptionMenu VROptionsMenu protected
 	Slider "Walking Speed",		        "vr_move_speed", 5, 50, 1, 2
 	Slider "Run Multiplier",	        "vr_run_multiplier", 0.0, 5.0, 0.1, 2
 	StaticText ""
-	Option "$VRPREFMNU_SNAPTURN",		vr_snap_turning, "OnOff"
-	Slider "Snap-turn Angle",		    "vr_snapTurn", 0.0, 90.0, 1.0, 2, vr_snap_turning
+	Slider "Snap-turn Angle",		    "vr_snapTurn", 0.0, 90.0, 1.0, 2
 	StaticText "Set Snap-Turn <= 10 for \"Smooth\" Turn", "Brown"
 	StaticText " "
 	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_move_use_offhand vr_teleport vr_momentum vr_crouch_use_button vr_move_speed vr_run_multiplier vr_snapTurn"
@@ -3090,7 +3087,7 @@ OptionValue VRMode
 	6, "$OPTVAL_RIGHTEYE"
 	7, "$OPTVAL_QUADBUFFERED"
 	10, "$OPTVAL_OPENVR"
-	15, "$OPTVAL_OPENXR_MOBILE"
+	15, "$OPTVAL_OPENXR"
 }
 
 OptionValue ShadowMapQuality
@@ -3248,83 +3245,6 @@ OptionMenu "PostProcessMenu" protected
 	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_bloom gl_lens gl_ssao gl_ssao_portals gl_fxaa gl_dither_bpc gl_tonemap gl_paltonemap_powtable gl_paltonemap_reverselookup"
 }
 
-/*=======================================
- *
- * OpenVR options menu
- *
- *=======================================*/
-
-OptionValue "LeftRight"
-{
-	0, "$VRPREFMNU_LEFT"
-	1, "$VRPREFMNU_RIGHT"
-}
-
-OptionValue "HeadHand"
-{
-	0, "$VRPREFMNU_HEAD"
-	1, "$VRPREFMNU_OFF_HAND"
-}
-
-OptionValue "Sprites3DMode"
-{
-	0, "$VRPREFMNU_CROSSED"
-	1, "$VRPREFMNU_BACK_ONLY"	
-	2, "$VRPREFMNU_ITEM_ONLY"	
-	3, "$VRPREFMNU_FAT_ITEM"
-}
-
-OptionMenu VRHUDOptions protected
-{
-	Title "$VRHUDMNU_TITLE"
-
-	StaticText ""
-	StaticText "$VRHUDMNU_HUD"
-	ScaleSlider "$SCALEMNU_HUD", 				hud_scale, -1.0, 8.0, 1.0, "$SCALEMNU_USEUI", "$SCALEMNU_USEFS"
-	ScaleSlider "$SCALEMNU_ALTHUD",				hud_althudscale, 0.0, 8.0, 1.0, "$SCALEMNU_USEUI"
-	StaticText ""
-	Slider "$VRHUDMNU_HUDSCALE",		        vr_hud_scale, 0.05, 1.0, 0.05, 2
-	Slider "$VRHUDMNU_HUDSTEREO",				vr_hud_stereo, 0.0, 5.0, 0.1, 2
-	Slider "$VRHUDMNU_HUDDISTANCE",				vr_hud_distance, 0.4, 3, 0.05, 2
-	Slider "$VRHUDMNU_HUDPITCH",				vr_hud_rotate, 0.0, 50.0, 1.0, 2
-	Option "$VRHUDMNU_HUDFIXROLL",		    	vr_hud_fixed_pitch, "OnOff"
-	Option "$VRHUDMNU_HUDFIXPITCH",		    	vr_hud_fixed_roll, "OnOff"
-
-	StaticText ""
-	StaticText "$VRHUDMNU_AUTOMAP"
-	Option "$VRHUDMNU_AUTOMAPUSEHUD",   		vr_automap_use_hud, "YesNo"
-	StaticText ""
-	Slider "$VRHUDMNU_AUTOMAPSCALE",		    vr_automap_scale, 0.05, 1.0, 0.05, 2
-	Slider "$VRHUDMNU_AUTOMAPSTEREO",			vr_automap_stereo, 0.0, 5.0, 0.1, 2
-	Slider "$VRHUDMNU_AUTOMAPDISTANCE",			vr_automap_distance, 0.4, 3, 0.05, 2
-	Slider "$VRHUDMNU_AUTOMAPPITCH",			vr_automap_rotate, 0.0, 50.0, 1.0, 2
-	Option "$VRHUDMNU_AUTOMAPFIXROLL",			vr_automap_fixed_pitch, "OnOff"
-	Option "$VRHUDMNU_AUTOMAPFIXPITCH",			vr_automap_fixed_roll, "OnOff"
-}
-
-OptionMenu "OpenVROptions" protected
-{
-	Title "$VRPREFMNU" 
-	Option "$VRPREFMNU_HANDED", 				openvr_rightHanded,						"LeftRight"
-	Option "$VRPREFMNU_MOVEFOLLOW", 			openvr_moveFollowsOffHand,				"HeadHand"
-	Slider "$VRPREFMNU_WEAPONANGLE", 			openvr_weaponRotate,					-180, 180, 1, 0
-	Slider "$VRPREFMNU_WORLDSCALE",				vr_vunits_per_meter,					1, 60, 1, 0
-	Slider "$VRPREFMNU_FLOOROFFSET",			vr_floor_offset,						-2, 2, 0.1, 2
-	Option "$VRPREFMNU_SPRITEWEAPON3D",			r_PlayerSprites3DMode,					"Sprites3DMode"
-	Slider "$VRPREFMNU_FATITEMWIDTH",			gl_fatItemWidth,						0, 1, 0.05, 2
-	Slider "$VRPREFMNU_WEAPONSCALE",			openvr_weaponScale,						0, 1, 0.05, 2
-	StaticText " "
-	Option "$VRPREFMNU_MOMENTUM",	    		vr_kill_momentum, "OnOff"
-	Option "$VRPREFMNU_DRAWCONTROLLERS",		openvr_drawControllers,					"OnOff"
-	StaticText " "
-	StaticText "$VRPREFMNU_HAPTICS"
-	Option "$VRPREFMNU_ENABLEHAPTICS",	    	vr_enable_haptics, "OnOff"
-	Slider "$VRPREFMNU_PICKUPHAPTIC",			vr_pickup_haptic_level,					0, 1, 0.1, 2
-	Slider "$VRPREFMNU_MISSILEHAPTIC",			vr_missile_haptic_level,				0, 1, 0.1, 2
-	Slider "$VRPREFMNU_QUAKEHAPTIC",			vr_quake_haptic_level,					0, 1, 0.1, 2
-	StaticText ""
-    Submenu "$VRHUDMNU_TITLE",	"VRHUDOptions"
-}
 OptionMenu "ReverbEdit" protected
 {
 	Class "ReverbEdit"
