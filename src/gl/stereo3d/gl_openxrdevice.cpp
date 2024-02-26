@@ -25,6 +25,8 @@
 **
 */
 
+#ifdef USE_OPENXR
+
 #include "gl_openxrdevice.h"
 
 #include <string>
@@ -728,4 +730,4 @@ namespace s3d
 
 } /* namespace s3d */
 
-
+#endif  // USE_OPENXR

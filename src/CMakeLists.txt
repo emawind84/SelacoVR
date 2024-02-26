@@ -399,6 +399,7 @@ endif()
 option( ENABLE_OPENVR "Enable OpenVR virtual reality mode" ON )
 if (ENABLE_OPENVR)
 	add_definitions("-DUSE_OPENVR")
+	list (APPEND PLAT_WIN32_SOURCES win32/i_openVR.cpp )
 	find_path(OPENVR_SDK_PATH
 		NAMES
 			headers/openvr.h
@@ -465,7 +466,6 @@ endif()
 # Start defining source files for ZDoom
 set( PLAT_WIN32_SOURCES
 	win32/i_steam.cpp
-	win32/i_openVR.cpp
 	common/platform/win32/hardware.cpp
 	common/platform/win32/i_input.cpp
 	common/platform/win32/i_keyboard.cpp
@@ -1297,8 +1297,6 @@ set( GAME_SOURCES
 	common/filesystem/source/files_decompress.cpp
 	common/filesystem/source/fs_findfile.cpp
 	common/filesystem/source/fs_stringpool.cpp
-	
-	QzDoom/mathlib.c
 )
 
 set( GAME_NONPCH_SOURCES ${GAME_SOURCES} )

@@ -122,7 +122,7 @@ PainFlashList PainFlashes;
 // [Nash] FOV cvar setting
 CUSTOM_CVAR(Float, fov, 90.f, CVAR_ARCHIVE | CVAR_USERINFO | CVAR_NOINITCALL)
 {
-#if !defined(VR)
+#if !defined(USE_OPENVR) && !defined(USE_OPENXR)
 	player_t *p = &players[consoleplayer];
 	p->SetFOV(fov);
 #endif

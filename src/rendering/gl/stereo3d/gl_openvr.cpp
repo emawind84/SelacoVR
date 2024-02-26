@@ -65,12 +65,12 @@
 using namespace openvr;
 using namespace OpenGLRenderer;
 
-float RAD2DEG(float rad)
+static float RAD2DEG(float rad)
 {
 	return rad * float(180. / M_PI);
 }
 
-float DEG2RAD(float deg)
+static float DEG2RAD(float deg)
 {
 	return deg * float(M_PI / 180.0);
 }
@@ -820,12 +820,11 @@ namespace s3d
 		return true;
 	}
 
-	void ApplyVPUniforms(HWDrawInfo* di);
-	// void ApplyVPUniforms(HWDrawInfo* di)
-	// {
-	// 	di->VPUniforms.CalcDependencies();
-	// 	di->vpIndex = screen->mViewpoints->SetViewpoint(gl_RenderState, &di->VPUniforms);
-	// }
+	void ApplyVPUniforms(HWDrawInfo* di)
+	{
+		di->VPUniforms.CalcDependencies();
+		di->vpIndex = screen->mViewpoints->SetViewpoint(gl_RenderState, &di->VPUniforms);
+	}
 
 	template<class TYPE>
 	TYPE& getHUDValue(TYPE& automap, TYPE& hud)

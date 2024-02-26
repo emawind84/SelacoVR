@@ -2,7 +2,13 @@
 #define vrcommon_h
 
 #include "c_cvars.h"
-#include "mathlib.h"
+
+typedef float vec_t;
+typedef vec_t vec3_t[3];
+
+#define PITCH 0
+#define YAW 1
+#define ROLL 2
 
 EXTERN_CVAR(Int, vr_control_scheme)
 EXTERN_CVAR(Bool, vr_move_use_offhand)
@@ -25,8 +31,6 @@ extern bool resetDoomYaw;
 extern float doomYaw;
 extern bool resetPreviousPitch;
 extern float previousPitch;
-
-extern float vrFOV;
 
 extern vec3_t worldPosition;
 

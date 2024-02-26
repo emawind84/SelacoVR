@@ -783,7 +783,7 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (buttonMap.ButtonDown(Button_ShowScores))	cmd->ucmd.buttons |= BT_SHOWSCORES;
 	if (speed) cmd->ucmd.buttons |= BT_RUN;
 
-#if !defined(__ANDROID__) || !defined(VR)
+#ifndef USE_OPENXR
 	// Handle joysticks/game controllers.
 	float joyaxes[NUM_JOYAXIS];
 
@@ -823,7 +823,7 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	}
 #endif
 
-#if defined(__ANDROID__) && defined(VR)
+#ifdef USE_OPENXR
 	if (vrmode->IsVR())
 		side = forward = 0;
 

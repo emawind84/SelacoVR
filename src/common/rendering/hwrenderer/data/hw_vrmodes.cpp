@@ -54,9 +54,13 @@ using namespace OpenGLRenderer;
 // Set up 3D-specific console variables:
 CUSTOM_CVAR(Int, vr_mode, 0, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 {
-#if defined(__ANDROID__) && defined(VR)
+#ifdef USE_OPENXR
 	if (self != 15)
 		self = 15;
+#endif
+#ifdef USE_OPENVR
+	if (self != 10)
+		self = 10;
 #endif
 }
 
@@ -190,7 +194,9 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 	static VREyeInfo vrmi_righteye_eyes[2] = { VREyeInfo(.5f, 1.f), VREyeInfo(0.f, 0.f) };
 	static VREyeInfo vrmi_topbottom_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(.5f, 1.f) };
 	static VREyeInfo vrmi_checker_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(.5f, 1.f) };
+#ifdef USE_OPENVR
 	static s3d::OpenVREyePose vrmi_openvr_eyes[2] = { s3d::OpenVREyePose(0, -.5f, 1.f), s3d::OpenVREyePose(1, .5f, 1.f) };
+#endif
 
 	static VRMode vrmi_mono(1, 1.f, 1.f, 1.f, vrmi_mono_eyes);
 	static VRMode vrmi_stereo(2, 1.f, 1.f, 1.f, vrmi_stereo_eyes);
@@ -200,7 +206,9 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 	static VRMode vrmi_righteye(1, 1.f, 1.f, 1.f, vrmi_righteye_eyes);
 	static VRMode vrmi_topbottom(2, 1.f, .5f, 1.f, vrmi_topbottom_eyes);
 	static VRMode vrmi_checker(2, isqrt2, isqrt2, 1.f, vrmi_checker_eyes);
+#ifdef USE_OPENVR
 	static s3d::OpenVRMode vrmi_openvr(vrmi_openvr_eyes);
+#endif
 
 	int mode = !toscreen || (sysCallbacks.DisableTextureFilter && sysCallbacks.DisableTextureFilter()) ? 0 : vr_mode;
 
@@ -236,12 +244,14 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 
 	case VR_CHECKERINTERLEAVED:
 		return &vrmi_checker;
-
+#ifdef USE_OPENVR
 	case VR_OPENVR:
 		return vrmi_openvr.IsInitialized() ? &vrmi_openvr : &vrmi_mono;
-
+#endif
+#ifdef USE_OPENXR
 	case VR_OPENXR_MOBILE:
 		return &s3d::OpenXRDeviceMode::getInstance();
+#endif
 	}
 }
 
@@ -415,4 +425,39 @@ bool VRMode::GetWeaponTransform(VSMatrix* out, int hand_weapon) const
 	}
 	return false;
 }
+
+float length(float x, float y)
+{
+    return sqrtf(powf(x, 2.0f) + powf(y, 2.0f));
+}
+
+#define NLF_DEADZONE 0.1
+#define NLF_POWER 2.2
+
+float nonLinearFilter(float in)
+{
+    float val = 0.0f;
+    if (in > NLF_DEADZONE)
+    {
+        val = in > 1.0f ? 1.0f : in;
+        val -= NLF_DEADZONE;
+        val /= (1.0f - NLF_DEADZONE);
+        val = powf(val, NLF_POWER);
+    }
+    else if (in < -NLF_DEADZONE)
+    {
+        val = in < -1.0f ? -1.0f : in;
+        val += NLF_DEADZONE;
+        val /= (1.0f - NLF_DEADZONE);
+        val = -powf(fabsf(val), NLF_POWER);
+    }
+
+    return val;
+}
+
+bool between(float min, float val, float max)
+{
+    return (min < val) && (val < max);
+}
+
 
