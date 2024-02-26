@@ -396,10 +396,31 @@ if( ${HAVE_VM_JIT} )
 	set( PROJECT_LIBRARIES ${PROJECT_LIBRARIES} "${ASMJIT_LIBRARIES}")
 endif()
 
+# Start defining source files for ZDoom
+set( PLAT_WIN32_SOURCES
+	win32/i_steam.cpp
+	common/platform/win32/hardware.cpp
+	common/platform/win32/i_input.cpp
+	common/platform/win32/i_keyboard.cpp
+	common/platform/win32/i_mouse.cpp
+	common/platform/win32/i_dijoy.cpp
+	common/platform/win32/i_rawps2.cpp
+	common/platform/win32/i_xinput.cpp
+	common/platform/win32/i_main.cpp
+	common/platform/win32/i_mainwindow.cpp
+	common/platform/win32/i_system.cpp
+	common/platform/win32/i_specialpaths.cpp
+	common/platform/win32/st_start.cpp
+	common/platform/win32/gl_sysfb.cpp
+	common/platform/win32/base_sysfb.cpp
+	common/platform/win32/win32basevideo.cpp
+	common/platform/win32/win32glvideo.cpp
+	)
+
 option( ENABLE_OPENVR "Enable OpenVR virtual reality mode" ON )
 if (ENABLE_OPENVR)
 	add_definitions("-DUSE_OPENVR")
-	list (APPEND PLAT_WIN32_SOURCES win32/i_openVR.cpp )
+	set (PLAT_WIN32_SOURCES win32/i_openVR.cpp ${PLAT_WIN32_SOURCES})
 	find_path(OPENVR_SDK_PATH
 		NAMES
 			headers/openvr.h
@@ -462,27 +483,6 @@ if (ENABLE_OPENVR)
 		endif()
 	endif()
 endif()
-
-# Start defining source files for ZDoom
-set( PLAT_WIN32_SOURCES
-	win32/i_steam.cpp
-	common/platform/win32/hardware.cpp
-	common/platform/win32/i_input.cpp
-	common/platform/win32/i_keyboard.cpp
-	common/platform/win32/i_mouse.cpp
-	common/platform/win32/i_dijoy.cpp
-	common/platform/win32/i_rawps2.cpp
-	common/platform/win32/i_xinput.cpp
-	common/platform/win32/i_main.cpp
-	common/platform/win32/i_mainwindow.cpp
-	common/platform/win32/i_system.cpp
-	common/platform/win32/i_specialpaths.cpp
-	common/platform/win32/st_start.cpp
-	common/platform/win32/gl_sysfb.cpp
-	common/platform/win32/base_sysfb.cpp
-	common/platform/win32/win32basevideo.cpp
-	common/platform/win32/win32glvideo.cpp
-	)
 
 if (HAVE_VULKAN)
 	list (APPEND PLAT_WIN32_SOURCES common/platform/win32/win32vulkanvideo.cpp )
