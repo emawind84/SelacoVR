@@ -61,7 +61,7 @@
 #include "g_levellocals.h"
 #include "events.h"
 #include "actorinlines.h"
-#include "hwrenderer/data/hw_vrmodes.h"
+#include "hw_vrmodes.h"
 #include "d_main.h"
 
 #include <QzDoom/VrCommon.h>

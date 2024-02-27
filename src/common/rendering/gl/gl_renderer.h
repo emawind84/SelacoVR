@@ -82,15 +82,14 @@ public:
 	void DrawPresentTexture(const IntRect &box, bool applyGamma);
 	void Flush();
 	void BeginFrame();
-	void DrawBlend(FVector4* blend, PalEntry* modulateColor);
-    
+
 	bool StartOffscreen();
 	void EndOffscreen();
 
 	void BindToFrameBuffer(FTexture* tex);
 
 private:
-	void gl_FillScreen();
+
 	bool QuadStereoCheckInitialRenderContextState();
 	void PresentAnaglyph(bool r, bool g, bool b);
 	void PresentSideBySide(int);

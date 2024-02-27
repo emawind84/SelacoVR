@@ -39,7 +39,7 @@
 #include "sbar.h"
 #include "r_utility.h"
 #include "actorinlines.h"
-#include "hwrenderer/data/hw_vrmodes.h"
+#include "hw_vrmodes.h"
 #include "texturemanager.h"
 
 #include <QzDoom/VrCommon.h>

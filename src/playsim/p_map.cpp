@@ -93,7 +93,7 @@
 #include "r_sky.h"
 #include "g_levellocals.h"
 #include "actorinlines.h"
-#include "hwrenderer/data/hw_vrmodes.h"
+#include "hw_vrmodes.h"
 
 #include <shadowinlines.h>
 
@@ -103,8 +103,6 @@ CVAR(Bool, cl_doautoaim, false, CVAR_ARCHIVE)
 CVAR(Int, use_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
 EXTERN_CVAR (Bool, use_action_spawn_yzoffset)
-// TODO gzdoomvr stuff
-EXTERN_CVAR(Bool, openvr_rightHanded)
 
 static void CheckForPushSpecial(line_t *line, int side, AActor *mobj, DVector2 * posforwindowcheck = NULL);
 static void SpawnShootDecal(AActor *t1, AActor *defaults, const FTraceResults &trace, int hand = 0);
@@ -4762,6 +4760,9 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 		tflags |= TRACE_HitSky;
 	}
 
+	// [MC] Check the flags and set the position according to what is desired.
+	// LAF_ABSPOSITION: Treat the offset parameters as direct coordinates.
+	// LAF_ABSOFFSET: Ignore the angle.
 
 	DVector3 tempos;
 
@@ -4803,7 +4804,9 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 	}
 	else
 	{
-		tempos = fromPos;
+		const double s = angle.Sin();
+		const double c = angle.Cos();
+		tempos = t1->Vec2OffsetZ(offsetforward * c + offsetside * s, offsetforward * s - offsetside * c, shootz);
 	}
 
 	// Perform the trace.
