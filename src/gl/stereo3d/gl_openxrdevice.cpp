@@ -86,6 +86,7 @@ EXTERN_CVAR(Float, vr_2dweaponOffsetZ);
 //HUD control
 EXTERN_CVAR(Float, vr_hud_scale);
 EXTERN_CVAR(Float, vr_hud_stereo);
+EXTERN_CVAR(Float, vr_hud_distance);
 EXTERN_CVAR(Float, vr_hud_rotate);
 EXTERN_CVAR(Bool, vr_hud_fixed_pitch);
 EXTERN_CVAR(Bool, vr_hud_fixed_roll);
@@ -94,6 +95,7 @@ EXTERN_CVAR(Bool, vr_hud_fixed_roll);
 EXTERN_CVAR(Bool, vr_automap_use_hud);
 EXTERN_CVAR(Float, vr_automap_scale);
 EXTERN_CVAR(Float, vr_automap_stereo);
+EXTERN_CVAR(Float, vr_automap_distance);
 EXTERN_CVAR(Float, vr_automap_rotate);
 EXTERN_CVAR(Bool,  vr_automap_fixed_pitch);
 EXTERN_CVAR(Bool,  vr_automap_fixed_roll);
@@ -110,14 +112,14 @@ extern vec3_t offhandangles;
 
 extern float playerYaw;
 extern float doomYaw;
-extern bool cinemamode;
+extern float previousPitch;
 
 extern bool ready_teleport;
 extern bool trigger_teleport;
 extern bool shutdown;
 extern bool resetDoomYaw;
 extern bool resetPreviousPitch;
-extern float previousPitch;
+extern bool cinemamode;
 
 bool TBXR_FrameSetup();
 void TBXR_prepareEyeBuffer(int eye );
@@ -274,7 +276,8 @@ namespace s3d
         // hmd coordinates (meters) from ndc coordinates
         // const float weapon_distance_meters = 0.55f;
         // const float weapon_width_meters = 0.3f;
-        new_projection.translate(0.0, 0.0, 1.0);
+        double distance = getHUDValue<FFloatCVarRef>(vr_automap_distance, vr_hud_distance);
+        new_projection.translate(0.0, 0.0, distance);
         double vr_scale = getHUDValue<FFloatCVarRef>(vr_automap_scale, vr_hud_scale);
         new_projection.scale(
                 -vr_scale,
@@ -378,6 +381,7 @@ namespace s3d
         screen->mScreenViewport.height = sceneHeight;
     }
 
+    /* hand is 1 for left (offhand) and 0 for right (mainhand) */
     void OpenXRDeviceMode::AdjustPlayerSprites(int hand) const
     {
         if (GetWeaponTransform(&gl_RenderState.mModelMatrix, hand))
@@ -397,6 +401,12 @@ namespace s3d
         gl_RenderState.EnableModelMatrix(false);
     }
 
+    //---------------------------------------------------------------------------
+    //
+    // This method has not been changed from its original implementation (before dualwield)
+    // the hand parameter respect the old logic of 0 for left (offhand) and 1 for right (mainhand)
+    //
+    //---------------------------------------------------------------------------
     bool OpenXRDeviceMode::GetHandTransform(int hand, VSMatrix* mat) const
     {
         double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
@@ -587,6 +597,8 @@ namespace s3d
 
                     // Teleport Logic
                     if (ready_teleport) {
+                        DPrintf(DMSG_NOTIFY, "teleport sz:%2.f\n", ((hmdPosition[1] + offhandoffset[1] + vr_height_adjust) *
+                                         vr_vunits_per_meter) / pixelstretch);
                         FLineTraceData trace;
                         if (P_LineTrace(player->mo, yaw, 8192, pitch, TRF_ABSOFFSET|TRF_BLOCKUSE|TRF_BLOCKSELF|TRF_SOLIDACTORS,
                                         ((hmdPosition[1] + offhandoffset[1] + vr_height_adjust) *
@@ -620,7 +632,18 @@ namespace s3d
 
                     trigger_teleport = false;
                 }
-
+#if 0  // this replace the move with offhand implementation in VrInputDefault.cpp
+                LSMatrix44 mat;
+                bool rightHanded = vr_control_scheme < 10;
+                if (GetHandTransform(rightHanded ? 0 : 1, &mat) && vr_move_use_offhand)
+                {
+                    player->mo->ThrustAngleOffset = DAngle::fromDeg(RAD2DEG(atan2f(-mat[2][2], -mat[2][0]))) - player->mo->Angles.Yaw;
+                }
+                else
+                {
+                    player->mo->ThrustAngleOffset = nullAngle;
+                }
+#endif
                 //Positional Movement
                 float hmd_forward=0;
                 float hmd_side=0;

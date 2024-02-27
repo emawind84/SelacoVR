@@ -92,7 +92,7 @@ CVAR(Float, vr_2dweaponOffsetX, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_2dweaponOffsetY, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_2dweaponOffsetZ, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_2dweaponScale, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
-CVAR(Bool, vr_snap_turning, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_snap_turning, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_snapTurn, 45.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Int, vr_move_speed, 19, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_run_multiplier, 1.5, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
@@ -408,6 +408,12 @@ void VRMode::SetUp() const
 	}
 }
 
+//---------------------------------------------------------------------------
+//
+// The parameter hand_weapon is 0 for mainhand and 1 for offhand
+// you can use the enum VR_MAINHAND and VR_OFFHAND
+//
+//---------------------------------------------------------------------------
 bool VRMode::GetWeaponTransform(VSMatrix* out, int hand_weapon) const
 {
 	player_t * player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
@@ -421,7 +427,6 @@ bool VRMode::GetWeaponTransform(VSMatrix* out, int hand_weapon) const
 	int hand = (hand_weapon == VR_OFFHAND) ? 1 - rightHanded : rightHanded;
 	if (GetHandTransform(hand, out))
 	{
-		out->rotate(vr_weaponRotate, 1, 0, 0);
 		if (!hand && autoReverse)
 			out->scale(-1.0f, 1.0f, 1.0f);
 		return true;
@@ -463,4 +468,18 @@ bool between(float min, float val, float max)
     return (min < val) && (val < max);
 }
 
+ADD_STAT(playerstats)
+{
+	FString out;
 
+	player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+	if (player && player->mo)
+	{
+		out.AppendFormat("AttackPos X:%2.f Y:%2.f Z:%2.f\n"
+			"AttachAngle: %2.f - AttachPitch: %2.f - AttachRoll: %2.f", 
+			player->mo->AttackPos.X, player->mo->AttackPos.Y, player->mo->AttackPos.Z,
+			player->mo->AttackAngle.Degrees(), player->mo->AttackPitch.Degrees(), player->mo->AttackRoll.Degrees());
+	}
+
+	return out;
+}

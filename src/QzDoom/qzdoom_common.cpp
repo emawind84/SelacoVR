@@ -26,6 +26,9 @@ float snapTurn;
 float cinemamodeYaw;
 float cinemamodePitch;
 
+float remote_movementSideways;
+float remote_movementForward;
+
 /*
 ================================================================================
 
@@ -91,6 +94,14 @@ void QzDoom_Restart()
 void VR_GetMove(float *joy_forward, float *joy_side, float *hmd_forward, float *hmd_side, float *up,
 				float *yaw, float *pitch, float *roll)
 {
+    *joy_forward = remote_movementForward;
+    *joy_side = remote_movementSideways;
+    *hmd_forward = 0.f;
+    *hmd_side = 0.f;
+    *up = 0.f;
+    *yaw = 0.f;
+    *pitch = 0.f;
+    *roll = 0.f;
 }
 
 bool VR_GetVRProjection(int eye, float zNear, float zFar, float* projection)

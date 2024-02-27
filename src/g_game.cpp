@@ -783,7 +783,7 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (buttonMap.ButtonDown(Button_ShowScores))	cmd->ucmd.buttons |= BT_SHOWSCORES;
 	if (speed) cmd->ucmd.buttons |= BT_RUN;
 
-#ifndef USE_OPENXR
+#if !defined(USE_OPENVR) && !defined(USE_OPENXR)
 	// Handle joysticks/game controllers.
 	float joyaxes[NUM_JOYAXIS];
 
@@ -822,8 +822,7 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 		forward += xs_CRoundToInt(mousey * m_forward);
 	}
 #endif
-
-#ifdef USE_OPENXR
+#if 1
 	if (vrmode->IsVR())
 		side = forward = 0;
 

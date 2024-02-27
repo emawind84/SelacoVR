@@ -56,6 +56,7 @@
 #include "d_gui.h"
 #include "d_event.h"
 #include "i_time.h"
+#include "stats.h"
 #include "hwrenderer/data/flatvertices.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 #include "texturemanager.h"
@@ -85,6 +86,8 @@ void I_StartupOpenVR();
 double P_XYMovement(AActor* mo, DVector2 scroll);
 float I_OpenVRGetYaw();
 float I_OpenVRGetDirectionalMove();
+float length(float x, float y);
+float nonLinearFilter(float in);
 
 extern class DMenu* CurrentMenu;
 
@@ -113,13 +116,33 @@ typedef vec_t vec3_t[3];
 #define YAW 1
 #define ROLL 2
 
+typedef enum control_scheme {
+	RIGHT_HANDED_DEFAULT = 0,  // x,y,a,b - trigger,grip,joystick btn,thumb left/right - joystick axis left/right
+    LEFT_HANDED_DEFAULT = 10,  // a,b,x,y - trigger,grip,joystick btn,thumb right/left - joystick axis right/left
+    LEFT_HANDED_ALT = 11       // x,y,a,b - trigger,grip,joystick btn,thumb right/left - joystick axis left/right
+} control_scheme_t;
+
+extern vec3_t hmdPosition;
+extern vec3_t hmdorientation;
+extern vec3_t weaponoffset;
 extern vec3_t weaponangles;
+extern vec3_t offhandoffset;
 extern vec3_t offhandangles;
+
+extern float playerYaw;
+extern float doomYaw;
+extern float previousPitch;
+extern float snapTurn;
+extern float remote_movementSideways;
+extern float remote_movementForward;
+
 extern bool ready_teleport;
 extern bool trigger_teleport;
-extern float snapTurn;
+extern bool shutdown;
+extern bool resetDoomYaw;
+extern bool resetPreviousPitch;
+extern bool cinemamode;
 
-bool dominantGripPushed;
 double HmdHeight;
 
 #define DEFINE_ENTRY(name) static TReqProc<OpenVRModule, L##name> name{#name};
@@ -157,12 +180,13 @@ S_API uint32_t VR_GetInitToken();
 
 #endif
 
+EXTERN_CVAR(Float, fov);
 EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Float, movebob);
 EXTERN_CVAR(Bool, gl_billboard_faces_camera);
 EXTERN_CVAR(Int, gl_multisample);
 EXTERN_CVAR(Float, vr_vunits_per_meter);
-EXTERN_CVAR(Float, vr_floor_offset);
+EXTERN_CVAR(Float, vr_height_adjust)
 EXTERN_CVAR(Float, vr_ipd);
 EXTERN_CVAR(Float, vr_weaponScale);
 EXTERN_CVAR(Float, vr_weaponRotate);
@@ -172,6 +196,8 @@ EXTERN_CVAR(Bool, vr_move_use_offhand)
 EXTERN_CVAR(Bool, vr_use_alternate_mapping);
 EXTERN_CVAR(Bool, vr_secondary_button_mappings);
 EXTERN_CVAR(Bool, vr_teleport);
+EXTERN_CVAR(Bool, vr_switch_sticks);
+EXTERN_CVAR(Bool, vr_two_handed_weapons);
 
 EXTERN_CVAR(Bool, vr_enable_haptics);
 EXTERN_CVAR(Float, vr_kill_momentum);
@@ -713,7 +739,7 @@ namespace s3d
 			// We want to align those two heights here
 			const player_t& player = players[consoleplayer];
 			double vh = getDoomPlayerHeightWithoutCrouch(&player); // Doom thinks this is where you are
-			double hh = ((openvr_X_hmd[1][3] - vr_floor_offset) * vr_vunits_per_meter) / pixelstretch; // HMD is actually here
+			double hh = ((openvr_X_hmd[1][3] + vr_height_adjust) * vr_vunits_per_meter) / pixelstretch; // HMD is actually here
 			HmdHeight = hh;
 			doom_EyeOffset[2] += hh - vh;
 			// TODO: optionally allow player to jump and crouch by actually jumping and crouching
@@ -748,8 +774,8 @@ namespace s3d
 
 	void OpenVREyePose::initialize(VR_IVRSystem_FnTable* vrsystem)
 	{
-		float zNear = 5.0;
-		float zFar = 65536.0;
+		float zNear = screen->GetZNear(); // 5.0;
+		float zFar = screen->GetZFar(); // 65536.0;
 		HmdMatrix44_t projection = vrsystem->GetProjectionMatrix(
 			EVREye(eye), zNear, zFar);
 		HmdMatrix44_t proj_transpose;
@@ -760,6 +786,8 @@ namespace s3d
 		}
 		projectionMatrix.loadIdentity();
 		projectionMatrix.multMatrix(&proj_transpose.m[0][0]);
+
+		fov = 2.0*atan( 1.0/projection.m[1][1] ) * 180.0 / M_PI;
 
 		HmdMatrix34_t eyeToHead = vrsystem->GetEyeToHeadTransform(EVREye(eye));
 		vSMatrixFromHmdMatrix34(eyeToHeadTransform, eyeToHead);
@@ -1020,12 +1048,16 @@ namespace s3d
 
 	void OpenVRMode::AdjustPlayerSprites(int hand) const
 	{
-		GetWeaponTransform(&gl_RenderState.mModelMatrix, hand);
+		if (GetWeaponTransform(&gl_RenderState.mModelMatrix, hand))
+		{
+			// TODO scale need to be fixed
+			float scale = 0.00125f * vr_weaponScale * vr_2dweaponScale;
+			gl_RenderState.mModelMatrix.scale(scale, -scale, scale);
+			gl_RenderState.mModelMatrix.translate(-viewwidth / 2, -viewheight * 3 / 4, 0.0f);
 
-		float scale = 0.00125f * vr_weaponScale * vr_2dweaponScale;
-		gl_RenderState.mModelMatrix.scale(scale, -scale, scale);
-		gl_RenderState.mModelMatrix.translate(-viewwidth / 2, -viewheight * 3 / 4, 0.0f);
-
+			float offsetFactor = 40.f;
+			gl_RenderState.mModelMatrix.translate(vr_2dweaponOffsetX * offsetFactor, -vr_2dweaponOffsetY * offsetFactor, vr_2dweaponOffsetZ * offsetFactor);
+		}
 		gl_RenderState.EnableModelMatrix(true);
 	}
 
@@ -1059,21 +1091,21 @@ namespace s3d
 				return false;
 			}
 
-			AActor* playermo = player->mo;
-			DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
+			//AActor* playermo = player->mo;
+			//DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
 
 			double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 
 			mat->loadIdentity();
-			mat->translate(r_viewpoint.Pos.X, r_viewpoint.Pos.Z - getDoomPlayerHeightWithoutCrouch(player), r_viewpoint.Pos.Y);
+			mat->translate(r_viewpoint.CenterEyePos.X, r_viewpoint.CenterEyePos.Z - getDoomPlayerHeightWithoutCrouch(player), r_viewpoint.CenterEyePos.Y);
 			mat->scale(vr_vunits_per_meter, vr_vunits_per_meter / pixelstretch, -vr_vunits_per_meter);
 			mat->rotate(-deltaYawDegrees - 180, 0, 1, 0);
-			mat->translate(-openvr_origin.x, -vr_floor_offset, -openvr_origin.z);
+			mat->translate(-openvr_origin.x, vr_height_adjust, -openvr_origin.z);
 
 			LSMatrix44 handToAbs;
 			vSMatrixFromHmdMatrix34(handToAbs, controllers[hand].pose.mDeviceToAbsoluteTracking);
 			mat->multMatrix(handToAbs.transpose());
-			mat->rotate(vr_weaponRotate, 1, 0, 0);
+			mat->rotate(vr_weaponRotate * 2, 1, 0, 0);
 
 			return true;
 		}
@@ -1085,7 +1117,7 @@ namespace s3d
 		bool rightHanded = vr_control_scheme < 10;
 		int hand = rightHanded ? 1 : 0;
 		weaponangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
-		weaponangles[PITCH] = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate).v[1]);
+		weaponangles[PITCH] = -RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate * 2).v[1]);
 		weaponangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
 	}
 
@@ -1094,7 +1126,7 @@ namespace s3d
 		bool rightHanded = vr_control_scheme < 10;
 		int hand = rightHanded ? 0 : 1;
 		offhandangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
-		offhandangles[PITCH] = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate).v[1]);
+		offhandangles[PITCH] = -RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate * 2).v[1]);
 		offhandangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
 	}
 
@@ -1130,6 +1162,18 @@ namespace s3d
 	{
 		double m = std::round(65535.0 * radians / (2.0 * M_PI));
 		return int(m);
+	}
+
+	static int joyint(double val)
+	{
+		if (val >= 0)
+		{
+			return int(ceil(val));
+		}
+		else
+		{
+			return int(floor(val));
+		}
 	}
 
 	void OpenVRMode::updateHmdPose(
@@ -1258,6 +1302,584 @@ namespace s3d
 		Joy_GenerateUIButtonEvents((lastState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, (newState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, 1, &doomkey);
 	}
 
+	void handleTrackedControllerButton(VRControllerState_t * trackedRemoteState, VRControllerState_t * prevTrackedRemoteState, long long vrindex, int doomkey)
+	{
+		// oldbutton_state, newbutton_state, doombutton
+		Joy_GenerateButtonEvents((prevTrackedRemoteState->ulButtonPressed & (1LL << vrindex)) ? 1 : 0, (trackedRemoteState->ulButtonPressed & (1LL << vrindex)) ? 1 : 0, 1, doomkey);
+	}
+
+	VRControllerState_t leftTrackedRemoteState_old;
+	VRControllerState_t leftTrackedRemoteState_new;
+
+	VRControllerState_t rightTrackedRemoteState_old;
+	VRControllerState_t rightTrackedRemoteState_new;
+
+	void HandleInput_Default(
+		int control_scheme, 
+		VRControllerState_t *pDominantTrackedRemoteNew, VRControllerState_t *pDominantTrackedRemoteOld, Controller* pDominantTracking,
+		VRControllerState_t *pOffTrackedRemoteNew, VRControllerState_t *pOffTrackedRemoteOld, Controller* pOffTracking,
+		int domButton1, int domButton2, int offButton1, int offButton2 )
+	{
+#if 0
+		if (leftTrackedRemoteState_new.ulButtonPressed)
+			DPrintf(DMSG_NOTIFY, "leftTrackedRemoteState_new: %" PRIu64 "\n", leftTrackedRemoteState_new.ulButtonPressed);
+		if (rightTrackedRemoteState_new.ulButtonPressed)
+			DPrintf(DMSG_NOTIFY, "rightTrackedRemoteState_new: %" PRIu64 "\n", rightTrackedRemoteState_new.ulButtonPressed);
+#endif
+		//Dominant Grip works like a shift key
+		bool dominantGripPushedOld = vr_secondary_button_mappings ?
+				(pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) : false;
+		bool dominantGripPushedNew = vr_secondary_button_mappings ?
+				(pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) : false;
+
+		VRControllerState_t *pPrimaryTrackedRemoteNew, *pPrimaryTrackedRemoteOld,  *pSecondaryTrackedRemoteNew, *pSecondaryTrackedRemoteOld;
+		if (vr_switch_sticks)
+		{
+			pPrimaryTrackedRemoteNew = pOffTrackedRemoteNew;
+			pPrimaryTrackedRemoteOld = pOffTrackedRemoteOld;
+			pSecondaryTrackedRemoteNew = pDominantTrackedRemoteNew;
+			pSecondaryTrackedRemoteOld = pDominantTrackedRemoteOld;
+		}
+		else
+		{
+			pPrimaryTrackedRemoteNew = pDominantTrackedRemoteNew;
+			pPrimaryTrackedRemoteOld = pDominantTrackedRemoteOld;
+			pSecondaryTrackedRemoteNew = pOffTrackedRemoteNew;
+			pSecondaryTrackedRemoteOld = pOffTrackedRemoteOld;
+		}
+
+		//All this to allow stick and button switching!
+		uint64_t primaryButtonsNew;
+		uint64_t primaryButtonsOld;
+		uint64_t secondaryButtonsNew;
+		uint64_t secondaryButtonsOld;
+		int primaryButton1;
+		int primaryButton2;
+		int secondaryButton1;
+		int secondaryButton2;
+
+		if (control_scheme == 11) // Left handed Alt
+		{
+			primaryButtonsNew = pOffTrackedRemoteNew->ulButtonPressed;
+			primaryButtonsOld = pOffTrackedRemoteOld->ulButtonPressed;
+			secondaryButtonsNew = pDominantTrackedRemoteNew->ulButtonPressed;
+			secondaryButtonsOld = pDominantTrackedRemoteOld->ulButtonPressed;
+
+			primaryButton1 = offButton1;
+			primaryButton2 = offButton2;
+			secondaryButton1 = domButton1;
+			secondaryButton2 = domButton2;
+		}
+		else // Left and right handed
+		{
+			primaryButtonsNew = pDominantTrackedRemoteNew->ulButtonPressed;
+			primaryButtonsOld = pDominantTrackedRemoteOld->ulButtonPressed;
+			secondaryButtonsNew = pOffTrackedRemoteNew->ulButtonPressed;
+			secondaryButtonsOld = pOffTrackedRemoteOld->ulButtonPressed;
+
+			primaryButton1 = domButton1;
+			primaryButton2 = domButton2;
+			secondaryButton1 = offButton1;
+			secondaryButton2 = offButton2;
+		}
+#if 0
+		//In cinema mode, right-stick controls mouse
+		const float mouseSpeed = 3.0f;
+		if (cinemamode)
+		{
+			if (fabs(pPrimaryTrackedRemoteNew->Joystick.x) > 0.1f) {
+				cinemamodeYaw -= mouseSpeed * pPrimaryTrackedRemoteNew->Joystick.x;
+			}
+			if (fabs(pPrimaryTrackedRemoteNew->Joystick.y) > 0.1f) {
+				cinemamodePitch -= mouseSpeed * pPrimaryTrackedRemoteNew->Joystick.y;
+			}
+		}
+#endif
+		// Only do the following if we are definitely not in the menu
+		if (getMenuState() == 0)
+		{
+#if 0
+			TrackedDevicePose_t pose = pOffTracking->pose;
+
+			if (pose.bPoseIsValid) {
+				const HmdMatrix34_t& poseMatrix = pose.mDeviceToAbsoluteTracking;
+				// Extract position from the poseMatrix
+				float x = poseMatrix.m[0][3];
+				float y = poseMatrix.m[1][3];
+				float z = poseMatrix.m[2][3];
+			}
+			float distance = sqrtf(powf(pOffTracking->Pose.position.x -
+										pDominantTracking->Pose.position.x, 2) +
+								powf(pOffTracking->Pose.position.y -
+										pDominantTracking->Pose.position.y, 2) +
+								powf(pOffTracking->Pose.position.z -
+										pDominantTracking->Pose.position.z, 2));
+
+			//Turn on weapon stabilisation?
+			if (vr_two_handed_weapons &&
+				(pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) !=
+				(pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)))
+			{
+				if (pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) {
+					if (distance < 0.50f) {
+						weaponStabilised = true;
+					}
+				} else {
+					weaponStabilised = false;
+				}
+			}
+
+			//dominant hand stuff first
+			LSMatrix44 mat;
+			if (GetWeaponTransform(&mat, VR_MAINHAND))
+			{
+				/Weapon location relative to view
+				weaponoffset[0] = mat[3][0];
+				weaponoffset[1] = mat[3][2];
+				weaponoffset[2] = mat[3][1];
+
+				vec2_t v;
+				float yawRotation = getViewpointYaw() - hmdorientation[YAW];
+				rotateAboutOrigin(weaponoffset[0], weaponoffset[2], -yawRotation, v);
+				weaponoffset[0] = v[1];
+				weaponoffset[2] = v[0];
+
+				//Set gun angles
+				//vec3_t rotation = {0};
+				//rotation[PITCH] = vr_weaponRotate;
+				//QuatToYawPitchRoll(pDominantTracking->Pose.orientation, rotation, weaponangles);
+				// weaponangles is already available
+
+				if (weaponStabilised) {
+					float z = pOffTracking->Pose.position.z -
+							pDominantTracking->Pose.position.z;
+					float x = pOffTracking->Pose.position.x -
+							pDominantTracking->Pose.position.x;
+					float y = pOffTracking->Pose.position.y -
+							pDominantTracking->Pose.position.y;
+					float zxDist = length(x, z);
+
+					if (zxDist != 0.0f && z != 0.0f) {
+						VectorSet(weaponangles, -RAD2DEG(atanf(y / zxDist)), -RAD2DEG(atan2f(x, -z)),
+								weaponangles[ROLL]);
+					}
+				}
+			}
+
+			float controllerYawHeading = 0.0f;
+
+			//off-hand stuff
+			LSMatrix44 matOffhand;
+			if (GetWeaponTransform(&matOffhand, VR_OFFHAND))
+			{
+				offhandoffset[0] = matOffhand[3][0];
+				offhandoffset[1] = matOffhand[3][2];
+				offhandoffset[2] = matOffhand[3][1];
+
+				vec2_t v;
+				float yawRotation = getViewpointYaw() - hmdorientation[YAW];
+				rotateAboutOrigin(offhandoffset[0], offhandoffset[2], -yawRotation, v);
+				offhandoffset[0] = v[1];
+				offhandoffset[2] = v[0];
+
+				//vec3_t rotation = {0};
+				//rotation[PITCH] = vr_weaponRotate;
+				//QuatToYawPitchRoll(pOffTracking->Pose.orientation, rotation, offhandangles);
+				// offhandangles already available
+
+				if (vr_move_use_offhand) {
+					controllerYawHeading = offhandangles[YAW] - hmdorientation[YAW];
+				} else {
+					controllerYawHeading = 0.0f;
+				}
+			}
+
+			//Positional movement
+			{
+				// ALOGV("        Right-Controller-Position: %f, %f, %f",
+				// 	pDominantTracking->Pose.position.x,
+				// 	pDominantTracking->Pose.position.y,
+				// 	pDominantTracking->Pose.position.z);
+
+				vec2_t v;
+				rotateAboutOrigin(positionDeltaThisFrame[0], positionDeltaThisFrame[2],
+								-(doomYaw - hmdorientation[YAW]), v);
+				positional_movementSideways = v[1];
+				positional_movementForward = v[0];
+
+				ALOGV("        positional_movementSideways: %f, positional_movementForward: %f",
+					positional_movementSideways,
+					positional_movementForward);
+			}
+#endif
+			//Off-hand specific stuff
+			{
+				// ALOGV("        Left-Controller-Position: %f, %f, %f",
+				// 	pOffTracking->Pose.position.x,
+				// 	pOffTracking->Pose.position.y,
+				// 	pOffTracking->Pose.position.z);
+
+				//Teleport - only does anything if vr_teleport cvar is true
+				if (vr_teleport) {
+					if ((pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f) && !ready_teleport) {
+						ready_teleport = true;
+					} else if ((pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y < 0.7f) && ready_teleport) {
+						ready_teleport = false;
+						trigger_teleport = true;
+					}
+				}
+
+				//Apply a filter and quadratic scaler so small movements are easier to make
+				//and we don't get movement jitter when the joystick doesn't quite center properly
+				float dist = length(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x, pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y);
+				float nlf = nonLinearFilter(dist);
+				dist = (dist > 1.0f) ? dist : 1.0f;
+				float x = nlf * (pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x / dist);
+				float y = nlf * (pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y / dist);
+
+				//Apply a simple deadzone
+				bool player_moving = (fabs(x) + fabs(y)) > 0.05f;
+				x = player_moving ? x : 0;
+				y = player_moving ? y : 0;
+
+				//Adjust to be off-hand controller oriented
+				//vec2_t v;
+				//rotateAboutOrigin(x, y, controllerYawHeading, v);
+
+				remote_movementSideways = x;
+				remote_movementForward = y;
+				// ALOGV("        remote_movementSideways: %f, remote_movementForward: %f",
+				// 	remote_movementSideways,
+				// 	remote_movementForward);
+			}
+
+			if (!cinemamode && !dominantGripPushedNew)
+			{
+				static int increaseSnap = true;
+				static int decreaseSnap = true;
+
+				float joy = pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x;
+				if (vr_snapTurn <= 10.0f && abs(joy) > 0.05f)
+				{
+					increaseSnap = false;
+					decreaseSnap = false;
+					snapTurn -= vr_snapTurn * nonLinearFilter(joy);
+				}
+
+				// Turning logic
+				if (joy > 0.6f && increaseSnap) {
+					resetDoomYaw = true;
+					snapTurn -= vr_snapTurn;
+					if (vr_snapTurn > 10.0f) {
+						increaseSnap = false;
+					}
+				} else if (joy < 0.4f) {
+					increaseSnap = true;
+				}
+
+				if (joy < -0.6f && decreaseSnap) {
+					resetDoomYaw = true;
+					snapTurn += vr_snapTurn;
+					if (vr_snapTurn > 10.0f) {
+						decreaseSnap = false;
+					}
+				} else if (joy > -0.4f) {
+					decreaseSnap = true;
+				}
+
+				if (snapTurn < -180.0f) {
+					snapTurn += 360.f;
+				}
+				else if (snapTurn > 180.0f) {
+					snapTurn -= 360.f;
+				}
+			}
+
+			// Smooth turning is activated only when snap turning is turned off
+			if(!vr_snap_turning)
+			{
+				//To feel smooth, yaw changes need to accumulate over the (sub) tic (i.e. render frame, not per tic)
+				unsigned int time = I_msTime();
+				static unsigned int lastTime = time;
+
+				unsigned int delta = time - lastTime;
+				lastTime = time;
+
+				float yaw = -pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x;
+				G_AddViewAngle(joyint(-1280 * yaw * delta * 30 / 1000), true);
+			}
+
+			//Menu button - invoke menu
+			Joy_GenerateButtonEvents(
+				((pPrimaryTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_ApplicationMenu)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((pPrimaryTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_ApplicationMenu)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_ESCAPE);
+				
+		}  // in game section
+
+		//if in cinema mode, then the dominant joystick is used differently
+		if (!cinemamode) 
+		{
+			//Default this is Weapon Chooser - This _could_ be remapped
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedOld ? 1 : 0), 
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedNew ? 1 : 0), 
+				1, KEY_MWHEELDOWN);
+
+			//Default this is Weapon Chooser - This _could_ be remapped
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedOld ? 1 : 0), 
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedNew ? 1 : 0), 
+				1, KEY_MWHEELUP);
+
+			//If snap turn set to 0, then we can use left/right on the stick as mappable functions
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedOld && !vr_snapTurn ? 1 : 0),
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedNew && !vr_snapTurn ? 1 : 0),
+				1, KEY_MWHEELLEFT);
+
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedOld && !vr_snapTurn ? 1 : 0),
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedNew && !vr_snapTurn ? 1 : 0),
+				1, KEY_MWHEELRIGHT);
+		}
+
+		//Dominant Hand - Primary keys (no grip pushed) - All keys are re-mappable, default bindngs are shown below
+		{
+			//Fire
+			Joy_GenerateButtonEvents(
+				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_PAD_RTRIGGER);
+
+			//"Use" (open door, toggle switch etc)
+			Joy_GenerateButtonEvents(
+				((primaryButtonsOld & (1ull << primaryButton1)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((primaryButtonsNew & (1ull << primaryButton1)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_PAD_A);
+
+			//No Binding
+			Joy_GenerateButtonEvents(
+				((primaryButtonsOld & (1ull << primaryButton2)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((primaryButtonsNew & (1ull << primaryButton2)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_PAD_B);
+
+			// Inv Use
+			Joy_GenerateButtonEvents(
+				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_ENTER);
+
+			//No Default Binding
+			// Joy_GenerateButtonEvents(
+			// 	((pDominantTrackedRemoteOld->Touches & xrButton_ThumbRest) != 0) && !dominantGripPushedOld ? 1 : 0,
+			// 	((pDominantTrackedRemoteNew->Touches & xrButton_ThumbRest) != 0) && !dominantGripPushedNew ? 1 : 0,
+			// 	1, KEY_JOY5);
+
+			//Use grip as an extra button
+			//Alt-Fire
+			Joy_GenerateButtonEvents(
+				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_PAD_LTRIGGER);
+		}
+		
+		//Dominant Hand - Secondary keys (grip pushed)
+		{
+			//Alt-Fire
+			Joy_GenerateButtonEvents(
+				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_PAD_LTRIGGER);
+
+			//Crouch
+			Joy_GenerateButtonEvents(
+				((primaryButtonsOld & (1ull << primaryButton1)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((primaryButtonsNew & (1ull << primaryButton1)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_PAD_LTHUMB);
+
+			//No Binding
+			Joy_GenerateButtonEvents(
+				((primaryButtonsOld & (1ull << primaryButton2)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((primaryButtonsNew & (1ull << primaryButton2)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_BACKSPACE);
+
+			//No Binding
+			Joy_GenerateButtonEvents(
+				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_TAB);
+
+			//No Default Binding
+			// Joy_GenerateButtonEvents(
+			// 	((pDominantTrackedRemoteOld->Touches & xrButton_ThumbRest) != 0) && dominantGripPushedOld ? 1 : 0,
+			// 	((pDominantTrackedRemoteNew->Touches & xrButton_ThumbRest) != 0) && dominantGripPushedNew ? 1 : 0,
+			// 	1, KEY_JOY6);
+
+		}
+
+
+		//Off Hand - Primary keys (no grip pushed)
+		{
+			//No Default Binding
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_LSHIFT);
+
+			//No Default Binding
+			Joy_GenerateButtonEvents(
+				((secondaryButtonsOld & (1ull << secondaryButton1)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((secondaryButtonsNew & (1ull << secondaryButton1)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_PAD_X);
+
+			//Toggle Map
+			Joy_GenerateButtonEvents(
+				((secondaryButtonsOld & (1ull << secondaryButton2)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((secondaryButtonsNew & (1ull << secondaryButton2)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_PAD_Y);
+
+			//"Use" (open door, toggle switch etc) - Can be rebound for other uses
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_SPACE);
+
+			//No Default Binding
+			// Joy_GenerateButtonEvents(
+			// 	((pOffTrackedRemoteOld->Touches & xrButton_ThumbRest) != 0) && !dominantGripPushedOld ? 1 : 0,
+			// 	((pOffTrackedRemoteNew->Touches & xrButton_ThumbRest) != 0) && !dominantGripPushedNew ? 1 : 0,
+			// 	1, KEY_JOY7);
+
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_PAD_RTHUMB);
+		}
+
+		//Off Hand - Secondary keys (grip pushed)
+		{
+			//No Default Binding
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_LALT);
+
+			//Move Down
+			Joy_GenerateButtonEvents(
+				((secondaryButtonsOld & (1ull << secondaryButton1)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((secondaryButtonsNew & (1ull << secondaryButton1)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_PGDN);
+
+			//Move Up
+			Joy_GenerateButtonEvents(
+				((secondaryButtonsOld & (1ull << secondaryButton2)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((secondaryButtonsNew & (1ull << secondaryButton2)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_PGUP);
+
+			//Land
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_HOME);
+
+			//No Default Binding
+			// Joy_GenerateButtonEvents(
+			// 	((pOffTrackedRemoteOld->Touches & xrButton_ThumbRest) != 0) && dominantGripPushedOld ? 1 : 0,
+			// 	((pOffTrackedRemoteNew->Touches & xrButton_ThumbRest) != 0) && dominantGripPushedNew ? 1 : 0,
+			// 	1, KEY_JOY8);
+
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) != 0) && dominantGripPushedOld && !vr_two_handed_weapons ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) != 0) && dominantGripPushedNew && !vr_two_handed_weapons ? 1 : 0,
+				1, KEY_PAD_DPAD_UP);
+		}
+
+		Joy_GenerateButtonEvents(
+			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedOld ? 1 : 0), 
+			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS1PLUS);
+
+		Joy_GenerateButtonEvents(
+			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedOld ? 1 : 0), 
+			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS1MINUS);
+
+		Joy_GenerateButtonEvents(
+			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedOld ? 1 : 0), 
+			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS3PLUS);
+
+		Joy_GenerateButtonEvents(
+			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedOld ? 1 : 0), 
+			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS3MINUS);
+
+		Joy_GenerateButtonEvents(
+			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedOld ? 1 : 0), 
+			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS2MINUS);
+
+		Joy_GenerateButtonEvents(
+			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedOld ? 1 : 0), 
+			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS2PLUS);
+		
+		Joy_GenerateButtonEvents(
+			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedOld ? 1 : 0), 
+			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS4MINUS);
+
+		Joy_GenerateButtonEvents(
+			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedOld ? 1 : 0), 
+			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS4PLUS);
+
+		Joy_GenerateButtonEvents(
+			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && dominantGripPushedOld ? 1 : 0), 
+			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS5PLUS);
+
+		Joy_GenerateButtonEvents(
+			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && dominantGripPushedOld ? 1 : 0), 
+			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS5MINUS);
+
+		Joy_GenerateButtonEvents(
+			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && dominantGripPushedOld ? 1 : 0), 
+			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS7PLUS);
+
+		Joy_GenerateButtonEvents(
+			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && dominantGripPushedOld ? 1 : 0), 
+			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS7MINUS);
+
+		Joy_GenerateButtonEvents(
+			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && dominantGripPushedOld ? 1 : 0), 
+			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS6MINUS);
+
+		Joy_GenerateButtonEvents(
+			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && dominantGripPushedOld ? 1 : 0), 
+			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS6PLUS);
+		
+		Joy_GenerateButtonEvents(
+			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && dominantGripPushedOld ? 1 : 0), 
+			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS8MINUS);
+
+		Joy_GenerateButtonEvents(
+			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && dominantGripPushedOld ? 1 : 0), 
+			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && dominantGripPushedNew ? 1 : 0), 
+			1, KEY_JOYAXIS8PLUS);
+
+		//Save state
+		pDominantTracking->lastState = rightTrackedRemoteState_old = rightTrackedRemoteState_new;
+		pOffTracking->lastState = leftTrackedRemoteState_old = leftTrackedRemoteState_new;
+	}
+
 	static void HandleControllerState(int device, int role, VRControllerState_t& newState)
 	{
 		VRControllerState_t& lastState = controllers[role].lastState;
@@ -1323,134 +1945,6 @@ namespace s3d
 		lastState = newState;
 	}
 
-	// Alternate controller mapping for Oculus, mapping is now similar to QuestZDoom and supports grip combo if enabled
-	static void HandleAlternateControllerMapping(int device, int role, VRControllerState_t& newState)
-	{
-		VRControllerState_t& lastState = controllers[role].lastState;
-		bool rightHanded = vr_control_scheme < 10;
-		int controller = rightHanded ? role : 1 - role;
-
-		// Check if main hand grip button is hold down
-		int DominantHandRole = rightHanded ? 1 : 0;
-		if (vr_secondary_button_mappings
-			&& (lastState.ulButtonPressed & (1LL << openvr::vr::k_EButton_Grip)) != (newState.ulButtonPressed & (1LL << openvr::vr::k_EButton_Grip))
-			&& role == DominantHandRole) {
-			if (newState.ulButtonPressed & (1LL << openvr::vr::k_EButton_Grip)) {
-				dominantGripPushed = true;
-			}
-			else {
-				dominantGripPushed = false;
-			}
-		}
-
-		// main hand trigger is kept unbindable to make sure it always works in menu (swaps with handedness)
-		// openvr::vr::k_EButton_SteamVR_Trigger can be used to catch trigger fire as well but not gonna bother as long following method is not broken
-		// Mainhand trigger = Fire, Grip + Mainhand trigger = Alt Fire
-		if (CurrentMenu == nullptr) //the quit menu is cancelled by any normal keypress, so don't generate the fire while in menus 
-		{
-			if (dominantGripPushed) {
-				HandleVRAxis(lastState, newState, 1, 0, KEY_LALT, KEY_LALT, controller * (KEY_PAD_LTRIGGER - KEY_LALT));
-			}
-			else {
-				HandleVRAxis(lastState, newState, 1, 0, KEY_LSHIFT, KEY_LSHIFT, controller * (KEY_PAD_RTRIGGER - KEY_LSHIFT));
-			}
-		}
-		// Offhand trigger is now bindable (sort of)
-		// TODO: need to fix the bug where it expects another input after pressing trigger in a key inputbox
-		// Offhand trigger = Run, Grip + Offhand trigger = unmapped
-		if (role != DominantHandRole)
-		{
-			if (dominantGripPushed) {
-				HandleVRAxis(lastState, newState, 1, 0, KEY_LALT, KEY_LALT, controller * (KEY_PAD_LTRIGGER - KEY_LALT));
-			}
-			else {
-				HandleVRAxis(lastState, newState, 1, 0, KEY_LSHIFT, KEY_LSHIFT, controller * (KEY_PAD_RTRIGGER - KEY_LSHIFT));
-			}
-		}
-		HandleUIVRAxis(lastState, newState, 1, 0, GK_RETURN, GK_RETURN);
-
-		// joysticks
-		if (axisJoystick != -1)
-		{
-			if (dominantGripPushed) {
-				HandleVRAxis(lastState, newState, axisJoystick, 0, KEY_JOYAXIS4MINUS, KEY_JOYAXIS4PLUS, role * (KEY_JOYAXIS6PLUS - KEY_JOYAXIS4PLUS));
-				HandleVRAxis(lastState, newState, axisJoystick, 1, KEY_JOYAXIS5MINUS, KEY_JOYAXIS5PLUS, role * (KEY_JOYAXIS6PLUS - KEY_JOYAXIS4PLUS));
-			}
-			else {
-				HandleVRAxis(lastState, newState, axisJoystick, 0, KEY_JOYAXIS1MINUS, KEY_JOYAXIS1PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
-				HandleVRAxis(lastState, newState, axisJoystick, 1, KEY_JOYAXIS2MINUS, KEY_JOYAXIS2PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
-			}
-			HandleUIVRAxes(lastState, newState, axisJoystick, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
-		}
-
-		// Only offhand grip is bindable in alternate mapping, main hand grip is used for grip combo
-		if(vr_secondary_button_mappings && role != DominantHandRole) {
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
-		}
-		HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_Grip, GK_BACK);
-
-		// Y/B
-		// Y = Automap, Grip + Y = Fly Up
-		// B = Jump, Grip + B = Main menu
-		// B will be defaulted to Menu button if grip combo is disabled
-		if (dominantGripPushed || !vr_secondary_button_mappings) {
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, KEY_PGUP, role * (KEY_PAD_BACK - KEY_PGUP));
-		}
-		else {
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, KEY_PAD_DPAD_UP, role * (KEY_PAD_Y - KEY_PAD_DPAD_UP));
-		}
-
-		// X/A
-		// X = Delete keybind (PAD_X), Grip + X = Fly Down
-		// A = Use, Grip + A = Crouch toggle
-		if (dominantGripPushed) {
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_A, KEY_INS, role * (KEY_PAD_LTHUMB - KEY_INS));
-		}
-		else {
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_A, KEY_PAD_X, role * (KEY_PAD_A - KEY_PAD_X));
-		}
-
-		// Thumbstick click
-		// Mainhand thumbstick = Use Inventory Item, Grip + Mainhand thumbstick = unmapped
-		// Offhand thumbstick = Jump, Grip + Offhand thumbstick = Stop Flying
-		if (dominantGripPushed) {
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_SteamVR_Touchpad, KEY_HOME, role * (KEY_TAB - KEY_HOME));
-		}
-		else {
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_SteamVR_Touchpad, KEY_SPACE, role * (KEY_ENTER - KEY_SPACE));
-		}
-
-		// Rest are unchanged
-
-		//touchpad
-		if (axisTrackpad != -1) {
-			HandleVRAxis(lastState, newState, axisTrackpad, 0, KEY_PAD_LTHUMB_LEFT, KEY_PAD_LTHUMB_RIGHT, role * (KEY_PAD_RTHUMB_LEFT - KEY_PAD_LTHUMB_LEFT));
-			HandleVRAxis(lastState, newState, axisTrackpad, 1, KEY_PAD_LTHUMB_DOWN, KEY_PAD_LTHUMB_UP, role * (KEY_PAD_RTHUMB_DOWN - KEY_PAD_LTHUMB_DOWN));
-			HandleUIVRAxes(lastState, newState, axisTrackpad, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
-		}
-
-		lastState = newState;
-	}
-
-	// Teleport trigger logic. Thanks to DrBeef for the inspiration of how to use this
-	void HandleTeleportTrigger()
-	{
-		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
-
-		if (vr_teleport && player && gamestate == GS_LEVEL && menuactive == MENU_Off)
-		{
-			float joyDirectionalMove = I_OpenVRGetDirectionalMove();
-
-			if ((joyDirectionalMove > 0.7f) && !ready_teleport) {
-				ready_teleport = true;
-			}
-			else if ((joyDirectionalMove < 0.6f) && ready_teleport) {
-				ready_teleport = false;
-				trigger_teleport = true;
-			}
-		}
-	}
-
 	// Teleport location where player sprite will be shown
 	bool OpenVRMode::GetTeleportLocation(DVector3& out) const
 	{
@@ -1464,57 +1958,6 @@ namespace s3d
 		}
 
 		return false;
-	}
-
-	// Snap-turn logic. Thanks to DrBeef for the codes
-	void HandleSnapTurn()
-	{
-		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
-
-		// Turning logic
-		static int increaseSnap = true;
-		static int decreaseSnap = true;
-
-		bool snap_turning_on = vr_snap_turning;
-
-		// Use main hand joystick left/right as buttons with grip combo
-		if (vr_use_alternate_mapping && dominantGripPushed) {
-			snap_turning_on = false;
-		}
-
-		if (snap_turning_on && player && gamestate == GS_LEVEL && menuactive == MENU_Off)
-		{
-			float joyTurnMove = -I_OpenVRGetYaw();
-
-			if (joyTurnMove > 0.6f && increaseSnap) {
-				snapTurn -= vr_snapTurn;
-				if (vr_snapTurn > 10.0f) {
-					increaseSnap = false;
-				}
-			}
-			else if (joyTurnMove < 0.4f) {
-				increaseSnap = true;
-			}
-
-			if (joyTurnMove < -0.6f && decreaseSnap) {
-				snapTurn += vr_snapTurn;
-
-				//If snap turn configured for less than 10 degrees
-				if (vr_snapTurn > 10.0f) {
-					decreaseSnap = false;
-				}
-			}
-			else if (joyTurnMove > -0.4f) {
-				decreaseSnap = true;
-			}
-
-			if (snapTurn < -180.0f) {
-				snapTurn += 360.f;
-			}
-			else if (snapTurn > 180.0f) {
-				snapTurn -= 360.f;
-			}
-		}
 	}
 
 	VRControllerState_t& OpenVR_GetState(int hand)
@@ -1538,19 +1981,6 @@ namespace s3d
 	bool OpenVR_OnHandIsRight()
 	{
 		return vr_control_scheme < 10;
-	}
-
-
-	static inline int joyint(double val)
-	{
-		if (val >= 0)
-		{
-			return int(ceil(val));
-		}
-		else
-		{
-			return int(floor(val));
-		}
 	}
 
 	bool JustStoppedMoving(VRControllerState_t& lastState, VRControllerState_t& newState, int axis)
@@ -1611,7 +2041,7 @@ namespace s3d
 		);
 
 		TrackedDevicePose_t& hmdPose0 = poses[k_unTrackedDeviceIndex_Hmd];
-
+		
 		if (hmdPose0.bPoseIsValid) {
 			const HmdMatrix34_t& hmdPose = hmdPose0.mDeviceToAbsoluteTracking;
 			HmdVector3d_t eulerAngles = eulerAnglesFromMatrix(hmdPose);
@@ -1656,6 +2086,11 @@ namespace s3d
 					VRControllerState_t newState;
 					vrSystem->GetControllerState(i, &newState, sizeof(newState));
 
+					if (role == 0)
+						leftTrackedRemoteState_new = newState;
+					else if (role == 1)
+						rightTrackedRemoteState_new = newState;
+
 
 					if (!identifiedAxes)
 					{
@@ -1676,29 +2111,22 @@ namespace s3d
 							}
 						}
 					}
-
-					// if (player && vr_kill_momentum)
-					// {
-					// 	if (role == (openvr_rightHanded ? 0 : 1))
-					// 	{
-					// 		if (JustStoppedMoving(controllers[role].lastState, newState, axisTrackpad)
-					// 			|| JustStoppedMoving(controllers[role].lastState, newState, axisJoystick))
-					// 		{
-					// 			player->mo->Vel[0] = 0;
-					// 			player->mo->Vel[1] = 0;
-					// 		}
-					// 	}
-					// }
-
-					if(vr_use_alternate_mapping)
+#if 0
+					if (player && vr_kill_momentum)
 					{
-						HandleAlternateControllerMapping(i, role, newState);
-					}
-					else
-					{
-						HandleControllerState(i, role, newState);
+						if (role == (openvr_rightHanded ? 0 : 1))
+						{
+							if (JustStoppedMoving(controllers[role].lastState, newState, axisTrackpad)
+								|| JustStoppedMoving(controllers[role].lastState, newState, axisJoystick))
+							{
+								player->mo->Vel[0] = 0;
+								player->mo->Vel[1] = 0;
+							}
+						}
 					}
 
+					HandleControllerState(i, role, newState);
+#endif
 				}
 			}
 
@@ -1728,7 +2156,7 @@ namespace s3d
 					getMainHandAngles();
 
 					player->mo->AttackAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - weaponangles[YAW]);
-					player->mo->AttackPitch = DAngle::fromDeg(weaponangles[PITCH]);
+					player->mo->AttackPitch = DAngle::fromDeg(-weaponangles[PITCH]);
 					player->mo->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
 				}
 
@@ -1742,7 +2170,7 @@ namespace s3d
 					getOffHandAngles();
 
 					player->mo->OffhandAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - offhandangles[YAW]);
-					player->mo->OffhandPitch = DAngle::fromDeg(offhandangles[PITCH]);
+					player->mo->OffhandPitch = DAngle::fromDeg(-offhandangles[PITCH]);
 					player->mo->OffhandRoll = DAngle::fromDeg(offhandangles[ROLL]);
 				}
 
@@ -1750,14 +2178,14 @@ namespace s3d
 				if (vr_teleport && player->mo->health > 0) {
 
 					DAngle yaw = DAngle::fromDeg(-deltaYawDegrees - 90 - offhandangles[YAW]);
-					DAngle pitch = DAngle::fromDeg(offhandangles[PITCH] + 30);
+					DAngle pitch = DAngle::fromDeg(offhandangles[PITCH]);
 
 					// Teleport Logic
 					if (ready_teleport) {
 						FLineTraceData trace;
+						DPrintf(DMSG_NOTIFY, "teleport sz:%2.f\n", matOffhand[3][1]);
 						if (P_LineTrace(player->mo, yaw, 8192, pitch, TRF_ABSOFFSET | TRF_BLOCKUSE | TRF_BLOCKSELF | TRF_SOLIDACTORS,
-							matOffhand[3][1] - player->mo->Z() + vr_floor_offset,
-							0, 0, &trace))
+							matOffhand[3][1], 0, 0, &trace))
 						{
 							m_TeleportTarget = trace.HitType;
 							m_TeleportLocation = trace.HitLocation;
@@ -1789,6 +2217,7 @@ namespace s3d
 				}
 
 				bool rightHanded = vr_control_scheme < 10;
+				// if right handed we use the left controller otherwise right controller
 				if (GetHandTransform(rightHanded ? 0 : 1, &mat) && vr_move_use_offhand)
 				{
 					player->mo->ThrustAngleOffset = DAngle::fromDeg(RAD2DEG(atan2f(-mat[2][2], -mat[2][0]))) - player->mo->Angles.Yaw;
@@ -1819,21 +2248,22 @@ namespace s3d
 
 		I_StartupOpenVR();
 
-		// Smooth turning is activated only when snap turning is turned off
-		if(!vr_snap_turning && !(vr_use_alternate_mapping && dominantGripPushed))
+		switch (vr_control_scheme)
 		{
-		//To feel smooth, yaw changes need to accumulate over the (sub) tic (i.e. render frame, not per tic)
-		unsigned int time = I_msTime();
-		static unsigned int lastTime = time;
-
-		unsigned int delta = time - lastTime;
-		lastTime = time;
-
-		G_AddViewAngle(joyint(-1280 * I_OpenVRGetYaw() * delta * 30 / 1000), true);
+			case RIGHT_HANDED_DEFAULT:
+				HandleInput_Default(vr_control_scheme,
+				&rightTrackedRemoteState_new, &rightTrackedRemoteState_old, &controllers[1],
+				&leftTrackedRemoteState_new, &leftTrackedRemoteState_old, &controllers[0],
+				openvr::vr::k_EButton_A /*A*/, openvr::vr::k_EButton_ApplicationMenu /*B*/, openvr::vr::k_EButton_A /*X*/, openvr::vr::k_EButton_ApplicationMenu /*Y*/);
+				break;
+			case LEFT_HANDED_DEFAULT:
+			case LEFT_HANDED_ALT:
+				HandleInput_Default(vr_control_scheme, 
+				&leftTrackedRemoteState_new, &leftTrackedRemoteState_old, &controllers[0],
+				&rightTrackedRemoteState_new, &rightTrackedRemoteState_old, &controllers[1],
+				openvr::vr::k_EButton_A /*X*/, openvr::vr::k_EButton_ApplicationMenu /*Y*/, openvr::vr::k_EButton_A /*A*/, openvr::vr::k_EButton_ApplicationMenu /*B*/);
+				break;
 		}
-
-		HandleTeleportTrigger();
-		HandleSnapTurn();
 	}
 
 	/* virtual */
@@ -1863,6 +2293,24 @@ namespace s3d
 	}
 
 } /* namespace s3d */
+
+
+ADD_STAT(remotestats)
+{
+	FString out;
+	
+	out.AppendFormat("lbtn:%" PRIu64 " - rbtn:%" PRIu64 "\n"
+		"ljoy x:1.3f - y:1.3f\n"
+		"rjoy x:1.3f - y:1.3f", 
+		s3d::leftTrackedRemoteState_new.ulButtonPressed,
+		s3d::rightTrackedRemoteState_new.ulButtonPressed,
+		s3d::leftTrackedRemoteState_new.rAxis[axisJoystick].x,
+		s3d::leftTrackedRemoteState_new.rAxis[axisJoystick].y,
+		s3d::rightTrackedRemoteState_new.rAxis[axisJoystick].x,
+		s3d::rightTrackedRemoteState_new.rAxis[axisJoystick].y);
+
+	return out;
+}
 
 #endif
 
