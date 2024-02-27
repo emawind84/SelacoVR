@@ -940,10 +940,12 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				sprangle = nullAngle;
 				rot = 0;
 			}
-			if (thing == camera && screen->stencilValue > 0)
-			{
-				rot = 0;
-			}
+			// this fix should not be needed anymore
+			// keep player sprite on mirror with same orientation
+			// if (thing == camera && screen->stencilValue > 0)
+			// {
+			// 	rot = 0;
+			// }
 			patch = sprites[spritenum].GetSpriteFrame(thing->frame, rot, sprangle, &mirror, !!(thing->renderflags & RF_SPRITEFLIP));
 		}
 
