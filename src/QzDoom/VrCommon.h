@@ -32,11 +32,6 @@ extern float doomYaw;
 extern bool resetPreviousPitch;
 extern float previousPitch;
 
-extern vec3_t worldPosition;
-
-extern vec3_t hmdPosition;
-extern vec3_t hmdorientation;
-
 extern vec3_t weaponangles;
 extern vec3_t weaponoffset;
 
@@ -47,8 +42,6 @@ extern bool player_moving;
 
 extern bool ready_teleport;
 extern bool trigger_teleport;
-
-extern bool shutdown;
 
 //Called from engine code
 void QzDoom_setUseScreenLayer(bool use);

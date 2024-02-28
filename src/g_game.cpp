@@ -390,28 +390,6 @@ CCMD (turn180)
 	sendturn180 = true;
 }
 
-extern bool cinemamode;
-extern float cinemamodeYaw;
-extern float cinemamodePitch;
-extern vec3_t hmdorientation;
-extern float snapTurn;
-
-CCMD (cinemamode)
-{
-	cinemamode = !cinemamode;
-
-	//Store these
-	cinemamodeYaw = hmdorientation[YAW] + snapTurn;
-	cinemamodePitch = hmdorientation[PITCH];
-
-	//Reset angles back to normal view
-	if (!cinemamode)
-    {
-	    resetDoomYaw = true;
-	    resetPreviousPitch = true;
-    }
-}
-
 CCMD (weapnext)
 {
 	int hand = 0;

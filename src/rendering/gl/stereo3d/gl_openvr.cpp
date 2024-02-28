@@ -31,11 +31,13 @@
 
 #include <string>
 #include <map>
+#include <cmath>
 #include "gl_load/gl_system.h"
 #include "p_trace.h"
 #include "p_linetracedata.h"
 #include "doomtype.h" // Printf
 #include "d_player.h"
+#include "c_console.h"
 #include "g_game.h" // G_Add...
 #include "p_local.h" // P_TryMove
 #include "gl_renderer.h"
@@ -47,7 +49,6 @@
 #include "hw_models.h"
 #include "g_levellocals.h" // pixelstretch
 #include "g_statusbar/sbar.h"
-#include <cmath>
 #include "c_cvars.h"
 #include "cmdlib.h"
 #include "LSMatrix.h"
@@ -122,8 +123,6 @@ typedef enum control_scheme {
     LEFT_HANDED_ALT = 11       // x,y,a,b - trigger,grip,joystick btn,thumb right/left - joystick axis left/right
 } control_scheme_t;
 
-extern vec3_t hmdPosition;
-extern vec3_t hmdorientation;
 extern vec3_t weaponoffset;
 extern vec3_t weaponangles;
 extern vec3_t offhandoffset;
@@ -138,7 +137,6 @@ extern float remote_movementForward;
 
 extern bool ready_teleport;
 extern bool trigger_teleport;
-extern bool shutdown;
 extern bool resetDoomYaw;
 extern bool resetPreviousPitch;
 extern bool cinemamode;
@@ -267,6 +265,16 @@ static float getDoomPlayerHeightWithoutCrouch(const player_t* player)
 	}
 
 	return height;
+}
+
+static float getViewpointYaw()
+{
+	if (cinemamode)
+	{
+		return r_viewpoint.Angles.Yaw.Degrees();
+	}
+
+	return doomYaw;
 }
 
 // feature toggles, for testing and debugging
@@ -686,7 +694,7 @@ namespace s3d
 
 		// Pitch and Roll are identical between OpenVR and Doom worlds.
 		// But yaw can differ, depending on starting state, and controller movement.
-		float doomYawDegrees = vp.HWAngles.Yaw.Degrees();
+		float doomYawDegrees = getViewpointYaw();
 		float openVrYawDegrees = RAD2DEG(-eulerAnglesFromMatrix(hmdPose).v[0]);
 		deltaYawDegrees = doomYawDegrees - openVrYawDegrees;
 		while (deltaYawDegrees > 180)
@@ -1192,7 +1200,7 @@ namespace s3d
 		double hmdpitch = hmdPitchRadians;
 		double hmdroll = hmdRollRadians;
 
-		double hmdYawDelta = 0;
+		double hmdYawDeltaRadians = 0;
 		if (doTrackHmdYaw) {
 			// Set HMD angle game state parameters for NEXT frame
 			static double previousHmdYaw = 0;
@@ -1201,35 +1209,47 @@ namespace s3d
 				previousHmdYaw = hmdYaw;
 				havePreviousYaw = true;
 			}
-			hmdYawDelta = hmdYaw - previousHmdYaw;
-			G_AddViewAngle(mAngleFromRadians(-hmdYawDelta), true);
+			hmdYawDeltaRadians = hmdYaw - previousHmdYaw;
+			G_AddViewAngle(mAngleFromRadians(-hmdYawDeltaRadians), true);
 			previousHmdYaw = hmdYaw;
 		}
 
 		/* */
 		// Pitch
 		if (doTrackHmdPitch) {
-			double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
-			double hmdPitchInDoom = -atan(tan(hmdpitch) / pixelstretch);
-			double viewPitchInDoom = vp.HWAngles.Pitch.Radians();
-			double dPitch =
-				// hmdPitchInDoom
-				-hmdpitch
-				- viewPitchInDoom;
-			G_AddViewPitch(mAngleFromRadians(-dPitch), true);
+			if (resetPreviousPitch)
+			{
+				previousPitch = vp.HWAngles.Pitch.Radians();
+				resetPreviousPitch = false;
+			}
+
+			double hmdPitchDeltaRadians = -hmdpitch - previousPitch;
+
+			G_AddViewPitch(mAngleFromRadians(-hmdPitchDeltaRadians));
+			previousPitch = -hmdpitch;
 		}
 
-		// Roll can be local, because it doesn't affect gameplay.
-		if (doTrackHmdRoll)
-			vp.HWAngles.Roll = FAngle::fromDeg(RAD2DEG(-hmdroll));
+		if (!cinemamode)
+		{
+			if (gamestate == GS_LEVEL && menuactive == MENU_Off)
+			{
+				doomYaw += RAD2DEG(hmdYawDeltaRadians);
 
-		// Late-schedule update to renderer angles directly, too
-		if (doLateScheduledRotationTracking) {
-			if (doTrackHmdPitch) {
-				vp.HWAngles.Pitch = FAngle::fromDeg(RAD2DEG(-hmdpitch));
+				// Roll can be local, because it doesn't affect gameplay.
+				if (doTrackHmdRoll)
+				{
+					vp.HWAngles.Roll = FAngle::fromDeg(RAD2DEG(-hmdroll));
+				}
+				if (doTrackHmdPitch && doLateScheduledRotationTracking)
+				{
+					vp.HWAngles.Pitch = FAngle::fromDeg(RAD2DEG(-hmdpitch));
+				}
 			}
-			if (doTrackHmdYaw) {
-				double viewYaw = vp.Angles.Yaw.Degrees() + RAD2DEG(hmdYawDelta);
+
+			// Late-schedule update to renderer angles directly, too
+			if (doTrackHmdYaw && doLateScheduledRotationTracking)
+			{
+				double viewYaw = doomYaw;
 				while (viewYaw <= -180.0)
 					viewYaw += 360.0;
 				while (viewYaw > 180.0)
@@ -1396,7 +1416,7 @@ namespace s3d
 		}
 #endif
 		// Only do the following if we are definitely not in the menu
-		if (getMenuState() == 0)
+		if (menuactive == MENU_Off)
 		{
 #if 0
 			TrackedDevicePose_t pose = pOffTracking->pose;
@@ -1407,25 +1427,26 @@ namespace s3d
 				float x = poseMatrix.m[0][3];
 				float y = poseMatrix.m[1][3];
 				float z = poseMatrix.m[2][3];
-			}
-			float distance = sqrtf(powf(pOffTracking->Pose.position.x -
-										pDominantTracking->Pose.position.x, 2) +
-								powf(pOffTracking->Pose.position.y -
-										pDominantTracking->Pose.position.y, 2) +
-								powf(pOffTracking->Pose.position.z -
-										pDominantTracking->Pose.position.z, 2));
+			
+				float distance = sqrtf(powf(pOffTracking->pose.position.x -
+											pDominantTracking->pose.position.x, 2) +
+									powf(pOffTracking->pose.position.y -
+											pDominantTracking->pose.position.y, 2) +
+									powf(pOffTracking->pose.position.z -
+											pDominantTracking->pose.position.z, 2));
 
-			//Turn on weapon stabilisation?
-			if (vr_two_handed_weapons &&
-				(pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) !=
-				(pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)))
-			{
-				if (pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) {
-					if (distance < 0.50f) {
-						weaponStabilised = true;
+				//Turn on weapon stabilisation?
+				if (vr_two_handed_weapons &&
+					(pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) !=
+					(pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)))
+				{
+					if (pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) {
+						if (distance < 0.50f) {
+							weaponStabilised = true;
+						}
+					} else {
+						weaponStabilised = false;
 					}
-				} else {
-					weaponStabilised = false;
 				}
 			}
 
@@ -2013,7 +2034,7 @@ namespace s3d
 
 		haptics->ProcessHaptics();
 
-		if (gamestate == GS_LEVEL) {
+		if (gamestate == GS_LEVEL && menuactive == MENU_Off) {
 			cachedScreenBlocks = screenblocks;
 			screenblocks = 12; // always be full-screen during 3D scene render
 		}
@@ -2045,7 +2066,7 @@ namespace s3d
 		if (hmdPose0.bPoseIsValid) {
 			const HmdMatrix34_t& hmdPose = hmdPose0.mDeviceToAbsoluteTracking;
 			HmdVector3d_t eulerAngles = eulerAnglesFromMatrix(hmdPose);
-			updateHmdPose(r_viewpoint, eulerAngles.v[0], eulerAngles.v[1], eulerAngles.v[2]);
+			
 			leftEyeView->setCurrentHmdPose(&hmdPose0);
 			rightEyeView->setCurrentHmdPose(&hmdPose0);
 
@@ -2111,7 +2132,7 @@ namespace s3d
 							}
 						}
 					}
-#if 0
+#if 0  // pcvr kill momentum and controller mapping
 					if (player && vr_kill_momentum)
 					{
 						if (role == (openvr_rightHanded ? 0 : 1))
@@ -2130,120 +2151,142 @@ namespace s3d
 				}
 			}
 
-			if (player && player->mo)
+			//Some crazy stuff to ascertain the actual yaw that doom is using at the right times!
+			if (gamestate != GS_LEVEL || menuactive != MENU_Off 
+			|| ConsoleState == c_down || ConsoleState == c_falling 
+			|| (player && player->playerstate == PST_DEAD)
+			|| (player && player->resetDoomYaw)
+			|| paused 
+			)
 			{
-				double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
-
-				// Thanks to Emawind for the codes for natural crouching
-				if (!vr_crouch_use_button)
-				{
-					static double defaultViewHeight = player->DefaultViewHeight();
-					player->crouching = 10;
-					player->crouchfactor = HmdHeight / defaultViewHeight;
-				}
-				else if (player->crouching == 10)
-				{
-					player->Uncrouch();
-				}
-
-				LSMatrix44 mat;
-				if (GetWeaponTransform(&mat, VR_MAINHAND))
-				{
-					player->mo->AttackPos.X = mat[3][0];
-					player->mo->AttackPos.Y = mat[3][2];
-					player->mo->AttackPos.Z = mat[3][1];
-
-					getMainHandAngles();
-
-					player->mo->AttackAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - weaponangles[YAW]);
-					player->mo->AttackPitch = DAngle::fromDeg(-weaponangles[PITCH]);
-					player->mo->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
-				}
-
-				LSMatrix44 matOffhand;
-				if (GetWeaponTransform(&matOffhand, VR_OFFHAND))
-				{
-					player->mo->OffhandPos.X = matOffhand[3][0];
-					player->mo->OffhandPos.Y = matOffhand[3][2];
-					player->mo->OffhandPos.Z = matOffhand[3][1];
-
-					getOffHandAngles();
-
-					player->mo->OffhandAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - offhandangles[YAW]);
-					player->mo->OffhandPitch = DAngle::fromDeg(-offhandangles[PITCH]);
-					player->mo->OffhandRoll = DAngle::fromDeg(offhandangles[ROLL]);
-				}
-
-				// Teleport locomotion. Thanks to DrBeef for the codes
-				if (vr_teleport && player->mo->health > 0) {
-
-					DAngle yaw = DAngle::fromDeg(-deltaYawDegrees - 90 - offhandangles[YAW]);
-					DAngle pitch = DAngle::fromDeg(offhandangles[PITCH]);
-
-					// Teleport Logic
-					if (ready_teleport) {
-						FLineTraceData trace;
-						DPrintf(DMSG_NOTIFY, "teleport sz:%2.f\n", matOffhand[3][1]);
-						if (P_LineTrace(player->mo, yaw, 8192, pitch, TRF_ABSOFFSET | TRF_BLOCKUSE | TRF_BLOCKSELF | TRF_SOLIDACTORS,
-							matOffhand[3][1], 0, 0, &trace))
-						{
-							m_TeleportTarget = trace.HitType;
-							m_TeleportLocation = trace.HitLocation;
-						}
-						else {
-							m_TeleportTarget = TRACE_HitNone;
-							m_TeleportLocation = DVector3(0, 0, 0);
-						}
-					}
-					else if (trigger_teleport && m_TeleportTarget == TRACE_HitFloor) {
-						auto vel = player->mo->Vel;
-						player->mo->Vel = DVector3(m_TeleportLocation.X - player->mo->X(),
-							m_TeleportLocation.Y - player->mo->Y(), 0);
-						bool wasOnGround = player->mo->Z() <= player->mo->floorz + 0.1;
-						double oldZ = player->mo->Z();
-						P_XYMovement(player->mo, DVector2(0, 0));
-
-						//if we were on the ground before offsetting, make sure we still are (this fixes not being able to move on lifts)
-						if (player->mo->Z() >= oldZ && wasOnGround) {
-							player->mo->SetZ(player->mo->floorz);
-						}
-						else {
-							player->mo->SetZ(oldZ);
-						}
-						player->mo->Vel = vel;
-					}
-
-					trigger_teleport = false;
-				}
-
-				bool rightHanded = vr_control_scheme < 10;
-				// if right handed we use the left controller otherwise right controller
-				if (GetHandTransform(rightHanded ? 0 : 1, &mat) && vr_move_use_offhand)
-				{
-					player->mo->ThrustAngleOffset = DAngle::fromDeg(RAD2DEG(atan2f(-mat[2][2], -mat[2][0]))) - player->mo->Angles.Yaw;
-				}
-				else
-				{
-					player->mo->ThrustAngleOffset = nullAngle;
-				}
-				auto vel = player->mo->Vel;
-				player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) * vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
-				bool wasOnGround = player->mo->Z() <= player->mo->floorz;
-				float oldZ = player->mo->Z();
-				P_XYMovement(player->mo, DVector2(0, 0));
-
-				//if we were on the ground before offsetting, make sure we still are (this fixes not being able to move on lifts)
-				if (player->mo->Z() >= oldZ && wasOnGround)
-				{
-					player->mo->SetZ(player->mo->floorz);
-				}
-				else
-				{
-					player->mo->SetZ(oldZ);
-				}
-				player->mo->Vel = vel;
-				openvr_origin += openvr_dpos;
+				resetDoomYaw = true;
 			}
+			else if (gamestate == GS_LEVEL && resetDoomYaw && r_viewpoint.camera != nullptr)
+			{
+				doomYaw = (float)r_viewpoint.camera->Angles.Yaw.Degrees();
+				resetDoomYaw = false;
+			}
+
+			if (gamestate == GS_LEVEL && menuactive == MENU_Off)
+			{
+				if (player && player->mo)
+				{
+					double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+
+					// Thanks to Emawind for the codes for natural crouching
+					if (!vr_crouch_use_button)
+					{
+						static double defaultViewHeight = player->DefaultViewHeight();
+						player->crouching = 10;
+						player->crouchfactor = HmdHeight / defaultViewHeight;
+					}
+					else if (player->crouching == 10)
+					{
+						player->Uncrouch();
+					}
+
+					LSMatrix44 mat;
+					if (GetWeaponTransform(&mat, VR_MAINHAND))
+					{
+						player->mo->AttackPos.X = mat[3][0];
+						player->mo->AttackPos.Y = mat[3][2];
+						player->mo->AttackPos.Z = mat[3][1];
+
+						getMainHandAngles();
+
+						player->mo->AttackAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - weaponangles[YAW]);
+						player->mo->AttackPitch = DAngle::fromDeg(-weaponangles[PITCH]);
+						player->mo->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
+					}
+
+					LSMatrix44 matOffhand;
+					if (GetWeaponTransform(&matOffhand, VR_OFFHAND))
+					{
+						player->mo->OffhandPos.X = matOffhand[3][0];
+						player->mo->OffhandPos.Y = matOffhand[3][2];
+						player->mo->OffhandPos.Z = matOffhand[3][1];
+
+						getOffHandAngles();
+
+						player->mo->OffhandAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - offhandangles[YAW]);
+						player->mo->OffhandPitch = DAngle::fromDeg(-offhandangles[PITCH]);
+						player->mo->OffhandRoll = DAngle::fromDeg(offhandangles[ROLL]);
+					}
+
+					// Teleport locomotion. Thanks to DrBeef for the codes
+					if (vr_teleport && player->mo->health > 0) {
+
+						DAngle yaw = DAngle::fromDeg(-deltaYawDegrees - 90 - offhandangles[YAW]);
+						DAngle pitch = DAngle::fromDeg(offhandangles[PITCH]);
+
+						// Teleport Logic
+						if (ready_teleport) {
+							FLineTraceData trace;
+							DPrintf(DMSG_NOTIFY, "teleport sz:%2.f\n", matOffhand[3][1]);
+							if (P_LineTrace(player->mo, yaw, 8192, pitch, TRF_ABSOFFSET | TRF_BLOCKUSE | TRF_BLOCKSELF | TRF_SOLIDACTORS,
+								matOffhand[3][1], 0, 0, &trace))
+							{
+								m_TeleportTarget = trace.HitType;
+								m_TeleportLocation = trace.HitLocation;
+							}
+							else {
+								m_TeleportTarget = TRACE_HitNone;
+								m_TeleportLocation = DVector3(0, 0, 0);
+							}
+						}
+						else if (trigger_teleport && m_TeleportTarget == TRACE_HitFloor) {
+							auto vel = player->mo->Vel;
+							player->mo->Vel = DVector3(m_TeleportLocation.X - player->mo->X(),
+								m_TeleportLocation.Y - player->mo->Y(), 0);
+							bool wasOnGround = player->mo->Z() <= player->mo->floorz + 0.1;
+							double oldZ = player->mo->Z();
+							P_XYMovement(player->mo, DVector2(0, 0));
+
+							//if we were on the ground before offsetting, make sure we still are (this fixes not being able to move on lifts)
+							if (player->mo->Z() >= oldZ && wasOnGround) {
+								player->mo->SetZ(player->mo->floorz);
+							}
+							else {
+								player->mo->SetZ(oldZ);
+							}
+							player->mo->Vel = vel;
+						}
+
+						trigger_teleport = false;
+					}
+
+					bool rightHanded = vr_control_scheme < 10;
+					// if right handed we use the left controller otherwise right controller
+					if (GetHandTransform(rightHanded ? 0 : 1, &mat) && vr_move_use_offhand)
+					{
+						player->mo->ThrustAngleOffset = DAngle::fromDeg(RAD2DEG(atan2f(-mat[2][2], -mat[2][0]))) - player->mo->Angles.Yaw;
+					}
+					else
+					{
+						player->mo->ThrustAngleOffset = nullAngle;
+					}
+
+					//Positional Movement
+					auto vel = player->mo->Vel;
+					player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) * vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
+					bool wasOnGround = player->mo->Z() <= player->mo->floorz;
+					float oldZ = player->mo->Z();
+					P_XYMovement(player->mo, DVector2(0, 0));
+
+					//if we were on the ground before offsetting, make sure we still are (this fixes not being able to move on lifts)
+					if (player->mo->Z() >= oldZ && wasOnGround)
+					{
+						player->mo->SetZ(player->mo->floorz);
+					}
+					else
+					{
+						player->mo->SetZ(oldZ);
+					}
+					player->mo->Vel = vel;
+					openvr_origin += openvr_dpos;
+				}
+				updateHmdPose(r_viewpoint, eulerAngles.v[0], eulerAngles.v[1], eulerAngles.v[2]);
+			}  // not in menu section
 		}
 
 		I_StartupOpenVR();
@@ -2269,7 +2312,7 @@ namespace s3d
 	/* virtual */
 	void OpenVRMode::TearDown() const
 	{
-		if (gamestate == GS_LEVEL) {
+		if (gamestate == GS_LEVEL && cachedScreenBlocks != 0 && !menuactive) {
 			screenblocks = cachedScreenBlocks;
 		}
 		super::TearDown();
@@ -2308,6 +2351,13 @@ ADD_STAT(remotestats)
 		s3d::leftTrackedRemoteState_new.rAxis[axisJoystick].y,
 		s3d::rightTrackedRemoteState_new.rAxis[axisJoystick].x,
 		s3d::rightTrackedRemoteState_new.rAxis[axisJoystick].y);
+
+		if (s3d::controllers[0].active && s3d::controllers[0].pose.bPoseIsValid) {
+			const HmdMatrix34_t& poseMatrix = s3d::controllers[0].pose.mDeviceToAbsoluteTracking;
+			float x = poseMatrix.m[0][3];
+			float y = poseMatrix.m[1][3];
+			float z = poseMatrix.m[2][3];
+		}
 
 	return out;
 }

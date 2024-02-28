@@ -47,12 +47,13 @@
 #include "g_levellocals.h" // pixelstretch
 #include "math/cmath.h"
 #include "c_cvars.h"
+#include "c_console.h"
+#include "c_dispatch.h"
 #include "cmdlib.h"
 #include "LSMatrix.h"
 #include "d_gui.h"
 #include "d_event.h"
 #include "doomstat.h"
-#include "c_console.h"
 #include "hw_models.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
 #include "hwrenderer/data/flatvertices.h"
@@ -113,6 +114,7 @@ extern vec3_t offhandangles;
 extern float playerYaw;
 extern float doomYaw;
 extern float previousPitch;
+extern float snapTurn;
 
 extern bool ready_teleport;
 extern bool trigger_teleport;
@@ -120,6 +122,8 @@ extern bool shutdown;
 extern bool resetDoomYaw;
 extern bool resetPreviousPitch;
 extern bool cinemamode;
+extern float cinemamodeYaw;
+extern float cinemamodePitch;
 
 bool TBXR_FrameSetup();
 void TBXR_prepareEyeBuffer(int eye );
@@ -754,5 +758,21 @@ namespace s3d
     }
 
 } /* namespace s3d */
+
+CCMD (cinemamode)
+{
+    cinemamode = !cinemamode;
+
+    //Store these
+    cinemamodeYaw = hmdorientation[YAW] + snapTurn;
+    cinemamodePitch = hmdorientation[PITCH];
+
+    //Reset angles back to normal view
+    if (!cinemamode)
+    {
+        resetDoomYaw = true;
+        resetPreviousPitch = true;
+    }
+}
 
 #endif  // USE_OPENXR
