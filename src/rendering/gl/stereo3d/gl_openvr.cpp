@@ -694,7 +694,7 @@ namespace s3d
 
 		// Pitch and Roll are identical between OpenVR and Doom worlds.
 		// But yaw can differ, depending on starting state, and controller movement.
-		float doomYawDegrees = getViewpointYaw();
+		float doomYawDegrees = vp.HWAngles.Yaw.Degrees();
 		float openVrYawDegrees = RAD2DEG(-eulerAnglesFromMatrix(hmdPose).v[0]);
 		deltaYawDegrees = doomYawDegrees - openVrYawDegrees;
 		while (deltaYawDegrees > 180)
