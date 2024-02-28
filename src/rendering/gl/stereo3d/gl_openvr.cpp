@@ -932,6 +932,13 @@ namespace s3d
 		}
 	}
 
+	const VRMode &OpenVRMode::getInstance()
+	{
+		static OpenVREyePose vrmi_openvr_eyes[2] = { OpenVREyePose(0, 0., 1.), OpenVREyePose(1, 0., 1.) };
+		static OpenVRMode instance(vrmi_openvr_eyes);
+		return instance;
+	}
+
 	OpenVRMode::OpenVRMode(OpenVREyePose eyes[2])
 		: VRMode(2, 1.f, 1.f, 1.f, eyes)
 		, vrSystem(nullptr)
