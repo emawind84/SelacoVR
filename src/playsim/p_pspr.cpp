@@ -46,6 +46,7 @@
 #include "g_levellocals.h"
 #include "vm.h"
 #include "sbar.h"
+#include "hw_vrmodes.h"
 
 #include <QzDoom/VrCommon.h>
 

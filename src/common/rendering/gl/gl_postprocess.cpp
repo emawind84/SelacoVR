@@ -133,7 +133,7 @@ void FGLRenderer::Flush()
 				eye->AdjustBlend(nullptr);
 				screen->Draw2D(true);
 			}
-			if (vr_mode == 10 || (!is2D && !getMenuState()))
+			if (vr_mode == 10 || (!is2D && menuactive == MENU_Off))
 			{
 				eye->AdjustHud();
 			}

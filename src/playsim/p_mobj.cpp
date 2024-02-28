@@ -99,7 +99,7 @@
 #include "actorinlines.h"
 #include "a_dynlight.h"
 #include "fragglescript/t_fs.h"
-#include "hwrenderer/data/hw_vrmodes.h"
+#include "hw_vrmodes.h"
 #include "shadowinlines.h"
 
 #include <QzDoom/VrCommon.h>
@@ -901,8 +901,9 @@ bool P_GiveBody(AActor *actor, int num, int max)
 				if (player == &players[consoleplayer])
 				{
 					float level = (float)(0.4 + (0.6 * (num / 100.0)));
-					QzDoom_Vibrate(100, 0, level); // left
-					QzDoom_Vibrate(100, 1, level); // right
+					auto vrmode = VRMode::GetVRMode(true);
+					vrmode->Vibrate(100, 0, level); // left
+					vrmode->Vibrate(100, 1, level); // right
 
 					VR_HapticEvent("healstation", 0, 100 * level * C_GetExternalHapticLevelValue("healstation"), 0, 0);
 				}

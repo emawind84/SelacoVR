@@ -517,7 +517,7 @@ namespace s3d
             return;
         }
 
-        if (gamestate == GS_LEVEL && getMenuState() == MENU_Off) {
+        if (gamestate == GS_LEVEL && menuactive == MENU_Off) {
             cachedScreenBlocks = screenblocks;
             screenblocks = 12;
             QzDoom_setUseScreenLayer(false);
@@ -530,7 +530,7 @@ namespace s3d
         player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 
         //Some crazy stuff to ascertain the actual yaw that doom is using at the right times!
-        if (getGameState() != GS_LEVEL || getMenuState() != MENU_Off 
+        if (gamestate != GS_LEVEL || menuactive != MENU_Off 
         || ConsoleState == c_down || ConsoleState == c_falling 
         || (player && player->playerstate == PST_DEAD)
         || (player && player->resetDoomYaw)
@@ -539,13 +539,13 @@ namespace s3d
         {
             resetDoomYaw = true;
         }
-        else if (getGameState() == GS_LEVEL && resetDoomYaw && r_viewpoint.camera != nullptr)
+        else if (gamestate == GS_LEVEL && resetDoomYaw && r_viewpoint.camera != nullptr)
         {
             doomYaw = (float)r_viewpoint.camera->Angles.Yaw.Degrees();
             resetDoomYaw = false;
         }
 
-        if (gamestate == GS_LEVEL && getMenuState() == MENU_Off)
+        if (gamestate == GS_LEVEL && menuactive == MENU_Off)
         {
             if (player && player->mo)
             {
@@ -680,6 +680,8 @@ namespace s3d
         float yaw=0;
         float pitch=0;
         float roll=0;
+
+        // the yaw returned contains snapTurn input value
         VR_GetMove(&dummy, &dummy, &dummy, &dummy, &dummy, &yaw, &pitch, &roll);
 
         //Yaw
@@ -714,7 +716,7 @@ namespace s3d
 
         if (!cinemamode)
         {
-            if (getGameState() == GS_LEVEL && getMenuState() == MENU_Off)
+            if (gamestate == GS_LEVEL && menuactive == MENU_Off)
             {
                 doomYaw += hmdYawDeltaDegrees;
                 vp.HWAngles.Roll = FAngle::fromDeg(roll);
@@ -740,7 +742,7 @@ namespace s3d
 /* virtual */
     void OpenXRDeviceMode::TearDown() const
     {
-        if (getGameState() == GS_LEVEL && cachedScreenBlocks != 0 && !getMenuState()) {
+        if (gamestate == GS_LEVEL && cachedScreenBlocks != 0 && !menuactive) {
             screenblocks = cachedScreenBlocks;
         }
         super::TearDown();

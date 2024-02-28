@@ -95,6 +95,7 @@
 #include "gstrings.h"
 #include "s_music.h"
 #include "d_main.h"
+#include "hw_vrmodes.h"
 
 static FRandom pr_skullpop ("SkullPop");
 

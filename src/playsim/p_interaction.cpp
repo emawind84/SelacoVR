@@ -1887,8 +1887,9 @@ void P_PoisonDamage (player_t *player, AActor *source, int damage, bool playPain
 		//Haptic feedback when hurt - level indicates amount of damage
 		float temp = damage < 100 ? damage : 100;
 		float level = (float)(0.4 + (0.6 * (temp / 100.0)));
-		QzDoom_Vibrate(500, 0, level); // left
-		QzDoom_Vibrate(500, 1, level); // right
+		auto vrmode = VRMode::GetVRMode(true);
+		vrmode->Vibrate(500, 0, level); // left
+		vrmode->Vibrate(500, 1, level); // right
 
 		VR_HapticEvent(player->poisontype.GetChars(), 0, 100 * C_GetExternalHapticLevelValue("poison"), 0, 0);
 	}

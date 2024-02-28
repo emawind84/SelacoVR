@@ -90,3 +90,9 @@ struct VRMode
 	virtual bool IsInitialized() const { return true; }
 	virtual void Vibrate(float duration, int channel, float intensity) const { }
 };
+
+void VR_HapticEvent(const char* event, int position, int intensity, float angle, float yHeight );
+void QzDoom_GetScreenRes(uint32_t *width, uint32_t *height);
+void QzDoom_Vibrate(float duration, int channel, float intensity );
+
+extern bool weaponStabilised;
