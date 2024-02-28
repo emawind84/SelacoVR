@@ -532,6 +532,9 @@ OptionValue "Layouts"
 	1, "QZD Dual Wield"
 	2, "QZD Classic"
 	3, "QZD Koopa"
+	4, "$OPTVAL_MODERN"
+	5, "$OPTVAL_CLASSICZ"
+	6, "$OPTVAL_MODERNLEFT"
 }
 
 OptionMenu "CustomizeControls" protected
@@ -3180,8 +3183,8 @@ OptionMenu "OpenGLOptions" protected
 	Option "$GLPREFMNU_RENDERSKYDOME",			gl_skydome, 					"YesNo"
 	StaticText " "
 	Slider "$GLPREFMNU_MENUBLUR",				gl_menu_blur, 0, 5.0, 0.5, 2
-	//StaticText " "
-	//Option "$GLPREFMNU_MULTISAMPLE", 			gl_multisample,					"Multisample"
+	StaticText " "
+	Option "$GLPREFMNU_MULTISAMPLE", 			gl_multisample,					"Multisample"
 	StaticText " "
 	Option "Global fade",						gl_global_fade, "OnOff"
 	Slider "Global fade density",				gl_global_fade_density, 0.0001, 0.005, 0.0001, 4

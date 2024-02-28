@@ -792,6 +792,14 @@ void C_BindDefaults()
 	case 3:
 		defbinds = "engine/defbind3.txt";
 		break;
+	case 4:
+		defbinds = "engine/defbinds.txt";
+		break;
+	case 5:
+		defbinds = "engine/origbinds.txt";
+		break;
+	case 6:
+		defbinds = "engine/leftbinds.txt";
 	}
 
 	C_SetDefaultKeys(defbinds);
