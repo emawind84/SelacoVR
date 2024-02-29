@@ -32,12 +32,11 @@
 #include <string>
 #include <map>
 #include <cmath>
-#include "gl_load/gl_system.h"
 #include "p_trace.h"
 #include "p_linetracedata.h"
+#include "gl_load/gl_system.h"
 #include "doomtype.h" // Printf
 #include "d_player.h"
-#include "c_console.h"
 #include "g_game.h" // G_Add...
 #include "p_local.h" // P_TryMove
 #include "gl_renderer.h"
@@ -50,9 +49,10 @@
 #include "g_levellocals.h" // pixelstretch
 #include "g_statusbar/sbar.h"
 #include "c_cvars.h"
+#include "c_console.h"
+#include "c_dispatch.h"
 #include "cmdlib.h"
 #include "LSMatrix.h"
-//#include "common/filesystem/filesystem.h"
 #include "m_joy.h"
 #include "d_gui.h"
 #include "d_event.h"
@@ -90,6 +90,13 @@ float I_OpenVRGetDirectionalMove();
 float length(float x, float y);
 float nonLinearFilter(float in);
 
+void QzDoom_setUseScreenLayer(bool use);
+
+bool VR_UseScreenLayer();
+void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float *hmd_side, float *up, float *yaw, float *pitch, float *roll );
+void VR_SetHMDOrientation(float pitch, float yaw, float roll );
+void VR_SetHMDPosition(float x, float y, float z );
+
 extern class DMenu* CurrentMenu;
 
 #ifdef DYN_OPENVR
@@ -123,6 +130,9 @@ typedef enum control_scheme {
     LEFT_HANDED_ALT = 11       // x,y,a,b - trigger,grip,joystick btn,thumb right/left - joystick axis left/right
 } control_scheme_t;
 
+extern vec3_t hmdPosition;
+extern vec3_t hmdorientation;
+extern vec3_t weaponoffset;
 extern vec3_t weaponoffset;
 extern vec3_t weaponangles;
 extern vec3_t offhandoffset;
@@ -140,6 +150,8 @@ extern bool trigger_teleport;
 extern bool resetDoomYaw;
 extern bool resetPreviousPitch;
 extern bool cinemamode;
+extern float cinemamodeYaw;
+extern float cinemamodePitch;
 
 double HmdHeight;
 
@@ -877,7 +889,7 @@ namespace s3d
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		static VRTextureBounds_t tBounds = { 0, 0, 1, 1 };
-
+#if 0
 		// we will disable overlay mode based on controller pitch
 		float controller1Pitch = DAngle::fromDeg(offhandangles[PITCH]).Degrees();
 		float controller2Pitch = DAngle::fromDeg(weaponangles[PITCH]).Degrees();
@@ -888,10 +900,9 @@ namespace s3d
 			forceDisableOverlay = true;
 		else
 			forceDisableOverlay = false;
-
-		if(forceDisableOverlay || vr_overlayscreen == 0 || (!vr_overlayscreen_always &&
-			!paused && menuactive == MENU_Off && gamestate != GS_INTRO && gamestate != GS_TITLELEVEL && gamestate != GS_INTERMISSION && gamestate != GS_DEMOSCREEN && gamestate != GS_MENUSCREEN)
-		) {
+#endif
+		if(forceDisableOverlay || !VR_UseScreenLayer())
+		{
 			//clear and hide overlay when not in use
 			vrOverlay->ClearOverlayTexture(overlayHandle);
 			vrOverlay->HideOverlay(overlayHandle);
@@ -985,16 +996,14 @@ namespace s3d
 
 			if (getHUDValue<FBoolCVarRef>(vr_automap_fixed_roll, vr_hud_fixed_roll))
 			{
-				float openVrRollDegrees = RAD2DEG(-eulerAnglesFromMatrix(this->currentPose->mDeviceToAbsoluteTracking).v[2]);
-				if (doTrackHmdAngles) new_projection.rotate(-openVrRollDegrees, 0, 0, 1);
+				if (doTrackHmdAngles) new_projection.rotate(-hmdorientation[ROLL], 0, 0, 1);
 			}
 
 			new_projection.rotate(getHUDValue<FFloatCVarRef>(vr_automap_rotate, vr_hud_rotate), 1, 0, 0);
 
 			if (getHUDValue<FBoolCVarRef>(vr_automap_fixed_pitch, vr_hud_fixed_pitch))
 			{
-				float openVrPitchDegrees = RAD2DEG(-eulerAnglesFromMatrix(this->currentPose->mDeviceToAbsoluteTracking).v[1]);
-				if(doTrackHmdAngles) new_projection.rotate(-openVrPitchDegrees, 1, 0, 0);
+				if(doTrackHmdAngles) new_projection.rotate(-hmdorientation[PITCH], 1, 0, 0);
 			}
 		}
 
@@ -1162,12 +1171,12 @@ namespace s3d
 		TrackedDeviceIndex_t mainhandOverlayIndex = controllers[rightHanded ? 1 : 0].active ? controllers[rightHanded ? 1 : 0].index : openvr::vr::k_unTrackedDeviceIndex_Hmd;
 		TrackedDeviceIndex_t offhandOverlayIndex = controllers[rightHanded ? 0 : 1].active ? controllers[rightHanded ? 0 : 1].index : openvr::vr::k_unTrackedDeviceIndex_Hmd;
 
-		int overlayscreen_pos = vr_overlayscreen;
+		//int overlayscreen_pos = vr_overlayscreen;
 		// when overlay follow-mode is set to the controllers it makes more sense to lock it in stationary position
 		// if the user decides to play the game in the overlay screen (to prevent nausea/gamepad user?)
-		if (vr_overlayscreen_always && vr_overlayscreen > 2) overlayscreen_pos = 1;
+		//if (vr_overlayscreen_always && vr_overlayscreen > 2) overlayscreen_pos = 1;
 
-		switch (overlayscreen_pos) {
+		switch (vr_overlayscreen) {
 		case 1: // overlay stationary position
 		{
 			HmdMatrix34_t oAbsTransform = {
@@ -1350,21 +1359,15 @@ namespace s3d
 		}
 	}
 
-	void OpenVRMode::updateHmdPose(
-
-		FRenderViewpoint& vp,
-		double hmdYawRadians,
-		double hmdPitchRadians,
-		double hmdRollRadians) const
+	void OpenVRMode::updateHmdPose(FRenderViewpoint& vp) const
 	{
-		if(vr_snap_turning){
-			hmdYaw = hmdYawRadians + DEG2RAD(snapTurn);
-		}
-		else {
-			hmdYaw = hmdYawRadians;
-		}
-		double hmdpitch = hmdPitchRadians;
-		double hmdroll = hmdRollRadians;
+		float dummy=0;
+		float hmdYaw=0;
+		float hmdpitch=0;
+		float hmdroll=0;
+
+		// the yaw returned contains snapTurn input value
+		VR_GetMove(&dummy, &dummy, &dummy, &dummy, &dummy, &hmdYaw, &hmdpitch, &hmdroll);
 
 		double hmdYawDeltaRadians = 0;
 		if (doTrackHmdYaw) {
@@ -1575,19 +1578,19 @@ namespace s3d
 			secondaryButton1 = offButton1;
 			secondaryButton2 = offButton2;
 		}
-#if 0
+
 		//In cinema mode, right-stick controls mouse
 		const float mouseSpeed = 3.0f;
 		if (cinemamode)
 		{
-			if (fabs(pPrimaryTrackedRemoteNew->Joystick.x) > 0.1f) {
-				cinemamodeYaw -= mouseSpeed * pPrimaryTrackedRemoteNew->Joystick.x;
+			if (fabs(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x) > 0.1f) {
+				cinemamodeYaw -= mouseSpeed * pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x;
 			}
-			if (fabs(pPrimaryTrackedRemoteNew->Joystick.y) > 0.1f) {
-				cinemamodePitch -= mouseSpeed * pPrimaryTrackedRemoteNew->Joystick.y;
+			if (fabs(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y) > 0.1f) {
+				cinemamodePitch -= mouseSpeed * pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y;
 			}
 		}
-#endif
+
 		// Only do the following if we are definitely not in the menu
 		if (gamestate == GS_LEVEL && menuactive == MENU_Off && !paused)
 		{
@@ -2209,11 +2212,17 @@ namespace s3d
 
 		haptics->ProcessHaptics();
 
-		if (gamestate == GS_LEVEL && menuactive == MENU_Off) {
+		if (gamestate == GS_LEVEL && menuactive == MENU_Off && !paused) {
 			cachedScreenBlocks = screenblocks;
 			screenblocks = 12; // always be full-screen during 3D scene render
+			QzDoom_setUseScreenLayer(false);
 		}
-		else if (gamestate != GS_TITLELEVEL) {
+		else {
+			//Ensure we are drawing on virtual screen
+			QzDoom_setUseScreenLayer(true);
+		}
+		
+		if (gamestate != GS_TITLELEVEL) {
 			// TODO: Draw a more interesting background behind the 2D screen
 			const int eyeCount = mEyeCount;
 			GLRenderer->mBuffers->CurrentEye() = 0;  // always begin at zero, in case eye count changed
@@ -2241,6 +2250,10 @@ namespace s3d
 		if (hmdPose0.bPoseIsValid) {
 			const HmdMatrix34_t& hmdPose = hmdPose0.mDeviceToAbsoluteTracking;
 			HmdVector3d_t eulerAngles = eulerAnglesFromMatrix(hmdPose);
+
+			// TODO we should prepare the hmd pos and orientation here
+			VR_SetHMDPosition(hmdPose.m[0][3], hmdPose.m[1][3], hmdPose.m[2][3]);
+			VR_SetHMDOrientation(eulerAngles.v[1], eulerAngles.v[0], eulerAngles.v[2]);
 			
 			leftEyeView->setCurrentHmdPose(&hmdPose0);
 			rightEyeView->setCurrentHmdPose(&hmdPose0);
@@ -2370,8 +2383,10 @@ namespace s3d
 
 						getMainHandAngles();
 
+						player->mo->AttackPitch = DAngle::fromDeg(cinemamode ? 
+							-weaponangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees() :
+							-weaponangles[PITCH]);
 						player->mo->AttackAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - weaponangles[YAW]);
-						player->mo->AttackPitch = DAngle::fromDeg(-weaponangles[PITCH]);
 						player->mo->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
 					}
 
@@ -2384,8 +2399,10 @@ namespace s3d
 
 						getOffHandAngles();
 
+						player->mo->OffhandPitch = DAngle::fromDeg(cinemamode ? 
+							-offhandangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees() : 
+							-offhandangles[PITCH]);
 						player->mo->OffhandAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - offhandangles[YAW]);
-						player->mo->OffhandPitch = DAngle::fromDeg(-offhandangles[PITCH]);
 						player->mo->OffhandRoll = DAngle::fromDeg(offhandangles[ROLL]);
 					}
 
@@ -2461,7 +2478,7 @@ namespace s3d
 					player->mo->Vel = vel;
 					openvr_origin += openvr_dpos;
 				}
-				updateHmdPose(r_viewpoint, eulerAngles.v[0], eulerAngles.v[1], eulerAngles.v[2]);
+				updateHmdPose(r_viewpoint);
 			}  // not in menu section
 		}
 
@@ -2537,6 +2554,22 @@ ADD_STAT(remotestats)
 		}
 
 	return out;
+}
+
+CCMD (cinemamode)
+{
+	cinemamode = !cinemamode;
+
+	//Store these
+	cinemamodeYaw = hmdorientation[YAW] + snapTurn;
+	cinemamodePitch = hmdorientation[PITCH];
+
+	//Reset angles back to normal view
+	if (!cinemamode)
+	{
+		resetDoomYaw = true;
+		resetPreviousPitch = true;
+	}
 }
 
 #endif

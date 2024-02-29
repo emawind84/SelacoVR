@@ -125,8 +125,8 @@ public:
 
 protected:
 	OpenVRMode();
-	// void updateDoomViewDirection() const;
-	void updateHmdPose(FRenderViewpoint& vp, double hmdYawRadians, double hmdPitchRadians, double hmdRollRadians) const;
+	
+	void updateHmdPose(FRenderViewpoint& vp) const;
 
 	OpenVREyePose* leftEyeView;
 	OpenVREyePose* rightEyeView;
