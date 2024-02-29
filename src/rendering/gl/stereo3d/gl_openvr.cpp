@@ -132,6 +132,7 @@ typedef enum control_scheme {
 
 extern vec3_t hmdPosition;
 extern vec3_t hmdorientation;
+extern vec3_t positionDeltaThisFrame;
 extern vec3_t weaponoffset;
 extern vec3_t weaponangles;
 extern vec3_t offhandoffset;
@@ -143,6 +144,8 @@ extern float previousPitch;
 extern float snapTurn;
 extern float remote_movementSideways;
 extern float remote_movementForward;
+extern float positional_movementSideways;
+extern float positional_movementForward;
 
 extern bool ready_teleport;
 extern bool trigger_teleport;
@@ -1676,32 +1679,17 @@ namespace s3d
 					controllerYawHeading = 0.0f;
 				}
 			}
-
+#endif
 			//Positional movement
 			{
-				// ALOGV("        Right-Controller-Position: %f, %f, %f",
-				// 	pDominantTracking->Pose.position.x,
-				// 	pDominantTracking->Pose.position.y,
-				// 	pDominantTracking->Pose.position.z);
-
-				vec2_t v;
-				rotateAboutOrigin(positionDeltaThisFrame[0], positionDeltaThisFrame[2],
-								-(doomYaw - hmdorientation[YAW]), v);
-				positional_movementSideways = v[1];
-				positional_movementForward = v[0];
-
-				ALOGV("        positional_movementSideways: %f, positional_movementForward: %f",
-					positional_movementSideways,
-					positional_movementForward);
+				//DVector2 v = DVector2(positionDeltaThisFrame[0], positionDeltaThisFrame[2]).Rotated(DAngle::fromDeg(-(doomYaw - hmdorientation[YAW])));
+				DVector2 v = DVector2(-openvr_dpos.x, openvr_dpos.z).Rotated(openvr_to_doom_angle);
+				positional_movementSideways = v.Y;
+				positional_movementForward = v.X;
 			}
-#endif
+
 			//Off-hand specific stuff
 			{
-				// ALOGV("        Left-Controller-Position: %f, %f, %f",
-				// 	pOffTracking->Pose.position.x,
-				// 	pOffTracking->Pose.position.y,
-				// 	pOffTracking->Pose.position.z);
-
 				//Teleport - only does anything if vr_teleport cvar is true
 				if (vr_teleport) {
 					if ((pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f) && !ready_teleport) {
@@ -1731,9 +1719,6 @@ namespace s3d
 
 				remote_movementSideways = x;
 				remote_movementForward = y;
-				// ALOGV("        remote_movementSideways: %f, remote_movementForward: %f",
-				// 	remote_movementSideways,
-				// 	remote_movementForward);
 			}
 
 			if (!cinemamode && !dominantGripPushedNew)
@@ -2446,8 +2431,13 @@ namespace s3d
 					}
 
 					//Positional Movement
+					float hmd_forward=0;
+					float hmd_side=0;
+					float dummy=0;
+					VR_GetMove(&dummy, &dummy, &hmd_forward, &hmd_side, &dummy, &dummy, &dummy, &dummy);
+
 					auto vel = player->mo->Vel;
-					player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) * vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
+					player->mo->Vel = DVector3((DVector2(hmd_side, hmd_forward) * vr_vunits_per_meter), 0);
 					bool wasOnGround = player->mo->Z() <= player->mo->floorz;
 					float oldZ = player->mo->Z();
 					P_XYMovement(player->mo, DVector2(0, 0));

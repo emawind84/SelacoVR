@@ -11,8 +11,10 @@ vec3_t weaponangles;
 vec3_t weaponoffset;
 vec3_t offhandangles;
 vec3_t offhandoffset;
+vec3_t worldPosition;
 vec3_t hmdPosition;
 vec3_t hmdorientation;
+vec3_t positionDeltaThisFrame;
 
 bool weaponStabilised;
 bool resetDoomYaw;
@@ -30,6 +32,8 @@ float cinemamodeYaw;
 float cinemamodePitch;
 float remote_movementSideways;
 float remote_movementForward;
+float positional_movementSideways;
+float positional_movementForward;
 
 //This is now controlled by the engine
 static bool useVirtualScreen = false;
@@ -74,8 +78,6 @@ bool VR_UseScreenLayer()
 	return vr_overlayscreen && (useVirtualScreen || cinemamode || vr_overlayscreen_always);
 }
 
-#define VectorSet(v, x, y, z) ((v)[0]=(x),(v)[1]=(y),(v)[2]=(z))
-
 void VR_SetHMDOrientation(float pitch, float yaw, float roll)
 {
 	VectorSet(hmdorientation, pitch, yaw, roll);
@@ -90,13 +92,13 @@ void VR_SetHMDPosition(float x, float y, float z )
 {
  	VectorSet(hmdPosition, x, y, z);
 
-	// positionDeltaThisFrame[0] = (worldPosition[0] - x);
-	// positionDeltaThisFrame[1] = (worldPosition[1] - y);
-	// positionDeltaThisFrame[2] = (worldPosition[2] - z);
+	positionDeltaThisFrame[0] = (worldPosition[0] - x);
+	positionDeltaThisFrame[1] = (worldPosition[1] - y);
+	positionDeltaThisFrame[2] = (worldPosition[2] - z);
 
-	// worldPosition[0] = x;
-	// worldPosition[1] = y;
-	// worldPosition[2] = z;
+	worldPosition[0] = x;
+	worldPosition[1] = y;
+	worldPosition[2] = z;
 }
 
 static float DEG2RAD(float deg)
@@ -109,9 +111,9 @@ void VR_GetMove(float *joy_forward, float *joy_side, float *hmd_forward, float *
 {
     *joy_forward = remote_movementForward;
     *joy_side = remote_movementSideways;
-    *hmd_forward = 0.f;
-    *hmd_side = 0.f;
-    *up = 0.f;
+    *hmd_forward = positional_movementForward;
+    *hmd_side = positional_movementSideways;
+    *up = 0.0f;
     *yaw = cinemamode ? cinemamodeYaw : hmdorientation[YAW] + (vr_snap_turning ? DEG2RAD(snapTurn) : 0.);
 	*pitch = cinemamode ? cinemamodePitch : hmdorientation[PITCH];
 	*roll = cinemamode ? 0.0f : hmdorientation[ROLL];
