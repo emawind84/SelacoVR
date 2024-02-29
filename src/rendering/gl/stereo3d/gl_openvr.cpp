@@ -133,7 +133,6 @@ typedef enum control_scheme {
 extern vec3_t hmdPosition;
 extern vec3_t hmdorientation;
 extern vec3_t weaponoffset;
-extern vec3_t weaponoffset;
 extern vec3_t weaponangles;
 extern vec3_t offhandoffset;
 extern vec3_t offhandangles;
@@ -889,18 +888,7 @@ namespace s3d
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		static VRTextureBounds_t tBounds = { 0, 0, 1, 1 };
-#if 0
-		// we will disable overlay mode based on controller pitch
-		float controller1Pitch = DAngle::fromDeg(offhandangles[PITCH]).Degrees();
-		float controller2Pitch = DAngle::fromDeg(weaponangles[PITCH]).Degrees();
 
-		if (vr_overlayscreen > 0 && menuactive == MENU_On &&
-			(controller1Pitch > 60 || controller1Pitch < -60 || controller2Pitch > 60 || controller2Pitch < -60)
-			)
-			forceDisableOverlay = true;
-		else
-			forceDisableOverlay = false;
-#endif
 		if(forceDisableOverlay || !VR_UseScreenLayer())
 		{
 			//clear and hide overlay when not in use
@@ -1383,9 +1371,7 @@ namespace s3d
 			previousHmdYaw = hmdYaw;
 		}
 
-		if (!forceDisableOverlay && vr_overlayscreen > 0 &&
-			(gamestate == GS_INTRO || gamestate == GS_TITLELEVEL || gamestate == GS_INTERMISSION || gamestate == GS_DEMOSCREEN || gamestate == GS_MENUSCREEN || menuactive == MENU_On || menuactive == MENU_WaitKey || paused)
-		)
+		if (!forceDisableOverlay && VR_UseScreenLayer() && paused)
 			doTrackHmdAngles = false;
 		else
 			doTrackHmdAngles = true;
@@ -2480,7 +2466,20 @@ namespace s3d
 				}
 				updateHmdPose(r_viewpoint);
 			}  // not in menu section
-		}
+
+#if 0
+			// we will disable overlay mode based on controller pitch
+			float controller1Pitch = DAngle::fromDeg(offhandangles[PITCH]).Degrees();
+			float controller2Pitch = DAngle::fromDeg(weaponangles[PITCH]).Degrees();
+
+			if (vr_overlayscreen > 0 && menuactive == MENU_On &&
+				(controller1Pitch > 60 || controller1Pitch < -60 || controller2Pitch > 60 || controller2Pitch < -60)
+				)
+				forceDisableOverlay = true;
+			else
+				forceDisableOverlay = false;
+#endif
+		}  // hmdPose0.bPoseIsValid
 
 		I_StartupOpenVR();
 
@@ -2505,7 +2504,7 @@ namespace s3d
 	/* virtual */
 	void OpenVRMode::TearDown() const
 	{
-		if (gamestate == GS_LEVEL && cachedScreenBlocks != 0 && !menuactive) {
+		if (cachedScreenBlocks != 0 && gamestate == GS_LEVEL && menuactive == MENU_Off && !paused) {
 			screenblocks = cachedScreenBlocks;
 		}
 		super::TearDown();

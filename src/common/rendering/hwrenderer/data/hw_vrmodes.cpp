@@ -64,6 +64,13 @@ CUSTOM_CVAR(Int, vr_mode, 0, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 #endif
 }
 
+#define PITCH 0
+#define YAW 1
+#define ROLL 2
+
+typedef float vec_t;
+typedef vec_t vec3_t[3];
+
 // switch left and right eye views
 CVAR(Bool, vr_swap_eyes, false, CVAR_GLOBALCONFIG   | CVAR_ARCHIVE)
 // intraocular distance in meters
@@ -113,12 +120,15 @@ CVAR(Float, vr_momentum_threshold, 1.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_crouch_use_button, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, use_action_spawn_yzoffset, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
+CVAR(Bool, vr_enable_haptics, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_pickup_haptic_level, 0.2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_quake_haptic_level, 0.8, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_missile_haptic_level, 0.6f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 //HUD control
 CVAR(Float, vr_hud_scale, 0.25f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_hud_stereo, 1.4f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_hud_distance, 1.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_hud_rotate, 10.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_hud_fixed_pitch, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_hud_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
@@ -127,46 +137,15 @@ CVAR(Bool, vr_hud_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_automap_use_hud, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_automap_scale, 0.4f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_automap_stereo, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_automap_distance, 1.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_automap_rotate, 13.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_automap_fixed_pitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_automap_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-
-// hh79 gzdoomvr stuff
-//CVAR(Float, vr_vunits_per_meter, 32.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
-//CVAR(Float, vr_floor_offset, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // METERS
-//CVAR(Bool, openvr_rightHanded, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Bool, openvr_moveFollowsOffHand, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Bool, openvr_drawControllers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Float, openvr_weaponRotate, -40.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Float, openvr_weaponScale, 0.3f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 CVARD(Bool, vr_override_weap_pos, false, 0, "Only used for testing VR environment on PC");
 CVARD(Bool, vr_render_weap_in_scene, false, 0, "Only used for testing VR environment on PC");
 
 EXTERN_CVAR(Bool, puristmode);
-
-// hh gzdoomvr stuff
-CVAR(Bool, vr_enable_haptics, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Float, vr_pickup_haptic_level, 0.25f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Float, vr_quake_haptic_level, 0.8f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Float, vr_missile_haptic_level, 0.6f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-
-//HUD control
-//CVAR(Float, vr_hud_scale, 0.35f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Float, vr_hud_stereo, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Float, vr_hud_distance, 1.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Float, vr_hud_rotate, 5.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Bool, vr_hud_fixed_pitch, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Bool, vr_hud_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-
-//AutoMap control
-//CVAR(Bool, vr_automap_use_hud, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Float, vr_automap_scale, 0.4f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Float, vr_automap_stereo, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Float, vr_automap_distance, 1.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Float, vr_automap_rotate, 13.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Bool, vr_automap_fixed_pitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-//CVAR(Bool, vr_automap_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 #define isqrt2 0.7071067812f
 
@@ -476,18 +455,35 @@ bool between(float min, float val, float max)
     return (min < val) && (val < max);
 }
 
-ADD_STAT(playerstats)
+extern vec3_t weaponoffset;
+extern vec3_t weaponangles;
+extern vec3_t offhandoffset;
+extern vec3_t offhandangles;
+
+ADD_STAT(vrstats)
 {
 	FString out;
 
 	player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 	if (player && player->mo)
 	{
-		out.AppendFormat("AttackPos X:%2.f Y:%2.f Z:%2.f\n"
-			"AttachAngle: %2.f - AttachPitch: %2.f - AttachRoll: %2.f", 
+		out.AppendFormat("AttackPos: X=%2.f, Y=%2.f, Z=%2.f\n"
+			"AttackAngle=%2.f, AttackPitch=%2.f, AttackRoll=%2.f\n", 
 			player->mo->AttackPos.X, player->mo->AttackPos.Y, player->mo->AttackPos.Z,
 			player->mo->AttackAngle.Degrees(), player->mo->AttackPitch.Degrees(), player->mo->AttackRoll.Degrees());
+
+		out.AppendFormat("OffhandPos: X=%2.f Y=%2.f Z=%2.f\n"
+			"OffhandAngle=%2.f, OffhandPitch=%2.f, OffhandRoll=%2.f\n", 
+			player->mo->OffhandPos.X, player->mo->OffhandPos.Y, player->mo->OffhandPos.Z,
+			player->mo->OffhandAngle.Degrees(), player->mo->OffhandPitch.Degrees(), player->mo->OffhandRoll.Degrees());
 	}
+
+	out.AppendFormat("weaponangles: [Y]=%2.f, [P]=%2.f, [R]=%2.f\n"
+					"offhandangles: [Y]=%2.f, [P]=%2.f, [R]=%2.f\n",
+		weaponangles[YAW], weaponangles[PITCH], weaponangles[ROLL],
+		offhandangles[YAW], offhandangles[PITCH], offhandangles[ROLL]);
+
+	out.AppendFormat("gamestate:%d - menuactive:%d - paused:%d", gamestate, menuactive, paused);
 
 	return out;
 }
