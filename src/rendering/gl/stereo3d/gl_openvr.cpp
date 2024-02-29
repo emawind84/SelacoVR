@@ -548,6 +548,7 @@ namespace s3d
 	struct Controller
 	{
 		bool active = false;
+		TrackedDeviceIndex_t index;
 		TrackedDevicePose_t pose;
 		VRControllerState_t lastState;
 		VRControllerModel* model = nullptr;
@@ -878,8 +879,8 @@ namespace s3d
 		static VRTextureBounds_t tBounds = { 0, 0, 1, 1 };
 
 		// we will disable overlay mode based on controller pitch
-		int controller1Pitch = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[0].pose.mDeviceToAbsoluteTracking, openvr_weaponRotate).v[1]);
-		int controller2Pitch = RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[1].pose.mDeviceToAbsoluteTracking, openvr_weaponRotate).v[1]);
+		float controller1Pitch = DAngle::fromDeg(offhandangles[PITCH]).Degrees();
+		float controller2Pitch = DAngle::fromDeg(weaponangles[PITCH]).Degrees();
 
 		if (vr_overlayscreen > 0 && menuactive == MENU_On &&
 			(controller1Pitch > 60 || controller1Pitch < -60 || controller2Pitch > 60 || controller2Pitch < -60)
@@ -1157,10 +1158,9 @@ namespace s3d
 					0.0f, 0.0f, 1.0f, overlayDrawDistance
 		};
 
-		ETrackedControllerRole trackedMainHandRole = openvr_rightHanded ? ETrackedControllerRole_TrackedControllerRole_RightHand : ETrackedControllerRole_TrackedControllerRole_LeftHand;
-		ETrackedControllerRole trackedOffHandRole = openvr_rightHanded ? ETrackedControllerRole_TrackedControllerRole_LeftHand : ETrackedControllerRole_TrackedControllerRole_RightHand;
-		TrackedDeviceIndex_t mainhandOverlayIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(trackedMainHandRole);
-		TrackedDeviceIndex_t offhandOverlayIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(trackedOffHandRole);
+		bool rightHanded = vr_control_scheme < 10;
+		TrackedDeviceIndex_t mainhandOverlayIndex = controllers[rightHanded ? 1 : 0].active ? controllers[rightHanded ? 1 : 0].index : openvr::vr::k_unTrackedDeviceIndex_Hmd;
+		TrackedDeviceIndex_t offhandOverlayIndex = controllers[rightHanded ? 0 : 1].active ? controllers[rightHanded ? 0 : 1].index : openvr::vr::k_unTrackedDeviceIndex_Hmd;
 
 		int overlayscreen_pos = vr_overlayscreen;
 		// when overlay follow-mode is set to the controllers it makes more sense to lock it in stationary position
@@ -1186,25 +1186,11 @@ namespace s3d
 			break;
 
 		case 3: // overlay follows main hand movement
-			if (mainhandOverlayIndex == k_unTrackedDeviceIndexInvalid || mainhandOverlayIndex == k_unTrackedDeviceIndex_Hmd)
-			{
-				vrOverlay->SetOverlayTransformTrackedDeviceRelative(overlayHandle, openvr::vr::k_unTrackedDeviceIndex_Hmd, &vrOverlayTransform);
-			}
-			else
-			{
-				vrOverlay->SetOverlayTransformTrackedDeviceRelative(overlayHandle, mainhandOverlayIndex, &vrOverlayTransform);
-			}
+			vrOverlay->SetOverlayTransformTrackedDeviceRelative(overlayHandle, mainhandOverlayIndex, &vrOverlayTransform);
 			break;
 
 		case 4: // overlay follows off hand movement
-			if (offhandOverlayIndex == k_unTrackedDeviceIndexInvalid || offhandOverlayIndex == k_unTrackedDeviceIndex_Hmd)
-			{
-				vrOverlay->SetOverlayTransformTrackedDeviceRelative(overlayHandle, openvr::vr::k_unTrackedDeviceIndex_Hmd, &vrOverlayTransform);
-			}
-			else
-			{
-				vrOverlay->SetOverlayTransformTrackedDeviceRelative(overlayHandle, offhandOverlayIndex, &vrOverlayTransform);
-			}
+			vrOverlay->SetOverlayTransformTrackedDeviceRelative(overlayHandle, offhandOverlayIndex, &vrOverlayTransform);
 			break;
 		}
 	}
@@ -2287,6 +2273,7 @@ namespace s3d
 						controllerMeshes[model_name] = VRControllerModel(model_name, vrRenderModels);
 						assert(controllerMeshes.count(model_name) == 1);
 					}
+					controllers[role].index = i;
 					controllers[role].active = true;
 					controllers[role].pose = pose;
 					if (controllerMeshes[model_name].isLoaded())
