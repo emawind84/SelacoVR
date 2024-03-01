@@ -455,10 +455,24 @@ bool between(float min, float val, float max)
     return (min < val) && (val < max);
 }
 
+// Function to normalize an angle to the [-180, 180] range
+double normalizeAngle(double angle) {
+	// Reduce the angle to [0, 359]
+	angle = fmod(angle, 360.0);
+	// Force it to be the positive remainder
+	angle = fmod(angle + 360.0, 360.0);
+	// Normalize to the [-180, 180] range
+	if (angle > 180.0) {
+		angle -= 360.0;
+	}
+	return angle;
+}
+
 extern vec3_t weaponoffset;
 extern vec3_t weaponangles;
 extern vec3_t offhandoffset;
 extern vec3_t offhandangles;
+extern vec3_t hmdorientation;
 
 ADD_STAT(vrstats)
 {
@@ -478,10 +492,17 @@ ADD_STAT(vrstats)
 			player->mo->OffhandAngle.Degrees(), player->mo->OffhandPitch.Degrees(), player->mo->OffhandRoll.Degrees());
 	}
 
-	out.AppendFormat("weaponangles: [Y]=%2.f, [P]=%2.f, [R]=%2.f\n"
-					"offhandangles: [Y]=%2.f, [P]=%2.f, [R]=%2.f\n",
-		weaponangles[YAW], weaponangles[PITCH], weaponangles[ROLL],
+	out.AppendFormat("weaponangles: yaw=%2.f, pitch=%2.f, roll=%2.f\n",
+		weaponangles[YAW], weaponangles[PITCH], weaponangles[ROLL]);
+
+	out.AppendFormat("weaponoffset: x=%2.f, y=%2.f, z=%2.f\n",
+		weaponoffset[0], weaponoffset[2], weaponoffset[1]);
+	
+	out.AppendFormat("offhandangles: yaw=%2.f, pitch=%2.f, roll=%2.f\n",
 		offhandangles[YAW], offhandangles[PITCH], offhandangles[ROLL]);
+
+	out.AppendFormat("hmdorientation: yaw=%2.f, pitch:%2.f, roll:%2.f\n", 
+		hmdorientation[YAW], hmdorientation[PITCH], hmdorientation[ROLL]);
 
 	out.AppendFormat("gamestate:%d - menuactive:%d - paused:%d", gamestate, menuactive, paused);
 

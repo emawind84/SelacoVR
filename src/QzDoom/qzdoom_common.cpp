@@ -114,7 +114,7 @@ void VR_GetMove(float *joy_forward, float *joy_side, float *hmd_forward, float *
     *hmd_forward = positional_movementForward;
     *hmd_side = positional_movementSideways;
     *up = 0.0f;
-    *yaw = cinemamode ? cinemamodeYaw : hmdorientation[YAW] + (vr_snap_turning ? DEG2RAD(snapTurn) : 0.);
+    *yaw = cinemamode ? cinemamodeYaw : hmdorientation[YAW] + (vr_snap_turning ? snapTurn : 0.);
 	*pitch = cinemamode ? cinemamodePitch : hmdorientation[PITCH];
 	*roll = cinemamode ? 0.0f : hmdorientation[ROLL];
 }

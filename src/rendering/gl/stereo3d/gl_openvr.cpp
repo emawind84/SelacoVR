@@ -87,8 +87,10 @@ void I_StartupOpenVR();
 double P_XYMovement(AActor* mo, DVector2 scroll);
 float I_OpenVRGetYaw();
 float I_OpenVRGetDirectionalMove();
+
 float length(float x, float y);
 float nonLinearFilter(float in);
+double normalizeAngle(double angle);
 
 void QzDoom_setUseScreenLayer(bool use);
 
@@ -987,14 +989,16 @@ namespace s3d
 
 			if (getHUDValue<FBoolCVarRef>(vr_automap_fixed_roll, vr_hud_fixed_roll))
 			{
-				if (doTrackHmdAngles) new_projection.rotate(-hmdorientation[ROLL], 0, 0, 1);
+				float openVrRollDegrees = RAD2DEG(-eulerAnglesFromMatrix(this->currentPose->mDeviceToAbsoluteTracking).v[2]);
+				new_projection.rotate(-openVrRollDegrees, 0, 0, 1);
 			}
 
 			new_projection.rotate(getHUDValue<FFloatCVarRef>(vr_automap_rotate, vr_hud_rotate), 1, 0, 0);
 
 			if (getHUDValue<FBoolCVarRef>(vr_automap_fixed_pitch, vr_hud_fixed_pitch))
 			{
-				if(doTrackHmdAngles) new_projection.rotate(-hmdorientation[PITCH], 1, 0, 0);
+				float openVrPitchDegrees = RAD2DEG(-eulerAnglesFromMatrix(this->currentPose->mDeviceToAbsoluteTracking).v[1]);
+				new_projection.rotate(-openVrPitchDegrees, 1, 0, 0);
 			}
 		}
 
@@ -1280,24 +1284,26 @@ namespace s3d
 	{
 		bool rightHanded = vr_control_scheme < 10;
 		int hand = rightHanded ? 1 : 0;
-		weaponangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
-		weaponangles[PITCH] = -RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate * 2).v[1]);
-		weaponangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
+		HmdVector3d_t eulerAngles = eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate * 2);
+		weaponangles[YAW] = RAD2DEG(eulerAngles.v[0]);
+		weaponangles[PITCH] = -RAD2DEG(eulerAngles.v[1]);
+		weaponangles[ROLL] = normalizeAngle(-RAD2DEG(eulerAngles.v[2]) + 180.);
 	}
 
 	void getOffHandAngles()
 	{
 		bool rightHanded = vr_control_scheme < 10;
 		int hand = rightHanded ? 0 : 1;
-		offhandangles[YAW] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[0]);
-		offhandangles[PITCH] = -RAD2DEG(eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate * 2).v[1]);
-		offhandangles[ROLL] = RAD2DEG(-eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking).v[2]);
+		HmdVector3d_t eulerAngles = eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate * 2);
+		offhandangles[YAW] = RAD2DEG(eulerAngles.v[0]);
+		offhandangles[PITCH] = -RAD2DEG(eulerAngles.v[1]);
+		offhandangles[ROLL] = normalizeAngle(-RAD2DEG(eulerAngles.v[2]) + 180.);
 	}
 
 	/* virtual */
 	void OpenVRMode::Present() const {
 		// TODO: For performance, don't render to the desktop screen here
-		if (doRenderToDesktop) {
+		if (doRenderToDesktop && vr_desktop_view != -1) {
 			GLRenderer->mBuffers->BindOutputFB();
 			GLRenderer->ClearBorders();
 
@@ -1360,7 +1366,7 @@ namespace s3d
 		// the yaw returned contains snapTurn input value
 		VR_GetMove(&dummy, &dummy, &dummy, &dummy, &dummy, &hmdYaw, &hmdpitch, &hmdroll);
 
-		double hmdYawDeltaRadians = 0;
+		double hmdYawDeltaDegrees = 0;
 		if (doTrackHmdYaw) {
 			// Set HMD angle game state parameters for NEXT frame
 			static double previousHmdYaw = 0;
@@ -1369,8 +1375,8 @@ namespace s3d
 				previousHmdYaw = hmdYaw;
 				havePreviousYaw = true;
 			}
-			hmdYawDeltaRadians = hmdYaw - previousHmdYaw;
-			G_AddViewAngle(mAngleFromRadians(-hmdYawDeltaRadians), true);
+			hmdYawDeltaDegrees = hmdYaw - previousHmdYaw;
+			G_AddViewAngle(mAngleFromRadians(DEG2RAD(-hmdYawDeltaDegrees)));
 			previousHmdYaw = hmdYaw;
 		}
 
@@ -1384,13 +1390,13 @@ namespace s3d
 		if (doTrackHmdPitch && doTrackHmdAngles) {
 			if (resetPreviousPitch)
 			{
-				previousPitch = vp.HWAngles.Pitch.Radians();
+				previousPitch = vp.HWAngles.Pitch.Degrees();
 				resetPreviousPitch = false;
 			}
 
-			double hmdPitchDeltaRadians = -hmdpitch - previousPitch;
+			double hmdPitchDeltaDegrees = -hmdpitch - previousPitch;
 
-			G_AddViewPitch(mAngleFromRadians(-hmdPitchDeltaRadians));
+			G_AddViewPitch(mAngleFromRadians(DEG2RAD(-hmdPitchDeltaDegrees)));
 			previousPitch = -hmdpitch;
 		}
 
@@ -1398,16 +1404,16 @@ namespace s3d
 		{
 			if (gamestate == GS_LEVEL && menuactive == MENU_Off)
 			{
-				doomYaw += RAD2DEG(hmdYawDeltaRadians);
+				doomYaw += hmdYawDeltaDegrees;
 
 				// Roll can be local, because it doesn't affect gameplay.
 				if (doTrackHmdRoll && doTrackHmdAngles)
 				{
-					vp.HWAngles.Roll = FAngle::fromDeg(RAD2DEG(-hmdroll));
+					vp.HWAngles.Roll = FAngle::fromDeg(-hmdroll);
 				}
 				if (doTrackHmdPitch && doTrackHmdAngles && doLateScheduledRotationTracking)
 				{
-					vp.HWAngles.Pitch = FAngle::fromDeg(RAD2DEG(-hmdpitch));
+					vp.HWAngles.Pitch = FAngle::fromDeg(-hmdpitch);
 				}
 			}
 
@@ -2224,7 +2230,11 @@ namespace s3d
 
 			// TODO we should prepare the hmd pos and orientation here
 			VR_SetHMDPosition(hmdPose.m[0][3], hmdPose.m[1][3], hmdPose.m[2][3]);
-			VR_SetHMDOrientation(eulerAngles.v[1], eulerAngles.v[0], eulerAngles.v[2]);
+			// DPrintf(DMSG_NOTIFY, "y:%2.f p:%2.f r:%2.f\n", 
+			// 		RAD2DEG(eulerAngles.v[0]),
+			// 		RAD2DEG(eulerAngles.v[1]), 
+			// 		RAD2DEG(eulerAngles.v[2]));
+			VR_SetHMDOrientation(RAD2DEG(eulerAngles.v[1]), RAD2DEG(eulerAngles.v[0]), RAD2DEG(eulerAngles.v[2]));
 			
 			leftEyeView->setCurrentHmdPose(&hmdPose0);
 			rightEyeView->setCurrentHmdPose(&hmdPose0);
@@ -2357,7 +2367,7 @@ namespace s3d
 						player->mo->AttackPitch = DAngle::fromDeg(cinemamode ? 
 							-weaponangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees() :
 							-weaponangles[PITCH]);
-						player->mo->AttackAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - weaponangles[YAW]);
+						player->mo->AttackAngle = DAngle::fromDeg(-90 + getViewpointYaw() + (weaponangles[YAW]- playerYaw));
 						player->mo->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
 					}
 
@@ -2373,7 +2383,7 @@ namespace s3d
 						player->mo->OffhandPitch = DAngle::fromDeg(cinemamode ? 
 							-offhandangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees() : 
 							-offhandangles[PITCH]);
-						player->mo->OffhandAngle = DAngle::fromDeg(-deltaYawDegrees - 180 - offhandangles[YAW]);
+						player->mo->OffhandAngle = DAngle::fromDeg(-90 + getViewpointYaw() + (offhandangles[YAW]- playerYaw));
 						player->mo->OffhandRoll = DAngle::fromDeg(offhandangles[ROLL]);
 					}
 
@@ -2431,13 +2441,8 @@ namespace s3d
 					}
 
 					//Positional Movement
-					float hmd_forward=0;
-					float hmd_side=0;
-					float dummy=0;
-					VR_GetMove(&dummy, &dummy, &hmd_forward, &hmd_side, &dummy, &dummy, &dummy, &dummy);
-
 					auto vel = player->mo->Vel;
-					player->mo->Vel = DVector3((DVector2(hmd_side, hmd_forward) * vr_vunits_per_meter), 0);
+					player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) * vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
 					bool wasOnGround = player->mo->Z() <= player->mo->floorz;
 					float oldZ = player->mo->Z();
 					P_XYMovement(player->mo, DVector2(0, 0));
@@ -2524,23 +2529,29 @@ namespace s3d
 ADD_STAT(remotestats)
 {
 	FString out;
-	
+#if 0
 	out.AppendFormat("lbtn:%" PRIu64 " - rbtn:%" PRIu64 "\n"
 		"ljoy x:1.3f - y:1.3f\n"
-		"rjoy x:1.3f - y:1.3f", 
+		"rjoy x:1.3f - y:1.3f\n", 
 		s3d::leftTrackedRemoteState_new.ulButtonPressed,
 		s3d::rightTrackedRemoteState_new.ulButtonPressed,
 		s3d::leftTrackedRemoteState_new.rAxis[axisJoystick].x,
 		s3d::leftTrackedRemoteState_new.rAxis[axisJoystick].y,
 		s3d::rightTrackedRemoteState_new.rAxis[axisJoystick].x,
 		s3d::rightTrackedRemoteState_new.rAxis[axisJoystick].y);
+#endif
+	if (s3d::controllers[1].active && s3d::controllers[1].pose.bPoseIsValid) {
+		const HmdMatrix34_t& poseMatrix = s3d::controllers[1].pose.mDeviceToAbsoluteTracking;
+		float x = poseMatrix.m[0][3];
+		float y = poseMatrix.m[1][3];
+		float z = poseMatrix.m[2][3];
 
-		if (s3d::controllers[0].active && s3d::controllers[0].pose.bPoseIsValid) {
-			const HmdMatrix34_t& poseMatrix = s3d::controllers[0].pose.mDeviceToAbsoluteTracking;
-			float x = poseMatrix.m[0][3];
-			float y = poseMatrix.m[1][3];
-			float z = poseMatrix.m[2][3];
-		}
+		HmdVector3d_t eulerAngles = s3d::eulerAnglesFromMatrixPitchRotate(poseMatrix, vr_weaponRotate * 2);
+		out.AppendFormat("yaw:%2.f pitch:%2.f roll:%2.f\n", 
+			RAD2DEG(eulerAngles.v[0]),
+			-RAD2DEG(eulerAngles.v[1]), 
+			normalizeAngle(-RAD2DEG(eulerAngles.v[2]) + 180.));
+	}
 
 	return out;
 }
