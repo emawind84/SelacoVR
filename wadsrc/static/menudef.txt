@@ -2755,9 +2755,9 @@ OptionValue "CinemaScreenFollow"
 {
 	0, "Disabled"
 	1, "Stationary"	
-	2, "Follow Head movement"	
-	3, "Follow Main Hand"	
-	4, "Follwo Offhand"
+	//2, "Follow Head movement"	
+	//3, "Follow Main Hand"	
+	//4, "Follwo Offhand"
 }
 
 OptionValue "CinemaScreenBG"
@@ -2772,6 +2772,7 @@ OptionValue "CinemaScreenBG"
 
 OptionValue "DesktopViewModes"
 {
+	-1, "Disabled"
 	0, "Side-By-Side"
 	1, "Left Eye"
 	2, "Right Eye"
@@ -2864,12 +2865,18 @@ OptionMenu VROptionsMenu protected
 	Title "VR OPTIONS"
 
 	StaticText ""
-	Submenu "$VRCMODEMNU_TITLE",        "CinemaModeOptions"
+	ifOption(OpenVR)
+	{
+		Submenu "$VRCMODEMNU_TITLE",        "CinemaModeOptions"
+	}
 	Submenu "VR HUD/Automap Options",   "VRHUDOptions"
 	Submenu "VR Weapon Options",        "VRWeaponOptions"
 	StaticText ""
 	StaticText "Misc", gold
-	Option "$VRPREFMNU_DESKTOP",        "vr_desktop_view", "DesktopViewModes"
+	ifOption(OpenVR)
+	{
+		Option "$VRPREFMNU_DESKTOP",        "vr_desktop_view", "DesktopViewModes"
+	}
 	Slider "$VRPREFMNU_WORLDSCALE",     "vr_vunits_per_meter", 1, 60, 1, 0
 	Slider "Height Adjust",		        "vr_height_adjust", -0.5, 1.0, 0.01, 2
 	StaticText " "
