@@ -601,8 +601,6 @@ namespace s3d
 
                     // Teleport Logic
                     if (ready_teleport) {
-                        DPrintf(DMSG_NOTIFY, "teleport sz:%2.f\n", ((hmdPosition[1] + offhandoffset[1] + vr_height_adjust) *
-                                         vr_vunits_per_meter) / pixelstretch);
                         FLineTraceData trace;
                         if (P_LineTrace(player->mo, yaw, 8192, pitch, TRF_ABSOFFSET|TRF_BLOCKUSE|TRF_BLOCKSELF|TRF_SOLIDACTORS,
                                         ((hmdPosition[1] + offhandoffset[1] + vr_height_adjust) *

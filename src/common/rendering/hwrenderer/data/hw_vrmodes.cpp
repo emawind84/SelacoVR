@@ -473,6 +473,7 @@ extern vec3_t weaponangles;
 extern vec3_t offhandoffset;
 extern vec3_t offhandangles;
 extern vec3_t hmdorientation;
+extern vec3_t hmdPosition;
 
 ADD_STAT(vrstats)
 {
@@ -495,14 +496,17 @@ ADD_STAT(vrstats)
 	out.AppendFormat("weaponangles: yaw=%2.f, pitch=%2.f, roll=%2.f\n",
 		weaponangles[YAW], weaponangles[PITCH], weaponangles[ROLL]);
 
-	out.AppendFormat("weaponoffset: x=%2.f, y=%2.f, z=%2.f\n",
-		weaponoffset[0], weaponoffset[2], weaponoffset[1]);
+	out.AppendFormat("weaponoffset: x=%1.3f, y=%1.3f, z=%1.3f\n",
+		weaponoffset[0], weaponoffset[1], weaponoffset[2]);
 	
 	out.AppendFormat("offhandangles: yaw=%2.f, pitch=%2.f, roll=%2.f\n",
 		offhandangles[YAW], offhandangles[PITCH], offhandangles[ROLL]);
 
 	out.AppendFormat("hmdorientation: yaw=%2.f, pitch:%2.f, roll:%2.f\n", 
 		hmdorientation[YAW], hmdorientation[PITCH], hmdorientation[ROLL]);
+
+	out.AppendFormat("hmdpos: x=%1.3f, y:%1.3f, z:%1.3f\n", 
+		hmdPosition[0], hmdPosition[1], hmdPosition[2]);
 
 	out.AppendFormat("gamestate:%d - menuactive:%d - paused:%d", gamestate, menuactive, paused);
 
