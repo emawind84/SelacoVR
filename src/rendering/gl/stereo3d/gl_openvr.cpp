@@ -937,11 +937,11 @@ namespace s3d
 			// without compositor background the game goes in/out of steamvr and gets glitchy
 			vrCompositor->Submit(EVREye(eye), blankTexture, &tBounds, EVRSubmitFlags_Submit_Default);
 
-			static VRTextureBounds_t oBounds = { 0, 0.05, 0.8, 0.95 }; // screen texture crop for overlay
+			//static VRTextureBounds_t oBounds = { 0, 0.05, 0.8, 0.95 }; // screen texture crop for overlay
 
 			// set screen texture on overly instead of compositor
 			vrOverlay->SetOverlayTexture(overlayHandle, eyeTexture);
-			vrOverlay->SetOverlayTextureBounds(overlayHandle, &oBounds);
+			vrOverlay->SetOverlayTextureBounds(overlayHandle, &tBounds);
 			vrOverlay->SetOverlayWidthInMeters(overlayHandle, 1 + vr_overlayscreen_size);
 			vrOverlay->ShowOverlay(overlayHandle);
 		}
