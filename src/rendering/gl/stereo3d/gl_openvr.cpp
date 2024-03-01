@@ -65,6 +65,7 @@
 
 #include "gl_openvr.h"
 #include "openvr_include.h"
+#include <QzDoom/VrCommon.h>
 
 using namespace openvr;
 using namespace OpenGLRenderer;
@@ -1400,7 +1401,7 @@ namespace s3d
 			previousPitch = -hmdpitch;
 		}
 
-		if (!cinemamode)
+		if (!VR_UseScreenLayer())
 		{
 			if (gamestate == GS_LEVEL && menuactive == MENU_Off)
 			{
@@ -1539,6 +1540,8 @@ namespace s3d
 			pSecondaryTrackedRemoteOld = pOffTrackedRemoteOld;
 		}
 
+		const auto vrmode = VRMode::GetVRMode(true);
+
 		//All this to allow stick and button switching!
 		uint64_t primaryButtonsNew;
 		uint64_t primaryButtonsOld;
@@ -1589,66 +1592,49 @@ namespace s3d
 		// Only do the following if we are definitely not in the menu
 		if (gamestate == GS_LEVEL && menuactive == MENU_Off && !paused)
 		{
-#if 0
-			TrackedDevicePose_t pose = pOffTracking->pose;
+			const HmdMatrix34_t& dominantControllerPose = pDominantTracking->pose.mDeviceToAbsoluteTracking;
+			const HmdMatrix34_t& offhandControllerPose = pOffTracking->pose.mDeviceToAbsoluteTracking;
 
-			if (pose.bPoseIsValid) {
-				const HmdMatrix34_t& poseMatrix = pose.mDeviceToAbsoluteTracking;
-				// Extract position from the poseMatrix
-				float x = poseMatrix.m[0][3];
-				float y = poseMatrix.m[1][3];
-				float z = poseMatrix.m[2][3];
-			
-				float distance = sqrtf(powf(pOffTracking->pose.position.x -
-											pDominantTracking->pose.position.x, 2) +
-									powf(pOffTracking->pose.position.y -
-											pDominantTracking->pose.position.y, 2) +
-									powf(pOffTracking->pose.position.z -
-											pDominantTracking->pose.position.z, 2));
+			float distance = sqrtf(powf(offhandControllerPose.m[0][3] -
+										dominantControllerPose.m[0][3], 2) +
+								powf(offhandControllerPose.m[1][3] -
+										dominantControllerPose.m[1][3], 2) +
+								powf(offhandControllerPose.m[2][3] -
+										dominantControllerPose.m[2][3], 2));
 
-				//Turn on weapon stabilisation?
-				if (vr_two_handed_weapons &&
-					(pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) !=
-					(pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)))
-				{
-					if (pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) {
-						if (distance < 0.50f) {
-							weaponStabilised = true;
-						}
-					} else {
-						weaponStabilised = false;
+			//Turn on weapon stabilisation?
+			if (vr_two_handed_weapons &&
+				(pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) !=
+				(pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)))
+			{
+				if (pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Grip)) {
+					if (distance < 0.50f) {
+						weaponStabilised = true;
 					}
+				} else {
+					weaponStabilised = false;
 				}
 			}
 
 			//dominant hand stuff first
-			LSMatrix44 mat;
-			if (GetWeaponTransform(&mat, VR_MAINHAND))
 			{
-				/Weapon location relative to view
-				weaponoffset[0] = mat[3][0];
-				weaponoffset[1] = mat[3][2];
-				weaponoffset[2] = mat[3][1];
+				//Weapon location relative to view
+				weaponoffset[0] = dominantControllerPose.m[0][3] - hmdPosition[0];
+				weaponoffset[1] = dominantControllerPose.m[1][3] - hmdPosition[1];
+				weaponoffset[2] = dominantControllerPose.m[2][3] - hmdPosition[2];
 
-				vec2_t v;
 				float yawRotation = getViewpointYaw() - hmdorientation[YAW];
-				rotateAboutOrigin(weaponoffset[0], weaponoffset[2], -yawRotation, v);
-				weaponoffset[0] = v[1];
-				weaponoffset[2] = v[0];
-
-				//Set gun angles
-				//vec3_t rotation = {0};
-				//rotation[PITCH] = vr_weaponRotate;
-				//QuatToYawPitchRoll(pDominantTracking->Pose.orientation, rotation, weaponangles);
-				// weaponangles is already available
+				DVector2 v = DVector2(weaponoffset[0], weaponoffset[2]).Rotated(-yawRotation);
+				weaponoffset[0] = v.Y;
+				weaponoffset[2] = v.X;
 
 				if (weaponStabilised) {
-					float z = pOffTracking->Pose.position.z -
-							pDominantTracking->Pose.position.z;
-					float x = pOffTracking->Pose.position.x -
-							pDominantTracking->Pose.position.x;
-					float y = pOffTracking->Pose.position.y -
-							pDominantTracking->Pose.position.y;
+					float z = offhandControllerPose.m[2][3] -
+							dominantControllerPose.m[2][3];
+					float x = offhandControllerPose.m[0][3] -
+							dominantControllerPose.m[0][3];
+					float y = offhandControllerPose.m[1][3] -
+							dominantControllerPose.m[1][3];
 					float zxDist = length(x, z);
 
 					if (zxDist != 0.0f && z != 0.0f) {
@@ -1661,23 +1647,16 @@ namespace s3d
 			float controllerYawHeading = 0.0f;
 
 			//off-hand stuff
-			LSMatrix44 matOffhand;
-			if (GetWeaponTransform(&matOffhand, VR_OFFHAND))
 			{
-				offhandoffset[0] = matOffhand[3][0];
-				offhandoffset[1] = matOffhand[3][2];
-				offhandoffset[2] = matOffhand[3][1];
+				const HmdMatrix34_t& offhandControllerPose = pOffTracking->pose.mDeviceToAbsoluteTracking;
+				offhandoffset[0] = offhandControllerPose.m[0][3] - hmdPosition[0];
+				offhandoffset[1] = offhandControllerPose.m[1][3] - hmdPosition[1];
+				offhandoffset[2] = offhandControllerPose.m[2][3] - hmdPosition[2];
 
-				vec2_t v;
 				float yawRotation = getViewpointYaw() - hmdorientation[YAW];
-				rotateAboutOrigin(offhandoffset[0], offhandoffset[2], -yawRotation, v);
-				offhandoffset[0] = v[1];
-				offhandoffset[2] = v[0];
-
-				//vec3_t rotation = {0};
-				//rotation[PITCH] = vr_weaponRotate;
-				//QuatToYawPitchRoll(pOffTracking->Pose.orientation, rotation, offhandangles);
-				// offhandangles already available
+				DVector2 v = DVector2(offhandoffset[0], offhandoffset[2]).Rotated(-yawRotation);
+				offhandoffset[0] = v.Y;
+				offhandoffset[2] = v.X;
 
 				if (vr_move_use_offhand) {
 					controllerYawHeading = offhandangles[YAW] - hmdorientation[YAW];
@@ -1685,11 +1664,11 @@ namespace s3d
 					controllerYawHeading = 0.0f;
 				}
 			}
-#endif
+
 			//Positional movement
 			{
-				//DVector2 v = DVector2(positionDeltaThisFrame[0], positionDeltaThisFrame[2]).Rotated(DAngle::fromDeg(-(doomYaw - hmdorientation[YAW])));
-				DVector2 v = DVector2(-openvr_dpos.x, openvr_dpos.z).Rotated(openvr_to_doom_angle);
+				DVector2 v = DVector2(positionDeltaThisFrame[0], positionDeltaThisFrame[2]).Rotated(DAngle::fromDeg(-(doomYaw - hmdorientation[YAW])));
+				//DVector2 v = DVector2(-openvr_dpos.x, openvr_dpos.z).Rotated(openvr_to_doom_angle);
 				positional_movementSideways = v.Y;
 				positional_movementForward = v.X;
 			}
@@ -2364,7 +2343,7 @@ namespace s3d
 
 						getMainHandAngles();
 
-						player->mo->AttackPitch = DAngle::fromDeg(cinemamode ? 
+						player->mo->AttackPitch = DAngle::fromDeg(VR_UseScreenLayer() ? 
 							-weaponangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees() :
 							-weaponangles[PITCH]);
 						player->mo->AttackAngle = DAngle::fromDeg(-90 + getViewpointYaw() + (weaponangles[YAW]- playerYaw));
@@ -2380,7 +2359,7 @@ namespace s3d
 
 						getOffHandAngles();
 
-						player->mo->OffhandPitch = DAngle::fromDeg(cinemamode ? 
+						player->mo->OffhandPitch = DAngle::fromDeg(VR_UseScreenLayer() ? 
 							-offhandangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees() : 
 							-offhandangles[PITCH]);
 						player->mo->OffhandAngle = DAngle::fromDeg(-90 + getViewpointYaw() + (offhandangles[YAW]- playerYaw));
@@ -2390,13 +2369,12 @@ namespace s3d
 					// Teleport locomotion. Thanks to DrBeef for the codes
 					if (vr_teleport && player->mo->health > 0) {
 
-						DAngle yaw = DAngle::fromDeg(-deltaYawDegrees - 90 - offhandangles[YAW]);
+						DAngle yaw = DAngle::fromDeg(-deltaYawDegrees - 90 + offhandangles[YAW]);
 						DAngle pitch = DAngle::fromDeg(offhandangles[PITCH]);
 
 						// Teleport Logic
 						if (ready_teleport) {
 							FLineTraceData trace;
-							DPrintf(DMSG_NOTIFY, "teleport sz:%2.f\n", matOffhand[3][1]);
 							if (P_LineTrace(player->mo, yaw, 8192, pitch, TRF_ABSOFFSET | TRF_BLOCKUSE | TRF_BLOCKSELF | TRF_SOLIDACTORS,
 								matOffhand[3][1], 0, 0, &trace))
 							{
@@ -2441,8 +2419,14 @@ namespace s3d
 					}
 
 					//Positional Movement
+					float hmd_forward=0;
+					float hmd_side=0;
+					float dummy=0;
+					VR_GetMove(&dummy, &dummy, &hmd_forward, &hmd_side, &dummy, &dummy, &dummy, &dummy);
+					
 					auto vel = player->mo->Vel;
-					player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) * vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
+					player->mo->Vel = DVector3((DVector2(hmd_side, hmd_forward) * vr_vunits_per_meter), 0);
+					//player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) * vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
 					bool wasOnGround = player->mo->Z() <= player->mo->floorz;
 					float oldZ = player->mo->Z();
 					P_XYMovement(player->mo, DVector2(0, 0));
@@ -2545,6 +2529,8 @@ ADD_STAT(remotestats)
 		float x = poseMatrix.m[0][3];
 		float y = poseMatrix.m[1][3];
 		float z = poseMatrix.m[2][3];
+
+		out.AppendFormat("x:%1.3f y:%1.3f z:%1.3f\n", x, y, z);
 
 		HmdVector3d_t eulerAngles = s3d::eulerAnglesFromMatrixPitchRotate(poseMatrix, vr_weaponRotate * 2);
 		out.AppendFormat("yaw:%2.f pitch:%2.f roll:%2.f\n", 
