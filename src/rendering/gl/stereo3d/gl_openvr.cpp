@@ -1252,32 +1252,54 @@ namespace s3d
 
 	bool OpenVRMode::GetHandTransform(int hand, VSMatrix* mat) const
 	{
-		if (controllers[hand].active)
+		double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
+		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+		if (player)
 		{
-			player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
-			if (player == nullptr)
+			mat->loadIdentity();
+
+			//We want to offset the weapon exactly from where we are seeing from
+			mat->translate(r_viewpoint.CenterEyePos.X, r_viewpoint.CenterEyePos.Z - getDoomPlayerHeightWithoutCrouch(player), r_viewpoint.CenterEyePos.Y);
+
+			mat->scale(vr_vunits_per_meter, vr_vunits_per_meter, -vr_vunits_per_meter);
+
+			if ((vr_control_scheme < 10 && hand == 1)
+				|| (vr_control_scheme >= 10 && hand == 0)) {
+				mat->translate(-weaponoffset[0], (hmdPosition[1] + weaponoffset[1] + vr_height_adjust) / pixelstretch, weaponoffset[2]);
+
+				mat->scale(1, 1 / pixelstretch, 1);
+
+				if (VR_UseScreenLayer())
+				{
+					mat->rotate(-90 + r_viewpoint.Angles.Yaw.Degrees()  + (weaponangles[YAW]- playerYaw), 0, 1, 0);
+					mat->rotate(-weaponangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees(), 1, 0, 0);
+				} else {
+					mat->rotate(-90 + doomYaw + (weaponangles[YAW]- hmdorientation[YAW]), 0, 1, 0);
+					mat->rotate(-weaponangles[PITCH], 1, 0, 0);
+				}
+				mat->rotate(-weaponangles[ROLL], 0, 0, 1);
+			}
+			else
 			{
-				return false;
+				mat->translate(-offhandoffset[0], (hmdPosition[1] + offhandoffset[1] + vr_height_adjust) / pixelstretch, offhandoffset[2]);
+
+				mat->scale(1, 1 / pixelstretch, 1);
+
+				if (VR_UseScreenLayer())
+				{
+					mat->rotate(-90 + r_viewpoint.Angles.Yaw.Degrees()  + (offhandangles[YAW]- playerYaw), 0, 1, 0);
+					mat->rotate(-offhandangles[PITCH] - r_viewpoint.Angles.Pitch.Degrees(), 1, 0, 0);
+				} else {
+					mat->rotate(-90 + doomYaw + (offhandangles[YAW]- hmdorientation[YAW]), 0, 1, 0);
+					mat->rotate(-offhandangles[PITCH], 1, 0, 0);
+				}
+				mat->rotate(-offhandangles[ROLL], 0, 0, 1);
 			}
 
-			//AActor* playermo = player->mo;
-			//DVector3 pos = playermo->InterpolatedPosition(r_viewpoint.TicFrac);
-
-			double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
-
-			mat->loadIdentity();
-			mat->translate(r_viewpoint.CenterEyePos.X, r_viewpoint.CenterEyePos.Z - getDoomPlayerHeightWithoutCrouch(player), r_viewpoint.CenterEyePos.Y);
-			mat->scale(vr_vunits_per_meter, vr_vunits_per_meter / pixelstretch, -vr_vunits_per_meter);
-			mat->rotate(-deltaYawDegrees - 180, 0, 1, 0);
-			mat->translate(-openvr_origin.x, vr_height_adjust, -openvr_origin.z);
-
-			LSMatrix44 handToAbs;
-			vSMatrixFromHmdMatrix34(handToAbs, controllers[hand].pose.mDeviceToAbsoluteTracking);
-			mat->multMatrix(handToAbs.transpose());
-			mat->rotate(vr_weaponRotate * 2, 1, 0, 0);
-
 			return true;
+
 		}
+
 		return false;
 	}
 
