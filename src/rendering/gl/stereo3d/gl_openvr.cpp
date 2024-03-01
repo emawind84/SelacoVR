@@ -294,7 +294,7 @@ static float getDoomPlayerHeightWithoutCrouch(const player_t* player)
 
 static float getViewpointYaw()
 {
-	if (cinemamode)
+	if (VR_UseScreenLayer())
 	{
 		return r_viewpoint.Angles.Yaw.Degrees();
 	}
@@ -1601,13 +1601,13 @@ namespace s3d
 
 		//In cinema mode, right-stick controls mouse
 		const float mouseSpeed = 3.0f;
-		if (cinemamode)
+		if (VR_UseScreenLayer())
 		{
 			if (fabs(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x) > 0.1f) {
 				cinemamodeYaw -= mouseSpeed * pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x;
 			}
 			if (fabs(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y) > 0.1f) {
-				cinemamodePitch -= mouseSpeed * pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y;
+				cinemamodePitch += mouseSpeed * pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y;
 			}
 		}
 
@@ -1728,7 +1728,7 @@ namespace s3d
 				remote_movementForward = y;
 			}
 
-			if (!cinemamode && !dominantGripPushedNew)
+			if (!VR_UseScreenLayer() && !dominantGripPushedNew)
 			{
 				static int increaseSnap = true;
 				static int decreaseSnap = true;
@@ -1793,7 +1793,7 @@ namespace s3d
 		}  // in game section
 
 		//if in cinema mode, then the dominant joystick is used differently
-		if (!cinemamode) 
+		if (!VR_UseScreenLayer()) 
 		{
 			//Default this is Weapon Chooser - This _could_ be remapped
 			Joy_GenerateButtonEvents(

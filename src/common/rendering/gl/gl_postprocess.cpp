@@ -41,6 +41,7 @@
 
 extern bool vid_hdr_active;
 extern bool cinemamode;
+bool VR_UseScreenLayer();
 
 EXTERN_CVAR(Int, vr_mode)
 EXTERN_CVAR(Int, vr_overlayscreen)
@@ -121,7 +122,7 @@ void FGLRenderer::Flush()
 	}
 	else
 	{
-		const bool is2D = (gamestate != GS_LEVEL) || cinemamode;
+		const bool is2D = (gamestate != GS_LEVEL);
 		if (is2D) vrmode->SetUp();
 		// Render 2D to eye textures
 		int eyeCount = vrmode->mEyeCount;
@@ -134,7 +135,7 @@ void FGLRenderer::Flush()
 				eye->AdjustBlend(nullptr);
 				screen->Draw2D(true);
 			}
-			if (!vr_overlayscreen || (!is2D && menuactive == MENU_Off))
+			if (!VR_UseScreenLayer())
 			{
 				eye->AdjustHud();
 			}
