@@ -595,7 +595,7 @@ namespace s3d
 
                 if (vr_teleport && player->mo->health > 0) {
 
-                    DAngle yaw = DAngle::fromDeg(doomYaw - hmdorientation[YAW] + offhandangles[YAW]);
+                    DAngle yaw = DAngle::fromDeg(getViewpointYaw() - hmdorientation[YAW] + offhandangles[YAW]);
                     DAngle pitch = DAngle::fromDeg(offhandangles[PITCH]);
                     double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 

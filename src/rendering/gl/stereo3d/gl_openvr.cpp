@@ -2391,14 +2391,18 @@ namespace s3d
 					// Teleport locomotion. Thanks to DrBeef for the codes
 					if (vr_teleport && player->mo->health > 0) {
 
-						DAngle yaw = DAngle::fromDeg(-deltaYawDegrees - 90 + offhandangles[YAW]);
+						DAngle yaw = DAngle::fromDeg(getViewpointYaw() - hmdorientation[YAW] + offhandangles[YAW]);
 						DAngle pitch = DAngle::fromDeg(offhandangles[PITCH]);
+						double pixelstretch = level.info ? level.info->pixelstretch : 1.2;
 
 						// Teleport Logic
 						if (ready_teleport) {
 							FLineTraceData trace;
-							if (P_LineTrace(player->mo, yaw, 8192, pitch, TRF_ABSOFFSET | TRF_BLOCKUSE | TRF_BLOCKSELF | TRF_SOLIDACTORS,
-								matOffhand[3][1], 0, 0, &trace))
+							if (P_LineTrace(player->mo, yaw, 8192, pitch, TRF_ABSOFFSET|TRF_BLOCKUSE|TRF_BLOCKSELF|TRF_SOLIDACTORS,
+											((hmdPosition[1] + offhandoffset[1] + vr_height_adjust) *
+											vr_vunits_per_meter) / pixelstretch,
+											-(offhandoffset[2] * vr_vunits_per_meter),
+											-(offhandoffset[0] * vr_vunits_per_meter), &trace))
 							{
 								m_TeleportTarget = trace.HitType;
 								m_TeleportLocation = trace.HitLocation;
