@@ -120,6 +120,41 @@ typedef const char* (*LVR_GetVRInitErrorAsEnglishDescription)(EVRInitError error
 typedef bool (*LVR_IsInterfaceVersionValid)(const char* version);
 typedef uint32_t(*LVR_GetInitToken)();
 
+#define DEFINE_ENTRY(name) static TReqProc<OpenVRModule, L##name> name{#name};
+DEFINE_ENTRY(VR_InitInternal)
+DEFINE_ENTRY(VR_ShutdownInternal)
+DEFINE_ENTRY(VR_IsHmdPresent)
+DEFINE_ENTRY(VR_GetGenericInterface)
+DEFINE_ENTRY(VR_IsRuntimeInstalled)
+DEFINE_ENTRY(VR_GetVRInitErrorAsSymbol)
+DEFINE_ENTRY(VR_GetVRInitErrorAsEnglishDescription)
+DEFINE_ENTRY(VR_IsInterfaceVersionValid)
+DEFINE_ENTRY(VR_GetInitToken)
+
+#ifdef _WIN32
+#define OPENVRLIB "openvr_api.dll"
+#elif defined(__APPLE__)
+#define OPENVRLIB "libopenvr_api.dylib"
+#else
+#define OPENVRLIB "libopenvr_api.so"
+#endif
+
+#else
+// Non-dynamic loading of OpenVR
+
+// OpenVR Global entry points
+S_API intptr_t VR_InitInternal(EVRInitError* peError, EVRApplicationType eType);
+S_API void VR_ShutdownInternal();
+S_API bool VR_IsHmdPresent();
+S_API intptr_t VR_GetGenericInterface(const char* pchInterfaceVersion, EVRInitError* peError);
+S_API bool VR_IsRuntimeInstalled();
+S_API const char* VR_GetVRInitErrorAsSymbol(EVRInitError error);
+S_API const char* VR_GetVRInitErrorAsEnglishDescription(EVRInitError error);
+S_API bool VR_IsInterfaceVersionValid(const char* version);
+S_API uint32_t VR_GetInitToken();
+
+#endif
+
 typedef float vec_t;
 typedef vec_t vec3_t[3];
 
@@ -159,41 +194,6 @@ extern float cinemamodeYaw;
 extern float cinemamodePitch;
 
 double HmdHeight;
-
-#define DEFINE_ENTRY(name) static TReqProc<OpenVRModule, L##name> name{#name};
-DEFINE_ENTRY(VR_InitInternal)
-DEFINE_ENTRY(VR_ShutdownInternal)
-DEFINE_ENTRY(VR_IsHmdPresent)
-DEFINE_ENTRY(VR_GetGenericInterface)
-DEFINE_ENTRY(VR_IsRuntimeInstalled)
-DEFINE_ENTRY(VR_GetVRInitErrorAsSymbol)
-DEFINE_ENTRY(VR_GetVRInitErrorAsEnglishDescription)
-DEFINE_ENTRY(VR_IsInterfaceVersionValid)
-DEFINE_ENTRY(VR_GetInitToken)
-
-#ifdef _WIN32
-#define OPENVRLIB "openvr_api.dll"
-#elif defined(__APPLE__)
-#define OPENVRLIB "libopenvr_api.dylib"
-#else
-#define OPENVRLIB "libopenvr_api.so"
-#endif
-
-#else
-// Non-dynamic loading of OpenVR
-
-// OpenVR Global entry points
-S_API intptr_t VR_InitInternal(EVRInitError* peError, EVRApplicationType eType);
-S_API void VR_ShutdownInternal();
-S_API bool VR_IsHmdPresent();
-S_API intptr_t VR_GetGenericInterface(const char* pchInterfaceVersion, EVRInitError* peError);
-S_API bool VR_IsRuntimeInstalled();
-S_API const char* VR_GetVRInitErrorAsSymbol(EVRInitError error);
-S_API const char* VR_GetVRInitErrorAsEnglishDescription(EVRInitError error);
-S_API bool VR_IsInterfaceVersionValid(const char* version);
-S_API uint32_t VR_GetInitToken();
-
-#endif
 
 EXTERN_CVAR(Float, fov);
 EXTERN_CVAR(Int, screenblocks);
@@ -2231,10 +2231,6 @@ namespace s3d
 
 			// TODO we should prepare the hmd pos and orientation here
 			VR_SetHMDPosition(hmdPose.m[0][3], hmdPose.m[1][3], hmdPose.m[2][3]);
-			// DPrintf(DMSG_NOTIFY, "y:%2.f p:%2.f r:%2.f\n", 
-			// 		RAD2DEG(eulerAngles.v[0]),
-			// 		RAD2DEG(eulerAngles.v[1]), 
-			// 		RAD2DEG(eulerAngles.v[2]));
 			VR_SetHMDOrientation(RAD2DEG(eulerAngles.v[1]), RAD2DEG(eulerAngles.v[0]), RAD2DEG(eulerAngles.v[2]));
 			
 			leftEyeView->setCurrentHmdPose(&hmdPose0);
