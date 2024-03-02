@@ -30,7 +30,9 @@
 
 #ifdef USE_OPENVR
 #include "openvr_include.h"
-struct openvr::HmdMatrix34_t;
+namespace openvr {
+	struct HmdMatrix34_t;
+}
 #endif
 
 class LSVec3
