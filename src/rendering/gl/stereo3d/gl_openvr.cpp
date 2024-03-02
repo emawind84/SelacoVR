@@ -1601,7 +1601,7 @@ namespace s3d
 
 		//In cinema mode, right-stick controls mouse
 		const float mouseSpeed = 3.0f;
-		if (VR_UseScreenLayer())
+		if (VR_UseScreenLayer() && !dominantGripPushedNew)
 		{
 			if (fabs(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x) > 0.1f) {
 				cinemamodeYaw -= mouseSpeed * pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x;
