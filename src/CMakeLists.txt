@@ -439,7 +439,7 @@ if (ENABLE_OPENVR)
 	option( DYN_OPENVR "Dynamically load OpenVR" ON )
 	if (DYN_OPENVR)
 		add_definitions( -DDYN_OPENVR )
-	else(DYN_OPENVR)
+	else()
 		option( STATIC_OPENVR "Statically link OpenVR API" ON )
 		if(STATIC_OPENVR)
 			# Incorporate the whole openvr API into zdoom, using a few rules lifted from the OpenVR CMakeLists.txt files
@@ -467,6 +467,7 @@ if (ENABLE_OPENVR)
 		else()
 			set(OPENVR_PLAT ${OPENVR_PLAT}32)
 		endif()
+		set( OPENVR_LIBRARIES openvr_api )
 		find_library(OPENVR_LIBRARY
 			NAMES openvr_api
 			HINTS "${OPENVR_SDK_PATH}/lib/${OPENVR_PLAT}/"
@@ -480,6 +481,8 @@ if (ENABLE_OPENVR)
 		if(NOT DYN_OPENVR)
 			# Link directly to shared library
 			list(APPEND ZDOOM_LIBS ${OPENVR_LIBRARY})
+		else()
+			link_directories( ${OPENVR_SDK_PATH}/lib/${OPENVR_PLAT} )
 		endif()
 	endif()
 endif()
@@ -1325,7 +1328,7 @@ if( UNIX )
 	endif()
 endif()
 
-target_link_libraries( zdoom ${PROJECT_LIBRARIES} lzma ${ZMUSIC_LIBRARIES} )
+target_link_libraries( zdoom ${PROJECT_LIBRARIES} lzma ${ZMUSIC_LIBRARIES} ${OPENVR_LIBRARIES} )
 
 include_directories(
 	BEFORE
