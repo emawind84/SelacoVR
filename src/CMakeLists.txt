@@ -417,7 +417,7 @@ set( PLAT_WIN32_SOURCES
 	common/platform/win32/win32glvideo.cpp
 	)
 
-option( ENABLE_OPENVR "Enable OpenVR virtual reality mode" ON )
+option( ENABLE_OPENVR "Enable OpenVR virtual reality mode" NO )
 if (ENABLE_OPENVR)
 	add_definitions("-DUSE_OPENVR")
 	set (PLAT_WIN32_SOURCES win32/i_openVR.cpp ${PLAT_WIN32_SOURCES})
