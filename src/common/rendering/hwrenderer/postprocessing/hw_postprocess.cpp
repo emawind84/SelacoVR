@@ -900,7 +900,7 @@ void PPShadowMap::Update(PPRenderState* renderstate)
 
 /////////////////////////////////////////////////////////////////////////////
 
-CVAR(Bool, gl_custompost, true, 0)
+CVAR(Bool, gl_custompost, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)  // user can change this
 
 void PPCustomShaders::Run(PPRenderState *renderstate, FString target)
 {
