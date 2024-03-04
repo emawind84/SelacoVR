@@ -101,7 +101,7 @@ jobs:
         cd build
         git clone https://github.com/emawind84/ZMusic.git
         cd ZMusic
-        git checkout mobile
+        git checkout master
         cd ..
         cmake -B zmusic_build -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DCMAKE_INSTALL_PREFIX=`pwd`/zmusic_install ZMusic
         cmake --build zmusic_build --target install --parallel 3
