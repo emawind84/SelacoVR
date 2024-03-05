@@ -41,6 +41,7 @@
 #include "c_dispatch.h"
 #include "configfile.h"
 #include "filesystem.h"
+#include "hw_vrmodes.h"
 
 #include "i_time.h"
 #include "printf.h"
@@ -733,7 +734,11 @@ void ReadBindings(int lump, bool override)
 
 void C_SetDefaultKeys(const char* baseconfig)
 {
-	auto lump = fileSystem.CheckNumForFullName("engine/commonbinds.txt");
+	auto vrmode = VRMode::GetVRMode(true);
+	auto commonbinds = "engine/commonbinds.txt";
+	if (vrmode->IsVR())
+		commonbinds = "engine/vr/commonbinds.txt";
+	auto lump = fileSystem.CheckNumForFullName(commonbinds);
 	if (lump >= 0)
 	{
 		// Bail out if a mod tries to override this. Main game resources are allowed to do this, though.
@@ -741,7 +746,7 @@ void C_SetDefaultKeys(const char* baseconfig)
 		if (fileno2 > fileSystem.GetMaxIwadNum())
 		{
 			I_FatalError("File %s is overriding core lump %s.",
-				fileSystem.GetResourceFileFullName(fileno2), "engine/commonbinds.txt");
+				fileSystem.GetResourceFileFullName(fileno2), commonbinds);
 		}
 
 		ReadBindings(lump, true);
@@ -784,16 +789,16 @@ void C_BindDefaults()
 	switch (cl_defaultconfiguration)
 	{
 	case 0:
-		defbinds = "engine/defbind0.txt";
+		defbinds = "engine/vr/defbind0.txt";
 		break;
 	case 1:
-		defbinds = "engine/defbind1.txt";
+		defbinds = "engine/vr/defbind1.txt";
 		break;
 	case 2:
-		defbinds = "engine/defbind2.txt";
+		defbinds = "engine/vr/defbind2.txt";
 		break;
 	case 3:
-		defbinds = "engine/defbind3.txt";
+		defbinds = "engine/vr/defbind3.txt";
 		break;
 	case 4:
 		defbinds = "engine/defbinds.txt";

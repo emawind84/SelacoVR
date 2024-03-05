@@ -1,0 +1,34 @@
+// These bindings are valid for all configurations
+
+mwheelleft invprev
+mwheelright invnext
+enter invuse
+shift +speed
+space +use
+tab togglemap
+mwheeldown weapnext
+mwheelup weapprev
+
+pgup invnext
+pgdn invprev
+home land
+
+// Xbox 360 / PS2 controllers
+pad_a +use
+pad_b +jump
+pad_y togglemap
+pad_x invuse
+rtrigger +attack
+ltrigger +altattack
+pad_start pause
+pad_back menu_main
+lthumb crouch
+
+axis1plus +moveright
+axis1minus +moveleft
+axis2plus +forward
+axis2minus +back
+
+/* Default automap bindings */
+mapbind mwheelup "am_zoom 1.2"
+mapbind mwheeldown "am_zoom -1.2"
