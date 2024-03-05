@@ -3213,7 +3213,7 @@ OptionMenu "GLLightOptions" protected
 OptionMenu "OpenGLOptions" protected
 {
 	Title "$GLMNU_TITLE"
-	//Submenu "$GLPREFMNU_VRMODE",				"VR3DMenu"
+	Submenu "$GLPREFMNU_VRMODE",				"VR3DMenu"
 	Submenu "$GLMNU_POSTPROCESS",				"PostProcessMenu"
 	StaticText " "
 	Option "$GLPREFMNU_SECLIGHTMODE",			gl_lightmode,					"LightingModes"
