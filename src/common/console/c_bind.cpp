@@ -49,6 +49,9 @@
 
 #include "d_eventbase.h"
 
+CVARD(Bool, cl_custombinds, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "Enable custom binds reading from IWAD and Mods")
+CVARD(Bool, cl_custombinds_override, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "Permit Mods to override user bindings")
+
 const char *KeyNames[NUM_KEYS] =
 {
 	// We use the DirectInput codes and assume a qwerty keyboard layout.
@@ -753,7 +756,7 @@ void C_SetDefaultKeys(const char* baseconfig)
 	}
 
 	lastlump = 0;
-	while ((lump = fileSystem.FindLump("DEFBINDS", &lastlump)) != -1)
+	while ((lump = fileSystem.FindLump("DEFBINDS", &lastlump)) != -1 && cl_custombinds)
 	{
 		// [SW] - We need to check to see the origin of the DEFBINDS... if it
 		// Comes from an IWAD/IPK3/IPK7 allow it to override the users settings...
@@ -761,7 +764,7 @@ void C_SetDefaultKeys(const char* baseconfig)
 		if (fileSystem.GetFileContainer(lump) > fileSystem.GetMaxIwadNum())
 			ReadBindings(lump, false);
 		else
-			ReadBindings(lump, false);  // don't override most of the mods are not VR friendly
+			ReadBindings(lump, cl_custombinds_override);
 	}
 }
 

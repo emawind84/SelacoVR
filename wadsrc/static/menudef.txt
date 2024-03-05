@@ -569,6 +569,9 @@ OptionMenu "CustomizeControls" protected
 	Option "$CNTRLMNU_LAYOUT",			"cl_defaultconfiguration", "Layouts"
 	SafeCommand "$OPTMNU_DEFAULTS",		"resetb2defaults"
 	SafeCommand "$OPTMNU_UPDATEMISSING","binddefaults"
+	StaticText " "
+	Option "$CNTRLMNU_CUSTOMBINDS",		"cl_custombinds", "OnOff"
+	Option "$CNTRLMNU_BINDSOVERRIDE",	"cl_custombinds_override", "OnOff", "cl_custombinds"
 }
 
 OptionMenu "ActionControlsMenu" protected
