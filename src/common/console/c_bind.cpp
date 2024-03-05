@@ -761,7 +761,7 @@ void C_SetDefaultKeys(const char* baseconfig)
 		if (fileSystem.GetFileContainer(lump) > fileSystem.GetMaxIwadNum())
 			ReadBindings(lump, false);
 		else
-			ReadBindings(lump, true);
+			ReadBindings(lump, false);  // don't override most of the mods are not VR friendly
 	}
 }
 
