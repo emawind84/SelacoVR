@@ -2203,7 +2203,7 @@ void HWWall::Process(HWWallDispatcher *di, seg_t *seg, sector_t * frontsector, s
 			{
 				DoTexture(di, RENDERWALL_TOP, seg, (seg->linedef->flags & (ML_DONTPEGTOP)) == 0,
 					crefz, frefz,
-					fch1, fch2, ffh1, ffh2, 0);
+					fch1, fch2, ffh1, ffh2, 0, 0);
 			}
 		}
 		return;
