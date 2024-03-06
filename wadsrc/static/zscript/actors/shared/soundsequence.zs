@@ -229,7 +229,7 @@ class AmbientSound : Actor
 				double asRange = as.GetAudibleRange();
 				
 				if(	(!masterAmbient && as.tid != 0 && as.tid == self.tid) || 
-					(range <= 0 || asRange <= 0 || (as.Distance2D(self) < (range + asRange))) 
+					((range <= 0 || asRange <= 0 || (as.Distance2D(self) < (range + asRange)) && as.bDormant == self.bDormant)) 
 				) {
 					if(masterAmbient) {
 						// Check master to see if this sound is already linked
