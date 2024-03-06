@@ -187,6 +187,7 @@ public:
 
 	FString GetWadName(int wadnum) const
 	{
+		if (wadnum < 0 || wadnum > (int)Files.Size()) return FString("");
 		FString name = Files[wadnum]->FileName;
 		
 		// Remove the path
