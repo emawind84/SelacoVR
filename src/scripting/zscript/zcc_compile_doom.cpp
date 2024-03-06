@@ -50,6 +50,7 @@ bool isActor(PContainerType *type);
 void AddActorInfo(PClass *cls);
 int GetIntConst(FxExpression* ex, FCompileContext& ctx);
 double GetFloatConst(FxExpression* ex, FCompileContext& ctx);
+VMFunction* GetFuncConst(FxExpression* ex, FCompileContext& ctx);
 
 //==========================================================================
 //
@@ -280,6 +281,10 @@ void ZCCDoomCompiler::DispatchProperty(FPropertyInfo *prop, ZCC_PropertyStmt *pr
 
 			case 'F':
 				conv.d = GetFloatConst(ex, ctx);
+				break;
+
+			case 'G':
+				conv.fu = GetFuncConst(ex, ctx);
 				break;
 
 			case 'Z':	// an optional string. Does not allow any numeric value.
@@ -650,7 +655,7 @@ void ZCCDoomCompiler::ProcessDefaultProperty(PClassActor *cls, ZCC_PropertyStmt 
 	}
 
 
-	FPropertyInfo *property = FindProperty(propname);
+	FPropertyInfo *property = FindProperty(propname.GetChars());
 
 	if (property != nullptr && property->category != CAT_INFO)
 	{
@@ -987,7 +992,7 @@ void ZCCDoomCompiler::CompileStates()
 				{
 					auto sl = static_cast<ZCC_StateLabel *>(st);
 					statename = FName(sl->Label).GetChars();
-					statedef.AddStateLabel(statename);
+					statedef.AddStateLabel(statename.GetChars());
 					break;
 				}
 				case AST_StateLine:
@@ -1046,7 +1051,7 @@ void ZCCDoomCompiler::CompileStates()
 						auto l = sl->Lights;
 						do
 						{
-							AddStateLight(&state, StringConstFromNode(l, c->Type()));
+							AddStateLight(&state, StringConstFromNode(l, c->Type()).GetChars());
 							l = static_cast<decltype(l)>(l->SiblingNext);
 						} while (l != sl->Lights);
 					}
@@ -1097,7 +1102,7 @@ void ZCCDoomCompiler::CompileStates()
 							statename.AppendFormat("+%d", offset);
 						}
 					}
-					if (!statedef.SetGotoLabel(statename))
+					if (!statedef.SetGotoLabel(statename.GetChars()))
 					{
 						Error(sg, "GOTO before first state");
 					}

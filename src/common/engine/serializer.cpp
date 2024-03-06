@@ -1146,7 +1146,7 @@ FSerializer &Serialize(FSerializer &arc, const char *key, FTextureID &value, FTe
 			}
 			else
 			{
-				name = pic->GetName();
+				name = pic->GetName().GetChars();
 			}
 			arc.WriteKey(key);
 			arc.w->StartArray();
@@ -1508,8 +1508,8 @@ FString DictionaryToString(const Dictionary &dict)
 
 	while (i.NextPair(pair))
 	{
-		writer.Key(pair->Key);
-		writer.String(pair->Value);
+		writer.Key(pair->Key.GetChars());
+		writer.String(pair->Value.GetChars());
 	}
 
 	writer.EndObject();

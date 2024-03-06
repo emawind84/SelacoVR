@@ -863,8 +863,8 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	{
 		sendsave = false;
 		Net_WriteByte (DEM_SAVEGAME);
-		Net_WriteString (savegamefile);
-		Net_WriteString (savedescription);
+		Net_WriteString (savegamefile.GetChars());
+		Net_WriteString (savedescription.GetChars());
 		savegamefile = "";
 	}
 	if (SendItemUse == (const AActor *)1)
@@ -1235,8 +1235,8 @@ void G_Ticker ()
 		{
 		case ga_recordgame:
 			G_CheckDemoStatus();
-			G_RecordDemo(newdemoname);
-			G_BeginRecording(newdemomap);
+			G_RecordDemo(newdemoname.GetChars());
+			G_BeginRecording(newdemomap.GetChars());
 			[[fallthrough]];
 		case ga_newgame2:	// Silence GCC (see above)
 		case ga_newgame:
@@ -1248,7 +1248,7 @@ void G_Ticker ()
 			G_DoLoadGame ();
 			break;
 		case ga_savegame:
-			G_DoSaveGame (true, false, savegamefile, savedescription);
+			G_DoSaveGame (true, false, savegamefile, savedescription.GetChars());
 			gameaction = ga_nothing;
 			savegamefile = "";
 			savedescription = "";
@@ -1270,7 +1270,7 @@ void G_Ticker ()
 			G_DoWorldDone ();
 			break;
 		case ga_screenshot:
-			M_ScreenShot (shotfile);
+			M_ScreenShot (shotfile.GetChars());
 			shotfile = "";
 			gameaction = ga_nothing;
 			break;
@@ -1565,7 +1565,7 @@ bool FLevelLocals::CheckSpot (int playernum, FPlayerStart *mthing)
 	//    return false;
 
 	players[playernum].mo->flags |=  MF_SOLID;
-	i = P_CheckPosition(players[playernum].mo, spot);
+	i = P_CheckPosition(players[playernum].mo, spot.XY());
 	players[playernum].mo->flags &= ~MF_SOLID;
 	players[playernum].mo->SetZ(oldz);	// [RH] Restore corpse's height
 	if (!i)
@@ -1817,7 +1817,7 @@ void FLevelLocals::DoReborn (int playernum, bool freshbot)
 	if (!multiplayer && !(flags2 & LEVEL2_ALLOWRESPAWN) && !sv_singleplayerrespawn &&
 		!G_SkillProperty(SKILLP_PlayerRespawn))
 	{
-		if (BackupSaveName.Len() > 0 && FileExists (BackupSaveName.GetChars()))
+		if (BackupSaveName.Len() > 0 && FileExists (BackupSaveName))
 		{ // Load game from the last point it was saved
 			savename = BackupSaveName;
 			gameaction = ga_autoloadgame;
@@ -1826,7 +1826,7 @@ void FLevelLocals::DoReborn (int playernum, bool freshbot)
 		{ // Reload the level from scratch
 			bool indemo = demoplayback;
 			BackupSaveName = "";
-			G_InitNew (MapName, false);
+			G_InitNew (MapName.GetChars(), false);
 			demoplayback = indemo;
 		}
 	}
@@ -2129,7 +2129,7 @@ void G_DoLoadGame ()
 			message.Substitute("%e", FStringf("%d", SAVEVER));
 		}
 		message.Substitute("%d", FStringf("%d", SaveVersion));
-		LoadGameError(message);
+		LoadGameError(message.GetChars());
 		return;
 	}
 
@@ -2201,7 +2201,7 @@ void G_DoLoadGame ()
 
 	// load a base level
 	bool demoplaybacksave = demoplayback;
-	G_InitNew(map, false);
+	G_InitNew(map.GetChars(), false);
 	demoplayback = demoplaybacksave;
 	savegamerestore = false;
 
@@ -2223,7 +2223,7 @@ void G_DoLoadGame ()
 	{
 		FString modelFilePath = smf.Left(smf.LastIndexOf("/")+1);
 		FString modelFileName = smf.Right(smf.Len() - smf.Left(smf.LastIndexOf("/") + 1).Len());
-		FindModel(modelFilePath, modelFileName);
+		FindModel(modelFilePath.GetChars(), modelFileName.GetChars());
 	}
 
 	// At this point, the GC threshold is likely a lot higher than the
@@ -2267,8 +2267,8 @@ void G_SaveGame (const char *filename, const char *description)
 CCMD(opensaves)
 {
 	FString name = G_GetSavegamesFolder();
-	CreatePath(name);
-	I_OpenShellFolder(name);
+	CreatePath(name.GetChars());
+	I_OpenShellFolder(name.GetChars());
 }
 
 CVAR (Int, autosavenum, 0, CVAR_NOSET|CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
@@ -2306,7 +2306,7 @@ void G_DoAutoSave ()
 	num.Int = nextautosave;
 	autosavenum->ForceSet (num, CVAR_Int);
 
-	file = G_BuildSaveName(FStringf("auto%02d", nextautosave));
+	file = G_BuildSaveName(FStringf("auto%02d", nextautosave).GetChars());
 
 	// The hint flag is only relevant on the primary level.
 	if (!(primaryLevel->flags2 & LEVEL2_NOAUTOSAVEHINT))
@@ -2321,7 +2321,7 @@ void G_DoAutoSave ()
 
 	readableTime = myasctime ();
 	description.Format("Autosave %s", readableTime);
-	G_DoSaveGame (false, false, file, description);
+	G_DoSaveGame (false, false, file, description.GetChars());
 }
 
 void G_DoQuickSave ()
@@ -2345,11 +2345,11 @@ void G_DoQuickSave ()
 	num.Int = lastquicksave;
 	quicksavenum->ForceSet (num, CVAR_Int);
 
-	file = G_BuildSaveName(FStringf("quick%02d", lastquicksave));
+	file = G_BuildSaveName(FStringf("quick%02d", lastquicksave).GetChars());
 
 	readableTime = myasctime ();
 	description.Format("Quicksave %s", readableTime);
-	G_DoSaveGame (true, true, file, description);
+	G_DoSaveGame (true, true, file, description.GetChars());
 }
 
 
@@ -2372,7 +2372,7 @@ static void PutSaveComment (FSerializer &arc)
 
 	FString comment = myasctime();
 
-	arc.AddString("Creation Time", comment);
+	arc.AddString("Creation Time", comment.GetChars());
 
 	// Get level name
 	comment.Format("%s - %s\n", primaryLevel->MapName.GetChars(), primaryLevel->LevelName.GetChars());
@@ -2383,7 +2383,7 @@ static void PutSaveComment (FSerializer &arc)
 	comment.AppendFormat("%s: %02d:%02d:%02d", time, levelTime/3600, (levelTime%3600)/60, levelTime%60);
 
 	// Write out the comment
-	arc.AddString("Comment", comment);
+	arc.AddString("Comment", comment.GetChars());
 }
 
 static void PutSavePic (FileWriter *file, int width, int height)
@@ -2461,7 +2461,7 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 	// put some basic info into the PNG so that this isn't lost when the image gets extracted.
 	M_AppendPNGText(&savepic, "Software", buf);
 	M_AppendPNGText(&savepic, "Title", description);
-	M_AppendPNGText(&savepic, "Current Map", primaryLevel->MapName);
+	M_AppendPNGText(&savepic, "Current Map", primaryLevel->MapName.GetChars());
 	M_FinishPNG(&savepic);
 
 	int ver = SAVEVER;
@@ -2469,7 +2469,7 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 		.AddString("Engine", GAMESIG)
 		("Save Version", ver)
 		.AddString("Title", description)
-		.AddString("Current Map", primaryLevel->MapName);
+		.AddString("Current Map", primaryLevel->MapName.GetChars());
 
 
 	PutSaveWads (savegameinfo);
@@ -2514,10 +2514,10 @@ void G_DoSaveGame (bool okForQuicksave, bool forceQuicksave, FString filename, c
 
 	bool succeeded = false;
 
-	if (WriteZip(filename, savegame_content.Data(), savegame_content.Size()))
+	if (WriteZip(filename.GetChars(), savegame_content.Data(), savegame_content.Size()))
 	{
 		// Check whether the file is ok by trying to open it.
-		FResourceFile *test = FResourceFile::OpenResourceFile(filename, true);
+		FResourceFile *test = FResourceFile::OpenResourceFile(filename.GetChars(), true);
 		if (test != nullptr)
 		{
 			delete test;
@@ -2686,7 +2686,7 @@ void G_BeginRecording (const char *startmap)
 
 	if (startmap == NULL)
 	{
-		startmap = primaryLevel->MapName;
+		startmap = primaryLevel->MapName.GetChars();
 	}
 	demo_p = demobuffer;
 
@@ -2953,7 +2953,7 @@ void G_DoPlayDemo (void)
 	gameaction = ga_nothing;
 
 	// [RH] Allow for demos not loaded as lumps
-	demolump = fileSystem.CheckNumForFullName (defdemoname, true);
+	demolump = fileSystem.CheckNumForFullName (defdemoname.GetChars(), true);
 	if (demolump >= 0)
 	{
 		int demolen = fileSystem.FileLength (demolump);
@@ -2965,7 +2965,7 @@ void G_DoPlayDemo (void)
 		FixPathSeperator (defdemoname);
 		DefaultExtension (defdemoname, ".lmp");
 		FileReader fr;
-		if (!fr.OpenFile(defdemoname))
+		if (!fr.OpenFile(defdemoname.GetChars()))
 		{
 			I_Error("Unable to open demo '%s'", defdemoname.GetChars());
 		}
@@ -3012,7 +3012,7 @@ void G_DoPlayDemo (void)
 		demonew = true;
 		if (mapname.Len() != 0)
 		{
-			G_InitNew (mapname, false);
+			G_InitNew (mapname.GetChars(), false);
 		}
 		else if (primaryLevel->sectors.Size() == 0)
 		{
@@ -3140,14 +3140,14 @@ bool G_CheckDemoStatus (void)
 		formlen = demobuffer + 4;
 		WriteLong (int(demo_p - demobuffer - 8), &formlen);
 
-		auto fw = FileWriter::Open(demoname);
+		auto fw = FileWriter::Open(demoname.GetChars());
 		bool saved = false;
 		if (fw != nullptr)
 		{
 			const size_t size = demo_p - demobuffer;
 			saved = fw->Write(demobuffer, size) == size;
 			delete fw;
-			if (!saved) remove(demoname);
+			if (!saved) remove(demoname.GetChars());
 		}
 		M_Free (demobuffer); 
 		demorecording = false;
