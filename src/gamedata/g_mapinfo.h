@@ -324,6 +324,7 @@ struct level_info_t
 	FString		NextMap;
 	FString		NextSecretMap;
 	FString		PName;
+	FString		Description;
 	FString		SkyPic1;
 	FString		SkyPic2;
 	FString		FadeTable;

@@ -242,6 +242,7 @@ void level_info_t::Reset()
 	PName = "";
 	NextMap = "";
 	NextSecretMap = "";
+	Description = "";
 	SkyPic1 = SkyPic2 = "-NOFLAT-";
 	invasiontier = 0;
 	tilt = tiltAngle = 0.0;
@@ -993,6 +994,13 @@ DEFINE_MAP_OPTION(author, true)
 	parse.ParseAssign();
 	parse.sc.MustGetString();
 	info->AuthorName = parse.sc.String;
+}
+
+DEFINE_MAP_OPTION(description, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetString();
+	info->Description = strbin1(GStrings.localize(parse.sc.String));
 }
 
 DEFINE_MAP_OPTION(secretnext, true)
