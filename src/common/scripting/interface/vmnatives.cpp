@@ -1120,7 +1120,7 @@ DEFINE_ACTION_FUNCTION(DOptionMenuItemCommandInput, DoCommand)
 	PARAM_STRING(cmd);
 	PARAM_BOOL(unsafe);
 	UnsafeExecutionScope scope(unsafe);
-	C_DoCommand(cmd);
+	C_DoCommand(cmd.GetChars());
 	return 0;
 }
 

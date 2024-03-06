@@ -810,7 +810,7 @@ void C_BindDefaults()
 		defbinds = "engine/leftbinds.txt";
 	}
 
-	C_SetDefaultKeys(defbinds);
+	C_SetDefaultKeys(defbinds.GetChars());
 }
 
 void C_SetDefaultBindings()

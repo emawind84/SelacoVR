@@ -18,7 +18,7 @@ ProfileManager profileManager;
 
 void ProfileManager::ProcessOneProfileFile(const FString &name)
 {
-	auto fb = ExtractFileBase(name, false);
+	auto fb = ExtractFileBase(name.GetChars(), false);
 	long clidx = fb.IndexOf("commandline_", 0);
 	if (clidx == 0)
 	{
@@ -29,12 +29,12 @@ void ProfileManager::ProcessOneProfileFile(const FString &name)
 			if (!profile.mName.CompareNoCase(fb)) return;
 		}
 		FileReader fr;
-		if (fr.OpenFile(name))
+		if (fr.OpenFile(name.GetChars()))
 		{
 			char head[100] = { 0};
 			fr.Read(head, 100);
 			FString titleTag = "#TITLE";
-			if (!memcmp(head, titleTag, titleTag.Len()))
+			if (!memcmp(head, titleTag.GetChars(), titleTag.Len()))
 			{
 				const long titleMaxLength = 50;
 				FString title = FString(&head[7], std::min<size_t>(strcspn(&head[7], "\r\n"), titleMaxLength));
@@ -89,7 +89,7 @@ void ProfileManager::CollectProfiles()
 	for (auto &dir : mSearchPaths)
 	{
 		FileSys::FileList list;
-		if (FileSys::ScanDirectory(list, dir, "*", true))
+		if (FileSys::ScanDirectory(list, dir.GetChars(), "*", true))
 		{
 			for (auto& entry : list)
 			{

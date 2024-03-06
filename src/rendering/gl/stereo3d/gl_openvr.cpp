@@ -267,7 +267,8 @@ bool IsOpenVRPresent()
 	if (!done)
 	{
 		done = true;
-		cached_result = OpenVRModule.Load({ NicePath("$PROGDIR/" OPENVRLIB), OPENVRLIB });
+		FString libname = NicePath("$PROGDIR/" OPENVRLIB);
+		cached_result = OpenVRModule.Load({ libname.GetChars(), OPENVRLIB });
 	}
 	return cached_result;
 #endif

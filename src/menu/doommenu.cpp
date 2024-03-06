@@ -1050,7 +1050,7 @@ static void InitCommandLineProfileMenu()
 		{
 			for (FCommandLineInfo &entry : cmdlineProfiles)
 			{
-				auto it = CreateOptionMenuItemCommand(entry.mTitle, FStringf("%s \"%s\"", "cmdlineprofile", entry.mName.GetChars()), true);
+				auto it = CreateOptionMenuItemCommand(entry.mTitle.GetChars(), FStringf("%s \"%s\"", "cmdlineprofile", entry.mName.GetChars()), true);
 				static_cast<DOptionMenuDescriptor*>(*menu)->mItems.Push(it);
 				GC::WriteBarrier(*menu, it);
 			}

@@ -6021,20 +6021,7 @@ void P_UseLines(player_t *player)
 
 int P_UsePuzzleItem(AActor *PuzzleItemUser, int PuzzleItemType, double x1, double y1, double x2, double y2)
 {
-	DVector2 start;
-	DVector2 end;
-	double usedist;
-
-	// [NS] If it's a Player, get their UseRange.
-	if (PuzzleItemUser->player)
-		usedist = PuzzleItemUser->player->mo->FloatVar(NAME_UseRange);
-	else
-		usedist = USERANGE;
-
-	start = PuzzleItemUser->GetPortalTransition(PuzzleItemUser->Height / 2).XY();
-	end = PuzzleItemUser->Angles.Yaw.ToVector(usedist);
-
-	FPathTraverse it(PuzzleItemUser->Level, start.X, start.Y, end.X, end.Y, PT_DELTA | PT_ADDLINES | PT_ADDTHINGS);
+	FPathTraverse it(PuzzleItemUser->Level, x1, y1, x2, y2, PT_DELTA | PT_ADDLINES | PT_ADDTHINGS);
 	intercept_t *in;
 
 	while ((in = it.Next()))
@@ -6098,7 +6085,7 @@ int P_UsePuzzleItem(AActor *PuzzleItemUser, int PuzzleItemType)
 	else
 		usedist = USERANGE;
 
-	start = PuzzleItemUser->GetPortalTransition(PuzzleItemUser->Height / 2);
+	start = PuzzleItemUser->GetPortalTransition(PuzzleItemUser->Height / 2).XY();
 	end = PuzzleItemUser->Angles.Yaw.ToVector(usedist);
 
 	if (use_mode == 0 || use_mode == 2)
