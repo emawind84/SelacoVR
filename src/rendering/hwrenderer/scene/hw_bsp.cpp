@@ -320,8 +320,9 @@ void HWDrawInfo::AddLine (seg_t *seg, bool portalclip)
 		else
 		{
 			HWWall wall;
+			HWWallDispatcher disp(this);
 			wall.sub = currentsubsector;
-			wall.Process(this, seg, seg->frontsector, seg->backsector, true);
+			wall.Process(&disp, seg, seg->frontsector, seg->backsector, true);
 		}
 		clipper.SafeAddClipRange(startAngle, endAngle);
 		return;

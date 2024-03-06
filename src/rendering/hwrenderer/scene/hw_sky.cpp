@@ -134,7 +134,7 @@ void HWWall::SkyPlane(HWWallDispatcher *di, sector_t *sector, int plane, bool al
 			ptype = PORTALTYPE_SKY;
 			sky = &skyinfo;
 		}
-		PutPortal(di, ptype, plane);
+		//PutPortal(di, ptype, plane);
 	}
 	else if (sportal != nullptr)
 	{
