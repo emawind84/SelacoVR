@@ -808,6 +808,13 @@ DEFINE_ACTION_FUNCTION(_Wads, GetLumpNamespace)
 	ACTION_RETURN_INT(fileSystem.GetFileNamespace(lump));
 }
 
+DEFINE_ACTION_FUNCTION(_Wads, GetLumpWadNum)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(lump);
+	ACTION_RETURN_INT(fileSystem.GetFileContainer(lump));
+}
+
 DEFINE_ACTION_FUNCTION(_Wads, ReadLump)
 {
 	PARAM_PROLOGUE;
