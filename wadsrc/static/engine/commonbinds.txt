@@ -46,10 +46,9 @@ mouse2 +altattack
 9 "slot 9"
 0 "slot 0"
 mouse1 +attack
-f1 menu_help
 f2 save_menu
 f3 load_menu
-f4 menu_options
+f4 openmenu SelacoOptionMenu
 f5 chase
 f6 quicksaveselaco
 f9 quickload
