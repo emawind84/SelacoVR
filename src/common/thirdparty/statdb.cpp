@@ -22,7 +22,7 @@ EXTERN_CVAR(Int, developer)
 
 StatDatabase statDatabase;
 
-#define ALLOW_STAT_CHEATS
+//#define ALLOW_STAT_CHEATS
 
 
 #ifdef ALLOW_STAT_CHEATS
