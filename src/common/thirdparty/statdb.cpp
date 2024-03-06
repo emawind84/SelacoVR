@@ -551,6 +551,10 @@ bool StatDatabase::isConnected() {
     return sock > -1 && outReady;
 }
 
+bool StatDatabase::checkConnection() {
+    return isConnected();
+}
+
 bool StatDatabase::connectRPC() {
     if(sock < 0) {
         sock = socket(AF_LOCAL, SOCK_STREAM | SOCK_NONBLOCK, 0);
