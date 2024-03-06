@@ -290,6 +290,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, StartNewGame)
 	PARAM_INT(episode);
 	PARAM_INT(skill);
 	PARAM_STRING(playerClass);
+	PARAM_STRING(mapName);
 
 	// Make sure this call is coming from a menu, 
 	if (menuactive == MENU_Off) {
@@ -297,12 +298,19 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, StartNewGame)
 		return 0;
 	}
 
-	FNewGameStartup s;
-	s.PlayerClass = playerClass.IsEmpty() ? NULL : playerClass.GetChars();
-	s.Episode = episode;
-	s.Skill = skill;
+	if (mapName.Len() > 0) {
+		auto pc = playerClass.IsEmpty() ? NULL : playerClass.GetChars();
+		if (pc) playerclass = pc;
+		G_DeferedInitNew(mapName, skill);
+	}
+	else {
+		FNewGameStartup s;
+		s.PlayerClass = playerClass.IsEmpty() ? NULL : playerClass.GetChars();
+		s.Episode = episode;
+		s.Skill = skill;
 
-	G_DeferedInitNew(&s);
+		G_DeferedInitNew(&s);
+	}
 	
 	if (gamestate == GS_FULLCONSOLE)
 	{
