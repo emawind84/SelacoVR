@@ -302,15 +302,10 @@ bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, int translation,
 		);
 
 		if (params != nullptr) {
-			if (makeSPI) {
-				// Only generate SPI if it's not already there
-				spi.generateSpi = !mat->sourcetex->HasSpritePositioning();
-				spi.notrimming = mat->sourcetex->GetNoTrimming();
-				spi.shouldExpand = shouldExpand;
-			}
-			else {
-				spi.generateSpi = false;
-			}
+			// Only generate SPI if it's not already there
+			spi.generateSpi = makeSPI && !mat->sourcetex->HasSpritePositioning();
+			spi.notrimming = mat->sourcetex->GetNoTrimming();
+			spi.shouldExpand = shouldExpand;
 
 			GlTexLoadIn in = {
 				layer->layerTexture->GetImage(),

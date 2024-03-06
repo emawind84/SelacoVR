@@ -337,6 +337,9 @@ void FGameTexture::GenerateInitialSpriteData(SpritePositioningInfo *info, FBitma
 			spi.spriteWidth += 2;
 			spi.spriteHeight += 2;
 		}
+		else {
+			spi.mTrimResult = 0;
+		}
 	}
 }
 

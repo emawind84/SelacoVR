@@ -208,6 +208,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 
 	pixels.Create(buffWidth, buffHeight); // TODO: Error checking
 
+
 	if (exx) {
 		// This is incredibly wasteful, but necessary for now since we can't read the bitmap with an offset into a larger buffer
 		// Read into a buffer and blit 
@@ -401,9 +402,11 @@ void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 					memcpy(spi, loaded.spi.info, 2 * sizeof(SpritePositioningInfo));
 					loaded.gtex->SetSpriteRect(spi);
 				}
+#ifdef DEBUG
 				else {
 					Printf(TEXTCOLOR_RED"%s ALREADY HAS SPRITE POSITIONING!!  %p\n", loaded.gtex->GetName(), this);
 				}
+#endif
 			}
 		}
 
@@ -720,15 +723,10 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 		);
 
 		if(params) {
-			if (makeSPI) {
-				// Only generate SPI if it's not already there, but we need the other flags for sizing
-				spi.generateSpi = !mat->sourcetex->HasSpritePositioning();
-				spi.notrimming = mat->sourcetex->GetNoTrimming();
-				spi.shouldExpand = shouldExpand;
-			}
-			else {
-				spi.generateSpi = false;
-			}
+			// Only generate SPI if it's not already there, but we need the other flags for sizing
+			spi.generateSpi = makeSPI && !mat->sourcetex->HasSpritePositioning();
+			spi.notrimming = mat->sourcetex->GetNoTrimming();
+			spi.shouldExpand = shouldExpand;
 
 			VkTexLoadIn in = {
 				layer->layerTexture->GetImage(),
