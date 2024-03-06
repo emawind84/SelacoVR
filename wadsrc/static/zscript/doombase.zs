@@ -336,6 +336,7 @@ struct LevelInfo native
 	native readonly int levelnum;
 	native readonly int levelgroup, areaNum;
 	native readonly String MapName;
+	native readonly String Description;
 	native readonly String NextMap;
 	native readonly String NextSecretMap;
 	native readonly String SkyPic1;
@@ -530,7 +531,7 @@ struct LevelLocals native
 	native void SecretExitLevel(int position);
 	native void ChangeLevel(string levelname, int position = 0, int flags = 0, int skill = -1);
 
-	native void StartNewGame(int episode, int skill = -1, string className = "");
+	native void StartNewGame(int episode, int skill = -1, string className = "", string levelName = "");
 	native void ReturnToTitle();
 	native void QuitGame();
 }
