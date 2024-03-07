@@ -66,7 +66,7 @@ class Mauler : StrifeWeapon
 			hand = weap.bOffhandWeapon ? 1 : 0;
 			laflags |= hand ? LAF_ISOFFHAND : 0;
 			alflags |= hand ? ALF_ISOFFHAND : 0;
-			if (!weap.DepleteAmmo (weap.bAltFire, true, 2))
+			if (!weap.DepleteAmmo (weap.bAltFire, true))
 				return;
 			
 		}

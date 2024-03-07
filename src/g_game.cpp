@@ -221,7 +221,10 @@ CVAR (Float,	m_forward,		1.f,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 CVAR (Float,	m_side,			2.f,	CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
  
 int 			turnheld;								// for accelerative turning 
- 
+
+EXTERN_CVAR (Bool, invertmouse)
+EXTERN_CVAR (Bool, invertmousex)
+
 // mouse values are used once 
 float 			mousex;
 float 			mousey; 		
@@ -1128,9 +1131,23 @@ bool G_Responder (event_t *ev)
 		break;
 
 	// [RH] mouse buttons are sent as key up/down events
-	case EV_Mouse: 
-		mousex = ev->x;
-		mousey = ev->y;
+	case EV_Mouse:
+        if(invertmousex)
+        {
+		   mousex = -ev->x;
+        }
+        else
+        {
+            mousex = ev->x;
+        }
+        if(invertmouse)
+        {
+            mousey = -ev->y;
+        }
+        else
+        {
+            mousey = ev->y;
+        }
 		break;
 	}
 
@@ -2058,8 +2075,12 @@ void C_SerializeCVars(FSerializer& arc, const char* label, uint32_t filter)
 }
 
 
+void SetupLoadingCVars();
+void FinishLoadingCVars();
+
 void G_DoLoadGame ()
 {
+	SetupLoadingCVars();
 	bool hidecon;
 
 	if (gameaction != ga_autoloadgame)
@@ -2202,6 +2223,7 @@ void G_DoLoadGame ()
 	// load a base level
 	bool demoplaybacksave = demoplayback;
 	G_InitNew(map.GetChars(), false);
+	FinishLoadingCVars();
 	demoplayback = demoplaybacksave;
 	savegamerestore = false;
 

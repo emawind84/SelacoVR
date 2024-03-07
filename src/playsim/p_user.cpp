@@ -1653,6 +1653,7 @@ void player_t::Serialize(FSerializer &arc)
 
 	if (arc.isReading())
 	{
+		userinfo.Reset(mo->Level->PlayerNum(this));
 		ReadUserInfo(arc, userinfo, skinname);
 	}
 	else

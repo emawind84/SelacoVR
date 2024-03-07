@@ -135,7 +135,7 @@ extend class StateProvider
 		if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
 			hand = weap.bOffhandWeapon ? 1 : 0;
-			if (!weap.DepleteAmmo (weap.bAltFire, true, 1))
+			if (!weap.DepleteAmmo (weap.bAltFire, true))
 				return;
 			
 			State flash = weap.FindState('Flash');

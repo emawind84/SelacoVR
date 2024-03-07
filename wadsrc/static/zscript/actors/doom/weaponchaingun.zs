@@ -63,7 +63,7 @@ extend class StateProvider
 		{
 			hand = weap.bOffhandWeapon ? 1 : 0;
 			alflags |= hand ? ALF_ISOFFHAND : 0;
-			if (!weap.DepleteAmmo (weap.bAltFire, true, 1))
+			if (!weap.DepleteAmmo (weap.bAltFire, true))
 				return;
 
 			State flash = weap.FindState('Flash');

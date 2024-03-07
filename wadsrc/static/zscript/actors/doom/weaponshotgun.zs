@@ -67,7 +67,7 @@ extend class StateProvider
 		if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
 			alflags |= weap.bOffhandWeapon ? ALF_ISOFFHAND : 0;
-			if (!weap.DepleteAmmo (weap.bAltFire, true, 1))
+			if (!weap.DepleteAmmo (weap.bAltFire, true))
 				return;
 			
 			player.SetPsprite(PSP_FLASH, weap.FindState('Flash'), true, weap);

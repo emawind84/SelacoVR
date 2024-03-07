@@ -110,7 +110,7 @@ extend class StateProvider
 		if (weap != null)
 		{
 			hand = weap.bOffhandWeapon ? 1 : 0;
-			if (!weap.DepleteAmmo (weap.bAltFire, true, 1))
+			if (!weap.DepleteAmmo (weap.bAltFire, true))
 				return;
 
 			doesautoaim = weap.bNoAutoaim;
