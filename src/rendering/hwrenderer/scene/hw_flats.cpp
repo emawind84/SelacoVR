@@ -51,6 +51,7 @@
 CVAR(Int, gl_max_vertices, 0, CVAR_ARCHIVE)
 
 extern int flatVerticesPerEye;
+extern int lightsFlatPerEye;
 
 #ifdef _DEBUG
 CVAR(Int, gl_breaksec, -1, 0)
@@ -161,7 +162,7 @@ void HWFlat::SetupLights(HWDrawInfo *di, FLightNode * node, FDynLightData &light
 		dynlightindex = -1;
 		return;	// no lights on additively blended surfaces.
 	}
-	while (node && (!gl_light_flat_max_lights || iter_dlightf < gl_light_flat_max_lights))
+	while (node && (!gl_light_flat_max_lights || lightsFlatPerEye < gl_light_flat_max_lights))
 	{
 		FDynamicLight * light = node->lightsource;
 
@@ -170,6 +171,7 @@ void HWFlat::SetupLights(HWDrawInfo *di, FLightNode * node, FDynLightData &light
 			node = node->nextLight;
 			continue;
 		}
+		lightsFlatPerEye++;
 		iter_dlightf++;
 
 		// we must do the side check here because gl_GetLight needs the correct plane orientation

@@ -58,6 +58,8 @@ extern bool NoInterpolateView;
 extern int flatVerticesPerEye;
 extern int wallVerticesPerEye;
 extern int portalsPerEye;
+extern int lightsFlatPerEye;
+extern int lightsWallPerEye;
 
 static SWSceneDrawer *swdrawer;
 
@@ -144,7 +146,7 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 	screen->FirstEye();
 	for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
 	{
-		flatVerticesPerEye = wallVerticesPerEye = portalsPerEye = 0;
+		flatVerticesPerEye = wallVerticesPerEye = portalsPerEye = lightsFlatPerEye = lightsWallPerEye = 0;
 		const auto& eye = vrmode->mEyes[eye_ix];
 		eye->SetUp();
 		screen->SetViewportRects(bounds);

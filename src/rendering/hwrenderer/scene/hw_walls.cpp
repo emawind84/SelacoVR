@@ -47,6 +47,7 @@
 EXTERN_CVAR(Int, gl_max_vertices)
 
 extern int wallVerticesPerEye;
+extern int lightsWallPerEye;
 
 bool IsDistanceCulled(seg_t *line);
 
@@ -434,10 +435,11 @@ void HWWall::SetupLights(HWDrawInfo *di, FDynLightData &lightdata)
 	else node = NULL;
 
 	// Iterate through all dynamic lights which touch this wall and render them
-	while (node && (!gl_light_wall_max_lights || iter_dlight < gl_light_wall_max_lights))
+	while (node && (!gl_light_wall_max_lights || lightsWallPerEye < gl_light_wall_max_lights))
 	{
 		if (node->lightsource->IsActive() && !node->lightsource->DontLightMap() && !gl_IsDistanceCulled(node->lightsource))
 		{
+			lightsWallPerEye++;
 			iter_dlight++;
 
 			DVector3 posrel = node->lightsource->PosRelative(seg->frontsector->PortalGroup);
