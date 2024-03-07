@@ -48,6 +48,7 @@
 #include "types.h"
 #include "vmintern.h"
 #include "c_cvars.h"
+#include "palettecontainer.h"
 
 struct FState; // needed for FxConstant. Maybe move the state constructor to a subclass later?
 
@@ -232,6 +233,7 @@ enum EFxType
 	EFX_StringCast,
 	EFX_ColorCast,
 	EFX_SoundCast,
+	EFX_TranslationCast,
 	EFX_TypeCast,
 	EFX_PlusSign,
 	EFX_MinusSign,
@@ -507,6 +509,13 @@ public:
 		isresolved = true;
 	}
 
+	FxConstant(FTranslationID state, const FScriptPosition& pos) : FxExpression(EFX_Constant, pos)
+	{
+		value.Int = state.index();
+		ValueType = value.Type = TypeTranslationID;
+		isresolved = true;
+	}
+
 	FxConstant(VMFunction* state, const FScriptPosition& pos) : FxExpression(EFX_Constant, pos)
 	{
 		value.pointer = state;
@@ -713,6 +722,19 @@ public:
 	FxExpression *Resolve(FCompileContext&);
 
 	ExpEmit Emit(VMFunctionBuilder *build);
+};
+
+class FxTranslationCast : public FxExpression
+{
+	FxExpression* basex;
+
+public:
+
+	FxTranslationCast(FxExpression* x);
+	~FxTranslationCast();
+	FxExpression* Resolve(FCompileContext&);
+
+	ExpEmit Emit(VMFunctionBuilder* build);
 };
 
 class FxFontCast : public FxExpression

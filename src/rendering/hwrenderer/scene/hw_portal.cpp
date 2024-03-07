@@ -989,7 +989,7 @@ void HWHorizonPortal::DrawContents(HWDrawInfo *di, FRenderState &state)
 
 
 	state.EnableBrightmap(true);
-	state.SetMaterial(texture, UF_Texture, 0, CLAMP_NONE, 0, -1);
+	state.SetMaterial(texture, UF_Texture, 0, CLAMP_NONE, NO_TRANSLATION, -1);
 	state.SetObjectColor(origin->specialcolor);
 
 	SetPlaneTextureRotation(state, sp, texture);
