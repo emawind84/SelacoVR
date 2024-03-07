@@ -268,7 +268,7 @@ const char* BaseFileSearch(const char* file, const char* ext, bool lookfirstinpr
 
 #ifdef __MOBILE__
 	BFSwad.Format("./res/%s", file);
-	if (DirEntryExists(BFSwad))
+	if (DirEntryExists(BFSwad.GetChars()))
 	{
 		return BFSwad.GetChars();
 	}

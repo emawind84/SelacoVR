@@ -47,7 +47,7 @@ FString M_GetAppDataPath(bool create)
 	FString path = NicePath("./config/");
 	if (create)
 	{
-		CreatePath(path);
+		CreatePath(path.GetChars());
 	}
 	return path;
 }
@@ -59,7 +59,7 @@ FString GetUserFile (const char *file)
 
 	path = NicePath("./config/");
 
-	if (stat (path, &info) == -1)
+	if (stat (path.GetChars(), &info) == -1)
 	{
 	/*
 		struct stat extrainfo;
@@ -72,9 +72,9 @@ FString GetUserFile (const char *file)
 			}
 		}
 		*/
-		CreatePath(path);
+		CreatePath(path.GetChars());
 	}
-	mkdir (path, S_IRUSR | S_IWUSR | S_IXUSR);
+	mkdir (path.GetChars(), S_IRUSR | S_IWUSR | S_IXUSR);
 
 	path += file;
 	return path;
@@ -95,7 +95,7 @@ FString M_GetCachePath(bool create)
 	FString path = NicePath("./cache/");
 	if (create)
 	{
-		CreatePath(path);
+		CreatePath(path.GetChars());
 	}
 	return path;
 }
