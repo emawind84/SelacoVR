@@ -48,6 +48,7 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/rendering \
     	$(GZDOOM_TOP_PATH)/src/common/thirdparty/libsmackerdec/include \
     	$(GZDOOM_TOP_PATH)/src/common/thirdparty/stb \
+    	$(GZDOOM_TOP_PATH)/src/common/thirdparty/utf8proc \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/hwrenderer/data \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl_load \
     	$(GZDOOM_TOP_PATH)/src/common/rendering/gl \
@@ -352,6 +353,7 @@ PCH_SOURCES = \
 	common/2d/v_drawtext.cpp \
 	common/2d/v_draw.cpp \
 	common/2d/wipe.cpp \
+	common/thirdparty/animlib.cpp \
 	common/thirdparty/gain_analysis.cpp \
 	common/thirdparty/sfmt/SFMT.cpp \
 	common/startscreen/startscreen.cpp \
@@ -380,7 +382,6 @@ PCH_SOURCES = \
 	common/textures/skyboxtexture.cpp \
 	common/textures/animtexture.cpp \
 	common/textures/v_collection.cpp \
-	common/textures/animlib.cpp \
 	common/textures/formats/automaptexture.cpp \
 	common/textures/formats/brightmaptexture.cpp \
 	common/textures/formats/buildtexture.cpp \
@@ -441,6 +442,7 @@ PCH_SOURCES = \
 	common/utility/s_playlist.cpp \
 	common/utility/name.cpp \
 	common/utility/r_memory.cpp \
+	common/utility/writezip.cpp \
 	common/thirdparty/base64.cpp \
 	common/thirdparty/md5.cpp \
  	common/thirdparty/superfasthash.cpp \
@@ -555,6 +557,7 @@ LOCAL_SRC_FILES = \
 	$(PCH_SOURCES) \
 	common/utility/x86.cpp \
 	common/thirdparty/strnatcmp.c \
+	common/thirdparty/utf8proc/utf8proc.c \
 	common/thirdparty/stb/stb_sprintf.c \
 	common/utility/zstring.cpp \
 	common/utility/findfile.cpp \
@@ -587,12 +590,16 @@ LOCAL_SRC_FILES = \
 	common/filesystem/source/file_pak.cpp \
 	common/filesystem/source/file_whres.cpp \
 	common/filesystem/source/file_ssi.cpp \
+	common/filesystem/source/file_hog.cpp \
+	common/filesystem/source/file_mvl.cpp \
 	common/filesystem/source/file_directory.cpp \
 	common/filesystem/source/resourcefile.cpp \
 	common/filesystem/source/files.cpp \
 	common/filesystem/source/files_decompress.cpp \
 	common/filesystem/source/fs_findfile.cpp \
 	common/filesystem/source/fs_stringpool.cpp \
+	common/filesystem/source/unicode.cpp \
+	common/filesystem/source/critsec.cpp \
 	../libraries/miniz/miniz.c \
 
 
