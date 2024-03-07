@@ -40,6 +40,7 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/utility \
     	$(GZDOOM_TOP_PATH)/src/common/cutscenes \
     	$(GZDOOM_TOP_PATH)/src/common/startscreen \
+    	$(GZDOOM_TOP_PATH)/src/common/widgets \
     	$(GZDOOM_TOP_PATH)/src/common/console \
     	$(GZDOOM_TOP_PATH)/src/common/engine \
     	$(GZDOOM_TOP_PATH)/src/common/menu \
