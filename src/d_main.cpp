@@ -1925,6 +1925,7 @@ void GetReserved(LumpFilterInfo& lfi)
 	lfi.reservedFolders = { "flats/", "textures/", "hires/", "sprites/", "voxels/", "colormaps/", "acs/", "maps/", "voices/", "patches/", "graphics/", "sounds/", "music/",
 	"materials/", "models/", "fonts/", "brightmaps/" };
 	lfi.requiredPrefixes = { "mapinfo", "zmapinfo", "umapinfo", "gameinfo", "sndinfo", "sndseq", "sbarinfo", "menudef", "gldefs", "animdefs", "decorate", "zscript", "iwadinfo", "complvl", "terrain", "maps/" };
+	lfi.blockednames = { "*.bat", "*.exe", "__macosx/*", "*/__macosx/*" };
 }
 
 static FString CheckGameInfo(std::vector<std::string> & pwads)
@@ -1943,7 +1944,7 @@ static FString CheckGameInfo(std::vector<std::string> & pwads)
 			// Found one!
 			auto data = check.ReadFile(num);
 			auto wadname = check.GetResourceFileName(check.GetFileContainer(num));
-			return ParseGameInfo(pwads, wadname, data.GetString(), (int)data.GetSize());
+			return ParseGameInfo(pwads, wadname, data.string(), (int)data.size());
 		}
 	}
 	return "";
@@ -3149,7 +3150,6 @@ static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allw
 	if (!batchrun) Printf ("W_Init: Init WADfiles.\n");
 
 	LumpFilterInfo lfi;
-	lfi.dotFilter = LumpFilterIWAD.GetChars();
 
 	static const struct { int match; const char* name; } blanket[] =
 	{
@@ -3164,6 +3164,15 @@ static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allw
 		if (gameinfo.gametype & inf.match) lfi.gameTypeFilter.push_back(inf.name);
 	}
 	lfi.gameTypeFilter.push_back(FStringf("game-%s", GameTypeName()).GetChars());
+
+	lfi.gameTypeFilter.push_back(LumpFilterIWAD.GetChars());
+	// Workaround for old Doom filter names.
+	if (LumpFilterIWAD.Compare("doom.id.doom") == 0)
+	{
+		lfi.gameTypeFilter.push_back("doom.doom");
+	}
+
+
 
 	GetReserved(lfi);
 
@@ -4003,5 +4012,16 @@ CCMD(fs_dir)
 		auto length = fileSystem.FileLength(i);
 		bool hidden = fileSystem.FindFile(fn1) != i;
 		Printf(PRINT_HIGH | PRINT_NONOTIFY, "%s%-64s %-15s (%5d) %10d %s %s\n", hidden ? TEXTCOLOR_RED : TEXTCOLOR_UNTRANSLATED, fn1, fns, fnid, length, container, hidden ? "(h)" : "");
+	}
+}
+
+CCMD(type)
+{
+	if (argv.argc() < 2) return;
+	int lump = fileSystem.CheckNumForFullName(argv[1]);
+	if (lump >= 0)
+	{
+		auto data = fileSystem.ReadFile(lump);
+		Printf("%.*s\n", data.size(), data.string());
 	}
 }

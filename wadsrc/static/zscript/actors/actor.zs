@@ -89,7 +89,6 @@ class Actor : Thinker native
 	const DEFMORPHTICS = 40 * TICRATE;
 	const MELEEDELTA = 20;
 
-
 	// flags are not defined here, the native fields for those get synthesized from the internal tables.
 	
 	// for some comments on these fields, see their native representations in actor.h.
@@ -540,13 +539,13 @@ class Actor : Thinker native
 	// This is called before a missile gets exploded.
 	virtual int SpecialMissileHit (Actor victim)
 	{
-		return -1;
+		return MHIT_DEFAULT;
 	}
 
 	// This is called when a missile bounces off something.
 	virtual int SpecialBounceHit(Actor bounceMobj, Line bounceLine, SecPlane bouncePlane)
 	{
-		return -1;
+		return MHIT_DEFAULT;
 	}
 
 	// Called when the player presses 'use' and an actor is found, except if the
