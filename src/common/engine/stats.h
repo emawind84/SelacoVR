@@ -35,7 +35,6 @@
 #define __STATS_H__
 
 #include "zstring.h"
-#include "i_time.h"
 #if defined __i386__
 #include "x86.h"
 #endif
@@ -236,24 +235,24 @@ public:
 
 	void Clock()
 	{
-		int64_t time = I_nsTime();
+		int64_t time = rdtsc();
 		Counter -= time;
 	}
 
 	void Unclock(bool checkvar = true)
 	{
-		int64_t time = I_nsTime();
+		int64_t time = rdtsc();
 		Counter += time;
 	}
 
 	double Time()
 	{
-		return double(Counter) / 1'000'000'000;
+		return Counter * PerfToSec;
 	}
 
 	double TimeMS()
 	{
-		return double(Counter) / 1'000'000;
+		return Counter * PerfToMillisec;
 	}
 
 	int64_t GetRawCounter()
