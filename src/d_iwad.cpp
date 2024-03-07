@@ -308,14 +308,16 @@ FIWadManager::FIWadManager(const char *firstfn, const char *optfn)
 	std::vector<std::string> fns;
 	fns.push_back(firstfn);
 	if (optfn) fns.push_back(optfn);
+	FileSys::LumpFilterInfo lfi;
+	GetReserved(lfi);
 
-	if (check.InitMultipleFiles(fns, nullptr, nullptr))
+	if (check.InitMultipleFiles(fns, &lfi, nullptr))
 	{
 		int num = check.CheckNumForName("IWADINFO");
 		if (num >= 0)
 		{
 			auto data = check.ReadFile(num);
-			ParseIWadInfo("IWADINFO", data.GetString(), (int)data.GetSize());
+			ParseIWadInfo("IWADINFO", data.string(), (int)data.size());
 		}
 	}
 }
@@ -399,7 +401,7 @@ int FIWadManager::CheckIWADInfo(const char* fn)
 
 				FIWADInfo result;
 				auto data = check.ReadFile(num);
-				ParseIWadInfo(fn, data.GetString(), (int)data.GetSize(), &result);
+				ParseIWadInfo(fn, data.string(), (int)data.size(), &result);
 
 				for (unsigned i = 0, count = mIWadInfos.Size(); i < count; ++i)
 				{

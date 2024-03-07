@@ -412,7 +412,7 @@ void player_t::SetLogNumber (int num)
 		}
 
 		auto lump = fileSystem.ReadFile(lumpnum);
-		SetLogText (lump.GetString());
+		SetLogText (lump.string());
 	}
 }
 

@@ -150,7 +150,7 @@ bool FScanner::OpenFile (const char *name)
 	auto filebuff = fr.Read();
 	if (filebuff.size() == 0 && filesize > 0) return false;
 
-	ScriptBuffer = FString((const char *)filebuff.data(), filesize);
+	ScriptBuffer = FString(filebuff.string(), filesize);
 	ScriptName = name;	// This is used for error messages so the full file name is preferable
 	LumpNum = -1;
 	PrepareScript ();
@@ -200,10 +200,10 @@ void FScanner :: OpenLumpNum (int lump)
 {
 	Close ();
 	{
-		auto mem = fileSystem.OpenFileReader(lump);
-		auto buff = ScriptBuffer.LockNewBuffer(mem.GetLength());
-		mem.Read(buff, mem.GetLength());
-		buff[mem.GetLength()] = 0;
+		auto len = fileSystem.FileLength(lump);
+		auto buff = ScriptBuffer.LockNewBuffer(len);
+		fileSystem.ReadFile(lump, buff);
+		buff[len] = 0;
 		ScriptBuffer.UnlockBuffer();
 	}
 	ScriptName = fileSystem.GetFileFullPath(lump).c_str();

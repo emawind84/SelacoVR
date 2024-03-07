@@ -150,7 +150,7 @@ class Lightning : Actor
 				tracer = thing;
 			}
 		}
-		return 1; // lightning zaps through all sprites
+		return MHIT_PASS; // lightning zaps through all sprites
 	}
 	
 }
@@ -420,7 +420,7 @@ class LightningZap : Actor
 				}
 			}
 		}
-		return -1;
+		return MHIT_DEFAULT;
 	}
 	
 	//============================================================================
