@@ -57,6 +57,8 @@ EXTERN_CVAR(Int, gl_dither_bpc)
 int flatVerticesPerEye;
 int wallVerticesPerEye;
 int portalsPerEye;
+int lightsFlatPerEye;
+int lightsWallPerEye;
 
 #ifdef _WIN32
 EXTERN_CVAR(Bool, vr_enable_quadbuffered)
