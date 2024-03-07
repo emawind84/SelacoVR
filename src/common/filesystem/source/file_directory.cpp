@@ -44,10 +44,6 @@ namespace FileSys {
 	
 std::string FS_FullPath(const char* directory);
 
-#ifdef _WIN32
-std::wstring toWide(const char* str);
-#endif
-
 //==========================================================================
 //
 // Zip file
@@ -58,6 +54,8 @@ class FDirectory : public FResourceFile
 {
 	const bool nosubdir;
 	const char* mBasePath;
+	const char** SystemFilePath;
+
 
 	int AddDirectory(const char* dirpath, LumpFilterInfo* filter, FileSystemMessageFunc Printf);
 
@@ -102,6 +100,7 @@ int FDirectory::AddDirectory(const char *dirpath, LumpFilterInfo* filter, FileSy
 	{
 		mBasePath = nullptr;
 		AllocateEntries((int)list.size());
+		SystemFilePath = (const char**)stringpool->Alloc(list.size() * sizeof(const char*));
 		for(auto& entry : list)
 		{
 			if (mBasePath == nullptr)
@@ -131,11 +130,13 @@ int FDirectory::AddDirectory(const char *dirpath, LumpFilterInfo* filter, FileSy
 					}
 					// for internal access we use the normalized form of the relative path.
 					Entries[count].FileName = NormalizeFileName(entry.FilePathRel.c_str());
+					SystemFilePath[count] = Entries[count].FileName;
 					Entries[count].CompressedSize = Entries[count].Length = entry.Length;
 					Entries[count].Flags = RESFF_FULLPATH;
 					Entries[count].ResourceID = -1;
 					Entries[count].Method = METHOD_STORED;
 					Entries[count].Namespace = ns_global;
+					Entries[count].Position = count;
 					count++;
 				}
 			}
@@ -153,6 +154,7 @@ int FDirectory::AddDirectory(const char *dirpath, LumpFilterInfo* filter, FileSy
 bool FDirectory::Open(LumpFilterInfo* filter, FileSystemMessageFunc Printf)
 {
 	NumLumps = AddDirectory(FileName, filter, Printf);
+	PostProcessArchive(filter);
 	return true;
 }
 
@@ -167,7 +169,8 @@ FileReader FDirectory::GetEntryReader(uint32_t entry, int readertype, int)
 	FileReader fr;
 	if (entry < NumLumps)
 	{
-		std::string fn = mBasePath; fn += Entries[entry].FileName;
+		std::string fn = mBasePath;
+		fn += SystemFilePath[Entries[entry].Position];
 		fr.OpenFile(fn.c_str());
 		if (readertype == READER_CACHED)
 		{
