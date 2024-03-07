@@ -1312,11 +1312,6 @@ static int PatchThing (int thingy)
 				hadStyle = true;
 			}
 		}
-		else if (linelen == 11 && stricmp(Line1, "Blood color") == 0)
-		{
-			info->BloodColor = V_GetColorFromString(Line2);
-			info->BloodTranslation = TRANSLATION(TRANSLATION_Blood, CreateBloodTranslation(info->BloodColor));
-        }
 		else if (linelen == 12 && stricmp(Line1, "No Ice Death") == 0)
 		{
 			if (val)
