@@ -113,7 +113,7 @@ void HWDrawInfo::DrawPSprite(HUDSprite *huds, FRenderState &state)
 		auto vrmode = VRMode::GetVRMode(true);
 		float thresh = (huds->texture->GetTranslucency() || huds->OverrideShader != -1) && !vrmode->IsVR() ? 0.f : gl_mask_sprite_threshold;
 		state.AlphaFunc(Alpha_GEqual, thresh);
-		uint32_t trans = huds->weapon->GetTranslation() != 0 ? huds->weapon->GetTranslation() : 0;
+		FTranslationID trans = huds->weapon->GetTranslation();
 		if ((huds->weapon->Flags & PSPF_PLAYERTRANSLATED)) trans = huds->owner->Translation;
 		
 		if (r_PlayerSprites3DMode != ITEM_ONLY && r_PlayerSprites3DMode != FAT_ITEM)
