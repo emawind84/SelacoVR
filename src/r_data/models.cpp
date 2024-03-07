@@ -270,11 +270,11 @@ void RenderHUDModel(FModelRenderer *renderer, DPSprite *psp, FVector3 translatio
 
 	float orientation = smf->xscale * smf->yscale * smf->zscale;
 
-	renderer->BeginDrawHUDModel(playermo->RenderStyle, objectToWorldMatrix, orientation < 0);
+	renderer->BeginDrawHUDModel(playermo->RenderStyle, objectToWorldMatrix, orientation < 0, smf);
 	uint32_t trans = psp->GetTranslation() != 0 ? psp->GetTranslation() : 0;
 	if ((psp->Flags & PSPF_PLAYERTRANSLATED)) trans = psp->Owner->mo->Translation;
 	RenderFrameModels(renderer, playermo->Level, smf, psp->GetState(), psp->GetTics(), psp->GetCaller()->modelData != nullptr ? psp->GetCaller()->modelData->modelDef != NAME_None ? PClass::FindActor(psp->GetCaller()->modelData->modelDef) : psp->GetCaller()->GetClass() : psp->GetCaller()->GetClass(), trans, psp->GetCaller());
-	renderer->EndDrawHUDModel(playermo->RenderStyle);
+	renderer->EndDrawHUDModel(playermo->RenderStyle, smf);
 }
 
 void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpriteModelFrame *smf, const FState *curState, const int curTics, const PClass *ti, int translation, AActor* actor)

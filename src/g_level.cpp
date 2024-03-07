@@ -1825,6 +1825,9 @@ void FLevelLocals::Init()
 			flags |= LEVEL_HASFADETABLE;
 		}
 	}
+
+
+	globalcolormap = R_ColormapNumForName(info->CustomColorMap.GetChars());
 	airsupply = info->airsupply*TICRATE;
 	outsidefog = info->outsidefog;
 	WallVertLight = info->WallVertLight*2;
