@@ -3748,8 +3748,9 @@ static int D_DoomMain_Internal (void)
 		I_FatalError("Cannot find " BASEWAD);
 	}
 	LoadHexFont(wad);	// load hex font early so we have it during startup.
+#ifdef __MOBILE__
 	InitWidgetResources(wad);
-
+#endif
 	C_InitConsole(80*8, 25*8, false);
 	I_DetectOS();
 
