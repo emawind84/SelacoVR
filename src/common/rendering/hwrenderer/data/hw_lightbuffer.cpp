@@ -30,7 +30,7 @@
 #include "shaderuniforms.h"
 #include "hw_clock.h"
 
-CVAR(Int, gl_max_lights, 40000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_max_lights, 80000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
 static const int ELEMENTS_PER_LIGHT = 4;			// each light needs 4 vec4's.
 static const int ELEMENT_SIZE = (4*sizeof(float));
