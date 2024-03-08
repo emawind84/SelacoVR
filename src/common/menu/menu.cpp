@@ -349,7 +349,6 @@ void DMenu::Close ()
 {
 	if (CurrentMenu == nullptr) return;	// double closing can happen in the save menu.
 	//assert(CurrentMenu == this);
-	if (CurrentMenu != this) return;
 	CurrentMenu = mParentMenu;
 
 	if (CurrentMenu != nullptr)
