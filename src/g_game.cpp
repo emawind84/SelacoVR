@@ -765,11 +765,11 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (buttonMap.ButtonDown(Button_ShowScores))	cmd->ucmd.buttons |= BT_SHOWSCORES;
 	if (speed) cmd->ucmd.buttons |= BT_RUN;
 
-#if !defined(USE_OPENVR) && !defined(USE_OPENXR)
 	// Handle joysticks/game controllers.
 	float joyaxes[NUM_JOYAXIS];
 
-	I_GetAxes(joyaxes);
+	if (!vrmode->IsVR())
+		I_GetAxes(joyaxes);
 
 	// Remap some axes depending on button state.
 	if (buttonMap.ButtonDown(Button_Strafe) || (buttonMap.ButtonDown(Button_Mlook) && lookstrafe))
@@ -803,8 +803,7 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	{
 		forward += xs_CRoundToInt(mousey * m_forward);
 	}
-#endif
-#if 1
+
 	if (vrmode->IsVR())
 		side = forward = 0;
 
@@ -820,7 +819,6 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	{
 		side = forward = 0;
 	}
-#endif
 
 	cmd->ucmd.pitch = LocalViewPitch >> 16;
 
