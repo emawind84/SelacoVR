@@ -100,8 +100,6 @@ void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float 
 void VR_SetHMDOrientation(float pitch, float yaw, float roll );
 void VR_SetHMDPosition(float x, float y, float z );
 
-extern class DMenu* CurrentMenu;
-
 #ifdef DYN_OPENVR
 // Dynamically load OpenVR
 
@@ -1453,75 +1451,6 @@ namespace s3d
 		}
 	}
 
-	static int GetVRAxisState(VRControllerState_t& state, int vrAxis, int axis)
-	{
-		float pos = axis == 0 ? state.rAxis[vrAxis].x : state.rAxis[vrAxis].y;
-		return pos < -DEAD_ZONE ? 1 : pos > DEAD_ZONE ? 2 : 0;
-	}
-
-	void Joy_GenerateUIButtonEvents(int oldbuttons, int newbuttons, int numbuttons, const int* keys)
-	{
-		int changed = oldbuttons ^ newbuttons;
-		if (changed != 0)
-		{
-			event_t ev = { 0, 0, 0, 0, 0, 0, 0 };
-			int mask = 1;
-			for (int j = 0; j < numbuttons; mask <<= 1, ++j)
-			{
-				if (changed & mask)
-				{
-					ev.data1 = keys[j];
-					ev.type = EV_GUI_Event;
-					ev.subtype = (newbuttons & mask) ? EV_GUI_KeyDown : EV_GUI_KeyUp;
-					D_PostEvent(&ev);
-				}
-			}
-		}
-	}
-
-	static void HandleVRAxis(VRControllerState_t& lastState, VRControllerState_t& newState, int vrAxis, int axis, int negativedoomkey, int positivedoomkey, int base)
-	{
-		int keys[] = { negativedoomkey + base, positivedoomkey + base };
-		Joy_GenerateButtonEvents(GetVRAxisState(lastState, vrAxis, axis), GetVRAxisState(newState, vrAxis, axis), 2, keys);
-	}
-
-	static void HandleUIVRAxis(VRControllerState_t& lastState, VRControllerState_t& newState, int vrAxis, int axis, ESpecialGUIKeys negativedoomkey, ESpecialGUIKeys positivedoomkey)
-	{
-		int keys[] = { (int)negativedoomkey, (int)positivedoomkey };
-		Joy_GenerateUIButtonEvents(GetVRAxisState(lastState, vrAxis, axis), GetVRAxisState(newState, vrAxis, axis), 2, keys);
-	}
-
-	static void HandleUIVRAxes(VRControllerState_t& lastState, VRControllerState_t& newState, int vrAxis,
-		ESpecialGUIKeys xnegativedoomkey, ESpecialGUIKeys xpositivedoomkey, ESpecialGUIKeys ynegativedoomkey, ESpecialGUIKeys ypositivedoomkey)
-	{
-		int oldButtons = abs(lastState.rAxis[vrAxis].x) > abs(lastState.rAxis[vrAxis].y)
-			? GetVRAxisState(lastState, vrAxis, 0)
-			: GetVRAxisState(lastState, vrAxis, 1) << 2;
-		int newButtons = abs(newState.rAxis[vrAxis].x) > abs(newState.rAxis[vrAxis].y)
-			? GetVRAxisState(newState, vrAxis, 0)
-			: GetVRAxisState(newState, vrAxis, 1) << 2;
-
-		int keys[] = { xnegativedoomkey, xpositivedoomkey, ynegativedoomkey, ypositivedoomkey };
-
-		Joy_GenerateUIButtonEvents(oldButtons, newButtons, 4, keys);
-	}
-
-	static void HandleVRButton(VRControllerState_t& lastState, VRControllerState_t& newState, long long vrindex, int doomkey, int base)
-	{
-		Joy_GenerateButtonEvents((lastState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, (newState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, 1, doomkey + base);
-	}
-
-	static void HandleUIVRButton(VRControllerState_t& lastState, VRControllerState_t& newState, long long vrindex, int doomkey)
-	{
-		Joy_GenerateUIButtonEvents((lastState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, (newState.ulButtonPressed & (1LL << vrindex)) ? 1 : 0, 1, &doomkey);
-	}
-
-	void handleTrackedControllerButton(VRControllerState_t * trackedRemoteState, VRControllerState_t * prevTrackedRemoteState, long long vrindex, int doomkey)
-	{
-		// oldbutton_state, newbutton_state, doombutton
-		Joy_GenerateButtonEvents((prevTrackedRemoteState->ulButtonPressed & (1LL << vrindex)) ? 1 : 0, (trackedRemoteState->ulButtonPressed & (1LL << vrindex)) ? 1 : 0, 1, doomkey);
-	}
-
 	VRControllerState_t leftTrackedRemoteState_old;
 	VRControllerState_t leftTrackedRemoteState_new;
 
@@ -1601,7 +1530,7 @@ namespace s3d
 
 		//In cinema mode, right-stick controls mouse
 		const float mouseSpeed = 3.0f;
-		if (VR_UseScreenLayer() && !dominantGripPushedNew)
+		if (VR_UseScreenLayer() && !dominantGripPushedNew && axisJoystick != -1)
 		{
 			if (fabs(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x) > 0.1f) {
 				cinemamodeYaw -= mouseSpeed * pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x;
@@ -1771,7 +1700,7 @@ namespace s3d
 			}
 
 			// Smooth turning is activated only when snap turning is turned off
-			if(!vr_snap_turning)
+			if(!vr_snap_turning && axisJoystick != -1)
 			{
 				//To feel smooth, yaw changes need to accumulate over the (sub) tic (i.e. render frame, not per tic)
 				unsigned int time = I_msTime();
@@ -1793,7 +1722,7 @@ namespace s3d
 		}  // in game section
 
 		//if in cinema mode, then the dominant joystick is used differently
-		if (!VR_UseScreenLayer()) 
+		if (!VR_UseScreenLayer() && axisJoystick != -1) 
 		{
 			//Default this is Weapon Chooser - This _could_ be remapped
 			Joy_GenerateButtonEvents(
@@ -1970,154 +1899,181 @@ namespace s3d
 				1, KEY_PAD_DPAD_UP);
 		}
 
-		Joy_GenerateButtonEvents(
-			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedOld ? 1 : 0), 
-			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS1PLUS);
+		if (axisTrackpad != -1)
+		{
+			if (menuactive != MENU_Off && menuactive != MENU_WaitKey)
+			{
+				Joy_GenerateButtonEvents(
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					1, GK_LEFT);
 
-		Joy_GenerateButtonEvents(
-			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedOld ? 1 : 0), 
-			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS1MINUS);
+				Joy_GenerateButtonEvents(
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					1, GK_RIGHT);
 
-		Joy_GenerateButtonEvents(
-			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedOld ? 1 : 0), 
-			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS3PLUS);
+				Joy_GenerateButtonEvents(
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].y < -0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].y < -0.7f ? 1 : 0), 
+					1, GK_DOWN);
 
-		Joy_GenerateButtonEvents(
-			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedOld ? 1 : 0), 
-			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS3MINUS);
+				Joy_GenerateButtonEvents(
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].y > 0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].y > 0.7f ? 1 : 0), 
+					1, GK_UP);
 
-		Joy_GenerateButtonEvents(
-			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedOld ? 1 : 0), 
-			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS2MINUS);
+				Joy_GenerateButtonEvents(
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					1, GK_LEFT);
 
-		Joy_GenerateButtonEvents(
-			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedOld ? 1 : 0), 
-			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS2PLUS);
-		
-		Joy_GenerateButtonEvents(
-			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedOld ? 1 : 0), 
-			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS4MINUS);
+				Joy_GenerateButtonEvents(
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					1, GK_RIGHT);
 
-		Joy_GenerateButtonEvents(
-			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedOld ? 1 : 0), 
-			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS4PLUS);
+				Joy_GenerateButtonEvents(
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].y < -0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].y < -0.7f ? 1 : 0), 
+					1, GK_DOWN);
 
-		Joy_GenerateButtonEvents(
-			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && dominantGripPushedOld ? 1 : 0), 
-			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS5PLUS);
+				Joy_GenerateButtonEvents(
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].y > 0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].y > 0.7f ? 1 : 0), 
+					1, GK_UP);
 
-		Joy_GenerateButtonEvents(
-			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && dominantGripPushedOld ? 1 : 0), 
-			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS5MINUS);
+			}
+			else {
+				Joy_GenerateButtonEvents(
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					1, KEY_PAD_LTHUMB_LEFT);
 
-		Joy_GenerateButtonEvents(
-			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && dominantGripPushedOld ? 1 : 0), 
-			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS7PLUS);
+				Joy_GenerateButtonEvents(
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					1, KEY_PAD_LTHUMB_RIGHT);
 
-		Joy_GenerateButtonEvents(
-			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && dominantGripPushedOld ? 1 : 0), 
-			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS7MINUS);
+				Joy_GenerateButtonEvents(
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					1, KEY_PAD_LTHUMB_UP);
 
-		Joy_GenerateButtonEvents(
-			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && dominantGripPushedOld ? 1 : 0), 
-			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS6MINUS);
+				Joy_GenerateButtonEvents(
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					1, KEY_PAD_LTHUMB_DOWN);
 
-		Joy_GenerateButtonEvents(
-			(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && dominantGripPushedOld ? 1 : 0), 
-			(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS6PLUS);
-		
-		Joy_GenerateButtonEvents(
-			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && dominantGripPushedOld ? 1 : 0), 
-			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS8MINUS);
+				Joy_GenerateButtonEvents(
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					1, KEY_PAD_RTHUMB_LEFT);
 
-		Joy_GenerateButtonEvents(
-			(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && dominantGripPushedOld ? 1 : 0), 
-			(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && dominantGripPushedNew ? 1 : 0), 
-			1, KEY_JOYAXIS8PLUS);
+				Joy_GenerateButtonEvents(
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					1, KEY_PAD_RTHUMB_RIGHT);
+
+				Joy_GenerateButtonEvents(
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					1, KEY_PAD_RTHUMB_UP);
+
+				Joy_GenerateButtonEvents(
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					1, KEY_PAD_RTHUMB_DOWN);
+
+			}
+		}
+
+		if (axisJoystick != -1)
+		{
+			Joy_GenerateButtonEvents(
+				(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedOld ? 1 : 0), 
+				(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS1PLUS);
+
+			Joy_GenerateButtonEvents(
+				(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedOld ? 1 : 0), 
+				(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS1MINUS);
+
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedOld ? 1 : 0), 
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && !dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS3PLUS);
+
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedOld ? 1 : 0), 
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && !dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS3MINUS);
+
+			Joy_GenerateButtonEvents(
+				(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedOld ? 1 : 0), 
+				(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS2MINUS);
+
+			Joy_GenerateButtonEvents(
+				(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedOld ? 1 : 0), 
+				(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS2PLUS);
+			
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedOld ? 1 : 0), 
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && !dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS4MINUS);
+
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedOld ? 1 : 0), 
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && !dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS4PLUS);
+
+			Joy_GenerateButtonEvents(
+				(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && dominantGripPushedOld ? 1 : 0), 
+				(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS5PLUS);
+
+			Joy_GenerateButtonEvents(
+				(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && dominantGripPushedOld ? 1 : 0), 
+				(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS5MINUS);
+
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x > 0.7f && dominantGripPushedOld ? 1 : 0), 
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x > 0.7f && dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS7PLUS);
+
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].x < -0.7f && dominantGripPushedOld ? 1 : 0), 
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].x < -0.7f && dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS7MINUS);
+
+			Joy_GenerateButtonEvents(
+				(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && dominantGripPushedOld ? 1 : 0), 
+				(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS6MINUS);
+
+			Joy_GenerateButtonEvents(
+				(pSecondaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && dominantGripPushedOld ? 1 : 0), 
+				(pSecondaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS6PLUS);
+			
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y < -0.7f && dominantGripPushedOld ? 1 : 0), 
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y < -0.7f && dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS8MINUS);
+
+			Joy_GenerateButtonEvents(
+				(pPrimaryTrackedRemoteOld->rAxis[axisJoystick].y > 0.7f && dominantGripPushedOld ? 1 : 0), 
+				(pPrimaryTrackedRemoteNew->rAxis[axisJoystick].y > 0.7f && dominantGripPushedNew ? 1 : 0), 
+				1, KEY_JOYAXIS8PLUS);
+		}
 
 		//Save state
 		pDominantTracking->lastState = rightTrackedRemoteState_old = rightTrackedRemoteState_new;
 		pOffTracking->lastState = leftTrackedRemoteState_old = leftTrackedRemoteState_new;
-	}
-
-	static void HandleControllerState(int device, int role, VRControllerState_t& newState)
-	{
-		VRControllerState_t& lastState = controllers[role].lastState;
-
-		//trigger (swaps with handedness)
-		bool rightHanded = vr_control_scheme < 10;
-		int controller = rightHanded ? role : 1 - role;
-
-		if (CurrentMenu != nullptr && menuactive != MENU_Off && menuactive != MENU_WaitKey)
-		{
-			if (axisTrackpad != -1)
-			{
-				HandleUIVRAxes(lastState, newState, axisTrackpad, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
-			}
-			if (axisJoystick != -1)
-			{
-				HandleUIVRAxes(lastState, newState, axisJoystick, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
-			}
-
-			HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_Axis1, GK_RETURN);
-			HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_Grip, GK_BACK);
-			HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_A, GK_BACK);
-			HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, GK_BACKSPACE);
-		}
-		else {
-
-			if (axisTrackpad != -1)
-			{
-				HandleVRAxis(lastState, newState, axisTrackpad, 0, KEY_PAD_LTHUMB_LEFT, KEY_PAD_LTHUMB_RIGHT, role * (KEY_PAD_RTHUMB_LEFT - KEY_PAD_LTHUMB_LEFT));
-				HandleVRAxis(lastState, newState, axisTrackpad, 1, KEY_PAD_LTHUMB_DOWN, KEY_PAD_LTHUMB_UP, role * (KEY_PAD_RTHUMB_DOWN - KEY_PAD_LTHUMB_DOWN));
-			}
-			if (axisJoystick != -1)
-			{
-				HandleVRAxis(lastState, newState, axisJoystick, 0, KEY_JOYAXIS1MINUS, KEY_JOYAXIS1PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
-				HandleVRAxis(lastState, newState, axisJoystick, 1, KEY_JOYAXIS2MINUS, KEY_JOYAXIS2PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
-			}
-
-			// k_EButton_Grip === k_EButton_IndexController_A
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
-
-			// k_EButton_ApplicationMenu / k_EButton_IndexController_B
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, KEY_PAD_BACK, role * (KEY_PAD_START - KEY_PAD_BACK));
-
-			// k_EButton_A
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_A, KEY_PAD_A, role * (KEY_PAD_B - KEY_PAD_A));
-
-			// k_EButton_Axis0 === k_EButton_SteamVR_Touchpad
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis0, KEY_PAD_LTHUMB, role * (KEY_PAD_RTHUMB - KEY_PAD_LTHUMB));
-
-			// k_EButton_Axis1 === k_EButton_SteamVR_Trigger
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis1, KEY_PAD_LTRIGGER, role * (KEY_PAD_RTRIGGER - KEY_PAD_LTRIGGER));
-
-			// k_EButton_Axis2 === SteamVR-binding "Right Axis 2 Press" (at least on Index Controller)
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis2, KEY_PAD_X, role * (KEY_PAD_Y - KEY_PAD_X));
-
-			// k_EButton_Axis3 (unknown if used by any controller at all)
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis3, KEY_JOY1, role * (KEY_JOY2 - KEY_JOY1));
-
-			// k_EButton_Axis4 (unknown if used by any controller at all)
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis4, KEY_JOY3, role * (KEY_JOY4 - KEY_JOY3));
-		}
-
-		lastState = newState;
 	}
 
 	// Teleport location where player sprite will be shown
@@ -2182,8 +2138,6 @@ namespace s3d
 		if (doAdjustVrSettings) {
 			movebob = 0;
 			gl_billboard_faces_camera = true;
-			// if (gl_multisample < 2)
-			// 	gl_multisample = 4;
 		}
 
 		UpdateOverlaySettings();
@@ -2209,7 +2163,7 @@ namespace s3d
 				const auto& eye = mEyes[GLRenderer->mBuffers->CurrentEye()];
 
 				GLRenderer->mBuffers->BindCurrentFB();
-				glClearColor(0.f, 0.f, 0.f, 1.0f); // draw a dark red universe
+				glClearColor(0.f, 0.f, 0.f, 1.0f);
 				glClear(GL_COLOR_BUFFER_BIT);
 				if (eyeCount - eye_ix > 1)
 					GLRenderer->mBuffers->NextEye(eyeCount);
@@ -2312,8 +2266,6 @@ namespace s3d
 							}
 						}
 					}
-
-					HandleControllerState(i, role, newState);
 #endif
 				}
 			}
