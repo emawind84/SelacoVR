@@ -311,14 +311,7 @@ PPGLTexture FGLRenderBuffers::Create2DTexture(const char *name, GLuint format, i
 	default: I_FatalError("Unknown format passed to FGLRenderBuffers.Create2DTexture");
 	}
 
-#ifdef __MOBILE__ // FIXME
-	if (format == GL_RGBA16F)
-	{
-		format = GL_RGBA;
-		dataformat = GL_RGBA;
-		datatype = GL_UNSIGNED_BYTE;
-	}
-
+#ifdef __MOBILE__
 	// Mobile does not have GL_RGBA16_SNORM so convert to GL_RGBA8_SNORM
 	// Used for SSAO random texture
     if (format == GL_RGBA16_SNORM)
@@ -354,7 +347,11 @@ PPGLTexture FGLRenderBuffers::Create2DMultisampleTexture(const char *name, GLuin
 	glGenTextures(1, &tex.handle);
 	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, tex.handle);
 	FGLDebug::LabelObject(GL_TEXTURE, tex.handle, name);
+#ifdef __MOBILE__
+	glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, fixedSampleLocations);
+#else
 	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, fixedSampleLocations);
+#endif
 	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 	return tex;
 }
