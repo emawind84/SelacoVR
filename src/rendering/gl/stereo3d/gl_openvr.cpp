@@ -1905,85 +1905,85 @@ namespace s3d
 			if (menuactive != MENU_Off && menuactive != MENU_WaitKey)
 			{
 				Joy_GenerateButtonEvents(
-					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
-					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
 					1, GK_LEFT);
 
 				Joy_GenerateButtonEvents(
-					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
-					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
 					1, GK_RIGHT);
 
 				Joy_GenerateButtonEvents(
-					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].y < -0.7f ? 1 : 0), 
-					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].y < -0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].y < -DEAD_ZONE ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].y < -DEAD_ZONE ? 1 : 0), 
 					1, GK_DOWN);
 
 				Joy_GenerateButtonEvents(
-					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].y > 0.7f ? 1 : 0), 
-					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].y > 0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].y > DEAD_ZONE ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].y > DEAD_ZONE ? 1 : 0), 
 					1, GK_UP);
 
 				Joy_GenerateButtonEvents(
-					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
-					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
 					1, GK_LEFT);
 
 				Joy_GenerateButtonEvents(
-					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
-					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
 					1, GK_RIGHT);
 
 				Joy_GenerateButtonEvents(
-					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].y < -0.7f ? 1 : 0), 
-					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].y < -0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].y < -DEAD_ZONE ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].y < -DEAD_ZONE ? 1 : 0), 
 					1, GK_DOWN);
 
 				Joy_GenerateButtonEvents(
-					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].y > 0.7f ? 1 : 0), 
-					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].y > 0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].y > DEAD_ZONE ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].y > DEAD_ZONE ? 1 : 0), 
 					1, GK_UP);
 
 			}
 			else {
 				Joy_GenerateButtonEvents(
-					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
-					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
 					1, KEY_PAD_LTHUMB_LEFT);
 
 				Joy_GenerateButtonEvents(
-					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
-					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
 					1, KEY_PAD_LTHUMB_RIGHT);
 
 				Joy_GenerateButtonEvents(
-					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
-					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
 					1, KEY_PAD_LTHUMB_UP);
 
 				Joy_GenerateButtonEvents(
-					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
-					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pPrimaryTrackedRemoteOld->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
+					(pPrimaryTrackedRemoteNew->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
 					1, KEY_PAD_LTHUMB_DOWN);
 
 				Joy_GenerateButtonEvents(
-					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
-					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
 					1, KEY_PAD_RTHUMB_LEFT);
 
 				Joy_GenerateButtonEvents(
-					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
-					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
 					1, KEY_PAD_RTHUMB_RIGHT);
 
 				Joy_GenerateButtonEvents(
-					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
-					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x > 0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x > DEAD_ZONE ? 1 : 0), 
 					1, KEY_PAD_RTHUMB_UP);
 
 				Joy_GenerateButtonEvents(
-					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
-					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x < -0.7f ? 1 : 0), 
+					(pSecondaryTrackedRemoteOld->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
+					(pSecondaryTrackedRemoteNew->rAxis[axisTrackpad].x < -DEAD_ZONE ? 1 : 0), 
 					1, KEY_PAD_RTHUMB_DOWN);
 
 			}
