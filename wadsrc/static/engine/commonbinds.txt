@@ -48,7 +48,7 @@ mouse2 +altattack
 mouse1 +attack
 f2 save_menu
 f3 load_menu
-f4 openmenu SelacoOptionMenu
+f4 "openmenu SelacoOptionMenu"
 f5 chase
 f6 quicksaveselaco
 f9 quickload
