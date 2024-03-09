@@ -136,6 +136,7 @@ CVAR(Int, am_linethickness, 1, CVAR_ARCHIVE)
 CVAR(Bool, am_thingrenderstyles, true, CVAR_ARCHIVE)
 CVAR(Int, am_showsubsector, -1, 0);
 CVAR(Float, am_playerScale, 0.5, CVAR_ARCHIVE)
+CVAR(Bool, am_draw_portals, false, CVAR_ARCHIVE);
 
 CUSTOM_CVAR(Int, am_showalllines, -1, CVAR_NOINITCALL)	// This is a cheat so don't save it.
 {
@@ -2560,7 +2561,7 @@ void DAutomap::drawWalls (bool allmap)
 
 				if (portalmode)
 				{
-					drawMline(&l, AMColors.PortalColor);
+					if(!!am_draw_portals) drawMline(&l, AMColors.PortalColor);
 				}
 				else if (AM_CheckSecret(&line) == 1)
 				{
