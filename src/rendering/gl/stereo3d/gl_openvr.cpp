@@ -1750,12 +1750,6 @@ namespace s3d
 
 		//Dominant Hand - Primary keys (no grip pushed) - All keys are re-mappable, default bindngs are shown below
 		{
-			//Fire
-			Joy_GenerateButtonEvents(
-				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedOld ? 1 : 0,
-				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedNew ? 1 : 0,
-				1, KEY_PAD_RTRIGGER);
-
 			//"Use" (open door, toggle switch etc)
 			Joy_GenerateButtonEvents(
 				((primaryButtonsOld & (1ull << primaryButton1)) != 0) && !dominantGripPushedOld ? 1 : 0,
@@ -1774,6 +1768,22 @@ namespace s3d
 				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && !dominantGripPushedNew ? 1 : 0,
 				1, KEY_ENTER);
 
+			//Fire
+			Joy_GenerateButtonEvents(
+				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_PAD_RTRIGGER);
+
+			Joy_GenerateButtonEvents(
+				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis2)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis2)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_F1);
+
+			Joy_GenerateButtonEvents(
+				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis3)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis3)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_F5);
+
 			//No Default Binding
 			// Joy_GenerateButtonEvents(
 			// 	((pDominantTrackedRemoteOld->Touches & xrButton_ThumbRest) != 0) && !dominantGripPushedOld ? 1 : 0,
@@ -1790,12 +1800,6 @@ namespace s3d
 		
 		//Dominant Hand - Secondary keys (grip pushed)
 		{
-			//Alt-Fire
-			Joy_GenerateButtonEvents(
-				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedOld ? 1 : 0,
-				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedNew ? 1 : 0,
-				1, KEY_PAD_LTRIGGER);
-
 			//Crouch
 			Joy_GenerateButtonEvents(
 				((primaryButtonsOld & (1ull << primaryButton1)) != 0) && dominantGripPushedOld ? 1 : 0,
@@ -1814,6 +1818,24 @@ namespace s3d
 				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && dominantGripPushedNew ? 1 : 0,
 				1, KEY_TAB);
 
+			//Alt-Fire
+			Joy_GenerateButtonEvents(
+				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_PAD_LTRIGGER);
+
+			//No Default Binding
+			Joy_GenerateButtonEvents(
+				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis2)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis2)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_F3);
+
+			//No Default Binding
+			Joy_GenerateButtonEvents(
+				((pDominantTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis3)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((pDominantTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis3)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_F6);
+
 			//No Default Binding
 			// Joy_GenerateButtonEvents(
 			// 	((pDominantTrackedRemoteOld->Touches & xrButton_ThumbRest) != 0) && dominantGripPushedOld ? 1 : 0,
@@ -1825,12 +1847,6 @@ namespace s3d
 
 		//Off Hand - Primary keys (no grip pushed)
 		{
-			//No Default Binding
-			Joy_GenerateButtonEvents(
-				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedOld ? 1 : 0,
-				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedNew ? 1 : 0,
-				1, KEY_LSHIFT);
-
 			//No Default Binding
 			Joy_GenerateButtonEvents(
 				((secondaryButtonsOld & (1ull << secondaryButton1)) != 0) && !dominantGripPushedOld ? 1 : 0,
@@ -1850,6 +1866,24 @@ namespace s3d
 				1, KEY_SPACE);
 
 			//No Default Binding
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_LSHIFT);
+
+			//No Default Binding
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis2)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis2)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_F2);
+
+			//No Default Binding
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis3)) != 0) && !dominantGripPushedOld ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis3)) != 0) && !dominantGripPushedNew ? 1 : 0,
+				1, KEY_F7);
+
+			//No Default Binding
 			// Joy_GenerateButtonEvents(
 			// 	((pOffTrackedRemoteOld->Touches & xrButton_ThumbRest) != 0) && !dominantGripPushedOld ? 1 : 0,
 			// 	((pOffTrackedRemoteNew->Touches & xrButton_ThumbRest) != 0) && !dominantGripPushedNew ? 1 : 0,
@@ -1863,12 +1897,6 @@ namespace s3d
 
 		//Off Hand - Secondary keys (grip pushed)
 		{
-			//No Default Binding
-			Joy_GenerateButtonEvents(
-				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedOld ? 1 : 0,
-				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedNew ? 1 : 0,
-				1, KEY_LALT);
-
 			//Move Down
 			Joy_GenerateButtonEvents(
 				((secondaryButtonsOld & (1ull << secondaryButton1)) != 0) && dominantGripPushedOld ? 1 : 0,
@@ -1886,6 +1914,24 @@ namespace s3d
 				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && dominantGripPushedOld ? 1 : 0,
 				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis0)) != 0) && dominantGripPushedNew ? 1 : 0,
 				1, KEY_HOME);
+
+			//No Default Binding
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis1)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_LALT);
+
+			//No Default Binding
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis2)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis2)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_F4);
+
+			//No Default Binding
+			Joy_GenerateButtonEvents(
+				((pOffTrackedRemoteOld->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis3)) != 0) && dominantGripPushedOld ? 1 : 0,
+				((pOffTrackedRemoteNew->ulButtonPressed & ButtonMaskFromId(openvr::vr::k_EButton_Axis3)) != 0) && dominantGripPushedNew ? 1 : 0,
+				1, KEY_F8);
 
 			//No Default Binding
 			// Joy_GenerateButtonEvents(
