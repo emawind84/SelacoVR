@@ -442,7 +442,10 @@ enum ActorFlag9
 	MF9_DOSHADOWBLOCK			= 0x00000002,	// [inkoalawetrust] Should the monster look for SHADOWBLOCK actors ?
 	MF9_SHADOWBLOCK				= 0x00000004,	// [inkoalawetrust] Actors in the line of fire with this flag trigger the MF_SHADOW aiming penalty.
 	MF9_SHADOWAIMVERT			= 0x00000008,	// [inkoalawetrust] Monster aim is also offset vertically when aiming at shadow actors.
-	MF9_DECOUPLEDANIMATIONS	= 0x00000010,	// [RL0] Decouple model animations from states
+	MF9_DECOUPLEDANIMATIONS		= 0x00000010,	// [RL0] Decouple model animations from states
+	MF9_PATHING					= 0x00000020,	// [MC] Enables monsters to do pathfinding, such as A*.
+	MF9_KEEPPATH				= 0x00000040,	// [MC] Forces monsters to keep to the path when target's in sight.
+	MF9_NOPATHING				= 0x00000080,	// [MC] override the mapinfo "pathfinding"
 };
 
 // --- mobj.renderflags ---
@@ -500,6 +503,7 @@ enum ActorRenderFlag2
 	RF2_BILLBOARDNOFACECAMERA	= 0x0008,	// Sprite billboard face camera angle (override gl_billboard_faces_camera)
 	RF2_FLIPSPRITEOFFSETX		= 0x0010,
 	RF2_FLIPSPRITEOFFSETY		= 0x0020,
+	RF2_CAMFOLLOWSPLAYER		= 0x0040,	// Matches the cam's base position and angles to the main viewpoint.
 };
 
 // This translucency value produces the closest match to Heretic's TINTTAB.
@@ -692,9 +696,6 @@ enum EViewPosFlags // [MC] Flags for SetViewPos.
 {
 	VPSF_ABSOLUTEOFFSET =	1 << 1,			// Don't include angles.
 	VPSF_ABSOLUTEPOS =		1 << 2,			// Use absolute position.
-	VPSF_ALLOWOUTOFBOUNDS =		1 << 3,			// Allow viewpoint to go out of bounds (hardware renderer only).
-	VPSF_ORTHOGRAPHIC =		1 << 4,			// Use orthographic projection.
-	VPSF_ISOMETRICSPRITES =		1 << 5,			// Displace sprites towards camera and don't billboard (drawn from isometric perspective).
 };
 
 enum EAnimOverrideFlags
@@ -772,7 +773,7 @@ public:
 			Flags = f;
 	}
 
-	bool isZero()
+	bool isZero() const
 	{
 		return Offset.isZero();
 	}
@@ -796,6 +797,7 @@ public:
 	virtual void PostSerialize() override;
 	virtual void PostBeginPlay() override;		// Called immediately before the actor's first tick
 	virtual void Tick() override;
+	void EnableNetworking(const bool enable) override;
 
 	static AActor *StaticSpawn (FLevelLocals *Level, PClassActor *type, const DVector3 &pos, replace_t allowreplacement, bool SpawningMapThing = false);
 
@@ -1102,6 +1104,11 @@ public:
 	void AttachLight(unsigned int count, const FLightDefaults *lightdef);
 	void SetDynamicLights();
 
+	void ClearPath();
+	bool CanPathfind();
+	bool CallExcludeNode(AActor *node);
+	void CallReachedNode(AActor *node);
+
 // info for drawing
 // NOTE: The first member variable *must* be snext.
 	AActor			*snext, **sprev;	// links in sector (if needed)
@@ -1158,6 +1165,7 @@ public:
 	TObjPtr<DBoneComponents*>		boneComponentData;
 
 // interaction info
+	TArray<TObjPtr<AActor*> > Path;
 	FBlockNode		*BlockNode;			// links in blocks (if needed)
 	struct sector_t	*Sector;
 	subsector_t *		subsector;
@@ -1753,8 +1761,8 @@ struct FTranslatedLineTarget
 	bool unlinked;	// found by a trace that went through an unlinked portal.
 };
 
-
-void StaticPointerSubstitution(AActor* old, AActor* notOld);
+void PlayerPointerSubstitution(AActor* oldPlayer, AActor* newPlayer);
+int MorphPointerSubstitution(AActor* from, AActor* to);
 
 #define S_FREETARGMOBJ	1
 

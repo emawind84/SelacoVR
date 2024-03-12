@@ -235,6 +235,8 @@ enum EMorphFlags
 	MRF_UNDOBYTIMEOUT		= 0x00001000,
 	MRF_UNDOALWAYS			= 0x00002000,
 	MRF_TRANSFERTRANSLATION = 0x00004000,
+	MRF_KEEPARMOR			= 0x00008000,
+	MRF_IGNOREINVULN		= 0x00010000,
 	MRF_STANDARDUNDOING	= MRF_UNDOBYTOMEOFPOWER | MRF_UNDOBYCHAOSDEVICE | MRF_UNDOBYTIMEOUT,
 };
 
@@ -425,9 +427,6 @@ enum EViewPosFlags
 {
 	VPSF_ABSOLUTEOFFSET =	1 << 1,			// Don't include angles.
 	VPSF_ABSOLUTEPOS =		1 << 2,			// Use absolute position.
-	VPSF_ALLOWOUTOFBOUNDS =		1 << 3,			// Allow viewpoint to go out of bounds (hardware renderer only).
-	VPSF_ORTHOGRAPHIC =		1 << 4,			// Use orthographic projection.
-	VPSF_ISOMETRICSPRITES =		1 << 5,			// Displace sprites towards camera and don't billboard (drawn from isometric perspective).
 };
 
 // Flags for A_TakeInventory and A_TakeFromTarget
