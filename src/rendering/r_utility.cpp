@@ -1148,7 +1148,7 @@ void R_SetupFrame(FRenderViewpoint& viewPoint, const FViewWindow& viewWindow, AA
 	viewPoint.ViewActor = viewPoint.showviewer ? nullptr : actor;
 
 	// Retain unshifted center eye pos so all sprites show the same frame
-	viewpoint.CenterEyePos = viewpoint.Pos;
+	viewPoint.CenterEyePos = viewPoint.Pos;
 }
 
 

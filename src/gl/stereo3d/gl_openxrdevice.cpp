@@ -220,7 +220,7 @@ namespace s3d
     }
 
 /* virtual */
-    VSMatrix OpenXRDeviceEyePose::GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatio, bool iso_ortho) const
+    VSMatrix OpenXRDeviceEyePose::GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatio) const
     {
         float m[16];
         VR_GetVRProjection(eye, screen->GetZNear(), screen->GetZFar(), m);
