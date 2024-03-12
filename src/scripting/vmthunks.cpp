@@ -1693,7 +1693,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, SetXOffset, SetXOffset)
 	 PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
 	 ACTION_RETURN_BOOL(self->IsFreelookAllowed());
  }
-
+ 
  //==========================================================================
 //
 // ZScript counterpart to ACS ChangeSky, uses TextureIDs
@@ -2786,6 +2786,7 @@ DEFINE_FIELD_X(LevelInfo, level_info_t, RedirectMapName)
 DEFINE_FIELD_X(LevelInfo, level_info_t, teamdamage)
 
 DEFINE_GLOBAL_NAMED(currentVMLevel, level)
+DEFINE_FIELD(FLevelLocals, PathNodes)
 DEFINE_FIELD(FLevelLocals, sectors)
 DEFINE_FIELD(FLevelLocals, lines)
 DEFINE_FIELD(FLevelLocals, sides)
@@ -2853,6 +2854,7 @@ DEFINE_FIELD_BIT(FLevelLocals, flags2, infinite_flight, LEVEL2_INFINITE_FLIGHT)
 DEFINE_FIELD_BIT(FLevelLocals, flags2, no_dlg_freeze, LEVEL2_CONV_SINGLE_UNFREEZE)
 DEFINE_FIELD_BIT(FLevelLocals, flags2, keepfullinventory, LEVEL2_KEEPFULLINVENTORY)
 DEFINE_FIELD_BIT(FLevelLocals, flags3, removeitems, LEVEL3_REMOVEITEMS)
+DEFINE_FIELD_BIT(FLevelLocals, flags3, pathing, LEVEL3_PATHING)
 
 DEFINE_FIELD_X(Sector, sector_t, floorplane)
 DEFINE_FIELD_X(Sector, sector_t, ceilingplane)
