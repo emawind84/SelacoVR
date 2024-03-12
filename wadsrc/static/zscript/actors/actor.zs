@@ -260,6 +260,7 @@ class Actor : Thinker native
 	native readonly int SpawnTime;
 	private native int InventoryID;	// internal counter.
 	native uint freezetics;
+	native Vector2 AutomapOffsets;
 	native readonly vector3 AttackPos;
 	native readonly double AttackPitch;
 	native readonly double AttackRoll;
@@ -373,6 +374,7 @@ class Actor : Thinker native
 	property LightLevel: LightLevel;
 	property ShadowAimFactor: ShadowAimFactor;
 	property ShadowPenaltyFactor: ShadowPenaltyFactor;
+	property AutomapOffsets : AutomapOffsets;
 	
 	// need some definition work first
 	//FRenderStyle RenderStyle;
@@ -452,6 +454,7 @@ class Actor : Thinker native
 		SelfDamageFactor 1;
 		ShadowAimFactor 1;
 		ShadowPenaltyFactor 1;
+		AutomapOffsets (0,0);
 		StealthAlpha 0;
 		WoundHealth 6;
 		GibHealth int.min;
@@ -509,6 +512,8 @@ class Actor : Thinker native
 	virtual native void FallAndSink(double grav, double oldfloorz);
 	private native void Substitute(Actor replacement);
 	native ui void DisplayNameTag();
+	native clearscope void DisableLocalRendering(uint playerNum, bool disable);
+	native ui bool ShouldRenderLocally(); // Only clients get to check this, never the playsim.
 
 	// Called by inventory items to see if this actor is capable of touching them.
 	// If true, the item will attempt to be picked up. Useful for things like
@@ -778,6 +783,7 @@ class Actor : Thinker native
 	native bool LineTrace(double angle, double distance, double pitch, int flags = 0, double offsetz = 0., double offsetforward = 0., double offsetside = 0., out FLineTraceData data = null);
 	native bool CheckSight(Actor target, int flags = 0);
 	native bool IsVisible(Actor other, bool allaround, LookExParams params = null);
+	native bool, Actor, double PerformShadowChecks (Actor other, Vector3 pos);
 	native bool HitFriend();
 	native bool MonsterMove();
 	
@@ -807,6 +813,7 @@ class Actor : Thinker native
 	native bool CheckMissileRange();
 	native bool SetState(state st, bool nofunction = false);
 	clearscope native state FindState(statelabel st, bool exact = false) const;
+	clearscope native state FindStateByString(string st, bool exact = false) const;
 	bool SetStateLabel(statelabel st, bool nofunction = false) { return SetState(FindState(st), nofunction); }
 	native action state ResolveState(statelabel st);	// this one, unlike FindState, is context aware.
 	native void LinkToWorld(LinkContext ctx = null);
