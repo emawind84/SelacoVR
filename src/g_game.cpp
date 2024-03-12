@@ -371,12 +371,12 @@ CCMD (centerview)
 {
 	if ((players[consoleplayer].cheats & CF_TOTALLYFROZEN))
 		return;
-	Net_WriteByte (DEM_CENTERVIEW);
+	Net_WriteInt8 (DEM_CENTERVIEW);
 }
 
 CCMD(crouch)
 {
-	Net_WriteByte(DEM_CROUCH);
+	Net_WriteInt8(DEM_CROUCH);
 }
 
 CCMD (land)
@@ -859,32 +859,32 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (sendpause)
 	{
 		sendpause = false;
-		Net_WriteByte (DEM_PAUSE);
+		Net_WriteInt8 (DEM_PAUSE);
 	}
 	if (sendsave)
 	{
 		sendsave = false;
-		Net_WriteByte (DEM_SAVEGAME);
+		Net_WriteInt8 (DEM_SAVEGAME);
 		Net_WriteString (savegamefile.GetChars());
 		Net_WriteString (savedescription.GetChars());
 		savegamefile = "";
 	}
 	if (SendItemUse == (const AActor *)1)
 	{
-		Net_WriteByte (DEM_INVUSEALL);
+		Net_WriteInt8 (DEM_INVUSEALL);
 		SendItemUse = NULL;
 	}
 	else if (SendItemUse != NULL)
 	{
-		Net_WriteByte (DEM_INVUSE);
-		Net_WriteLong (SendItemUse->InventoryID);
+		Net_WriteInt8 (DEM_INVUSE);
+		Net_WriteInt32 (SendItemUse->InventoryID);
 		SendItemUse = NULL;
 	}
 	if (SendItemDrop != NULL)
 	{
-		Net_WriteByte (DEM_INVDROP);
-		Net_WriteLong (SendItemDrop->InventoryID);
-		Net_WriteLong(SendItemDropAmount);
+		Net_WriteInt8 (DEM_INVDROP);
+		Net_WriteInt32 (SendItemDrop->InventoryID);
+		Net_WriteInt32(SendItemDropAmount);
 		SendItemDrop = NULL;
 	}
 
@@ -994,7 +994,7 @@ static void ChangeSpy (int changespy)
 		// has done this for you, since it could desync otherwise.
 		if (!demoplayback)
 		{
-			Net_WriteByte(DEM_REVERTCAMERA);
+			Net_WriteInt8(DEM_REVERTCAMERA);
 		}
 		return;
 	}
@@ -1422,7 +1422,7 @@ void G_Ticker ()
 		if (ScreenJobTick())
 		{
 			// synchronize termination with the playsim.
-			Net_WriteByte(DEM_ENDSCREENJOB);
+			Net_WriteInt8(DEM_ENDSCREENJOB);
 		}
 		break;
 
@@ -2594,7 +2594,7 @@ void G_ReadDemoTiccmd (ticcmd_t *cmd, int player)
 			break;
 		}
 
-		id = ReadByte (&demo_p);
+		id = ReadInt8 (&demo_p);
 
 		switch (id)
 		{
@@ -2613,7 +2613,7 @@ void G_ReadDemoTiccmd (ticcmd_t *cmd, int player)
 
 		case DEM_DROPPLAYER:
 			{
-				uint8_t i = ReadByte (&demo_p);
+				uint8_t i = ReadInt8 (&demo_p);
 				if (i < MAXPLAYERS)
 				{
 					playeringame[i] = false;
@@ -2711,19 +2711,19 @@ void G_BeginRecording (const char *startmap)
 	}
 	demo_p = demobuffer;
 
-	WriteLong (FORM_ID, &demo_p);			// Write FORM ID
+	WriteInt32 (FORM_ID, &demo_p);			// Write FORM ID
 	demo_p += 4;							// Leave space for len
-	WriteLong (ZDEM_ID, &demo_p);			// Write ZDEM ID
+	WriteInt32 (ZDEM_ID, &demo_p);			// Write ZDEM ID
 
 	// Write header chunk
 	StartChunk (ZDHD_ID, &demo_p);
-	WriteWord (DEMOGAMEVERSION, &demo_p);	// Write ZDoom version
+	WriteInt16 (DEMOGAMEVERSION, &demo_p);	// Write ZDoom version
 	*demo_p++ = 2;							// Write minimum version needed to use this demo.
 	*demo_p++ = 3;							// (Useful?)
 
 	strcpy((char*)demo_p, startmap);		// Write name of map demo was recorded on.
 	demo_p += strlen(startmap) + 1;
-	WriteLong(rngseed, &demo_p);			// Write RNG seed
+	WriteInt32(rngseed, &demo_p);			// Write RNG seed
 	*demo_p++ = consoleplayer;
 	FinishChunk (&demo_p);
 
@@ -2733,7 +2733,7 @@ void G_BeginRecording (const char *startmap)
 		if (playeringame[i])
 		{
 			StartChunk(UINF_ID, &demo_p);
-			WriteByte((uint8_t)i, &demo_p);
+			WriteInt8((uint8_t)i, &demo_p);
 			auto str = D_GetUserInfoStrings(i);
 			memcpy(demo_p, str.GetChars(), str.Len() + 1);
 			demo_p += str.Len();
@@ -2763,7 +2763,7 @@ void G_BeginRecording (const char *startmap)
 	// Indicate body is compressed
 	StartChunk (COMP_ID, &demo_p);
 	democompspot = demo_p;
-	WriteLong (0, &demo_p);
+	WriteInt32 (0, &demo_p);
 	FinishChunk (&demo_p);
 
 	// Begin BODY chunk
@@ -2828,13 +2828,13 @@ bool G_ProcessIFFDemo (FString &mapname)
 	for (i = 0; i < MAXPLAYERS; i++)
 		playeringame[i] = 0;
 
-	len = ReadLong (&demo_p);
+	len = ReadInt32 (&demo_p);
 	zdemformend = demo_p + len + (len & 1);
 
 	// Check to make sure this is a ZDEM chunk file.
 	// TODO: Support multiple FORM ZDEMs in a CAT. Might be useful.
 
-	id = ReadLong (&demo_p);
+	id = ReadInt32 (&demo_p);
 	if (id != ZDEM_ID)
 	{
 		Printf ("Not a " GAMENAME " demo file!\n");
@@ -2845,8 +2845,8 @@ bool G_ProcessIFFDemo (FString &mapname)
 
 	while (demo_p < zdemformend && !bodyHit)
 	{
-		id = ReadLong (&demo_p);
-		len = ReadLong (&demo_p);
+		id = ReadInt32 (&demo_p);
+		len = ReadInt32 (&demo_p);
 		nextchunk = demo_p + len + (len & 1);
 		if (nextchunk > zdemformend)
 		{
@@ -2859,13 +2859,13 @@ bool G_ProcessIFFDemo (FString &mapname)
 		case ZDHD_ID:
 			headerHit = true;
 
-			demover = ReadWord (&demo_p);	// ZDoom version demo was created with
+			demover = ReadInt16 (&demo_p);	// ZDoom version demo was created with
 			if (demover < MINDEMOVERSION)
 			{
 				Printf ("Demo requires an older version of " GAMENAME "!\n");
 				//return true;
 			}
-			if (ReadWord (&demo_p) > DEMOGAMEVERSION)	// Minimum ZDoom version
+			if (ReadInt16 (&demo_p) > DEMOGAMEVERSION)	// Minimum ZDoom version
 			{
 				Printf ("Demo requires a newer version of " GAMENAME "!\n");
 				return true;
@@ -2880,7 +2880,7 @@ bool G_ProcessIFFDemo (FString &mapname)
 				mapname = FString((char*)demo_p, 8);
 				demo_p += 8;
 			}
-			rngseed = ReadLong (&demo_p);
+			rngseed = ReadInt32 (&demo_p);
 			// Only reset the RNG if this demo is not in conjunction with a savegame.
 			if (mapname[0] != 0)
 			{
@@ -2895,7 +2895,7 @@ bool G_ProcessIFFDemo (FString &mapname)
 			break;
 
 		case UINF_ID:
-			i = ReadByte (&demo_p);
+			i = ReadInt8 (&demo_p);
 			if (!playeringame[i])
 			{
 				playeringame[i] = 1;
@@ -2918,7 +2918,7 @@ bool G_ProcessIFFDemo (FString &mapname)
 			break;
 
 		case COMP_ID:
-			uncompSize = ReadLong (&demo_p);
+			uncompSize = ReadInt32 (&demo_p);
 			break;
 		}
 
@@ -3003,7 +3003,7 @@ void G_DoPlayDemo (void)
 
 	C_BackupCVars ();		// [RH] Save cvars that might be affected by demo
 
-	if (ReadLong (&demo_p) != FORM_ID)
+	if (ReadInt32 (&demo_p) != FORM_ID)
 	{
 		const char *eek = "Cannot play non-" GAMENAME " demos.\n";
 
@@ -3137,7 +3137,7 @@ bool G_CheckDemoStatus (void)
 	{
 		uint8_t *formlen;
 
-		WriteByte (DEM_STOP, &demo_p);
+		WriteInt8 (DEM_STOP, &demo_p);
 
 		if (demo_compress)
 		{
@@ -3152,14 +3152,14 @@ bool G_CheckDemoStatus (void)
 			if (r == Z_OK && outlen < len)
 			{
 				formlen = democompspot;
-				WriteLong (len, &democompspot);
+				WriteInt32 (len, &democompspot);
 				memcpy (demobodyspot, compressed.Data(), outlen);
 				demo_p = demobodyspot + outlen;
 			}
 		}
 		FinishChunk (&demo_p);
 		formlen = demobuffer + 4;
-		WriteLong (int(demo_p - demobuffer - 8), &formlen);
+		WriteInt32 (int(demo_p - demobuffer - 8), &formlen);
 
 		auto fw = FileWriter::Open(demoname.GetChars());
 		bool saved = false;

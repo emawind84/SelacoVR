@@ -1324,7 +1324,7 @@ IMPLEMENT_CLASS(DAutosaver, false, false)
 
 void DAutosaver::Tick ()
 {
-	Net_WriteByte (DEM_CHECKAUTOSAVE);
+	Net_WriteInt8 (DEM_CHECKAUTOSAVE);
 	Destroy ();
 }
 
@@ -1858,6 +1858,7 @@ void FLevelLocals::Init()
 	flags2 |= info->flags2;
 	flags3 |= info->flags3;
 	levelnum = info->levelnum;
+	LightningSound = info->LightningSound;
 	Music = info->Music;
 	musicorder = info->musicorder;
 	MusicVolume = 1.f;

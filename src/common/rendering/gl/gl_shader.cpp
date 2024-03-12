@@ -811,7 +811,6 @@ FShaderCollection::FShaderCollection(EPassType passType)
 	{
 		mEffectShaders[i] = NULL;
 	}
-	CompileNextShader();
 }
 
 //==========================================================================
