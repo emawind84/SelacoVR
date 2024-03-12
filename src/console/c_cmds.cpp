@@ -1152,8 +1152,8 @@ CCMD(idkfa)
 	if (CheckCheatmode ())
 		return;
 
-	Net_WriteByte (DEM_GENERICCHEAT);
-	Net_WriteByte (CHT_IDKFA);
+	Net_WriteInt8 (DEM_GENERICCHEAT);
+	Net_WriteInt8 (CHT_IDKFA);
 }
 
 CCMD(idfa)
@@ -1161,8 +1161,8 @@ CCMD(idfa)
 	if (CheckCheatmode ())
 		return;
 
-	Net_WriteByte (DEM_GENERICCHEAT);
-	Net_WriteByte (CHT_IDFA);
+	Net_WriteInt8 (DEM_GENERICCHEAT);
+	Net_WriteInt8 (CHT_IDFA);
 }
 
 CCMD(idbehold)
@@ -1179,28 +1179,28 @@ CCMD(idbehold)
 	switch (argv[1][0])
 	{
 		case 'v':
-			Net_WriteByte (DEM_GENERICCHEAT);
-			Net_WriteByte (CHT_BEHOLDV);
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDV);
 			break;
 		case 's':
-			Net_WriteByte (DEM_GENERICCHEAT);
-			Net_WriteByte (CHT_BEHOLDS);
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDS);
 			break;
 		case 'i':
-			Net_WriteByte (DEM_GENERICCHEAT);
-			Net_WriteByte (CHT_BEHOLDI);
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDI);
 			break;
 		case 'r':
-			Net_WriteByte (DEM_GENERICCHEAT);
-			Net_WriteByte (CHT_BEHOLDR);
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDR);
 			break;
 		case 'a':
-			Net_WriteByte (DEM_GENERICCHEAT);
-			Net_WriteByte (CHT_BEHOLDA);
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDA);
 			break;
 		case 'l':
-			Net_WriteByte (DEM_GENERICCHEAT);
-			Net_WriteByte (CHT_BEHOLDL);
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDL);
 			break;
 	}
 }
@@ -1220,8 +1220,8 @@ CCMD(idchoppers)
 	if (CheckCheatmode ())
 		return;
 
-	Net_WriteByte (DEM_GENERICCHEAT);
-	Net_WriteByte (CHT_CHAINSAW);
+	Net_WriteInt8 (DEM_GENERICCHEAT);
+	Net_WriteInt8 (CHT_CHAINSAW);
 }
 
 CCMD(idclip)
@@ -1229,8 +1229,8 @@ CCMD(idclip)
 	if (CheckCheatmode ())
 		return;
 
-	Net_WriteByte (DEM_GENERICCHEAT);
-	Net_WriteByte (CHT_NOCLIP);
+	Net_WriteInt8 (DEM_GENERICCHEAT);
+	Net_WriteInt8 (CHT_NOCLIP);
 }
 
 CCMD(angleconvtest)
