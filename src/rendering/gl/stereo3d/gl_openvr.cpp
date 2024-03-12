@@ -2534,17 +2534,25 @@ namespace s3d
 ADD_STAT(remotestats)
 {
 	FString out;
-#if 0
-	out.AppendFormat("lbtn:%" PRIu64 " - rbtn:%" PRIu64 "\n"
-		"ljoy x:1.3f - y:1.3f\n"
-		"rjoy x:1.3f - y:1.3f\n", 
+
+	out.AppendFormat(
+			"Pressed: lbtn=%" PRIu64 ", rbtn=%" PRIu64 "\n"
+			"Touched: lbtn=%" PRIu64 ", rbtn=%" PRIu64 "\n"
+			"Joystick: lx=1.3f, ly=1.3f, rx=1.3f, ry=1.3f\n", 
+			"Trackpad: lx=1.3f, ly=1.3f, rx=1.3f, ry=1.3f\n", 
 		s3d::leftTrackedRemoteState_new.ulButtonPressed,
 		s3d::rightTrackedRemoteState_new.ulButtonPressed,
+		s3d::leftTrackedRemoteState_new.ulButtonTouched,
+		s3d::rightTrackedRemoteState_new.ulButtonTouched,
 		s3d::leftTrackedRemoteState_new.rAxis[axisJoystick].x,
 		s3d::leftTrackedRemoteState_new.rAxis[axisJoystick].y,
 		s3d::rightTrackedRemoteState_new.rAxis[axisJoystick].x,
-		s3d::rightTrackedRemoteState_new.rAxis[axisJoystick].y);
-#endif
+		s3d::rightTrackedRemoteState_new.rAxis[axisJoystick].y,
+		s3d::leftTrackedRemoteState_new.rAxis[axisTrackpad].x,
+		s3d::leftTrackedRemoteState_new.rAxis[axisTrackpad].y,
+		s3d::rightTrackedRemoteState_new.rAxis[axisTrackpad].x,
+		s3d::rightTrackedRemoteState_new.rAxis[axisTrackpad].y);
+
 	if (s3d::controllers[1].active && s3d::controllers[1].pose.bPoseIsValid) {
 		const HmdMatrix34_t& poseMatrix = s3d::controllers[1].pose.mDeviceToAbsoluteTracking;
 		float x = poseMatrix.m[0][3];
