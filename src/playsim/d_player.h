@@ -395,6 +395,7 @@ public:
 	int			jumpTics = 0;				// delay the next jump for a moment
 	bool		onground = 0;				// Identifies if this player is on the ground or other object
 	bool		keepmomentum = 0;			// keep momentum until velocity reach 0, override vr_momentum
+	bool		crossingPortal = 0;			// Crossing a portal (disables sprite from showing up)
 
 	int			respawn_time = 0;			// [RH] delay respawning until this tic
 	TObjPtr<AActor*>	camera = MakeObjPtr<AActor*>(nullptr);			// [RH] Whose eyes this player sees through

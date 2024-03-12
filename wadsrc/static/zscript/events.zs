@@ -1,3 +1,56 @@
+enum ENetCmd
+{
+	NET_BYTE = 1,
+	NET_WORD,
+	NET_LONG,
+	NET_FLOAT,
+	NET_STRING,
+}
+
+struct NetworkCommand native play version("4.12")
+{
+    native readonly int Player;
+    native readonly Name Command;
+
+    native int ReadByte();
+    native int ReadWord();
+    native int ReadLong();
+    native double ReadFloat();
+    native string ReadString();
+
+    // Wrappers
+    native Name ReadName();
+    native double ReadMapUnit(); // 16.16 long -> double
+    native double ReadAngle(); // BAM long -> double
+    native Vector2 ReadVector2();
+    native Vector3 ReadVector3();
+    native Vector4 ReadVector4();
+    native Quat ReadQuat();
+    native void ReadIntArray(out Array<int> values, ENetCmd intSize = NET_LONG);
+    native void ReadFloatArray(out Array<double> values);
+    native void ReadStringArray(out Array<string> values, bool skipEmpty = false);
+}
+
+class NetworkBuffer native version("4.12")
+{
+    native void AddByte(int value);
+    native void AddWord(int value);
+    native void AddLong(int value);
+    native void AddFloat(double value);
+    native void AddString(string value);
+
+    // Wrappers
+    native void AddName(Name value);
+    native void AddMapUnit(double value); // double -> 16.16 long
+    native void AddAngle(double value); // double -> BAM long
+    native void AddVector2(Vector2 value);
+    native void AddVector3(Vector3 value);
+    native void AddVector4(Vector4 value);
+    native void AddQuat(Quat value);
+    native void AddIntArray(Array<int> values, ENetCmd intSize = NET_LONG);
+    native void AddFloatArray(Array<double> values);
+    native void AddStringArray(Array<string> values);
+}
 
 struct RenderEvent native ui version("2.4")
 {
@@ -127,6 +180,7 @@ class StaticEventHandler : Object native play version("2.4")
     virtual ui void ConsoleProcess(ConsoleEvent e) {}
     virtual ui void InterfaceProcess(ConsoleEvent e) {}
     virtual void NetworkProcess(ConsoleEvent e) {}
+    version("4.12") virtual void NetworkCommandProcess(NetworkCommand cmd) {}
     
     //
     virtual void CheckReplacement(ReplaceEvent e) {}
@@ -150,5 +204,7 @@ class EventHandler : StaticEventHandler native version("2.4")
 {
     clearscope static native StaticEventHandler Find(class<StaticEventHandler> type);
     clearscope static native void SendNetworkEvent(String name, int arg1 = 0, int arg2 = 0, int arg3 = 0);
+    version("4.12") clearscope static native vararg bool SendNetworkCommand(Name cmd, ...);
+    version("4.12") clearscope static native bool SendNetworkBuffer(Name cmd, NetworkBuffer buffer);
     clearscope static native void SendInterfaceEvent(int playerNum, string name, int arg1 = 0, int arg2 = 0, int arg3 = 0);
 }

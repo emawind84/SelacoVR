@@ -3793,7 +3793,8 @@ void AActor::Tick ()
 	}
 	else
 	{
-
+		if (player)
+			player->crossingPortal = false;
 		if (!player || !(player->cheats & CF_PREDICTING))
 		{
 			// Handle powerup effects here so that the order is controlled
