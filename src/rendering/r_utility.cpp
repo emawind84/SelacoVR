@@ -996,6 +996,19 @@ void R_SetupFrame(FRenderViewpoint& viewPoint, const FViewWindow& viewWindow, AA
 				iView->ViewOffset.Y += QuakePower(quakeFactor, jiggers.Intensity.Y, jiggers.Offset.Y);
 			if (jiggers.Intensity.Z || jiggers.Offset.Z)
 				iView->ViewOffset.Z += QuakePower(quakeFactor, jiggers.Intensity.Z, jiggers.Offset.Z);
+
+			//Haptic Quake
+			if (vr_quake_haptic_level > 0.0) {
+				double left = QuakePower(vr_quake_haptic_level, jiggers.Intensity.X, jiggers.Offset.X);
+				double right = QuakePower(vr_quake_haptic_level, jiggers.Intensity.Y, jiggers.Offset.Y);
+
+				auto vrmode = VRMode::GetVRMode(true);
+				vrmode->Vibrate(10, 0, (float)left); // left
+				vrmode->Vibrate(10, 1, (float)right); // right
+
+				VR_HapticEvent("rumble_front", 0, 100 * left * C_GetExternalHapticLevelValue("rumble"), 120, 0);
+				VR_HapticEvent("rumble_back", 0, 100 * right * C_GetExternalHapticLevelValue("rumble"), 120, 0);
+			}
 		}
 	}
 

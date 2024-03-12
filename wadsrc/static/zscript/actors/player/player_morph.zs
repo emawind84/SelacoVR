@@ -301,6 +301,7 @@ extend class PlayerPawn
 		class<Actor> exitFlash = alt.GetMorphExitFlash();
 		EMorphFlags style = alt.GetMorphStyle();
 		Weapon premorphWeap = p.PremorphWeapon;
+		Weapon premorphWeapOffhand = p.PremorphWeaponOffhand;
 
 		if (TID && (style & MRF_NEWTIDBEHAVIOUR))
 		{
@@ -312,7 +313,7 @@ extend class PlayerPawn
 		alt.SetMorphStyle(0);
 		alt.SetMorphExitFlash(null);
 		p.MorphedPlayerClass = null;
-		p.PremorphWeapon = null;
+		p.PremorphWeapon = p.PremorphWeaponOffhand = null;
 		p.ViewHeight = alt.ViewHeight;
 		p.Vel = (0.0, 0.0);
 		if (p.Health > 0 || (style & MRF_UNDOBYDEATHSAVES))
@@ -325,15 +326,16 @@ extend class PlayerPawn
 			level2.Destroy();
 
 		let morphWeap = p.ReadyWeapon;
+		p.ReadyWeapon = p.OffhandWeapon = null;
+		p.PendingWeapon = WP_NOCHANGE;
+		p.Refire = 0;
 		if (premorphWeap)
 		{
 			premorphWeap.PostMorphWeapon();
 		}
-		else
+		if (premorphWeapOffhand)
 		{
-			p.ReadyWeapon = null;
-			p.PendingWeapon = WP_NOCHANGE;
-			p.Refire = 0;
+			premorphWeapOffhand.PostMorphWeapon();
 		}
 
 		if (style & MRF_LOSEACTUALWEAPON)
