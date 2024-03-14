@@ -292,7 +292,7 @@ class StateProvider : Inventory
 						}
 						else
 						{
-							dir = player.mo.AttackDir(misl, misl.Angle + angle, misl.Pitch);
+							dir = player.mo.AttackDir(misl, misl.Angle - angle, misl.Pitch);
 						}
 						misl.Angle = dir.x;
 						misl.Vel3DFromAngle(misl.Speed, misl.Angle, dir.y);
