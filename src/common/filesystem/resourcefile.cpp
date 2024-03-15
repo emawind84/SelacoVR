@@ -691,7 +691,7 @@ int FExternalLump::FillCache()
 	return 1;
 }
 
-long FExternalLump::ReadData(FileReader &reader, char *buffer) { 
+long FExternalLump::ReadData(FileReader &reader, char *buffer) {
 	// Since each file is it's own lump, open this file fresh just like FillCache()
 	FileReader f;
 

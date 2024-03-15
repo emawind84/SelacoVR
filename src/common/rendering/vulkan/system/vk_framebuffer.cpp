@@ -200,16 +200,24 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	auto *src = input.imgSource;
 	FBitmap pixels;
 
-	int exx = input.spi.shouldExpand;
+	bool gpu = src->IsGPUOnly();
+	int exx = input.spi.shouldExpand && !gpu;
 	int srcWidth = src->GetWidth();
 	int srcHeight = src->GetHeight();
 	int buffWidth = src->GetWidth() + 2 * exx;
 	int buffHeight = src->GetHeight() + 2 * exx;
+	bool indexed = false;	// TODO: Determine this properly
+	bool mipmap = !indexed && input.allowMipmaps;
+	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
 
-	pixels.Create(buffWidth, buffHeight); // TODO: Error checking
+	unsigned char* pixelData = nullptr;
+	size_t pixelDataSize = 0;
+	bool freePixels = false;
 
 
-	if (exx) {
+	if (exx && !gpu) {
+		pixels.Create(buffWidth, buffHeight); // TODO: Error checking
+
 		// This is incredibly wasteful, but necessary for now since we can't read the bitmap with an offset into a larger buffer
 		// Read into a buffer and blit 
 		FBitmap srcBitmap;
@@ -221,12 +229,33 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 		if (input.spi.generateSpi) {
 			FGameTexture::GenerateInitialSpriteData(output.spi.info, &srcBitmap, input.spi.shouldExpand, input.spi.notrimming);
 		}
+
+		pixelData = pixels.GetPixels();
+		pixelDataSize = pixels.GetBufferSize();
 	}
 	else {
-		output.isTranslucent = src->ReadPixels(params, &pixels);
+		if (gpu) {
+			// GPU only textures cannot be trimmed or translated, so just do a straight read
+			output.isTranslucent = src->ReadCompressedPixels(params->reader, &pixelData, &pixelDataSize);
+			freePixels = true;
+			mipmap = false;
+			// TODO: Mipmaps must be read from the source image, they cannot be generated here
+			fmt = VK_FORMAT_BC7_UNORM_BLOCK;
 
-		if (input.spi.generateSpi) {
-			FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+			if (input.spi.generateSpi) {
+				// Generate sprite data without pixel data, since no trimming should occur
+				FGameTexture::GenerateEmptySpriteData(output.spi.info, buffWidth, buffHeight);
+			}
+		}
+		else {
+			pixels.Create(buffWidth, buffHeight); // TODO: Error checking
+			output.isTranslucent = src->ReadPixels(params, &pixels);
+			pixelData = pixels.GetPixels();
+			pixelDataSize = pixels.GetBufferSize();
+
+			if (input.spi.generateSpi) {
+				FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+			}
 		}
 	}
 	
@@ -238,15 +267,19 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 
 	delete input.params;
 
+	if (input.gtex && input.gtex->GetName().CompareNoCase("KFSEB0") == 0) {
+		input.params->translation = input.params->translation;
+	}
 	// We have the image now, let's upload it through the channel created exclusively for background ops
 	// If we really wanted to be efficient, we would do the disk loading in one thread and the texture upload in another
 	// But for now this approach should yield reasonable results
 	VulkanDevice* device = cmd->GetFrameBuffer()->device;
-	bool indexed = false;	// TODO: Determine this properly
-	bool mipmap = !indexed && input.allowMipmaps;
-	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
-	output.tex->BackgroundCreateTexture(cmd, pixels.GetWidth(), pixels.GetHeight(), indexed ? 1 : 4, fmt, pixels.GetPixels(), mipmap);
+	output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, mipmap, (int)pixelDataSize);
 	output.createMipmaps = mipmap && !uploadQueue.familySupportsGraphics;
+
+	if (freePixels) {
+		free(pixelData);
+	}
 
 	// If we created the texture on a different family than the graphics family, we need to release access 
 	// to the image on this queue

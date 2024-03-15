@@ -25,6 +25,7 @@
 #include "hw_material.h"
 #include "hw_cvars.h"
 #include "hw_renderstate.h"
+#include "filesystem.h"
 #include "vulkan/system/vk_objects.h"
 #include "vulkan/system/vk_builders.h"
 #include "vulkan/system/vk_framebuffer.h"
@@ -139,9 +140,39 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 {
 	if (!tex->isHardwareCanvas())
 	{
-		FTextureBuffer texbuffer = tex->CreateTexBuffer(translation, flags | CTF_ProcessData);
-		bool indexed = flags & CTF_Indexed;
-		CreateTexture(texbuffer.mWidth, texbuffer.mHeight,indexed? 1 : 4, indexed? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM, texbuffer.mBuffer, !indexed);
+		// @Cockatrice - Special case for GPU only textures
+		// These texture cannot be manipulated, so just straight up load them into the GPU now
+		// We are completely ignoring any translations or effects here
+		FImageSource* src = tex->GetImage();
+		if (src && src->IsGPUOnly()) {
+			unsigned char* pixelData = nullptr;
+			size_t pixelDataSize = 0;
+
+			// Create a reader
+			auto *rLump = fileSystem.GetFileAt(src->LumpNum());
+			if (!rLump) 
+				return;
+
+			FileReader *reader = rLump->Owner->GetReader();
+			reader = reader ? reader->CopyNew() : rLump->NewReader().CopyNew();
+			if (!reader) return;
+			reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);
+
+			// Read pixels
+			src->ReadCompressedPixels(reader, &pixelData, &pixelDataSize);
+
+			// Create texture
+			// TODO: Mipmaps must be read from the source image, they cannot be generated here
+			CreateTexture(fb->GetCommands(), mImage.get(), src->GetWidth(), src->GetHeight(), 4, VK_FORMAT_BC7_UNORM_BLOCK, pixelData, false, false, (int)pixelDataSize);
+			free(pixelData);
+			free(reader);
+			hwState = READY;
+		}
+		else {
+			FTextureBuffer texbuffer = tex->CreateTexBuffer(translation, flags | CTF_ProcessData);
+			bool indexed = flags & CTF_Indexed;
+			CreateTexture(texbuffer.mWidth, texbuffer.mHeight, indexed ? 1 : 4, indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM, texbuffer.mBuffer, !indexed);
+		}
 	}
 	else
 	{
@@ -174,7 +205,7 @@ void VkHardwareTexture::CreateTexture(int w, int h, int pixelsize, VkFormat form
 	hwState = READY;
 }
 
-void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManager, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap) {
+void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManager, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap, int totalSize) {
 	if (!mLoadedImage) mLoadedImage.reset(new VkTextureImage());
 	else {
 		//mLoadedImage->Reset(fb);
@@ -182,7 +213,7 @@ void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManag
 		return; // We cannot reset the loaded image on a different thread
 	}
 
-	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, fb->device->uploadFamilySupportsGraphics);
+	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, fb->device->uploadFamilySupportsGraphics, totalSize);
 
 	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
 	if (bufManager->TransferDeleteList->TotalSize > 1) {
@@ -190,12 +221,12 @@ void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManag
 	}
 }
 
-void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkTextureImage *img, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap, bool generateMipmaps)
+void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkTextureImage *img, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap, bool generateMipmaps, int totalSize)
 {
 	if (w <= 0 || h <= 0)
 		throw CVulkanError("Trying to create zero size texture");
 
-	int totalSize = w * h * pixelsize;
+	if(totalSize < 0) totalSize = w * h * pixelsize;
 	int mipLevels = !mipmap ? 1 : GetMipLevels(w, h);
 
 	auto stagingBuffer = BufferBuilder()
@@ -240,7 +271,7 @@ void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkText
 	bufManager->TransferDeleteList->Add(std::move(stagingBuffer));
 	if (bufManager->TransferDeleteList->TotalSize > 64 * 1024 * 1024) {
 		bufManager->WaitForCommands(false, true);
-		hwState = READY;
+		//hwState = READY;
 	}
 }
 

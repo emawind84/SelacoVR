@@ -207,6 +207,13 @@ int FImageSource::ReadTranslatedPixels(FileReader *reader, FBitmap *bmp, const P
 	return 0;
 }
 
+// @Cockatrice: This should only ever be used for textures that are in a GPU readable compressed format
+int FImageSource::ReadCompressedPixels(FileReader* reader, unsigned char** data, size_t* size, int mipLevel) {
+	FString lumpname = fileSystem.GetFileFullName(SourceLump);
+	I_FatalError("FImageSource::ReadCompressedPixels() was called on an image source that does not support it! (%s)", lumpname);
+	return 0;
+}
+
 // Call this on the main thread to prepare params for a background thread load
 // convoluted I know, but some formats require more information than others
 // Default version should work for some formats like PNG
@@ -215,8 +222,6 @@ FImageLoadParams *FImageSource::NewLoaderParams(int conversion, int translation,
 	FileReader *reader = rLump ? rLump->Owner->GetReader() : nullptr;
 
 	if (!rLump) { return nullptr; }
-
-	
 
 	FImageLoadParams *il = new FImageLoadParams();
 	il->reader = reader ? reader->CopyNew() : rLump->NewReader().CopyNew();
