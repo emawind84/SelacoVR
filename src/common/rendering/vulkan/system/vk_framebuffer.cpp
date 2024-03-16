@@ -209,6 +209,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	bool indexed = false;	// TODO: Determine this properly
 	bool mipmap = !indexed && input.allowMipmaps;
 	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
+	VulkanDevice* device = cmd->GetFrameBuffer()->device;
 
 	unsigned char* pixelData = nullptr;
 	size_t pixelDataSize = 0;
@@ -236,11 +237,36 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	else {
 		if (gpu) {
 			// GPU only textures cannot be trimmed or translated, so just do a straight read
-			output.isTranslucent = src->ReadCompressedPixels(params->reader, &pixelData, &pixelDataSize);
+			size_t totalSize;
+			int numMipLevels;
+			output.isTranslucent = src->ReadCompressedPixels(params->reader, &pixelData, totalSize, pixelDataSize, numMipLevels);
 			freePixels = true;
 			mipmap = false;
-			// TODO: Mipmaps must be read from the source image, they cannot be generated here
 			fmt = VK_FORMAT_BC7_UNORM_BLOCK;
+
+			uint32_t expectedMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(buffWidth, buffHeight)))) + 1;
+			if (numMipLevels != expectedMipLevels || numMipLevels == 0) {
+				// Abort mips
+				output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, 4, fmt, pixelData, false, false, (int)pixelDataSize);
+			}
+			else {
+				// Base texture
+				output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, true, false, (int)pixelDataSize);
+
+				// Mips
+				uint32_t mipWidth = buffWidth, mipHeight = buffHeight;
+				uint32_t mipSize = (uint32_t)pixelDataSize, dataPos = (uint32_t)pixelDataSize;
+
+				for (int x = 1; x < numMipLevels; x++) {
+					mipWidth	= std::max(1u, (mipWidth >> 1));
+					mipHeight	= std::max(1u, (mipHeight >> 1));
+					mipSize		= std::max(1u, ((mipWidth + 3) / 4)) * std::max(1u, ((mipHeight + 3) / 4)) * 16;
+					if (mipSize == 0 || totalSize - dataPos < mipSize) 
+						break;
+					output.tex->BackgroundCreateTextureMipMap(cmd, x, mipWidth, mipHeight, 4, fmt, pixelData + dataPos, mipSize);
+					dataPos += mipSize;
+				}
+			}
 
 			if (input.spi.generateSpi) {
 				// Generate sprite data without pixel data, since no trimming should occur
@@ -267,14 +293,16 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 
 	delete input.params;
 
-	if (input.gtex && input.gtex->GetName().CompareNoCase("KFSEB0") == 0) {
-		input.params->translation = input.params->translation;
+
+	if (!gpu) {
+		output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, mipmap, mipmap, (int)pixelDataSize);
 	}
-	// We have the image now, let's upload it through the channel created exclusively for background ops
-	// If we really wanted to be efficient, we would do the disk loading in one thread and the texture upload in another
-	// But for now this approach should yield reasonable results
-	VulkanDevice* device = cmd->GetFrameBuffer()->device;
-	output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, mipmap, (int)pixelDataSize);
+
+	// Wait for operations to finish, since we can't maintain a regular loop of clearing the buffer
+	if (cmd->TransferDeleteList->TotalSize > 1) {
+		cmd->WaitForCommands(false, true);
+	}
+
 	output.createMipmaps = mipmap && !uploadQueue.familySupportsGraphics;
 
 	if (freePixels) {

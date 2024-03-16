@@ -146,7 +146,9 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 		FImageSource* src = tex->GetImage();
 		if (src && src->IsGPUOnly()) {
 			unsigned char* pixelData = nullptr;
-			size_t pixelDataSize = 0;
+			size_t pixelDataSize = 0, totalDataSize = 0;
+			int mipLevels = 0;
+			uint32_t srcWidth = src->GetWidth(), srcHeight = src->GetHeight();
 
 			// Create a reader
 			auto *rLump = fileSystem.GetFileAt(src->LumpNum());
@@ -159,11 +161,32 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 			reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);
 
 			// Read pixels
-			src->ReadCompressedPixels(reader, &pixelData, &pixelDataSize);
+			src->ReadCompressedPixels(reader, &pixelData, totalDataSize, pixelDataSize, mipLevels);
 
 			// Create texture
-			// TODO: Mipmaps must be read from the source image, they cannot be generated here
-			CreateTexture(fb->GetCommands(), mImage.get(), src->GetWidth(), src->GetHeight(), 4, VK_FORMAT_BC7_UNORM_BLOCK, pixelData, false, false, (int)pixelDataSize);
+			// Mipmaps must be read from the source image, they cannot be generated
+			// TODO: Find some way to prevent UI textures from loading mipmaps. After all they are never used when rendering and just straight up eating VRAM for no reason
+			uint32_t expectedMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(srcWidth, srcHeight)))) + 1;
+			if (mipLevels > 0 && mipLevels == expectedMipLevels) {
+				CreateTexture(fb->GetCommands(), mImage.get(), src->GetWidth(), src->GetHeight(), 4, VK_FORMAT_BC7_UNORM_BLOCK, pixelData, true, false, (int)pixelDataSize);
+
+				uint32_t mipWidth = srcWidth, mipHeight = srcHeight;
+				uint32_t mipSize = (uint32_t)pixelDataSize, dataPos = (uint32_t)pixelDataSize;
+
+				for (int x = 1; x < mipLevels; x++) {
+					mipWidth = std::max(1u, (mipWidth >> 1));
+					mipHeight = std::max(1u, (mipHeight >> 1));
+					mipSize = std::max(1u, ((mipWidth + 3) / 4)) * std::max(1u, ((mipHeight + 3) / 4)) * 16;
+					if (mipSize == 0 || totalDataSize - dataPos < mipSize)
+						break;
+					CreateTextureMipMap(fb->GetCommands(), mImage.get(), x, mipWidth, mipHeight, 4, VK_FORMAT_BC7_UNORM_BLOCK, pixelData + dataPos, mipSize);
+					dataPos += mipSize;
+				}
+			}
+			else {
+				CreateTexture(fb->GetCommands(), mImage.get(), src->GetWidth(), src->GetHeight(), 4, VK_FORMAT_BC7_UNORM_BLOCK, pixelData, false, false, (int)pixelDataSize);
+			}
+			
 			free(pixelData);
 			free(reader);
 			hwState = READY;
@@ -205,7 +228,7 @@ void VkHardwareTexture::CreateTexture(int w, int h, int pixelsize, VkFormat form
 	hwState = READY;
 }
 
-void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManager, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap, int totalSize) {
+void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManager, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap, bool createMips, int totalSize) {
 	if (!mLoadedImage) mLoadedImage.reset(new VkTextureImage());
 	else {
 		//mLoadedImage->Reset(fb);
@@ -213,10 +236,59 @@ void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManag
 		return; // We cannot reset the loaded image on a different thread
 	}
 
-	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, fb->device->uploadFamilySupportsGraphics, totalSize);
+	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, createMips && fb->device->uploadFamilySupportsGraphics, totalSize);
 
 	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
-	if (bufManager->TransferDeleteList->TotalSize > 1) {
+	/*if (bufManager->TransferDeleteList->TotalSize > 1) {
+		bufManager->WaitForCommands(false, true);
+	}*/
+}
+
+
+void VkHardwareTexture::BackgroundCreateTextureMipMap(VkCommandBufferManager* bufManager, int mipLevel, int w, int h, int pixelsize, VkFormat format, const void* pixels, int totalSize) {
+	if (!mLoadedImage) {
+		return;
+	}
+
+	CreateTextureMipMap(bufManager, mLoadedImage.get(), mipLevel, w, h, pixelsize, format, pixels, totalSize);
+
+	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
+	// TODO: Make this a manual flush, since we are going to call a couple of these mipmap creations in a row
+	/*if (bufManager->TransferDeleteList->TotalSize > 1) {
+		bufManager->WaitForCommands(false, true);
+	}*/
+}
+
+
+void VkHardwareTexture::CreateTextureMipMap(VkCommandBufferManager* bufManager, VkTextureImage *img, int mipLevel, int w, int h, int pixelsize, VkFormat format, const void* pixels, int totalSize) {
+	if (w <= 0 || h <= 0)
+		throw CVulkanError("Trying to create zero size mipmap!");
+
+	auto stagingBuffer = BufferBuilder()
+		.Size(totalSize)
+		.Usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY)
+		.DebugName("VkHardwareTexture.mStagingBuffer")
+		.Create(fb->device);
+
+	uint8_t* data = (uint8_t*)stagingBuffer->Map(0, totalSize);
+	memcpy(data, pixels, totalSize);
+	stagingBuffer->Unmap();
+
+	auto cmdBuffer = bufManager->GetTransferCommands();
+
+	// Assumes image is still in transfer layout!
+	VkBufferImageCopy region = {};
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.layerCount = 1;
+	region.imageSubresource.mipLevel = mipLevel;
+	region.imageExtent.depth = 1;
+	region.imageExtent.width = w;
+	region.imageExtent.height = h;
+	cmdBuffer->copyBufferToImage(stagingBuffer->buffer, img->Image->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+	// If we queued more than 64 MB of data already: wait until the uploads finish before continuing
+	bufManager->TransferDeleteList->Add(std::move(stagingBuffer));
+	if (bufManager->TransferDeleteList->TotalSize > (size_t)64 * 1024 * 1024) {
 		bufManager->WaitForCommands(false, true);
 	}
 }
@@ -269,7 +341,7 @@ void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkText
 
 	// If we queued more than 64 MB of data already: wait until the uploads finish before continuing
 	bufManager->TransferDeleteList->Add(std::move(stagingBuffer));
-	if (bufManager->TransferDeleteList->TotalSize > 64 * 1024 * 1024) {
+	if (bufManager->TransferDeleteList->TotalSize > (size_t)64 * 1024 * 1024) {
 		bufManager->WaitForCommands(false, true);
 		//hwState = READY;
 	}

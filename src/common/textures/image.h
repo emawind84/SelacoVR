@@ -114,8 +114,8 @@ public:
 	virtual FImageLoadParams *NewLoaderParams(int conversion, int translation, FRemapTable *remap);
 	virtual int ReadPixels(FImageLoadParams *params, FBitmap *bmp);									// Thread safe(ish) version
 	virtual int ReadPixels(FileReader *reader, FBitmap *bmp, int conversion);						// Direct read pixels, must be implemented for things like multipatch to work properly
-	virtual int ReadTranslatedPixels(FileReader *reader, FBitmap *bmp, const PalEntry *remap, int conversion);		// Thread safe(ish) version
-	virtual int ReadCompressedPixels(FileReader* reader, unsigned char** data, size_t* size, int mipLevel = 0);						// Thread safe, read data for the GPU and don't interpret it at all
+	virtual int ReadTranslatedPixels(FileReader *reader, FBitmap *bmp, const PalEntry *remap, int conversion);							// Thread safe(ish) version
+	virtual int ReadCompressedPixels(FileReader* reader, unsigned char** data, size_t &size, size_t &unitSize, int &mipLevels);			// Thread safe, read data for the GPU and don't interpret it at all
 
 	bool bMasked = true;						// Image (might) have holes (Assume true unless proven otherwise!)
 	int8_t bTranslucent = -1;					// Image has pixels with a non-0/1 value. (-1 means the user needs to do a real check)

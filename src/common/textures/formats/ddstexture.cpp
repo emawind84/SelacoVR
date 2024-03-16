@@ -315,7 +315,7 @@ public:
 	FDDSTexture (FileReader &lump, int lumpnum, void *surfdesc, void *dx10header);
 
 	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
-	int ReadCompressedPixels(FileReader* reader, unsigned char** data, size_t* size, int mipLevel) override;
+	int ReadCompressedPixels(FileReader* reader, unsigned char** data, size_t& size, size_t& unitSize, int& mipLevels) override;
 
 	bool IsGPUOnly() override { return true; }
 
@@ -507,73 +507,45 @@ FDDSTexture::FDDSTexture (FileReader &lump, int lumpnum, void *vsurfdesc, void* 
 	bTranslucent = surf->Offsets[2] == 0;	
 	storedMips = surf->MipMapCount;
 	SetOffsets(surf->Offsets[0], surf->Offsets[1]);
-
-	/*if (surf->PixelFormat.Flags & DDPF_FOURCC)
-	{
-		Format = surf->PixelFormat.FourCC;
-		Pitch = 0;
-		LinearSize = surf->LinearSize;
-	}
-	else	// DDPF_RGB
-	{
-		Format = surf->PixelFormat.RGBBitCount >> 3;
-		CalcBitShift (RMask = surf->PixelFormat.RBitMask, &RShiftL, &RShiftR);
-		CalcBitShift (GMask = surf->PixelFormat.GBitMask, &GShiftL, &GShiftR);
-		CalcBitShift (BMask = surf->PixelFormat.BBitMask, &BShiftL, &BShiftR);
-		if (surf->PixelFormat.Flags & DDPF_ALPHAPIXELS)
-		{
-			CalcBitShift (AMask = surf->PixelFormat.RGBAlphaBitMask, &AShiftL, &AShiftR);
-		}
-		else
-		{
-			AMask = 0;
-			AShiftL = AShiftR = 0;
-		}
-		if (surf->Flags & DDSD_PITCH)
-		{
-			Pitch = surf->Pitch;
-		}
-		else
-		{
-			Pitch = (Width * Format + 3) & ~3;
-		}
-		LinearSize = Pitch * Height;
-	}*/
 }
 
-// Assumes the file reader is currently wound to the start position of this lump!!
-int FDDSTexture::ReadCompressedPixels(FileReader* reader, unsigned char** data, size_t *size, int mipLevel) {
+
+// Data must be interpreted, this may include mipmap data which may be used or discarded at will
+int FDDSTexture::ReadCompressedPixels(FileReader* reader, unsigned char** data, size_t& size, size_t& unitSize, int& mipLevels) {
+	const size_t headerSize = sizeof(DDSURFACEDESC2) + sizeof(DDHEADERDX10) + 4;
+	
 	// TODO: Read remapped/translated version here when necessary!
 	auto rl = fileSystem.GetFileAt(SourceLump);		// These values do not change at runtime until after teardown
 	if (!rl || rl->LumpSize <= 0) {
 		return 0;
 	}
 
+	size_t pixelDataSize = rl->LumpSize - headerSize;
+
 	unsigned char* cacheData = new unsigned char[rl->LumpSize];
 	rl->ReadData(*reader, (char*)cacheData);
 	
-	// We have to read in the headers to get this correct
-	auto size1 = sizeof(DDSURFACEDESC2);
-	auto size2 = sizeof(DDHEADERDX10);
-	//reader->Seek(4 + size1 + size2, FileReader::SeekCur);
-	*data = (unsigned char *)malloc(LinearSize);
-	*size = LinearSize;
-	
-	/*auto readBytes = reader->Read(*data, LinearSize);
-	if (readBytes != LinearSize) {
-		return 0;
-	}*/
-	if (rl->LumpSize >= LinearSize + size1 + size2) {
-		// Copy data from read file
-		memcpy(*data, cacheData + (4 + size1 + size2), LinearSize);
+	*data = (unsigned char *)malloc(pixelDataSize);
+	unitSize = LinearSize;
+	size = pixelDataSize;
+	mipLevels = storedMips;
+
+	if (pixelDataSize >= LinearSize) {
+		// Copy data from file
+		memcpy(*data, cacheData + headerSize, pixelDataSize);
 		delete[]cacheData;
 	}
 	else {
 		delete[]cacheData;
-		memset(*data, 9, LinearSize);
+		//memset(*data, 9, pixelDataSize);
+		free(*data);
+		*data = nullptr;
+		size = 0;
+
 		return 0;
 	}
-	return (int)bTranslucent;	// TODO: Return transparency status
+
+	return (int)bTranslucent;
 }
 
 //==========================================================================
