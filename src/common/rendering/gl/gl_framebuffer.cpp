@@ -160,20 +160,24 @@ bool GlTexLoadThread::loadResource(GlTexLoadIn & input, GlTexLoadOut & output) {
 	auto* src = input.imgSource;
 	FBitmap pixels;
 
-	int exx = input.spi.shouldExpand;
+	bool indexed = false;	// TODO: Determine this properly
+	bool mipmap = !indexed && input.allowMipmaps;
+	bool gpu = src->IsGPUOnly();
+	int exx = input.spi.shouldExpand && !gpu;
 	int srcWidth = src->GetWidth();
 	int srcHeight = src->GetHeight();
 	int buffWidth = src->GetWidth() + 2 * exx;
 	int buffHeight = src->GetHeight() + 2 * exx;
 
-	pixels.Create(buffWidth, buffHeight);	// TODO: Error checking
+	
 
-	if (exx) {
+	if (exx && !gpu) {
 		// This is incredibly wasteful, but necessary for now since we can't read the bitmap with an offset into a larger buffer
 		// Read into a buffer and blit 
 		FBitmap srcBitmap;
 		srcBitmap.Create(srcWidth, srcHeight);
 		output.isTranslucent = src->ReadPixels(params, &srcBitmap);
+		pixels.Create(buffWidth, buffHeight);
 		pixels.Blit(exx, exx, srcBitmap);
 
 		// If we need sprite positioning info, generate it here and assign it in the main thread later
@@ -182,24 +186,32 @@ bool GlTexLoadThread::loadResource(GlTexLoadIn & input, GlTexLoadOut & output) {
 		}
 	}
 	else {
-		output.isTranslucent = src->ReadPixels(params, &pixels);
+		if (gpu) {
+			int numMipLevels;
+			size_t dataSize = 0, totalSize = 0;
+			unsigned char* pixelData;
+			output.isTranslucent = src->ReadCompressedPixels(params->reader, &pixelData, totalSize, dataSize, numMipLevels);
+			output.tex->BackgroundCreateCompressedTexture(pixelData, (uint32_t)dataSize, (uint32_t)totalSize, buffWidth, buffHeight, input.texUnit, numMipLevels, "GlTexLoadThread::loadResource(Compressed)", !input.allowMipmaps);
 
-		if (input.spi.generateSpi) {
-			FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+			if (input.spi.generateSpi) {
+				FGameTexture::GenerateEmptySpriteData(output.spi.info, buffWidth, buffHeight);
+			}
+		}
+		else {
+			pixels.Create(buffWidth, buffHeight);
+			output.isTranslucent = src->ReadPixels(params, &pixels);
+
+			if (input.spi.generateSpi) {
+				FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+			}
 		}
 	}
 
-	//output.isTranslucent = src->ReadPixels(params, &pixels);
-
 	delete input.params;
 
-	bool indexed = false;	// TODO: Determine this properly
-	bool mipmap = !indexed && input.allowMipmaps;
-	output.tex->BackgroundCreateTexture(pixels.GetPixels(), pixels.GetWidth(), pixels.GetHeight(), input.texUnit, mipmap, indexed, "GlTexLoadThread::loadResource()", !input.allowMipmaps);
+	if(!gpu) 
+		output.tex->BackgroundCreateTexture(pixels.GetPixels(), pixels.GetWidth(), pixels.GetHeight(), input.texUnit, mipmap, indexed, "GlTexLoadThread::loadResource()", !input.allowMipmaps);
 
-	
-
-	// Always return true, because failed images need to be marked as unloadable
 	// TODO: Mark failed images as unloadable so they don't keep coming back to the queue
 	return true;
 }
