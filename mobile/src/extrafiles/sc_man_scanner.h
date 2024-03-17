@@ -664,7 +664,7 @@ yy72:
 yy75:
 	++YYCURSOR;
 yy76:
-#line 305 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 307 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{
 			ScriptError ("Unexpected character: %c (ASCII %d)\n", *tok, *tok);
 			goto std1;
@@ -680,18 +680,18 @@ yy77:
 		if (yych <= '\r') goto yy77;
 		if (yych == ' ') goto yy77;
 	}
-#line 302 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 304 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto std1; }
 #line 686 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy80:
 	++YYCURSOR;
-#line 303 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 305 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto newline; }
 #line 691 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy82:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) == '=') goto yy162;
-#line 287 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 289 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('!'); }
 #line 697 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy84:
@@ -712,20 +712,20 @@ yy85:
 		}
 	}
 yy86:
-#line 299 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 301 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('#'); }
 #line 718 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy87:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) == '=') goto yy174;
-#line 293 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 295 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('%'); }
 #line 724 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy89:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) == '&') goto yy176;
 	if (yych == '=') goto yy178;
-#line 286 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 288 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('&'); }
 #line 731 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy91:
@@ -735,31 +735,31 @@ yy91:
 	goto yy181;
 yy92:
 	++YYCURSOR;
-#line 281 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 283 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('('); }
 #line 741 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy94:
 	++YYCURSOR;
-#line 282 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 284 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(')'); }
 #line 746 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy96:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) == '*') goto yy184;
 	if (yych == '=') goto yy186;
-#line 291 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 293 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('*'); }
 #line 753 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy98:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) == '+') goto yy188;
 	if (yych == '=') goto yy190;
-#line 290 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 292 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('+'); }
 #line 760 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy100:
 	++YYCURSOR;
-#line 278 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 280 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(','); }
 #line 765 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy102:
@@ -770,7 +770,7 @@ yy102:
 		if (yych <= '=') goto yy194;
 		if (yych <= '>') goto yy196;
 	}
-#line 289 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 291 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('-'); }
 #line 776 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy104:
@@ -779,7 +779,7 @@ yy104:
 	if (yych <= '/') goto yy105;
 	if (yych <= '9') goto yy200;
 yy105:
-#line 285 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 287 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('.'); }
 #line 785 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy106:
@@ -792,7 +792,7 @@ yy106:
 		if (yych == '=') goto yy207;
 	}
 yy107:
-#line 292 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 294 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('/'); }
 #line 798 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy108:
@@ -831,7 +831,7 @@ yy108:
 		}
 	}
 yy109:
-#line 235 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 237 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_IntConst); }
 #line 837 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy110:
@@ -867,12 +867,12 @@ yy110:
 yy112:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) == ':') goto yy212;
-#line 279 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 281 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(':'); }
 #line 873 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy114:
 	++YYCURSOR;
-#line 275 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 277 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ StateOptions = false; RET(';'); }
 #line 878 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy116:
@@ -883,13 +883,13 @@ yy116:
 	if (yych <= '=') goto yy216;
 	if (yych <= '>') goto yy218;
 yy117:
-#line 294 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 296 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('<'); }
 #line 889 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy118:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) == '=') goto yy219;
-#line 280 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 282 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('='); }
 #line 895 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy120:
@@ -898,17 +898,17 @@ yy120:
 	if (yych <= '=') goto yy221;
 	if (yych <= '>') goto yy223;
 yy121:
-#line 295 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 297 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('>'); }
 #line 904 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy122:
 	++YYCURSOR;
-#line 298 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 300 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('?'); }
 #line 909 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy124:
 	++YYCURSOR;
-#line 300 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 302 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('@'); }
 #line 914 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy126:
@@ -950,7 +950,7 @@ yy126:
 		}
 	}
 yy127:
-#line 232 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 234 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Identifier); }
 #line 956 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy128:
@@ -1027,35 +1027,23 @@ yy131:
 	}
 yy132:
 	yych = *++YYCURSOR;
-	if (yych <= 'O') {
-		if (yych <= 'I') {
-			if (yych == 'A') goto yy244;
-			if (yych <= 'H') goto yy135;
-			goto yy245;
-		} else {
-			if (yych == 'L') goto yy246;
-			if (yych <= 'N') goto yy135;
-			goto yy247;
-		}
-	} else {
-		if (yych <= 'i') {
-			if (yych == 'a') goto yy244;
-			if (yych <= 'h') goto yy135;
-			goto yy245;
-		} else {
-			if (yych <= 'l') {
-				if (yych <= 'k') goto yy135;
-				goto yy246;
-			} else {
-				if (yych == 'o') goto yy247;
-				goto yy135;
-			}
-		}
+	switch (yych) {
+	case 'A':
+	case 'a':	goto yy244;
+	case 'I':
+	case 'i':	goto yy245;
+	case 'L':
+	case 'l':	goto yy246;
+	case 'O':
+	case 'o':	goto yy247;
+	case 'U':
+	case 'u':	goto yy248;
+	default:	goto yy135;
 	}
 yy133:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy248;
-	if (yych == 'o') goto yy248;
+	if (yych == 'O') goto yy249;
+	if (yych == 'o') goto yy249;
 	goto yy135;
 yy134:
 	++YYCURSOR;
@@ -1081,20 +1069,20 @@ yy136:
 	yych = *++YYCURSOR;
 	if (yych <= 'S') {
 		if (yych <= 'M') {
-			if (yych == 'F') goto yy249;
+			if (yych == 'F') goto yy250;
 			goto yy135;
 		} else {
-			if (yych <= 'N') goto yy251;
+			if (yych <= 'N') goto yy252;
 			if (yych <= 'R') goto yy135;
-			goto yy253;
+			goto yy254;
 		}
 	} else {
 		if (yych <= 'm') {
-			if (yych == 'f') goto yy249;
+			if (yych == 'f') goto yy250;
 			goto yy135;
 		} else {
-			if (yych <= 'n') goto yy251;
-			if (yych == 's') goto yy253;
+			if (yych <= 'n') goto yy252;
+			if (yych == 's') goto yy254;
 			goto yy135;
 		}
 	}
@@ -1102,20 +1090,20 @@ yy137:
 	yych = *++YYCURSOR;
 	if (yych <= 'O') {
 		if (yych <= 'H') {
-			if (yych == 'E') goto yy255;
+			if (yych == 'E') goto yy256;
 			goto yy135;
 		} else {
-			if (yych <= 'I') goto yy256;
+			if (yych <= 'I') goto yy257;
 			if (yych <= 'N') goto yy135;
-			goto yy257;
+			goto yy258;
 		}
 	} else {
 		if (yych <= 'h') {
-			if (yych == 'e') goto yy255;
+			if (yych == 'e') goto yy256;
 			goto yy135;
 		} else {
-			if (yych <= 'i') goto yy256;
-			if (yych == 'o') goto yy257;
+			if (yych <= 'i') goto yy257;
+			if (yych == 'o') goto yy258;
 			goto yy135;
 		}
 	}
@@ -1123,20 +1111,20 @@ yy138:
 	yych = *++YYCURSOR;
 	if (yych <= 'I') {
 		if (yych <= 'D') {
-			if (yych == 'A') goto yy258;
+			if (yych == 'A') goto yy259;
 			goto yy135;
 		} else {
-			if (yych <= 'E') goto yy259;
+			if (yych <= 'E') goto yy260;
 			if (yych <= 'H') goto yy135;
-			goto yy260;
+			goto yy261;
 		}
 	} else {
 		if (yych <= 'd') {
-			if (yych == 'a') goto yy258;
+			if (yych == 'a') goto yy259;
 			goto yy135;
 		} else {
-			if (yych <= 'e') goto yy259;
-			if (yych == 'i') goto yy260;
+			if (yych <= 'e') goto yy260;
+			if (yych == 'i') goto yy261;
 			goto yy135;
 		}
 	}
@@ -1144,20 +1132,20 @@ yy139:
 	yych = *++YYCURSOR;
 	if (yych <= 'U') {
 		if (yych <= 'N') {
-			if (yych == 'A') goto yy261;
+			if (yych == 'A') goto yy262;
 			goto yy135;
 		} else {
-			if (yych <= 'O') goto yy262;
+			if (yych <= 'O') goto yy263;
 			if (yych <= 'T') goto yy135;
-			goto yy263;
+			goto yy264;
 		}
 	} else {
 		if (yych <= 'n') {
-			if (yych == 'a') goto yy261;
+			if (yych == 'a') goto yy262;
 			goto yy135;
 		} else {
-			if (yych <= 'o') goto yy262;
-			if (yych == 'u') goto yy263;
+			if (yych <= 'o') goto yy263;
+			if (yych == 'u') goto yy264;
 			goto yy135;
 		}
 	}
@@ -1166,75 +1154,77 @@ yy140:
 	if (yych <= 'V') {
 		if (yych <= 'F') {
 			if (yych <= 'E') goto yy135;
-			goto yy264;
+			goto yy265;
 		} else {
 			if (yych <= 'T') goto yy135;
-			if (yych <= 'U') goto yy265;
-			goto yy266;
+			if (yych <= 'U') goto yy266;
+			goto yy267;
 		}
 	} else {
 		if (yych <= 't') {
-			if (yych == 'f') goto yy264;
+			if (yych == 'f') goto yy265;
 			goto yy135;
 		} else {
-			if (yych <= 'u') goto yy265;
-			if (yych <= 'v') goto yy266;
+			if (yych <= 'u') goto yy266;
+			if (yych <= 'v') goto yy267;
 			goto yy135;
 		}
 	}
 yy141:
 	yych = *++YYCURSOR;
 	if (yych <= 'R') {
-		if (yych == 'L') goto yy267;
+		if (yych == 'L') goto yy268;
 		if (yych <= 'Q') goto yy135;
-		goto yy268;
+		goto yy269;
 	} else {
 		if (yych <= 'l') {
 			if (yych <= 'k') goto yy135;
-			goto yy267;
+			goto yy268;
 		} else {
-			if (yych == 'r') goto yy268;
+			if (yych == 'r') goto yy269;
 			goto yy135;
 		}
 	}
 yy142:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy269;
-	if (yych == 'e') goto yy269;
+	if (yych == 'E') goto yy270;
+	if (yych == 'e') goto yy270;
 	goto yy135;
 yy143:
 	yych = *++YYCURSOR;
 	switch (yych) {
 	case 'B':
-	case 'b':	goto yy270;
+	case 'b':	goto yy271;
+	case 'E':
+	case 'e':	goto yy272;
 	case 'H':
-	case 'h':	goto yy271;
+	case 'h':	goto yy273;
 	case 'I':
-	case 'i':	goto yy272;
+	case 'i':	goto yy274;
 	case 'L':
-	case 'l':	goto yy273;
+	case 'l':	goto yy275;
 	case 'O':
-	case 'o':	goto yy274;
+	case 'o':	goto yy276;
 	case 'T':
-	case 't':	goto yy275;
+	case 't':	goto yy277;
 	case 'U':
-	case 'u':	goto yy276;
+	case 'u':	goto yy278;
 	case 'W':
-	case 'w':	goto yy277;
+	case 'w':	goto yy279;
 	default:	goto yy135;
 	}
 yy144:
 	yych = *++YYCURSOR;
 	if (yych <= 'R') {
-		if (yych == 'I') goto yy278;
+		if (yych == 'I') goto yy280;
 		if (yych <= 'Q') goto yy135;
-		goto yy279;
+		goto yy281;
 	} else {
 		if (yych <= 'i') {
 			if (yych <= 'h') goto yy135;
-			goto yy278;
+			goto yy280;
 		} else {
-			if (yych == 'r') goto yy279;
+			if (yych == 'r') goto yy281;
 			goto yy135;
 		}
 	}
@@ -1242,93 +1232,93 @@ yy145:
 	yych = *++YYCURSOR;
 	switch (yych) {
 	case 'I':
-	case 'i':	goto yy280;
+	case 'i':	goto yy282;
 	case 'L':
-	case 'l':	goto yy282;
+	case 'l':	goto yy284;
 	case 'N':
-	case 'n':	goto yy283;
+	case 'n':	goto yy285;
 	case 'S':
-	case 's':	goto yy284;
+	case 's':	goto yy286;
 	default:	goto yy135;
 	}
 yy146:
 	yych = *++YYCURSOR;
 	if (yych <= 'O') {
 		if (yych <= 'E') {
-			if (yych == 'A') goto yy285;
+			if (yych == 'A') goto yy287;
 			if (yych <= 'D') goto yy135;
-			goto yy286;
-		} else {
-			if (yych == 'I') goto yy287;
-			if (yych <= 'N') goto yy135;
 			goto yy288;
+		} else {
+			if (yych == 'I') goto yy289;
+			if (yych <= 'N') goto yy135;
+			goto yy290;
 		}
 	} else {
 		if (yych <= 'e') {
-			if (yych == 'a') goto yy285;
+			if (yych == 'a') goto yy287;
 			if (yych <= 'd') goto yy135;
-			goto yy286;
+			goto yy288;
 		} else {
 			if (yych <= 'i') {
 				if (yych <= 'h') goto yy135;
-				goto yy287;
+				goto yy289;
 			} else {
-				if (yych == 'o') goto yy288;
+				if (yych == 'o') goto yy290;
 				goto yy135;
 			}
 		}
 	}
 yy147:
 	yych = *++YYCURSOR;
-	if (yych == 'H') goto yy289;
-	if (yych == 'h') goto yy289;
+	if (yych == 'H') goto yy291;
+	if (yych == 'h') goto yy291;
 	goto yy135;
 yy148:
 	++YYCURSOR;
-#line 283 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 285 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('['); }
-#line 1291 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1281 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy150:
 	++YYCURSOR;
-#line 284 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 286 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(']'); }
-#line 1296 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1286 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy152:
 	++YYCURSOR;
-	if ((yych = *YYCURSOR) == '=') goto yy290;
-#line 296 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	if ((yych = *YYCURSOR) == '=') goto yy292;
+#line 298 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('^'); }
-#line 1302 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1292 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy154:
 	++YYCURSOR;
-#line 276 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 278 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ StateOptions = false; RET('{'); }
-#line 1307 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1297 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy156:
 	++YYCURSOR;
-	if ((yych = *YYCURSOR) == '=') goto yy292;
-	if (yych == '|') goto yy294;
-#line 297 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	if ((yych = *YYCURSOR) == '=') goto yy294;
+	if (yych == '|') goto yy296;
+#line 299 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('|'); }
-#line 1314 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1304 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy158:
 	++YYCURSOR;
-#line 277 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 279 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('}'); }
-#line 1319 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1309 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy160:
 	yyaccept = 5;
 	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych == '=') goto yy296;
+	if (yych == '=') goto yy298;
 yy161:
-#line 288 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 290 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET('~'); }
-#line 1327 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1317 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy162:
 	++YYCURSOR;
-#line 269 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 271 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Neq); }
-#line 1332 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1322 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy164:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
@@ -1340,20 +1330,20 @@ yy165:
 yy166:
 	++YYCURSOR;
 yy167:
-#line 241 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 243 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto string_const; }
-#line 1346 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1336 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy168:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
-	if (yych == '"') goto yy297;
+	if (yych == '"') goto yy299;
 	if (yych == '\\') goto yy168;
 	goto yy164;
 yy170:
 	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy298;
-	if (yych == 'n') goto yy298;
+	if (yych == 'N') goto yy300;
+	if (yych == 'n') goto yy300;
 yy171:
 	YYCURSOR = YYMARKER;
 	if (yyaccept <= 3) {
@@ -1387,27 +1377,27 @@ yy171:
 	}
 yy172:
 	yych = *++YYCURSOR;
-	if (yych == 'n') goto yy299;
+	if (yych == 'n') goto yy301;
 	goto yy171;
 yy173:
 	yych = *++YYCURSOR;
-	if (yych == 'e') goto yy300;
+	if (yych == 'e') goto yy302;
 	goto yy171;
 yy174:
 	++YYCURSOR;
-#line 255 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 257 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_ModEq); }
-#line 1401 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1391 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy176:
 	++YYCURSOR;
-#line 264 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 266 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_AndAnd); }
-#line 1406 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1396 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy178:
 	++YYCURSOR;
-#line 256 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 258 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_AndEq); }
-#line 1411 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1401 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy180:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
@@ -1416,50 +1406,50 @@ yy181:
 	if (yych == '\n') goto yy171;
 	if (yych != '\'') goto yy180;
 	++YYCURSOR;
-#line 244 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 246 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_NameConst); }
-#line 1422 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1412 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy184:
 	++YYCURSOR;
-#line 272 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 274 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_MulMul); }
-#line 1427 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1417 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy186:
 	++YYCURSOR;
-#line 253 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 255 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_MulEq); }
-#line 1432 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1422 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy188:
 	++YYCURSOR;
-#line 262 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 264 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Incr); }
-#line 1437 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1427 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy190:
 	++YYCURSOR;
-#line 251 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 253 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_AddEq); }
-#line 1442 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1432 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy192:
 	++YYCURSOR;
-#line 263 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 265 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Decr); }
-#line 1447 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1437 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy194:
 	++YYCURSOR;
-#line 252 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 254 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_SubEq); }
-#line 1452 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1442 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy196:
 	++YYCURSOR;
-#line 274 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 276 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Arrow); }
-#line 1457 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1447 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy198:
 	++YYCURSOR;
-	if ((yych = *YYCURSOR) == '.') goto yy301;
-#line 246 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	if ((yych = *YYCURSOR) == '.') goto yy303;
+#line 248 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_DotDot); }
-#line 1463 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1453 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy200:
 	yyaccept = 6;
 	YYMARKER = ++YYCURSOR;
@@ -1471,55 +1461,55 @@ yy200:
 		if (yych >= 'E') goto yy209;
 	} else {
 		if (yych <= 'd') {
-			if (yych <= 'F') goto yy303;
+			if (yych <= 'F') goto yy305;
 		} else {
 			if (yych <= 'e') goto yy209;
-			if (yych <= 'f') goto yy303;
+			if (yych <= 'f') goto yy305;
 		}
 	}
 yy202:
-#line 238 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 240 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_FloatConst); }
-#line 1484 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1474 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy203:
 	++YYCURSOR;
 #line 118 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto comment; }
-#line 1489 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1479 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy205:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
-	if (yych == '\n') goto yy304;
+	if (yych == '\n') goto yy306;
 	goto yy205;
 yy207:
 	++YYCURSOR;
-#line 254 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 256 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_DivEq); }
-#line 1500 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1490 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy209:
 	yych = *++YYCURSOR;
 	if (yych <= ',') {
-		if (yych == '+') goto yy306;
+		if (yych == '+') goto yy308;
 		goto yy171;
 	} else {
-		if (yych <= '-') goto yy306;
+		if (yych <= '-') goto yy308;
 		if (yych <= '/') goto yy171;
-		if (yych <= '9') goto yy307;
+		if (yych <= '9') goto yy309;
 		goto yy171;
 	}
 yy210:
 	yych = *++YYCURSOR;
 	if (yych <= 'U') {
-		if (yych == 'L') goto yy309;
+		if (yych == 'L') goto yy311;
 		if (yych <= 'T') goto yy109;
-		goto yy309;
+		goto yy311;
 	} else {
 		if (yych <= 'l') {
 			if (yych <= 'k') goto yy109;
-			goto yy309;
+			goto yy311;
 		} else {
-			if (yych == 'u') goto yy309;
+			if (yych == 'u') goto yy311;
 			goto yy109;
 		}
 	}
@@ -1527,170 +1517,170 @@ yy211:
 	yych = *++YYCURSOR;
 	if (yych <= '@') {
 		if (yych <= '/') goto yy171;
-		if (yych <= '9') goto yy310;
+		if (yych <= '9') goto yy312;
 		goto yy171;
 	} else {
-		if (yych <= 'F') goto yy310;
+		if (yych <= 'F') goto yy312;
 		if (yych <= '`') goto yy171;
-		if (yych <= 'f') goto yy310;
+		if (yych <= 'f') goto yy312;
 		goto yy171;
 	}
 yy212:
 	++YYCURSOR;
-#line 273 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 275 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_ColonColon); }
-#line 1543 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1533 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy214:
 	++YYCURSOR;
-	if ((yych = *YYCURSOR) == '=') goto yy312;
-#line 261 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	if ((yych = *YYCURSOR) == '=') goto yy314;
+#line 263 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_LShift); }
-#line 1549 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1539 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy216:
 	++YYCURSOR;
-#line 266 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 268 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Leq); }
-#line 1554 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1544 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy218:
 	yych = *++YYCURSOR;
-	if (yych == '=') goto yy314;
+	if (yych == '=') goto yy316;
 	goto yy171;
 yy219:
 	++YYCURSOR;
-#line 268 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 270 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Eq); }
-#line 1563 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1553 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy221:
 	++YYCURSOR;
-#line 267 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 269 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Geq); }
-#line 1568 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1558 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy223:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= '<') goto yy224;
-	if (yych <= '=') goto yy316;
-	if (yych <= '>') goto yy318;
+	if (yych <= '=') goto yy318;
+	if (yych <= '>') goto yy320;
 yy224:
-#line 260 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 262 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_RShift); }
-#line 1577 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1567 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy225:
 	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy320;
-	if (yych == 's') goto yy320;
+	if (yych == 'S') goto yy322;
+	if (yych == 's') goto yy322;
 	goto yy135;
 yy226:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy321;
-	if (yych == 't') goto yy321;
+	if (yych == 'T') goto yy323;
+	if (yych == 't') goto yy323;
 	goto yy135;
 yy227:
 	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy322;
-	if (yych == 'i') goto yy322;
+	if (yych == 'I') goto yy324;
+	if (yych == 'i') goto yy324;
 	goto yy135;
 yy228:
 	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy323;
-	if (yych == 'r') goto yy323;
+	if (yych == 'R') goto yy325;
+	if (yych == 'r') goto yy325;
 	goto yy135;
 yy229:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy324;
-	if (yych == 't') goto yy324;
+	if (yych == 'T') goto yy326;
+	if (yych == 't') goto yy326;
 	goto yy135;
 yy230:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy325;
-	if (yych == 'o') goto yy325;
+	if (yych == 'O') goto yy327;
+	if (yych == 'o') goto yy327;
 	goto yy135;
 yy231:
 	yych = *++YYCURSOR;
 	if (yych <= 'I') {
-		if (yych == 'E') goto yy326;
+		if (yych == 'E') goto yy328;
 		if (yych <= 'H') goto yy135;
-		goto yy327;
+		goto yy329;
 	} else {
 		if (yych <= 'e') {
 			if (yych <= 'd') goto yy135;
-			goto yy326;
+			goto yy328;
 		} else {
-			if (yych == 'i') goto yy327;
+			if (yych == 'i') goto yy329;
 			goto yy135;
 		}
 	}
 yy232:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy328;
-	if (yych == 't') goto yy328;
+	if (yych == 'T') goto yy330;
+	if (yych == 't') goto yy330;
 	goto yy135;
 yy233:
 	yych = *++YYCURSOR;
 	if (yych <= 'S') {
-		if (yych == 'N') goto yy329;
+		if (yych == 'N') goto yy331;
 		if (yych <= 'R') goto yy135;
-		goto yy330;
+		goto yy332;
 	} else {
 		if (yych <= 'n') {
 			if (yych <= 'm') goto yy135;
-			goto yy329;
+			goto yy331;
 		} else {
-			if (yych == 's') goto yy330;
+			if (yych == 's') goto yy332;
 			goto yy135;
 		}
 	}
 yy234:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy331;
-	if (yych == 'a') goto yy331;
+	if (yych == 'A') goto yy333;
+	if (yych == 'a') goto yy333;
 	goto yy135;
 yy235:
 	yych = *++YYCURSOR;
 	if (yych <= 'E') {
-		if (yych == 'A') goto yy332;
+		if (yych == 'A') goto yy334;
 		if (yych <= 'D') goto yy135;
-		goto yy333;
+		goto yy335;
 	} else {
 		if (yych <= 'a') {
 			if (yych <= '`') goto yy135;
-			goto yy332;
+			goto yy334;
 		} else {
-			if (yych == 'e') goto yy333;
+			if (yych == 'e') goto yy335;
 			goto yy135;
 		}
 	}
 yy236:
 	yych = *++YYCURSOR;
 	if (yych <= 'N') {
-		if (yych == 'L') goto yy334;
+		if (yych == 'L') goto yy336;
 		if (yych <= 'M') goto yy135;
-		goto yy335;
+		goto yy337;
 	} else {
 		if (yych <= 'l') {
 			if (yych <= 'k') goto yy135;
-			goto yy334;
+			goto yy336;
 		} else {
-			if (yych == 'n') goto yy335;
+			if (yych == 'n') goto yy337;
 			goto yy135;
 		}
 	}
 yy237:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy336;
-	if (yych == 'o') goto yy336;
+	if (yych == 'O') goto yy338;
+	if (yych == 'o') goto yy338;
 	goto yy135;
 yy238:
 	yych = *++YYCURSOR;
 	if (yych <= 'P') {
-		if (yych == 'F') goto yy337;
+		if (yych == 'F') goto yy339;
 		if (yych <= 'O') goto yy135;
-		goto yy338;
+		goto yy340;
 	} else {
 		if (yych <= 'f') {
 			if (yych <= 'e') goto yy135;
-			goto yy337;
+			goto yy339;
 		} else {
-			if (yych == 'p') goto yy338;
+			if (yych == 'p') goto yy340;
 			goto yy135;
 		}
 	}
@@ -1702,8 +1692,8 @@ yy239:
 			if (yych <= '9') goto yy134;
 		} else {
 			if (yych <= 'S') goto yy134;
-			if (yych <= 'T') goto yy339;
-			if (yych <= 'U') goto yy341;
+			if (yych <= 'T') goto yy341;
+			if (yych <= 'U') goto yy343;
 			goto yy134;
 		}
 	} else {
@@ -1711,387 +1701,377 @@ yy239:
 			if (yych == '_') goto yy134;
 			if (yych >= 'a') goto yy134;
 		} else {
-			if (yych <= 't') goto yy339;
-			if (yych <= 'u') goto yy341;
+			if (yych <= 't') goto yy341;
+			if (yych <= 'u') goto yy343;
 			if (yych <= 'z') goto yy134;
 		}
 	}
 yy240:
 #line 129 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Do); }
-#line 1723 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 1713 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy241:
 	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy342;
-	if (yych == 's') goto yy342;
+	if (yych == 'S') goto yy344;
+	if (yych == 's') goto yy344;
 	goto yy135;
 yy242:
 	yych = *++YYCURSOR;
-	if (yych == 'U') goto yy343;
-	if (yych == 'u') goto yy343;
+	if (yych == 'U') goto yy345;
+	if (yych == 'u') goto yy345;
 	goto yy135;
 yy243:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy344;
-	if (yych == 't') goto yy344;
+	if (yych == 'T') goto yy346;
+	if (yych == 't') goto yy346;
 	goto yy135;
 yy244:
 	yych = *++YYCURSOR;
 	if (yych <= 'S') {
-		if (yych == 'L') goto yy345;
+		if (yych == 'L') goto yy347;
 		if (yych <= 'R') goto yy135;
-		goto yy346;
+		goto yy348;
 	} else {
 		if (yych <= 'l') {
 			if (yych <= 'k') goto yy135;
-			goto yy345;
+			goto yy347;
 		} else {
-			if (yych == 's') goto yy346;
+			if (yych == 's') goto yy348;
 			goto yy135;
 		}
 	}
 yy245:
 	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy347;
-	if (yych == 'n') goto yy347;
+	if (yych == 'N') goto yy349;
+	if (yych == 'n') goto yy349;
 	goto yy135;
 yy246:
 	yych = *++YYCURSOR;
 	if (yych <= 'O') {
-		if (yych == 'A') goto yy348;
+		if (yych == 'A') goto yy350;
 		if (yych <= 'N') goto yy135;
-		goto yy349;
+		goto yy351;
 	} else {
 		if (yych <= 'a') {
 			if (yych <= '`') goto yy135;
-			goto yy348;
+			goto yy350;
 		} else {
-			if (yych == 'o') goto yy349;
+			if (yych == 'o') goto yy351;
 			goto yy135;
 		}
 	}
 yy247:
 	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy350;
-	if (yych == 'r') goto yy350;
+	if (yych == 'R') goto yy352;
+	if (yych == 'r') goto yy352;
 	goto yy135;
 yy248:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy352;
-	if (yych == 't') goto yy352;
+	if (yych == 'N') goto yy354;
+	if (yych == 'n') goto yy354;
 	goto yy135;
 yy249:
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy355;
+	if (yych == 't') goto yy355;
+	goto yy135;
+yy250:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy250;
+		if (yych <= '/') goto yy251;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy250;
+			if (yych <= '`') goto yy251;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy250:
+yy251:
 #line 133 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_If); }
-#line 1801 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy251:
+#line 1796 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy252:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
 		if (yych <= '@') {
-			if (yych <= '/') goto yy252;
+			if (yych <= '/') goto yy253;
 			if (yych <= '9') goto yy134;
 		} else {
-			if (yych == 'T') goto yy353;
+			if (yych == 'T') goto yy356;
 			goto yy134;
 		}
 	} else {
 		if (yych <= '`') {
 			if (yych == '_') goto yy134;
 		} else {
-			if (yych == 't') goto yy353;
+			if (yych == 't') goto yy356;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy252:
-#line 172 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_In); }
-#line 1823 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy253:
+#line 173 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_In); }
+#line 1818 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy254:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy254;
+		if (yych <= '/') goto yy255;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy254;
+			if (yych <= '`') goto yy255;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy254:
-#line 208 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Is : TK_Identifier); }
-#line 1841 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy255:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy355;
-	if (yych == 't') goto yy355;
-	goto yy135;
+#line 210 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Is : TK_Identifier); }
+#line 1836 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy256:
 	yych = *++YYCURSOR;
-	if (yych == 'G') goto yy357;
-	if (yych == 'g') goto yy357;
+	if (yych == 'T') goto yy358;
+	if (yych == 't') goto yy358;
 	goto yy135;
 yy257:
 	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy358;
-	if (yych == 'n') goto yy358;
+	if (yych == 'G') goto yy360;
+	if (yych == 'g') goto yy360;
 	goto yy135;
 yy258:
 	yych = *++YYCURSOR;
-	if (yych == 'P') goto yy359;
-	if (yych == 'p') goto yy359;
+	if (yych == 'N') goto yy361;
+	if (yych == 'n') goto yy361;
 	goto yy135;
 yy259:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy361;
-	if (yych == 't') goto yy361;
+	if (yych == 'P') goto yy362;
+	if (yych == 'p') goto yy362;
 	goto yy135;
 yy260:
 	yych = *++YYCURSOR;
-	if (yych == 'X') goto yy362;
-	if (yych == 'x') goto yy362;
+	if (yych == 'T') goto yy364;
+	if (yych == 't') goto yy364;
 	goto yy135;
 yy261:
 	yych = *++YYCURSOR;
+	if (yych == 'X') goto yy365;
+	if (yych == 'x') goto yy365;
+	goto yy135;
+yy262:
+	yych = *++YYCURSOR;
 	if (yych <= 'T') {
-		if (yych == 'M') goto yy363;
+		if (yych == 'M') goto yy366;
 		if (yych <= 'S') goto yy135;
-		goto yy364;
+		goto yy367;
 	} else {
 		if (yych <= 'm') {
 			if (yych <= 'l') goto yy135;
-			goto yy363;
+			goto yy366;
 		} else {
-			if (yych == 't') goto yy364;
-			goto yy135;
-		}
-	}
-yy262:
-	yych = *++YYCURSOR;
-	if (yych <= 'N') {
-		if (yych == 'D') goto yy365;
-		if (yych <= 'M') goto yy135;
-		goto yy366;
-	} else {
-		if (yych <= 'd') {
-			if (yych <= 'c') goto yy135;
-			goto yy365;
-		} else {
-			if (yych == 'n') goto yy366;
+			if (yych == 't') goto yy367;
 			goto yy135;
 		}
 	}
 yy263:
 	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy367;
-	if (yych == 'l') goto yy367;
-	goto yy135;
-yy264:
-	yych = *++YYCURSOR;
-	if (yych == 'F') goto yy368;
-	if (yych == 'f') goto yy368;
-	goto yy135;
-yy265:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy369;
-	if (yych == 't') goto yy369;
-	goto yy135;
-yy266:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy371;
-	if (yych == 'e') goto yy371;
-	goto yy135;
-yy267:
-	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy372;
-	if (yych == 'a') goto yy372;
-	goto yy135;
-yy268:
-	yych = *++YYCURSOR;
-	if (yych <= 'O') {
-		if (yych == 'I') goto yy373;
-		if (yych <= 'N') goto yy135;
-		goto yy374;
+	if (yych <= 'N') {
+		if (yych == 'D') goto yy368;
+		if (yych <= 'M') goto yy135;
+		goto yy369;
 	} else {
-		if (yych <= 'i') {
-			if (yych <= 'h') goto yy135;
-			goto yy373;
+		if (yych <= 'd') {
+			if (yych <= 'c') goto yy135;
+			goto yy368;
 		} else {
-			if (yych == 'o') goto yy374;
+			if (yych == 'n') goto yy369;
 			goto yy135;
 		}
 	}
+yy264:
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy370;
+	if (yych == 'l') goto yy370;
+	goto yy135;
+yy265:
+	yych = *++YYCURSOR;
+	if (yych == 'F') goto yy371;
+	if (yych == 'f') goto yy371;
+	goto yy135;
+yy266:
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy372;
+	if (yych == 't') goto yy372;
+	goto yy135;
+yy267:
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy374;
+	if (yych == 'e') goto yy374;
+	goto yy135;
+yy268:
+	yych = *++YYCURSOR;
+	if (yych == 'A') goto yy375;
+	if (yych == 'a') goto yy375;
+	goto yy135;
 yy269:
 	yych = *++YYCURSOR;
-	if (yych <= 'T') {
-		if (yych <= 'O') {
-			if (yych == 'A') goto yy375;
-			goto yy135;
-		} else {
-			if (yych <= 'P') goto yy376;
-			if (yych <= 'S') goto yy135;
-			goto yy377;
-		}
+	if (yych <= 'O') {
+		if (yych == 'I') goto yy376;
+		if (yych <= 'N') goto yy135;
+		goto yy377;
 	} else {
-		if (yych <= 'o') {
-			if (yych == 'a') goto yy375;
-			goto yy135;
+		if (yych <= 'i') {
+			if (yych <= 'h') goto yy135;
+			goto yy376;
 		} else {
-			if (yych <= 'p') goto yy376;
-			if (yych == 't') goto yy377;
+			if (yych == 'o') goto yy377;
 			goto yy135;
 		}
 	}
 yy270:
 	yych = *++YYCURSOR;
-	if (yych == 'Y') goto yy378;
-	if (yych == 'y') goto yy378;
-	goto yy135;
+	if (yych <= 'T') {
+		if (yych <= 'O') {
+			if (yych == 'A') goto yy378;
+			goto yy135;
+		} else {
+			if (yych <= 'P') goto yy379;
+			if (yych <= 'S') goto yy135;
+			goto yy380;
+		}
+	} else {
+		if (yych <= 'o') {
+			if (yych == 'a') goto yy378;
+			goto yy135;
+		} else {
+			if (yych <= 'p') goto yy379;
+			if (yych == 't') goto yy380;
+			goto yy135;
+		}
+	}
 yy271:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy379;
-	if (yych == 'o') goto yy379;
+	if (yych == 'Y') goto yy381;
+	if (yych == 'y') goto yy381;
 	goto yy135;
 yy272:
 	yych = *++YYCURSOR;
-	if (yych == 'Z') goto yy380;
-	if (yych == 'z') goto yy380;
+	if (yych == 'A') goto yy382;
+	if (yych == 'a') goto yy382;
 	goto yy135;
 yy273:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy381;
-	if (yych == 'o') goto yy381;
+	if (yych == 'O') goto yy383;
+	if (yych == 'o') goto yy383;
 	goto yy135;
 yy274:
 	yych = *++YYCURSOR;
-	if (yych == 'U') goto yy382;
-	if (yych == 'u') goto yy382;
+	if (yych == 'Z') goto yy384;
+	if (yych == 'z') goto yy384;
 	goto yy135;
 yy275:
 	yych = *++YYCURSOR;
-	if (yych <= 'R') {
-		if (yych <= 'N') {
-			if (yych == 'A') goto yy383;
-			goto yy135;
-		} else {
-			if (yych <= 'O') goto yy384;
-			if (yych <= 'Q') goto yy135;
-			goto yy385;
-		}
-	} else {
-		if (yych <= 'n') {
-			if (yych == 'a') goto yy383;
-			goto yy135;
-		} else {
-			if (yych <= 'o') goto yy384;
-			if (yych == 'r') goto yy385;
-			goto yy135;
-		}
-	}
+	if (yych == 'O') goto yy385;
+	if (yych == 'o') goto yy385;
+	goto yy135;
 yy276:
 	yych = *++YYCURSOR;
-	if (yych == 'P') goto yy386;
-	if (yych == 'p') goto yy386;
+	if (yych == 'U') goto yy386;
+	if (yych == 'u') goto yy386;
 	goto yy135;
 yy277:
 	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy387;
-	if (yych == 'i') goto yy387;
-	goto yy135;
-yy278:
-	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy388;
-	if (yych == 'c') goto yy388;
-	goto yy135;
-yy279:
-	yych = *++YYCURSOR;
-	if (yych <= 'U') {
-		if (yych == 'A') goto yy389;
-		if (yych <= 'T') goto yy135;
-		goto yy390;
-	} else {
-		if (yych <= 'a') {
-			if (yych <= '`') goto yy135;
-			goto yy389;
+	if (yych <= 'R') {
+		if (yych <= 'N') {
+			if (yych == 'A') goto yy387;
+			goto yy135;
 		} else {
-			if (yych == 'u') goto yy390;
+			if (yych <= 'O') goto yy388;
+			if (yych <= 'Q') goto yy135;
+			goto yy389;
+		}
+	} else {
+		if (yych <= 'n') {
+			if (yych == 'a') goto yy387;
+			goto yy135;
+		} else {
+			if (yych <= 'o') goto yy388;
+			if (yych == 'r') goto yy389;
 			goto yy135;
 		}
 	}
+yy278:
+	yych = *++YYCURSOR;
+	if (yych == 'P') goto yy390;
+	if (yych == 'p') goto yy390;
+	goto yy135;
+yy279:
+	yych = *++YYCURSOR;
+	if (yych == 'I') goto yy391;
+	if (yych == 'i') goto yy391;
+	goto yy135;
 yy280:
+	yych = *++YYCURSOR;
+	if (yych == 'C') goto yy392;
+	if (yych == 'c') goto yy392;
+	goto yy135;
+yy281:
+	yych = *++YYCURSOR;
+	if (yych <= 'U') {
+		if (yych == 'A') goto yy393;
+		if (yych <= 'T') goto yy135;
+		goto yy394;
+	} else {
+		if (yych <= 'a') {
+			if (yych <= '`') goto yy135;
+			goto yy393;
+		} else {
+			if (yych == 'u') goto yy394;
+			goto yy135;
+		}
+	}
+yy282:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
 		if (yych <= '@') {
-			if (yych <= '/') goto yy281;
+			if (yych <= '/') goto yy283;
 			if (yych <= '9') goto yy134;
 		} else {
-			if (yych == 'N') goto yy391;
+			if (yych == 'N') goto yy395;
 			goto yy134;
 		}
 	} else {
 		if (yych <= '`') {
 			if (yych == '_') goto yy134;
 		} else {
-			if (yych == 'n') goto yy391;
+			if (yych == 'n') goto yy395;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy281:
-#line 199 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+yy283:
+#line 200 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(ParseVersion >= MakeVersion(2, 4, 0)? TK_UI : TK_Identifier); }
 #line 2060 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy282:
-	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy392;
-	if (yych == 'o') goto yy392;
-	goto yy135;
-yy283:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy393;
-	if (yych == 't') goto yy393;
-	goto yy135;
 yy284:
 	yych = *++YYCURSOR;
-	if (yych == 'H') goto yy394;
-	if (yych == 'h') goto yy394;
+	if (yych == 'O') goto yy396;
+	if (yych == 'o') goto yy396;
 	goto yy135;
 yy285:
 	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy395;
-	if (yych == 'r') goto yy395;
+	if (yych == 'T') goto yy397;
+	if (yych == 't') goto yy397;
 	goto yy135;
 yy286:
 	yych = *++YYCURSOR;
-	if (yych <= 'R') {
-		if (yych == 'C') goto yy397;
-		if (yych <= 'Q') goto yy135;
-		goto yy398;
-	} else {
-		if (yych <= 'c') {
-			if (yych <= 'b') goto yy135;
-			goto yy397;
-		} else {
-			if (yych == 'r') goto yy398;
-			goto yy135;
-		}
-	}
+	if (yych == 'H') goto yy398;
+	if (yych == 'h') goto yy398;
+	goto yy135;
 yy287:
 	yych = *++YYCURSOR;
 	if (yych == 'R') goto yy399;
@@ -2099,44 +2079,64 @@ yy287:
 	goto yy135;
 yy288:
 	yych = *++YYCURSOR;
-	if (yych <= 'L') {
-		if (yych == 'I') goto yy400;
-		if (yych <= 'K') goto yy135;
-		goto yy401;
+	if (yych <= 'R') {
+		if (yych == 'C') goto yy401;
+		if (yych <= 'Q') goto yy135;
+		goto yy402;
 	} else {
-		if (yych <= 'i') {
-			if (yych <= 'h') goto yy135;
-			goto yy400;
+		if (yych <= 'c') {
+			if (yych <= 'b') goto yy135;
+			goto yy401;
 		} else {
-			if (yych == 'l') goto yy401;
+			if (yych == 'r') goto yy402;
 			goto yy135;
 		}
 	}
 yy289:
 	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy402;
-	if (yych == 'i') goto yy402;
+	if (yych == 'R') goto yy403;
+	if (yych == 'r') goto yy403;
 	goto yy135;
 yy290:
-	++YYCURSOR;
-#line 257 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_XorEq); }
-#line 2125 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych <= 'L') {
+		if (yych == 'I') goto yy404;
+		if (yych <= 'K') goto yy135;
+		goto yy405;
+	} else {
+		if (yych <= 'i') {
+			if (yych <= 'h') goto yy135;
+			goto yy404;
+		} else {
+			if (yych == 'l') goto yy405;
+			goto yy135;
+		}
+	}
+yy291:
+	yych = *++YYCURSOR;
+	if (yych == 'I') goto yy406;
+	if (yych == 'i') goto yy406;
+	goto yy135;
 yy292:
 	++YYCURSOR;
-#line 258 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_OrEq); }
-#line 2130 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 259 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_XorEq); }
+#line 2125 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy294:
 	++YYCURSOR;
-#line 265 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 260 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_OrEq); }
+#line 2130 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy296:
+	++YYCURSOR;
+#line 267 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_OrOr); }
 #line 2135 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy296:
+yy298:
 	yych = *++YYCURSOR;
-	if (yych == '=') goto yy403;
+	if (yych == '=') goto yy407;
 	goto yy171;
-yy297:
+yy299:
 	yyaccept = 7;
 	YYMARKER = ++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
@@ -2144,63 +2144,63 @@ yy297:
 	if (yych == '"') goto yy166;
 	if (yych == '\\') goto yy168;
 	goto yy164;
-yy298:
-	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy405;
-	if (yych == 'c') goto yy405;
-	goto yy171;
-yy299:
-	yych = *++YYCURSOR;
-	if (yych == 'd') goto yy406;
-	goto yy171;
 yy300:
 	yych = *++YYCURSOR;
-	if (yych == 'g') goto yy407;
+	if (yych == 'C') goto yy409;
+	if (yych == 'c') goto yy409;
 	goto yy171;
 yy301:
+	yych = *++YYCURSOR;
+	if (yych == 'd') goto yy410;
+	goto yy171;
+yy302:
+	yych = *++YYCURSOR;
+	if (yych == 'g') goto yy411;
+	goto yy171;
+yy303:
 	++YYCURSOR;
-#line 247 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 249 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Ellipsis); }
 #line 2165 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy303:
+yy305:
 	yych = *++YYCURSOR;
 	goto yy202;
-yy304:
+yy306:
 	++YYCURSOR;
 #line 119 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto newline; }
 #line 2173 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy306:
+yy308:
 	yych = *++YYCURSOR;
 	if (yych <= '/') goto yy171;
 	if (yych >= ':') goto yy171;
-yy307:
+yy309:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
 	if (yych <= 'E') {
 		if (yych <= '/') goto yy202;
-		if (yych <= '9') goto yy307;
+		if (yych <= '9') goto yy309;
 		goto yy202;
 	} else {
-		if (yych <= 'F') goto yy303;
-		if (yych == 'f') goto yy303;
+		if (yych <= 'F') goto yy305;
+		if (yych == 'f') goto yy305;
 		goto yy202;
 	}
-yy309:
+yy311:
 	yych = *++YYCURSOR;
 	goto yy109;
-yy310:
+yy312:
 	++YYCURSOR;
 	if ((YYLIMIT - YYCURSOR) < 2) YYFILL(2);
 	yych = *YYCURSOR;
 	if (yych <= 'T') {
 		if (yych <= '@') {
 			if (yych <= '/') goto yy109;
-			if (yych <= '9') goto yy310;
+			if (yych <= '9') goto yy312;
 			goto yy109;
 		} else {
-			if (yych <= 'F') goto yy310;
+			if (yych <= 'F') goto yy312;
 			if (yych == 'L') goto yy210;
 			goto yy109;
 		}
@@ -2208,7 +2208,7 @@ yy310:
 		if (yych <= 'k') {
 			if (yych <= 'U') goto yy210;
 			if (yych <= '`') goto yy109;
-			if (yych <= 'f') goto yy310;
+			if (yych <= 'f') goto yy312;
 			goto yy109;
 		} else {
 			if (yych <= 'l') goto yy210;
@@ -2216,161 +2216,151 @@ yy310:
 			goto yy109;
 		}
 	}
-yy312:
-	++YYCURSOR;
-#line 250 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_LShiftEq); }
-#line 2224 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy314:
 	++YYCURSOR;
-#line 271 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_LtGtEq); }
-#line 2229 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 252 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_LShiftEq); }
+#line 2224 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy316:
 	++YYCURSOR;
-#line 249 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_RShiftEq); }
-#line 2234 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 273 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_LtGtEq); }
+#line 2229 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy318:
 	++YYCURSOR;
-	if ((yych = *YYCURSOR) == '=') goto yy408;
-#line 259 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 251 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_RShiftEq); }
+#line 2234 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy320:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) == '=') goto yy412;
+#line 261 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_URShift); }
 #line 2240 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy320:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy410;
-	if (yych == 't') goto yy410;
-	goto yy135;
-yy321:
-	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy411;
-	if (yych == 'i') goto yy411;
-	goto yy135;
 yy322:
 	yych = *++YYCURSOR;
-	if (yych == 'G') goto yy412;
-	if (yych == 'g') goto yy412;
+	if (yych == 'T') goto yy414;
+	if (yych == 't') goto yy414;
 	goto yy135;
 yy323:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy413;
-	if (yych == 'a') goto yy413;
+	if (yych == 'I') goto yy415;
+	if (yych == 'i') goto yy415;
 	goto yy135;
 yy324:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy414;
-	if (yych == 'o') goto yy414;
+	if (yych == 'G') goto yy416;
+	if (yych == 'g') goto yy416;
 	goto yy135;
 yy325:
 	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy416;
-	if (yych == 'l') goto yy416;
+	if (yych == 'A') goto yy417;
+	if (yych == 'a') goto yy417;
 	goto yy135;
 yy326:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy418;
-	if (yych == 'a') goto yy418;
+	if (yych == 'O') goto yy418;
+	if (yych == 'o') goto yy418;
 	goto yy135;
 yy327:
 	yych = *++YYCURSOR;
-	if (yych == 'G') goto yy419;
-	if (yych == 'g') goto yy419;
+	if (yych == 'L') goto yy420;
+	if (yych == 'l') goto yy420;
 	goto yy135;
 yy328:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy420;
-	if (yych == 'e') goto yy420;
+	if (yych == 'A') goto yy422;
+	if (yych == 'a') goto yy422;
 	goto yy135;
 yy329:
 	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy422;
-	if (yych == 'r') goto yy422;
+	if (yych == 'G') goto yy423;
+	if (yych == 'g') goto yy423;
 	goto yy135;
 yy330:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy423;
-	if (yych == 'e') goto yy423;
+	if (yych == 'E') goto yy424;
+	if (yych == 'e') goto yy424;
 	goto yy135;
 yy331:
 	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy425;
-	if (yych == 'r') goto yy425;
+	if (yych == 'R') goto yy426;
+	if (yych == 'r') goto yy426;
 	goto yy135;
 yy332:
 	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy427;
-	if (yych == 's') goto yy427;
+	if (yych == 'E') goto yy427;
+	if (yych == 'e') goto yy427;
 	goto yy135;
 yy333:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy428;
-	if (yych == 'a') goto yy428;
+	if (yych == 'R') goto yy429;
+	if (yych == 'r') goto yy429;
 	goto yy135;
 yy334:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy429;
-	if (yych == 'o') goto yy429;
+	if (yych == 'S') goto yy431;
+	if (yych == 's') goto yy431;
 	goto yy135;
 yy335:
 	yych = *++YYCURSOR;
-	if (yych <= 'T') {
-		if (yych <= 'R') goto yy135;
-		if (yych <= 'S') goto yy430;
-		goto yy431;
-	} else {
-		if (yych <= 'r') goto yy135;
-		if (yych <= 's') goto yy430;
-		if (yych <= 't') goto yy431;
-		goto yy135;
-	}
+	if (yych == 'A') goto yy432;
+	if (yych == 'a') goto yy432;
+	goto yy135;
 yy336:
 	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy432;
-	if (yych == 's') goto yy432;
+	if (yych == 'O') goto yy433;
+	if (yych == 'o') goto yy433;
 	goto yy135;
 yy337:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy433;
-	if (yych == 'a') goto yy433;
-	goto yy135;
+	if (yych <= 'T') {
+		if (yych <= 'R') goto yy135;
+		if (yych <= 'S') goto yy434;
+		goto yy435;
+	} else {
+		if (yych <= 'r') goto yy135;
+		if (yych <= 's') goto yy434;
+		if (yych <= 't') goto yy435;
+		goto yy135;
+	}
 yy338:
 	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy434;
-	if (yych == 'r') goto yy434;
+	if (yych == 'S') goto yy436;
+	if (yych == 's') goto yy436;
 	goto yy135;
 yy339:
+	yych = *++YYCURSOR;
+	if (yych == 'A') goto yy437;
+	if (yych == 'a') goto yy437;
+	goto yy135;
+yy340:
+	yych = *++YYCURSOR;
+	if (yych == 'R') goto yy438;
+	if (yych == 'r') goto yy438;
+	goto yy135;
+yy341:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy340;
+		if (yych <= '/') goto yy342;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy340;
+			if (yych <= '`') goto yy342;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy340:
-#line 194 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+yy342:
+#line 195 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Dot); }
 #line 2360 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy341:
-	yych = *++YYCURSOR;
-	if (yych == 'B') goto yy435;
-	if (yych == 'b') goto yy435;
-	goto yy135;
-yy342:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy436;
-	if (yych == 'e') goto yy436;
-	goto yy135;
 yy343:
 	yych = *++YYCURSOR;
-	if (yych == 'M') goto yy438;
-	if (yych == 'm') goto yy438;
+	if (yych == 'B') goto yy439;
+	if (yych == 'b') goto yy439;
 	goto yy135;
 yy344:
 	yych = *++YYCURSOR;
@@ -2379,293 +2369,283 @@ yy344:
 	goto yy135;
 yy345:
 	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy441;
-	if (yych == 's') goto yy441;
+	if (yych == 'M') goto yy442;
+	if (yych == 'm') goto yy442;
 	goto yy135;
 yy346:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy442;
-	if (yych == 't') goto yy442;
+	if (yych == 'E') goto yy444;
+	if (yych == 'e') goto yy444;
 	goto yy135;
 yy347:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy444;
-	if (yych == 'a') goto yy444;
+	if (yych == 'S') goto yy445;
+	if (yych == 's') goto yy445;
 	goto yy135;
 yy348:
 	yych = *++YYCURSOR;
-	if (yych == 'G') goto yy445;
-	if (yych == 'g') goto yy445;
+	if (yych == 'T') goto yy446;
+	if (yych == 't') goto yy446;
 	goto yy135;
 yy349:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy446;
-	if (yych == 'a') goto yy446;
+	if (yych == 'A') goto yy448;
+	if (yych == 'a') goto yy448;
 	goto yy135;
 yy350:
+	yych = *++YYCURSOR;
+	if (yych == 'G') goto yy449;
+	if (yych == 'g') goto yy449;
+	goto yy135;
+yy351:
+	yych = *++YYCURSOR;
+	if (yych == 'A') goto yy450;
+	if (yych == 'a') goto yy450;
+	goto yy135;
+yy352:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
 		if (yych <= '@') {
-			if (yych <= '/') goto yy351;
+			if (yych <= '/') goto yy353;
 			if (yych <= '9') goto yy134;
 		} else {
-			if (yych == 'E') goto yy447;
+			if (yych == 'E') goto yy451;
 			goto yy134;
 		}
 	} else {
 		if (yych <= '`') {
 			if (yych == '_') goto yy134;
 		} else {
-			if (yych == 'e') goto yy447;
+			if (yych == 'e') goto yy451;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy351:
+yy353:
 #line 131 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_For); }
 #line 2427 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy352:
+yy354:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy448;
-	if (yych == 'o') goto yy448;
+	if (yych == 'C') goto yy452;
+	if (yych == 'c') goto yy452;
 	goto yy135;
-yy353:
+yy355:
+	yych = *++YYCURSOR;
+	if (yych == 'O') goto yy453;
+	if (yych == 'o') goto yy453;
+	goto yy135;
+yy356:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'D') {
 		if (yych <= '7') {
-			if (yych <= '/') goto yy354;
-			if (yych == '1') goto yy450;
+			if (yych <= '/') goto yy357;
+			if (yych == '1') goto yy455;
 			goto yy134;
 		} else {
-			if (yych <= '8') goto yy451;
+			if (yych <= '8') goto yy456;
 			if (yych <= '9') goto yy134;
 			if (yych >= 'A') goto yy134;
 		}
 	} else {
 		if (yych <= '_') {
-			if (yych <= 'E') goto yy453;
+			if (yych <= 'E') goto yy458;
 			if (yych <= 'Z') goto yy134;
 			if (yych >= '_') goto yy134;
 		} else {
 			if (yych <= 'd') {
 				if (yych >= 'a') goto yy134;
 			} else {
-				if (yych <= 'e') goto yy453;
+				if (yych <= 'e') goto yy458;
 				if (yych <= 'z') goto yy134;
 			}
 		}
 	}
-yy354:
+yy357:
 #line 153 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Int); }
-#line 2462 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy355:
+#line 2467 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy358:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy356;
+		if (yych <= '/') goto yy359;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy356;
+			if (yych <= '`') goto yy359;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy356:
-#line 217 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Let : TK_Identifier); }
-#line 2480 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy357:
-	yych = *++YYCURSOR;
-	if (yych == 'H') goto yy454;
-	if (yych == 'h') goto yy454;
-	goto yy135;
-yy358:
-	yych = *++YYCURSOR;
-	if (yych == 'G') goto yy455;
-	if (yych == 'g') goto yy455;
-	goto yy135;
 yy359:
+#line 219 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Let : TK_Identifier); }
+#line 2485 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy360:
+	yych = *++YYCURSOR;
+	if (yych == 'H') goto yy459;
+	if (yych == 'h') goto yy459;
+	goto yy135;
+yy361:
+	yych = *++YYCURSOR;
+	if (yych == 'G') goto yy460;
+	if (yych == 'g') goto yy460;
+	goto yy135;
+yy362:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
 		if (yych <= '@') {
-			if (yych <= '/') goto yy360;
+			if (yych <= '/') goto yy363;
 			if (yych <= '9') goto yy134;
 		} else {
-			if (yych == 'I') goto yy457;
+			if (yych == 'I') goto yy462;
 			goto yy134;
 		}
 	} else {
 		if (yych <= '`') {
 			if (yych == '_') goto yy134;
 		} else {
-			if (yych == 'i') goto yy457;
+			if (yych == 'i') goto yy462;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy360:
+yy363:
 #line 169 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Map); }
-#line 2512 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy361:
-	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy458;
-	if (yych == 'a') goto yy458;
-	goto yy135;
-yy362:
-	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy460;
-	if (yych == 'i') goto yy460;
-	goto yy135;
-yy363:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy461;
-	if (yych == 'e') goto yy461;
-	goto yy135;
+#line 2517 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy364:
 	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy463;
-	if (yych == 'i') goto yy463;
+	if (yych == 'A') goto yy463;
+	if (yych == 'a') goto yy463;
 	goto yy135;
 yy365:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy464;
-	if (yych == 'e') goto yy464;
+	if (yych == 'I') goto yy465;
+	if (yych == 'i') goto yy465;
 	goto yy135;
 yy366:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy465;
-	if (yych == 'e') goto yy465;
+	if (yych == 'E') goto yy466;
+	if (yych == 'e') goto yy466;
 	goto yy135;
 yy367:
 	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy467;
-	if (yych == 'l') goto yy467;
+	if (yych == 'I') goto yy468;
+	if (yych == 'i') goto yy468;
 	goto yy135;
 yy368:
 	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy469;
-	if (yych == 's') goto yy469;
+	if (yych == 'E') goto yy469;
+	if (yych == 'e') goto yy469;
 	goto yy135;
 yy369:
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy470;
+	if (yych == 'e') goto yy470;
+	goto yy135;
+yy370:
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy472;
+	if (yych == 'l') goto yy472;
+	goto yy135;
+yy371:
+	yych = *++YYCURSOR;
+	if (yych == 'S') goto yy474;
+	if (yych == 's') goto yy474;
+	goto yy135;
+yy372:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy370;
+		if (yych <= '/') goto yy373;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy370;
+			if (yych <= '`') goto yy373;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy370:
-#line 187 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Out : TK_Identifier); }
-#line 2570 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy371:
-	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy470;
-	if (yych == 'r') goto yy470;
-	goto yy135;
-yy372:
-	yych = *++YYCURSOR;
-	if (yych == 'Y') goto yy471;
-	if (yych == 'y') goto yy471;
-	goto yy135;
 yy373:
-	yych = *++YYCURSOR;
-	if (yych == 'V') goto yy473;
-	if (yych == 'v') goto yy473;
-	goto yy135;
+#line 188 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Out : TK_Identifier); }
+#line 2575 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy374:
 	yych = *++YYCURSOR;
-	if (yych <= 'T') {
-		if (yych == 'P') goto yy474;
-		if (yych <= 'S') goto yy135;
-		goto yy475;
-	} else {
-		if (yych <= 'p') {
-			if (yych <= 'o') goto yy135;
-			goto yy474;
-		} else {
-			if (yych == 't') goto yy475;
-			goto yy135;
-		}
-	}
+	if (yych == 'R') goto yy475;
+	if (yych == 'r') goto yy475;
+	goto yy135;
 yy375:
 	yych = *++YYCURSOR;
-	if (yych == 'D') goto yy476;
-	if (yych == 'd') goto yy476;
+	if (yych == 'Y') goto yy476;
+	if (yych == 'y') goto yy476;
 	goto yy135;
 yy376:
 	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy477;
-	if (yych == 'l') goto yy477;
+	if (yych == 'V') goto yy478;
+	if (yych == 'v') goto yy478;
 	goto yy135;
 yy377:
 	yych = *++YYCURSOR;
-	if (yych == 'U') goto yy478;
-	if (yych == 'u') goto yy478;
-	goto yy135;
-yy378:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy479;
-	if (yych == 't') goto yy479;
-	goto yy135;
-yy379:
-	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy480;
-	if (yych == 'r') goto yy480;
-	goto yy135;
-yy380:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy481;
-	if (yych == 'e') goto yy481;
-	goto yy135;
-yy381:
-	yych = *++YYCURSOR;
-	if (yych == 'W') goto yy482;
-	if (yych == 'w') goto yy482;
-	goto yy135;
-yy382:
-	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy484;
-	if (yych == 'n') goto yy484;
-	goto yy135;
-yy383:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy485;
-	if (yych == 't') goto yy485;
-	goto yy135;
-yy384:
-	yych = *++YYCURSOR;
-	if (yych == 'P') goto yy486;
-	if (yych == 'p') goto yy486;
-	goto yy135;
-yy385:
-	yych = *++YYCURSOR;
-	if (yych <= 'U') {
-		if (yych == 'I') goto yy488;
-		if (yych <= 'T') goto yy135;
-		goto yy489;
+	if (yych <= 'T') {
+		if (yych == 'P') goto yy479;
+		if (yych <= 'S') goto yy135;
+		goto yy480;
 	} else {
-		if (yych <= 'i') {
-			if (yych <= 'h') goto yy135;
-			goto yy488;
+		if (yych <= 'p') {
+			if (yych <= 'o') goto yy135;
+			goto yy479;
 		} else {
-			if (yych == 'u') goto yy489;
+			if (yych == 't') goto yy480;
 			goto yy135;
 		}
 	}
+yy378:
+	yych = *++YYCURSOR;
+	if (yych == 'D') goto yy481;
+	if (yych == 'd') goto yy481;
+	goto yy135;
+yy379:
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy482;
+	if (yych == 'l') goto yy482;
+	goto yy135;
+yy380:
+	yych = *++YYCURSOR;
+	if (yych == 'U') goto yy483;
+	if (yych == 'u') goto yy483;
+	goto yy135;
+yy381:
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy484;
+	if (yych == 't') goto yy484;
+	goto yy135;
+yy382:
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy485;
+	if (yych == 'l') goto yy485;
+	goto yy135;
+yy383:
+	yych = *++YYCURSOR;
+	if (yych == 'R') goto yy486;
+	if (yych == 'r') goto yy486;
+	goto yy135;
+yy384:
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy487;
+	if (yych == 'e') goto yy487;
+	goto yy135;
+yy385:
+	yych = *++YYCURSOR;
+	if (yych == 'W') goto yy488;
+	if (yych == 'w') goto yy488;
+	goto yy135;
 yy386:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy490;
-	if (yych == 'e') goto yy490;
+	if (yych == 'N') goto yy490;
+	if (yych == 'n') goto yy490;
 	goto yy135;
 yy387:
 	yych = *++YYCURSOR;
@@ -2674,180 +2654,182 @@ yy387:
 	goto yy135;
 yy388:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy492;
-	if (yych == 'a') goto yy492;
+	if (yych == 'P') goto yy492;
+	if (yych == 'p') goto yy492;
 	goto yy135;
 yy389:
 	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy493;
-	if (yych == 'n') goto yy493;
-	goto yy135;
+	if (yych <= 'U') {
+		if (yych == 'I') goto yy494;
+		if (yych <= 'T') goto yy135;
+		goto yy495;
+	} else {
+		if (yych <= 'i') {
+			if (yych <= 'h') goto yy135;
+			goto yy494;
+		} else {
+			if (yych == 'u') goto yy495;
+			goto yy135;
+		}
+	}
 yy390:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy494;
-	if (yych == 'e') goto yy494;
+	if (yych == 'E') goto yy496;
+	if (yych == 'e') goto yy496;
 	goto yy135;
 yy391:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy496;
-	if (yych == 't') goto yy496;
+	if (yych == 'T') goto yy497;
+	if (yych == 't') goto yy497;
 	goto yy135;
 yy392:
 	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy498;
-	if (yych == 'n') goto yy498;
+	if (yych == 'A') goto yy498;
+	if (yych == 'a') goto yy498;
 	goto yy135;
 yy393:
 	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy499;
-	if (yych == 'i') goto yy499;
+	if (yych == 'N') goto yy499;
+	if (yych == 'n') goto yy499;
 	goto yy135;
 yy394:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy500;
-	if (yych == 'o') goto yy500;
+	if (yych == 'E') goto yy500;
+	if (yych == 'e') goto yy500;
 	goto yy135;
 yy395:
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy502;
+	if (yych == 't') goto yy502;
+	goto yy135;
+yy396:
+	yych = *++YYCURSOR;
+	if (yych == 'N') goto yy504;
+	if (yych == 'n') goto yy504;
+	goto yy135;
+yy397:
+	yych = *++YYCURSOR;
+	if (yych == 'I') goto yy505;
+	if (yych == 'i') goto yy505;
+	goto yy135;
+yy398:
+	yych = *++YYCURSOR;
+	if (yych == 'O') goto yy506;
+	if (yych == 'o') goto yy506;
+	goto yy135;
+yy399:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
 		if (yych <= '9') {
 			if (yych >= '0') goto yy134;
 		} else {
-			if (yych <= '@') goto yy396;
-			if (yych <= 'A') goto yy501;
+			if (yych <= '@') goto yy400;
+			if (yych <= 'A') goto yy507;
 			goto yy134;
 		}
 	} else {
 		if (yych <= '`') {
 			if (yych == '_') goto yy134;
 		} else {
-			if (yych <= 'a') goto yy501;
+			if (yych <= 'a') goto yy507;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy396:
-#line 186 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Var); }
-#line 2732 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy397:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy502;
-	if (yych == 't') goto yy502;
-	goto yy135;
-yy398:
-	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy503;
-	if (yych == 's') goto yy503;
-	goto yy135;
-yy399:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy504;
-	if (yych == 't') goto yy504;
-	goto yy135;
 yy400:
-	yych = *++YYCURSOR;
-	if (yych == 'D') goto yy505;
-	if (yych == 'd') goto yy505;
-	goto yy135;
+#line 187 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Var); }
+#line 2742 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy401:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy507;
-	if (yych == 'a') goto yy507;
+	if (yych == 'T') goto yy508;
+	if (yych == 't') goto yy508;
 	goto yy135;
 yy402:
 	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy508;
-	if (yych == 'l') goto yy508;
+	if (yych == 'S') goto yy509;
+	if (yych == 's') goto yy509;
 	goto yy135;
 yy403:
-	++YYCURSOR;
-#line 270 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_ApproxEq); }
-#line 2767 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy510;
+	if (yych == 't') goto yy510;
+	goto yy135;
+yy404:
+	yych = *++YYCURSOR;
+	if (yych == 'D') goto yy511;
+	if (yych == 'd') goto yy511;
+	goto yy135;
 yy405:
 	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy509;
-	if (yych == 'l') goto yy509;
-	goto yy171;
+	if (yych == 'A') goto yy513;
+	if (yych == 'a') goto yy513;
+	goto yy135;
 yy406:
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy514;
+	if (yych == 'l') goto yy514;
+	goto yy135;
+yy407:
+	++YYCURSOR;
+#line 272 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_ApproxEq); }
+#line 2777 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy409:
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy515;
+	if (yych == 'l') goto yy515;
+	goto yy171;
+yy410:
 	yych = *++YYCURSOR;
 	if (yych == 'r') goto yy173;
 	goto yy171;
-yy407:
-	yych = *++YYCURSOR;
-	if (yych == 'i') goto yy510;
-	goto yy171;
-yy408:
-	++YYCURSOR;
-#line 248 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_URShiftEq); }
-#line 2785 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy410:
-	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy511;
-	if (yych == 'r') goto yy511;
-	goto yy135;
 yy411:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy512;
-	if (yych == 'o') goto yy512;
-	goto yy135;
+	if (yych == 'i') goto yy516;
+	goto yy171;
 yy412:
-	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy513;
-	if (yych == 'n') goto yy513;
-	goto yy135;
-yy413:
-	yych = *++YYCURSOR;
-	if (yych == 'Y') goto yy514;
-	if (yych == 'y') goto yy514;
-	goto yy135;
+	++YYCURSOR;
+#line 250 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_URShiftEq); }
+#line 2795 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy414:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy415;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy415;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'R') goto yy517;
+	if (yych == 'r') goto yy517;
+	goto yy135;
 yy415:
-#line 182 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Auto); }
-#line 2823 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'O') goto yy518;
+	if (yych == 'o') goto yy518;
+	goto yy135;
 yy416:
+	yych = *++YYCURSOR;
+	if (yych == 'N') goto yy519;
+	if (yych == 'n') goto yy519;
+	goto yy135;
+yy417:
+	yych = *++YYCURSOR;
+	if (yych == 'Y') goto yy520;
+	if (yych == 'y') goto yy520;
+	goto yy135;
+yy418:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy417;
+		if (yych <= '/') goto yy419;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy417;
+			if (yych <= '`') goto yy419;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy417:
-#line 141 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Bool); }
-#line 2841 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy418:
-	yych = *++YYCURSOR;
-	if (yych == 'K') goto yy516;
-	if (yych == 'k') goto yy516;
-	goto yy135;
 yy419:
-	yych = *++YYCURSOR;
-	if (yych == 'H') goto yy518;
-	if (yych == 'h') goto yy518;
-	goto yy135;
+#line 183 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Auto); }
+#line 2833 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy420:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
@@ -2863,141 +2845,141 @@ yy420:
 		}
 	}
 yy421:
-#line 145 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Byte); }
-#line 2869 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 141 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Bool); }
+#line 2851 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy422:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy519;
-	if (yych == 'a') goto yy519;
+	if (yych == 'K') goto yy522;
+	if (yych == 'k') goto yy522;
 	goto yy135;
 yy423:
+	yych = *++YYCURSOR;
+	if (yych == 'H') goto yy524;
+	if (yych == 'h') goto yy524;
+	goto yy135;
+yy424:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy424;
+		if (yych <= '/') goto yy425;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy424;
+			if (yych <= '`') goto yy425;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy424:
+yy425:
+#line 145 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Byte); }
+#line 2879 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy426:
+	yych = *++YYCURSOR;
+	if (yych == 'A') goto yy525;
+	if (yych == 'a') goto yy525;
+	goto yy135;
+yy427:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy428;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy428;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy428:
 #line 125 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Case); }
-#line 2892 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy425:
+#line 2902 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy429:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy426;
+		if (yych <= '/') goto yy430;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy426;
+			if (yych <= '`') goto yy430;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy426:
+yy430:
 #line 144 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Char); }
-#line 2910 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy427:
-	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy520;
-	if (yych == 's') goto yy520;
-	goto yy135;
-yy428:
-	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy522;
-	if (yych == 'r') goto yy522;
-	goto yy135;
-yy429:
-	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy523;
-	if (yych == 'r') goto yy523;
-	goto yy135;
-yy430:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy525;
-	if (yych == 't') goto yy525;
-	goto yy135;
+#line 2920 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy431:
 	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy527;
-	if (yych == 'i') goto yy527;
+	if (yych == 'S') goto yy526;
+	if (yych == 's') goto yy526;
 	goto yy135;
 yy432:
 	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy528;
-	if (yych == 's') goto yy528;
+	if (yych == 'R') goto yy528;
+	if (yych == 'r') goto yy528;
 	goto yy135;
 yy433:
 	yych = *++YYCURSOR;
-	if (yych == 'U') goto yy530;
-	if (yych == 'u') goto yy530;
+	if (yych == 'R') goto yy529;
+	if (yych == 'r') goto yy529;
 	goto yy135;
 yy434:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy531;
-	if (yych == 'e') goto yy531;
+	if (yych == 'T') goto yy531;
+	if (yych == 't') goto yy531;
 	goto yy135;
 yy435:
 	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy532;
-	if (yych == 'l') goto yy532;
+	if (yych == 'I') goto yy533;
+	if (yych == 'i') goto yy533;
 	goto yy135;
 yy436:
+	yych = *++YYCURSOR;
+	if (yych == 'S') goto yy534;
+	if (yych == 's') goto yy534;
+	goto yy135;
+yy437:
+	yych = *++YYCURSOR;
+	if (yych == 'U') goto yy536;
+	if (yych == 'u') goto yy536;
+	goto yy135;
+yy438:
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy537;
+	if (yych == 'e') goto yy537;
+	goto yy135;
+yy439:
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy538;
+	if (yych == 'l') goto yy538;
+	goto yy135;
+yy440:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy437;
+		if (yych <= '/') goto yy441;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy437;
+			if (yych <= '`') goto yy441;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy437:
+yy441:
 #line 130 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Else); }
-#line 2973 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy438:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy439;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy439;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy439:
-#line 161 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Enum); }
-#line 2991 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy440:
-	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy533;
-	if (yych == 'n') goto yy533;
-	goto yy135;
-yy441:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy534;
-	if (yych == 'e') goto yy534;
-	goto yy135;
+#line 2983 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy442:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
@@ -3013,260 +2995,268 @@ yy442:
 		}
 	}
 yy443:
-#line 221 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(StateOptions ? TK_Fast : TK_Identifier); }
-#line 3019 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 161 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Enum); }
+#line 3001 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy444:
 	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy536;
-	if (yych == 'l') goto yy536;
+	if (yych == 'N') goto yy539;
+	if (yych == 'n') goto yy539;
 	goto yy135;
 yy445:
 	yych = *++YYCURSOR;
-	if (yych == 'D') goto yy538;
-	if (yych == 'd') goto yy538;
+	if (yych == 'E') goto yy540;
+	if (yych == 'e') goto yy540;
 	goto yy135;
 yy446:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy539;
-	if (yych == 't') goto yy539;
-	goto yy135;
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy447;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy447;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy447:
-	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy541;
-	if (yych == 'a') goto yy541;
-	goto yy135;
+#line 223 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(StateOptions ? TK_Fast : TK_Identifier); }
+#line 3029 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy448:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy449;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy449;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy542;
+	if (yych == 'l') goto yy542;
+	goto yy135;
 yy449:
-#line 132 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Goto); }
-#line 3057 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'D') goto yy544;
+	if (yych == 'd') goto yy544;
+	goto yy135;
 yy450:
-	yych = *++YYCURSOR;
-	if (yych == '6') goto yy542;
-	goto yy135;
-yy451:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy452;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy452;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy452:
-#line 149 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Int8); }
-#line 3079 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy453:
-	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy544;
-	if (yych == 'r') goto yy544;
-	goto yy135;
-yy454:
 	yych = *++YYCURSOR;
 	if (yych == 'T') goto yy545;
 	if (yych == 't') goto yy545;
 	goto yy135;
-yy455:
+yy451:
+	yych = *++YYCURSOR;
+	if (yych == 'A') goto yy547;
+	if (yych == 'a') goto yy547;
+	goto yy135;
+yy452:
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy548;
+	if (yych == 't') goto yy548;
+	goto yy135;
+yy453:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy456;
+		if (yych <= '/') goto yy454;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy456;
+			if (yych <= '`') goto yy454;
 			if (yych <= 'z') goto yy134;
 		}
 	}
+yy454:
+#line 132 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Goto); }
+#line 3072 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy455:
+	yych = *++YYCURSOR;
+	if (yych == '6') goto yy549;
+	goto yy135;
 yy456:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy457;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy457;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy457:
+#line 149 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Int8); }
+#line 3094 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy458:
+	yych = *++YYCURSOR;
+	if (yych == 'R') goto yy551;
+	if (yych == 'r') goto yy551;
+	goto yy135;
+yy459:
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy552;
+	if (yych == 't') goto yy552;
+	goto yy135;
+yy460:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy461;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy461;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy461:
 #line 155 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Long); }
-#line 3107 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy457:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy547;
-	if (yych == 't') goto yy547;
-	goto yy135;
-yy458:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy459;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy459;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy459:
-#line 211 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Meta : TK_Identifier); }
-#line 3130 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy460:
-	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy548;
-	if (yych == 'n') goto yy548;
-	goto yy135;
-yy461:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy462;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy462;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+#line 3122 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy462:
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy554;
+	if (yych == 't') goto yy554;
+	goto yy135;
+yy463:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy464;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy464;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy464:
+#line 213 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Meta : TK_Identifier); }
+#line 3145 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy465:
+	yych = *++YYCURSOR;
+	if (yych == 'N') goto yy555;
+	if (yych == 'n') goto yy555;
+	goto yy135;
+yy466:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy467;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy467;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy467:
 #line 162 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Name : TK_Identifier); }
-#line 3153 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy463:
+#line 3168 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy468:
 	yych = *++YYCURSOR;
-	if (yych == 'V') goto yy550;
-	if (yych == 'v') goto yy550;
+	if (yych == 'V') goto yy557;
+	if (yych == 'v') goto yy557;
 	goto yy135;
-yy464:
+yy469:
 	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy551;
-	if (yych == 'l') goto yy551;
+	if (yych == 'L') goto yy558;
+	if (yych == 'l') goto yy558;
 	goto yy135;
-yy465:
+yy470:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy466;
+		if (yych <= '/') goto yy471;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy466;
+			if (yych <= '`') goto yy471;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy466:
-#line 181 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+yy471:
+#line 182 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_None); }
-#line 3181 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy467:
+#line 3196 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy472:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
 		if (yych <= '@') {
-			if (yych <= '/') goto yy468;
+			if (yych <= '/') goto yy473;
 			if (yych <= '9') goto yy134;
 		} else {
-			if (yych == 'P') goto yy552;
+			if (yych == 'P') goto yy559;
 			goto yy134;
 		}
 	} else {
 		if (yych <= '`') {
 			if (yych == '_') goto yy134;
 		} else {
-			if (yych == 'p') goto yy552;
+			if (yych == 'p') goto yy559;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy468:
-#line 205 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+yy473:
+#line 206 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Null); }
-#line 3203 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy469:
+#line 3218 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy474:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy553;
-	if (yych == 'e') goto yy553;
+	if (yych == 'E') goto yy560;
+	if (yych == 'e') goto yy560;
 	goto yy135;
-yy470:
+yy475:
 	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy554;
-	if (yych == 'r') goto yy554;
+	if (yych == 'R') goto yy561;
+	if (yych == 'r') goto yy561;
 	goto yy135;
-yy471:
+yy476:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy472;
+		if (yych <= '/') goto yy477;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy472;
+			if (yych <= '`') goto yy477;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy472:
-#line 200 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(2, 4, 0)? TK_Play : TK_Identifier); }
-#line 3231 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy473:
-	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy555;
-	if (yych == 'a') goto yy555;
-	goto yy135;
-yy474:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy556;
-	if (yych == 'e') goto yy556;
-	goto yy135;
-yy475:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy557;
-	if (yych == 'e') goto yy557;
-	goto yy135;
-yy476:
-	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy558;
-	if (yych == 'o') goto yy558;
-	goto yy135;
 yy477:
-	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy559;
-	if (yych == 'a') goto yy559;
-	goto yy135;
+#line 201 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(2, 4, 0)? TK_Play : TK_Identifier); }
+#line 3246 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy478:
 	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy560;
-	if (yych == 'r') goto yy560;
+	if (yych == 'A') goto yy562;
+	if (yych == 'a') goto yy562;
 	goto yy135;
 yy479:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy561;
-	if (yych == 'e') goto yy561;
+	if (yych == 'E') goto yy563;
+	if (yych == 'e') goto yy563;
 	goto yy135;
 yy480:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy563;
-	if (yych == 't') goto yy563;
+	if (yych == 'E') goto yy564;
+	if (yych == 'e') goto yy564;
 	goto yy135;
 yy481:
 	yych = *++YYCURSOR;
@@ -3274,265 +3264,249 @@ yy481:
 	if (yych == 'o') goto yy565;
 	goto yy135;
 yy482:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy483;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy483;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'A') goto yy566;
+	if (yych == 'a') goto yy566;
+	goto yy135;
 yy483:
-#line 222 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(StateOptions ? TK_Slow : TK_Identifier); }
-#line 3294 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'R') goto yy567;
+	if (yych == 'r') goto yy567;
+	goto yy135;
 yy484:
 	yych = *++YYCURSOR;
-	if (yych == 'D') goto yy566;
-	if (yych == 'd') goto yy566;
+	if (yych == 'E') goto yy568;
+	if (yych == 'e') goto yy568;
 	goto yy135;
 yy485:
 	yych = *++YYCURSOR;
-	if (yych <= 'I') {
-		if (yych == 'E') goto yy568;
-		if (yych <= 'H') goto yy135;
-		goto yy570;
-	} else {
-		if (yych <= 'e') {
-			if (yych <= 'd') goto yy135;
-			goto yy568;
-		} else {
-			if (yych == 'i') goto yy570;
-			goto yy135;
-		}
-	}
+	if (yych == 'E') goto yy570;
+	if (yych == 'e') goto yy570;
+	goto yy135;
 yy486:
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy571;
+	if (yych == 't') goto yy571;
+	goto yy135;
+yy487:
+	yych = *++YYCURSOR;
+	if (yych == 'O') goto yy573;
+	if (yych == 'o') goto yy573;
+	goto yy135;
+yy488:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy487;
+		if (yych <= '/') goto yy489;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy487;
+			if (yych <= '`') goto yy489;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy487:
-#line 204 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Stop); }
-#line 3332 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy488:
-	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy571;
-	if (yych == 'n') goto yy571;
-	goto yy135;
 yy489:
-	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy572;
-	if (yych == 'c') goto yy572;
-	goto yy135;
+#line 224 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(StateOptions ? TK_Slow : TK_Identifier); }
+#line 3314 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy490:
 	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy573;
-	if (yych == 'r') goto yy573;
+	if (yych == 'D') goto yy574;
+	if (yych == 'd') goto yy574;
 	goto yy135;
 yy491:
 	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy575;
-	if (yych == 'c') goto yy575;
-	goto yy135;
+	if (yych <= 'I') {
+		if (yych == 'E') goto yy576;
+		if (yych <= 'H') goto yy135;
+		goto yy578;
+	} else {
+		if (yych <= 'e') {
+			if (yych <= 'd') goto yy135;
+			goto yy576;
+		} else {
+			if (yych == 'i') goto yy578;
+			goto yy135;
+		}
+	}
 yy492:
-	yych = *++YYCURSOR;
-	if (yych == 'D') goto yy576;
-	if (yych == 'd') goto yy576;
-	goto yy135;
-yy493:
-	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy577;
-	if (yych == 's') goto yy577;
-	goto yy135;
-yy494:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy495;
+		if (yych <= '/') goto yy493;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy495;
+			if (yych <= '`') goto yy493;
 			if (yych <= 'z') goto yy134;
 		}
 	}
+yy493:
+#line 205 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Stop); }
+#line 3352 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy494:
+	yych = *++YYCURSOR;
+	if (yych == 'N') goto yy579;
+	if (yych == 'n') goto yy579;
+	goto yy135;
 yy495:
-#line 179 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_True); }
-#line 3380 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'C') goto yy580;
+	if (yych == 'c') goto yy580;
+	goto yy135;
 yy496:
+	yych = *++YYCURSOR;
+	if (yych == 'R') goto yy581;
+	if (yych == 'r') goto yy581;
+	goto yy135;
+yy497:
+	yych = *++YYCURSOR;
+	if (yych == 'C') goto yy583;
+	if (yych == 'c') goto yy583;
+	goto yy135;
+yy498:
+	yych = *++YYCURSOR;
+	if (yych == 'D') goto yy584;
+	if (yych == 'd') goto yy584;
+	goto yy135;
+yy499:
+	yych = *++YYCURSOR;
+	if (yych == 'S') goto yy585;
+	if (yych == 's') goto yy585;
+	goto yy135;
+yy500:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy501;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy501;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy501:
+#line 180 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_True); }
+#line 3400 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy502:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= '9') {
 		if (yych <= '1') {
-			if (yych <= '/') goto yy497;
+			if (yych <= '/') goto yy503;
 			if (yych <= '0') goto yy134;
-			goto yy578;
+			goto yy586;
 		} else {
-			if (yych == '8') goto yy579;
+			if (yych == '8') goto yy587;
 			goto yy134;
 		}
 	} else {
 		if (yych <= '^') {
-			if (yych <= '@') goto yy497;
+			if (yych <= '@') goto yy503;
 			if (yych <= 'Z') goto yy134;
 		} else {
-			if (yych == '`') goto yy497;
+			if (yych == '`') goto yy503;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy497:
+yy503:
 #line 154 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_UInt); }
-#line 3404 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy498:
-	yych = *++YYCURSOR;
-	if (yych == 'G') goto yy581;
-	if (yych == 'g') goto yy581;
-	goto yy135;
-yy499:
-	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy583;
-	if (yych == 'l') goto yy583;
-	goto yy135;
-yy500:
-	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy585;
-	if (yych == 'r') goto yy585;
-	goto yy135;
-yy501:
-	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy586;
-	if (yych == 'r') goto yy586;
-	goto yy135;
-yy502:
-	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy587;
-	if (yych == 'o') goto yy587;
-	goto yy135;
-yy503:
-	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy588;
-	if (yych == 'i') goto yy588;
-	goto yy135;
+#line 3424 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy504:
 	yych = *++YYCURSOR;
-	if (yych == 'U') goto yy589;
-	if (yych == 'u') goto yy589;
+	if (yych == 'G') goto yy589;
+	if (yych == 'g') goto yy589;
 	goto yy135;
 yy505:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy506;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy506;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy591;
+	if (yych == 'l') goto yy591;
+	goto yy135;
 yy506:
-#line 157 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Void); }
-#line 3457 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'R') goto yy593;
+	if (yych == 'r') goto yy593;
+	goto yy135;
 yy507:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy590;
-	if (yych == 't') goto yy590;
+	if (yych == 'R') goto yy594;
+	if (yych == 'r') goto yy594;
 	goto yy135;
 yy508:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy591;
-	if (yych == 'e') goto yy591;
+	if (yych == 'O') goto yy595;
+	if (yych == 'o') goto yy595;
 	goto yy135;
 yy509:
 	yych = *++YYCURSOR;
-	if (yych == 'U') goto yy593;
-	if (yych == 'u') goto yy593;
-	goto yy171;
+	if (yych == 'I') goto yy596;
+	if (yych == 'i') goto yy596;
+	goto yy135;
 yy510:
 	yych = *++YYCURSOR;
-	if (yych == 'o') goto yy594;
-	goto yy171;
+	if (yych == 'U') goto yy597;
+	if (yych == 'u') goto yy597;
+	goto yy135;
 yy511:
-	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy595;
-	if (yych == 'a') goto yy595;
-	goto yy135;
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy512;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy512;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy512:
-	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy596;
-	if (yych == 'n') goto yy596;
-	goto yy135;
+#line 157 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Void); }
+#line 3477 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy513:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy598;
-	if (yych == 'o') goto yy598;
+	if (yych == 'T') goto yy598;
+	if (yych == 't') goto yy598;
 	goto yy135;
 yy514:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy515;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy515;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy599;
+	if (yych == 'e') goto yy599;
+	goto yy135;
 yy515:
-#line 171 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Array); }
-#line 3509 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'U') goto yy601;
+	if (yych == 'u') goto yy601;
+	goto yy171;
 yy516:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy517;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy517;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'o') goto yy602;
+	goto yy171;
 yy517:
-#line 124 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Break); }
-#line 3527 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'A') goto yy603;
+	if (yych == 'a') goto yy603;
+	goto yy135;
 yy518:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy599;
-	if (yych == 't') goto yy599;
+	if (yych == 'N') goto yy604;
+	if (yych == 'n') goto yy604;
 	goto yy135;
 yy519:
 	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy601;
-	if (yych == 'i') goto yy601;
+	if (yych == 'O') goto yy606;
+	if (yych == 'o') goto yy606;
 	goto yy135;
 yy520:
 	++YYCURSOR;
@@ -3549,92 +3523,100 @@ yy520:
 		}
 	}
 yy521:
+#line 171 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Array); }
+#line 3529 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy522:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy523;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy523;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy523:
+#line 124 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Break); }
+#line 3547 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy524:
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy607;
+	if (yych == 't') goto yy607;
+	goto yy135;
+yy525:
+	yych = *++YYCURSOR;
+	if (yych == 'I') goto yy609;
+	if (yych == 'i') goto yy609;
+	goto yy135;
+yy526:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy527;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy527;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy527:
 #line 159 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Class); }
-#line 3555 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy522:
+#line 3575 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy528:
 	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy602;
-	if (yych == 's') goto yy602;
+	if (yych == 'S') goto yy610;
+	if (yych == 's') goto yy610;
 	goto yy135;
-yy523:
+yy529:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy524;
+		if (yych <= '/') goto yy530;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy524;
+			if (yych <= '`') goto yy530;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy524:
+yy530:
 #line 166 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Color); }
-#line 3578 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy525:
+#line 3598 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy531:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy526;
+		if (yych <= '/') goto yy532;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy526;
+			if (yych <= '`') goto yy532;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy526:
+yy532:
 #line 126 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_Const); }
-#line 3596 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy527:
-	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy603;
-	if (yych == 'n') goto yy603;
-	goto yy135;
-yy528:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy529;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy529;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy529:
-#line 195 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Cross); }
-#line 3619 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy530:
-	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy604;
-	if (yych == 'l') goto yy604;
-	goto yy135;
-yy531:
-	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy605;
-	if (yych == 'c') goto yy605;
-	goto yy135;
-yy532:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy606;
-	if (yych == 'e') goto yy606;
-	goto yy135;
+#line 3616 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy533:
 	yych = *++YYCURSOR;
-	if (yych == 'D') goto yy608;
-	if (yych == 'd') goto yy608;
+	if (yych == 'N') goto yy611;
+	if (yych == 'n') goto yy611;
 	goto yy135;
 yy534:
 	++YYCURSOR;
@@ -3651,55 +3633,47 @@ yy534:
 		}
 	}
 yy535:
-#line 180 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_False); }
-#line 3657 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 196 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Cross); }
+#line 3639 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy536:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy537;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy537;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy612;
+	if (yych == 'l') goto yy612;
+	goto yy135;
 yy537:
-#line 190 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Final : TK_Identifier); }
-#line 3675 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'C') goto yy613;
+	if (yych == 'c') goto yy613;
+	goto yy135;
 yy538:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy610;
-	if (yych == 'e') goto yy610;
+	if (yych == 'E') goto yy614;
+	if (yych == 'e') goto yy614;
 	goto yy135;
 yy539:
+	yych = *++YYCURSOR;
+	if (yych == 'D') goto yy616;
+	if (yych == 'd') goto yy616;
+	goto yy135;
+yy540:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy540;
+		if (yych <= '/') goto yy541;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy540;
+			if (yych <= '`') goto yy541;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy540:
-#line 142 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Float); }
-#line 3698 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy541:
-	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy611;
-	if (yych == 'c') goto yy611;
-	goto yy135;
+#line 181 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_False); }
+#line 3677 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy542:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
@@ -3715,13 +3689,13 @@ yy542:
 		}
 	}
 yy543:
-#line 151 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Int16); }
-#line 3721 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 191 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Final : TK_Identifier); }
+#line 3695 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy544:
 	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy612;
-	if (yych == 'n') goto yy612;
+	if (yych == 'E') goto yy618;
+	if (yych == 'e') goto yy618;
 	goto yy135;
 yy545:
 	++YYCURSOR;
@@ -3738,238 +3712,239 @@ yy545:
 		}
 	}
 yy546:
-#line 227 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(StateOptions ? TK_Light : TK_Identifier); }
-#line 3744 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 142 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Float); }
+#line 3718 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy547:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy613;
-	if (yych == 'e') goto yy613;
+	if (yych == 'C') goto yy619;
+	if (yych == 'c') goto yy619;
 	goto yy135;
 yy548:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy549;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy549;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy549:
-#line 160 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Mixin); }
-#line 3767 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy550:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy614;
-	if (yych == 'e') goto yy614;
-	goto yy135;
-yy551:
-	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy616;
-	if (yych == 'a') goto yy616;
-	goto yy135;
-yy552:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy617;
-	if (yych == 't') goto yy617;
-	goto yy135;
-yy553:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy618;
-	if (yych == 't') goto yy618;
-	goto yy135;
-yy554:
 	yych = *++YYCURSOR;
 	if (yych == 'I') goto yy620;
 	if (yych == 'i') goto yy620;
 	goto yy135;
+yy549:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy550;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy550;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy550:
+#line 151 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Int16); }
+#line 3746 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy551:
+	yych = *++YYCURSOR;
+	if (yych == 'N') goto yy621;
+	if (yych == 'n') goto yy621;
+	goto yy135;
+yy552:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy553;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy553;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy553:
+#line 229 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(StateOptions ? TK_Light : TK_Identifier); }
+#line 3769 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy554:
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy622;
+	if (yych == 'e') goto yy622;
+	goto yy135;
 yy555:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy621;
-	if (yych == 't') goto yy621;
-	goto yy135;
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy556;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy556;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy556:
-	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy622;
-	if (yych == 'r') goto yy622;
-	goto yy135;
+#line 160 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Mixin); }
+#line 3792 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy557:
 	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy623;
-	if (yych == 'c') goto yy623;
+	if (yych == 'E') goto yy623;
+	if (yych == 'e') goto yy623;
 	goto yy135;
 yy558:
 	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy624;
-	if (yych == 'n') goto yy624;
+	if (yych == 'A') goto yy625;
+	if (yych == 'a') goto yy625;
 	goto yy135;
 yy559:
 	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy625;
-	if (yych == 'c') goto yy625;
+	if (yych == 'T') goto yy626;
+	if (yych == 't') goto yy626;
 	goto yy135;
 yy560:
 	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy626;
-	if (yych == 'n') goto yy626;
+	if (yych == 'T') goto yy627;
+	if (yych == 't') goto yy627;
 	goto yy135;
 yy561:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy562;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy562;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'I') goto yy629;
+	if (yych == 'i') goto yy629;
+	goto yy135;
 yy562:
-#line 146 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_SByte); }
-#line 3840 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy630;
+	if (yych == 't') goto yy630;
+	goto yy135;
 yy563:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy564;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy564;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'R') goto yy631;
+	if (yych == 'r') goto yy631;
+	goto yy135;
 yy564:
-#line 147 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Short); }
-#line 3858 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'C') goto yy632;
+	if (yych == 'c') goto yy632;
+	goto yy135;
 yy565:
 	yych = *++YYCURSOR;
-	if (yych == 'F') goto yy628;
-	if (yych == 'f') goto yy628;
+	if (yych == 'N') goto yy633;
+	if (yych == 'n') goto yy633;
 	goto yy135;
 yy566:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy567;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy567;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'C') goto yy634;
+	if (yych == 'c') goto yy634;
+	goto yy135;
 yy567:
-#line 164 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Sound); }
-#line 3881 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'N') goto yy635;
+	if (yych == 'n') goto yy635;
+	goto yy135;
 yy568:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy569;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy569;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy569:
+#line 146 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_SByte); }
+#line 3865 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy570:
+	yych = *++YYCURSOR;
+	if (yych == 'D') goto yy637;
+	if (yych == 'd') goto yy637;
+	goto yy135;
+yy571:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy572;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy572;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy572:
+#line 147 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Short); }
+#line 3888 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy573:
+	yych = *++YYCURSOR;
+	if (yych == 'F') goto yy639;
+	if (yych == 'f') goto yy639;
+	goto yy135;
+yy574:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy575;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy575;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy575:
+#line 164 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Sound); }
+#line 3911 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy576:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
 		if (yych <= '@') {
-			if (yych <= '/') goto yy569;
+			if (yych <= '/') goto yy577;
 			if (yych <= '9') goto yy134;
 		} else {
-			if (yych == 'S') goto yy630;
+			if (yych == 'S') goto yy641;
 			goto yy134;
 		}
 	} else {
 		if (yych <= '`') {
 			if (yych == '_') goto yy134;
 		} else {
-			if (yych == 's') goto yy630;
+			if (yych == 's') goto yy641;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy569:
+yy577:
 #line 165 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(TK_State); }
-#line 3903 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy570:
-	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy632;
-	if (yych == 'c') goto yy632;
-	goto yy135;
-yy571:
-	yych = *++YYCURSOR;
-	if (yych == 'G') goto yy634;
-	if (yych == 'g') goto yy634;
-	goto yy135;
-yy572:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy636;
-	if (yych == 't') goto yy636;
-	goto yy135;
-yy573:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy574;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy574;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy574:
-#line 203 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Super : TK_Identifier); }
-#line 3936 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy575:
-	yych = *++YYCURSOR;
-	if (yych == 'H') goto yy638;
-	if (yych == 'h') goto yy638;
-	goto yy135;
-yy576:
-	yych = *++YYCURSOR;
-	if (yych == 'J') goto yy640;
-	if (yych == 'j') goto yy640;
-	goto yy135;
-yy577:
-	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy641;
-	if (yych == 'i') goto yy641;
-	goto yy135;
+#line 3933 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy578:
 	yych = *++YYCURSOR;
-	if (yych == '6') goto yy642;
+	if (yych == 'C') goto yy643;
+	if (yych == 'c') goto yy643;
 	goto yy135;
 yy579:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy580;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy580;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'G') goto yy645;
+	if (yych == 'g') goto yy645;
+	goto yy135;
 yy580:
-#line 150 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_UInt8); }
-#line 3973 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy647;
+	if (yych == 't') goto yy647;
+	goto yy135;
 yy581:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
@@ -3985,57 +3960,64 @@ yy581:
 		}
 	}
 yy582:
-#line 156 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_ULong); }
-#line 3991 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 204 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Super : TK_Identifier); }
+#line 3966 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy583:
+	yych = *++YYCURSOR;
+	if (yych == 'H') goto yy649;
+	if (yych == 'h') goto yy649;
+	goto yy135;
+yy584:
+	yych = *++YYCURSOR;
+	if (yych == 'J') goto yy651;
+	if (yych == 'j') goto yy651;
+	goto yy135;
+yy585:
+	yych = *++YYCURSOR;
+	if (yych == 'I') goto yy652;
+	if (yych == 'i') goto yy652;
+	goto yy135;
+yy586:
+	yych = *++YYCURSOR;
+	if (yych == '6') goto yy653;
+	goto yy135;
+yy587:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy584;
+		if (yych <= '/') goto yy588;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy584;
+			if (yych <= '`') goto yy588;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy584:
-#line 136 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Until); }
-#line 4009 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy585:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy644;
-	if (yych == 't') goto yy644;
-	goto yy135;
-yy586:
-	yych = *++YYCURSOR;
-	if (yych == 'G') goto yy646;
-	if (yych == 'g') goto yy646;
-	goto yy135;
-yy587:
-	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy648;
-	if (yych == 'r') goto yy648;
-	goto yy135;
 yy588:
-	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy649;
-	if (yych == 'o') goto yy649;
-	goto yy135;
+#line 150 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_UInt8); }
+#line 4003 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy589:
-	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy650;
-	if (yych == 'a') goto yy650;
-	goto yy135;
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy590;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy590;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy590:
-	yych = *++YYCURSOR;
-	if (yych == 'I') goto yy651;
-	if (yych == 'i') goto yy651;
-	goto yy135;
+#line 156 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_ULong); }
+#line 4021 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy591:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
@@ -4051,45 +4033,38 @@ yy591:
 		}
 	}
 yy592:
-#line 138 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_While); }
-#line 4057 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 136 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Until); }
+#line 4039 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy593:
 	yych = *++YYCURSOR;
-	if (yych == 'D') goto yy652;
-	if (yych == 'd') goto yy652;
-	goto yy171;
+	if (yych == 'T') goto yy655;
+	if (yych == 't') goto yy655;
+	goto yy135;
 yy594:
 	yych = *++YYCURSOR;
-	if (yych == 'n') goto yy653;
-	goto yy171;
+	if (yych == 'G') goto yy657;
+	if (yych == 'g') goto yy657;
+	goto yy135;
 yy595:
 	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy655;
-	if (yych == 'c') goto yy655;
+	if (yych == 'R') goto yy659;
+	if (yych == 'r') goto yy659;
 	goto yy135;
 yy596:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy597;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy597;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'O') goto yy660;
+	if (yych == 'o') goto yy660;
+	goto yy135;
 yy597:
-#line 214 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Action : TK_Identifier); }
-#line 4089 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'A') goto yy661;
+	if (yych == 'a') goto yy661;
+	goto yy135;
 yy598:
 	yych = *++YYCURSOR;
-	if (yych == 'F') goto yy656;
-	if (yych == 'f') goto yy656;
+	if (yych == 'I') goto yy662;
+	if (yych == 'i') goto yy662;
 	goto yy135;
 yy599:
 	++YYCURSOR;
@@ -4106,89 +4081,88 @@ yy599:
 		}
 	}
 yy600:
-#line 220 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(StateOptions ? TK_Bright : TK_Identifier); }
-#line 4112 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 138 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_While); }
+#line 4087 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy601:
 	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy658;
-	if (yych == 's') goto yy658;
-	goto yy135;
+	if (yych == 'D') goto yy663;
+	if (yych == 'd') goto yy663;
+	goto yy171;
 yy602:
 	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy659;
-	if (yych == 'c') goto yy659;
-	goto yy135;
+	if (yych == 'n') goto yy664;
+	goto yy171;
 yy603:
 	yych = *++YYCURSOR;
-	if (yych == 'U') goto yy660;
-	if (yych == 'u') goto yy660;
+	if (yych == 'C') goto yy666;
+	if (yych == 'c') goto yy666;
 	goto yy135;
 yy604:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy661;
-	if (yych == 't') goto yy661;
-	goto yy135;
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy605;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy605;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy605:
-	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy663;
-	if (yych == 'a') goto yy663;
-	goto yy135;
+#line 216 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Action : TK_Identifier); }
+#line 4119 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy606:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy607;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy607;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'F') goto yy667;
+	if (yych == 'f') goto yy667;
+	goto yy135;
 yy607:
-#line 143 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Double); }
-#line 4155 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy608:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy609;
+		if (yych <= '/') goto yy608;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy609;
+			if (yych <= '`') goto yy608;
 			if (yych <= 'z') goto yy134;
 		}
 	}
+yy608:
+#line 222 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(StateOptions ? TK_Bright : TK_Identifier); }
+#line 4142 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy609:
-#line 191 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Extend : TK_Identifier); }
-#line 4173 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'S') goto yy669;
+	if (yych == 's') goto yy669;
+	goto yy135;
 yy610:
 	yych = *++YYCURSOR;
-	if (yych == 'F') goto yy664;
-	if (yych == 'f') goto yy664;
+	if (yych == 'C') goto yy670;
+	if (yych == 'c') goto yy670;
 	goto yy135;
 yy611:
 	yych = *++YYCURSOR;
-	if (yych == 'H') goto yy666;
-	if (yych == 'h') goto yy666;
+	if (yych == 'U') goto yy671;
+	if (yych == 'u') goto yy671;
 	goto yy135;
 yy612:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy668;
-	if (yych == 'a') goto yy668;
+	if (yych == 'T') goto yy672;
+	if (yych == 't') goto yy672;
 	goto yy135;
 yy613:
 	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy669;
-	if (yych == 'r') goto yy669;
+	if (yych == 'A') goto yy674;
+	if (yych == 'a') goto yy674;
 	goto yy135;
 yy614:
 	++YYCURSOR;
@@ -4205,414 +4179,406 @@ yy614:
 		}
 	}
 yy615:
-#line 185 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Native); }
-#line 4211 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 143 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Double); }
+#line 4185 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy616:
-	yych = *++YYCURSOR;
-	if (yych == 'Y') goto yy670;
-	if (yych == 'y') goto yy670;
-	goto yy135;
-yy617:
-	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy672;
-	if (yych == 'r') goto yy672;
-	goto yy135;
-yy618:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy619;
+		if (yych <= '/') goto yy617;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy619;
+			if (yych <= '`') goto yy617;
 			if (yych <= 'z') goto yy134;
 		}
 	}
+yy617:
+#line 192 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Extend : TK_Identifier); }
+#line 4203 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy618:
+	yych = *++YYCURSOR;
+	if (yych == 'F') goto yy675;
+	if (yych == 'f') goto yy675;
+	goto yy135;
 yy619:
-#line 226 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(StateOptions ? TK_Offset : TK_Identifier); }
-#line 4239 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'H') goto yy677;
+	if (yych == 'h') goto yy677;
+	goto yy135;
 yy620:
 	yych = *++YYCURSOR;
-	if (yych == 'D') goto yy674;
-	if (yych == 'd') goto yy674;
+	if (yych == 'O') goto yy679;
+	if (yych == 'o') goto yy679;
 	goto yy135;
 yy621:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy675;
-	if (yych == 'e') goto yy675;
+	if (yych == 'A') goto yy680;
+	if (yych == 'a') goto yy680;
 	goto yy135;
 yy622:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy677;
-	if (yych == 't') goto yy677;
+	if (yych == 'R') goto yy681;
+	if (yych == 'r') goto yy681;
 	goto yy135;
 yy623:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy678;
-	if (yych == 't') goto yy678;
-	goto yy135;
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy624;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy624;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy624:
-	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy679;
-	if (yych == 'l') goto yy679;
-	goto yy135;
+#line 186 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Native); }
+#line 4246 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy625:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy680;
-	if (yych == 'e') goto yy680;
+	if (yych == 'Y') goto yy682;
+	if (yych == 'y') goto yy682;
 	goto yy135;
 yy626:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy627;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy627;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'R') goto yy684;
+	if (yych == 'r') goto yy684;
+	goto yy135;
 yy627:
-#line 134 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Return); }
-#line 4287 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy628;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy628;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy628:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy629;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy629;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+#line 228 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(StateOptions ? TK_Offset : TK_Identifier); }
+#line 4274 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy629:
-#line 173 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_SizeOf); }
-#line 4305 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'D') goto yy686;
+	if (yych == 'd') goto yy686;
+	goto yy135;
 yy630:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy631;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy631;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy687;
+	if (yych == 'e') goto yy687;
+	goto yy135;
 yy631:
-#line 210 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_States); }
-#line 4323 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy689;
+	if (yych == 't') goto yy689;
+	goto yy135;
 yy632:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy633;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy633;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy690;
+	if (yych == 't') goto yy690;
+	goto yy135;
 yy633:
-#line 188 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Static); }
-#line 4341 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy634:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy635;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy635;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy635:
-#line 163 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_String); }
-#line 4359 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy636:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy637;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy637;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy637:
-#line 158 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Struct); }
-#line 4377 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy638:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy639;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy639;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy639:
-#line 135 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Switch); }
-#line 4395 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy640:
-	yych = *++YYCURSOR;
-	if (yych == 'U') goto yy681;
-	if (yych == 'u') goto yy681;
-	goto yy135;
-yy641:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy682;
-	if (yych == 'e') goto yy682;
-	goto yy135;
-yy642:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy643;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy643;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy643:
-#line 152 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_UInt16); }
-#line 4423 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy644:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy645;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy645;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy645:
-#line 148 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_UShort); }
-#line 4441 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy646:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy647;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy647;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy647:
-#line 198 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_VarArg : TK_Identifier); }
-#line 4459 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy648:
-	yych = *++YYCURSOR;
-	if (yych <= '1') goto yy135;
-	if (yych <= '2') goto yy683;
-	if (yych <= '3') goto yy685;
-	goto yy135;
-yy649:
-	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy687;
-	if (yych == 'n') goto yy687;
-	goto yy135;
-yy650:
-	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy689;
-	if (yych == 'l') goto yy689;
-	goto yy135;
-yy651:
 	yych = *++YYCURSOR;
 	if (yych == 'L') goto yy691;
 	if (yych == 'l') goto yy691;
 	goto yy135;
-yy652:
+yy634:
 	yych = *++YYCURSOR;
 	if (yych == 'E') goto yy692;
 	if (yych == 'e') goto yy692;
-	goto yy171;
-yy653:
-	++YYCURSOR;
-	if (YYLIMIT <= YYCURSOR) YYFILL(1);
-	yych = *YYCURSOR;
-	if (yych == '\n') goto yy694;
-	goto yy653;
-yy655:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy696;
-	if (yych == 't') goto yy696;
 	goto yy135;
-yy656:
+yy635:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy657;
+		if (yych <= '/') goto yy636;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy657;
+			if (yych <= '`') goto yy636;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy657:
+yy636:
+#line 134 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Return); }
+#line 4322 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy637:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy638;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy638;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy638:
+#line 208 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(4, 12, 0)? TK_Sealed : TK_Identifier); }
+#line 4340 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy639:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy640;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy640;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy640:
 #line 174 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_AlignOf); }
-#line 4514 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy658:
+	{ RET(TK_SizeOf); }
+#line 4358 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy641:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy642;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy642;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy642:
+#line 212 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_States); }
+#line 4376 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy643:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy644;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy644;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy644:
+#line 189 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Static); }
+#line 4394 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy645:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy646;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy646;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy646:
+#line 163 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_String); }
+#line 4412 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy647:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy648;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy648;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy648:
+#line 158 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Struct); }
+#line 4430 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy649:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy650;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy650;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy650:
+#line 135 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Switch); }
+#line 4448 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy651:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy698;
-	if (yych == 'e') goto yy698;
+	if (yych == 'U') goto yy693;
+	if (yych == 'u') goto yy693;
 	goto yy135;
+yy652:
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy694;
+	if (yych == 'e') goto yy694;
+	goto yy135;
+yy653:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy654;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy654;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy654:
+#line 152 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_UInt16); }
+#line 4476 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy655:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy656;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy656;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy656:
+#line 148 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_UShort); }
+#line 4494 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy657:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy658;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy658;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy658:
+#line 199 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_VarArg : TK_Identifier); }
+#line 4512 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy659:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy700;
-	if (yych == 'o') goto yy700;
+	if (yych <= '1') goto yy135;
+	if (yych <= '2') goto yy695;
+	if (yych <= '3') goto yy697;
 	goto yy135;
 yy660:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy701;
-	if (yych == 'e') goto yy701;
+	if (yych == 'N') goto yy699;
+	if (yych == 'n') goto yy699;
 	goto yy135;
 yy661:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy662;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy662;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy701;
+	if (yych == 'l') goto yy701;
+	goto yy135;
 yy662:
-#line 128 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Default); }
-#line 4547 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'L') goto yy703;
+	if (yych == 'l') goto yy703;
+	goto yy135;
 yy663:
 	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy703;
-	if (yych == 't') goto yy703;
-	goto yy135;
+	if (yych == 'E') goto yy704;
+	if (yych == 'e') goto yy704;
+	goto yy171;
 yy664:
 	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy665;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy665;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy665:
-#line 184 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(3, 7, 0)? TK_FlagDef : TK_Identifier); }
-#line 4570 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	if (YYLIMIT <= YYCURSOR) YYFILL(1);
+	yych = *YYCURSOR;
+	if (yych == '\n') goto yy706;
+	goto yy664;
 yy666:
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy708;
+	if (yych == 't') goto yy708;
+	goto yy135;
+yy667:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy667;
+		if (yych <= '/') goto yy668;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy667;
+			if (yych <= '`') goto yy668;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy667:
-#line 178 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(4, 10, 0)? TK_ForEach : TK_Identifier); }
-#line 4588 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy668:
-	yych = *++YYCURSOR;
-	if (yych == 'L') goto yy704;
-	if (yych == 'l') goto yy704;
-	goto yy135;
+#line 175 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_AlignOf); }
+#line 4567 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy669:
 	yych = *++YYCURSOR;
-	if (yych == 'A') goto yy706;
-	if (yych == 'a') goto yy706;
+	if (yych == 'E') goto yy710;
+	if (yych == 'e') goto yy710;
 	goto yy135;
 yy670:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy671;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy671;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'O') goto yy712;
+	if (yych == 'o') goto yy712;
+	goto yy135;
 yy671:
-#line 224 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(StateOptions ? TK_NoDelay : TK_Identifier); }
-#line 4616 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy713;
+	if (yych == 'e') goto yy713;
+	goto yy135;
 yy672:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
@@ -4628,13 +4594,13 @@ yy672:
 		}
 	}
 yy673:
-#line 206 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(4, 9, 0)? TK_Null : TK_Identifier); }
-#line 4634 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 128 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Default); }
+#line 4600 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy674:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy707;
-	if (yych == 'e') goto yy707;
+	if (yych == 'T') goto yy715;
+	if (yych == 't') goto yy715;
 	goto yy135;
 yy675:
 	++YYCURSOR;
@@ -4651,75 +4617,83 @@ yy675:
 		}
 	}
 yy676:
-#line 193 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Private : TK_Identifier); }
-#line 4657 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 185 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(3, 7, 0)? TK_FlagDef : TK_Identifier); }
+#line 4623 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy677:
-	yych = *++YYCURSOR;
-	if (yych == 'Y') goto yy709;
-	if (yych == 'y') goto yy709;
-	goto yy135;
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy678;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy678;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy678:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy711;
-	if (yych == 'e') goto yy711;
-	goto yy135;
+#line 179 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(4, 10, 0)? TK_ForEach : TK_Identifier); }
+#line 4641 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy679:
 	yych = *++YYCURSOR;
-	if (yych == 'Y') goto yy712;
-	if (yych == 'y') goto yy712;
+	if (yych == 'N') goto yy716;
+	if (yych == 'n') goto yy716;
 	goto yy135;
 yy680:
 	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy714;
-	if (yych == 's') goto yy714;
+	if (yych == 'L') goto yy718;
+	if (yych == 'l') goto yy718;
 	goto yy135;
 yy681:
 	yych = *++YYCURSOR;
-	if (yych == 'S') goto yy716;
-	if (yych == 's') goto yy716;
+	if (yych == 'A') goto yy720;
+	if (yych == 'a') goto yy720;
 	goto yy135;
 yy682:
-	yych = *++YYCURSOR;
-	if (yych == 'N') goto yy717;
-	if (yych == 'n') goto yy717;
-	goto yy135;
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy683;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy683;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy683:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy684;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy684;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+#line 226 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(StateOptions ? TK_NoDelay : TK_Identifier); }
+#line 4674 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy684:
-#line 167 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Vector2); }
-#line 4705 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy685:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy686;
+		if (yych <= '/') goto yy685;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy686;
+			if (yych <= '`') goto yy685;
 			if (yych <= 'z') goto yy134;
 		}
 	}
+yy685:
+#line 207 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(4, 9, 0)? TK_Null : TK_Identifier); }
+#line 4692 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy686:
-#line 168 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Vector3); }
-#line 4723 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy721;
+	if (yych == 'e') goto yy721;
+	goto yy135;
 yy687:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
@@ -4735,276 +4709,276 @@ yy687:
 		}
 	}
 yy688:
-#line 213 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(2, 4, 0)? TK_Version : TK_Identifier); }
-#line 4741 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 194 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Private : TK_Identifier); }
+#line 4715 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy689:
+	yych = *++YYCURSOR;
+	if (yych == 'Y') goto yy723;
+	if (yych == 'y') goto yy723;
+	goto yy135;
+yy690:
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy725;
+	if (yych == 'e') goto yy725;
+	goto yy135;
+yy691:
+	yych = *++YYCURSOR;
+	if (yych == 'Y') goto yy726;
+	if (yych == 'y') goto yy726;
+	goto yy135;
+yy692:
+	yych = *++YYCURSOR;
+	if (yych == 'S') goto yy728;
+	if (yych == 's') goto yy728;
+	goto yy135;
+yy693:
+	yych = *++YYCURSOR;
+	if (yych == 'S') goto yy730;
+	if (yych == 's') goto yy730;
+	goto yy135;
+yy694:
+	yych = *++YYCURSOR;
+	if (yych == 'N') goto yy731;
+	if (yych == 'n') goto yy731;
+	goto yy135;
+yy695:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy696;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy696;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy696:
+#line 167 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Vector2); }
+#line 4763 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy697:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy698;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy698;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy698:
+#line 168 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Vector3); }
+#line 4781 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy699:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy700;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy700;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy700:
+#line 215 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(2, 4, 0)? TK_Version : TK_Identifier); }
+#line 4799 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy701:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
 		if (yych <= '@') {
-			if (yych <= '/') goto yy690;
+			if (yych <= '/') goto yy702;
 			if (yych <= '9') goto yy134;
 		} else {
-			if (yych == 'S') goto yy718;
+			if (yych == 'S') goto yy732;
 			goto yy134;
 		}
 	} else {
 		if (yych <= '`') {
 			if (yych == '_') goto yy134;
 		} else {
-			if (yych == 's') goto yy718;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy690:
-#line 196 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Virtual : TK_Identifier); }
-#line 4763 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy691:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy719;
-	if (yych == 'e') goto yy719;
-	goto yy135;
-yy692:
-	++YYCURSOR;
-#line 230 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Include); }
-#line 4773 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy694:
-	++YYCURSOR;
-#line 121 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto newline; }
-#line 4778 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy696:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy697;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy697;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy697:
-#line 177 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Abstract); }
-#line 4796 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy698:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy699;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy699;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy699:
-#line 225 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(StateOptions ? TK_CanRaise : TK_Identifier); }
-#line 4814 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy700:
-	yych = *++YYCURSOR;
-	if (yych == 'P') goto yy721;
-	if (yych == 'p') goto yy721;
-	goto yy135;
-yy701:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy702;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy702;
+			if (yych == 's') goto yy732;
 			if (yych <= 'z') goto yy134;
 		}
 	}
 yy702:
-#line 127 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Continue); }
-#line 4837 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 197 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Virtual : TK_Identifier); }
+#line 4821 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy703:
 	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy722;
-	if (yych == 'e') goto yy722;
+	if (yych == 'E') goto yy733;
+	if (yych == 'e') goto yy733;
 	goto yy135;
 yy704:
 	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy705;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy705;
-			if (yych <= 'z') goto yy134;
-		}
-	}
-yy705:
-#line 216 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(3, 4, 0)? TK_Internal : TK_Identifier); }
-#line 4860 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 232 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Include); }
+#line 4831 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy706:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy723;
-	if (yych == 't') goto yy723;
-	goto yy135;
-yy707:
 	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy708;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy708;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+#line 121 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto newline; }
+#line 4836 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy708:
-#line 197 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Override : TK_Identifier); }
-#line 4883 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy709;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy709;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy709:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy710;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy710;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+#line 178 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Abstract); }
+#line 4854 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy710:
-#line 183 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Property); }
-#line 4901 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy711;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy711;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy711:
-	yych = *++YYCURSOR;
-	if (yych == 'D') goto yy724;
-	if (yych == 'd') goto yy724;
-	goto yy135;
+#line 227 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(StateOptions ? TK_CanRaise : TK_Identifier); }
+#line 4872 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy712:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy713;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy713;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'P') goto yy735;
+	if (yych == 'p') goto yy735;
+	goto yy135;
 yy713:
-#line 215 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_ReadOnly : TK_Identifier); }
-#line 4924 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy714;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy714;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy714:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy715;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy715;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+#line 127 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Continue); }
+#line 4895 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy715:
-#line 209 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Replaces : TK_Identifier); }
-#line 4942 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy736;
+	if (yych == 'e') goto yy736;
+	goto yy135;
 yy716:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy726;
-	if (yych == 't') goto yy726;
-	goto yy135;
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy717;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy717;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy717:
-	yych = *++YYCURSOR;
-	if (yych == 'T') goto yy728;
-	if (yych == 't') goto yy728;
-	goto yy135;
+#line 172 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(4, 12, 0)? TK_FunctionType : TK_Identifier); }
+#line 4918 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy718:
-	yych = *++YYCURSOR;
-	if (yych == 'C') goto yy730;
-	if (yych == 'c') goto yy730;
-	goto yy135;
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy719;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy719;
+			if (yych <= 'z') goto yy134;
+		}
+	}
 yy719:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy720;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy720;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+#line 218 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(3, 4, 0)? TK_Internal : TK_Identifier); }
+#line 4936 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy720:
-#line 137 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_Volatile); }
-#line 4975 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy737;
+	if (yych == 't') goto yy737;
+	goto yy135;
 yy721:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy731;
-	if (yych == 'e') goto yy731;
-	goto yy135;
-yy722:
-	yych = *++YYCURSOR;
-	if (yych == 'D') goto yy733;
-	if (yych == 'd') goto yy733;
-	goto yy135;
-yy723:
-	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy735;
-	if (yych == 'o') goto yy735;
-	goto yy135;
-yy724:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy725;
+		if (yych <= '/') goto yy722;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy725;
+			if (yych <= '`') goto yy722;
 			if (yych <= 'z') goto yy134;
 		}
 	}
+yy722:
+#line 198 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Override : TK_Identifier); }
+#line 4959 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy723:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy724;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy724;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy724:
+#line 184 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Property); }
+#line 4977 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy725:
-#line 192 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Protected : TK_Identifier); }
-#line 5008 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'D') goto yy738;
+	if (yych == 'd') goto yy738;
+	goto yy135;
 yy726:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
@@ -5020,9 +4994,9 @@ yy726:
 		}
 	}
 yy727:
-#line 223 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(StateOptions ? TK_NoDelay : TK_Identifier); }
-#line 5026 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 217 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_ReadOnly : TK_Identifier); }
+#line 5000 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy728:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
@@ -5038,32 +5012,24 @@ yy728:
 		}
 	}
 yy729:
-#line 189 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Transient : TK_Identifier); }
-#line 5044 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 211 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Replaces : TK_Identifier); }
+#line 5018 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy730:
 	yych = *++YYCURSOR;
-	if (yych == 'O') goto yy736;
-	if (yych == 'o') goto yy736;
+	if (yych == 'T') goto yy740;
+	if (yych == 't') goto yy740;
 	goto yy135;
 yy731:
-	++YYCURSOR;
-	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy732;
-		if (yych <= '9') goto yy134;
-		if (yych >= 'A') goto yy134;
-	} else {
-		if (yych <= '_') {
-			if (yych >= '_') goto yy134;
-		} else {
-			if (yych <= '`') goto yy732;
-			if (yych <= 'z') goto yy134;
-		}
-	}
+	yych = *++YYCURSOR;
+	if (yych == 'T') goto yy742;
+	if (yych == 't') goto yy742;
+	goto yy135;
 yy732:
-#line 201 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(2, 4, 0)? TK_ClearScope : TK_Identifier); }
-#line 5067 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+	yych = *++YYCURSOR;
+	if (yych == 'C') goto yy744;
+	if (yych == 'c') goto yy744;
+	goto yy135;
 yy733:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
@@ -5079,41 +5045,42 @@ yy733:
 		}
 	}
 yy734:
-#line 212 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Deprecated : TK_Identifier); }
-#line 5085 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 137 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(TK_Volatile); }
+#line 5051 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy735:
 	yych = *++YYCURSOR;
-	if (yych == 'R') goto yy737;
-	if (yych == 'r') goto yy737;
+	if (yych == 'E') goto yy745;
+	if (yych == 'e') goto yy745;
 	goto yy135;
 yy736:
 	yych = *++YYCURSOR;
-	if (yych == 'P') goto yy739;
-	if (yych == 'p') goto yy739;
+	if (yych == 'D') goto yy747;
+	if (yych == 'd') goto yy747;
 	goto yy135;
 yy737:
+	yych = *++YYCURSOR;
+	if (yych == 'O') goto yy749;
+	if (yych == 'o') goto yy749;
+	goto yy135;
+yy738:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
-		if (yych <= '/') goto yy738;
+		if (yych <= '/') goto yy739;
 		if (yych <= '9') goto yy134;
 		if (yych >= 'A') goto yy134;
 	} else {
 		if (yych <= '_') {
 			if (yych >= '_') goto yy134;
 		} else {
-			if (yych <= '`') goto yy738;
+			if (yych <= '`') goto yy739;
 			if (yych <= 'z') goto yy134;
 		}
 	}
-yy738:
-#line 170 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ RET(TK_MapIterator); }
-#line 5113 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy739:
-	yych = *++YYCURSOR;
-	if (yych == 'E') goto yy740;
-	if (yych != 'e') goto yy135;
+#line 193 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Protected : TK_Identifier); }
+#line 5084 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy740:
 	++YYCURSOR;
 	if ((yych = *YYCURSOR) <= 'Z') {
@@ -5129,17 +5096,126 @@ yy740:
 		}
 	}
 yy741:
+#line 225 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(StateOptions ? TK_NoDelay : TK_Identifier); }
+#line 5102 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy742:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy743;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy743;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy743:
+#line 190 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Transient : TK_Identifier); }
+#line 5120 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy744:
+	yych = *++YYCURSOR;
+	if (yych == 'O') goto yy750;
+	if (yych == 'o') goto yy750;
+	goto yy135;
+yy745:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy746;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy746;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy746:
 #line 202 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(2, 4, 0)? TK_ClearScope : TK_Identifier); }
+#line 5143 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy747:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy748;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy748;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy748:
+#line 214 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Deprecated : TK_Identifier); }
+#line 5161 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy749:
+	yych = *++YYCURSOR;
+	if (yych == 'R') goto yy751;
+	if (yych == 'r') goto yy751;
+	goto yy135;
+yy750:
+	yych = *++YYCURSOR;
+	if (yych == 'P') goto yy753;
+	if (yych == 'p') goto yy753;
+	goto yy135;
+yy751:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy752;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy752;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy752:
+#line 170 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ RET(ParseVersion >= MakeVersion(4, 10, 0)? TK_MapIterator : TK_Identifier); }
+#line 5189 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy753:
+	yych = *++YYCURSOR;
+	if (yych == 'E') goto yy754;
+	if (yych != 'e') goto yy135;
+yy754:
+	++YYCURSOR;
+	if ((yych = *YYCURSOR) <= 'Z') {
+		if (yych <= '/') goto yy755;
+		if (yych <= '9') goto yy134;
+		if (yych >= 'A') goto yy134;
+	} else {
+		if (yych <= '_') {
+			if (yych >= '_') goto yy134;
+		} else {
+			if (yych <= '`') goto yy755;
+			if (yych <= 'z') goto yy134;
+		}
+	}
+yy755:
+#line 203 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ RET(ParseVersion >= MakeVersion(2, 4, 0)? TK_VirtualScope : TK_Identifier); }
-#line 5135 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 5211 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 }
-#line 309 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 311 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 
 	}
 	if (!CMode)	// The classic Hexen scanner.
 	{
 	
-#line 5143 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 5219 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 {
 	YYCTYPE yych;
 	unsigned int yyaccept = 0;
@@ -5147,256 +5223,256 @@ yy741:
 	yych = *YYCURSOR;
 	if (yych <= '.') {
 		if (yych <= ' ') {
-			if (yych == '\n') goto yy748;
-			goto yy745;
+			if (yych == '\n') goto yy762;
+			goto yy759;
 		} else {
-			if (yych <= '!') goto yy750;
-			if (yych <= '"') goto yy752;
-			if (yych <= '#') goto yy754;
-			goto yy750;
+			if (yych <= '!') goto yy764;
+			if (yych <= '"') goto yy766;
+			if (yych <= '#') goto yy768;
+			goto yy764;
 		}
 	} else {
 		if (yych <= '<') {
-			if (yych <= '/') goto yy755;
-			if (yych == ';') goto yy757;
-			goto yy750;
+			if (yych <= '/') goto yy769;
+			if (yych == ';') goto yy771;
+			goto yy764;
 		} else {
-			if (yych <= '=') goto yy758;
-			if (yych <= 'z') goto yy750;
-			if (yych <= '}') goto yy758;
-			goto yy750;
+			if (yych <= '=') goto yy772;
+			if (yych <= 'z') goto yy764;
+			if (yych <= '}') goto yy772;
+			goto yy764;
 		}
 	}
-yy744:
-#line 326 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+yy758:
+#line 328 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto normal_token; }
-#line 5174 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy745:
+#line 5250 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy759:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
-	if (yych == '\n') goto yy747;
-	if (yych <= ' ') goto yy745;
-yy747:
-#line 319 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	if (yych == '\n') goto yy761;
+	if (yych <= ' ') goto yy759;
+yy761:
+#line 321 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto std1; }
-#line 5184 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy748:
+#line 5260 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy762:
 	++YYCURSOR;
-#line 320 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 322 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto newline; }
-#line 5189 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy750:
+#line 5265 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy764:
 	yyaccept = 0;
 	YYMARKER = ++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
-yy751:
+yy765:
 	if (yych <= ':') {
 		if (yych <= '"') {
-			if (yych == '!') goto yy750;
-			goto yy744;
+			if (yych == '!') goto yy764;
+			goto yy758;
 		} else {
-			if (yych == '/') goto yy760;
-			goto yy750;
+			if (yych == '/') goto yy774;
+			goto yy764;
 		}
 	} else {
 		if (yych <= '=') {
-			if (yych == '<') goto yy750;
-			goto yy744;
+			if (yych == '<') goto yy764;
+			goto yy758;
 		} else {
-			if (yych <= 'z') goto yy750;
-			if (yych <= '}') goto yy744;
-			goto yy750;
+			if (yych <= 'z') goto yy764;
+			if (yych <= '}') goto yy758;
+			goto yy764;
 		}
 	}
-yy752:
-	++YYCURSOR;
-#line 321 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto string; }
-#line 5218 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy754:
-	yyaccept = 0;
-	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych == 'e') goto yy762;
-	if (yych == 'r') goto yy763;
-	goto yy751;
-yy755:
-	yyaccept = 1;
-	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych <= '/') {
-		if (yych <= '"') {
-			if (yych == '!') goto yy750;
-		} else {
-			if (yych == '*') goto yy764;
-			if (yych <= '.') goto yy750;
-			goto yy766;
-		}
-	} else {
-		if (yych <= '<') {
-			if (yych != ';') goto yy750;
-		} else {
-			if (yych <= '=') goto yy756;
-			if (yych <= 'z') goto yy750;
-			if (yych >= '~') goto yy750;
-		}
-	}
-yy756:
-#line 328 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto normal_token; }
-#line 5248 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy757:
-	yyaccept = 1;
-	yych = *(YYMARKER = ++YYCURSOR);
-	goto yy767;
-yy758:
-	++YYCURSOR;
-#line 323 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto normal_token; }
-#line 5257 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy760:
-	++YYCURSOR;
-	if (YYLIMIT <= YYCURSOR) YYFILL(1);
-	yych = *YYCURSOR;
-	if (yych <= '/') {
-		if (yych <= '"') {
-			if (yych == '!') goto yy750;
-		} else {
-			if (yych == '*') goto yy761;
-			if (yych <= '.') goto yy750;
-		}
-	} else {
-		if (yych <= '<') {
-			if (yych != ';') goto yy750;
-		} else {
-			if (yych <= '=') goto yy761;
-			if (yych <= 'z') goto yy750;
-			if (yych >= '~') goto yy750;
-		}
-	}
-yy761:
-	YYCURSOR = YYMARKER;
-	if (yyaccept == 0) {
-		goto yy744;
-	} else {
-		goto yy756;
-	}
-yy762:
-	yyaccept = 0;
-	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych == 'n') goto yy770;
-	goto yy751;
-yy763:
-	yyaccept = 0;
-	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych == 'e') goto yy771;
-	goto yy751;
-yy764:
-	++YYCURSOR;
-#line 314 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto comment; }
-#line 5299 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 yy766:
 	++YYCURSOR;
+#line 323 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto string; }
+#line 5294 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy768:
+	yyaccept = 0;
+	yych = *(YYMARKER = ++YYCURSOR);
+	if (yych == 'e') goto yy776;
+	if (yych == 'r') goto yy777;
+	goto yy765;
+yy769:
+	yyaccept = 1;
+	yych = *(YYMARKER = ++YYCURSOR);
+	if (yych <= '/') {
+		if (yych <= '"') {
+			if (yych == '!') goto yy764;
+		} else {
+			if (yych == '*') goto yy778;
+			if (yych <= '.') goto yy764;
+			goto yy780;
+		}
+	} else {
+		if (yych <= '<') {
+			if (yych != ';') goto yy764;
+		} else {
+			if (yych <= '=') goto yy770;
+			if (yych <= 'z') goto yy764;
+			if (yych >= '~') goto yy764;
+		}
+	}
+yy770:
+#line 330 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto normal_token; }
+#line 5324 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy771:
+	yyaccept = 1;
+	yych = *(YYMARKER = ++YYCURSOR);
+	goto yy781;
+yy772:
+	++YYCURSOR;
+#line 325 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto normal_token; }
+#line 5333 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy774:
+	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
-yy767:
-	if (yych != '\n') goto yy766;
-	++YYCURSOR;
-#line 315 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto newline; }
-#line 5309 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy770:
-	yyaccept = 0;
-	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych == 'd') goto yy772;
-	goto yy751;
-yy771:
-	yyaccept = 0;
-	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych == 'g') goto yy773;
-	goto yy751;
-yy772:
-	yyaccept = 0;
-	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych == 'r') goto yy763;
-	goto yy751;
-yy773:
-	yyaccept = 0;
-	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych != 'i') goto yy751;
-	yyaccept = 0;
-	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych != 'o') goto yy751;
-	yyaccept = 0;
-	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych != 'n') goto yy751;
+	if (yych <= '/') {
+		if (yych <= '"') {
+			if (yych == '!') goto yy764;
+		} else {
+			if (yych == '*') goto yy775;
+			if (yych <= '.') goto yy764;
+		}
+	} else {
+		if (yych <= '<') {
+			if (yych != ';') goto yy764;
+		} else {
+			if (yych <= '=') goto yy775;
+			if (yych <= 'z') goto yy764;
+			if (yych >= '~') goto yy764;
+		}
+	}
+yy775:
+	YYCURSOR = YYMARKER;
+	if (yyaccept == 0) {
+		goto yy758;
+	} else {
+		goto yy770;
+	}
 yy776:
+	yyaccept = 0;
+	yych = *(YYMARKER = ++YYCURSOR);
+	if (yych == 'n') goto yy784;
+	goto yy765;
+yy777:
+	yyaccept = 0;
+	yych = *(YYMARKER = ++YYCURSOR);
+	if (yych == 'e') goto yy785;
+	goto yy765;
+yy778:
+	++YYCURSOR;
+#line 316 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto comment; }
+#line 5375 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy780:
+	++YYCURSOR;
+	if (YYLIMIT <= YYCURSOR) YYFILL(1);
+	yych = *YYCURSOR;
+yy781:
+	if (yych != '\n') goto yy780;
+	++YYCURSOR;
+#line 317 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto newline; }
+#line 5385 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy784:
+	yyaccept = 0;
+	yych = *(YYMARKER = ++YYCURSOR);
+	if (yych == 'd') goto yy786;
+	goto yy765;
+yy785:
+	yyaccept = 0;
+	yych = *(YYMARKER = ++YYCURSOR);
+	if (yych == 'g') goto yy787;
+	goto yy765;
+yy786:
+	yyaccept = 0;
+	yych = *(YYMARKER = ++YYCURSOR);
+	if (yych == 'r') goto yy777;
+	goto yy765;
+yy787:
+	yyaccept = 0;
+	yych = *(YYMARKER = ++YYCURSOR);
+	if (yych != 'i') goto yy765;
+	yyaccept = 0;
+	yych = *(YYMARKER = ++YYCURSOR);
+	if (yych != 'o') goto yy765;
+	yyaccept = 0;
+	yych = *(YYMARKER = ++YYCURSOR);
+	if (yych != 'n') goto yy765;
+yy790:
 	yyaccept = 0;
 	YYMARKER = ++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
 	if (yych <= '/') {
 		if (yych <= ' ') {
-			if (yych == '\n') goto yy780;
+			if (yych == '\n') goto yy794;
 		} else {
-			if (yych == '"') goto yy778;
-			if (yych <= '.') goto yy776;
-			goto yy782;
+			if (yych == '"') goto yy792;
+			if (yych <= '.') goto yy790;
+			goto yy796;
 		}
 	} else {
 		if (yych <= '<') {
-			if (yych != ';') goto yy776;
+			if (yych != ';') goto yy790;
 		} else {
-			if (yych <= '=') goto yy778;
-			if (yych <= 'z') goto yy776;
-			if (yych >= '~') goto yy776;
+			if (yych <= '=') goto yy792;
+			if (yych <= 'z') goto yy790;
+			if (yych >= '~') goto yy790;
 		}
 	}
-yy778:
+yy792:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
-	if (yych != '\n') goto yy778;
-yy780:
+	if (yych != '\n') goto yy792;
+yy794:
 	++YYCURSOR;
-#line 317 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 319 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto newline; }
-#line 5366 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy782:
+#line 5442 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy796:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
 	if (yych <= '.') {
 		if (yych <= '!') {
-			if (yych == '\n') goto yy780;
-			if (yych <= ' ') goto yy778;
-			goto yy776;
+			if (yych == '\n') goto yy794;
+			if (yych <= ' ') goto yy792;
+			goto yy790;
 		} else {
-			if (yych <= '"') goto yy778;
-			if (yych == '*') goto yy778;
-			goto yy776;
+			if (yych <= '"') goto yy792;
+			if (yych == '*') goto yy792;
+			goto yy790;
 		}
 	} else {
 		if (yych <= '<') {
-			if (yych <= '/') goto yy778;
-			if (yych == ';') goto yy778;
-			goto yy776;
+			if (yych <= '/') goto yy792;
+			if (yych == ';') goto yy792;
+			goto yy790;
 		} else {
-			if (yych <= '=') goto yy778;
-			if (yych <= 'z') goto yy776;
-			if (yych <= '}') goto yy778;
-			goto yy776;
+			if (yych <= '=') goto yy792;
+			if (yych <= 'z') goto yy790;
+			if (yych <= '}') goto yy792;
+			goto yy790;
 		}
 	}
 }
-#line 329 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 331 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 
 	}
 	else		// A modified Hexen scanner for DECORATE.
 	{
 	
-#line 5400 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 5476 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 {
 	YYCTYPE yych;
 	unsigned int yyaccept = 0;
@@ -5405,391 +5481,391 @@ yy782:
 	if (yych <= '9') {
 		if (yych <= '%') {
 			if (yych <= ' ') {
-				if (yych == '\n') goto yy788;
+				if (yych == '\n') goto yy802;
 			} else {
-				if (yych <= '!') goto yy790;
-				if (yych <= '"') goto yy792;
-				if (yych <= '#') goto yy794;
-				goto yy790;
+				if (yych <= '!') goto yy804;
+				if (yych <= '"') goto yy806;
+				if (yych <= '#') goto yy808;
+				goto yy804;
 			}
 		} else {
 			if (yych <= ',') {
-				if (yych <= '&') goto yy795;
-				if (yych <= '\'') goto yy796;
-				goto yy790;
+				if (yych <= '&') goto yy809;
+				if (yych <= '\'') goto yy810;
+				goto yy804;
 			} else {
-				if (yych <= '-') goto yy799;
-				if (yych <= '.') goto yy801;
-				if (yych <= '/') goto yy802;
-				goto yy803;
+				if (yych <= '-') goto yy813;
+				if (yych <= '.') goto yy815;
+				if (yych <= '/') goto yy816;
+				goto yy817;
 			}
 		}
 	} else {
 		if (yych <= 'Z') {
 			if (yych <= '<') {
-				if (yych <= ':') goto yy805;
-				if (yych <= ';') goto yy790;
-				goto yy806;
+				if (yych <= ':') goto yy819;
+				if (yych <= ';') goto yy804;
+				goto yy820;
 			} else {
-				if (yych <= '=') goto yy807;
-				if (yych <= '>') goto yy808;
-				if (yych <= '@') goto yy790;
-				goto yy796;
+				if (yych <= '=') goto yy821;
+				if (yych <= '>') goto yy822;
+				if (yych <= '@') goto yy804;
+				goto yy810;
 			}
 		} else {
 			if (yych <= 'z') {
-				if (yych == '_') goto yy796;
-				if (yych <= '`') goto yy790;
-				goto yy796;
+				if (yych == '_') goto yy810;
+				if (yych <= '`') goto yy804;
+				goto yy810;
 			} else {
-				if (yych == '|') goto yy809;
-				if (yych <= '~') goto yy790;
-				goto yy796;
+				if (yych == '|') goto yy823;
+				if (yych <= '~') goto yy804;
+				goto yy810;
 			}
 		}
 	}
-yy785:
+yy799:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
-	if (yych == '\n') goto yy787;
-	if (yych <= ' ') goto yy785;
-yy787:
-#line 339 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto std1; }
-#line 5461 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy788:
-	++YYCURSOR;
-#line 340 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto newline; }
-#line 5466 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy790:
-	++YYCURSOR;
-yy791:
-#line 352 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto normal_token; }
-#line 5472 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy792:
-	++YYCURSOR;
+	if (yych == '\n') goto yy801;
+	if (yych <= ' ') goto yy799;
+yy801:
 #line 341 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto std1; }
+#line 5537 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy802:
+	++YYCURSOR;
+#line 342 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto newline; }
+#line 5542 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy804:
+	++YYCURSOR;
+yy805:
+#line 354 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto normal_token; }
+#line 5548 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy806:
+	++YYCURSOR;
+#line 343 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto string; }
-#line 5477 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy794:
+#line 5553 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy808:
 	yyaccept = 0;
 	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych == 'e') goto yy810;
-	if (yych == 'r') goto yy812;
-	goto yy791;
-yy795:
+	if (yych == 'e') goto yy824;
+	if (yych == 'r') goto yy826;
+	goto yy805;
+yy809:
 	yych = *++YYCURSOR;
-	if (yych == '&') goto yy813;
-	goto yy791;
-yy796:
+	if (yych == '&') goto yy827;
+	goto yy805;
+yy810:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
-yy797:
+yy811:
 	if (yych <= 'Z') {
 		if (yych <= '/') {
-			if (yych == '\'') goto yy796;
+			if (yych == '\'') goto yy810;
 		} else {
-			if (yych <= '9') goto yy796;
-			if (yych >= 'A') goto yy796;
+			if (yych <= '9') goto yy810;
+			if (yych >= 'A') goto yy810;
 		}
 	} else {
 		if (yych <= '`') {
-			if (yych == '_') goto yy796;
+			if (yych == '_') goto yy810;
 		} else {
-			if (yych <= 'z') goto yy796;
-			if (yych >= 0x7F) goto yy796;
+			if (yych <= 'z') goto yy810;
+			if (yych >= 0x7F) goto yy810;
 		}
 	}
-yy798:
-#line 353 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+yy812:
+#line 355 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto normal_token; }
-#line 5511 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy799:
+#line 5587 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy813:
 	++YYCURSOR;
-#line 343 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 345 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto negative_check; }
-#line 5516 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy801:
+#line 5592 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy815:
 	yych = *++YYCURSOR;
-	if (yych <= '/') goto yy791;
-	if (yych <= '9') goto yy815;
-	goto yy791;
-yy802:
+	if (yych <= '/') goto yy805;
+	if (yych <= '9') goto yy829;
+	goto yy805;
+yy816:
 	yyaccept = 0;
 	yych = *(YYMARKER = ++YYCURSOR);
-	if (yych == '*') goto yy818;
-	if (yych == '/') goto yy820;
-	goto yy791;
-yy803:
+	if (yych == '*') goto yy832;
+	if (yych == '/') goto yy834;
+	goto yy805;
+yy817:
 	++YYCURSOR;
 	if ((YYLIMIT - YYCURSOR) < 3) YYFILL(3);
 	yych = *YYCURSOR;
 	if (yych <= 'E') {
 		if (yych <= '.') {
-			if (yych == '\'') goto yy796;
-			if (yych <= '-') goto yy798;
-			goto yy815;
+			if (yych == '\'') goto yy810;
+			if (yych <= '-') goto yy812;
+			goto yy829;
 		} else {
 			if (yych <= '9') {
-				if (yych <= '/') goto yy798;
-				goto yy803;
+				if (yych <= '/') goto yy812;
+				goto yy817;
 			} else {
-				if (yych <= '@') goto yy798;
-				if (yych <= 'D') goto yy796;
-				goto yy822;
+				if (yych <= '@') goto yy812;
+				if (yych <= 'D') goto yy810;
+				goto yy836;
 			}
 		}
 	} else {
 		if (yych <= '`') {
-			if (yych <= 'Z') goto yy796;
-			if (yych == '_') goto yy796;
-			goto yy798;
+			if (yych <= 'Z') goto yy810;
+			if (yych == '_') goto yy810;
+			goto yy812;
 		} else {
 			if (yych <= 'e') {
-				if (yych <= 'd') goto yy796;
-				goto yy822;
+				if (yych <= 'd') goto yy810;
+				goto yy836;
 			} else {
-				if (yych <= 'z') goto yy796;
-				if (yych <= '~') goto yy798;
-				goto yy796;
+				if (yych <= 'z') goto yy810;
+				if (yych <= '~') goto yy812;
+				goto yy810;
 			}
 		}
 	}
-yy805:
+yy819:
 	yych = *++YYCURSOR;
-	if (yych == ':') goto yy823;
-	goto yy791;
-yy806:
+	if (yych == ':') goto yy837;
+	goto yy805;
+yy820:
 	yych = *++YYCURSOR;
-	if (yych == '<') goto yy825;
-	goto yy791;
-yy807:
+	if (yych == '<') goto yy839;
+	goto yy805;
+yy821:
 	yych = *++YYCURSOR;
-	if (yych == '=') goto yy827;
-	goto yy791;
-yy808:
+	if (yych == '=') goto yy841;
+	goto yy805;
+yy822:
 	yych = *++YYCURSOR;
-	if (yych == '>') goto yy829;
-	goto yy791;
-yy809:
+	if (yych == '>') goto yy843;
+	goto yy805;
+yy823:
 	yych = *++YYCURSOR;
-	if (yych == '|') goto yy831;
-	goto yy791;
-yy810:
+	if (yych == '|') goto yy845;
+	goto yy805;
+yy824:
 	yych = *++YYCURSOR;
-	if (yych == 'n') goto yy833;
-yy811:
+	if (yych == 'n') goto yy847;
+yy825:
 	YYCURSOR = YYMARKER;
 	if (yyaccept <= 1) {
 		if (yyaccept == 0) {
-			goto yy791;
+			goto yy805;
 		} else {
-			goto yy817;
+			goto yy831;
 		}
 	} else {
-		goto yy798;
+		goto yy812;
 	}
-yy812:
+yy826:
 	yych = *++YYCURSOR;
-	if (yych == 'e') goto yy834;
-	goto yy811;
-yy813:
+	if (yych == 'e') goto yy848;
+	goto yy825;
+yy827:
 	++YYCURSOR;
-#line 347 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 349 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto normal_token; }
-#line 5605 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy815:
+#line 5681 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy829:
 	yyaccept = 1;
 	YYMARKER = ++YYCURSOR;
 	if ((YYLIMIT - YYCURSOR) < 3) YYFILL(3);
 	yych = *YYCURSOR;
 	if (yych <= 'E') {
-		if (yych <= '/') goto yy817;
-		if (yych <= '9') goto yy815;
-		if (yych >= 'E') goto yy835;
+		if (yych <= '/') goto yy831;
+		if (yych <= '9') goto yy829;
+		if (yych >= 'E') goto yy849;
 	} else {
 		if (yych <= 'd') {
-			if (yych <= 'F') goto yy836;
+			if (yych <= 'F') goto yy850;
 		} else {
-			if (yych <= 'e') goto yy835;
-			if (yych <= 'f') goto yy836;
+			if (yych <= 'e') goto yy849;
+			if (yych <= 'f') goto yy850;
 		}
 	}
-yy817:
-#line 344 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+yy831:
+#line 346 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto normal_token; }
-#line 5626 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy818:
+#line 5702 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy832:
 	++YYCURSOR;
-#line 334 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 336 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto comment; }
-#line 5631 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy820:
+#line 5707 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy834:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
-	if (yych == '\n') goto yy838;
-	goto yy820;
-yy822:
+	if (yych == '\n') goto yy852;
+	goto yy834;
+yy836:
 	yyaccept = 2;
 	yych = *(YYMARKER = ++YYCURSOR);
 	if (yych <= ',') {
-		if (yych == '+') goto yy840;
-		goto yy797;
+		if (yych == '+') goto yy854;
+		goto yy811;
 	} else {
-		if (yych <= '-') goto yy840;
-		if (yych <= '/') goto yy797;
-		if (yych <= '9') goto yy841;
-		goto yy797;
+		if (yych <= '-') goto yy854;
+		if (yych <= '/') goto yy811;
+		if (yych <= '9') goto yy855;
+		goto yy811;
 	}
-yy823:
-	++YYCURSOR;
-#line 346 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto normal_token; }
-#line 5654 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy825:
-	++YYCURSOR;
-#line 350 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto normal_token; }
-#line 5659 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy827:
+yy837:
 	++YYCURSOR;
 #line 348 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto normal_token; }
-#line 5664 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy829:
+#line 5730 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy839:
+	++YYCURSOR;
+#line 352 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto normal_token; }
+#line 5735 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy841:
+	++YYCURSOR;
+#line 350 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto normal_token; }
+#line 5740 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy843:
+	++YYCURSOR;
+#line 353 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+	{ goto normal_token; }
+#line 5745 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy845:
 	++YYCURSOR;
 #line 351 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto normal_token; }
-#line 5669 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy831:
-	++YYCURSOR;
-#line 349 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
-	{ goto normal_token; }
-#line 5674 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy833:
+#line 5750 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy847:
 	yych = *++YYCURSOR;
-	if (yych == 'd') goto yy843;
-	goto yy811;
-yy834:
+	if (yych == 'd') goto yy857;
+	goto yy825;
+yy848:
 	yych = *++YYCURSOR;
-	if (yych == 'g') goto yy844;
-	goto yy811;
-yy835:
+	if (yych == 'g') goto yy858;
+	goto yy825;
+yy849:
 	yych = *++YYCURSOR;
 	if (yych <= ',') {
-		if (yych == '+') goto yy840;
-		goto yy811;
+		if (yych == '+') goto yy854;
+		goto yy825;
 	} else {
-		if (yych <= '-') goto yy840;
-		if (yych <= '/') goto yy811;
-		if (yych <= '9') goto yy845;
-		goto yy811;
+		if (yych <= '-') goto yy854;
+		if (yych <= '/') goto yy825;
+		if (yych <= '9') goto yy859;
+		goto yy825;
 	}
-yy836:
+yy850:
 	++YYCURSOR;
-yy837:
-#line 345 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+yy851:
+#line 347 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto normal_token; }
-#line 5699 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy838:
+#line 5775 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy852:
 	++YYCURSOR;
-#line 335 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 337 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto newline; }
-#line 5704 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy840:
+#line 5780 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy854:
 	yych = *++YYCURSOR;
-	if (yych <= '/') goto yy811;
-	if (yych <= '9') goto yy845;
-	goto yy811;
-yy841:
+	if (yych <= '/') goto yy825;
+	if (yych <= '9') goto yy859;
+	goto yy825;
+yy855:
 	++YYCURSOR;
 	if ((YYLIMIT - YYCURSOR) < 2) YYFILL(2);
 	yych = *YYCURSOR;
 	if (yych <= 'Z') {
 		if (yych <= '9') {
-			if (yych == '\'') goto yy796;
-			if (yych <= '/') goto yy837;
-			goto yy841;
+			if (yych == '\'') goto yy810;
+			if (yych <= '/') goto yy851;
+			goto yy855;
 		} else {
-			if (yych <= '@') goto yy837;
-			if (yych == 'F') goto yy847;
-			goto yy796;
+			if (yych <= '@') goto yy851;
+			if (yych == 'F') goto yy861;
+			goto yy810;
 		}
 	} else {
 		if (yych <= 'e') {
-			if (yych == '_') goto yy796;
-			if (yych <= '`') goto yy837;
-			goto yy796;
+			if (yych == '_') goto yy810;
+			if (yych <= '`') goto yy851;
+			goto yy810;
 		} else {
-			if (yych <= 'f') goto yy847;
-			if (yych <= 'z') goto yy796;
-			if (yych <= '~') goto yy837;
-			goto yy796;
+			if (yych <= 'f') goto yy861;
+			if (yych <= 'z') goto yy810;
+			if (yych <= '~') goto yy851;
+			goto yy810;
 		}
 	}
-yy843:
+yy857:
 	yych = *++YYCURSOR;
-	if (yych == 'r') goto yy812;
-	goto yy811;
-yy844:
+	if (yych == 'r') goto yy826;
+	goto yy825;
+yy858:
 	yych = *++YYCURSOR;
-	if (yych == 'i') goto yy848;
-	goto yy811;
-yy845:
+	if (yych == 'i') goto yy862;
+	goto yy825;
+yy859:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
 	if (yych <= 'E') {
-		if (yych <= '/') goto yy837;
-		if (yych <= '9') goto yy845;
-		goto yy837;
+		if (yych <= '/') goto yy851;
+		if (yych <= '9') goto yy859;
+		goto yy851;
 	} else {
-		if (yych <= 'F') goto yy836;
-		if (yych == 'f') goto yy836;
-		goto yy837;
+		if (yych <= 'F') goto yy850;
+		if (yych == 'f') goto yy850;
+		goto yy851;
 	}
-yy847:
+yy861:
 	yych = *++YYCURSOR;
 	if (yych <= 'Z') {
 		if (yych <= '/') {
-			if (yych == '\'') goto yy796;
-			goto yy837;
+			if (yych == '\'') goto yy810;
+			goto yy851;
 		} else {
-			if (yych <= '9') goto yy796;
-			if (yych <= '@') goto yy837;
-			goto yy796;
+			if (yych <= '9') goto yy810;
+			if (yych <= '@') goto yy851;
+			goto yy810;
 		}
 	} else {
 		if (yych <= '`') {
-			if (yych == '_') goto yy796;
-			goto yy837;
+			if (yych == '_') goto yy810;
+			goto yy851;
 		} else {
-			if (yych <= 'z') goto yy796;
-			if (yych <= '~') goto yy837;
-			goto yy796;
+			if (yych <= 'z') goto yy810;
+			if (yych <= '~') goto yy851;
+			goto yy810;
 		}
 	}
-yy848:
+yy862:
 	yych = *++YYCURSOR;
-	if (yych != 'o') goto yy811;
+	if (yych != 'o') goto yy825;
 	yych = *++YYCURSOR;
-	if (yych != 'n') goto yy811;
-yy850:
+	if (yych != 'n') goto yy825;
+yy864:
 	++YYCURSOR;
 	if (YYLIMIT <= YYCURSOR) YYFILL(1);
 	yych = *YYCURSOR;
-	if (yych != '\n') goto yy850;
+	if (yych != '\n') goto yy864;
 	++YYCURSOR;
-#line 337 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 339 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto newline; }
-#line 5791 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 5867 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 }
-#line 356 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 358 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 
 	}
 
@@ -5817,21 +5893,21 @@ negative_check:
 
 comment:
 
-#line 5821 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 5897 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 {
 	YYCTYPE yych;
 	if ((YYLIMIT - YYCURSOR) < 2) YYFILL(2);
 	yych = *YYCURSOR;
-	if (yych == '\n') goto yy858;
-	if (yych == '*') goto yy860;
+	if (yych == '\n') goto yy872;
+	if (yych == '*') goto yy874;
 	++YYCURSOR;
-yy857:
-#line 405 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+yy871:
+#line 407 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{ goto comment; }
-#line 5832 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy858:
+#line 5908 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy872:
 	++YYCURSOR;
-#line 394 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 396 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{
 			if (YYCURSOR >= YYLIMIT)
 			{
@@ -5843,12 +5919,12 @@ yy858:
 			Crossed = true;
 			goto comment;
 		}
-#line 5847 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
-yy860:
+#line 5923 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+yy874:
 	yych = *++YYCURSOR;
-	if (yych != '/') goto yy857;
+	if (yych != '/') goto yy871;
 	++YYCURSOR;
-#line 384 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 386 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 	{
 			if (YYCURSOR >= YYLIMIT)
 			{
@@ -5858,9 +5934,9 @@ yy860:
 			}
 			goto std1;
 		}
-#line 5862 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
+#line 5938 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/build/src/sc_man_scanner.h"
 }
-#line 406 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
+#line 408 "D:/GitHub/QuestZDoom/Projects/Android/jni/gzdoom-g3.3mgw_mobile/src/common/engine/sc_man_scanner.re"
 
 
 newline:
