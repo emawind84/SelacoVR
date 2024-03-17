@@ -214,7 +214,7 @@ static bool CheckSkipGameBlock(FScanner &sc, bool yes = true)
 //
 //=============================================================================
 
-static bool CheckSkipOptionBlock(FScanner &sc)
+static bool CheckSkipOptionBlock(FScanner &sc, bool yes = true)
 {
 	bool filter = false;
 	sc.MustGetStringName("(");
@@ -268,10 +268,16 @@ static bool CheckSkipOptionBlock(FScanner &sc)
 				filter = true;
 			#endif
 		}
+		else if (sc.Compare("OpenXR"))
+		{
+			#ifdef USE_OPENXR
+				filter = true;
+			#endif
+		}
 	}
 	while (sc.CheckString(","));
 	sc.MustGetStringName(")");
-	if (!filter)
+	if (filter != yes)
 	{
 		SkipSubBlock(sc);
 		return !sc.CheckString("else");
@@ -1009,6 +1015,14 @@ static void ParseOptionMenuBody(FScanner &sc, DOptionMenuDescriptor *desc, int i
 		else if (sc.Compare("ifoption"))
 		{
 			if (!CheckSkipOptionBlock(sc))
+			{
+				// recursively parse sub-block
+				ParseOptionMenuBody(sc, desc, insertIndex);
+			}
+		}
+		else if (sc.Compare("ifnotoption"))
+		{
+			if (!CheckSkipOptionBlock(sc, false))
 			{
 				// recursively parse sub-block
 				ParseOptionMenuBody(sc, desc, insertIndex);
