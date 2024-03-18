@@ -1043,8 +1043,6 @@ void D_Display ()
 		twod->Begin(screen->GetWidth(), screen->GetHeight());
 		if (!hud_toggled)
 		{
-			static int saved_screenblocks = screenblocks;
-			if (gametic == 1) screenblocks = 10;
 			if (vrmode->IsMono())
 			{
 				V_DrawBlend(viewsec);
@@ -1086,7 +1084,6 @@ void D_Display ()
 				StatusBar->CallDraw (HUD_StatusBar, vp.TicFrac);
 				StatusBar->DrawTopStuff (HUD_StatusBar);
 			}
-			if (gametic == 1) screenblocks = saved_screenblocks;
 			//stb.Unclock();
 			//Printf("Stbar = %f\n", stb.TimeMS());
 		}
