@@ -3584,6 +3584,7 @@ static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allw
 		// Initialize the size of the 2D drawer so that an attempt to access it outside the draw code won't crash.
 		twod->Begin(screen->GetWidth(), screen->GetHeight());
 		twod->End();
+		twod->ClearScreen();
 		UpdateJoystickMenu(NULL);
 		UpdateVRModes();
 		Local_Job_Init();
