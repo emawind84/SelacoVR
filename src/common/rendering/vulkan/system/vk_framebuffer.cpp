@@ -730,7 +730,10 @@ void VulkanFrameBuffer::PrequeueMaterial(FMaterial *mat, int translation)
 
 // @Cockatrice - Cache a texture material, intended for use outside of the main thread
 bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI) {
-	if (!tex || !tex->isValid() || tex->GetID().GetIndex() == 0) return false;
+	if (!tex || !tex->isValid() || tex->GetID().GetIndex() == 0) {
+
+		return false;
+	}
 
 	QueuedPatch qp = {
 		tex, translation, scaleFlags, makeSPI
@@ -745,7 +748,9 @@ bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int tr
 // @Cockatrice - Submit each texture in the material to the background loader
 // Call from main thread only
 bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI, bool secondary) {
-	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return false;
+	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) {
+		return false;
+	}
 
 	MaterialLayerInfo* layer;
 
@@ -803,6 +808,7 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 		}
 		else {
 			systex->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
+			Printf(TEXTCOLOR_RED"Error submitting texture [%s] to background loader.", rLump->getName());
 			return false;
 		}
 	}
@@ -852,6 +858,7 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 			}
 			else {
 				syslayer->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
+				Printf(TEXTCOLOR_RED"Error submitting texture [%s] to background loader.", rLump->getName());
 			}
 		}
 	}

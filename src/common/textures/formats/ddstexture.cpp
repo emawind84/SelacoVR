@@ -55,6 +55,8 @@
 #include "imagehelpers.h"
 #include "image.h"
 #include "engineerrors.h"
+#include "texturemanager.h"
+#include "printf.h"
 
 // Since we want this to compile under Linux too, we need to define this
 // stuff ourselves instead of including a DirectX header.
@@ -273,7 +275,7 @@ struct DDSURFACEDESC2
 	union
 	{
 		int32_t		Pitch;
-		uint32_t		LinearSize;
+		uint32_t	LinearSize;
 	};
 	uint32_t			Depth;
 	uint32_t			MipMapCount;
@@ -313,13 +315,74 @@ class FDDSTexture : public FImageSource
 	};
 public:
 	FDDSTexture (FileReader &lump, int lumpnum, void *surfdesc, void *dx10header);
+	FDDSTexture (int lumpnum);
 
 	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
 	int ReadCompressedPixels(FileReader* reader, unsigned char** data, size_t& size, size_t& unitSize, int& mipLevels) override;
 
 	bool IsGPUOnly() override { return true; }
 
-	int32_t vkFormat, glFormat;
+	//int32_t vkFormat, glFormat;
+
+	bool SerializeForTextureDef(FILE* fp, FString& name, int useType, FGameTexture* gameTex)  override {
+		const char* fullName = fileSystem.GetFileFullName(SourceLump);
+		fprintf(fp, "%d:%s:%s:%d:%dx%d:%dx%d:%d:%d:%d:%d:", 2, name.GetChars(), fullName != NULL ? fullName : "-", useType, Width, Height, LeftOffset, TopOffset, LinearSize, storedMips,  (int)bMasked, (int)bTranslucent);
+
+		// Signal that the next line is not SPI
+		fprintf(fp, "0\n");
+
+		return true;
+	}
+
+
+	int DeSerializeFromTextureDef(FileReader& fr) override {
+		int fileType = 0, useType = 0;
+		int masked = 0, translucent = 0, numMips = 0;
+		int numSPI = 0;
+
+		char id[9], path[1024];
+		id[0] = '\0';
+		path[0] = '\0';
+
+		char str[1800];
+
+		if (fr.Gets(str, 1800)) {
+
+			int count = sscanf(str,
+				"%d:%8[^:]:%1023[^:]:%d:%dx%d:%dx%d:%d:%d:%d:%d",
+				&fileType, id, path, &useType, &Width, &Height, &LeftOffset, &TopOffset, &LinearSize, &numMips, &masked, &translucent
+			);
+
+			bMasked = masked;
+			bTranslucent = translucent;
+			storedMips = (uint8_t)numMips;
+
+			if (count != 12) {
+				Printf("Failed to parse DDS Texture: %s\n", id);
+				return 0;
+			}
+
+			return 2;
+		}
+
+		return 0;
+	}
+
+
+	bool DeSerializeExtraDataFromTextureDef(FileReader& fr, FGameTexture* gameTex) override {
+		// Assign SPI if possible
+		if (gameTex != nullptr) {
+			SpritePositioningInfo spi[2];
+			gameTex->GenerateEmptySpriteData(spi, Width, Height);
+			SpritePositioningInfo* spir = gameTex->HasSpritePositioning() ? (SpritePositioningInfo*)&gameTex->GetSpritePositioning(0) : (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
+
+			// Copy spi into correct location
+			memcpy(spir, spi, sizeof(SpritePositioningInfo) * 2);
+			gameTex->SetSpriteRect(spir, true);
+		}
+
+		return true;
+	}
 
 protected:
 	uint32_t Format;
@@ -343,6 +406,19 @@ protected:
 
 	friend class FTexture;
 };
+
+
+
+FImageSource* DDSImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo = nullptr) {
+	auto img = new FDDSTexture(lumpnum);
+	int res = img->DeSerializeFromTextureDef(fr);
+	if (res == 0) {
+		delete img;
+		return nullptr;
+	}
+	if (res > 1 && hasExtraInfo != nullptr) *hasExtraInfo = true;
+	return img;
+}
 
 
 //==========================================================================
@@ -494,8 +570,8 @@ FDDSTexture::FDDSTexture (FileReader &lump, int lumpnum, void *vsurfdesc, void* 
 	Width = uint16_t(surf->Width);
 	Height = uint16_t(surf->Height);
 
-	vkFormat = 146;		// VK_FORMAT_BC7_SRGB_BLOCK;
-	glFormat = 0x8E8C;	// GL_COMPRESSED_RGBA_BPTC_UNORM
+	//vkFormat = 146;		// VK_FORMAT_BC7_SRGB_BLOCK;
+	//glFormat = 0x8E8C;	// GL_COMPRESSED_RGBA_BPTC_UNORM
 
 	LinearSize = surf->LinearSize;
 	Format = ID_DX10;
@@ -507,6 +583,25 @@ FDDSTexture::FDDSTexture (FileReader &lump, int lumpnum, void *vsurfdesc, void* 
 	bTranslucent = surf->Offsets[2] == 0;	
 	storedMips = surf->MipMapCount;
 	SetOffsets(surf->Offsets[0], surf->Offsets[1]);
+}
+
+
+FDDSTexture::FDDSTexture(int lumpnum) : FImageSource(lumpnum)
+{
+	
+	bMasked = false;
+	Width = uint16_t(0);
+	Height = uint16_t(0);
+
+	Format = ID_DX10;
+	Pitch = 0;
+
+	// This is a bit backwards, but this value should be set by Offsetter. 
+	// We want translucency by default, and most exporters will set this value to zero
+	// So 0 = translucent  1 = not translucent
+	bTranslucent = 0;
+	storedMips = 0;
+	SetOffsets(0,0);
 }
 
 
