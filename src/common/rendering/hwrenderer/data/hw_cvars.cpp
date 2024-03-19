@@ -155,4 +155,6 @@ CUSTOM_CVAR (Int, gl_storage_buffer_type, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | 
 	Printf("You must restart " GAMENAME " for this change to take effect.\n");
 }
 
-CVARD(Bool, gl_no_persistent_buffer, false, 0, "Only used to test mobile buffer")
+CVARD(Bool, gl_no_persistent_buffer, false, 0, "Disable persistent buffer storage support")
+CVARD(Bool, gl_no_clip_planes, false, 0, "Disable clip planes support")
+CVARD(Bool, gl_no_ssbo, false, 0, "Disable SSBO support")
