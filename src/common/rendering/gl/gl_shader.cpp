@@ -401,6 +401,8 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 
 #ifdef __MOBILE__
 	vp_comb << "#version 310 es\n";
+	if (gl.flags & ~RFL_NO_CLIP_PLANES)
+		vp_comb << "#extension GL_EXT_clip_cull_distance : enable\n";
 #else
 	if ((gl.flags & RFL_SHADER_STORAGE_BUFFER) && screen->allowSSBO())
 		vp_comb << "#version 430 core\n";

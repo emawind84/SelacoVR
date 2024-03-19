@@ -140,9 +140,9 @@ void gl_LoadExtensions()
 
 #ifdef __MOBILE__
 	gl_version = 3.31;
+	gl.flags |= RFL_NO_CLIP_PLANES;
 	gl.flags |= RFL_INVALIDATE_BUFFER;
 	gl.flags |= RFL_SHADER_STORAGE_BUFFER;
-	if (!CheckExtension("GL_EXT_clip_cull_distance")) gl.flags |= RFL_NO_CLIP_PLANES;
 #endif
 	// Don't even start if it's lower than 2.0 or no framebuffers are available (The framebuffer extension is needed for glGenerateMipmapsEXT!)
 	if (gl_version < 3.3f)
@@ -160,6 +160,7 @@ void gl_LoadExtensions()
 	// first test for optional features
 	if (CheckExtension("GL_ARB_texture_compression")) gl.flags |= RFL_TEXTURE_COMPRESSION;
 	if (CheckExtension("GL_EXT_texture_compression_s3tc")) gl.flags |= RFL_TEXTURE_COMPRESSION_S3TC;
+	if (CheckExtension("GL_EXT_clip_cull_distance")) gl.flags &= ~RFL_NO_CLIP_PLANES;
 
 	if (gl_version < 4.f)
 	{
