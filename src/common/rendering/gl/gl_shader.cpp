@@ -408,6 +408,8 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		vp_comb << "#version 330 core\n";
 #endif
 	vp_comb << "#define SUPPORTS_SHADOWMAPS\n";
+	if (gl.flags & RFL_NO_CLIP_PLANES)
+		vp_comb << "#define NO_CLIPDISTANCE_SUPPORT\n";
 
 	bool lightbuffertype = screen->mLights->GetBufferType();
 	if (!lightbuffertype)
