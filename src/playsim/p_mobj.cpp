@@ -2009,7 +2009,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 			else if ((mo->flags2 & (MF2_SLIDE|MF2_BLASTED) || bForceSlide) && !(mo->flags&MF_MISSILE))
 			{	// try to slide along it
 				if (BlockingMobj == NULL)
-				{ // slide against wall\
+				{ 	// slide against wall
 					// @Cocaktrice - This little water jump is supremely annoying and not controllable by script at all
 					// So let's turn it off and replicate it in ZScript if we want the same behaviour
 					/*if (BlockingLine != NULL &&
