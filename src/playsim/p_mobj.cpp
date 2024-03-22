@@ -101,6 +101,7 @@
 #include "fragglescript/t_fs.h"
 #include "shadowinlines.h"
 #include "d_net.h"
+#include "model.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -391,7 +392,8 @@ void AActor::Serialize(FSerializer &arc)
 		A("lightlevel", LightLevel)
 		A("userlights", UserLights)
 		A("WorldOffset", WorldOffset)
-		("modelData", modelData);
+		("modelData", modelData)
+		A("LandingSpeed", LandingSpeed);
 
 		SerializeTerrain(arc, "floorterrain", floorterrain, &def->floorterrain);
 		SerializeArgs(arc, "args", args, def->args, special);
@@ -1386,18 +1388,57 @@ bool AActor::Massacre ()
 //
 //----------------------------------------------------------------------------
 
+void SerializeModelID(FSerializer &arc, const char *key, int &id)
+{	// TODO: make it a proper serializable type (FModelID) instead of an int
+	if(arc.isWriting())
+	{
+		if(id >= 0)
+		{
+			arc(key, Models[id]->mFilePath);
+		}
+	}
+	else
+	{
+		if(arc.HasKey(key))
+		{
+			std::pair<FString, FString> modelFile;
+			arc(key, modelFile);
+
+			id = FindModel(modelFile.first.GetChars(), modelFile.second.GetChars(), true);
+		}
+		else
+		{
+			id = -1;
+		}
+	}
+}
+
 FSerializer &Serialize(FSerializer &arc, const char *key, ModelOverride &mo, ModelOverride *def)
 {
 	arc.BeginObject(key);
-	arc("modelID", mo.modelID);
+	SerializeModelID(arc, "model", mo.modelID);
 	arc("surfaceSkinIDs", mo.surfaceSkinIDs);
 	arc.EndObject();
 	return arc;
 }
 
+FSerializer &Serialize(FSerializer &arc, const char *key, AnimModelOverride &amo, AnimModelOverride *def)
+{
+	int ok = arc.BeginObject(key);
+	if(arc.isReading() && !ok)
+	{
+		amo.id = -1;
+	}
+	else if(ok)
+	{
+		SerializeModelID(arc, "model", amo.id);
+		arc.EndObject();
+	}
+	return arc;
+}
+
 FSerializer &Serialize(FSerializer &arc, const char *key, struct AnimOverride &ao, struct AnimOverride *def)
 {
-	//TODO
 	arc.BeginObject(key);
 	arc("firstFrame", ao.firstFrame);
 	arc("lastFrame", ao.lastFrame);
@@ -2584,11 +2625,9 @@ static void P_ZMovement (AActor *mo, double oldfloorz)
 			mo->SetZ(mo->floorz);
 			if (mo->Vel.Z < 0)
 			{
-				const double minvel = -8;	// landing speed from a jump with normal gravity
-
 				// Spawn splashes, etc.
 				P_HitFloor (mo);
-				if (mo->DamageType == NAME_Ice && mo->Vel.Z < minvel)
+				if (mo->DamageType == NAME_Ice && mo->Vel.Z < mo->LandingSpeed)
 				{
 					mo->tics = 1;
 					mo->Vel.Zero();
@@ -2601,11 +2640,11 @@ static void P_ZMovement (AActor *mo, double oldfloorz)
 				}
 				if (mo->player)
 				{
-					if (mo->player->jumpTics < 0 || mo->Vel.Z < minvel)
+					if (mo->player->jumpTics < 0 || mo->Vel.Z < mo->LandingSpeed)
 					{ // delay any jumping for a short while
 						mo->player->jumpTics = 7;
 					}
-					if (mo->Vel.Z < minvel && !(mo->flags & MF_NOGRAVITY))
+					if (mo->Vel.Z < mo->LandingSpeed && !(mo->flags & MF_NOGRAVITY))
 					{
 						// Squat down.
 						// Decrease viewheight for a moment after hitting the ground (hard),
