@@ -118,6 +118,7 @@
 #include "startscreen.h"
 #include "shiftstate.h"
 #include "hw_vrmodes.h"
+#include "profiledef.h"
 
 #include <QzDoom/VrCommon.h>
 
@@ -161,6 +162,7 @@ void I_ShutdownInput();
 void SetConsoleNotifyBuffer();
 void I_UpdateDiscordPresence(bool SendPresence, const char* curstatus, const char* appid, const char* steamappid);
 bool M_SetSpecialMenu(FName& menu, int param);	// game specific checks
+const char* M_GetActiveProfile();
 
 const FIWADInfo *D_FindIWAD(TArray<FString> &wadfiles, const char *iwad, const char *basewad);
 
@@ -1843,6 +1845,37 @@ static void GetCmdLineFiles(std::vector<std::string>& wadfiles)
 	}
 }
 
+static void ParseCommandLineFile()
+{
+	const char *profile = M_GetActiveProfile();
+	auto *profileInfo = profileManager.GetProfileInfo(profile);
+	FString profilePath;
+	profilePath.Format("%scommandline.txt", progdir.GetChars());
+	if (profileInfo != nullptr && profileInfo->mPath.IsNotEmpty())
+	{
+		profilePath = profileInfo->mPath;
+	}
+
+	FileReader file;
+	if (!file.OpenFile (profilePath.GetChars()))
+	{
+		return;
+	}
+
+	TArray<uint8_t> readbuf;
+	FCmdFile cmdfile(profilePath.GetChars());
+	FString value;
+	while (cmdfile.ReadLine (readbuf, &file) != NULL)
+	{
+		value << readbuf;
+	}
+	
+	FCommandLine argv(value.GetChars());
+	for (int i = 1; i < argv.argc(); ++i)
+	{
+		Args->AppendArg(argv[i]);
+	}
+}
 
 static FString ParseGameInfo(std::vector<std::string> &pwads, const char *fn, const char *data, int size)
 {
@@ -3795,6 +3828,11 @@ static int D_DoomMain_Internal (void)
 		{
 			iwad_man = new FIWadManager(basewad, optionalwad);
 		}
+
+		profileManager.CollectProfiles();
+#ifndef __MOBILE__
+		ParseCommandLineFile();
+#endif
 
 		// Load zdoom.pk3 alone so that we can get access to the internal gameinfos before 
 		// the IWAD is known.

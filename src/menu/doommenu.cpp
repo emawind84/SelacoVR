@@ -1041,7 +1041,6 @@ static void InitKeySections()
 
 static void InitCommandLineProfileMenu()
 {
-	profileManager.CollectProfiles();
 	auto cmdlineProfiles = profileManager.GetList();
 	DMenuDescriptor **menu = MenuDescriptors.CheckKey("CommandLineProfileMenu");
 	if (menu != nullptr)
