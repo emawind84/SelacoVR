@@ -4,6 +4,7 @@ REM Change working folder to .bat location, so we can find the executable, even 
 cd /d "%~dp0"
 REM Place extra arguments first, since that seems to work better for brutal doom pk3 file.
 qzdoom.exe %* ^
+ +vid_preferbackend 0 ^
  +vid_vsync false ^
  +vr_mode 10 ^
  +turbo 80 ^
