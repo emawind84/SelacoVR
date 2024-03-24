@@ -133,4 +133,15 @@ public:
 	void SetPosition (const Position &pos);
 };
 
+class FCmdFile : public FConfigFile
+{
+public:
+	FCmdFile (const char *pathname) : FConfigFile(pathname) {}
+
+	uint8_t *ReadLine (TArray<uint8_t> &string, FileReader *file) const
+	{
+		return FConfigFile::ReadLine(string, file);
+	}
+};
+
 #endif //__CONFIGFILE_H__

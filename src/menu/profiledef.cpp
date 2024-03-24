@@ -5,20 +5,33 @@
 #include "fs_findfile.h"
 #include "findfile.h"
 #include "profiledef.h"
+#include "m_argv.h"
 #include <algorithm>
 
 extern bool wantToRestart;
 
 CUSTOM_CVAR(String, cmdlineprofile, "", CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
+	Args->RemoveArgs("-iwad");
+	Args->RemoveArgs("-deh");
+	Args->RemoveArgs("-bex");
+	Args->RemoveArgs("-playdemo");
+	Args->RemoveArgs("-file");
+	Args->RemoveArgs("-altdeath");
+	Args->RemoveArgs("-deathmatch");
+	Args->RemoveArgs("-skill");
+	Args->RemoveArgs("-savedir");
+	Args->RemoveArgs("-xlat");
+	Args->RemoveArgs("-oldsprites");
+
 	wantToRestart = true;
 }
 
 ProfileManager profileManager;
 
-void ProfileManager::ProcessOneProfileFile(const FString &name)
+void ProfileManager::ProcessOneProfileFile(const FString &filepath)
 {
-	auto fb = ExtractFileBase(name.GetChars(), false);
+	auto fb = ExtractFileBase(filepath.GetChars(), false);
 	long clidx = fb.IndexOf("commandline_", 0);
 	if (clidx == 0)
 	{
@@ -29,7 +42,7 @@ void ProfileManager::ProcessOneProfileFile(const FString &name)
 			if (!profile.mName.CompareNoCase(fb)) return;
 		}
 		FileReader fr;
-		if (fr.OpenFile(name.GetChars()))
+		if (fr.OpenFile(filepath.GetChars()))
 		{
 			char head[100] = { 0};
 			fr.Read(head, 100);
@@ -38,12 +51,12 @@ void ProfileManager::ProcessOneProfileFile(const FString &name)
 			{
 				const long titleMaxLength = 50;
 				FString title = FString(&head[7], std::min<size_t>(strcspn(&head[7], "\r\n"), titleMaxLength));
-				FCommandLineInfo sft = { fb, title };
+				FCommandLineInfo sft = { fb, title, filepath };
 				cmdlineProfiles.Push(sft);
 			}
 			else
 			{
-				FCommandLineInfo sft = { fb, fb };
+				FCommandLineInfo sft = { fb, fb, filepath };
 				cmdlineProfiles.Push(sft);
 			}
 		}
@@ -54,7 +67,7 @@ void ProfileManager::CollectProfiles()
 {
 	TArray<FString> mSearchPaths;
 	cmdlineProfiles.Clear();
-	cmdlineProfiles.Push({"", "No profile"});
+	cmdlineProfiles.Push({"", "No profile", ""});
 
 	if (GameConfig != NULL && GameConfig->SetSection ("FileSearch.Directories"))
 	{
@@ -105,6 +118,18 @@ void ProfileManager::CollectProfiles()
 	[](const FCommandLineInfo left, const FCommandLineInfo right){
 		return std::tolower(*left.mTitle.GetChars()) < std::tolower(*right.mTitle.GetChars());
 	});
+}
+
+const FCommandLineInfo *ProfileManager::GetProfileInfo(const char *profileName)
+{
+	for (int i = 0; i < cmdlineProfiles.Size(); i++)
+	{
+		if (!cmdlineProfiles[i].mName.Compare(profileName))
+		{
+			return &cmdlineProfiles[i];
+		}
+	}
+	return nullptr;
 }
 
 void I_InitProfiles()
