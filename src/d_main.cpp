@@ -1867,6 +1867,8 @@ static void ParseCommandLineFile()
 	FString value;
 	while (cmdfile.ReadLine (readbuf, &file) != NULL)
 	{
+		value.StripRight("\n\r");
+		value.AppendFormat(" ");
 		value << readbuf;
 	}
 	
