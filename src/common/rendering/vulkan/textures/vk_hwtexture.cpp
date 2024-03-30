@@ -167,7 +167,7 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 			// Mipmaps must be read from the source image, they cannot be generated
 			// TODO: Find some way to prevent UI textures from loading mipmaps. After all they are never used when rendering and just straight up eating VRAM for no reason
 			uint32_t expectedMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(srcWidth, srcHeight)))) + 1;
-			if (mipLevels > 0 && mipLevels == expectedMipLevels) {
+			if (mipLevels > 0 && mipLevels == (int)expectedMipLevels) {
 				CreateTexture(fb->GetCommands(), mImage.get(), src->GetWidth(), src->GetHeight(), 4, VK_FORMAT_BC7_UNORM_BLOCK, pixelData, true, false, (int)pixelDataSize);
 
 				uint32_t mipWidth = srcWidth, mipHeight = srcHeight;

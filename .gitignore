@@ -16,6 +16,7 @@
 /build_vc2015-64
 /build_vc2017-64
 /build
+/libraries/SDL/build
 /llvm
 .vs
 /src/gl/unused
