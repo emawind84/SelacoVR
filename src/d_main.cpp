@@ -1877,6 +1877,7 @@ static void ParseCommandLineFile()
 	{
 		Args->AppendArg(argv[i]);
 	}
+	Args->CollectFiles("-file", NULL);
 }
 
 static FString ParseGameInfo(std::vector<std::string> &pwads, const char *fn, const char *data, int size)
@@ -3762,6 +3763,10 @@ static int D_DoomMain_Internal (void)
 
 	};
 
+	profileManager.CollectProfiles();
+#ifndef __MOBILE__
+	ParseCommandLineFile();
+#endif
 	
 	std::set_new_handler(NewFailure);
 	const char *batchout = Args->CheckValue("-errorlog");
@@ -3823,6 +3828,7 @@ static int D_DoomMain_Internal (void)
 		if (restart)
 		{
 			C_InitConsole(SCREENWIDTH, SCREENHEIGHT, false);
+			ParseCommandLineFile();
 		}
 		nospriterename = false;
 
@@ -3830,11 +3836,6 @@ static int D_DoomMain_Internal (void)
 		{
 			iwad_man = new FIWadManager(basewad, optionalwad);
 		}
-
-		profileManager.CollectProfiles();
-#ifndef __MOBILE__
-		ParseCommandLineFile();
-#endif
 
 		// Load zdoom.pk3 alone so that we can get access to the internal gameinfos before 
 		// the IWAD is known.
