@@ -62,6 +62,7 @@ static FRandom pr_animatepictures ("AnimatePics");
 
 void FTextureAnimator::DeleteAll()
 {
+	mAnimationIndices.Clear();
 	mAnimations.Clear();
 
 	for (unsigned i = 0; i < mSwitchDefs.Size(); i++)
