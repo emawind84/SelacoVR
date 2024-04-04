@@ -902,8 +902,8 @@ void main()
 		{
 			frag = vec4(uFogColor.rgb, (1.0 - fogfactor) * frag.a * 0.75 * vColor.a);
 		}
-		frag = ApplyFadeColor(frag);
 #endif
+		frag = ApplyFadeColor(frag);
 	}
 	else // simple 2D (uses the fog color to add a color overlay)
 	{

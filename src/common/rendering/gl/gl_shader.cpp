@@ -52,8 +52,7 @@
 
 EXTERN_CVAR(Bool, r_skipmats)
 EXTERN_CVAR(Bool, gl_customshader)
-CVAR(Bool, gl_lite_shader, false, 0);
-
+CVAR(Bool, gl_lite_shader, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 namespace OpenGLRenderer
 {

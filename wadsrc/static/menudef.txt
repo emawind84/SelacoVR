@@ -3007,6 +3007,12 @@ OptionValue "FXAAQuality"
 	4, "$OPTVAL_EXTREME"
 }
 
+OptionValue "ShaderQuality"
+{
+	0, "$OPTVAL_QUALITY"
+	1, "$OPTVAL_SPEED"
+}
+
 OptionValue "Anisotropy"
 {
 	1, "$OPTVAL_OFF"
@@ -3264,9 +3270,9 @@ OptionMenu "OpenGLOptions" protected
 	Option "$GLPREFMNU_MIRRORPLAYER",			gl_mirror_player,				"OnOff"
 	Slider "$GLPREFMNU_MIRRORRECURSIONS",		r_mirror_recursions, 0, 10, 1, 0
 	StaticText " "
-	Option "$GLPREFMNU_BUFFERTYPE",		gl_storage_buffer_type, "StorageBuffer"
+	Option "$GLPREFMNU_BUFFERTYPE",				gl_storage_buffer_type, "StorageBuffer"
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_max_vertices gl_max_portals gl_mirrors gl_mirror_envmap gl_mirror_player r_mirror_recursions"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_max_vertices gl_max_portals gl_mirrors gl_mirror_envmap gl_mirror_player r_mirror_recursions gl_storage_buffer_type"
 }
 
 OptionMenu "VR3DMenu" protected
@@ -3299,8 +3305,10 @@ OptionMenu "PostProcessMenu" protected
 	StaticText " "
 	Option "$GLPREFMNU_CUSTOMPOST",		 		gl_custompost,					"OnOff"
 	Option "$GLPREFMNU_CUSTOMSHADER",	 		gl_customshader,				"OnOff"
+	Option "$GLPREFMNU_LITESHADER",				gl_lite_shader,					"ShaderQuality"
+	StaticText "Changing these options requires a restart", "Brown"
 	StaticText " "
-	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_bloom gl_lens gl_ssao gl_ssao_portals gl_fxaa gl_dither_bpc gl_tonemap gl_paltonemap_powtable gl_paltonemap_reverselookup"
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_bloom gl_lens gl_ssao gl_ssao_portals gl_fxaa gl_dither_bpc gl_tonemap gl_paltonemap_powtable gl_paltonemap_reverselookup gl_custompost gl_customshader gl_lite_shader"
 }
 
 OptionMenu "ReverbEdit" protected
