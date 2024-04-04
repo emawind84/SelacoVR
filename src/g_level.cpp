@@ -104,6 +104,7 @@ void STAT_StartNewGame(const char *lev);
 void STAT_ChangeLevel(const char *newl, FLevelLocals *Level);
 FString STAT_EpisodeName();
 
+EXTERN_CVAR(Bool, gl_lite_shader)
 EXTERN_CVAR(Bool, save_formatted)
 EXTERN_CVAR (Float, sv_gravity)
 EXTERN_CVAR (Float, sv_aircontrol)
@@ -158,7 +159,7 @@ CUSTOM_CVARD(Int, gl_lightmode, 1, CVAR_ARCHIVE, "Select lighting mode. 2 is van
 
 ELightMode getRealLightmode(FLevelLocals* Level, bool for3d)
 {
-	if (Level->info == nullptr)
+	if (Level->info == nullptr || gl_lite_shader)
 		return ELightMode::Doom;
 
 	// The rules are:
