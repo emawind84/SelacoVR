@@ -371,12 +371,12 @@ void VulkanFrameBuffer::FlushBackground() {
 	while (active) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-		check.Unclock();
+		/*check.Unclock();
 		if (check.TimeMS() > 100) {
 			check.Reset();
 			Printf(TEXTCOLOR_GOLD"VulkanFrameBuffer::FlushBackground() Is taking a while to finish load ops (100ms+)...\n");
 			check.Clock();
-		}
+		}*/
 
 		UpdateBackgroundCache(true);
 
@@ -386,6 +386,9 @@ void VulkanFrameBuffer::FlushBackground() {
 
 	// Finish anything that was loaded
 	UpdateBackgroundCache(true);
+
+	check.Unclock();
+	Printf(TEXTCOLOR_GOLD"VulkanFrameBuffer::FlushBackground() took %f ms\n", check.TimeMS());
 }
 
 void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {

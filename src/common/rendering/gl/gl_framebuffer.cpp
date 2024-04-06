@@ -428,13 +428,6 @@ void OpenGLFrameBuffer::FlushBackground() {
 	while (active) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-		check.Unclock();
-		if (check.TimeMS() > 100) {
-			check.Reset();
-			Printf(TEXTCOLOR_GOLD"OpenGLFrameBuffer::FlushBackground() Is taking a while to finish load ops (100ms+)...\n");
-			check.Clock();
-		}
-
 		UpdateBackgroundCache(true);
 
 		active = false;
@@ -443,6 +436,9 @@ void OpenGLFrameBuffer::FlushBackground() {
 
 	// Finish anything that was loaded
 	UpdateBackgroundCache(true);
+
+	check.Unclock();
+	Printf(TEXTCOLOR_GOLD"OpenGLFrameBuffer::FlushBackground() took %f ms\n", check.TimeMS());
 }
 
 
