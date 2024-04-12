@@ -164,7 +164,7 @@ void Draw2D(F2DDrawer* drawer, FRenderState& state, int x, int y, int width, int
 		state.SetColor(1, 1, 1, 1, cmd.mDesaturate); 
 		if (cmd.mFlags & F2DDrawer::DTF_Indexed) state.SetSoftLightLevel(cmd.mLightLevel);
 		state.SetLightParms(0, 0);
-
+		state.ResetFadeColor();
 		state.AlphaFunc(Alpha_Greater, 0.f);
 
 		if (cmd.useTransform)

@@ -722,7 +722,6 @@ void HWDrawInfo::DrawCoronas(FRenderState& state)
 
 void HWDrawInfo::EndDrawScene(sector_t * viewsector, FRenderState &state)
 {
-	state.ResetFadeColor();
 	HWSkyInfo skyinfo;
 	skyinfo.init(this, viewsector, sector_t::ceiling, viewsector->skytransfer, viewsector->Colormap.FadeColor);
 	if (skyinfo.texture[0])
