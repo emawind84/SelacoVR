@@ -113,7 +113,6 @@ void CollectLights(FLevelLocals* Level)
 sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bounds, float fov, float ratio, float fovratio, bool mainview, bool toscreen)
 {
 	auto& RenderState = *screen->RenderState();
-	RenderState.ResetFadeColor();
 
 	R_SetupFrame(mainvp, r_viewwindow, camera);
 
