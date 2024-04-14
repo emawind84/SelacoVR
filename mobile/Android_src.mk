@@ -90,6 +90,7 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/libraries/lzma/C \
         $(GZDOOM_TOP_PATH)/libraries/bzip2 \
         $(GZDOOM_TOP_PATH)/libraries/miniz \
+        $(GZDOOM_TOP_PATH)/libraries/webp/include \
         $(GZDOOM_TOP_PATH)/libraries/discordrpc/include \
 \
  $(SUPPORT_LIBS)/openal/include/AL \
