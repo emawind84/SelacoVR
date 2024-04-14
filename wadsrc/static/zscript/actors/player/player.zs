@@ -911,7 +911,7 @@ class PlayerPawn : Actor
 	//
 	//===========================================================================
 
-	void FilterCoopRespawnInventory (PlayerPawn oldplayer)
+	void FilterCoopRespawnInventory (PlayerPawn oldplayer, Weapon curHeldWeapon = null)
 	{
 		// If we're losing everything, this is really simple.
 		if (sv_cooploseinventory)
@@ -919,6 +919,10 @@ class PlayerPawn : Actor
 			oldplayer.DestroyAllInventory();
 			return;
 		}
+
+		// Make sure to get the real held weapon before messing with the inventory.
+		if (curHeldWeapon && curHeldWeapon.bPowered_Up)
+			curHeldWeapon = curHeldWeapon.SisterWeapon;
 
 		// Walk through the old player's inventory and destroy or modify
 		// according to dmflags.
@@ -1001,7 +1005,15 @@ class PlayerPawn : Actor
 		ObtainInventory (oldplayer);
 
 		player.ReadyWeapon = player.OffhandWeapon = NULL;
-		PickNewWeapon (NULL);
+		if (curHeldWeapon && curHeldWeapon.owner == self && curHeldWeapon.CheckAmmo(Weapon.EitherFire, false))
+		{
+			player.PendingWeapon = curHeldWeapon;
+			BringUpWeapon();
+		}
+		else
+		{
+			PickNewWeapon (NULL);
+		}
 	}
 
 	

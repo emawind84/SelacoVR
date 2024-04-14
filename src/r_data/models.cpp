@@ -532,7 +532,7 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 			skinid = smf->skinIDs[i];
 		}
 
-		if (modelid >= 0)
+		if (modelid >= 0 && modelid < Models.size())
 		{
 			FModel * mdl = Models[modelid];
 			auto tex = skinid.isValid() ? TexMan.GetGameTexture(skinid, true) : nullptr;
@@ -1150,7 +1150,7 @@ FSpriteModelFrame * FindModelFrame(const AActor * thing, int sprite, int frame, 
 
 	if(thing->flags9 & MF9_DECOUPLEDANIMATIONS)
 	{
-		return &BaseSpriteModelFrames[(thing->modelData != nullptr && thing->modelData->modelDef != nullptr) ? thing->modelData->modelDef : thing->GetClass()];
+		return BaseSpriteModelFrames.CheckKey((thing->modelData != nullptr && thing->modelData->modelDef != nullptr) ? thing->modelData->modelDef : thing->GetClass());
 	}
 	else
 	{
