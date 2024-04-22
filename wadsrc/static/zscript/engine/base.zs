@@ -848,3 +848,12 @@ struct StatDatabase native play
 	native static bool SetStat(String key, double value);
 	native static bool AddStat(String key, double amount);
 }
+
+struct Globals native play
+{
+	native static string, bool Get(string key);
+	native static int, bool GetInt(string key);
+	native static void Set(string key, string value);
+	native static void SetInt(string key, int value);
+	native static void Save();
+}
