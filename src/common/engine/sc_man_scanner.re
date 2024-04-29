@@ -174,6 +174,7 @@ std2:
 
 		/* Other keywords from UnrealScript */
 		'abstract'					{ RET(TK_Abstract); }
+		'singleunit'				{ RET(TK_Unit); }
 		'foreach'					{ RET(TK_ForEach); }
 		'true'						{ RET(TK_True); }
 		'false'						{ RET(TK_False); }

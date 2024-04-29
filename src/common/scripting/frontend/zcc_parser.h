@@ -64,6 +64,7 @@ enum
 	ZCC_VirtualScope	= 1 << 20,
 	ZCC_Version			= 1 << 21,
 	ZCC_Internal		= 1 << 22,
+	ZCC_Unit			= 1 << 23,
 };
 
 // Function parameter modifiers
