@@ -200,16 +200,25 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	auto *src = input.imgSource;
 	FBitmap pixels;
 
-	int exx = input.spi.shouldExpand;
+	bool gpu = src->IsGPUOnly();
+	int exx = input.spi.shouldExpand && !gpu;
 	int srcWidth = src->GetWidth();
 	int srcHeight = src->GetHeight();
 	int buffWidth = src->GetWidth() + 2 * exx;
 	int buffHeight = src->GetHeight() + 2 * exx;
+	bool indexed = false;	// TODO: Determine this properly
+	bool mipmap = !indexed && input.allowMipmaps;
+	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
+	VulkanDevice* device = cmd->GetFrameBuffer()->device;
 
-	pixels.Create(buffWidth, buffHeight); // TODO: Error checking
+	unsigned char* pixelData = nullptr;
+	size_t pixelDataSize = 0;
+	bool freePixels = false;
 
 
-	if (exx) {
+	if (exx && !gpu) {
+		pixels.Create(buffWidth, buffHeight); // TODO: Error checking
+
 		// This is incredibly wasteful, but necessary for now since we can't read the bitmap with an offset into a larger buffer
 		// Read into a buffer and blit 
 		FBitmap srcBitmap;
@@ -221,12 +230,58 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 		if (input.spi.generateSpi) {
 			FGameTexture::GenerateInitialSpriteData(output.spi.info, &srcBitmap, input.spi.shouldExpand, input.spi.notrimming);
 		}
+
+		pixelData = pixels.GetPixels();
+		pixelDataSize = pixels.GetBufferSize();
 	}
 	else {
-		output.isTranslucent = src->ReadPixels(params, &pixels);
+		if (gpu) {
+			// GPU only textures cannot be trimmed or translated, so just do a straight read
+			size_t totalSize;
+			int numMipLevels;
+			output.isTranslucent = src->ReadCompressedPixels(params->reader, &pixelData, totalSize, pixelDataSize, numMipLevels);
+			freePixels = true;
+			mipmap = false;
+			fmt = VK_FORMAT_BC7_UNORM_BLOCK;
 
-		if (input.spi.generateSpi) {
-			FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+			uint32_t expectedMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(buffWidth, buffHeight)))) + 1;
+			if (numMipLevels != (int)expectedMipLevels || numMipLevels == 0) {
+				// Abort mips
+				output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, 4, fmt, pixelData, false, false, (int)pixelDataSize);
+			}
+			else {
+				// Base texture
+				output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, true, false, (int)pixelDataSize);
+
+				// Mips
+				uint32_t mipWidth = buffWidth, mipHeight = buffHeight;
+				uint32_t mipSize = (uint32_t)pixelDataSize, dataPos = (uint32_t)pixelDataSize;
+
+				for (int x = 1; x < numMipLevels; x++) {
+					mipWidth	= std::max(1u, (mipWidth >> 1));
+					mipHeight	= std::max(1u, (mipHeight >> 1));
+					mipSize		= std::max(1u, ((mipWidth + 3) / 4)) * std::max(1u, ((mipHeight + 3) / 4)) * 16;
+					if (mipSize == 0 || totalSize - dataPos < mipSize) 
+						break;
+					output.tex->BackgroundCreateTextureMipMap(cmd, x, mipWidth, mipHeight, 4, fmt, pixelData + dataPos, mipSize);
+					dataPos += mipSize;
+				}
+			}
+
+			if (input.spi.generateSpi) {
+				// Generate sprite data without pixel data, since no trimming should occur
+				FGameTexture::GenerateEmptySpriteData(output.spi.info, buffWidth, buffHeight);
+			}
+		}
+		else {
+			pixels.Create(buffWidth, buffHeight); // TODO: Error checking
+			output.isTranslucent = src->ReadPixels(params, &pixels);
+			pixelData = pixels.GetPixels();
+			pixelDataSize = pixels.GetBufferSize();
+
+			if (input.spi.generateSpi) {
+				FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+			}
 		}
 	}
 	
@@ -238,15 +293,21 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 
 	delete input.params;
 
-	// We have the image now, let's upload it through the channel created exclusively for background ops
-	// If we really wanted to be efficient, we would do the disk loading in one thread and the texture upload in another
-	// But for now this approach should yield reasonable results
-	VulkanDevice* device = cmd->GetFrameBuffer()->device;
-	bool indexed = false;	// TODO: Determine this properly
-	bool mipmap = !indexed && input.allowMipmaps;
-	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
-	output.tex->BackgroundCreateTexture(cmd, pixels.GetWidth(), pixels.GetHeight(), indexed ? 1 : 4, fmt, pixels.GetPixels(), mipmap);
+
+	if (!gpu) {
+		output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, mipmap, mipmap, (int)pixelDataSize);
+	}
+
+	// Wait for operations to finish, since we can't maintain a regular loop of clearing the buffer
+	if (cmd->TransferDeleteList->TotalSize > 1) {
+		cmd->WaitForCommands(false, true);
+	}
+
 	output.createMipmaps = mipmap && !uploadQueue.familySupportsGraphics;
+
+	if (freePixels) {
+		free(pixelData);
+	}
 
 	// If we created the texture on a different family than the graphics family, we need to release access 
 	// to the image on this queue
@@ -310,12 +371,12 @@ void VulkanFrameBuffer::FlushBackground() {
 	while (active) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-		check.Unclock();
+		/*check.Unclock();
 		if (check.TimeMS() > 100) {
 			check.Reset();
 			Printf(TEXTCOLOR_GOLD"VulkanFrameBuffer::FlushBackground() Is taking a while to finish load ops (100ms+)...\n");
 			check.Clock();
-		}
+		}*/
 
 		UpdateBackgroundCache(true);
 
@@ -325,6 +386,9 @@ void VulkanFrameBuffer::FlushBackground() {
 
 	// Finish anything that was loaded
 	UpdateBackgroundCache(true);
+
+	check.Unclock();
+	Printf(TEXTCOLOR_GOLD"VulkanFrameBuffer::FlushBackground() took %f ms\n", check.TimeMS());
 }
 
 void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
@@ -669,7 +733,10 @@ void VulkanFrameBuffer::PrequeueMaterial(FMaterial *mat, int translation)
 
 // @Cockatrice - Cache a texture material, intended for use outside of the main thread
 bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI) {
-	if (!tex || !tex->isValid() || tex->GetID().GetIndex() == 0) return false;
+	if (!tex || !tex->isValid() || tex->GetID().GetIndex() == 0) {
+
+		return false;
+	}
 
 	QueuedPatch qp = {
 		tex, translation, scaleFlags, makeSPI
@@ -684,7 +751,9 @@ bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int tr
 // @Cockatrice - Submit each texture in the material to the background loader
 // Call from main thread only
 bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI, bool secondary) {
-	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return false;
+	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) {
+		return false;
+	}
 
 	MaterialLayerInfo* layer;
 
@@ -742,6 +811,7 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 		}
 		else {
 			systex->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
+			Printf(TEXTCOLOR_RED"Error submitting texture [%s] to background loader.", rLump->getName());
 			return false;
 		}
 	}
@@ -791,6 +861,7 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 			}
 			else {
 				syslayer->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
+				Printf(TEXTCOLOR_RED"Error submitting texture [%s] to background loader.", rLump->getName());
 			}
 		}
 	}

@@ -309,11 +309,14 @@ void FGameTexture::SetupSpriteData()
 		spi.spriteWidth = GetTexelWidth();
 		spi.spriteHeight = GetTexelHeight();
 
-		if (i == 1 && ShouldExpandSprite())
+		if (i == 1 && ShouldExpandSprite() && !(Base->GetImage() && Base->GetImage()->IsGPUOnly()))
 		{
 			spi.mTrimResult = Base->TrimBorders(spi.trim) && !GetNoTrimming();	// get the trim size before adding the empty frame
 			spi.spriteWidth += 2;
 			spi.spriteHeight += 2;
+		}
+		else {
+			spi.mTrimResult = 0;
 		}
 	}
 
@@ -340,6 +343,19 @@ void FGameTexture::GenerateInitialSpriteData(SpritePositioningInfo *info, FBitma
 		else {
 			spi.mTrimResult = 0;
 		}
+	}
+}
+
+
+void FGameTexture::GenerateEmptySpriteData(SpritePositioningInfo* info, int width, int height) {
+	for (int i = 0; i < 2; i++)
+	{
+		auto& spi = info[i];
+		spi.mSpriteU[0] = spi.mSpriteV[0] = 0.f;
+		spi.mSpriteU[1] = spi.mSpriteV[1] = 1.f;
+		spi.spriteWidth = width;
+		spi.spriteHeight = height;
+		spi.mTrimResult = 0;
 	}
 }
 

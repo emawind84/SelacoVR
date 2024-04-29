@@ -245,7 +245,7 @@ struct InputEvent native play version("2.4")
     native readonly String KeyString;
     native readonly int KeyChar; // ASCII char (if any)
     //
-    native readonly int MouseX;
-    native readonly int MouseY;
+    native readonly float MouseX;
+    native readonly float MouseY;
 }
 

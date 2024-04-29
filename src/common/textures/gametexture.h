@@ -137,6 +137,7 @@ public:
 	bool ShouldExpandSprite();
 	void SetupSpriteData();
 	static void GenerateInitialSpriteData(SpritePositioningInfo *info, FBitmap *bmp, bool expandSprite = false, bool noTrimming = false);	// @Cockatrice - Generate the data with an already-loaded image in a thread
+	static void GenerateEmptySpriteData(SpritePositioningInfo* info, int width, int height);												// @Cockatrice - Generate basic data for images we can't work with
 	void SetSpriteRect();
 	void SetSpriteRect(SpritePositioningInfo *spi, bool raw = false);																		// @Cockatrice - Use this after loading spi in a thread
 

@@ -346,7 +346,7 @@ public:
 	}
 
 	bool isActive() {
-		return mActive.load() && mRunning.load();
+		return mRunning.load();//&& mActive.load();
 	}
 
 	void resetStats() {

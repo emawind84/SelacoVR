@@ -440,10 +440,12 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 	// decide which patch to use
 	bool mirror;
 	FTextureID lump = sprites[psp->GetSprite()].GetSpriteFrame(psp->GetFrame(), 0, 0., &mirror);
-	if (!lump.isValid()) return false;
+	if (!lump.isValid())
+		return false;
 
 	auto tex = TexMan.GetGameTexture(lump, false);
-	if (!tex || !tex->isValid()) return false;
+	if (!tex || !tex->isValid()) 
+		return false;
 
 	// @Cockatrice - If this texture is not loaded, and we are able to BG load it, try to render this sprites last frame instead
 	// Also load the texture
@@ -506,7 +508,8 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 			if (!foundNewer && lastPatch.isValid()) {
 				lump = lastPatch;
 				tex = TexMan.GetGameTexture(lump, false);
-				if (!tex || !tex->isValid()) return false;
+				if (!tex || !tex->isValid()) 
+					return false;
 			}
 			else if(!foundNewer) {
 				return false;

@@ -455,6 +455,16 @@ DEFINE_ACTION_FUNCTION(DObject, S_StopSound)
 	return 0;
 }
 
+DEFINE_ACTION_FUNCTION(DObject, S_SoundPitch)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(channel);
+	PARAM_FLOAT(pitch);
+
+	S_ChangeSoundPitch(channel, pitch);
+	return 0;
+}
+
 
 //==========================================================================
 //
@@ -742,6 +752,10 @@ void S_ChangeActorSoundVolume(AActor *actor, int channel, double dvolume)
 void S_ChangeActorSoundPitch(AActor *actor, int channel, double pitch)
 {
 	soundEngine->ChangeSoundPitch(SOURCE_Actor, actor, channel, pitch);
+}
+
+void S_ChangeSoundPitch(int channel, double pitch) {
+	soundEngine->ChangeSoundPitch(SOURCE_None, nullptr, channel, pitch);
 }
 
 //==========================================================================

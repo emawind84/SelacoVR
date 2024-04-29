@@ -170,7 +170,11 @@ void RenderModel(FModelRenderer *renderer, float x, float y, float z, FSpriteMod
 	objectToWorldMatrix.rotate(-smf->rolloffset, 1, 0, 0);
 
 	// consider the pixel stretching. For non-voxels this must be factored out here
-	float stretch = (smf->modelIDs[0] != -1 ? Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) : 1.f) / actor->Level->info->pixelstretch;
+	float stretch = 1.0;
+	if (!(smf->flags & MDL_NOPIXELSTRETCH) && smf->modelIDs[0] != -1) {
+		stretch = Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) / actor->Level->info->pixelstretch;
+	}
+	//float stretch = (smf->modelIDs[0] != -1 ? Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) : 1.f) / actor->Level->info->pixelstretch;
 	objectToWorldMatrix.scale(1, stretch, 1);
 
 	float orientation = scaleFactorX * scaleFactorY * scaleFactorZ;
@@ -794,6 +798,9 @@ static void ParseModelDefLump(int Lump)
 					smf.rotationCenterX = 0.;
 					smf.rotationCenterY = 0.;
 					smf.rotationCenterZ = 0.;
+				}
+				else if (sc.Compare("nopixelstretch")) {
+					smf.flags |= MDL_NOPIXELSTRETCH;
 				}
 				else
 				{

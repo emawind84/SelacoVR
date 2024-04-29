@@ -133,6 +133,7 @@ extend class Object
 	native static void S_StopSound (int channel, Sound sound_id = -1);
 	native static void S_PauseSound (bool notmusic, bool notsfx);
 	native static void S_ResumeSound (bool notsfx);
+	native static void S_SoundPitch(int channel, float pitch = 1.0);
 	native static bool S_ChangeMusic(String music_name, int order = 0, bool looping = true, bool force = false);
 	native static float S_GetLength(Sound sound_id);
 	native static void MarkSound(Sound snd);

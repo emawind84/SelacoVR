@@ -58,7 +58,7 @@ DEFINE_ACTION_FUNCTION(_StatDatabase, SetStat)
 
 #ifndef ALLOW_STAT_CHEATS
     if (sv_cheats) {
-        if (developer > 0) {
+        if (developer > 1) {
             Printf(TEXTCOLOR_RED"StatDatabase::SetStat() not available with sv_cheats enabled.\n");
         }
         return false;
@@ -81,7 +81,7 @@ DEFINE_ACTION_FUNCTION(_StatDatabase, AddStat)
 
 #ifndef ALLOW_STAT_CHEATS
     if (sv_cheats) {
-        if (developer > 0) {
+        if (developer > 1) {
             Printf(TEXTCOLOR_RED"StatDatabase::AddStat() not available with sv_cheats enabled.\n");
         }
         return false;
@@ -119,7 +119,7 @@ DEFINE_ACTION_FUNCTION(_StatDatabase, SetAchievement)
 
 #ifndef ALLOW_STAT_CHEATS
     if (sv_cheats) {
-        if (developer > 0) {
+        if (developer > 1) {
             Printf(TEXTCOLOR_RED"StatDatabase::SetAchievement() not available with sv_cheats enabled.\n");
         }
         return false;
@@ -173,6 +173,8 @@ bool StatDatabase::isAvailable() {
 void StatDatabase::start() {
     if (!g_statdb) return;  // Don't startup if disabled
 
+    // Mods allowed for now, for stat DB
+    /*
 #ifndef ALLOW_STAT_CHEATS
     // Don't startup if we have mods installed
     if (fileSystem.HasExtraWads()) {
@@ -181,6 +183,7 @@ void StatDatabase::start() {
         return;
     }
 #endif
+    */
 
     if (mThread.get_id() == std::thread::id()) {
         mRunning.store(true);
@@ -207,7 +210,7 @@ void StatDatabase::update() {
             ach.hasIt = data;
             ach.hasChanged = false;
 
-            if (developer > 0) Printf("StatDatabase: Received Achievement - %s = %d\n", name.GetChars(), ach.hasIt);
+            if (developer > 1) Printf("StatDatabase: Received Achievement - %s = %d\n", name.GetChars(), ach.hasIt);
 
             // Notify script that achievement data came in
             if (didChange && !exists && data > 0) {
@@ -223,7 +226,7 @@ void StatDatabase::update() {
                 bool didChange = stat.iVal != data;
                 stat.iVal = data;
                 stat.hasChanged = false;
-                if (developer > 0) Printf("StatDatabase: Received Stat - %s = %d\n", name.GetChars(), stat.iVal);
+                if (developer > 1) Printf("StatDatabase: Received Stat - %s = %d\n", name.GetChars(), stat.iVal);
 
                 // Notify script that achievement data came in
                 if (didChange && !exists) {
@@ -235,7 +238,7 @@ void StatDatabase::update() {
                 bool didChange = stat.fVal != data;
                 stat.fVal = data;
                 stat.hasChanged = false;
-                if (developer > 0) Printf("StatDatabase: Received Stat - %s = %f\n", name.GetChars(), stat.fVal);
+                if (developer > 1) Printf("StatDatabase: Received Stat - %s = %f\n", name.GetChars(), stat.fVal);
 
                 // Notify script that achievement data came in
                 if (didChange && !exists) {
@@ -246,7 +249,7 @@ void StatDatabase::update() {
         else if (p.type == 6) {
             // Achievement notification
             // Hack for now, send name twice. Eventually need a way of transfering achievement names from the host
-            if (developer > 0) Printf("StatDatabase: Received Achievement Notification - %s : %s\n", name.GetChars(), name.GetChars());
+            if (developer > 1) Printf("StatDatabase: Received Achievement Notification - %s : %s\n", name.GetChars(), name.GetChars());
             primaryLevel->localEventManager->Stat(name, name, true, (double)1);
         }
         else if (developer > 0) {
@@ -280,8 +283,8 @@ void StatDatabase::queueOutput() {
 
         outPackets.queue(p);
         stat.hasChanged = false;
-        if(developer > 0 && stat.type == Stat::INT_TYPE) Printf("StatDatabase: Queued %s : %d\n", name.GetChars(), stat.iVal);
-        else if(developer > 0) Printf("StatDatabase: Queued %s : %f\n", name.GetChars(), stat.fVal);
+        if(developer > 1 && stat.type == Stat::INT_TYPE) Printf("StatDatabase: Queued %s : %d\n", name.GetChars(), stat.iVal);
+        else if(developer > 1) Printf("StatDatabase: Queued %s : %f\n", name.GetChars(), stat.fVal);
     }
 
     for (auto& [name, ach] : allAchievements) {
@@ -295,7 +298,7 @@ void StatDatabase::queueOutput() {
         outPackets.queue(p);
         ach.hasChanged = false;
 
-        if(developer > 0) Printf("StatDatabase: Queued Achievement %s\n", name.GetChars());
+        if(developer > 1) Printf("StatDatabase: Queued Achievement %s\n", name.GetChars());
     }
 }
 
