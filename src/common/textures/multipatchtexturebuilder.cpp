@@ -44,6 +44,7 @@
 #include "image.h"
 #include "formats/multipatchtexture.h"
 #include "texturemanager.h"
+#include "c_cvars.h"
 
 
 // On the Alpha, accessing the shorts directly if they aren't aligned on a
@@ -56,6 +57,7 @@
 #define SAFESHORT(s)	LittleShort(s)
 #endif
 
+EXTERN_CVAR(Int, developer)
 
 //--------------------------------------------------------------------------
 //
@@ -793,7 +795,7 @@ void FMultipatchTextureBuilder::ParseTexture(FScanner &sc, ETextureType UseType,
 					return;
 				}
 
-				//Printf("Texture %s is just a redefinition!\n", buildinfo.Name.GetChars());
+				if(developer >= 2) Printf(TEXTCOLOR_GOLD"Successfully set params for texture %s instead of a new multipatch.\n", buildinfo.Name.GetChars());
 				FGameTexture *tex = TexMan.GetGameTexture(oldtex, false);
 
 				if (tex != nullptr) {
