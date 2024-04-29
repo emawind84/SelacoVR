@@ -7457,9 +7457,6 @@ ExpEmit FxArrayElement::Emit(VMFunctionBuilder *build)
 
 static bool CheckFunctionCompatiblity(FScriptPosition &ScriptPosition, PFunction *caller, PFunction *callee)
 {
-	if ((callee->Variants[0].Flags & VARF_Unit) || (caller->Variants[0].Flags & VARF_Unit)) {
-		ScriptPosition.Message(MSG_ERROR, "Function %s is unit only\n", callee->SymbolName.GetChars());
-	}
 	if (callee->Variants[0].Flags & VARF_Method)
 	{
 		// The called function must support all usage modes of the current function. It may support more, but must not support less.
