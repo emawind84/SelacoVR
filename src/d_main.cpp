@@ -580,6 +580,7 @@ CVAR(Flag, sv_nolocaldrops, dmflags3, DF3_NO_LOCAL_DROPS);
 CVAR(Flag, sv_nocoopitems, dmflags3, DF3_NO_COOP_ONLY_ITEMS);
 CVAR(Flag, sv_nocoopthings, dmflags3, DF3_NO_COOP_ONLY_THINGS);
 CVAR(Flag, sv_rememberlastweapon, dmflags3, DF3_REMEMBER_LAST_WEAP);
+CVAR(Flag, sv_pistolstart, dmflags3, DF3_PISTOL_START);
 
 //==========================================================================
 //
@@ -714,6 +715,8 @@ CVAR (Flag, compat_oldrandom,			compatflags2, COMPATF2_OLD_RANDOM_GENERATOR);
 CVAR (Flag, compat_avoidhazard,			compatflags2, COMPATF2_AVOID_HAZARDS);
 CVAR (Flag, compat_stayonlift,			compatflags2, COMPATF2_STAYONLIFT);
 CVAR (Flag, compat_nombf21,				compatflags2, COMPATF2_NOMBF21);
+CVAR (Flag, compat_voodoozombies,		compatflags2, COMPATF2_VOODOO_ZOMBIES);
+CVAR (Flag, compat_fdteleport,			compatflags2, COMPATF2_FDTELEPORT);
 
 CVAR(Bool, vid_activeinbackground, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 

@@ -1881,6 +1881,7 @@ OptionMenu GameplayOptions protected
 	StaticText " "
 	Option "$GMPLYMNU_SMARTAUTOAIM",			"sv_smartaim", "SmartAim"
 	StaticText " "
+	Option "$GMPLYMNU_PISTOLSTART",				"sv_pistolstart", "YesNo"
 	Option "$GMPLYMNU_FALLINGDAMAGE",			"sv_fallingdamage", "FallingDM"
 	Option "$GMPLYMNU_DROPWEAPON",				"sv_weapondrop", "YesNo"
 	Option "$GMPLYMNU_DOUBLEAMMO",				"sv_doubleammo", "YesNo"
@@ -2010,6 +2011,7 @@ OptionMenu "CompatActorMenu" protected
 	Option "$CMPTMNU_INVISIBILITY",					"compat_INVISIBILITY", "YesNo"
 	Option "$CMPTMNU_MINOTAUR",						"compat_MINOTAUR", "YesNo"
 	Option "$CMPTMNU_NOTOSSDROPS",					"compat_NOTOSSDROPS", "YesNo"
+	Option "$CMPTMNU_VOODOOZOMBIES",				"compat_voodoozombies", "YesNo"
 	Option "$CMPTMNU_OLDRANDOM",					"compat_oldrandom", "YesNo"
 	Class "CompatibilityMenu"
 }
@@ -2037,6 +2039,7 @@ OptionMenu "CompatMapMenu" protected
 	Option "$CMPTMNU_POINTONLINE",					"compat_pointonline", "YesNo"
 	Option "$CMPTMNU_MULTIEXIT",					"compat_multiexit", "YesNo"
 	Option "$CMPTMNU_TELEPORT",						"compat_teleport", "YesNo"
+	Option "$CMPTMNU_FDTELEPORT",					"compat_fdteleport", "YesNo"
 	Option "$CMPTMNU_PUSHWINDOW",					"compat_pushwindow", "YesNo"
 	Option "$CMPTMNU_CHECKSWITCHRANGE",				"compat_checkswitchrange", "YesNo"
 	Option "$CMPTMNU_RAILINGHACK",					"compat_railing", "YesNo"
