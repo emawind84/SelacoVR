@@ -1320,6 +1320,12 @@ class PlayerPawn : Actor
 		return forward, side;
 	}
 
+	virtual void ApplyAirControl(out double movefactor, out double bobfactor)
+	{
+		movefactor *= level.aircontrol;
+		bobfactor *= level.aircontrol;
+	}
+
 	//----------------------------------------------------------------------------
 	//
 	// PROC P_MovePlayer
@@ -1382,8 +1388,8 @@ class PlayerPawn : Actor
 			if (!player.onground && !bNoGravity && !waterlevel)
 			{
 				// [RH] allow very limited movement if not on ground.
-				movefactor *= level.aircontrol;
-				bobfactor*= level.aircontrol;
+				// [AA] but also allow authors to override it.
+				ApplyAirControl(movefactor, bobfactor);
 			}
 
 			fm = cmd.forwardmove;
