@@ -400,7 +400,13 @@ void AActor::Serialize(FSerializer &arc)
 		A("userlights", UserLights)
 		A("WorldOffset", WorldOffset)
 		("modelData", modelData)
-		A("LandingSpeed", LandingSpeed);
+		A("LandingSpeed", LandingSpeed)
+
+		("unmorphtime", UnmorphTime)
+		("morphflags", MorphFlags)
+		("premorphproperties", PremorphProperties)
+		("morphexitflash", MorphExitFlash);
+
 
 		SerializeTerrain(arc, "floorterrain", floorterrain, &def->floorterrain);
 		SerializeArgs(arc, "args", args, def->args, special);
@@ -3678,10 +3684,6 @@ void AActor::SetViewAngle(DAngle ang, int fflags)
 
 double AActor::GetFOV(double ticFrac)
 {
-	// [B] Disable interpolation when playing online, otherwise it gets vomit inducing
-	if (netgame)
-		return player ? player->FOV : CameraFOV;
-
 	double fov;
 	if (player)
 	{

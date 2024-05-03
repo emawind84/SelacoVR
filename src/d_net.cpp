@@ -2756,6 +2756,10 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 			primaryLevel->localEventManager->NetCommand(netCmd);
 		}
 	break;
+
+	case DEM_CHANGESKILL:
+		NextSkill = ReadInt32(stream);
+		break;
 		
 	default:
 		I_Error ("Unknown net command: %d", type);
@@ -2851,6 +2855,7 @@ void Net_SkipCommand (int type, uint8_t **stream)
 		case DEM_INVUSE:
 		case DEM_FOV:
 		case DEM_MYFOV:
+		case DEM_CHANGESKILL:
 			skip = 4;
 			break;
 
