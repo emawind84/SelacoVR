@@ -100,8 +100,8 @@
 #include "a_dynlight.h"
 #include "fragglescript/t_fs.h"
 #include "shadowinlines.h"
-#include "d_net.h"
 #include "model.h"
+#include "d_net.h"
 
 // MACROS ------------------------------------------------------------------
 
