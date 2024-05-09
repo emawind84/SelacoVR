@@ -360,6 +360,9 @@ void VulkanFrameBuffer::FlushBackground() {
 
 	Printf(TEXTCOLOR_GREEN"VulkanFrameBuffer[%s]: Flushing [%d + %d + %d] texture load ops\n", active ? "active" : "inactive", nq, patchQueue.size(), nq + patchQueue.size());
 
+	// Make sure active is marked if we have patches waiting
+	active = active || patchQueue.size() > 0;
+
 	// Finish anything queued, and send anything that needs to be loaded from the patch queue
 	UpdateBackgroundCache(true);
 		
