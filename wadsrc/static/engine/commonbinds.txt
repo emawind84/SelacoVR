@@ -4,8 +4,8 @@ M printObjectives
 F Toggle_Flashlight
 G useGadget
 H switchGadget
-C +crouch
-ctrl crouch
+C crouch
+ctrl +crouch
 Q meleeButton
 R +reload
 Z useMeds
@@ -20,18 +20,14 @@ RightBracket nextAbility
 ] nextAbility
 
 
-
 // Movement
 w +forward
 s +back
 a +moveleft
 d +moveright
 space +jump
-ctrl crouch
 e +use
 mouse2 +altattack
-
-
 
 // Basic
 ` toggleconsole

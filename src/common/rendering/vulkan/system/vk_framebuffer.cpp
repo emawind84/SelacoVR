@@ -354,12 +354,14 @@ void VkTexLoadThread::completeLoad() { currentImageID.store(0); }
 void VulkanFrameBuffer::FlushBackground() {
 	int nq = primaryTexQueue.size() + secondaryTexQueue.size();
 	bool active = nq;
-	/*for (auto& tfr : bgTransferThreads) {
-		nq += tfr->numQueued();
-		active = active || tfr->isActive();
-	}*/
+
+	if(!active)
+		for (auto& tfr : bgTransferThreads) active = active || tfr->isActive();
 
 	Printf(TEXTCOLOR_GREEN"VulkanFrameBuffer[%s]: Flushing [%d + %d + %d] texture load ops\n", active ? "active" : "inactive", nq, patchQueue.size(), nq + patchQueue.size());
+
+	// Make sure active is marked if we have patches waiting
+	active = active || patchQueue.size() > 0;
 
 	// Finish anything queued, and send anything that needs to be loaded from the patch queue
 	UpdateBackgroundCache(true);
@@ -371,17 +373,11 @@ void VulkanFrameBuffer::FlushBackground() {
 	while (active) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-		/*check.Unclock();
-		if (check.TimeMS() > 100) {
-			check.Reset();
-			Printf(TEXTCOLOR_GOLD"VulkanFrameBuffer::FlushBackground() Is taking a while to finish load ops (100ms+)...\n");
-			check.Clock();
-		}*/
-
 		UpdateBackgroundCache(true);
 
 		active = false;
-		for (auto& tfr : bgTransferThreads) active = active || tfr->isActive();
+		for (auto& tfr : bgTransferThreads) 
+			active = active || tfr->isActive();
 	}
 
 	// Finish anything that was loaded

@@ -94,8 +94,12 @@ class AmbientSound : Actor
 			masterAmbient.ActivateAmbient(self);
 		} else if(!masterAmbient && linkedSounds.size()) {
 			for(int x = 0; x < linkedSounds.size(); x++) {
-				if(linkedSounds[x] && activator != linkedSounds[x]) {
-					linkedSounds[x].ActivateAmbient(self);
+				let ls = linkedSounds[x];
+				if(ls && activator != ls) {
+					ls.ActivateAmbient(self);
+				} else if(!ls) {
+					linkedSounds.delete(x);
+					x--;
 				}
 			}
 		}
@@ -109,8 +113,12 @@ class AmbientSound : Actor
 			masterAmbient.DeactivateAmbient(self);
 		} else if(!masterAmbient && linkedSounds.size()) {
 			for(int x = 0; x < linkedSounds.size(); x++) {
-				if(linkedSounds[x] && activator != linkedSounds[x]) {
-					linkedSounds[x].DeactivateAmbient(self);
+				let ls = linkedSounds[x];
+				if(ls && activator != ls) {
+					ls.DeactivateAmbient(self);
+				} else if(!ls) {
+					linkedSounds.delete(x);
+					x--;
 				}
 			}
 		}
@@ -144,7 +152,7 @@ class AmbientSound : Actor
 		}
 
 		for(int x = linkedSounds.size() - 1; x >= 0; x--) {
-			if(linkedSounds[x].inRangeOfPlayer()) return true;
+			if(linkedSounds[x] && linkedSounds[x].inRangeOfPlayer()) return true;
 		}
 
 		return false;
@@ -155,13 +163,12 @@ class AmbientSound : Actor
 	virtual bool WillResume() {
 		// Play linked sounds if exist
 		if(!masterAmbient) {
-			for(int x = 0; x < linkedSounds.size(); x++) {
+			for(int x = linkedSounds.size() - 1; x >= 0; x--) {
 				let ls = linkedSounds[x];
 				if(ls && ls.special1 != INT.max) {
 					ls.StartPlaying();
 				}
 			}
-			
 		} else {
 			if(masterAmbient.special1 != INT.max) masterAmbient.StartPlaying();
 			masterAmbient.WillResume();
@@ -186,15 +193,15 @@ class AmbientSound : Actor
 
 		// Stop linked sounds if necessary
 		if(!masterAmbient) {
-			for(int x = 0; x < linkedSounds.size(); x++) {
-				linkedSounds[x].StopPlaying();
+			for(int x = linkedSounds.size() - 1; x >= 0; x--) {
+				if(linkedSounds[x]) linkedSounds[x].StopPlaying();
 			}
 		} else {
 			// Halt all sounds from master
-			for(int x = 0; x < masterAmbient.linkedSounds.size(); x++) {
+			for(int x = masterAmbient.linkedSounds.size() - 1; x >= 0; x--) {
 				let ls = masterAmbient.linkedSounds[x];
 				if(ls && ls != self) {
-					masterAmbient.linkedSounds[x].StopPlaying();
+					ls.StopPlaying();
 				}
 			}
 		}

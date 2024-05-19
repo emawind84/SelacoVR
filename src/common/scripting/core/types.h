@@ -37,6 +37,7 @@ enum
 	VARF_VirtualScope	= (1<<22),  // [ZZ] virtualscope: object should use the scope of the particular class it's being used with (methods only)
 	VARF_ClearScope		= (1<<23),  // [ZZ] clearscope: this method ignores the member access chain that leads to it and is always plain data.
 	VARF_Abstract		= (1<<24),  // [Player701] Function does not have a body and must be overridden in subclasses
+	VARF_Unit			= (1<<25),	// @Cockatrice Function is limited to the container in which it is defined
 };
 
 // Basic information shared by all types ------------------------------------
@@ -537,6 +538,8 @@ public:
 	PStruct(FName name, PTypeBase *outer, bool isnative = false);
 
 	bool isNative;
+	int sourceLump = -1;
+
 	// Some internal structs require explicit construction and destruction of fields the VM cannot handle directly so use these two functions for it.
 	VMFunction *mConstructor = nullptr;
 	VMFunction *mDestructor = nullptr;

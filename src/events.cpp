@@ -1360,7 +1360,8 @@ CCMD(event)
 
 CCMD(netevent)
 {
-	if (gamestate != GS_LEVEL/* && gamestate != GS_TITLELEVEL*/) // not sure if this should work in title level, but probably not, because this is for actual playing
+	// @cockatrice - Re-enabled GS_TITLELEVEL because netevent is the only way we can interact with some play scoped functionality while in titlemap
+	if (gamestate != GS_LEVEL && gamestate != GS_TITLELEVEL) // not sure if this should work in title level, but probably not, because this is for actual playing
 	{
 		DPrintf(DMSG_SPAMMY, "netevent cannot be used outside of a map.\n");
 		return;

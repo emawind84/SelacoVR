@@ -62,9 +62,11 @@ public:
 	unsigned			 MetaSize = 0;
 	FName				 TypeName = NAME_None;
 	FName				 SourceLumpName = NAME_None;
+	int					 SourceLump = -1;
 	bool				 bRuntimeClass = false;	// class was defined at run-time, not compile-time
 	bool				 bDecorateClass = false;	// may be subject to some idiosyncracies due to DECORATE backwards compatibility
 	bool				 bAbstract = false;
+	bool				 bUnitOnly = false;
 	bool				 bOptional = false;
 	TArray<VMFunction*>	 Virtuals;	// virtual function table
 	TArray<FTypeAndOffset> MetaInits;

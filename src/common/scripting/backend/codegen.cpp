@@ -6154,6 +6154,7 @@ FxExpression *FxIdentifier::ResolveMember(FCompileContext &ctx, PContainerType *
 			}
 			auto cls_ctx = PType::toClass(classctx);
 			auto cls_target = PType::toClass(objtype);
+				
 			// [ZZ] neither PSymbol, PField or PSymbolTable have the necessary information. so we need to do the more complex check here.
 			if (vsym->Flags & VARF_Protected)
 			{
@@ -7596,6 +7597,38 @@ PFunction* FindClassMemberFunction(PContainerType* selfcls, PContainerType* func
 		else if ((funcsym->Variants[0].Flags & VARF_Deprecated) && funcsym->mVersion <= version && !nodeprecated)
 		{
 			sc.Message(MSG_WARNING, "Call to deprecated function %s", symbol->SymbolName.GetChars());
+		}
+		// @Cockatrice - Restrict callers to being from the same "unit" which in this case is just going to be the wad/pk3/lump container
+		else if (funcsym->Variants[0].Flags & VARF_Unit) {
+			int calleeLump = cls_target != nullptr ? cls_target->Descriptor->SourceLump : -1;
+			int callerLump = cls_ctx != nullptr ? cls_ctx->Descriptor->SourceLump : -1;
+			const char* calleeName = cls_target != nullptr ? cls_target->DescriptiveName() : nullptr;
+			const char* callerName = cls_ctx != nullptr ? cls_ctx->DescriptiveName() : nullptr;
+
+			if (calleeLump == -1 && cls_target == nullptr && funcsym->OwningClass->isStruct()) {
+				auto strct = static_cast<PStruct*> (funcsym->OwningClass);
+				calleeLump = strct->sourceLump;
+				calleeName = strct->DescriptiveName();
+			}
+
+			if (callerLump == -1 && cls_ctx == nullptr && funccls->isStruct()) {
+				auto strct = static_cast<PStruct*> (funccls);
+				callerLump = strct->sourceLump;
+				callerName = strct->DescriptiveName();
+			}
+
+			// Compare containers and make sure they are the same
+			if (callerLump != -1 && calleeLump != -1) {
+				int callerContainer = fileSystem.GetFileContainer(callerLump);
+				int calleeContainer = fileSystem.GetFileContainer(calleeLump);
+
+				if (! (callerContainer >= 0 && calleeContainer >= 0 && calleeContainer == callerContainer) ) {
+					sc.Message(MSG_ERROR, "%s does not have permission to call (%s) %s", callerName, calleeName, symbol->SymbolName.GetChars());
+				}
+			}
+			else {
+				sc.Message(MSG_ERROR, "%s tries to call %s but the unit context could not be determined.", callerName, calleeName, symbol->SymbolName.GetChars());
+			}
 		}
 	}
 	// return nullptr if the name cannot be found in the symbol table so that the calling code can do other checks.

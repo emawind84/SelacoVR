@@ -419,7 +419,7 @@ protected:
 						// Always load from secondary queue only if the primary queue has no items
 						if (mInputQSecondary == nullptr || !mInputQSecondary->dequeue(input)) {
 							cancelLoad();
-							break;
+							continue;
 						}
 					}
 

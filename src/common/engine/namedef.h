@@ -236,3 +236,9 @@ xx(BuiltinNameToClass)
 xx(BuiltinClassCast)
 
 xx(ScreenJobRunner)
+
+// Misc
+xx(StatDatabase)
+xx(SetStat)
+xx(AddStat)
+xx(SetAchievement)

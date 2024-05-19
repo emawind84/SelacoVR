@@ -150,6 +150,7 @@ void Local_Job_Init();
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
 extern void I_SetWindowTitle(const char* caption);
+extern void I_FocusWindow();
 extern void ReadStatistics();
 extern void M_SetDefaultMode ();
 extern void G_NewInit ();
@@ -213,7 +214,7 @@ static const char* iwad_folders[] = { "flats/", "textures/", "hires/", "sprites/
 static const char* iwad_reserved[] = { "mapinfo", "zmapinfo", "umapinfo", "gameinfo", "sndinfo", "sndseq", "sbarinfo", "menudef", "gldefs", "animdefs", "decorate", "zscript", "iwadinfo", "maps/" };
 
 
-CUSTOM_CVAR(Float, i_timescale, 1.0f, CVAR_NOINITCALL | CVAR_VIRTUAL)
+CUSTOM_CVAR(Float, i_timescale, 1.0f, CVAR_NOINITCALL | CVAR_VIRTUAL | CVAR_CHEAT)
 {
 	if (netgame)
 	{
@@ -881,7 +882,7 @@ void D_Display ()
 	if (nodrawers || screen == NULL)
 		return; 				// for comparative timing / profiling
 	
-	if (!AppActive && (screen->IsFullscreen() || !vid_activeinbackground))
+	if (!AppActive && !vid_activeinbackground /*(screen->IsFullscreen() || !vid_activeinbackground)*/)
 	{
 		return;
 	}
@@ -3802,6 +3803,7 @@ static int D_DoomMain_Internal (void)
 
 		D_DoAnonStats();
 		I_UpdateWindowTitle();
+		I_FocusWindow();
 		D_DoomLoop ();		// this only returns if a 'restart' CCMD is given.
 		// 
 		// Clean up after a restart
