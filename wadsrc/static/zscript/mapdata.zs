@@ -172,6 +172,7 @@ struct Line native play
 	native uint						flags;
 	native uint						flags2;
 	native uint						activation;	// activation type
+	native uint						blockBits;	// @Cockatrice - Compared to actor for blocking, combined with flags
 	native int						special;
 	native int						args[5];	// <--- hexen-style arguments (expanded to ZDoom's full width)
 	native double					alpha;		// <--- translucency (0=invisible, 1.0=opaque)
