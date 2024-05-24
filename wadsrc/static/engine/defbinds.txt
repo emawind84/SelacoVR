@@ -8,3 +8,4 @@ space +jump
 ctrl +crouch
 e +use
 mouse2 +altattack
+mapbind f am_togglefollow
