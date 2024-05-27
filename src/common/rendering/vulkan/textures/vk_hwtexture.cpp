@@ -37,6 +37,7 @@
 #include "vulkan/renderer/vk_postprocess.h"
 #include "vulkan/shaders/vk_shader.h"
 #include "vk_hwtexture.h"
+#include "g_levellocals.h"
 
 VkHardwareTexture::VkHardwareTexture(VulkanFrameBuffer* fb, int numchannels) : fb(fb)
 {
@@ -138,11 +139,24 @@ VkTextureImage *VkHardwareTexture::GetDepthStencil(FTexture *tex)
 
 void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 {
+	
 	if (!tex->isHardwareCanvas())
 	{
+#ifndef NDEBUG
+		// Output a texture load on the main thread for debugging. 
+		if (tex->GetSourceLump() > 0) {
+			auto* rLump = fileSystem.GetFileAt(tex->GetSourceLump());
+			Printf("Making texture: %s\n", !!rLump ? rLump->getName() : "No Lump Found!");
+		}
+		else if (tex->GetImage() && tex->GetImage()->LumpNum() > 0) {
+			auto* rLump = fileSystem.GetFileAt(tex->GetImage()->LumpNum());
+			Printf("Making texture2: %s\n", !!rLump ? rLump->getName() : "No Lump Found!");
+		}
+#endif
+
 		// @Cockatrice - Special case for GPU only textures
 		// These texture cannot be manipulated, so just straight up load them into the GPU now
-		// We are completely ignoring any translations or effects here
+		// We are completely ignoring any translations, upscaling, trimming or effects here
 		FImageSource* src = tex->GetImage();
 		if (src && src->IsGPUOnly()) {
 			unsigned char* pixelData = nullptr;
@@ -199,6 +213,14 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 	}
 	else
 	{
+#ifndef NDEBUG
+		// Output a texture load on the main thread for debugging. 
+		if (tex->GetSourceLump() > 0) {
+			auto* rLump = fileSystem.GetFileAt(tex->GetSourceLump());
+			Printf("Making texture in the weird way: %s\n", rLump ? rLump->getName() : "None");
+		}
+#endif
+
 		VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 		int w = tex->GetWidth();
 		int h = tex->GetHeight();

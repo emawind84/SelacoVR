@@ -1048,6 +1048,8 @@ public:
 	uint32_t		fillcolor;			// Color to draw when STYLE_Shaded
 	uint32_t		Translation;
 	FTextureID		LastPatch;			// @Cockatrice - Used by the hardware renderer to determine the last rendered patch
+	int				lastModelSprite;	// Likewise used for the last rendered model sprite, only used when unimportant
+	uint8_t			lastModelFrame;		// And the frame index
 
 	uint32_t		RenderRequired;		// current renderer must have this feature set
 	uint32_t		RenderHidden;		// current renderer must *not* have any of these features
@@ -1086,6 +1088,7 @@ public:
 	double			dropoffz;		// killough 11/98: the lowest floor over all contacted Sectors.
 
 	uint32_t		ThruBits;
+	uint32_t		lineBlockBits;		// @Cockatrice - Compared to line bits for blocking
 	FTextureID		floorpic;			// contacted sec floorpic
 	int				floorterrain;
 	FTextureID		ceilingpic;			// contacted sec ceilingpic

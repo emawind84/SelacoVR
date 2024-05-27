@@ -52,6 +52,8 @@
 #include "image.h"
 #include "s_soundinternal.h"
 #include "i_time.h"
+#include "v_video.h"
+#include "hw_material.h"
 
 //==========================================================================
 //
@@ -565,6 +567,41 @@ DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, UseGamePalette, UseGamePalette)
 	PARAM_PROLOGUE;
 	PARAM_INT(texid);
 	ACTION_RETURN_INT(UseGamePalette(texid));
+}
+
+
+EXTERN_CVAR(Bool, gl_texture_thread);
+
+static int MakeReady(int texid, int translation) {
+
+	if (!gl_texture_thread || !screen->SupportsBackgroundCache()) return 1;
+
+	auto tex = TexMan.GameByIndex(texid);
+	if (tex == NULL) return 1;
+
+	int scaleflags = 0;
+	FMaterial* gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
+	if (!gltex || !gltex->IsHardwareCached(translation)) {
+		if (gltex) {
+			screen->BackgroundCacheMaterial(gltex, translation, true);  // TODO: Prevent calling this every time the sprite wants to render, it's incredibly wasteful
+		}
+		else {
+			screen->BackgroundCacheTextureMaterial(tex, translation, scaleflags, true);
+		}
+
+		return 0;
+	}
+
+	return 1;
+}
+
+// @cockatrice - UI Function to preload and test a texture upload
+DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, MakeReady, MakeReady)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(texid);
+	PARAM_INT(translation);
+	ACTION_RETURN_INT(MakeReady(texid, translation));
 }
 
 //=====================================================================================

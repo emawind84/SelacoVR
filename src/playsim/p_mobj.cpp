@@ -354,6 +354,7 @@ void AActor::Serialize(FSerializer &arc)
 		A("spriterotation", SpriteRotation)
 		("alternative", alternative)
 		A("thrubits", ThruBits)
+		A("lineBlockBits", lineBlockBits)
 		A("cameraheight", CameraHeight)
 		A("camerafov", CameraFOV)
 		A("tag", Tag)
@@ -4515,6 +4516,8 @@ void ConstructActor(AActor *actor, const DVector3 &pos, bool SpawningMapThing)
 	auto Level = actor->Level;
 	actor->SpawnTime = Level->totaltime;
 	actor->SpawnOrder = Level->spawnindex++;
+	actor->lastModelFrame = -1;
+	actor->LastPatch.SetInvalid();
 
 	// Set default dialogue
 	actor->ConversationRoot = Level->GetConversation(actor->GetClass()->TypeName);

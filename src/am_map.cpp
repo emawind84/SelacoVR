@@ -205,10 +205,17 @@ CVAR(Int, am_markcolor, CR_GREY, CVAR_ARCHIVE)
 
 CCMD(am_togglefollow)
 {
-	am_followplayer = !am_followplayer;
+	am_followplayer = true;// !am_followplayer;
 	if (primaryLevel && primaryLevel->automap)
 		primaryLevel->automap->ResetFollowLocation();
 	Printf("%s\n", GStrings(am_followplayer ? "AMSTR_FOLLOWON" : "AMSTR_FOLLOWOFF"));
+}
+
+CCMD(am_center)
+{
+	if (primaryLevel && primaryLevel->automap) {
+		primaryLevel->automap->ResetFollowLocation();
+	}
 }
 
 CCMD(am_togglegrid)
@@ -1447,12 +1454,13 @@ bool DAutomap::Responder (event_t *ev, bool last)
 			return true;
 		}
 
-		if (am_followplayer)
+		// @Cockatrice - Allow panning with follow mode on, just provide a center button
+		/*if (am_followplayer)
 		{
 			// check for am_pan* and ignore in follow mode
 			const char *defbind = AutomapBindings.GetBind(ev->data1);
 			if (defbind && !strnicmp(defbind, "+am_pan", 7)) return false;
-		}
+		}*/
 
 		bool res = C_DoKey(ev, &AutomapBindings, nullptr);
 		if (res && ev->type == EV_KeyUp && !last)
@@ -3255,7 +3263,7 @@ void DAutomap::Drawer (int bottom)
 	{
 		doFollowPlayer();
 	}
-	else
+	//else
 	{
 		m_paninc.x = m_paninc.y = 0;
 		if (buttonMap.ButtonDown(Button_AM_PanLeft))

@@ -299,6 +299,10 @@ struct TexMan
 	native static int CheckRealHeight(TextureID tex);
 	native static bool OkForLocalization(TextureID patch, String textSubstitute);
 	native static bool UseGamePalette(TextureID tex);
+
+	// @Cockatrice - Checks and loads (in background when available) texture. Returns TRUE if fully loaded OR if unloadable/null.  Returns FALSE when waiting for load.
+	// Will not function correctly with animated textures
+	native static ui bool MakeReady(TextureID tex, int translation = 0);
 }
 
 /*

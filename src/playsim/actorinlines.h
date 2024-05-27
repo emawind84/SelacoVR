@@ -227,6 +227,9 @@ inline bool P_IsBlockedByLine(AActor* actor, line_t* line)
 	// Blocking floaters.
 	if ((actor->flags & MF_FLOAT) && (line->flags & ML_BLOCK_FLOATERS)) return true;
 
+	// @Cockatrice - Compare line bits with actor bits
+	if (actor->lineBlockBits & line->blockBits) return true;
+
 	return false;
 }
 
