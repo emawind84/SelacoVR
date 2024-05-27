@@ -91,6 +91,7 @@ FGameConfigFile::FGameConfigFile ()
 
 	OkayToWrite = false;	// Do not allow saving of the config before DoKeySetup()
 	bModSetup = false;
+	bRequiresReset = false;
 	pathname = GetConfigPath (true);
 	ChangePathName (pathname);
 	LoadConfigFile ();
@@ -267,9 +268,16 @@ void FGameConfigFile::DoGlobalSetup ()
 	if (SetSection ("LastRun"))
 	{
 		const char *lastver = GetValueForKey ("Version");
+		double last = 0, target = atof(LASTRUNVERSION);
 		if (lastver != NULL)
 		{
-			double last = atof (lastver);
+			last = atof(lastver);
+		}
+
+		if (last < target) {
+			
+			bRequiresReset = true;
+			/*
 			if (last < 207)
 			{ // Now that snd_midiprecache works again, you probably don't want it on.
 				FBaseCVar *precache = FindCVar ("snd_midiprecache", NULL);
@@ -558,6 +566,7 @@ void FGameConfigFile::DoGlobalSetup ()
 				// ooooh boy did i open a can of worms with this one.
 				i_pauseinbackground = !(i_soundinbackground);
 			}
+			*/
 		}
 	}
 }
@@ -664,6 +673,13 @@ void FGameConfigFile::DoKeySetup(const char *gamename)
 		}
 	}
 	OkayToWrite = true;
+}
+
+void FGameConfigFile::FinishStartup() {
+	if (bRequiresReset) {
+		C_SetCVarsToDefaults();
+		bRequiresReset = false;
+	}
 }
 
 // Like DoGameSetup(), but for mod-specific cvars.
