@@ -13,7 +13,7 @@ extend struct _
 	native readonly int gametic;
 	native readonly int Net_Arbitrator;
 	native ui BaseStatusBar StatusBar;
-	native readonly Weapon WP_NOCHANGE;
+	native readonly WeaponBase WP_NOCHANGE;
 	deprecated("3.8", "Use Actor.isFrozen() or Level.isFrozen() instead") native readonly bool globalfreeze;
 	native int LocalViewPitch;
 	
@@ -130,6 +130,7 @@ extend class Object
 	}
 	deprecated("4.3", "Use S_StartSound() instead") native static void S_Sound (Sound sound_id, int channel, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0, float startTime = 0.0);
 	native static void S_StartSound (Sound sound_id, int channel, int flags = 0, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0, float startTime = 0.0);
+	native static void S_StopSound (int channel, Sound sound_id = -1);
 	native static void S_PauseSound (bool notmusic, bool notsfx);
 	native static void S_ResumeSound (bool notsfx);
 	native static bool S_ChangeMusic(String music_name, int order = 0, bool looping = true, bool force = false);
@@ -165,6 +166,9 @@ class Thinker : Object native play
 		STAT_MAPMARKER,							// Map marker actors
 		STAT_DLIGHT,							// Dynamic lights
 
+		STAT_SLEEP = 60,						// Pool of sleepers, don't add to this without Sleep()
+		STAT_SLEEP_FOREVER = 61,				// Pool if indefinite sleepers. Adding to this pool is OK.
+
 		STAT_USER = 70,
 		STAT_USER_MAX = 90,
 
@@ -182,7 +186,12 @@ class Thinker : Object native play
 	virtual native void Tick();
 	virtual native void PostBeginPlay();
 	native void ChangeStatNum(int stat);
-	
+
+	virtual native void Sleep(int tics);
+	virtual native bool ShouldWake();
+	virtual native void Wake();
+	native void SleepIndefinite();
+
 	static clearscope int Tics2Seconds(int tics)
 	{
 		return int(tics / TICRATE);
@@ -292,7 +301,7 @@ struct TraceResults native
 
 	native Sector CrossedWater;		// For Boom-style, Transfer_Heights-based deep water
 	native vector3 CrossedWaterPos;	// remember the position so that we can use it for spawning the splash
-	native Sector Crossed3DWater;		// For 3D floor-based deep water
+	native F3DFloor Crossed3DWater;		// For 3D floor-based deep water
 	native vector3 Crossed3DWaterPos;
 }
 
@@ -325,6 +334,7 @@ struct DropItem native
 struct LevelInfo native
 {
 	native readonly int levelnum;
+	native readonly int levelgroup;
 	native readonly String MapName;
 	native readonly String NextMap;
 	native readonly String NextSecretMap;
@@ -334,6 +344,8 @@ struct LevelInfo native
 	native readonly int cluster;
 	native readonly int partime;
 	native readonly int sucktime;
+	native readonly int invasiontier;
+	native readonly double tilt, tiltAngle;
 	native readonly int flags;
 	native readonly int flags2;
 	native readonly int flags3;
@@ -394,9 +406,11 @@ struct LevelLocals native
 	native readonly int starttime;
 	native readonly int partime;
 	native readonly int sucktime;
+	
 	native readonly int cluster;
 	native readonly int clusterflags;
 	native readonly int levelnum;
+	native readonly int levelgroup;
 	native readonly String LevelName;
 	native readonly String MapName;
 	native String NextMap;
@@ -416,6 +430,8 @@ struct LevelLocals native
 	native int found_items;
 	native int total_monsters;
 	native int killed_monsters;
+	native int invasiontier;
+	native double tilt, tiltAngle;
 	native play double gravity;
 	native play double aircontrol;
 	native play double airfriction;
@@ -432,6 +448,7 @@ struct LevelLocals native
 	native readonly bool polygrind;
 	native readonly bool nomonsters;
 	native readonly bool allowrespawn;
+	native readonly bool rainymap;
 	deprecated("3.8", "Use Level.isFrozen() instead") native bool frozen;
 	native readonly bool infinite_flight;
 	native readonly bool no_dlg_freeze;
@@ -455,6 +472,7 @@ struct LevelLocals native
 	native void StartSlideshow(Name whichone = 'none');
 	native static void MakeScreenShot();
 	native static void MakeAutoSave();
+	native static bool MakeQuickSave();
 	native void WorldDone();
 	deprecated("3.8", "This function does nothing") static void RemoveAllBots(bool fromlist) { /* intentionally left as no-op. */ }
 	native ui Vector2 GetAutomapPosition();
@@ -510,6 +528,10 @@ struct LevelLocals native
 	native void ExitLevel(int position, bool keepFacing);
 	native void SecretExitLevel(int position);
 	native void ChangeLevel(string levelname, int position = 0, int flags = 0, int skill = -1);
+
+	native void StartNewGame(int episode, int skill = -1, string className = "");
+	native void ReturnToTitle();
+	native void QuitGame();
 }
 
 // a few values of this need to be readable by the play code.

@@ -68,6 +68,23 @@ DEFINE_ACTION_FUNCTION(IJoystickConfig, SetAxisScale)
 	return 0;
 }
 
+DEFINE_ACTION_FUNCTION(IJoystickConfig, GetAxisAcceleration)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	PARAM_INT(axis);
+	ACTION_RETURN_FLOAT(self->GetAxisAcceleration(axis));
+}
+
+DEFINE_ACTION_FUNCTION(IJoystickConfig, SetAxisAcceleration)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	PARAM_INT(axis);
+	PARAM_FLOAT(sens);
+	self->SetAxisAcceleration(axis, (float)sens);
+	return 0;
+}
+
+
 DEFINE_ACTION_FUNCTION(IJoystickConfig, GetAxisDeadZone)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
@@ -113,11 +130,63 @@ DEFINE_ACTION_FUNCTION(IJoystickConfig, GetAxisName)
 	ACTION_RETURN_STRING(self->GetAxisName(axis));
 }
 
+DEFINE_ACTION_FUNCTION(IJoystickConfig, GetAxis)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	PARAM_INT(axis);
+	ACTION_RETURN_FLOAT(self->GetAxis(axis));
+}
+
+DEFINE_ACTION_FUNCTION(IJoystickConfig, GetRawAxis)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	PARAM_INT(axis);
+	ACTION_RETURN_FLOAT(self->GetRawAxis(axis));
+}
+
 DEFINE_ACTION_FUNCTION(IJoystickConfig, GetNumAxes)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
 	ACTION_RETURN_INT(self->GetNumAxes());
 }
+
+DEFINE_ACTION_FUNCTION(IJoystickConfig, NumJoysticks)
+{
+	ACTION_RETURN_INT(Joysticks.Size());
+}
+
+DEFINE_ACTION_FUNCTION(IJoystickConfig, GetJoystick)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(indx);
+	ACTION_RETURN_POINTER(Joysticks[indx]);
+}
+
+DEFINE_ACTION_FUNCTION(IJoystickConfig, RestoreDefaults)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	self->SetDefaultConfig();
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(IJoystickConfig, AddVibration)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	PARAM_FLOAT(l);
+	PARAM_FLOAT(r);
+	ACTION_RETURN_BOOL(self->AddVibration((float)l, (float)r));
+}
+
+DEFINE_ACTION_FUNCTION(IJoystickConfig, SetVibration)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(IJoystickConfig);
+	PARAM_FLOAT(l);
+	PARAM_FLOAT(r);
+	ACTION_RETURN_BOOL(self->SetVibration((float)l, (float)r));
+}
+
+
+
 
 
 void UpdateJoystickMenu(IJoystickConfig *selected)

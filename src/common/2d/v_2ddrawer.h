@@ -70,6 +70,7 @@ public:
 		DTF_Scissor = 2,
         DTF_Burn = 4,
 		DTF_Indexed = 8,
+		DTF_ForceFilter = 16
 	};
 
 

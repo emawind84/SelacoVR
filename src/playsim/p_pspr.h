@@ -31,6 +31,7 @@
 #define __P_PSPR_H__
 
 #include "renderstyle.h"
+#include "TSQueue.h"
 
 // Basic data types.
 // Needs fixed point, and BAM angles.
@@ -131,6 +132,11 @@ public:
 	int Flags;
 	FRenderStyle Renderstyle;
 
+	// @Cockatrice - Kind of hacky, but we are going to store the last successfully rendered frame when using threaded loading
+	// That way we know what to display until the next frame is ready. Never serialize this or store it!
+	RingBuffer<int, 5> LastPatches;
+	FTextureID LastPatch;
+
 private:
 	DPSprite () {}
 
@@ -154,6 +160,7 @@ void P_NewPspriteTick();
 void P_CalcSwing (player_t *player);
 void P_SetPsprite(player_t *player, PSPLayers id, FState *state, bool pending = false);
 void P_BringUpWeapon (player_t *player);
+void P_GetCameraOffsets(player_t *player, DVector3 &angleOffsets, DVector3 &posOffset, double ticFrac = 1.0, bool worldTilt = true);
 void P_FireWeapon (player_t *player);
 void P_BobWeapon (player_t *player, float *x, float *y, double ticfrac);
 DAngle P_BulletSlope (AActor *mo, FTranslatedLineTarget *pLineTarget = NULL, int aimflags = 0);

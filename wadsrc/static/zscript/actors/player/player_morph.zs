@@ -54,7 +54,7 @@ extend class PlayerPawn
 
 	virtual void ActivateMorphWeapon ()
 	{
-		class<Weapon> morphweaponcls = MorphWeapon;
+		class<WeaponBase> morphweaponcls = MorphWeapon;
 		player.PendingWeapon = WP_NOCHANGE;
 
 		if (player.ReadyWeapon != null)
@@ -67,16 +67,16 @@ extend class PlayerPawn
 			}
 		}
 
-		if (morphweaponcls == null || !(morphweaponcls is 'Weapon'))
+		if (morphweaponcls == null || !(morphweaponcls is 'WeaponBase'))
 		{ // No weapon at all while morphed!
 			player.ReadyWeapon = null;
 		}
 		else
 		{
-			player.ReadyWeapon = Weapon(FindInventory (morphweaponcls));
+			player.ReadyWeapon = WeaponBase(FindInventory (morphweaponcls));
 			if (player.ReadyWeapon == null)
 			{
-				player.ReadyWeapon = Weapon(GiveInventoryType (morphweaponcls));
+				player.ReadyWeapon = WeaponBase(GiveInventoryType (morphweaponcls));
 				if (player.ReadyWeapon != null)
 				{
 					player.ReadyWeapon.GivenAsMorphWeapon = true; // flag is used only by new beastweap semantics in UndoPlayerMorph
@@ -182,8 +182,11 @@ extend class PlayerPawn
 		morphed.bFly |= bFly;
 		morphed.bGhost |= bGhost;
 
-		if (enter_flash == null) enter_flash = 'TeleportFog';
-		let eflash = Spawn(enter_flash, Pos + (0, 0, gameinfo.telefogheight), ALLOW_REPLACE);
+		Actor eflash = null;
+		if (enter_flash != null) {
+			eflash = Spawn(enter_flash, Pos + (0, 0, gameinfo.telefogheight), ALLOW_REPLACE);
+		}
+		
 		let p = player;
 		player = null;
 		alternative = morphed;
@@ -198,7 +201,6 @@ extend class PlayerPawn
 		p.MorphedPlayerClass = spawntype;
 
 		p.MorphStyle = style;
-		if (exit_flash == null) exit_flash = 'TeleportFog';
 		p.MorphExitFlash = exit_flash;
 		p.health = morphed.health;
 		p.mo = morphed;
@@ -389,9 +391,9 @@ extend class PlayerPawn
 		if (correctweapon)
 		{ // Better "lose morphed weapon" semantics
 			class<Actor> morphweaponcls = MorphWeapon;
-			if (morphweaponcls != null && morphweaponcls is 'Weapon')
+			if (morphweaponcls != null && morphweaponcls is 'WeaponBase')
 			{
-				let OriginalMorphWeapon = Weapon(altmo.FindInventory (morphweapon));
+				let OriginalMorphWeapon = WeaponBase(altmo.FindInventory (morphweapon));
 				if ((OriginalMorphWeapon != null) && (OriginalMorphWeapon.GivenAsMorphWeapon))
 				{ // You don't get to keep your morphed weapon.
 					if (OriginalMorphWeapon.SisterWeapon != null)

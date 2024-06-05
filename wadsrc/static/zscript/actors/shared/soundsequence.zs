@@ -60,6 +60,10 @@
 
 class AmbientSound : Actor
 {
+	bool activatedOnce;
+	bool user_alwaysPlay;
+	int inRangeCounter;
+
 	default
 	{
 		+NOBLOCKMAP
@@ -69,20 +73,42 @@ class AmbientSound : Actor
 	}
 	
 	native void MarkAmbientSounds();
-	override native void Tick();
+	native void AmbientTick();
 	override native void Activate(Actor activator);
 	override native void Deactivate(Actor activator);
 	
 	override void BeginPlay ()
 	{
 		Super.BeginPlay ();
-		Activate (NULL);
+		bDormant = (SpawnFlags & MTF_DORMANT);
 	}
 	
 	override void MarkPrecacheSounds()
 	{
 		Super.MarkPrecacheSounds();
 		MarkAmbientSounds();
+	}
+
+	override void Tick() {
+		Super.Tick();
+		
+		// Check range to players
+		// This code has been moved into AmbientTick() because we cannot get the ambient attenuation setting for when Args[3] is not present
+		/*bool inRange = user_alwaysPlay || (--inRangeCounter > 0 || !CheckRange(args[3] + 128, true));
+
+		if(!inRange && special2) {
+			Deactivate(NULL);
+		} else if(inRange && !special2 && !bDormant && level.maptime > 5) {
+			inRangeCounter = 10;
+			Activate(NULL);
+		}*/
+
+		if(!activatedOnce && !bDormant && level.maptime > 5) {
+			Activate(NULL);
+			activatedOnce = true;
+		}
+
+		AmbientTick();
 	}
 }
 

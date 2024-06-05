@@ -105,12 +105,12 @@ CUSTOM_CVAR(Float, r_quakeintensity, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 	else if (self > 1.f) self = 1.f;
 }
 
-CUSTOM_CVARD(Int, r_actorspriteshadow, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "render actor sprite shadows. 0 = off, 1 = default, 2 = always on")
+CUSTOM_CVARD(Int, r_shadowquality, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "render light effect shadows and sprite shadows. 1 = low, 2 = medium, 3 = high")
 {
-	if (self < 0)
-		self = 0;
-	else if (self > 2)
-		self = 2;
+	if (self < 1)
+		self = 1;
+	else if (self > 3)
+		self = 3;
 }
 CUSTOM_CVARD(Float, r_actorspriteshadowdist, 1500.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "how far sprite shadows should be rendered")
 {
@@ -119,6 +119,7 @@ CUSTOM_CVARD(Float, r_actorspriteshadowdist, 1500.0, CVAR_ARCHIVE | CVAR_GLOBALC
 	else if (self > 8192.f)
 		self = 8192.f;
 }
+EXTERN_CVAR(Bool, gl_light_shadowmap);
 
 int 			viewwindowx;
 int 			viewwindowy;
@@ -164,6 +165,9 @@ int			freelookviewheight;
 
 DVector3a view;
 DAngle viewpitch;
+
+DVector3	FrameAngleOffsets;	// cache each frame for look offsets
+DVector3	FramePosOffset;		// cache each frame for look offsets
 
 DEFINE_GLOBAL(LocalViewPitch);
 
@@ -415,6 +419,7 @@ void R_Shutdown ()
 	if (SWRenderer != nullptr) delete SWRenderer;
 	SWRenderer = nullptr;
 }
+
 
 //==========================================================================
 //
@@ -748,6 +753,29 @@ static double QuakePower(double factor, double intensity, double offset)
 // R_SetupFrame
 //
 //==========================================================================
+EXTERN_CVAR(Bool, g_leveltilting)
+
+void R_SetupViewOffsets(player_t *player, double ticFrac, DVector3 &angleOffsets, DVector3 &posOffset) {
+	// @Cockatrice - Allow the player class to supply per-frame view adjustments
+	// This will be used for things like strafe-tilt. We don't use the look interpolation
+	// because it also interpolates mouse-look, which we absolutely do not want
+	/*angleOffsets = { 0,0,0 };
+	posOffset = { 0,0,0 };
+	
+	if (player != NULL && player->mo != NULL) {
+		IFVIRTUALPTRNAME(player->mo, NAME_PlayerPawn, CameraOffsets)
+		{
+			VMValue param[] = { player->mo, ticFrac };
+			VMReturn ret[2];
+			ret[0].Location = &angleOffsets;
+			ret[1].Location = &posOffset;
+			ret[0].RegType = REGT_FLOAT | REGT_MULTIREG3;
+			ret[1].RegType = REGT_FLOAT | REGT_MULTIREG3;
+			VMCall(func, param, 2, ret, 2);
+		}
+	}*/
+	P_GetCameraOffsets(player, angleOffsets, posOffset, ticFrac, false);
+}
 
 void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor *actor)
 {
@@ -788,11 +816,27 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 		iview->otic = nowtic;
 		iview->Old = iview->New;
 	}
+
+	viewpoint.TicFrac = I_GetTimeFrac();
+	if (cl_capfps || r_NoInterpolate)
+	{
+		viewpoint.TicFrac = 1.;
+	}
+	
+	R_SetupViewOffsets(player, viewpoint.TicFrac, FrameAngleOffsets, FramePosOffset);
+	
 	//==============================================================================================
 	// Handles offsetting the camera with ChaseCam and/or viewpos.
 	{
 		AActor *mo = viewpoint.camera;
 		DViewPosition *VP = mo->ViewPos;
+		if (VP) {
+			VP->Offset += FramePosOffset;
+		}
+		else {
+			// TODO: Supply a temporary viewposition if there is an offset
+		}
+
 		const DVector3 orig = { mo->Pos().XY(), mo->player ? mo->player->viewz : mo->Z() + mo->GetCameraHeight() };
 		viewpoint.ActorPos = orig;
 
@@ -919,13 +963,22 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 		iview->otic = nowtic;
 	}
 
-	viewpoint.TicFrac = I_GetTimeFrac ();
-	if (cl_capfps || r_NoInterpolate)
-	{
-		viewpoint.TicFrac = 1.;
-	}
+	
 	R_InterpolateView (viewpoint, player, viewpoint.TicFrac, iview);
 
+	// Add angle offsets from script, if any
+	viewpoint.Angles.Yaw += FrameAngleOffsets.X;
+	viewpoint.Angles.Pitch += FrameAngleOffsets.Y;
+	viewpoint.Angles.Roll += FrameAngleOffsets.Z;
+
+	// Add world tilt
+	if (g_leveltilting) {
+		auto wyaw = viewpoint.Angles.Yaw + level.tiltAngle;
+		viewpoint.Angles.Roll += wyaw.Cos() * level.tilt;
+		viewpoint.Angles.Pitch += -wyaw.Sin() * level.tilt;
+	}
+
+	
 	viewpoint.SetViewAngle (viewwindow);
 
 	// Keep the view within the sector's floor and ceiling
@@ -947,7 +1000,7 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 		}
 	}
 
-	if (!paused)
+	if (!paused && menuactive != MENU_On && menuactive != MENU_WaitKey)
 	{
 		FQuakeJiggers jiggers;
 
@@ -1152,18 +1205,21 @@ CUSTOM_CVAR(Float, maxviewpitch, 90.f, CVAR_ARCHIVE | CVAR_SERVERINFO)
 
 bool R_ShouldDrawSpriteShadow(AActor *thing)
 {
+	//@Cockatrice - Hate me for this, but for Selaco we want to unify shadow settings and this was the easiest way to do it
+	if (!gl_light_shadowmap) return false;
+
 	int rf = thing->renderflags;
 	// for wall and flat sprites the shadow math does not work so these must be unconditionally skipped.
 	if (rf & (RF_FLATSPRITE | RF_WALLSPRITE)) return false;	
 
 	bool doit = false;
-	switch (r_actorspriteshadow)
+	switch (r_shadowquality)
 	{
-	case 1:
+	case 2:
 		doit = (rf & RF_CASTSPRITESHADOW);
 		break;
 
-	case 2:
+	case 3:
 		doit = (rf & RF_CASTSPRITESHADOW) || (!(rf & RF_NOSPRITESHADOW) && ((thing->flags3 & MF3_ISMONSTER) || thing->player != nullptr));
 		break;
 

@@ -249,7 +249,7 @@ void hw_GetDynModelLight(AActor *self, FDynLightData &modellightdata)
 					{
 						if (std::find(addedLights.begin(), addedLights.end(), light) == addedLights.end()) // Check if we already added this light from a different subsector
 						{
-							AddLightToList(modellightdata, group, light, true);
+							AddLightToList(modellightdata, group, light, true, 1.0);
 							addedLights.Push(light);
 						}
 					}

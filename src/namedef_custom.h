@@ -324,6 +324,7 @@ xx(RedSkull)
 xx(DynamicLight)
 xx(SpotInnerAngle)
 xx(SpotOuterAngle)
+xx(Flicker)
 xx(lightflags)
 xx(lighttype)
 xx(InternalDynamicLight)
@@ -369,6 +370,8 @@ xx(Burn)
 //xx(Ice)			// already defined above
 xx(Disintegrate)
 xx(Smash)
+xx(Splash)
+xx(HitThrough)
 
 // Weapon animator names.
 xx(Select)

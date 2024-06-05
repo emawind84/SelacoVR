@@ -74,6 +74,9 @@ struct JoystickConfig native version("2.4")
 	native float GetAxisScale(int axis);
 	native void SetAxisScale(int axis, float scale);
 
+	native float GetAxisAcceleration(int axis);
+	native void SetAxisAcceleration(int axis, float scale);
+
 	native float GetAxisDeadZone(int axis);
 	native void SetAxisDeadZone(int axis, float zone);
 
@@ -84,6 +87,27 @@ struct JoystickConfig native version("2.4")
 	native int GetNumAxes();
 	native String GetAxisName(int axis);
 
+	native float GetAxis(int axis);		// @Cockatrice - Get current value of axis
+	native float GetRawAxis(int axis);	// Get axis value that has not been squared or processed with deadzone
+
+	native void RestoreDefaults();
+	native bool AddVibration(float l, float r);
+	native bool SetVibration(float l, float r);
+
+	native static int NumJoysticks();
+	native static JoystickConfig GetJoystick(int index);
+
+	static clearscope void AddVibe(float l, float r) {
+		for(int x = 0; x < NumJoysticks(); x++) {
+			GetJoystick(x).AddVibration(l, r);
+		}
+	}
+
+	static clearscope void SetVibe(float l, float r) {
+		for(int x = 0; x < NumJoysticks(); x++) {
+			GetJoystick(x).SetVibration(l, r);
+		}
+	}
 }
 
 class Menu : Object native ui version("2.4")
@@ -129,7 +153,9 @@ class Menu : Object native ui version("2.4")
 	native bool mBackbuttonSelected;
 	native bool DontDim;
 	native bool DontBlur;
+	native float BlurAmount;	// -1 = Ignored, > 0 = Force this much blur regardless of settings
 	native bool AnimatedTransition;
+	native bool ReceiveAllInputEvents;
 	native bool Animated;
 
 	native static int MenuTime();
@@ -153,7 +179,9 @@ class Menu : Object native ui version("2.4")
 		mBackbuttonSelected = false;
 		DontDim = false;
 		DontBlur = false;
+		BlurAmount = -1;
 		AnimatedTransition = false;
+		ReceiveAllInputEvents = false;
 		Animated = false;
 	}
 

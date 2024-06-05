@@ -72,6 +72,9 @@ public:
 	virtual char *Gets(char *strbuf, int len) = 0;
 	virtual const char *GetBuffer() const { return nullptr; }
 	long GetLength () const { return Length; }
+
+	// @Cockatrice - We need to be able to copy a file reader so we may spin it up in a thread
+	virtual FileReaderInterface* CopyNew() { return nullptr; }
 };
 
 class MemoryReader : public FileReaderInterface
@@ -96,6 +99,12 @@ public:
 	long Read(void *buffer, long len) override;
 	char *Gets(char *strbuf, int len) override;
 	virtual const char *GetBuffer() const override { return bufptr; }
+	
+	FileReaderInterface* CopyNew() override {
+		MemoryReader *m = new MemoryReader(bufptr, Length);
+		m->FilePos = FilePos;
+		return m;
+	}
 };
 
 
@@ -140,6 +149,11 @@ public:
 		mReader = r.mReader;
 		r.mReader = nullptr;
 		return *this;
+	}
+
+	FileReader* CopyNew() {
+		if (mReader == nullptr) { return nullptr; }
+		return new FileReader(mReader->CopyNew());
 	}
 
 	// This is for wrapping the actual reader for custom access where a managed FileReader won't work. 
