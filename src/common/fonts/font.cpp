@@ -400,10 +400,19 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 void FFont::ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height, const DVector2 &Scale, TMap<int, int> &explicitWidths)
 {
 	// all valid lumps must be named with a hex number that represents the Unicode character index for its first character,
-	TArray<TexPartBuild> part(1, true);
-	TMap<int, FGameTexture*> charMap;
+	//TArray<TexPartBuild> part(1, true);
+	struct CharData2 {
+		FGameTexture* tex;
+		int sourceX, sourceY, destW, destH;
+	};
+
+	TMap<int, CharData2> charMap;
+	//TMap<int, CharData2> charMapData;
+
 	int minchar = INT_MAX;
 	int maxchar = INT_MIN;
+	supportsChardata = true;
+
 	for (auto &entry : folderdata)
 	{
 		char *endp;
@@ -421,6 +430,18 @@ void FFont::ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height
 				if (minchar > position) minchar = int(position);
 				if (maxchar < maxinsheet) maxchar = maxinsheet;
 
+				// Replace texture if needed
+				if (tex->GetUseType() != ETextureType::FontChar || tex->GetScaleX() != Scale.X || tex->GetScaleY() != Scale.Y) {
+					auto newTex = MakeGameTexture(tex->GetTexture(), nullptr, ETextureType::FontChar);
+					newTex->CopySize(tex, true);
+					newTex->SetUseType(ETextureType::FontChar);
+					newTex->SetScale((float)Scale.X, (float)Scale.Y);
+
+					TexMan.AddGameTexture(newTex);
+					tex = newTex;
+				}
+
+
 				for (int y = 0; y < numtex_y; y++)
 				{
 					for (int x = 0; x < numtex_x; x++)
@@ -432,7 +453,7 @@ void FFont::ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height
 							charWidth = *xp;
 						}
 
-						part[0].OriginX = -width * x;
+						/*part[0].OriginX = -width * x;
 						part[0].OriginY = -height * y;
 						part[0].TexImage = static_cast<FImageTexture*>(tex->GetTexture());
 						FMultiPatchTexture *image = new FMultiPatchTexture(charWidth, height, part, false, false);
@@ -443,7 +464,10 @@ void FFont::ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height
 						gtex->SetOffsets(1, 0, 0);
 						gtex->SetScale((float)Scale.X, (float)Scale.Y);
 						TexMan.AddGameTexture(gtex);
-						charMap.Insert(thisPosition, gtex);
+						charMap.Insert(thisPosition, gtex);*/
+
+						// @Cocaktrice - Instead of making a whole new f***ing texture for each character, let's be more HDD friendly and just add the coordinates required to draw each character from the master texture
+						charMap.Insert(thisPosition, {tex, width * x, height * y, charWidth, height});
 					}
 				}
 			}
@@ -464,18 +488,30 @@ void FFont::ReadSheetFont(TArray<FolderEntry> &folderdata, int width, int height
 
 	for (int i = 0; i < count; i++)
 	{
-		auto lump = charMap.CheckKey(FirstChar + i);
-		if (lump != nullptr)
-		{
-			auto pic = (*lump)->GetTexture();
-			Chars[i].OriginalPic = (*lump)->GetUseType() == ETextureType::FontChar? (*lump) : MakeGameTexture(pic, nullptr, ETextureType::FontChar);
-			Chars[i].OriginalPic->SetUseType(ETextureType::FontChar);
-			Chars[i].OriginalPic->CopySize(*lump, true);
-			if (Chars[i].OriginalPic != *lump) TexMan.AddGameTexture(Chars[i].OriginalPic);
-		}
-
 		auto cWidth = explicitWidths.CheckKey(FirstChar + i);
 		Chars[i].XMove = cWidth ? int(*cWidth / Scale.X) : int(width / Scale.X);
+		
+		auto chr = charMap.CheckKey(FirstChar + i);
+		if (chr != nullptr && chr->tex != nullptr)
+		{
+			auto tex = chr->tex;
+			auto pic = tex->GetTexture();
+			Chars[i].OriginalPic = tex->GetUseType() == ETextureType::FontChar && tex->GetScaleX() == Scale.X && tex->GetScaleY() == Scale.Y ? tex : MakeGameTexture(pic, nullptr, ETextureType::FontChar);
+
+			if (Chars[i].OriginalPic != tex) {	// In a well formatted sheet texture, this should no longer happen
+				Chars[i].OriginalPic->CopySize(tex, true);
+				Chars[i].OriginalPic->SetUseType(ETextureType::FontChar);
+				Chars[i].OriginalPic->SetScale((float)Scale.X, (float)Scale.Y);
+				TexMan.AddGameTexture(Chars[i].OriginalPic);
+				tex = Chars[i].OriginalPic;
+			}
+
+			//const double delta = 0.000015;
+			Chars[i].tCharX = chr->sourceX;	// / (double)tex->GetTexelWidth() + delta;
+			Chars[i].tCharY = chr->sourceY;	// / (double)tex->GetTexelHeight() + delta;
+			Chars[i].tCharW = chr->destW;	// / (double)tex->GetTexelWidth() - delta;
+			Chars[i].tCharH = chr->destH;	// / (double)tex->GetTexelHeight() - delta;
+		}
 	}
 
 	if (map1252 && !No1252)
@@ -858,6 +894,26 @@ FGameTexture *FFont::GetChar (int code, int translation, int *const width) const
 
 	assert(Chars[code].OriginalPic->GetUseType() == ETextureType::FontChar);
 	return Chars[code].OriginalPic;
+}
+
+
+FFont::CharData FFont::GetChar(int code, int translation) const
+{
+	CharData data;
+	data.OriginalPic = nullptr;
+	data.XMove = SpaceWidth;
+
+	if (!supportsChardata) {
+		data.OriginalPic = GetChar(code, translation, &data.XMove);
+		return data;
+	}
+	
+	code = GetCharCode(code, true);
+
+	if (code >= 0) {
+		code -= FirstChar;
+		return Chars[code];
+	} else return data;
 }
 
 //==========================================================================

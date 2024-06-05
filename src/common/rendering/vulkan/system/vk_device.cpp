@@ -65,6 +65,15 @@ CUSTOM_CVAR(Int, vk_device, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCAL
 	Printf("This won't take effect until " GAMENAME " is restarted.\n");
 }
 
+CUSTOM_CVAR(Int, vk_max_transfer_threads, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+{
+	if (self < 0) self = 0;
+	else if (self > 4) self = 4;
+
+	Printf("This won't take effect until " GAMENAME " is restarted.\n");
+}
+
+
 CCMD(vk_listdevices)
 {
 	for (size_t i = 0; i < SupportedDevices.size(); i++)
@@ -270,8 +279,8 @@ void VulkanDevice::SelectPhysicalDevice()
 
 		// Sort by GPU type first. This will ensure the "best" device is most likely to map to vk_device 0
 		static const int typeSort[] = { 4, 1, 0, 2, 3 };
-		int sortA = a.device->Properties.deviceType < 5 ? typeSort[a.device->Properties.deviceType] : (int)a.device->Properties.deviceType;
-		int sortB = b.device->Properties.deviceType < 5 ? typeSort[b.device->Properties.deviceType] : (int)b.device->Properties.deviceType;
+		int sortA = a.device->Properties.deviceType < 5 ? typeSort[(int)a.device->Properties.deviceType] : (int)a.device->Properties.deviceType;
+		int sortB = b.device->Properties.deviceType < 5 ? typeSort[(int)b.device->Properties.deviceType] : (int)b.device->Properties.deviceType;
 		if (sortA != sortB)
 			return sortA < sortB;
 
@@ -302,6 +311,10 @@ void VulkanDevice::SelectPhysicalDevice()
 	uploadFamily = SupportedDevices[selected].uploadFamily;
 	graphicsTimeQueries = SupportedDevices[selected].graphicsTimeQueries;
 	uploadFamilySupportsGraphics = SupportedDevices[selected].uploadFamilySupportsGraphics;
+
+	// Test to see if we can fit more upload queues
+	int rqt = (uploadFamily == graphicsFamily ? 1 : 0) + (presentFamily == uploadFamily ? 1 : 0);
+	uploadQueuesSupported = SupportedDevices[selected].device->QueueFamilies[uploadFamily].queueCount - rqt;
 }
 
 bool VulkanDevice::SupportsDeviceExtension(const char *ext) const
@@ -347,7 +360,8 @@ static int CreateOrModifyQueueInfo(std::vector<VkDeviceQueueCreateInfo> &infos, 
 
 void VulkanDevice::CreateDevice()
 {
-	float queuePriority = 1.0f;
+	// TODO: Lower queue priority for upload queues
+	float queuePriority[] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
 	std::set<int> neededFamilies;
@@ -355,18 +369,15 @@ void VulkanDevice::CreateDevice()
 	if(presentFamily != -2) neededFamilies.insert(presentFamily);
 	neededFamilies.insert(uploadFamily);
 
-	int graphicsFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, graphicsFamily, &queuePriority);
-	int presentFamilySlot = presentFamily == -2 ? -1 : CreateOrModifyQueueInfo(queueCreateInfos, presentFamily, &queuePriority);
-	int uploadFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, uploadFamily, &queuePriority);
-
-	// Graphics Queue
-	/*VkDeviceQueueCreateInfo queueCreateInfo = {};
-	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfo.queueFamilyIndex = graphicsFamily;
-	queueCreateInfo.queueCount = 1;
-	queueCreateInfo.pQueuePriorities = &queuePriority;
-	queueCreateInfos.push_back(queueCreateInfo);*/
-
+	int graphicsFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, graphicsFamily, queuePriority);
+	int presentFamilySlot = presentFamily == -2 ? -1 : CreateOrModifyQueueInfo(queueCreateInfos, presentFamily, queuePriority);
+	
+	// Request as many upload queues as desired and supported. Minimum 1
+	std::vector<int> uploadFamilySlots;
+	int numUploadQueues = vk_max_transfer_threads > 0 ? vk_max_transfer_threads : 2;
+	for (int x = 0; x < numUploadQueues && x < uploadQueuesSupported; x++) {
+		uploadFamilySlots.push_back(CreateOrModifyQueueInfo(queueCreateInfos, uploadFamily, queuePriority));
+	}
 
 	VkDeviceCreateInfo deviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 	VkPhysicalDeviceFeatures2 deviceFeatures2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
@@ -417,9 +428,27 @@ void VulkanDevice::CreateDevice()
 
 	vkGetDeviceQueue(device, graphicsFamily, graphicsFamilySlot, &graphicsQueue);
 	vkGetDeviceQueue(device, presentFamily, presentFamilySlot != -1 ? presentFamilySlot : graphicsFamilySlot, &presentQueue);
-	vkGetDeviceQueue(device, uploadFamily, uploadFamilySlot, &uploadQueue);
+	
+	// Upload queues
+	VulkanUploadSlot slot = { VK_NULL_HANDLE, uploadFamily, uploadFamilySlots[0], uploadFamilySupportsGraphics };
+	vkGetDeviceQueue(device, uploadFamily, uploadFamilySlots[0], &slot.queue);
+	uploadQueues.push_back(slot);
 
-	Printf(TEXTCOLOR_WHITE "VK Graphics Queue: %p\nVK Upload Queue: %p \nVK Present Queue: %p\n", graphicsQueue, uploadQueue, presentQueue);
+	// Push more upload queues if supported
+	for(int x = 1; x < (int)uploadFamilySlots.size(); x++) {
+		VulkanUploadSlot slot = { VK_NULL_HANDLE, uploadFamily, uploadFamilySlots[x], uploadFamilySupportsGraphics };
+		vkGetDeviceQueue(device, uploadFamily, uploadFamilySlots[x], &slot.queue);
+		uploadQueues.push_back(slot);
+
+		if (slot.queue == VK_NULL_HANDLE) {
+			FString msg;
+			msg.Format("Vulkan Error: Failed to create background transfer queue %d!\nCheck vk_max_transfer_threads?", x);
+			throw CVulkanError(msg.GetChars());
+		}
+	}
+
+	Printf(TEXTCOLOR_WHITE "VK Graphics Queue: %p\nVK Present Queue: %p\n", graphicsQueue, presentQueue);
+	for (int x = 0; x < (int)uploadQueues.size(); x++) Printf(TEXTCOLOR_WHITE "VK Upload Queue %d: %p\n", x, uploadQueues[x].queue);
 }
 
 void VulkanDevice::CreateSurface()

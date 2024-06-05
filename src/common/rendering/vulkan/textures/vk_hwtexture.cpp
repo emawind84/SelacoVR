@@ -25,6 +25,7 @@
 #include "hw_material.h"
 #include "hw_cvars.h"
 #include "hw_renderstate.h"
+#include "filesystem.h"
 #include "vulkan/system/vk_objects.h"
 #include "vulkan/system/vk_builders.h"
 #include "vulkan/system/vk_framebuffer.h"
@@ -36,6 +37,7 @@
 #include "vulkan/renderer/vk_postprocess.h"
 #include "vulkan/shaders/vk_shader.h"
 #include "vk_hwtexture.h"
+#include "g_levellocals.h"
 
 VkHardwareTexture::VkHardwareTexture(VulkanFrameBuffer* fb, int numchannels) : fb(fb)
 {
@@ -137,14 +139,88 @@ VkTextureImage *VkHardwareTexture::GetDepthStencil(FTexture *tex)
 
 void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 {
+	
 	if (!tex->isHardwareCanvas())
 	{
-		FTextureBuffer texbuffer = tex->CreateTexBuffer(translation, flags | CTF_ProcessData);
-		bool indexed = flags & CTF_Indexed;
-		CreateTexture(texbuffer.mWidth, texbuffer.mHeight,indexed? 1 : 4, indexed? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM, texbuffer.mBuffer, !indexed);
+#ifndef NDEBUG
+		// Output a texture load on the main thread for debugging. 
+		if (tex->GetSourceLump() > 0) {
+			auto* rLump = fileSystem.GetFileAt(tex->GetSourceLump());
+			Printf("Making texture: %s\n", !!rLump ? rLump->getName() : "No Lump Found!");
+		}
+		else if (tex->GetImage() && tex->GetImage()->LumpNum() > 0) {
+			auto* rLump = fileSystem.GetFileAt(tex->GetImage()->LumpNum());
+			Printf("Making texture2: %s\n", !!rLump ? rLump->getName() : "No Lump Found!");
+		}
+#endif
+
+		// @Cockatrice - Special case for GPU only textures
+		// These texture cannot be manipulated, so just straight up load them into the GPU now
+		// We are completely ignoring any translations, upscaling, trimming or effects here
+		FImageSource* src = tex->GetImage();
+		if (src && src->IsGPUOnly()) {
+			unsigned char* pixelData = nullptr;
+			size_t pixelDataSize = 0, totalDataSize = 0;
+			int mipLevels = 0;
+			uint32_t srcWidth = src->GetWidth(), srcHeight = src->GetHeight();
+
+			// Create a reader
+			auto *rLump = fileSystem.GetFileAt(src->LumpNum());
+			if (!rLump) 
+				return;
+
+			FileReader *reader = rLump->Owner->GetReader();
+			reader = reader ? reader->CopyNew() : rLump->NewReader().CopyNew();
+			if (!reader) return;
+			reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);
+
+			// Read pixels
+			src->ReadCompressedPixels(reader, &pixelData, totalDataSize, pixelDataSize, mipLevels);
+
+			// Create texture
+			// Mipmaps must be read from the source image, they cannot be generated
+			// TODO: Find some way to prevent UI textures from loading mipmaps. After all they are never used when rendering and just straight up eating VRAM for no reason
+			uint32_t expectedMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(srcWidth, srcHeight)))) + 1;
+			if (mipLevels > 0 && mipLevels == (int)expectedMipLevels) {
+				CreateTexture(fb->GetCommands(), mImage.get(), src->GetWidth(), src->GetHeight(), 4, VK_FORMAT_BC7_UNORM_BLOCK, pixelData, true, false, (int)pixelDataSize);
+
+				uint32_t mipWidth = srcWidth, mipHeight = srcHeight;
+				uint32_t mipSize = (uint32_t)pixelDataSize, dataPos = (uint32_t)pixelDataSize;
+
+				for (int x = 1; x < mipLevels; x++) {
+					mipWidth = std::max(1u, (mipWidth >> 1));
+					mipHeight = std::max(1u, (mipHeight >> 1));
+					mipSize = std::max(1u, ((mipWidth + 3) / 4)) * std::max(1u, ((mipHeight + 3) / 4)) * 16;
+					if (mipSize == 0 || totalDataSize - dataPos < mipSize)
+						break;
+					CreateTextureMipMap(fb->GetCommands(), mImage.get(), x, mipWidth, mipHeight, 4, VK_FORMAT_BC7_UNORM_BLOCK, pixelData + dataPos, mipSize);
+					dataPos += mipSize;
+				}
+			}
+			else {
+				CreateTexture(fb->GetCommands(), mImage.get(), src->GetWidth(), src->GetHeight(), 4, VK_FORMAT_BC7_UNORM_BLOCK, pixelData, false, false, (int)pixelDataSize);
+			}
+			
+			free(pixelData);
+			free(reader);
+			hwState = READY;
+		}
+		else {
+			FTextureBuffer texbuffer = tex->CreateTexBuffer(translation, flags | CTF_ProcessData);
+			bool indexed = flags & CTF_Indexed;
+			CreateTexture(texbuffer.mWidth, texbuffer.mHeight, indexed ? 1 : 4, indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM, texbuffer.mBuffer, !indexed);
+		}
 	}
 	else
 	{
+#ifndef NDEBUG
+		// Output a texture load on the main thread for debugging. 
+		if (tex->GetSourceLump() > 0) {
+			auto* rLump = fileSystem.GetFileAt(tex->GetSourceLump());
+			Printf("Making texture in the weird way: %s\n", rLump ? rLump->getName() : "None");
+		}
+#endif
+
 		VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 		int w = tex->GetWidth();
 		int h = tex->GetHeight();
@@ -174,7 +250,7 @@ void VkHardwareTexture::CreateTexture(int w, int h, int pixelsize, VkFormat form
 	hwState = READY;
 }
 
-void VkHardwareTexture::BackgroundCreateTexture(int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap) {
+void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManager, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap, bool createMips, int totalSize) {
 	if (!mLoadedImage) mLoadedImage.reset(new VkTextureImage());
 	else {
 		//mLoadedImage->Reset(fb);
@@ -182,22 +258,69 @@ void VkHardwareTexture::BackgroundCreateTexture(int w, int h, int pixelsize, VkF
 		return; // We cannot reset the loaded image on a different thread
 	}
 
-	auto bufManager = fb->GetBGCommands();
-	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, fb->device->uploadFamilySupportsGraphics);
+	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, createMips && fb->device->uploadFamilySupportsGraphics, totalSize);
 
 	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
-	if (bufManager->TransferDeleteList->TotalSize > 1) {
+	/*if (bufManager->TransferDeleteList->TotalSize > 1) {
 		bufManager->WaitForCommands(false, true);
-		//hwState = READY;
+	}*/
+}
+
+
+void VkHardwareTexture::BackgroundCreateTextureMipMap(VkCommandBufferManager* bufManager, int mipLevel, int w, int h, int pixelsize, VkFormat format, const void* pixels, int totalSize) {
+	if (!mLoadedImage) {
+		return;
+	}
+
+	CreateTextureMipMap(bufManager, mLoadedImage.get(), mipLevel, w, h, pixelsize, format, pixels, totalSize);
+
+	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
+	// TODO: Make this a manual flush, since we are going to call a couple of these mipmap creations in a row
+	/*if (bufManager->TransferDeleteList->TotalSize > 1) {
+		bufManager->WaitForCommands(false, true);
+	}*/
+}
+
+
+void VkHardwareTexture::CreateTextureMipMap(VkCommandBufferManager* bufManager, VkTextureImage *img, int mipLevel, int w, int h, int pixelsize, VkFormat format, const void* pixels, int totalSize) {
+	if (w <= 0 || h <= 0)
+		throw CVulkanError("Trying to create zero size mipmap!");
+
+	auto stagingBuffer = BufferBuilder()
+		.Size(totalSize)
+		.Usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY)
+		.DebugName("VkHardwareTexture.mStagingBuffer")
+		.Create(fb->device);
+
+	uint8_t* data = (uint8_t*)stagingBuffer->Map(0, totalSize);
+	memcpy(data, pixels, totalSize);
+	stagingBuffer->Unmap();
+
+	auto cmdBuffer = bufManager->GetTransferCommands();
+
+	// Assumes image is still in transfer layout!
+	VkBufferImageCopy region = {};
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.layerCount = 1;
+	region.imageSubresource.mipLevel = mipLevel;
+	region.imageExtent.depth = 1;
+	region.imageExtent.width = w;
+	region.imageExtent.height = h;
+	cmdBuffer->copyBufferToImage(stagingBuffer->buffer, img->Image->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+	// If we queued more than 64 MB of data already: wait until the uploads finish before continuing
+	bufManager->TransferDeleteList->Add(std::move(stagingBuffer));
+	if (bufManager->TransferDeleteList->TotalSize > (size_t)64 * 1024 * 1024) {
+		bufManager->WaitForCommands(false, true);
 	}
 }
 
-void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkTextureImage *img, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap, bool generateMipmaps)
+void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkTextureImage *img, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap, bool generateMipmaps, int totalSize)
 {
 	if (w <= 0 || h <= 0)
 		throw CVulkanError("Trying to create zero size texture");
 
-	int totalSize = w * h * pixelsize;
+	if(totalSize < 0) totalSize = w * h * pixelsize;
 	int mipLevels = !mipmap ? 1 : GetMipLevels(w, h);
 
 	auto stagingBuffer = BufferBuilder()
@@ -240,9 +363,9 @@ void VkHardwareTexture::CreateTexture(VkCommandBufferManager *bufManager, VkText
 
 	// If we queued more than 64 MB of data already: wait until the uploads finish before continuing
 	bufManager->TransferDeleteList->Add(std::move(stagingBuffer));
-	if (bufManager->TransferDeleteList->TotalSize > 64 * 1024 * 1024) {
+	if (bufManager->TransferDeleteList->TotalSize > (size_t)64 * 1024 * 1024) {
 		bufManager->WaitForCommands(false, true);
-		hwState = READY;
+		//hwState = READY;
 	}
 }
 

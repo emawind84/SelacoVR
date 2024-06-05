@@ -123,6 +123,9 @@
 #include "shiftstate.h"
 #include "s_loader.h"
 
+#include "statdb.h"
+
+
 #ifdef __unix__
 #include "i_system.h"  // for SHARE_DIR
 #endif // __unix__
@@ -147,6 +150,7 @@ void Local_Job_Init();
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
 extern void I_SetWindowTitle(const char* caption);
+extern void I_FocusWindow();
 extern void ReadStatistics();
 extern void M_SetDefaultMode ();
 extern void G_NewInit ();
@@ -210,7 +214,7 @@ static const char* iwad_folders[] = { "flats/", "textures/", "hires/", "sprites/
 static const char* iwad_reserved[] = { "mapinfo", "zmapinfo", "umapinfo", "gameinfo", "sndinfo", "sndseq", "sbarinfo", "menudef", "gldefs", "animdefs", "decorate", "zscript", "iwadinfo", "maps/" };
 
 
-CUSTOM_CVAR(Float, i_timescale, 1.0f, CVAR_NOINITCALL | CVAR_VIRTUAL)
+CUSTOM_CVAR(Float, i_timescale, 1.0f, CVAR_NOINITCALL | CVAR_VIRTUAL | CVAR_CHEAT)
 {
 	if (netgame)
 	{
@@ -878,7 +882,7 @@ void D_Display ()
 	if (nodrawers || screen == NULL)
 		return; 				// for comparative timing / profiling
 	
-	if (!AppActive && (screen->IsFullscreen() || !vid_activeinbackground))
+	if (!AppActive && !vid_activeinbackground /*(screen->IsFullscreen() || !vid_activeinbackground)*/)
 	{
 		return;
 	}
@@ -1226,6 +1230,8 @@ void D_DoomLoop ()
 			}
 			// Update display, next frame, with current state.
 			I_StartTic ();
+			statDatabase.update();
+			D_ProcessEvents();
 			D_Display ();
 			S_UpdateMusic();
 			if (wantToRestart)
@@ -1595,6 +1601,7 @@ void ParseCVarInfo()
 			ECVarType cvartype = CVAR_Dummy;
 			int cvarflags = CVAR_MOD|CVAR_ARCHIVE;
 			FBaseCVar *cvar;
+			bool set_default = false;
 
 			// Check for flag tokens.
 			while (sc.TokenType == TK_Identifier)
@@ -1623,11 +1630,24 @@ void ParseCVarInfo()
 				{
 					cvarflags |= CVAR_CONFIG_ONLY;
 				}
+				else if (stricmp(sc.String, "setdefault") == 0) {
+					set_default = true;
+				}
 				else
 				{
 					sc.ScriptError("Unknown cvar attribute '%s'", sc.String);
 				}
-				sc.MustGetAnyToken();
+
+				if (set_default) {
+					// The next token must be the cvar name.
+					sc.MustGetToken(TK_Identifier);
+					break;
+				} else sc.MustGetAnyToken();
+			}
+
+			// Error out if we are combining any flags with CVAR_REDEFINE_DEFAULT
+			if (set_default && cvarflags != (CVAR_MOD | CVAR_ARCHIVE)) {
+				sc.ScriptError("setdefault cannot be combined with any other flags");
 			}
 
 			// Possibility of defining a cvar as 'server nosave' or 'user nosave' is kept for
@@ -1641,39 +1661,44 @@ void ParseCVarInfo()
 			// Do some sanity checks.
 			// No need to check server-nosave and user-nosave combinations because they
 			// are made impossible right above.
-			if ((cvarflags & (CVAR_SERVERINFO|CVAR_USERINFO|CVAR_CONFIG_ONLY)) == 0 ||
+			if (!set_default && 
+				(cvarflags & (CVAR_SERVERINFO|CVAR_USERINFO|CVAR_CONFIG_ONLY)) == 0 ||
 				(cvarflags & (CVAR_SERVERINFO|CVAR_USERINFO)) == (CVAR_SERVERINFO|CVAR_USERINFO))
 			{
 				sc.ScriptError("One of 'server', 'user', or 'nosave' must be specified");
 			}
+
 			// The next token must be the cvar type.
-			if (sc.TokenType == TK_Bool)
-			{
-				cvartype = CVAR_Bool;
+			if (!set_default) {
+				if (sc.TokenType == TK_Bool)
+				{
+					cvartype = CVAR_Bool;
+				}
+				else if (sc.TokenType == TK_Int)
+				{
+					cvartype = CVAR_Int;
+				}
+				else if (sc.TokenType == TK_Float)
+				{
+					cvartype = CVAR_Float;
+				}
+				else if (sc.TokenType == TK_Color)
+				{
+					cvartype = CVAR_Color;
+				}
+				else if (sc.TokenType == TK_String)
+				{
+					cvartype = CVAR_String;
+				}
+				else
+				{
+					sc.ScriptError("Bad cvar type '%s'", sc.String);
+				}
+				// The next token must be the cvar name.
+				sc.MustGetToken(TK_Identifier);
 			}
-			else if (sc.TokenType == TK_Int)
-			{
-				cvartype = CVAR_Int;
-			}
-			else if (sc.TokenType == TK_Float)
-			{
-				cvartype = CVAR_Float;
-			}
-			else if (sc.TokenType == TK_Color)
-			{
-				cvartype = CVAR_Color;
-			}
-			else if (sc.TokenType == TK_String)
-			{
-				cvartype = CVAR_String;
-			}
-			else
-			{
-				sc.ScriptError("Bad cvar type '%s'", sc.String);
-			}
-			// The next token must be the cvar name.
-			sc.MustGetToken(TK_Identifier);
-			if (FindCVar(sc.String, NULL) != NULL)
+			
+			if (FindCVar(sc.String, NULL) != NULL && !set_default)
 			{
 				sc.ScriptError("cvar '%s' already exists", sc.String);
 			}
@@ -1704,12 +1729,27 @@ void ParseCVarInfo()
 					break;
 				}
 			}
-			// Now create the cvar.
-			cvar = C_CreateCVar(cvarname, cvartype, cvarflags);
-			if (cvardefault != NULL)
+			else if (set_default) {
+				sc.ScriptError("setdefault requires a value");
+			}
+
+			// Now create or modify the cvar.
+			if (set_default) {
+				cvar = FindCVar(cvarname, NULL);
+
+				if (cvar == nullptr) {
+					Printf("Warning: CVAR %s could not be found for setdefault\n", cvarname.GetChars());
+				}
+			} 
+			else {
+				cvar = C_CreateCVar(cvarname, cvartype, cvarflags);
+			}
+
+			if (cvar != nullptr && cvardefault != NULL)
 			{
 				UCVarValue val;
 				val.String = cvardefault;
+
 				cvar->SetGenericRepDefault(val, CVAR_String);
 			}
 			// To be like C and ACS, require a semicolon after everything.
@@ -1723,6 +1763,8 @@ void ParseCVarInfo()
 	{
 		GameConfig->DoModSetup (gameinfo.ConfigName);
 	}
+
+	GameConfig->FinishStartup();
 }	
 
 //==========================================================================
@@ -1970,6 +2012,82 @@ static void D_DoomInit()
 	if (!batchrun) Printf ("M_LoadDefaults: Load system defaults.\n");
 	M_LoadDefaults ();			// load before initing other systems
 }
+
+
+//==========================================================================
+//
+// AddModFiles
+//
+// Adds all files found in the subdirectory /Mods
+//==========================================================================
+
+static void AddModFilesFrom(FString path, TArray<FString>& allwads) {
+	void* handle;
+	findstate_t findstate;
+	FString findmask = path + "*.*";
+	if ((handle = I_FindFirst(findmask, &findstate)) != (void*)-1)
+	{
+		do
+		{
+			if (!(I_FindAttr(&findstate) & FA_DIREC))
+			{
+				auto FindName = I_FindName(&findstate);
+				auto p = strrchr(FindName, '.');
+				if (p != nullptr)
+				{
+					// Only valid extensions
+					if (!stricmp(p, ".wad") || !stricmp(p, ".pk3") || !stricmp(p, ".pk7"))
+					{
+						Printf("\tFound %s!\n", FindName);
+						D_AddFile(allwads, path + FindName, false, -1, GameConfig);
+					}
+				}
+			}
+		} while (I_FindNext(handle, &findstate) == 0);
+		I_FindClose(handle);
+	}
+}
+
+
+static void AddModFiles(TArray<FString>& allwads) {
+	if (!(gameinfo.flags & GI_SHAREWARE) && !Args->CheckParm("-noautoload") && !disableautoload) {
+		Printf("Finding Mods...\n");
+
+		const char* modFolder = "Mods";
+		FStringf slasheddir("%s/%s/", progdir.GetChars(), modFolder);
+		AddModFilesFrom(slasheddir, allwads);
+		AddModFilesFrom(slasheddir + "Workshop" + "/", allwads);
+
+		// Open workshop.txt if it exists, and add any PK3 files
+		FString workshopPath = slasheddir + "workshop.txt";
+		FILE* ws = fopen(workshopPath.GetChars(), "r");
+		if (ws != NULL) {
+			Printf("Checking Steam Workshop mods...\n");
+			char buff[1024];
+
+			// Skip first line
+			fgets(buff, 1024, ws);
+
+			while (fgets(buff, 1024, ws)) {
+				size_t len = strnlen(buff, 1024);
+				if (len > 4) {
+					buff[len - 1] = '\0';	// Remove nasty \n
+
+					auto p = strrchr(buff, '.');
+					if (p != nullptr) {
+						if (!strnicmp(p, ".pk3", 1024)) {
+							Printf("\tFound %s!\n", buff);
+							D_AddFile(allwads, buff, false, -1, GameConfig);
+						}
+					}
+				}
+			}
+
+			fclose(ws);
+		}
+	}
+}
+
 
 //==========================================================================
 //
@@ -3015,8 +3133,13 @@ static FILE* D_GetHashFile()
 //
 //==========================================================================
 
+#define CLOCK_START  timer.Reset(); timer.Clock(); 
+#define CLOCK_END(_D_)  timer.Unclock(); Printf(TEXTCOLOR_GOLD"%s: %.2fms\n", _D_, timer.TimeMS()); 
+
 static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArray<FString>& pwads)
 {
+	cycle_t timer = cycle_t();
+
 	gameinfo.gametype = iwad_info->gametype;
 	gameinfo.flags = iwad_info->flags;
 	gameinfo.nokeyboardcheats = iwad_info->nokeyboardcheats;
@@ -3094,6 +3217,8 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	};
 	allwads.Append(std::move(pwads));
 
+	AddModFiles(allwads);
+
 	bool allowduplicates = Args->CheckParm("-allowduplicates");
 	auto hashfile = D_GetHashFile();
 	fileSystem.InitMultipleFiles (allwads, false, &lfi, allowduplicates, hashfile);
@@ -3104,10 +3229,14 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	D_GrabCVarDefaults(); //parse DEFCVARS
 	InitPalette();
 
+	CLOCK_START
 	if (!batchrun) Printf("S_Init: Setting up sound.\n");
 	S_Init();
-
+	CLOCK_END("Sound Startup")
+	
+	bool writeCache = Args->CheckParm("-writetexturecache");
 	int max_progress = TexMan.GuesstimateNumTextures();
+	if (writeCache) max_progress *= 2;	// If we are writing textures, we need to double the estimated time so we get actual progress
 	int per_shader_progress = 0;//screen->GetShaderCount()? (max_progress / 10 / screen->GetShaderCount()) : 0;
 	bool nostartscreen = batchrun || restart || Args->CheckParm("-join") || Args->CheckParm("-host") || Args->CheckParm("-norun");
 
@@ -3136,8 +3265,10 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 		exec = NULL;
 	}
 
+	CLOCK_START
 	// [RH] Initialize localizable strings.
 	GStrings.LoadStrings (language);
+	CLOCK_END("Loaded Strings")
 
 	V_InitFontColors ();
 
@@ -3217,6 +3348,7 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	// MUSINFO must be parsed after MAPINFO
 	S_ParseMusInfo();
 
+	CLOCK_START
 	if (!batchrun) Printf ("Texman.Init: Init texture manager.\n");
 	UpdateUpscaleMask();
 	SpriteFrames.Clear();
@@ -3230,13 +3362,21 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	C_InitConback(TexMan.CheckForTexture(gameinfo.BorderFlat, ETextureType::Flat), true, 0.25);
 
 	FixWideStatusBar();
-
+	CLOCK_END("Textures Startup Total")
+	
 	StartWindow->Progress(); 
 	if (StartScreen) StartScreen->Progress(1);
+	
+	CLOCK_START
 	V_InitFonts();
 	InitDoomFonts();
+	CLOCK_END("Font Startup")
 	V_LoadTranslations();
 	UpdateGenericUI(false);
+
+	// @Cockatrice - Startup stats database
+	statDatabase.init();
+	statDatabase.start();
 
 	// [CW] Parse any TEAMINFO lumps.
 	if (!batchrun) Printf ("ParseTeamInfo: Load team definitions.\n");
@@ -3329,6 +3469,7 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 	if (!batchrun) Printf ("P_Init: Init Playloop state.\n");
 	if (StartScreen) StartScreen->LoadingStatus ("Init game engine", 0x3f);
 	AM_StaticInit();
+	
 	P_Init ();
 
 	P_SetupWeapons_ntohton();
@@ -3409,10 +3550,12 @@ static int D_InitGame(const FIWADInfo* iwad_info, TArray<FString>& allwads, TArr
 			StartScreen = NULL;
 		}
 
+		CLOCK_START
 		while(!screen->CompileNextShader())
 		{
 			// here we can do some visual updates later
 		}
+		CLOCK_END("Compiling Shaders")
 		twod->fullscreenautoaspect = gameinfo.fullscreenautoaspect;
 		// Initialize the size of the 2D drawer so that an attempt to access it outside the draw code won't crash.
 		twod->Begin(screen->GetWidth(), screen->GetHeight());
@@ -3657,9 +3800,12 @@ static int D_DoomMain_Internal (void)
 
 		startupClock.Unclock();
 		Printf(TEXTCOLOR_YELLOW "Full startup in %.2fms\n", startupClock.TimeMS());
+		
+		statDatabase.update();	// @Cockatrice - Do at least one update before the game loop
 
 		D_DoAnonStats();
 		I_UpdateWindowTitle();
+		I_FocusWindow();
 		D_DoomLoop ();		// this only returns if a 'restart' CCMD is given.
 		// 
 		// Clean up after a restart

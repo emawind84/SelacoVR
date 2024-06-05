@@ -147,6 +147,7 @@ public:
 	double m_Falloff;
 	int m_Highpoint, m_MiniCount;
 	double m_RollIntensity, m_RollWave;
+	bool hasPlayedSound;
 
 	double GetModIntensity(double intensity, bool fake = false) const;
 	double GetModWave(double ticFrac, double waveMultiplier) const;

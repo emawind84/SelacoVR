@@ -63,6 +63,7 @@ enum
 	
 	STAT_SLEEP = 60,
 	STAT_SLEEP_FOREVER = 61,
+	STAT_TEMPORARY_WAKERS = 62,				// Used as temporary storage during wake cycle
 
 	STAT_USER = 70,
 	STAT_USER_MAX = 90,

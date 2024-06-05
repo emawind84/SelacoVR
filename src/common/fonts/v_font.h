@@ -98,11 +98,20 @@ public:
 		Custom
 	};
 
+	struct CharData
+	{
+		FGameTexture* OriginalPic = nullptr;
+		int XMove = INT_MIN;
+		int tCharX = -1, tCharY = -1, tCharW = -1, tCharH = -1;
+	};
+
 	FFont (const char *fontname, const char *nametemplate, const char *filetemplate, int first, int count, int base, int fdlump, int spacewidth=-1, bool notranslate = false, bool iwadonly = false, bool doomtemplate = false, GlyphSet *baseGlpyphs = nullptr);
 	FFont(int lump, FName nm = NAME_None);
 	virtual ~FFont ();
 
 	virtual FGameTexture *GetChar (int code, int translation, int *const width) const;
+	virtual CharData GetChar(int code, int translation) const;
+
 	virtual int GetCharWidth (int code) const;
 	int GetColorTranslation (EColorRange range, PalEntry *color = nullptr) const;
 	int GetLump() const { return Lump; }
@@ -190,11 +199,8 @@ protected:
 	bool noTranslate = false;
 	bool MixedCase = false;
 	bool forceremap = false;
-	struct CharData
-	{
-		FGameTexture *OriginalPic = nullptr;
-		int XMove = INT_MIN;
-	};
+	bool supportsChardata = false;
+	
 	TArray<CharData> Chars;
 	TArray<int> Translations;
 

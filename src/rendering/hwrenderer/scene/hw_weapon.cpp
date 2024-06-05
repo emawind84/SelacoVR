@@ -440,10 +440,12 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 	// decide which patch to use
 	bool mirror;
 	FTextureID lump = sprites[psp->GetSprite()].GetSpriteFrame(psp->GetFrame(), 0, 0., &mirror);
-	if (!lump.isValid()) return false;
+	if (!lump.isValid())
+		return false;
 
 	auto tex = TexMan.GetGameTexture(lump, false);
-	if (!tex || !tex->isValid()) return false;
+	if (!tex || !tex->isValid()) 
+		return false;
 
 	// @Cockatrice - If this texture is not loaded, and we are able to BG load it, try to render this sprites last frame instead
 	// Also load the texture
@@ -460,7 +462,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 		// We have to do this first so it doesn't get cancelled if the current frame is already loaded
 		// Since the textures added here won't start loading until the next frame we don't have to worry about putting them in front of the right-now texture
 		// TODO: We are adding 5 checks to the list every frame that needs to be cleared out at the global level, somehow we need to check for loaded and skip
-		FState *nextState = psp->GetState();
+		FState* nextState = psp->GetState();
 		for (int x = 0; x < 5; x++) {
 			if (!nextState) break;
 
@@ -480,7 +482,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 			else {
 				screen->BackgroundCacheTextureMaterial(tex, psp->Translation, scaleflags, true);
 			}
-
+			
 			bool foundNewer = false;
 				
 			// We need something to render, go through the last few patches and see if anything is loaded yet that we can grab
@@ -506,7 +508,8 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 			if (!foundNewer && lastPatch.isValid()) {
 				lump = lastPatch;
 				tex = TexMan.GetGameTexture(lump, false);
-				if (!tex || !tex->isValid()) return false;
+				if (!tex || !tex->isValid()) 
+					return false;
 			}
 			else if(!foundNewer) {
 				return false;
@@ -518,8 +521,6 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 
 	psp->LastPatch = lump;
 
-	// @Cockatrice - TODO: Get the sprite positioning data in the bg load function
-	// This function will cause an HDD load and thus cause stuttering
 	auto& spi = tex->GetSpritePositioning(1);
 
 	float vw = (float)viewwidth;
@@ -743,7 +744,7 @@ void HWDrawInfo::PreparePlayerSprites(sector_t * viewsector, area_t in_area)
 			}
 			else
 			{
-				hw_GetDynModelLight(playermo, lightdata);
+				hw_GetDynModelLight(playermo, lightdata, vp.TicFrac);
 				hudsprite.lightindex = screen->mLights->UploadLights(lightdata);
 				LightProbe* probe = FindLightProbe(playermo->Level, playermo->X(), playermo->Y(), playermo->Center());
 				if (probe)

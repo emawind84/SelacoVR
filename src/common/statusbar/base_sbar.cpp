@@ -58,6 +58,7 @@ IMPLEMENT_CLASS(DHUDFont, false, false);
 CVAR(Color, crosshaircolor, 0xff0000, CVAR_ARCHIVE);
 CVAR(Int, crosshairhealth, 2, CVAR_ARCHIVE);
 CVARD(Float, crosshairscale, 0.5, CVAR_ARCHIVE, "changes the size of the crosshair");
+CVARD(Float, crosshairalpha, 1.0, CVAR_ARCHIVE, "changes the opacity of the crosshair");
 CVAR(Bool, crosshairgrow, false, CVAR_ARCHIVE);
 CVAR(Bool, crosshairfilter, false, CVAR_ARCHIVE);
 
@@ -200,6 +201,7 @@ void ST_DrawCrosshair(int phealth, double xpos, double ypos, double scale)
 		DTA_DestHeight, h,
 		DTA_AlphaChannel, true,
 		DTA_FillColor, color & 0xFFFFFF,
+		DTA_Alpha, (double)crosshairalpha,
 		DTA_BilinearFilter, (bool)crosshairfilter,
 		TAG_DONE);
 }

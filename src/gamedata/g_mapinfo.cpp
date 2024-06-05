@@ -238,9 +238,11 @@ void level_info_t::Reset()
 	MapBackground = "";
 	levelnum = 0;
 	levelgroup = 0;
+	areaNum = 0;
 	PName = "";
 	NextMap = "";
 	NextSecretMap = "";
+	Description = "";
 	SkyPic1 = SkyPic2 = "-NOFLAT-";
 	invasiontier = 0;
 	tilt = tiltAngle = 0.0;
@@ -967,6 +969,13 @@ DEFINE_MAP_OPTION(levelgroup, true)
 	info->levelgroup = parse.sc.Number;
 }
 
+DEFINE_MAP_OPTION(areaNum, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetNumber();
+	info->areaNum = parse.sc.Number;
+}
+
 DEFINE_MAP_OPTION(levelnum, true)
 {
 	parse.ParseAssign();
@@ -985,6 +994,13 @@ DEFINE_MAP_OPTION(author, true)
 	parse.ParseAssign();
 	parse.sc.MustGetString();
 	info->AuthorName = parse.sc.String;
+}
+
+DEFINE_MAP_OPTION(description, true)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetString();
+	info->Description = strbin1(GStrings.localize(parse.sc.String));
 }
 
 DEFINE_MAP_OPTION(secretnext, true)
@@ -1743,6 +1759,7 @@ MapFlagHandlers[] =
 	{ "avoidmelee",						MITYPE_SETFLAG3,	LEVEL3_AVOIDMELEE, 0 },
 	{ "attenuatelights",				MITYPE_SETFLAG3,	LEVEL3_ATTENUATE, 0 },
 	{ "rainymap",						MITYPE_SETFLAG3,	LEVEL3_RAINYMAP, 0 },
+	{ "saferoom",						MITYPE_SETFLAG3,	LEVEL3_SAFEROOM, 0 },
 	{ "nobotnodes",						MITYPE_IGNORE,	0, 0 },		// Skulltag option: nobotnodes
 	{ "compat_shorttex",				MITYPE_COMPATFLAG, COMPATF_SHORTTEX, 0 },
 	{ "compat_stairs",					MITYPE_COMPATFLAG, COMPATF_STAIRINDEX, 0 },

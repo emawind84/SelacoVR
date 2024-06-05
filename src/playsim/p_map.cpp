@@ -1657,6 +1657,7 @@ bool PIT_CheckThing(FMultiBlockThingsIterator &it, FMultiBlockThingsIterator::Ch
 					{ // Push thing
 						if (thing->lastpush != tm.PushTime)
 						{
+							Printf("Pushing basics\n");
 							thing->Vel += tm.thing->Vel.XY() * thing->pushfactor;
 							thing->lastpush = tm.PushTime;
 						}
@@ -1681,11 +1682,52 @@ bool PIT_CheckThing(FMultiBlockThingsIterator &it, FMultiBlockThingsIterator::Ch
 		return false;		// don't traverse any more
 	}
 	if (thing->flags2 & MF2_PUSHABLE && !(tm.thing->flags2 & MF2_CANNOTPUSH))
-	{ // Push thing
+	{	// Push thing
+		//@Cockatrice - Push em away, keep em far
 		if (thing->lastpush != tm.PushTime)
 		{
+			TVector2 vxy = tm.thing->Vel.XY();
+			bool zeroVel = vxy.isZero();
+			TVector2 velDir = vxy.Unit();
+			TVector2 contactDir = (tm.thing->Pos().XY() - thing->Pos().XY());
+			TVector2 contactNorm = contactDir.isZero() ? TVector2(0.0,0.0) : contactDir.Unit();
+			double velDot = zeroVel ? 0.0 : velDir | contactNorm;
+
+			// SpecialPushDirectionFix tries to help the player push in the desired direction
+			if (velDot < 0 && !contactNorm.isZero() && !zeroVel) {
+				// Move contact norm between the real one and the player velocity
+				// Ease the difference between desired normal and contact normal
+				double easeDot = velDot * velDot;
+				contactNorm = (contactNorm + (((-velDir) - contactNorm) * easeDot)).Unit();
+
+				// Readjust velDot
+				velDot = zeroVel ? 0 : velDir | contactNorm;
+			}
+
+			// Push objects away
+			if (velDot < 0) {
+				
+				auto dvel = contactNorm * (vxy.Length() * velDot) * thing->pushfactor;
+
+				double dv = (vxy.Length() * velDot) * thing->pushfactor;
+				double uv = (contactNorm | thing->Vel.XY().Unit()) * thing->Vel.XY().Length();
+				double mv = min(0.0, dv - uv);
+				thing->Vel += contactNorm * mv;
+
+				//thing->Vel.X = dvel.X;
+				//thing->Vel.Y = dvel.Y;
+				//thing->Vel += contactNorm * (vxy.Length() * velDot) * thing->pushfactor;
+
+				// Push obj away by specialPushFactor
+				//tm.thing->Vel -= contactNorm * (vxy.Length() * velDot) * (1.0 - thing->pushfactor);
+				tm.thing->Vel -= contactNorm * (mv * (1.0 - thing->pushfactor));
+			}
+
+			/* Old push code 
 			thing->Vel += tm.thing->Vel.XY() * thing->pushfactor;
+			*/
 			thing->lastpush = tm.PushTime;
+			tm.pushFactor = velDot < 0 ? -velDot : 0;
 		}
 	}
 	solid = (thing->flags & MF_SOLID) &&
@@ -2091,6 +2133,93 @@ int P_TestMobjZ(AActor *actor, bool quick, AActor **pOnmobj)
 		{ // over thing
 			continue;
 		}
+		else if (actor->Top() <= thing->Z())
+		{ // under thing
+			continue;
+		}
+		else if (!quick && onmobj != NULL && thing->Top() < onmobj->Top())
+		{ // something higher is in the way
+			continue;
+		}
+		else if (!P_CanCollideWith(actor, thing))
+		{ // If they cannot collide, they cannot block each other.
+			continue;
+		}
+
+
+		onmobj = thing;
+		if (quick) break;
+	}
+
+	if (pOnmobj) *pOnmobj = onmobj;
+	return onmobj == NULL;
+}
+
+
+// @Cockatrice - Find the nearest mobj that we could sit on
+int P_FindOnMobjZNearest(AActor* actor, bool quick, AActor** pOnmobj)
+{
+	AActor* onmobj = nullptr;
+	if (pOnmobj) *pOnmobj = nullptr;
+	if ((actor->flags & MF_NOCLIP) || (actor->flags2 & MF2_THRUACTORS))
+	{
+		return true;
+	}
+
+	FPortalGroupArray check;
+	FMultiBlockThingsIterator it(check, actor, -1, true);
+	FMultiBlockThingsIterator::CheckResult cres;
+
+	while (it.Next(&cres))
+	{
+		AActor* thing = cres.thing;
+
+		double blockdist = thing->radius + actor->radius;
+		if (fabs(thing->X() - cres.Position.X) >= blockdist || fabs(thing->Y() - cres.Position.Y) >= blockdist)
+		{
+			continue;
+		}
+		if (thing->flags2 & MF2_THRUACTORS)
+		{
+			continue;
+		}
+		if ((actor->ThruBits & thing->ThruBits) && ((actor->flags8 | thing->flags8) & MF8_ALLOWTHRUBITS))
+		{
+			continue;
+		}
+		if ((actor->flags6 & MF6_THRUSPECIES) && (thing->GetSpecies() == actor->GetSpecies()))
+		{
+			continue;
+		}
+		if (!(thing->flags & MF_SOLID))
+		{ // Can't hit thing
+			continue;
+		}
+		if (thing->flags & (MF_SPECIAL | MF_NOCLIP))
+		{ // [RH] Specials and noclippers don't block moves
+			continue;
+		}
+		if (thing->flags & (MF_CORPSE))
+		{ // Corpses need a few more checks
+			if (!(actor->flags & MF_ICECORPSE))
+				continue;
+		}
+		if (!(thing->flags4 & MF4_ACTLIKEBRIDGE) && (actor->flags & MF_SPECIAL))
+		{ // [RH] Only bridges block pickup items
+			continue;
+		}
+		if (thing == actor)
+		{ // Don't clip against self
+			continue;
+		}
+		if ((actor->flags & MF_MISSILE) && (thing == actor->target))
+		{ // Don't clip against whoever shot the missile.
+			continue;
+		}
+		/*if (actor->Z() > thing->Top())
+		{ // over thing
+			continue;
+		}*/
 		else if (actor->Top() <= thing->Z())
 		{ // under thing
 			continue;
@@ -6772,7 +6901,7 @@ int P_PushUp(AActor *thing, FChangePosition *cpos)
 			continue;
 
 		if (!(intersect->flags2 & MF2_PASSMOBJ) ||
-			(!(intersect->flags3 & MF3_ISMONSTER) && intersect->Mass > mymass) ||
+			/*(!(intersect->flags3 & MF3_ISMONSTER) && intersect->Mass > mymass) ||*/	// @Cockatrice - Removed mass requirement, since we use mass differently. This will be handled in Grind()
 			(intersect->flags4 & MF4_ACTLIKEBRIDGE)
 			)
 		{
@@ -6871,6 +7000,13 @@ void PIT_FloorDrop(AActor *thing, FChangePosition *cpos)
 {
 	double oldfloorz = thing->floorz;
 	double oldz = thing->Z();
+	AActor* onMobj = nullptr;
+
+	// Are we on a mobj? If it drops with the floor, we drop with it
+	if (oldfloorz != oldz && (thing->flags2 & MF2_ONMOBJ) && !(thing->flags & MF_NOGRAVITY)) {
+		// Find the mobj we are on top of, if true
+		P_FindOnMobjZNearest(thing, false, &onMobj);
+	}
 
 	P_AdjustFloorCeil(thing, cpos);
 
@@ -6892,6 +7028,12 @@ void PIT_FloorDrop(AActor *thing, FChangePosition *cpos)
 			}
 			thing->SetZ(thing->floorz);
 			P_CheckFakeFloorTriggers(thing, oldz);
+			thing->UpdateRenderSectorList();
+		}
+		else
+		if (onMobj != nullptr) {
+			thing->SetZ(onMobj->Top());
+			P_CheckFakeFloorTriggers(thing, oldz);	// Probably won't ever go off but you never know
 			thing->UpdateRenderSectorList();
 		}
 	}
@@ -7190,9 +7332,16 @@ bool P_ChangeSector(sector_t *sector, int crunch, double amt, int floorOrCeil, b
 	// killough 4/7/98: simplified to avoid using complicated counter
 
 	// Mark all things invalid
+	bool sortZ = amt < 0, loop = false;
+	double lastZ = DBL_MAX, orderZ;
 
-	for (n = sector->touching_thinglist; n; n = n->m_snext)
+	for (n = sector->touching_thinglist; n; n = n->m_snext) {
 		n->visited = false;
+
+		// @Cockatrice - Find lowest Z
+		if (n->m_thing->Z() <= lastZ /* && !(n->m_thing->flags5 & MF5_NOINTERACTION)*/) lastZ = n->m_thing->Z();
+	}
+	orderZ = lastZ;
 
 	do
 	{
@@ -7200,6 +7349,24 @@ bool P_ChangeSector(sector_t *sector, int crunch, double amt, int floorOrCeil, b
 		{
 			if (!n->visited)								// unprocessed thing found
 			{
+				// @Cockatrice - Order things by Z for moving down
+				// We force re-looping to find the next Z in the order
+				// Don't bother sorting actors that cannot interact with others
+				if (sortZ){//} && !(n->m_thing->flags5 & MF5_NOINTERACTION)) {
+					if (orderZ != n->m_thing->Z() && n->m_thing->Z() < lastZ) {
+						lastZ = n->m_thing->Z();
+						loop = true;
+						continue;
+					}
+					else if (orderZ != n->m_thing->Z()) {
+						loop = true;
+						continue;
+					}
+
+					orderZ = lastZ;
+					lastZ = DBL_MAX;
+				}
+
 				n->visited = true; 							// mark thing as processed
 				if (!(n->m_thing->flags & MF_NOBLOCKMAP) ||	//jff 4/7/98 don't do these
 					(n->m_thing->flags5 & MF5_MOVEWITHSECTOR))
@@ -7209,6 +7376,13 @@ bool P_ChangeSector(sector_t *sector, int crunch, double amt, int floorOrCeil, b
 				}
 				break;										// exit and start over
 			}
+		}
+		// Restart from the beginning if we are sorting
+		if (sortZ && loop) {
+			orderZ = lastZ;
+			lastZ = DBL_MAX;
+			n = sector->touching_thinglist;
+			loop = false;
 		}
 	} while (n);	// repeat from scratch until all things left are marked valid
 

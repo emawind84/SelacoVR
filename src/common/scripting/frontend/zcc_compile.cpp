@@ -761,6 +761,8 @@ void ZCCCompiler::CreateStructTypes()
 			auto etype = NewEnum(e->NodeName, s->Type());
 			s->Type()->Symbols.AddSymbol(Create<PSymbolType>(e->NodeName, etype));
 		}
+
+		(static_cast<PStruct*> (s->Type()))->sourceLump = s->strct->SourceLump;
 	}
 }
 
@@ -834,6 +836,7 @@ void ZCCCompiler::CreateClassTypes()
 					}
 					c->cls->Type = NewClassType(me);
 					me->SourceLumpName = *c->cls->SourceName;
+					me->SourceLump = c->cls->SourceLump;
 				}
 				else
 				{
@@ -867,8 +870,13 @@ void ZCCCompiler::CreateClassTypes()
 					c->cls->Type = NewClassType(parent->FindClassTentative(c->NodeName()));
 				}
 
+				c->ClassType()->SourceLump = c->cls->SourceLump;
+
 				if (c->cls->Flags & ZCC_Abstract)
 					c->ClassType()->bAbstract = true;
+
+				if (c->cls->Flags & ZCC_Unit)
+					c->ClassType()->bUnitOnly = true;
 
 				if (c->cls->Flags & ZCC_Version)
 				{
@@ -2097,8 +2105,21 @@ void ZCCCompiler::CompileFunction(ZCC_StructWork *c, ZCC_FuncDeclarator *f, bool
 		if (f->Flags & ZCC_Virtual) varflags |= VARF_Virtual;
 		if (f->Flags & ZCC_Override) varflags |= VARF_Override;
 		if (f->Flags & ZCC_Abstract) varflags |= VARF_Abstract;
+		if (f->Flags & ZCC_Unit) varflags |= VARF_Unit;
 		if (f->Flags & ZCC_VarArg) varflags |= VARF_VarArg;
 		if (f->Flags & ZCC_FuncConst) varflags |= VARF_ReadOnly; // FuncConst method is internally marked as VARF_ReadOnly
+
+		// @Cockatrice: This is truly some bullshit and if you came looking for this and found it, feel free to hate me
+		if (c->NodeName() == NAME_StatDatabase &&
+			(f->Name == NAME_AddStat || f->Name == NAME_SetStat || f->Name == NAME_SetAchievement)) {
+			varflags |= VARF_Unit;
+
+			auto container = fileSystem.GetFileContainer(f->SourceLump);
+			if (container > 2) { // TODO: 1
+				Error(f, "Redefinition of %s not allowed", FName(f->Name).GetChars());
+			}
+		}
+
 		if (mVersion >= MakeVersion(2, 4, 0))
 		{
 			if (c->Type()->ScopeFlags & Scope_UI)

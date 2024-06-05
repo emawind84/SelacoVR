@@ -184,6 +184,8 @@ class FMultipatchTextureBuilder
 	void ResolvePatches(BuildInfo &buildinfo);
 
 public:
+	bool skipRedefines = false;
+
 	FMultipatchTextureBuilder(FTextureManager &texMan, void(*progressFunc_)(), void(*checkForHacks_)(BuildInfo &)) : TexMan(texMan), progressFunc(progressFunc_), checkForHacks(checkForHacks_)
 	{
 	}

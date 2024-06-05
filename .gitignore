@@ -16,6 +16,7 @@
 /build_vc2015-64
 /build_vc2017-64
 /build
+/libraries/SDL/build
 /llvm
 .vs
 /src/gl/unused
@@ -25,3 +26,6 @@
 /build2
 /build_vc2019-64
 /build_vc2019-32
+.vscode/settings.json
+.vscode/launch.json
+.vscode/c_cpp_properties.json

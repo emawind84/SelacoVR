@@ -300,7 +300,6 @@ void FGameTexture::SetupSpriteData()
 {
 	// Since this is only needed for real sprites it gets allocated on demand.
 	// It also allocates from the image memory arena because it has the same lifetime and to reduce maintenance.
-	//Printf(TEXTCOLOR_CYAN"Generated sprite positioning %sfor: %s : %p", spi != nullptr ? "AGAIN " : " ", GetName(), this);
 	if (spi == nullptr) spi = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
 	for (int i = 0; i < 2; i++)
 	{
@@ -310,11 +309,14 @@ void FGameTexture::SetupSpriteData()
 		spi.spriteWidth = GetTexelWidth();
 		spi.spriteHeight = GetTexelHeight();
 
-		if (i == 1 && ShouldExpandSprite())
+		if (i == 1 && ShouldExpandSprite() && !(Base->GetImage() && Base->GetImage()->IsGPUOnly()))
 		{
 			spi.mTrimResult = Base->TrimBorders(spi.trim) && !GetNoTrimming();	// get the trim size before adding the empty frame
 			spi.spriteWidth += 2;
 			spi.spriteHeight += 2;
+		}
+		else {
+			spi.mTrimResult = 0;
 		}
 	}
 
@@ -338,6 +340,22 @@ void FGameTexture::GenerateInitialSpriteData(SpritePositioningInfo *info, FBitma
 			spi.spriteWidth += 2;
 			spi.spriteHeight += 2;
 		}
+		else {
+			spi.mTrimResult = 0;
+		}
+	}
+}
+
+
+void FGameTexture::GenerateEmptySpriteData(SpritePositioningInfo* info, int width, int height) {
+	for (int i = 0; i < 2; i++)
+	{
+		auto& spi = info[i];
+		spi.mSpriteU[0] = spi.mSpriteV[0] = 0.f;
+		spi.mSpriteU[1] = spi.mSpriteV[1] = 1.f;
+		spi.spriteWidth = width;
+		spi.spriteHeight = height;
+		spi.mTrimResult = 0;
 	}
 }
 
@@ -402,19 +420,19 @@ void FGameTexture::SetSpriteRect()
 }
 
 
-void FGameTexture::SetSpriteRect(SpritePositioningInfo *spi)
+void FGameTexture::SetSpriteRect(SpritePositioningInfo *spi, bool raw)
 {
-	if (!spi) return;
+	if (spi == nullptr) return;
 
 	// @Cockatrice - Unfortunately, if we already allocated space for this data, the memory is wasted. 
 	// As far as I know there is no way to free a single block of memory allocated from the arena
 	// I expect this to occur very little, since there should be few occurences of a texture that is loaded both in
 	// the main thread AND in the background thread in Selaco
-	if(this->spi != nullptr)
+	if(this->spi != nullptr && this->spi != spi)
 		Printf(TEXTCOLOR_YELLOW"Cockatrice wasted some memory on SPI info! Image: %s\n", GetName().GetChars());
 
 	this->spi = spi;
-	SetSpriteRect();
+	if(!raw) SetSpriteRect();
 }
 
 //===========================================================================

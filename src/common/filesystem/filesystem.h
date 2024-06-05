@@ -67,6 +67,8 @@ public:
 	int GetMaxIwadNum() { return MaxIwadIndex; }
 	void SetMaxIwadNum(int x) { MaxIwadIndex = x; }
 
+	bool HasExtraWads() { return (int)Files.Size() > MaxIwadIndex + 1; }
+
 	void InitSingleFile(const char *filename, bool quiet = false);
 	void InitMultipleFiles (TArray<FString> &filenames, bool quiet = false, LumpFilterInfo* filter = nullptr, bool allowduplicates = false, FILE* hashfile = nullptr);
 	void AddFile (const char *filename, FileReader *wadinfo, bool quiet, LumpFilterInfo* filter, FILE* hashfile);
@@ -181,6 +183,22 @@ public:
 	int GetNumWads() const
 	{
 		return Files.Size();
+	}
+
+	FString GetWadName(int wadnum) const
+	{
+		if (wadnum < 0 || wadnum > (int)Files.Size()) return FString("");
+		FString name = Files[wadnum]->FileName;
+		
+		// Remove the path
+		/*auto rindex = name.LastIndexOf('/');
+		auto pindex = name.LastIndexOf('.');
+
+		if (pindex > rindex) name.Truncate(pindex);
+		if (rindex >=0) name = name.Mid(rindex);
+		*/
+		
+		return name;
 	}
 
 	void AddLump(FResourceLump* lump);
