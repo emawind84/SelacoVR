@@ -31,7 +31,9 @@ public:
 	VulkanPhysicalDevice *device = nullptr;
 	int graphicsFamily = -1;
 	int presentFamily = -1;
+	int uploadFamily = -1;
 	bool graphicsTimeQueries = false;
+	bool uploadFamilySupportsGraphics = false;
 };
 
 class VulkanDevice
@@ -86,10 +88,13 @@ public:
 
 	VkQueue graphicsQueue = VK_NULL_HANDLE;
 	VkQueue presentQueue = VK_NULL_HANDLE;
+	VkQueue uploadQueue = VK_NULL_HANDLE;
 
 	int graphicsFamily = -1;
 	int presentFamily = -1;
+	int uploadFamily = -1;
 	bool graphicsTimeQueries = false;
+	bool uploadFamilySupportsGraphics = false;
 
 	bool SupportsDeviceExtension(const char* ext) const;
 

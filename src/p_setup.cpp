@@ -151,6 +151,8 @@ static void AddToList(uint8_t *hitlist, FTextureID texid, int bitmask)
 	}
 }
 
+EXTERN_CVAR(Bool, gl_precache_actors)
+
 static void PrecacheLevel(FLevelLocals *Level)
 {
 	if (demoplayback)
@@ -160,6 +162,7 @@ static void PrecacheLevel(FLevelLocals *Level)
 	TMap<PClassActor *, bool> actorhitlist;
 	int cnt = TexMan.NumTextures();
 	TArray<uint8_t> hitlist(cnt, true);
+	bool precacheActors = gamestate != GS_TITLELEVEL;
 
 	memset(hitlist.Data(), 0, cnt);
 
@@ -171,16 +174,31 @@ static void PrecacheLevel(FLevelLocals *Level)
 		actorhitlist[actor->GetClass()] = true;
 	}
 
-	for (auto n : gameinfo.PrecachedClasses)
-	{
-		PClassActor *cls = PClass::FindActor(n);
-		if (cls != nullptr) actorhitlist[cls] = true;
-	}
-	for (unsigned i = 0; i < Level->info->PrecacheClasses.Size(); i++)
-	{
-		// Level->info can only store names, no class pointers.
-		PClassActor *cls = PClass::FindActor(Level->info->PrecacheClasses[i]);
-		if (cls != nullptr) actorhitlist[cls] = true;
+	if (precacheActors) {
+		if (gl_precache_actors) {
+			for (auto n : gameinfo.PrecachedClasses)
+			{
+				PClassActor *cls = PClass::FindActor(n);
+				if (cls != nullptr) actorhitlist[cls] = true;
+			}
+
+			for (unsigned i = 0; i < Level->info->PrecacheClasses.Size(); i++)
+			{
+				// Level->info can only store names, no class pointers.
+				PClassActor *cls = PClass::FindActor(Level->info->PrecacheClasses[i]);
+				if (cls != nullptr) actorhitlist[cls] = true;
+			}
+		}
+
+		// @Cockatrice - Also check the actor classes themselves to see if they are marked for precache
+		for (auto pc : PClassActor::AllActorClasses) {
+			auto act = GetDefaultByType(pc);
+			if (act != NULL && act->flags8 && (act->flags8 & MF8_PRECACHEALWAYS))
+			{
+				actorhitlist[static_cast<PClassActor*>(pc)] = true;
+				//Printf(TEXTCOLOR_YELLOW"Adding actor: %s to precache list from CACHEALWAYS\n", act->GetCharacterName());
+			}
+		}
 	}
 
 	for (i = Level->sectors.Size() - 1; i >= 0; i--)
@@ -547,6 +565,11 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 
 	// [RH] Remove all particles
 	P_ClearParticles(Level);
+
+	// @Cockatrice - Flush any background texture loads
+	if (screen->SupportsBackgroundCache()) {
+		screen->FlushBackground();
+	}
 
 	// preload graphics and sounds
 	if (precache)

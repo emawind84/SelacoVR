@@ -121,6 +121,7 @@
 #include "screenjob.h"
 #include "startscreen.h"
 #include "shiftstate.h"
+#include "s_loader.h"
 
 #ifdef __unix__
 #include "i_system.h"  // for SHARE_DIR
@@ -874,6 +875,9 @@ void D_Display ()
 	int wipe_type;
 	sector_t *viewsec;
 
+	// TODO: Find a new place for this!
+	AudioLoaderQueue::Instance->update();
+
 	if (nodrawers || screen == NULL)
 		return; 				// for comparative timing / profiling
 	
@@ -902,8 +906,14 @@ void D_Display ()
 		AActor *cam = players[consoleplayer].camera;
 		if (cam)
 		{
-			if (cam->player)
-				fov = cam->player->FOV;
+			if (cam->player) {
+				// @Cockatrice - Interpolate camera FOV changes
+				// For this to work the ZScript implementation of the player must update deltaFOV every frame
+				double ticFrac = 1.0;
+				if (!r_NoInterpolate) ticFrac = I_GetTimeFrac();
+				fov = (cam->player->deltaFOV + (cam->player->FOV - cam->player->deltaFOV) * ticFrac);
+				//fov = cam->player->FOV;
+			}
 			else fov = cam->CameraFOV;
 		}
 		R_SetFOV(vp, fov);
@@ -1234,6 +1244,9 @@ void D_DoomLoop ()
 				Printf (PRINT_BOLD, "\n%s\n", error.GetMessage());
 			}
 			D_ErrorCleanup ();
+
+			// @Cockatrice - Clearing the net-game was not updating the lasttic variable, which means joystick input stops working
+			lasttic = gametic;
 		}
 		catch (CVMAbortException &error)
 		{
@@ -3497,6 +3510,8 @@ static int D_DoomMain_Internal (void)
 	const char *v;
 	const char *wad;
 	FIWadManager *iwad_man;
+	cycle_t startupClock;
+	startupClock.Clock();
 
 	GC::AddMarkerFunc(GC_MarkGameRoots);
 	VM_CastSpriteIDToString = Doom_CastSpriteIDToString;
@@ -3644,6 +3659,9 @@ static int D_DoomMain_Internal (void)
 		iwad_man = NULL;
 		if (ret != 0) return ret;
 
+		startupClock.Unclock();
+		Printf(TEXTCOLOR_YELLOW "Full startup in %.2fms\n", startupClock.TimeMS());
+
 		D_DoAnonStats();
 		I_UpdateWindowTitle();
 		D_DoomLoop ();		// this only returns if a 'restart' CCMD is given.
@@ -3725,6 +3743,9 @@ void D_Cleanup()
 	S_ClearSoundData();
 	S_UnloadReverbDef();
 	G_ClearMapinfo();
+
+	// @Cockatrice - Stop any renderer threads
+	if(screen) screen->StopBackgroundCache();
 
 	M_ClearMenus();					// close menu if open
 	AM_ClearColorsets();
@@ -3836,7 +3857,7 @@ void I_UpdateWindowTitle()
 	case 1:
 		if (level.LevelName.IsNotEmpty())
 		{
-			titlestr.Format("%s - %s", level.LevelName.GetChars(), GameStartupInfo.Name.GetChars());
+			titlestr.Format("%s - %s", GameStartupInfo.Name.GetChars(), level.LevelName.GetChars());
 			break;
 		}
 		[[fallthrough]];

@@ -179,6 +179,8 @@ inline bool AActor::isFrozen() const
 	return false;
 }
 
+EXTERN_CVAR(Bool, gl_selflighting)
+
 inline int AActor::GetLightLevel(sector_t* rendersector)
 {
 	int lightlevel = rendersector->GetSpriteLight();
@@ -191,6 +193,9 @@ inline int AActor::GetLightLevel(sector_t* rendersector)
 	{
 		lightlevel = LightLevel;
 	}
+
+	if(gl_selflighting) lightlevel += selfLighting.Luminance() * 3;
+
 	return lightlevel;
 }
 

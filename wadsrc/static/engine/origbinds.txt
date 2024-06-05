@@ -13,6 +13,7 @@ mouse2 +strafe
 mouse3 +forward
 mouse4 +speed
 
+
 // Generic joystick buttons
 joy1 +attack
 joy2 +strafe

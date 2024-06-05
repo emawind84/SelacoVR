@@ -403,7 +403,7 @@ enum DrawTextureTags
 	DTA_KeepRatio,		// doesn't adjust screen size for DTA_Virtual* if the aspect ratio is not 4:3
 	DTA_RenderStyle,	// same as render style for actors
 	DTA_ColorOverlay,	// DWORD: ARGB to overlay on top of image; limited to black for software
-	DTA_Internal1,
+	DTA_Filtering,		// Apply Linear/Bilinear filtering depending on texture
 	DTA_Internal2,
 	DTA_Desaturate,		// explicit desaturation factor (does not do anything in Legacy OpenGL)
 	DTA_Fullscreen,		// Draw image fullscreen (same as DTA_VirtualWidth/Height with graphics size.)
@@ -485,7 +485,9 @@ struct Screen native
 	native static Color PaletteColor(int index);
 	native static int GetWidth();
 	native static int GetHeight();
-	native static Vector2 GetTextScreenSize();
+		native static Vector2 GetTextScreenSize();
+	native static int GetWindowWidth();
+	native static int GetWindowHeight();
 	native static void Clear(int left, int top, int right, int bottom, Color color, int palcolor = -1);
 	native static void Dim(Color col, double amount, int x, int y, int w, int h, ERenderStyle style = STYLE_Translucent);
 
@@ -506,6 +508,8 @@ struct Screen native
 	native static Vector2 SetOffset(double x, double y);
 	native static void ClearScreen(color col = 0);
 	native static void SetScreenFade(double factor);
+
+	native static void SetCursor(String texName = "None");
 }
 
 struct Font native

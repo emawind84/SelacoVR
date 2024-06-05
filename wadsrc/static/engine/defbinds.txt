@@ -5,6 +5,6 @@ s +back
 a +moveleft
 d +moveright
 space +jump
-x crouch
+ctrl crouch
 e +use
 mouse2 +altattack

@@ -1,5 +1,38 @@
-// These bindings are valid for all configurations
+// Selaco Specific
+shift +DashMode
+M printObjectives
+F Toggle_Flashlight
+G useGadget
+H switchGadget
+C +crouch
+ctrl crouch
+Q meleeButton
+R reloader
+Z useMeds
+Alt tempability
+Mouse2 +altattack
+Mouse3 useability
+Mouse4 reloader
+capslock "codex"
+LeftBracket previousAbility
+RightBracket nextAbility
+[ previousAbility
+] nextAbility
 
+
+// Movement
+w +forward
+s +back
+a +moveleft
+d +moveright
+space +jump
+ctrl crouch
+e +use
+mouse2 +altattack
+
+
+
+// Basic
 ` toggleconsole
 1 "slot 1"
 2 "slot 2"
@@ -11,37 +44,21 @@
 8 "slot 8"
 9 "slot 9"
 0 "slot 0"
-[ invprev
-] invnext
-mwheelleft invprev
-mwheelright invnext
-- sizedown
-= sizeup
-shift +spee`d
 mouse1 +attack
-capslock "toggle cl_run"
 f1 menu_help
-f2 menu_save
-f3 menu_load
+f2 save_menu
+f3 load_menu
 f4 menu_options
-f5 menu_display
-f6 quicksave
-f7 menu_endgame
-f8 togglemessages
+f5 chase
+f6 quicksaveselaco
 f9 quickload
-f11 bumpgamma
 f10 menu_quit
 tab togglemap
-pause pause
 sysrq screenshot
-t messagemode
-\ +showscores
-f12 spynext
 mwheeldown weapnext
 mwheelup weapprev
 
-// Originally just for Heretic, Hexen, and Strife.
-// I can't see why they shouldn't be for Doom or Chex either.
+
 pgup +moveup
 ins +movedown
 home land
@@ -50,26 +67,27 @@ del +lookdown
 end centerview
 
 // Xbox 360 / PS2 controllers
-pad_a +use
-pad_y +jump
+pad_a +jump
+pad_b useGadget
+pad_x +usereload
+dpaddown Toggle_Flashlight
+pad_y usemeds
 rtrigger +attack
 ltrigger +altattack
-lshoulder weapprev
-rshoulder weapnext
-dpadleft invprev
-dpadright invnext
-dpaddown invuse
+lshoulder +DashMode
+rshoulder weaponWheel
+dpadleft printObjectives
+dpadright switchGadget
 dpadup togglemap
-pad_start pause
-pad_back menu_main
+pad_start menu_main
+pad_back codex
 lthumb crouch
+rthumb meleeButton
 
 
 /* Default automap bindings */
 mapbind f am_togglefollow
-mapbind g am_togglegrid
 mapbind p am_toggletexture
-mapbind m am_setmark
 mapbind c am_clearmarks
 mapbind 0 am_gobig
 mapbind rightarrow +am_panright

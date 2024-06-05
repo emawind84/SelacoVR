@@ -565,6 +565,10 @@ enum ELOFFlags
 	CLOFF_SETTARGET =			0x800000,
 	CLOFF_SETMASTER =			0x1000000,
 	CLOFF_SETTRACER =			0x2000000,
+	CLOFF_BLOCKLOF_ALWAYS =  	0x4000000,	// @Cockatrice - Always stop on BLOCKLOF flag, regardless of other flags
+	CLOFF_JUMPMONSTER =			0x10000000, // Jump when any MONSTER is in the way
+	CLOFF_SKIPMONSTER =			0x20000000, // Skip any MONSTER
+	CLOFF_SKIPWORLD =			0x40000000, // Skip walls/floor/ceiling etc
 
 	CLOFF_SKIPOBSTACLES = CLOFF_SKIPENEMY|CLOFF_SKIPFRIEND|CLOFF_SKIPOBJECT|CLOFF_SKIPNONHOSTILE,
 	CLOFF_NOAIM = CLOFF_NOAIM_VERT|CLOFF_NOAIM_HORZ
@@ -1036,6 +1040,7 @@ enum EFindFloorCeiling
 	FFCF_NOCEILING = 64,
 	FFCF_RESTRICTEDPORTAL = 128,	// current values in the iterator's return are through a restricted portal type (i.e. some features are blocked.)
 	FFCF_NODROPOFF = 256,			// Caller does not need a dropoff (saves some time when checking portals)
+	FFCF_ALLOWWATER = 512			// Allow 3D sectors that are swimmable and non-solid
 };
 
 enum ERaise
@@ -1364,6 +1369,7 @@ enum ELevelFlags
 	LEVEL3_AVOIDMELEE			= 0x00020000,	// global flag needed for proper MBF support.
 	LEVEL3_NOJUMPDOWN			= 0x00040000,	// only for MBF21. Inverse of MBF's dog_jumping flag.
 	LEVEL3_LIGHTCREATED			= 0x00080000,	// a light had been created in the last frame
+	LEVEL3_RAINYMAP				= 0x00100000,	// @Cockatrice - Indicates map should draw rain effects under F_SKY
 };
 
 // [RH] Compatibility flags.

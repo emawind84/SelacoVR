@@ -499,6 +499,7 @@ void DHUDMessage::DoDraw (int linenum, int x, int y, bool clean, int hudheight)
 			DTA_Alpha, Alpha,
 			DTA_RenderStyle, Style,
 			DTA_KeepRatio, true,
+			DTA_BilinearFilter, true,
 			TAG_DONE);
 	}
 	else
@@ -512,6 +513,7 @@ void DHUDMessage::DoDraw (int linenum, int x, int y, bool clean, int hudheight)
 			DTA_ClipBottom, ClipBot,
 			DTA_Alpha, Alpha,
 			DTA_RenderStyle, Style,
+			DTA_BilinearFilter, true,
 			TAG_DONE);
 	}
 }
@@ -592,6 +594,7 @@ void DHUDMessageFadeOut::DoDraw (int linenum, int x, int y, bool clean, int hudh
 				DTA_Alpha, trans,
 				DTA_RenderStyle, Style,
 				DTA_KeepRatio, true,
+				DTA_BilinearFilter, true,
 				TAG_DONE);
 		}
 		else
@@ -605,6 +608,7 @@ void DHUDMessageFadeOut::DoDraw (int linenum, int x, int y, bool clean, int hudh
 				DTA_ClipBottom, ClipBot,
 				DTA_Alpha, trans,
 				DTA_RenderStyle, Style,
+				DTA_BilinearFilter, true,
 				TAG_DONE);
 		}
 	}
@@ -681,6 +685,7 @@ void DHUDMessageFadeInOut::DoDraw (int linenum, int x, int y, bool clean, int hu
 				DTA_Alpha, trans,
 				DTA_RenderStyle, Style,
 				DTA_KeepRatio, true,
+				DTA_BilinearFilter, true,
 				TAG_DONE);
 		}
 		else
@@ -694,6 +699,7 @@ void DHUDMessageFadeInOut::DoDraw (int linenum, int x, int y, bool clean, int hu
 				DTA_ClipBottom, ClipBot,
 				DTA_Alpha, trans,
 				DTA_RenderStyle, Style,
+				DTA_BilinearFilter, true,
 				TAG_DONE);
 		}
 	}
@@ -866,6 +872,7 @@ void DHUDMessageTypeOnFadeOut::DoDraw (int linenum, int x, int y, bool clean, in
 					DTA_TextLen, LineVisible,
 					DTA_Alpha, Alpha,
 					DTA_RenderStyle, Style,
+					DTA_BilinearFilter, true,
 					TAG_DONE);
 			}
 			else
@@ -880,6 +887,7 @@ void DHUDMessageTypeOnFadeOut::DoDraw (int linenum, int x, int y, bool clean, in
 					DTA_Alpha, Alpha,
 					DTA_TextLen, LineVisible,
 					DTA_RenderStyle, Style,
+					DTA_BilinearFilter, true,
 					TAG_DONE);
 			}
 		}

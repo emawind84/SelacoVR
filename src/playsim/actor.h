@@ -430,7 +430,15 @@ enum ActorFlag8
 	MF8_CROSSLINECHECK	= 0x10000000,	// [MC]Enables CanCrossLine virtual
 	MF8_MASTERNOSEE		= 0x20000000,	// Don't show object in first person if their master is the current camera.
 	MF8_ADDLIGHTLEVEL	= 0x40000000,	// [MC] Actor light level is additive with sector.
+	MF8_PRECACHEALWAYS  = 0x80000000	// @Cockatrice - Actor is marked for precache on every map
 };
+
+enum ActorFlag9
+{
+	MF8_ABSDAMAGE		= 0x00001000,	// @Cockatrice - Damage value ignores dice roll
+	MF8_HITSCANTHRU		= 0x00002000,	// @Cockatrice - Allow hitscans to pass through, but also damage this actor
+	MF8_BLOCKLOF		= 0x00004000,	// @Cockatrice - Blocks LOF in CHECKLOF
+}
 
 // --- mobj.renderflags ---
 enum ActorRenderFlag
@@ -631,12 +639,14 @@ class FDecalBase;
 
 inline AActor *GetDefaultByName (const char *name)
 {
-	return (AActor *)(PClass::FindClass(name)->Defaults);
+	PClass *pc = PClass::FindClass(name);
+	return pc != NULL ? (AActor *)pc->Defaults : NULL;
 }
 
 inline AActor* GetDefaultByName(FName name)
 {
-	return (AActor*)(PClass::FindClass(name)->Defaults);
+	PClass *pc = PClass::FindClass(name);
+	return pc != NULL ? (AActor *)pc->Defaults : NULL;
 }
 
 inline AActor *GetDefaultByType (const PClass *type)
@@ -1053,13 +1063,15 @@ public:
 	uint8_t			frame;				// sprite frame to draw
 	uint8_t			effects;			// [RH] see p_effect.h
 	uint8_t			fountaincolor;		// Split out of 'effect' to have easier access.
+	PalEntry		selfLighting;		// (@Cockatrice) Self illumination, add this value to lighting calculations
 	FRenderStyle	RenderStyle;		// Style to draw this actor with
 	FTextureID		picnum;				// Draw this instead of sprite if valid
-	uint32_t			fillcolor;			// Color to draw when STYLE_Shaded
-	uint32_t			Translation;
+	uint32_t		fillcolor;			// Color to draw when STYLE_Shaded
+	uint32_t		Translation;
+	FTextureID		LastPatch;			// @Cockatrice - Used by the hardware renderer to determine the last rendered patch
 
-	uint32_t			RenderRequired;		// current renderer must have this feature set
-	uint32_t			RenderHidden;		// current renderer must *not* have any of these features
+	uint32_t		RenderRequired;		// current renderer must have this feature set
+	uint32_t		RenderHidden;		// current renderer must *not* have any of these features
 
 	ActorRenderFlags	renderflags;		// Different rendering flags
 	ActorRenderFlags2	renderflags2;		// More rendering flags...

@@ -781,6 +781,17 @@ DEFINE_PROPERTY(stencilcolor, C, Actor)
 //==========================================================================
 //
 //==========================================================================
+DEFINE_PROPERTY(selfLighting, C, Actor)
+{
+	PROP_COLOR_PARM(color, 0, &bag.ScriptPosition);
+
+	defaults->selfLighting = color;
+	defaults->selfLighting.a = 0;
+}
+
+//==========================================================================
+//
+//==========================================================================
 DEFINE_PROPERTY(bloodcolor, C, Actor)
 {
 	PROP_COLOR_PARM(color, 0, &bag.ScriptPosition);
@@ -1217,7 +1228,7 @@ DEFINE_CLASS_PROPERTY(pickupannouncerentry, S, Inventory)
 //==========================================================================
 //
 //==========================================================================
-DEFINE_CLASS_PROPERTY(defaultkickback, 0, Weapon)
+DEFINE_CLASS_PROPERTY(defaultkickback, 0, WeaponBase)
 {
 	defaults->IntVar(NAME_Kickback) = gameinfo.defKickback;
 }
@@ -1225,7 +1236,7 @@ DEFINE_CLASS_PROPERTY(defaultkickback, 0, Weapon)
 //==========================================================================
 //
 //==========================================================================
-DEFINE_CLASS_PROPERTY(bobstyle, S, Weapon)
+DEFINE_CLASS_PROPERTY(bobstyle, S, WeaponBase)
 {
 	static const char *names[] = { "Normal", "Inverse", "Alpha", "InverseAlpha", "Smooth", "InverseSmooth", NULL };
 	static const EBobStyle styles[] = { EBobStyle::BobNormal,
@@ -1244,7 +1255,7 @@ DEFINE_CLASS_PROPERTY(bobstyle, S, Weapon)
 //==========================================================================
 //
 //==========================================================================
-DEFINE_CLASS_PROPERTY(preferredskin, S, Weapon)
+DEFINE_CLASS_PROPERTY(preferredskin, S, WeaponBase)
 {
 	PROP_STRING_PARM(str, 0);
 	// NoOp - only for Skulltag compatibility
