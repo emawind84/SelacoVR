@@ -42,6 +42,10 @@
 #include "c_cvars.h"
 #include "hw_vrmodes.h"
 
+// @Cockatrice - For Screen.SetCursor
+#include "i_system.h"
+#include "gi.h"
+
 EXTERN_CVAR(Int, vid_aspect)
 EXTERN_CVAR(Int, uiscale)
 CVAR(Bool, ui_screenborder_classic_scaling, true, CVAR_ARCHIVE)
@@ -370,6 +374,29 @@ DEFINE_ACTION_FUNCTION(_Screen, SetScreenFade)
 	twod->SetScreenFade(float(x));
 	return 0;
 }
+
+// Wasn't sure where to put this, setting cursor manually here
+DEFINE_ACTION_FUNCTION(_Screen, SetCursor)
+{
+	bool res = false;
+	PARAM_PROLOGUE;
+	PARAM_STRING(texName);
+
+	if (!stricmp(texName, "None") && gameinfo.CursorPic.IsNotEmpty())
+	{
+		res = I_SetCursor(TexMan.GetGameTextureByName(gameinfo.CursorPic));
+	}
+	else
+	{
+		res = I_SetCursor(TexMan.GetGameTextureByName(texName));
+	}
+	if (!res)
+	{
+		I_SetCursor(TexMan.GetGameTextureByName("cursor"));
+	}
+	return 0;
+}
+
 
 
 void F2DDrawer::GetClipRect(int *x, int *y, int *w, int *h)

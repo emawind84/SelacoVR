@@ -1,4 +1,23 @@
-// These bindings are valid for all configurations
+// Selaco Specific
+shift +DashMode
+M printObjectives
+F Toggle_Flashlight
+G useGadget
+H switchGadget
+C +crouch
+ctrl crouch
+Q meleeButton
+R reloader
+Z useMeds
+Alt tempability
+Mouse2 +altattack
+Mouse3 useability
+Mouse4 reloader
+capslock "codex"
+LeftBracket previousAbility
+RightBracket nextAbility
+[ previousAbility
+] nextAbility
 
 mwheelleft invprev
 mwheelright invnext
@@ -23,6 +42,7 @@ ltrigger +altattack
 pad_start pause
 pad_back menu_main
 lthumb crouch
+rthumb meleeButton
 
 axis1plus +moveright
 axis1minus +moveleft

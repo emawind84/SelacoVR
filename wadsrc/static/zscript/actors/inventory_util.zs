@@ -67,7 +67,7 @@ extend class Actor
 		// This can be called from places which do not check the given item's type.
 		if (type == null || !(type is 'Inventory')) return false;
 
-		Weapon savedPendingWeap = player != NULL ? player.PendingWeapon : NULL;
+		WeaponBase savedPendingWeap = player != NULL ? player.PendingWeapon : NULL;
 		bool hadweap = player != NULL ? (player.ReadyWeapon != NULL || player.OffhandWeapon != NULL) : true;
 
 		Inventory item;
@@ -781,7 +781,7 @@ extend class Actor
 	//
 	//===========================================================================
 
-	bool A_SelectWeapon(class<Weapon> whichweapon, int flags = 0)
+	bool A_SelectWeapon(class<WeaponBase> whichweapon, int flags = 0)
 	{
 		bool selectPriority = !!(flags & SWF_SELECTPRIORITY);
 		let player = self.player;
@@ -791,7 +791,7 @@ extend class Actor
 			return false;
 		}
 
-		let weaponitem = Weapon(FindInventory(whichweapon));
+		let weaponitem = WeaponBase(FindInventory(whichweapon));
 
 		if (weaponitem != NULL)
 		{

@@ -40,6 +40,8 @@
 #include "files.h"
 #include "cmdlib.h"
 #include "palettecontainer.h"
+#include "printf.h"
+#include "files.h"
 
 FMemArena ImageArena(32768);
 TArray<FImageSource *>FImageSource::ImageForLump;
@@ -186,6 +188,54 @@ int FImageSource::CopyTranslatedPixels(FBitmap *bmp, const PalEntry *remap)
 	return 0;
 }
 
+// @Cockatrice: Thread safe(ish) version of CopyPixels. 
+// Default does not do much
+int FImageSource::ReadPixels(FImageLoadParams *params, FBitmap *bmp)
+{
+	/*if (conversion == luminance) conversion = normal;	// luminance images have no use as an RGB source.
+	PalEntry *palette = GPalette.BaseColors;
+	auto ppix = CreatePalettedPixels(conversion);
+	bmp->CopyPixelData(0, 0, ppix.Data(), Width, Height, Height, 1, 0, palette, nullptr);*/
+
+	return 0;
+}
+
+int FImageSource::ReadPixels(FileReader *reader, FBitmap *bmp, int conversion) {
+	return 0;
+}
+
+// @Cockatrice: Thread safe(ish) version of CopyTranslatedPixels
+int FImageSource::ReadTranslatedPixels(FileReader *reader, FBitmap *bmp, const PalEntry *remap, int conversion)
+{
+	// TODO: It
+	return 0;
+}
+
+// Call this on the main thread to prepare params for a background thread load
+// convoluted I know, but some formats require more information than others
+// Default version should work for some formats like PNG
+FImageLoadParams *FImageSource::NewLoaderParams(int conversion, int translation, FRemapTable *remap) {
+	FResourceLump *rLump = SourceLump >= 0 ? fileSystem.GetFileAt(SourceLump) : nullptr;
+	FileReader *reader = rLump ? rLump->Owner->GetReader() : nullptr;
+
+	if (!rLump) { return nullptr; }
+
+	
+
+	FImageLoadParams *il = new FImageLoadParams();
+	il->reader = reader ? reader->CopyNew() : rLump->NewReader().CopyNew();
+	il->conversion = conversion;
+	il->translation = translation;
+	il->remap = remap;
+
+	if (il->reader) {
+		il->reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);
+	}
+
+	return il;
+}
+
+
 //==========================================================================
 //
 //
@@ -196,9 +246,9 @@ FBitmap FImageSource::GetCachedBitmap(const PalEntry *remap, int conversion, int
 {
 	FBitmap ret;
 
-	FString name;
+	//FString name;
 	int trans = -1;
-	fileSystem.GetFileShortName(name, SourceLump);
+	//fileSystem.GetFileShortName(name, SourceLump);
 
 	auto imageID = ImageID;
 
@@ -389,3 +439,114 @@ FImageSource * FImageSource::GetImage(int lumpnum, bool isflat)
 	}
 	return nullptr;
 }
+
+
+
+// TODO: Move this to a unique file
+// Image Loader ====================================================
+/*ImageLoaderQueue *ImageLoaderQueue::Instance = new ImageLoaderQueue();
+const int ImageLoaderQueue::MAX_THREADS;
+
+bool ImageLoadThread::loadResource(ImageLoadIn &input, ImageLoadOut &output) {
+	currentImageID.store(input.imgSource->GetId());
+
+	auto *src = input.imgSource;
+	output.pixels.Create(src->GetWidth(), src->GetHeight());
+
+	output.trans = src->ReadPixels(input.readerCopy, &output.pixels, input.conversion);
+	
+	// TODO: We have the image now, let's store it somewhere
+	
+
+	// Always return true, because failed images need to be marked as unloadable
+	return true;
+}
+
+
+ImageLoadThread *ImageLoaderQueue::spinupThreads() {
+	if ((int)mRunning.Size() >= 2) return nullptr;
+
+	int createThreads = clamp((int)(2 - mRunning.Size()), 0, MAX_THREADS);
+	ImageLoadThread *first = nullptr;
+
+	for (int x = 0; x < createThreads; x++) {
+		ImageLoadThread *t = new ImageLoadThread();
+		t->start();
+
+		mRunning.Push(t);
+
+		if (!first) first = t;
+	}
+
+	return first;
+}
+
+
+ImageLoadThread *ImageLoaderQueue::nextAvailableThread() {
+	ImageLoadThread *th = nullptr;
+	int minQ = INT_MAX - 1;
+
+	for (ImageLoadThread *thi : mRunning) {
+		int numQueued = thi->numQueued();
+
+		if (numQueued < minQ) {
+			th = thi;
+			minQ = numQueued;
+		}
+	}
+
+	if (!th) {
+		th = spinupThreads();
+	}
+
+	assert(th != nullptr);
+
+	return th;
+}
+
+// TODO: Make sure we haven't already queued this image, or that it is not already cached!
+void ImageLoaderQueue::queue(FImageSource *img, int conversion) {
+	ImageLoadIn input;
+
+	input.conversion = conversion;
+	input.imgSource = img;
+	input.readerCopy = fileSystem.OpenFileReader(img->LumpNum()).CopyNew();
+
+	// Reserve the data in the cache
+
+
+	ImageLoadThread *th = nextAvailableThread();
+	th->queue(input);
+}
+
+void ImageLoaderQueue::clear() {
+	// We can't abort the current jobs yet, we'll have to let them finish
+	for (unsigned int x = 0; x < mRunning.Size(); x++) {
+		mRunning[x]->clearInputQueue();	// Stop any pending loads
+		mRunning[x]->stop();			// Stop the thread, this will not abort the current load but will wait for it to finish, nor does it clear output queue
+	}
+	
+	update();	// Since we cleared the queue this update should move data where it belongs before we clear everything
+
+	while (int x = mRunning.Size()) {
+		delete mRunning[x - 1];
+		mRunning.Delete(x - 1);
+	}
+
+	//for (unsigned int x = mRunning.Size() - 1; x >= 0; x--) {
+	//	delete mRunning[x];
+	//	mRunning.Delete(x);
+	//}
+}
+
+
+void ImageLoaderQueue::update() {
+	for (unsigned int x = 0; x < mRunning.Size(); x++) {
+		ImageLoadOut loaded;
+
+		while (mRunning[x]->popFinished(loaded)) {
+			// Mark image as belonging to the precache by filling in the necessary data
+
+		}
+	}
+}*/

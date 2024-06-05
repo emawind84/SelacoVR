@@ -336,7 +336,7 @@ void PolyFrameBuffer::SetTextureFilterMode()
 {
 }
 
-void PolyFrameBuffer::BlurScene(float amount)
+void PolyFrameBuffer::BlurScene(float amount, bool force)
 {
 }
 

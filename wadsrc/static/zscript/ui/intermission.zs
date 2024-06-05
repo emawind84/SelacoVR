@@ -38,7 +38,7 @@ class IntermissionScreenJob : ScreenJob
 }
 
 
-class DoomCutscenes ui
+/*class DoomCutscenes ui
 {
 	//---------------------------------------------------------------------------
 	//
@@ -57,4 +57,4 @@ class DoomCutscenes ui
 			runner.Append(new("IntermissionScreenJob").Init(inter, status != null));
 		}
 	}
-}
+}*/

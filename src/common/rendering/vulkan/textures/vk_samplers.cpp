@@ -137,6 +137,31 @@ void VkSamplerManager::CreateHWSamplers()
 		.MaxLod(0.25f)
 		.DebugName("VkSamplerManager.mSamplers")
 		.Create(fb->device);
+
+
+	// Set up forced filters for UI drawing
+	{
+		SamplerBuilder builder;
+		builder.MagFilter(VK_FILTER_LINEAR);
+		builder.MinFilter(VK_FILTER_LINEAR);
+		builder.AddressMode(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT);
+		builder.MipmapMode(VK_SAMPLER_MIPMAP_MODE_NEAREST);
+		builder.MaxLod(0.25f);
+		mSamplers[CLAMP_NONE_FORCE_FILTER] = builder.Create(fb->device);
+		mSamplers[CLAMP_NONE_FORCE_FILTER]->SetDebugName("VkSamplerManager.mSamplers");
+	}
+
+	// And for clamped version
+	{
+		SamplerBuilder builder;
+		builder.MagFilter(VK_FILTER_LINEAR);
+		builder.MinFilter(VK_FILTER_LINEAR);
+		builder.AddressMode(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_REPEAT);
+		builder.MipmapMode(VK_SAMPLER_MIPMAP_MODE_NEAREST);
+		builder.MaxLod(0.25f);
+		mSamplers[CLAMP_XY_NOMIP_FORCE_FILTER] = builder.Create(fb->device);
+		mSamplers[CLAMP_XY_NOMIP_FORCE_FILTER]->SetDebugName("VkSamplerManager.mSamplers");
+	}
 }
 
 void VkSamplerManager::DeleteHWSamplers()

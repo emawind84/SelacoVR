@@ -43,7 +43,7 @@ public:
 	double Alpha = 1;
 	uint32_t AlphaColor = 0;
 	int Translation = 0;
-	FTextureID PicNum;
+	FTextureID PicNum, LastPatch;
 	uint32_t RenderFlags = 0;
 	FRenderStyle RenderStyle;
 	side_t *Side = nullptr;

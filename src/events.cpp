@@ -302,6 +302,37 @@ void EventManager::WorldUnloaded(const FString& nextmap)
 	}
 }
 
+FString EventManager::GetSavegameComments()
+{
+	struct Comment {
+		FString txt;
+		int order;
+	};
+
+	FString comments = "";
+	TArray<Comment> allComments(20);
+
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
+	{
+		if (!handler->IsStatic()) continue;
+		int order;
+		FString res = handler->GetSavegameComment(order);
+		if (!res.IsEmpty()) {
+			int index = 0;
+			for (unsigned int x = 0; x < allComments.Size(); x++) { if (order > allComments[x].order) index++; }
+			allComments.Insert(index, { res, order });
+		}
+	}
+
+	if (allComments.Size()) {
+		for (unsigned int x = 0; x < allComments.Size(); x++) {
+			comments.AppendFormat("%s%s", comments.IsEmpty() ? "\n" : "", allComments[x].txt.GetChars());
+		}
+	}
+
+	return comments;
+}
+
 bool EventManager::ShouldCallStatic(bool forplay)
 {
 	return this != &staticEventManager && Level == primaryLevel;
@@ -383,20 +414,20 @@ void EventManager::WorldThingDestroyed(AActor* actor)
 	if (ShouldCallStatic(true)) staticEventManager.WorldThingDestroyed(actor);
 }
 
-void EventManager::WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate)
+void EventManager::WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate, DVector3 *optpos)
 {
-	if (ShouldCallStatic(true)) staticEventManager.WorldLinePreActivated(line, actor, activationType, shouldactivate);
+	if (ShouldCallStatic(true)) staticEventManager.WorldLinePreActivated(line, actor, activationType, shouldactivate, optpos);
 
 	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
-		handler->WorldLinePreActivated(line, actor, activationType, shouldactivate);
+		handler->WorldLinePreActivated(line, actor, activationType, shouldactivate, optpos != nullptr ? *optpos  : DVector3(0,0,0));
 }
 
-void EventManager::WorldLineActivated(line_t* line, AActor* actor, int activationType)
+void EventManager::WorldLineActivated(line_t* line, AActor* actor, int activationType, DVector3 *optpos)
 {
-	if (ShouldCallStatic(true)) staticEventManager.WorldLineActivated(line, actor, activationType);
+	if (ShouldCallStatic(true)) staticEventManager.WorldLineActivated(line, actor, activationType, optpos);
 
 	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
-		handler->WorldLineActivated(line, actor, activationType);
+		handler->WorldLineActivated(line, actor, activationType, optpos != nullptr ? *optpos : DVector3(0, 0, 0));
 }
 
 int EventManager::WorldSectorDamaged(sector_t* sector, AActor* source, int damage, FName damagetype, int part, DVector3 position, bool isradius)
@@ -870,7 +901,7 @@ void DStaticEventHandler::WorldThingDestroyed(AActor* actor)
 	}
 }
 
-void DStaticEventHandler::WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate)
+void DStaticEventHandler::WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate, DVector3 pos)
 {
 	IFVIRTUAL(DStaticEventHandler, WorldLinePreActivated)
 	{
@@ -881,13 +912,14 @@ void DStaticEventHandler::WorldLinePreActivated(line_t* line, AActor* actor, int
 		e.ActivatedLine = line;
 		e.ActivationType = activationType;
 		e.ShouldActivate = *shouldactivate;
+		e.DamagePosition = pos;
 		VMValue params[2] = { (DStaticEventHandler*)this, &e };
 		VMCall(func, params, 2, nullptr, 0);
 		*shouldactivate = e.ShouldActivate;
 	}
 }
 
-void DStaticEventHandler::WorldLineActivated(line_t* line, AActor* actor, int activationType)
+void DStaticEventHandler::WorldLineActivated(line_t* line, AActor* actor, int activationType, DVector3 pos)
 {
 	IFVIRTUAL(DStaticEventHandler, WorldLineActivated)
 	{
@@ -897,6 +929,7 @@ void DStaticEventHandler::WorldLineActivated(line_t* line, AActor* actor, int ac
 		e.Thing = actor;
 		e.ActivatedLine = line;
 		e.ActivationType = activationType;
+		e.DamagePosition = pos;
 		VMValue params[2] = { (DStaticEventHandler*)this, &e };
 		VMCall(func, params, 2, nullptr, 0);
 	}
@@ -969,6 +1002,25 @@ void DStaticEventHandler::WorldTick()
 		VMValue params[1] = { (DStaticEventHandler*)this };
 		VMCall(func, params, 1, nullptr, 0);
 	}
+}
+
+
+FString DStaticEventHandler::GetSavegameComment(int &order)
+{
+	IFVIRTUAL(DStaticEventHandler, GetSavegameComment)
+	{
+		FString retString;
+
+		// don't create excessive DObjects if not going to be processed anyway
+		if (isEmpty(func)) return "";
+		VMValue params[1] = { (DStaticEventHandler*)this };
+		VMReturn ret[2]; ret[0].StringAt(&retString); ret[1].IntAt(&order);
+		VMCall(func, params, 1, ret, 2);
+
+		return retString;
+	}
+
+	return "";
 }
 
 FRenderEvent EventManager::SetupRenderEvent()

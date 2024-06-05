@@ -91,7 +91,7 @@ const char *GetVersionString();
 #define SAVEVER 4559
 
 // This is so that derivates can use the same savegame versions without worrying about engine compatibility
-#define GAMESIG "LZDOOM"
+#define GAMESIG "SELACO"
 #ifdef __ANDROID__
 #define BASEWAD "res/lzdoom.pk3"
 #define OPTIONALWAD "res/game_support.pk3"
@@ -104,7 +104,7 @@ const char *GetVersionString();
 #define VR3D_ENABLED
 
 // More stuff that needs to be different for derivatives.
-#define GAMENAME "QZDoom"
+#define GAMENAME "Selaco"
 #define WGAMENAME L"QZDoom"
 #define GAMENAMELOWERCASE "qzdoom"
 #define FORUM_URL "http://forum.zdoom.org/"
@@ -118,10 +118,10 @@ const char *GetVersionString();
 
 #define DEFAULT_DISCORD_APP_ID "951303644597325885"
 
-const int SAVEPICWIDTH = 216;
-const int SAVEPICHEIGHT = 162;
-const int VID_MIN_WIDTH = 320;
-const int VID_MIN_HEIGHT = 200;
+const int SAVEPICWIDTH = 1000;
+const int SAVEPICHEIGHT = 563;
+const int VID_MIN_WIDTH = 640;
+const int VID_MIN_HEIGHT = 480;
 
 
 #endif //__VERSION_H__

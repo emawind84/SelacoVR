@@ -130,7 +130,7 @@ extend class Actor
 
 		morphed.UnmorphTime = level.time + ((duration) ? duration : DEFMORPHTICS) + random[morphmonst]();
 		morphed.MorphStyle = style;
-		morphed.MorphExitFlash = (exit_flash) ? exit_flash : (class<Actor>)("TeleportFog");
+		morphed.MorphExitFlash = exit_flash;
 		morphed.FlagsSave = bSolid * 2 + bShootable * 4 + bInvisible * 0x40;	// The factors are for savegame compatibility
 		
 		morphed.special = special;
@@ -147,9 +147,10 @@ extend class Actor
 		bShootable = false;
 		bUnmorphed = true;
 		bInvisible = true;
-		let eflash = Spawn(enter_flash ? enter_flash : (class<Actor>)("TeleportFog"), Pos + (0, 0, gameinfo.TELEFOGHEIGHT), ALLOW_REPLACE);
-		if (eflash)
-			eflash.target = morphed;
+		
+		Actor eflash = null;
+		if(enter_flash) eflash = Spawn(enter_flash, Pos + (0, 0, gameinfo.TELEFOGHEIGHT), ALLOW_REPLACE);
+		if (eflash) eflash.target = morphed;
 		PostMorph(morphed, false);
 		morphed.PostMorph(self, true);
 		return true;

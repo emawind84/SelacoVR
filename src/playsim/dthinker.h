@@ -55,12 +55,20 @@ struct FThinkerList
 {
 	// No destructor. If this list goes away it's the GC's task to clean the orphaned thinkers. Otherwise this may clash with engine shutdown.
 	void AddTail(DThinker *thinker);
+	//void AddSleeper(DThinker *thinker);
+	void AddHead(DThinker *thinker);
+	void AddAfter(DThinker *after, DThinker *thinker);
+
 	DThinker *GetHead() const;
 	DThinker *GetTail() const;
+
+	inline void AssertSentinel();
+
 	bool IsEmpty() const;
 	void DestroyThinkers();
 	bool DoDestroyThinkers();
-	int TickThinkers(FThinkerList *dest);	// Returns: # of thinkers ticked
+	int CheckSleepingThinkers(int ticsElapsed = 1);			// Check and unsleep thinkers periodically
+	int TickThinkers(FThinkerList *dest);					// Returns: # of thinkers ticked
 	int ProfileThinkers(FThinkerList *dest);
 	void SaveList(FSerializer &arc);
 
@@ -84,6 +92,7 @@ struct FThinkerCollection
 	void MarkRoots();
 	DThinker *FirstThinker(int statnum);
 	void Link(DThinker *thinker, int statnum);
+	void LinkSleeper(DThinker *thinker, int statnum);
 
 private:
 	FThinkerList Thinkers[MAX_STATNUM + 2];
@@ -104,6 +113,15 @@ public:
 	virtual void PostBeginPlay ();	// Called just before the first tick
 	virtual void CallPostBeginPlay(); // different in actor.
 	virtual void PostSerialize();
+
+	virtual bool ShouldWake();		// Should wake from sleep
+	virtual void Wake();
+	virtual void Sleep(int tics = 10);
+	virtual void SleepIndefinite();
+	virtual void CallSleep(int tics = 10);
+	virtual bool CallShouldWake();
+	virtual void CallWake();
+
 	void Serialize(FSerializer &arc) override;
 	size_t PropagateMark();
 	
@@ -119,6 +137,10 @@ private:
 	friend class FDoomSerializer;
 
 	DThinker *NextThinker = nullptr, *PrevThinker = nullptr;
+
+	// Sleep info
+	int sleepInterval = 0;	// How many tics to sleep before checking for wake
+	int sleepTimer = 0;		// Timer data
 
 public:
 	FLevelLocals *Level;

@@ -1,4 +1,4 @@
-class Weapon : StateProvider
+class WeaponBase : StateProvider
 {
 	enum EFireMode
 	{
@@ -18,7 +18,7 @@ class Weapon : StateProvider
 	int Kickback;
 	double YAdjust;							// For viewing the weapon fullscreen
 	sound UpSound, ReadySound;				// Sounds when coming up and idle
-	class<Weapon> SisterWeaponType;			// Another weapon to pick up with self one
+	class<WeaponBase> SisterWeaponType;			// Another weapon to pick up with self one
 	int SelectionOrder;						// Lower-numbered weapons get picked first
 	int MinSelAmmo1, MinSelAmmo2;			// Ignore in BestWeapon() if inadequate ammo
 	int ReloadCounter;						// For A_CheckForReload
@@ -27,7 +27,7 @@ class Weapon : StateProvider
 	float BobRangeX, BobRangeY;				// [XA] Bobbing range. Defines how far a weapon bobs in either direction.
 	double WeaponScaleX, WeaponScaleY;		// [XA] Weapon scale. Defines the scale for the held weapon sprites (PSprite). Defaults to (1.0, 1.2) since that's what Doom does.
 	Ammo Ammo1, Ammo2;						// In-inventory instance variables
-	Weapon SisterWeapon;
+	WeaponBase SisterWeapon;
 	double FOVScale;
 	double LookScale;						// Multiplier for look sensitivity (like FOV scaling but without the zooming)
 	int Crosshair;							// 0 to use player's crosshair
@@ -100,15 +100,15 @@ class Weapon : StateProvider
 	Default
 	{
 		Inventory.PickupSound "misc/w_pkup";
-		Weapon.DefaultKickback;
-		Weapon.BobSpeed 1.0;
-		Weapon.BobRangeX 1.0;
-		Weapon.BobRangeY 1.0;
-		Weapon.WeaponScaleX 1.0;
-		Weapon.WeaponScaleY 1.2;
-		Weapon.SlotNumber -1;
-		Weapon.SlotPriority 32767;
-		Weapon.UseRange 48;
+		WeaponBase.DefaultKickback;
+		WeaponBase.BobSpeed 1.0;
+		WeaponBase.BobRangeX 1.0;
+		WeaponBase.BobRangeY 1.0;
+		WeaponBase.WeaponScaleX 1.0;
+		WeaponBase.WeaponScaleY 1.2;
+		WeaponBase.SlotNumber -1;
+		WeaponBase.SlotPriority 32767;
+		WeaponBase.UseRange 48;
 		+WEAPONSPAWN
 		DefaultStateUsage SUF_ACTOR|SUF_OVERLAY|SUF_WEAPON;
 	}
@@ -199,7 +199,7 @@ class Weapon : StateProvider
 			player.mo.PlayAttacking2 ();
 		}
 
-		Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		WeaponBase weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapon == null)
 		{
 			return;
@@ -470,7 +470,7 @@ class Weapon : StateProvider
 		let weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weap != NULL)
 		{
-			weap.CheckAmmo (weap.bAltFire ? Weapon.AltFire : Weapon.PrimaryFire, true);
+			weap.CheckAmmo (weap.bAltFire ? WeaponBase.AltFire : WeaponBase.PrimaryFire, true);
 		}
 	}
 		
@@ -560,7 +560,7 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: Use
+	// WeaponBase :: Use
 	//
 	// Make the player switch to self weapon.
 	//
@@ -568,7 +568,7 @@ class Weapon : StateProvider
 
 	override bool Use (bool pickup)
 	{
-		Weapon useweap = self;
+		WeaponBase useweap = self;
 
 		// Powered up weapons cannot be used directly.
 		if (bPowered_Up) return false;
@@ -595,7 +595,7 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: Destroy
+	// WeaponBase :: Destroy
 	//
 	//===========================================================================
 
@@ -618,7 +618,7 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: HandlePickup
+	// WeaponBase :: HandlePickup
 	//
 	// Try to leach ammo from the weapon if you have it already.
 	//
@@ -628,7 +628,7 @@ class Weapon : StateProvider
 	{
 		if (item.GetClass() == GetClass())
 		{
-			if (Weapon(item).PickupForAmmo (self))
+			if (WeaponBase(item).PickupForAmmo (self))
 			{
 				item.bPickupGood = true;
 			}
@@ -643,13 +643,13 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: PickupForAmmo
+	// WeaponBase :: PickupForAmmo
 	//
 	// The player already has self weapon, so try to pick it up for ammo.
 	//
 	//===========================================================================
 
-	protected bool PickupForAmmo (Weapon ownedWeapon)
+	protected bool PickupForAmmo (WeaponBase ownedWeapon)
 	{
 		bool gotstuff = false;
 
@@ -682,13 +682,13 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: CreateCopy
+	// WeaponBase :: CreateCopy
 	//
 	//===========================================================================
 
 	override Inventory CreateCopy (Actor other)
 	{
-		let copy = Weapon(Super.CreateCopy (other));
+		let copy = WeaponBase(Super.CreateCopy (other));
 		if (copy != self && copy != null)
 		{
 			copy.AmmoGive1 = AmmoGive1;
@@ -699,7 +699,7 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: CreateTossable
+	// WeaponBase :: CreateTossable
 	//
 	// A weapon that's tossed out should contain no ammo, so you can't cheat
 	// by dropping it and then picking it back up.
@@ -716,7 +716,7 @@ class Weapon : StateProvider
 		{
 			return SisterWeapon.CreateTossable (amt);
 		}
-		let copy = Weapon(Super.CreateTossable (-1));
+		let copy = WeaponBase(Super.CreateTossable (-1));
 
 		if (copy != NULL)
 		{
@@ -735,7 +735,7 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: AttachToOwner
+	// WeaponBase :: AttachToOwner
 	//
 	//===========================================================================
 
@@ -762,7 +762,7 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: AddAmmo
+	// WeaponBase :: AddAmmo
 	//
 	// Give some ammo to the owner, even if it's just 0.
 	//
@@ -807,7 +807,7 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: AddExistingAmmo
+	// WeaponBase :: AddExistingAmmo
 	//
 	// Give the owner some more ammo he already has.
 	//
@@ -834,24 +834,24 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: AddWeapon
+	// WeaponBase :: AddWeapon
 	//
 	// Give the owner a weapon if they don't have it already.
 	//
 	//===========================================================================
 
-	protected Weapon AddWeapon (Class<Weapon> weapontype)
+	protected WeaponBase AddWeapon (Class<WeaponBase> weapontype)
 	{
-		Weapon weap;
+		WeaponBase weap;
 
 		if (weapontype == NULL)
 		{
 			return NULL;
 		}
-		weap = Weapon(Owner.FindInventory (weapontype));
+		weap = WeaponBase(Owner.FindInventory (weapontype));
 		if (weap == NULL)
 		{
-			weap = Weapon(Spawn (weapontype));
+			weap = WeaponBase(Spawn (weapontype));
 			weap.AttachToOwner (Owner);
 		}
 		return weap;
@@ -859,7 +859,7 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: ShouldStay
+	// WeaponBase :: ShouldStay
 	//
 	//===========================================================================
 
@@ -877,7 +877,7 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: EndPowerUp
+	// WeaponBase :: EndPowerUp
 	//
 	// The Tome of Power just expired.
 	//
@@ -927,7 +927,7 @@ class Weapon : StateProvider
 	
 	//===========================================================================
 	//
-	// Weapon :: PostMorphWeapon
+	// WeaponBase :: PostMorphWeapon
 	//
 	// Bring this weapon up after a player unmorphs.
 	//
@@ -962,7 +962,7 @@ class Weapon : StateProvider
 
 	//===========================================================================
 	//
-	// Weapon :: CheckAmmo
+	// WeaponBase :: CheckAmmo
 	//
 	// Returns true if there is enough ammo to shoot.  If not, selects the
 	// next weapon to use.
@@ -1040,7 +1040,7 @@ class Weapon : StateProvider
 		
 	//===========================================================================
 	//
-	// Weapon :: DepleteAmmo
+	// WeaponBase :: DepleteAmmo
 	//
 	// Use up some of the weapon's ammo. Returns true if the ammo was successfully
 	// depleted. If checkEnough is false, then the ammo will always be depleted,
@@ -1123,30 +1123,30 @@ class Weapon : StateProvider
 	
 }
 
-class WeaponGiver : Weapon
+class WeaponGiver : WeaponBase
 {
 	double AmmoFactor;
 	
 	Default
 	{
-		Weapon.AmmoGive1 -1;
-		Weapon.AmmoGive2 -1;
+		WeaponBase.AmmoGive1 -1;
+		WeaponBase.AmmoGive2 -1;
 	}
 	
 	override bool TryPickup(in out Actor toucher)
 	{
 		DropItem di = GetDropItems();
-		Weapon weap;
+		WeaponBase weap;
 
 		if (di != NULL)
 		{
-			Class<Weapon> ti = di.Name;
+			Class<WeaponBase> ti = di.Name;
 			if (ti != NULL)
 			{
 				if (master == NULL)
 				{
 					// save the spawned weapon in 'master' to avoid constant respawning if it cannot be picked up.
-					master = weap = Weapon(Spawn(di.Name));
+					master = weap = WeaponBase(Spawn(di.Name));
 					if (weap != NULL)
 					{
 						weap.bAlwaysPickup = false;	// use the flag of self item only.
@@ -1167,7 +1167,7 @@ class WeaponGiver : Weapon
 					else return false;
 				}
 
-				weap = Weapon(master);
+				weap = WeaponBase(master);
 				bool res = false;
 				if (weap != null)
 				{
@@ -1211,8 +1211,8 @@ class WeaponGiver : Weapon
 
 struct WeaponSlots native
 {
-	native bool, int, int LocateWeapon(class<Weapon> weap) const;
+	native bool, int, int LocateWeapon(class<WeaponBase> weap) const;
 	native static void SetupWeaponSlots(PlayerPawn pp);
-	native class<Weapon> GetWeapon(int slot, int index) const;
+	native class<WeaponBase> GetWeapon(int slot, int index) const;
 	native int SlotSize(int slot) const;
 }
