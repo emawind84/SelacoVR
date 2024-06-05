@@ -446,9 +446,10 @@ void FIWadManager::CollectSearchPaths()
 			}
 		}
 	}
-	mSearchPaths.Append(I_GetGogPaths());
-	mSearchPaths.Append(I_GetSteamPath());
-	mSearchPaths.Append(I_GetBethesdaPath());
+	// @Cockatrice - Removed search paths for other games, we only want to search in our own game directory
+	//mSearchPaths.Append(I_GetGogPaths());
+	//mSearchPaths.Append(I_GetSteamPath());
+	//mSearchPaths.Append(I_GetBethesdaPath());
 
 	// Unify and remove trailing slashes
 	for (auto &str : mSearchPaths)
@@ -702,7 +703,7 @@ int FIWadManager::IdentifyVersion (TArray<FString> &wadfiles, const char *iwad, 
 	// If we still haven't found a suitable IWAD let's error out.
 	if (picks.Size() == 0)
 	{
-		I_FatalError ("Cannot find a game IWAD (doom.wad, doom2.wad, heretic.wad, etc.).\n"
+		I_FatalError ("Cannot find a game IWAD (Selaco.ipk3).\n"
 					  "Did you install " GAMENAME " properly? You can do either of the following:\n"
 					  "\n"
 #if defined(_WIN32)

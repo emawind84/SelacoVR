@@ -1,9 +1,12 @@
 #pragma once
 
+#include <iostream>
 #include <thread>
 #include <functional>
 #include <mutex>
 #include <atomic>
+#include <algorithm>
+
 #ifdef __linux__
 #include <condition_variable>
 #endif
@@ -16,7 +19,7 @@
 template <typename T, int IN_NUM>
 struct RingBuffer {
 	const int length = IN_NUM;
-	T input[IN_NUM];
+	T input[IN_NUM] = {};
 	long pos = -1;
 
 	void add(T v) {
@@ -308,6 +311,144 @@ private:
 
 			if (!processed) {
 				mWake.wait_for(lock, std::chrono::milliseconds(5));
+			}
+		}
+	}
+};
+
+
+// @Cockatrice - Redesigning resource loader to work with an arbitrary set of queues
+template <typename IP, typename OP>
+class ResourceLoader2 {
+public:
+	ResourceLoader2() { }
+
+	ResourceLoader2(TSQueue<IP>* inputQueue, TSQueue<IP>* secondaryInputQueue, TSQueue<OP>* outputQueue) {
+		mInputQ = inputQueue;
+		mInputQSecondary = secondaryInputQueue;
+		mOutputQ = outputQueue;
+	}
+	virtual ~ResourceLoader2() { stop(); }
+
+	void start() {
+		if (mThread.get_id() == std::thread::id()) {
+			mThread = std::thread(&ResourceLoader2<IP, OP>::bgproc, this);
+		}
+	}
+
+	void stop() {
+		// Kill and finish the thread
+		if (mThread.joinable()) {
+			mActive.store(false);
+			mWake.notify_all();
+			mThread.join();
+		}
+	}
+
+	bool isActive() {
+		return mRunning.load();//&& mActive.load();
+	}
+
+	void resetStats() {
+		// TODO: Block stat updates
+		mStatLoadTime = 0;
+		mStatLoadCount = 0;
+		mStatTotalLoaded = 0;
+		mStatMinTime = 99999.0;
+		mStatMaxTime = 0;
+	}
+
+	double statAvgLoadTime() {
+		return mStatAvgTime;
+	}
+
+	double statMinLoadTime() {
+		return std::min(99999.0, mStatMinTime.load());
+	}
+
+	double statMaxLoadTime() {
+		return mStatMaxTime.load();
+	}
+
+	int statTotalLoaded() {
+		return mStatTotalLoaded.load();
+	}
+
+protected:
+	// Replace this to actually load the resource in the background
+	virtual bool loadResource(IP& input, OP& output) { return false; }
+	virtual void prepareLoad() {}		// Before load
+	virtual void completeLoad() {}		// After load
+	virtual void cancelLoad() {}		// Load was cancelled
+
+	std::atomic<bool> mActive{ true };
+	std::atomic<bool> mRunning{ false };
+	std::atomic<int> mStatTotalLoaded{ 0 };
+	std::atomic<double> mStatAvgTime{ 0 }, mStatMinTime{ 999999 }, mStatMaxTime{ 0 };
+
+	double mStatLoadTime = 0, mStatLoadCount = 0;
+
+	std::thread mThread;
+	std::mutex mWakeLock, mStatsLock;
+	std::condition_variable mWake;
+
+	TSQueue<IP>* mInputQ = nullptr;
+	TSQueue<IP>* mInputQSecondary = nullptr;
+	TSQueue<OP>* mOutputQ = nullptr;
+
+protected:
+	virtual void bgproc() {
+		std::unique_lock<std::mutex> lock(mWakeLock);
+
+		while (mActive.load()) {
+			bool processed = false;
+
+			// Process the queue
+			while (true) {
+				if (mInputQ->size() > 0 || mInputQSecondary->size() > 0) {
+					mRunning.store(true);
+
+					cycle_t lTime;
+					lTime.Reset();
+					lTime.Clock();
+
+					prepareLoad();
+
+					IP input;
+					if (!mInputQ->dequeue(input)) {
+						// Always load from secondary queue only if the primary queue has no items
+						if (mInputQSecondary == nullptr || !mInputQSecondary->dequeue(input)) {
+							cancelLoad();
+							continue;
+						}
+					}
+
+					OP output;
+					if (loadResource(input, output)) {
+						mOutputQ->queue(output);
+					}
+					processed = true;
+
+					completeLoad();
+
+					// Update load stats
+					lTime.Unclock();
+					mStatLoadTime += lTime.TimeMS();
+					mStatLoadCount += 1;
+					mStatAvgTime = mStatLoadTime / mStatLoadCount;
+					mStatMinTime = std::min(mStatMinTime.load(), lTime.TimeMS());
+					mStatMaxTime = std::max(mStatMaxTime.load(), lTime.TimeMS());
+					mStatTotalLoaded++;
+				}
+				else {
+					break;
+				}
+			}
+
+			mRunning.store(false);
+
+			if (!processed) {
+				mWake.wait_for(lock, std::chrono::milliseconds(3));
 			}
 		}
 	}

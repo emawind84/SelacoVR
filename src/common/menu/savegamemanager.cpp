@@ -46,8 +46,9 @@
 #include "findfile.h"
 #include "v_draw.h"
 #include "savegamemanager.h"
+#include "events.h"
 
-
+EXTERN_CVAR(Int, developer);
 
 //=============================================================================
 //
@@ -236,6 +237,13 @@ DEFINE_ACTION_FUNCTION(FSavegameManager, LoadSavegame)
 
 void FSavegameManagerBase::DoSave(int Selected, const char *savegamestring)
 {
+	// @Cockatrice - Consult the event managers to determine if we are actually allowed to save at this moment
+	if (!staticEventManager.IsSaveAllowed(false)) {
+		if (developer > 0)
+			Printf("Save \"%s\" rejected by event manager.", savegamestring);
+		return;
+	}
+
 	if (Selected != 0)
 	{
 		auto node = SaveGames[Selected];

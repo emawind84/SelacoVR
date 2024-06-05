@@ -65,7 +65,7 @@ const char *GetVersionString();
 // Version stored in the ini's [LastRun] section.
 // Bump it if you made some configuration change that you want to
 // be able to migrate in FGameConfigFile::DoGlobalSetup().
-#define LASTRUNVERSION "223"
+#define LASTRUNVERSION "224"
 
 // Protocol version used in demos.
 // Bump it if you change existing DEM_ commands or add new ones.
@@ -98,11 +98,11 @@ const char *GetVersionString();
 #define VR3D_ENABLED
 
 // More stuff that needs to be different for derivatives.
-#define GAMENAME "Selaco-DemoV3"
-#define WGAMENAME L"Selaco Demo"
-#define GAMENAMELOWERCASE "selaco-demov3"
-#define FORUM_URL "http://forum.zdoom.org/"
-#define BUGS_FORUM_URL	"http://forum.zdoom.org/viewforum.php?f=2"
+#define GAMENAME "Selaco-EA"
+#define WGAMENAME L"Selaco-EA"
+#define GAMENAMELOWERCASE "selaco-ea"
+#define FORUM_URL "https://discord.gg/g4cg5t9tDZ"
+#define BUGS_FORUM_URL	"https://discord.gg/g4cg5t9tDZ"
 
 #if defined(__APPLE__) || defined(_WIN32)
 #define GAME_DIR GAMENAME

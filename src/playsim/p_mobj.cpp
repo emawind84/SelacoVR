@@ -219,6 +219,7 @@ void AActor::Serialize(FSerializer &arc)
 		A("fountaincolor", fountaincolor)
 		A("alpha", Alpha)
 		A("fillcolor", fillcolor)
+		A("selfLighting", selfLighting)
 		A("sector", Sector)
 		A("floorz", floorz)
 		A("ceilingz", ceilingz)
@@ -356,6 +357,7 @@ void AActor::Serialize(FSerializer &arc)
 		A("spriterotation", SpriteRotation)
 		("alternative", alternative)
 		A("thrubits", ThruBits)
+		A("lineBlockBits", lineBlockBits)
 		A("cameraheight", CameraHeight)
 		A("camerafov", CameraFOV)
 		A("tag", Tag)
@@ -2034,14 +2036,16 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 			else if ((mo->flags2 & (MF2_SLIDE|MF2_BLASTED) || bForceSlide) && !(mo->flags&MF_MISSILE))
 			{	// try to slide along it
 				if (BlockingMobj == NULL)
-				{ // slide against wall
-					if (BlockingLine != NULL &&
+				{ 	// slide against wall
+					// @Cocaktrice - This little water jump is supremely annoying and not controllable by script at all
+					// So let's turn it off and replicate it in ZScript if we want the same behaviour
+					/*if (BlockingLine != NULL &&
 						mo->player && mo->waterlevel && mo->waterlevel < 3 &&
 						(mo->player->cmd.ucmd.forwardmove | mo->player->cmd.ucmd.sidemove) &&
 						mo->BlockingLine->sidedef[1] != NULL)
 					{
 						mo->Vel.Z = WATER_JUMP_SPEED;
-					}
+					}*/
 					// If the blocked move executed any push specials that changed the
 					// actor's velocity, do not attempt to slide.
 					if (mo->Vel.XY() == startvel)
@@ -2080,26 +2084,87 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 				}
 				else
 				{ // slide against another actor
-					DVector2 t;
-					t.X = 0, t.Y = onestep.Y;
-					walkplane = P_CheckSlopeWalk (mo, t);
-					if (P_TryMove (mo, mo->Pos() + t, true, walkplane, tm))
-					{
-						mo->Vel.X = 0;
-					}
-					else
-					{
-						t.X = onestep.X, t.Y = 0;
-						walkplane = P_CheckSlopeWalk (mo, t);
-						if (P_TryMove (mo, mo->Pos() + t, true, walkplane, tm))
+					if (!(mo->flags2 & MF2_CANNOTPUSH) && BlockingMobj && (BlockingMobj->flags2 & MF2_PUSHABLE)) {
+
+						// Move object as close to pushable object as possible by vel
+						AActor* b = BlockingMobj;
+						auto mp = mo->Pos().XY(), bp = b->Pos().XY();
+						auto v = onestep;
+						double mr = mo->radius, br = b->radius;
+						double le = mp.X - mr, ble = bp.X - br;
+						double re = mp.X + mr, bre = bp.X + br;
+						double te = mp.Y + mr, bte = bp.Y + br;
+						double be = mp.Y - mr, bbe = bp.Y - br;
+
+						// @Cockatrice - I don't think the math is right here but I'm too stupid to figure it out right now
+						if (v.X != 0) {
+							double mvx =	v.X > 0 ? 
+											min(re < ble ? ble - re : v.X, v.X) : 
+											max(le > bre ? bre - le : v.X, v.X);
+							double divx = (mvx / v.X) * 0.9999;
+							double mvy = v.Y * divx;
+
+							// Y overlap?
+							if (v.Y != 0 && te + mvy > bbe && be + mvy < bte && le + mvx < bre && re + mvx > ble) {
+								// Use Y adjustment instead
+								double mvy =	v.Y > 0 ?
+												min(te < bbe ? bbe - te : v.Y, v.Y) :
+												max(be > bte ? bte - be : v.Y, v.Y);
+								double divy = (mvy / v.Y) * 0.9999;
+
+								P_TryMove(mo, mo->Pos() + (v * divy), true, walkplane, tm);
+							}
+							else {
+								P_TryMove(mo, mo->Pos() + (v * divx), true, walkplane, tm);
+							}
+						}
+						else if (v.Y != 0) {
+							double mvy = v.Y > 0 ?
+										min(te < bbe ? bbe - te : v.Y, v.Y) :
+										max(be > bte ? bte - be : v.Y, v.Y);
+							double divy = (mvy / v.Y) * 0.9999;
+
+							P_TryMove(mo, mo->Pos() + (v * divy), true, walkplane, tm);
+						}
+
+						double pf = 1.0 - tm.pushFactor;
+						DVector2 t;
+						t.X = 0, t.Y = onestep.Y * pf;
+						walkplane = P_CheckSlopeWalk(mo, t);
+						if (!P_TryMove(mo, mo->Pos() + t, true, walkplane, tm))
 						{
-							mo->Vel.Y = 0;
+							t.X = onestep.X * pf, t.Y = 0;
+							walkplane = P_CheckSlopeWalk(mo, t);
+							P_TryMove(mo, mo->Pos() + t, true, walkplane, tm);
+						}
+
+						if (mo->player) {
+							mo->player->Vel = mo->Vel;
+						}
+					}
+					else {
+						DVector2 t;
+						t.X = 0, t.Y = onestep.Y;
+						walkplane = P_CheckSlopeWalk(mo, t);
+						if (P_TryMove(mo, mo->Pos() + t, true, walkplane, tm))
+						{
+							mo->Vel.X = 0;
 						}
 						else
 						{
-							mo->Vel.X = mo->Vel.Y = 0;
+							t.X = onestep.X, t.Y = 0;
+							walkplane = P_CheckSlopeWalk(mo, t);
+							if (P_TryMove(mo, mo->Pos() + t, true, walkplane, tm))
+							{
+								mo->Vel.Y = 0;
+							}
+							else
+							{
+								mo->Vel.X = mo->Vel.Y = 0;
+							}
 						}
 					}
+					
 					if (player && player->mo == mo)
 					{
 						if (mo->Vel.X == 0)
@@ -4476,6 +4541,8 @@ void ConstructActor(AActor *actor, const DVector3 &pos, bool SpawningMapThing)
 	auto Level = actor->Level;
 	actor->SpawnTime = Level->totaltime;
 	actor->SpawnOrder = Level->spawnindex++;
+	actor->lastModelFrame = -1;
+	actor->LastPatch.SetInvalid();
 
 	// Set default dialogue
 	actor->ConversationRoot = Level->GetConversation(actor->GetClass()->TypeName);

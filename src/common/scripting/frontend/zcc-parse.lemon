@@ -255,6 +255,7 @@ class_ancestry(X) ::= COLON dottable_id(A).	{ X = A; /*X-overwrites-A*/ }
 %type class_flags{ClassFlagsBlock}
 class_flags(X) ::= .										{ X.Flags = 0; X.Replaces = NULL; X.Version = {0,0}; }
 class_flags(X) ::= class_flags(A) ABSTRACT.					{ X.Flags = A.Flags | ZCC_Abstract; X.Replaces = A.Replaces; }
+class_flags(X) ::= class_flags(A) UNIT.						{ X.Flags = A.Flags | ZCC_Unit; X.Replaces = A.Replaces; }
 class_flags(X) ::= class_flags(A) NATIVE.					{ X.Flags = A.Flags | ZCC_Native; X.Replaces = A.Replaces; }
 class_flags(X) ::= class_flags(A) UI.						{ X.Flags = A.Flags | ZCC_UIFlag; X.Replaces = A.Replaces; }
 class_flags(X) ::= class_flags(A) PLAY.						{ X.Flags = A.Flags | ZCC_Play; X.Replaces = A.Replaces; }
@@ -412,6 +413,7 @@ struct_flags(X) ::= struct_flags(A) UI.						{ X.Flags = A.Flags | ZCC_UIFlag; }
 struct_flags(X) ::= struct_flags(A) PLAY.					{ X.Flags = A.Flags | ZCC_Play; }
 struct_flags(X) ::= struct_flags(A) CLEARSCOPE.				{ X.Flags = A.Flags | ZCC_ClearScope; }
 struct_flags(X) ::= struct_flags(A) NATIVE.					{ X.Flags = A.Flags | ZCC_Native; }
+struct_flags(X) ::= struct_flags(A) UNIT.					{ X.Flags = A.Flags | ZCC_Unit; }
 struct_flags(X) ::= struct_flags(A) VERSION LPAREN STRCONST(C) RPAREN.	{ X.Flags = A.Flags | ZCC_Version; X.Version = C.String->GetChars(); }
 
 opt_struct_body(X) ::= .								{ X = NULL; }
@@ -1215,6 +1217,7 @@ decl_flag(X) ::= INTERNAL(T).	{ X.Int = ZCC_Internal; X.SourceLoc =  T.SourceLoc
 decl_flag(X) ::= VIRTUAL(T).	{ X.Int = ZCC_Virtual; X.SourceLoc =  T.SourceLoc; }
 decl_flag(X) ::= OVERRIDE(T).	{ X.Int = ZCC_Override; X.SourceLoc =  T.SourceLoc; }
 decl_flag(X) ::= ABSTRACT(T).	{ X.Int = ZCC_Abstract; X.SourceLoc =  T.SourceLoc; }
+decl_flag(X) ::= UNIT(T).		{ X.Int = ZCC_Unit; X.SourceLoc =  T.SourceLoc; }
 decl_flag(X) ::= VARARG(T).     { X.Int = ZCC_VarArg; X.SourceLoc = T.SourceLoc; }
 decl_flag(X) ::= UI(T).			{ X.Int = ZCC_UIFlag; X.SourceLoc = T.SourceLoc; }
 decl_flag(X) ::= PLAY(T).		{ X.Int = ZCC_Play; X.SourceLoc = T.SourceLoc; }

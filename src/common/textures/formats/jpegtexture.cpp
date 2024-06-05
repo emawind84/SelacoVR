@@ -183,9 +183,17 @@ class FJPEGTexture : public FImageSource
 {
 public:
 	FJPEGTexture (int lumpnum, int width, int height);
+	FJPEGTexture(int lumpnum);
 
 	int CopyPixels(FBitmap *bmp, int conversion) override;
 	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
+
+
+	bool SerializeForTextureDef(FILE* fp, FString& name, int useType, FGameTexture* gameTex) override {
+		const char* fullName = fileSystem.GetFileFullName(SourceLump);
+		fprintf(fp, "%d:%s:%s:%d:%dx%d:%dx%d\n", 1, name.GetChars(), fullName != NULL ? fullName : "-", useType, Width, Height, LeftOffset, TopOffset);
+		return true;
+	}
 };
 
 //==========================================================================
@@ -193,6 +201,18 @@ public:
 //
 //
 //==========================================================================
+
+FImageSource* JPEGImage_TryMake(FileReader &fr, int lumpnum, bool *hasExtraInfo = nullptr) {
+	auto img = new FJPEGTexture(lumpnum);
+	int res = img->DeSerializeFromTextureDef(fr);
+	if (res <= 0) {
+		delete img;
+		return nullptr;
+	}
+	if (res > 1 && hasExtraInfo != nullptr) *hasExtraInfo = true;
+	return img;
+}
+
 
 FImageSource *JPEGImage_TryCreate(FileReader & data, int lumpnum)
 {
@@ -243,6 +263,14 @@ FImageSource *JPEGImage_TryCreate(FileReader & data, int lumpnum)
 //
 //
 //==========================================================================
+
+FJPEGTexture::FJPEGTexture(int lumpnum) : FImageSource(lumpnum) {
+	bMasked = false;
+
+	Width = 0;
+	Height = 0;
+}
+
 
 FJPEGTexture::FJPEGTexture (int lumpnum, int width, int height)
 : FImageSource(lumpnum)

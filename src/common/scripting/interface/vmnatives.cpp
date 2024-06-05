@@ -52,6 +52,8 @@
 #include "image.h"
 #include "s_soundinternal.h"
 #include "i_time.h"
+#include "v_video.h"
+#include "hw_material.h"
 
 //==========================================================================
 //
@@ -400,6 +402,10 @@ static int CheckForTexture(const FString& name, int type, int flags)
 	return TexMan.CheckForTexture(name, static_cast<ETextureType>(type), flags).GetIndex();
 }
 
+static int FindTextures(const FString& search, TArray<FTextureID> *out, int type, int flags) {
+	return TexMan.FindTextures(search, out, static_cast<ETextureType>(type), flags);
+}
+
 DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, CheckForTexture, CheckForTexture)
 {
 	PARAM_PROLOGUE;
@@ -407,6 +413,17 @@ DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, CheckForTexture, CheckForTexture)
 	PARAM_INT(type);
 	PARAM_INT(flags);
 	ACTION_RETURN_INT(CheckForTexture(name, type, flags));
+}
+
+
+DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, FindTextures, FindTextures)
+{
+	PARAM_PROLOGUE;
+	PARAM_STRING(search);
+	PARAM_POINTER(out, TArray<FTextureID>);
+	PARAM_INT(type);
+	PARAM_INT(flags);
+	ACTION_RETURN_INT(FindTextures(search, out, type, flags));
 }
 
 //==========================================================================
@@ -550,6 +567,41 @@ DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, UseGamePalette, UseGamePalette)
 	PARAM_PROLOGUE;
 	PARAM_INT(texid);
 	ACTION_RETURN_INT(UseGamePalette(texid));
+}
+
+
+EXTERN_CVAR(Bool, gl_texture_thread);
+
+static int MakeReady(int texid, int translation) {
+
+	if (!gl_texture_thread || !screen->SupportsBackgroundCache()) return 1;
+
+	auto tex = TexMan.GameByIndex(texid);
+	if (tex == NULL) return 1;
+
+	int scaleflags = 0;
+	FMaterial* gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
+	if (!gltex || !gltex->IsHardwareCached(translation)) {
+		if (gltex) {
+			screen->BackgroundCacheMaterial(gltex, translation, true);  // TODO: Prevent calling this every time the sprite wants to render, it's incredibly wasteful
+		}
+		else {
+			screen->BackgroundCacheTextureMaterial(tex, translation, scaleflags, true);
+		}
+
+		return 0;
+	}
+
+	return 1;
+}
+
+// @cockatrice - UI Function to preload and test a texture upload
+DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, MakeReady, MakeReady)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(texid);
+	PARAM_INT(translation);
+	ACTION_RETURN_INT(MakeReady(texid, translation));
 }
 
 //=====================================================================================
@@ -716,6 +768,27 @@ DEFINE_ACTION_FUNCTION_NATIVE(FFont, GetDefaultKerning, GetDefaultKerning)
 //
 //==========================================================================
 
+DEFINE_ACTION_FUNCTION(_Wads, GetNumWads)
+{
+	PARAM_PROLOGUE;
+	ACTION_RETURN_INT(fileSystem.GetNumWads());
+}
+
+
+DEFINE_ACTION_FUNCTION(_Wads, GetWadName)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(wadnum);
+	ACTION_RETURN_STRING(fileSystem.GetWadName(wadnum));
+}
+
+DEFINE_ACTION_FUNCTION(_Wads, HasMods)
+{
+	PARAM_PROLOGUE;
+	ACTION_RETURN_BOOL(fileSystem.HasExtraWads());
+}
+
+
 DEFINE_ACTION_FUNCTION(_Wads, GetNumLumps)
 {
 	PARAM_PROLOGUE;
@@ -770,6 +843,13 @@ DEFINE_ACTION_FUNCTION(_Wads, GetLumpNamespace)
 	PARAM_PROLOGUE;
 	PARAM_INT(lump);
 	ACTION_RETURN_INT(fileSystem.GetFileNamespace(lump));
+}
+
+DEFINE_ACTION_FUNCTION(_Wads, GetLumpWadNum)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(lump);
+	ACTION_RETURN_INT(fileSystem.GetFileContainer(lump));
 }
 
 DEFINE_ACTION_FUNCTION(_Wads, ReadLump)

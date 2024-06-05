@@ -58,6 +58,7 @@ enum
 	MDL_NOPERPIXELLIGHTING			= 1024, // forces a model to not use per-pixel lighting. useful for voxel-converted-to-model objects.
 	MDL_SCALEWEAPONFOV				= 2048,	// scale weapon view model with higher user FOVs
 	MDL_ALWAYSCULLBACKFACES			= 4096, // @Cockatrice - Always cull backfaces
+	MDL_NOPIXELSTRETCH				= 8192	// @Cockatrice - Ignore pixel stretch so we can rotate these suckers
 };
 
 FSpriteModelFrame * FindModelFrame(const PClass * ti, int sprite, int frame, bool dropped);

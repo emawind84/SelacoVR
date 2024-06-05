@@ -211,7 +211,7 @@ void HWDrawInfo::GetDynSpriteLight(AActor *thing, particle_t *particle, float *o
 // For multithread processing each worker thread needs its own copy, though.
 static thread_local TArray<FDynamicLight*> addedLightsArray; 
 
-void hw_GetDynModelLight(AActor *self, FDynLightData &modellightdata)
+void hw_GetDynModelLight(AActor *self, FDynLightData &modellightdata, double ticFrac)
 {
 	modellightdata.Clear();
 
@@ -254,7 +254,7 @@ void hw_GetDynModelLight(AActor *self, FDynLightData &modellightdata)
 					{
 						if (std::find(addedLights.begin(), addedLights.end(), light) == addedLights.end()) // Check if we already added this light from a different subsector
 						{
-							AddLightToList(modellightdata, group, light, true, 1.0);
+							AddLightToList(modellightdata, group, light, true, ticFrac);
 							addedLights.Push(light);
 						}
 					}

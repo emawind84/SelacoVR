@@ -36,11 +36,11 @@ extern bool gpuStatActive;
 extern bool keepGpuStatActive;
 extern FString gpuStatOutput;
 
-VkCommandBufferManager::VkCommandBufferManager(VulkanFrameBuffer* fb, bool uploadOnly) : fb(fb)
+VkCommandBufferManager::VkCommandBufferManager(VulkanFrameBuffer* fb, VkQueue *queue, int queueFamily, bool uploadOnly) : fb(fb)
 {
 	mIsUploadOnly = uploadOnly;
-	fbQueue = uploadOnly ? &fb->device->uploadQueue : &fb->device->graphicsQueue;
-	mCommandPool.reset(new VulkanCommandPool(fb->device, uploadOnly ? fb->device->uploadFamily : fb->device->graphicsFamily));
+	fbQueue = queue;
+	mCommandPool.reset(new VulkanCommandPool(fb->device, queueFamily));
 
 	if (!mIsUploadOnly) {
 		swapChain = std::make_unique<VulkanSwapChain>(fb->device);
@@ -172,6 +172,8 @@ void VkCommandBufferManager::FlushCommands(bool finish, bool lastsubmit, bool up
 	}
 }
 
+extern glcycle_t GPUWait, FPSWait;
+
 void VkCommandBufferManager::WaitForCommands(bool finish, bool uploadOnly)
 {
 	if (finish)
@@ -182,13 +184,18 @@ void VkCommandBufferManager::WaitForCommands(bool finish, bool uploadOnly)
 		presentImageIndex = swapChain->AcquireImage(fb->GetClientWidth(), fb->GetClientHeight(), fb->GetVSync(), mSwapChainImageAvailableSemaphore.get());
 		if (presentImageIndex != 0xffffffff)
 			fb->GetPostprocess()->DrawPresentTexture(fb->mOutputLetterbox, true, false);
+
 	}
 
 	FlushCommands(finish, true, uploadOnly);
 
 	if (finish)
 	{
+		/* @Cockatrice - Moving the FPS limiter to after the GPU functions, since it doesn't seem to account for a slow GPU process
+		FPSWait.Reset();
+		FPSWait.Clock();
 		fb->FPSLimit();
+		FPSWait.Unclock();*/
 
 		if (presentImageIndex != 0xffffffff)
 			swapChain->QueuePresent(presentImageIndex, mRenderFinishedSemaphore.get());
@@ -198,8 +205,23 @@ void VkCommandBufferManager::WaitForCommands(bool finish, bool uploadOnly)
 
 	if (numWaitFences > 0)
 	{
+		if (finish) {
+			GPUWait.Reset();
+			GPUWait.Clock();
+		}
 		auto res = vkWaitForFences(fb->device->device, numWaitFences, mSubmitWaitFences, VK_TRUE, std::numeric_limits<uint64_t>::max());
 		vkResetFences(fb->device->device, numWaitFences, mSubmitWaitFences);
+
+		if (finish) {
+			GPUWait.Unclock();
+		}
+	}
+
+	if (finish) {
+		FPSWait.Reset();
+		FPSWait.Clock();
+		fb->FPSLimit();
+		FPSWait.Unclock();
 	}
 
 	DeleteFrameObjects(uploadOnly);

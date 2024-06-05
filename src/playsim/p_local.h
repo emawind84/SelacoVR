@@ -251,6 +251,7 @@ extern TArray<spechit_t> portalhit;
 
 
 int	P_TestMobjLocation (AActor *mobj);
+int P_FindOnMobjZNearest(AActor* actor, bool quick, AActor** pOnmobj);	// @Cockatrice - Find nearest thing below actor it can sit on 
 int	P_TestMobjZ (AActor *mobj, bool quick=true, AActor **pOnmobj = NULL);
 bool P_CheckPosition(AActor *thing, const DVector2 &pos, bool actorsonly = false);
 void P_DoMissileDamage(AActor* inflictor, AActor* target);

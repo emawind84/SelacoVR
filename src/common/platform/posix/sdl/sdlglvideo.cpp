@@ -83,6 +83,8 @@ EXTERN_CVAR (Int, vid_defwidth)
 EXTERN_CVAR (Int, vid_defheight)
 EXTERN_CVAR (Int, vid_preferbackend)
 EXTERN_CVAR (Bool, cl_capfps)
+EXTERN_CVAR(Int, gl_max_transfer_threads)
+
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
@@ -137,6 +139,8 @@ namespace Priv
 
 		FString caption;
 		caption.Format(GAMENAME " %s (%s)", GetVersionString(), GetGitTime());
+
+		SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 
 		const uint32_t windowFlags = (win_maximized ? SDL_WINDOW_MAXIMIZED : 0) | SDL_WINDOW_RESIZABLE | extraFlags;
 		Priv::window = SDL_CreateWindow(caption,
@@ -638,6 +642,36 @@ SystemGLFrameBuffer::SystemGLFrameBuffer(void *hMonitor, bool fullscreen)
 			continue;
 		}
 
+		// @Cockatrice - Create the aux contexts first with the expectation that they will be shared with the main context
+		if(gl_max_transfer_threads > 0) {
+			Printf("R_OPENGL: Creating additional contexts...\n");
+
+			const int numAux = min((int)gl_max_transfer_threads, 4);
+			int numCreated = 0;
+
+			for (int x = 0; x < numAux; x++) {
+				GLAuxContexts[x] = SDL_GL_CreateContext(Priv::window);
+
+				
+				if (GLAuxContexts[x] == NULL) {
+					break;
+				}
+				
+				numCreated++;
+			}
+
+			if (numCreated < numAux) {
+				if (numCreated == 0) {
+					Printf("R_OPENGL: Warning - Unable to create any additional context(s) [0/%d] (%s) \n\tTexture loading may be main-thread only.\n", numAux, SDL_GetError());
+				} else {
+					Printf("R_OPENGL: Warning - %d Contexts could not be created. Created %d of %d requested.\n\t(%s)\n", numAux - numCreated, numCreated, numAux, SDL_GetError());
+				}
+			}
+			else {
+				Printf("R_OPENGL: Created %d additional contexts\n", numCreated);
+			}
+		}
+
 		GLContext = SDL_GL_CreateContext(Priv::window);
 		if (GLContext == nullptr)
 		{
@@ -661,6 +695,10 @@ SystemGLFrameBuffer::~SystemGLFrameBuffer ()
 		if (GLContext)
 		{
 			SDL_GL_DeleteContext(GLContext);
+		}
+
+		for(int x = 0; x < 4; x++) {
+			if(GLAuxContexts[x]) SDL_GL_DeleteContext(GLAuxContexts[x]);
 		}
 
 		Priv::DestroyWindow();
@@ -702,6 +740,27 @@ void SystemGLFrameBuffer::SetVSync( bool vsync )
 void SystemGLFrameBuffer::SwapBuffers()
 {
 	SDL_GL_SwapWindow(Priv::window);
+}
+
+
+// @Cockatrice - This is messy but these are some accessors for basic context usage
+// Aux and null contexts should only be used in texture load threads
+void SystemGLFrameBuffer::setNULLContext() {
+	SDL_GL_MakeCurrent(0, 0);
+}
+
+void SystemGLFrameBuffer::setMainContext() {
+	SDL_GL_MakeCurrent(Priv::window, GLContext);
+}
+
+void SystemGLFrameBuffer::setAuxContext(int index) {
+	SDL_GL_MakeCurrent(Priv::window, GLAuxContexts[index]);
+}
+
+int SystemGLFrameBuffer::numAuxContexts() {
+	int num = 0;
+	for (int x = 0; x < 4; x++) if (GLAuxContexts[x] != NULL) num++;
+	return num;
 }
 
 
@@ -763,5 +822,10 @@ void I_SetWindowTitle(const char* caption)
 		default_caption.Format(GAMENAME " %s (%s)", GetVersionString(), GetGitTime());
 		SDL_SetWindowTitle(Priv::window, default_caption);
 	}
+}
+
+void I_FocusWindow()
+{
+	SDL_RaiseWindow(Priv::window);
 }
 

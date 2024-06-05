@@ -513,7 +513,7 @@ DEFINE_ACTION_FUNCTION(_Screen, GetFullscreenRect)
 //
 //==========================================================================
 
-bool SetTextureParms(F2DDrawer * drawer, DrawParms *parms, FGameTexture *img, double xx, double yy)
+bool SetTextureParms(F2DDrawer * drawer, DrawParms *parms, FGameTexture *img, double xx, double yy, double texWidth, double texHeight)
 {
 	auto GetWidth = [=]() { return parms->viewport.width; };
 	auto GetHeight = [=]() {return parms->viewport.height; };
@@ -521,8 +521,8 @@ bool SetTextureParms(F2DDrawer * drawer, DrawParms *parms, FGameTexture *img, do
 	{
 		parms->x = xx;
 		parms->y = yy;
-		parms->texwidth = img->GetDisplayWidth();
-		parms->texheight = img->GetDisplayHeight();
+		parms->texwidth = texWidth == 0 ? img->GetDisplayWidth() : texWidth;
+		parms->texheight = texHeight == 0 ? img->GetDisplayHeight() : texHeight;
 		if (parms->top == INT_MAX || parms->fortext)
 		{
 			parms->top = img->GetDisplayTopOffset();

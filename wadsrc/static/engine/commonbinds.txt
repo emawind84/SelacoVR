@@ -4,15 +4,15 @@ M printObjectives
 F Toggle_Flashlight
 G useGadget
 H switchGadget
-C +crouch
-ctrl crouch
+C crouch
+ctrl +crouch
 Q meleeButton
-R reloader
+R +reload
 Z useMeds
-Alt tempability
+Alt weaponWheel
 Mouse2 +altattack
 Mouse3 useability
-Mouse4 reloader
+Mouse4 +reload
 capslock "codex"
 LeftBracket previousAbility
 RightBracket nextAbility
@@ -26,11 +26,8 @@ s +back
 a +moveleft
 d +moveright
 space +jump
-ctrl crouch
 e +use
 mouse2 +altattack
-
-
 
 // Basic
 ` toggleconsole
@@ -45,11 +42,9 @@ mouse2 +altattack
 9 "slot 9"
 0 "slot 0"
 mouse1 +attack
-f1 menu_help
 f2 save_menu
 f3 load_menu
-f4 menu_options
-f5 chase
+f4 "openmenu SelacoOptionMenu"
 f6 quicksaveselaco
 f9 quickload
 f10 menu_quit
@@ -86,17 +81,29 @@ rthumb meleeButton
 
 
 /* Default automap bindings */
-mapbind f am_togglefollow
 mapbind p am_toggletexture
 mapbind c am_clearmarks
-mapbind 0 am_gobig
+//mapbind r am_center
+mapbind o am_gobig
+mapbind l am_togglelegend
 mapbind rightarrow +am_panright
 mapbind leftarrow +am_panleft
 mapbind uparrow +am_panup
 mapbind downarrow +am_pandown
-mapbind - +am_zoomout
-mapbind = +am_zoomin
-mapbind kp- +am_zoomout
-mapbind kp+ +am_zoomin
+mapbind pgdn +am_zoomout
+mapbind pgup +am_zoomin
 mapbind mwheelup "am_zoom 1.2"
 mapbind mwheeldown "am_zoom -1.2"
+// Controllers
+mapbind pad_b togglemap
+mapbind dpadup togglemap
+//mapbind dpaddown am_center
+mapbind pad_x am_togglefollow
+mapbind pad_y am_gobig
+mapbind pad_a am_togglelegend
+mapbind rstickright +am_panright
+mapbind rstickleft +am_panleft
+mapbind rstickup +am_panup
+mapbind rstickdown +am_pandown
+mapbind lshoulder +am_zoomout
+mapbind rshoulder +am_zoomin

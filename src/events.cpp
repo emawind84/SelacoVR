@@ -302,6 +302,12 @@ void EventManager::WorldUnloaded(const FString& nextmap)
 	}
 }
 
+bool EventManager::IsSaveAllowed(bool quicksave) {
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
+		if (!handler->IsSaveAllowed(quicksave)) return false;
+	return true;
+}
+
 FString EventManager::GetSavegameComments()
 {
 	struct Comment {
@@ -555,6 +561,13 @@ void EventManager::Console(int player, FString name, int arg1, int arg2, int arg
 		handler->ConsoleProcess(player, name, arg1, arg2, arg3, manual);
 }
 
+void EventManager::Stat(FString name, FString text, bool isAchievement, double value) {
+	if (ShouldCallStatic(false)) staticEventManager.Stat(name, text, isAchievement, value);
+
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
+		handler->StatsEvent(name, text, isAchievement, value);
+}
+
 void EventManager::RenderOverlay(EHudState state)
 {
 	if (ShouldCallStatic(false)) staticEventManager.RenderOverlay(state);
@@ -695,6 +708,11 @@ DEFINE_FIELD_X(ReplaceEvent, FReplaceEvent, IsFinal)
 DEFINE_FIELD_X(ReplacedEvent, FReplacedEvent, Replacee)
 DEFINE_FIELD_X(ReplacedEvent, FReplacedEvent, Replacement)
 DEFINE_FIELD_X(ReplacedEvent, FReplacedEvent, IsFinal)
+
+DEFINE_FIELD_X(StatsEvent, FStatsEvent, Name)
+DEFINE_FIELD_X(StatsEvent, FStatsEvent, Text)
+DEFINE_FIELD_X(StatsEvent, FStatsEvent, IsAchievement)
+DEFINE_FIELD_X(StatsEvent, FStatsEvent, Value)
 
 DEFINE_ACTION_FUNCTION(DStaticEventHandler, SetOrder)
 {
@@ -1023,6 +1041,19 @@ FString DStaticEventHandler::GetSavegameComment(int &order)
 	return "";
 }
 
+bool DStaticEventHandler::IsSaveAllowed(bool quicksave) {
+	IFVIRTUAL(DStaticEventHandler, IsSaveAllowed)
+	{
+		int valid = 1;
+		VMReturn results[1] = { &valid };
+		VMValue params[2] = { (DStaticEventHandler*)this, &quicksave };
+		VMCall(func, params, 2, results, 1);
+		return !!valid;
+	}
+
+	return true;
+}
+
 FRenderEvent EventManager::SetupRenderEvent()
 {
 	FRenderEvent e;
@@ -1195,6 +1226,24 @@ void DStaticEventHandler::PostUiTick()
 	}
 }
 
+void DStaticEventHandler::StatsEvent(FString name, FString text, bool isAchievement, double value) {
+	IFVIRTUAL(DStaticEventHandler, StatProcess)
+	{
+		// don't create excessive DObjects if not going to be processed anyway
+		if (isEmpty(func)) return;
+		FStatsEvent e;
+
+		//
+		e.Name = name;
+		e.Text = text;
+		e.IsAchievement = isAchievement;
+		e.Value = value;
+
+		VMValue params[2] = { (DStaticEventHandler*)this, &e };
+		VMCall(func, params, 2, nullptr, 0);
+	}
+}
+
 void DStaticEventHandler::ConsoleProcess(int player, FString name, int arg1, int arg2, int arg3, bool manual)
 {
 	if (player < 0)
@@ -1311,7 +1360,8 @@ CCMD(event)
 
 CCMD(netevent)
 {
-	if (gamestate != GS_LEVEL/* && gamestate != GS_TITLELEVEL*/) // not sure if this should work in title level, but probably not, because this is for actual playing
+	// @cockatrice - Re-enabled GS_TITLELEVEL because netevent is the only way we can interact with some play scoped functionality while in titlemap
+	if (gamestate != GS_LEVEL && gamestate != GS_TITLELEVEL) // not sure if this should work in title level, but probably not, because this is for actual playing
 	{
 		DPrintf(DMSG_SPAMMY, "netevent cannot be used outside of a map.\n");
 		return;

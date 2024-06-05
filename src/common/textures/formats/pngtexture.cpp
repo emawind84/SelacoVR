@@ -54,6 +54,7 @@ class FPNGTexture : public FImageSource
 {
 public:
 	FPNGTexture (FileReader &lump, int lumpnum, int width, int height, uint8_t bitdepth, uint8_t colortype, uint8_t interlace);
+	FPNGTexture(int lumpnum);
 
 	int CopyPixels(FBitmap *bmp, int conversion) override;
 	int ReadPixels(FImageLoadParams *params, FBitmap *bmp) override;
@@ -63,15 +64,131 @@ public:
 	TArray<uint8_t> CreatePalettedPixels(int conversion) override;
 	TArray<uint8_t> ReadPalettedPixels(FileReader *lump, int conversion);
 
+	bool SerializeForTextureDef(FILE *fp, FString &name, int useType, FGameTexture *gameTex)  override {
+		const char* fullName = fileSystem.GetFileFullName(SourceLump);
+		fprintf(fp, "%d:%s:%s:%d:%dx%d:%dx%d:%hhu:%d:%d:%d:%hu:%hu:%hu:%d:%u:%u:%d:", 0, name.GetChars(), fullName != NULL ? fullName : "-", useType, Width, Height, LeftOffset, TopOffset, BitDepth, ColorType, Interlace, (int)HaveTrans, NonPaletteTrans[0], NonPaletteTrans[1], NonPaletteTrans[2], PaletteSize, StartOfIDAT, StartOfPalette, (int)bMasked);
+		
+		// Now dump sprite positioning info if necessary
+		if (useType == (int)ETextureType::Sprite		||
+			useType == (int)ETextureType::SkinSprite	|| 
+			useType == (int)ETextureType::Decal
+		) {
+			// Signal 2 lines of SPI
+			fprintf(fp, "2\n");
+
+			// This is expensive and dirty, but only necessary for dumping data and should not be done when running the game normally
+			for (int x = 0; x < 2; x++) {
+				const SpritePositioningInfo& info = gameTex->GetSpritePositioning(x);
+				fprintf(fp,
+					"-1:%hu:%hu:%hu:%hu:%d:%d:%g:%g:%g:%g:%g:%g:%g:%g:%hhu\n", 
+					info.trim[0], info.trim[1], info.trim[2], info.trim[3],
+					info.spriteWidth, info.spriteHeight,
+					info.mSpriteU[0], info.mSpriteU[1], info.mSpriteV[0], info.mSpriteV[1],
+					info.mSpriteRect.left, info.mSpriteRect.top, info.mSpriteRect.width, info.mSpriteRect.height,
+					info.mTrimResult
+				);	// Start with -1 so this line is ignored in the case of ordering problems
+			}
+		}
+		else {
+			// Signal that the next line is not SPI
+			fprintf(fp, "0\n");
+		}
+		
+		return true;
+	}
+
+	int DeSerializeFromTextureDef(FileReader &fr) override {
+		int fileType = 0, useType = 0, haveTrans = 0, colorType = 0, interlace = 0, bitDepth = 0;
+		int npt0 = 0, npt1 = 0, npt2 = 0, masked = 0;
+		int numSPI = 0;
+
+		char id[9], path[1024];
+		id[0] = '\0';
+		path[0] = '\0';
+
+		char str[1800];
+
+		if (fr.Gets(str, 1800)) {
+
+			int count = sscanf(str,
+				"%d:%8[^:]:%1023[^:]:%d:%dx%d:%dx%d:%d:%d:%d:%d:%d:%d:%d:%d:%u:%u:%d:%d",
+				&fileType, id, path, &useType, &Width, &Height, &LeftOffset, &TopOffset, &bitDepth, &colorType, &interlace, &haveTrans, &npt0, &npt1, &npt2, &PaletteSize, &StartOfIDAT, &StartOfPalette, &masked, &numSPI
+			);
+
+			BitDepth = bitDepth;
+			HaveTrans = haveTrans > 0;
+			ColorType = colorType;
+			Interlace = interlace;
+			bMasked = masked;
+			NonPaletteTrans[0] = npt0;
+			NonPaletteTrans[1] = npt1;
+			NonPaletteTrans[2] = npt2;
+
+			if (ColorType == 0 && !(ColorType == 0 && HaveTrans && NonPaletteTrans[0] < 256)) {
+				PaletteMap = GPalette.GrayMap;
+			}
+
+			if (count != 20) {
+				Printf("Failed to parse PNG Texture: %s\n", id);
+				return 0;
+			}
+
+			return numSPI == 2 ? 2 : 1;
+		}
+
+		return 0;
+	}
+
+
+	bool DeSerializeExtraDataFromTextureDef(FileReader& fr, FGameTexture* gameTex) override {
+		SpritePositioningInfo spi[2];
+		char str[1800];
+
+		// Read the next two lines into the sprite positioning info
+		for (int x = 0; x < 2; x++) {
+			if (fr.Gets(str, 1800)) {
+				int count = sscanf(
+					str,
+					"-1:%hu:%hu:%hu:%hu:%d:%d:%f:%f:%f:%f:%f:%f:%f:%f:%hhu",
+					&spi[x].trim[0], &spi[x].trim[1], &spi[x].trim[2], &spi[x].trim[3],
+					&spi[x].spriteWidth, &spi[x].spriteHeight,
+					&spi[x].mSpriteU[0], &spi[x].mSpriteU[1], &spi[x].mSpriteV[0], &spi[x].mSpriteV[1],
+					&spi[x].mSpriteRect.left, &spi[x].mSpriteRect.top, &spi[x].mSpriteRect.width, &spi[x].mSpriteRect.height,
+					&spi[x].mTrimResult
+				);
+
+				if (count != 15) {
+					Printf(TEXTCOLOR_RED"Warning: Invalid info in sprite positioning info for texture %s\n", gameTex->GetName().GetChars());
+				}
+			}
+			else {
+				throw std::invalid_argument("PNGTexture:: Fatal Error - Not enough lines to deserialize Sprite Positioning Info from texture info cache.");
+			}
+		}
+
+		// Assign SPI if possible
+		if (gameTex != nullptr) {
+			SpritePositioningInfo* spir = gameTex->HasSpritePositioning() ? (SpritePositioningInfo*)&gameTex->GetSpritePositioning(0) : (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
+
+			// Copy spi into correct location
+			memcpy(spir, spi, sizeof(SpritePositioningInfo) * 2);
+
+			gameTex->SetSpriteRect(spir, true);	// Make sure to keep values as they are exported
+		}
+		
+
+		return true;
+	}
+
 protected:
 	void ReadAlphaRemap(FileReader *lump, uint8_t *alpharemap);
 	void SetupPalette(FileReader &lump);
 	int ReadPalette(FileReader &lump, uint8_t *pMap);		// @Cockatrice - Reads palette without modifying internal vars, for threaded reads
 
-	uint8_t BitDepth;
-	uint8_t ColorType;
-	uint8_t Interlace;
-	bool HaveTrans;
+	uint8_t BitDepth = 0;
+	uint8_t ColorType = 0;
+	uint8_t Interlace = 0;
+	bool HaveTrans = false;
 	uint16_t NonPaletteTrans[3];
 
 	uint8_t *PaletteMap = nullptr;
@@ -87,6 +204,18 @@ FImageSource* StbImage_TryCreate(FileReader& file, int lumpnum);
 //
 //
 //==========================================================================
+
+FImageSource *PNGImage_TryMake(FileReader &fr, int lumpnum, bool* hasExtraInfo = nullptr) {
+	auto img = new FPNGTexture(lumpnum);
+	int res = img->DeSerializeFromTextureDef(fr);
+	if (res == 0) {
+		delete img;
+		return nullptr;
+	}
+	if (res > 1 && hasExtraInfo != nullptr) *hasExtraInfo = true;
+	return img;
+}
+
 
 FImageSource *PNGImage_TryCreate(FileReader & data, int lumpnum)
 {
@@ -198,6 +327,17 @@ FImageSource *PNGImage_TryCreate(FileReader & data, int lumpnum)
 //
 //
 //==========================================================================
+
+FPNGTexture::FPNGTexture(int lumpnum) : FImageSource(lumpnum) {
+	Width = Height = 0;
+	bMasked = false;
+	BitDepth = 0;
+	ColorType = 0;
+	Interlace = 0;
+	HaveTrans = false;
+	NonPaletteTrans[0] = NonPaletteTrans[1] = NonPaletteTrans[2] = 0;
+}
+
 
 FPNGTexture::FPNGTexture (FileReader &lump, int lumpnum, int width, int height,
 						  uint8_t depth, uint8_t colortype, uint8_t interlace)
@@ -636,7 +776,7 @@ TArray<uint8_t> FPNGTexture::CreatePalettedPixels(int conversion)
 
 
 
-#define CHECKPMAP if(pMap == nullptr) readPalMap.Reserve(PaletteSize); ReadPalette(*lump, readPalMap.Data()); pMap = readPalMap.Data();
+#define CHECKPMAP if(pMap == nullptr) { readPalMap.Reserve(PaletteSize); ReadPalette(*lump, readPalMap.Data()); pMap = readPalMap.Data(); }
 TArray<uint8_t> FPNGTexture::ReadPalettedPixels(FileReader *lump, int conversion)
 {
 	TArray<uint8_t> Pixels(Width*Height, true);

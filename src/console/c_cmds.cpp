@@ -69,6 +69,8 @@
 #include "s_music.h"
 #include "texturemanager.h"
 #include "v_draw.h"
+#include "events.h"
+
 
 extern FILE *Logfile;
 extern bool insave;
@@ -652,15 +654,14 @@ UNSAFE_CCMD (save)
         return;
     }
 
-	FString fname;
-	for (int i = 0;; ++i)
-	{
-		fname = G_BuildSaveName("save", i);
-		if (!FileExists(fname))
-		{
-			break;
-		}
+	// @Cockatrice - Consult the event managers to determine if we are actually allowed to save at this moment
+	if (!staticEventManager.IsSaveAllowed(false)) {
+		if (developer > 0)
+			Printf("Save \"%s\" rejected by event manager.", argv[1]);
+		return;
 	}
+
+    FString fname = argv[1];
 	DefaultExtension (fname, "." SAVEGAME_EXT);
 	G_SaveGame (fname, argv[1]);
 }

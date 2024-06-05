@@ -136,6 +136,7 @@ CVAR(Int, am_linethickness, 1, CVAR_ARCHIVE)
 CVAR(Bool, am_thingrenderstyles, true, CVAR_ARCHIVE)
 CVAR(Int, am_showsubsector, -1, 0);
 CVAR(Float, am_playerScale, 0.5, CVAR_ARCHIVE)
+CVAR(Bool, am_draw_portals, false, CVAR_ARCHIVE);
 
 CUSTOM_CVAR(Int, am_showalllines, -1, CVAR_NOINITCALL)	// This is a cheat so don't save it.
 {
@@ -204,10 +205,17 @@ CVAR(Int, am_markcolor, CR_GREY, CVAR_ARCHIVE)
 
 CCMD(am_togglefollow)
 {
-	am_followplayer = !am_followplayer;
+	am_followplayer = true;// !am_followplayer;
 	if (primaryLevel && primaryLevel->automap)
 		primaryLevel->automap->ResetFollowLocation();
 	Printf("%s\n", GStrings(am_followplayer ? "AMSTR_FOLLOWON" : "AMSTR_FOLLOWOFF"));
+}
+
+CCMD(am_center)
+{
+	if (primaryLevel && primaryLevel->automap) {
+		primaryLevel->automap->ResetFollowLocation();
+	}
 }
 
 CCMD(am_togglegrid)
@@ -1440,12 +1448,19 @@ bool DAutomap::Responder (event_t *ev, bool last)
 {
 	if (automapactive && (ev->type == EV_KeyDown || ev->type == EV_KeyUp))
 	{
-		if (am_followplayer)
+		// @Cockatrice - Allow ESCAPE to cancel automap instead of opening a menu on top
+		if (ev->type == EV_KeyDown && ev->data1 == KEY_ESCAPE) {
+			AM_Stop();
+			return true;
+		}
+
+		// @Cockatrice - Allow panning with follow mode on, just provide a center button
+		/*if (am_followplayer)
 		{
 			// check for am_pan* and ignore in follow mode
 			const char *defbind = AutomapBindings.GetBind(ev->data1);
 			if (defbind && !strnicmp(defbind, "+am_pan", 7)) return false;
-		}
+		}*/
 
 		bool res = C_DoKey(ev, &AutomapBindings, nullptr);
 		if (res && ev->type == EV_KeyUp && !last)
@@ -2554,7 +2569,7 @@ void DAutomap::drawWalls (bool allmap)
 
 				if (portalmode)
 				{
-					drawMline(&l, AMColors.PortalColor);
+					if(!!am_draw_portals) drawMline(&l, AMColors.PortalColor);
 				}
 				else if (AM_CheckSecret(&line) == 1)
 				{
@@ -3248,7 +3263,7 @@ void DAutomap::Drawer (int bottom)
 	{
 		doFollowPlayer();
 	}
-	else
+	//else
 	{
 		m_paninc.x = m_paninc.y = 0;
 		if (buttonMap.ButtonDown(Button_AM_PanLeft))
