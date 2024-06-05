@@ -2090,6 +2090,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Respawn)
 		self->flags6 = defs->flags6;
 		self->flags7 = defs->flags7;
 		self->flags8 = defs->flags8;
+		self->flags9 = defs->flags9;
 		self->SetState (self->SpawnState);
 		self->renderflags &= ~RF_INVISIBLE;
 
@@ -2210,7 +2211,7 @@ ETraceStatus CheckLOFTraceFunc(FTraceResults &trace, void *userdata)
 	}
 
 	// @Cockatrice - CLOFF_BLOCKLOF_ALWAYS will always stop if it hits a BLOCKLOF actor
-	if ((flags & CLOFF_BLOCKLOF_ALWAYS) && (trace.Actor->flags8 & MF8_BLOCKLOF)) {
+	if ((flags & CLOFF_BLOCKLOF_ALWAYS) && (trace.Actor->flags9 & MF9_BLOCKLOF)) {
 		return TRACE_Stop;
 	}
 
@@ -2257,7 +2258,7 @@ ETraceStatus CheckLOFTraceFunc(FTraceResults &trace, void *userdata)
 			((flags & CLOFF_SKIPMONSTER) && (trace.Actor->flags3 & MF3_ISMONSTER)) ||
 			((flags & CLOFF_SKIPENEMY) && data->Self->IsHostile(trace.Actor)) ||
 			((flags & CLOFF_SKIPFRIEND) && data->Self->IsFriend(trace.Actor)) ||
-			((flags & CLOFF_SKIPOBJECT) && !(trace.Actor->flags3 & MF3_ISMONSTER) && !(trace.Actor->flags8 & MF8_BLOCKLOF)) ||
+			((flags & CLOFF_SKIPOBJECT) && !(trace.Actor->flags3 & MF3_ISMONSTER) && !(trace.Actor->flags9 & MF9_BLOCKLOF)) ||
 			((flags & CLOFF_SKIPNONHOSTILE) && (trace.Actor->flags3 & MF3_ISMONSTER) && !data->Self->IsHostile(trace.Actor))
 		)
 	{
@@ -2265,7 +2266,7 @@ ETraceStatus CheckLOFTraceFunc(FTraceResults &trace, void *userdata)
 	}
 
 	// @Cocktrice - If all checks pass, blocking actors will always return positive
-	if ((trace.Actor->flags8 & MF8_BLOCKLOF)) {
+	if ((trace.Actor->flags9 & MF9_BLOCKLOF)) {
 		return TRACE_Stop;
 	}
 

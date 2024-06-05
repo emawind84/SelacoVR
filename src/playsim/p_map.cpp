@@ -4537,7 +4537,7 @@ static ETraceStatus CheckForMultipleActors(FTraceResults &res, void *userdata)
 		return TRACE_Skip;
 
 	// If the actor takes damage, but passes on hitscans add it to the list so we can damage it later
-	if (res.Actor->flags8 & MF8_HITSCANTHRU) {
+	if (res.Actor->flags9 & MF9_HITSCANTHRU) {
 		// Save this thing for damaging later, and continue the trace
 		ActorHitS newhit;
 		newhit.HitActor = res.Actor;
