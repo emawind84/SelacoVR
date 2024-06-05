@@ -3143,7 +3143,7 @@ int AActor::GetMissileDamage (int mask, int add)
 {
 	if (DamageVal >= 0)
 	{
-		if (flags8 & MF8_ABSDAMAGE) {
+		if (flags9 & MF9_ABSDAMAGE) {
 			return DamageVal;
 		}
 		else

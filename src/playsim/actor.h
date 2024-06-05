@@ -432,12 +432,11 @@ enum ActorFlag8
 	MF8_ADDLIGHTLEVEL	= 0x40000000,	// [MC] Actor light level is additive with sector.
 	MF8_PRECACHEALWAYS  = 0x80000000	// @Cockatrice - Actor is marked for precache on every map
 };
-
 enum ActorFlag9
 {
-	MF8_ABSDAMAGE		= 0x00001000,	// @Cockatrice - Damage value ignores dice roll
-	MF8_HITSCANTHRU		= 0x00002000,	// @Cockatrice - Allow hitscans to pass through, but also damage this actor
-	MF8_BLOCKLOF		= 0x00004000,	// @Cockatrice - Blocks LOF in CHECKLOF
+	MF9_ABSDAMAGE		= 0x00001000,	// @Cockatrice - Damage value ignores dice roll
+	MF9_HITSCANTHRU		= 0x00002000,	// @Cockatrice - Allow hitscans to pass through, but also damage this actor
+	MF9_BLOCKLOF		= 0x00004000,	// @Cockatrice - Blocks LOF in CHECKLOF
 }
 
 // --- mobj.renderflags ---
