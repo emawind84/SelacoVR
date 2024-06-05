@@ -44,6 +44,7 @@
 EXTERN_CVAR(Bool, gl_precache)
 EXTERN_CVAR(Bool, gl_precache_actors)
 EXTERN_CVAR(Bool, gl_texture_thread)
+EXTERN_CVAR(Bool, debug_precache_actor)
 
 //==========================================================================
 //
@@ -180,7 +181,7 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 
 		// @Cockatrice - If the texture thread is enabled, and the sprite has a PRECACHE state, only load frames from that state
 		FState *precacheState = cls->FindStateByString("precache", true);
-		if (!precacheState || !gl_texture_thread) {
+		if (!precacheState || !gl_texture_thread || debug_precache_actor) {
 			for (unsigned i = 0; i < cls->GetStateCount(); i++)
 			{
 				auto &state = cls->GetStates()[i];
@@ -248,7 +249,7 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 			//Printf("%s found precache state: %s\n", cls->GetDisplayName().GetChars(), FState::StaticGetStateName(precacheState, cls).GetChars());
 			int failsafeCounter = 0;		// If someone forgot to add a stop; to the Precache state, we don't want to loop endlessly
 
-			while (precacheState && failsafeCounter < 100) {
+			while (precacheState && failsafeCounter < 1000) {
 				//Printf("   Precaching sprite: %s frame: %d State: %s \n", sprites[precacheState->sprite].name, precacheState->Frame, FState::StaticGetStateName(precacheState, cls).GetChars());
 
 				spritelist[precacheState->sprite].Insert(gltrans, true);
@@ -277,8 +278,7 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 						}
 						else if (smf->modelIDs[i] != -1)
 						{
-							Models[smf->modelIDs[i]]->PushSpriteMDLFrame(smf, i);
-							Models[smf->modelIDs[i]]->AddSkins(texhitlist);
+							Models[smf->modelIDs[i]]->AddSkins(texhitlist, (unsigned)(i * MD3_MAX_SURFACES) < smf->surfaceskinIDs.Size()? &smf->surfaceskinIDs[i * MD3_MAX_SURFACES] : nullptr);
 						}
 						if (smf->modelIDs[i] != -1)
 						{
@@ -289,6 +289,10 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 
 				precacheState = precacheState->GetNextState();
 				failsafeCounter++;
+			}
+
+			if (failsafeCounter >= 999) {
+				Printf(TEXTCOLOR_RED"Pre-Cache error: 1000+ states encountered in %s!\n", cls->GetDisplayName().GetChars());
 			}
 		}
 

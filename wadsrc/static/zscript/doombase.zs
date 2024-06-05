@@ -133,6 +133,7 @@ extend class Object
 	native static void S_StopSound (int channel, Sound sound_id = -1);
 	native static void S_PauseSound (bool notmusic, bool notsfx);
 	native static void S_ResumeSound (bool notsfx);
+	native static void S_SoundPitch(int channel, float pitch = 1.0);
 	native static bool S_ChangeMusic(String music_name, int order = 0, bool looping = true, bool force = false);
 	native static float S_GetLength(Sound sound_id);
 	native static void MarkSound(Sound snd);
@@ -190,7 +191,7 @@ class Thinker : Object native play
 	virtual native void Sleep(int tics);
 	virtual native bool ShouldWake();
 	virtual native void Wake();
-	native void SleepIndefinite();
+	virtual native void SleepIndefinite();
 
 	static clearscope int Tics2Seconds(int tics)
 	{
@@ -334,8 +335,9 @@ struct DropItem native
 struct LevelInfo native
 {
 	native readonly int levelnum;
-	native readonly int levelgroup;
+	native readonly int levelgroup, areaNum;
 	native readonly String MapName;
+	native readonly String Description;
 	native readonly String NextMap;
 	native readonly String NextSecretMap;
 	native readonly String SkyPic1;
@@ -410,7 +412,7 @@ struct LevelLocals native
 	native readonly int cluster;
 	native readonly int clusterflags;
 	native readonly int levelnum;
-	native readonly int levelgroup;
+	native readonly int levelgroup, areaNum;
 	native readonly String LevelName;
 	native readonly String MapName;
 	native String NextMap;
@@ -449,6 +451,7 @@ struct LevelLocals native
 	native readonly bool nomonsters;
 	native readonly bool allowrespawn;
 	native readonly bool rainymap;
+	native readonly bool saferoom;
 	deprecated("3.8", "Use Level.isFrozen() instead") native bool frozen;
 	native readonly bool infinite_flight;
 	native readonly bool no_dlg_freeze;
@@ -529,7 +532,7 @@ struct LevelLocals native
 	native void SecretExitLevel(int position);
 	native void ChangeLevel(string levelname, int position = 0, int flags = 0, int skill = -1);
 
-	native void StartNewGame(int episode, int skill = -1, string className = "");
+	native void StartNewGame(int episode, int skill = -1, string className = "", string levelName = "");
 	native void ReturnToTitle();
 	native void QuitGame();
 }

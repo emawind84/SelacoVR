@@ -360,6 +360,8 @@ CCMD(targetinv)
 
 CCMD(listmaps)
 {
+	bool all = argv.argc() > 1 && strcmp(argv[1], "all") == 0;
+
 	for (unsigned i = 0; i < wadlevelinfos.Size(); i++)
 	{
 		level_info_t *info = &wadlevelinfos[i];
@@ -367,13 +369,28 @@ CCMD(listmaps)
 
 		if (map != NULL)
 		{
-			if (argv.argc() == 1 
+			if (argv.argc() == 1 || all
 			    || CheckWildcards(argv[1], info->MapName.GetChars()) 
 			    || CheckWildcards(argv[1], info->LookupLevelName().GetChars())
 			    || CheckWildcards(argv[1], fileSystem.GetResourceFileName(fileSystem.GetFileContainer(map->lumpnum))))
 			{
-				Printf("%s: '%s' (%s)\n", info->MapName.GetChars(), info->LookupLevelName().GetChars(),
-					fileSystem.GetResourceFileName(fileSystem.GetFileContainer(map->lumpnum)));
+				if (all) {
+					Printf("\n%s: '%s' (%s)\n\tLevelNum: %d\n\tAreaNum: %d\n\tCluster: %d\n",
+						info->MapName.GetChars(),
+						info->LookupLevelName().GetChars(),
+						fileSystem.GetResourceFileName(fileSystem.GetFileContainer(map->lumpnum)),
+						info->levelnum,
+						info->areaNum,
+						info->cluster
+					);
+				}
+				else {
+					Printf("%s: '%s' (%s)\n",
+						info->MapName.GetChars(),
+						info->LookupLevelName().GetChars(),
+						fileSystem.GetResourceFileName(fileSystem.GetFileContainer(map->lumpnum))
+					);
+				}
 			}
 			delete map;
 		}

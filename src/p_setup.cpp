@@ -87,6 +87,8 @@ extern AActor *SpawnMapThing (int index, FMapThing *mthing, int position);
 
 extern unsigned int R_OldBlend;
 
+CVAR(Bool, debug_precache_actor, 0, 0);
+
 
 //===========================================================================
 //
@@ -198,6 +200,13 @@ static void PrecacheLevel(FLevelLocals *Level)
 			{
 				actorhitlist[static_cast<PClassActor*>(pc)] = true;
 				//Printf(TEXTCOLOR_YELLOW"Adding actor: %s to precache list from CACHEALWAYS\n", act->GetCharacterName());
+			}
+		}
+
+		// Debug: Precache ALL ACTORS
+		if (debug_precache_actor) {
+			for (auto pc : PClassActor::AllActorClasses) {
+				actorhitlist[pc] = true;
 			}
 		}
 	}

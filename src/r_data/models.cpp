@@ -176,7 +176,11 @@ void RenderModel(FModelRenderer *renderer, float x, float y, float z, FSpriteMod
 	objectToWorldMatrix.rotate(-smf->rolloffset, 1, 0, 0);
 
 	// consider the pixel stretching. For non-voxels this must be factored out here
-	float stretch = (smf->modelIDs[0] != -1 ? Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) : 1.f) / actor->Level->info->pixelstretch;
+	float stretch = 1.0;
+	if (!(smf->flags & MDL_NOPIXELSTRETCH) && smf->modelIDs[0] != -1) {
+		stretch = Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) / actor->Level->info->pixelstretch;
+	}
+	//float stretch = (smf->modelIDs[0] != -1 ? Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) : 1.f) / actor->Level->info->pixelstretch;
 	objectToWorldMatrix.scale(1, stretch, 1);
 
 	float orientation = scaleFactorX * scaleFactorY * scaleFactorZ;
@@ -390,6 +394,9 @@ static void ParseModelDefLump(int Lump);
 
 void InitModels()
 {
+	cycle_t model_time = cycle_t();
+	model_time.Clock();
+
 	Models.DeleteAndClear();
 	SpriteModelFrames.Clear();
 	SpriteModelHash.Clear();
@@ -464,6 +471,9 @@ void InitModels()
 		SpriteModelFrames[i].hashnext = SpriteModelHash[j];
 		SpriteModelHash[j]=i;
 	}
+
+	model_time.Unclock();
+	Printf(TEXTCOLOR_GOLD"Model Indexing: %.2fms\n", model_time.TimeMS());
 }
 
 static void ParseModelDefLump(int Lump)
@@ -473,7 +483,7 @@ static void ParseModelDefLump(int Lump)
 	{
 		if (sc.Compare("model"))
 		{
-			int preParseFrames = SpriteModelFrames.Size();
+			unsigned int preParseFrames = SpriteModelFrames.Size();
 			int index, surface;
 			FString path = "";
 			sc.MustGetString();
@@ -875,6 +885,9 @@ static void ParseModelDefLump(int Lump)
 					smf.rotationCenterX = 0.;
 					smf.rotationCenterY = 0.;
 					smf.rotationCenterZ = 0.;
+				}
+				else if (sc.Compare("nopixelstretch")) {
+					smf.flags |= MDL_NOPIXELSTRETCH;
 				}
 				else
 				{

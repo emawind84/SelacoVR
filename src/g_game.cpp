@@ -2318,7 +2318,7 @@ CVAR (Int, autosavenum, 0, CVAR_NOSET|CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 static int nextautosave = -1;
 CVAR (Int, disableautosave, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Bool, saveloadconfirmation, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // [mxd]
-CUSTOM_CVAR (Int, autosavecount, 4, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CUSTOM_CVAR (Int, autosavecount, 16, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 {
 	if (self < 0)
 		self = 0;
@@ -2377,6 +2377,13 @@ void G_DoAutoSave ()
 
 void G_DoQuickSave ()
 {
+	// @Cockatrice - Consult the event managers to determine if we are actually allowed to save at this moment
+	if (!staticEventManager.IsSaveAllowed(true)) {
+		if (developer > 0)
+			Printf("Quicksave rejected by event manager.");
+		return;
+	}
+
 	FString description;
 	FString file;
 	// Keeps a rotating set of quicksaves

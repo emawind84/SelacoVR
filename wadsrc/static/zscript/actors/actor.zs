@@ -99,6 +99,7 @@ class Actor : Thinker native
 	native readonly vector3 Pos;
 	native vector3 Prev;
 	native uint ThruBits;
+	native uint lineBlockBits;
 	native vector2 SpriteOffset;
 	native vector3 WorldOffset;
 	native double spriteAngle;
@@ -367,6 +368,7 @@ class Actor : Thinker native
 	property RenderRequired: RenderRequired;
 	property FriendlySeeBlocks: FriendlySeeBlocks;
 	property ThruBits: ThruBits;
+	property LineBlockBits : lineBlockBits;
 	property LightLevel: LightLevel;
 	
 	// need some definition work first

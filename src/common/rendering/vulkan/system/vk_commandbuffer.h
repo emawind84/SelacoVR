@@ -8,7 +8,7 @@ class VulkanFrameBuffer;
 class VkCommandBufferManager
 {
 public:
-	VkCommandBufferManager(VulkanFrameBuffer* fb, bool uploadOnly = false);
+	VkCommandBufferManager(VulkanFrameBuffer* fb, VkQueue* queue, int queueFamily, bool uploadOnly = false);
 	~VkCommandBufferManager();
 
 	void BeginFrame();

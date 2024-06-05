@@ -293,6 +293,7 @@ struct TexMan
 	};
 
 	native static TextureID CheckForTexture(String name, int usetype = Type_Any, int flags = TryAny);
+	native static int FindTextures(String name, out Array<TextureID> output, int usetype = Type_Any, int flags = TryAny);
 	native static String GetName(TextureID tex);
 	native static int, int GetSize(TextureID tex);
 	native static Vector2 GetScaledSize(TextureID tex);
@@ -300,6 +301,10 @@ struct TexMan
 	native static int CheckRealHeight(TextureID tex);
 	native static bool OkForLocalization(TextureID patch, String textSubstitute);
 	native static bool UseGamePalette(TextureID tex);
+
+	// @Cockatrice - Checks and loads (in background when available) texture. Returns TRUE if fully loaded OR if unloadable/null.  Returns FALSE when waiting for load.
+	// Will not function correctly with animated textures
+	native static ui bool MakeReady(TextureID tex, int translation = 0);
 }
 
 /*
@@ -780,6 +785,11 @@ struct Wads	// todo: make FileSystem an alias to 'Wads'
 	native static string GetLumpName(int lump);
 	native static string GetLumpFullName(int lump);
 	native static int GetLumpNamespace(int lump);
+	native static int GetLumpWadNum(int lump);
+
+	native static int GetNumWads();
+	native static string GetWadName(int wadnum);
+	native static bool HasMods();
 }
 
 enum EmptyTokenType
@@ -835,3 +845,11 @@ struct Translation version("2.4")
 	}
 }
 
+struct Globals native play
+{
+	native static string, bool Get(string key);
+	native static int, bool GetInt(string key);
+	native static void Set(string key, string value);
+	native static void SetInt(string key, int value);
+	native static void Save();
+}

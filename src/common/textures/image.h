@@ -49,7 +49,7 @@ private:
 };
 
 class ImageLoadThread;
-
+class FGameTexture;
 
 // @Cockatrice - Image sources must prepare the information they will need to load in the background thread
 // in the main thread. These params or a subclass will be passed to the loader and then back to the image source
@@ -95,6 +95,7 @@ protected:
 public:
 	virtual bool SupportRemap0() { return false; }		// Unfortunate hackery that's needed for Hexen's skies. Only the image can know about the needed parameters
 	virtual bool IsRawCompatible() { return true; }		// Same thing for mid texture compatibility handling. Can only be determined by looking at the composition data which is private to the image.
+	virtual bool IsGPUOnly() { return false; }			// @Cockatrice - Image can only exist on the GPU, and CPU manipulation of this image will not be possible. Used for DDS Compressed Textures
 
 	void CopySize(FImageSource &other)
 	{
@@ -113,7 +114,8 @@ public:
 	virtual FImageLoadParams *NewLoaderParams(int conversion, int translation, FRemapTable *remap);
 	virtual int ReadPixels(FImageLoadParams *params, FBitmap *bmp);									// Thread safe(ish) version
 	virtual int ReadPixels(FileReader *reader, FBitmap *bmp, int conversion);						// Direct read pixels, must be implemented for things like multipatch to work properly
-	virtual int ReadTranslatedPixels(FileReader *reader, FBitmap *bmp, const PalEntry *remap, int conversion);		// Thread safe(ish) version
+	virtual int ReadTranslatedPixels(FileReader *reader, FBitmap *bmp, const PalEntry *remap, int conversion);							// Thread safe(ish) version
+	virtual int ReadCompressedPixels(FileReader* reader, unsigned char** data, size_t &size, size_t &unitSize, int &mipLevels);			// Thread safe, read data for the GPU and don't interpret it at all
 
 	bool bMasked = true;						// Image (might) have holes (Assume true unless proven otherwise!)
 	int8_t bTranslucent = -1;					// Image has pixels with a non-0/1 value. (-1 means the user needs to do a real check)
@@ -133,8 +135,8 @@ public:
 	FBitmap GetCachedBitmap(const PalEntry *remap, int conversion, int *trans = nullptr);
 
 	static void ClearImages() { ImageArena.FreeAll(); ImageForLump.Clear(); NextID = 0; }
-	static FImageSource * GetImage(int lumpnum, bool checkflat);
-
+	static FImageSource* GetImage(int lumpnum, bool checkflat);
+	static FImageSource* CreateImageFromDef(FileReader& fr, int filetype, int lumpnum, bool* hasExtraInfo = nullptr);
 
 
 	// Conversion option
@@ -147,6 +149,10 @@ public:
 
 	FImageSource(int sourcelump = -1) : SourceLump(sourcelump) { ImageID = ++NextID; }
 	virtual ~FImageSource() {}
+
+	virtual bool SerializeForTextureDef(FILE* fp, FString& name, int useType, FGameTexture* gameTex);
+	virtual int DeSerializeFromTextureDef(FileReader &fr);
+	virtual bool DeSerializeExtraDataFromTextureDef(FileReader& fr, FGameTexture* gameTex) { return true; }
 
 	int GetWidth() const
 	{
@@ -214,100 +220,3 @@ protected:
 class FTexture;
 
 FTexture* CreateImageTexture(FImageSource* img) noexcept;
-
-
-
-// Image loader =============================================
-/*
-struct ImageLoadIn {
-	FImageSource *imgSource;
-	FileReader *readerCopy;		// Needs a unique copy of a file reader
-	int conversion;
-};
-
-struct ImageLoadOut {
-	FImageSource *imgSource;
-	FBitmap pixels;
-	int conversion, trans;
-
-	ImageLoadOut() {
-		imgSource = nullptr;
-		conversion = 0;
-	}
-
-	ImageLoadOut(const ImageLoadOut& _Right) {
-		imgSource = _Right.imgSource;
-		conversion = _Right.conversion;
-		pixels.Copy(_Right.pixels, false);
-	}
-
-	ImageLoadOut &operator = (const ImageLoadOut& _Right) {
-		imgSource = _Right.imgSource;
-		conversion = _Right.conversion;
-		pixels.Copy(_Right.pixels, false);
-
-		return *this;
-	}
-};
-
-
-class ImageLoadThread : public ResourceLoader<ImageLoadIn, ImageLoadOut> {
-public:
-	std::atomic<int> currentImageID;
-
-	// Is this image ID already loading/loaded on this thread?
-	bool existsInQueue(int imageID) {
-		if (currentImageID == imageID) return true;
-
-		bool found = false;
-
-		mInputQ.foreach([&](ImageLoadIn &i) {
-			if (i.imgSource->GetId() == imageID) found = true;
-		});
-
-		if (found) return true;
-
-		mOutputQ.foreach([&](ImageLoadOut &o) {
-			if (o.imgSource->GetId() == imageID) found = true;
-		});
-
-		return found;
-	}
-
-protected:
-
-	bool loadResource(ImageLoadIn &input, ImageLoadOut &output) override;
-	void cancelLoad() override { currentImageID.store(0); }
-	void completeLoad() override { currentImageID.store(0); }
-};
-
-
-// Designed for background loading of texture data. Stage 1 does not include background hardware loading, just puts the pixel data in the precache
-class ImageLoaderQueue {
-private:
-	static const int MAX_THREADS = 4;
-
-	TArray<ImageLoadThread*> mRunning;
-	
-	ImageLoadThread *spinupThreads();			// Start as many threads as necessary or specified, return the first one
-	ImageLoadThread *nextAvailableThread();		// Find the least encumbered thread, start one if necessary
-
-public:
-	ImageLoaderQueue() {}
-	~ImageLoaderQueue() {
-		clear();
-	}
-
-	// Call this during the game or render loop, after loading textures it will integrate the loaded data
-	void update();
-
-	// Empty the queue, blocks until current load ops are complete
-	void clear();
-
-	void queue(FImageSource *img, int conversion);
-	
-
-	static ImageLoaderQueue *Instance;
-};*/
-
-// End Image Loader =========================================

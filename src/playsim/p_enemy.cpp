@@ -50,6 +50,7 @@
 #include "vm.h"
 #include "actorinlines.h"
 #include "a_ceiling.h"
+#include "i_time.h"
 
 #include "gi.h"
 
@@ -110,6 +111,17 @@ double yspeed[8] = {0,SQRTHALF,1,SQRTHALF,0,-SQRTHALF,-1,-SQRTHALF};
 // but some can be made preaware
 //
 
+cycle_t AlertCycles;
+
+ADD_STAT(ALERT)
+{
+	double tm = AlertCycles.TimeMS();
+	if (primaryLevel->totaltime % 35 == 0) {
+		AlertCycles.Reset();
+	}
+
+	return FStringf("ALERT time in last second: %f ms  %f", tm, I_GetTimeFrac());
+}
 
 //----------------------------------------------------------------------------
 //
@@ -248,6 +260,8 @@ void P_NoiseAlert (AActor *emitter, AActor *target, bool splash, double maxdist)
 	if (target != NULL && target->player && (target->player->cheats & CF_NOTARGET))
 		return;
 
+	AlertCycles.Clock();
+
 	validcount++;
 	NoiseList.Clear();
 	NoiseMarkSector(emitter->Sector, target, splash, emitter, 0, maxdist);
@@ -255,6 +269,8 @@ void P_NoiseAlert (AActor *emitter, AActor *target, bool splash, double maxdist)
 	{
 		P_RecursiveSound(NoiseList[i].sec, target, splash, emitter, NoiseList[i].soundblocks, maxdist);
 	}
+
+	AlertCycles.Unclock();
 }
 
 //----------------------------------------------------------------------------

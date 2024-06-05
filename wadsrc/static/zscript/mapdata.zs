@@ -172,6 +172,7 @@ struct Line native play
 	native uint						flags;
 	native uint						flags2;
 	native uint						activation;	// activation type
+	native uint						blockBits;	// @Cockatrice - Compared to actor for blocking, combined with flags
 	native int						special;
 	native int						args[5];	// <--- hexen-style arguments (expanded to ZDoom's full width)
 	native double					alpha;		// <--- translucency (0=invisible, 1.0=opaque)
@@ -209,6 +210,138 @@ struct Line native play
 
     native clearscope int GetHealth();
     native void SetHealth(int newhealth);
+
+	// @Cockatrice - Some helper functions
+	clearscope double distanceToPos(Vector2 pos) {
+        double num = abs((delta.y * pos.x) - (delta.x * pos.y) - (delta.y * v1.p.x) + (delta.x * v1.p.y));
+        double denom = sqrt((delta.x * delta.x) + (delta.y * delta.y));
+        return num / denom;
+    }
+
+	// Returns ESide side of the line the point is on
+	clearscope int pointOnSide(Vector2 pos) {
+		let v = delta;//.unit();
+        return !((v.y * pos.x) - (v.x * pos.y) - (v.y * v1.p.x) + (v.x * v1.p.y) > 0);
+    }
+
+	// Returns TRUE, POS if intersection was found
+	// Returns FALSE, UNDEFINED if intersection was not found
+	clearscope bool, Vector2 getIntersection(Vector2 p0, Vector2 p1) {
+        let s1_x = p1.x - p0.x;     
+        let s1_y = p1.y - p0.y;
+        let s2_x = v2.p.x - v1.p.x;     
+        let s2_y = v2.p.y - v1.p.y;
+        
+        let sd = (-s2_x * s1_y + s1_x * s2_y);
+
+        if( (s1_x * s2_y - s1_y * s2_x) ~== 0 || sd ~== 0) return false;  // Check perpendicular
+        
+        let s = (-s1_y * (p0.x - v1.p.x) + s1_x * (p0.y - v1.p.y)) / sd;
+        let t = ( s2_x * (p0.y - v1.p.y) - s2_y * (p0.x - v1.p.x)) / sd;
+
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+            return true, (
+                p0.x + (t * s1_x),
+                p0.y + (t * s1_y)
+            );
+        }
+
+        return false;
+    }
+
+
+	clearscope Vector2 pointOnLine(Vector2 pt, bool restrict = false) {
+        Vector2 p1 = v1.p, p2 = v2.p;
+		Vector2 r = (0,0);
+        if (p1.x == p2.x && p1.y == p2.y) p1.x -= 0.00001;
+
+        let U = ((pt.x - p1.x) * (p2.x - p1.x)) + ((pt.y - p1.y) * (p2.y - p1.y));
+        let Udenom = (p2.x - p1.x)**2 + (p2.y - p1.y)**2;
+
+        U /= Udenom;
+
+        r.x = p1.x + (U * (p2.x - p1.x));
+        r.y = p1.y + (U * (p2.y - p1.y));
+
+        if(restrict) {
+            let minx = min(p1.x, p2.x);
+            let maxx = max(p1.x, p2.x);
+
+            let miny = min(p1.y, p2.y);
+            let maxy = max(p1.y, p2.y);
+
+            r.x = clamp(r.x, minx, maxx);
+            r.y = clamp(r.y, miny, maxy);
+        }
+
+        return r;
+    }
+
+
+	// @Cockatrice - Generic static line helper funcs =====================================
+	clearscope static double DistanceToLine(Vector2 v, Vector2 vp, Vector2 p) {
+        double num = abs((v.y * p.x) - (v.x * p.y) - (v.y * vp.x) + (v.x * vp.y));
+        double denom = sqrt((v.x * v.x) + (v.y * v.y));
+        return num / denom;
+    }
+
+	clearscope static bool PosInFrontOfLine(Vector2 dir, Vector2 lp, Vector2 p) {
+        return (dir.y * p.x) - (dir.x * p.y) - (dir.y * lp.x) + (dir.x * lp.y) > 0;
+    }
+
+	
+	// Original func by Corey Ogburn
+	// P1 - P2 : Start and end point of the line
+	// PT: Position to compare
+	// Restrict : Result must stay inside bounds of line
+    clearscope static Vector2 GetPointOnLine(Vector2 p1, Vector2 p2, Vector2 pt, bool restrict = false) {
+        Vector2 r = (0,0);
+        if (p1.x == p2.x && p1.y == p2.y) p1.x -= 0.00001;
+
+        let U = ((pt.x - p1.x) * (p2.x - p1.x)) + ((pt.y - p1.y) * (p2.y - p1.y));
+        let Udenom = (p2.x - p1.x)**2 + (p2.y - p1.y)**2;
+
+        U /= Udenom;
+
+        r.x = p1.x + (U * (p2.x - p1.x));
+        r.y = p1.y + (U * (p2.y - p1.y));
+
+        if(restrict) {
+            let minx = min(p1.x, p2.x);
+            let maxx = max(p1.x, p2.x);
+
+            let miny = min(p1.y, p2.y);
+            let maxy = max(p1.y, p2.y);
+
+            r.x = clamp(r.x, minx, maxx);
+            r.y = clamp(r.y, miny, maxy);
+        }
+
+        return r;
+    }
+
+	static clearscope bool, Vector2 GetLineIntersection(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3) {
+        let s1_x = p1.x - p0.x;     
+        let s1_y = p1.y - p0.y;
+        let s2_x = p3.x - p2.x;     
+        let s2_y = p3.y - p2.y;
+        
+        let sd = (-s2_x * s1_y + s1_x * s2_y);
+
+        if( (s1_x * s2_y - s1_y * s2_x) ~== 0 || sd ~== 0) return false;  // Check perpendicular
+        
+        let s = (-s1_y * (p0.x - p2.x) + s1_x * (p0.y - p2.y)) / sd;
+        let t = ( s2_x * (p0.y - p2.y) - s2_y * (p0.x - p2.x)) / sd;
+
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+            return true, (
+                p0.x + (t * s1_x),
+                p0.y + (t * s1_y)
+            );
+        }
+
+        return false;
+    }
 }
 
 struct SecPlane native play

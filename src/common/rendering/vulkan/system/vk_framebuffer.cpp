@@ -68,6 +68,7 @@ EXTERN_CVAR(Bool, r_drawvoxels)
 EXTERN_CVAR(Int, gl_tonemap)
 EXTERN_CVAR(Int, screenblocks)
 EXTERN_CVAR(Bool, cl_capfps)
+EXTERN_CVAR(Int, vk_max_transfer_threads)
 
 CCMD(vk_memstats)
 {
@@ -90,22 +91,22 @@ CVAR(Bool, vk_raytrace, false, 0/*CVAR_ARCHIVE | CVAR_GLOBALCONFIG*/)	// @Cockat
 
 ADD_STAT(vkloader)
 {
-	static int maxQueue = 0, maxSecondaryQueue = 0, queue, total;
+	static int maxQueue = 0, maxSecondaryQueue = 0, queue, secQueue, total, collisions;
 	static double minLoad = 0, maxLoad = 0, avgLoad = 0;
 
 	auto sc = dynamic_cast<VulkanFrameBuffer *>(screen);
 
 	if (sc) {
-		sc->GetBGQueueSize(queue, maxQueue, maxSecondaryQueue, total);
+		sc->GetBGQueueSize(queue, secQueue, collisions, maxQueue, maxSecondaryQueue, total);
 		sc->GetBGStats(minLoad, maxLoad, avgLoad);
 
 		FString out;
 		out.AppendFormat(
-			"Queued: %3.3d Max: %3.3d Max Sec: %3.3d Tot: %d\n"
+			"[%d Threads] Queued: %3.3d - %3.3d  Collisions: %d\nMax: %3.3d Max Sec: %3.3d Tot: %d\n"
 			"Min: %.3fms\n"
 			"Max: %.3fms\n"
 			"Avg: %.3fms\n",
-			queue, maxQueue, maxSecondaryQueue, total, minLoad, maxLoad, avgLoad
+			sc->GetNumThreads(), queue, secQueue, collisions, maxQueue, maxSecondaryQueue, total, minLoad, maxLoad, avgLoad
 		);
 		return out;
 	}
@@ -118,21 +119,51 @@ CCMD(vk_rstbgstats) {
 	if (sc) sc->ResetBGStats();
 }
 
-void VulkanFrameBuffer::GetBGQueueSize(int &current, int &max, int &maxSec, int &total) {
-	current = bgTransferThread->numQueued();
-	max = bgTransferThread->statMaxQueued();
-	maxSec = bgTransferThread->statMaxSecondaryQueued();
-	total = bgTransferThread->statTotalLoaded();
+
+void VulkanFrameBuffer::GetBGQueueSize(int& current, int& secCurrent, int& collisions, int& max, int& maxSec, int& total) {
+	max = maxSec = total = 0;
+	current = primaryTexQueue.size();
+	secCurrent = secondaryTexQueue.size();
+	max = statMaxQueued;
+	maxSec = statMaxQueuedSecondary;
+	collisions = statCollisions;
+
+	for (auto& tfr : bgTransferThreads) {
+		total += tfr->statTotalLoaded();
+	}
 }
+
+
 
 void VulkanFrameBuffer::GetBGStats(double &min, double &max, double &avg) {
-	min = bgTransferThread->statMinLoadTime();
-	max = bgTransferThread->statMaxLoadTime();
-	avg = bgTransferThread->statAvgLoadTime();
+	min = 99999998;
+	max = avg = 0;
+
+	for (auto& tfr : bgTransferThreads) {
+		min = std::min(tfr->statMinLoadTime(), min);
+		max = std::max(tfr->statMaxLoadTime(), max);
+		avg += tfr->statAvgLoadTime();
+	}
+
+	avg /= (double)bgTransferThreads.size();
 }
 
+
 void VulkanFrameBuffer::ResetBGStats() {
-	bgTransferThread->resetStats();
+	statMaxQueued = statMaxQueuedSecondary = 0;
+	for (auto& tfr : bgTransferThreads) tfr->resetStats();
+	statCollisions = 0;
+}
+
+bool VulkanFrameBuffer::CachingActive() {
+	return secondaryTexQueue.size() > 0;
+}
+
+// TODO: Change this to report the actual progress once we have a way to mark the total number of objects to load
+float VulkanFrameBuffer::CacheProgress() {
+	float total = 0;
+
+	return (float)secondaryTexQueue.size();
 }
 
 
@@ -149,18 +180,6 @@ VkTexLoadThread::~VkTexLoadThread() {
 	}*/
 }
 
-bool VkTexLoadThread::moveToMainQueue(VkHardwareTexture *tex) {
-	// Find and requeue
-	VkTexLoadIn in;
-	if(mInputSecondaryQ.dequeueSearch(in, tex,
-		[](void *a, VkTexLoadIn &b)
-		{ return (VkHardwareTexture*)a == b.tex; })) {
-		tex->SetHardwareState(IHardwareTexture::HardwareState::LOADING);
-		queue(in);
-		return true;
-	}
-	return false;
-}
 
 bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	currentImageID.store(input.imgSource->GetId());
@@ -180,9 +199,91 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	// Load pixels directly with the reader we copied on the main thread
 	auto *src = input.imgSource;
 	FBitmap pixels;
-	pixels.Create(src->GetWidth(), src->GetHeight());	// TODO: Error checking
 
-	output.isTranslucent = src->ReadPixels(params, &pixels);
+	bool gpu = src->IsGPUOnly();
+	int exx = input.spi.shouldExpand && !gpu;
+	int srcWidth = src->GetWidth();
+	int srcHeight = src->GetHeight();
+	int buffWidth = src->GetWidth() + 2 * exx;
+	int buffHeight = src->GetHeight() + 2 * exx;
+	bool indexed = false;	// TODO: Determine this properly
+	bool mipmap = !indexed && input.allowMipmaps;
+	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
+	VulkanDevice* device = cmd->GetFrameBuffer()->device;
+
+	unsigned char* pixelData = nullptr;
+	size_t pixelDataSize = 0;
+	bool freePixels = false;
+
+
+	if (exx && !gpu) {
+		pixels.Create(buffWidth, buffHeight); // TODO: Error checking
+
+		// This is incredibly wasteful, but necessary for now since we can't read the bitmap with an offset into a larger buffer
+		// Read into a buffer and blit 
+		FBitmap srcBitmap;
+		srcBitmap.Create(srcWidth, srcHeight);
+		output.isTranslucent = src->ReadPixels(params, &srcBitmap);
+		pixels.Blit(exx, exx, srcBitmap);
+
+		// If we need sprite positioning info, generate it here and assign it in the main thread later
+		if (input.spi.generateSpi) {
+			FGameTexture::GenerateInitialSpriteData(output.spi.info, &srcBitmap, input.spi.shouldExpand, input.spi.notrimming);
+		}
+
+		pixelData = pixels.GetPixels();
+		pixelDataSize = pixels.GetBufferSize();
+	}
+	else {
+		if (gpu) {
+			// GPU only textures cannot be trimmed or translated, so just do a straight read
+			size_t totalSize;
+			int numMipLevels;
+			output.isTranslucent = src->ReadCompressedPixels(params->reader, &pixelData, totalSize, pixelDataSize, numMipLevels);
+			freePixels = true;
+			mipmap = false;
+			fmt = VK_FORMAT_BC7_UNORM_BLOCK;
+
+			uint32_t expectedMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(buffWidth, buffHeight)))) + 1;
+			if (numMipLevels != (int)expectedMipLevels || numMipLevels == 0) {
+				// Abort mips
+				output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, 4, fmt, pixelData, false, false, (int)pixelDataSize);
+			}
+			else {
+				// Base texture
+				output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, true, false, (int)pixelDataSize);
+
+				// Mips
+				uint32_t mipWidth = buffWidth, mipHeight = buffHeight;
+				uint32_t mipSize = (uint32_t)pixelDataSize, dataPos = (uint32_t)pixelDataSize;
+
+				for (int x = 1; x < numMipLevels; x++) {
+					mipWidth	= std::max(1u, (mipWidth >> 1));
+					mipHeight	= std::max(1u, (mipHeight >> 1));
+					mipSize		= std::max(1u, ((mipWidth + 3) / 4)) * std::max(1u, ((mipHeight + 3) / 4)) * 16;
+					if (mipSize == 0 || totalSize - dataPos < mipSize) 
+						break;
+					output.tex->BackgroundCreateTextureMipMap(cmd, x, mipWidth, mipHeight, 4, fmt, pixelData + dataPos, mipSize);
+					dataPos += mipSize;
+				}
+			}
+
+			if (input.spi.generateSpi) {
+				// Generate sprite data without pixel data, since no trimming should occur
+				FGameTexture::GenerateEmptySpriteData(output.spi.info, buffWidth, buffHeight);
+			}
+		}
+		else {
+			pixels.Create(buffWidth, buffHeight); // TODO: Error checking
+			output.isTranslucent = src->ReadPixels(params, &pixels);
+			pixelData = pixels.GetPixels();
+			pixelDataSize = pixels.GetBufferSize();
+
+			if (input.spi.generateSpi) {
+				FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+			}
+		}
+	}
 	
 	/*if (input.translationRemap) {
 
@@ -192,28 +293,29 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 
 	delete input.params;
 
-	// We have the image now, let's upload it through the channel created exclusively for background ops
-	// If we really wanted to be efficient, we would do the disk loading in one thread and the texture upload in another
-	// But for now this approach should yield reasonable results
-	VulkanDevice* device = cmd->GetFrameBuffer()->device;
-	bool indexed = false;	// TODO: Determine this properly
-	bool mipmap = !indexed;
-	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
-	output.tex->BackgroundCreateTexture(pixels.GetWidth(), pixels.GetHeight(), indexed ? 1 : 4, indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM, pixels.GetPixels(), !indexed);
-	output.createMipmaps = mipmap && !device->uploadFamilySupportsGraphics;
-	
-	// If we need sprite positioning info, generate it here and assign it in the main thread later
-	if (input.spi.generateSpi) {
-		FGameTexture::GenerateInitialSpriteData(output.spi.info, &pixels, input.spi.shouldExpand, input.spi.notrimming);
+
+	if (!gpu) {
+		output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, mipmap, mipmap, (int)pixelDataSize);
+	}
+
+	// Wait for operations to finish, since we can't maintain a regular loop of clearing the buffer
+	if (cmd->TransferDeleteList->TotalSize > 1) {
+		cmd->WaitForCommands(false, true);
+	}
+
+	output.createMipmaps = mipmap && !uploadQueue.familySupportsGraphics;
+
+	if (freePixels) {
+		free(pixelData);
 	}
 
 	// If we created the texture on a different family than the graphics family, we need to release access 
 	// to the image on this queue
-	if(device->graphicsFamily != device->uploadFamily) {
+	if(device->graphicsFamily != uploadQueue.queueFamily) {
 		auto cmds = cmd->CreateUnmanagedCommands();
 		cmds->SetDebugName("BGThread::QueueMoveCMDS");
 		output.releaseSemaphore = new VulkanSemaphore(device);
-		output.tex->ReleaseLoadedFromQueue(cmds.get(), device->uploadFamily, device->graphicsFamily);
+		output.tex->ReleaseLoadedFromQueue(cmds.get(), uploadQueue.queueFamily, device->graphicsFamily);
 		cmds->end();
 
 		QueueSubmit submit;
@@ -227,7 +329,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 			// being used by the time we get back to the main thread and move resources to the main graphics queue.
 			// I believe this is incorrect, we should be able to move on here without having to wait.
 			submits = 1;
-			submit.Execute(device, device->uploadQueue, submitFences[submits - 1].get());
+			submit.Execute(device, uploadQueue.queue, submitFences[submits - 1].get());
 			vkWaitForFences(device->device, submits, submitWaitFences, VK_TRUE, std::numeric_limits<uint64_t>::max());
 			vkResetFences(device->device, submits, submitWaitFences);
 			deleteList.clear();
@@ -237,11 +339,8 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 		//}
 	}
 
-
-
 	// Always return true, because failed images need to be marked as unloadable
 	// TODO: Mark failed images as unloadable so they don't keep coming back to the queue
-	// TODO: Load indexed images properly
 	return true;
 }
 
@@ -251,9 +350,16 @@ void VkTexLoadThread::completeLoad() { currentImageID.store(0); }
 // END Background Loader Stuff =====================================================
 
 void VulkanFrameBuffer::FlushBackground() {
-	int nq = bgTransferThread->numQueued();
+	int nq = primaryTexQueue.size() + secondaryTexQueue.size();
+	bool active = nq;
 
-	Printf(TEXTCOLOR_GREEN"VulkanFrameBuffer[%s]: Flushing [%d + %d] = %d texture load ops\n", bgTransferThread->isActive() ? "active" : "inactive", nq, patchQueue.size(), nq + patchQueue.size());
+	if(!active)
+		for (auto& tfr : bgTransferThreads) active = active || tfr->isActive();
+
+	Printf(TEXTCOLOR_GREEN"VulkanFrameBuffer[%s]: Flushing [%d + %d + %d] texture load ops\n", active ? "active" : "inactive", nq, patchQueue.size(), nq + patchQueue.size());
+
+	// Make sure active is marked if we have patches waiting
+	active = active || patchQueue.size() > 0;
 
 	// Finish anything queued, and send anything that needs to be loaded from the patch queue
 	UpdateBackgroundCache(true);
@@ -261,19 +367,22 @@ void VulkanFrameBuffer::FlushBackground() {
 	// Wait for everything to load, kinda cheating here but this shouldn't be called in the game loop only at teardown
 	cycle_t check = cycle_t();
 	check.Clock();
-	while (bgTransferThread->isActive()) {
-		std::this_thread::sleep_for(std::chrono::nanoseconds(50000));
+	
+	while (active) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-		check.Unclock();
-		if (check.TimeMS() > 100) {
-			check.Reset();
-			Printf(TEXTCOLOR_GOLD"VulkanFrameBuffer::FlushBackground() Is taking a while to finish load ops (100ms+)...\n");
-			check.Clock();
-		}
+		UpdateBackgroundCache(true);
+
+		active = false;
+		for (auto& tfr : bgTransferThreads) 
+			active = active || tfr->isActive();
 	}
 
 	// Finish anything that was loaded
 	UpdateBackgroundCache(true);
+
+	check.Unclock();
+	Printf(TEXTCOLOR_GOLD"VulkanFrameBuffer::FlushBackground() took %f ms\n", check.TimeMS());
 }
 
 void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
@@ -290,20 +399,32 @@ void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 	}
 
 	// Start processing finished resource loads
-	if (bgTransferThread->numFinished() > 0) {
-		std::unique_ptr<VulkanCommandBuffer> cmds = device->uploadFamily != device->graphicsFamily ? mCommands->CreateUnmanagedCommands() : nullptr;
-		if(cmds.get()) cmds->SetDebugName("MainThread::QueueMoveCMDS");
+	if(outputTexQueue.size()) {
+		// Do transfers need to be made?
+		bool familyPicnic = false;
+		for (int bgIndex = (int)bgTransferThreads.size() - 1; bgIndex >= 0; bgIndex--) {
+			if (bgTransferThreads[bgIndex]->getUploadQueue().queueFamily != device->graphicsFamily) {
+				familyPicnic = true;
+				break;
+			}
+		}
+
+		// TODO: Limit the total amount of commands we are going to send per-frame, or at least per-submit
+		std::unique_ptr<VulkanCommandBuffer> cmds = familyPicnic ? mCommands->CreateUnmanagedCommands() : nullptr;
+		if (cmds.get()) cmds->SetDebugName("MainThread::QueueMoveCMDS");
 
 		unsigned int sm4StartIndex = (unsigned int)bgtSm4List.size() - 1;
 
-		while (bgTransferThread->popFinished(loaded)) {
-			if(loaded.tex->hwState == IHardwareTexture::HardwareState::READY) {
+		//while (bgTransferThreads[bgIndex]->popFinished(loaded)) {
+		while (outputTexQueue.dequeue(loaded)) {
+			if (loaded.tex->hwState == IHardwareTexture::HardwareState::READY) {
+				statCollisions++;
 				//Printf("Background proc Loaded an already-loaded image: %s What a farting mistake!\n", loaded.gtex ? loaded.gtex->GetName().GetChars() : "UNKNOWN");
-				
+
 				// Set the sprite positioning if we loaded it and it hasn't already been applied
-				if(loaded.spi.generateSpi && loaded.gtex && !loaded.gtex->HasSpritePositioning()) {
+				if (loaded.spi.generateSpi && loaded.gtex && !loaded.gtex->HasSpritePositioning()) {
 					//Printf("Setting SPI even though we rejected the texture.\n");
-					SpritePositioningInfo *spi = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
+					SpritePositioningInfo* spi = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
 					memcpy(spi, loaded.spi.info, 2 * sizeof(SpritePositioningInfo));
 					loaded.gtex->SetSpriteRect(spi);
 				}
@@ -316,7 +437,7 @@ void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 			// the graphics queue faimly
 			if (device->uploadFamily != device->graphicsFamily && loaded.tex->mLoadedImage) {
 				loaded.tex->AcquireLoadedFromQueue(cmds.get(), device->uploadFamily, device->graphicsFamily);
-				
+
 				// If we cannot create mipmaps in the background, tell the GPU to create them now
 				if (loaded.createMipmaps) {
 					loaded.tex->mLoadedImage.get()->GenerateMipmaps(cmds.get());
@@ -326,8 +447,6 @@ void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 					loaded.releaseSemaphore->SetDebugName("BGT::RlsA");
 					bgtSm4List.push_back(std::unique_ptr<VulkanSemaphore>(loaded.releaseSemaphore));
 				}
-
-				//Printf(" moving: %d\n", loaded.imgSource->GetId());
 			}
 
 			loaded.tex->SwapToLoadedImage();
@@ -336,11 +455,16 @@ void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 
 			// Set the sprite positioning info if generated
 			if (loaded.spi.generateSpi && loaded.gtex) {
-				if(!loaded.gtex->HasSpritePositioning()) {
-					SpritePositioningInfo *spi = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
+				if (!loaded.gtex->HasSpritePositioning()) {
+					SpritePositioningInfo* spi = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
 					memcpy(spi, loaded.spi.info, 2 * sizeof(SpritePositioningInfo));
 					loaded.gtex->SetSpriteRect(spi);
 				}
+#ifdef DEBUG
+				else {
+					Printf(TEXTCOLOR_RED"%s ALREADY HAS SPRITE POSITIONING!!  %p\n", loaded.gtex->GetName(), this);
+				}
+#endif
 			}
 		}
 
@@ -359,26 +483,28 @@ void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 
 			submit.AddCommandBuffer(cmds.get());
 
-			for(unsigned int x = sm4StartIndex; x < bgtSm4List.size(); x++) {
+			for (unsigned int x = sm4StartIndex; x < bgtSm4List.size(); x++) {
 				submit.AddWait(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, bgtSm4List[x].get());
 			}
-			
-			if(!bgtFence.get()) bgtFence.reset(new VulkanFence(device));
-			
+
+			if (!bgtFence.get()) bgtFence.reset(new VulkanFence(device));
+
 			submit.Execute(device, device->graphicsQueue, bgtFence.get());
 
-			if(flush) {
+			if (flush) {
 				// Wait if flushing
 				bgtHasFence = false;
 				vkWaitForFences(device->device, 1, &bgtFence->fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 				vkResetFences(device->device, 1, &bgtFence->fence);
 				bgtSm4List.clear();
-			} else {
+			}
+			else {
 				bgtHasFence = true;
 				bgtCmds = std::move(cmds);
 			}
 		}
 	}
+
 
 	// Submit all of the patches that need to be loaded
 	QueuedPatch qp;
@@ -418,14 +544,18 @@ VulkanFrameBuffer::~VulkanFrameBuffer()
 		mShaderManager->Deinit();
 
 	mCommands->DeleteFrameObjects();
-	mBGTransferCommands->DeleteFrameObjects();
+	for(auto &cmds : mBGTransferCommands) cmds->DeleteFrameObjects();
 }
 
 void VulkanFrameBuffer::StopBackgroundCache() {
-	if (bgTransferThread.get()) {
-		bgTransferThread->clearInputQueue();
-		bgTransferThread->clearSecondaryInputQueue();
-		bgTransferThread->stop();
+	primaryTexQueue.clear();
+	secondaryTexQueue.clear();
+	outputTexQueue.clear();
+
+	for (auto& tfr : bgTransferThreads) {
+		//tfr->clearInputQueue();
+		//tfr->clearSecondaryInputQueue();
+		tfr->stop();
 	}
 }
 
@@ -452,8 +582,7 @@ void VulkanFrameBuffer::InitializeState()
 	uniformblockalignment = (unsigned int)device->PhysicalDevice.Properties.limits.minUniformBufferOffsetAlignment;
 	maxuniformblock = device->PhysicalDevice.Properties.limits.maxUniformBufferRange;
 
-	mCommands.reset(new VkCommandBufferManager(this));
-	mBGTransferCommands.reset(new VkCommandBufferManager(this, true));
+	mCommands.reset(new VkCommandBufferManager(this, &device->graphicsQueue, device->graphicsFamily));
 
 	mSamplerManager.reset(new VkSamplerManager(this));
 	mTextureManager.reset(new VkTextureManager(this));
@@ -483,8 +612,14 @@ void VulkanFrameBuffer::InitializeState()
 #endif
 
 	// @Cockatrice - Init the background loader
-	bgTransferThread.reset(new VkTexLoadThread(mBGTransferCommands.get(), device));
-	bgTransferThread->start();
+	for (int q = 0; q < (int)device->uploadQueues.size(); q++) {
+		if (q > 0 && q > vk_max_transfer_threads) break;	// Cap the number of threads used based on user preference
+		std::unique_ptr<VkCommandBufferManager> cmds(new VkCommandBufferManager(this, &device->uploadQueues[q].queue, device->uploadQueues[q].queueFamily, true));
+		std::unique_ptr<VkTexLoadThread> ptr(new VkTexLoadThread(cmds.get(), device, q, &primaryTexQueue, &secondaryTexQueue, &outputTexQueue));
+		ptr->start();
+		mBGTransferCommands.push_back(std::move(cmds));
+		bgTransferThreads.push_back(std::move(ptr));
+	}
 }
 
 void VulkanFrameBuffer::Update()
@@ -562,9 +697,10 @@ const char* VulkanFrameBuffer::DeviceName() const
 
 void VulkanFrameBuffer::SetVSync(bool vsync)
 {
-	Printf("Vsync changed to: %d", vsync);
+	Printf("Vsync changed to: %d\n", vsync);
 	mVSync = vsync;
 }
+
 
 void VulkanFrameBuffer::PrecacheMaterial(FMaterial *mat, int translation)
 {
@@ -591,7 +727,10 @@ void VulkanFrameBuffer::PrequeueMaterial(FMaterial *mat, int translation)
 
 // @Cockatrice - Cache a texture material, intended for use outside of the main thread
 bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI) {
-	if (!tex || !tex->isValid() || tex->GetID().GetIndex() == 0) return false;
+	if (!tex || !tex->isValid() || tex->GetID().GetIndex() == 0) {
+
+		return false;
+	}
 
 	QueuedPatch qp = {
 		tex, translation, scaleFlags, makeSPI
@@ -606,7 +745,9 @@ bool VulkanFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture *tex, int tr
 // @Cockatrice - Submit each texture in the material to the background loader
 // Call from main thread only
 bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI, bool secondary) {
-	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return false;
+	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) {
+		return false;
+	}
 
 	MaterialLayerInfo* layer;
 
@@ -618,11 +759,22 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 	int lump = layer->layerTexture->GetSourceLump();
 	FResourceLump *rLump = lump >= 0 ? fileSystem.GetFileAt(lump) : nullptr;
 	FImageLoadParams *params;
-	VkTexLoadSpi spi;
+	VkTexLoadSpi spi = {};
+
+	bool shouldExpand = mat->sourcetex->ShouldExpandSprite() && (layer->scaleFlags & CTF_Expand);
+	bool allowMips = !mat->sourcetex->GetNoMipmaps();
 
 	// If the texture is already submitted to the cache, find it and move it to the normal queue to reprioritize it
-	if (rLump && systex->GetState() == IHardwareTexture::HardwareState::CACHING) {
-		bgTransferThread->moveToMainQueue(systex);
+	if (rLump && !secondary && systex->GetState() == IHardwareTexture::HardwareState::CACHING) {
+		// Move from secondary queue to primary
+		VkTexLoadIn in;
+		if (secondaryTexQueue.dequeueSearch(in, systex,
+			[](void* a, VkTexLoadIn& b)
+		{ return (VkHardwareTexture*)a == b.tex; })) {
+			systex->SetHardwareState(IHardwareTexture::HardwareState::LOADING, 0);
+			primaryTexQueue.queue(in);
+			return true;
+		}
 	} else if (rLump && systex->GetState() == IHardwareTexture::HardwareState::NONE) {
 		systex->SetHardwareState(secondary ? IHardwareTexture::HardwareState::CACHING : IHardwareTexture::HardwareState::LOADING);
 
@@ -634,39 +786,26 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 		);
 
 		if(params) {
-			if (makeSPI) {
-				// Only generate SPI if it's not already there
-				if (!mat->sourcetex->HasSpritePositioning()) {
-					spi.generateSpi = true;
-					spi.notrimming = mat->sourcetex->GetNoTrimming();
-					spi.shouldExpand = mat->sourcetex->ShouldExpandSprite();
-					// TODO: Be careful with this, if a texture load fails and returns to the queue over and over, it will eat up all available memory in the arena
-					//spi.info = (SpritePositioningInfo*)ImageArena.Alloc(2 * sizeof(SpritePositioningInfo));
-				}
-				else {
-					//Printf("%s already has SPI so skipping it!\n", mat->sourcetex->GetName(), mat->Source());
-					spi.generateSpi = false;
-					//spi.info = nullptr;
-				}
-			}
-			else {
-				spi.generateSpi = false;
-				//spi.info = nullptr;
-			}
+			// Only generate SPI if it's not already there, but we need the other flags for sizing
+			spi.generateSpi = makeSPI && !mat->sourcetex->HasSpritePositioning();
+			spi.notrimming = mat->sourcetex->GetNoTrimming();
+			spi.shouldExpand = shouldExpand;
 
 			VkTexLoadIn in = {
 				layer->layerTexture->GetImage(),
 				params,
 				spi,
 				systex,
-				mat->sourcetex
+				mat->sourcetex,
+				allowMips
 			};
 
-			if(secondary) bgTransferThread->queueSecondary(in);
-			else bgTransferThread->queue(in);
+			if (secondary) secondaryTexQueue.queue(in);
+			else primaryTexQueue.queue(in);
 		}
 		else {
 			systex->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
+			Printf(TEXTCOLOR_RED"Error submitting texture [%s] to background loader.", rLump->getName());
 			return false;
 		}
 	}
@@ -680,7 +819,15 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 		rLump = lump >= 0 ? fileSystem.GetFileAt(lump) : nullptr;
 
 		if (rLump && syslayer->GetState() == IHardwareTexture::HardwareState::CACHING) {
-			bgTransferThread->moveToMainQueue(syslayer);
+			// Move from secondary queue to primary
+			VkTexLoadIn in;
+			if (secondaryTexQueue.dequeueSearch(in, syslayer,
+				[](void* a, VkTexLoadIn& b)
+			{ return (VkHardwareTexture*)a == b.tex; })) {
+				syslayer->SetHardwareState(IHardwareTexture::HardwareState::LOADING, 0);
+				primaryTexQueue.queue(in);
+				return true;
+			}
 		} else if (rLump && syslayer->GetState() == IHardwareTexture::HardwareState::NONE) {
 			syslayer->SetHardwareState(secondary ? IHardwareTexture::HardwareState::CACHING : IHardwareTexture::HardwareState::LOADING);
 			
@@ -696,20 +843,25 @@ bool VulkanFrameBuffer::BackgroundCacheMaterial(FMaterial *mat, int translation,
 					layer->layerTexture->GetImage(),
 					params,
 					{
-						false, false, false//, nullptr
+						false, shouldExpand, true
 					},
 					syslayer,
-					nullptr
+					nullptr,
+					allowMips
 				};
 
-				if(secondary) bgTransferThread->queueSecondary(in);
-				else bgTransferThread->queue(in);
+				if (secondary) secondaryTexQueue.queue(in);
+				else primaryTexQueue.queue(in);
 			}
 			else {
 				syslayer->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
+				Printf(TEXTCOLOR_RED"Error submitting texture [%s] to background loader.", rLump->getName());
 			}
 		}
 	}
+
+	statMaxQueued = max(statMaxQueued, primaryTexQueue.size());
+	statMaxQueuedSecondary = max(statMaxQueuedSecondary, secondaryTexQueue.size());
 
 	return true;
 }

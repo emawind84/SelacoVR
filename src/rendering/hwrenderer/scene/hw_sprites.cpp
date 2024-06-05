@@ -522,12 +522,12 @@ bool HWSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 //
 //==========================================================================
 
-inline void HWSprite::PutSprite(HWDrawInfo *di, bool translucent)
+inline void HWSprite::PutSprite(HWDrawInfo *di, bool translucent, double ticFrac)
 {
 	// That's a lot of checks...
 	if (modelframe && !modelframe->isVoxel && !(modelframe->flags & MDL_NOPERPIXELLIGHTING) && RenderStyle.BlendOp != STYLEOP_Shadow && gl_light_sprites && di->Level->HasDynamicLights && !di->isFullbrightScene() && !fullbright)
 	{
-		hw_GetDynModelLight(actor, lightdata);
+		hw_GetDynModelLight(actor, lightdata, ticFrac);
 		dynlightindex = screen->mLights->UploadLights(lightdata);
 	}
 	else
@@ -609,7 +609,7 @@ void HWSprite::SplitSprite(HWDrawInfo *di, sector_t * frontsector, bool transluc
 			z1=copySprite.z2=lightbottom;
 			vt=copySprite.vb=copySprite.vt+ 
 				(lightbottom-copySprite.z1)*(copySprite.vb-copySprite.vt)/(z2-copySprite.z1);
-			copySprite.PutSprite(di, translucent);
+			copySprite.PutSprite(di, translucent, di->Viewpoint.TicFrac);
 			put=true;
 		}
 	}
@@ -1112,6 +1112,79 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		y1 = y2 = y;
 		z1 = z2 = z;
 		texture = nullptr;
+
+		// Model textures will only load in the background thread if they are considered unimportant (Hacky solution)
+		// Because some models may define the visible world. In that case they should be precached to avoid stutter
+		// This WILL cause breakages in animations that use multiple frames and multiple skins but that is not
+		// something that happens in Selaco yet so :ascii shrug:
+		// This also does not support animated textures as skins, frames beyond 0 will end up loading in the main thread
+		if (/*(thing->flags8 & UNIMPORTANT_FLAG) &&*/
+			!modelframe->isVoxel &&						// completely ignore voxels
+			gametic - primaryLevel->starttime > 2 &&	// On the first tic or so, do not use the background loader to avoid pop-in
+			gl_texture_thread &&
+			(spritenum != thing->lastModelSprite || thing->frame != thing->lastModelFrame) &&		// only if this is a new frame or model
+			screen->SupportsBackgroundCache()) {
+
+			bool success = true;
+
+			// Verify all model textures are loaded, and if they are not submit and fallback
+			for (int x = modelframe->skinIDs.Size() - 1; x >= 0; x--) {
+				auto tex = TexMan.GetGameTexture(modelframe->skinIDs[x], false);
+				if (!tex || !tex->isValid()) continue;	// Nothing we can do here
+
+				int scaleflags = 0;
+				if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
+
+				FMaterial* gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
+				if (!gltex || !gltex->IsHardwareCached(thing->Translation)) {
+					if (gltex) {
+						screen->BackgroundCacheMaterial(gltex, thing->Translation, false);
+					}
+					else {
+						screen->BackgroundCacheTextureMaterial(tex, thing->Translation, scaleflags, false);
+					}
+
+					success = false;
+				}
+			}
+
+			// Do the same for surface skins
+			for (int x = modelframe->surfaceskinIDs.Size() - 1; x >= 0; x--) {
+				auto tex = TexMan.GetGameTexture(modelframe->surfaceskinIDs[x], false);
+				if (!tex || !tex->isValid()) continue;	// Nothing we can do here
+
+				int scaleflags = 0;
+				if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
+
+				FMaterial* gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
+				if (!gltex || !gltex->IsHardwareCached(thing->Translation)) {
+					if (gltex) {
+						screen->BackgroundCacheMaterial(gltex, thing->Translation, false);
+					}
+					else {
+						screen->BackgroundCacheTextureMaterial(tex, thing->Translation, scaleflags, false);
+					}
+
+					success = false;
+				}
+			}
+
+
+			if (!success) {
+				// Attempt the last frame that was drawn
+				if (thing->lastModelSprite > -1) {
+					modelframe = FindModelFrame(thing->GetClass(), thing->lastModelSprite, thing->lastModelFrame, !!(thing->flags& MF_DROPPED));
+					if (!modelframe) return; // Farted here too
+				}
+				else {
+					return;	// Farted up here haven't we
+				}
+			}
+			else {
+				thing->lastModelSprite = spritenum;
+				thing->lastModelFrame = thing->frame;
+			}
+		}
 	}
 
 	depth = (float)((x - vp.CenterEyePos.X) * vp.TanCos + (y - vp.CenterEyePos.Y) * vp.TanSin);
@@ -1338,7 +1411,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		lightlist = nullptr;
 	}
 
-	PutSprite(di, hw_styleflags != STYLEHW_Solid);
+	PutSprite(di, hw_styleflags != STYLEHW_Solid, vp.TicFrac);
 	rendered_sprites++;
 }
 
@@ -1492,7 +1565,7 @@ void HWSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	else
 		lightlist = nullptr;
 
-	PutSprite(di, hw_styleflags != STYLEHW_Solid);
+	PutSprite(di, hw_styleflags != STYLEHW_Solid, vp.TicFrac);
 	rendered_sprites++;
 }
 

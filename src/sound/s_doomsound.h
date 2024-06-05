@@ -51,6 +51,7 @@ void S_ChangeActorSoundVolume(AActor *actor, int channel, double volume);
 
 // Change a playing sound's pitch
 void S_ChangeActorSoundPitch(AActor *actor, int channel, double pitch);
+void S_ChangeSoundPitch(int channel, double pitch);
 
 // Stores/retrieves playing channel information in an archive.
 void S_SerializeSounds(FSerializer &arc);

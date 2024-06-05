@@ -54,12 +54,15 @@
 #include "menustate.h"
 #include "i_time.h"
 #include "printf.h"
+#include "am_map.h"
 
 void M_StartControlPanel(bool makeSound, bool scaleoverride = false);
 
 int DMenu::InMenu;
 static ScaleOverrider *CurrentScaleOverrider;
 extern int chatmodeon;
+extern bool	automapactive;
+
 //
 // Todo: Move these elsewhere
 //
@@ -825,8 +828,14 @@ bool M_Responder (event_t *ev)
 			// Pop-up menu?
 			if (ev->data1 == KEY_ESCAPE)
 			{
-				M_StartControlPanel(true);
-				M_SetMenu(NAME_Mainmenu, -1);
+				if (automapactive) {
+					// Close automap
+					AM_Stop();
+				}
+				else {
+					M_StartControlPanel(true);
+					M_SetMenu(NAME_Mainmenu, -1);
+				}
 				return true;
 			}
 			return false;

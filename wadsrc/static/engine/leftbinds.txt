@@ -11,3 +11,5 @@ w +use
 mouse2 +altattack
 h usemeds
 a Toggle_Flashlight
+t switchGadget
+mapbind r am_togglefollow

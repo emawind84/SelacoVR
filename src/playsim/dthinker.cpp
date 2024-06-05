@@ -90,15 +90,15 @@ void FThinkerCollection::Link(DThinker *thinker, int statnum)
 		if (statnum != STAT_TRAVELLING) thinker->ObjectFlags &= ~OF_JustSpawned;
 		list = &Thinkers[statnum];
 	}
+
 	list->AddTail(thinker);
 }
 
-// Add to the list but insert the sleeper sorted by sleepCount
-void FThinkerCollection::LinkSleeper(DThinker *thinker, int statnum)
+// Insert the sleeper at the head of the list
+void FThinkerCollection::LinkSleeper(DThinker* thinker, int statnum)
 {
-
+	Thinkers[statnum].AddHead(thinker);
 	//if (statnum != STAT_TRAVELLING) thinker->ObjectFlags &= ~OF_JustSpawned;
-	Thinkers[statnum].AddTail(thinker);
 }
 
 //==========================================================================
@@ -120,11 +120,17 @@ void FThinkerCollection::RunThinkers(FLevelLocals *Level)
 	ThinkCycles.Clock();
 
 	// Handle sleeping thinkers, allow them to slip back into the regular pool when unnecessary
-	//if (Level->time % 5 == 0) {
-		Thinkers[STAT_SLEEP].CheckSleepingThinkers(1);
-		FreshThinkers[STAT_SLEEP].CheckSleepingThinkers(1);
-	//}
-	
+	inSleepCycle = true;
+	Thinkers[STAT_SLEEP].CheckSleepingThinkers(1);
+	FreshThinkers[STAT_SLEEP].CheckSleepingThinkers(1);
+
+	// Wake the waiting dreamers
+	for (auto dreamer : tempWakers) {
+		if (dreamer) dreamer->ChangeStatNum(STAT_DEFAULT);
+	}
+	tempWakers.Clear();
+
+	inSleepCycle = false;
 
 
 	bool dolights;
@@ -735,34 +741,6 @@ int FThinkerList::CheckSleepingThinkers(int ticsElapsed) {
 		return 0;
 	}
 
-	/*sleepCount += ticsElapsed;
-
-	while (node != Sentinel)
-	{
-		nextNode = node->NextThinker;
-		
-		if (!(node->ObjectFlags & OF_EuthanizeMe))
-		{ // Only check thinkers not scheduled for destruction
-			if(sleepCount >= node->sleepTimer) {
-				if (node->sleepInterval <= 0 || node->CallShouldWake()) {
-					++count;
-					node->CallWake();
-				}
-				else {
-					//node->sleepTimer = node->sleepInterval;
-					// Re-Sleep this thinker which will sort it back into the list
-					node->Sleep(node->sleepInterval);
-				}
-			}
-			else {
-				// All the following nodes are sorted and need to sleep longer, so bail here
-				return count;
-			}
-		}
-
-		node = nextNode;
-	}*/
-
 	while (node != Sentinel)
 	{
 		nextNode = node->NextThinker;
@@ -780,7 +758,6 @@ int FThinkerList::CheckSleepingThinkers(int ticsElapsed) {
 
 		node = nextNode;
 	}
-
 
 	// TODO: Might have to perform some maintenance on sleepCount to prevent it from getting too big
 
@@ -1065,7 +1042,16 @@ void DThinker::Wake() {
 		return;
 	}
 
-	ChangeStatNum(STAT_DEFAULT);
+	// If we are in the sleep/wake cycle, don't change statnums until after
+	// Send to temporary storage first
+	if (Level->Thinkers.IsSleepCycle()) {
+		Level->Thinkers.AddWaker(this);
+	}
+	else {
+		ChangeStatNum(STAT_DEFAULT);
+	}
+
+	
 	sleepInterval = 0;
 	sleepTimer = 0;
 }
@@ -1073,7 +1059,7 @@ void DThinker::Wake() {
 void DThinker::Sleep(int tics) {
 	//ChangeStatNum(STAT_SLEEP);
 	// Only sleep if we are not going to be destroyed
-	if (ObjectFlags & OF_EuthanizeMe) { return; }
+	if ((ObjectFlags & OF_EuthanizeMe) || tics <= 0) { return; }
 
 	Remove();
 	sleepInterval = tics;

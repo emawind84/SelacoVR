@@ -437,7 +437,7 @@ enum ActorFlag9
 	MF9_ABSDAMAGE		= 0x00001000,	// @Cockatrice - Damage value ignores dice roll
 	MF9_HITSCANTHRU		= 0x00002000,	// @Cockatrice - Allow hitscans to pass through, but also damage this actor
 	MF9_BLOCKLOF		= 0x00004000,	// @Cockatrice - Blocks LOF in CHECKLOF
-}
+};
 
 // --- mobj.renderflags ---
 enum ActorRenderFlag
@@ -593,6 +593,7 @@ typedef TFlags<ActorFlag5> ActorFlags5;
 typedef TFlags<ActorFlag6> ActorFlags6;
 typedef TFlags<ActorFlag7> ActorFlags7;
 typedef TFlags<ActorFlag8> ActorFlags8;
+typedef TFlags<ActorFlag9> ActorFlags9;
 typedef TFlags<ActorRenderFlag> ActorRenderFlags;
 typedef TFlags<ActorRenderFlag2> ActorRenderFlags2;
 typedef TFlags<ActorBounceFlag> ActorBounceFlags;
@@ -1068,6 +1069,8 @@ public:
 	uint32_t		fillcolor;			// Color to draw when STYLE_Shaded
 	uint32_t		Translation;
 	FTextureID		LastPatch;			// @Cockatrice - Used by the hardware renderer to determine the last rendered patch
+	int				lastModelSprite;	// Likewise used for the last rendered model sprite, only used when unimportant
+	uint8_t			lastModelFrame;		// And the frame index
 
 	uint32_t		RenderRequired;		// current renderer must have this feature set
 	uint32_t		RenderHidden;		// current renderer must *not* have any of these features
@@ -1082,6 +1085,7 @@ public:
 	ActorFlags6		flags6;			// Shit! Where did all the flags go?
 	ActorFlags7		flags7;			// WHO WANTS TO BET ON 8!?
 	ActorFlags8		flags8;			// I see your 8, and raise you a bet for 9.
+	ActorFlags9		flags9;			// Happy ninth actor flag field GZDoom !
 	double			Floorclip;		// value to use for floor clipping
 	double			radius, Height;		// for movement checking
 
@@ -1107,6 +1111,7 @@ public:
 	double			dropoffz;		// killough 11/98: the lowest floor over all contacted Sectors.
 
 	uint32_t		ThruBits;
+	uint32_t		lineBlockBits;		// @Cockatrice - Compared to line bits for blocking
 	FTextureID		floorpic;			// contacted sec floorpic
 	int				floorterrain;
 	FTextureID		ceilingpic;			// contacted sec ceilingpic

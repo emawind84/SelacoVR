@@ -174,7 +174,7 @@ public:
 	static void DisableCallbacks ();
 	static void ResetColors ();		// recalc color cvars' indices after screen change
 
-	static void ListVars (const char *filter, bool plain);
+	static void ListVars (const char *filter, bool plain, int is_default = 0);
 
 	const FString &GetDescription() const { return Description; };
 	const FString& GetToggleMessage(int which) { return ToggleMessages[which]; }
