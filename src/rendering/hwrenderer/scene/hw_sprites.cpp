@@ -70,6 +70,7 @@ EXTERN_CVAR(Bool, r_debug_disable_vis_filter)
 EXTERN_CVAR(Float, transsouls)
 EXTERN_CVAR(Float, r_actorspriteshadowalpha)
 EXTERN_CVAR(Float, r_actorspriteshadowfadeheight)
+EXTERN_CVAR(Bool, gl_texture_thread)
 
 //==========================================================================
 //
@@ -86,6 +87,8 @@ CVAR(Int, gl_particles_style, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // 0 = square
 CVAR(Int, gl_billboard_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_billboard_faces_camera, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_billboard_particles, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_selflighting, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
 CUSTOM_CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
 {
 	if (self < 0 || self > 8) self = 0;
@@ -102,10 +105,8 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 	bool additivefog = false;
 	bool foglayer = false;
 	int rel = fullbright ? 0 : getExtraLight();
+	
 	auto &vp = di->Viewpoint;
-
-	const bool UseActorLight = (actor && actor->LightLevel > -1);
-
 	if (translucent)
 	{
 		// The translucent pass requires special setup for the various modes.
@@ -186,9 +187,31 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 				: ThingColor.Modulate(cursec->SpecialColors[sector_t::sprites]);
 
 			state.SetObjectColor(finalcol);
+
+			/*
+			// TODO: Add leftover color from selfLighting to additive
+			PalEntry addCol;
+			if (actor) {
+				addCol = PalEntry(255,
+					clamp(cursec->AdditiveColors[sector_t::sprites].r + actor->selfLighting.r, 0, 255),
+					clamp(cursec->AdditiveColors[sector_t::sprites].g + actor->selfLighting.g, 0, 255),
+					clamp(cursec->AdditiveColors[sector_t::sprites].b + actor->selfLighting.b, 0, 255));
+			}
+			else {
+				addCol = cursec->AdditiveColors[sector_t::sprites] | 0xff000000;
+			}
+			
+			state.SetAddColor(addCol);*/
+			
 			state.SetAddColor(cursec->AdditiveColors[sector_t::sprites] | 0xff000000);
 		}
-		di->SetColor(state, lightlevel, rel, di->isFullbrightScene(), Colormap, trans);
+		/*else if (actor && actor->selfLighting != 0) {
+			state.SetAddColor(actor->selfLighting | 0xFF000000);
+		}*/
+
+		// (@Cockatrice) Add bonus luminence based on the selfLighting field color
+		//int lightBonus = !actor || !gl_selflighting ? 0 : actor->selfLighting.Luminance() * 3;
+		di->SetColor(state, lightlevel/* + lightBonus*/, rel, di->isFullbrightScene(), Colormap, trans);
 	}
 
 
@@ -225,7 +248,7 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 	uint32_t spritetype = actor? uint32_t(actor->renderflags & RF_SPRITETYPEMASK) : 0;
 	if (texture) state.SetMaterial(texture, UF_Sprite, (spritetype == RF_FACESPRITE) ? CTF_Expand : 0, CLAMP_XY, translation, OverrideShader);
 	else if (!modelframe) state.EnableTexture(false);
-
+	
 	//SetColor(lightlevel, rel, Colormap, trans);
 
 	unsigned int iter = lightlist ? lightlist->Size() : 1;
@@ -242,10 +265,11 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 	{
 		if (lightlist)
 		{
+			
 			// set up the light slice
 			secplane_t *topplane = i == 0 ? &topp : &(*lightlist)[i].plane;
 			secplane_t *lowplane = i == (*lightlist).Size() - 1 ? &bottomp : &(*lightlist)[i + 1].plane;
-			int thislight = (*lightlist)[i].caster != nullptr ? hw_ClampLight(*(*lightlist)[i].p_lightlevel) : lightlevel;
+			int thislight = (*lightlist)[i].caster != nullptr ? hw_ClampLight(*(*lightlist)[i].p_lightlevel + (!actor || !gl_selflighting ? 0 : actor->selfLighting.Luminance() * 3)) : lightlevel;
 			int thisll = actor == nullptr ? thislight : (uint8_t)actor->Sector->CheckSpriteGlow(thislight, actor->InterpolatedPosition(vp.TicFrac));
 
 			FColormap thiscm;
@@ -254,6 +278,15 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 			if (di->Level->flags3 & LEVEL3_NOCOLOREDSPRITELIGHTING)
 			{
 				thiscm.Decolorize();
+			}
+
+			// Boost color from self lighting
+			if (gl_selflighting && actor && actor->selfLighting != 0) {
+				PalEntry actBoost = actor->selfLighting;
+				thiscm.LightColor = PalEntry(thiscm.LightColor.a,
+					clamp(thiscm.LightColor.r + actBoost.r, 0, 255),
+					clamp(thiscm.LightColor.g + actBoost.g, 0, 255),
+					clamp(thiscm.LightColor.b + actBoost.b, 0, 255));
 			}
 
 			di->SetColor(state, thisll, rel, di->isFullbrightScene(), thiscm, trans);
@@ -492,12 +525,12 @@ bool HWSprite::CalculateVertices(HWDrawInfo *di, FVector3 *v, DVector3 *vp)
 //
 //==========================================================================
 
-inline void HWSprite::PutSprite(HWDrawInfo *di, bool translucent)
+inline void HWSprite::PutSprite(HWDrawInfo *di, bool translucent, double ticFrac)
 {
 	// That's a lot of checks...
 	if (modelframe && !modelframe->isVoxel && !(modelframe->flags & MDL_NOPERPIXELLIGHTING) && RenderStyle.BlendOp != STYLEOP_Shadow && gl_light_sprites && di->Level->HasDynamicLights && !di->isFullbrightScene() && !fullbright)
 	{
-		hw_GetDynModelLight(actor, lightdata);
+		hw_GetDynModelLight(actor, lightdata, ticFrac);
 		dynlightindex = screen->mLights->UploadLights(lightdata);
 	}
 	else
@@ -579,7 +612,7 @@ void HWSprite::SplitSprite(HWDrawInfo *di, sector_t * frontsector, bool transluc
 			z1=copySprite.z2=lightbottom;
 			vt=copySprite.vb=copySprite.vt+ 
 				(lightbottom-copySprite.z1)*(copySprite.vb-copySprite.vt)/(z2-copySprite.z1);
-			copySprite.PutSprite(di, translucent);
+			copySprite.PutSprite(di, translucent, di->Viewpoint.TicFrac);
 			put=true;
 		}
 	}
@@ -916,6 +949,8 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 					else
 						rot = (sprang - (thing->Angles.Yaw + thing->SpriteRotation) + DAngle::fromDeg(45.0 / 2 * 9 - 180.0 / 16)).BAMs() >> 28;
 				}
+				// @Cockatrice - This code does not look correct, I'm not 100% sure what it is supposed to do but this picnum value is ignored
+				// and the mirror value is set but the patch is just set to the thing->picnum no matter what :shrug:
 				auto picnum = sprframe->Texture[rot];
 				if (sprframe->Flip & (1 << rot))
 				{
@@ -923,6 +958,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				}
 			}
 
+			
 			patch =  tex->GetID();
 		}
 		else
@@ -953,6 +989,47 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		int type = thing->renderflags & RF_SPRITETYPEMASK;
 		auto tex = TexMan.GetGameTexture(patch, false);
 		if (!tex || !tex->isValid()) return;
+
+
+		// @Cockatrice - If this texture is not loaded, and we are able to BG load it, try to render this sprites last frame instead
+		// Also load the texture
+		FTextureID lastPatch = thing->LastPatch;
+		if ( gametic - primaryLevel->starttime > 2 &&	// On the first tic or so, do not use the background loader to avoid pop-in
+			 patch != lastPatch &&						// only if this is a new frame
+			 gl_texture_thread &&
+			 screen->SupportsBackgroundCache()) {
+
+			int scaleflags = (type == RF_FACESPRITE) ? CTF_Expand : 0;
+			if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
+
+			FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
+			if (!gltex || !gltex->IsHardwareCached(thing->Translation)) {
+				if (gltex) {
+					screen->BackgroundCacheMaterial(gltex, thing->Translation, true);
+				}
+				else {
+					screen->BackgroundCacheTextureMaterial(tex, thing->Translation, scaleflags, true);
+				}
+
+				if (lastPatch.isValid()) {
+					//auto lt = patch;
+					//FString lpn = tex->GetName();
+					patch = lastPatch;
+					tex = TexMan.GetGameTexture(patch, false);
+					if (!tex || !tex->isValid()) {
+						return;
+					}
+				}
+				else {
+					return;
+				}
+			}
+
+			// If the bg cache func fails, we can't bg load the patch so just move on to the normal render path and load in the main thread
+		}
+
+		thing->LastPatch = patch;
+		
 		auto& spi = tex->GetSpritePositioning(type == RF_FACESPRITE);
 
 		vt = spi.GetSpriteVT();
@@ -977,7 +1054,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			ur = spi.GetSpriteUL();
 		}
 
-		texture = TexMan.GetGameTexture(patch, false);
+		texture = TexMan.GetGameTexture(patch, false);	// @Cockatrice - Why was this being done twice? Not sure.
 		if (!texture || !texture->isValid())
 			return;
 
@@ -1048,6 +1125,79 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		y1 = y2 = y;
 		z1 = z2 = z;
 		texture = nullptr;
+
+		// Model textures will only load in the background thread if they are considered unimportant (Hacky solution)
+		// Because some models may define the visible world. In that case they should be precached to avoid stutter
+		// This WILL cause breakages in animations that use multiple frames and multiple skins but that is not
+		// something that happens in Selaco yet so :ascii shrug:
+		// This also does not support animated textures as skins, frames beyond 0 will end up loading in the main thread
+		if (/*(thing->flags8 & UNIMPORTANT_FLAG) &&*/
+			!modelframe->isVoxel &&						// completely ignore voxels
+			gametic - primaryLevel->starttime > 2 &&	// On the first tic or so, do not use the background loader to avoid pop-in
+			gl_texture_thread &&
+			(spritenum != thing->lastModelSprite || thing->frame != thing->lastModelFrame) &&		// only if this is a new frame or model
+			screen->SupportsBackgroundCache()) {
+
+			bool success = true;
+
+			// Verify all model textures are loaded, and if they are not submit and fallback
+			for (int x = modelframe->skinIDs.Size() - 1; x >= 0; x--) {
+				auto tex = TexMan.GetGameTexture(modelframe->skinIDs[x], false);
+				if (!tex || !tex->isValid()) continue;	// Nothing we can do here
+
+				int scaleflags = 0;
+				if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
+
+				FMaterial* gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
+				if (!gltex || !gltex->IsHardwareCached(thing->Translation)) {
+					if (gltex) {
+						screen->BackgroundCacheMaterial(gltex, thing->Translation, false);
+					}
+					else {
+						screen->BackgroundCacheTextureMaterial(tex, thing->Translation, scaleflags, false);
+					}
+
+					success = false;
+				}
+			}
+
+			// Do the same for surface skins
+			for (int x = modelframe->surfaceskinIDs.Size() - 1; x >= 0; x--) {
+				auto tex = TexMan.GetGameTexture(modelframe->surfaceskinIDs[x], false);
+				if (!tex || !tex->isValid()) continue;	// Nothing we can do here
+
+				int scaleflags = 0;
+				if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
+
+				FMaterial* gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
+				if (!gltex || !gltex->IsHardwareCached(thing->Translation)) {
+					if (gltex) {
+						screen->BackgroundCacheMaterial(gltex, thing->Translation, false);
+					}
+					else {
+						screen->BackgroundCacheTextureMaterial(tex, thing->Translation, scaleflags, false);
+					}
+
+					success = false;
+				}
+			}
+
+
+			if (!success) {
+				// Attempt the last frame that was drawn
+				if (thing->lastModelSprite > -1) {
+					modelframe = FindModelFrame(thing->GetClass(), thing->lastModelSprite, thing->lastModelFrame, !!(thing->flags& MF_DROPPED));
+					if (!modelframe) return; // Farted here too
+				}
+				else {
+					return;	// Farted up here haven't we
+				}
+			}
+			else {
+				thing->lastModelSprite = spritenum;
+				thing->lastModelFrame = thing->frame;
+			}
+		}
 	}
 
 	depth = (float)((x - vp.CenterEyePos.X) * vp.TanCos + (y - vp.CenterEyePos.Y) * vp.TanSin);
@@ -1110,6 +1260,17 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		else if (di->Level->flags3 & LEVEL3_NOCOLOREDSPRITELIGHTING)
 		{
 			Colormap.Decolorize();
+		}
+
+		// (@Cockatrice) Boost the colormap self lighting in the sprite def
+		// I'm not sure if this is really correct but it seems to work fine!
+		if (gl_selflighting && thing && thing->selfLighting != 0) {
+			PalEntry actBoost = thing->selfLighting;
+			//Colormap.LightColor = Colormap.LightColor.Modulate(thing->selfLighting);
+			Colormap.LightColor = PalEntry(Colormap.LightColor.a,
+				clamp(Colormap.LightColor.r + actBoost.r, 0, 255),
+				clamp(Colormap.LightColor.g + actBoost.g, 0, 255),
+				clamp(Colormap.LightColor.b + actBoost.b, 0, 255));
 		}
 	}
 
@@ -1268,7 +1429,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		lightlist = nullptr;
 	}
 
-	PutSprite(di, hw_styleflags != STYLEHW_Solid);
+	PutSprite(di, hw_styleflags != STYLEHW_Solid, vp.TicFrac);
 	rendered_sprites++;
 }
 
@@ -1422,7 +1583,7 @@ void HWSprite::ProcessParticle (HWDrawInfo *di, particle_t *particle, sector_t *
 	else
 		lightlist = nullptr;
 
-	PutSprite(di, hw_styleflags != STYLEHW_Solid);
+	PutSprite(di, hw_styleflags != STYLEHW_Solid, vp.TicFrac);
 	rendered_sprites++;
 }
 

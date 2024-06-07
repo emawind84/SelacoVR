@@ -54,9 +54,12 @@
 #include "menustate.h"
 #include "i_time.h"
 #include "printf.h"
+#include "am_map.h"
 
 int DMenu::InMenu;
 static ScaleOverrider *CurrentScaleOverrider;
+extern bool	automapactive;
+
 //
 // Todo: Move these elsewhere
 //
@@ -264,6 +267,7 @@ DMenu::DMenu(DMenu *parent)
 	mMouseCapture = false;
 	mBackbuttonSelected = false;
 	DontDim = false;
+	ReceiveAllInputEvents = false;
 	GC::WriteBarrier(this, parent);
 }
 
@@ -502,6 +506,16 @@ void M_ActivateMenu(DMenu *menu)
 DEFINE_ACTION_FUNCTION(DMenu, ActivateMenu)
 {
 	PARAM_SELF_PROLOGUE(DMenu);
+	
+	// @Cockatrice - Clear menu keys if there was no menu showing
+	if (CurrentMenu == nullptr) {
+		buttonMap.ResetButtonStates();
+		for (int i = 0; i < NUM_MKEYS; ++i)
+		{
+			MenuButtons[i].ReleaseKey(0);
+		}
+	}
+
 	M_ActivateMenu(self);
 	return 0;
 }
@@ -603,6 +617,16 @@ DEFINE_ACTION_FUNCTION(DMenu, SetMenu)
 	PARAM_PROLOGUE;
 	PARAM_NAME(menu);
 	PARAM_INT(mparam);
+
+	// @Cockatrice - Clear menu buttons if there wasn't already a menu showing
+	if (CurrentMenu == nullptr) {
+		buttonMap.ResetButtonStates();
+		for (int i = 0; i < NUM_MKEYS; ++i)
+		{
+			MenuButtons[i].ReleaseKey(0);
+		}
+	}
+
 	M_SetMenu(menu, mparam);
 	return 0;
 }
@@ -611,6 +635,16 @@ DEFINE_ACTION_FUNCTION(DMenu, SetMenu)
 //
 //
 //=============================================================================
+inline bool M_TryAllEvent(event_t *ev) {
+	if (CurrentMenu != nullptr && CurrentMenu->ReceiveAllInputEvents) {
+		if (CurrentMenu->CallResponder(ev)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 
 bool M_Responder (event_t *ev) 
 { 
@@ -642,7 +676,9 @@ bool M_Responder (event_t *ev)
 			{
 				// We do our own key repeat handling but still want to eat the
 				// OS's repeated keys.
-				if (CurrentMenu->TranslateKeyboardEvents()) return true;
+				if (CurrentMenu->TranslateKeyboardEvents()) {
+					M_TryAllEvent(ev); return true;
+				}
 				else return CurrentMenu->CallResponder(ev);
 			}
 			else if (ev->subtype == EV_GUI_BackButtonDown || ev->subtype == EV_GUI_BackButtonUp)
@@ -764,7 +800,7 @@ bool M_Responder (event_t *ev)
 			if (keyup)
 			{
 				MenuButtons[mkey].ReleaseKey(ch);
-				return false;
+				return M_TryAllEvent(ev);
 			}
 			else
 			{
@@ -775,6 +811,7 @@ bool M_Responder (event_t *ev)
 					MenuButtonTickers[mkey] = KEY_REPEAT_DELAY;
 				}
 				CurrentMenu->CallMenuEvent(mkey, fromcontroller);
+				M_TryAllEvent(ev);
 				return true;
 			}
 		}
@@ -787,8 +824,14 @@ bool M_Responder (event_t *ev)
 			// Pop-up menu?
 			if (ev->data1 == KEY_ESCAPE)
 			{
-				M_StartControlPanel(true);
-				M_SetMenu(NAME_Mainmenu, -1);
+				if (automapactive) {
+					// Close automap
+					AM_Stop();
+				}
+				else {
+					M_StartControlPanel(true);
+					M_SetMenu(NAME_Mainmenu, -1);
+				}
 				return true;
 			}
 			return false;
@@ -858,7 +901,8 @@ void M_Drawer (void)
 
 	if (CurrentMenu != nullptr && menuactive != MENU_Off) 
 	{
-		if (!CurrentMenu->DontBlur) screen->BlurScene(menuBlurAmount);
+		// Allow menus to force blur when necessary @Cockatrice
+		if (!CurrentMenu->DontBlur) screen->BlurScene(CurrentMenu->BlurAmount > 0 ? CurrentMenu->BlurAmount : menuBlurAmount, CurrentMenu->BlurAmount > 0);
 		if (!CurrentMenu->DontDim)
 		{
 			if (sysCallbacks.MenuDim) sysCallbacks.MenuDim();
@@ -1023,7 +1067,9 @@ DEFINE_FIELD(DMenu, mMouseCapture);
 DEFINE_FIELD(DMenu, mBackbuttonSelected);
 DEFINE_FIELD(DMenu, DontDim);
 DEFINE_FIELD(DMenu, DontBlur);
+DEFINE_FIELD(DMenu, BlurAmount);
 DEFINE_FIELD(DMenu, AnimatedTransition);
+DEFINE_FIELD(DMenu, ReceiveAllInputEvents);
 DEFINE_FIELD(DMenu, Animated);
 
 DEFINE_FIELD(DMenuDescriptor, mMenuName)

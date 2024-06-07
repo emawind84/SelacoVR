@@ -826,7 +826,7 @@ void HWDrawInfo::Set3DViewport(FRenderState &state)
 //
 //-----------------------------------------------------------------------------
 
-void HWDrawInfo::DrawScene(int drawmode)
+void HWDrawInfo::DrawScene(int drawmode, bool drawpsprites)
 {
 	static int recursion = 0;
 	static int ssao_portals_available = 0;
@@ -851,7 +851,7 @@ void HWDrawInfo::DrawScene(int drawmode)
 	if (vp.camera != nullptr)
 	{
 		ActorRenderFlags savedflags = vp.camera->renderflags;
-		CreateScene(drawmode == DM_MAINVIEW);
+		CreateScene(drawmode == DM_MAINVIEW || drawpsprites);
 		vp.camera->renderflags = savedflags;
 	}
 	else
@@ -892,14 +892,14 @@ void HWDrawInfo::DrawScene(int drawmode)
 //
 //-----------------------------------------------------------------------------
 
-void HWDrawInfo::ProcessScene(bool toscreen)
+void HWDrawInfo::ProcessScene(bool toscreen, bool drawpsprites)
 {
 	portalState.BeginScene();
 
 	int mapsection = Level->PointInRenderSubsector(Viewpoint.Pos)->mapsection;
 	CurrentMapSections.Set(mapsection);
 	screen->mBones->Map();
-	DrawScene(toscreen ? DM_MAINVIEW : DM_OFFSCREEN);
+	DrawScene(toscreen ? DM_MAINVIEW : DM_OFFSCREEN, drawpsprites);
 	screen->mBones->Unmap();
 }
 

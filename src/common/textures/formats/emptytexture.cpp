@@ -50,6 +50,8 @@ class FEmptyTexture : public FImageSource
 public:
 	FEmptyTexture (int lumpnum);
 	PalettedPixels CreatePalettedPixels(int conversion, int frame = 0) override;
+	FImageLoadParams* NewLoaderParams(int conversion, int translation, FRemapTable* remap) override { return nullptr; }
+	//bool BackgroundSupport() override { return false; }
 };
 
 //==========================================================================

@@ -442,6 +442,10 @@ enum ActorFlag9
 	MF9_DOSHADOWBLOCK = 0x00000002,	// [inkoalawetrust] Should the monster look for SHADOWBLOCK actors ?
 	MF9_SHADOWBLOCK = 0x00000004,	// [inkoalawetrust] Actors in the line of fire with this flag trigger the MF_SHADOW aiming penalty.
 	MF9_SHADOWAIMVERT = 0x00000008,	// [inkoalawetrust] Monster aim is also offset vertically when aiming at shadow actors.
+	MF9_ABSDAMAGE		= 0x00001000,	// @Cockatrice - Damage value ignores dice roll
+	MF9_HITSCANTHRU		= 0x00002000,	// @Cockatrice - Allow hitscans to pass through, but also damage this actor
+	MF9_BLOCKLOF		= 0x00004000,	// @Cockatrice - Blocks LOF in CHECKLOF
+	MF9_PRECACHEALWAYS  = 0x80000000	// @Cockatrice - Actor is marked for precache on every map
 };
 
 // --- mobj.renderflags ---
@@ -645,12 +649,14 @@ class FDecalBase;
 
 inline AActor *GetDefaultByName (const char *name)
 {
-	return (AActor *)(PClass::FindClass(name)->Defaults);
+	PClass *pc = PClass::FindClass(name);
+	return pc != NULL ? (AActor *)pc->Defaults : NULL;
 }
 
 inline AActor* GetDefaultByName(FName name)
 {
-	return (AActor*)(PClass::FindClass(name)->Defaults);
+	PClass *pc = PClass::FindClass(name);
+	return pc != NULL ? (AActor *)pc->Defaults : NULL;
 }
 
 inline AActor *GetDefaultByType (const PClass *type)
@@ -1079,13 +1085,17 @@ public:
 	uint8_t			frame;				// sprite frame to draw
 	uint8_t			effects;			// [RH] see p_effect.h
 	uint8_t			fountaincolor;		// Split out of 'effect' to have easier access.
+	PalEntry		selfLighting;		// (@Cockatrice) Self illumination, add this value to lighting calculations
 	FRenderStyle	RenderStyle;		// Style to draw this actor with
 	FTextureID		picnum;				// Draw this instead of sprite if valid
-	uint32_t			fillcolor;			// Color to draw when STYLE_Shaded
-	uint32_t			Translation;
+	uint32_t		fillcolor;			// Color to draw when STYLE_Shaded
+	uint32_t		Translation;
+	FTextureID		LastPatch;			// @Cockatrice - Used by the hardware renderer to determine the last rendered patch
+	int				lastModelSprite;	// Likewise used for the last rendered model sprite, only used when unimportant
+	uint8_t			lastModelFrame;		// And the frame index
 
-	uint32_t			RenderRequired;		// current renderer must have this feature set
-	uint32_t			RenderHidden;		// current renderer must *not* have any of these features
+	uint32_t		RenderRequired;		// current renderer must have this feature set
+	uint32_t		RenderHidden;		// current renderer must *not* have any of these features
 
 	ActorRenderFlags	renderflags;		// Different rendering flags
 	ActorRenderFlags2	renderflags2;		// More rendering flags...
@@ -1124,6 +1134,7 @@ public:
 	double			dropoffz;		// killough 11/98: the lowest floor over all contacted Sectors.
 
 	uint32_t		ThruBits;
+	uint32_t		lineBlockBits;		// @Cockatrice - Compared to line bits for blocking
 	FTextureID		floorpic;			// contacted sec floorpic
 	int				floorterrain;
 	FTextureID		ceilingpic;			// contacted sec ceilingpic

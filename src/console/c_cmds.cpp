@@ -71,6 +71,8 @@
 #include "v_draw.h"
 #include "d_main.h"
 #include "savegamemanager.h"
+#include "events.h"
+
 
 extern FILE *Logfile;
 extern bool insave;
@@ -725,6 +727,13 @@ UNSAFE_CCMD(save)
 		return;
 	}
 #endif
+
+	// @Cockatrice - Consult the event managers to determine if we are actually allowed to save at this moment
+	if (!staticEventManager.IsSaveAllowed(false)) {
+		if (developer > 0)
+			Printf("Save \"%s\" rejected by event manager.", argv[1]);
+		return;
+	}
     fname = G_BuildSaveName(fname);
 	G_SaveGame (fname, argv.argc() > 2 ? argv[2] : argv[1]);
 }

@@ -86,12 +86,14 @@ public:
 	void WorldThingRevived(AActor* actor);
 	void WorldThingDamaged(AActor* actor, AActor* inflictor, AActor* source, int damage, FName mod, int flags, DAngle angle);
 	void WorldThingDestroyed(AActor* actor);
-	void WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate);
-	void WorldLineActivated(line_t* line, AActor* actor, int activationType);
+	void WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate, DVector3 pos);
+	void WorldLineActivated(line_t* line, AActor* actor, int activationType, DVector3 pos);
 	int WorldSectorDamaged(sector_t* sector, AActor* source, int damage, FName damagetype, int part, DVector3 position, bool isradius);
 	int WorldLineDamaged(line_t* line, AActor* source, int damage, FName damagetype, int side, DVector3 position, bool isradius);
 	void WorldLightning();
 	void WorldTick();
+	FString GetSavegameComment(int &order);		// @Cockatrice - Static handlers can append custom data to savegame comments, sorted by order
+	bool IsSaveAllowed(bool quicksave);			// @Cockatrice - Callback to check if game saving is allowed at this moment
 
 	//
 	void RenderFrame();
@@ -117,6 +119,9 @@ public:
 	//
 	void CheckReplacement(PClassActor* replacee, PClassActor** replacement, bool* final);
 	void CheckReplacee(PClassActor** replacee, PClassActor* replacement, bool* final);
+
+	// 
+	void StatsEvent(FString name, FString text, bool isAchievement, double value = 1);
 
 	//
 	void NewGame();
@@ -191,6 +196,13 @@ struct FConsoleEvent
 	bool IsManual;
 };
 
+struct FStatsEvent
+{
+	FString Name, Text;
+	bool IsAchievement;
+	double Value;
+};
+
 struct FReplaceEvent
 {
 	PClassActor* Replacee;
@@ -250,9 +262,9 @@ struct EventManager
 	// called before AActor::Destroy of each actor.
 	void WorldThingDestroyed(AActor* actor);
 	// called in P_ActivateLine before executing special, set shouldactivate to false to prevent activation.
-	void WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate);
+	void WorldLinePreActivated(line_t* line, AActor* actor, int activationType, bool* shouldactivate, DVector3 *optpos);
 	// called in P_ActivateLine after successful special execution.
-	void WorldLineActivated(line_t* line, AActor* actor, int activationType);
+	void WorldLineActivated(line_t* line, AActor* actor, int activationType, DVector3 *optpos);
 	// called in P_DamageSector and P_DamageLinedef before receiving damage to the sector. returns actual damage
 	int WorldSectorDamaged(sector_t* sector, AActor* source, int damage, FName damagetype, int part, DVector3 position, bool isradius);
 	// called in P_DamageLinedef before receiving damage to the linedef. returns actual damage
@@ -261,6 +273,10 @@ struct EventManager
 	void WorldLightning();
 	// this executes on every tick, before everything, only when in valid level and not paused
 	void WorldTick();
+	// @Cockatrice - Get a compilation of comments from all static event handlers for the savegame text
+	FString GetSavegameComments();
+	// @Cockatrice - Check if any event handler is preventing save games from happening
+	bool IsSaveAllowed(bool quicksave);
 	// this executes on every tick on UI side, always
 	void UiTick();
 	// this executes on every tick on UI side, always AND immediately after everything else
@@ -293,6 +309,8 @@ struct EventManager
 
 	// called on new game
 	void NewGame();
+
+	void Stat(FString name, FString text, bool isAchievement, double value);
 
 	// send networked event. unified function.
 	bool SendNetworkEvent(FString name, int arg1, int arg2, int arg3, bool manual);

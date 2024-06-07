@@ -189,8 +189,12 @@ void RenderModel(FModelRenderer *renderer, float x, float y, float z, FSpriteMod
 	if (!(smf->flags & MDL_CORRECTPIXELSTRETCH))
 	{
 		stretch = (smf->modelIDs[0] != -1 ? Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) : 1.f) / actor->Level->info->pixelstretch;
-		objectToWorldMatrix.scale(1, stretch, 1);
 	}
+	// consider the pixel stretching. For non-voxels this must be factored out here
+	else if (!(smf->flags & MDL_NOPIXELSTRETCH) && smf->modelIDs[0] != -1) {
+		stretch = Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) / actor->Level->info->pixelstretch;
+	}
+	objectToWorldMatrix.scale(1, stretch, 1);
 
 	float orientation = scaleFactorX * scaleFactorY * scaleFactorZ;
 
@@ -509,6 +513,9 @@ static void ParseModelDefLump(int Lump);
 
 void InitModels()
 {
+	cycle_t model_time = cycle_t();
+	model_time.Clock();
+
 	Models.DeleteAndClear();
 	SpriteModelFrames.Clear();
 	SpriteModelHash.Clear();
@@ -585,6 +592,9 @@ void InitModels()
 		SpriteModelFrames[i].hashnext = SpriteModelHash[j];
 		SpriteModelHash[j]=i;
 	}
+
+	model_time.Unclock();
+	Printf(TEXTCOLOR_GOLD"Model Indexing: %.2fms\n", model_time.TimeMS());
 }
 
 static void ParseModelDefLump(int Lump)
@@ -594,6 +604,7 @@ static void ParseModelDefLump(int Lump)
 	{
 		if (sc.Compare("model"))
 		{
+			unsigned int preParseFrames = SpriteModelFrames.Size();
 			int index, surface;
 			FString path = "";
 			sc.MustGetString();
@@ -702,6 +713,74 @@ static void ParseModelDefLump(int Lump)
 					smf.yscale = sc.Float;
 					sc.MustGetFloat();
 					smf.zscale = sc.Float;
+				}
+				else if (sc.Compare("inherits"))
+				{	// Code copied (and modified) from ShinyMetagross #1487
+					unsigned int i, j;
+					sc.MustGetString();
+					auto type2 = PClass::FindClass(sc.String);
+					if (!type2 || type2->Defaults == nullptr)
+					{
+						sc.ScriptError("MODELDEF: Unknown actor type '%s'\n", sc.String);
+					}
+
+					for (i = 0; i < preParseFrames; i++)
+					{
+						if (SpriteModelFrames[i].type == type2)
+						{
+							auto frame = SpriteModelFrames[i];
+							frame.type = type;
+
+							int newFrameIndex = SpriteModelFrames.Push(frame);
+
+							for (j = 0; j < smf.modelsAmount; j++)
+							{
+								if (smf.modelIDs[j] != -1)
+									SpriteModelFrames[newFrameIndex].modelIDs[j] = smf.modelIDs[j];
+								if (smf.skinIDs[j].isValid())
+									SpriteModelFrames[newFrameIndex].skinIDs[j] = smf.skinIDs[j];
+							}
+							for (j = 0; j < MD3_MAX_SURFACES; j++)
+							{
+								if (smf.surfaceskinIDs[j].isValid())
+									SpriteModelFrames[SpriteModelFrames.Size() - 1].surfaceskinIDs[j] = smf.surfaceskinIDs[j];
+							}
+							if (smf.xscale != 1.f)
+								SpriteModelFrames[newFrameIndex].xscale = smf.xscale;
+							if (smf.yscale != 1.f)
+								SpriteModelFrames[newFrameIndex].yscale = smf.yscale;
+							if (smf.zscale != 1.f)
+								SpriteModelFrames[newFrameIndex].zscale = smf.zscale;
+							if (smf.xoffset != 0.f)
+								SpriteModelFrames[newFrameIndex].xoffset = smf.xoffset;
+							if (smf.yoffset != 0.f)
+								SpriteModelFrames[newFrameIndex].yoffset = smf.yoffset;
+							if (smf.zoffset != 0.f)
+								SpriteModelFrames[newFrameIndex].zoffset = smf.zoffset;
+							if (smf.angleoffset != 0.f)
+								SpriteModelFrames[newFrameIndex].angleoffset = smf.angleoffset;
+							if (smf.pitchoffset != 0.f)
+								SpriteModelFrames[newFrameIndex].pitchoffset = smf.pitchoffset;
+							if (smf.rolloffset != 0.f)
+								SpriteModelFrames[newFrameIndex].rolloffset = smf.rolloffset;
+							if (smf.rotationSpeed != 0.f)
+								SpriteModelFrames[newFrameIndex].rotationSpeed = smf.rotationSpeed;
+							if (smf.xrotate != 0.f)
+								SpriteModelFrames[newFrameIndex].xrotate = smf.xrotate;
+							if (smf.yrotate != 0.f)
+								SpriteModelFrames[newFrameIndex].yrotate = smf.yrotate;
+							if (smf.zrotate != 0.f)
+								SpriteModelFrames[newFrameIndex].zrotate = smf.zrotate;
+							if (smf.rotationCenterX != 0.f)
+								SpriteModelFrames[newFrameIndex].rotationCenterX = smf.rotationCenterX;
+							if (smf.rotationCenterY != 0.f)
+								SpriteModelFrames[newFrameIndex].rotationCenterX = smf.rotationCenterY;
+							if (smf.rotationCenterZ != 0.f)
+								SpriteModelFrames[newFrameIndex].rotationCenterX = smf.rotationCenterZ;
+							SpriteModelFrames[newFrameIndex].flags |= smf.flags;
+						}
+					}
+					GetDefaultByType(type)->hasmodel = true;
 				}
 				// [BB] Added zoffset reading.
 				// Now it must be considered deprecated.
@@ -946,6 +1025,10 @@ static void ParseModelDefLump(int Lump)
 				{
 					smf.flags |= MDL_DONTCULLBACKFACES;
 				}
+				else if (sc.Compare("alwayscullbackfaces"))
+				{
+					smf.flags |= MDL_ALWAYSCULLBACKFACES;
+				}
 				else if (sc.Compare("userotationcenter"))
 				{
 					smf.flags |= MDL_USEROTATIONCENTER;
@@ -956,6 +1039,9 @@ static void ParseModelDefLump(int Lump)
 				else if (sc.Compare("correctpixelstretch"))
 				{
 					smf.flags |= MDL_CORRECTPIXELSTRETCH;
+				}
+				else if (sc.Compare("nopixelstretch")) {
+					smf.flags |= MDL_NOPIXELSTRETCH;
 				}
 				else
 				{

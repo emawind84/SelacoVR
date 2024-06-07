@@ -136,7 +136,8 @@ CVAR(Int, am_linethickness, 1, CVAR_ARCHIVE)
 CVAR(Int, am_lineantialiasing, 0, CVAR_ARCHIVE)
 CVAR(Bool, am_thingrenderstyles, true, CVAR_ARCHIVE)
 CVAR(Int, am_showsubsector, -1, 0);
-
+CVAR(Float, am_playerScale, 0.5, CVAR_ARCHIVE)
+CVAR(Bool, am_draw_portals, false, CVAR_ARCHIVE);
 
 CUSTOM_CVAR(Int, am_showalllines, -1, CVAR_NOINITCALL)	// This is a cheat so don't save it.
 {
@@ -205,10 +206,17 @@ CVAR(Int, am_markcolor, CR_GREY, CVAR_ARCHIVE)
 
 CCMD(am_togglefollow)
 {
-	am_followplayer = !am_followplayer;
+	am_followplayer = true;// !am_followplayer;
 	if (primaryLevel && primaryLevel->automap)
 		primaryLevel->automap->ResetFollowLocation();
 	Printf("%s\n", GStrings(am_followplayer ? "AMSTR_FOLLOWON" : "AMSTR_FOLLOWOFF"));
+}
+
+CCMD(am_center)
+{
+	if (primaryLevel && primaryLevel->automap) {
+		primaryLevel->automap->ResetFollowLocation();
+	}
 }
 
 CCMD(am_togglegrid)
@@ -820,6 +828,7 @@ static TArray<mline_t> MapArrow;
 static TArray<mline_t> CheatMapArrow;
 static TArray<mline_t> CheatKey;
 static TArray<mline_t> EasyKey;
+static FTextureID AutomapPlayerIcon, AutomapPlayerIconOuter;	// The player icons, outer will be rotated around inner
 
 static std::array<mline_t, 3> thintriangle_guy = { {
 	{{-.5,-.7}, {1,0}},
@@ -885,6 +894,9 @@ void AM_StaticInit()
 		mysnprintf(namebuf, countof(namebuf), "AMMNUM%d", i);
 		marknums[i] = TexMan.CheckForTexture(namebuf, ETextureType::MiscPatch);
 	}
+
+	AutomapPlayerIcon = TexMan.CheckForTexture("PLYRZ0", ETextureType::Any);
+	AutomapPlayerIconOuter = TexMan.CheckForTexture("PLYRZ1", ETextureType::Any);
 }
 
 
@@ -996,6 +1008,8 @@ class DAutomap :public DAutomapBase
 	void calcMinMaxMtoF();
 
 	void DrawMarker(FGameTexture *tex, double x, double y, int yadjust,
+		INTBOOL flip, double xscale, double yscale, int translation, double alpha, uint32_t fillcolor, FRenderStyle renderstyle);
+	void DrawMarkerRotated(FGameTexture *tex, double x, double y, double angle, int yadjust,
 		INTBOOL flip, double xscale, double yscale, int translation, double alpha, uint32_t fillcolor, FRenderStyle renderstyle);
 
 	void rotatePoint(double *x, double *y);
@@ -1179,8 +1193,8 @@ void DAutomap::findMinMaxBoundaries ()
 	max_w = max_x - min_x;
 	max_h = max_y - min_y;
 
-	min_w = 2*PLAYERRADIUS; // const? never changed?
-	min_h = 2*PLAYERRADIUS;
+	min_w = 512;//2*PLAYERRADIUS; // const? never changed?
+	min_h = 512;//2*PLAYERRADIUS;
 
 	calcMinMaxMtoF();
 }
@@ -1198,7 +1212,7 @@ void DAutomap::calcMinMaxMtoF()
 	double b = safe_frame * (StatusBar->GetTopOfStatusbar() / max_h);
 
 	min_scale_mtof = a < b ? a : b;
-	max_scale_mtof = twod->GetHeight() / (2*PLAYERRADIUS);
+	max_scale_mtof = twod->GetHeight() / 512.0;//(2*PLAYERRADIUS);
 }
 
 //=============================================================================
@@ -1366,7 +1380,7 @@ void DAutomap::LevelInit ()
 	clearMarks();
 
 	findMinMaxBoundaries();
-	scale_mtof = min_scale_mtof / 0.7;
+	scale_mtof = max_scale_mtof * 0.2;
 	if (scale_mtof > max_scale_mtof)
 		scale_mtof = min_scale_mtof;
 	scale_ftom = 1 / scale_mtof;
@@ -1435,12 +1449,19 @@ bool DAutomap::Responder (event_t *ev, bool last)
 {
 	if (automapactive && (ev->type == EV_KeyDown || ev->type == EV_KeyUp))
 	{
-		if (am_followplayer)
+		// @Cockatrice - Allow ESCAPE to cancel automap instead of opening a menu on top
+		if (ev->type == EV_KeyDown && ev->data1 == KEY_ESCAPE) {
+			AM_Stop();
+			return true;
+		}
+
+		// @Cockatrice - Allow panning with follow mode on, just provide a center button
+		/*if (am_followplayer)
 		{
 			// check for am_pan* and ignore in follow mode
 			const char *defbind = AutomapBindings.GetBind(ev->data1);
 			if (defbind && !strnicmp(defbind, "+am_pan", 7)) return false;
-		}
+		}*/
 
 		bool res = C_DoKey(ev, &AutomapBindings, nullptr);
 		if (res && ev->type == EV_KeyUp && !last)
@@ -2603,7 +2624,7 @@ void DAutomap::drawWalls (bool allmap)
 
 				if (portalmode)
 				{
-					drawMline(&l, AMColors.PortalColor);
+					if(!!am_draw_portals) drawMline(&l, AMColors.PortalColor);
 				}
 				else if (AM_CheckSecret(&line) == 1)
 				{
@@ -2804,24 +2825,24 @@ void DAutomap::drawPlayers ()
 
 	if (!multiplayer)
 	{
-		mline_t *arrow;
-		int numarrowlines;
+		//mline_t *arrow;
+		//int numarrowlines;
 
 		double vh = players[consoleplayer].viewheight;
 		DVector2 pos = players[consoleplayer].camera->InterpolatedPosition(r_viewpoint.TicFrac);
-		pt.x = pos.X;
-		pt.y = pos.Y;
+		/*pt.x = pos.X;
+		pt.y = pos.Y;*/
 		if (am_rotate == 1 || (am_rotate == 2 && viewactive))
 		{
 			angle = DAngle::fromDeg(90.);
-			rotatePoint (&pt.x, &pt.y);
+			//rotatePoint (&pt.x, &pt.y);
 		}
 		else
 		{
 			angle = players[consoleplayer].camera->InterpolatedAngles(r_viewpoint.TicFrac).Yaw;
 		}
 		
-		if (am_cheat != 0 && CheatMapArrow.Size() > 0)
+		/*if (am_cheat != 0 && CheatMapArrow.Size() > 0)
 		{
 			arrow = &CheatMapArrow[0];
 			numarrowlines = CheatMapArrow.Size();
@@ -2831,7 +2852,15 @@ void DAutomap::drawPlayers ()
 			arrow = &MapArrow[0];
 			numarrowlines = MapArrow.Size();
 		}
-		drawLineCharacter(arrow, numarrowlines, 0, angle, AMColors[AMColors.YourColor], pt.x, pt.y);
+		drawLineCharacter(arrow, numarrowlines, 0, angle, AMColors[AMColors.YourColor], pt.x, pt.y);*/
+		auto tex = TexMan.GetGameTexture(AutomapPlayerIcon, true);
+		auto tex2 = TexMan.GetGameTexture(AutomapPlayerIconOuter, true);
+		const double spriteXScale = am_playerScale * (10. / 16.) * scale_mtof;
+		const double spriteYScale = am_playerScale * (10. / 16.) * scale_mtof;
+
+		DrawMarkerRotated(tex, pos.X, pos.Y, 0, 0, false, spriteXScale, spriteYScale, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
+		DrawMarkerRotated(tex2, pos.X, pos.Y, angle.Degrees - 90.0, 0, false, spriteXScale, spriteYScale, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
+
 		return;
 	}
 
@@ -3101,6 +3130,42 @@ void DAutomap::DrawMarker (FGameTexture *tex, double x, double y, int yadjust,
 		DTA_Alpha, alpha,
 		DTA_FillColor, fillcolor,
 		DTA_RenderStyle, renderstyle.AsDWORD,
+		DTA_BilinearFilter, true,
+		TAG_DONE);
+}
+
+
+void DAutomap::DrawMarkerRotated(FGameTexture *tex, double x, double y, double angle, int yadjust,
+	INTBOOL flip, double xscale, double yscale, int translation, double alpha, uint32_t fillcolor, FRenderStyle renderstyle)
+{
+	if (tex == nullptr || !tex->isValid())
+	{
+		return;
+	}
+	if (xscale < 0)
+	{
+		flip = !flip;
+		xscale = -xscale;
+	}
+	if (am_rotate == 1 || (am_rotate == 2 && viewactive))
+	{
+		rotatePoint(&x, &y);
+	}
+
+	DrawTexture(twod, tex, CXMTOF(x) + f_x, CYMTOF(y) + yadjust + f_y,
+		DTA_DestWidthF, tex->GetDisplayWidth() * CleanXfac * xscale,
+		DTA_DestHeightF, tex->GetDisplayHeight() * CleanYfac * yscale,
+		DTA_ClipTop, f_y,
+		DTA_ClipBottom, f_y + f_h,
+		DTA_ClipLeft, f_x,
+		DTA_ClipRight, f_x + f_w,
+		DTA_FlipX, flip,
+		DTA_TranslationIndex, translation,
+		DTA_Alpha, alpha,
+		DTA_FillColor, fillcolor,
+		DTA_RenderStyle, renderstyle.AsDWORD,
+		DTA_BilinearFilter, true,
+		DTA_Rotate, angle,
 		TAG_DONE);
 }
 
@@ -3253,7 +3318,7 @@ void DAutomap::Drawer (int bottom)
 	{
 		doFollowPlayer();
 	}
-	else
+	//else
 	{
 		m_paninc.x = m_paninc.y = 0;
 		if (buttonMap.ButtonDown(Button_AM_PanLeft))

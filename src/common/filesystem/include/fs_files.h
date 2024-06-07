@@ -100,6 +100,9 @@ public:
 	virtual char *Gets(char *strbuf, ptrdiff_t len) = 0;
 	virtual const char *GetBuffer() const { return nullptr; }
 	ptrdiff_t GetLength () const { return Length; }
+
+	// @Cockatrice - We need to be able to copy a file reader so we may spin it up in a thread
+	virtual FileReaderInterface* CopyNew() { return nullptr; }
 };
 
 struct FResourceLump;
@@ -143,6 +146,11 @@ public:
 		mReader = r.mReader;
 		r.mReader = nullptr;
 		return *this;
+	}
+
+	FileReader* CopyNew() {
+		if (mReader == nullptr) { return nullptr; }
+		return new FileReader(mReader->CopyNew());
 	}
 
 	// This is for wrapping the actual reader for custom access where a managed FileReader won't work. 

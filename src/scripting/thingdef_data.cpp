@@ -351,6 +351,10 @@ static FFlagDef ActorFlagDefs[]=
 	DEFINE_FLAG(MF9, DOSHADOWBLOCK, AActor, flags9),
 	DEFINE_FLAG(MF9, SHADOWBLOCK, AActor, flags9),
 	DEFINE_FLAG(MF9, SHADOWAIMVERT, AActor, flags9),
+	DEFINE_FLAG(MF9, PRECACHEALWAYS, AActor, flags9),
+	DEFINE_FLAG(MF9, ABSDAMAGE, AActor, flags9),
+	DEFINE_FLAG(MF9, HITSCANTHRU, AActor, flags9),
+	DEFINE_FLAG(MF9, BLOCKLOF, AActor, flags9),
 
 	// Effect flags
 	DEFINE_FLAG(FX, VISIBILITYPULSE, AActor, effects),

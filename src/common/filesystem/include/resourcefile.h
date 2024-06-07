@@ -149,6 +149,10 @@ public:
 	const char* getName() { return FullName; }
 	void clearName() { FullName = ""; }
 
+	// @Cockatrice - We need to be able to arbitrarily read the data of any given lump
+	// for background loading. Copy Reader => Read Lump Data => Store cache on main thread if necessary
+	virtual long ReadData(FileReader &reader, char *buffer) { return 0; }
+
 protected:
 	virtual int FillCache() { return -1; }
 
@@ -187,6 +191,7 @@ public:
 	virtual ~FResourceFile();
     // If this FResourceFile represents a directory, the Reader object is not usable so don't return it.
     FileReader *GetReader() { return Reader.isOpen()? &Reader : nullptr; }
+
 	uint32_t LumpCount() const { return NumLumps; }
 	uint32_t GetFirstEntry() const { return FirstLump; }
 	void SetFirstLump(uint32_t f) { FirstLump = f; }

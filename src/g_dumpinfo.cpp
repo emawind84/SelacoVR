@@ -361,7 +361,7 @@ CCMD(targetinv)
 
 CCMD(listmaps)
 {
-	int iwadNum = fileSystem.GetIwadNum();
+	bool all = argv.argc() > 1 && strcmp(argv[1], "all") == 0;
 
 	for (unsigned i = 0; i < wadlevelinfos.Size(); i++)
 	{
@@ -371,19 +371,28 @@ CCMD(listmaps)
 		if (map != NULL)
 		{
 			int mapWadNum = fileSystem.GetFileContainer(map->lumpnum);
-
-			if (argv.argc() == 1 
+			if (argv.argc() == 1 || all
 			    || CheckWildcards(argv[1], info->MapName.GetChars()) 
 			    || CheckWildcards(argv[1], info->LookupLevelName().GetChars())
 			    || CheckWildcards(argv[1], fileSystem.GetResourceFileName(mapWadNum)))
 			{
-				bool isFromPwad = mapWadNum != iwadNum;
-
-				const char* lineColor = isFromPwad ? TEXTCOLOR_LIGHTBLUE : "";
-
-				Printf("%s%s: '%s' (%s)\n", lineColor, info->MapName.GetChars(),
-					info->LookupLevelName().GetChars(),
-					fileSystem.GetResourceFileName(mapWadNum));
+				if (all) {
+					Printf("\n%s: '%s' (%s)\n\tLevelNum: %d\n\tAreaNum: %d\n\tCluster: %d\n",
+						info->MapName.GetChars(),
+						info->LookupLevelName().GetChars(),
+						fileSystem.GetResourceFileName(mapWadNum),
+						info->levelnum,
+						info->areaNum,
+						info->cluster
+					);
+				}
+				else {
+					Printf("%s: '%s' (%s)\n",
+						info->MapName.GetChars(),
+						info->LookupLevelName().GetChars(),
+						fileSystem.GetResourceFileName(mapWadNum)
+					);
+				}
 			}
 			delete map;
 		}

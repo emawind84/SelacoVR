@@ -270,6 +270,8 @@ enum ELevelFlags : unsigned int
 	LEVEL3_AVOIDMELEE			= 0x00020000,	// global flag needed for proper MBF support.
 	LEVEL3_NOJUMPDOWN			= 0x00040000,	// only for MBF21. Inverse of MBF's dog_jumping flag.
 	LEVEL3_LIGHTCREATED			= 0x00080000,	// a light had been created in the last frame
+	LEVEL3_RAINYMAP				= 0x00100000,	// @Cockatrice - Indicates map should draw rain effects under F_SKY
+	LEVEL3_SAFEROOM				= 0x00200000	// @Cockatrice - Indicates a saferoom is in this map, available for fast travel
 };
 
 
@@ -327,6 +329,7 @@ struct level_info_t
 	FString		NextMap;
 	FString		NextSecretMap;
 	FString		PName;
+	FString		Description;
 	FString		SkyPic1;
 	FString		SkyPic2;
 	FString		FadeTable;
@@ -337,8 +340,11 @@ struct level_info_t
 	TMap<FName, FExitText> ExitMapTexts;
 
 	int			cluster;
+	int			levelgroup, areaNum;
 	int			partime;
 	int			sucktime;
+	int			invasiontier;
+	double		tilt, tiltAngle;
 	int32_t		flags;
 	uint32_t	flags2;
 	uint32_t	flags3;

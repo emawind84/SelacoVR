@@ -40,7 +40,7 @@ class PlayerPawn : Actor
 	double		SideMove1, SideMove2;
 	TextureID	ScoreIcon;
 	int			SpawnMask;
-	Name			MorphWeapon;
+	Name		MorphWeapon;
 	double		AttackZOffset;			// attack height, relative to player center
 	double		UseRange;				// [NS] Distance at which player can +use
 	double		AirCapacity;			// Multiplier for air supply underwater.
@@ -126,7 +126,7 @@ class PlayerPawn : Actor
 		Player.SoundClass "player";
 		Player.DamageScreenColor "ff 00 00";
 		Player.MugShotMaxHealth 0;
-		Player.FlechetteType "ArtiPoisonBag3";
+		Player.FlechetteType "";
 		Player.AirCapacity 1;
 		Player.FlyBob 1;
 		Player.ViewBob 1;
@@ -391,7 +391,7 @@ class PlayerPawn : Actor
 		}
 
 		let weapn = hand ? player.OffhandWeapon : player.ReadyWeapon;
-		if (weapn == null || !weapn.CheckAmmo (Weapon.PrimaryFire, true))
+		if (weapn == null || !weapn.CheckAmmo (WeaponBase.PrimaryFire, true))
 		{
 			return;
 		}
@@ -424,7 +424,7 @@ class PlayerPawn : Actor
 		}
 
 		let weapn = hand ? player.OffhandWeapon : player.ReadyWeapon;
-		if (weapn == null || weapn.FindState('AltFire') == null || !weapn.CheckAmmo (Weapon.AltFire, true))
+		if (weapn == null || weapn.FindState('AltFire') == null || !weapn.CheckAmmo (WeaponBase.AltFire, true))
 		{
 			return;
 		}
@@ -553,7 +553,7 @@ class PlayerPawn : Actor
 			// or if it's from an inventory item that the player no longer owns. 
 			if ((pspr.Caller == null ||
 				(pspr.Caller is "Inventory" && Inventory(pspr.Caller).Owner != pspr.Owner.mo) ||
-				(pspr.Caller is "Weapon" && (pspr.Caller != pspr.Owner.ReadyWeapon && pspr.Caller != pspr.Owner.OffhandWeapon))) ||
+				(pspr.Caller is "WeaponBase" && (pspr.Caller != pspr.Owner.ReadyWeapon && pspr.Caller != pspr.Owner.OffhandWeapon))) ||
 				(pspr.ID == PSP_WEAPON && pspr.Caller != pspr.Owner.ReadyWeapon) ||
 				(pspr.ID == PSP_OFFHANDWEAPON && pspr.Caller != pspr.Owner.OffhandWeapon))
 			{
@@ -861,7 +861,7 @@ class PlayerPawn : Actor
 					else if (weap.SpawnState != NULL &&
 						weap.SpawnState != GetDefaultByType('Actor').SpawnState)
 					{
-						let weapitem = Weapon(A_DropItem (weap.GetClass(), -1, 256));
+						let weapitem = WeaponBase(A_DropItem (weap.GetClass(), -1, 256));
 						if (weapitem)
 						{
 							if (weap.AmmoGive1 && weap.Ammo1)
@@ -936,7 +936,7 @@ class PlayerPawn : Actor
 			{
 				item.Destroy();
 			}
-			else if (sv_cooploseweapons && defitem == NULL && item is 'Weapon')
+			else if (sv_cooploseweapons && defitem == NULL && item is 'WeaponBase')
 			{
 				item.Destroy();
 			}
@@ -1020,6 +1020,8 @@ class PlayerPawn : Actor
 		double fov1 = player.ReadyWeapon != NULL ? player.ReadyWeapon.FOVScale : 0;
 		double fov2 = player.OffhandWeapon != NULL ? player.OffhandWeapon.FOVScale : 0;
 		double fovscale = MAX(fov1, fov2);
+
+		player.deltaFOV = player.FOV;
 
 		// [RH] Zoom the player's FOV
 		float desired = player.DesiredFOV;
@@ -1555,14 +1557,6 @@ class PlayerPawn : Actor
 					}
 				}
 			}
-			else if (cmd.upmove > 0 && !(player.cheats & CF_PREDICTING))
-			{
-				let fly = FindInventory("ArtiFly");
-				if (fly != NULL)
-				{
-					UseInventory(fly);
-				}
-			}
 		}
 	}
 
@@ -1874,9 +1868,9 @@ class PlayerPawn : Actor
 	//
 	//===========================================================================
 
-	Weapon BestWeapon(Class<Ammo> ammotype, int hand = 0)
+	WeaponBase BestWeapon(Class<Ammo> ammotype, int hand = 0)
 	{
-		Weapon bestMatch = NULL;
+		WeaponBase bestMatch = NULL;
 		int bestOrder = int.max;
 		Inventory item;
 		bool tomed = !!FindInventory ('PowerWeaponLevel2', true);
@@ -1884,7 +1878,7 @@ class PlayerPawn : Actor
 		// Find the best weapon the player has.
 		for (item = Inv; item != NULL; item = item.Inv)
 		{
-			let weap = Weapon(item);
+			let weap = WeaponBase(item);
 			if (weap == null)
 				continue;
 
@@ -1914,7 +1908,7 @@ class PlayerPawn : Actor
 
 			// Don't select it if there isn't enough ammo to use its primary fire.
 			if (!(weap.bAMMO_OPTIONAL) &&
-				!weap.CheckAmmo (Weapon.PrimaryFire, false))
+				!weap.CheckAmmo (WeaponBase.PrimaryFire, false))
 				continue;
 
 			// Don't select if if there isn't enough ammo as determined by the weapon's author.
@@ -1949,7 +1943,7 @@ class PlayerPawn : Actor
 		int disableswitch = hand ? WF_OFFHANDDISABLESWITCH : WF_DISABLESWITCH;
 		// Since the weapon is dropping, stop blocking switching.
 		player.WeaponState &= ~disableswitch;
-		Weapon weap = hand ? player.OffhandWeapon : player.ReadyWeapon;
+		WeaponBase weap = hand ? player.OffhandWeapon : player.ReadyWeapon;
 		if ((weap != null) && (player.health > 0 || !weap.bNoDeathDeselect))
 		{
 			player.SetPsprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON, weap.GetDownState());
@@ -1966,9 +1960,9 @@ class PlayerPawn : Actor
 	//
 	//===========================================================================
 
-	Weapon PickNewWeapon(Class<Ammo> ammotype, int hand = 0)
+	WeaponBase PickNewWeapon(Class<Ammo> ammotype, int hand = 0)
 	{
-		Weapon best = BestWeapon (ammotype, hand);
+		WeaponBase best = BestWeapon (ammotype, hand);
 
 		if (best != NULL)
 		{
@@ -2041,7 +2035,7 @@ class PlayerPawn : Actor
 						item = Inventory(Spawn(ti));
 						item.bIgnoreSkill = true;	// no skill multipliers here
 						item.Amount = di.Amount;
-						let weap = Weapon(item);
+						let weap = WeaponBase(item);
 						if (weap)
 						{
 							// To allow better control any weapon is emptied of
@@ -2063,8 +2057,8 @@ class PlayerPawn : Actor
 							ThrowAbortException("Cannot give morph item '%s' when starting a game!", di.Name);
 						}
 					}
-					let weap = Weapon(item);
-					if (weap != NULL && weap.CheckAmmo(Weapon.EitherFire, false))
+					let weap = WeaponBase(item);
+					if (weap != NULL && weap.CheckAmmo(WeaponBase.EitherFire, false))
 					{
 						player.ReadyWeapon = player.PendingWeapon = weap;
 					}
@@ -2279,7 +2273,7 @@ class PlayerPawn : Actor
 	//
 	//===========================================================================
 
-	virtual Weapon PickWeapon(int slot, bool checkammo, int hand = 0)
+	virtual WeaponBase PickWeapon(int slot, bool checkammo, int hand = 0)
 	{
 		int i, j;
 
@@ -2304,11 +2298,11 @@ class PlayerPawn : Actor
 						j = (j == 0 ? Size - 1 : j - 1))
 					{
 						let weapontype2 = player.weapons.GetWeapon(slot, j);
-						let weap = Weapon(player.mo.FindInventory(weapontype2));
+						let weap = WeaponBase(player.mo.FindInventory(weapontype2));
 
 						if (weap != null)
 						{
-							if (!checkammo || weap.CheckAmmo(Weapon.EitherFire, false))
+							if (!checkammo || weap.CheckAmmo(WeaponBase.EitherFire, false))
 							{
 								return weap;
 							}
@@ -2320,11 +2314,11 @@ class PlayerPawn : Actor
 		for (i = Size - 1; i >= 0; i--)
 		{
 			let weapontype = player.weapons.GetWeapon(slot, i);
-			let weap = Weapon(player.mo.FindInventory(weapontype));
+			let weap = WeaponBase(player.mo.FindInventory(weapontype));
 
 			if (weap != null)
 			{
-				if (!checkammo || weap.CheckAmmo(Weapon.EitherFire, false) &&
+				if (!checkammo || weap.CheckAmmo(WeaponBase.EitherFire, false) &&
 					((weap.bOffhandWeapon && hand == 1) ||
 					(!weap.bOffhandWeapon && hand == 0)))
 				{
@@ -2423,7 +2417,7 @@ class PlayerPawn : Actor
 	//===========================================================================
 	const NUM_WEAPON_SLOTS = 10;
 
-	virtual Weapon PickNextWeapon(int hand = 0)
+	virtual WeaponBase PickNextWeapon(int hand = 0)
 	{
 		let player = self.player;
 		bool found;
@@ -2457,8 +2451,8 @@ class PlayerPawn : Actor
 					}
 				}
 				let type = player.weapons.GetWeapon(slot, index);
-				let weap = Weapon(FindInventory(type));
-				if (weap != null && weap.CheckAmmo(Weapon.EitherFire, false) &&
+				let weap = WeaponBase(FindInventory(type));
+				if (weap != null && weap.CheckAmmo(WeaponBase.EitherFire, false) &&
 					((weap.bOffhandWeapon && hand == 1) ||
 					(!weap.bOffhandWeapon && hand == 0)))
 				{
@@ -2479,7 +2473,7 @@ class PlayerPawn : Actor
 	//
 	//===========================================================================
 
-	virtual Weapon PickPrevWeapon(int hand = 0)
+	virtual WeaponBase PickPrevWeapon(int hand = 0)
 	{
 		let player = self.player;
 		int startslot, startindex;
@@ -2513,8 +2507,8 @@ class PlayerPawn : Actor
 					index = player.weapons.SlotSize(slot) - 1;
 				}
 				let type = player.weapons.GetWeapon(slot, index);
-				let weap = Weapon(FindInventory(type));
-				if (weap != null && weap.CheckAmmo(Weapon.EitherFire, false) &&
+				let weap = WeaponBase(FindInventory(type));
+				if (weap != null && weap.CheckAmmo(WeaponBase.EitherFire, false) &&
 					((weap.bOffhandWeapon && hand == 1) ||
 					(!weap.bOffhandWeapon && hand == 0)))
 				{
@@ -2646,6 +2640,11 @@ class PlayerPawn : Actor
 		return (0, 0, 0) , ( oldBob.x / 4, oldBob.y / -4, 0);
 	}
 	
+	// @Cockatrice - Per-frame camera offsets
+	virtual Vector3, Vector3 CameraOffsets(double ticfrac) {
+		return (0, 0, 0), (0,0,0);
+	}
+
 	//----------------------------------------------------------------------------
 	//
 	// 
@@ -2732,14 +2731,12 @@ extend class Actor
 	//
 	//----------------------------------------------------------------------------
 
-	void A_SkullPop(class<PlayerChunk> skulltype = "BloodySkull")
+	void A_SkullPop(class<PlayerChunk> skulltype = null)
 	{
 		// [GRB] Parameterized version
 		if (skulltype == NULL || !(skulltype is "PlayerChunk"))
 		{
-			skulltype = "BloodySkull";
-			if (skulltype == NULL)
-				return;
+			return;
 		}
 
 		bSolid = false;
@@ -2899,6 +2896,7 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native Class<PlayerPawn> cls;
 	native float DesiredFOV;
 	native float FOV;
+	native float deltaFOV;
 	native double viewz;
 	native double viewheight;
 	native double deltaviewheight;
@@ -2920,9 +2918,9 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native uint8 multicount;
 	native uint8 spreecount;
 	native uint WeaponState;
-	native Weapon ReadyWeapon;
-	native Weapon PendingWeapon;
-	native Weapon OffhandWeapon;
+	native WeaponBase ReadyWeapon;
+	native WeaponBase PendingWeapon;
+	native WeaponBase OffhandWeapon;
 	native PSprite psprites;
 	native int cheats;
 	native int timefreezer;
@@ -2949,8 +2947,8 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native Class<PlayerPawn>MorphedPlayerClass;
 	native int MorphStyle;
 	native Class<Actor> MorphExitFlash;
-	native Weapon PremorphWeapon;
-	native Weapon PremorphWeaponOffhand;
+	native WeaponBase PremorphWeapon;
+	native WeaponBase PremorphWeaponOffhand;
 	native int chickenPeck;
 	native int jumpTics;
 	native bool onground;
@@ -2986,7 +2984,7 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native bool PoisonPlayer(Actor poisoner, Actor source, int poison);
 	native void PoisonDamage(Actor source, int damage, bool playPainSound);
 	native void SetPsprite(int id, State stat, bool pending = false, Actor newcaller = null);
-	native void SetSafeFlash(Weapon weap, State flashstate, int index);
+	native void SetSafeFlash(WeaponBase weap, State flashstate, int index);
 	native PSprite GetPSprite(int id) const;
 	native PSprite FindPSprite(int id) const;
 	native void SetLogNumber (int text);

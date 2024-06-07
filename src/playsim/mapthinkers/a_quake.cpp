@@ -72,6 +72,7 @@ void DEarthquake::Construct(AActor *center, double intensityX, double intensityY
 	m_DamageMultiplier = damageMultiplier;
 	m_ThrustMultiplier = thrustMultiplier;
 	m_Damage = damage;
+	hasPlayedSound = false;
 }
 
 //==========================================================================
@@ -96,6 +97,7 @@ void DEarthquake::Serialize(FSerializer &arc)
 		("highpoint", m_Highpoint)
 		("minicount", m_MiniCount)
 		("rollintensity", m_RollIntensity)
+		("hasPlayedSound", hasPlayedSound)
 		("rollwave", m_RollWave);
 		("damagemultiplier", m_DamageMultiplier);
 		("thrustmultiplier", m_ThrustMultiplier);
@@ -121,8 +123,9 @@ void DEarthquake::Tick ()
 		return;
 	}
 	
-	if (!S_IsActorPlayingSomething (m_Spot, CHAN_BODY, m_QuakeSFX))
+	if (m_QuakeSFX != 0 && !S_IsActorPlayingSomething (m_Spot, CHAN_BODY, m_QuakeSFX))
 	{
+		hasPlayedSound = true;
 		S_Sound (m_Spot, CHAN_BODY, CHANF_LOOP, m_QuakeSFX, 1, ATTN_NORM);
 	}
 
@@ -160,7 +163,7 @@ void DEarthquake::Tick ()
 		m_MiniCount--;
 	if (--m_Countdown == 0)
 	{
-		if (S_IsActorPlayingSomething(m_Spot, CHAN_BODY, m_QuakeSFX))
+		if (hasPlayedSound && S_IsActorPlayingSomething(m_Spot, CHAN_BODY, m_QuakeSFX))
 		{
 			S_StopSound(m_Spot, CHAN_BODY);
 		}

@@ -301,6 +301,71 @@ void G_DeferedInitNew (FNewGameStartup *gs)
 	}
 }
 
+
+DEFINE_ACTION_FUNCTION(FLevelLocals, StartNewGame)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+	PARAM_INT(episode);
+	PARAM_INT(skill);
+	PARAM_STRING(playerClass);
+	PARAM_STRING(mapName);
+
+	// Make sure this call is coming from a menu, 
+	if (menuactive == MENU_Off) {
+		Printf("Sorry, you cannot start a new game outside of a menu.\n");
+		return 0;
+	}
+
+	if (mapName.Len() > 0) {
+		auto pc = playerClass.IsEmpty() ? NULL : playerClass.GetChars();
+		if (pc) playerclass = pc;
+		G_DeferedInitNew(mapName, skill);
+	}
+	else {
+		FNewGameStartup s;
+		s.PlayerClass = playerClass.IsEmpty() ? NULL : playerClass.GetChars();
+		s.Episode = episode;
+		s.Skill = skill;
+
+		G_DeferedInitNew(&s);
+	}
+	
+	if (gamestate == GS_FULLCONSOLE)
+	{
+		gamestate = GS_HIDECONSOLE;
+		gameaction = ga_newgame;
+	}
+	M_ClearMenus();
+
+	return 0;
+}
+
+
+DEFINE_ACTION_FUNCTION(FLevelLocals, ReturnToTitle) 
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+
+	M_ClearMenus();
+	if (!netgame)
+	{
+		if (demorecording)
+			G_CheckDemoStatus();
+		D_StartTitle();
+	}
+
+	return 0;
+}
+
+
+
+DEFINE_ACTION_FUNCTION(FLevelLocals, QuitGame)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(FLevelLocals);
+
+	throw CExitEvent(0);
+	return 0;
+}
+
 //==========================================================================
 //
 //
@@ -1846,6 +1911,9 @@ void FLevelLocals::Init()
 
 	cluster_info_t *clus = FindClusterInfo (info->cluster);
 
+	invasiontier = info->invasiontier;
+	tilt = info->tilt;
+	tiltAngle = info->tiltAngle;
 	partime = info->partime;
 	sucktime = info->sucktime;
 	cluster = info->cluster;
@@ -1854,6 +1922,8 @@ void FLevelLocals::Init()
 	flags2 |= info->flags2;
 	flags3 |= info->flags3;
 	levelnum = info->levelnum;
+	levelgroup = info->levelgroup;
+	areaNum = info->areaNum;
 	Music = info->Music;
 	musicorder = info->musicorder;
 	MusicVolume = 1.f;

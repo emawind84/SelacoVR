@@ -37,10 +37,10 @@ extern bool gpuStatActive;
 extern bool keepGpuStatActive;
 extern FString gpuStatOutput;
 
-VkCommandBufferManager::VkCommandBufferManager(VulkanRenderDevice* fb) : fb(fb)
+VkCommandBufferManager::VkCommandBufferManager(VulkanRenderDevice* fb, VkQueue *queue, int queueFamily, bool uploadOnly) : fb(fb)
 {
 	mCommandPool = CommandPoolBuilder()
-		.QueueFamily(fb->device->GraphicsFamily)
+		.QueueFamily(queueFamily)
 		.DebugName("mCommandPool")
 		.Create(fb->device.get());
 
@@ -53,7 +53,7 @@ VkCommandBufferManager::VkCommandBufferManager(VulkanRenderDevice* fb) : fb(fb)
 	for (int i = 0; i < maxConcurrentSubmitCount; i++)
 		mSubmitWaitFences[i] = mSubmitFence[i]->fence;
 
-	if (fb->device->GraphicsTimeQueries)
+	if (!mIsUploadOnly && fb->device->GraphicsTimeQueries)
 	{
 		mTimestampQueryPool = QueryPoolBuilder()
 			.QueryType(VK_QUERY_TYPE_TIMESTAMP, MaxTimestampQueries)
@@ -80,13 +80,21 @@ VulkanCommandBuffer* VkCommandBufferManager::GetTransferCommands()
 
 VulkanCommandBuffer* VkCommandBufferManager::GetDrawCommands()
 {
-	if (!mDrawCommands)
+	if (!mDrawCommands && !mIsUploadOnly)
 	{
 		mDrawCommands = mCommandPool->createBuffer();
 		mDrawCommands->SetDebugName("VulkanRenderDevice.mDrawCommands");
 		mDrawCommands->begin();
 	}
 	return mDrawCommands.get();
+}
+
+std::unique_ptr<VulkanCommandBuffer> VkCommandBufferManager::CreateUnmanagedCommands() {
+	std::unique_ptr<VulkanCommandBuffer> cmds = mCommandPool->createBuffer();
+	cmds->SetDebugName("VulkanFrameBuffer.arbitraryCommands");
+	cmds->begin();
+
+	return cmds;
 }
 
 void VkCommandBufferManager::BeginFrame()
@@ -98,7 +106,7 @@ void VkCommandBufferManager::BeginFrame()
 	}
 }
 
-void VkCommandBufferManager::FlushCommands(VulkanCommandBuffer** commands, size_t count, bool finish, bool lastsubmit)
+void VkCommandBufferManager::FlushCommands(VulkanCommandBuffer** commands, size_t count, VkQueue *queue, bool finish, bool lastsubmit)
 {
 	int currentIndex = mNextSubmit % maxConcurrentSubmitCount;
 
@@ -125,7 +133,7 @@ void VkCommandBufferManager::FlushCommands(VulkanCommandBuffer** commands, size_
 	if (!lastsubmit)
 		submit.AddSignal(mSubmitSemaphore[currentIndex].get());
 
-	submit.Execute(fb->device.get(), fb->device->GraphicsQueue, mSubmitFence[currentIndex].get());
+	submit.Execute(fb->device.get(), *queue, mSubmitFence[currentIndex].get());
 	mNextSubmit++;
 }
 
@@ -153,11 +161,13 @@ void VkCommandBufferManager::FlushCommands(bool finish, bool lastsubmit, bool up
 			DrawDeleteList->Add(std::move(mDrawCommands));
 		}
 
-		FlushCommands(commands, count, finish, lastsubmit);
+		FlushCommands(commands, count, fbQueue, finish, lastsubmit);
 
 		current_rendered_commandbuffers += (int)count;
 	}
 }
+
+extern glcycle_t GPUWait, FPSWait;
 
 void VkCommandBufferManager::WaitForCommands(bool finish, bool uploadOnly)
 {
@@ -173,7 +183,12 @@ void VkCommandBufferManager::WaitForCommands(bool finish, bool uploadOnly)
 
 	if (finish)
 	{
+		/* @Cockatrice - Moving the FPS limiter to after the GPU functions, since it doesn't seem to account for a slow GPU process
+		FPSWait.Reset();
+		FPSWait.Clock();
 		fb->FPSLimit();
+		FPSWait.Unclock();*/
+
 		fb->GetFramebufferManager()->QueuePresent();
 	}
 
@@ -181,8 +196,23 @@ void VkCommandBufferManager::WaitForCommands(bool finish, bool uploadOnly)
 
 	if (numWaitFences > 0)
 	{
-		vkWaitForFences(fb->device->device, numWaitFences, mSubmitWaitFences, VK_TRUE, std::numeric_limits<uint64_t>::max());
+		if (finish) {
+			GPUWait.Reset();
+			GPUWait.Clock();
+		}
+		auto res = vkWaitForFences(fb->device->device, numWaitFences, mSubmitWaitFences, VK_TRUE, std::numeric_limits<uint64_t>::max());
 		vkResetFences(fb->device->device, numWaitFences, mSubmitWaitFences);
+
+		if (finish) {
+			GPUWait.Unclock();
+		}
+	}
+
+	if (finish) {
+		FPSWait.Reset();
+		FPSWait.Clock();
+		fb->FPSLimit();
+		FPSWait.Unclock();
 	}
 
 	DeleteFrameObjects(uploadOnly);

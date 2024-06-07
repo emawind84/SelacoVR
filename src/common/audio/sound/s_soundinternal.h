@@ -195,7 +195,7 @@ protected:
 	// the complete set of sound effects
 	TArray<sfxinfo_t> S_sfx;
 	FRolloffInfo S_Rolloff{};
-	TArray<uint8_t> S_SoundCurve;
+	TArray<uint8_t> S_SoundCurve;		// @Cockatrice - As far as I know this is only inited once, but for thread safety do not change this during gameplay
 	TMap<FName, FSoundID> SoundMap;
 	TMap<int, FSoundID> ResIdMap;
 	TArray<FRandomSoundList> S_rnd;
@@ -221,7 +221,7 @@ private:
 	virtual std::vector<uint8_t> ReadSound(int lumpnum) = 0;
 
 protected:
-	virtual bool CheckSoundLimit(sfxinfo_t* sfx, const FVector3& pos, int near_limit, float limit_range, int sourcetype, const void* actor, int channel, float attenuation);
+	virtual bool CheckSoundLimit(sfxinfo_t* sfx, const FVector3& pos, int near_limit, float limit_range, int sourcetype, const void* actor, int channel, float attenuation, sfxinfo_t* compareOrgID = nullptr);
 	virtual FSoundID ResolveSound(const void *ent, int srctype, FSoundID soundid, float &attenuation);
 
 public:
@@ -243,6 +243,8 @@ public:
 		if ((unsigned)snd.index() >= S_sfx.Size()) return nullptr;
 		return &S_sfx[snd.index()];
 	}
+
+	sfxinfo_t* CheckLinks(sfxinfo_t *sfx);
 
 	const sfxinfo_t* GetSfx(FSoundID snd)
 	{
@@ -273,6 +275,7 @@ public:
 	void SetVolume(FSoundChan* chan, float vol);
 
 	FSoundChan* GetChannel(void* syschan);
+	FSoundChan* FindChannel(void* syschan);
 	void RestoreEvictedChannels();
 	void CalcPosVel(FSoundChan* chan, FVector3* pos, FVector3* vel);
 
@@ -289,6 +292,10 @@ public:
 
 	FSoundChan* StartSound(int sourcetype, const void* source,
 		const FVector3* pt, int channel, EChanFlags flags, FSoundID sound_id, float volume, float attenuation, FRolloffInfo* rolloff = nullptr, float spitch = 0.0f, float startTime = 0.0f);
+	
+	FSoundChan* StartSoundER(sfxinfo_t *sfx, int type, const void *source,
+		FVector3 pos, FVector3 vel, int channel, EChanFlags flags, FSoundID sound_id, FSoundID org_sound_id, float volume, float attenuation,
+		FRolloffInfo *forcedrolloff, float spitch, float startTime, bool usePosVel = true);
 
 	// Stops an origin-less sound from playing from this channel.
 	void StopSoundID(FSoundID sound_id);

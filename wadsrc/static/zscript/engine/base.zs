@@ -303,6 +303,7 @@ struct TexMan
 	};
 
 	native static TextureID CheckForTexture(String name, int usetype = Type_Any, int flags = TryAny);
+	native static int FindTextures(String name, out Array<TextureID> output, int usetype = Type_Any, int flags = TryAny);
 	native static String GetName(TextureID tex);
 	native static int, int GetSize(TextureID tex);
 	native static Vector2 GetScaledSize(TextureID tex);
@@ -311,6 +312,10 @@ struct TexMan
 	native static bool OkForLocalization(TextureID patch, String textSubstitute);
 	native static bool UseGamePalette(TextureID tex);
 	native static Canvas GetCanvas(String texture);
+
+	// @Cockatrice - Checks and loads (in background when available) texture. Returns TRUE if fully loaded OR if unloadable/null.  Returns FALSE when waiting for load.
+	// Will not function correctly with animated textures
+	native static ui bool MakeReady(TextureID tex, int translation = 0);
 }
 
 /*
@@ -415,7 +420,7 @@ enum DrawTextureTags
 	DTA_KeepRatio,		// doesn't adjust screen size for DTA_Virtual* if the aspect ratio is not 4:3
 	DTA_RenderStyle,	// same as render style for actors
 	DTA_ColorOverlay,	// DWORD: ARGB to overlay on top of image; limited to black for software
-	DTA_Internal1,
+	DTA_Filtering,		// Apply Linear/Bilinear filtering depending on texture
 	DTA_Internal2,
 	DTA_Desaturate,		// explicit desaturation factor (does not do anything in Legacy OpenGL)
 	DTA_Fullscreen,		// Draw image fullscreen (same as DTA_VirtualWidth/Height with graphics size.)
@@ -541,7 +546,9 @@ struct Screen native
 	native static Color PaletteColor(int index);
 	native static int GetWidth();
 	native static int GetHeight();
-	native static Vector2 GetTextScreenSize();
+		native static Vector2 GetTextScreenSize();
+	native static int GetWindowWidth();
+	native static int GetWindowHeight();
 	native static void Clear(int left, int top, int right, int bottom, Color color, int palcolor = -1);
 	native static void Dim(Color col, double amount, int x, int y, int w, int h, ERenderStyle style = STYLE_Translucent);
 
@@ -569,6 +576,8 @@ struct Screen native
 	native static void ClearStencil();
 	native static void SetTransform(Shape2DTransform transform);
 	native static void ClearTransform();
+
+	native static void SetCursor(String texName = "None");
 }
 
 struct Font native
@@ -867,6 +876,11 @@ struct Wads	// todo: make FileSystem an alias to 'Wads'
 	native static string GetLumpName(int lump);
 	native static string GetLumpFullName(int lump);
 	native static int GetLumpNamespace(int lump);
+	native static int GetLumpWadNum(int lump);
+
+	native static int GetNumWads();
+	native static string GetWadName(int wadnum);
+	native static bool HasMods();
 }
 
 enum EmptyTokenType
@@ -936,4 +950,13 @@ struct QuatStruct native
 	// native double Length();
 	// native double LengthSquared();
 	// native Quat Unit();
+}
+
+struct Globals native play
+{
+	native static string, bool Get(string key);
+	native static int, bool GetInt(string key);
+	native static void Set(string key, string value);
+	native static void SetInt(string key, int value);
+	native static void Save();
 }

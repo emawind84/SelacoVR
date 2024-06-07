@@ -99,6 +99,7 @@ class Actor : Thinker native
 	native readonly vector3 Pos;
 	native vector3 Prev;
 	native uint ThruBits;
+	native uint lineBlockBits;
 	native vector2 SpriteOffset;
 	native vector3 WorldOffset;
 	native double spriteAngle;
@@ -118,6 +119,7 @@ class Actor : Thinker native
 	native vector2 Scale;
 	native TextureID picnum;
 	native double Alpha;
+	native color selfLighting;
 	native readonly color fillcolor;	// must be set with SetShade to initialize correctly.
 	native Sector CurSector;
 	native double CeilingZ;
@@ -371,6 +373,7 @@ class Actor : Thinker native
 	property RenderRequired: RenderRequired;
 	property FriendlySeeBlocks: FriendlySeeBlocks;
 	property ThruBits: ThruBits;
+	property LineBlockBits : lineBlockBits;
 	property LightLevel: LightLevel;
 	property ShadowAimFactor: ShadowAimFactor;
 	property ShadowPenaltyFactor: ShadowPenaltyFactor;
@@ -408,6 +411,7 @@ class Actor : Thinker native
 		Mass 100;
 		RenderStyle 'Normal';
 		Alpha 1;
+		SelfLighting "00 00 00";
 		MinMissileChance 200;
 		MeleeRange 64 - MELEEDELTA;
 		MaxDropoffHeight 24;
@@ -429,8 +433,8 @@ class Actor : Thinker native
 		DesignatedTeam 255;
 		PainType "Normal";
 		DeathType "Normal";
-		TeleFogSourceType "TeleportFog";
-		TeleFogDestType 'TeleportFog';
+		TeleFogSourceType "";
+		TeleFogDestType '';
 		RipperLevel 0;
 		RipLevelMin 0;
 		RipLevelMax 0;
@@ -498,6 +502,7 @@ class Actor : Thinker native
 		return sin(fb * (180./32)) * 8;
 	}
 
+	native void DeleteAttachedLights();
 	native clearscope bool isFrozen() const;
 	virtual native void BeginPlay();
 	virtual native void Activate(Actor activator);
@@ -510,6 +515,21 @@ class Actor : Thinker native
 	virtual native void FallAndSink(double grav, double oldfloorz);
 	private native void Substitute(Actor replacement);
 	native ui void DisplayNameTag();
+
+	// @Cockatrice - Called on puffs that pass through or hit water so they can react accordingly
+	// return TRUE(1) to indicate we took care of the splash (the engine will not create splashes based on terrain as usual)
+	// Note that the puff that this is called on may be temporary and could be deleted immediately after this call, do not rely
+	// on the puff still existing after this call.
+	// Calling the native function does nothing
+	virtual native bool PuffSplash(Vector3 position, Vector3 direction, Sector sect, F3DFloor floor3D);
+
+	// @Cockatrice - Called on puffs when they hit a solid surface, not an actor
+	// Calling the native function does nothing
+	virtual native void PuffHit(FLineTraceData trace);
+
+	// @Cockatrice - Called on puffs when they hit an actor that is tagged as a passthru. Often these puffs are temporary.
+	// Calling the native function does nothing
+	virtual native void PuffThrough(Actor victim, Vector3 pos, Vector3 dir);
 
 	// Called by inventory items to see if this actor is capable of touching them.
 	// If true, the item will attempt to be picked up. Useful for things like
@@ -1119,6 +1139,36 @@ class Actor : Thinker native
 		A_Face(master, max_turn, max_pitch, ang_offset, pitch_offset, flags, z_ofs);
 	}
 
+
+	void A_AlertMonsters(double maxdist = 0, int flags = 0) {
+		Actor target = null;
+		Actor emitter = self;
+
+		if (player != null || (Flags & AMF_TARGETEMITTER))
+		{
+			target = self;
+		}
+		else if (self.target != null && (self.target.player != null || (Flags & AMF_TARGETNONPLAYER)))
+		{
+			target = self.target;
+		}
+
+		if (Flags & AMF_EMITFROMTARGET) emitter = target;
+
+		if (target != null && emitter != null)
+		{
+			emitter.SoundAlert(target, false, maxdist);
+		}
+	}
+
+	void A_Countdown() {
+		if (--reactiontime <= 0)
+		{
+			ExplodeMissile ();
+			bSkullFly = false;
+		}
+	}
+
 	// Action functions
 	// Meh, MBF redundant functions. Only for DeHackEd support.
 	native bool A_LineEffect(int boomspecial = 0, int tag = 0);
@@ -1199,7 +1249,7 @@ class Actor : Thinker native
 	native void Revive();
 	native void A_Weave(int xspeed, int yspeed, double xdist, double ydist);
 
-	action native state, bool A_Teleport(statelabel teleportstate = null, class<SpecialSpot> targettype = "BossSpot", class<Actor> fogtype = "TeleportFog", int flags = 0, double mindist = 128, double maxdist = 0, int ptr = AAPTR_DEFAULT);
+	//action native state, bool A_Teleport(statelabel teleportstate = null, class<SpecialSpot> targettype = "SpecialSpot", class<Actor> fogtype = "TeleportFog", int flags = 0, double mindist = 128, double maxdist = 0, int ptr = AAPTR_DEFAULT);
 	action native state, bool A_Warp(int ptr_destination, double xofs = 0, double yofs = 0, double zofs = 0, double angle = 0, int flags = 0, statelabel success_state = null, double heightoffset = 0, double radiusoffset = 0, double pitch = 0);
 	native void A_CountdownArg(int argnum, statelabel targstate = null);
 	native state A_MonsterRefire(int chance, statelabel label);
@@ -1287,6 +1337,10 @@ class Actor : Thinker native
 	
 	native bool A_AttachLightDef(Name lightid, Name lightdef);
 	native bool A_AttachLight(Name lightid, int type, Color lightcolor, int radius1, int radius2, int flags = 0, Vector3 ofs = (0,0,0), double param = 0, double spoti = 10, double spoto = 25, double spotp = 0);
+	
+	// @Cockatrice, due to 14 arg limit to VM funcs, the light color's ALPHA value is the light type
+	native bool A_AttachLightEx(Name lightid, Color lightcolor, double colIntensity, int radius1, int radius2, int flags = 0, Vector3 ofs = (0,0,0), double param = 0, double spoti = 10, double spoto = 25, double spotp = 0);
+	
 	native bool A_RemoveLight(Name lightid);
 
 	int ACS_NamedExecute(name script, int mapnum=0, int arg1=0, int arg2=0, int arg3=0)
@@ -1391,7 +1445,7 @@ class Actor : Thinker native
 
 	
 	
-	States(Actor, Overlay, Weapon, Item)
+	States(Actor, Overlay, WeaponBase, Item)
 	{
 	Spawn:
 		TNT1 A -1;

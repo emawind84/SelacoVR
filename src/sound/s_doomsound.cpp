@@ -67,6 +67,8 @@
 #include "s_music.h"
 #include "v_draw.h"
 #include "m_argv.h"
+#include "s_loader.h"
+
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
@@ -93,10 +95,10 @@ class DoomSoundEngine : public SoundEngine
 		S_sfx[ndx.index()].UserData[0] = 0;
 		return ndx;
 	}
-	bool CheckSoundLimit(sfxinfo_t* sfx, const FVector3& pos, int near_limit, float limit_range, int sourcetype, const void* actor, int channel, float attenuation) override
+	bool CheckSoundLimit(sfxinfo_t* sfx, const FVector3& pos, int near_limit, float limit_range, int sourcetype, const void* actor, int channel, float attenuation, sfxinfo_t* compareOrgID = nullptr) override
 	{
 		if (sourcetype != SOURCE_Actor) actor = nullptr; //ZDoom did this.
-		return SoundEngine::CheckSoundLimit(sfx, pos, near_limit, limit_range, sourcetype, actor, channel, attenuation);
+		return SoundEngine::CheckSoundLimit(sfx, pos, near_limit, limit_range, sourcetype, actor, channel, attenuation, compareOrgID);
 	}
 
 
@@ -289,6 +291,9 @@ void S_Start()
 		// kill all playing sounds at start of level (trust me - a good idea)
 		soundEngine->StopAllChannels();
 
+		// reset the listener so any new audio playing before we are positioned is not heard
+		S_SetListener(nullptr);
+
 		// Check for local sound definitions. Only reload if they differ
 		// from the previous ones.
 		FString LocalSndInfo;
@@ -398,12 +403,16 @@ void S_InitData()
 
 void S_SoundPitch(int channel, EChanFlags flags, FSoundID sound_id, float volume, float attenuation, float pitch, float startTime)
 {
-	soundEngine->StartSound(SOURCE_None, nullptr, nullptr, channel, flags, sound_id, volume, attenuation, 0, pitch);
+	soundEngine->StartSound(SOURCE_None, nullptr, nullptr, channel, flags, sound_id, volume, attenuation, 0, pitch, startTime);
 }
 
 void S_Sound(int channel, EChanFlags flags, FSoundID sound_id, float volume, float attenuation)
 {
 	soundEngine->StartSound (SOURCE_None, nullptr, nullptr, channel, flags, sound_id, volume, attenuation, 0, 0.f);
+}
+
+void S_StopSoundID(int channel, FSoundID sound_id) {
+	soundEngine->StopSound(channel, sound_id);
 }
 
 DEFINE_ACTION_FUNCTION(DObject, S_Sound)
@@ -430,6 +439,26 @@ DEFINE_ACTION_FUNCTION(DObject, S_StartSound)
 	PARAM_FLOAT(pitch);
 	PARAM_FLOAT(startTime);
 	S_SoundPitch(channel, EChanFlags::FromInt(flags), id, static_cast<float>(volume), static_cast<float>(attn), static_cast<float>(pitch), static_cast<float>(startTime));
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DObject, S_StopSound)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(channel);
+	PARAM_SOUND(id);
+
+	S_StopSoundID(channel, id);
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DObject, S_SoundPitch)
+{
+	PARAM_PROLOGUE;
+	PARAM_INT(channel);
+	PARAM_FLOAT(pitch);
+
+	S_ChangeSoundPitch(channel, pitch);
 	return 0;
 }
 
@@ -722,6 +751,10 @@ void S_ChangeActorSoundPitch(AActor *actor, int channel, double pitch)
 	soundEngine->ChangeSoundPitch(SOURCE_Actor, actor, channel, pitch);
 }
 
+void S_ChangeSoundPitch(int channel, double pitch) {
+	soundEngine->ChangeSoundPitch(SOURCE_None, nullptr, channel, pitch);
+}
+
 //==========================================================================
 //
 // S_GetSoundPlayingInfo
@@ -786,7 +819,7 @@ static void S_SetListener(AActor *listenactor)
 	else
 	{
 		listener.angle = 0;
-		listener.position.Zero();
+		listener.position = { 32000, 32000, 32000 };
 		listener.velocity.Zero();
 		listener.underwater = false;
 		listener.Environment = nullptr;
