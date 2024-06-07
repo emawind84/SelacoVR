@@ -1,6 +1,7 @@
 #pragma once
 
 #include "resourcefile.h"
+#include "zstring.h"
 
 namespace FileSys {
 struct FUncompressedLump : public FResourceLump
@@ -10,7 +11,7 @@ struct FUncompressedLump : public FResourceLump
 	virtual FileReader *GetReader();
 	virtual int FillCache() override;
 	virtual int GetFileOffset() { return Position; }
-
+	virtual long ReadData(FileReader &reader, char *buffer);
 };
 
 // Base class for uncompressed resource files (WAD, GRP, PAK and single lumps)
@@ -28,11 +29,11 @@ protected:
 // should only be used internally.
 struct FExternalLump : public FResourceLump
 {
-	const char* FileName;
+	FString FileName;
 
 	FExternalLump(const char *_filename, int filesize, StringPool* sp);
 	virtual int FillCache() override;
-
+	virtual long ReadData(FileReader &reader, char *buffer);
 };
 
 }

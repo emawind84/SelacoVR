@@ -147,7 +147,7 @@ void VkSamplerManager::CreateHWSamplers()
 		builder.AddressMode(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT);
 		builder.MipmapMode(VK_SAMPLER_MIPMAP_MODE_NEAREST);
 		builder.MaxLod(0.25f);
-		mSamplers[CLAMP_NONE_FORCE_FILTER] = builder.Create(fb->device);
+		mSamplers[CLAMP_NONE_FORCE_FILTER] = builder.Create(fb->device.get());
 		mSamplers[CLAMP_NONE_FORCE_FILTER]->SetDebugName("VkSamplerManager.mSamplers");
 	}
 
@@ -159,7 +159,7 @@ void VkSamplerManager::CreateHWSamplers()
 		builder.AddressMode(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_REPEAT);
 		builder.MipmapMode(VK_SAMPLER_MIPMAP_MODE_NEAREST);
 		builder.MaxLod(0.25f);
-		mSamplers[CLAMP_XY_NOMIP_FORCE_FILTER] = builder.Create(fb->device);
+		mSamplers[CLAMP_XY_NOMIP_FORCE_FILTER] = builder.Create(fb->device.get());
 		mSamplers[CLAMP_XY_NOMIP_FORCE_FILTER]->SetDebugName("VkSamplerManager.mSamplers");
 	}
 }

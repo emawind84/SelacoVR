@@ -27,7 +27,7 @@ public:
 	void PopGroup();
 	void UpdateGpuStats();
 
-	VulkanFrameBuffer *GetFrameBuffer() { return fb; }
+	VulkanRenderDevice *GetFrameBuffer() { return fb; }
 
 	class DeleteList
 	{

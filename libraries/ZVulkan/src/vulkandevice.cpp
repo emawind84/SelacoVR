@@ -14,7 +14,13 @@ VulkanDevice::VulkanDevice(std::shared_ptr<VulkanInstance> instance, std::shared
 
 	GraphicsFamily = selectedDevice.GraphicsFamily;
 	PresentFamily = selectedDevice.PresentFamily;
+	uploadFamily = selectedDevice.uploadFamily;
 	GraphicsTimeQueries = selectedDevice.GraphicsTimeQueries;
+	uploadFamilySupportsGraphics = selectedDevice.uploadFamilySupportsGraphics;
+
+	// Test to see if we can fit more upload queues
+	int rqt = (uploadFamily == GraphicsFamily ? 1 : 0) + (PresentFamily == uploadFamily ? 1 : 0);
+	uploadQueuesSupported = selectedDevice.Device->QueueFamilies[uploadFamily].queueCount - rqt;
 
 	try
 	{
@@ -56,25 +62,44 @@ void VulkanDevice::CreateAllocator()
 		VulkanError("Unable to create allocator");
 }
 
+static int CreateOrModifyQueueInfo(std::vector<VkDeviceQueueCreateInfo> &infos, uint32_t family, float *priority) {
+	for (VkDeviceQueueCreateInfo &info : infos) {
+		if (info.queueFamilyIndex == family) {
+			info.queueCount++;
+			return info.queueCount - 1;
+		}
+	}
+
+	VkDeviceQueueCreateInfo queueCreateInfo = {};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = family;
+	queueCreateInfo.queueCount = 1;
+	queueCreateInfo.pQueuePriorities = priority;
+	infos.push_back(queueCreateInfo);
+
+	return 0;
+}
+
 void VulkanDevice::CreateDevice()
 {
-	float queuePriority = 1.0f;
+	// TODO: Lower queue priority for upload queues
+	float queuePriority[] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
 	std::set<int> neededFamilies;
-	if (GraphicsFamily != -1)
-		neededFamilies.insert(GraphicsFamily);
-	if (PresentFamily != -1)
-		neededFamilies.insert(PresentFamily);
+	neededFamilies.insert(GraphicsFamily);
+	if(PresentFamily != -2) neededFamilies.insert(PresentFamily);
+	neededFamilies.insert(uploadFamily);
 
-	for (int index : neededFamilies)
-	{
-		VkDeviceQueueCreateInfo queueCreateInfo = {};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = index;
-		queueCreateInfo.queueCount = 1;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
-		queueCreateInfos.push_back(queueCreateInfo);
+	int graphicsFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, GraphicsFamily, queuePriority);
+	int presentFamilySlot = PresentFamily == -2 ? -1 : CreateOrModifyQueueInfo(queueCreateInfos, PresentFamily, queuePriority);
+	
+	// Request as many upload queues as desired and supported. Minimum 1
+	std::vector<int> uploadFamilySlots;
+	//int numUploadQueues = vk_max_transfer_threads > 0 ? vk_max_transfer_threads : 2;
+	int numUploadQueues = 2;
+	for (int x = 0; x < numUploadQueues && x < uploadQueuesSupported; x++) {
+		uploadFamilySlots.push_back(CreateOrModifyQueueInfo(queueCreateInfos, uploadFamily, queuePriority));
 	}
 
 	std::vector<const char*> extensionNames;

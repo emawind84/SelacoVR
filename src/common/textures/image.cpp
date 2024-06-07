@@ -43,6 +43,8 @@
 #include "printf.h"
 #include "files.h"
 
+using namespace FileSys;
+
 FMemArena ImageArena(32768);
 TArray<FImageSource *>FImageSource::ImageForLump;
 int FImageSource::NextID;
@@ -419,7 +421,7 @@ FImageSource *StartupPageImage_TryCreate(FileReader &, int lumpnum);
 
 
 FImageSource* PNGImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
-FImageSource* JPEGImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
+//FImageSource* JPEGImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
 FImageSource* DDSImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
 //FImageSource* DDSImage_TryMake(const char* str, int lumpnum);
 //FImageSource* PCXImage_TryMake(const char* str, int lumpnum);
@@ -490,7 +492,7 @@ FImageSource* FImageSource::CreateImageFromDef(FileReader& fr, int filetype, int
 	static MakeFunc MakeInfo[] = {
 		//IMGZImage_TryCreate
 		PNGImage_TryMake,
-		JPEGImage_TryMake,
+		//JPEGImage_TryMake,
 		DDSImage_TryMake,
 		//DDSImage_TryMake,
 		//PCXImage_TryMake,

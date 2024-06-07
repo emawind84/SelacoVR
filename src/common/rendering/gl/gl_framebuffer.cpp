@@ -68,6 +68,8 @@
 #include "filesystem.h"
 #include "c_dispatch.h"
 
+using namespace FileSys;
+
 EXTERN_CVAR (Bool, vid_vsync)
 EXTERN_CVAR(Int, gl_tonemap)
 EXTERN_CVAR(Bool, cl_capfps)

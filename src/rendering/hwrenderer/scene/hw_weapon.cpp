@@ -655,7 +655,7 @@ static inline FGameTexture *GetNextStateTexture(FState **state, int sprite) {
 	*state = nextState;
 
 	if (nextState && nextState->GetTics() > 0) {
-		FTextureID lump2 = sprites[sprite].GetSpriteFrame(nextState->GetFrame(), 0, 0., nullptr);
+		FTextureID lump2 = sprites[sprite].GetSpriteFrame(nextState->GetFrame(), 0, nullAngle, nullptr);
 		if (lump2.isValid()) {
 			auto tex2 = TexMan.GetGameTexture(lump2, false);
 			if (tex2 && tex2->isValid()) {

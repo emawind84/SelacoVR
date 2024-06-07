@@ -66,6 +66,9 @@
 #include "engineerrors.h"
 #include "c_dispatch.h"
 #include "image.h"
+#include "resourcefile.h"
+
+using namespace FileSys;
 
 FString JitCaptureStackTrace(int framesToSkip, bool includeNativeFrames, int maxFrames = -1);
 
@@ -130,7 +133,7 @@ ADD_STAT(vkloader)
 	static int maxQueue = 0, maxSecondaryQueue = 0, queue, secQueue, total, collisions;
 	static double minLoad = 0, maxLoad = 0, avgLoad = 0;
 
-	auto sc = dynamic_cast<VulkanFrameBuffer *>(screen);
+	auto sc = dynamic_cast<VulkanRenderDevice *>(screen);
 
 	if (sc) {
 		sc->GetBGQueueSize(queue, secQueue, collisions, maxQueue, maxSecondaryQueue, total);
@@ -151,12 +154,12 @@ ADD_STAT(vkloader)
 }
 
 CCMD(vk_rstbgstats) {
-	auto sc = dynamic_cast<VulkanFrameBuffer *>(screen);
+	auto sc = dynamic_cast<VulkanRenderDevice *>(screen);
 	if (sc) sc->ResetBGStats();
 }
 
 
-void VulkanFrameBuffer::GetBGQueueSize(int& current, int& secCurrent, int& collisions, int& max, int& maxSec, int& total) {
+void VulkanRenderDevice::GetBGQueueSize(int& current, int& secCurrent, int& collisions, int& max, int& maxSec, int& total) {
 	max = maxSec = total = 0;
 	current = primaryTexQueue.size();
 	secCurrent = secondaryTexQueue.size();
@@ -171,7 +174,7 @@ void VulkanFrameBuffer::GetBGQueueSize(int& current, int& secCurrent, int& colli
 
 
 
-void VulkanFrameBuffer::GetBGStats(double &min, double &max, double &avg) {
+void VulkanRenderDevice::GetBGStats(double &min, double &max, double &avg) {
 	min = 99999998;
 	max = avg = 0;
 
@@ -185,18 +188,18 @@ void VulkanFrameBuffer::GetBGStats(double &min, double &max, double &avg) {
 }
 
 
-void VulkanFrameBuffer::ResetBGStats() {
+void VulkanRenderDevice::ResetBGStats() {
 	statMaxQueued = statMaxQueuedSecondary = 0;
 	for (auto& tfr : bgTransferThreads) tfr->resetStats();
 	statCollisions = 0;
 }
 
-bool VulkanFrameBuffer::CachingActive() {
+bool VulkanRenderDevice::CachingActive() {
 	return secondaryTexQueue.size() > 0;
 }
 
 // TODO: Change this to report the actual progress once we have a way to mark the total number of objects to load
-float VulkanFrameBuffer::CacheProgress() {
+float VulkanRenderDevice::CacheProgress() {
 	float total = 0;
 
 	return (float)secondaryTexQueue.size();
@@ -245,7 +248,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	bool indexed = false;	// TODO: Determine this properly
 	bool mipmap = !indexed && input.allowMipmaps;
 	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
-	VulkanDevice* device = cmd->GetFrameBuffer()->device;
+	VulkanDevice* device = cmd->GetFrameBuffer()->device.get();
 
 	unsigned char* pixelData = nullptr;
 	size_t pixelDataSize = 0;
@@ -347,11 +350,11 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 
 	// If we created the texture on a different family than the graphics family, we need to release access 
 	// to the image on this queue
-	if(device->graphicsFamily != uploadQueue.queueFamily) {
+	if(device->GraphicsFamily != uploadQueue.queueFamily) {
 		auto cmds = cmd->CreateUnmanagedCommands();
 		cmds->SetDebugName("BGThread::QueueMoveCMDS");
 		output.releaseSemaphore = new VulkanSemaphore(device);
-		output.tex->ReleaseLoadedFromQueue(cmds.get(), uploadQueue.queueFamily, device->graphicsFamily);
+		output.tex->ReleaseLoadedFromQueue(cmds.get(), uploadQueue.queueFamily, device->GraphicsFamily);
 		cmds->end();
 
 		QueueSubmit submit;
@@ -392,7 +395,7 @@ void VulkanRenderDevice::FlushBackground() {
 	if(!active)
 		for (auto& tfr : bgTransferThreads) active = active || tfr->isActive();
 
-	Printf(TEXTCOLOR_GREEN"VulkanFrameBuffer[%s]: Flushing [%d + %d + %d] texture load ops\n", active ? "active" : "inactive", nq, patchQueue.size(), nq + patchQueue.size());
+	Printf(TEXTCOLOR_GREEN"VulkanRenderDevice[%s]: Flushing [%d + %d + %d] texture load ops\n", active ? "active" : "inactive", nq, patchQueue.size(), nq + patchQueue.size());
 
 	// Make sure active is marked if we have patches waiting
 	active = active || patchQueue.size() > 0;
@@ -418,7 +421,7 @@ void VulkanRenderDevice::FlushBackground() {
 	UpdateBackgroundCache(true);
 
 	check.Unclock();
-	Printf(TEXTCOLOR_GOLD"VulkanFrameBuffer::FlushBackground() took %f ms\n", check.TimeMS());
+	Printf(TEXTCOLOR_GOLD"VulkanRenderDevice::FlushBackground() took %f ms\n", check.TimeMS());
 }
 
 void VulkanRenderDevice::UpdateBackgroundCache(bool flush) {
@@ -439,7 +442,7 @@ void VulkanRenderDevice::UpdateBackgroundCache(bool flush) {
 		// Do transfers need to be made?
 		bool familyPicnic = false;
 		for (int bgIndex = (int)bgTransferThreads.size() - 1; bgIndex >= 0; bgIndex--) {
-			if (bgTransferThreads[bgIndex]->getUploadQueue().queueFamily != device->graphicsFamily) {
+			if (bgTransferThreads[bgIndex]->getUploadQueue().queueFamily != device->GraphicsFamily) {
 				familyPicnic = true;
 				break;
 			}
@@ -471,8 +474,8 @@ void VulkanRenderDevice::UpdateBackgroundCache(bool flush) {
 
 			// If this image was created in a different queue family, it now needs to be moved over to
 			// the graphics queue faimly
-			if (device->uploadFamily != device->graphicsFamily && loaded.tex->mLoadedImage) {
-				loaded.tex->AcquireLoadedFromQueue(cmds.get(), device->uploadFamily, device->graphicsFamily);
+			if (device->uploadFamily != device->GraphicsFamily && loaded.tex->mLoadedImage) {
+				loaded.tex->AcquireLoadedFromQueue(cmds.get(), device->uploadFamily, device->GraphicsFamily);
 
 				// If we cannot create mipmaps in the background, tell the GPU to create them now
 				if (loaded.createMipmaps) {
@@ -523,9 +526,9 @@ void VulkanRenderDevice::UpdateBackgroundCache(bool flush) {
 				submit.AddWait(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, bgtSm4List[x].get());
 			}
 
-			if (!bgtFence.get()) bgtFence.reset(new VulkanFence(device));
+			if (!bgtFence.get()) bgtFence.reset(new VulkanFence(device.get()));
 
-			submit.Execute(device, device->graphicsQueue, bgtFence.get());
+			submit.Execute(device.get(), device->GraphicsQueue, bgtFence.get());
 
 			if (flush) {
 				// Wait if flushing
@@ -589,7 +592,7 @@ VulkanRenderDevice::~VulkanRenderDevice()
 	for(auto &cmds : mBGTransferCommands) cmds->DeleteFrameObjects();
 }
 
-void VulkanFrameBuffer::StopBackgroundCache() {
+void VulkanRenderDevice::StopBackgroundCache() {
 	primaryTexQueue.clear();
 	secondaryTexQueue.clear();
 	outputTexQueue.clear();
@@ -624,7 +627,7 @@ void VulkanRenderDevice::InitializeState()
 	uniformblockalignment = (unsigned int)device->PhysicalDevice.Properties.Properties.limits.minUniformBufferOffsetAlignment;
 	maxuniformblock = device->PhysicalDevice.Properties.Properties.limits.maxUniformBufferRange;
 
-	mCommands.reset(new VkCommandBufferManager(this, &device->graphicsQueue, device->graphicsFamily));
+	mCommands.reset(new VkCommandBufferManager(this, &device->GraphicsQueue, device->GraphicsFamily));
 
 	mSamplerManager.reset(new VkSamplerManager(this));
 	mTextureManager.reset(new VkTextureManager(this));
@@ -659,7 +662,7 @@ void VulkanRenderDevice::InitializeState()
 	for (int q = 0; q < (int)device->uploadQueues.size(); q++) {
 		if (q > 0 && q > vk_max_transfer_threads) break;	// Cap the number of threads used based on user preference
 		std::unique_ptr<VkCommandBufferManager> cmds(new VkCommandBufferManager(this, &device->uploadQueues[q].queue, device->uploadQueues[q].queueFamily, true));
-		std::unique_ptr<VkTexLoadThread> ptr(new VkTexLoadThread(cmds.get(), device, q, &primaryTexQueue, &secondaryTexQueue, &outputTexQueue));
+		std::unique_ptr<VkTexLoadThread> ptr(new VkTexLoadThread(cmds.get(), device.get(), q, &primaryTexQueue, &secondaryTexQueue, &outputTexQueue));
 		ptr->start();
 		mBGTransferCommands.push_back(std::move(cmds));
 		bgTransferThreads.push_back(std::move(ptr));
@@ -1138,7 +1141,7 @@ void VulkanRenderDevice::PrintStartupLog()
 	Printf("Max. texture size: %d\n", limits.maxImageDimension2D);
 	Printf("Max. uniform buffer range: %d\n", limits.maxUniformBufferRange);
 	Printf("Min. uniform buffer offset alignment: %" PRIu64 "\n", limits.minUniformBufferOffsetAlignment);
-	Printf("Graphics Queue Family: #%d\nPresent Queue Family:  #%d\nUpload Queue Family:   #%d\nUpload Queue Supports Graphics: %s\n", device->graphicsFamily, device->presentFamily, device->uploadFamily, device->uploadFamilySupportsGraphics ? "Yes" : "No");
+	Printf("Graphics Queue Family: #%d\nPresent Queue Family:  #%d\nUpload Queue Family:   #%d\nUpload Queue Supports Graphics: %s\n", device->GraphicsFamily, device->PresentFamily, device->uploadFamily, device->uploadFamilySupportsGraphics ? "Yes" : "No");
 }
 
 void VulkanRenderDevice::SetLevelMesh(hwrenderer::LevelMesh* mesh)

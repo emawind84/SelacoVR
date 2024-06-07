@@ -290,7 +290,7 @@ void VkHardwareTexture::CreateTextureMipMap(VkCommandBufferManager* bufManager, 
 		.Size(totalSize)
 		.Usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY)
 		.DebugName("VkHardwareTexture.mStagingBuffer")
-		.Create(fb->device);
+		.Create(fb->device.get());
 
 	uint8_t* data = (uint8_t*)stagingBuffer->Map(0, totalSize);
 	memcpy(data, pixels, totalSize);
@@ -374,7 +374,7 @@ void VkHardwareTexture::ReleaseLoadedFromQueue(VulkanCommandBuffer *cmd, int fro
 
 	PipelineBarrier().AddQueueTransfer(
 		fb->device->uploadFamily,
-		fb->device->graphicsFamily,
+		fb->device->GraphicsFamily,
 		mLoadedImage->Image.get(),
 		mLoadedImage->Layout,
 		VK_IMAGE_ASPECT_COLOR_BIT, 
@@ -392,7 +392,7 @@ void VkHardwareTexture::AcquireLoadedFromQueue(VulkanCommandBuffer *cmd, int fro
 
 	PipelineBarrier().AddQueueTransfer(
 		fb->device->uploadFamily,
-		fb->device->graphicsFamily,
+		fb->device->GraphicsFamily,
 		mLoadedImage->Image.get(),
 		mLoadedImage->Layout,
 		VK_IMAGE_ASPECT_COLOR_BIT, 

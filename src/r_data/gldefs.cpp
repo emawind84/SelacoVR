@@ -1714,13 +1714,13 @@ class GLDefsParser
 
 						// I have no idea if this will actually work
 						if (tex->GetBrightmap()) newTex->Brightmap = tex->GetBrightmap();
-						if (tex->Normal.get()) newTex->Normal = tex->Normal;
-						if (tex->AmbientOcclusion.get()) newTex->AmbientOcclusion = tex->AmbientOcclusion;
-						if (tex->Roughness.get()) newTex->Roughness = tex->Roughness;
-						if (tex->Metallic.get()) newTex->Metallic = tex->Metallic;
-						if (tex->Specular.get()) newTex->Specular = tex->Specular;
-						if (tex->Glowmap.get()) newTex->Glowmap = tex->Glowmap;
-						if (tex->Detailmap.get()) newTex->Detailmap = tex->Detailmap;
+						// if (tex->Normal.get()) newTex->Normal = tex->Normal;
+						// if (tex->AmbientOcclusion.get()) newTex->AmbientOcclusion = tex->AmbientOcclusion;
+						// if (tex->Roughness.get()) newTex->Roughness = tex->Roughness;
+						// if (tex->Metallic.get()) newTex->Metallic = tex->Metallic;
+						// if (tex->Specular.get()) newTex->Specular = tex->Specular;
+						// if (tex->Glowmap.get()) newTex->Glowmap = tex->Glowmap;
+						// if (tex->Detailmap.get()) newTex->Detailmap = tex->Detailmap;
 
 						tex = newTex;
 					}

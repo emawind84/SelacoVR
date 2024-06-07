@@ -63,13 +63,13 @@ public:
 		bool found = false;
 
 		mInputQ.foreach([&](AudioQInput &i) {
-			if (i.soundID == soundID) found = true;
+			if (i.soundID == FSoundID::fromInt(soundID)) found = true;
 		});
 
 		if (found) return true;
 
 		mOutputQ.foreach([&](AudioQOutput &o) {
-			if (o.soundID == soundID) found = true;
+			if (o.soundID == FSoundID::fromInt(soundID)) found = true;
 		});
 
 		return found;

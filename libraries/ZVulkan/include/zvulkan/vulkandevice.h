@@ -15,6 +15,12 @@ class VulkanPhysicalDevice;
 class VulkanSurface;
 class VulkanCompatibleDevice;
 
+struct VulkanUploadSlot {
+	VkQueue queue;
+	int queueFamily, queueIndex;
+	bool familySupportsGraphics;
+};
+
 class VulkanDevice
 {
 public:
@@ -34,10 +40,16 @@ public:
 
 	VkQueue GraphicsQueue = VK_NULL_HANDLE;
 	VkQueue PresentQueue = VK_NULL_HANDLE;
+	//VkQueue uploadQueue = VK_NULL_HANDLE;
+	std::vector<VulkanUploadSlot> uploadQueues;
 
 	int GraphicsFamily = -1;
 	int PresentFamily = -1;
+	int uploadFamily = -1;
+	int uploadQueuesSupported = 1;
+
 	bool GraphicsTimeQueries = false;
+	bool uploadFamilySupportsGraphics = false;
 
 	bool SupportsExtension(const char* ext) const;
 

@@ -35,6 +35,7 @@
 
 #include <string>
 #include "files_internal.h"
+#include "zstring.h"
 
 namespace FileSys {
 	

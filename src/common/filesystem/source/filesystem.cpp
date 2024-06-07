@@ -333,6 +333,12 @@ struct FMemoryLump : public FResourceLump
 		Cache = new char[length];
 		memcpy(Cache, data, length);
 	}
+
+	// @Cockatrice - This should not be used during background loading, but it's included for completeness
+	virtual long ReadData(FileReader &reader, char *buffer) {
+		memcpy(buffer, Cache, LumpSize);
+		return LumpSize;
+	}
 };
 
 int FileSystem::AddFromBuffer(const char* name, const char* type, char* data, int size, int id, int flags)

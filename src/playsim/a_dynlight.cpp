@@ -122,7 +122,7 @@ void AttachLight(AActor *self)
 	light->pPitch = &self->Angles.Pitch;
 	light->pLightFlags = (LightFlags*)&self->IntVar(NAME_lightflags);
 	light->pArgs = self->args;
-	light->specialf1 = self->FloatVar(NAME_Flicker) <= 0 ? DAngle::fromDeg(double(self->SpawnAngle)).Normalized360().Degrees() : DAngle::fromDeg(self->FloatVar(NAME_Flicker));
+	light->specialf1 = self->FloatVar(NAME_Flicker) <= 0 ? DAngle::fromDeg(double(self->SpawnAngle)).Normalized360().Degrees() : DAngle::fromDeg(self->FloatVar(NAME_Flicker)).Degrees();
 	light->Sector = light->LastSector = self->Sector;
 	light->target = self;
 	light->mShadowmapIndex = 1024;

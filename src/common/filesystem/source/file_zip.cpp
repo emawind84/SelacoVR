@@ -550,7 +550,7 @@ long FZipLump::ReadData(FileReader &reader, char *buffer) {
 	}
 
 	reader.Seek(position, FileReader::SeekSet);
-	if (UncompressZipLump(buffer, reader, Method, LumpSize, CompressedSize, GPFlags)) {
+	if (UncompressZipLump(buffer, reader, Method, LumpSize, CompressedSize, GPFlags, false)) {
 		return LumpSize;
 	}
 	return 0;

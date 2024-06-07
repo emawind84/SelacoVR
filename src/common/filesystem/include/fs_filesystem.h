@@ -77,7 +77,7 @@ public:
 	int GetMaxIwadNum() { return MaxIwadIndex; }
 	void SetMaxIwadNum(int x) { MaxIwadIndex = x; }
 
-	bool HasExtraWads() { return (int)Files.Size() > MaxIwadIndex + 1; }
+	bool HasExtraWads() { return (int)Files.size() > MaxIwadIndex + 1; }
 
 	bool InitSingleFile(const char *filename, FileSystemMessageFunc Printf = nullptr);
 	bool InitMultipleFiles (std::vector<std::string>& filenames, LumpFilterInfo* filter = nullptr, FileSystemMessageFunc Printf = nullptr, bool allowduplicates = false, FILE* hashfile = nullptr);
@@ -171,10 +171,10 @@ public:
 		return (int)Files.size();
 	}
 
-	FString GetWadName(int wadnum) const
+	const char *GetWadName(int wadnum) const
 	{
-		if (wadnum < 0 || wadnum > (int)Files.Size()) return FString("");
-		FString name = Files[wadnum]->FileName;
+		if (wadnum < 0 || wadnum > (int)Files.size()) return "";
+		const char *name = Files[wadnum]->FileName;
 		
 		// Remove the path
 		/*auto rindex = name.LastIndexOf('/');

@@ -195,7 +195,7 @@ static void PrecacheLevel(FLevelLocals *Level)
 		// @Cockatrice - Also check the actor classes themselves to see if they are marked for precache
 		for (auto pc : PClassActor::AllActorClasses) {
 			auto act = GetDefaultByType(pc);
-			if (act != NULL && act->flags8 && (act->flags8 & MF8_PRECACHEALWAYS))
+			if (act != NULL && act->flags8 && (act->flags9 & MF9_PRECACHEALWAYS))
 			{
 				actorhitlist[static_cast<PClassActor*>(pc)] = true;
 				//Printf(TEXTCOLOR_YELLOW"Adding actor: %s to precache list from CACHEALWAYS\n", act->GetCharacterName());

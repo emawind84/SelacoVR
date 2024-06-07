@@ -493,6 +493,7 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 	float limit_range = sfx->LimitRange;
 	float defpitch = sfx->DefPitch;
 	float defpitchmax = sfx->DefPitchMax;
+	auto pitchmask = sfx->PitchMask;
 	rolloff = &sfx->Rolloff;
 
 	// Resolve player sounds, random sounds, and aliases
@@ -949,7 +950,7 @@ sfxinfo_t *SoundEngine::CheckLinks(sfxinfo_t *sfx) {
 			(!sfx->bLoadRAW || (sfx->RawRate == S_sfx[i].RawRate)))	// Raw sounds with different sample rates may not share buffers, even if they use the same source data.
 		{
 			DPrintf(DMSG_NOTIFY, "Linked %s to %s (%d)\n", sfx->name.GetChars(), S_sfx[i].name.GetChars(), i);
-			sfx->link = i;
+			sfx->link = FSoundID::fromInt(i);
 			// This is necessary to avoid using the rolloff settings of the linked sound if its
 			// settings are different.
 			if (sfx->Rolloff.MinDistance == 0) sfx->Rolloff = S_Rolloff;
@@ -1186,7 +1187,7 @@ void SoundEngine::StopSound(int sourcetype, const void* actor, int channel, FSou
 		chan = next;
 	}
 
-	AudioLoaderQueue::Instance->stopSound(sourcetype, actor, channel, sound_id);
+	AudioLoaderQueue::Instance->stopSound(sourcetype, actor, channel, sound_id.index());
 }
 
 //==========================================================================
@@ -1384,7 +1385,7 @@ int SoundEngine::GetSoundPlayingInfo (int sourcetype, const void *source, FSound
 		}
 	}
 
-	count += AudioLoaderQueue::Instance->getSoundPlayingInfo(sourcetype, source, sound_id, chann);
+	count += AudioLoaderQueue::Instance->getSoundPlayingInfo(sourcetype, source, sound_id.index(), chann);
 
 	return count;
 }

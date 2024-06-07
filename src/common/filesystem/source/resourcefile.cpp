@@ -768,7 +768,7 @@ long FExternalLump::ReadData(FileReader &reader, char *buffer) {
 	// Since each file is it's own lump, open this file fresh just like FillCache()
 	FileReader f;
 
-	if (f.OpenFile(Filename))
+	if (f.OpenFile(FileName))
 	{
 		f.Read(buffer, LumpSize);
 	}
