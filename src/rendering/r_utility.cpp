@@ -1056,15 +1056,15 @@ void R_SetupFrame (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, AActor 
 	R_InterpolateView (viewpoint, player, viewpoint.TicFrac, iview);
 
 	// Add angle offsets from script, if any
-	viewpoint.Angles.Yaw += FrameAngleOffsets.X;
-	viewpoint.Angles.Pitch += FrameAngleOffsets.Y;
-	viewpoint.Angles.Roll += FrameAngleOffsets.Z;
+	viewpoint.Angles.Yaw += DAngle::fromDeg(FrameAngleOffsets.X);
+	viewpoint.Angles.Pitch += DAngle::fromDeg(FrameAngleOffsets.Y);
+	viewpoint.Angles.Roll += DAngle::fromDeg(FrameAngleOffsets.Z);
 
 	// Add world tilt
 	if (g_leveltilting) {
-		auto wyaw = viewpoint.Angles.Yaw + level.tiltAngle;
-		viewpoint.Angles.Roll += wyaw.Cos() * level.tilt;
-		viewpoint.Angles.Pitch += -wyaw.Sin() * level.tilt;
+		auto wyaw = viewpoint.Angles.Yaw + DAngle::fromDeg(level.tiltAngle);
+		viewpoint.Angles.Roll += DAngle::fromDeg(wyaw.Cos() * level.tilt);
+		viewpoint.Angles.Pitch += DAngle::fromDeg(-wyaw.Sin() * level.tilt);
 	}
 
 	

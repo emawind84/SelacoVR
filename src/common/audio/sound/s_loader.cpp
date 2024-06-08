@@ -169,7 +169,7 @@ void AudioLoaderThread::startLoading() {
 
 // TODO: Store the sound length in the output to be added to the resource
 bool AudioLoadThread::loadResource(AudioQInput &input, AudioQOutput &output) {
-	currentSoundID.store(input.soundID);
+	currentSoundID.store(input.soundID.index());
 	
 	auto rl = fileSystem.GetFileAt(input.sfx->lumpnum);		// These values do not change at runtime until after teardown
 	int size = rl->LumpSize;
@@ -286,21 +286,21 @@ void AudioLoaderQueue::queue(sfxinfo_t *sfx, FSoundID soundID, const AudioQueueP
 		// If we find an entry for this soundID, we assume that it's already loading and skip the load part
 		AudioQueuePlayInfo pli = *playInfo;
 		
-		auto search = mPlayQueue.find((int)soundID);
+		auto search = mPlayQueue.find((int)soundID.index());
 		if (search != mPlayQueue.end()) {
 			search->second.Push(std::move(pli));
 			alreadyLoading = true;
 		} else {
 			TArray<AudioQueuePlayInfo> pl;
 			pl.Push(std::move(pli));
-			mPlayQueue[soundID] = std::move(pl);
+			mPlayQueue[soundID.index()] = std::move(pl);
 		}
 	}
 
 	if (!alreadyLoading) {
 		// Check existing threads just in case we are already loading this file
 		for (AudioLoadThread *alt : mRunning) {
-			if (alt->existsInQueue(soundID)) {
+			if (alt->existsInQueue(soundID.index())) {
 				alreadyLoading = true;
 				break;
 			}
@@ -418,7 +418,7 @@ void AudioLoaderQueue::stopSound(FSoundID soundID) {
 		}
 	}*/
 
-	auto search = mPlayQueue.find((int)soundID);
+	auto search = mPlayQueue.find((int)soundID.index());
 	if (search != mPlayQueue.end()) {
 		//Printf("Stopping play of sound in queue by request: %s\n", soundEngine->GetSfx(soundID)->name.GetChars());	// TODO: Remove debug
 		search->second.Clear();
@@ -458,7 +458,7 @@ void AudioLoaderQueue::stopSound(int channel, FSoundID soundID) {
 			AudioQueuePlayInfo &info = pair.second[x];
 
 			if (info.type == SOURCE_None &&
-				(pair.first == soundID || soundID == -1) &&
+				(pair.first == soundID.index() || soundID == INVALID_SOUND) &&
 				(channel == CHAN_AUTO || channel == info.channel)) {
 				//Printf("Stopping play of sound in queue by chan request: %s\n", soundEngine->GetSfx(pair.first)->name.GetChars());
 				pair.second.Delete(x);
@@ -615,7 +615,7 @@ int AudioLoaderQueue::getSoundPlayingInfo(int sourcetype, const void *source, in
 			if (chann != -1 && chann != playInfo.channel) continue;
 
 			if (sound_id > 0) {
-				if (playInfo.orgSoundID == sound_id && (sourcetype == SOURCE_Any ||
+				if (playInfo.orgSoundID.index() == sound_id && (sourcetype == SOURCE_Any ||
 					(playInfo.source == source)))
 				{
 					count++;
@@ -690,7 +690,7 @@ void AudioLoaderQueue::update() {
 
 			// Find associated audio and play
 			if (loaded.sfx->data.isValid()) {
-				auto search = mPlayQueue.find((int)loaded.soundID);
+				auto search = mPlayQueue.find((int)loaded.soundID.index());
 				if (search != mPlayQueue.end()) {
 					auto& playlist = search->second;
 
@@ -709,7 +709,7 @@ void AudioLoaderQueue::update() {
 				}
 
 				// Delete the playlist
-				mPlayQueue.erase((int)loaded.soundID);
+				mPlayQueue.erase((int)loaded.soundID.index());
 			}
 
 			//mRunning[x]->totalTime.Unclock();

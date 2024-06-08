@@ -671,7 +671,7 @@ void P_GetCameraOffsets(player_t *player, DVector3 &angleOffsets, DVector3 &posO
 
 		// Add level tilt to the offsets
 		if (worldTilt && g_leveltilting) {
-			auto wyaw = player->mo->Angles.Yaw + level.tiltAngle;
+			auto wyaw = player->mo->Angles.Yaw + DAngle::fromDeg(level.tiltAngle);
 			angleOffsets.Z += wyaw.Cos() * level.tilt;
 			angleOffsets.Y += -wyaw.Sin() * level.tilt;
 		}

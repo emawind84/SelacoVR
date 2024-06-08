@@ -7145,7 +7145,7 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 		if (source->player && source->IsKindOf(NAME_PlayerPawn)) {
 			DVector3 angOff, posOff;
 			P_GetCameraOffsets(source->player, angOff, posOff);
-			pitch += angOff.Y;
+			pitch += DAngle::fromDeg(angOff.Y);
 		}
 	}
 	else // see which target is to be aimed at

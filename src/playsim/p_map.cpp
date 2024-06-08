@@ -4602,7 +4602,7 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 	if (t1->player && t1->IsKindOf(NAME_PlayerPawn)) {
 		DVector3 angOff, posOff;
 		P_GetCameraOffsets(t1->player, angOff, posOff);
-		t1Pitch += angOff.Y;
+		t1Pitch += DAngle::fromDeg(angOff.Y);
 	}
 
 	// can't shoot outside view angles

@@ -1372,7 +1372,7 @@ void FTextureManager::WriteCacheForWad(int wadnum) {
 	FILE* f = fopen(fs.GetChars(), "w");
 
 	for (int x = firsttexture; x < lasttexture; x++) {
-		TextureHash& txh = Textures[x];
+		//TextureHash& txh = Textures[x];
 		FGameTexture* tx = Textures[x].Texture;
 
 		if (tx->GetName().Len() < 1 || !tx->GetTexture()) {
