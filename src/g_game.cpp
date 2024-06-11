@@ -3266,7 +3266,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, MakeQuickSave)
 		FString description;
 		FString file;
 		lastquicksave = 0;
-		file = G_BuildSaveName("quick", lastquicksave);
+		file = G_BuildSaveName(FStringf("quick%02d", lastquicksave));
 
 		FString readableTime = myasctime();
 		description.Format("Quicksave %s", readableTime.GetChars());

@@ -5,6 +5,7 @@
 #include "actor.h"
 #include "stats.h"
 #include "i_time.h"
+#include "m_swap.h"
 
 AudioLoaderQueue *AudioLoaderQueue::Instance = new AudioLoaderQueue();
 const int AudioLoaderQueue::MAX_THREADS;

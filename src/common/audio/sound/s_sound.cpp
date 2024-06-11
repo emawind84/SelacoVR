@@ -550,7 +550,7 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 	}
 
 	// If this sound doesn't like playing near itself, don't play it if that's what would happen.
-	if (near_limit > 0 && CheckSoundLimit(sfx, pos, near_limit, limit_range, type, source, channel, attenuation, snd_evict_lists ? &S_sfx[org_id] : nullptr))
+	if (near_limit > 0 && CheckSoundLimit(sfx, pos, near_limit, limit_range, type, source, channel, attenuation, snd_evict_lists ? &S_sfx[org_id.index()] : nullptr))
 	{
 		chanflags |= CHANF_EVICTED;
 	}
@@ -745,6 +745,118 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 		else if (type != SOURCE_None)
 		{
 			chan->Source = source;
+		}
+	}
+
+	return chan;
+}
+
+// Start sound with specific settings, do not modify data, just play the sound as specified
+// Do not check links or verify that the sound is loaded. If not loaded, no sound is played.
+FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *source,
+	FVector3 pos, FVector3 vel, int channel, EChanFlags flags, FSoundID sound_id, FSoundID org_sound_id, float volume, float attenuation,
+	FRolloffInfo *forcedrolloff, float spitch, float startTime, bool usePosVel)
+{
+	// Return NULL if the sound isn't loaded
+	if (!sfx->data.isValid()) { 
+		Printf(TEXTCOLOR_YELLOW"SoundEngine::StartSoundER() Tried to play an unloaded sound: %s\n", sfx->name.GetChars());
+		return NULL;
+	}
+
+	EChanFlags chanflags = flags;
+	FRolloffInfo *rolloff;
+	int basepriority;
+	//int pitch;
+	FSoundChan *chan;
+
+	// The empty sound never plays.
+	if (sfx->lumpnum == sfx_empty) {
+		return NULL;
+	}
+
+	if (sound_id.index() <= 0 || volume <= 0 || nosfx || !SoundEnabled() || blockNewSounds || (unsigned)sound_id.index() >= S_sfx.Size())
+		return NULL;
+
+	if(!usePosVel && type != SOURCE_Unattached && source != nullptr)
+		CalcPosVel(type, source, nullptr, channel, chanflags, sound_id, &pos, &vel, nullptr);
+
+	// When resolving a link we do not want to get the NearLimit of
+	// the referenced sound so some additional checks are required
+	int near_limit = sfx->NearLimit;
+	float limit_range = sfx->LimitRange;
+	float defpitch = sfx->DefPitch;
+	float defpitchmax = sfx->DefPitchMax;
+	auto pitchmask = sfx->PitchMask;
+	rolloff = forcedrolloff ? forcedrolloff : &sfx->Rolloff;
+
+	// If no valid rolloff was set, use the global default.
+	if (rolloff->MinDistance == 0)
+	{
+		rolloff = &S_Rolloff;
+	}
+
+	// If this is a singular sound, don't play it if it's already playing.
+	if (sfx->bSingular && CheckSingular(sound_id))
+	{
+		chanflags |= CHANF_EVICTED;
+	}
+
+	// If the sound is unpositioned or comes from the listener, it is
+	// never limited.
+	if (type == SOURCE_None || source == listener.ListenerObject)
+	{
+		near_limit = 0;
+	}
+
+	// If this sound doesn't like playing near itself, don't play it if that's what would happen.
+	if (near_limit > 0 && CheckSoundLimit(sfx, pos, near_limit, limit_range, type, source, channel, attenuation))
+	{
+		chanflags |= CHANF_EVICTED;
+	}
+
+	// If the sound is blocked and not looped, return now. If the sound
+	// is blocked and looped, pretend to play it so that it can
+	// eventually play for real.
+	if ((chanflags & (CHANF_EVICTED | CHANF_LOOP)) == CHANF_EVICTED)
+	{
+		return NULL;
+	}
+
+	// Select priority.
+	if (type == SOURCE_None || source == listener.ListenerObject)
+	{
+		basepriority = 80;
+	}
+	else
+	{
+		basepriority = 0;
+	}
+
+
+	int seen = 0;
+	if (source != NULL && channel == CHAN_AUTO)
+	{
+		// In the old sound system, 'AUTO' hijacked one of the other channels.
+		// Now, with CHANF_OVERLAP at our disposal that isn't needed anymore. Just set the flag and let all sounds play on channel 0.
+		chanflags |= CHANF_OVERLAP;
+	}
+
+	// If this actor is already playing something on the selected channel, stop it.
+	if (!(chanflags & CHANF_OVERLAP) && type != SOURCE_None && ((source == NULL && channel != CHAN_AUTO) || (source != NULL && IsChannelUsed(type, source, channel, &seen))))
+	{
+		for (chan = Channels; chan != NULL; chan = chan->NextChan)
+		{
+			if (chan->SourceType == type && chan->EntChannel == channel)
+			{
+				const bool foundit = (type == SOURCE_Unattached)
+					? (chan->Point[0] == pos.X && chan->Point[2] == pos.Z && chan->Point[1] == pos.Y)
+					: (chan->Source == source);
+
+				if (foundit)
+				{
+					StopChannel(chan);
+				}
+			}
 		}
 	}
 
@@ -1094,7 +1206,7 @@ bool SoundEngine::CheckSoundLimit(sfxinfo_t *sfx, const FVector3 &pos, int near_
 	for (chan = Channels, count = 0; chan != NULL && count < near_limit; chan = chan->NextChan)
 	{
 		if (chan->ChanFlags & CHANF_FORGETTABLE) continue;
-		if (!(chan->ChanFlags & CHANF_EVICTED) && (&S_sfx[chan->SoundID.index()] == sfx || (compareOrgID != nullptr && &S_sfx[chan->OrgID] == compareOrgID)))
+		if (!(chan->ChanFlags & CHANF_EVICTED) && (&S_sfx[chan->SoundID.index()] == sfx || (compareOrgID != nullptr && &S_sfx[chan->OrgID.index()] == compareOrgID)))
 		{
 			FVector3 chanorigin;
 
