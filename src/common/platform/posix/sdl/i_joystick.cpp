@@ -69,7 +69,7 @@ void PostDeviceChangeEvent() {
 class SDLInputJoystick: public SDLInputJoystickBase
 {
 public:
-	SDLInputJoystick(int DeviceIndex) , Enabled(true)
+	SDLInputJoystick(int DeviceIndex): Enabled(true)
 	{
 		this->DeviceIndex = DeviceIndex;
 		this->Multiplier = 1.0f;
@@ -314,6 +314,7 @@ public:
 		}
 	}
 
+
 protected:
 	static const DefaultAxisConfig DefaultAxes[5];
 
@@ -462,6 +463,16 @@ public:
 
 			Axes.Push(info);
 		}
+	}
+
+	bool GetEnabled()
+	{
+		return Enabled;
+	}
+	
+	void SetEnabled(bool enabled)
+	{
+		Enabled = enabled;
 	}
 
 	void AddAxes(float axes[NUM_JOYAXIS])
@@ -624,6 +635,7 @@ public:
 protected:
 	static const DefaultAxisConfig DefaultAxes[6];
 
+	bool Enabled;
 	SDL_GameController		*Device;
 	FString 				Name;
 
