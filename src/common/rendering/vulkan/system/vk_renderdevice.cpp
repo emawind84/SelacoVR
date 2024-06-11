@@ -291,7 +291,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 			mipmap = false;
 			fmt = VK_FORMAT_BC7_UNORM_BLOCK;
 
-			uint32_t expectedMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(buffWidth, buffHeight)))) + 1;
+			uint32_t expectedMipLevels = static_cast<uint32_t>(floor(log2(std::max(buffWidth, buffHeight)))) + 1;
 			if (numMipLevels != (int)expectedMipLevels || numMipLevels == 0) {
 				// Abort mips
 				output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, 4, fmt, pixelData, false, false, (int)pixelDataSize);
