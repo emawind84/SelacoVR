@@ -1853,39 +1853,129 @@ std::vector<VulkanCompatibleDevice> VulkanDeviceBuilder::FindDevices(const std::
 		enabledFeatures.DescriptorIndexing.descriptorBindingSampledImageUpdateAfterBind = deviceFeatures.DescriptorIndexing.descriptorBindingSampledImageUpdateAfterBind;
 		enabledFeatures.DescriptorIndexing.descriptorBindingVariableDescriptorCount = deviceFeatures.DescriptorIndexing.descriptorBindingVariableDescriptorCount;
 
-		// Figure out which queue can present
-		if (surface)
-		{
-			for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
-			{
-				VkBool32 presentSupport = false;
-				VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(info.Device, i, surface->Surface, &presentSupport);
-				if (result == VK_SUCCESS && info.QueueFamilies[i].queueCount > 0 && presentSupport)
-				{
-					dev.PresentFamily = i;
-					break;
-				}
-			}
-		}
-
-		// The vulkan spec states that graphics and compute queues can always do transfer.
-		// Furthermore the spec states that graphics queues always can do compute.
-		// Last, the spec makes it OPTIONAL whether the VK_QUEUE_TRANSFER_BIT is set for such queues, but they MUST support transfer.
-		//
-		// In short: pick the first graphics queue family for everything.
-		for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
-		{
-			const auto& queueFamily = info.QueueFamilies[i];
-			if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
-			{
+		// @Cockatrice - The old way was broken, using the first graphics queue was a huge problem and only worked because
+		// the code that actually requested the queue only ever actually found 1 and reused it for both Graphics and Present
+		// So, lets Find our graphics queue family first, this should be the easiest one
+		for (int i = 0; i < (int)info.QueueFamilies.size(); i++) {
+			const auto &queueFamily = info.QueueFamilies[i];
+			if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
 				dev.GraphicsFamily = i;
 				dev.GraphicsTimeQueries = queueFamily.timestampValidBits != 0;
 				break;
 			}
 		}
 
-		// Only use device if we found the required graphics and present queues
-		if (dev.GraphicsFamily != -1 && (!surface || dev.PresentFamily != -1))
+		// Find a transfer queue family. This can be a graphics family if necessary, but make sure there is enough
+		// room. AMD cards do not seem to allow blit ops on a Transfer only queue, to the point where most drivers
+		// seem to freeze the entire operating system if you try. We will first try a unique graphics family queue.
+		// If we can't get a graphics family queue, mipmaps need to be generated in the main thread which is obviously
+		// a bit slower, so avoid this when possible.
+		for (int i = 0; i < (int)info.QueueFamilies.size(); i++) {
+			const auto &queueFamily = info.QueueFamilies[i];
+			if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+				// Make sure the family has room for another queue
+				if (i == dev.GraphicsFamily && queueFamily.queueCount < 2) {
+					continue;
+				}
+
+				// We have LOTS of misalignments between our textures, so we NEED a granularity of 1.
+				if (queueFamily.minImageTransferGranularity.width > 1 || queueFamily.minImageTransferGranularity.depth > 1) {
+					continue;
+				}
+
+				// We are lucky! We found a graphics family for our upload queue, and we can generate mipmaps in
+				// the background thread
+				dev.uploadFamily = i;
+				dev.uploadFamilySupportsGraphics = true;
+				break;
+			}
+		}
+
+		// If we didn't find one, loosen the restrictions
+		if(dev.uploadFamily == -1) {
+			for (int i = 0; i < (int)info.QueueFamilies.size(); i++) {
+				const auto &queueFamily = info.QueueFamilies[i];
+
+				if (i == dev.GraphicsFamily && queueFamily.queueCount < 2) {
+					continue;
+				}
+
+				// We have LOTS of misalignments between our textures, so we NEED a granularity of 1.
+				if (queueFamily.minImageTransferGranularity.width > 1 || queueFamily.minImageTransferGranularity.depth > 1) {
+					continue;
+				}
+
+				// Spec states all families must support Transfer, so we should be able to grab any one that passes the other criteria
+				if (queueFamily.queueCount > 0) {
+					dev.uploadFamily = i;
+					dev.uploadFamilySupportsGraphics = false;
+					break;
+				}
+			}
+		}
+
+		// Now find a Present family. In the end the Present and Graphics queue CAN be the same queue, but we need to treat that specially
+		// The original Vulkan implementation accidentally always ended up with the same queue for graphics and present anyways 
+		for (int i = 0; i < (int)info.QueueFamilies.size(); i++) {
+			const auto &queueFamily = info.QueueFamilies[i];
+			VkBool32 presentSupport = false;
+			VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(info.Device, i, surface->Surface, &presentSupport);
+			if (result == VK_SUCCESS && queueFamily.queueCount > 0 && presentSupport) {
+				// Make sure there is enough room in this queue
+				uint32_t requiredCount = 1;
+				if (i == dev.GraphicsFamily) requiredCount++;
+				if (i == dev.uploadFamily) requiredCount++;
+				if (requiredCount > queueFamily.queueCount) continue;
+
+				dev.PresentFamily = i;
+				break;
+			}
+		}
+
+		// If we didn't find a present family with enough room, let's make sure the graphics queue family supports it
+		if (dev.PresentFamily < 0 && dev.GraphicsFamily >= 0) {
+			VkBool32 presentSupport = false;
+			VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(info.Device, dev.GraphicsFamily, surface->Surface, &presentSupport);
+			if (result == VK_SUCCESS && presentSupport) {
+				dev.PresentFamily = -2;
+			}
+		}
+
+
+		// OLD CODE
+		/*for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
+		{
+			const auto &queueFamily = info.QueueFamilies[i];
+			if (queueFamily.queueCount > 0 && ((queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) || !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)))
+			{
+				dev.uploadFamily = i;
+				break;
+			}
+		}*/
+
+		// The vulkan spec states that graphics and compute queues can always do transfer.
+		// Furthermore the spec states that graphics queues always can do compute.
+		// Last, the spec makes it OPTIONAL whether the VK_QUEUE_TRANSFER_BIT is set for such queues, but they MUST support transfer.
+		//
+		// In short: pick the first graphics queue family for everything.
+		/*for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
+		{
+			const auto &queueFamily = info.QueueFamilies[i];
+			if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
+			{
+				dev.GraphicsFamily = i;
+				dev.GraphicsTimeQueries = queueFamily.timestampValidBits != 0;
+				if (dev.uploadFamily < 0) {
+					dev.uploadFamily = i;
+				}
+				if (dev.PresentFamily < 0) {
+					dev.uploadFamily = i;
+				}
+				break;
+			}
+		}*/
+
+		if (dev.GraphicsFamily != -1 && dev.uploadFamily != -1 && dev.PresentFamily != -1)
 		{
 			supportedDevices.push_back(dev);
 		}

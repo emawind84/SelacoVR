@@ -39,6 +39,9 @@ extern FString gpuStatOutput;
 
 VkCommandBufferManager::VkCommandBufferManager(VulkanRenderDevice* fb, VkQueue *queue, int queueFamily, bool uploadOnly) : fb(fb)
 {
+	mIsUploadOnly = uploadOnly;
+	fbQueue = queue;
+	
 	mCommandPool = CommandPoolBuilder()
 		.QueueFamily(queueFamily)
 		.DebugName("mCommandPool")

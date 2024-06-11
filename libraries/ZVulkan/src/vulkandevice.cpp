@@ -154,10 +154,30 @@ void VulkanDevice::CreateDevice()
 
 	volkLoadDevice(device);
 
-	if (GraphicsFamily != -1)
-		vkGetDeviceQueue(device, GraphicsFamily, 0, &GraphicsQueue);
-	if (PresentFamily != -1)
-		vkGetDeviceQueue(device, PresentFamily, 0, &PresentQueue);
+	vkGetDeviceQueue(device, GraphicsFamily, graphicsFamilySlot, &GraphicsQueue);
+	vkGetDeviceQueue(device, PresentFamily, presentFamilySlot != -1 ? presentFamilySlot : graphicsFamilySlot, &PresentQueue);
+	
+	// Upload queues
+	VulkanUploadSlot slot = { VK_NULL_HANDLE, uploadFamily, uploadFamilySlots[0], uploadFamilySupportsGraphics };
+	vkGetDeviceQueue(device, uploadFamily, uploadFamilySlots[0], &slot.queue);
+	uploadQueues.push_back(slot);
+
+	// Push more upload queues if supported
+	for(int x = 1; x < (int)uploadFamilySlots.size(); x++) {
+		VulkanUploadSlot slot = { VK_NULL_HANDLE, uploadFamily, uploadFamilySlots[x], uploadFamilySupportsGraphics };
+		vkGetDeviceQueue(device, uploadFamily, uploadFamilySlots[x], &slot.queue);
+		uploadQueues.push_back(slot);
+
+		if (slot.queue == VK_NULL_HANDLE) {
+			// FString msg;
+			// msg.Format("Vulkan Error: Failed to create background transfer queue %d!\nCheck vk_max_transfer_threads?", x);
+			// throw CVulkanError(msg.GetChars());
+			throw;
+		}
+	}
+
+	// Printf(TEXTCOLOR_WHITE "VK Graphics Queue: %p\nVK Present Queue: %p\n", graphicsQueue, presentQueue);
+	// for (int x = 0; x < (int)uploadQueues.size(); x++) Printf(TEXTCOLOR_WHITE "VK Upload Queue %d: %p\n", x, uploadQueues[x].queue);
 }
 
 void VulkanDevice::ReleaseResources()
