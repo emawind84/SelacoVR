@@ -42,6 +42,8 @@
 #include "hwrenderer/scene/hw_portal.h"
 #include "hw_fakeflat.h"
 
+extern int lightsFlatPerEye;
+
 //==========================================================================
 //
 // Create render list entries from the data generated below
@@ -117,7 +119,7 @@ int HWDrawInfo::SetupLightsForOtherPlane(subsector_t * sub, FDynLightData &light
 		FLightNode * node = sub->section->lighthead;
 
 		lightdata.Clear();
-		while (node)
+		while (node && (!gl_light_flat_max_lights || lightsFlatPerEye < gl_light_flat_max_lights))
 		{
 			FDynamicLight * light = node->lightsource;
 
@@ -126,6 +128,7 @@ int HWDrawInfo::SetupLightsForOtherPlane(subsector_t * sub, FDynLightData &light
 				node = node->nextLight;
 				continue;
 			}
+			lightsFlatPerEye++;
 			iter_dlightf++;
 
 			p.Set(plane->Normal(), plane->fD());

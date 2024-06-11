@@ -89,6 +89,7 @@ EXTERN_CVAR(Int, win_y)
 EXTERN_CVAR(Int, win_w)
 EXTERN_CVAR(Int, win_h)
 EXTERN_CVAR(Bool, win_maximized)
+EXTERN_CVAR(Int, gl_storage_buffer_type)
 
 struct FColormap;
 enum FTextureFormat : uint32_t;
@@ -182,7 +183,7 @@ public:
 	// SSBOs have quite worse performance for read only data, so keep this around only as long as Vulkan has not been adapted yet.
 	bool useSSBO() 
 	{
-		return IsVulkan() || ((hwcaps & RFL_SHADER_STORAGE_BUFFER) && allowSSBO() && !strstr(vendorstring, "Intel"));
+		return IsVulkan() || ((hwcaps & RFL_SHADER_STORAGE_BUFFER) && allowSSBO() && !strstr(vendorstring, "Intel") && gl_storage_buffer_type == 1);
 	}
 
 	virtual DCanvas* GetCanvas() { return nullptr; }

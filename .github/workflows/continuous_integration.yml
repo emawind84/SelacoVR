@@ -67,7 +67,13 @@ jobs:
           build_type: Release
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout QuestZDoom
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        submodules: true
+        path: ''
+    - run: git fetch --deepen=100
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11

@@ -51,6 +51,7 @@
 CVAR(Int, gl_max_vertices, 0, CVAR_ARCHIVE)
 
 extern int flatVerticesPerEye;
+extern int lightsFlatPerEye;
 
 #ifdef _DEBUG
 CVAR(Int, gl_breaksec, -1, 0)
@@ -161,7 +162,7 @@ void HWFlat::SetupLights(HWDrawInfo *di, FLightNode * node, FDynLightData &light
 		dynlightindex = -1;
 		return;	// no lights on additively blended surfaces.
 	}
-	while (node && (!gl_light_flat_max_lights || iter_dlightf < gl_light_flat_max_lights))
+	while (node && (!gl_light_flat_max_lights || lightsFlatPerEye < gl_light_flat_max_lights))
 	{
 		FDynamicLight * light = node->lightsource;
 
@@ -170,6 +171,7 @@ void HWFlat::SetupLights(HWDrawInfo *di, FLightNode * node, FDynLightData &light
 			node = node->nextLight;
 			continue;
 		}
+		lightsFlatPerEye++;
 		iter_dlightf++;
 
 		// we must do the side check here because gl_GetLight needs the correct plane orientation
@@ -211,6 +213,7 @@ void HWFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 	state.SetLightIndex(dynlightindex);
 
 	state.DrawIndexed(DT_Triangles, iboindex + section->vertexindex, section->vertexcount);
+	flatVerticesPerEye += section->vertexcount;
 	flatvertices += section->vertexcount;
 	flatprimitives++;
 }
@@ -237,6 +240,7 @@ void HWFlat::DrawOtherPlanes(HWDrawInfo *di, FRenderState &state)
     {
         state.SetLightIndex(node->lightindex);
         auto num = node->sub->numlines;
+		flatVerticesPerEye += num;
         flatvertices += num;
         flatprimitives++;
         state.Draw(DT_TriangleFan,node->vertexindex, num);
@@ -268,6 +272,7 @@ void HWFlat::DrawFloodPlanes(HWDrawInfo *di, FRenderState &state)
 	state.SetLightIndex(-1);
 	while (fnode)
 	{
+		flatVerticesPerEye += 12;
 		flatvertices += 12;
 		flatprimitives += 3;
 

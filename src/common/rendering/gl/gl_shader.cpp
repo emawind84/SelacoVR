@@ -52,7 +52,7 @@
 
 EXTERN_CVAR(Bool, r_skipmats)
 EXTERN_CVAR(Bool, gl_customshader)
-
+CVAR(Bool, gl_lite_shader, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 namespace OpenGLRenderer
 {
@@ -399,18 +399,19 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 	assert(screen->mBones != NULL);
 
 
+#ifdef __MOBILE__
+	vp_comb << "#version 310 es\n";
+	if (gl.flags & ~RFL_NO_CLIP_PLANES)
+		vp_comb << "#extension GL_EXT_clip_cull_distance : enable\n";
+#else
 	if ((gl.flags & RFL_SHADER_STORAGE_BUFFER) && screen->allowSSBO())
-#ifdef __MOBILE__
-		vp_comb << "#version 310 es\n#define SUPPORTS_SHADOWMAPS\n";
-#else
-		vp_comb << "#version 430 core\n#define SUPPORTS_SHADOWMAPS\n";
-#endif
+		vp_comb << "#version 430 core\n";
 	else 
-#ifdef __MOBILE__
-		vp_comb << "#version 310 es\n";
-#else
 		vp_comb << "#version 330 core\n";
 #endif
+	vp_comb << "#define SUPPORTS_SHADOWMAPS\n";
+	if (gl.flags & RFL_NO_CLIP_PLANES)
+		vp_comb << "#define NO_CLIPDISTANCE_SUPPORT\n";
 
 	bool lightbuffertype = screen->mLights->GetBufferType();
 	if (!lightbuffertype)
@@ -710,6 +711,9 @@ FShader *FShaderCollection::Compile (const char *ShaderName, const char *ShaderP
 	// this can't be in the shader code due to ATI strangeness.
 	if (!usediscard) defines += "#define NO_ALPHATEST\n";
 	if (passType == GBUFFER_PASS) defines += "#define GBUFFER_PASS\n";
+
+	if(gl_lite_shader)
+		defines += "#define SHADER_LITE\n";
 
 	FShader *shader = NULL;
 	try

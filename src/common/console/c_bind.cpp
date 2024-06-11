@@ -778,7 +778,7 @@ void C_SetDefaultKeys(const char* baseconfig)
 //
 //
 //=============================================================================
-CVAR(Int, cl_defaultconfiguration, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, cl_defaultconfiguration, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)  // default to qzd official mapping
 
 
 void C_BindDefaults()

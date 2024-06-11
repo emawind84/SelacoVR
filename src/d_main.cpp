@@ -255,6 +255,8 @@ CUSTOM_CVAR(Int, vid_rendermode, 4, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOIN
 
 	// No further checks needed. All this changes now is which scene drawer the render backend calls.
 }
+#else
+CVAR(Int, vid_rendermode, 4, 0);
 #endif
 
 CUSTOM_CVAR (Int, fraglimit, 0, CVAR_SERVERINFO)
@@ -3745,7 +3747,8 @@ static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allw
 		// Initialize the size of the 2D drawer so that an attempt to access it outside the draw code won't crash.
 		twod->Begin(screen->GetWidth(), screen->GetHeight());
 		twod->End();
-		//UpdateJoystickMenu(NULL);
+		twod->ClearScreen();
+		UpdateJoystickMenu(NULL);
 		UpdateVRModes();
 		Local_Job_Init();
 
