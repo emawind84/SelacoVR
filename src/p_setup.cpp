@@ -86,7 +86,7 @@ extern AActor *SpawnMapThing (int index, FMapThing *mthing, int position);
 
 extern unsigned int R_OldBlend;
 
-CVAR(Bool, debug_precache_actor, 0, 0);
+CVAR(Bool, debug_precache_actor, false, 0);
 
 
 //===========================================================================

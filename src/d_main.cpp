@@ -2105,70 +2105,70 @@ static void D_DoomInit()
 //==========================================================================
 
 static void AddModFilesFrom(FString path, TArray<FString>& allwads) {
-	void* handle;
-	findstate_t findstate;
-	FString findmask = path + "*.*";
-	if ((handle = I_FindFirst(findmask, &findstate)) != (void*)-1)
-	{
-		do
-		{
-			if (!(I_FindAttr(&findstate) & FA_DIREC))
-			{
-				auto FindName = I_FindName(&findstate);
-				auto p = strrchr(FindName, '.');
-				if (p != nullptr)
-				{
-					// Only valid extensions
-					if (!stricmp(p, ".wad") || !stricmp(p, ".pk3") || !stricmp(p, ".pk7"))
-					{
-						Printf("\tFound %s!\n", FindName);
-						D_AddFile(allwads, path + FindName, false, -1, GameConfig);
-					}
-				}
-			}
-		} while (I_FindNext(handle, &findstate) == 0);
-		I_FindClose(handle);
-	}
+	// void* handle;
+	// findstate_t findstate;
+	// FString findmask = path + "*.*";
+	// if ((handle = I_FindFirst(findmask, &findstate)) != (void*)-1)
+	// {
+	// 	do
+	// 	{
+	// 		if (!(I_FindAttr(&findstate) & FA_DIREC))
+	// 		{
+	// 			auto FindName = I_FindName(&findstate);
+	// 			auto p = strrchr(FindName, '.');
+	// 			if (p != nullptr)
+	// 			{
+	// 				// Only valid extensions
+	// 				if (!stricmp(p, ".wad") || !stricmp(p, ".pk3") || !stricmp(p, ".pk7"))
+	// 				{
+	// 					Printf("\tFound %s!\n", FindName);
+	// 					D_AddFile(allwads, path + FindName, false, -1, GameConfig);
+	// 				}
+	// 			}
+	// 		}
+	// 	} while (I_FindNext(handle, &findstate) == 0);
+	// 	I_FindClose(handle);
+	// }
 }
 
 
-static void AddModFiles(TArray<FString>& allwads) {
-	if (!(gameinfo.flags & GI_SHAREWARE) && !Args->CheckParm("-noautoload") && !disableautoload) {
-		Printf("Finding Mods...\n");
+static void AddModFiles(std::vector<std::string>& allwads) {
+	// if (!(gameinfo.flags & GI_SHAREWARE) && !Args->CheckParm("-noautoload") && !disableautoload) {
+	// 	Printf("Finding Mods...\n");
 
-		const char* modFolder = "Mods";
-		FStringf slasheddir("%s/%s/", progdir.GetChars(), modFolder);
-		AddModFilesFrom(slasheddir, allwads);
-		AddModFilesFrom(slasheddir + "Workshop" + "/", allwads);
+	// 	const char* modFolder = "Mods";
+	// 	FStringf slasheddir("%s/%s/", progdir.GetChars(), modFolder);
+	// 	AddModFilesFrom(slasheddir, allwads);
+	// 	AddModFilesFrom(slasheddir + "Workshop" + "/", allwads);
 
-		// Open workshop.txt if it exists, and add any PK3 files
-		FString workshopPath = slasheddir + "workshop.txt";
-		FILE* ws = fopen(workshopPath.GetChars(), "r");
-		if (ws != NULL) {
-			Printf("Checking Steam Workshop mods...\n");
-			char buff[1024];
+	// 	// Open workshop.txt if it exists, and add any PK3 files
+	// 	FString workshopPath = slasheddir + "workshop.txt";
+	// 	FILE* ws = fopen(workshopPath.GetChars(), "r");
+	// 	if (ws != NULL) {
+	// 		Printf("Checking Steam Workshop mods...\n");
+	// 		char buff[1024];
 
-			// Skip first line
-			fgets(buff, 1024, ws);
+	// 		// Skip first line
+	// 		fgets(buff, 1024, ws);
 
-			while (fgets(buff, 1024, ws)) {
-				size_t len = strnlen(buff, 1024);
-				if (len > 4) {
-					buff[len - 1] = '\0';	// Remove nasty \n
+	// 		while (fgets(buff, 1024, ws)) {
+	// 			size_t len = strnlen(buff, 1024);
+	// 			if (len > 4) {
+	// 				buff[len - 1] = '\0';	// Remove nasty \n
 
-					auto p = strrchr(buff, '.');
-					if (p != nullptr) {
-						if (!strnicmp(p, ".pk3", 1024)) {
-							Printf("\tFound %s!\n", buff);
-							D_AddFile(allwads, buff, false, -1, GameConfig);
-						}
-					}
-				}
-			}
+	// 				auto p = strrchr(buff, '.');
+	// 				if (p != nullptr) {
+	// 					if (!strnicmp(p, ".pk3", 1024)) {
+	// 						Printf("\tFound %s!\n", buff);
+	// 						D_AddFile(allwads, buff, false, -1, GameConfig);
+	// 					}
+	// 				}
+	// 			}
+	// 		}
 
-			fclose(ws);
-		}
-	}
+	// 		fclose(ws);
+	// 	}
+	// }
 }
 
 

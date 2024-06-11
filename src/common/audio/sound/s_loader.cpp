@@ -6,6 +6,9 @@
 #include "stats.h"
 #include "i_time.h"
 #include "m_swap.h"
+#include "file_directory.h"
+
+using namespace FileSys;
 
 AudioLoaderQueue *AudioLoaderQueue::Instance = new AudioLoaderQueue();
 const int AudioLoaderQueue::MAX_THREADS;
@@ -228,7 +231,7 @@ bool AudioLoadThread::loadResource(AudioQInput &input, AudioQOutput &output) {
 		// If that fails, let the sound system try and figure it out.
 		else
 		{
-			output.loadedSnd = GSnd->LoadSound((uint8_t *)data, size);
+			output.loadedSnd = GSnd->LoadSound((uint8_t *)data, size, output.sfx->LoopStart, output.sfx->LoopEnd);
 		}
 	}
 
@@ -371,7 +374,7 @@ void AudioLoaderQueue::queue(sfxinfo_t *sfx, FSoundID soundID, const AudioQueueP
 void AudioLoaderQueue::relinkSound(int sourcetype, const void *from, const void *to, const FVector3 *optpos) {
 	for (auto &pair : mPlayQueue) {
 		for(unsigned int x = 0; x < pair.second.Size(); x++) {
-			if (!relinkSound(pair.second[x], pair.first, sourcetype, from, to, optpos)) {
+			if (!relinkSound(pair.second[x], FSoundID::fromInt(pair.first), sourcetype, from, to, optpos)) {
 				pair.second.Delete(x);
 				x--;
 			}

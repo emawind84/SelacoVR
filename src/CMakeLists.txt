@@ -1348,6 +1348,7 @@ include_directories(
 	common/textures
 	common/models
 	common/filesystem/include
+	common/filesystem/source
 	common/utility
 	common/console
 	common/engine

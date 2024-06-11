@@ -5038,7 +5038,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 			if (!(trace.Actor->flags & MF_NOBLOOD))
 			{
 				// We must pass the unreplaced puff type here 
-				tPuff = P_SpawnPuff(t1, pufftype, bleedpos, TData.ActorHits[x].HitAngle, TData.ActorHits[x].HitAngle - 90, 2, puffFlags | PF_HITTHINGBLEED | PF_HITTHING | PF_HITTHRU, hitActor);
+				tPuff = P_SpawnPuff(t1, pufftype, bleedpos, TData.ActorHits[x].HitAngle, TData.ActorHits[x].HitAngle - DAngle90, 2, puffFlags | PF_HITTHINGBLEED | PF_HITTHING | PF_HITTHRU, hitActor);
 			}
 
 			// Allow puffs to inflict poison damage, so that hitscans can poison, too.
@@ -5080,7 +5080,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 			if (!(puffDefaults != NULL && puffDefaults->flags3&MF3_BLOODLESSIMPACT)) {
 				IFVIRTUALPTR(trace.Actor, AActor, SpawnLineAttackBlood)
 				{
-					VMValue params[] = { hitActor, t1, bleedpos.X, bleedpos.Y, bleedpos.Z, TData.ActorHits[x].HitAngle.Degrees, damage, newdam };
+					VMValue params[] = { hitActor, t1, bleedpos.X, bleedpos.Y, bleedpos.Z, TData.ActorHits[x].HitAngle.Degrees(), damage, newdam };
 					VMCall(func, params, countof(params), nullptr, 0);
 				}
 				if (damage)

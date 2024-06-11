@@ -44,6 +44,9 @@
 #include "texturemanager.h"
 #include "filesystem.h"
 #include "m_swap.h"
+#include "files_internal.h"
+
+using FileSys::MemoryReader; 
 
 //==========================================================================
 //
@@ -1058,7 +1061,8 @@ int FPNGTexture::ReadPixels(FImageLoadParams *params, FBitmap *bmp) {
 		rl->ReadData(*params->reader, data);
 
 		// Create a file wrapper for the data
-		FileReader memReader(new MemoryReader(data, rl->LumpSize));
+		const char *cdata = data;
+		FileReader memReader(new MemoryReader(cdata, rl->LumpSize));
 		int trans = 0;
 
 		if (params->remap != nullptr) {
