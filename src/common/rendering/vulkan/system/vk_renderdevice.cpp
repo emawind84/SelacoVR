@@ -351,7 +351,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 
 			output.totalDataSize = totalSize;
 
-			uint32_t expectedMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(buffWidth, buffHeight)))) + 1;
+			uint32_t expectedMipLevels = static_cast<uint32_t>(floor(log2(std::max(buffWidth, buffHeight)))) + 1;
 
 			// Only perform upload if we have a command buffer
 			if (cmd) {
