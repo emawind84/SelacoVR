@@ -594,7 +594,7 @@ class WeaponBase : StateProvider
 		}
 		if (Owner.player != NULL)
 		{
-			Weapon weap = useweap.bOffhandWeapon ? Owner.player.OffhandWeapon : Owner.player.ReadyWeapon;
+			WeaponBase weap = useweap.bOffhandWeapon ? Owner.player.OffhandWeapon : Owner.player.ReadyWeapon;
 			if (weap != useweap)
 			{
 				Owner.player.PendingWeapon = useweap;

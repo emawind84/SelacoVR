@@ -507,7 +507,7 @@ class PlayerPawn : Actor
 		if (player.PendingWeapon != NULL && player.PendingWeapon != WP_NOCHANGE)
 		{
 			hand = player.PendingWeapon.bOffhandWeapon ? 1 : 0;
-			Weapon weap = hand ? player.OffhandWeapon : player.ReadyWeapon;
+			WeaponBase weap = hand ? player.OffhandWeapon : player.ReadyWeapon;
 			if (weap == null)
 			{
 				player.mo.BringUpWeapon();
@@ -1967,7 +1967,7 @@ class PlayerPawn : Actor
 		if (best != NULL)
 		{
 			player.PendingWeapon = best;
-			Weapon weapon = hand ? player.OffhandWeapon : player.ReadyWeapon;
+			WeaponBase weapon = hand ? player.OffhandWeapon : player.ReadyWeapon;
 			if (weapon != NULL)
 			{
 				DropWeapon(hand);

@@ -924,7 +924,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 //==========================================================================
 void HWDrawInfo::PreparePlayerSprites2D(sector_t * viewsector, area_t in_area)
 {
-	static PClass * wpCls = PClass::FindClass("Weapon");
+	static PClass * wpCls = PClass::FindClass("WeaponBase");
 	static unsigned ModifyBobLayerVIndex = GetVirtualIndex(wpCls, "ModifyBobLayer");
 	static VMFunction * ModifyBobLayerOrigFunc = wpCls->Virtuals.Size() > ModifyBobLayerVIndex ? wpCls->Virtuals[ModifyBobLayerVIndex] : nullptr;
 	
@@ -1005,7 +1005,7 @@ void HWDrawInfo::PreparePlayerSprites2D(sector_t * viewsector, area_t in_area)
 
 void HWDrawInfo::PreparePlayerSprites3D(sector_t * viewsector, area_t in_area)
 {
-	static PClass * wpCls = PClass::FindClass("Weapon");
+	static PClass * wpCls = PClass::FindClass("WeaponBase");
 	
 	static unsigned ModifyBobLayer3DVIndex = GetVirtualIndex(wpCls, "ModifyBobLayer3D");
 	static unsigned ModifyBobPivotLayer3DVIndex = GetVirtualIndex(wpCls, "ModifyBobPivotLayer3D");

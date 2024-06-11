@@ -463,7 +463,7 @@ extend class Actor
 		if (player != null && (flags & SXF_RELATIVETOWEAPON))
 		{
 			directionAngle = self.Angle + angle;
-			Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			WeaponBase weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
 			{
 				Vector3 dir;
@@ -571,7 +571,7 @@ extend class Actor
 		{
 			return false, null;
 		}
-		Weapon weapon;
+		WeaponBase weapon;
 		Vector3 dir;
 		Vector3 zoffsetDir;
 		Vector3 spawnpos = pos + (0, 0, (-Floorclip + GetBobOffset() + zheight + 35 + (player? player.crouchoffset : 0.)));
