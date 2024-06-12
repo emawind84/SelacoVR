@@ -960,20 +960,17 @@ void D_Display ()
 		DAngle fov = DAngle::fromDeg(QzDoom_GetFOV());
 		AActor *cam = players[consoleplayer].camera;
 		if (cam)
-			fov = DAngle::fromDeg(cam->GetFOV(I_GetTimeFrac()));
-
-		/* from selaco source
 		{
 			if (cam->player) {
 				// @Cockatrice - Interpolate camera FOV changes
 				// For this to work the ZScript implementation of the player must update deltaFOV every frame
 				double ticFrac = 1.0;
 				if (!r_NoInterpolate) ticFrac = I_GetTimeFrac();
-				fov = (cam->player->deltaFOV + (cam->player->FOV - cam->player->deltaFOV) * ticFrac);
+				fov = DAngle::fromDeg(cam->player->deltaFOV + (cam->player->FOV - cam->player->deltaFOV) * ticFrac);
 				//fov = cam->player->FOV;
 			}
-			else fov = cam->CameraFOV;
-		}*/
+			else fov = DAngle::fromDeg(cam->CameraFOV);
+		}
 		R_SetFOV(vp, fov);
 	}
 
