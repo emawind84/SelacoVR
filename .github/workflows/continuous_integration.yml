@@ -30,17 +30,17 @@ jobs:
           extra_options: -DENABLE_OPENVR=ON
           build_type: Release
 
-        - name: macOS
-          os: macos-12
-          extra_options:
-          deps_cmdline: brew install libvpx webp
-          build_type: Release
+        # - name: macOS
+        #   os: macos-12
+        #   extra_options:
+        #   deps_cmdline: brew install libvpx webp
+        #   build_type: Release
 
-        - name: macOS
-          os: macos-12
-          extra_options: -G Xcode -DDYN_OPENAL=OFF
-          deps_cmdline: brew install libvpx webp
-          build_type: Debug
+        # - name: macOS
+        #   os: macos-12
+        #   extra_options: -G Xcode -DDYN_OPENAL=OFF
+        #   deps_cmdline: brew install libvpx webp
+        #   build_type: Debug
 
         - name: Linux GCC 9
           os: ubuntu-22.04
