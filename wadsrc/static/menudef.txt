@@ -508,8 +508,6 @@ OptionMenu "ActionDoubleControlsMenu" protected
 	StaticText ""
 	DoubleControl    "$CNTRLMNU_ATTACK"           , "+attack"
 	DoubleControl    "$CNTRLMNU_ALTATTACK"        , "+altattack"
-	DoubleControl    "$CNTRLMNU_OH_ATTACK"        , "+oh_attack"
-	DoubleControl    "$CNTRLMNU_OH_ALTATTACK"     , "+oh_altatk"
 	DoubleControl    "$CNTRLMNU_RELOAD"           , "+reload"
 	DoubleControl    "$CNTRLMNU_ZOOM"             , "+zoom"
 
@@ -548,11 +546,6 @@ OptionMenu "ActionDoubleControlsMenu" protected
 	DoubleControl    "$CNTRLMNU_RUN"              , "+speed"
 	DoubleControl    "$CNTRLMNU_TOGGLERUN"        , "toggle cl_run"
 	DoubleControl    "$CNTRLMNU_STRAFE"           , "+strafe"
-
-	StaticText ""
-	StaticText "Advanced reloading", gold
-	DoubleControl    "$CNTRLMNU_MAINHANDRELOAD"    , "+mh_reload"
-	DoubleControl    "$CNTRLMNU_OFFHANDRELOAD"     , "+oh_reload"
 }
 
 OptionMenu "ActionDoubleControlsMenu" protected
@@ -649,10 +642,6 @@ OptionMenu "WeaponsControlMenu" protected
 	StaticText ""
 	Control    "$CNTRLMNU_NEXTWEAPON"     , "weapnext"
 	Control    "$CNTRLMNU_PREVIOUSWEAPON" , "weapprev"
-	Control    "$CNTRLMNU_OFFHAND_NEXTWEAPON"     , "weapnext 1"
-	Control    "$CNTRLMNU_OFFHAND_PREVIOUSWEAPON" , "weapprev 1"
-	Control    "$CNTRLMNU_SWITCH_TO_OFFHAND", "switchhand 1"
-	Control    "$CNTRLMNU_SWITCH_TO_MAINHAND", "switchhand 0"
 
 	StaticText ""
 	Control    "$CNTRLMNU_SLOT1"          , "slot 1"
@@ -685,10 +674,6 @@ OptionMenu "WeaponsDoubleControlMenu" protected
 	StaticText ""
 	DoubleControl    "$CNTRLMNU_NEXTWEAPON"     , "weapnext"
 	DoubleControl    "$CNTRLMNU_PREVIOUSWEAPON" , "weapprev"
-	DoubleControl    "$CNTRLMNU_OFFHAND_NEXTWEAPON"     , "weapnext 1"
-	DoubleControl    "$CNTRLMNU_OFFHAND_PREVIOUSWEAPON" , "weapprev 1"
-	DoubleControl    "$CNTRLMNU_SWITCH_TO_OFFHAND", "switchhand 1"
-	DoubleControl    "$CNTRLMNU_SWITCH_TO_MAINHAND", "switchhand 0"
 
 	StaticText ""
 	DoubleControl    "$CNTRLMNU_SLOT1"          , "slot 1"

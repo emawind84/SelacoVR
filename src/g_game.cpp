@@ -311,23 +311,6 @@ CCMD (turnspeeds)
 	}
 }
 
-CCMD (switchhand)
-{
-	if (argv.argc() > 1)
-	{
-		int hand = atoi (argv[1]);
-		auto mo = players[consoleplayer].mo;
-		if (mo)
-		{
-			IFVIRTUALPTRNAME(mo, NAME_PlayerPawn, SwitchWeaponHand)
-			{
-				VMValue param[] = { mo, hand };
-				VMCall(func, param, 2, nullptr, 0);
-			}
-		}
-	}
-}
-
 CCMD (slot)
 {
 	if (argv.argc() > 1)
