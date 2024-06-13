@@ -32,6 +32,11 @@ public:
 
 	//SDL_Window *GetSDLWindow() { return Screen; }
 
+	void setNULLContext();
+	void setMainContext();
+	void setAuxContext(int index);
+	int numAuxContexts();
+
 	virtual int GetTrueHeight() { return GetClientHeight(); }
 
 protected:

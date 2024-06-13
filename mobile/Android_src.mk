@@ -37,6 +37,7 @@ LOCAL_C_INCLUDES := \
     	$(GZDOOM_TOP_PATH)/src/common/textures \
     	$(GZDOOM_TOP_PATH)/src/common/models \
     	$(GZDOOM_TOP_PATH)/src/common/filesystem/include \
+		$(GZDOOM_TOP_PATH)/src/common/filesystem/source \
     	$(GZDOOM_TOP_PATH)/src/common/utility \
     	$(GZDOOM_TOP_PATH)/src/common/cutscenes \
     	$(GZDOOM_TOP_PATH)/src/common/startscreen \
@@ -403,7 +404,6 @@ PCH_SOURCES = \
 	common/textures/formats/startscreentexture.cpp \
 	common/textures/formats/qoitexture.cpp \
 	common/textures/formats/webptexture.cpp \
-	common/textures/formats/jpegtexture.cpp \
 	common/textures/hires/hqresize.cpp \
 	common/models/models_md3.cpp \
 	common/models/models_md2.cpp \
