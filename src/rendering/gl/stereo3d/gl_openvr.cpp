@@ -2200,6 +2200,8 @@ namespace s3d
 			QzDoom_setUseScreenLayer(true);
 		}
 		
+		static TrackedDevicePose_t poses[k_unMaxTrackedDeviceCount];
+		
 		if (gamestate != GS_TITLELEVEL) {
 			// TODO: Draw a more interesting background behind the 2D screen
 			const int eyeCount = mEyeCount;
@@ -2215,13 +2217,12 @@ namespace s3d
 					GLRenderer->mBuffers->NextEye(eyeCount);
 			}
 			GLRenderer->mBuffers->BlitToEyeTexture(GLRenderer->mBuffers->CurrentEye(), false);
+			
+			vrCompositor->WaitGetPoses(
+				poses, k_unMaxTrackedDeviceCount, // current pose
+				nullptr, 0 // future pose?
+			);
 		}
-
-		static TrackedDevicePose_t poses[k_unMaxTrackedDeviceCount];
-		vrCompositor->WaitGetPoses(
-			poses, k_unMaxTrackedDeviceCount, // current pose
-			nullptr, 0 // future pose?
-		);
 
 		TrackedDevicePose_t& hmdPose0 = poses[k_unTrackedDeviceIndex_Hmd];
 		
