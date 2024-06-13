@@ -225,6 +225,21 @@ int SystemGLFrameBuffer::GetClientHeight()
 	return height;
 }
 
+// @Cockatrice - This is messy but these are some accessors for basic context usage
+// Aux and null contexts should only be used in texture load threads
+void SystemGLFrameBuffer::setNULLContext() {
+}
+
+void SystemGLFrameBuffer::setMainContext() {
+}
+
+void SystemGLFrameBuffer::setAuxContext(int index) {
+}
+
+int SystemGLFrameBuffer::numAuxContexts() {
+	return 4;
+}
+
 
 // each platform has its own specific version of this function.
 void I_SetWindowTitle(const char* caption)
