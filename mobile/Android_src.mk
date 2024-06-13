@@ -346,6 +346,7 @@ PCH_SOURCES = \
 	common/audio/sound/s_environment.cpp \
 	common/audio/sound/s_sound.cpp \
 	common/audio/sound/s_reverbedit.cpp \
+	common/audio/sound/s_loader.cpp \
 	common/audio/music/music_midi_base.cpp \
 	common/audio/music/music.cpp \
 	common/audio/music/i_music.cpp \
@@ -406,6 +407,7 @@ PCH_SOURCES = \
 	common/textures/formats/startscreentexture.cpp \
 	common/textures/formats/qoitexture.cpp \
 	common/textures/formats/webptexture.cpp \
+	common/textures/formats/jpegtexture.cpp \
 	common/textures/hires/hqresize.cpp \
 	common/models/models_md3.cpp \
 	common/models/models_md2.cpp \
@@ -445,8 +447,10 @@ PCH_SOURCES = \
 	common/utility/name.cpp \
 	common/utility/r_memory.cpp \
 	common/utility/writezip.cpp \
+	common/utility/TSQueue.cpp \
 	common/thirdparty/base64.cpp \
 	common/thirdparty/md5.cpp \
+	common/thirdparty/statdb.cpp \
  	common/thirdparty/superfasthash.cpp \
 	common/thirdparty/libsmackerdec/src/BitReader.cpp \
 	common/thirdparty/libsmackerdec/src/FileStream.cpp \
