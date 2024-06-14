@@ -5,15 +5,24 @@
 
 ## How to play
 
-> **README**
->
-> In the release page you will only find the engine, in order to play you need to own the game. 
-> The game will default to VR mode but it can also be played in 2D mode by changing the cvar `vr_mode` to `0` or by going in `Stereo 3D VR` and changing the `3D mode` to `normal`.
+### PC Version
 
 1. Download the engine from https://github.com/emawind84/SelacoVR/releases
 2. Extract the content where you want, possibly not in Program File where permissions are limited
 3. Take the ipk3 file from the game folder and place it inside the engine folder
 4. Run SelacoVR.bat or Selaco.exe
+
+### Android Version
+
+1. Download the apk file and install it in your headset
+2. Find the app Selaco VR and run it; a new folder `Selaco` will be created inside the `sdcard` folder (the game will crash).
+3. Take the ipk3 file from the game folder on your PC and place it in the `wads` folder located inside the `Selaco` folder
+4. Run the game
+
+> **README**
+>
+> In the release page you will only find the engine, in order to play you need to own the game. 
+> The game will default to VR mode but it can also be played in 2D mode (only PC version) by changing the cvar `vr_mode` to `0` or by going in `Stereo 3D VR` and changing the `3D mode` to `normal`.
 
 
 ## Mods
