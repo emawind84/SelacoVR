@@ -1,5 +1,7 @@
 # Selaco VR port powered by QuestZDoom!
 
+![image](https://github.com/emawind84/SelacoVR/assets/5586300/93a816c5-bb32-457a-be03-42e65942ab62)
+
 [![Build Status](https://github.com/emawind84/selacovr/actions/workflows/continuous_integration.yml/badge.svg?branch=main)](https://github.com/emawind84/gzdoom/actions/workflows/continuous_integration.yml)
 
 Built/tested on Oculus Quest using Virtual Desktop but other VR setups should work as long they are compatible with OpenVR API.
