@@ -3017,7 +3017,7 @@ OptionValue VRMode
 	15, "$OPTVAL_OPENXR"
 }
 
-OptionValue ShadowMapQuality
+OptionValue ShadowMapResolution
 {
 	128, "128"
 	256, "256"
@@ -3073,7 +3073,7 @@ OptionMenu "GLLightOptions" protected
 
 	StaticText ""
 	StaticText "$GLLIGHTMNU_ADVANCED", gold
-	Option "$GLLIGHTMNU_LIGHTSHADOWMAPQUALITY", gl_shadowmap_quality,	"ShadowMapQuality"
+	Option "$GLLIGHTMNU_LIGHTSHADOWMAPQUALITY", gl_shadowmap_quality,	"ShadowMapResolution"
 	Option "$GLLIGHTMNU_LIGHTSHADOWMAPFILTER", 	gl_shadowmap_filter,	"ShadowMapFilter"
 	ScaleSlider "$GLLIGHTMNU_LIGHTSCULL",		gl_light_distance_cull, 0.0, 16000.0, 100.0, "Culling disabled"
 	Slider "$GLLIGHTMNU_MAXINTENSITY",			gl_light_max_intensity, 50, 2000, 50, 0
