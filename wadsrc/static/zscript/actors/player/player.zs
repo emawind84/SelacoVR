@@ -2331,6 +2331,32 @@ class PlayerPawn : Actor
 
 	//===========================================================================
 	//
+	// SwitchHand
+	//
+	// Move a weapon from one hand to the other.
+	// The hand is where you want to move the weapon to, 0 for main hand and 1 for offhand.
+	//
+	//===========================================================================
+
+	virtual void SwitchWeaponHand(int hand = 0)
+	{
+		let weap = hand == 0 ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weap != null && !weap.bNoHandSwitch && player.playerstate == PST_LIVE)
+		{
+			let nextweap = player.mo.PickNextWeapon(1 - hand);
+			player.OffhandWeapon = player.ReadyWeapon = null;
+			weap.bOffhandWeapon = hand == 1;
+			player.PendingWeapon = weap;
+			player.mo.BringUpWeapon();
+			if (nextweap != weap && !weap.bTwoHanded && !nextweap.bTwoHanded) {
+				player.PendingWeapon = nextweap;
+				player.mo.BringUpWeapon();
+			}
+		}
+	}
+
+	//===========================================================================
+	//
 	// FindMostRecentWeapon
 	//
 	// Locates the slot and index for the most recently selected weapon. If the
