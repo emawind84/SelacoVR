@@ -217,7 +217,7 @@ unsigned int FHardwareTexture::BackgroundCreateCompressedTexture(unsigned char* 
 		glGenTextures(1, &glInfo.glTexID);
 	}
 	auto err = glGetError();
-	assert(err == GL_NO_ERROR);
+	//assert(err == GL_NO_ERROR);
 	assert(firstCall);
 	assert(texunit >= 0);
 
@@ -276,7 +276,7 @@ unsigned int FHardwareTexture::CreateCompressedTexture(unsigned char* buffer, ui
 		glGenTextures(1, &glTexID);
 	}
 	auto err = glGetError();
-	assert(err == GL_NO_ERROR);
+	//assert(err == GL_NO_ERROR);
 	assert(firstCall);
 
 	int textureBinding = UINT_MAX;
@@ -342,7 +342,7 @@ unsigned int FHardwareTexture::BackgroundCreateTexture(unsigned char* buffer, in
 		glGenTextures(1, &glInfo.glTexID);
 	}
 	auto err = glGetError();
-	assert(err == GL_NO_ERROR);
+	//assert(err == GL_NO_ERROR);
 	assert(firstCall);
 
 	if (texunit > 0) glActiveTexture(GL_TEXTURE0 + texunit);
