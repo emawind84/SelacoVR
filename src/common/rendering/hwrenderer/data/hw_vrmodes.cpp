@@ -395,6 +395,14 @@ void VRMode::SetUp() const
 	}
 }
 
+bool VRMode::GetHandTransform(int hand, VSMatrix* out) const
+{
+	player_t * player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+	if (player->OffhandWeapon && player->ReadyWeapon)
+		out->translate(10, 0, 0);
+	return false;
+}
+
 //---------------------------------------------------------------------------
 //
 // The parameter hand_weapon is 0 for mainhand and 1 for offhand
@@ -412,13 +420,9 @@ bool VRMode::GetWeaponTransform(VSMatrix* out, int hand_weapon) const
 	}
 	bool rightHanded = vr_control_scheme < 10;
 	int hand = (hand_weapon == VR_OFFHAND) ? 1 - rightHanded : rightHanded;
-	if (GetHandTransform(hand, out))
-	{
-		if (!hand && autoReverse)
-			out->scale(-1.0f, 1.0f, 1.0f);
-		return true;
-	}
-	return false;
+	if (!hand && autoReverse)
+		out->scale(-1.0f, 1.0f, 1.0f);
+	return GetHandTransform(hand, out);
 }
 
 float length(float x, float y)

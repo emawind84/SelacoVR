@@ -86,7 +86,7 @@ struct VRMode
 	
 	virtual void Present() const;
 
-	virtual bool GetHandTransform(int hand, VSMatrix* out) const { return false; }
+	virtual bool GetHandTransform(int hand, VSMatrix* out) const;
 	virtual bool GetWeaponTransform(VSMatrix* out, int hand = 0) const;
 	virtual bool RenderPlayerSpritesInScene() const;
 	virtual bool GetTeleportLocation(DVector3 &out) const { return false; }
