@@ -257,7 +257,7 @@ void FSavegameManagerBase::DoSave(int Selected, const char *savegamestring)
 
 		for (i = 0;; ++i)
 		{
-			filename = BuildSaveName("save", i);
+			filename = BuildSaveName("save_manual", i);
 			if (!FileExists(filename))
 			{
 				break;
