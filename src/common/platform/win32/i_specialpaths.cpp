@@ -431,8 +431,9 @@ int M_GetSavegamesPaths(TArray<FString>& outputAr) {
 	path = "";
 
 	// Try Saved Games
-	if (GetKnownFolder(-1, FOLDERID_SavedGames, true, path))
+	// if (1)
 	{
+		path = GetKnownFolder(-1, FOLDERID_SavedGames, true);
 		path << "/" GAMENAME "/";
 		outputAr.Push(path);
 		cnt++;
@@ -440,8 +441,9 @@ int M_GetSavegamesPaths(TArray<FString>& outputAr) {
 	path = "";
 
 	// Try Documents/My Games/ Folder
-	if (GetKnownFolder(CSIDL_PERSONAL, FOLDERID_Documents, true, path))
+	// if (1)
 	{
+		path = GetKnownFolder(CSIDL_PERSONAL, FOLDERID_Documents, true);
 		path << "/My Games/" GAMENAME "/";
 		outputAr.Push(path);
 		cnt++;

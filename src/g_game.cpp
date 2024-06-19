@@ -96,6 +96,8 @@
 #include <QzDoom/VrCommon.h>
 #include <cmath>
 
+using FileSys::FResourceFile;
+using FileSys::FResourceLump;
 
 static FRandom pr_dmspawn ("DMSpawn");
 static FRandom pr_pspawn ("PlayerSpawn");
@@ -2328,7 +2330,7 @@ FString G_FindSaveFilename(const char* header, int count = 1) {
 
 	for (i = 0; i < 50; ++i)
 	{
-		filename = G_BuildSaveName(header, i);
+		filename = savegameManager.BuildSaveName(header, i);
 		if (FileExists(filename)) {
 			saveFiles.Push(filename);
 		}
@@ -2345,7 +2347,7 @@ FString G_FindSaveFilename(const char* header, int count = 1) {
 		int lastDate = INT_MAX;
 
 		for (unsigned int x = 0; x < saveFiles.Size(); x++) {
-			std::unique_ptr<FResourceFile> savegame(FResourceFile::OpenResourceFile(saveFiles[x], true, true));
+			std::unique_ptr<FResourceFile> savegame(FResourceFile::OpenResourceFile(saveFiles[x], true));
 			if (savegame != nullptr) {
 				FResourceLump* info = savegame->FindLump("info.json");
 				if (info == nullptr)
@@ -2375,12 +2377,12 @@ FString G_FindSaveFilename(const char* header, int count = 1) {
 	}
 	else {
 		if (firstValidIndex != -1) {
-			file = G_BuildSaveName(header, firstValidIndex);
+			file = savegameManager.BuildSaveName(header, firstValidIndex);
 		}
 		else {
 			// Keep going until we find a valid filename
 			for (i = 0;; ++i) {
-				filename = G_BuildSaveName(header, i);
+				filename = savegameManager.BuildSaveName(header, i);
 				if (!FileExists(filename)) {
 					file = filename;
 					break;
@@ -3355,7 +3357,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, MakeQuickSave)
 		FString description;
 		FString file;
 		//lastquicksave = 0;
-		file = G_BuildSaveName("quicksave", 0);// lastquicksave);
+		file = savegameManager.BuildSaveName("quicksave", 0);// lastquicksave);
 
 		FString readableTime = myasctime();
 		description.Format("Quicksave %s", readableTime.GetChars());

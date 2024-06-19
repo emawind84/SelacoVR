@@ -22,8 +22,9 @@ class FSavegameManager : public FSavegameManagerBase
 	void PerformSaveGame(const char *fn, const char *sgdesc) override;
 	void PerformLoadGame(const char *fn, bool) override;
 	FString ExtractSaveComment(FSerializer &arc) override;
-	FString BuildSaveName(const char* prefix, int slot) override;
 	void ReadSaveStrings() override;
+public:
+	FString BuildSaveName(const char* prefix, int slot) override;
 };
 
 extern FSavegameManager savegameManager;
