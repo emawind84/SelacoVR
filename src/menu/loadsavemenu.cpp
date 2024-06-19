@@ -62,153 +62,165 @@ void FSavegameManager::ReadSaveStrings()
 {
 	if (SaveGames.Size() == 0)
 	{
-		void *filefirst;
-		findstate_t c_file;
-		FString filter;
+		TArray<FString> searchPaths;
+		G_BuildSaveNames("", searchPaths);
 
-		LastSaved = LastAccessed = -1;
-		quickSaveSlot = nullptr;
-		filter = G_BuildSaveName("*." SAVEGAME_EXT, -1);
-		filefirst = I_FindFirst(filter.GetChars(), &c_file);
-		if (filefirst != ((void *)(-1)))
-		{
-			do
+		for (int searchPathIndex = 0; searchPathIndex < searchPaths.Size(); searchPathIndex++) {
+			void* filefirst;
+			findstate_t c_file;
+			FString filter;
+
+			LastSaved = LastAccessed = -1;
+			quickSaveSlot = nullptr;
+
+			filter << searchPaths[searchPathIndex] << "/*." SAVEGAME_EXT;
+			//filter = G_BuildSaveName(filter, -1);
+			filefirst = I_FindFirst(filter.GetChars(), &c_file);
+			if (filefirst != ((void*)(-1)))
 			{
-				// I_FindName only returns the file's name and not its full path
-				FString filepath = G_BuildSaveName(I_FindName(&c_file), -1);
-
-				std::unique_ptr<FResourceFile> savegame(FResourceFile::OpenResourceFile(filepath, true, true));
-				if (savegame != nullptr)
+				do
 				{
-					bool oldVer = false;
-					bool missing = false;
-					FResourceLump *info = savegame->FindLump("info.json");
-					if (info == nullptr)
+					// I_FindName only returns the file's name and not its full path
+					FString filepath;
+					filepath << searchPaths[searchPathIndex] << I_FindName(&c_file);
+					//G_BuildSaveName(I_FindName(&c_file), -1);
+
+					std::unique_ptr<FResourceFile> savegame(FResourceFile::OpenResourceFile(filepath, true, true));
+					if (savegame != nullptr)
 					{
-						// savegame info not found. This is not a savegame so leave it alone.
-						continue;
-					}
-					void *data = info->Lock();
-					FSerializer arc;
-					if (arc.OpenReader((const char *)data, info->LumpSize))
-					{
-						int savever = 0;
-						arc("Save Version", savever);
-						FString engine = arc.GetString("Engine");
-						FString iwad = arc.GetString("Game WAD");
-						FString title = arc.GetString("Title");
-						int date = 0;
-						arc("Save Date", date);
-
-						if (engine.Compare(GAMESIG) != 0 || savever > SAVEVER)
-						{
-							// different engine or newer version:
-							// not our business. Leave it alone.
-							continue;
-						}
-
-						if (savever < MINSAVEVER)
-						{
-							// old, incompatible savegame. List as not usable.
-							oldVer = true;
-						}
-						else if (iwad.CompareNoCase(fileSystem.GetResourceFileName(fileSystem.GetIwadNum())) == 0)
-						{
-							missing = !G_CheckSaveGameWads(arc, false);
-						}
-						else
-						{
-							// different game. Skip this.
-							continue;
-						}
-
-						FSaveGameNode *node = new FSaveGameNode;
-						node->Filename = filepath;
-						node->bOldVersion = oldVer;
-						node->bMissingWads = missing;
-						node->SaveTitle = title;
-						node->saveDate = date;
-						InsertSaveNode(node);
-					}
-
-				}
-				else // check for old formats.
-				{
-					FileReader file;
-					if (file.OpenFile(filepath))
-					{
-						PNGHandle *png;
-						char sig[16];
-						char title[OLDSAVESTRINGSIZE + 1];
-						bool oldVer = true;
-						bool addIt = false;
+						bool oldVer = false;
 						bool missing = false;
-
-						// ZDoom 1.23 betas 21-33 have the savesig first.
-						// Earlier versions have the savesig second.
-						// Later versions have the savegame encapsulated inside a PNG.
-						//
-						// Old savegame versions are always added to the menu so
-						// the user can easily delete them if desired.
-
-						title[OLDSAVESTRINGSIZE] = 0;
-
-						if (nullptr != (png = M_VerifyPNG(file)))
+						FResourceLump* info = savegame->FindLump("info.json");
+						if (info == nullptr)
 						{
-							char *ver = M_GetPNGText(png, "ZDoom Save Version");
-							if (ver != nullptr)
-							{
-								// An old version
-								if (!M_GetPNGText(png, "Title", title, OLDSAVESTRINGSIZE))
-								{
-									strncpy(title, I_FindName(&c_file), OLDSAVESTRINGSIZE);
-								}
-								addIt = true;
-								delete[] ver;
-							}
-							delete png;
+							// savegame info not found. This is not a savegame so leave it alone.
+							continue;
 						}
-						else
+						void* data = info->Lock();
+						FSerializer arc;
+						if (arc.OpenReader((const char*)data, info->LumpSize))
 						{
-							file.Seek(0, FileReader::SeekSet);
-							if (file.Read(sig, 16) == 16)
+							int savever = 0;
+							arc("Save Version", savever);
+							FString engine = arc.GetString("Engine");
+							FString iwad = arc.GetString("Game WAD");
+							FString title = arc.GetString("Title");
+							int date = 0;
+							arc("Save Date", date);
+
+							if (engine.Compare(GAMESIG) != 0 || savever > SAVEVER)
 							{
-
-								if (strncmp(sig, "ZDOOMSAVE", 9) == 0)
-								{
-									if (file.Read(title, OLDSAVESTRINGSIZE) == OLDSAVESTRINGSIZE)
-									{
-										addIt = true;
-									}
-								}
-								else
-								{
-									memcpy(title, sig, 16);
-									if (file.Read(title + 16, OLDSAVESTRINGSIZE - 16) == OLDSAVESTRINGSIZE - 16 &&
-										file.Read(sig, 16) == 16 &&
-										strncmp(sig, "ZDOOMSAVE", 9) == 0)
-									{
-										addIt = true;
-									}
-								}
+								// different engine or newer version:
+								// not our business. Leave it alone.
+								continue;
 							}
-						}
 
-						if (addIt)
-						{
-							FSaveGameNode *node = new FSaveGameNode;
+							if (savever < MINSAVEVER)
+							{
+								// old, incompatible savegame. List as not usable.
+								oldVer = true;
+							}
+							else if (iwad.CompareNoCase(fileSystem.GetResourceFileName(fileSystem.GetIwadNum())) == 0)
+							{
+								missing = !G_CheckSaveGameWads(arc, false);
+							}
+							else
+							{
+								// different game. Skip this.
+								continue;
+							}
+
+							FSaveGameNode* node = new FSaveGameNode;
 							node->Filename = filepath;
-							node->bOldVersion = true;
-							node->bMissingWads = false;
+							node->bOldVersion = oldVer;
+							node->bMissingWads = missing;
 							node->SaveTitle = title;
-							node->saveDate = 0;
+							node->saveDate = date;
 							InsertSaveNode(node);
 						}
+
 					}
-				}
-			} while (I_FindNext(filefirst, &c_file) == 0);
-			I_FindClose(filefirst);
+					else // check for old formats.
+					{
+						/*
+						FileReader file;
+						if (file.OpenFile(filepath))
+						{
+							PNGHandle* png;
+							char sig[16];
+							char title[OLDSAVESTRINGSIZE + 1];
+							bool oldVer = true;
+							bool addIt = false;
+							bool missing = false;
+
+							// ZDoom 1.23 betas 21-33 have the savesig first.
+							// Earlier versions have the savesig second.
+							// Later versions have the savegame encapsulated inside a PNG.
+							//
+							// Old savegame versions are always added to the menu so
+							// the user can easily delete them if desired.
+
+							title[OLDSAVESTRINGSIZE] = 0;
+
+							if (nullptr != (png = M_VerifyPNG(file)))
+							{
+								char* ver = M_GetPNGText(png, "ZDoom Save Version");
+								if (ver != nullptr)
+								{
+									// An old version
+									if (!M_GetPNGText(png, "Title", title, OLDSAVESTRINGSIZE))
+									{
+										strncpy(title, I_FindName(&c_file), OLDSAVESTRINGSIZE);
+									}
+									addIt = true;
+									delete[] ver;
+								}
+								delete png;
+							}
+							else
+							{
+								file.Seek(0, FileReader::SeekSet);
+								if (file.Read(sig, 16) == 16)
+								{
+
+									if (strncmp(sig, "ZDOOMSAVE", 9) == 0)
+									{
+										if (file.Read(title, OLDSAVESTRINGSIZE) == OLDSAVESTRINGSIZE)
+										{
+											addIt = true;
+										}
+									}
+									else
+									{
+										memcpy(title, sig, 16);
+										if (file.Read(title + 16, OLDSAVESTRINGSIZE - 16) == OLDSAVESTRINGSIZE - 16 &&
+											file.Read(sig, 16) == 16 &&
+											strncmp(sig, "ZDOOMSAVE", 9) == 0)
+										{
+											addIt = true;
+										}
+									}
+								}
+							}
+
+							if (addIt)
+							{
+								FSaveGameNode* node = new FSaveGameNode;
+								node->Filename = filepath;
+								node->bOldVersion = true;
+								node->bMissingWads = false;
+								node->SaveTitle = title;
+								node->saveDate = 0;
+								InsertSaveNode(node);
+							}
+						}
+						*/
+					}
+				} while (I_FindNext(filefirst, &c_file) == 0);
+				I_FindClose(filefirst);
+			}
 		}
+		
 	}
 }
 

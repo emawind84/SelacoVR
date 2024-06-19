@@ -82,6 +82,7 @@ void G_ScreenShot (const char* filename);
 void G_StartSlideshow(FLevelLocals *Level, FName whichone);
 
 FString G_BuildSaveName (const char *prefix, int slot);
+int		G_BuildSaveNames(const char* prefix, TArray<FString>& outputAr);	// @Cockatice - Get all possible locations for save path (Not a specific slot)
 
 class FSerializer;
 bool G_CheckSaveGameWads (FSerializer &arc, bool printwarn);
