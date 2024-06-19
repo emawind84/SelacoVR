@@ -62,67 +62,71 @@ void FSavegameManager::ReadSaveStrings()
 {
 	if (SaveGames.Size() == 0)
 	{
-		FString filter;
+		TArray<FString> searchPaths;
+		G_BuildSaveNames("", searchPaths);
 
-		LastSaved = LastAccessed = -1;
-		quickSaveSlot = nullptr;
-		FileSys::FileList list;
-		if (FileSys::ScanDirectory(list, G_GetSavegamesFolder().GetChars(), "*." SAVEGAME_EXT, true))
+		for (int searchPathIndex = 0; searchPathIndex < searchPaths.Size(); searchPathIndex++) 
 		{
-			for (auto& entry : list)
+			LastSaved = LastAccessed = -1;
+			quickSaveSlot = nullptr;
+			FileSys::FileList list;
+			if (FileSys::ScanDirectory(list, searchPaths[searchPathIndex], "*." SAVEGAME_EXT, true))
 			{
-				std::unique_ptr<FResourceFile> savegame(FResourceFile::OpenResourceFile(entry.FilePath.c_str(), true));
-				if (savegame != nullptr)
+				for (auto& entry : list)
 				{
-					bool oldVer = false;
-					bool missing = false;
-					auto info = savegame->FindLump("info.json");
-					if (info == nullptr)
+					std::unique_ptr<FResourceFile> savegame(FResourceFile::OpenResourceFile(entry.FilePath.c_str(), true));
+					if (savegame != nullptr)
 					{
-						// savegame info not found. This is not a savegame so leave it alone.
-						continue;
-					}
-					void *data = info->Lock();
-					FSerializer arc;
-					if (arc.OpenReader((const char *)data, info->LumpSize))
-					{
-						int savever = 0;
-						arc("Save Version", savever);
-						FString engine = arc.GetString("Engine");
-						FString iwad = arc.GetString("Game WAD");
-						FString title = arc.GetString("Title");
-						int date = 0;
-						arc("Save Date", date);
-
-						if (engine.Compare(GAMESIG) != 0 || savever > SAVEVER)
+						bool oldVer = false;
+						bool missing = false;
+						auto info = savegame->FindLump("info.json");
+						if (info == nullptr)
 						{
-							// different engine or newer version:
-							// not our business. Leave it alone.
+							// savegame info not found. This is not a savegame so leave it alone.
 							continue;
 						}
+						void *data = info->Lock();
+						FSerializer arc;
+						if (arc.OpenReader((const char *)data, info->LumpSize))
+						{
+							int savever = 0;
+							arc("Save Version", savever);
+							FString engine = arc.GetString("Engine");
+							FString iwad = arc.GetString("Game WAD");
+							FString title = arc.GetString("Title");
+							int date = 0;
+							arc("Save Date", date);
 
-						if (savever < MINSAVEVER)
-						{
-							// old, incompatible savegame. List as not usable.
-							oldVer = true;
-						}
-						else if (iwad.CompareNoCase(fileSystem.GetResourceFileName(fileSystem.GetIwadNum())) == 0)
-						{
-							missing = !G_CheckSaveGameWads(arc, false);
-						}
-						else
-						{
-							// different game. Skip this.
-							continue;
-						}
+							if (engine.Compare(GAMESIG) != 0 || savever > SAVEVER)
+							{
+								// different engine or newer version:
+								// not our business. Leave it alone.
+								continue;
+							}
 
-						FSaveGameNode *node = new FSaveGameNode;
-						node->Filename = entry.FilePath.c_str();
-						node->bOldVersion = oldVer;
-						node->bMissingWads = missing;
-						node->SaveTitle = title;
-						node->saveDate = date;
-						InsertSaveNode(node);
+							if (savever < MINSAVEVER)
+							{
+								// old, incompatible savegame. List as not usable.
+								oldVer = true;
+							}
+							else if (iwad.CompareNoCase(fileSystem.GetResourceFileName(fileSystem.GetIwadNum())) == 0)
+							{
+								missing = !G_CheckSaveGameWads(arc, false);
+							}
+							else
+							{
+								// different game. Skip this.
+								continue;
+							}
+
+							FSaveGameNode *node = new FSaveGameNode;
+							node->Filename = entry.FilePath.c_str();
+							node->bOldVersion = oldVer;
+							node->bMissingWads = missing;
+							node->SaveTitle = title;
+							node->saveDate = date;
+							InsertSaveNode(node);
+						}
 					}
 				}
 			}

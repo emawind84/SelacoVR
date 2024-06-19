@@ -108,6 +108,37 @@ bool IsPortable()
 	return false;
 }
 
+
+bool UseKnownFoldersIncludingProgramFiles()
+{
+	// Cache this value so the semantics don't change during a single run
+	// of the program. (e.g. Somebody could add write access while the
+	// program is running.)
+	static int iswritable = -1;
+	HANDLE file;
+
+	if (iswritable >= 0)
+	{
+		return !iswritable;
+	}
+
+	std::wstring testpath = progdir.WideString() + L"writest";
+	file = CreateFile(testpath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL,
+		CREATE_ALWAYS,
+		FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+	if (file != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(file);
+		if (!batchrun) Printf("Using program directory for savegame storage\n");
+		iswritable = true;
+		return false;
+	}
+
+	if (!batchrun) Printf("Using known folders for savegame storage\n");
+	iswritable = false;
+	return true;
+}
+
 //===========================================================================
 //
 // GetKnownFolder
@@ -367,7 +398,7 @@ FString M_GetSavegamesPath()
 {
 	FString path;
 
-	if (IsPortable())
+	if (!UseKnownFoldersIncludingProgramFiles())
 	{
 		path << progdir << "Save/";
 	}
@@ -378,6 +409,45 @@ FString M_GetSavegamesPath()
 		path << "/" GAMENAME "/";
 	}
 	return path;
+}
+
+
+//===========================================================================
+//
+// M_GetSavegamesPaths												Windows
+//
+// Returns all paths where savegames might be located
+//
+//===========================================================================
+
+int M_GetSavegamesPaths(TArray<FString>& outputAr) {
+	FString path;
+	int cnt = 1;
+	
+	// Start with progdir
+	path << progdir << "Save/";
+	outputAr.Push(path);
+
+	path = "";
+
+	// Try Saved Games
+	if (GetKnownFolder(-1, FOLDERID_SavedGames, true, path))
+	{
+		path << "/" GAMENAME "/";
+		outputAr.Push(path);
+		cnt++;
+	}
+	path = "";
+
+	// Try Documents/My Games/ Folder
+	if (GetKnownFolder(CSIDL_PERSONAL, FOLDERID_Documents, true, path))
+	{
+		path << "/My Games/" GAMENAME "/";
+		outputAr.Push(path);
+		cnt++;
+	}
+
+	return cnt;
 }
 
 //===========================================================================
