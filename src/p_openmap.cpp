@@ -143,7 +143,7 @@ MapData *P_OpenMapData(const char * mapname, bool justcheck, int forceVersion)
 			FString nMapName;
 			nMapName.Format("V%d%s", forceVersion, fMapname.GetChars());
 			if (nMapName.Len() <= 8) lump_name = fileSystem.CheckNumForName(nMapName);
-			fmt.Format("maps/%s.wad", nMapName);
+			fmt.Format("maps/%s.wad", nMapName.GetChars());
 			lump_wad = fileSystem.CheckNumForFullName(fmt);
 			fMapname = nMapName;
 			map->version = forceVersion;
@@ -163,7 +163,7 @@ MapData *P_OpenMapData(const char * mapname, bool justcheck, int forceVersion)
 				FString nMapName;
 				nMapName.Format("V%d%s", x, fMapname.GetChars());
 				if (nMapName.Len() <= 8) lname = fileSystem.CheckNumForName(nMapName);
-				fmt.Format("maps/%s.wad", nMapName);
+				fmt.Format("maps/%s.wad", nMapName.GetChars());
 				lwad = fileSystem.CheckNumForFullName(fmt);
 
 				if (lname >= 0 || lwad >= 0) {
