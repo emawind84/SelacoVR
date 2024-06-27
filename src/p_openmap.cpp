@@ -111,7 +111,7 @@ static int GetMapIndex(const char *mapname, int lastindex, const char *lumpname,
 //
 //===========================================================================
 
-MapData *P_OpenMapData(const char * mapname, bool justcheck)
+MapData *P_OpenMapData(const char * mapname, bool justcheck, int forceVersion)
 {
 	MapData * map = new MapData;
 	FileReader * wadReader = nullptr;
@@ -131,18 +131,67 @@ MapData *P_OpenMapData(const char * mapname, bool justcheck)
 	else
 	{
 		FString fmt;
-		int lump_wad;
-		int lump_map;
+		int lump_wad = -1;
+		int lump_map = -1;
 		int lump_name = -1;
-		
-		// Check for both *.wad and *.map in order to load Build maps
-		// as well. The higher one will take precedence.
-		// Names with more than 8 characters will only be checked as .wad and .map.
-		if (strlen(mapname) <= 8) lump_name = fileSystem.CheckNumForName(mapname);
-		fmt.Format("maps/%s.wad", mapname);
-		lump_wad = fileSystem.CheckNumForFullName(fmt);
-		fmt.Format("maps/%s.map", mapname);
-		lump_map = fileSystem.CheckNumForFullName(fmt);
+
+		FString fMapname(mapname);
+
+		// Version 0 will always refer to the base map with no version number
+		if (forceVersion > 0) {
+			// Force a specific version and error out if it doesn't exist
+			FString nMapName;
+			nMapName.Format("V%d%s", forceVersion, fMapname.GetChars());
+			if (nMapName.Len() <= 8) lump_name = fileSystem.CheckNumForName(nMapName);
+			fmt.Format("maps/%s.wad", nMapName);
+			lump_wad = fileSystem.CheckNumForFullName(fmt);
+			fMapname = nMapName;
+			map->version = forceVersion;
+		}
+		else if (forceVersion < 0) {
+			if (strlen(mapname) <= 8) lump_name = fileSystem.CheckNumForName(mapname);
+			fmt.Format("maps/%s.wad", mapname);
+			lump_wad = fileSystem.CheckNumForFullName(fmt);
+			map->version = 0;
+
+			int lwad = -1, lname = -1;
+			FString lmapname = fMapname;
+
+			// Find any version number higher, stop searching if there is a gap
+			// Version numbers CANNOT BE SKIPPED YET
+			for (int x = 1; x < 50; x++) {
+				FString nMapName;
+				nMapName.Format("V%d%s", x, fMapname.GetChars());
+				if (nMapName.Len() <= 8) lname = fileSystem.CheckNumForName(nMapName);
+				fmt.Format("maps/%s.wad", nMapName);
+				lwad = fileSystem.CheckNumForFullName(fmt);
+
+				if (lname >= 0 || lwad >= 0) {
+					lmapname = nMapName;
+					lump_wad = lwad;
+					lump_name = lname;
+					map->version = x;
+				}
+				else {
+					break;
+				}
+			}
+
+			fMapname = lmapname;
+		}
+		else {
+			// If version is zero, just get the base map name, skipping the version number
+
+			// Check for both *.wad and *.map in order to load Build maps
+			// as well. The higher one will take precedence.
+			// Names with more than 8 characters will only be checked as .wad and .map.
+			if (strlen(mapname) <= 8) lump_name = fileSystem.CheckNumForName(mapname);
+			fmt.Format("maps/%s.wad", mapname);
+			lump_wad = fileSystem.CheckNumForFullName(fmt);
+			/*fmt.Format("maps/%s.map", mapname);
+			lump_map = fileSystem.CheckNumForFullName(fmt);*/
+		}
+
 		
 		if (lump_name > lump_wad && lump_name > lump_map && lump_name != -1)
 		{
@@ -181,7 +230,7 @@ MapData *P_OpenMapData(const char * mapname, bool justcheck)
 					const char * lumpname = fileSystem.GetFileFullName(lump_name + i);
 					try
 					{
-						index = GetMapIndex(mapname, index, lumpname, !justcheck);
+						index = GetMapIndex(fMapname.GetChars(), index, lumpname, !justcheck);
 					}
 					catch(...)
 					{
@@ -212,7 +261,7 @@ MapData *P_OpenMapData(const char * mapname, bool justcheck)
 
 					if (lumpname == NULL)
 					{
-						I_Error("Invalid map definition for %s", mapname);
+						I_Error("Invalid map definition for %s", fMapname.GetChars());
 					}
 					else if (!stricmp(lumpname, "ZNODES"))
 					{
@@ -375,9 +424,9 @@ MapData *P_OpenMapData(const char * mapname, bool justcheck)
 	return map;		
 }
 
-bool P_CheckMapData(const char *mapname)
+bool P_CheckMapData(const char *mapname, int forceVersion)
 {
-	MapData *mapd = P_OpenMapData(mapname, true);
+	MapData *mapd = P_OpenMapData(mapname, true, forceVersion);
 	if (mapd == NULL) return false;
 	delete mapd;
 	return true;

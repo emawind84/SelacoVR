@@ -9,7 +9,7 @@
 
 extern bool savegamerestore;
 
-void G_InitNew (const char *mapname, bool bTitleLevel);
+void G_InitNew (const char *mapname, bool bTitleLevel, int mapVersion = -1);
 
 // Can be called by the startup code or M_Responder.
 // A normal game starts at map 1,
@@ -29,7 +29,7 @@ enum
 	CHANGELEVEL_PRERAISEWEAPON = 64,
 };
 
-void G_DoLoadLevel (const FString &MapName, int position, bool autosave, bool newGame);
+void G_DoLoadLevel (const FString &MapName, int position, bool autosave, bool newGame, int mapVersion = -1);
 
 void G_ClearSnapshots (void);
 void P_RemoveDefereds ();
