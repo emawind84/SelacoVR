@@ -190,6 +190,9 @@ FSerializer &Serialize(FSerializer &arc, const char *key, FHubInfo &h, FHubInfo 
 	if (arc.BeginObject(key))
 	{
 		int zero = 0;
+		if(arc.isReading())
+			h.mapversion = 0;
+
 		arc("levelnum", h.levelnum)
 			("totalkills", h.totalkills)
 			("maxkills", h.maxkills)
