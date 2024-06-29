@@ -154,6 +154,21 @@ FString M_GetSavegamesPath()
 	return NicePath("./saves/");
 }
 
+
+//===========================================================================
+//
+// M_GetSavegamesPaths												Windows
+//
+// Returns all paths where savegames might be located
+//
+//===========================================================================
+
+int M_GetSavegamesPaths(TArray<FString>& outputAr) {
+	outputAr.Push(M_GetSavegamesPath());
+	return 1;
+}
+
+
 //===========================================================================
 //
 // M_GetDocumentsPath												Unix
