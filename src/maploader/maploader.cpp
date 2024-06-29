@@ -2941,6 +2941,8 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 {
 	const int *oldvertextable  = nullptr;
 
+	Level->mapVersion = 0;
+
 	// note: most of this ordering is important 
 	ForceNodeBuild = gennodes;
 
@@ -3262,6 +3264,7 @@ void MapLoader::LoadLevel(MapData *map, const char *lumpname, int position)
 
 	Level->aabbTree = new DoomLevelAABBTree(Level);
 	Level->levelMesh = new DoomLevelMesh(*Level);
+	Level->mapVersion = map->version;
 }
 
 //==========================================================================

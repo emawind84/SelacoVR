@@ -620,7 +620,7 @@ static void InitPlayerClasses ()
 //
 //==========================================================================
 
-void G_InitNew (const char *mapname, bool bTitleLevel)
+void G_InitNew (const char *mapname, bool bTitleLevel, int mapVersion)
 {
 	bool wantFast;
 	int i;
@@ -665,9 +665,9 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 	setsizeneeded = true;
 
 	// [RH] If this map doesn't exist, bomb out
-	if (!P_CheckMapData(mapname))
+	if (!P_CheckMapData(mapname, mapVersion))
 	{
-		I_Error ("Could not find map %s\n", mapname);
+		I_Error ("Could not find map %s (%d)\n", mapname, mapVersion);
 	}
 
 	wantFast = !!G_SkillProperty(SKILLP_FastMonsters);
@@ -722,7 +722,7 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 		gamestate = GS_LEVEL;
 	}
 	
-	G_DoLoadLevel (mapname, 0, false, !savegamerestore);
+	G_DoLoadLevel (mapname, 0, false, !savegamerestore, mapVersion);
 
 	if (!savegamerestore && (gameinfo.gametype == GAME_Strife || (SBarInfoScript[SCRIPT_CUSTOM] != nullptr && SBarInfoScript[SCRIPT_CUSTOM]->GetGameType() == GAME_Strife)))
 	{
@@ -1402,12 +1402,12 @@ void DAutosaver::Tick ()
 
 extern gamestate_t 	wipegamestate; 
  
-void G_DoLoadLevel(const FString &nextmapname, int position, bool autosave, bool newGame)
+void G_DoLoadLevel(const FString &nextmapname, int position, bool autosave, bool newGame, int mapVersion)
 {
 	gamestate_t oldgs = gamestate;
 
 	// Here the new level needs to be allocated.
-	primaryLevel->DoLoadLevel(nextmapname, position, autosave, newGame);
+	primaryLevel->DoLoadLevel(nextmapname, position, autosave, newGame, mapVersion);
 
 	// Reset the global state for the new level.
 	if (wipegamestate == GS_LEVEL)
@@ -1439,7 +1439,7 @@ void G_DoLoadLevel(const FString &nextmapname, int position, bool autosave, bool
 	I_UpdateWindowTitle();
 }
 
-void FLevelLocals::DoLoadLevel(const FString &nextmapname, int position, bool autosave, bool newGame)
+void FLevelLocals::DoLoadLevel(const FString &nextmapname, int position, bool autosave, bool newGame, int mapVersion)
 {
 	MapName = nextmapname;
 	static int lastposition = 0;
@@ -1515,7 +1515,14 @@ void FLevelLocals::DoLoadLevel(const FString &nextmapname, int position, bool au
 		staticEventManager.NewGame();
 	}
 
-	P_SetupLevel (this, position, newGame);
+	if (!newGame) {
+		// Check hub for level number and choose version from there
+		if (info->levelnum >= 0) {
+			mapVersion = max(mapVersion, G_GetHubLevelVersion(info->levelnum));
+		}
+	}
+
+	P_SetupLevel (this, position, newGame, mapVersion);
 
 
 
@@ -1930,6 +1937,7 @@ void FLevelLocals::Init()
 	MusicVolume = 1.f;
 	HasHeightSecs = false;
 
+	mapVersion = 0;
 	LevelName = info->LookupLevelName();
 	NextMap = info->NextMap;
 	NextSecretMap = info->NextSecretMap;
