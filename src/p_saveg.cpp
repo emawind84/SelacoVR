@@ -966,6 +966,9 @@ void FLevelLocals::Serialize(FSerializer &arc, bool hubload)
 		// If there have been object deserialization errors we must absolutely not continue here because scripted objects can do unpredictable things.
 		if (arc.mObjectErrors) I_Error("Failed to load savegame");
 	}
+	else {
+		arc("mapversion", mapVersion);
+	}
 
 	arc("multiplayer", multiplayer);
 

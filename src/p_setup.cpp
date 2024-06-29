@@ -431,7 +431,7 @@ void P_FreeLevelData ()
 //
 //===========================================================================
 
-void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
+void P_SetupLevel(FLevelLocals *Level, int position, bool newGame, int mapVersion)
 {
 	int i;
 
@@ -478,7 +478,7 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	// Free all level data from the previous map
 	P_FreeLevelData();
 
-	MapData *map = P_OpenMapData(Level->MapName, true);
+	MapData *map = P_OpenMapData(Level->MapName, true, mapVersion);
 	if (map == nullptr)
 	{
 		I_Error("Unable to open map '%s'\n", Level->MapName.GetChars());
@@ -492,6 +492,7 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	map->GetChecksum(Level->md5);
 	// find map num
 	Level->lumpnum = map->lumpnum;
+	Level->mapVersion = map->version;
 
 	if (newGame)
 	{

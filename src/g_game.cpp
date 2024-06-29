@@ -2166,6 +2166,11 @@ void G_DoLoadGame ()
 	{
 		gamestate = GS_HIDECONSOLE;
 	}
+
+	// @Cockatrice - Retrieve the version number if it exists
+	int mapVersion = 0;
+	arc("Map Version", mapVersion);
+
 	// we are done with info.json.
 	arc.Close();
 
@@ -2217,7 +2222,7 @@ void G_DoLoadGame ()
 
 	// load a base level
 	bool demoplaybacksave = demoplayback;
-	G_InitNew(map, false);
+	G_InitNew(map, false, mapVersion);
 	demoplayback = demoplaybacksave;
 	savegamerestore = false;
 
@@ -2522,6 +2527,8 @@ static void PutSaveWads (FSerializer &arc)
 		name = fileSystem.GetResourceFileName (fileSystem.GetFileContainer (primaryLevel->lumpnum));
 		arc.AddString("Map WAD", name);
 	}
+
+	arc("Map Version", primaryLevel->mapVersion);
 }
 
 static void PutSaveComment (FSerializer &arc)

@@ -847,8 +847,8 @@ struct Translation version("2.4")
 
 struct Globals native play
 {
-	native static string, bool Get(string key);
-	native static int, bool GetInt(string key);
+	native static clearscope string, bool Get(string key);
+	native static clearscope int, bool GetInt(string key);
 	native static void Set(string key, string value);
 	native static void SetInt(string key, int value);
 	native static void Save();
