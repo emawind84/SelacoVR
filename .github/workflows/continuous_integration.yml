@@ -113,11 +113,11 @@ jobs:
         cd build
         mkdir package
         if [[ "${{ runner.os }}" == 'Windows' ]]; then
-          cp *.pk3 package
+          cp ${{ matrix.config.build_type }}/Selaco.exe ${{ matrix.config.build_type }}/*.pk3 package
         elif [[ "${{ runner.os }}" == 'macOS' ]]; then
-          cp -r lzdoom.app package
+          cp -r Selaco.app package
         elif [[ "${{ runner.os }}" == 'Linux' ]]; then
-          cp *.pk3 package
+          cp Selaco *.pk3 package
         fi
 
     - name: Upload Package
