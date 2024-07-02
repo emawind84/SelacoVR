@@ -305,7 +305,16 @@ struct TexMan
 	native static ui bool MakeReady(TextureID tex, int translation = 0);
 }
 
+
+
 /*
+// @Cockatrice - Manage individual playing sounds with SoundHandle
+struct SoundHandle native
+{
+	native bool IsValid();
+	native void SetInvalid();
+}
+
 // Intrinsic TextureID methods
 // This isn't really a class, and can be used as an integer
 struct TextureID
