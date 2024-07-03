@@ -306,15 +306,28 @@ struct TexMan
 }
 
 
-
-/*
-// @Cockatrice - Manage individual playing sounds with SoundHandle
-struct SoundHandle native
+// SoundHandleStruct: Function holder for SoundHandle type, since SoundHandle is just an INT pseudo-type
+// @Cockatrice - There is deliberately no way to check the status of a playing sound
+// If that did exist you could very easily desync a game just by changing out a sound effect
+// Maybe I'll add something for UI only. OK I did
+struct SoundHandleStruct native
 {
-	native bool IsValid();
-	native void SetInvalid();
+	native void SetVolume(float volume);
+	native void SetPitch(float pitch);
+	native void StopSound();
+
+	// Technically this works, but the first time you play a sound IsPlaying() may not return true
+	// because it has to be loaded in the background first. Only once the sound finishes loading and
+	// starts actually playing will IsPlaying() return true. Eventually I will fix this.
+	native ui bool IsPlaying();
+
+	// Built in functions
+	//native bool IsValid();
+	//native bool SetInvalid();
 }
 
+
+/*
 // Intrinsic TextureID methods
 // This isn't really a class, and can be used as an integer
 struct TextureID

@@ -232,6 +232,7 @@ enum EFxType
 	EFX_StringCast,
 	EFX_ColorCast,
 	EFX_SoundCast,
+	EFX_SoundHandleCast,
 	EFX_TypeCast,
 	EFX_PlusSign,
 	EFX_MinusSign,

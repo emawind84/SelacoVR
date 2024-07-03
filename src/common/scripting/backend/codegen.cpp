@@ -1448,7 +1448,7 @@ ExpEmit FxSoundCast::Emit(VMFunctionBuilder *build)
 //==========================================================================
 
 FxSoundHandleCast::FxSoundHandleCast(FxExpression* x)
-	: FxExpression(EFX_SoundCast, x->ScriptPosition)
+	: FxExpression(EFX_SoundHandleCast, x->ScriptPosition)
 {
 	basex = x;
 	ValueType = TypeSoundHandle;
@@ -8082,6 +8082,9 @@ FxExpression *FxMemberFunctionCall::Resolve(FCompileContext& ctx)
 		// because the resulting value type would cause problems in nearly every other place where identifiers are being used.
 		// [ZZ] substitute ccls for String internal type.
 		if (id == NAME_String) ccls = TypeStringStruct;
+		else if (id == NAME_SoundHandle) {
+			ccls = TypeSoundHandleStruct;
+		}
 		else ccls = FindContainerType(id, ctx);
 		if (ccls != nullptr) static_cast<FxIdentifier *>(Self)->noglobal = true;
 	}
@@ -8191,6 +8194,8 @@ FxExpression *FxMemberFunctionCall::Resolve(FCompileContext& ctx)
 			delete this;
 			return x;
 		}
+
+		Self->ValueType = TypeSoundHandleStruct;
 	}
 
 	// Texture builtins.

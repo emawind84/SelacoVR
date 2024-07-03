@@ -628,6 +628,7 @@ extern PStruct* TypeFVector2;
 extern PStruct* TypeFVector3;
 extern PStruct *TypeColorStruct;
 extern PStruct *TypeStringStruct;
+extern PStruct *TypeSoundHandleStruct;
 extern PStatePointer *TypeState;
 extern PPointer *TypeFont;
 extern PStateLabel *TypeStateLabel;

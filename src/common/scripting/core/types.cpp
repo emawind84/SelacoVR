@@ -66,6 +66,7 @@ PStruct* TypeFVector2;
 PStruct* TypeFVector3;
 PStruct *TypeColorStruct;
 PStruct *TypeStringStruct;
+PStruct *TypeSoundHandleStruct;
 PPointer *TypeNullPtr;
 PPointer *TypeVoidPtr;
 
@@ -314,6 +315,7 @@ void PType::StaticInit()
 	TypeVoidPtr = NewPointer(TypeVoid, false);
 	TypeColorStruct = NewStruct("@ColorStruct", nullptr);	//This name is intentionally obfuscated so that it cannot be used explicitly. The point of this type is to gain access to the single channels of a color value.
 	TypeStringStruct = NewStruct("Stringstruct", nullptr, true);
+	TypeSoundHandleStruct = NewStruct("SoundHandleStruct", nullptr, true);
 	TypeFont = NewPointer(NewStruct("Font", nullptr, true));
 
 #ifdef __BIG_ENDIAN__

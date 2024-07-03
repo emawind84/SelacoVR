@@ -131,13 +131,9 @@ extend class Object
 	deprecated("4.3", "Use S_StartSound() instead") native static void S_Sound (Sound sound_id, int channel, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0, float startTime = 0.0);
 	native static SoundHandle S_StartSound (Sound sound_id, int channel, int flags = 0, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0, float startTime = 0.0);
 	native static void S_StopSound (int channel, Sound sound_id = -1);
-	native static void S_StopSoundHandle (SoundHandle handle);
 	native static void S_PauseSound (bool notmusic, bool notsfx);
 	native static void S_ResumeSound (bool notsfx);
 	native static void S_SoundPitch(int channel, float pitch = 1.0);
-	native static bool S_SoundHandlePitch (SoundHandle handle, float pitch = 1.0);
-	native static bool S_SoundHandleVolume (SoundHandle handle, float vol = 1.0);
-	native static bool S_SoundHandleIsPlaying (SoundHandle handle);
 	native static bool S_ChangeMusic(String music_name, int order = 0, bool looping = true, bool force = false);
 	native static float S_GetLength(Sound sound_id);
 	native static void MarkSound(Sound snd);
