@@ -587,8 +587,8 @@ FString G_GetSavegamesFolder()
 			name << '/';
 	}
 
-	if (usefilter && SavegameFolder.IsNotEmpty())
-		name << SavegameFolder << '/';
+	// if (usefilter && SavegameFolder.IsNotEmpty())
+	// 	name << SavegameFolder << '/';
 
 	name = NicePath(name);
 	CreatePath(name);
