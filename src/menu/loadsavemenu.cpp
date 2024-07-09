@@ -66,6 +66,8 @@ void FSavegameManager::ReadSaveStrings()
 		FString filter;
 		TArray<FString> searchPaths;
 		G_BuildSaveNames("", searchPaths);
+		if (SavegameFolder.IsNotEmpty())
+			G_BuildSaveNames(SavegameFolder.GetChars(), searchPaths);
 
 		LastSaved = LastAccessed = -1;
 		quickSaveSlot = nullptr;
