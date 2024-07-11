@@ -1129,13 +1129,13 @@ void RunIntermission(level_info_t* fromMap, level_info_t* toMap, DIntermissionCo
 		}
 	}
 
-	auto func = LookupFunction("DoomCutscenes.BuildMapTransition");
-	if (func == nullptr)
-	{
-		I_Error("Script function 'DoomCutscenes.BuildMapTransition' not found");
-	}
-	VMValue val[3] = { cutscene.runner, intermissionScreen, statusScreen };
-	VMCall(func, val, 3, nullptr, 0);
+	// auto func = LookupFunction("DoomCutscenes.BuildMapTransition");
+	// if (func == nullptr)
+	// {
+	// 	I_Error("Script function 'DoomCutscenes.BuildMapTransition' not found");
+	// }
+	// VMValue val[3] = { cutscene.runner, intermissionScreen, statusScreen };
+	// VMCall(func, val, 3, nullptr, 0);
 
 	if (toMap)
 	{
