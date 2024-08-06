@@ -145,6 +145,10 @@ class StaticEventHandler : Object native play version("2.4")
     //virtual void WorldStatProcess(StatsEvent e) {}
 
     //
+    virtual void SkillChanged(int oldSkill, int newSkill) {}
+    virtual bool SkillShouldChange(int oldSkill, int newSkill) { return true; }
+
+    //
     virtual  void NewGame() {}
 
     // this value will be queried on Register() to decide the relative order of this handler to every other.

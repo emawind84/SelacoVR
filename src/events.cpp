@@ -568,6 +568,30 @@ void EventManager::Stat(FString name, FString text, bool isAchievement, double v
 		handler->StatsEvent(name, text, isAchievement, value);
 }
 
+bool EventManager::SkillShouldChange(int oldSkill, int newSkill) {
+	bool success = true;
+
+	if (ShouldCallStatic(false))
+		if (!staticEventManager.SkillShouldChange(oldSkill, newSkill))
+			success = false;
+
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
+		if (!handler->SkillShouldChange(oldSkill, newSkill))
+			success = false;
+
+	return success;
+}
+
+void EventManager::SkillChanged(int oldSkill, int newSkill) {
+	bool success = true;
+
+	if (ShouldCallStatic(false))
+		staticEventManager.SkillChanged(oldSkill, newSkill);
+
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
+		handler->SkillChanged(oldSkill, newSkill);
+}
+
 void EventManager::RenderOverlay(EHudState state)
 {
 	if (ShouldCallStatic(false)) staticEventManager.RenderOverlay(state);
@@ -1242,6 +1266,36 @@ void DStaticEventHandler::StatsEvent(FString name, FString text, bool isAchievem
 		VMValue params[2] = { (DStaticEventHandler*)this, &e };
 		VMCall(func, params, 2, nullptr, 0);
 	}
+}
+
+
+bool DStaticEventHandler::SkillShouldChange(int oldSkill, int newSkill) {
+	IFVIRTUAL(DStaticEventHandler, SkillShouldChange)
+	{
+		// don't create excessive DObjects if not going to be processed anyway
+		if (isEmpty(func)) return true;
+
+		int bbool = 1;
+		VMValue params[3] = { (DStaticEventHandler*)this, oldSkill, newSkill };
+		VMReturn ret(&bbool);
+		VMCall(func, params, countof(params), &ret, 1);
+		return bbool;
+	}
+
+	return true;
+}
+
+void DStaticEventHandler::SkillChanged(int oldSkill, int newSkill) {
+	IFVIRTUAL(DStaticEventHandler, SkillChanged)
+	{
+		// don't create excessive DObjects if not going to be processed anyway
+		if (isEmpty(func)) return;
+
+		int bbool = 1;
+		VMValue params[3] = { (DStaticEventHandler*)this, oldSkill, newSkill };
+		VMCall(func, params, countof(params), nullptr, 0);
+	}
+
 }
 
 void DStaticEventHandler::ConsoleProcess(int player, FString name, int arg1, int arg2, int arg3, bool manual)

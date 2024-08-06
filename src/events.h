@@ -123,6 +123,10 @@ public:
 	void StatsEvent(FString name, FString text, bool isAchievement, double value = 1);
 
 	//
+	bool SkillShouldChange(int oldSkill, int newSkill);
+	void SkillChanged(int oldSkill, int newSkill);
+
+	//
 	void NewGame();
 };
 class DEventHandler : public DStaticEventHandler
@@ -308,6 +312,11 @@ struct EventManager
 	void NewGame();
 
 	void Stat(FString name, FString text, bool isAchievement, double value);
+	
+	// @Cockatrice - A request to change skill has been made
+	// Return false to cancel
+	void SkillChanged(int oldSkill, int newSkill);
+	bool SkillShouldChange(int oldSkill, int newSkill);
 
 	// send networked event. unified function.
 	bool SendNetworkEvent(FString name, int arg1, int arg2, int arg3, bool manual);
