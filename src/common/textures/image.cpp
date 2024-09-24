@@ -50,9 +50,10 @@ static PrecacheInfo precacheInfo;
 
 struct PrecacheDataPaletted
 {
-	TArray<uint8_t> Pixels;
+	PalettedPixels Pixels;
 	int RefCount;
 	int ImageID;
+	int Frame;
 };
 
 struct PrecacheDataRgba
@@ -61,6 +62,7 @@ struct PrecacheDataRgba
 	int TransInfo;
 	int RefCount;
 	int ImageID;
+	int Frame;
 };
 
 // TMap doesn't handle this kind of data well.  std::map neither. The linear search is still faster, even for a few 100 entries because it doesn't have to access the heap as often..
@@ -73,24 +75,21 @@ TArray<PrecacheDataRgba> precacheDataRgba;
 //
 //===========================================================================
 
-TArray<uint8_t> FImageSource::CreatePalettedPixels(int conversion)
+PalettedPixels FImageSource::CreatePalettedPixels(int conversion, int frame)
 {
-	TArray<uint8_t> Pixels(Width * Height, true);
+	PalettedPixels Pixels(Width * Height);
 	memset(Pixels.Data(), 0, Width * Height);
 	return Pixels;
 }
 
-PalettedPixels FImageSource::GetCachedPalettedPixels(int conversion)
+PalettedPixels FImageSource::GetCachedPalettedPixels(int conversion, int frame)
 {
 	PalettedPixels ret;
-
-	FString name;
-	fileSystem.GetFileShortName(name, SourceLump);
 
 	auto imageID = ImageID;
 
 	// Do we have this image in the cache?
-	unsigned index = conversion != normal? UINT_MAX : precacheDataPaletted.FindEx([=](PrecacheDataPaletted &entry) { return entry.ImageID == imageID; });
+	unsigned index = conversion != normal? UINT_MAX : precacheDataPaletted.FindEx([=](PrecacheDataPaletted &entry) { return entry.ImageID == imageID && entry.Frame == frame; });
 	if (index < precacheDataPaletted.Size())
 	{
 		auto cache = &precacheDataPaletted[index];
@@ -102,8 +101,7 @@ PalettedPixels FImageSource::GetCachedPalettedPixels(int conversion)
 		}
 		else if (cache->Pixels.Size() > 0)
 		{
-			ret.PixelStore = std::move(cache->Pixels);
-			ret.Pixels.Set(ret.PixelStore.Data(), ret.PixelStore.Size());
+			ret = std::move(cache->Pixels);
 			precacheDataPaletted.Delete(index);
 		}
 		else
@@ -118,8 +116,7 @@ PalettedPixels FImageSource::GetCachedPalettedPixels(int conversion)
 		if (!info || info->second <= 1 || conversion != normal)
 		{
 			// This is either the only copy needed or some access outside the caching block. In these cases create a new one and directly return it.
-			ret.PixelStore = CreatePalettedPixels(conversion);
-			ret.Pixels.Set(ret.PixelStore.Data(), ret.PixelStore.Size());
+			return CreatePalettedPixels(conversion, frame);
 		}
 		else
 		{
@@ -129,16 +126,16 @@ PalettedPixels FImageSource::GetCachedPalettedPixels(int conversion)
 			pdp->ImageID = imageID;
 			pdp->RefCount = info->second - 1;
 			info->second = 0;
-			pdp->Pixels = CreatePalettedPixels(normal);
+			pdp->Pixels = CreatePalettedPixels(normal, frame);
 			ret.Pixels.Set(pdp->Pixels.Data(), pdp->Pixels.Size());
 		}
 	}
 	return ret;
 }
 
-TArray<uint8_t> FImageSource::GetPalettedPixels(int conversion)
+TArray<uint8_t> FImageSource::GetPalettedPixels(int conversion, int frame)
 {
-	auto pix = GetCachedPalettedPixels(conversion);
+	auto pix = GetCachedPalettedPixels(conversion, frame);
 	if (pix.ownsPixels())
 	{
 		// return the pixel store of the returned data directly if this was the last reference.
@@ -168,18 +165,19 @@ TArray<uint8_t> FImageSource::GetPalettedPixels(int conversion)
 //
 //===========================================================================
 
-int FImageSource::CopyPixels(FBitmap *bmp, int conversion)
+int FImageSource::CopyPixels(FBitmap *bmp, int conversion, int frame)
 {
 	if (conversion == luminance) conversion = normal;	// luminance images have no use as an RGB source.
 	PalEntry *palette = GPalette.BaseColors;
-	auto ppix = CreatePalettedPixels(conversion);
+
+	auto ppix = CreatePalettedPixels(conversion, frame);
 	bmp->CopyPixelData(0, 0, ppix.Data(), Width, Height, Height, 1, 0, palette, nullptr);
 	return 0;
 }
 
-int FImageSource::CopyTranslatedPixels(FBitmap *bmp, const PalEntry *remap)
+int FImageSource::CopyTranslatedPixels(FBitmap *bmp, const PalEntry *remap, int frame)
 {
-	auto ppix = CreatePalettedPixels(false);
+	auto ppix = CreatePalettedPixels(normal, frame);
 	bmp->CopyPixelData(0, 0, ppix.Data(), Width, Height, Height, 1, 0, remap, nullptr);
 	return 0;
 }
@@ -267,15 +265,17 @@ int FImageSource::DeSerializeFromTextureDef(FileReader &fr) {
 //
 //==========================================================================
 
-FBitmap FImageSource::GetCachedBitmap(const PalEntry *remap, int conversion, int *ptrans)
+FBitmap FImageSource::GetCachedBitmap(const PalEntry *remap, int conversion, int *ptrans, int frame)
 {
 	FBitmap ret;
 
-	//FString name;
 	int trans = -1;
-	//fileSystem.GetFileShortName(name, SourceLump);
-
 	auto imageID = ImageID;
+
+	if (NumOfFrames == 1 && frame == 1)
+	{
+		frame = 0;
+	}
 
 	if (remap != nullptr)
 	{
@@ -283,13 +283,13 @@ FBitmap FImageSource::GetCachedBitmap(const PalEntry *remap, int conversion, int
 		// Translated images are normally sprites which normally just consist of a single image and use no composition.
 		// Additionally, since translation requires the base palette, the really time consuming stuff will never be subjected to it.
 		ret.Create(Width, Height);
-		trans = CopyTranslatedPixels(&ret, remap);
+		trans = CopyTranslatedPixels(&ret, remap, frame);
 	}
 	else
 	{
 		if (conversion == luminance) conversion = normal;	// luminance has no meaning for true color.
 		// Do we have this image in the cache?
-		unsigned index = conversion != normal? UINT_MAX : precacheDataRgba.FindEx([=](PrecacheDataRgba &entry) { return entry.ImageID == imageID; });
+		unsigned index = conversion != normal? UINT_MAX : precacheDataRgba.FindEx([=](PrecacheDataRgba &entry) { return entry.ImageID == imageID && entry.Frame == frame; });
 		if (index < precacheDataRgba.Size())
 		{
 			auto cache = &precacheDataRgba[index];
@@ -312,7 +312,7 @@ FBitmap FImageSource::GetCachedBitmap(const PalEntry *remap, int conversion, int
 				// This should never happen if the function is implemented correctly
 				//Printf("something bad happened for %s, refcount = %d\n", name.GetChars(), cache->RefCount);
 				ret.Create(Width, Height);
-				trans = CopyPixels(&ret, normal);
+				trans = CopyPixels(&ret, normal, frame);
 			}
 		}
 		else
@@ -324,7 +324,7 @@ FBitmap FImageSource::GetCachedBitmap(const PalEntry *remap, int conversion, int
 				// This is either the only copy needed or some access outside the caching block. In these cases create a new one and directly return it.
 				//Printf("returning fresh copy of %s\n", name.GetChars());
 				ret.Create(Width, Height);
-				trans = CopyPixels(&ret, conversion);
+				trans = CopyPixels(&ret, conversion, frame);
 			}
 			else
 			{
@@ -333,10 +333,11 @@ FBitmap FImageSource::GetCachedBitmap(const PalEntry *remap, int conversion, int
 				PrecacheDataRgba *pdr = &precacheDataRgba[precacheDataRgba.Reserve(1)];
 
 				pdr->ImageID = imageID;
+				pdr->Frame = frame;
 				pdr->RefCount = info->first - 1;
 				info->first = 0;
 				pdr->Pixels.Create(Width, Height);
-				trans = pdr->TransInfo = CopyPixels(&pdr->Pixels, normal);
+				trans = pdr->TransInfo = CopyPixels(&pdr->Pixels, normal, frame);
 				ret.Copy(pdr->Pixels, false);
 			}
 		}
@@ -400,11 +401,12 @@ struct TexCreateInfo
 
 FImageSource *IMGZImage_TryCreate(FileReader &, int lumpnum);
 FImageSource *PNGImage_TryCreate(FileReader &, int lumpnum);
-FImageSource *JPEGImage_TryCreate(FileReader &, int lumpnum);
 FImageSource *DDSImage_TryCreate(FileReader &, int lumpnum);
 FImageSource *PCXImage_TryCreate(FileReader &, int lumpnum);
 FImageSource *TGAImage_TryCreate(FileReader &, int lumpnum);
 FImageSource *StbImage_TryCreate(FileReader &, int lumpnum);
+FImageSource *QOIImage_TryCreate(FileReader &, int lumpnum);
+FImageSource *WebPImage_TryCreate(FileReader &, int lumpnum);
 FImageSource *AnmImage_TryCreate(FileReader &, int lumpnum);
 FImageSource *RawPageImage_TryCreate(FileReader &, int lumpnum);
 FImageSource *FlatImage_TryCreate(FileReader &, int lumpnum);
@@ -434,10 +436,11 @@ FImageSource * FImageSource::GetImage(int lumpnum, bool isflat)
 	static TexCreateInfo CreateInfo[] = {
 		//{ IMGZImage_TryCreate,			false },
 		{ PNGImage_TryCreate,			false },
-		{ JPEGImage_TryCreate,			false },
 		{ DDSImage_TryCreate,			false },
 		//{ PCXImage_TryCreate,			false },
 		//{ StbImage_TryCreate,			false },
+		{ QOIImage_TryCreate, 			false },
+		{ WebPImage_TryCreate,			false },
 		{ TGAImage_TryCreate,			false },
 		//{ AnmImage_TryCreate,			false },
 		{ StartupPageImage_TryCreate,	false },

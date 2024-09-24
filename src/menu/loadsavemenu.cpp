@@ -44,7 +44,7 @@
 #include "vm.h"
 #include "i_system.h"
 #include "v_video.h"
-#include "findfile.h"
+#include "fs_findfile.h"
 #include "v_draw.h"
 
 // Save name length limit for old binary formats.
@@ -267,7 +267,7 @@ FString FSavegameManager::ExtractSaveComment(FSerializer &arc)
 
 FString FSavegameManager::BuildSaveName(const char* prefix, int slot)
 {
-	return G_BuildSaveName(prefix, slot);
+	return G_BuildSaveName(FStringf("%s%02d", prefix, slot).GetChars());
 }
 
 //=============================================================================

@@ -125,8 +125,8 @@ MapData *P_OpenMapData(const char * mapname, bool justcheck, int forceVersion)
 			delete map;
 			return NULL;
 		}
-		map->resource = FResourceFile::OpenResourceFile(mapname, true);
-		wadReader = map->resource->GetReader();
+		map->resource = FResourceFile::OpenResourceFile(mapname);
+		wadReader = map->resource->GetContainerReader();
 	}
 	else
 	{
@@ -314,7 +314,7 @@ MapData *P_OpenMapData(const char * mapname, bool justcheck, int forceVersion)
 			map->lumpnum = lump_wad;
 			auto reader = fileSystem.ReopenFileReader(lump_wad);
 			map->resource = FResourceFile::OpenResourceFile(fileSystem.GetFileFullName(lump_wad), reader, true);
-			wadReader = map->resource->GetReader();
+			wadReader = map->resource->GetContainerReader();
 		}
 	}
 	uint32_t id;
@@ -329,21 +329,21 @@ MapData *P_OpenMapData(const char * mapname, bool justcheck, int forceVersion)
 		char maplabel[9]="";
 		int index=0;
 
-		map->MapLumps[0].Reader = map->resource->GetLump(0)->NewReader();
-		uppercopy(map->MapLumps[0].Name, map->resource->GetLump(0)->getName());
+		map->MapLumps[0].Reader = map->resource->GetEntryReader(0, FileSys::READER_SHARED);
+		uppercopy(map->MapLumps[0].Name, map->resource->getName(0));
 
-		for(uint32_t i = 1; i < map->resource->LumpCount(); i++)
+		for(uint32_t i = 1; i < map->resource->EntryCount(); i++)
 		{
-			const char* lumpname = map->resource->GetLump(i)->getName();
+			const char* lumpname = map->resource->getName(i);
 
 			if (i == 1 && !strnicmp(lumpname, "TEXTMAP", 8))
 			{
 				map->isText = true;
-				map->MapLumps[ML_TEXTMAP].Reader = map->resource->GetLump(i)->NewReader();
+				map->MapLumps[ML_TEXTMAP].Reader = map->resource->GetEntryReader(i, FileSys::READER_SHARED);
 				strncpy(map->MapLumps[ML_TEXTMAP].Name, lumpname, 8);
 				for(int i = 2;; i++)
 				{
-					lumpname = map->resource->GetLump(i)->getName();
+					lumpname = map->resource->getName(i);
 					if (!strnicmp(lumpname, "ZNODES",8))
 					{
 						index = ML_GLZNODES;
@@ -375,7 +375,7 @@ MapData *P_OpenMapData(const char * mapname, bool justcheck, int forceVersion)
 						return map;
 					}
 					else continue;
-					map->MapLumps[index].Reader = map->resource->GetLump(i)->NewReader();
+					map->MapLumps[index].Reader = map->resource->GetEntryReader(i, FileSys::READER_SHARED);
 					strncpy(map->MapLumps[index].Name, lumpname, 8);
 				}
 			}
@@ -407,7 +407,7 @@ MapData *P_OpenMapData(const char * mapname, bool justcheck, int forceVersion)
 				maplabel[8]=0;
 			}
 
-			map->MapLumps[index].Reader = map->resource->GetLump(i)->NewReader();
+			map->MapLumps[index].Reader = map->resource->GetEntryReader(i, FileSys::READER_SHARED);
 			strncpy(map->MapLumps[index].Name, lumpname, 8);
 		}
 	}

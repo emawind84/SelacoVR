@@ -176,7 +176,7 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 	while (it.NextPair(pair))
 	{
 		PClassActor *cls = pair->Key;
-		auto remap = GPalette.TranslationToTable(GetDefaultByType(cls)->Translation);
+		auto remap = GPalette.TranslationToTable(GetDefaultByType(cls)->Translation.index());
 		int gltrans = remap == nullptr ? 0 : remap->Index;
 
 		// @Cockatrice - If the texture thread is enabled, and the sprite has a PRECACHE state, only load frames from that state
@@ -186,7 +186,7 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 			{
 				auto &state = cls->GetStates()[i];
 				spritelist[state.sprite].Insert(gltrans, true);
-				FSpriteModelFrame * smf = FindModelFrame(cls, state.sprite, state.Frame, false);
+				FSpriteModelFrame * smf = FindModelFrameRaw(cls, state.sprite, state.Frame, false);
 				if (smf != NULL)
 				{
 					for (int i = 0; i < smf->modelsAmount; i++)
@@ -197,8 +197,7 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 						}
 						else if (smf->modelIDs[i] != -1)
 						{
-							Models[smf->modelIDs[i]]->PushSpriteMDLFrame(smf, i);
-							Models[smf->modelIDs[i]]->AddSkins(texhitlist);
+							Models[smf->modelIDs[i]]->AddSkins(texhitlist, (unsigned)(i * MD3_MAX_SURFACES) < smf->surfaceskinIDs.Size()? &smf->surfaceskinIDs[i * MD3_MAX_SURFACES] : nullptr);
 						}
 						if (smf->modelIDs[i] != -1)
 						{

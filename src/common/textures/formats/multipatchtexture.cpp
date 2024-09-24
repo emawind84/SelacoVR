@@ -201,13 +201,13 @@ void FMultiPatchTexture::CopyToBlock(uint8_t *dest, int dwidth, int dheight, FIm
 //
 //==========================================================================
 
-TArray<uint8_t> FMultiPatchTexture::CreatePalettedPixels(int conversion)
+PalettedPixels FMultiPatchTexture::CreatePalettedPixels(int conversion, int frame)
 {
 	int numpix = Width * Height;
 	uint8_t blendwork[256];
 	bool buildrgb = bComplex;
 
-	TArray<uint8_t> Pixels(numpix, true);
+	PalettedPixels Pixels(numpix);
 	memset (Pixels.Data(), 0, numpix);
 
 	if (conversion == luminance)
@@ -278,7 +278,7 @@ TArray<uint8_t> FMultiPatchTexture::CreatePalettedPixels(int conversion)
 //
 //===========================================================================
 
-int FMultiPatchTexture::CopyPixels(FBitmap *bmp, int conversion)
+int FMultiPatchTexture::CopyPixels(FBitmap *bmp, int conversion, int frame)
 {
 	int retv = -1;
 
