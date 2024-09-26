@@ -184,7 +184,7 @@ void RenderModel(FModelRenderer *renderer, float x, float y, float z, FSpriteMod
 	objectToWorldMatrix.rotate(smf->pitchoffset, 0, 0, 1);
 	objectToWorldMatrix.rotate(-smf->rolloffset, 1, 0, 0);
 
-	if (!(smf_flags & MDL_CORRECTPIXELSTRETCH) && !(smf->flags & MDL_NOPIXELSTRETCH))
+	if (!(smf_flags & MDL_CORRECTPIXELSTRETCH) && !(smf_flags & MDL_NOPIXELSTRETCH))
 	{
 		stretch = (smf->modelIDs[0] != -1 ? Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) : 1.f) / actor->Level->info->pixelstretch;
 		objectToWorldMatrix.scale(1, stretch, 1);

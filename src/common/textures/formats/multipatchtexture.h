@@ -47,11 +47,13 @@ public:
 	int numPatches = 0;
 	FImageLoadParams **params = nullptr;
 
-	virtual ~FMultiPatchParams() {
+	~FMultiPatchParams() override {
 		if (params) {
 			for (int x = 0; x < numPatches; x++) delete params[x];
 			delete params;
 		}
+
+		FImageLoadParams::~FImageLoadParams();
 	}
 };
 

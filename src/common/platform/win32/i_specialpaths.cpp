@@ -49,6 +49,39 @@
 #include "engineerrors.h"
 
 
+
+bool UseKnownFoldersIncludingProgramFiles()
+{
+	// Cache this value so the semantics don't change during a single run
+	// of the program. (e.g. Somebody could add write access while the
+	// program is running.)
+	static int iswritable = -1;
+	HANDLE file;
+
+	if (iswritable >= 0)
+	{
+		return !iswritable;
+	}
+
+	std::wstring testpath = progdir.WideString() + L"writest";
+	file = CreateFile(testpath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL,
+		CREATE_ALWAYS,
+		FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+	if (file != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(file);
+		if (!batchrun) Printf("Using program directory for savegame storage\n");
+		iswritable = true;
+		return false;
+	}
+
+	if (!batchrun) Printf("Using known folders for savegame storage\n");
+	iswritable = false;
+	return true;
+}
+
+
+
 static int isportable = -1;
 
 //===========================================================================
@@ -113,36 +146,6 @@ bool IsPortable()
 	return !UseKnownFoldersIncludingProgramFiles();
 }
 
-
-bool UseKnownFoldersIncludingProgramFiles()
-{
-	// Cache this value so the semantics don't change during a single run
-	// of the program. (e.g. Somebody could add write access while the
-	// program is running.)
-	static int iswritable = -1;
-	HANDLE file;
-
-	if (iswritable >= 0)
-	{
-		return !iswritable;
-	}
-
-	std::wstring testpath = progdir.WideString() + L"writest";
-	file = CreateFile(testpath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL,
-		CREATE_ALWAYS,
-		FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
-	if (file != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(file);
-		if (!batchrun) Printf("Using program directory for savegame storage\n");
-		iswritable = true;
-		return false;
-	}
-
-	if (!batchrun) Printf("Using known folders for savegame storage\n");
-	iswritable = false;
-	return true;
-}
 
 //===========================================================================
 //
@@ -436,7 +439,7 @@ int M_GetSavegamesPaths(TArray<FString>& outputAr) {
 	path = "";
 
 	// Try Saved Games
-	if (GetKnownFolder(-1, FOLDERID_SavedGames, true, path))
+	path = GetKnownFolder(-1, FOLDERID_SavedGames, true);
 	{
 		path << "/" GAMENAME "/";
 		outputAr.Push(path);
@@ -445,7 +448,7 @@ int M_GetSavegamesPaths(TArray<FString>& outputAr) {
 	path = "";
 
 	// Try Documents/My Games/ Folder
-	if (GetKnownFolder(CSIDL_PERSONAL, FOLDERID_Documents, true, path))
+	path = GetKnownFolder(CSIDL_PERSONAL, FOLDERID_Documents, true);
 	{
 		path << "/My Games/" GAMENAME "/";
 		outputAr.Push(path);

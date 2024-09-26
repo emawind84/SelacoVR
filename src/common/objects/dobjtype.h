@@ -76,6 +76,7 @@ public:
 	bool				 bDecorateClass = false;	// may be subject to some idiosyncracies due to DECORATE backwards compatibility
 	bool				 bAbstract = false;
 	bool				 bUnitOnly = false;
+	bool				 bSealed = false;
 	bool				 bFinal = false;
 	bool				 bOptional = false;
 	TArray<VMFunction*>	 Virtuals;	// virtual function table

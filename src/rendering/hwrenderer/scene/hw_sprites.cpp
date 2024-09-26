@@ -1013,7 +1013,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
 
 			FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
-			if (!gltex || !gltex->IsHardwareCached(thing->Translation)) {
+			if (!gltex || !gltex->IsHardwareCached(thing->Translation.index())) {
 				if (gltex) {
 					screen->BackgroundCacheMaterial(gltex, thing->Translation, true);
 				}
@@ -1193,7 +1193,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
 
 				FMaterial* gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
-				if (!gltex || !gltex->IsHardwareCached(thing->Translation)) {
+				if (!gltex || !gltex->IsHardwareCached(thing->Translation.index())) {
 					if (gltex) {
 						screen->BackgroundCacheMaterial(gltex, thing->Translation, false);
 					}
@@ -1214,7 +1214,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
 
 				FMaterial* gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
-				if (!gltex || !gltex->IsHardwareCached(thing->Translation)) {
+				if (!gltex || !gltex->IsHardwareCached(thing->Translation.index())) {
 					if (gltex) {
 						screen->BackgroundCacheMaterial(gltex, thing->Translation, false);
 					}
@@ -1230,7 +1230,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			if (!success) {
 				// Attempt the last frame that was drawn
 				if (thing->lastModelSprite > -1) {
-					modelframe = FindModelFrame(thing->GetClass(), thing->lastModelSprite, thing->lastModelFrame, !!(thing->flags& MF_DROPPED));
+					modelframe = FindModelFrame(thing, thing->lastModelSprite, thing->lastModelFrame, !!(thing->flags& MF_DROPPED));
 					if (!modelframe) return; // Farted here too
 				}
 				else {

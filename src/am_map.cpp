@@ -2867,7 +2867,7 @@ void DAutomap::drawPlayers ()
 		const double spriteYScale = am_playerScale * (10. / 16.) * scale_mtof;
 
 		DrawMarkerRotated(tex, pos.X, pos.Y, 0, 0, false, spriteXScale, spriteYScale, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
-		DrawMarkerRotated(tex2, pos.X, pos.Y, angle.Degrees - 90.0, 0, false, spriteXScale, spriteYScale, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
+		DrawMarkerRotated(tex2, pos.X, pos.Y, angle.Degrees() - 90.0, 0, false, spriteXScale, spriteYScale, 0, 1, 0, LegacyRenderStyles[STYLE_Normal]);
 
 		return;
 	}

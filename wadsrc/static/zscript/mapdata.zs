@@ -283,7 +283,7 @@ struct Line native play
         
         let sd = (-s2_x * s1_y + s1_x * s2_y);
 
-        if( (s1_x * s2_y - s1_y * s2_x) ~== 0 || sd ~== 0) return false;  // Check perpendicular
+        if( (s1_x * s2_y - s1_y * s2_x) ~== 0 || sd ~== 0) return false, (0,0);  // Check perpendicular
         
         let s = (-s1_y * (p0.x - v1.p.x) + s1_x * (p0.y - v1.p.y)) / sd;
         let t = ( s2_x * (p0.y - v1.p.y) - s2_y * (p0.x - v1.p.x)) / sd;
@@ -295,7 +295,7 @@ struct Line native play
             );
         }
 
-        return false;
+        return false, (0,0);
     }
 
 
@@ -377,7 +377,7 @@ struct Line native play
         
         let sd = (-s2_x * s1_y + s1_x * s2_y);
 
-        if( (s1_x * s2_y - s1_y * s2_x) ~== 0 || sd ~== 0) return false;  // Check perpendicular
+        if( (s1_x * s2_y - s1_y * s2_x) ~== 0 || sd ~== 0) return false, (0,0);  // Check perpendicular
         
         let s = (-s1_y * (p0.x - p2.x) + s1_x * (p0.y - p2.y)) / sd;
         let t = ( s2_x * (p0.y - p2.y) - s2_y * (p0.x - p2.x)) / sd;
@@ -389,8 +389,9 @@ struct Line native play
             );
         }
 
-        return false;
-    }}
+        return false, (0,0);
+    }
+}
 
 struct SecPlane native play
 {

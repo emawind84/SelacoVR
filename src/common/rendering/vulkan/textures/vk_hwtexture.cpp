@@ -145,12 +145,12 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 #ifndef NDEBUG
 		// Output a texture load on the main thread for debugging. 
 		if (tex->GetSourceLump() > 0) {
-			auto* rLump = fileSystem.GetFileAt(tex->GetSourceLump());
-			Printf("Making texture: %s\n", !!rLump ? rLump->getName() : "No Lump Found!");
+			const char *n = fileSystem.GetFileFullName(tex->GetSourceLump());
+			Printf("Making texture: %s\n", n != nullptr ? n : "No Lump Found!");
 		}
 		else if (tex->GetImage() && tex->GetImage()->LumpNum() > 0) {
-			auto* rLump = fileSystem.GetFileAt(tex->GetImage()->LumpNum());
-			Printf("Making texture2: %s\n", !!rLump ? rLump->getName() : "No Lump Found!");
+			const char* n = fileSystem.GetFileFullName(tex->GetImage()->LumpNum());
+			Printf("Making texture2: %s\n", n != nullptr ? n : "No Lump Found!");
 		}
 #endif
 
@@ -165,17 +165,12 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 			uint32_t srcWidth = src->GetWidth(), srcHeight = src->GetHeight();
 
 			// Create a reader
-			auto *rLump = fileSystem.GetFileAt(src->LumpNum());
-			if (!rLump) 
-				return;
-
-			FileReader *reader = rLump->Owner->GetReader();
-			reader = reader ? reader->CopyNew() : rLump->NewReader().CopyNew();
-			if (!reader) return;
-			reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);
+			FileReader reader = fileSystem.OpenFileReader(src->LumpNum(), FileSys::EReaderType::READER_NEW, FileSys::EReaderType::READERFLAG_SEEKABLE);
+			//reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);
+			reader.Seek(0, FileReader::SeekSet);	// @Cockatrice - TODO: After the engine merge and new filesystem stuff, ensure this goes to the correct offset when reading from ZIP files
 
 			// Read pixels
-			src->ReadCompressedPixels(reader, &pixelData, totalDataSize, pixelDataSize, mipLevels);
+			src->ReadCompressedPixels(&reader, &pixelData, totalDataSize, pixelDataSize, mipLevels);
 
 			// Create texture
 			// Mipmaps must be read from the source image, they cannot be generated
@@ -202,7 +197,7 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 			}
 			
 			free(pixelData);
-			free(reader);
+			reader.Close();
 			hwState = READY;
 		}
 		else {
@@ -218,10 +213,11 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 #ifndef NDEBUG
 		// Output a texture load on the main thread for debugging. 
 		if (tex->GetSourceLump() > 0) {
-			auto* rLump = fileSystem.GetFileAt(tex->GetSourceLump());
-			Printf("Making texture in the weird way: %s\n", rLump ? rLump->getName() : "None");
+			const char* n = fileSystem.GetFileFullName(tex->GetSourceLump());
+			Printf("Making texture in the weird way: %s\n", n != nullptr ? n : "None");
 		}
-#endif		int w = tex->GetWidth();
+#endif		
+		int w = tex->GetWidth();
 		int h = tex->GetHeight();
 
 		mImage->Image = ImageBuilder()
@@ -257,7 +253,7 @@ void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManag
 		return; // We cannot reset the loaded image on a different thread
 	}
 
-	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, createMips && fb->device->uploadFamilySupportsGraphics, totalSize);
+	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, createMips && fb->device.get()->UploadFamilySupportsGraphics, totalSize);
 
 	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
 	/*if (bufManager->TransferDeleteList->TotalSize > 1) {
@@ -289,7 +285,7 @@ void VkHardwareTexture::CreateTextureMipMap(VkCommandBufferManager* bufManager, 
 		.Size(totalSize)
 		.Usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY)
 		.DebugName("VkHardwareTexture.mStagingBuffer")
-		.Create(fb->device);
+		.Create(fb->device.get());
 
 	uint8_t* data = (uint8_t*)stagingBuffer->Map(0, totalSize);
 	memcpy(data, pixels, totalSize);
@@ -372,8 +368,8 @@ void VkHardwareTexture::ReleaseLoadedFromQueue(VulkanCommandBuffer *cmd, int fro
 	assert(mLoadedImage.get());
 
 	PipelineBarrier().AddQueueTransfer(
-		fb->device->uploadFamily,
-		fb->device->graphicsFamily,
+		fb->device->UploadFamily,
+		fb->device->GraphicsFamily,
 		mLoadedImage->Image.get(),
 		mLoadedImage->Layout,
 		VK_IMAGE_ASPECT_COLOR_BIT, 
@@ -390,8 +386,8 @@ void VkHardwareTexture::AcquireLoadedFromQueue(VulkanCommandBuffer *cmd, int fro
 	assert(mLoadedImage.get());
 
 	PipelineBarrier().AddQueueTransfer(
-		fb->device->uploadFamily,
-		fb->device->graphicsFamily,
+		fb->device->UploadFamily,
+		fb->device->GraphicsFamily,
 		mLoadedImage->Image.get(),
 		mLoadedImage->Layout,
 		VK_IMAGE_ASPECT_COLOR_BIT, 

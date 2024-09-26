@@ -110,8 +110,8 @@ public:
 	IHardwareTexture *CreateHardwareTexture(int numchannels) override;
 	void PrecacheMaterial(FMaterial *mat, int translation) override;
 	void PrequeueMaterial(FMaterial* mat, int translation) override;
-	bool BackgroundCacheMaterial(FMaterial* mat, int translation, bool makeSPI = false, bool secondary = false) override;
-	bool BackgroundCacheTextureMaterial(FGameTexture* tex, int translation, int scaleFlags, bool makeSPI = false) override;
+	bool BackgroundCacheMaterial(FMaterial* mat, FTranslationID translation, bool makeSPI = false, bool secondary = false) override;
+	bool BackgroundCacheTextureMaterial(FGameTexture* tex, FTranslationID translation, int scaleFlags, bool makeSPI = false) override;
 	bool CachingActive() override { return secondaryTexQueue.size() > 0; }
 	bool SupportsBackgroundCache() override { return bgTransferThreads.size() > 0; }
 	void StopBackgroundCache() override;
@@ -159,7 +159,8 @@ public:
 private:
 	struct QueuedPatch {
 		FGameTexture* tex;
-		int translation, scaleFlags;
+		FTranslationID translation;
+		int scaleFlags;
 		bool generateSPI;
 	};
 

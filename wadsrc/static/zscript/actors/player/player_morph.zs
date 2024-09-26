@@ -95,7 +95,7 @@ extend class PlayerPawn
 	//
 	//---------------------------------------------------------------------------
 
-	virtual bool MorphPlayer(PlayerInfo activator, class<PlayerPawn> spawnType, int duration, EMorphFlags style, class<Actor> enterFlash = "TeleportFog", class<Actor> exitFlash = "TeleportFog")
+	virtual bool MorphPlayer(PlayerInfo activator, class<PlayerPawn> spawnType, int duration, EMorphFlags style, class<Actor> enterFlash = null, class<Actor> exitFlash = null)
 	{
 		if (!player || !spawnType || bDontMorph || player.Health <= 0
 			|| (!(style & MRF_IGNOREINVULN) && bInvulnerable && (player != activator || !(style & MRF_WHENINVULNERABLE))))
@@ -293,7 +293,7 @@ extend class PlayerPawn
 		let p = alt.player;
 		class<Actor> exitFlash = alt.GetMorphExitFlash();
 		EMorphFlags style = alt.GetMorphStyle();
-		Weapon premorphWeap = p.PremorphWeapon;
+		WeaponBase premorphWeap = p.PremorphWeapon;
 
 		if (TID && (style & MRF_NEWTIDBEHAVIOUR))
 		{
@@ -333,10 +333,10 @@ extend class PlayerPawn
 		if (style & MRF_LOSEACTUALWEAPON)
 		{
 			// Improved "lose morph weapon" semantics.
-			class<Weapon> morphWeapCls = MorphWeapon;
+			class<WeaponBase> morphWeapCls = MorphWeapon;
 			if (morphWeapCls)
 			{
-				let originalMorphWeapon = Weapon(alt.FindInventory(morphWeapCls));
+				let originalMorphWeapon = WeaponBase(alt.FindInventory(morphWeapCls));
 				if (originalMorphWeapon && originalMorphWeapon.GivenAsMorphWeapon)
 					originalMorphWeapon.Destroy();
 			}

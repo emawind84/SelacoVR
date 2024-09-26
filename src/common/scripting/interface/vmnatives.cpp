@@ -440,7 +440,7 @@ static int CheckForTexture(const FString& name, int type, int flags)
 }
 
 static int FindTextures(const FString& search, TArray<FTextureID> *out, int type, int flags) {
-	return TexMan.FindTextures(search, out, static_cast<ETextureType>(type), flags);
+	return TexMan.FindTextures(search.GetChars(), out, static_cast<ETextureType>(type), flags);
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(_TexMan, CheckForTexture, CheckForTexture)
@@ -629,10 +629,10 @@ static int MakeReady(int texid, int translation) {
 	FMaterial* gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
 	if (!gltex || !gltex->IsHardwareCached(translation)) {
 		if (gltex) {
-			screen->BackgroundCacheMaterial(gltex, translation, true);  // TODO: Prevent calling this every time the sprite wants to render, it's incredibly wasteful
+			screen->BackgroundCacheMaterial(gltex, FTranslationID::fromInt(translation), true);  // TODO: Prevent calling this every time the sprite wants to render, it's incredibly wasteful
 		}
 		else {
-			screen->BackgroundCacheTextureMaterial(tex, translation, scaleflags, true);
+			screen->BackgroundCacheTextureMaterial(tex, FTranslationID::fromInt(translation), scaleflags, true);
 		}
 
 		return 0;

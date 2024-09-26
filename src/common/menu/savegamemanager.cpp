@@ -578,8 +578,8 @@ FString G_GetSavegamesFolder()
 			name << '/';
 	}
 
-	if (usefilter && SavegameFolder.IsNotEmpty())
-		name << SavegameFolder << '/';
+	//if (usefilter && SavegameFolder.IsNotEmpty())
+	//	name << SavegameFolder << '/';
 
 	name = NicePath(name.GetChars());
 	CreatePath(name.GetChars());
@@ -599,5 +599,12 @@ FString G_BuildSaveName(const char* prefix)
 	name = NicePath(name.GetChars());
 	name.Substitute("\\", "/");
 	return name;
+}
+
+
+FString G_BuildSaveName(const char* prefix, int number) {
+	FString nam(prefix);
+	nam.AppendFormat("%d", number);
+	return G_BuildSaveName(nam.GetChars());
 }
 

@@ -124,7 +124,7 @@ void DEarthquake::Tick ()
 		return;
 	}
 	
-	if (m_QuakeSFX != 0 && !S_IsActorPlayingSomething (m_Spot, CHAN_BODY, m_QuakeSFX))
+	if (m_QuakeSFX.isvalid() && !S_IsActorPlayingSomething(m_Spot, CHAN_BODY, m_QuakeSFX))
 	{
 		hasPlayedSound = true;
 		S_Sound (m_Spot, CHAN_BODY, CHANF_LOOP, m_QuakeSFX, 1, ATTN_NORM);

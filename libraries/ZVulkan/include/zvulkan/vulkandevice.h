@@ -15,6 +15,14 @@ class VulkanPhysicalDevice;
 class VulkanSurface;
 class VulkanCompatibleDevice;
 
+
+struct VulkanUploadSlot {
+	VkQueue queue;
+	int queueFamily, queueIndex;
+	bool familySupportsGraphics;
+};
+
+
 class VulkanDevice
 {
 public:
@@ -32,8 +40,14 @@ public:
 	VkDevice device = VK_NULL_HANDLE;
 	VmaAllocator allocator = VK_NULL_HANDLE;
 
+
 	VkQueue GraphicsQueue = VK_NULL_HANDLE;
 	VkQueue PresentQueue = VK_NULL_HANDLE;
+	std::vector<VulkanUploadSlot> uploadQueues;
+
+	int UploadFamily = -1;
+	int UploadQueuesSupported = 1;
+	bool UploadFamilySupportsGraphics = false;
 
 	int GraphicsFamily = -1;
 	int PresentFamily = -1;

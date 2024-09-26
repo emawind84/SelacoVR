@@ -870,7 +870,7 @@ class PlayerPawn : Actor
 	//
 	//===========================================================================
 
-	void FilterCoopRespawnInventory (PlayerPawn oldplayer, Weapon curHeldWeapon = null)
+	void FilterCoopRespawnInventory (PlayerPawn oldplayer, WeaponBase curHeldWeapon = null)
 	{
 		// If we're losing everything, this is really simple.
 		if (sv_cooploseinventory)
@@ -964,7 +964,7 @@ class PlayerPawn : Actor
 		ObtainInventory (oldplayer);
 
 		player.ReadyWeapon = NULL;
-		if (curHeldWeapon && curHeldWeapon.owner == self && curHeldWeapon.CheckAmmo(Weapon.EitherFire, false))
+		if (curHeldWeapon && curHeldWeapon.owner == self && curHeldWeapon.CheckAmmo(WeaponBase.EitherFire, false))
 		{
 			player.PendingWeapon = curHeldWeapon;
 			BringUpWeapon();
@@ -2881,7 +2881,7 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native clearscope bool HasWeaponsInSlot(int slot) const;
 
 	// The actual implementation is on PlayerPawn where it can be overridden. Use that directly in the future.
-	deprecated("3.7", "MorphPlayer() should be used on a PlayerPawn object") bool MorphPlayer(PlayerInfo activator, class<PlayerPawn> spawnType, int duration, EMorphFlags style, class<Actor> enterFlash = "TeleportFog", class<Actor> exitFlash = "TeleportFog")
+	deprecated("3.7", "MorphPlayer() should be used on a PlayerPawn object") bool MorphPlayer(PlayerInfo activator, class<PlayerPawn> spawnType, int duration, EMorphFlags style, class<Actor> enterFlash = null, class<Actor> exitFlash = null)
 	{
 		return mo ? mo.MorphPlayer(activator, spawnType, duration, style, enterFlash, exitFlash) : false;
 	}

@@ -4633,7 +4633,7 @@ DAngle P_AimLineAttack(AActor *t1, DAngle angle, double distance, FTranslatedLin
 	if (t1->player && t1->IsKindOf(NAME_PlayerPawn)) {
 		DVector3 angOff, posOff;
 		P_GetCameraOffsets(t1->player, angOff, posOff);
-		t1Pitch += angOff.Y;
+		t1Pitch += DAngle::fromDeg(angOff.Y);
 	}
 
 	// can't shoot outside view angles
@@ -4975,7 +4975,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 			if (!(trace.Actor->flags & MF_NOBLOOD))
 			{
 				// We must pass the unreplaced puff type here 
-				tPuff = P_SpawnPuff(t1, pufftype, bleedpos, TData.ActorHits[x].HitAngle, TData.ActorHits[x].HitAngle - 90, 2, puffFlags | PF_HITTHINGBLEED | PF_HITTHING | PF_HITTHRU, hitActor);
+				tPuff = P_SpawnPuff(t1, pufftype, bleedpos, TData.ActorHits[x].HitAngle, TData.ActorHits[x].HitAngle - DAngle::fromDeg(90), 2, puffFlags | PF_HITTHINGBLEED | PF_HITTHING | PF_HITTHRU, hitActor);
 			}
 
 			// Allow puffs to inflict poison damage, so that hitscans can poison, too.
@@ -4999,7 +4999,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 				{
 					// Since the puff is the damage inflictor we need it here 
 					// regardless of whether it is displayed or not.
-					tPuff = P_SpawnPuff(t1, pufftype, bleedpos, 0., 0., 2, puffFlags | PF_HITTHING | PF_HITTHRU | PF_TEMPORARY);
+					tPuff = P_SpawnPuff(t1, pufftype, bleedpos, nullAngle, nullAngle, 2, puffFlags | PF_HITTHING | PF_HITTHRU | PF_TEMPORARY);
 					killTPuff = true;
 				}
 				
@@ -5017,7 +5017,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 			if (!(puffDefaults != NULL && puffDefaults->flags3&MF3_BLOODLESSIMPACT)) {
 				IFVIRTUALPTR(trace.Actor, AActor, SpawnLineAttackBlood)
 				{
-					VMValue params[] = { hitActor, t1, bleedpos.X, bleedpos.Y, bleedpos.Z, TData.ActorHits[x].HitAngle.Degrees, damage, newdam };
+					VMValue params[] = { hitActor, t1, bleedpos.X, bleedpos.Y, bleedpos.Z, TData.ActorHits[x].HitAngle.Degrees(), damage, newdam};
 					VMCall(func, params, countof(params), nullptr, 0);
 				}
 				if (damage)
@@ -5266,7 +5266,7 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 		// Ensure we are calling the splash function on the original puff type, not the blood or anything else that spawned
 		// Spawn one of the correct type if necessary
 		if (!tPuff || !tPuff->IsKindOf(pufftype)) {
-			tPuff = P_SpawnPuff(t1, pufftype, trace.Crossed3DWater ? trace.Crossed3DWaterPos : trace.CrossedWaterPos, 0., 0., 2, puffFlags | PF_NORANDOMZ | PF_TEMPORARY | PF_SPLASHING);
+			tPuff = P_SpawnPuff(t1, pufftype, trace.Crossed3DWater ? trace.Crossed3DWaterPos : trace.CrossedWaterPos, nullAngle, nullAngle, 2, puffFlags | PF_NORANDOMZ | PF_TEMPORARY | PF_SPLASHING);
 		}
 
 		// Try calling PuffSplash first, if it returns false we can spawn engine-default splashes

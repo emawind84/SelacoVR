@@ -1841,7 +1841,7 @@ bool AActor::CanSeek(AActor *target) const
 	if ((flags2 & MF2_DONTSEEKINVISIBLE) && 
 		((target->flags & MF_SHADOW) || 
 		 (target->renderflags & RF_INVISIBLE) || 
-		 (target->flags8 & MF8_MINVISIBLE) ||
+		 (target->flags9 & MF9_MINVISIBLE) ||
 		 !target->RenderStyle.IsVisible(target->Alpha)
 		)
 	   ) return false;
@@ -2230,10 +2230,10 @@ static double P_XYMovement (AActor *mo, DVector2 scroll)
 												max(be > bte ? bte - be : v.Y, v.Y);
 								double divy = (mvy / v.Y) * 0.9999;
 
-								P_TryMove(mo, mo->Pos() + (v * divy), true, walkplane, tm);
+								P_TryMove(mo, mo->Pos().XY() + (v * divy), true, walkplane, tm);
 							}
 							else {
-								P_TryMove(mo, mo->Pos() + (v * divx), true, walkplane, tm);
+								P_TryMove(mo, mo->Pos().XY() + (v * divx), true, walkplane, tm);
 							}
 						}
 						else if (v.Y != 0) {
@@ -2242,22 +2242,22 @@ static double P_XYMovement (AActor *mo, DVector2 scroll)
 										max(be > bte ? bte - be : v.Y, v.Y);
 							double divy = (mvy / v.Y) * 0.9999;
 
-							P_TryMove(mo, mo->Pos() + (v * divy), true, walkplane, tm);
+							P_TryMove(mo, mo->Pos().XY() + (v * divy), true, walkplane, tm);
 						}
 
 						double pf = 1.0 - tm.pushFactor;
 						DVector2 t;
 						t.X = 0, t.Y = onestep.Y * pf;
 						walkplane = P_CheckSlopeWalk(mo, t);
-						if (!P_TryMove(mo, mo->Pos() + t, true, walkplane, tm))
+						if (!P_TryMove(mo, mo->Pos().XY() + t, true, walkplane, tm))
 						{
 							t.X = onestep.X * pf, t.Y = 0;
 							walkplane = P_CheckSlopeWalk(mo, t);
-							P_TryMove(mo, mo->Pos() + t, true, walkplane, tm);
+							P_TryMove(mo, mo->Pos().XY() + t, true, walkplane, tm);
 						}
 
 						if (mo->player) {
-							mo->player->Vel = mo->Vel;
+							mo->player->Vel = mo->Vel.XY();
 						}
 					}
 					else {
@@ -2272,7 +2272,7 @@ static double P_XYMovement (AActor *mo, DVector2 scroll)
 						{
 							t.X = onestep.X, t.Y = 0;
 							walkplane = P_CheckSlopeWalk(mo, t);
-							if (P_TryMove(mo, mo->Pos() + t, true, walkplane, tm))
+							if (P_TryMove(mo, mo->Pos().XY() + t, true, walkplane, tm))
 							{
 								mo->Vel.Y = 0;
 							}
@@ -3335,7 +3335,7 @@ DEFINE_ACTION_FUNCTION(AActor, Howl)
 
 bool AActor::Slam (AActor *thing)
 {
-	if ((flags8 & MF8_ONLYSLAMSOLID)
+	if ((flags9 & MF9_ONLYSLAMSOLID)
 		&& !(thing->flags & MF_SOLID) && !(thing->flags & MF_SHOOTABLE))
 	{
 		return true;
@@ -7383,7 +7383,7 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 		if (source->player && source->IsKindOf(NAME_PlayerPawn)) {
 			DVector3 angOff, posOff;
 			P_GetCameraOffsets(source->player, angOff, posOff);
-			pitch += angOff.Y;
+			pitch += DAngle::fromDeg(angOff.Y);
 		}
 	}
 	else // see which target is to be aimed at

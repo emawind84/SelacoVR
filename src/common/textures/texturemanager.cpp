@@ -324,7 +324,7 @@ int FTextureManager::FindTextures(const char* search, TArray<FTextureID> *list, 
 			continue;
 		}
 		
-		if (strstr(tex->GetName(), search) == nullptr) {
+		if (strstr(tex->GetName().GetChars(), search) == nullptr) {
 			continue;
 		}
 			
@@ -940,7 +940,7 @@ void FTextureManager::ParseTextureDef(int lump, FMultipatchTextureBuilder &build
 			}
 
 			// Confirm that we have a valid texture name here
-			FTextureID texID = TexMan.CheckForTexture(name, ETextureType::Sprite);
+			FTextureID texID = TexMan.CheckForTexture(name.GetChars(), ETextureType::Sprite);
 			FGameTexture *tex = TexMan.GetGameTexture(texID, false);
 			
 
@@ -1241,15 +1241,14 @@ void FTextureManager::AddTexturesForWad(int wadnum, FMultipatchTextureBuilder& b
 		for (int i = firsttx; i <= lasttx; i++)
 		{
 			bool skin = false;
-			FString Name;
-			fileSystem.GetFileShortName(Name, i);
+			const char *Name = fileSystem.GetFileShortName(i);
 
 			// Ignore anything not in the global namespace
 			int ns = fileSystem.GetFileNamespace(i);
 			if (ns == ns_global)
 			{
 				// In Zips all graphics must be in a separate namespace.
-				if (fileSystem.GetFileFlags(i) & LUMPF_FULLPATH) continue;
+				if (fileSystem.GetFileFlags(i) & RESFF_FULLPATH) continue;
 
 				// Ignore lumps with empty names.
 				if (fileSystem.CheckFileName(i, "")) continue;
@@ -1274,7 +1273,7 @@ void FTextureManager::AddTexturesForWad(int wadnum, FMultipatchTextureBuilder& b
 					if (iwad)
 					{
 						// We need to make an exception for font characters of the SmallFont coming from the IWAD to be able to construct the original font.
-						if (Name.IndexOf("STCFN") != 0 && Name.IndexOf("FONTA") != 0) continue;
+						if (strncmp(Name, "STCFN", 5) != 0 && strncmp(Name, "FONTA", 5) != 0) continue;
 						force = true;
 					}
 					else continue;
@@ -1290,7 +1289,7 @@ void FTextureManager::AddTexturesForWad(int wadnum, FMultipatchTextureBuilder& b
 					if (iwad)
 					{
 						// We need to make an exception for font characters of the SmallFont coming from the IWAD to be able to construct the original font.
-						if (Name.IndexOf("STCFN") != 0 && Name.IndexOf("FONTA") != 0) continue;
+						if (strncmp(Name, "STCFN", 5) != 0 && strncmp(Name, "FONTA", 5) != 0) continue;
 					}
 					else continue;
 				}
@@ -1373,7 +1372,6 @@ void FTextureManager::WriteCacheForWad(int wadnum) {
 	FILE* f = fopen(fs.GetChars(), "w");
 
 	for (int x = firsttexture; x < lasttexture; x++) {
-		TextureHash& txh = Textures[x];
 		FGameTexture* tx = Textures[x].Texture;
 
 		if (tx->GetName().Len() < 1 || !tx->GetTexture()) {

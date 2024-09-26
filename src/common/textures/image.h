@@ -78,12 +78,12 @@ class FGameTexture;
 // in the main thread. These params or a subclass will be passed to the loader and then back to the image source
 class FImageLoadParams {
 public:
-	FileReader *reader;
+	int lump;
 	int translation, conversion;
 	FRemapTable *remap;
 
 	virtual ~FImageLoadParams() {
-		if (reader) delete reader;
+
 	}
 };
 

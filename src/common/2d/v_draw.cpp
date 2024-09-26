@@ -485,15 +485,13 @@ DEFINE_ACTION_FUNCTION(_Screen, SetCursor)
 	PARAM_PROLOGUE;
 	PARAM_STRING(texName);
 
-
-
-	if (!stricmp(texName, "None") && gameinfo.CursorPic.IsNotEmpty())
+	if (!stricmp(texName.GetChars(), "None") && gameinfo.CursorPic.IsNotEmpty())
 	{
-		res = I_SetCursor(TexMan.GetGameTextureByName(gameinfo.CursorPic));
+		res = I_SetCursor(TexMan.GetGameTextureByName(gameinfo.CursorPic.GetChars()));
 	}
 	else
 	{
-		res = I_SetCursor(TexMan.GetGameTextureByName(texName));
+		res = I_SetCursor(TexMan.GetGameTextureByName(texName.GetChars()));
 	}
 	if (!res)
 	{

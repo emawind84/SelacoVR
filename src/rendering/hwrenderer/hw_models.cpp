@@ -64,7 +64,7 @@ void FHWModelRenderer::BeginDrawModel(FRenderStyle style, int smf_flags, const V
 	// TO-DO: Implement proper depth sorting.
 	// @Cockatrice DO cull backfaces if specified in the model
 	// @Cockatrice - This is a bit of a mess after the merge since we now have two ways to force backface culling
-	if (gl_cull_backfaces || (smf->flags & MDL_ALWAYSCULLBACKFACES) || (smf_flags & MDL_FORCECULLBACKFACES) || ( !(style == DefaultRenderStyle()) && !(smf->flags & MDL_DONTCULLBACKFACES) ))
+	if (gl_cull_backfaces || (smf_flags & MDL_ALWAYSCULLBACKFACES) || (smf_flags & MDL_FORCECULLBACKFACES) || ( !(style == DefaultRenderStyle()) && !(smf_flags & MDL_DONTCULLBACKFACES) ))
 	{
 		state.SetCulling((mirrored ^ portalState.isMirrored()) ? Cull_CCW : Cull_CW);
 	}
@@ -78,7 +78,7 @@ void FHWModelRenderer::EndDrawModel(FRenderStyle style, int smf_flags)
 	state.SetBoneIndexBase(-1);
 	state.EnableModelMatrix(false);
 	state.SetDepthFunc(DF_Less);
-	if (gl_cull_backfaces || (smf->flags & MDL_ALWAYSCULLBACKFACES) || (smf_flags & MDL_FORCECULLBACKFACES) || ( !(style == DefaultRenderStyle()) && !(smf->flags & MDL_DONTCULLBACKFACES) ))
+	if (gl_cull_backfaces || (smf_flags & MDL_ALWAYSCULLBACKFACES) || (smf_flags & MDL_FORCECULLBACKFACES) || ( !(style == DefaultRenderStyle()) && !(smf_flags & MDL_DONTCULLBACKFACES) ))
 		state.SetCulling(Cull_None);
 }
 

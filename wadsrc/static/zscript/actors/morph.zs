@@ -111,7 +111,7 @@ extend class Actor
 	//
 	//===========================================================================
 
-	virtual bool Morph(Actor activator, class<PlayerPawn> playerClass, class<Actor> monsterClass, int duration = 0, EMorphFlags style = 0, class<Actor> morphFlash = "TeleportFog", class<Actor> unmorphFlash = "TeleportFog")
+	virtual bool Morph(Actor activator, class<PlayerPawn> playerClass, class<Actor> monsterClass, int duration = 0, EMorphFlags style = 0, class<Actor> morphFlash = null, class<Actor> unmorphFlash = null)
 	{
 		if (player)
 			return player.mo.MorphPlayer(activator ? activator.player : null, playerClass, duration, style, morphFlash, unmorphFlash);
@@ -125,7 +125,7 @@ extend class Actor
 	//
 	//===========================================================================
 
-	bool A_Morph(class<Actor> type, int duration = 0, EMorphFlags style = 0, class<Actor> morphFlash = "TeleportFog", class<Actor> unmorphFlash = "TeleportFog")
+	bool A_Morph(class<Actor> type, int duration = 0, EMorphFlags style = 0, class<Actor> morphFlash = null, class<Actor> unmorphFlash = null)
 	{
 		return Morph(self, (class<PlayerPawn>)(type), type, duration, style, morphFlash, unmorphFlash);
 	}
@@ -157,7 +157,7 @@ extend class Actor
 	//
 	//---------------------------------------------------------------------------
 
-	virtual bool MorphMonster(class<Actor> spawnType, int duration, EMorphFlags style, class<Actor> enterFlash = "TeleportFog", class<Actor> exitFlash = "TeleportFog")
+	virtual bool MorphMonster(class<Actor> spawnType, int duration, EMorphFlags style, class<Actor> enterFlash = null, class<Actor> exitFlash = null)
 	{
 		if (player || !bIsMonster || !spawnType || bDontMorph || Health <= 0 || spawnType == GetClass())
 			return false;
@@ -370,8 +370,8 @@ class MorphProjectile : Actor
 	{
 		Damage 1;
 		Projectile;
-		MorphProjectile.MorphFlash "TeleportFog";
-		MorphProjectile.UnmorphFlash "TeleportFog";
+		//MorphProjectile.MorphFlash "TeleportFog";
+		//MorphProjectile.UnmorphFlash "TeleportFog";
 
 		-ACTIVATEIMPACT
 		-ACTIVATEPCROSS

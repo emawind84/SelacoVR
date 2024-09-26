@@ -203,12 +203,6 @@ protected:
 	bool forceremap = false;
 	bool supportsChardata = false;
 	bool lowercaselatinonly = false;
-	
-	struct CharData
-	{
-		FGameTexture *OriginalPic = nullptr;
-		int XMove = INT_MIN;
-	};
 
 	TArray<CharData> Chars;
 	TArray<FTranslationID> Translations;

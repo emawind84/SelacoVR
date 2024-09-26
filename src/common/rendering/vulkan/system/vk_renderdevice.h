@@ -79,18 +79,6 @@ struct VkLoadJobOut{
 // TODO: Move the queue outside of the object and have each thread pull from a central queue
 class VkTexLoadThread : public ResourceLoader2<VkTexLoadIn, VkTexLoadOut> {
 public:
-	/*VkTexLoadThread(VkCommandBufferManager* bgCmd, VulkanDevice* device, int uploadQueueIndex) {
-		cmd = bgCmd;
-		submits = 0;
-		uploadQueue = device->uploadQueues[uploadQueueIndex];
-
-		for (auto& fence : submitFences)
-			fence.reset(new VulkanFence(device));
-
-		for (int i = 0; i < 8; i++)
-			submitWaitFences[i] = submitFences[i]->fence;
-	}*/
-
 	VkTexLoadThread(VkCommandBufferManager* bgCmd, VulkanDevice* device, int uploadQueueIndex, TSQueue<VkTexLoadIn>* inQueue, TSQueue<VkTexLoadIn>* secondaryQueue, TSQueue<VkTexLoadOut>* outQueue) : ResourceLoader2(inQueue, secondaryQueue, outQueue) {
 		cmd = bgCmd;
 		submits = 0;
@@ -163,8 +151,8 @@ public:
 	bool CompileNextShader() override;
 	void PrecacheMaterial(FMaterial *mat, int translation) override;
 	void PrequeueMaterial(FMaterial *mat, int translation) override;
-	bool BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI = false, bool secondary = false) override;
-	bool BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI = false) override;
+	bool BackgroundCacheMaterial(FMaterial *mat, FTranslationID translation, bool makeSPI = false, bool secondary = false) override;
+	bool BackgroundCacheTextureMaterial(FGameTexture *tex, FTranslationID translation, int scaleFlags, bool makeSPI = false) override;
 	bool CachingActive() override;
 	bool SupportsBackgroundCache() override { return true; }
 	void StopBackgroundCache() override;

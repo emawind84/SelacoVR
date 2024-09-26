@@ -611,15 +611,15 @@ int FDDSTexture::ReadCompressedPixels(FileReader* reader, unsigned char** data, 
 	const size_t headerSize = sizeof(DDSURFACEDESC2) + sizeof(DDHEADERDX10) + 4;
 	
 	// TODO: Read remapped/translated version here when necessary!
-	auto rl = fileSystem.GetFileAt(SourceLump);		// These values do not change at runtime until after teardown
-	if (!rl || rl->LumpSize <= 0) {
+	int lumpSize = fileSystem.FileLength(SourceLump);
+	if (lumpSize <= 0) {
 		return 0;
 	}
 
-	size_t pixelDataSize = rl->LumpSize - headerSize;
+	size_t pixelDataSize = lumpSize - headerSize;
 
-	unsigned char* cacheData = new unsigned char[rl->LumpSize];
-	rl->ReadData(*reader, (char*)cacheData);
+	unsigned char* cacheData = new unsigned char[lumpSize];
+	reader->Read(cacheData, lumpSize);
 	
 	*data = (unsigned char *)malloc(pixelDataSize);
 	unitSize = LinearSize;

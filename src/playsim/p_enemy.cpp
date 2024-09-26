@@ -1278,7 +1278,7 @@ int P_IsVisible(AActor *lookee, AActor *other, INTBOOL allaround, FLookExParams 
 	double mindist;
 	DAngle fov;
 
-	if (other == nullptr || (other->flags8 & MF8_MVISBLOCKED))
+	if (other == nullptr || (other->flags9 & MF9_MVISBLOCKED))
 	{
 		return false;
 	}
@@ -2371,7 +2371,7 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 
 	// [RH] Don't chase invisible targets
 	if (actor->target != NULL &&
-		((actor->target->renderflags & RF_INVISIBLE) || (actor->target->flags8 & MF8_MINVISIBLE)) &&
+		((actor->target->renderflags & RF_INVISIBLE) || (actor->target->flags9 & MF9_MINVISIBLE)) &&
 		actor->target != actor->goal)
 	{
 		actor->target = nullptr;

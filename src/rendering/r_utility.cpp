@@ -972,14 +972,8 @@ void R_SetupFrame(FRenderViewpoint& viewPoint, const FViewWindow& viewWindow, AA
 	AActor* const client = players[consoleplayer].mo;
 	const bool matchPlayer = gamestate != GS_TITLELEVEL && viewPoint.camera->player == nullptr && (viewPoint.camera->renderflags2 & RF2_CAMFOLLOWSPLAYER);
 	const bool usePawn = matchPlayer ? mainView.camera != client : false;
-
-	viewpoint.TicFrac = I_GetTimeFrac();
-	if (cl_capfps || r_NoInterpolate)
-	{
-		viewpoint.TicFrac = 1.;
-	}
 	
-	R_SetupViewOffsets(player, viewpoint.TicFrac, FrameAngleOffsets, FramePosOffset);
+	R_SetupViewOffsets(player, viewPoint.TicFrac, FrameAngleOffsets, FramePosOffset);
 	
 	//==============================================================================================
 	// Sets up the view position offset.
@@ -1102,19 +1096,16 @@ void R_SetupFrame(FRenderViewpoint& viewPoint, const FViewWindow& viewWindow, AA
 	R_InterpolateView(viewPoint, player, viewPoint.TicFrac, iView);
 
 	// Add angle offsets from script, if any
-	viewpoint.Angles.Yaw += FrameAngleOffsets.X;
-	viewpoint.Angles.Pitch += FrameAngleOffsets.Y;
-	viewpoint.Angles.Roll += FrameAngleOffsets.Z;
+	viewPoint.Angles.Yaw += DAngle::fromDeg(FrameAngleOffsets.X);
+	viewPoint.Angles.Pitch += DAngle::fromDeg(FrameAngleOffsets.Y);
+	viewPoint.Angles.Roll += DAngle::fromDeg(FrameAngleOffsets.Z);
 
 	// Add world tilt
 	if (g_leveltilting) {
-		auto wyaw = viewpoint.Angles.Yaw + level.tiltAngle;
-		viewpoint.Angles.Roll += wyaw.Cos() * level.tilt;
-		viewpoint.Angles.Pitch += -wyaw.Sin() * level.tilt;
+		DAngle wyaw = viewPoint.Angles.Yaw + DAngle::fromDeg(level.tiltAngle);
+		viewPoint.Angles.Roll += DAngle::fromDeg(wyaw.Cos() * level.tilt);
+		viewPoint.Angles.Pitch += DAngle::fromDeg(-wyaw.Sin() * level.tilt);
 	}
-
-	
-	viewpoint.SetViewAngle (viewwindow);
 
 	viewPoint.SetViewAngle(viewWindow);
 

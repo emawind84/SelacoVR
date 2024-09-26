@@ -2240,8 +2240,8 @@ int G_BuildSaveNames(const char* prefix, TArray<FString> &outputAr) {
 			slash = "/";
 		}
 		name << leader << slash;
-		name = NicePath(name);
-		CreatePath(name);
+		name = NicePath(name.GetChars());
+		CreatePath(name.GetChars());
 		name << prefix;
 
 		outputAr.Push(name);
@@ -2282,7 +2282,10 @@ FString G_FindSaveFilename(const char* header, int count = 1) {
 
 	for (i = 0; i < 50; ++i)
 	{
-		filename = G_BuildSaveName(header, i);
+		FString savnam(header);
+		savnam.AppendFormat("%d", i);
+
+		filename = G_BuildSaveName(savnam.GetChars());
 		if (FileExists(filename)) {
 			saveFiles.Push(filename);
 		}
@@ -2299,15 +2302,18 @@ FString G_FindSaveFilename(const char* header, int count = 1) {
 		int lastDate = INT_MAX;
 
 		for (unsigned int x = 0; x < saveFiles.Size(); x++) {
-			std::unique_ptr<FResourceFile> savegame(FResourceFile::OpenResourceFile(saveFiles[x], true, true));
+			std::unique_ptr<FResourceFile> savegame(FResourceFile::OpenResourceFile(saveFiles[x].GetChars(), true));
 			if (savegame != nullptr) {
-				FResourceLump* info = savegame->FindLump("info.json");
-				if (info == nullptr)
+				auto info = savegame->FindEntry("info.json");
+				if (info < 0)
+				{
+					// this should not happen because the file has already been verified.
 					continue;
+				}
 
-				void* data = info->Lock();
+				auto data = savegame->Read(info);
 				FSerializer arc;
-				if (arc.OpenReader((const char*)data, info->LumpSize)) {
+				if (arc.OpenReader(data.string(), data.size())) {
 					int date = 0;
 					arc("Save Date", date);
 
@@ -2447,7 +2453,7 @@ static void PutSaveComment (FSerializer &arc)
 		comment.Format("%s - %s\n", primaryLevel->MapName.GetChars(), primaryLevel->LevelName.GetChars());
 
 		// Append elapsed time
-		const char *const time = GStrings("SAVECOMMENT_TIME");
+		const char *const time = GStrings.GetString("SAVECOMMENT_TIME");
 		levelTime = primaryLevel->time / TICRATE;
 		comment.AppendFormat("%s: %02d:%02d:%02d", time, levelTime / 3600, (levelTime % 3600) / 60, levelTime % 60);
 	}
@@ -3314,7 +3320,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, MakeQuickSave)
 
 		FString readableTime = myasctime();
 		description.Format("Quicksave %s", readableTime.GetChars());
-		G_DoSaveGame(true, true, file, description);
+		G_DoSaveGame(true, true, file, description.GetChars());
 		ACTION_RETURN_BOOL(true);
 	}
 

@@ -42,6 +42,7 @@
 #include "palettecontainer.h"
 #include "printf.h"
 #include "files.h"
+#include "resourcefile.h"
 
 FMemArena ImageArena(32768);
 TArray<FImageSource *>FImageSource::ImageForLump;
@@ -216,20 +217,11 @@ int FImageSource::ReadCompressedPixels(FileReader* reader, unsigned char** data,
 // convoluted I know, but some formats require more information than others
 // Default version should work for some formats like PNG
 FImageLoadParams *FImageSource::NewLoaderParams(int conversion, int translation, FRemapTable *remap) {
-	FResourceLump *rLump = SourceLump >= 0 ? fileSystem.GetFileAt(SourceLump) : nullptr;
-	FileReader *reader = rLump ? rLump->Owner->GetReader() : nullptr;
-
-	if (!rLump) { return nullptr; }
-
 	FImageLoadParams *il = new FImageLoadParams();
-	il->reader = reader ? reader->CopyNew() : rLump->NewReader().CopyNew();
+	il->lump = SourceLump;
 	il->conversion = conversion;
 	il->translation = translation;
 	il->remap = remap;
-
-	if (il->reader) {
-		il->reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);
-	}
 
 	return il;
 }
@@ -417,7 +409,7 @@ FImageSource *StartupPageImage_TryCreate(FileReader &, int lumpnum);
 
 
 FImageSource* PNGImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
-FImageSource* JPEGImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
+//FImageSource* JPEGImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
 FImageSource* DDSImage_TryMake(FileReader& fr, int lumpnum, bool* hasExtraInfo);
 //FImageSource* DDSImage_TryMake(const char* str, int lumpnum);
 //FImageSource* PCXImage_TryMake(const char* str, int lumpnum);
@@ -486,9 +478,9 @@ FImageSource * FImageSource::GetImage(int lumpnum, bool isflat)
 FImageSource* FImageSource::CreateImageFromDef(FileReader& fr, int filetype, int lumpnum, bool *hasExtraInfo)
 {
 	static MakeFunc MakeInfo[] = {
-		//IMGZImage_TryCreate
+		//IMGZImage_TryMake
 		PNGImage_TryMake,
-		JPEGImage_TryMake,
+		//JPEGImage_TryMake,
 		DDSImage_TryMake,
 		//DDSImage_TryMake,
 		//PCXImage_TryMake,

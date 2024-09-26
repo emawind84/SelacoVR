@@ -316,7 +316,7 @@ DEFINE_ACTION_FUNCTION(FLevelLocals, StartNewGame)
 	if (mapName.Len() > 0) {
 		auto pc = playerClass.IsEmpty() ? NULL : playerClass.GetChars();
 		if (pc) playerclass = pc;
-		G_DeferedInitNew(mapName, skill);
+		G_DeferedInitNew(mapName.GetChars(), skill);
 	}
 	else {
 		FNewGameStartup s;

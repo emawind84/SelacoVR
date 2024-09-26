@@ -190,12 +190,15 @@ bool GlTexLoadThread::loadResource(GlTexLoadIn & input, GlTexLoadOut & output) {
 			int numMipLevels;
 			size_t dataSize = 0, totalSize = 0;
 			unsigned char* pixelData;
-			output.isTranslucent = src->ReadCompressedPixels(params->reader, &pixelData, totalSize, dataSize, numMipLevels);
+			FileReader reader = fileSystem.OpenFileReader(params->lump, FileSys::EReaderType::READER_NEW, FileSys::EReaderType::READERFLAG_SEEKABLE);
+			output.isTranslucent = src->ReadCompressedPixels(&reader, &pixelData, totalSize, dataSize, numMipLevels);
 			output.tex->BackgroundCreateCompressedTexture(pixelData, (uint32_t)dataSize, (uint32_t)totalSize, buffWidth, buffHeight, input.texUnit, numMipLevels, "GlTexLoadThread::loadResource(Compressed)", !input.allowMipmaps);
 
 			if (input.spi.generateSpi) {
 				FGameTexture::GenerateEmptySpriteData(output.spi.info, buffWidth, buffHeight);
 			}
+
+			free(pixelData);
 		}
 		else {
 			pixels.Create(buffWidth, buffHeight);
@@ -254,12 +257,12 @@ void OpenGLFrameBuffer::ResetBGStats() {
 
 void OpenGLFrameBuffer::PrequeueMaterial(FMaterial * mat, int translation)
 {
-	BackgroundCacheMaterial(mat, translation, true, true);
+	BackgroundCacheMaterial(mat, FTranslationID::fromInt(translation), true, true);
 }
 
 
 // @Cockatrice - Cache a texture material, intended for use outside of the main thread
-bool OpenGLFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture* tex, int translation, int scaleFlags, bool makeSPI) {
+bool OpenGLFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture* tex, FTranslationID translation, int scaleFlags, bool makeSPI) {
 	if (!tex || !tex->isValid() || tex->GetID().GetIndex() == 0) return false;
 
 	QueuedPatch qp = {
@@ -274,25 +277,25 @@ bool OpenGLFrameBuffer::BackgroundCacheTextureMaterial(FGameTexture* tex, int tr
 
 // @Cockatrice - Submit each texture in the material to the background loader
 // Call from main thread only!
-bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, int translation, bool makeSPI, bool secondary) {
+bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, FTranslationID translation, bool makeSPI, bool secondary) {
 	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) return false;
 
 	MaterialLayerInfo* layer;
 
-	auto systex = static_cast<FHardwareTexture*>(mat->GetLayer(0, translation, &layer));
-	auto remap = translation <= 0 || IsLuminosityTranslation(translation) ? nullptr : GPalette.TranslationToTable(translation);
+	auto systex = static_cast<FHardwareTexture*>(mat->GetLayer(0, translation.index(), &layer));
+	auto remap = !translation.isvalid() || IsLuminosityTranslation(translation) ? nullptr : GPalette.TranslationToTable(translation);
 	if (remap && remap->Inactive) remap = nullptr;
 
 	// Submit each layer to the background loader
 	int lump = layer->layerTexture->GetSourceLump();
-	FResourceLump* rLump = lump >= 0 ? fileSystem.GetFileAt(lump) : nullptr;
+	bool lumpExists = fileSystem.FileLength(lump) >= 0;
 	FImageLoadParams* params = nullptr;
 	GlTexLoadSpi spi = {};
 	bool shouldExpand = mat->sourcetex->ShouldExpandSprite() && (layer->scaleFlags & CTF_Expand);
 	bool allowMipmaps = !mat->sourcetex->GetNoMipmaps();
 
 	// If the texture is already submitted to the cache, find it and move it to the normal queue to reprioritize it
-	if (rLump && !secondary && systex->GetState(0) == IHardwareTexture::HardwareState::CACHING) {
+	if (lumpExists && !secondary && systex->GetState(0) == IHardwareTexture::HardwareState::CACHING) {
 		GlTexLoadIn in;
 		if (secondaryTexQueue.dequeueSearch(in, systex,
 			[](void* a, GlTexLoadIn& b)
@@ -302,14 +305,14 @@ bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, int translation,
 			return true;
 		}
 	}
-	else if (rLump && systex->GetState(0) == IHardwareTexture::HardwareState::NONE) {
+	else if (lumpExists && systex->GetState(0) == IHardwareTexture::HardwareState::NONE) {
 		assert(systex->GetTextureHandle() == 0);
 		systex->SetHardwareState(secondary ? IHardwareTexture::HardwareState::CACHING : IHardwareTexture::HardwareState::LOADING, 0);
 		
 		FImageTexture* fLayerTexture = dynamic_cast<FImageTexture*>(layer->layerTexture);
 		params = layer->layerTexture->GetImage()->NewLoaderParams(
 			fLayerTexture ? (fLayerTexture->GetNoRemap0() ? FImageSource::noremap0 : FImageSource::normal) : FImageSource::normal,
-			translation,
+			translation.index(),
 			remap
 		);
 
@@ -345,9 +348,9 @@ bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, int translation,
 		FImageLoadParams* params = nullptr;
 		auto syslayer = static_cast<FHardwareTexture*>(mat->GetLayer(i, 0, &layer));
 		lump = layer->layerTexture->GetSourceLump();
-		rLump = lump >= 0 ? fileSystem.GetFileAt(lump) : nullptr;
+		bool lumpExists = fileSystem.FileLength(lump) >= 0;
 
-		if (rLump && !secondary && syslayer->GetState(i) == IHardwareTexture::HardwareState::CACHING) {
+		if (lumpExists && !secondary && syslayer->GetState(i) == IHardwareTexture::HardwareState::CACHING) {
 			GlTexLoadIn in;
 			if (secondaryTexQueue.dequeueSearch(in, syslayer,
 				[](void* a, GlTexLoadIn& b)
@@ -357,7 +360,7 @@ bool OpenGLFrameBuffer::BackgroundCacheMaterial(FMaterial* mat, int translation,
 				return true;
 			}
 		}
-		else if (rLump && syslayer->GetState(i) == IHardwareTexture::HardwareState::NONE) {
+		else if (lumpExists && syslayer->GetState(i) == IHardwareTexture::HardwareState::NONE) {
 			syslayer->SetHardwareState(secondary ? IHardwareTexture::HardwareState::CACHING : IHardwareTexture::HardwareState::LOADING, i);
 			
 			FImageTexture* fLayerTexture = dynamic_cast<FImageTexture*>(layer->layerTexture);
@@ -480,7 +483,7 @@ void OpenGLFrameBuffer::UpdateBackgroundCache(bool flush) {
 	QueuedPatch qp;
 	while (patchQueue.dequeue(qp)) {
 		FMaterial* gltex = FMaterial::ValidateTexture(qp.tex, qp.scaleFlags, true);
-		if (gltex && !gltex->IsHardwareCached(qp.translation)) {
+		if (gltex && !gltex->IsHardwareCached(qp.translation.index())) {
 			BackgroundCacheMaterial(gltex, qp.translation, qp.generateSPI);
 		}
 	}

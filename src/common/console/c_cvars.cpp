@@ -1734,7 +1734,7 @@ void FBaseCVar::ListVars (const char *filter, int listtype, int is_default)
 			// Check if value is the same as default
 			if (!valIsDefault) {
 				switch (var->GetRealType()) {
-				case ECVarType::CVAR_DummyBool:
+				//case ECVarType::CVAR_DummyBool:
 				case ECVarType::CVAR_Bool:
 					valIsDefault = var->GetGenericRepDefault(CVAR_Bool).Bool == var->GetGenericRep(CVAR_Bool).Bool;
 					break;
@@ -1744,7 +1744,7 @@ void FBaseCVar::ListVars (const char *filter, int listtype, int is_default)
 				case ECVarType::CVAR_Float:
 					valIsDefault = var->GetGenericRepDefault(CVAR_Float).Float == var->GetGenericRep(CVAR_Float).Float;
 					break;
-				case ECVarType::CVAR_DummyInt:
+				//case ECVarType::CVAR_DummyInt:
 				case ECVarType::CVAR_Int:
 					valIsDefault = var->GetGenericRepDefault(CVAR_Int).Int == var->GetGenericRep(CVAR_Int).Int;
 					break;
@@ -1761,7 +1761,6 @@ void FBaseCVar::ListVars (const char *filter, int listtype, int is_default)
 
 			// Skip if we want only changed or default values and this doesn't match
 			if ((is_default > 0 && !valIsDefault) || (is_default < 0 && valIsDefault)) {
-				var = var->m_Next;
 				continue;
 			}
 			

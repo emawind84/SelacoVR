@@ -501,7 +501,7 @@ static inline FGameTexture *GetNextStateTexture(FState **state, int sprite) {
 	*state = nextState;
 
 	if (nextState && nextState->GetTics() > 0) {
-		FTextureID lump2 = sprites[sprite].GetSpriteFrame(nextState->GetFrame(), 0, 0., nullptr);
+		FTextureID lump2 = sprites[sprite].GetSpriteFrame(nextState->GetFrame(), 0, nullAngle, nullptr);
 		if (lump2.isValid()) {
 			auto tex2 = TexMan.GetGameTexture(lump2, false);
 			if (tex2 && tex2->isValid()) {
@@ -559,7 +559,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 		}
 
 		FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
-		if (!gltex || !gltex->IsHardwareCached(psp->Translation)) {
+		if (!gltex || !gltex->IsHardwareCached(psp->Translation.index())) {
 			if (gltex) {
 				screen->BackgroundCacheMaterial(gltex, psp->Translation, true);  // TODO: Prevent calling this every time the sprite wants to render, it's incredibly wasteful
 			}
@@ -580,7 +580,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 				auto tex2 = TexMan.GetGameTexture(lump2, false);
 				FMaterial *gltex2 = FMaterial::ValidateTexture(tex2, scaleflags, false);
 
-				if (gltex2 && gltex2->IsHardwareCached(psp->Translation)) {
+				if (gltex2 && gltex2->IsHardwareCached(psp->Translation.index())) {
 					lump = lump2;
 					tex = tex2;
 					foundNewer = true;
@@ -773,7 +773,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 //==========================================================================
 void HWDrawInfo::PreparePlayerSprites2D(sector_t * viewsector, area_t in_area)
 {
-	static PClass * wpCls = PClass::FindClass("Weapon");
+	static PClass * wpCls = PClass::FindClass("WeaponBase");
 	static unsigned ModifyBobLayerVIndex = GetVirtualIndex(wpCls, "ModifyBobLayer");
 	static VMFunction * ModifyBobLayerOrigFunc = wpCls->Virtuals.Size() > ModifyBobLayerVIndex ? wpCls->Virtuals[ModifyBobLayerVIndex] : nullptr;
 	
@@ -849,7 +849,7 @@ void HWDrawInfo::PreparePlayerSprites2D(sector_t * viewsector, area_t in_area)
 
 void HWDrawInfo::PreparePlayerSprites3D(sector_t * viewsector, area_t in_area)
 {
-	static PClass * wpCls = PClass::FindClass("Weapon");
+	static PClass * wpCls = PClass::FindClass("WeaponBase");
 	
 	static unsigned ModifyBobLayer3DVIndex = GetVirtualIndex(wpCls, "ModifyBobLayer3D");
 	static unsigned ModifyBobPivotLayer3DVIndex = GetVirtualIndex(wpCls, "ModifyBobPivotLayer3D");

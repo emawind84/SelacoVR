@@ -213,7 +213,7 @@ void S_Init()
 	}
 
 	I_InitSound();
-	I_InitMusic(Args->CheckParm("-nomusic") || Args->CheckParm("-nosound"));
+	I_InitMusic((int)(Args->CheckParm("-nomusic") || Args->CheckParm("-nosound")));
 
 	// Heretic and Hexen have sound curve lookup tables. Doom does not.
 	int curvelump = fileSystem.CheckNumForName("SNDCURVE");
@@ -699,7 +699,7 @@ void A_StartSound(AActor *self, int soundid, int channel, int flags, double volu
 
 int StartSound(AActor* self, int soundid, int channel, int flags, double volume, double attenuation, double pitch, double startTime)
 {
-	return S_PlaySoundPitch(self, channel, EChanFlags::FromInt(flags), soundid, (float)volume, (float)attenuation, (float)pitch, (float)startTime);
+	return S_PlaySoundPitch(self, channel, EChanFlags::FromInt(flags), FSoundID::fromInt(soundid), (float)volume, (float)attenuation, (float)pitch, (float)startTime);
 }
 
 void A_PlaySound(AActor* self, int soundid, int channel, double volume, int looping, double attenuation, int local, double pitch)

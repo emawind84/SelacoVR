@@ -67,6 +67,10 @@ public:
 	void SetOwnsReader();
 	void EnableExceptions(bool on) { exceptions = on; }
 
+	FileReaderInterface* CopyNew() override {
+		return nullptr;
+	}
+
 protected:
 	DecompressorBase()
 	{

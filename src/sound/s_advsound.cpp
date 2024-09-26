@@ -1032,7 +1032,8 @@ static void S_AddSNDINFO (int lump)
 				{ // Only add non-empty random lists
 					soundEngine->AddRandomSound(Owner, list);
 					// @Cockatrice - Increase the default for a random list to 4 instead of 2
-					S_sfx[Owner].NearLimit = 4;
+					auto sfx = soundEngine->GetWritableSfx(Owner);
+					sfx->NearLimit = 4;
 				}
 				}
 				break;
@@ -1726,7 +1727,7 @@ float CalcAttenuationRdm(unsigned int refid) {
 		const FRandomSoundList* list = soundEngine->ResolveRandomSound(&S_sfx[refid]);
 
 		for (int i = list->Choices.Size(); i >= 0; i--) {
-			attenuation = min(attenuation, CalcAttenuationRdm(list->Choices[i]));
+			attenuation = min(attenuation, CalcAttenuationRdm(list->Choices[i].index()));
 		}
 	}
 
@@ -1740,12 +1741,13 @@ inline float CalcAttenuation(sfxinfo_t *sfx) {
 
 	// Make sure we have the correct sound
 	while (sfx->link != sfxinfo_t::NO_LINK) {
+		const auto index = sfx->link.index();
 		// We cannot work with random sounds since we don't know which one will be picked
 		// So we will find the smallest value (largest distance) and use that
-		if (S_sfx[sfx->link].bRandomHeader) {
-			return sfx->Attenuation * CalcAttenuationRdm(sfx->link);
+		if (S_sfx[index].bRandomHeader) {
+			return sfx->Attenuation * CalcAttenuationRdm(index);
 		}
-		if (&S_sfx[sfx->link] != sfx) sfx = &S_sfx[sfx->link];
+		if (&S_sfx[index] != sfx) sfx = &S_sfx[index];
 		else return 1.0; // Prevent infinite loop
 	}
 
@@ -1818,7 +1820,7 @@ inline double GetRange(AActor *self) {
 		// If we haven't already calculated the max distance, do it now
 		if (ambient->maxHearableDistance < 0) {
 			auto& S_sfx = soundEngine->GetSounds();
-			float attenuation = CalcAttenuation(&S_sfx[ambient->sound]);
+			float attenuation = CalcAttenuation(&S_sfx[ambient->sound.index()]);
 
 			if (ambient->attenuation * attenuation < 0.001) {
 				ambient->maxHearableDistance = 0;

@@ -119,6 +119,7 @@
 #include "startscreen.h"
 #include "shiftstate.h"
 #include "s_loader.h"
+#include "fs_findfile.h"
 
 #include "statdb.h"
 
@@ -1791,7 +1792,7 @@ void ParseCVarInfo()
 
 			// Now create or modify the cvar.
 			if (set_default) {
-				cvar = FindCVar(cvarname, NULL);
+				cvar = FindCVar(cvarname.GetChars(), NULL);
 
 				if (cvar == nullptr) {
 					Printf("Warning: CVAR %s could not be found for setdefault\n", cvarname.GetChars());
@@ -2082,35 +2083,31 @@ static void D_DoomInit()
 // Adds all files found in the subdirectory /Mods
 //==========================================================================
 
-static void AddModFilesFrom(FString path, TArray<FString>& allwads) {
-	void* handle;
-	findstate_t findstate;
+static void AddModFilesFrom(FString path, std::vector<std::string>& allwads) {
 	FString findmask = path + "*.*";
-	if ((handle = I_FindFirst(findmask, &findstate)) != (void*)-1)
+
+	FileSys::FileList list;
+
+	if (FileSys::ScanDirectory(list, path.GetChars(), "*.*", true))
 	{
-		do
+		for (auto& entry : list)
 		{
-			if (!(I_FindAttr(&findstate) & FA_DIREC))
+			auto p = strrchr(entry.FileName.c_str(), '.');
+			if (p != nullptr && !entry.isDirectory)
 			{
-				auto FindName = I_FindName(&findstate);
-				auto p = strrchr(FindName, '.');
-				if (p != nullptr)
+				// Only valid extensions
+				if (!stricmp(p, ".wad") || !stricmp(p, ".pk3") || !stricmp(p, ".pk7"))
 				{
-					// Only valid extensions
-					if (!stricmp(p, ".wad") || !stricmp(p, ".pk3") || !stricmp(p, ".pk7"))
-					{
-						Printf("\tFound %s!\n", FindName);
-						D_AddFile(allwads, path + FindName, false, -1, GameConfig);
-					}
+					Printf("\tFound %s!\n", entry.FileName.c_str());
+					D_AddFile(allwads, entry.FilePath.c_str(), false, -1, GameConfig);
 				}
 			}
-		} while (I_FindNext(handle, &findstate) == 0);
-		I_FindClose(handle);
+		}
 	}
 }
 
 
-static void AddModFiles(TArray<FString>& allwads) {
+static void AddModFiles(std::vector<std::string>& allwads) {
 	if (!(gameinfo.flags & GI_SHAREWARE) && !Args->CheckParm("-noautoload") && !disableautoload) {
 		Printf("Finding Mods...\n");
 

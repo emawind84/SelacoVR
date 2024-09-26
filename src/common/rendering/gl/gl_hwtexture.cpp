@@ -571,20 +571,23 @@ bool FHardwareTexture::BindOrCreate(FTexture *tex, int texunit, int clampmode, i
 			assert(glBufferID == 0);
 
 			// Create a reader
-			auto* rLump = fileSystem.GetFileAt(src->LumpNum());
+			/*auto* rLump = fileSystem.GetFileAt(src->LumpNum());
 			if (!rLump)
 				return false;
 
 			FileReader* reader = rLump->Owner->GetReader();
 			reader = reader ? reader->CopyNew() : rLump->NewReader().CopyNew();
 			if (!reader) return false;
-			reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);
+			reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);*/
+			FileReader reader = fileSystem.OpenFileReader(src->LumpNum(), FileSys::EReaderType::READER_NEW, FileSys::EReaderType::READERFLAG_SEEKABLE);
+			if (reader.GetInterface() == nullptr)
+				return false;
 
 			// Read and upload texture
 			int numMipLevels;
 			size_t dataSize = 0, totalSize = 0;
 			unsigned char* pixelData;
-			src->ReadCompressedPixels(reader, &pixelData, totalSize, dataSize, numMipLevels);
+			src->ReadCompressedPixels(&reader, &pixelData, totalSize, dataSize, numMipLevels);
 			CreateCompressedTexture(pixelData, (uint32_t)dataSize, (uint32_t)totalSize, tex->GetWidth(), tex->GetHeight(), texunit, numMipLevels, "::BindOrCreate(Compressed)", !forcenofilter);
 
 			SetHardwareState(HardwareState::READY, texunit);

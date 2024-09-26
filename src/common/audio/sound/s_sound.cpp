@@ -45,7 +45,8 @@
 #include "printf.h"
 #include "c_cvars.h"
 
-#include "gamestate.h"#include "s_loader.h"
+#include "gamestate.h"
+#include "s_loader.h"
 #include "g_levellocals.h"
 #include "i_time.h"
 
@@ -494,6 +495,7 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 	float limit_range = sfx->LimitRange;
 	float defpitch = sfx->DefPitch;
 	float defpitchmax = sfx->DefPitchMax;
+	auto pitchmask = sfx->PitchMask;
 	rolloff = &sfx->Rolloff;
 
 	// Resolve player sounds, random sounds, and aliases
@@ -550,7 +552,7 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 	}
 
 	// If this sound doesn't like playing near itself, don't play it if that's what would happen.
-	if (near_limit > 0 && CheckSoundLimit(sfx, pos, near_limit, limit_range, type, source, channel, attenuation, snd_evict_lists ? &S_sfx[org_id] : nullptr))
+	if (near_limit > 0 && CheckSoundLimit(sfx, pos, near_limit, limit_range, type, source, channel, attenuation, snd_evict_lists ? &S_sfx[org_id.index()] : nullptr))
 	{
 		chanflags |= CHANF_EVICTED;
 	}
@@ -700,7 +702,6 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 		return NULL;
 	}
 
-	float pitch = spitch > 0 ? spitch : CalcPitch(sfx->PitchMask, defpitch, defpitchmax);
 	if (chanflags & CHANF_EVICTED)
 	{
 		chan = NULL;
@@ -802,7 +803,7 @@ FSoundChan *SoundEngine::StartSoundER(sfxinfo_t *sfx, int type, const void *sour
 		return NULL;
 	}
 
-	if (sound_id <= 0 || volume <= 0 || nosfx || !SoundEnabled() || blockNewSounds || (unsigned)sound_id >= S_sfx.Size())
+	if (!sound_id.isvalid() || volume <= 0 || nosfx || !SoundEnabled() || blockNewSounds)
 		return NULL;
 
 	if(!usePosVel && type != SOURCE_Unattached && source != nullptr)
@@ -1080,7 +1081,7 @@ sfxinfo_t *SoundEngine::CheckLinks(sfxinfo_t *sfx) {
 			(!sfx->bLoadRAW || (sfx->RawRate == S_sfx[i].RawRate)))	// Raw sounds with different sample rates may not share buffers, even if they use the same source data.
 		{
 			DPrintf(DMSG_NOTIFY, "Linked %s to %s (%d)\n", sfx->name.GetChars(), S_sfx[i].name.GetChars(), i);
-			sfx->link = i;
+			sfx->link = FSoundID::fromInt(i);
 			// This is necessary to avoid using the rolloff settings of the linked sound if its
 			// settings are different.
 			if (sfx->Rolloff.MinDistance == 0) sfx->Rolloff = S_Rolloff;
@@ -1223,7 +1224,7 @@ bool SoundEngine::CheckSoundLimit(sfxinfo_t *sfx, const FVector3 &pos, int near_
 	for (chan = Channels, count = 0; chan != NULL && count < near_limit; chan = chan->NextChan)
 	{
 		if (chan->ChanFlags & CHANF_FORGETTABLE || chan->ChanFlags & CHANF_RESERVED) continue;
-		if (!(chan->ChanFlags & CHANF_EVICTED) && (&S_sfx[chan->SoundID.index()] == sfx || (compareOrgID != nullptr && &S_sfx[chan->OrgID] == compareOrgID)))
+		if (!(chan->ChanFlags & CHANF_EVICTED) && (&S_sfx[chan->SoundID.index()] == sfx || (compareOrgID != nullptr && &S_sfx[chan->OrgID.index()] == compareOrgID)))
 		{
 			FVector3 chanorigin;
 
@@ -1746,11 +1747,11 @@ void SoundEngine::UpdateSounds(int time)
 		}
 	}
 
-	// Kill the channels
+	// Kill the channels	
 	for (int x = 0; x < 5; x++) {
 		if (purges[x] != NULL) {
 #ifndef NDEBUG
-			Printf("Audio System: Purged [%s] (ID: %d), never resolved.\n", GetSoundName(purges[x]->SoundID), (int)purges[x]->SoundID);
+			Printf("Audio System: Purged [%s] (ID: %d), never resolved.\n", GetSoundName(purges[x]->SoundID), purges[x]->SoundID.index());
 #endif
 			GSnd->StopChannel(purges[x]);
 		}

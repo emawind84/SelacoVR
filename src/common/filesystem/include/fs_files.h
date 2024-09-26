@@ -165,13 +165,6 @@ public:
 		length = 0;
 		owned = true;
 	}
-
-	
-	FileReaderInterface* CopyNew() override {
-		MemoryReader *m = new MemoryReader(bufptr, Length);
-		m->FilePos = FilePos;
-		return m;
-	}
 };
 
 
@@ -186,6 +179,8 @@ public:
 	virtual char *Gets(char *strbuf, ptrdiff_t len) = 0;
 	virtual const char *GetBuffer() const { return nullptr; }
 	ptrdiff_t GetLength () const { return Length; }
+
+	virtual FileReaderInterface* CopyNew() = 0;
 };
 
 class FileReader
@@ -408,9 +403,6 @@ public:
 protected:
 
 	FILE *File;
-
-protected:
-	bool CloseOnDestruct;
 };
 
 class BufferWriter : public FileWriter

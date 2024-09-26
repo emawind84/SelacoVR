@@ -27,7 +27,9 @@ public:
 	ptrdiff_t Read(void *buffer, ptrdiff_t len) override;
 	char *Gets(char *strbuf, ptrdiff_t len) override;
 	virtual const char *GetBuffer() const override { return bufptr; }
+	FileReaderInterface* CopyNew() override;
 };
+
 
 class BufferingReader : public MemoryReader
 {
@@ -48,6 +50,7 @@ public:
 	ptrdiff_t Seek(ptrdiff_t offset, int origin) override;
 	ptrdiff_t Read(void* buffer, ptrdiff_t len) override;
 	char* Gets(char* strbuf, ptrdiff_t len) override;
+	FileReaderInterface* CopyNew() override;
 };
 
 //==========================================================================

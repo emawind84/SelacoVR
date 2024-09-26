@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <string.h>
+#include "zstring.h"
 #include "files_internal.h"
 
 namespace FileSys {
@@ -214,12 +215,12 @@ private:
 
 class FileReaderRedirect : public FileReaderInterface
 {
-	FileReader *mReader = nullptr;
+	FileReader* mReader = nullptr;
 	ptrdiff_t StartPos = 0;
 	ptrdiff_t FilePos = 0;
 
 public:
-	FileReaderRedirect(FileReader &parent, ptrdiff_t start, ptrdiff_t length)
+	FileReaderRedirect(FileReader& parent, ptrdiff_t start, ptrdiff_t length)
 	{
 		mReader = &parent;
 		FilePos = start;
@@ -258,7 +259,7 @@ public:
 		return -1;
 	}
 
-	virtual ptrdiff_t Read(void *buffer, ptrdiff_t len) override
+	virtual ptrdiff_t Read(void* buffer, ptrdiff_t len) override
 	{
 		assert(len >= 0);
 		if (len <= 0) return 0;
@@ -271,10 +272,10 @@ public:
 		return len;
 	}
 
-	virtual char *Gets(char *strbuf, ptrdiff_t len) override
+	virtual char* Gets(char* strbuf, ptrdiff_t len) override
 	{
 		if (len <= 0 || FilePos >= StartPos + Length) return nullptr;
-		char *p = mReader->Gets(strbuf, len);
+		char* p = mReader->Gets(strbuf, len);
 		if (p != nullptr)
 		{
 			ptrdiff_t old = FilePos;
@@ -287,6 +288,14 @@ public:
 		return p;
 	}
 
+
+	FileReaderInterface* CopyNew() override {
+		auto *readerInterface = mReader->CopyNew();
+		auto *reader = new FileReaderRedirect(*readerInterface, StartPos, Length);
+		reader->Seek(FilePos, SEEK_SET);
+
+		return reader;
+	}
 };
 
 //==========================================================================
@@ -359,6 +368,14 @@ char *MemoryReader::Gets(char *strbuf, ptrdiff_t len)
 	return strbuf;
 }
 
+
+FileReaderInterface* MemoryReader::CopyNew() {
+	MemoryReader* m = new MemoryReader(bufptr, Length);
+	m->FilePos = FilePos;
+	return m;
+}
+
+
 int BufferingReader::FillBuffer(ptrdiff_t newpos)
 {
 	if (newpos > Length) newpos = Length;
@@ -389,6 +406,13 @@ char* BufferingReader::Gets(char* strbuf, ptrdiff_t len)
 {
 	if (FillBuffer(FilePos + len) < 0) return nullptr;
 	return MemoryReader::Gets(strbuf, len);
+}
+
+FileReaderInterface* BufferingReader::CopyNew() {
+	BufferingReader* m = new BufferingReader(baseReader.get());
+	m->FilePos = FilePos;
+
+	return m;
 }
 
 //==========================================================================

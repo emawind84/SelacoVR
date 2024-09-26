@@ -429,7 +429,7 @@ public:
 };
 
 
-void FFont::ReadSheetFont(std::vector<FileSys::FolderEntry> &folderdata, int width, int height, const DVector2 &Scale)
+void FFont::ReadSheetFont(std::vector<FileSys::FolderEntry> &folderdata, int width, int height, const DVector2 &Scale, TMap<int, int>& explicitWidths)
 {
 	// all valid lumps must be named with a hex number that represents the Unicode character index for its first character,
 	struct CharData2 {
