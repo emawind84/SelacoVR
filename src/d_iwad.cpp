@@ -750,7 +750,7 @@ int FIWadManager::IdentifyVersion (std::vector<std::string>&wadfiles, const char
 				}
 			}
 		}
-		if (alwaysshow || picks.Size() > 1)
+		/*if (alwaysshow || picks.Size() > 1)
 		{
 			if (!havepicked)
 			{
@@ -795,7 +795,7 @@ int FIWadManager::IdentifyVersion (std::vector<std::string>&wadfiles, const char
 				}
 				havepicked = true;
 			}
-		}
+		}*/
 	}
 
 	// zdoom.pk3 must always be the first file loaded and the IWAD second.

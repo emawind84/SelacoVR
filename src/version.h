@@ -41,7 +41,7 @@ const char *GetVersionString();
 
 /** Lots of different version numbers **/
 
-#define VERSIONSTR "4.13pre"
+#define VERSIONSTR "4.13pre+"
 
 // The version as seen in the Windows resource
 #define RC_FILEVERSION 4,12,9999,0
@@ -103,7 +103,7 @@ const char *GetVersionString();
 #define GAMENAMELOWERCASE "selaco-ea"
 #define FORUM_URL "https://discord.gg/g4cg5t9tDZ"
 #define BUGS_FORUM_URL	"https://discord.gg/g4cg5t9tDZ"
-#define QUERYIWADDEFAULT true
+#define QUERYIWADDEFAULT false
 // For QUERYIWADDEFAULT: Set to 'true' to always show dialog box on startup by default, 'false' to disable.
 // Should set to 'false' for standalone games, and set to 'true' for regular source port forks that are meant to run any game.
 
