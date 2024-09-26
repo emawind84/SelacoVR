@@ -49,6 +49,54 @@
 #include "engineerrors.h"
 
 
+bool UseKnownFolders()
+{
+	// Cache this value so the semantics don't change during a single run
+	// of the program. (e.g. Somebody could add write access while the
+	// program is running.)
+	static int iswritable = -1;
+	HANDLE file;
+
+	if (iswritable >= 0)
+	{
+		return !iswritable;
+	}
+	// Consider 'Program Files' read only without actually checking.
+	bool found = false;
+	for (auto p : { L"ProgramFiles", L"ProgramFiles(x86)" })
+	{
+		wchar_t buffer1[256];
+		if (GetEnvironmentVariable(p, buffer1, 256))
+		{
+			FString envpath(buffer1);
+			FixPathSeperator(envpath);
+			if (progdir.MakeLower().IndexOf(envpath.MakeLower()) == 0)
+			{
+				found = true;
+				break;
+			}
+		}
+	}
+
+	if (!found)
+	{
+		std::wstring testpath = progdir.WideString() + L"writest";
+		file = CreateFile(testpath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL,
+			CREATE_ALWAYS,
+			FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+		if (file != INVALID_HANDLE_VALUE)
+		{
+			CloseHandle(file);
+			if (!batchrun) Printf("Using program directory for storage\n");
+			iswritable = true;
+			return false;
+		}
+	}
+	if (!batchrun) Printf("Using known folders for storage\n");
+	iswritable = false;
+	return true;
+}
+
 
 bool UseKnownFoldersIncludingProgramFiles()
 {
@@ -70,12 +118,12 @@ bool UseKnownFoldersIncludingProgramFiles()
 	if (file != INVALID_HANDLE_VALUE)
 	{
 		CloseHandle(file);
-		if (!batchrun) Printf("Using program directory for savegame storage\n");
+		Printf("Using program directory for savegame storage\n");
 		iswritable = true;
 		return false;
 	}
 
-	if (!batchrun) Printf("Using known folders for savegame storage\n");
+	Printf("Using known folders for savegame storage\n");
 	iswritable = false;
 	return true;
 }
@@ -314,43 +362,52 @@ int M_MigrateOldConfig()
 
 FString M_GetConfigPath(bool for_reading)
 {
-	if (IsPortable())
+	FString path;
+	HRESULT hr;
+
+	path.Format("%s" GAMENAMELOWERCASE "_portable.ini", progdir.GetChars());
+	if (FileExists(path))
 	{
-		return FStringf("%s" GAMENAMELOWERCASE "_portable.ini", progdir.GetChars());
+		return path;
 	}
+	path = "";
 
 	// Construct a user-specific config name
-	FString path = GetKnownFolder(CSIDL_APPDATA, FOLDERID_Documents, true);
-	path += "/My Games/" GAME_DIR;
-	CreatePath(path.GetChars());
-	path += "/" GAMENAMELOWERCASE ".ini";
-	if (!for_reading || FileExists(path))
-		return path;
-
-	// No config was found in the accepted locations. 
-	// Look in previously valid places to see if we have something we can migrate
-
-	int type = 0;
-	FString oldpath = M_GetOldConfigPath(type);
-	if (!oldpath.IsEmpty())
+	if (UseKnownFolders())
 	{
-		if (type == 0)
+		path = GetKnownFolder(CSIDL_APPDATA, FOLDERID_RoamingAppData, true);
+		path += "/" GAME_DIR;
+		CreatePath(path.GetChars());
+		path += "/" GAMENAMELOWERCASE ".ini";
+	}
+	else
+	{ // construct "$PROGDIR/-$USER.ini"
+		WCHAR uname[UNLEN + 1];
+		DWORD unamelen = UNLEN;
+
+		path = progdir;
+		hr = GetUserNameW(uname, &unamelen);
+		if (SUCCEEDED(hr) && uname[0] != 0)
 		{
-			// If we find a local per-user config, ask the user what to do with it.
-			int action = M_MigrateOldConfig();
-			if (action == IDNO)
+			// Is it valid for a user name to have slashes?
+			// Check for them and substitute just in case.
+			auto probe = uname;
+			while (*probe != 0)
 			{
-				path.Format("%s" GAMENAMELOWERCASE "_portable.ini", progdir.GetChars());
-				isportable = true;
+				if (*probe == '\\' || *probe == '/')
+					*probe = '_';
+				++probe;
 			}
+			path << GAMENAMELOWERCASE "-" << FString(uname) << ".ini";
 		}
-		bool res = MoveFileExW(WideString(oldpath.GetChars()).c_str(), WideString(path.GetChars()).c_str(), MOVEFILE_COPY_ALLOWED);
-		if (res) return path;
-		else return oldpath;	// if we cannot move, just use the config where it was. It won't be written back, though and never be used again if a new one gets saved.
+		else
+		{ // Couldn't get user name, so just use base version.
+			path += GAMENAMELOWERCASE ".ini";
+		}
 	}
 
-	// Fall back to the global template if nothing was found.
-	// If we are reading the config file, check if it exists. If not, fallback to base version.
+	// If we are reading the config file, check if it exists. If not, fallback
+	// to base version.
 	if (for_reading)
 	{
 		if (!FileExists(path))
