@@ -938,8 +938,13 @@ void D_Display ()
 	{
 		DAngle fov = DAngle::fromDeg(90.);
 		AActor *cam = players[consoleplayer].camera;
-		if (cam)
-			fov = DAngle::fromDeg(cam->GetFOV(I_GetTimeFrac()));
+		if (cam) {
+			// @Cockatrice - Don't interpolate if paused or pref. Not sure why this was left out of stock FOV code
+			double ticFrac = 1.0;
+			if (!r_NoInterpolate && !paused) ticFrac = I_GetTimeFrac();
+
+			fov = DAngle::fromDeg(cam->GetFOV(ticFrac));
+		}
 		
 		// @Cockatrice - Old cockatrice FOV interpolation code
 		/*{
