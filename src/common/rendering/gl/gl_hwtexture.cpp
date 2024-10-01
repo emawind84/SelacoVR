@@ -580,8 +580,11 @@ bool FHardwareTexture::BindOrCreate(FTexture *tex, int texunit, int clampmode, i
 			if (!reader) return false;
 			reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);*/
 			FileReader reader = fileSystem.OpenFileReader(src->LumpNum(), FileSys::EReaderType::READER_NEW, FileSys::EReaderType::READERFLAG_SEEKABLE);
-			if (reader.GetInterface() == nullptr)
+			if (reader.GetInterface() == nullptr || !reader.isOpen()) {
+				Printf(TEXTCOLOR_RED "Lump: %s cannot be read: Uninitialized reader!\n", fileSystem.GetFileFullName(src->LumpNum(), false));
+				SetHardwareState(HardwareState::READY, texunit);
 				return false;
+			}
 
 			// Read and upload texture
 			int numMipLevels;
