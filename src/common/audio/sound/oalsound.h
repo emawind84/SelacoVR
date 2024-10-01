@@ -30,21 +30,21 @@ struct OpenALQueueItem {
 	SoundHandle sfx;
 	//SoundListener *listener;
 	float vol = 0, dist_sqr = 0, distscale = 0, startTime = 0, pitch = 0;
-	FVector3 pos, vel;
+	FVector3 pos = { 0.,0.,0.}, vel = { 0.,0.,0.};
 	FRolloffInfo rolloff;
 	int channum = -1, chanflags = 0, priority = 0;
 	uint64_t chanStartTime = 0;
-	ALuint source;
-	ALuint buffer;
-	ALuint envSlot;
+	ALuint source = 0;
+	ALuint buffer = 0;
+	ALuint envSlot = 0;
 	bool reuseChan = false;		// Only used to signal what type of offset startTime is
 	bool inWater = false;		// Play as if in water
 };
 
 struct OpenALPlayedItem {
-	ALuint source;
-	ALint state;
-	int channum;
+	ALuint source	= 0;
+	ALint state		= -1;
+	int channum		= -1;
 };
 
 

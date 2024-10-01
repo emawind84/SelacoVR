@@ -26,7 +26,7 @@ struct VulkanUploadSlot {
 class VulkanDevice
 {
 public:
-	VulkanDevice(std::shared_ptr<VulkanInstance> instance, std::shared_ptr<VulkanSurface> surface, const VulkanCompatibleDevice& selectedDevice);
+	VulkanDevice(std::shared_ptr<VulkanInstance> instance, std::shared_ptr<VulkanSurface> surface, const VulkanCompatibleDevice& selectedDevice, int numUploadSlots = 2);
 	~VulkanDevice();
 
 	std::set<std::string> EnabledDeviceExtensions;
@@ -60,7 +60,7 @@ public:
 private:
 	bool DebugLayerActive = false;
 
-	void CreateDevice();
+	void CreateDevice(int numUploadSlots = 2);
 	void CreateAllocator();
 	void ReleaseResources();
 };

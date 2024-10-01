@@ -92,6 +92,14 @@ CUSTOM_CVAR(Int, vk_device, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCAL
 	Printf("This won't take effect until " GAMENAME " is restarted.\n");
 }
 
+CUSTOM_CVAR(Int, vk_max_transfer_threads, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+{
+	if (self < 0) self = 0;
+	else if (self > 4) self = 4;
+
+	Printf("This won't take effect until " GAMENAME " is restarted.\n");
+}
+
 CCMD(vk_listdevices)
 {
 	for (size_t i = 0; i < SupportedDevices.size(); i++)
@@ -100,13 +108,6 @@ CCMD(vk_listdevices)
 	}
 }
 
-CUSTOM_CVAR(Int, vk_max_transfer_threads, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
-{
-	if (self < 0) self = 0;
-	else if (self > 4) self = 4;
-
-	Printf("This won't take effect until " GAMENAME " is restarted.\n");
-}
 
 void VulkanError(const char* text)
 {
@@ -575,7 +576,7 @@ VulkanRenderDevice::VulkanRenderDevice(void *hMonitor, bool fullscreen, std::sha
 	builder.Surface(surface);
 	builder.SelectDevice(vk_device);
 	SupportedDevices = builder.FindDevices(surface->Instance);
-	device = builder.Create(surface->Instance);
+	device = builder.Create(surface->Instance, vk_max_transfer_threads);
 }
 
 VulkanRenderDevice::~VulkanRenderDevice()
@@ -678,6 +679,9 @@ void VulkanRenderDevice::InitializeState()
 		mBGTransferCommands.push_back(std::move(cmds));
 		bgTransferThreads.push_back(std::move(ptr));
 	}
+
+	Printf(TEXTCOLOR_BLUE "VK Graphics Queue: %p\nVK Present Queue: %p\n", device->GraphicsQueue, device->PresentQueue);
+	for (int x = 0; x < (int)device->uploadQueues.size(); x++) Printf(TEXTCOLOR_BLUE "VK Upload Queue %d: %p\n", x, device->uploadQueues[x].queue);
 }
 
 void VulkanRenderDevice::Update()
