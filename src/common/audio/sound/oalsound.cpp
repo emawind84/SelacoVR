@@ -951,48 +951,7 @@ OpenALSoundRenderer::~OpenALSoundRenderer()
 	Device = NULL;
 }
 
-/*void OpenALSoundRenderer::BackgroundProc()
-{
-	std::unique_lock<std::mutex> lock(StreamLock);
-	std::chrono::time_point<std::chrono::steady_clock> lastStreamTime;
 
-	while(!QuitThread.load())
-	{
-		// Copy the queue
-		TArray<ALuint> q;
-		std::unique_lock<std::mutex> pqLock(PlayQueueLock);
-		q.Append(PlayQueue);
-		PlayQueue.Clear();
-		pqLock.unlock();
-
-		// Play the queue
-		for (auto s : q) { 
-			alSourcePlay(s);
-			alGetError();
-		}
-
-		
-		// Process streams
-		if(Streams.Size() == 0)
-		{
-			// If there's nothing to play, wait indefinitely.
-			//StreamWake.wait(lock);
-		}
-		else
-		{
-			// If ~100ms has passed since the last stream processing, do it now
-			auto clk = std::chrono::high_resolution_clock::now();
-			if (std::chrono::duration<double, std::milli>(lastStreamTime - clk).count() >= 100) {
-				lastStreamTime = clk;
-
-				for (size_t i = 0; i < Streams.Size(); i++)
-					Streams[i]->Process();
-			}
-		}
-
-		if(q.Size() == 0) StreamWake.wait_for(lock, std::chrono::milliseconds(5));
-	}
-}*/
 void OpenALSoundRenderer::BackgroundProc()
 {
 	std::unique_lock<std::mutex> lock(StreamLock);
@@ -1853,6 +1812,8 @@ void OpenALSoundRenderer::StopChannel(FISoundChannel *chan)
 			// Flush the queue and wait to see if it plays so we can stop it immediately
 			FlushPlayQueue();
 			UpdatePlayedSounds();
+
+			alGetError();	// Clear errors
 
 			// Now the state may have changed, stop the sound if necessary
 			if (status->state != AL_INITIAL) {

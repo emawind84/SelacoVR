@@ -92,16 +92,23 @@ bool AudioLoadThread::loadResource(AudioQInput &input, AudioQOutput &output) {
 	}*/
 	output.createdNewData = true;
 	data = new char[size];
-	FileReader reader = fileSystem.OpenFileReader(input.lump, FileSys::EReaderType::READER_NEW, FileSys::EReaderType::READERFLAG_SEEKABLE);
-	reader.Read(data, size);
-	reader.Close();
 
-	output.data = data;
+	try {
+		FileReader reader = fileSystem.OpenFileReader(input.lump, FileSys::EReaderType::READER_NEW, 0);
+		reader.Read(data, size);
+		reader.Close();
+		output.data = data;
+	}
+	catch (std::exception& e) {
+		output.data = nullptr;
+	}
+
+	
 	output.sfx = input.sfx;
 	output.soundID = input.soundID;
 
 	// Try to interpret the data
-	if (size > 8)
+	if (size > 8 && output.data != nullptr)
 	{
 		int32_t dmxlen = FileSys::byteswap::LittleLong(((int32_t *)data)[1]);
 
@@ -127,14 +134,15 @@ bool AudioLoadThread::loadResource(AudioQInput &input, AudioQOutput &output) {
 		{
 			output.loadedSnd = GSnd->LoadSound((uint8_t *)data, size, input.sfx->LoopStart, input.sfx->LoopEnd);
 		}
-	}
 
-	if (output.loadedSnd.isValid()) {
-		return true;
+		if (output.loadedSnd.isValid()) {
+			return true;
+		}
 	}
 
 	// If we created any data, free it now
 	if (output.createdNewData) {
+		output.createdNewData = false;
 		delete [] data;
 	}
 
