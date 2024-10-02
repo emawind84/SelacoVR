@@ -165,9 +165,12 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 			uint32_t srcWidth = src->GetWidth(), srcHeight = src->GetHeight();
 
 			// Create a reader
-			FileReader reader = fileSystem.OpenFileReader(src->LumpNum(), FileSys::EReaderType::READER_NEW, FileSys::EReaderType::READERFLAG_SEEKABLE);
-			//reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);
-			reader.Seek(0, FileReader::SeekSet);	// @Cockatrice - TODO: After the engine merge and new filesystem stuff, ensure this goes to the correct offset when reading from ZIP files
+			FileReader reader = fileSystem.OpenFileReader(src->LumpNum(), FileSys::EReaderType::READER_SHARED, 0);
+			if (!reader.isOpen()) {
+				Printf(TEXTCOLOR_RED "Lump: %s cannot be read: Uninitialized reader!\n", fileSystem.GetFileFullName(src->LumpNum(), false));
+				hwState = READY;
+				return;
+			}
 
 			// Read pixels
 			src->ReadCompressedPixels(&reader, &pixelData, totalDataSize, pixelDataSize, mipLevels);

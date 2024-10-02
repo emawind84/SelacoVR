@@ -287,7 +287,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 			int numMipLevels;
 
 			assert(params->lump > 0);
-			FileReader reader = fileSystem.OpenFileReader(params->lump, FileSys::EReaderType::READER_NEW, FileSys::EReaderType::READERFLAG_SEEKABLE);
+			FileReader reader = fileSystem.OpenFileReader(params->lump, FileSys::EReaderType::READER_NEW, 0);
 			output.isTranslucent = src->ReadCompressedPixels(&reader, &pixelData, totalSize, pixelDataSize, numMipLevels);
 			reader.Close();
 			freePixels = true;
