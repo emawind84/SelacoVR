@@ -1107,6 +1107,12 @@ DIntermissionController* FLevelLocals::CreateIntermission()
 
 void RunIntermission(level_info_t* fromMap, level_info_t* toMap, DIntermissionController* intermissionScreen, DObject* statusScreen, std::function<void(bool)> completionf)
 {
+	if (!intermissionScreen && !statusScreen)
+	{
+		completionf(false);
+		return;
+	}
+
 	cutscene.runner = CreateRunner(false);
 	GC::WriteBarrier(cutscene.runner);
 	cutscene.completion = std::move(completionf);
