@@ -371,13 +371,13 @@ void VulkanDevice::CreateDevice()
 	float queuePriority[] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-	std::set<int> neededFamilies;
+	/*std::set<int> neededFamilies;
 	neededFamilies.insert(graphicsFamily);
 	if(presentFamily != -2) neededFamilies.insert(presentFamily);
-	neededFamilies.insert(uploadFamily);
+	neededFamilies.insert(uploadFamily);*/
 
 	int graphicsFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, graphicsFamily, queuePriority);
-	int presentFamilySlot = presentFamily == -2 ? -1 : CreateOrModifyQueueInfo(queueCreateInfos, presentFamily, queuePriority);
+	int presentFamilySlot = presentFamily < 0 ? -1 : CreateOrModifyQueueInfo(queueCreateInfos, presentFamily, queuePriority);
 	
 	// Request as many upload queues as desired and supported. Minimum 1
 	std::vector<int> uploadFamilySlots;
@@ -434,7 +434,14 @@ void VulkanDevice::CreateDevice()
 	volkLoadDevice(device);
 
 	vkGetDeviceQueue(device, graphicsFamily, graphicsFamilySlot, &graphicsQueue);
-	vkGetDeviceQueue(device, presentFamily, presentFamilySlot != -1 ? presentFamilySlot : graphicsFamilySlot, &presentQueue);
+
+	if (presentFamily >= 0 && presentFamilySlot >= 0) {
+		vkGetDeviceQueue(device, presentFamily, presentFamilySlot, &presentQueue);
+	}
+	else {
+		vkGetDeviceQueue(device, graphicsFamily, graphicsFamilySlot, &presentQueue);
+	}
+	
 	
 	// Upload queues
 	VulkanUploadSlot slot = { VK_NULL_HANDLE, uploadFamily, uploadFamilySlots[0], uploadFamilySupportsGraphics };
