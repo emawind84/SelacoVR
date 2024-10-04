@@ -308,6 +308,17 @@ bool EventManager::IsSaveAllowed(bool quicksave) {
 	return true;
 }
 
+
+void EventManager::PreSave(int saveType) {
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
+		handler->PreSave(saveType);
+}
+
+void EventManager::PostSave(int saveType) {
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
+		handler->PostSave(saveType);
+}
+
 FString EventManager::GetSavegameComments()
 {
 	struct Comment {
@@ -1070,12 +1081,32 @@ bool DStaticEventHandler::IsSaveAllowed(bool quicksave) {
 	{
 		int valid = 1;
 		VMReturn results[1] = { &valid };
-		VMValue params[2] = { (DStaticEventHandler*)this, &quicksave };
+		VMValue params[2] = { (DStaticEventHandler*)this, quicksave };
 		VMCall(func, params, 2, results, 1);
 		return !!valid;
 	}
 
 	return true;
+}
+
+
+void DStaticEventHandler::PreSave(int saveType) {
+	IFVIRTUAL(DStaticEventHandler, PreSave)
+	{
+		if (isEmpty(func)) return;
+		VMValue params[2] = { (DStaticEventHandler*)this, saveType };
+		VMCall(func, params, 2, nullptr, 0);
+	}
+}
+
+
+void DStaticEventHandler::PostSave(int saveType) {
+	IFVIRTUAL(DStaticEventHandler, PostSave)
+	{
+		if (isEmpty(func)) return;
+		VMValue params[2] = { (DStaticEventHandler*)this, saveType };
+		VMCall(func, params, 2, nullptr, 0);
+	}
 }
 
 FRenderEvent EventManager::SetupRenderEvent()
