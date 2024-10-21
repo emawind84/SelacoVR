@@ -113,6 +113,24 @@ DEFINE_ACTION_FUNCTION(_Globals, GetInt)
 }
 
 
+DEFINE_ACTION_FUNCTION(_Globals, GetKeys)
+{
+	PARAM_PROLOGUE;
+	PARAM_POINTER(out, TArray<FString>);
+
+	// Copy keys to out
+	TMapIterator<FString, FString> it(globalStorage);
+	TMap<FString, FString>::Pair* pair;
+	int outSize = out->Size();
+
+	while (it.NextPair(pair)) {
+		out->Push(pair->Key);
+	}
+
+	ACTION_RETURN_INT(out->Size() - outSize);
+}
+
+
 DEFINE_ACTION_FUNCTION(_Globals, Set)
 {
 	PARAM_PROLOGUE;

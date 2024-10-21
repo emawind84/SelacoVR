@@ -869,6 +869,7 @@ struct Globals native play
 {
 	native static clearscope string, bool Get(string key);
 	native static clearscope int, bool GetInt(string key);
+	native static clearscope int GetKeys(out Array<string> keys);
 	native static void Set(string key, string value);
 	native static void SetInt(string key, int value);
 	native static void Save();
