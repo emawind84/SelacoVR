@@ -545,7 +545,7 @@ void M_ReadGlobalVars(FileReader& fr, TMap<FString, FString>& map) {
 
 		if (!key.Len() == 0 && !value.Len() == 0) {
 			map[key] = value;
-			if(developer) Printf("Globals Read: %s = %s\n", key, value);
+			if(developer) Printf("Globals Read: %s = %s\n", key.GetChars(), value.GetChars());
 		}
 	}
 }
