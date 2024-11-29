@@ -610,9 +610,33 @@ void M_LoadDefaults ()
 
 	// Migrate old global vars from the same path as GameConfig
 	if (GameConfig->GetPathName() != nullptr) {
-		FString filename = GameConfig->GetPathName();
-		filename += ".globals";
-		M_MigrateGlobalVars(filename.GetChars(), path.GetChars());
+		FString iniName = GameConfig->GetPathName();
+		FString iniGlobals = iniName + ".globals";
+
+		M_MigrateGlobalVars(iniGlobals.GetChars(), path.GetChars());
+
+		// Attempt to migrate any .globals files in the same folder, and in the program folder
+		std::filesystem::path iniFilePath(iniName.GetChars());
+		std::filesystem::path iniPath = iniFilePath.parent_path();
+
+		if (!iniPath.empty() && std::filesystem::exists(iniPath)) {
+			for (auto const& entry : std::filesystem::directory_iterator{ iniPath }) {
+				if (!entry.is_directory() && entry.path().extension() == ".globals") {
+					M_MigrateGlobalVars(entry.path().string().c_str(), path.GetChars());
+				}
+			}
+		}
+
+		// Attempt to migrate .globals file in the program directory
+		std::filesystem::path localPath(".");
+
+		if (!localPath.empty() && std::filesystem::exists(localPath)) {
+			for (auto const& entry : std::filesystem::directory_iterator{ localPath }) {
+				if (!entry.is_directory() && entry.path().extension() == ".globals") {
+					M_MigrateGlobalVars(entry.path().string().c_str(), path.GetChars());
+				}
+			}
+		}
 	}
 }
 
