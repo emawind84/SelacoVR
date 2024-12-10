@@ -322,6 +322,17 @@ void VulkanDevice::SelectPhysicalDevice()
 	// Test to see if we can fit more upload queues
 	int rqt = (uploadFamily == graphicsFamily ? 1 : 0) + (presentFamily == uploadFamily ? 1 : 0);
 	uploadQueuesSupported = SupportedDevices[selected].device->QueueFamilies[uploadFamily].queueCount - rqt;
+
+	// Output available devices for debugging
+	for (int x = 0; x < SupportedDevices.size(); x++) {
+		Printf("Found VK Device #%d: ", x);
+		if (x == selected) {
+			Printf(TEXTCOLOR_CYAN "%s (Vendor ID: %d  Device ID: %d)\n", SupportedDevices[x].device->Properties.deviceName, SupportedDevices[x].device->Properties.vendorID, SupportedDevices[x].device->Properties.deviceID);
+		}
+		else {
+			Printf(TEXTCOLOR_WHITE "%s (Vendor ID: %d  Device ID: %d)\n", SupportedDevices[x].device->Properties.deviceName, SupportedDevices[x].device->Properties.vendorID, SupportedDevices[x].device->Properties.deviceID);
+		}
+	}
 }
 
 bool VulkanDevice::SupportsDeviceExtension(const char *ext) const
