@@ -450,6 +450,10 @@ void AudioLoaderQueue::update() {
 				}
 			}
 
+			if (loaded.data != nullptr && loaded.createdNewData) {
+				delete [] loaded.data;
+			}
+
 			totalLoaded++;
 
 			// TODO: Set the cache pointer if there is data loaded and there is not already a cache
