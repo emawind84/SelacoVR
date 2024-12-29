@@ -702,6 +702,7 @@ OpenALSoundRenderer::OpenALSoundRenderer()
 	alSpeedOfSound(343.3f);
 	if(ALC.EXT_EFX)
 		alListenerf(AL_METERS_PER_UNIT, 1.0f);
+	alDopplerFactor(0);
 
 	alDistanceModel(AL_INVERSE_DISTANCE);
 	if(AL.EXT_source_distance_model)
@@ -979,6 +980,8 @@ void OpenALSoundRenderer::BackgroundProc()
 void OpenALSoundRenderer::BackgroundQueueProc()
 {
 	std::unique_lock<std::mutex> threadLocker(QueueThreadLock);
+
+	alcMakeContextCurrent(Context);
 
 	while (!QuitQueueThread)
 	{
@@ -1726,6 +1729,7 @@ bool OpenALSoundRenderer::StartSound3D(OpenALQueueItem &playInfo)
 	}
 
 	alSourcei(source, AL_BUFFER, buffer);
+	getALError();
 
 	if((playInfo.chanflags&SNDF_NOPAUSE) || !SFXPaused)
 		alSourcePlay(source);
