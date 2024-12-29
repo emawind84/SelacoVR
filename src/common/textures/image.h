@@ -83,7 +83,7 @@ public:
 	FRemapTable *remap;
 
 	virtual ~FImageLoadParams() {
-
+		remap = 0;
 	}
 };
 
