@@ -183,7 +183,7 @@ void VulkanDevice::CreateDevice(int numUploadSlots)
 
 	if (GraphicsFamily != -1)
 		vkGetDeviceQueue(device, GraphicsFamily, graphicsFamilySlot, &GraphicsQueue);
-	if (PresentFamily >= 0)
+	if (PresentFamily >= 0 && presentFamilySlot >= 0)
 		vkGetDeviceQueue(device, PresentFamily, presentFamilySlot, &PresentQueue);
 	else if(PresentFamily == -2)
 		PresentQueue = GraphicsQueue;	// I think we still need a reference to a queue even if there is no present family
