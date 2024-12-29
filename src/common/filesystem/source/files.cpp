@@ -55,6 +55,7 @@ FILE *myfopen(const char *filename, const char *flags)
 	auto widename = toWide(filename);
 	auto wideflags = toWide(flags);
 	return _wfopen(widename.c_str(), wideflags.c_str());
+	//return _wfsopen(widename.c_str(), wideflags.c_str(), _SH_DENYWR);
 #endif
 }
 
@@ -104,27 +105,18 @@ public:
 		return true;
 	}
 	
-
-	FileReaderInterface* CopyNew() override {
-		StdFileReader *m = new StdFileReader();
-		m->Filename = Filename;
-		m->StartPos = StartPos;
-		m->Length = Length;
-		m->FilePos = FilePos;
-		// Do not open right away!
-
-		//m->Open(Filename, StartPos, Length);
-		//m->Seek(FilePos, SEEK_SET);
-		return m;
+	void ShiftStart(ptrdiff_t offset) override {
+		StartPos += offset;
 	}
 
 	const inline void VerifyFileOpen() {
-		if (!File && Filename.GetChars() != "") {
+		/*if (!File && Filename.GetChars() != "") {
 			long fPos = FilePos;
 
 			if (Open(Filename.GetChars(), StartPos, Length))
 				Seek(fPos, SEEK_SET);
-		}
+		}*/
+		assert(0);
 	}
 
 	ptrdiff_t Tell() const override
@@ -148,7 +140,7 @@ public:
 		}
 		if (offset < StartPos || offset > StartPos + Length) return -1;	// out of scope
 
-		VerifyFileOpen();
+		//VerifyFileOpen();
 		if (0 == fseek(File, offset, SEEK_SET))
 		{
 			FilePos = offset;
@@ -166,7 +158,7 @@ public:
 			len = Length - FilePos + StartPos;
 		}
 
-		VerifyFileOpen();
+		//VerifyFileOpen();
 		len = fread(buffer, 1, len, File);
 		FilePos += len;
 		return len;
@@ -176,7 +168,7 @@ public:
 	{
 		if (len <= 0 || len > 0x7fffffff || FilePos >= StartPos + Length) return nullptr;
 
-		VerifyFileOpen();
+		//VerifyFileOpen();
 
 		char *p = fgets(strbuf, (int)len, File);
 		if (p != nullptr)
@@ -196,7 +188,7 @@ private:
 	{
 		ptrdiff_t endpos;
 
-		VerifyFileOpen();
+		//VerifyFileOpen();
 
 		fseek(File, 0, SEEK_END);
 		endpos = ftell(File);
@@ -287,15 +279,6 @@ public:
 		}
 		return p;
 	}
-
-
-	FileReaderInterface* CopyNew() override {
-		auto *readerInterface = mReader->CopyNew();
-		auto *reader = new FileReaderRedirect(*readerInterface, StartPos, Length);
-		reader->Seek(FilePos, SEEK_SET);
-
-		return reader;
-	}
 };
 
 //==========================================================================
@@ -369,12 +352,6 @@ char *MemoryReader::Gets(char *strbuf, ptrdiff_t len)
 }
 
 
-FileReaderInterface* MemoryReader::CopyNew() {
-	MemoryReader* m = new MemoryReader(bufptr, Length);
-	m->FilePos = FilePos;
-	return m;
-}
-
 
 int BufferingReader::FillBuffer(ptrdiff_t newpos)
 {
@@ -406,13 +383,6 @@ char* BufferingReader::Gets(char* strbuf, ptrdiff_t len)
 {
 	if (FillBuffer(FilePos + len) < 0) return nullptr;
 	return MemoryReader::Gets(strbuf, len);
-}
-
-FileReaderInterface* BufferingReader::CopyNew() {
-	BufferingReader* m = new BufferingReader(baseReader.get());
-	m->FilePos = FilePos;
-
-	return m;
 }
 
 //==========================================================================

@@ -180,7 +180,7 @@ public:
 	virtual const char *GetBuffer() const { return nullptr; }
 	ptrdiff_t GetLength () const { return Length; }
 
-	virtual FileReaderInterface* CopyNew() = 0;
+	virtual void ShiftStart(ptrdiff_t offset) {};
 };
 
 class FileReader
@@ -222,9 +222,8 @@ public:
 		return *this;
 	}
 
-	FileReader* CopyNew() {
-		if (mReader == nullptr) { return nullptr; }
-		return new FileReader(mReader->CopyNew());
+	void ShiftStart(ptrdiff_t offset) {
+		mReader->ShiftStart(offset);
 	}
 
 	// This is for wrapping the actual reader for custom access where a managed FileReader won't work. 
