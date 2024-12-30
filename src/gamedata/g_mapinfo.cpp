@@ -1868,7 +1868,8 @@ MapFlagHandlers[] =
 	{ "attenuatelights",				MITYPE_SETFLAG3,	LEVEL3_ATTENUATE, 0 },
 	{ "nofogofwar",						MITYPE_SETFLAG3,	LEVEL3_NOFOGOFWAR, 0 },
 	{ "rainymap",						MITYPE_SETFLAG3,	LEVEL3_RAINYMAP, 0 },
-	{ "saferoom",						MITYPE_SETFLAG3,	LEVEL3_SAFEROOM, 0 },	{ "nobotnodes",						MITYPE_IGNORE,	0, 0 },		// Skulltag option: nobotnodes
+	{ "saferoom",						MITYPE_SETFLAG3,	LEVEL3_SAFEROOM, 0 },	
+	{ "nobotnodes",						MITYPE_IGNORE,	0, 0 },		// Skulltag option: nobotnodes
 	{ "nopassover",						MITYPE_COMPATFLAG, COMPATF_NO_PASSMOBJ, 0 },
 	{ "passover",						MITYPE_CLRCOMPATFLAG, COMPATF_NO_PASSMOBJ, 0 },
 	{ "compat_shorttex",				MITYPE_COMPATFLAG, COMPATF_SHORTTEX, 0 },
