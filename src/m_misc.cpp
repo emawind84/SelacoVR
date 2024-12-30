@@ -69,6 +69,7 @@
 #include "vm.h"
 
 #include <fstream>
+#include <filesystem>
 
 FGameConfigFile *GameConfig;
 
@@ -76,12 +77,14 @@ CVAR(Bool, screenshot_quiet, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 CVAR(String, screenshot_type, "png", CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 CVAR(String, screenshot_dir, "", CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 EXTERN_CVAR(Bool, longsavemessages);
+EXTERN_CVAR(Int, developer)
 
 static size_t ParseCommandLine (const char *args, int *argc, char **argv);
 
 TMap<FString, FString> globalStorage;
 void M_LoadGlobalVars(const char* filename);
-void M_SaveGlobalVars(const char* filename);
+bool M_SaveGlobalVars(const char* filename);
+void M_ReadGlobalVars(FileReader& fr, TMap<FString, FString>& map);
 
 
 // Quick funcs for global vars
@@ -171,9 +174,9 @@ DEFINE_ACTION_FUNCTION(_Globals, Save)
 {
 	// Save global vars from the same path as GameConfig
 	if (GameConfig != nullptr && GameConfig->GetPathName() != nullptr) {
-		FString filename = GameConfig->GetPathName();
-		filename += ".globals";
-		M_SaveGlobalVars(filename.GetChars());
+		FString path = M_GetSavegamesPath();
+		path += "selaco.globals";
+		M_SaveGlobalVars(path.GetChars());
 	}
 	else {
 		Printf(TEXTCOLOR_RED"Failed to write globals!");
@@ -185,10 +188,10 @@ DEFINE_ACTION_FUNCTION(_Globals, Save)
 
 UNSAFE_CCMD(writeglobals)
 {
-	if (GameConfig != nullptr && GameConfig->GetPathName() != nullptr) {
-		FString filename = GameConfig->GetPathName();
-		filename += ".globals";
-		M_SaveGlobalVars(filename.GetChars());
+	FString path = M_GetSavegamesPath();
+	path += "selaco.globals";
+	if (M_SaveGlobalVars(path.GetChars())) {
+		Printf(TEXTCOLOR_BLUE"Wrote globals to: %s", path.GetChars());
 	}
 	else {
 		Printf(TEXTCOLOR_RED"Failed to write globals!");
@@ -407,10 +410,10 @@ bool M_SaveDefaults (const char *filename)
 	}
 
 	// Save global vars from the same path as GameConfig
-	if (success && GameConfig->GetPathName() != nullptr) {
-		FString filename = GameConfig->GetPathName();
-		filename += ".globals";
-		M_SaveGlobalVars(filename.GetChars());
+	if (success) {
+		FString path = M_GetSavegamesPath();
+		path += "selaco.globals";
+		M_SaveGlobalVars(path.GetChars());
 	}
 
 	return success;
@@ -440,6 +443,47 @@ UNSAFE_CCMD (writeini)
 	}
 }
 
+// @Cockatrice - I lazily implemented the first version of the globals file
+// that just copied your .ini path. This doesn't sync between Steam installs
+// so we are going to migrate to something in the Save folder.
+// This function will read the globals file, merge the important fields
+// and then delete the file.
+void M_MigrateGlobalVars(const char* filename, const char *newFilename) {
+	TMap<FString, FString> map;
+
+	FileReader fr;
+	fr.OpenFile(filename);
+	M_ReadGlobalVars(fr, globalStorage);
+	fr.Close();
+
+	// Merge data by adopting the largest number for each value
+	// Legacy data was all INTs so we can just convert everything to INT
+	TMapIterator<FString, FString> it(map);
+	TMap<FString, FString>::Pair* pair;
+
+	while (it.NextPair(pair))
+	{
+		auto data = pair->Value.ToLong();
+
+		if (globalStorage.CheckKey(pair->Key)) {
+			FString sData;
+			sData.Format("%d", max(data, globalStorage[pair->Key].ToLong()));
+			globalStorage[pair->Key] = sData;
+		}
+		else {
+			globalStorage[pair->Key] = pair->Value;
+		}
+	}
+
+	if (FileExists(filename)) {
+		// Don't delete this file unless we can save the new one
+		if (M_SaveGlobalVars(newFilename)) {
+			std::filesystem::remove(filename);
+			Printf("Migrated %s\n", filename);
+		}
+	}
+}
+
 
 CCMD(openconfig)
 {
@@ -453,12 +497,18 @@ CCMD(openconfig)
 void M_LoadGlobalVars(const char* filename) {
 	globalStorage.Clear();
 
+	Printf("Loading Globals...\n");
 	FileReader fr;
 	fr.OpenFile(filename);
+	M_ReadGlobalVars(fr, globalStorage);
+	fr.Close();
+}
 
+
+void M_ReadGlobalVars(FileReader& fr, TMap<FString, FString>& map) {
 	const auto fileSize = fr.isOpen() ? fr.GetLength() : 0;
 
-	if (!fr.isOpen() || fileSize < sizeof(uint32_t)) 
+	if (!fr.isOpen() || fileSize < sizeof(uint32_t))
 		return;
 
 	const uint32_t numEntries = fr.ReadUInt32();
@@ -499,18 +549,17 @@ void M_LoadGlobalVars(const char* filename) {
 		value = buf;
 
 		if (!key.Len() == 0 && !value.Len() == 0) {
-			globalStorage[key] = value;
-			Printf("Read: %s = %s\n", key, value);
+			map[key] = value;
+			if(developer) Printf("Globals Read: %s = %s\n", key.GetChars(), value.GetChars());
 		}
 	}
-
-	fr.Close();
 }
 
 
-void M_SaveGlobalVars(const char* filename) {
+bool M_SaveGlobalVars(const char* filename) {
 	std::ofstream fw(filename, std::ios_base::binary | std::ios_base::out);
 	
+	if (!fw.is_open()) return false;
 
 	const uint32_t numEntries = globalStorage.CountUsed();
 	const char hash = (char)(numEntries % 256);
@@ -519,7 +568,7 @@ void M_SaveGlobalVars(const char* filename) {
 	
 	if (numEntries == 0) {
 		fw.close();
-		return;
+		return true;
 	}
 
 	TMapIterator<FString, FString> it(globalStorage);
@@ -546,6 +595,8 @@ void M_SaveGlobalVars(const char* filename) {
 	}
 
 	fw.close();
+
+	return true;
 }
 
 
@@ -558,11 +609,39 @@ void M_LoadDefaults ()
 	GameConfig = new FGameConfigFile;
 	GameConfig->DoGlobalSetup ();
 
-	// Load global vars from the same path as GameConfig
+	FString path = M_GetSavegamesPath();
+	path += "selaco.globals";
+	M_LoadGlobalVars(path.GetChars());
+
+	// Migrate old global vars from the same path as GameConfig
 	if (GameConfig->GetPathName() != nullptr) {
-		FString filename = GameConfig->GetPathName();
-		filename += ".globals";
-		M_LoadGlobalVars(filename.GetChars());
+		FString iniName = GameConfig->GetPathName();
+		FString iniGlobals = iniName + ".globals";
+
+		M_MigrateGlobalVars(iniGlobals.GetChars(), path.GetChars());
+
+		// Attempt to migrate any .globals files in the same folder, and in the program folder
+		std::filesystem::path iniFilePath(iniName.GetChars());
+		std::filesystem::path iniPath = iniFilePath.parent_path();
+
+		if (!iniPath.empty() && std::filesystem::exists(iniPath)) {
+			for (auto const& entry : std::filesystem::directory_iterator{ iniPath }) {
+				if (!entry.is_directory() && entry.path().extension() == ".globals") {
+					M_MigrateGlobalVars(entry.path().string().c_str(), path.GetChars());
+				}
+			}
+		}
+
+		// Attempt to migrate .globals file in the program directory
+		std::filesystem::path localPath(".");
+
+		if (!localPath.empty() && std::filesystem::exists(localPath)) {
+			for (auto const& entry : std::filesystem::directory_iterator{ localPath }) {
+				if (!entry.is_directory() && entry.path().extension() == ".globals") {
+					M_MigrateGlobalVars(entry.path().string().c_str(), path.GetChars());
+				}
+			}
+		}
 	}
 }
 

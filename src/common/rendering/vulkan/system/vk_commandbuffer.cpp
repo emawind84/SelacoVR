@@ -187,8 +187,12 @@ void VkCommandBufferManager::WaitForCommands(bool finish, bool uploadOnly)
 
 	if (finish)
 	{
-		if (!fb->GetVSync())
+		if (!fb->GetVSync()) {
+			FPSWait.Reset();
+			FPSWait.Clock();
 			fb->FPSLimit();
+			FPSWait.Unclock();
+		}
 		fb->GetFramebufferManager()->QueuePresent();
 	}
 
@@ -206,13 +210,6 @@ void VkCommandBufferManager::WaitForCommands(bool finish, bool uploadOnly)
 		if (finish) {
 			GPUWait.Unclock();
 		}
-	}
-
-	if (finish) {
-		FPSWait.Reset();
-		FPSWait.Clock();
-		fb->FPSLimit();
-		FPSWait.Unclock();
 	}
 
 	DeleteFrameObjects(uploadOnly);
