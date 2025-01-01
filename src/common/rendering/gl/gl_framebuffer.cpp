@@ -72,7 +72,9 @@ EXTERN_CVAR(Bool, r_drawvoxels)
 EXTERN_CVAR(Int, gl_tonemap)
 EXTERN_CVAR(Bool, cl_capfps)
 EXTERN_CVAR(Int, gl_pipeline_depth)
+EXTERN_CVAR(Bool, gl_texture_thread)
 EXTERN_CVAR(Int, gl_max_transfer_threads)
+EXTERN_CVAR(Int, gl_background_flush_count)
 
 void gl_LoadExtensions();
 void gl_PrintStartupLog();
@@ -104,6 +106,9 @@ ADD_STAT(glloader)
 	auto sc = dynamic_cast<OpenGLRenderer::OpenGLFrameBuffer*>(screen);
 
 	if (sc) {
+		if (!sc->SupportsBackgroundCache()) {
+			return FString("OpenGL Texture Thread Disabled");
+		}
 		sc->GetBGQueueSize(queue, secQueue, collisions, maxQueue, maxSecondaryQueue, total);
 		sc->GetBGStats(minLoad, maxLoad, avgLoad);
 
@@ -449,8 +454,9 @@ void OpenGLFrameBuffer::FlushBackground() {
 void OpenGLFrameBuffer::UpdateBackgroundCache(bool flush) {
 	// Check for completed cache items and link textures to the data
 	GlTexLoadOut loaded;
+	int dequeueCount = 0;
 
-	while (outputTexQueue.size() > 0) {
+	while (outputTexQueue.size() > 0 && (flush || dequeueCount < gl_background_flush_count)) {
 		if (!outputTexQueue.dequeue(loaded)) break;
 
 		// Set the sprite positioning if we loaded it and it hasn't already been applied
@@ -590,12 +596,14 @@ void OpenGLFrameBuffer::InitializeState()
 	mDebug = std::make_unique<FGLDebug>();
 	mDebug->Update();
 
-	
-	int numThreads = min((int)gl_max_transfer_threads, gl_numAUXContexts());
-	for (int x = 0; x < numThreads; x++) {
-		std::unique_ptr<GlTexLoadThread> ptr(new GlTexLoadThread(this, x, &primaryTexQueue, &secondaryTexQueue, &outputTexQueue));
-		ptr->start();
-		bgTransferThreads.push_back(std::move(ptr));
+	bgTransferThreads.clear();
+	if (gl_texture_thread) {
+		int numThreads = min(4, min((int)gl_max_transfer_threads, gl_numAUXContexts()));
+		for (int x = 0; x < numThreads; x++) {
+			std::unique_ptr<GlTexLoadThread> ptr(new GlTexLoadThread(this, x, &primaryTexQueue, &secondaryTexQueue, &outputTexQueue));
+			ptr->start();
+			bgTransferThreads.push_back(std::move(ptr));
+		}
 	}
 }
 
