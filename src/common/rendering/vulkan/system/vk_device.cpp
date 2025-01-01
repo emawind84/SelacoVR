@@ -73,6 +73,8 @@ CUSTOM_CVAR(Int, vk_max_transfer_threads, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | 
 	Printf("This won't take effect until " GAMENAME " is restarted.\n");
 }
 
+EXTERN_CVAR(Bool, gl_texture_thread)
+
 
 CCMD(vk_listdevices)
 {
@@ -120,6 +122,7 @@ bool VulkanDevice::CheckRequiredFeatures(const VkPhysicalDeviceFeatures &f)
 		f.samplerAnisotropy == VK_TRUE &&
 		f.fragmentStoresAndAtomics == VK_TRUE;
 }
+
 
 void VulkanDevice::SelectPhysicalDevice()
 {
@@ -196,7 +199,8 @@ void VulkanDevice::SelectPhysicalDevice()
 				}
 
 				// Spec states all families must support Transfer, so we should be able to grab any one that passes the other criteria
-				if (queueFamily.queueCount > 0) {
+				// Note: It turns out that this isn't true. Newer drivers are specifying queues that do not have transfer enabled so we need to check
+				if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
 					dev.uploadFamily = i;
 					dev.uploadFamilySupportsGraphics = false;
 					break;
@@ -230,40 +234,6 @@ void VulkanDevice::SelectPhysicalDevice()
 				dev.presentFamily = -2;
 			}
 		}
-
-
-		// OLD CODE
-		/*for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
-		{
-			const auto &queueFamily = info.QueueFamilies[i];
-			if (queueFamily.queueCount > 0 && ((queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) || !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)))
-			{
-				dev.uploadFamily = i;
-				break;
-			}
-		}*/
-
-		// The vulkan spec states that graphics and compute queues can always do transfer.
-		// Furthermore the spec states that graphics queues always can do compute.
-		// Last, the spec makes it OPTIONAL whether the VK_QUEUE_TRANSFER_BIT is set for such queues, but they MUST support transfer.
-		//
-		// In short: pick the first graphics queue family for everything.
-		/*for (int i = 0; i < (int)info.QueueFamilies.size(); i++)
-		{
-			const auto &queueFamily = info.QueueFamilies[i];
-			if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
-			{
-				dev.graphicsFamily = i;
-				dev.graphicsTimeQueries = queueFamily.timestampValidBits != 0;
-				if (dev.uploadFamily < 0) {
-					dev.uploadFamily = i;
-				}
-				if (dev.presentFamily < 0) {
-					dev.uploadFamily = i;
-				}
-				break;
-			}
-		}*/
 
 		if (dev.graphicsFamily != -1 && dev.uploadFamily != -1 && dev.presentFamily != -1)
 		{
@@ -382,18 +352,14 @@ void VulkanDevice::CreateDevice()
 	float queuePriority[] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-	/*std::set<int> neededFamilies;
-	neededFamilies.insert(graphicsFamily);
-	if(presentFamily != -2) neededFamilies.insert(presentFamily);
-	neededFamilies.insert(uploadFamily);*/
-
 	int graphicsFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, graphicsFamily, queuePriority);
 	int presentFamilySlot = presentFamily < 0 ? -1 : CreateOrModifyQueueInfo(queueCreateInfos, presentFamily, queuePriority);
 	
-	// Request as many upload queues as desired and supported. Minimum 1
+	// Request as many upload queues as desired and supported
+	// Modified to support 0 queues, which will disable background loading
 	std::vector<int> uploadFamilySlots;
-	int numUploadQueues = vk_max_transfer_threads > 0 ? vk_max_transfer_threads : 2;
-	for (int x = 0; x < numUploadQueues && x < uploadQueuesSupported; x++) {
+	int numUploadQueues = vk_max_transfer_threads >= 0 ? vk_max_transfer_threads : 2;
+	for (int x = 0; x < numUploadQueues && x < uploadQueuesSupported && gl_texture_thread; x++) {
 		uploadFamilySlots.push_back(CreateOrModifyQueueInfo(queueCreateInfos, uploadFamily, queuePriority));
 	}
 
@@ -455,25 +421,28 @@ void VulkanDevice::CreateDevice()
 	
 	
 	// Upload queues
-	VulkanUploadSlot slot = { VK_NULL_HANDLE, uploadFamily, uploadFamilySlots[0], uploadFamilySupportsGraphics };
-	vkGetDeviceQueue(device, uploadFamily, uploadFamilySlots[0], &slot.queue);
-	uploadQueues.push_back(slot);
-
-	// Push more upload queues if supported
-	for(int x = 1; x < (int)uploadFamilySlots.size(); x++) {
-		VulkanUploadSlot slot = { VK_NULL_HANDLE, uploadFamily, uploadFamilySlots[x], uploadFamilySupportsGraphics };
-		vkGetDeviceQueue(device, uploadFamily, uploadFamilySlots[x], &slot.queue);
+	if (uploadFamilySlots.size() > 0) {
+		VulkanUploadSlot slot = { VK_NULL_HANDLE, uploadFamily, uploadFamilySlots[0], uploadFamilySupportsGraphics };
+		vkGetDeviceQueue(device, uploadFamily, uploadFamilySlots[0], &slot.queue);
 		uploadQueues.push_back(slot);
 
-		if (slot.queue == VK_NULL_HANDLE) {
-			FString msg;
-			msg.Format("Vulkan Error: Failed to create background transfer queue %d!\nCheck vk_max_transfer_threads?", x);
-			throw CVulkanError(msg.GetChars());
+		// Push more upload queues if supported
+		for (int x = 1; x < (int)uploadFamilySlots.size(); x++) {
+			VulkanUploadSlot slot = { VK_NULL_HANDLE, uploadFamily, uploadFamilySlots[x], uploadFamilySupportsGraphics };
+			vkGetDeviceQueue(device, uploadFamily, uploadFamilySlots[x], &slot.queue);
+			uploadQueues.push_back(slot);
+
+			if (slot.queue == VK_NULL_HANDLE) {
+				FString msg;
+				msg.Format("Vulkan Error: Failed to create background transfer queue %d!\nCheck vk_max_transfer_threads?", x);
+				throw CVulkanError(msg.GetChars());
+			}
 		}
 	}
 
 	Printf(TEXTCOLOR_WHITE "VK Graphics Queue: %p\nVK Present Queue: %p\n", graphicsQueue, presentQueue);
 	for (int x = 0; x < (int)uploadQueues.size(); x++) Printf(TEXTCOLOR_WHITE "VK Upload Queue %d: %p\n", x, uploadQueues[x].queue);
+	if (uploadQueues.size() == 0) Printf(TEXTCOLOR_RED "No VK Upload Queues Supported or Enabled!\n");
 }
 
 void VulkanDevice::CreateSurface()

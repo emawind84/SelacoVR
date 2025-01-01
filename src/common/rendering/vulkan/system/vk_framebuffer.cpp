@@ -69,6 +69,8 @@ EXTERN_CVAR(Int, gl_tonemap)
 EXTERN_CVAR(Int, screenblocks)
 EXTERN_CVAR(Bool, cl_capfps)
 EXTERN_CVAR(Int, vk_max_transfer_threads)
+EXTERN_CVAR(Bool, gl_texture_thread)
+EXTERN_CVAR(Int, gl_background_flush_count)
 
 CCMD(vk_memstats)
 {
@@ -91,22 +93,25 @@ CVAR(Bool, vk_raytrace, false, 0/*CVAR_ARCHIVE | CVAR_GLOBALCONFIG*/)	// @Cockat
 
 ADD_STAT(vkloader)
 {
-	static int maxQueue = 0, maxSecondaryQueue = 0, queue, secQueue, total, collisions;
+	static int maxQueue = 0, maxSecondaryQueue = 0, queue, secQueue, total, collisions, outSize;
 	static double minLoad = 0, maxLoad = 0, avgLoad = 0;
 
 	auto sc = dynamic_cast<VulkanFrameBuffer *>(screen);
 
 	if (sc) {
-		sc->GetBGQueueSize(queue, secQueue, collisions, maxQueue, maxSecondaryQueue, total);
+		if (!sc->SupportsBackgroundCache()) {
+			return FString("Vulkan Texture Thread Disabled");
+		}
+		sc->GetBGQueueSize(queue, secQueue, collisions, maxQueue, maxSecondaryQueue, total, outSize);
 		sc->GetBGStats(minLoad, maxLoad, avgLoad);
 
 		FString out;
 		out.AppendFormat(
-			"[%d Threads] Queued: %3.3d - %3.3d  Collisions: %d\nMax: %3.3d Max Sec: %3.3d Tot: %d\n"
+			"[%d Threads] Queued: %3.3d - %3.3d Out: %3.3d  Col: %d\nMax: %3.3d Max Sec: %3.3d Tot: %d\n"
 			"Min: %.3fms\n"
 			"Max: %.3fms\n"
 			"Avg: %.3fms\n",
-			sc->GetNumThreads(), queue, secQueue, collisions, maxQueue, maxSecondaryQueue, total, minLoad, maxLoad, avgLoad
+			sc->GetNumThreads(), queue, secQueue, outSize, collisions, maxQueue, maxSecondaryQueue, total, minLoad, maxLoad, avgLoad
 		);
 		return out;
 	}
@@ -120,13 +125,14 @@ CCMD(vk_rstbgstats) {
 }
 
 
-void VulkanFrameBuffer::GetBGQueueSize(int& current, int& secCurrent, int& collisions, int& max, int& maxSec, int& total) {
+void VulkanFrameBuffer::GetBGQueueSize(int& current, int& secCurrent, int& collisions, int& max, int& maxSec, int& total, int& outSize) {
 	max = maxSec = total = 0;
 	current = primaryTexQueue.size();
 	secCurrent = secondaryTexQueue.size();
 	max = statMaxQueued;
 	maxSec = statMaxQueuedSecondary;
 	collisions = statCollisions;
+	outSize = outputTexQueue.size();
 
 	for (auto& tfr : bgTransferThreads) {
 		total += tfr->statTotalLoaded();
@@ -415,8 +421,10 @@ void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 
 		unsigned int sm4StartIndex = (unsigned int)bgtSm4List.size() - 1;
 
-		//while (bgTransferThreads[bgIndex]->popFinished(loaded)) {
-		while (outputTexQueue.dequeue(loaded)) {
+		int dequeueCount = 0;
+		while (outputTexQueue.dequeue(loaded) && (flush || dequeueCount < gl_background_flush_count)) {
+			dequeueCount++;
+
 			if (loaded.tex->hwState == IHardwareTexture::HardwareState::READY) {
 				statCollisions++;
 				//Printf("Background proc Loaded an already-loaded image: %s What a farting mistake!\n", loaded.gtex ? loaded.gtex->GetName().GetChars() : "UNKNOWN");
@@ -526,6 +534,7 @@ VulkanFrameBuffer::VulkanFrameBuffer(void *hMonitor, bool fullscreen, VulkanDevi
 
 VulkanFrameBuffer::~VulkanFrameBuffer()
 {
+	StopBackgroundCache();
 	vkDeviceWaitIdle(device->device); // make sure the GPU is no longer using any objects before RAII tears them down
 
 	delete mVertexData;
@@ -612,13 +621,21 @@ void VulkanFrameBuffer::InitializeState()
 #endif
 
 	// @Cockatrice - Init the background loader
-	for (int q = 0; q < (int)device->uploadQueues.size(); q++) {
-		if (q > 0 && q > vk_max_transfer_threads) break;	// Cap the number of threads used based on user preference
-		std::unique_ptr<VkCommandBufferManager> cmds(new VkCommandBufferManager(this, &device->uploadQueues[q].queue, device->uploadQueues[q].queueFamily, true));
-		std::unique_ptr<VkTexLoadThread> ptr(new VkTexLoadThread(cmds.get(), device, q, &primaryTexQueue, &secondaryTexQueue, &outputTexQueue));
-		ptr->start();
-		mBGTransferCommands.push_back(std::move(cmds));
-		bgTransferThreads.push_back(std::move(ptr));
+	bgTransferThreads.clear();
+	if (gl_texture_thread && vk_max_transfer_threads >= 0 && device->uploadQueues.size() > 0) {
+		bgTransferEnabled = true;
+
+		for (int q = 0; q < (int)device->uploadQueues.size(); q++) {
+			if (q > 0 && q > vk_max_transfer_threads) break;	// Cap the number of threads used based on user preference
+			std::unique_ptr<VkCommandBufferManager> cmds(new VkCommandBufferManager(this, &device->uploadQueues[q].queue, device->uploadQueues[q].queueFamily, true));
+			std::unique_ptr<VkTexLoadThread> ptr(new VkTexLoadThread(cmds.get(), device, q, &primaryTexQueue, &secondaryTexQueue, &outputTexQueue));
+			ptr->start();
+			mBGTransferCommands.push_back(std::move(cmds));
+			bgTransferThreads.push_back(std::move(ptr));
+		}
+	}
+	else {
+		bgTransferEnabled = false;
 	}
 }
 

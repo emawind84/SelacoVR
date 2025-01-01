@@ -163,7 +163,7 @@ public:
 	bool BackgroundCacheMaterial(FMaterial *mat, int translation, bool makeSPI = false, bool secondary = false) override;
 	bool BackgroundCacheTextureMaterial(FGameTexture *tex, int translation, int scaleFlags, bool makeSPI = false) override;
 	bool CachingActive() override;
-	bool SupportsBackgroundCache() override { return true; }
+	bool SupportsBackgroundCache() override { return bgTransferEnabled; }
 	void StopBackgroundCache() override;
 	void FlushBackground() override;
 	float CacheProgress() override;
@@ -207,9 +207,7 @@ public:
 	bool RaytracingEnabled();
 
 	// Cache stats helpers
-	/*void GetBGQueueSize(int& current, int& max, int& maxSec, int& total);
-	void GetBGStats(double &min, double &max, double &avg);*/
-	void GetBGQueueSize(int& current, int& currentSec, int& collisions, int& max, int& maxSec, int& total);
+	void GetBGQueueSize(int& current, int& currentSec, int& collisions, int& max, int& maxSec, int& total, int& outSize);
 	void GetBGStats(double& min, double& max, double& avg);
 	void ResetBGStats();
 	int GetNumThreads() { return (int)bgTransferThreads.size(); }
@@ -239,6 +237,7 @@ private:
 	std::vector<std::unique_ptr<VulkanSemaphore>> bgtSm4List;			// Semaphores to release after queue resource transfers
 	std::unique_ptr<VulkanCommandBuffer> bgtCmds;
 	bool bgtHasFence = false;
+	bool bgTransferEnabled = true;
 
 	std::unique_ptr<VkCommandBufferManager> mCommands;
 	std::vector<std::unique_ptr<VkCommandBufferManager>> mBGTransferCommands;		// @Cockatrice - Command pool for submitting background transfers
