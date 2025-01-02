@@ -89,18 +89,12 @@ void VulkanDevice::CreateDevice(int numUploadSlots)
 	float queuePriority[] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-	/*std::set<int> neededFamilies;
-	if (GraphicsFamily != -1)
-		neededFamilies.insert(GraphicsFamily);
-	if (PresentFamily != -2)
-		neededFamilies.insert(PresentFamily);*/
-
 	int graphicsFamilySlot = CreateOrModifyQueueInfo(queueCreateInfos, GraphicsFamily, queuePriority);
 	int presentFamilySlot = PresentFamily < 0 ? -1 : CreateOrModifyQueueInfo(queueCreateInfos, PresentFamily, queuePriority);
 
 	// Request as many upload queues as desired and supported. Minimum 1
 	std::vector<int> uploadFamilySlots;
-	int numUploadQueues = numUploadSlots > 0 ? numUploadSlots : 2;
+	int numUploadQueues = numUploadSlots >= 0 ? numUploadSlots : 2;
 
 	for (int x = 0; x < numUploadQueues && x < UploadQueuesSupported; x++) {
 		uploadFamilySlots.push_back(CreateOrModifyQueueInfo(queueCreateInfos, UploadFamily, queuePriority));
@@ -117,15 +111,6 @@ void VulkanDevice::CreateDevice(int numUploadSlots)
 	VulkanPrintLog("debug", "Present Family: " + std::to_string(PresentFamily));
 	VulkanPrintLog("debug", "Upload Family: " + std::to_string(UploadFamily));
 
-	/*for (int index : neededFamilies)
-	{
-		VkDeviceQueueCreateInfo queueCreateInfo = {};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = index;
-		queueCreateInfo.queueCount = 1;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
-		queueCreateInfos.push_back(queueCreateInfo);
-	}*/
 
 	std::vector<const char*> extensionNames;
 	extensionNames.reserve(EnabledDeviceExtensions.size());
@@ -191,18 +176,20 @@ void VulkanDevice::CreateDevice(int numUploadSlots)
 		VulkanError("No valid combination of queues gave us a Graphics and Present queue. \nCockatrice must have done something wrong or your hardware does not support it.");
 
 	// Upload queues
-	VulkanUploadSlot slot = { VK_NULL_HANDLE, UploadFamily, uploadFamilySlots[0], UploadFamilySupportsGraphics };
-	vkGetDeviceQueue(device, UploadFamily, uploadFamilySlots[0], &slot.queue);
-	uploadQueues.push_back(slot);
-
-	// Push more upload queues if supported
-	for (int x = 1; x < (int)uploadFamilySlots.size(); x++) {
-		VulkanUploadSlot slot = { VK_NULL_HANDLE, UploadFamily, uploadFamilySlots[x], UploadFamilySupportsGraphics };
-		vkGetDeviceQueue(device, UploadFamily, uploadFamilySlots[x], &slot.queue);
+	if (uploadFamilySlots.size() > 0) {
+		VulkanUploadSlot slot = { VK_NULL_HANDLE, UploadFamily, uploadFamilySlots[0], UploadFamilySupportsGraphics };
+		vkGetDeviceQueue(device, UploadFamily, uploadFamilySlots[0], &slot.queue);
 		uploadQueues.push_back(slot);
 
-		if (slot.queue == VK_NULL_HANDLE) {
-			VulkanError(("Vulkan Error : Failed to create background transfer queue [" + std::to_string(x) + "] !\n\tCheck vk_max_transfer_threads ?").c_str());
+		// Push more upload queues if supported
+		for (int x = 1; x < (int)uploadFamilySlots.size(); x++) {
+			VulkanUploadSlot slot = { VK_NULL_HANDLE, UploadFamily, uploadFamilySlots[x], UploadFamilySupportsGraphics };
+			vkGetDeviceQueue(device, UploadFamily, uploadFamilySlots[x], &slot.queue);
+			uploadQueues.push_back(slot);
+
+			if (slot.queue == VK_NULL_HANDLE) {
+				VulkanError(("Vulkan Error : Failed to create background transfer queue [" + std::to_string(x) + "] !\n\tCheck vk_max_transfer_threads ?").c_str());
+			}
 		}
 	}
 }

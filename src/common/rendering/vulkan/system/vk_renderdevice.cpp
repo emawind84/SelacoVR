@@ -584,7 +584,7 @@ VulkanRenderDevice::VulkanRenderDevice(void *hMonitor, bool fullscreen, std::sha
 	builder.Surface(surface);
 	builder.SelectDevice(vk_device);
 	SupportedDevices = builder.FindDevices(surface->Instance);
-	device = builder.Create(surface->Instance, vk_max_transfer_threads);
+	device = builder.Create(surface->Instance, gl_texture_thread ? vk_max_transfer_threads : 0);
 }
 
 VulkanRenderDevice::~VulkanRenderDevice()
@@ -687,7 +687,7 @@ void VulkanRenderDevice::InitializeState()
 		for (int q = 0; q < (int)device->uploadQueues.size(); q++) {
 			if (q > 0 && q > vk_max_transfer_threads) break;	// Cap the number of threads used based on user preference
 			std::unique_ptr<VkCommandBufferManager> cmds(new VkCommandBufferManager(this, &device->uploadQueues[q].queue, device->uploadQueues[q].queueFamily, true));
-			std::unique_ptr<VkTexLoadThread> ptr(new VkTexLoadThread(cmds.get(), device, q, &primaryTexQueue, &secondaryTexQueue, &outputTexQueue));
+			std::unique_ptr<VkTexLoadThread> ptr(new VkTexLoadThread(cmds.get(), device.get(), q, &primaryTexQueue, &secondaryTexQueue, &outputTexQueue));
 			ptr->start();
 			mBGTransferCommands.push_back(std::move(cmds));
 			bgTransferThreads.push_back(std::move(ptr));

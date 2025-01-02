@@ -571,14 +571,6 @@ bool FHardwareTexture::BindOrCreate(FTexture *tex, int texunit, int clampmode, i
 			assert(glBufferID == 0);
 
 			// Create a reader
-			/*auto* rLump = fileSystem.GetFileAt(src->LumpNum());
-			if (!rLump)
-				return false;
-
-			FileReader* reader = rLump->Owner->GetReader();
-			reader = reader ? reader->CopyNew() : rLump->NewReader().CopyNew();
-			if (!reader) return false;
-			reader->Seek(rLump->GetFileOffset(), FileReader::SeekSet);*/
 			FileReader reader = fileSystem.OpenFileReader(src->LumpNum(), FileSys::EReaderType::READER_SHARED, 0);
 			if (!reader.isOpen()) {
 				Printf(TEXTCOLOR_RED "Lump: %s cannot be read: Uninitialized reader!\n", fileSystem.GetFileFullName(src->LumpNum(), false));
