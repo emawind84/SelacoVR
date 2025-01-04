@@ -17,9 +17,9 @@ class VulkanCompatibleDevice;
 
 
 struct VulkanUploadSlot {
-	VkQueue queue;
-	int queueFamily, queueIndex;
-	bool familySupportsGraphics;
+	VkQueue queue = VK_NULL_HANDLE;
+	int queueFamily = -1, queueIndex = -1;
+	bool familySupportsGraphics = false;
 };
 
 

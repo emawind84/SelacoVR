@@ -71,25 +71,6 @@ bool AudioLoadThread::loadResource(AudioQInput &input, AudioQOutput &output) {
 
 	char *data;
 
-	/*if (!rl->Cache) {	// TODO: We need to synchronize access to the cache!
-		// This resource hasn't been cached yet, we need to read it manually
-		if (!input.readerCopy) {
-			return false;
-		}
-
-		// ReadData is designed to be thread safe so we should be okay here
-		data = new char[rl->LumpSize];
-		size = rl->ReadData(*input.readerCopy, data);
-		output.createdNewData = true;
-
-		// TODO: This is currently a memory leak situation because the data created here will never be released
-		// TODO: Find out how lump data is eventually freed and use the native process for that
-
-		delete input.readerCopy;
-	}
-	else {
-		data = rl->Cache;
-	}*/
 	output.createdNewData = true;
 	data = new char[size];
 
@@ -236,41 +217,10 @@ void AudioLoaderQueue::queue(sfxinfo_t *sfx, FSoundID soundID, const AudioQueueP
 			qInput.sfx = sfx;
 			qInput.soundID = soundID;
 			qInput.lump = sfx->lumpnum;
-			
-			// Generate a copy of the reader. Some readers (ZIP/PK3) are not at all thread safe
-			/*auto rl = fileSystem.GetFileAt(sfx->lumpnum);
-			auto reader = rl->Owner->GetReader();
-
-			if (!reader) {
-				FDirectory *fdir = dynamic_cast<FDirectory*>(rl->Owner);
-				if (!fdir || !dynamic_cast<FDirectoryLump*>(rl)) {
-					Printf(TEXTCOLOR_RED"AudioLoaderThread::No valid reader on owner for sfx : %s\n", sfx->name.GetChars());
-					return;
-				}
-
-				// Should be a valid file reader now
-				qInput.readerCopy = rl->NewReader().CopyNew();
-			} else { 
-				qInput.readerCopy = reader->CopyNew();
-			}*/
 
 			th->queue(qInput);
 		}
 	}
-
-
-	/*AActor *a = playInfo && playInfo->type == SOURCE_Actor ? (AActor *)playInfo->source : NULL;
-
-
-	if (mQueue.Size() == 0 && (int)mRunning.Size() < audio_max_threads) {
-		start(m);
-		return;
-	}
-
-	mQueue.Push(m);*/
-
-	
-	//Printf(TEXTCOLOR_YELLOW"Queued %d : %s : %s\n", soundID, sfx->name.GetChars(), a ? a->GetCharacterName() : "<None>");
 }
 
 

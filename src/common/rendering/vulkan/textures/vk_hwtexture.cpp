@@ -251,17 +251,11 @@ void VkHardwareTexture::CreateTexture(int w, int h, int pixelsize, VkFormat form
 void VkHardwareTexture::BackgroundCreateTexture(VkCommandBufferManager* bufManager, int w, int h, int pixelsize, VkFormat format, const void *pixels, bool mipmap, bool createMips, int totalSize) {
 	if (!mLoadedImage) mLoadedImage.reset(new VkTextureImage());
 	else {
-		//mLoadedImage->Reset(fb);
 		assert(mLoadedImage != nullptr);
 		return; // We cannot reset the loaded image on a different thread
 	}
 
 	CreateTexture(bufManager, mLoadedImage.get(), w, h, pixelsize, format, pixels, mipmap, createMips && fb->device.get()->UploadFamilySupportsGraphics, totalSize);
-
-	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
-	/*if (bufManager->TransferDeleteList->TotalSize > 1) {
-		bufManager->WaitForCommands(false, true);
-	}*/
 }
 
 
@@ -271,12 +265,6 @@ void VkHardwareTexture::BackgroundCreateTextureMipMap(VkCommandBufferManager* bu
 	}
 
 	CreateTextureMipMap(bufManager, mLoadedImage.get(), mipLevel, w, h, pixelsize, format, pixels, totalSize);
-
-	// Flush commands as they come in, since we don't have a steady frame loop in the background thread
-	// TODO: Make this a manual flush, since we are going to call a couple of these mipmap creations in a row
-	/*if (bufManager->TransferDeleteList->TotalSize > 1) {
-		bufManager->WaitForCommands(false, true);
-	}*/
 }
 
 

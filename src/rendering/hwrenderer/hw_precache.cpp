@@ -412,12 +412,6 @@ void hw_PrecacheTexture(uint8_t *texhitlist, TMap<PClassActor*, bool> &actorhitl
 
 
 		FImageSource::EndPrecaching();
-
-		/*while (screen->CachingActive()) {
-			screen->UpdateBackgroundCache();
-			Printf("Cache Progress: %.2f\n", screen->CacheProgress());
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		}*/
 		
 
 		// cache all used models
