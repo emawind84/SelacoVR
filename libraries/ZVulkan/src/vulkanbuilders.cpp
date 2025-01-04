@@ -1886,7 +1886,7 @@ std::vector<VulkanCompatibleDevice> VulkanDeviceBuilder::FindDevices(const std::
 		// a bit slower, so avoid this when possible.
 		for (int i = 0; i < (int)info.QueueFamilies.size(); i++) {
 			const auto& queueFamily = info.QueueFamilies[i];
-			if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+			if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) && (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)) {
 				// Make sure the family has room for another queue
 				if (i == dev.GraphicsFamily && queueFamily.queueCount < 2) {
 					continue;
@@ -1920,7 +1920,8 @@ std::vector<VulkanCompatibleDevice> VulkanDeviceBuilder::FindDevices(const std::
 				}
 
 				// Spec states all families must support Transfer, so we should be able to grab any one that passes the other criteria
-				if (queueFamily.queueCount > 0) {
+				// Note: It turns out that this isn't true. Newer drivers are specifying queues that do not have transfer enabled so we need to check (I'm look at you ARC!!)
+				if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)) {
 					dev.UploadFamily = i;
 					dev.UploadFamilySupportsGraphics = false;
 					break;

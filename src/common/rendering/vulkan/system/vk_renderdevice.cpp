@@ -350,29 +350,6 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 
 			// Only perform upload if we have a command buffer
 			if (cmd) {
-				/*uint32_t expectedMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(buffWidth, buffHeight)))) + 1;
-				if (numMipLevels != (int)expectedMipLevels || numMipLevels == 0) {
-					// Abort mips
-					output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, 4, fmt, pixelData, false, false, (int)pixelDataSize);
-				}
-				else {
-					// Base texture
-					output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, true, false, (int)pixelDataSize);
-
-					// Mips
-					uint32_t mipWidth = buffWidth, mipHeight = buffHeight;
-					uint32_t mipSize = (uint32_t)pixelDataSize, dataPos = (uint32_t)pixelDataSize;
-
-					for (int x = 1; x < numMipLevels; x++) {
-						mipWidth = std::max(1u, (mipWidth >> 1));
-						mipHeight = std::max(1u, (mipHeight >> 1));
-						mipSize = std::max(1u, ((mipWidth + 3) / 4)) * std::max(1u, ((mipHeight + 3) / 4)) * 16;
-						if (mipSize == 0 || totalSize - dataPos < mipSize)
-							break;
-						output.tex->BackgroundCreateTextureMipMap(cmd, x, mipWidth, mipHeight, 4, fmt, pixelData + dataPos, mipSize);
-						dataPos += mipSize;
-					}
-				}*/
 				mipmap = false;	// Don't generate mipmaps past this point
 				TempUploadTexture(cmd, output.tex, fmt, buffWidth, buffHeight, pixelData, pixelDataSize, totalSize, input.allowMipmaps && numMipLevels == (int)expectedMipLevels && numMipLevels > 0, true, indexed);
 			}

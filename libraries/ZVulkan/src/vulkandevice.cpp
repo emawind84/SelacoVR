@@ -171,7 +171,8 @@ void VulkanDevice::CreateDevice(int numUploadSlots)
 	if (PresentFamily >= 0 && presentFamilySlot >= 0)
 		vkGetDeviceQueue(device, PresentFamily, presentFamilySlot, &PresentQueue);
 	else if(PresentFamily == -2)
-		PresentQueue = GraphicsQueue;	// I think we still need a reference to a queue even if there is no present family
+		vkGetDeviceQueue(device, GraphicsFamily, graphicsFamilySlot, &PresentQueue);
+		//PresentQueue = GraphicsQueue;	// I think we still need a reference to a queue even if there is no present family
 	else
 		VulkanError("No valid combination of queues gave us a Graphics and Present queue. \nCockatrice must have done something wrong or your hardware does not support it.");
 
