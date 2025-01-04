@@ -17,7 +17,7 @@ class FHardwareTexture;
 class FGLDebug;
 
 
-/* Background loader classes: TODO: Move into own files. */
+/* Background loader classes: TODO: Split GPU and File loading. */
 struct GlTexLoadSpiFull {
 	bool generateSpi, shouldExpand, notrimming;
 	SpritePositioningInfo info[2];
@@ -45,6 +45,10 @@ struct GlTexLoadOut {
 	int conversion, translation, texUnit;
 	bool isTranslucent;
 	FImageSource* imgSource;
+	unsigned char* pixels = nullptr;		// Returned when we can't upload in the backghround thread
+	size_t pixelsSize = 0, totalDataSize = 0;
+	int pixelW = 0, pixelH = 0, mipLevels = -1;
+	bool createMipmaps = false;
 };
 
 
@@ -60,6 +64,8 @@ public:
 	}
 
 	~GlTexLoadThread() override {};
+
+	bool uploadPossible() const { return auxContext >= 0; }
 
 protected:
 	OpenGLFrameBuffer* cmd;
@@ -149,8 +155,9 @@ public:
 
 	// Cache stats helpers
 	
-	void GetBGQueueSize(int& current, int& currentSec, int& collisions, int& max, int& maxSec, int& total);
+	void GetBGQueueSize(int& current, int& currentSec, int& collisions, int& max, int& maxSec, int& total, int &outSize);
 	void GetBGStats(double& min, double& max, double& avg);
+	void GetBGStats2(double& min, double& max, double& avg);
 	int GetNumThreads() { return (int)bgTransferThreads.size(); }
 	void ResetBGStats();
 
@@ -169,6 +176,8 @@ private:
 	TSQueue<GlTexLoadOut> outputTexQueue;
 	TSQueue<QueuedPatch> patchQueue;									// @Cockatrice - Thread safe queue of textures to create materials for and submit to the bg thread
 	std::vector<std::unique_ptr<GlTexLoadThread>> bgTransferThreads;	// @Cockatrice - Threads that handle the background transfers
+
+	double fgTotalTime = 0, fgTotalCount = 0, fgMin = 0, fgMax = 0;		// Foreground integration time stats
 };
 
 }
