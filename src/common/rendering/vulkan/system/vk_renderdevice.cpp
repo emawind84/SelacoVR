@@ -98,7 +98,7 @@ CUSTOM_CVAR(Int, vk_device, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCAL
 CUSTOM_CVAR(Int, vk_max_transfer_threads, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	if (self < 0) self = 0;
-	else if (self > 4) self = 4;
+	else if (self > 8) self = 8;
 
 	Printf("This won't take effect until " GAMENAME " is restarted.\n");
 }
