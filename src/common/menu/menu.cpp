@@ -352,7 +352,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(DMenu, SetMouseCapture, SetMouseCapture)
 void DMenu::Close ()
 {
 	if (CurrentMenu == nullptr) return;	// double closing can happen in the save menu.
-	assert(CurrentMenu == this);
+	//assert(CurrentMenu == this);
 	CurrentMenu = mParentMenu;
 
 	if (CurrentMenu != nullptr)

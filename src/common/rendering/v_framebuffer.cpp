@@ -264,7 +264,14 @@ void DFrameBuffer::FPSLimit()
 	if (!isMenu && (vid_maxfps <= 0 || cl_capfps))
 		return;
 
-	int maxfps = isMenu ? std::max(200, (int)vid_maxfps) : vid_maxfps;
+	int maxfps = vid_maxfps;
+	
+	if(isMenu) {
+		if(maxfps == 0) maxfps = 200;
+		else maxfps = std::min(maxfps, 200);
+	} else if(maxfps == 0) {
+		return;
+	}
 
 	uint64_t targetWakeTime = fpsLimitTime + 1'000'000 / maxfps;
 
