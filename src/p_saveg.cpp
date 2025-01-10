@@ -708,6 +708,12 @@ void FLevelLocals::ReadOnePlayer(FSerializer &arc, bool skipload)
 						// via a net command, but that won't be processed in time for a screen
 						// wipe, so we need something here.
 						playerTemp.MaxPitch = playerTemp.MinPitch = playerTemp.mo->Angles.Pitch;
+
+						// @Cockatrice - The temp player has completely undefined rotator values, so zero it out here
+						// I'm pretty sure this should be in the constructor but it's not
+						// Maybe it should be in the savegame? At least this saves us from invalidating the player angle.
+						playerTemp.angleOffsetTargets.Zero();
+
 						CopyPlayer(Players[i], &playerTemp, name);
 					}
 					else
