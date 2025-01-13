@@ -612,6 +612,12 @@ FSoundChan *SoundEngine::StartSound(int type, const void *source,
 	if (!sfx->data.isValid() && audio_loader_threads > 0 && level.maptime > 1) {
 		sfx = CheckLinks(sfx);
 
+		// The empty sound never plays.
+		if (sfx->lumpnum == sfx_empty)
+		{
+			return NULL;
+		}
+
 		if (!sfx->data.isValid()) {
 			bool force2D = false;
 
@@ -1133,7 +1139,9 @@ sfxinfo_t *SoundEngine::LoadSound(sfxinfo_t *sfx)
 		sfx = CheckLinks(sfx);
 
 		DPrintf(DMSG_NOTIFY, "Loading sound \"%s\" (%td)\n", sfx->name.GetChars(), sfx - &S_sfx[0]);
-		//Printf(TEXTCOLOR_GOLD"Loading sound %s on main thread!\n", sfx->name.GetChars());
+		#ifndef NDEBUG
+			Printf(TEXTCOLOR_GOLD"Loading sound %s on main thread!\n", sfx->name.GetChars());
+		#endif
 
 		auto sfxdata = ReadSound(sfx->lumpnum);
 		int size = (int)sfxdata.size();
