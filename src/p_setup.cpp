@@ -108,9 +108,16 @@ static void AddToList(uint8_t *hitlist, FTextureID texid, int bitmask)
 		{
 			if (texid == anim.BasePic || (!anim.bDiscrete && anim.BasePic < texid && texid < anim.BasePic + anim.NumFrames))
 			{
-				for (int i = anim.BasePic.GetIndex(); i < anim.BasePic.GetIndex() + anim.NumFrames; i++)
-				{
-					hitlist[i] |= (uint8_t)bitmask;
+				// @Cockatrice - The code for handling discrete animation sequences was missing here
+				if (anim.bDiscrete) {
+					for (int i = 0; i < anim.NumFrames; i++) {
+						hitlist[anim.Frames[i].FramePic.GetIndex()] |= (uint8_t)bitmask;
+					}
+				}
+				else {
+					for (int i = anim.BasePic.GetIndex(); i < anim.BasePic.GetIndex() + anim.NumFrames; i++) {
+						hitlist[i] |= (uint8_t)bitmask;
+					}
 				}
 			}
 		}
@@ -197,7 +204,6 @@ static void PrecacheLevel(FLevelLocals *Level)
 			if (act != NULL && act->flags8 && (act->flags8 & MF8_PRECACHEALWAYS))
 			{
 				actorhitlist[static_cast<PClassActor*>(pc)] = true;
-				//Printf(TEXTCOLOR_YELLOW"Adding actor: %s to precache list from CACHEALWAYS\n", act->GetCharacterName());
 			}
 		}
 
