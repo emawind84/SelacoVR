@@ -210,6 +210,9 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 					else if (sc.Compare("No1252")) {
 						No1252 = true;
 					}
+					else if (sc.Compare("NoTranslate")) {
+						noTranslate = true;
+					}
 					else if (sc.Compare("lowercaselatinonly"))
 					{
 						lowercaselatinonly = true;
@@ -802,6 +805,7 @@ FTranslationID FFont::GetColorTranslation (EColorRange range, PalEntry *color) c
 			retcolor.a = 255;
 		}
 		if (color != nullptr) *color = retcolor;
+		return INVALID_TRANSLATION;
 	}
 	if (range == CR_UNDEFINED)
 		return INVALID_TRANSLATION;
