@@ -422,7 +422,7 @@ void VulkanFrameBuffer::UpdateBackgroundCache(bool flush) {
 		unsigned int sm4StartIndex = (unsigned int)bgtSm4List.size() - 1;
 
 		int dequeueCount = 0;
-		while (outputTexQueue.dequeue(loaded) && (flush || dequeueCount < gl_background_flush_count)) {
+		while ((flush || dequeueCount < gl_background_flush_count) && outputTexQueue.dequeue(loaded)) {
 			dequeueCount++;
 
 			if (loaded.tex->hwState == IHardwareTexture::HardwareState::READY) {
