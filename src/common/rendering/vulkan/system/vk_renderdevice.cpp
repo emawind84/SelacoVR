@@ -535,7 +535,7 @@ void VulkanRenderDevice::UpdateBackgroundCache(bool flush) {
 
 		int dequeueCount = 0;
 		size_t uploadSize = 0;
-		while (outputTexQueue.dequeue(loaded) && (flush || (dequeueCount < gl_background_flush_count && uploadSize < 20971520L))) {
+		while ((flush || (dequeueCount < gl_background_flush_count && uploadSize < 20971520L)) && outputTexQueue.dequeue(loaded)) {
 			dequeueCount++;
 
 			if (loaded.tex->hwState == IHardwareTexture::HardwareState::READY) {
@@ -583,6 +583,7 @@ void VulkanRenderDevice::UpdateBackgroundCache(bool flush) {
 			loaded.tex->SwapToLoadedImage();
 			loaded.tex->SetHardwareState(IHardwareTexture::HardwareState::READY);
 			if (loaded.gtex) loaded.gtex->SetTranslucent(loaded.isTranslucent);
+			if (loaded.gtex && loaded.imgSource) Printf("Finished: %s (%d)\n", loaded.gtex->GetName(), loaded.imgSource->GetId());
 
 			// Set the sprite positioning info if generated
 			if (loaded.spi.generateSpi && loaded.gtex) {
@@ -1014,11 +1015,13 @@ bool VulkanRenderDevice::BackgroundCacheMaterial(FMaterial *mat, FTranslationID 
 
 	// If the texture is already submitted to the cache, find it and move it to the normal queue to reprioritize it
 	if (lumpExists && !secondary && systex->GetState() == IHardwareTexture::HardwareState::CACHING) {
+		Printf(TEXTCOLOR_RED"Checking texture [%s] in background loader.", fileSystem.GetFileFullName(lump, false));
 		// Move from secondary queue to primary
 		VkTexLoadIn in;
 		if (secondaryTexQueue.dequeueSearch(in, systex,
 			[](void* a, VkTexLoadIn& b)
 		{ return (VkHardwareTexture*)a == b.tex; })) {
+			Printf(TEXTCOLOR_RED"Moving texture [%s] to foreground loader.", fileSystem.GetFileFullName(lump, false));
 			systex->SetHardwareState(IHardwareTexture::HardwareState::LOADING, 0);
 			primaryTexQueue.queue(in);
 			return true;
@@ -1050,6 +1053,8 @@ bool VulkanRenderDevice::BackgroundCacheMaterial(FMaterial *mat, FTranslationID 
 
 			if (secondary) secondaryTexQueue.queue(in);
 			else primaryTexQueue.queue(in);
+
+			Printf("Queued: %d %s (%s)\n", lump, fileSystem.GetFileFullName(lump, false), secondary ? "Secondary" : "Primary");
 		}
 		else {
 			systex->SetHardwareState(IHardwareTexture::HardwareState::READY); // TODO: Set state to a special "unloadable" state
@@ -1066,12 +1071,14 @@ bool VulkanRenderDevice::BackgroundCacheMaterial(FMaterial *mat, FTranslationID 
 		lump = layer->layerTexture->GetSourceLump();
 		bool lumpExists = fileSystem.FileLength(lump) >= 0;
 
+		if (lump == 0) continue;
 		if (lumpExists && syslayer->GetState() == IHardwareTexture::HardwareState::CACHING) {
 			// Move from secondary queue to primary
 			VkTexLoadIn in;
 			if (secondaryTexQueue.dequeueSearch(in, syslayer,
 				[](void* a, VkTexLoadIn& b)
 			{ return (VkHardwareTexture*)a == b.tex; })) {
+				Printf(TEXTCOLOR_RED"Moving texture [%s] [%d] to foreground loader.", fileSystem.GetFileFullName(lump, false), i);
 				syslayer->SetHardwareState(IHardwareTexture::HardwareState::LOADING, 0);
 				primaryTexQueue.queue(in);
 				return true;
