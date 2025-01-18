@@ -1000,17 +1000,21 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		auto tex = TexMan.GetGameTexture(patch, false);
 		if (!tex || !tex->isValid()) return;
 
+		
+		int scaleflags = (type == RF_FACESPRITE) ? CTF_Expand : 0;
+		if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
 
 		// @Cockatrice - If this texture is not loaded, and we are able to BG load it, try to render this sprites last frame instead
 		// Also load the texture
+		// Reusing the last patch will have the flaw of not matching the last translation, but this is a rare instance and we will ignore it for now 
+		// since translations aren't even working just yet with compressed textures
 		FTextureID lastPatch = thing->LastPatch;
 		if ( gametic - primaryLevel->starttime > 2 &&	// On the first tic or so, do not use the background loader to avoid pop-in
-			 patch != lastPatch &&						// only if this is a new frame
+			 (patch != lastPatch ||						// only if this is a new frame
+			 scaleflags != thing->lastScaleFlags) &&
 			 gl_texture_thread &&
 			 screen->SupportsBackgroundCache()) {
 
-			int scaleflags = (type == RF_FACESPRITE) ? CTF_Expand : 0;
-			if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
 
 			FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags, false);
 			if (!gltex || !gltex->IsHardwareCached(thing->Translation.index())) {
@@ -1021,14 +1025,17 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 					screen->BackgroundCacheTextureMaterial(tex, thing->Translation, scaleflags, true);
 				}
 
-				if (lastPatch.isValid()) {
-					//auto lt = patch;
-					//FString lpn = tex->GetName();
+				if (lastPatch.isValid() && scaleflags == thing->lastScaleFlags) {
 					patch = lastPatch;
 					tex = TexMan.GetGameTexture(patch, false);
 					if (!tex || !tex->isValid()) {
 						return;
 					}
+
+#ifndef NDEBUG
+					gltex = FMaterial::ValidateTexture(tex, thing->lastScaleFlags, false);
+					assert(gltex && gltex->IsHardwareCached(thing->Translation.index()));
+#endif
 				}
 				else {
 					return;
@@ -1039,6 +1046,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		}
 
 		thing->LastPatch = patch;
+		thing->lastScaleFlags = scaleflags;
 		
 		auto& spi = tex->GetSpritePositioning(type == RF_FACESPRITE);
 

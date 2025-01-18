@@ -1152,8 +1152,10 @@ public:
 	uint32_t			fillcolor;			// Color to draw when STYLE_Shaded
 	FTranslationID			Translation;
 	FTextureID		LastPatch;			// @Cockatrice - Used by the hardware renderer to determine the last rendered patch
+	int				lastScaleFlags;		// And scale flags
 	int				lastModelSprite;	// Likewise used for the last rendered model sprite, only used when unimportant
 	uint8_t			lastModelFrame;		// And the frame index
+	
 
 	uint32_t		RenderRequired;		// current renderer must have this feature set
 	uint32_t		RenderHidden;		// current renderer must *not* have any of these features
