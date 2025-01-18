@@ -208,6 +208,9 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 					else if (sc.Compare("No1252")) {
 						No1252 = true;
 					}
+					else if (sc.Compare("NoTranslate")) {
+						noTranslate = true;
+					}
 				}
 			}
 		}
@@ -775,6 +778,7 @@ int FFont::GetColorTranslation (EColorRange range, PalEntry *color) const
 			retcolor.a = 255;
 		}
 		if (color != nullptr) *color = retcolor;
+		return -1;
 	}
 	if (range == CR_UNDEFINED)
 		return -1;
