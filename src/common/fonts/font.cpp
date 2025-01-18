@@ -766,9 +766,8 @@ int FFont::GetLuminosity (uint32_t *colorsused, TArray<double> &Luminosity, int*
 int FFont::GetColorTranslation (EColorRange range, PalEntry *color) const
 {
 	// Single pic fonts do not set up their translation table and must always return 0.
-	if (Translations.Size() == 0) return 0;
-	assert(Translations.Size() == (unsigned)NumTextColors);
-
+	if (Translations.Size() == 0 && !noTranslate) return NO_TRANSLATION;
+	
 	if (noTranslate)
 	{
 		PalEntry retcolor = PalEntry(255, 255, 255, 255);
@@ -780,6 +779,9 @@ int FFont::GetColorTranslation (EColorRange range, PalEntry *color) const
 		if (color != nullptr) *color = retcolor;
 		return -1;
 	}
+
+	assert(Translations.Size() == (unsigned)NumTextColors);
+
 	if (range == CR_UNDEFINED)
 		return -1;
 	else if (range >= NumTextColors)
