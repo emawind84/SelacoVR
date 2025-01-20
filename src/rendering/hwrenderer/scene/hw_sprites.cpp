@@ -1033,8 +1033,8 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 					}
 
 #ifndef NDEBUG
-					gltex = FMaterial::ValidateTexture(tex, thing->lastScaleFlags, false);
-					assert(gltex && gltex->IsHardwareCached(thing->Translation.index()));
+					//gltex = FMaterial::ValidateTexture(tex, thing->lastScaleFlags, false);
+					//assert(gltex && gltex->IsHardwareCached(thing->Translation.index()));
 #endif
 				}
 				else {
@@ -1178,6 +1178,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		z1 = z2 = z;
 		texture = nullptr;
 
+
 		// Model textures will only load in the background thread if they are considered unimportant (Hacky solution)
 		// Because some models may define the visible world. In that case they should be precached to avoid stutter
 		// This WILL cause breakages in animations that use multiple frames and multiple skins but that is not
@@ -1234,6 +1235,18 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				}
 			}
 
+			// Make sure the current model sprite is loaded
+			for (int x = 0; x < modelframe->modelsAmount; x++) {
+				int id = modelframe->modelIDs[x];
+				if (id > 0) {
+					auto* model = Models[id];
+					if (!model->GetVertexBuffer(GLModelRendererType)) {
+						if (screen->BackgroundLoadModel(model)) {
+							success = false;
+						}
+					}
+				}
+			}
 
 			if (!success) {
 				// Attempt the last frame that was drawn

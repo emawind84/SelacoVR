@@ -66,6 +66,8 @@
 #include "engineerrors.h"
 #include "c_dispatch.h"
 #include "image.h"
+#include "model.h"
+
 
 FString JitCaptureStackTrace(int framesToSkip, bool includeNativeFrames, int maxFrames = -1);
 
@@ -140,7 +142,7 @@ void VulkanPrintLog(const char* typestr, const std::string& msg)
 
 ADD_STAT(vkloader)
 {
-	static int maxQueue = 0, maxSecondaryQueue = 0, queue, secQueue, total, collisions, outSize;
+	static int maxQueue = 0, maxSecondaryQueue = 0, queue, secQueue, total, collisions, outSize, models;
 	static double minLoad = 0, maxLoad = 0, avgLoad = 0;
 	static double minFG = 0, maxFG = 0, avgFG = 0;
 
@@ -150,17 +152,18 @@ ADD_STAT(vkloader)
 		if (!sc->SupportsBackgroundCache()) {
 			return FString("Vulkan Texture Thread Disabled");
 		}
-		sc->GetBGQueueSize(queue, secQueue, collisions, maxQueue, maxSecondaryQueue, total, outSize);
+		sc->GetBGQueueSize(queue, secQueue, collisions, maxQueue, maxSecondaryQueue, total, outSize, models);
 		sc->GetBGStats(minLoad, maxLoad, avgLoad);
 		sc->GetBGStats2(minFG, maxFG, avgFG);
 
 		FString out;
 		out.AppendFormat(
 			"[%d Threads] Queued: %3.3d - %3.3d Out: %3.3d  Col: %d\nMax: %3.3d Max Sec: %3.3d Tot: %d\n"
+			"Models: %d\n"
 			"Min: %.3fms  FG: %.3fms\n"
 			"Max: %.3fms  FG: %.3fms\n"
 			"Avg: %.3fms  FG: %.3fms\n",
-			sc->GetNumThreads(), queue, secQueue, outSize, collisions, maxQueue, maxSecondaryQueue, total, minLoad, minFG, maxLoad, maxFG, avgLoad, avgFG
+			sc->GetNumThreads(), queue, secQueue, outSize, collisions, maxQueue, maxSecondaryQueue, total, models, minLoad, minFG, maxLoad, maxFG, avgLoad, avgFG
 		);
 		return out;
 	}
@@ -174,7 +177,7 @@ CCMD(vk_rstbgstats) {
 }
 
 
-void VulkanRenderDevice::GetBGQueueSize(int& current, int& secCurrent, int& collisions, int& max, int& maxSec, int& total, int& outSize) {
+void VulkanRenderDevice::GetBGQueueSize(int& current, int& secCurrent, int& collisions, int& max, int& maxSec, int& total, int& outSize, int& models) {
 	max = maxSec = total = 0;
 	current = primaryTexQueue.size();
 	secCurrent = secondaryTexQueue.size();
@@ -182,6 +185,7 @@ void VulkanRenderDevice::GetBGQueueSize(int& current, int& secCurrent, int& coll
 	maxSec = statMaxQueuedSecondary;
 	collisions = statCollisions;
 	outSize = outputTexQueue.size() + bgtUploads.size();
+	models = statModelsLoaded;
 
 	for (auto& tfr : bgTransferThreads) {
 		total += tfr->statTotalLoaded();
@@ -220,6 +224,7 @@ void VulkanRenderDevice::ResetBGStats() {
 	for (auto& tfr : bgTransferThreads) tfr->resetStats();
 	statCollisions = 0;
 	fgTotalTime = fgTotalCount = fgMin = fgMax = fgCurTime = 0;
+	statModelsLoaded = 0;
 }
 
 bool VulkanRenderDevice::CachingActive() {
@@ -447,6 +452,19 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 void VkTexLoadThread::cancelLoad() { currentImageID.store(0); }
 void VkTexLoadThread::completeLoad() { currentImageID.store(0); }
 
+
+bool VkModelLoadThread::loadResource(VkModelLoadIn& input, VkModelLoadOut& output) {
+	FileReader reader = fileSystem.OpenFileReader(input.lump, FileSys::EReaderType::READER_NEW, 0);
+	output.data = reader.Read();
+	reader.Close();
+
+	output.lump = input.lump;
+	output.model = input.model;
+
+	return true;
+}
+
+
 // END Background Loader Stuff =====================================================
 
 void VulkanRenderDevice::FlushBackground() {
@@ -457,6 +475,7 @@ void VulkanRenderDevice::FlushBackground() {
 		for (auto& tfr : bgTransferThreads) active = active || tfr->isActive();
 
 	Printf(TEXTCOLOR_GREEN"VulkanFrameBuffer[%s]: Flushing [%d + %d + %d] texture load ops\n", active ? "active" : "inactive", nq, patchQueue.size(), nq + patchQueue.size());
+	Printf(TEXTCOLOR_GREEN"\tFlushing %d - %d Model Reads\n", modelInQueue.size(), modelOutQueue.size());
 
 	// Make sure active is marked if we have patches waiting
 	active = active || patchQueue.size() > 0;
@@ -476,18 +495,19 @@ void VulkanRenderDevice::FlushBackground() {
 		active = false;
 		for (auto& tfr : bgTransferThreads) 
 			active = active || tfr->isActive();
+		active = active || modelThread->isActive();
 	}
 
 	// Finish anything that was loaded
 	UpdateBackgroundCache(true);
 
-	Printf(TEXTCOLOR_GREEN "Flushing %d raw texture reads...", bgtUploads.size());
+	Printf(TEXTCOLOR_GREEN "\tFlushing %d raw texture reads...\n", bgtUploads.size());
 
 	// Lastly finish anything that needs to be uploaded in the main thread
 	UploadLoadedTextures(true);
 
 	check.Unclock();
-	Printf(TEXTCOLOR_GOLD"VulkanFrameBuffer::FlushBackground() took %f ms\n", check.TimeMS());
+	Printf(TEXTCOLOR_GOLD"\tVulkanFrameBuffer::FlushBackground() took %f ms\n", check.TimeMS());
 }
 
 void VulkanRenderDevice::UpdateBackgroundCache(bool flush) {
@@ -645,6 +665,24 @@ void VulkanRenderDevice::UpdateBackgroundCache(bool flush) {
 			BackgroundCacheMaterial(gltex, FTranslationID::fromInt(qp.translation), qp.generateSPI);
 		}
 	}
+
+	// Process any loaded models
+	VkModelLoadOut modelOut;
+	while (modelOutQueue.dequeue(modelOut)) {
+		assert(modelOut.model);
+
+		if (modelOut.model->GetLoadState() != FModel::LOADING) {
+			statCollisions++;
+			modelOut.data.clear();
+			continue;
+		}
+
+		modelOut.model->LoadGeometry(&modelOut.data);
+		modelOut.model->SetLoadState(FModel::READY);
+		modelOut.data.clear();
+		statModelsLoaded++;
+	}
+
 
 	if (!flush && processed) {
 		timer.Unclock();
@@ -870,6 +908,9 @@ void VulkanRenderDevice::InitializeState()
 		bgUploadEnabled = false;
 		bgTransferEnabled = false;
 	}
+
+	modelThread.reset(new VkModelLoadThread(&modelInQueue, &modelOutQueue));
+	modelThread->start();
 }
 
 void VulkanRenderDevice::Update()
@@ -970,6 +1011,23 @@ void VulkanRenderDevice::PrecacheMaterial(FMaterial *mat, int translation)
 void VulkanRenderDevice::PrequeueMaterial(FMaterial *mat, int translation)
 {
 	BackgroundCacheMaterial(mat, FTranslationID::fromInt(translation), true, true);
+}
+
+
+bool VulkanRenderDevice::BackgroundLoadModel(FModel* model) {
+	if (!model || model->GetLoadState() == FModel::READY || model->GetLumpNum() <= 0)
+		return false;
+	if (model->GetLoadState() == FModel::LOADING)
+		return true;
+
+	model->SetLoadState(FModel::LOADING);
+
+	VkModelLoadIn modelLoad;
+	modelLoad.model = model;
+	modelLoad.lump = model->GetLumpNum();
+	modelInQueue.queue(modelLoad);
+
+	return true;
 }
 
 

@@ -60,21 +60,14 @@ struct VkTexLoadOut {
 };
 
 struct VkModelLoadIn {
-
+	int lump = -1;
+	FModel* model = nullptr;
 };
 
 struct VkModelLoadOut {
-
-};
-
-struct VkLoadJobIn {
-	VkTexLoadIn* texJob;
-	VkModelLoadIn* modelJob;
-};
-
-struct VkLoadJobOut{
-	VkTexLoadOut* texJob;
-	VkModelLoadOut* modelJob;
+	int lump = -1;
+	FileSys::FileData data;
+	FModel* model = nullptr;
 };
 
 
@@ -124,6 +117,20 @@ protected:
 };
 
 
+class VkModelLoadThread : public ResourceLoader2<VkModelLoadIn, VkModelLoadOut> {
+public:
+	VkModelLoadThread(TSQueue<VkModelLoadIn>* inQueue, TSQueue<VkModelLoadOut>* outQueue) : ResourceLoader2(inQueue, nullptr, outQueue) {
+		
+	}
+
+protected:
+	std::atomic<int> maxQueue;
+
+	bool loadResource(VkModelLoadIn& input, VkModelLoadOut& output) override;
+};
+
+
+
 class VulkanRenderDevice : public SystemBaseFrameBuffer
 {
 	typedef SystemBaseFrameBuffer Super;
@@ -161,6 +168,7 @@ public:
 	void PrequeueMaterial(FMaterial *mat, int translation) override;
 	bool BackgroundCacheMaterial(FMaterial *mat, FTranslationID translation, bool makeSPI = false, bool secondary = false) override;
 	bool BackgroundCacheTextureMaterial(FGameTexture *tex, FTranslationID translation, int scaleFlags, bool makeSPI = false) override;
+	bool BackgroundLoadModel(FModel* model) override;
 	bool CachingActive() override;
 	bool SupportsBackgroundCache() override { return bgTransferEnabled; }
 	void StopBackgroundCache() override;
@@ -207,7 +215,7 @@ public:
 	bool RaytracingEnabled();
 
 	// Cache stats helpers
-	void GetBGQueueSize(int& current, int& currentSec, int& collisions, int& max, int& maxSec, int& total, int& outSize);
+	void GetBGQueueSize(int& current, int& currentSec, int& collisions, int& max, int& maxSec, int& total, int& outSize, int &models);
 	void GetBGStats(double& min, double& max, double& avg);
 	void GetBGStats2(double& min, double& max, double& avg);
 	void ResetBGStats();
@@ -229,10 +237,13 @@ private:
 
 	// BG Thread management
 	// TODO: Move these into their own manager object
-	int statMaxQueued = 0, statMaxQueuedSecondary = 0, statCollisions = 0;
+	int statMaxQueued = 0, statMaxQueuedSecondary = 0, statCollisions = 0, statModelsLoaded = 0;
 	TSQueue<VkTexLoadIn> primaryTexQueue, secondaryTexQueue;
 	TSQueue<VkTexLoadOut> outputTexQueue;
-	TSQueue<QueuedPatch> patchQueue;									// @Cockatrice - Thread safe queue of textures to create materials for and submit to the bg thread
+	TSQueue<QueuedPatch> patchQueue;									// @Cockatrice - Queue of textures to create materials for and submit to the bg thread
+	TSQueue<VkModelLoadIn> modelInQueue;
+	TSQueue<VkModelLoadOut> modelOutQueue;
+	std::unique_ptr<VkModelLoadThread> modelThread;						// Loads models, always 1 thread
 	std::vector<std::unique_ptr<VkTexLoadThread>> bgTransferThreads;	// @Cockatrice - Threads that handle the background transfers
 	std::unique_ptr<VulkanFence> bgtFence;								// @Cockatrice - Used to block for tranferring resources between queues
 	std::vector<std::unique_ptr<VulkanSemaphore>> bgtSm4List;			// Semaphores to release after queue resource transfers
