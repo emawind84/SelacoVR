@@ -10,7 +10,7 @@
 AudioLoaderQueue *AudioLoaderQueue::Instance = new AudioLoaderQueue();
 const int AudioLoaderQueue::MAX_THREADS;
 
-CVAR(Int, audio_loader_threads, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, audio_loader_threads, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
 static void AppendAudioThreadStats(int q, int l, double tt, FString &out)
 {
