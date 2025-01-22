@@ -810,13 +810,16 @@ VulkanRenderDevice::~VulkanRenderDevice()
 void VulkanRenderDevice::StopBackgroundCache() {
 	primaryTexQueue.clear();
 	secondaryTexQueue.clear();
-	outputTexQueue.clear();
+	modelInQueue.clear();
 
 	for (auto& tfr : bgTransferThreads) {
-		//tfr->clearInputQueue();
-		//tfr->clearSecondaryInputQueue();
 		tfr->stop();
 	}
+
+	modelThread->stop();
+
+	modelOutQueue.clear();
+	outputTexQueue.clear();
 }
 
 void VulkanRenderDevice::InitializeState()

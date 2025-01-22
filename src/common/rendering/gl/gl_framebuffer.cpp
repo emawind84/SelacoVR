@@ -61,6 +61,7 @@
 #include "v_draw.h"
 #include "printf.h"
 #include "gl_hwtexture.h"
+#include "model.h"
 
 #include "flatvertices.h"
 #include "hw_cvars.h"
@@ -101,7 +102,7 @@ extern bool vid_hdr_active;
 
 ADD_STAT(glloader)
 {
-	static int maxQueue = 0, maxSecondaryQueue = 0, queue, secQueue, total, collisions, outSize;
+	static int maxQueue = 0, maxSecondaryQueue = 0, queue, secQueue, total, collisions, outSize, models;
 	static double minLoad = 0, maxLoad = 0, avgLoad = 0;
 	static double minFG = 0, maxFG = 0, avgFG = 0;
 
@@ -111,17 +112,18 @@ ADD_STAT(glloader)
 		if (!sc->SupportsBackgroundCache()) {
 			return FString("OpenGL Texture Thread Disabled");
 		}
-		sc->GetBGQueueSize(queue, secQueue, collisions, maxQueue, maxSecondaryQueue, total, outSize);
+		sc->GetBGQueueSize(queue, secQueue, collisions, maxQueue, maxSecondaryQueue, total, outSize, models);
 		sc->GetBGStats(minLoad, maxLoad, avgLoad);
 		sc->GetBGStats2(minFG, maxFG, avgFG);
 
 		FString out;
 		out.AppendFormat(
 			"[%d Threads] Queued: %3.3d - %3.3d Out: %3.3d  Col: %d\nMax: %3.3d Max Sec: %3.3d Tot: %d\n"
+			"Models: %d\n"
 			"Min: %.3fms  FG: %.3fms\n"
 			"Max: %.3fms  FG: %.3fms\n"
 			"Avg: %.3fms  FG: %.3fms\n",
-			sc->GetNumThreads(), queue, secQueue, outSize, collisions, maxQueue, maxSecondaryQueue, total, minLoad, minFG, maxLoad, maxFG, avgLoad, avgFG
+			sc->GetNumThreads(), queue, secQueue, outSize, collisions, maxQueue, maxSecondaryQueue, total, models, minLoad, minFG, maxLoad, maxFG, avgLoad, avgFG
 		);
 		return out;
 	}
@@ -262,10 +264,22 @@ bool GlTexLoadThread::loadResource(GlTexLoadIn & input, GlTexLoadOut & output) {
 }
 
 
+bool GLModelLoadThread::loadResource(GLModelLoadIn& input, GLModelLoadOut& output) {
+	FileReader reader = fileSystem.OpenFileReader(input.lump, FileSys::EReaderType::READER_NEW, 0);
+	output.data = reader.Read();
+	reader.Close();
+
+	output.lump = input.lump;
+	output.model = input.model;
+
+	return true;
+}
+
+
 
 // @Cockatrice - Background loader management =======================================
 // ==================================================================================
-void OpenGLFrameBuffer::GetBGQueueSize(int& current, int &secCurrent, int& collisions, int& max, int& maxSec, int& total, int &outSize) {
+void OpenGLFrameBuffer::GetBGQueueSize(int& current, int &secCurrent, int& collisions, int& max, int& maxSec, int& total, int &outSize, int &models) {
 	max = maxSec = total = 0;
 	current = primaryTexQueue.size();
 	secCurrent = secondaryTexQueue.size();
@@ -273,6 +287,7 @@ void OpenGLFrameBuffer::GetBGQueueSize(int& current, int &secCurrent, int& colli
 	maxSec = statMaxQueuedSecondary;
 	collisions = statCollisions;
 	outSize = outputTexQueue.size();
+	models = statModelsLoaded;
 
 	for (auto& tfr : bgTransferThreads) {
 		total += tfr->statTotalLoaded();
@@ -306,11 +321,29 @@ void OpenGLFrameBuffer::ResetBGStats() {
 	for (auto& tfr : bgTransferThreads) tfr->resetStats();
 	statCollisions = 0;
 	fgTotalTime = fgTotalCount = fgMin = fgMax = 0;
+	statModelsLoaded = 0;
 }
 
 void OpenGLFrameBuffer::PrequeueMaterial(FMaterial * mat, int translation)
 {
 	BackgroundCacheMaterial(mat, FTranslationID::fromInt(translation), true, true);
+}
+
+
+bool OpenGLFrameBuffer::BackgroundLoadModel(FModel* model) {
+	if (!model || model->GetLoadState() == FModel::READY || model->GetLumpNum() <= 0)
+		return false;
+	if (model->GetLoadState() == FModel::LOADING)
+		return true;
+
+	model->SetLoadState(FModel::LOADING);
+
+	GLModelLoadIn modelLoad;
+	modelLoad.model = model;
+	modelLoad.lump = model->GetLumpNum();
+	modelInQueue.queue(modelLoad);
+
+	return true;
 }
 
 
@@ -458,10 +491,15 @@ void OpenGLFrameBuffer::StopBackgroundCache() {
 	primaryTexQueue.clear();
 	secondaryTexQueue.clear();
 	patchQueue.clear();
+	modelInQueue.clear();
 
 	for (auto& tfr : bgTransferThreads) {
 		tfr->stop();
 	}
+
+	modelThread->stop();
+	modelOutQueue.clear();
+	outputTexQueue.clear();
 }
 
 
@@ -473,6 +511,7 @@ void OpenGLFrameBuffer::FlushBackground() {
 		for (auto& tfr : bgTransferThreads) active = active || tfr->isActive();
 
 	Printf(TEXTCOLOR_GREEN"OpenGLFrameBuffer[%s]: Flushing [%d + %d] = %d texture load ops\n", active ? "active" : "inactive", nq, patchQueue.size(), nq + patchQueue.size());
+	Printf(TEXTCOLOR_GREEN"\tFlushing %d - %d Model Reads\n", modelInQueue.size(), modelOutQueue.size());
 
 	// Make sure active is marked if we have patches waiting
 	active = active || patchQueue.size() > 0;
@@ -492,13 +531,14 @@ void OpenGLFrameBuffer::FlushBackground() {
 		active = false;
 		for (auto& tfr : bgTransferThreads)
 			active = active || tfr->isActive();
+		active = active || modelThread->isActive();
 	}
 
 	// Finish anything that was loaded
 	UpdateBackgroundCache(true);
 
 	check.Unclock();
-	Printf(TEXTCOLOR_GOLD"OpenGLFrameBuffer::FlushBackground() took %f ms\n", check.TimeMS());
+	Printf(TEXTCOLOR_GOLD"\tOpenGLFrameBuffer::FlushBackground() took %f ms\n", check.TimeMS());
 }
 
 
@@ -563,6 +603,23 @@ void OpenGLFrameBuffer::UpdateBackgroundCache(bool flush) {
 		if (gltex && !gltex->IsHardwareCached(qp.translation.index())) {
 			BackgroundCacheMaterial(gltex, qp.translation, qp.generateSPI);
 		}
+	}
+
+	// Process any loaded models
+	GLModelLoadOut modelOut;
+	while (modelOutQueue.dequeue(modelOut)) {
+		assert(modelOut.model);
+
+		if (modelOut.model->GetLoadState() != FModel::LOADING) {
+			statCollisions++;
+			modelOut.data.clear();
+			continue;
+		}
+
+		modelOut.model->LoadGeometry(&modelOut.data);
+		modelOut.model->SetLoadState(FModel::READY);
+		modelOut.data.clear();
+		statModelsLoaded++;
 	}
 
 
@@ -698,6 +755,9 @@ void OpenGLFrameBuffer::InitializeState()
 			bgTransferThreads.push_back(std::move(ptr));
 		}
 	}
+
+	modelThread.reset(new GLModelLoadThread(&modelInQueue, &modelOutQueue));
+	modelThread->start();
 }
 
 //==========================================================================
