@@ -1286,6 +1286,8 @@ void D_DoomLoop ()
 		}
 		catch (const CRecoverableError &error)
 		{
+			bool wasConsole = gamestate == GS_FULLCONSOLE || ConsoleState != c_up;
+
 			if (error.GetMessage ())
 			{
 				Printf (PRINT_NONOTIFY | PRINT_BOLD, "\n%s\n", error.GetMessage());
@@ -1294,6 +1296,16 @@ void D_DoomLoop ()
 
 			// @Cockatrice - Clearing the net-game was not updating the lasttic variable, which means joystick input stops working
 			lasttic = gametic;
+
+			CRecoverableError2* err2 = dynamic_cast<CRecoverableError2*>(&error);
+			int errType = err2 ? err2->type : ERR_UNKNOWN;
+
+			// Attempt to notify script
+			if (!wasConsole && staticEventManager.HandleError(errType, FString(error.GetMessage()))) {
+				C_HideConsole();
+				gameaction = ga_nothing;
+				gamestate = GS_FULLCONSOLE;
+			}
 		}
 		catch (const FileSystemException& error) // in case this propagates up to here it should be treated as a recoverable error.
 		{
@@ -1305,9 +1317,21 @@ void D_DoomLoop ()
 		}
 		catch (CVMAbortException &error)
 		{
+			bool wasConsole = gamestate == GS_FULLCONSOLE || ConsoleState != c_up;
+
 			error.MaybePrintMessage();
 			Printf(PRINT_NONOTIFY | PRINT_BOLD, "%s", error.stacktrace.GetChars());
 			D_ErrorCleanup();
+
+			FString fullError;
+			fullError.Format(TEXTCOLOR_RED "%s" TEXTCOLOR_NORMAL "\n%s", error.GetMessage(), error.stacktrace.GetChars());
+
+			// Attempt to notify script
+			if (!wasConsole && staticEventManager.HandleError(ERR_UNKNOWN_ABORT, fullError)) {
+				C_HideConsole();
+				gameaction = ga_nothing;
+				gamestate = GS_FULLCONSOLE;
+			}
 		}
 	}
 }

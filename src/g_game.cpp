@@ -1933,12 +1933,14 @@ static bool CheckSingleWad (const char *name, bool &printRequires, bool printwar
 }
 
 // Return false if not all the needed wads have been loaded.
-bool G_CheckSaveGameWads (FSerializer &arc, bool printwarn)
+bool G_CheckSaveGameWads (FSerializer &arc, bool printwarn, TArray<FString> *wadList)
 {
 	bool printRequires = false;
 
 	const char *text = arc.GetString("Game WAD");
-	CheckSingleWad (text, printRequires, printwarn);
+	if (!CheckSingleWad(text, printRequires, printwarn) && wadList != nullptr)
+		wadList->Push(text);
+
 	const char *text2 = arc.GetString("Map WAD");
 	// do not validate the same file twice.
 	if (text != nullptr && text2 != nullptr && stricmp(text, text2) != 0) CheckSingleWad (text2, printRequires, printwarn);
@@ -1955,11 +1957,16 @@ bool G_CheckSaveGameWads (FSerializer &arc, bool printwarn)
 	return true;
 }
 
-static void LoadGameError(const char *label, const char *append = "")
+static void LoadGameError(const char *label, const char *append = "", int errType = ERR_LOADGAME)
 {
 	FString message = GStrings.GetString(label);
 	message.Substitute("%s", savename);
-	Printf ("%s %s\n", message.GetChars(), append);
+	FString full;
+	full.Format("%s %s", message.GetChars(), append);
+	Printf ("%s\n", full);
+
+	// @Cockatrice - Send an event to static event handlers so the script system can present this info better to the player
+	staticEventManager.HandleError(errType, full);
 }
 
 void C_SerializeCVars(FSerializer& arc, const char* label, uint32_t filter)
@@ -2085,12 +2092,19 @@ void G_DoLoadGame ()
 			message.Substitute("%e", FStringf("%d", SAVEVER));
 		}
 		message.Substitute("%d", FStringf("%d", SaveVersion));
-		LoadGameError(message.GetChars());
+		LoadGameError(message.GetChars(), "", ERR_SAVEGAMEVERSION);
 		return;
 	}
 
-	if (!G_CheckSaveGameWads(arc, true))
+	TArray<FString> missingWadList;
+
+	if (!G_CheckSaveGameWads(arc, true, &missingWadList))
 	{
+		FString wadErr = "Failed to restore savegame. \nMissing Wads:\n";
+		for (int x = 0; x < (int)missingWadList.Size(); x++) {
+			wadErr.AppendFormat("\t%s\n", missingWadList[x].GetChars());
+		}
+		LoadGameError(wadErr, "", ERR_MISSINGMAP);
 		return;
 	}
 
@@ -2113,6 +2127,19 @@ void G_DoLoadGame ()
 
 	// we are done with info.json.
 	arc.Close();
+
+	// Verify we can find the specified map version
+	if (!P_CheckMapData(map, mapVersion)) {
+		FString fullError;
+
+		if (mapVersion > 0)
+			fullError.Format("Could not find map: %s Version: %d", map, mapVersion, ERR_MISSINGMAP);
+		else
+			fullError.Format("Could not find map: %s", map, "", ERR_MISSINGMAP);
+
+		LoadGameError(fullError.GetChars());
+		return;
+	}
 
 	info = resfile->FindEntry("globals.json");
 	if (info < 0)

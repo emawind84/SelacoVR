@@ -41,7 +41,7 @@
 #include <stdexcept>
 #include "basics.h"
 
-#define MAX_ERRORTEXT	1024
+#define MAX_ERRORTEXT	2048
 
 class CEngineError : public std::exception
 {
@@ -90,6 +90,15 @@ public:
 	CRecoverableError(const char *message) : CEngineError(message) {}
 };
 
+class CRecoverableError2 : public CRecoverableError
+{
+public:
+	int type = -1;
+	CRecoverableError2() : CRecoverableError() {}
+	CRecoverableError2(int errType, const char* message) : CRecoverableError(message) { type = errType; }
+};
+
+
 class CFatalError : public CEngineError
 {
 public:
@@ -112,5 +121,6 @@ public:
 void I_ShowFatalError(const char *message);
 [[noreturn]] void I_Error (const char *error, ...) GCCPRINTF(1,2);
 [[noreturn]] void I_FatalError (const char *error, ...) GCCPRINTF(1,2);
+[[noreturn]] void I_Error2(int type, const char* error, ...) GCCPRINTF(2, 3);
 
 #endif //__ERRORS_H__

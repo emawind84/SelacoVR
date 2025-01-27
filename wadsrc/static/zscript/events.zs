@@ -148,6 +148,16 @@ enum SaveType {
     SAVE_AUTO   = 2
 }
 
+enum EventManagerError {
+	ERR_UNKNOWN			= 0,
+	ERR_UNKNOWN_ABORT	= 1,
+	ERR_LOADGAME		= 2,
+    ERR_MISSINGMAP      = 3,
+    ERR_LOADOBJECTS		= 4,
+    ERR_SAVEGAMEVERSION = 5
+};
+
+
 class StaticEventHandler : Object native play version("2.4")
 {
     // static event handlers CAN register other static event handlers.
@@ -179,6 +189,7 @@ class StaticEventHandler : Object native play version("2.4")
     virtual bool IsSaveAllowed(bool quicksave) { return true; }               // @Cockatrice - Returning false from any event manager will prevent a savegame
     virtual void PreSave(int type) {}                                         // @Cockatrice - Called before any type of save. Use this to alter the world before save
     virtual void PostSave(int type) {}                                        // @Cockatrice - Called after any type of save. Use this to alter the world after save (not saving the changes)
+    virtual ui bool HandleError(int type, string message) { return false; }   // @Cockatrice - Handle a fatal error that prevents game from continuing. Return TRUE to signal that it has been displayed to user.
 
     //
     //virtual ui void RenderFrame(RenderEvent e) {}

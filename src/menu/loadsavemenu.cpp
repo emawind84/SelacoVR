@@ -71,7 +71,7 @@ void FSavegameManager::ReadSaveStrings()
 		quickSaveSlot = nullptr;
 		FileSys::FileList list;
 
-		for (int searchPathIndex = 0; searchPathIndex < searchPaths.Size(); searchPathIndex++) {
+		for (int searchPathIndex = 0; searchPathIndex < (int)searchPaths.Size(); searchPathIndex++) {
 			if (FileSys::ScanDirectory(list, searchPaths[searchPathIndex].GetChars(), "*." SAVEGAME_EXT, true))
 			{
 				for (auto& entry : list)
