@@ -1297,7 +1297,7 @@ void D_DoomLoop ()
 			// @Cockatrice - Clearing the net-game was not updating the lasttic variable, which means joystick input stops working
 			lasttic = gametic;
 
-			CRecoverableError2* err2 = dynamic_cast<CRecoverableError2*>(&error);
+			const CRecoverableError2* err2 = dynamic_cast<const CRecoverableError2*>(&error);
 			int errType = err2 ? err2->type : ERR_UNKNOWN;
 
 			// Attempt to notify script

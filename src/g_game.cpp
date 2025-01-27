@@ -2104,7 +2104,7 @@ void G_DoLoadGame ()
 		for (int x = 0; x < (int)missingWadList.Size(); x++) {
 			wadErr.AppendFormat("\t%s\n", missingWadList[x].GetChars());
 		}
-		LoadGameError(wadErr, "", ERR_MISSINGMAP);
+		LoadGameError(wadErr.GetChars(), "", ERR_MISSINGMAP);
 		return;
 	}
 
@@ -2129,7 +2129,7 @@ void G_DoLoadGame ()
 	arc.Close();
 
 	// Verify we can find the specified map version
-	if (!P_CheckMapData(map, mapVersion)) {
+	if (!P_CheckMapData(map.GetChars(), mapVersion)) {
 		FString fullError;
 
 		if (mapVersion > 0)
