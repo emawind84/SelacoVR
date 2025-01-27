@@ -85,7 +85,7 @@ FString G_BuildSaveName (const char *prefix, int slot);
 int		G_BuildSaveNames(const char* prefix, TArray<FString>& outputAr);	// @Cockatice - Get all possible locations for save path (Not a specific slot)
 
 class FSerializer;
-bool G_CheckSaveGameWads (FSerializer &arc, bool printwarn);
+bool G_CheckSaveGameWads (FSerializer &arc, bool printwarn, TArray<FString> *wadList = nullptr);
 
 enum EFinishLevelType
 {

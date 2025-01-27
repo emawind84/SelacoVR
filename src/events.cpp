@@ -319,6 +319,13 @@ void EventManager::PostSave(int saveType) {
 		handler->PostSave(saveType);
 }
 
+bool EventManager::HandleError(int errorType, FString errMsg) {
+	for (DStaticEventHandler* handler = FirstEventHandler; handler; handler = handler->next)
+		if (handler->IsStatic() && handler->HandleError(errorType, errMsg)) return true;
+
+	return false;
+}
+
 FString EventManager::GetSavegameComments()
 {
 	struct Comment {
@@ -1108,6 +1115,21 @@ void DStaticEventHandler::PostSave(int saveType) {
 		VMCall(func, params, 2, nullptr, 0);
 	}
 }
+
+
+bool DStaticEventHandler::HandleError(int errorType, FString engineErrMsg) {
+	IFVIRTUAL(DStaticEventHandler, HandleError)
+	{
+		int handled = 0;
+		VMReturn results[1] = { &handled };
+		VMValue params[3] = { (DStaticEventHandler*)this, errorType, (FString*)&engineErrMsg };
+		VMCall(func, params, 3, results, 1);
+		return !!handled;
+	}
+
+	return false;
+}
+
 
 FRenderEvent EventManager::SetupRenderEvent()
 {

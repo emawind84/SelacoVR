@@ -95,6 +95,7 @@ public:
 	bool IsSaveAllowed(bool quicksave);			// @Cockatrice - Callback to check if game saving is allowed at this moment
 	void PreSave(int saveType);					// @Cockatrice - Called immediately before a save, allowing managers to alter the world before saving
 	void PostSave(int saveType);				// @Cocaktrice - Called immediately after a save
+	bool HandleError(int errorType, FString engineErrMsg);		// @Cockatrice - Give the script a chance to handle a fatal error more gracefully than a console dump
 
 	//
 	void RenderFrame();
@@ -222,6 +223,17 @@ struct FReplacedEvent
 	bool IsFinal;
 };
 
+
+enum EventManagerError {
+	ERR_UNKNOWN			= 0,
+	ERR_UNKNOWN_ABORT	= 1,
+	ERR_LOADGAME		= 2,
+	ERR_MISSINGMAP		= 3,
+	ERR_LOADOBJECTS		= 4,
+	ERR_SAVEGAMEVERSION = 5
+};
+
+
 struct EventManager
 {
 	FLevelLocals *Level = nullptr;
@@ -283,6 +295,7 @@ struct EventManager
 	// @Cockatrice - Save callbacks
 	void PreSave(int saveType);
 	void PostSave(int saveType);
+	bool HandleError(int errorType, FString errMsg);
 
 	// this executes on every tick on UI side, always
 	void UiTick();

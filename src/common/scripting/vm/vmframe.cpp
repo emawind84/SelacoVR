@@ -679,12 +679,14 @@ CVMAbortException::CVMAbortException(EVMAbortException reason, const char *morei
 // Print this only once on the first catch block.
 void CVMAbortException::MaybePrintMessage()
 {
+	if (printedMessage) return;
 	auto m = GetMessage();
 	if (m != nullptr)
 	{
+		printedMessage = true;
 		Printf(TEXTCOLOR_RED);
 		Printf("%s\n", m);
-		SetMessage("");
+		//SetMessage("");
 	}
 }
 

@@ -626,6 +626,8 @@ void FSerializer::ReadObjects(bool hubtravel)
 
 	if (isReading() && BeginArray("objects"))
 	{
+		fullErrorMessage = "Failed to restore all objects : \n";
+
 		// Do not link any thinker that's being created here. This will be done by deserializing the thinker list later.
 		try
 		{
@@ -647,6 +649,8 @@ void FSerializer::ReadObjects(bool hubtravel)
 					if (cls == nullptr)
 					{
 						Printf(TEXTCOLOR_RED "Unknown object class '%s' in savegame\n", clsname.GetChars());
+						fullErrorMessage.AppendFormat(TEXTCOLOR_RED "Unknown object class '%s' in savegame\n", clsname.GetChars());
+
 						founderrors = true;
 						r->mDObjects[i] = RUNTIME_CLASS(DObject)->CreateNew();	// make sure we got at least a valid pointer for the duration of the loading process.
 						r->mDObjects[i]->Destroy();								// but we do not want to keep this around, so destroy it right away.
@@ -684,6 +688,7 @@ void FSerializer::ReadObjects(bool hubtravel)
 								r->mObjects.Clamp(size);	// close all inner objects.
 								// In case something in here throws an error, let's continue and deal with it later.
 								Printf(TEXTCOLOR_RED "'%s'\n while restoring %s\n", err.GetMessage(), obj ? obj->GetClass()->TypeName.GetChars() : "invalid object");
+								fullErrorMessage.AppendFormat(TEXTCOLOR_RED "'%s'\n while restoring %s\n", err.GetMessage(), obj ? obj->GetClass()->TypeName.GetChars() : "invalid object");
 								mErrors++;
 							}
 						}

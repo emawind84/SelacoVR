@@ -65,7 +65,7 @@ void FSavegameManager::ReadSaveStrings()
 		TArray<FString> searchPaths;
 		G_BuildSaveNames("", searchPaths);
 
-		for (int searchPathIndex = 0; searchPathIndex < searchPaths.Size(); searchPathIndex++) {
+		for (int searchPathIndex = 0; searchPathIndex < (int)searchPaths.Size(); searchPathIndex++) {
 			void* filefirst;
 			findstate_t c_file;
 			FString filter;
