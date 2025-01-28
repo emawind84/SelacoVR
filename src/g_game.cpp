@@ -1963,7 +1963,7 @@ static void LoadGameError(const char *label, const char *append = "", int errTyp
 	message.Substitute("%s", savename);
 	FString full;
 	full.Format("%s %s", message.GetChars(), append);
-	Printf ("%s\n", full);
+	Printf ("%s\n", full.GetChars());
 
 	// @Cockatrice - Send an event to static event handlers so the script system can present this info better to the player
 	staticEventManager.HandleError(errType, full);
@@ -2133,9 +2133,9 @@ void G_DoLoadGame ()
 		FString fullError;
 
 		if (mapVersion > 0)
-			fullError.Format("Could not find map: %s Version: %d", map, mapVersion, ERR_MISSINGMAP);
+			fullError.Format("Could not find map: %s Version: %d", map.GetChars(), mapVersion, ERR_MISSINGMAP);
 		else
-			fullError.Format("Could not find map: %s", map, "", ERR_MISSINGMAP);
+			fullError.Format("Could not find map: %s", map.GetChars(), "", ERR_MISSINGMAP);
 
 		LoadGameError(fullError.GetChars());
 		return;
