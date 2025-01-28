@@ -468,15 +468,11 @@ FString M_GetSavegamesPath()
 		path << progdir << "Save/";
 	}
 	// Try standard Saved Games folder
-	else if (GetKnownFolder(-1, FOLDERID_SavedGames, true, path))
-	{
-		path << "/" GAMENAME "/";
-	}
 	else
 	{
-		path << progdir << "Save/";
+		path = GetKnownFolder(-1, FOLDERID_SavedGames, true);
+		path << "/" GAMENAME "/";
 	}
-	
 	return path;
 }
 
