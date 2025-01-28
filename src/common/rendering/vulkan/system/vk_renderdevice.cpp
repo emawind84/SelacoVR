@@ -268,7 +268,7 @@ static void TempUploadTexture(VkCommandBufferManager *cmd, VkHardwareTexture *te
 			uint32_t mipWidth = buffWidth, mipHeight = buffHeight;
 			uint32_t mipSize = (uint32_t)pixelDataSize, dataPos = (uint32_t)pixelDataSize;
 
-			for (int x = 1; x < numMipLevels; x++) {
+			for (uint32_t x = 1; x < numMipLevels; x++) {
 				mipWidth = std::max(1u, (mipWidth >> 1));
 				mipHeight = std::max(1u, (mipHeight >> 1));
 				mipSize = std::max(1u, ((mipWidth + 3) / 4)) * std::max(1u, ((mipHeight + 3) / 4)) * 16;
@@ -501,7 +501,7 @@ void VulkanRenderDevice::FlushBackground() {
 	// Finish anything that was loaded
 	UpdateBackgroundCache(true);
 
-	Printf(TEXTCOLOR_GREEN "\tFlushing %d raw texture reads...\n", bgtUploads.size());
+	Printf(TEXTCOLOR_GREEN "\tFlushing %ld raw texture reads...\n", bgtUploads.size());
 
 	// Lastly finish anything that needs to be uploaded in the main thread
 	UploadLoadedTextures(true);
@@ -750,7 +750,7 @@ void VulkanRenderDevice::UploadLoadedTextures(bool flush) {
 	}
 
 	if (numLoaded > 0) {
-		if (numLoaded == bgtUploads.size())
+		if (numLoaded == (int)bgtUploads.size())
 			bgtUploads.clear();
 		else if (numLoaded == 1)
 			bgtUploads.erase(bgtUploads.begin());
@@ -808,6 +808,7 @@ VulkanRenderDevice::~VulkanRenderDevice()
 
 
 void VulkanRenderDevice::StopBackgroundCache() {
+	FlushBackground();
 	primaryTexQueue.clear();
 	secondaryTexQueue.clear();
 	modelInQueue.clear();
