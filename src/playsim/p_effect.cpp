@@ -50,6 +50,7 @@
 #include "actorinlines.h"
 #include "g_game.h"
 #include "serializer_doom.h"
+#include "p_pooledparticles.h"
 
 #include "hwrenderer/scene/hw_drawstructs.h"
 

@@ -49,6 +49,7 @@
 #include "actor.h"
 #include "b_bot.h"
 #include "p_effect.h"
+#include "p_pooledparticles.h"
 #include "d_player.h"
 #include "p_destructible.h"
 #include "r_data/r_sections.h"
@@ -677,6 +678,8 @@ public:
 	TArray<particle_t>	Particles;
 	TArray<uint16_t>	ParticlesInSubsec;
 	FThinkerCollection Thinkers;
+
+	TArray<particlelevelpool_t> ParticlePools;
 
 	TArray<DVector2>	Scrolls;		// NULL if no DScrollers in this level
 
