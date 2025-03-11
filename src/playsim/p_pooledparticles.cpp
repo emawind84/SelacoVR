@@ -4,13 +4,56 @@
 #include "p_pooledparticles.h"
 #include "g_levellocals.h"
 #include "m_argv.h"
+#include "vm.h"
+#include "types.h"
+#include "texturemanager.h"
 
 CVAR(Bool, r_pooledparticles, true, 0);
+
+/*
+IMPLEMENT_CLASS(DParticleDefinition, false, false)
+DEFINE_FIELD(DParticleDefinition, PoolSize)
+DEFINE_FIELD(DParticleDefinition, Lifetime)
+DEFINE_FIELD(DParticleDefinition, LifetimeRange)
+DEFINE_FIELD(DParticleDefinition, Acceleration)
+DEFINE_FIELD(DParticleDefinition, Scale)
+DEFINE_FIELD(DParticleDefinition, ScaleStep)
+DEFINE_FIELD(DParticleDefinition, Alpha)
+DEFINE_FIELD(DParticleDefinition, FadeStep)
+DEFINE_FIELD(DParticleDefinition, Roll)
+DEFINE_FIELD(DParticleDefinition, RollVel)
+DEFINE_FIELD(DParticleDefinition, RollAcc)
+DEFINE_FIELD(DParticleDefinition, Color)
+DEFINE_FIELD(DParticleDefinition, Texture)
+DEFINE_FIELD(DParticleDefinition, Style)
+
+DParticleDefinition::DParticleDefinition()
+	: PoolSize(100)
+	, Lifetime(35)
+	, LifetimeRange(0)
+	, Scale(1)
+	, ScaleStep(0)
+	, Alpha(1)
+	, FadeStep(0)
+	, Roll(0)
+	, RollVel(0)
+	, RollAcc(0)
+	, Color(0xffffff)
+	, Style(STYLE_Normal)
+{
+
+}
+*/
 
 #define FADEFROMTTL(a)	(1.f/(a))
 
 int ParticleRandom(int min, int max)
 {
+	if (min == max)
+	{
+		return min;
+	}
+
 	if (min > max)
 	{
 		std::swap(min, max);
@@ -19,15 +62,34 @@ int ParticleRandom(int min, int max)
 	return min + M_Random(max - min);
 }
 
-inline pooledparticle_t* NewPooledParticle(FLevelLocals* Level, pooledparticleid particleDefinitionID, bool replace = false)
+float ParticleRandom(float min, float max)
 {
-	if (particleDefinitionID >= Level->ParticlePools.size())
+	if (min == max)
+	{
+		return min;
+	}
+
+	if (min > max)
+	{
+		std::swap(min, max);
+	}
+
+	return (float)(min + M_Random.GenRand_Real1() * (max - min));
+}
+
+inline pooledparticle_t* NewPooledParticle(FLevelLocals* Level, pooledparticleid particleDefinitionID, bool replace /* = false */)
+{
+	particlelevelpool_t* pool = Level->ParticlePools.CheckKey(particleDefinitionID);
+	if (!pool)
 	{
 		return nullptr;
 	}
 
-	particlelevelpool_t* pool = &Level->ParticlePools[particleDefinitionID];
+	return NewPooledParticle(Level, pool, replace);
+}
 
+pooledparticle_t* NewPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, bool replace /* = false */)
+{
 	pooledparticle_t* result = nullptr;
 
 	// Array's filled up
@@ -88,22 +150,84 @@ inline pooledparticle_t* NewPooledParticle(FLevelLocals* Level, pooledparticleid
 	return result;
 }
 
-void P_InitPooledParticles(FLevelLocals* Level, pooledparticleid particleDefinitionID)
+// HACK: This is probably nasty, talk to Cock about whether there's a better way of doing this
+template<typename T>
+void GetDefaultValue(PClass* cls, FName name, T* outValue)
 {
-	if (particleDefinitionID < Level->ParticlePools.size())
-	{
-		particlelevelpool_t* pool = &Level->ParticlePools[particleDefinitionID];
+	uint8_t* addr = cls->Defaults;
 
-		pool->Particles.Resize(pool->Definition->poolsize);
-		P_ClearPooledParticles(pool);
+	PField* pField = dyn_cast<PField>(cls->FindSymbol(name, true));
+	assert(pField && "Couldn't find field for default value");
+	assert(pField->Type->Size == sizeof(T) && "Field is incorrect size");
+
+	addr += pField->Offset;
+
+	assert(((intptr_t)addr & (pField->Type->Align - 1)) == 0 && "unaligned address");
+
+	*outValue = *(T*)(addr);
+}
+
+template<typename T>
+T GetDefaultValue(PClass* cls, FName name)
+{
+	T value = {};
+	GetDefaultValue(cls, name, &value);
+	return value;
+}
+
+#define GET_DEFAULT_FROM_DEFINITION(name) GetDefaultValue(cls, #name, &definition->name);
+
+void P_InitDefinitionFromClass(particledefinition_t* definition, PClass* cls)
+{
+	GET_DEFAULT_FROM_DEFINITION(PoolSize);
+	GET_DEFAULT_FROM_DEFINITION(Lifetime);
+	GET_DEFAULT_FROM_DEFINITION(LifetimeVariance);
+	GET_DEFAULT_FROM_DEFINITION(Acceleration);
+	GET_DEFAULT_FROM_DEFINITION(ScaleMin);
+	GET_DEFAULT_FROM_DEFINITION(ScaleMax);
+	GET_DEFAULT_FROM_DEFINITION(ScaleStep);
+	GET_DEFAULT_FROM_DEFINITION(AlphaMin);
+	GET_DEFAULT_FROM_DEFINITION(AlphaMax);
+	GET_DEFAULT_FROM_DEFINITION(FadeStep);
+	GET_DEFAULT_FROM_DEFINITION(RollMin);
+	GET_DEFAULT_FROM_DEFINITION(RollMax);
+	GET_DEFAULT_FROM_DEFINITION(RollVelMin);
+	GET_DEFAULT_FROM_DEFINITION(RollVelMax);
+	GET_DEFAULT_FROM_DEFINITION(RollAccMin);
+	GET_DEFAULT_FROM_DEFINITION(RollAccMax);
+	GET_DEFAULT_FROM_DEFINITION(Color);
+	GET_DEFAULT_FROM_DEFINITION(Style);
+
+	FString textureName = GetDefaultValue<FString>(cls, "Texture");
+	if (!textureName.IsEmpty())
+	{
+		definition->Texture = TexMan.CheckForTexture(textureName.GetChars(), ETextureType::Any);
 	}
 }
 
-void P_ClearAllPooledParticles(FLevelLocals* Level)
+void P_InitPooledParticles(FLevelLocals* Level)
 {
-	for (particlelevelpool_t& pool : Level->ParticlePools)
+	FName className = "ParticleDefinition";
+
+	for (unsigned int i = 0; i < PClass::AllClasses.Size(); i++)
 	{
-		P_ClearPooledParticles(&pool);
+		PClass* cls = PClass::AllClasses[i];
+
+		if (cls->TypeName != className && cls->IsDescendantOf(className))
+		{
+			uint32_t poolSize = GetDefaultValue<uint32_t>(cls, "PoolSize");
+
+			if (poolSize > 0)
+			{
+				particlelevelpool_t* pool = &Level->ParticlePools.InsertNew(cls->TypeName.GetIndex());
+				particledefinition_t* definition = &pool->Definition;
+
+				P_InitDefinitionFromClass(definition, cls);
+
+				pool->Particles.Resize(poolSize);
+				P_ClearPooledParticles(pool);
+			}
+		}
 	}
 }
 
@@ -123,6 +247,28 @@ void P_ClearPooledParticles(particlelevelpool_t* pool)
 	pool->Particles.Data()->tprev = NO_PARTICLE;
 }
 
+void P_ClearAllPooledParticles(FLevelLocals* Level)
+{
+	TMapIterator<int, particlelevelpool_t> it(Level->ParticlePools);
+	TMap<int, particlelevelpool_t>::Pair* pair;
+
+	while (it.NextPair(pair))
+	{
+		P_ClearPooledParticles(&pair->Value);
+	}
+}
+
+void P_FindAllPooledParticleSubsectors(FLevelLocals* Level)
+{
+	TMapIterator<int, particlelevelpool_t> it(Level->ParticlePools);
+	TMap<int, particlelevelpool_t>::Pair* pair;
+
+	while (it.NextPair(pair))
+	{
+		P_FindPooledParticleSubsectors(Level, &pair->Value);
+	}
+}
+
 // Group particles by subsectors. Because particles are always
 // in motion, there is little benefit to caching this information
 // from one frame to the next.
@@ -130,26 +276,6 @@ void P_ClearPooledParticles(particlelevelpool_t* pool)
 
 void P_FindPooledParticleSubsectors(FLevelLocals* Level, particlelevelpool_t* pool)
 {
-	// [NL] What is this VisualThinker stuff for, exactly? They mention it's 'hitching a ride', so it may be irrelevant to particles
-/*
-	// [MC] Hitch a ride on particle subsectors since VisualThinkers are effectively using the same kind of system.
-	for (uint32_t i = 0; i < Level->subsectors.Size(); i++)
-	{
-		Level->subsectors[i].sprites.Clear();
-	}
-	// [MC] Not too happy about using an iterator for this but I can't think of another way to handle it.
-	// At least it's on its own statnum for maximum efficiency.
-	auto it = Level->GetThinkerIterator<DVisualThinker>(NAME_None, STAT_VISUALTHINKER);
-	DVisualThinker* sp;
-	while (sp = it.Next())
-	{
-		if (!sp->PT.subsector) sp->PT.subsector = Level->PointInRenderSubsector(sp->PT.Pos);
-
-		sp->PT.subsector->sprites.Push(sp);
-	}
-	// End VisualThinker hitching. Now onto the particles. 
-*/
-
 	if (pool->ParticlesInSubsec.Size() < Level->subsectors.Size())
 	{
 		pool->ParticlesInSubsec.Reserve(Level->subsectors.Size() - pool->ParticlesInSubsec.Size());
@@ -173,16 +299,19 @@ void P_FindPooledParticleSubsectors(FLevelLocals* Level, particlelevelpool_t* po
 
 void P_ThinkAllPooledParticles(FLevelLocals* Level)
 {
-	for (particlelevelpool_t& pool : Level->ParticlePools)
+	TMapIterator<int, particlelevelpool_t> it(Level->ParticlePools);
+	TMap<int, particlelevelpool_t>::Pair* pair;
+
+	while (it.NextPair(pair))
 	{
-		P_ThinkPooledParticles(Level, &pool);
+		P_ThinkPooledParticles(Level, &pair->Value);
 	}
 }
 
 void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool)
 {
 	int i = pool->ActiveParticles;
-	pooledparticledefinition_t* definition = pool->Definition;
+	particledefinition_t* definition = &pool->Definition;
 	pooledparticle_t* particle = nullptr, *prev = nullptr;
 	while (i != NO_PARTICLE)
 	{
@@ -199,37 +328,37 @@ void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool)
 			continue;
 		}
 
-		particle->alpha -= definition->fadestep;
-		particle->scale += definition->scalestep;
+		particle->alpha -= definition->FadeStep;
+		particle->scale += definition->ScaleStep;
 		if (particle->alpha <= 0 || --particle->ttl <= 0 || (particle->scale <= 0))
 		{ // The particle has expired, so free it
 			*particle = {};
 			if (prev)
 				prev->tnext = i;
 			else
-				Level->ActiveParticles = i;
+				pool->ActiveParticles = i;
 
 			if (i != NO_PARTICLE)
 			{
-				particle_t* next = &Level->Particles[i];
+				pooledparticle_t* next = &pool->Particles[i];
 				next->tprev = particle->tprev;
 			}
-			particle->tnext = Level->InactiveParticles;
-			Level->InactiveParticles = (int)(particle - Level->Particles.Data());
+			particle->tnext = pool->InactiveParticles;
+			pool->InactiveParticles = (int)(particle - pool->Particles.Data());
 			continue;
 		}
 
 		// Handle crossing a line portal
-		DVector2 newxy = Level->GetPortalOffsetPosition(particle->Pos.X, particle->Pos.Y, particle->Vel.X, particle->Vel.Y);
+		DVector2 newxy = Level->GetPortalOffsetPosition(particle->pos.X, particle->pos.Y, particle->vel.X, particle->vel.Y);
 		particle->pos.X = newxy.X;
 		particle->pos.Y = newxy.Y;
 		particle->pos.Z += particle->vel.Z;
-		particle->vel += definition->acceleration;
+		particle->vel += (FVector3)definition->Acceleration;
 
 		if (particle->flags & SPF_ROLL)
 		{
 			particle->roll += particle->rollvel;
-			particle->rollvel += definition->rollacc;
+			particle->rollvel += ParticleRandom(definition->RollAccMin, definition->RollAccMax);
 		}
 
 		particle->subsector = Level->PointInRenderSubsector(particle->pos);
@@ -255,36 +384,35 @@ void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool)
 	}
 }
 
-void P_SpawnPooledParticle(FLevelLocals* Level, pooledparticleid particleDefinitionID, const DVector3& pos, const DVector3& vel, double scale, int flags)
+void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const DVector3& pos, const DVector3& vel, double scale, int flags)
 {
-	pooledparticle_t* particle = NewPooledParticle(Level, particleDefinitionID, (bool)(flags & SPF_REPLACE));
+	particledefinition_t* definition = &pool->Definition;
+	pooledparticle_t* particle = NewPooledParticle(Level, pool, (bool)(flags & SPF_REPLACE));
 
 	if (particle)
 	{
-		pooledparticledefinition_t* definition; // TODO: Figure out where we're storing these definitions
-
 		particle->pos = pos;
 		particle->vel = FVector3(vel);
-		particle->color = definition->color;
-		particle->alpha = float(definition->startalpha);
-		particle->ttl = ParticleRandom(definition->lifetimemin, definition->lifetimemax);
+		particle->color = definition->Color;
+		particle->alpha = ParticleRandom(definition->AlphaMin, definition->AlphaMax);
+		particle->ttl = definition->Lifetime + M_Random(definition->LifetimeVariance);
 		
-		if ((definition->fadestep < 0 && !(flags & SPF_NEGATIVE_FADESTEP)) || definition->fadestep <= -1.0) 
+		if ((definition->FadeStep < 0 && !(flags & SPF_NEGATIVE_FADESTEP)) || definition->FadeStep <= -1.0) 
 		{
 			particle->fadestep = FADEFROMTTL(particle->ttl);
 		}
 		else 
 		{
-			particle->fadestep = float(definition->fadestep);
+			particle->fadestep = float(definition->FadeStep);
 		}
 
-		particle->scale = definition->startscale;
-		particle->roll = definition->startroll;
-		particle->rollvel = definition->startrollvel;
+		particle->scale = ParticleRandom(definition->ScaleMin, definition->ScaleMax);
+		particle->roll = ParticleRandom(definition->RollMin, definition->RollMax);
+		particle->rollvel = ParticleRandom(definition->RollVelMin, definition->RollVelMax);
 		particle->flags = flags;
 		if (flags & SPF_LOCAL_ANIM)
 		{
-			TexAnim.InitStandaloneAnimation(particle->animData, definition->texture, Level->maptime);
+			TexAnim.InitStandaloneAnimation(particle->animData, definition->Texture, Level->maptime);
 		}
 	}
 }

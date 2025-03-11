@@ -1872,6 +1872,8 @@ void FLevelLocals::Init()
 {
 	P_InitParticles(this);
 	P_ClearParticles(this);
+
+	P_InitPooledParticles(this);
 	
 	gravity = sv_gravity * 35/TICRATE;
 	aircontrol = sv_aircontrol;

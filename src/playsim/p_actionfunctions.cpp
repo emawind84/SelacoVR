@@ -1734,45 +1734,28 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnParticleEx)
 	return 0;
 }
 
-/*
 DEFINE_ACTION_FUNCTION(AActor, A_SpawnPooledParticle)
 {
 	PARAM_SELF_PROLOGUE(AActor);
-	PARAM_COLOR		(color);
-	PARAM_INT   (i_texid)
-	PARAM_INT   (style)
-	PARAM_INT	(flags)		
-	PARAM_INT	(lifetime)	
-	PARAM_FLOAT	(size)		
-	PARAM_ANGLE	(angle)		
+	PARAM_CLASS	(definition, AActor)
 	PARAM_FLOAT	(xoff)		
 	PARAM_FLOAT	(yoff)		
 	PARAM_FLOAT	(zoff)		
 	PARAM_FLOAT	(xvel)		
 	PARAM_FLOAT	(yvel)		
-	PARAM_FLOAT	(zvel)		
-	PARAM_FLOAT	(accelx)	
-	PARAM_FLOAT	(accely)	
-	PARAM_FLOAT	(accelz)	
-	PARAM_FLOAT	(startalpha)
-	PARAM_FLOAT	(fadestep)	
-	PARAM_FLOAT (sizestep)	
-	PARAM_FLOAT	(startroll)	
-	PARAM_FLOAT	(rollvel)	
-	PARAM_FLOAT	(rollacc)
+	PARAM_FLOAT	(zvel)
+	PARAM_ANGLE	(angle)
+	PARAM_FLOAT	(scale)
+	PARAM_INT	(flags)
 
-	startalpha = clamp(startalpha, 0., 1.);
-	fadestep = clamp(fadestep, -1.0, 1.0);
-
-	size = fabs(size);
-	if (lifetime != 0)
+	if (particlelevelpool_t* pool = self->Level->ParticlePools.CheckKey(definition->TypeName.GetIndex()))
 	{
 		if (flags & SPF_RELANG) angle += self->Angles.Yaw;
 		double s = angle.Sin();
 		double c = angle.Cos();
 		DVector3 pos(xoff, yoff, zoff + self->GetBobOffset());
 		DVector3 vel(xvel, yvel, zvel);
-		DVector3 acc(accelx, accely, accelz);
+
 		//[MC] Code ripped right out of A_SpawnItemEx.
 		if (flags & SPF_RELPOS)
 		{
@@ -1786,25 +1769,12 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnPooledParticle)
 			vel.X = xvel * c + yvel * s;
 			vel.Y = xvel * s - yvel * c;
 		}
-		if (flags & SPF_RELACCEL)
-		{
-			acc.X = accelx * c + accely * s;
-			acc.Y = accelx * s - accely * c;
-		}
 		
-		FTextureID texid;
-		texid.SetIndex(i_texid);
-		
-		if(style < 0 || style >= STYLE_Count)
-		{
-			style = STYLE_None;
-		}
-
-		P_SpawnPooledParticle(self->Level, self->Vec3Offset(pos), vel, acc, color, startalpha, lifetime, size, fadestep, sizestep, flags, texid, ERenderStyle(style), startroll, rollvel, rollacc);
+		P_SpawnPooledParticle(self->Level, pool, self->Vec3Offset(pos), vel, scale, flags);
 	}
+
 	return 0;
 }
-*/
 
 //===========================================================================
 //

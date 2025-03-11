@@ -679,7 +679,7 @@ public:
 	TArray<uint16_t>	ParticlesInSubsec;
 	FThinkerCollection Thinkers;
 
-	TArray<particlelevelpool_t> ParticlePools;
+	TMap<int, particlelevelpool_t> ParticlePools;
 
 	TArray<DVector2>	Scrolls;		// NULL if no DScrollers in this level
 
