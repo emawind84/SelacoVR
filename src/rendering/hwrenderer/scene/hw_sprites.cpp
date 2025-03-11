@@ -1769,8 +1769,8 @@ void HWSprite::ProcessPooledParticle(HWDrawInfo* di, particledefinition_t* defin
 
 	int particle_style = particlehastexture ? 2 : gl_particles_style; // Treat custom texture the same as smooth particles
 
-	float sizeX = 32;
-	float sizeY = 32;
+	float texWidth = 32;
+	float texHeight = 32;
 
 	// [BB] Load the texture for round or smooth particles
 	if (particle_style)
@@ -1811,8 +1811,8 @@ void HWSprite::ProcessPooledParticle(HWDrawInfo* di, particledefinition_t* defin
 
 			if (texture)
 			{
-				sizeX = texture->GetDisplayWidth();
-				sizeY = texture->GetDisplayHeight();
+				texWidth = texture->GetDisplayWidth();
+				texHeight = texture->GetDisplayHeight();
 			}
 		}
 	}
@@ -1838,23 +1838,19 @@ void HWSprite::ProcessPooledParticle(HWDrawInfo* di, particledefinition_t* defin
 	if (particle_style == 1) factor = 1.3f / 7.f;
 	else if (particle_style == 2) factor = 2.5f / 7.f;
 	else factor = 1 / 7.f;
-	float scalefacX = particle->scale * factor * sizeY;
-	float scalefacY = particle->scale * factor * sizeX;
 
-	float ps = di->Level->pixelstretch;
+	float width = particle->scale * texWidth * 0.5f * factor;
+	float height = particle->scale * texHeight * 0.5f * factor;
 
-	scalefacX /= sqrt(ps); // shrink it slightly to account for the stretch
-	scalefacY /= sqrt(ps);
+	float viewvecX = vp.ViewVector.X * width;
+	float viewvecY = vp.ViewVector.Y * width;
 
-	float viewvecX = vp.ViewVector.X * scalefacX * ps;
-	float viewvecY = vp.ViewVector.Y * scalefacY;
-
-	x1 = x + viewvecY;
-	x2 = x - viewvecY;
-	y1 = y - viewvecX;
-	y2 = y + viewvecX;
-	z1 = z - scalefacX;
-	z2 = z + scalefacX;
+	x1 = x - viewvecY;
+	x2 = x + viewvecY;
+	y1 = y + viewvecX;
+	y2 = y - viewvecX;
+	z1 = z + height;
+	z2 = z - height;
 
 	depth = (float)((x - vp.Pos.X) * vp.TanCos + (y - vp.Pos.Y) * vp.TanSin);
 
