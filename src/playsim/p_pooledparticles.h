@@ -24,6 +24,13 @@ struct particledefinition_t
 
 typedef uint32_t pooledparticleid;
 
+// Used to iterate over particles in a subsector
+struct pooledparticlessit_t
+{
+	uint16_t particleIndex; // Next sector index
+	uint16_t poolIndex; // Next pool index
+};
+
 struct pooledparticle_t
 {
 	subsector_t* subsector;
@@ -35,7 +42,8 @@ struct pooledparticle_t
 	float alpha, fadestep;
 	int32_t ttl;
 	int color;
-	uint16_t tnext, snext, tprev;
+	uint16_t tnext, tprev;
+	pooledparticlessit_t snext;
 	uint16_t flags;
 	FStandaloneAnimation animData;
 };
@@ -47,7 +55,6 @@ struct particlelevelpool_t
 	uint32_t					ActiveParticles;
 	uint32_t					InactiveParticles;
 	TArray<pooledparticle_t>	Particles;
-	TArray<uint16_t>			ParticlesInSubsec;
 };
 
 inline pooledparticle_t* NewPooledParticle(FLevelLocals* Level, pooledparticleid particleDefinitionID, bool replace = false);
@@ -56,8 +63,7 @@ void P_InitPooledParticles(FLevelLocals* Level);
 void P_ClearAllPooledParticles(FLevelLocals* Level);
 void P_ClearPooledParticles(particlelevelpool_t* pool);
 
-void P_FindAllPooledParticleSubsectors(FLevelLocals* Level);
-void P_FindPooledParticleSubsectors(FLevelLocals* Level, particlelevelpool_t* pool);
+void P_FindPooledParticleSubsectors(FLevelLocals* Level);
 void P_ThinkAllPooledParticles(FLevelLocals* Level);
 void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool);
 void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const DVector3& pos, const DVector3& vel, double scale, int flags);

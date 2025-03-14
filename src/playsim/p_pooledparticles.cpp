@@ -79,13 +79,12 @@ float ParticleRandom(float min, float max)
 
 inline pooledparticle_t* NewPooledParticle(FLevelLocals* Level, pooledparticleid particleDefinitionID, bool replace /* = false */)
 {
-	particlelevelpool_t* pool = Level->ParticlePools.CheckKey(particleDefinitionID);
-	if (!pool)
+	if (particleDefinitionID >= Level->ParticlePools.Size())
 	{
 		return nullptr;
 	}
 
-	return NewPooledParticle(Level, pool, replace);
+	return NewPooledParticle(Level, &Level->ParticlePools[particleDefinitionID], replace);
 }
 
 pooledparticle_t* NewPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, bool replace /* = false */)
@@ -219,8 +218,12 @@ void P_InitPooledParticles(FLevelLocals* Level)
 
 			if (poolSize > 0)
 			{
-				particlelevelpool_t* pool = &Level->ParticlePools.InsertNew(cls->TypeName.GetIndex());
+				int index = Level->ParticlePools.Push({});
+
+				particlelevelpool_t* pool = &Level->ParticlePools[index];
 				particledefinition_t* definition = &pool->Definition;
+
+				Level->ParticlePoolsByType.Insert(cls->TypeName.GetIndex(), pool);
 
 				P_InitDefinitionFromClass(definition, cls);
 
@@ -249,23 +252,9 @@ void P_ClearPooledParticles(particlelevelpool_t* pool)
 
 void P_ClearAllPooledParticles(FLevelLocals* Level)
 {
-	TMapIterator<int, particlelevelpool_t> it(Level->ParticlePools);
-	TMap<int, particlelevelpool_t>::Pair* pair;
-
-	while (it.NextPair(pair))
+	for (particlelevelpool_t& pool : Level->ParticlePools)
 	{
-		P_ClearPooledParticles(&pair->Value);
-	}
-}
-
-void P_FindAllPooledParticleSubsectors(FLevelLocals* Level)
-{
-	TMapIterator<int, particlelevelpool_t> it(Level->ParticlePools);
-	TMap<int, particlelevelpool_t>::Pair* pair;
-
-	while (it.NextPair(pair))
-	{
-		P_FindPooledParticleSubsectors(Level, &pair->Value);
+		P_ClearPooledParticles(&pool);
 	}
 }
 
@@ -274,37 +263,46 @@ void P_FindAllPooledParticleSubsectors(FLevelLocals* Level)
 // from one frame to the next.
 // [MC] VisualThinkers hitches a ride here
 
-void P_FindPooledParticleSubsectors(FLevelLocals* Level, particlelevelpool_t* pool)
+void P_FindPooledParticleSubsectors(FLevelLocals* Level)
 {
-	if (pool->ParticlesInSubsec.Size() < Level->subsectors.Size())
-	{
-		pool->ParticlesInSubsec.Reserve(Level->subsectors.Size() - pool->ParticlesInSubsec.Size());
-	}
-
-	fillshort(&pool->ParticlesInSubsec[0], Level->subsectors.Size(), NO_PARTICLE);
-
 	if (!r_pooledparticles)
 	{
 		return;
 	}
-	for (uint16_t i = pool->ActiveParticles; i != NO_PARTICLE; i = pool->Particles[i].tnext)
+
+	if (Level->PooledParticlesInSubsec.Size() < Level->subsectors.Size())
 	{
-		// Try to reuse the subsector from the last portal check, if still valid.
-		if (pool->Particles[i].subsector == nullptr) pool->Particles[i].subsector = Level->PointInRenderSubsector(pool->Particles[i].pos);
-		int ssnum = pool->Particles[i].subsector->Index();
-		pool->Particles[i].snext = pool->ParticlesInSubsec[ssnum];
-		pool->ParticlesInSubsec[ssnum] = i;
+		Level->PooledParticlesInSubsec.Reserve(Level->subsectors.Size() - Level->PooledParticlesInSubsec.Size());
+	}
+
+	pooledparticlessit_t* b2 = &Level->PooledParticlesInSubsec[0];
+	for (size_t i = 0; i < Level->PooledParticlesInSubsec.Size(); ++i)
+	{
+		b2[i] = { NO_PARTICLE, NO_PARTICLE };
+	}
+
+	fillshort(&Level->PooledParticlesInSubsec[0], Level->subsectors.Size(), NO_PARTICLE);
+
+	for (int poolIndex = 0; poolIndex < Level->ParticlePools.Size(); poolIndex++)
+	{
+		particlelevelpool_t* pool = &Level->ParticlePools[poolIndex];
+
+		for (uint16_t i = pool->ActiveParticles; i != NO_PARTICLE; i = pool->Particles[i].tnext)
+		{
+			// Try to reuse the subsector from the last portal check, if still valid.
+			if (pool->Particles[i].subsector == nullptr) pool->Particles[i].subsector = Level->PointInRenderSubsector(pool->Particles[i].pos);
+			int ssnum = pool->Particles[i].subsector->Index();
+			pool->Particles[i].snext = Level->PooledParticlesInSubsec[ssnum];
+			Level->PooledParticlesInSubsec[ssnum] = pooledparticlessit_t { i, (uint16_t)poolIndex };
+		}
 	}
 }
 
 void P_ThinkAllPooledParticles(FLevelLocals* Level)
 {
-	TMapIterator<int, particlelevelpool_t> it(Level->ParticlePools);
-	TMap<int, particlelevelpool_t>::Pair* pair;
-
-	while (it.NextPair(pair))
+	for (particlelevelpool_t& pool : Level->ParticlePools)
 	{
-		P_ThinkPooledParticles(Level, &pair->Value);
+		P_ThinkPooledParticles(Level, &pool);
 	}
 }
 

@@ -218,7 +218,7 @@ void HWDrawInfo::WorkerThread()
 
 		case RenderJob::ParticlePoolJob:
 			front = hw_FakeFlat(job->sub->sector, in_area, false);
-			RenderParticlePool(job->sub, front, (particlelevelpool_t*)job->seg); // [NL] HACK: Using the segment pointer to smuggle in the pool. Nasty, needs a better solution.
+			RenderParticlePools(job->sub, front);
 			break;
 
 		case RenderJob::PortalJob:
@@ -693,20 +693,27 @@ void HWDrawInfo::RenderParticles(subsector_t *sub, sector_t *front)
 	SetupSprite.Unclock();
 }
 
-void HWDrawInfo::RenderParticlePool(subsector_t* sub, sector_t* front, particlelevelpool_t* pool)
+void HWDrawInfo::RenderParticlePools(subsector_t* sub, sector_t* front)
 {
 	SetupSprite.Clock();
-	for (int i = pool->ParticlesInSubsec[sub->Index()]; i != NO_PARTICLE; i = pool->Particles[i].snext)
+
+	for (pooledparticlessit_t it = Level->PooledParticlesInSubsec[sub->Index()]; it.poolIndex != NO_PARTICLE; )
 	{
+		particlelevelpool_t& pool = Level->ParticlePools[it.poolIndex];
+		pooledparticle_t& particle = pool.Particles[it.particleIndex];
+
 		if (mClipPortal)
 		{
-			int clipres = mClipPortal->ClipPoint(pool->Particles[i].pos.XY());
+			int clipres = mClipPortal->ClipPoint(particle.pos.XY());
 			if (clipres == PClip_InFront) continue;
 		}
 
 		HWSprite sprite;
-		sprite.ProcessPooledParticle(this, &pool->Definition, &pool->Particles[i], front);
+		sprite.ProcessPooledParticle(this, &pool.Definition, &particle, front);
+
+		it = particle.snext;
 	}
+
 	SetupSprite.Unclock();
 }
 
@@ -832,30 +839,17 @@ void HWDrawInfo::DoSubsector(subsector_t * sub)
 			SetupSprite.Unclock();
 		}
 	}
-	else if (gl_render_things)
+	else if (gl_render_things && Level->PooledParticlesInSubsec[sub->Index()].particleIndex != NO_PARTICLE)
 	{
-		// [NL] HACK: Just to get things working for now, need something that doesn't have to iterate over ALL the particle types!
-		TMapIterator<int, particlelevelpool_t> it(Level->ParticlePools);
-		TMap<int, particlelevelpool_t>::Pair* pair;
-
-		while (it.NextPair(pair))
+		if (multithread)
 		{
-			particlelevelpool_t& pool = pair->Value;
-
-			if (pool.ParticlesInSubsec[sub->Index()] != NO_PARTICLE)
-			{
-				if (multithread)
-				{
-					// [NL] HACK: Using the segment pointer to smuggle in the pool. Nasty, needs a better solution.
-					jobQueue.AddJob(RenderJob::ParticlePoolJob, sub, (seg_t*)&pool);
-				}
-				else
-				{
-					SetupSprite.Clock();
-					RenderParticlePool(sub, fakesector, &pool);
-					SetupSprite.Unclock();
-				}
-			}
+			jobQueue.AddJob(RenderJob::ParticlePoolJob, sub);
+		}
+		else
+		{
+			SetupSprite.Clock();
+			RenderParticlePools(sub, fakesector);
+			SetupSprite.Unclock();
 		}
 	}
 
