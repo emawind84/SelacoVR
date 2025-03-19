@@ -1690,7 +1690,7 @@ void HWSprite::ProcessParticle(HWDrawInfo *di, particle_t *particle, sector_t *s
 	rendered_sprites++;
 }
 
-void HWSprite::ProcessPooledParticle(HWDrawInfo* di, particledefinition_t* definition, pooledparticle_t* particle, sector_t* sector)
+void HWSprite::ProcessPooledParticle(HWDrawInfo* di, DParticleDefinition* definition, pooledparticle_t* particle, sector_t* sector)
 {
 	if (!particle || particle->alpha <= 0)
 		return;
@@ -1698,7 +1698,6 @@ void HWSprite::ProcessPooledParticle(HWDrawInfo* di, particledefinition_t* defin
 	lightlevel = hw_ClampLight(sector->GetSpriteLight());
 	foglevel = (uint8_t)clamp<short>(sector->lightlevel, 0, 255);
 
-	trans = particle->alpha;
 	OverrideShader = 0;
 	modelframe = nullptr;
 	texture = nullptr;
@@ -1710,7 +1709,7 @@ void HWSprite::ProcessPooledParticle(HWDrawInfo* di, particledefinition_t* defin
 	nomipmap = particle->flags & SPF_NOMIPMAP;
 
 	isparticle = true;
-	particlehastexture = definition->Texture.isValid();
+	particlehastexture = particle->texture.isValid();
 	particleflags = particle->flags;
 	particlesubsector = particle->subsector;
 
@@ -1765,8 +1764,6 @@ void HWSprite::ProcessPooledParticle(HWDrawInfo* di, particledefinition_t* defin
 	if (paused || (di->Level->isFrozen() && !(particle->flags & SPF_NOTIMEFREEZE)))
 		timefrac = 0.;
 
-	bool custom_animated_texture = (particle->flags & SPF_LOCAL_ANIM) && particle->animData.ok;
-
 	int particle_style = particlehastexture ? 2 : gl_particles_style; // Treat custom texture the same as smooth particles
 
 	float texWidth = 32;
@@ -1782,13 +1779,9 @@ void HWSprite::ProcessPooledParticle(HWDrawInfo* di, particledefinition_t* defin
 		}
 		else if (particle_style == 2)
 		{
-			if (custom_animated_texture)
+			if (particlehastexture)
 			{
-				lump = TexAnim.UpdateStandaloneAnimation(particle->animData, di->Level->maptime + timefrac);
-			}
-			else if (particlehastexture)
-			{
-				lump = definition->Texture;
+				lump = particle->texture;
 			}
 			else
 			{
@@ -1807,7 +1800,7 @@ void HWSprite::ProcessPooledParticle(HWDrawInfo* di, particledefinition_t* defin
 			ul = vt = 0;
 			ur = vb = 1;
 
-			texture = TexMan.GetGameTexture(lump, !custom_animated_texture);
+			texture = TexMan.GetGameTexture(lump, false);
 
 			if (texture)
 			{
@@ -1817,30 +1810,37 @@ void HWSprite::ProcessPooledParticle(HWDrawInfo* di, particledefinition_t* defin
 		}
 	}
 
-	float xvf = (particle->vel.X) * timefrac;
-	float yvf = (particle->vel.Y) * timefrac;
-	float zvf = (particle->vel.Z) * timefrac;
+	// We use the delta between the previous position and the new position instead of the velocity,
+	// because it helps smooth out script-driven position changes when in slow motion.
+	// This *does* mean that particles will be visually behind where they actually are, but should
+	// be subtle enough to get away with.
+	float xvf = (particle->pos.X - particle->prevpos.X) * timefrac;
+	float yvf = (particle->pos.Y - particle->prevpos.Y) * timefrac;
+	float zvf = (particle->pos.Z - particle->prevpos.Z) * timefrac;
 
 	offx = 0.f;
 	offy = 0.f;
 
-	x = float(particle->pos.X) + xvf;
-	y = float(particle->pos.Y) + yvf;
-	z = float(particle->pos.Z) + zvf;
+	x = float(particle->prevpos.X) + xvf;
+	y = float(particle->prevpos.Y) + yvf;
+	z = float(particle->prevpos.Z) + zvf;
 
 	if (particle->flags & SPF_ROLL)
 	{
-		float rvf = (particle->rollvel) * timefrac;
+		float rvf = (particle->rollStep) * timefrac;
 		Angles.Roll = TAngle<double>::fromDeg(particle->roll + rvf);
 	}
+
+	trans = particle->alpha + particle->alphaStep * timefrac;
+	float scale = particle->scale + (particle->scaleStep * timefrac);
 
 	float factor;
 	if (particle_style == 1) factor = 1.3f / 7.f;
 	else if (particle_style == 2) factor = 2.5f / 7.f;
 	else factor = 1 / 7.f;
 
-	float width = particle->scale * texWidth * 0.5f * factor;
-	float height = particle->scale * texHeight * 0.5f * factor;
+	float width = scale * texWidth * 0.5f * factor;
+	float height = scale * texHeight * 0.5f * factor;
 
 	float viewvecX = vp.ViewVector.X * width;
 	float viewvecY = vp.ViewVector.Y * width;

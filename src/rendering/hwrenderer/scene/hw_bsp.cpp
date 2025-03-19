@@ -709,7 +709,7 @@ void HWDrawInfo::RenderParticlePools(subsector_t* sub, sector_t* front)
 		}
 
 		HWSprite sprite;
-		sprite.ProcessPooledParticle(this, &pool.Definition, &particle, front);
+		sprite.ProcessPooledParticle(this, pool.Definition, &particle, front);
 
 		it = particle.snext;
 	}

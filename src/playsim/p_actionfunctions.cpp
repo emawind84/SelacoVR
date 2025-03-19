@@ -1740,7 +1740,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnParticleEx)
 DEFINE_ACTION_FUNCTION(AActor, A_SpawnPooledParticle)
 {
 	PARAM_SELF_PROLOGUE(AActor);
-	PARAM_CLASS	(definition, AActor)
+	PARAM_CLASS	(definition, DParticleDefinition)
 	PARAM_FLOAT	(xoff)		
 	PARAM_FLOAT	(yoff)		
 	PARAM_FLOAT	(zoff)		

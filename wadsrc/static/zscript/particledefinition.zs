@@ -1,47 +1,27 @@
-class ParticleDefinition : Actor
+struct ParticleData
 {
-    uint            PoolSize;
-    int             Lifetime;
-    int             LifetimeVariance;
-    vector3         Acceleration;
-    float           ScaleMin;
-    float           ScaleMax;
-    float           ScaleStep;
-    float           AlphaMin;
-    float           AlphaMax;
-    float           FadeStep;
-    float           RollMin;
-    float           RollMax;
-    float           RollVelMin;
-    float           RollVelMax;
-    float           RollAccMin;
-    float           RollAccMax;
-    color           Color;
-    string          Texture;
-    ERenderStyle    Style;
+    native int      Time;       // Time elapsed
+    native int      Lifetime;   // How long this particle lives for
+    native vector3  Pos;
+    native FVector3 Vel;
+    native float    Alpha;
+    native float    AlphaStep;
+    native float    Scale;
+    native float    ScaleStep;
+    native float    Roll;
+    native float    RollStep;
+    native color    Color;
+    native int16    Flags;
+}
 
-    property        PoolSize : PoolSize;
-    property        Lifetime : Lifetime;
-    property        LifetimeVariance : LifetimeVariance;
-    property        Acceleration : Acceleration;
-    property        RandomScale : ScaleMin, ScaleMax;
-    property        ScaleStep : ScaleStep;
-    property        RandomAlpha : AlphaMin, AlphaMax;
-    property        FadeStep : FadeStep;
-    property        RandomRoll : RollMin, RollMax;
-    property        RandomRollVel : RollVelMin, RollVelMax;
-    property        RandomRollAcc : RollAccMin, RollAccMax;
-    property        Color : Color;
-    property        Texture : Texture;
-    property        Style : Style;
+class ParticleDefinition native
+{
+    native uint            PoolSize;
+    native TextureID       DefaultTexture;
+    native ERenderStyle    Style;
 
-    default
-    {
-        ParticleDefinition.PoolSize 100;
-        ParticleDefinition.Lifetime 35;
-        ParticleDefinition.RandomScale 1, 1;
-        ParticleDefinition.RandomAlpha 1, 1;
-        ParticleDefinition.Color "white";
-        ParticleDefinition.Style STYLE_Normal;
-    }
+    virtual void Init() { }
+    virtual void OnCreateParticle(in out ParticleData data) { }
+    
+    native virtual void ThinkParticle(in out ParticleData data);
 }

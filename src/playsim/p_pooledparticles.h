@@ -8,19 +8,8 @@
 #include "animations.h"
 #include "p_local.h"
 #include "p_effect.h"
-
-struct particledefinition_t
-{
-	uint32_t PoolSize;
-	int32_t Lifetime, LifetimeVariance;
-	DVector3 Acceleration;
-	float ScaleMin, ScaleMax, ScaleStep;
-	float AlphaMin, AlphaMax, FadeStep;
-	float RollMin, RollMax, RollVelMin, RollVelMax, RollAccMin, RollAccMax;
-	PalEntry Color;
-	FTextureID Texture;
-	ERenderStyle Style;
-};
+#include "actor.h"
+#include "dobject.h"
 
 typedef uint32_t pooledparticleid;
 
@@ -33,24 +22,42 @@ struct pooledparticlessit_t
 
 struct pooledparticle_t
 {
-	subsector_t* subsector;
+	int32_t time;
+	int32_t lifetime;
+	DVector3 prevpos;
 	DVector3 pos;
 	FVector3 vel;
-	float roll;
-	float rollvel;
-	float scale;
-	float alpha, fadestep;
-	int32_t ttl;
+	float alpha, alphaStep;
+	float scale, scaleStep;
+	float roll, rollStep;
 	int color;
+	FTextureID texture;
+	uint16_t flags;
+	subsector_t* subsector;
 	uint16_t tnext, tprev;
 	pooledparticlessit_t snext;
-	uint16_t flags;
-	FStandaloneAnimation animData;
+};
+
+class DParticleDefinition : public DObject
+{
+	DECLARE_CLASS(DParticleDefinition, DObject);
+
+public:
+	DParticleDefinition();
+	virtual ~DParticleDefinition();
+
+	uint32_t PoolSize;
+	FTextureID DefaultTexture;
+	ERenderStyle Style;
+
+	void Init();
+	void OnCreateParticle(pooledparticle_t* particle);
+	void ThinkParticle(pooledparticle_t* particle);
 };
 
 struct particlelevelpool_t
 {
-	particledefinition_t		Definition;
+	DParticleDefinition*		Definition;
 	uint32_t					OldestParticle; // Oldest particle for replacing with SPF_REPLACE
 	uint32_t					ActiveParticles;
 	uint32_t					InactiveParticles;

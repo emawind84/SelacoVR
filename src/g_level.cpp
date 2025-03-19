@@ -1526,7 +1526,7 @@ void FLevelLocals::DoLoadLevel(const FString &nextmapname, int position, bool au
 
 	P_SetupLevel (this, position, newGame, mapVersion);
 
-
+	P_InitPooledParticles(this);
 
 
 	//Added by MC: Initialize bots.
@@ -1873,8 +1873,6 @@ void FLevelLocals::Init()
 	P_InitParticles(this);
 	P_ClearParticles(this);
 
-	P_InitPooledParticles(this);
-	
 	gravity = sv_gravity * 35/TICRATE;
 	aircontrol = sv_aircontrol;
 	AirControlChanged();
