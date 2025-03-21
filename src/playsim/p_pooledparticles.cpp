@@ -421,26 +421,36 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& l
 			arc("definitionname", lp.Definition->GetClass()->TypeName);
 		}
 
-		arc ("oldestparticle", lp.OldestParticle)
-			("activeparticles", lp.ActiveParticles)
-			("inactiveparticles", lp.InactiveParticles);
-
-		if (arc.isWriting())
+		if (arc.BeginArray("particles"))
 		{
-			arc("particles", lp.Particles);
-		}
-		else if (arc.BeginArray("particles"))
-		{
-			// We only load the particles if the loaded particles will find in the particle array.
-			// This is done because of the way the particle iterators work; if the run off the end of
-			// the array we may crash.
-			// It may be possible to fix this, but we'd have to go through each particle and manually
-			// fix their tprev and tnext iterators.
-			if (arc.ArraySize() <= lp.Particles.Size())
+			if (arc.isWriting())
 			{
-				for (unsigned int i = 0; i < arc.ArraySize(); i++)
+				// Write out the particles from newest to oldest and then stop, so we only store the particles we *need*
+				for (uint16_t i = lp.ActiveParticles; i != NO_PARTICLE; i = lp.Particles[i].tnext)
 				{
-					arc(nullptr, lp.Particles[i]);
+					pooledparticle_t& p = lp.Particles[i];
+					arc(nullptr, p);
+				}
+			}
+			else
+			{
+				unsigned int count = min(arc.ArraySize(), lp.Particles.Size());
+
+				lp.OldestParticle = NO_PARTICLE;
+				lp.ActiveParticles = count > 0 ? 0 : NO_PARTICLE;
+				lp.InactiveParticles = 0;
+
+				for (unsigned int i = 0; i < count; i++)
+				{
+					pooledparticle_t& p = lp.Particles[i];
+					arc(nullptr, p);
+
+					// Since the particles are stored newest-to-oldest, we can figure out the tprev and tnext
+					p.tprev = i > 0 ? i - 1 : NO_PARTICLE;
+					p.tnext = i < count - 1 ? i + 1 : NO_PARTICLE;
+
+					lp.OldestParticle = i;
+					lp.InactiveParticles = p.tnext;
 				}
 			}
 
@@ -473,9 +483,8 @@ FSerializer& Serialize(FSerializer& arc, const char* key, pooledparticle_t& p, p
 			("color", p.color)
 			("texture", p.texture)
 			("flags", p.flags)
-			("tnext", p.tnext)
-			("tprev", p.tprev)
-			// We're deliberately not saving subsector or snext, since they're calculated every frame.
+			// Deliberately not saving tprev or tnext, since they're calculated during load
+			// Deliberately not saving subsector or snext, since they're calculated every frame.
 			.EndObject();
 	}
 	return arc;
