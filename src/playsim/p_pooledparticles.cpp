@@ -186,14 +186,15 @@ void P_InitPooledParticles(FLevelLocals* Level)
 
 		if (cls != baseClass && cls->IsDescendantOf(baseClass))
 		{
-			int index = Level->ParticlePools.Push({});
+			DParticleDefinition* definition = (DParticleDefinition*)cls->CreateNew();
+			definition->Init();
 
-			particlelevelpool_t* pool = &Level->ParticlePools[index];
-			pool->Definition = (DParticleDefinition*)cls->CreateNew();
-			pool->Definition->Init();
-
-			if (pool->Definition->PoolSize > 0)
+			if (definition->PoolSize > 0)
 			{
+				int index = Level->ParticlePools.Push({});
+				particlelevelpool_t* pool = &Level->ParticlePools[index];
+
+				pool->Definition = definition;
 				Level->ParticlePoolsByType.Insert(cls->TypeName.GetIndex(), pool);
 
 				pool->Particles.Resize(pool->Definition->PoolSize);
