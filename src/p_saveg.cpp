@@ -1032,6 +1032,14 @@ void FLevelLocals::Serialize(FSerializer &arc, bool hubload)
 		("interpolator", interpolator)
 		("frozenstate", frozenstate);
 
+	if (arc.isWriting())
+	{
+		arc("pooledparticles", ParticlePools);
+	}
+	else if (arc.isReading())
+	{
+		P_LoadParticlePools(arc, this, "pooledparticles");
+	}
 
 	// Hub transitions must keep the current total time
 	if (!hubload)

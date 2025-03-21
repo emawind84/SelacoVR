@@ -10,6 +10,7 @@
 #include "p_effect.h"
 #include "actor.h"
 #include "dobject.h"
+#include "serializer.h"
 
 typedef uint32_t pooledparticleid;
 
@@ -33,8 +34,9 @@ struct pooledparticle_t
 	int color;
 	FTextureID texture;
 	uint16_t flags;
-	subsector_t* subsector;
 	uint16_t tnext, tprev;
+
+	subsector_t* subsector;
 	pooledparticlessit_t snext;
 };
 
@@ -74,3 +76,8 @@ void P_FindPooledParticleSubsectors(FLevelLocals* Level);
 void P_ThinkAllPooledParticles(FLevelLocals* Level);
 void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool);
 void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const DVector3& pos, const DVector3& vel, double scale, int flags);
+
+void P_LoadParticlePools(FSerializer& arc, FLevelLocals* Level, const char* key);
+
+FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& lp, particlelevelpool_t* def);
+FSerializer& Serialize(FSerializer& arc, const char* key, pooledparticle_t& p, pooledparticle_t* def);

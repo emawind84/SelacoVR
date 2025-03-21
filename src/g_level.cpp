@@ -1526,8 +1526,6 @@ void FLevelLocals::DoLoadLevel(const FString &nextmapname, int position, bool au
 
 	P_SetupLevel (this, position, newGame, mapVersion);
 
-	P_InitPooledParticles(this);
-
 
 	//Added by MC: Initialize bots.
 	if (deathmatch)
@@ -1558,6 +1556,10 @@ void FLevelLocals::DoLoadLevel(const FString &nextmapname, int position, bool au
 			if (PlayerInGame(i) && Players[i]->mo != nullptr)
 				P_PlayerStartStomp(Players[i]->mo, !deathmatch);
 		}
+
+		// We only initialize the ParticlePools if we're not loading from a snapshot,
+		// since P_LoadParticlePools automatically reinitializes them.
+		P_InitPooledParticles(this);
 	}
 
 	// For each player, if they are viewing through a player, make sure it is themselves.

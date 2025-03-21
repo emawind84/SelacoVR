@@ -25,7 +25,9 @@ DParticleDefinition::DParticleDefinition()
 	, DefaultTexture()
 	, Style(STYLE_Normal)
 {
-
+	// We don't want to save ParticleDefinitions, since the definition could have changed since the game was saved.
+	// This way we always use the most up-to-date ParticleDefinition
+	ObjectFlags |= OF_Transient;
 }
 
 DParticleDefinition::~DParticleDefinition()
@@ -179,6 +181,9 @@ pooledparticle_t* NewPooledParticle(FLevelLocals* Level, particlelevelpool_t* po
 void P_InitPooledParticles(FLevelLocals* Level)
 {
 	PClass* baseClass = PClass::FindClass("ParticleDefinition");
+
+	Level->ParticlePools.Clear();
+	Level->ParticlePoolsByType.Clear();
 
 	for (unsigned int i = 0; i < PClass::AllClasses.Size(); i++)
 	{
@@ -369,5 +374,110 @@ void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const
 
 		definition->OnCreateParticle(particle);
 	}
+}
+
+void P_LoadParticlePools(FSerializer& arc, FLevelLocals* Level, const char* key)
+{
+	assert(arc.isReading());
+
+	if (!arc.isReading())
+	{
+		return;
+	}
+
+	// Reinitialize the pools, since even if they've already been initialized, the ParticleDefinitions
+	// would have been destroyed by the load, so we need to recreate them.
+	P_InitPooledParticles(Level);
+
+	if (arc.BeginArray(key))
+	{
+		for (unsigned int i = 0; i < arc.ArraySize(); i++)
+		{
+			if (arc.BeginObject(nullptr))
+			{
+				FName definitionName;
+				arc("definitionname", definitionName);
+
+				particlelevelpool_t** pool = Level->ParticlePoolsByType.CheckKey(definitionName.GetIndex());
+				if (pool)
+				{
+					arc(nullptr, **pool);
+				}
+
+				arc.EndObject();
+			}
+		}
+
+		arc.EndArray();
+	}
+}
+
+FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& lp, particlelevelpool_t* def)
+{
+	if (arc.isReading() || arc.BeginObject(key))
+	{
+		if (arc.isWriting())
+		{
+			arc("definitionname", lp.Definition->GetClass()->TypeName);
+		}
+
+		arc ("oldestparticle", lp.OldestParticle)
+			("activeparticles", lp.ActiveParticles)
+			("inactiveparticles", lp.InactiveParticles);
+
+		if (arc.isWriting())
+		{
+			arc("particles", lp.Particles);
+		}
+		else if (arc.BeginArray("particles"))
+		{
+			// We only load the particles if the loaded particles will find in the particle array.
+			// This is done because of the way the particle iterators work; if the run off the end of
+			// the array we may crash.
+			// It may be possible to fix this, but we'd have to go through each particle and manually
+			// fix their tprev and tnext iterators.
+			if (arc.ArraySize() <= lp.Particles.Size())
+			{
+				for (unsigned int i = 0; i < arc.ArraySize(); i++)
+				{
+					arc(nullptr, lp.Particles[i]);
+				}
+			}
+
+			arc.EndArray();
+		}
+
+		if (arc.isWriting())
+		{
+			arc.EndObject();
+		}
+	}
+	return arc;
+}
+
+FSerializer& Serialize(FSerializer& arc, const char* key, pooledparticle_t& p, pooledparticle_t* def)
+{
+	if (arc.BeginObject(key))
+	{
+		arc ("time", p.time)
+			("lifetime", p.lifetime)
+			("prevpos", p.prevpos)
+			("pos", p.pos)
+			("vel", p.vel)
+			("alpha", p.alpha)
+			("alphastep", p.alphaStep)
+			("scale", p.scale)
+			("scalestep", p.scaleStep)
+			("roll", p.roll)
+			("rollstep", p.rollStep)
+			("color", p.color)
+			("texture", p.texture)
+			("flags", p.flags)
+			("tnext", p.tnext)
+			("tprev", p.tprev)
+			// We're deliberately not saving subsector or snext, since they're calculated every frame.
+			.EndObject();
+	}
+	return arc;
 }
 
