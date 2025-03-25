@@ -1834,13 +1834,8 @@ void HWSprite::ProcessPooledParticle(HWDrawInfo* di, DParticleDefinition* defini
 	trans = particle->alpha + particle->alphaStep * timefrac;
 	float scale = particle->scale + (particle->scaleStep * timefrac);
 
-	float factor;
-	if (particle_style == 1) factor = 1.3f / 7.f;
-	else if (particle_style == 2) factor = 2.5f / 7.f;
-	else factor = 1 / 7.f;
-
-	float width = scale * texWidth * 0.5f * factor;
-	float height = scale * texHeight * 0.5f * factor;
+	float width = scale * texWidth * 0.5f;
+	float height = scale * texHeight * 0.5f;
 
 	float viewvecX = vp.ViewVector.X * width;
 	float viewvecY = vp.ViewVector.Y * width;
