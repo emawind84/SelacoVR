@@ -559,7 +559,12 @@ FSerializer& Serialize(FSerializer& arc, const char* key, pooledparticle_t& p, p
 			("rollstep", p.rollStep)
 			("color", p.color)
 			("texture", p.texture)
+			("animframe", p.animFrame)
+			("animTick", p.animTick)
 			("flags", p.flags)
+			("user1", p.user1)
+			("user2", p.user2)
+			("user3", p.user3)
 			// Deliberately not saving tprev or tnext, since they're calculated during load
 			// Deliberately not saving subsector or snext, since they're calculated every frame.
 			.EndObject();
