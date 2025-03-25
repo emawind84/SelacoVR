@@ -12,6 +12,7 @@ IMPLEMENT_CLASS(DParticleDefinition, false, false)
 DEFINE_FIELD(DParticleDefinition, PoolSize)
 DEFINE_FIELD(DParticleDefinition, DefaultTexture)
 DEFINE_FIELD(DParticleDefinition, Style)
+DEFINE_FIELD(DParticleDefinition, AnimationFrames)
 DEFINE_ACTION_FUNCTION(DParticleDefinition, ThinkParticle)
 {
 	PARAM_PROLOGUE;
@@ -20,10 +21,66 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, ThinkParticle)
 	return 0;
 }
 
+static void DParticleDefinition_AddAnimationFrame(DParticleDefinition* self, const FString& textureName, int ticks)
+{
+	if (self->AnimationFrames.Size() >= 255)
+	{
+		ThrowAbortException(X_OTHER, "Exceeded maximum number of frames for a Particle animation (256) for ParticleDefinition: %s", self->GetClass()->TypeName.GetChars());
+	}
+
+	self->AnimationFrames.Push({ TexMan.CheckForTexture(textureName.GetChars(), ETextureType::Any), (uint8_t)ticks });
+	self->AnimationLengthInTicks += ticks;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DParticleDefinition, AddAnimationFrame, DParticleDefinition_AddAnimationFrame)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_STRING(textureName);
+	PARAM_UINT(ticks);
+	DParticleDefinition_AddAnimationFrame(self, textureName, ticks);
+	return 0;
+}
+
+static void DParticleDefinition_AddAnimationFrames(DParticleDefinition* self, const FString& spriteName, const FString& frames, int ticks)
+{
+	for (size_t i = 0; i < frames.Len(); i++)
+	{
+		std::string textureName = std::string(spriteName.GetChars()) + frames[i] + "0";
+		DParticleDefinition_AddAnimationFrame(self, textureName, (uint8_t)ticks);
+	}
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DParticleDefinition, AddAnimationFrames, DParticleDefinition_AddAnimationFrames)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_STRING(spriteName);
+	PARAM_STRING(frames);
+	PARAM_UINT(ticksPerFrame);
+
+	DParticleDefinition_AddAnimationFrames(self, spriteName, frames, ticksPerFrame);
+
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DParticleDefinition, GetAnimationFrameCount)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+
+	ACTION_RETURN_INT(self->AnimationFrames.Size());
+}
+
+DEFINE_ACTION_FUNCTION(DParticleDefinition, GetAnimationLengthInTicks)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+
+	ACTION_RETURN_INT(self->AnimationLengthInTicks);
+}
+
 DParticleDefinition::DParticleDefinition()
 	: PoolSize(100)
 	, DefaultTexture()
 	, Style(STYLE_Normal)
+	, AnimationLengthInTicks(0)
 {
 	// We don't want to save ParticleDefinitions, since the definition could have changed since the game was saved.
 	// This way we always use the most up-to-date ParticleDefinition
@@ -46,7 +103,16 @@ DEFINE_FIELD_X(ParticleData, pooledparticle_t, scaleStep);
 DEFINE_FIELD_X(ParticleData, pooledparticle_t, roll);
 DEFINE_FIELD_X(ParticleData, pooledparticle_t, rollStep);
 DEFINE_FIELD_X(ParticleData, pooledparticle_t, color);
+DEFINE_FIELD_X(ParticleData, pooledparticle_t, texture);
+DEFINE_FIELD_X(ParticleData, pooledparticle_t, animFrame);
+DEFINE_FIELD_X(ParticleData, pooledparticle_t, animTick);
 DEFINE_FIELD_X(ParticleData, pooledparticle_t, flags);
+DEFINE_FIELD_X(ParticleData, pooledparticle_t, user1);
+DEFINE_FIELD_X(ParticleData, pooledparticle_t, user2);
+DEFINE_FIELD_X(ParticleData, pooledparticle_t, user3);
+
+DEFINE_FIELD_X(ParticleAnimFrame, pooledparticleanimframe_t, frame);
+DEFINE_FIELD_X(ParticleAnimFrame, pooledparticleanimframe_t, duration);
 
 int ParticleRandom(int min, int max)
 {
@@ -346,6 +412,17 @@ void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool)
 			}
 		}
 
+		uint8_t animFrameCount = (uint8_t)definition->AnimationFrames.Size();
+		if (animFrameCount > 0)
+		{
+			const pooledparticleanimframe_t& animFrame = definition->AnimationFrames[particle->animFrame % animFrameCount];
+			if (particle->animTick++ > animFrame.duration)
+			{
+				particle->animFrame++;
+				particle->texture = animFrame.frame;
+			}
+		}
+
 		prev = particle;
 	}
 }
@@ -369,7 +446,7 @@ void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const
 		particle->roll = 0;
 		particle->rollStep = 0;
 		particle->color = 0xffffff;
-		particle->texture = definition->DefaultTexture;
+		particle->texture = definition->AnimationFrames.Size() ? definition->AnimationFrames[0].frame : definition->DefaultTexture;
 		particle->flags = flags;
 
 		definition->OnCreateParticle(particle);

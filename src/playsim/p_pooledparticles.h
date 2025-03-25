@@ -23,21 +23,29 @@ struct pooledparticlessit_t
 
 struct pooledparticle_t
 {
-	int32_t time;
-	int32_t lifetime;
-	DVector3 prevpos;
-	DVector3 pos;
-	FVector3 vel;
-	float alpha, alphaStep;
-	float scale, scaleStep;
-	float roll, rollStep;
-	int color;
-	FTextureID texture;
-	uint16_t flags;
-	uint16_t tnext, tprev;
+	int16_t time;					// +2  = 2
+	int16_t lifetime;				// +2  = 4
+	DVector3 prevpos;				// +24 = 28
+	DVector3 pos;					// +24 = 52
+	FVector3 vel;					// +12 = 64
+	float alpha, alphaStep;			// +8  = 72
+	float scale, scaleStep;			// +8  = 80
+	float roll, rollStep;			// +8  = 88
+	int color;						// +4  = 92
+	FTextureID texture;				// +4  = 96
+	uint8_t animFrame, animTick;	// +2  = 98
+	uint16_t flags;					// +2  = 100
+	int user1, user2, user3;		// +12 = 112
+	uint16_t tnext, tprev;			// +4  = 116
 
-	subsector_t* subsector;
-	pooledparticlessit_t snext;
+	subsector_t* subsector;			// +8  = 124
+	pooledparticlessit_t snext;		// +4  = 128
+};
+
+struct pooledparticleanimframe_t
+{
+	FTextureID frame;
+	uint8_t duration;
 };
 
 class DParticleDefinition : public DObject
@@ -51,6 +59,9 @@ public:
 	uint32_t PoolSize;
 	FTextureID DefaultTexture;
 	ERenderStyle Style;
+
+	TArray<pooledparticleanimframe_t> AnimationFrames;
+	uint32_t AnimationLengthInTicks;
 
 	void Init();
 	void OnCreateParticle(pooledparticle_t* particle);
