@@ -21,7 +21,7 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, ThinkParticle)
 	return 0;
 }
 
-static void DParticleDefinition_AddAnimationSequence(DParticleDefinition* self)
+static int DParticleDefinition_AddAnimationSequence(DParticleDefinition* self)
 {
 	if (self->AnimationSequences.Size() >= 255)
 	{
@@ -30,14 +30,17 @@ static void DParticleDefinition_AddAnimationSequence(DParticleDefinition* self)
 
 	int firstFrame = max((int)self->AnimationFrames.Size() - 1, 0);
 	self->AnimationSequences.Push({ (uint8_t)firstFrame, (uint8_t)firstFrame, (uint8_t)self->AnimationSequences.Size() });
+
+	return (int)self->AnimationSequences.size() - 1;
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(DParticleDefinition, AddAnimationSequence, DParticleDefinition_AddAnimationSequence)
 {
 	PARAM_SELF_PROLOGUE(DParticleDefinition);
-	DParticleDefinition_AddAnimationSequence(self);
+
+	int sequenceIndex = DParticleDefinition_AddAnimationSequence(self);
 	
-	ACTION_RETURN_INT((int)self->AnimationSequences.size() - 1);
+	ACTION_RETURN_INT(sequenceIndex);
 }
 
 static void CheckSequence(DParticleDefinition* self, int sequence)
