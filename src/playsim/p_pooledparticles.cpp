@@ -21,66 +21,158 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, ThinkParticle)
 	return 0;
 }
 
-static void DParticleDefinition_AddAnimationFrame(DParticleDefinition* self, const FString& textureName, int ticks)
+static void DParticleDefinition_AddAnimationSequence(DParticleDefinition* self)
 {
+	if (self->AnimationSequences.Size() >= 255)
+	{
+		ThrowAbortException(X_OTHER, "Exceeded maximum number of sequences (256) for ParticleDefinition: %s", self->GetClass()->TypeName.GetChars());
+	}
+
+	int firstFrame = max((int)self->AnimationFrames.Size() - 1, 0);
+	self->AnimationSequences.Push({ (uint8_t)firstFrame, (uint8_t)firstFrame, (uint8_t)self->AnimationSequences.Size() });
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DParticleDefinition, AddAnimationSequence, DParticleDefinition_AddAnimationSequence)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	DParticleDefinition_AddAnimationSequence(self);
+	
+	ACTION_RETURN_INT((int)self->AnimationSequences.size() - 1);
+}
+
+static void CheckSequence(DParticleDefinition* self, int sequence)
+{
+	if (sequence > self->AnimationSequences.size())
+	{
+		ThrowAbortException(X_OTHER, "Animation sequence %d does not exist (Did you call forget to call AddAnimationSequence?)", sequence);
+	}
+}
+
+static void DParticleDefinition_AddAnimationFrame(DParticleDefinition* self, int sequence, const FString& textureName, int ticks)
+{
+	CheckSequence(self, sequence);
+
 	if (self->AnimationFrames.Size() >= 255)
 	{
 		ThrowAbortException(X_OTHER, "Exceeded maximum number of frames for a Particle animation (256) for ParticleDefinition: %s", self->GetClass()->TypeName.GetChars());
 	}
 
-	self->AnimationFrames.Push({ TexMan.CheckForTexture(textureName.GetChars(), ETextureType::Any), (uint8_t)ticks });
-	self->AnimationLengthInTicks += ticks;
+	pooledparticleanimsequence_t& animSequence = self->AnimationSequences[sequence];
+	FTextureID frame = TexMan.CheckForTexture(textureName.GetChars(), ETextureType::Any);
+
+	// Don't add invalid frames
+	if (!frame.isValid())
+	{
+		return;
+	}
+
+	self->AnimationFrames.Insert(animSequence.endFrame, { frame, (uint8_t)ticks, (uint8_t)sequence });
+
+	animSequence.endFrame++;
+	animSequence.lengthInTicks += ticks;
+
+	// Shift the start and endframes down for any sequences that follow this one
+	for (size_t i = sequence + 1; i < self->AnimationSequences.size(); i++)
+	{
+		self->AnimationSequences[i].startFrame++;
+		self->AnimationSequences[i].endFrame++;
+	}
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(DParticleDefinition, AddAnimationFrame, DParticleDefinition_AddAnimationFrame)
 {
 	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_UINT(sequence);
 	PARAM_STRING(textureName);
 	PARAM_UINT(ticks);
-	DParticleDefinition_AddAnimationFrame(self, textureName, ticks);
+	DParticleDefinition_AddAnimationFrame(self, sequence, textureName, ticks);
 	return 0;
 }
 
-static void DParticleDefinition_AddAnimationFrames(DParticleDefinition* self, const FString& spriteName, const FString& frames, int ticks)
+static void DParticleDefinition_AddAnimationFrames(DParticleDefinition* self, int sequence, const FString& spriteName, const FString& frames, int ticks)
 {
 	for (size_t i = 0; i < frames.Len(); i++)
 	{
 		std::string textureName = std::string(spriteName.GetChars()) + frames[i] + "0";
-		DParticleDefinition_AddAnimationFrame(self, textureName, (uint8_t)ticks);
+		DParticleDefinition_AddAnimationFrame(self, sequence, textureName, (uint8_t)ticks);
 	}
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(DParticleDefinition, AddAnimationFrames, DParticleDefinition_AddAnimationFrames)
 {
 	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_UINT(sequence);
 	PARAM_STRING(spriteName);
 	PARAM_STRING(frames);
 	PARAM_UINT(ticksPerFrame);
 
-	DParticleDefinition_AddAnimationFrames(self, spriteName, frames, ticksPerFrame);
+	DParticleDefinition_AddAnimationFrames(self, sequence, spriteName, frames, ticksPerFrame);
 
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION(DParticleDefinition, GetAnimationFrameCount)
+static int DParticleDefinition_GetAnimationFrameCount(DParticleDefinition* self, int sequence)
 {
-	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	CheckSequence(self, sequence);
 
-	ACTION_RETURN_INT(self->AnimationFrames.Size());
+	pooledparticleanimsequence_t& animSequence = self->AnimationSequences[sequence];
+	return animSequence.endFrame - animSequence.startFrame;
 }
 
-DEFINE_ACTION_FUNCTION(DParticleDefinition, GetAnimationLengthInTicks)
+DEFINE_ACTION_FUNCTION_NATIVE(DParticleDefinition, GetAnimationFrameCount, DParticleDefinition_GetAnimationFrameCount)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_UINT(sequence);
+
+	ACTION_RETURN_INT(DParticleDefinition_GetAnimationFrameCount(self, sequence));
+}
+
+static int DParticleDefinition_GetAnimationLengthInTicks(DParticleDefinition* self, int sequence)
+{
+	CheckSequence(self, sequence);
+
+	return self->AnimationSequences[sequence].lengthInTicks;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(DParticleDefinition, GetAnimationLengthInTicks, DParticleDefinition_GetAnimationLengthInTicks)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_UINT(sequence);
+
+	ACTION_RETURN_INT(DParticleDefinition_GetAnimationLengthInTicks(self, sequence));
+}
+
+DEFINE_ACTION_FUNCTION(DParticleDefinition, GetAnimationSequenceCount)
 {
 	PARAM_SELF_PROLOGUE(DParticleDefinition);
 
-	ACTION_RETURN_INT(self->AnimationLengthInTicks);
+	ACTION_RETURN_INT((int)self->AnimationSequences.size());
+}
+
+DEFINE_ACTION_FUNCTION(DParticleDefinition, GetAnimationStartFrame)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_UINT(sequence);
+
+	CheckSequence(self, sequence);
+
+	ACTION_RETURN_INT(self->AnimationSequences[sequence].startFrame);
+}
+
+DEFINE_ACTION_FUNCTION(DParticleDefinition, GetAnimationEndFrame)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_UINT(sequence);
+
+	CheckSequence(self, sequence);
+
+	ACTION_RETURN_INT(self->AnimationSequences[sequence].endFrame);
 }
 
 DParticleDefinition::DParticleDefinition()
 	: PoolSize(100)
 	, DefaultTexture()
 	, Style(STYLE_Normal)
-	, AnimationLengthInTicks(0)
 {
 	// We don't want to save ParticleDefinitions, since the definition could have changed since the game was saved.
 	// This way we always use the most up-to-date ParticleDefinition
@@ -153,12 +245,12 @@ void DParticleDefinition::Init()
 	}
 }
 
-void DParticleDefinition::OnCreateParticle(pooledparticle_t* particle)
+void DParticleDefinition::OnCreateParticle(pooledparticle_t* particle, AActor* refActor)
 {
 	IFVIRTUAL(DParticleDefinition, OnCreateParticle)
 	{
-		VMValue params[] = { this, particle };
-		VMCall(func, params, 2, nullptr, 0);
+		VMValue params[] = { this, particle, refActor };
+		VMCall(func, params, 3, nullptr, 0);
 	}
 }
 
@@ -413,13 +505,25 @@ void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool)
 		}
 
 		uint8_t animFrameCount = (uint8_t)definition->AnimationFrames.Size();
-		if (animFrameCount > 0)
+		if (definition->AnimationSequences.size() > 0 && particle->animFrame < animFrameCount)
 		{
-			const pooledparticleanimframe_t& animFrame = definition->AnimationFrames[particle->animFrame % animFrameCount];
-			if (particle->animTick++ > animFrame.duration)
+			const pooledparticleanimframe_t& animFrame = definition->AnimationFrames[particle->animFrame];
+			
+			uint8_t sequenceIndex = animFrame.sequence;
+			const pooledparticleanimsequence_t& sequence = definition->AnimationSequences[sequenceIndex];
+
+			if (++particle->animTick >= animFrame.duration)
 			{
+				particle->animTick = 0;
 				particle->animFrame++;
-				particle->texture = animFrame.frame;
+
+				// Loop the animation if it's finished
+				if (particle->animFrame >= sequence.endFrame)
+				{
+					particle->animFrame = sequence.startFrame;
+				}
+
+				particle->texture = definition->AnimationFrames[particle->animFrame].frame;
 			}
 		}
 
@@ -427,7 +531,7 @@ void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool)
 	}
 }
 
-void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const DVector3& pos, const DVector3& vel, double scale, int flags)
+void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const DVector3& pos, const DVector3& vel, double scale, int flags, AActor* refActor)
 {
 	DParticleDefinition* definition = pool->Definition;
 	pooledparticle_t* particle = NewPooledParticle(Level, pool, (bool)(flags & SPF_REPLACE));
@@ -449,7 +553,13 @@ void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const
 		particle->texture = definition->AnimationFrames.Size() ? definition->AnimationFrames[0].frame : definition->DefaultTexture;
 		particle->flags = flags;
 
-		definition->OnCreateParticle(particle);
+		definition->OnCreateParticle(particle, refActor);
+
+		// If we've set any roll values, make sure the roll flag is set
+		if (particle->roll != 0 || particle->rollStep != 0)
+		{
+			particle->flags |= SPF_ROLL;
+		}
 	}
 }
 

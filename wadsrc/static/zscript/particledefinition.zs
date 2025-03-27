@@ -19,6 +19,39 @@ struct ParticleData
     native int          User2;
     native int          User3;
 
+    void ChangeVelocity(Actor ref, double x = 0, double y = 0, double z = 0, int flags = 0)
+    {
+		if (ref == NULL)
+		{
+			return;
+		}
+
+		let newvel = (x, y, z);
+
+        vector3 dir;
+        if (Vel.LengthSquared() != 0)
+        {
+            dir = Vel.Unit();
+        }
+
+		double sina = sin(ref.Angle);
+		double cosa = cos(ref.Angle);
+
+		if (flags & CVF_RELATIVE)	// relative axes - make x, y relative to particle's current angle
+		{
+			newvel.X = x * cosa - y * sina;
+			newvel.Y = x * sina + y * cosa;
+		}
+
+		if (flags & CVF_REPLACE)	// discard old velocity - replace old velocity with new velocity
+		{
+			Vel = newvel;
+		}
+		else	// add new velocity to old velocity
+		{
+			Vel += newvel;
+		}
+    }
 }
 
 class ParticleDefinition native
@@ -28,12 +61,17 @@ class ParticleDefinition native
     native ERenderStyle    Style;
 
     virtual void Init() { }
-    virtual void OnCreateParticle(in out ParticleData data) { }
+    virtual void OnCreateParticle(in out ParticleData data, Actor refActor) { }
     
     native virtual void ThinkParticle(in out ParticleData data);
 
-    native void AddAnimationFrame(string textureName, int ticks = 1);
-    native void AddAnimationFrames(string spriteName, string frames, int ticksPerFrame);
-    native int GetAnimationFrameCount();
-    native int GetAnimationLengthInTicks();
+    native int AddAnimationSequence();
+    native void AddAnimationFrame(int sequence, string textureName, int ticks = 1);
+    native void AddAnimationFrames(int sequence, string spriteName, string frames, int ticksPerFrame);
+    native int GetAnimationFrameCount(int sequence);
+    native int GetAnimationLengthInTicks(int sequence);
+
+    native int GetAnimationSequenceCount();
+    native int GetAnimationStartFrame(int sequence);
+    native int GetAnimationEndFrame(int sequence);
 }

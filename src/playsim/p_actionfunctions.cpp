@@ -1750,6 +1750,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnPooledParticle)
 	PARAM_ANGLE	(angle)
 	PARAM_FLOAT	(scale)
 	PARAM_INT	(flags)
+	PARAM_POINTER(refActor, AActor);
 
 	if (particlelevelpool_t* pool = *self->Level->ParticlePoolsByType.CheckKey(definition->TypeName.GetIndex()))
 	{
@@ -1773,7 +1774,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnPooledParticle)
 			vel.Y = xvel * s - yvel * c;
 		}
 		
-		P_SpawnPooledParticle(self->Level, pool, self->Vec3Offset(pos), vel, scale, flags);
+		P_SpawnPooledParticle(self->Level, pool, self->Vec3Offset(pos), vel, scale, flags, refActor ? refActor : self);
 	}
 
 	return 0;

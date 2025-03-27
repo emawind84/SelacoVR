@@ -42,10 +42,18 @@ struct pooledparticle_t
 	pooledparticlessit_t snext;		// +4  = 128
 };
 
+struct pooledparticleanimsequence_t
+{
+	uint8_t startFrame;
+	uint8_t endFrame;
+	uint8_t lengthInTicks;
+};
+
 struct pooledparticleanimframe_t
 {
 	FTextureID frame;
 	uint8_t duration;
+	uint8_t sequence;
 };
 
 class DParticleDefinition : public DObject
@@ -60,11 +68,11 @@ public:
 	FTextureID DefaultTexture;
 	ERenderStyle Style;
 
+	TArray<pooledparticleanimsequence_t> AnimationSequences;
 	TArray<pooledparticleanimframe_t> AnimationFrames;
-	uint32_t AnimationLengthInTicks;
 
 	void Init();
-	void OnCreateParticle(pooledparticle_t* particle);
+	void OnCreateParticle(pooledparticle_t* particle, AActor* refActor);
 	void ThinkParticle(pooledparticle_t* particle);
 };
 
@@ -86,7 +94,7 @@ void P_ClearPooledParticles(particlelevelpool_t* pool);
 void P_FindPooledParticleSubsectors(FLevelLocals* Level);
 void P_ThinkAllPooledParticles(FLevelLocals* Level);
 void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool);
-void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const DVector3& pos, const DVector3& vel, double scale, int flags);
+void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const DVector3& pos, const DVector3& vel, double scale, int flags, AActor* refActor);
 
 void P_LoadParticlePools(FSerializer& arc, FLevelLocals* Level, const char* key);
 
