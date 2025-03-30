@@ -35,6 +35,8 @@
 
 bool gameisdead;
 
+#include <cstdarg>
+
 #ifdef _WIN32
 #include <windows.h>
 #include "zstring.h"
@@ -46,10 +48,31 @@ void I_DebugPrint(const char *cp)
 		OutputDebugStringW(wstr.c_str());
 	}
 }
+
+void I_DebugPrintf(const char *fmt,...)
+{
+	if (IsDebuggerPresent())
+	{
+		va_list args;
+		va_start(args, fmt);
+
+		FString s;
+		s.VFormat(fmt, args);
+
+		va_end(args);
+
+		auto wstr = WideString(s.GetChars());
+		OutputDebugStringW(wstr.c_str());
+	}
+}
 #else
 void I_DebugPrint(const char *cp)
 {
-}	
+}
+
+void I_DebugPrintf(const char *fmt,...)
+{
+}
 #endif
 
 #include "engineerrors.h"
@@ -63,7 +86,7 @@ void I_DebugPrint(const char *cp)
 //
 //==========================================================================
 
-void I_Error(const char *error, ...)
+[[noreturn]] void I_Error(const char *error, ...)
 {
 	va_list argptr;
 	char errortext[MAX_ERRORTEXT];
@@ -99,7 +122,7 @@ void I_Error2(int type, const char* error, ...)
 //==========================================================================
 extern FILE *Logfile;
 
-void I_FatalError(const char *error, ...)
+[[noreturn]] void I_FatalError(const char *error, ...)
 {
 	static bool alreadyThrown = false;
 	gameisdead = true;
