@@ -218,7 +218,7 @@ void HWDrawInfo::WorkerThread()
 
 		case RenderJob::ParticlePoolJob:
 			front = hw_FakeFlat(job->sub->sector, in_area, false);
-			RenderParticlePools(job->sub, front);
+			RenderDefinedParticles(job->sub, front);
 			break;
 
 		case RenderJob::PortalJob:
@@ -693,14 +693,13 @@ void HWDrawInfo::RenderParticles(subsector_t *sub, sector_t *front)
 	SetupSprite.Unclock();
 }
 
-void HWDrawInfo::RenderParticlePools(subsector_t* sub, sector_t* front)
+void HWDrawInfo::RenderDefinedParticles(subsector_t* sub, sector_t* front)
 {
 	SetupSprite.Clock();
 
-	for (pooledparticlessit_t it = Level->PooledParticlesInSubsec[sub->Index()]; it.poolIndex != NO_PARTICLE; )
+	for (int i = Level->DefinedParticlesInSubsec[sub->Index()]; i != NO_PARTICLE; i = Level->DefinedParticlePool.Particles[i].snext)
 	{
-		particlelevelpool_t& pool = Level->ParticlePools[it.poolIndex];
-		pooledparticle_t& particle = pool.Particles[it.particleIndex];
+		particledata_t& particle = Level->DefinedParticlePool.Particles[i];
 
 		if (mClipPortal)
 		{
@@ -709,9 +708,7 @@ void HWDrawInfo::RenderParticlePools(subsector_t* sub, sector_t* front)
 		}
 
 		HWSprite sprite;
-		sprite.ProcessPooledParticle(this, pool.Definition, &particle, front);
-
-		it = particle.snext;
+		sprite.ProcessDefinedParticle(this, &particle, front);
 	}
 
 	SetupSprite.Unclock();
@@ -839,7 +836,7 @@ void HWDrawInfo::DoSubsector(subsector_t * sub)
 			SetupSprite.Unclock();
 		}
 	}
-	else if (gl_render_things && Level->PooledParticlesInSubsec[sub->Index()].particleIndex != NO_PARTICLE)
+	else if (gl_render_things && Level->DefinedParticlesInSubsec[sub->Index()] != NO_PARTICLE)
 	{
 		if (multithread)
 		{
@@ -848,7 +845,7 @@ void HWDrawInfo::DoSubsector(subsector_t * sub)
 		else
 		{
 			SetupSprite.Clock();
-			RenderParticlePools(sub, fakesector);
+			RenderDefinedParticles(sub, fakesector);
 			SetupSprite.Unclock();
 		}
 	}

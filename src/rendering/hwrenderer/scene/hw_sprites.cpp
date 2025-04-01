@@ -1690,13 +1690,15 @@ void HWSprite::ProcessParticle(HWDrawInfo *di, particle_t *particle, sector_t *s
 	rendered_sprites++;
 }
 
-void HWSprite::ProcessPooledParticle(HWDrawInfo* di, DParticleDefinition* definition, pooledparticle_t* particle, sector_t* sector)
+void HWSprite::ProcessDefinedParticle(HWDrawInfo* di, particledata_t* particle, sector_t* sector)
 {
 	if (!particle || particle->alpha <= 0)
 		return;
 
 	lightlevel = hw_ClampLight(sector->GetSpriteLight());
 	foglevel = (uint8_t)clamp<short>(sector->lightlevel, 0, 255);
+
+	DParticleDefinition* definition = particle->definition;
 
 	OverrideShader = 0;
 	modelframe = nullptr;

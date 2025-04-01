@@ -9,14 +9,13 @@
 #include "texturemanager.h"
 
 IMPLEMENT_CLASS(DParticleDefinition, false, false)
-DEFINE_FIELD(DParticleDefinition, PoolSize)
 DEFINE_FIELD(DParticleDefinition, DefaultTexture)
 DEFINE_FIELD(DParticleDefinition, Style)
 DEFINE_FIELD(DParticleDefinition, AnimationFrames)
 DEFINE_ACTION_FUNCTION(DParticleDefinition, ThinkParticle)
 {
 	PARAM_PROLOGUE;
-	PARAM_POINTER(ParticleData, pooledparticle_t);
+	PARAM_POINTER(ParticleData, particledata_t);
 
 	return 0;
 }
@@ -60,7 +59,7 @@ static void DParticleDefinition_AddAnimationFrame(DParticleDefinition* self, int
 		ThrowAbortException(X_OTHER, "Exceeded maximum number of frames for a Particle animation (256) for ParticleDefinition: %s", self->GetClass()->TypeName.GetChars());
 	}
 
-	pooledparticleanimsequence_t& animSequence = self->AnimationSequences[sequence];
+	particleanimsequence_t& animSequence = self->AnimationSequences[sequence];
 	FTextureID frame = TexMan.CheckForTexture(textureName.GetChars(), ETextureType::Any);
 
 	// Don't add invalid frames
@@ -118,7 +117,7 @@ static int DParticleDefinition_GetAnimationFrameCount(DParticleDefinition* self,
 {
 	CheckSequence(self, sequence);
 
-	pooledparticleanimsequence_t& animSequence = self->AnimationSequences[sequence];
+	particleanimsequence_t& animSequence = self->AnimationSequences[sequence];
 	return animSequence.endFrame - animSequence.startFrame;
 }
 
@@ -173,8 +172,7 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, GetAnimationEndFrame)
 }
 
 DParticleDefinition::DParticleDefinition()
-	: PoolSize(100)
-	, DefaultTexture()
+	: DefaultTexture()
 	, Style(STYLE_Normal)
 {
 	// We don't want to save ParticleDefinitions, since the definition could have changed since the game was saved.
@@ -187,27 +185,27 @@ DParticleDefinition::~DParticleDefinition()
 
 }
 
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, time);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, lifetime);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, pos);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, vel);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, alpha);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, alphaStep);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, scale);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, scaleStep);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, roll);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, rollStep);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, color);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, texture);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, animFrame);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, animTick);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, flags);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, user1);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, user2);
-DEFINE_FIELD_X(ParticleData, pooledparticle_t, user3);
+DEFINE_FIELD_X(ParticleData, particledata_t, time);
+DEFINE_FIELD_X(ParticleData, particledata_t, lifetime);
+DEFINE_FIELD_X(ParticleData, particledata_t, pos);
+DEFINE_FIELD_X(ParticleData, particledata_t, vel);
+DEFINE_FIELD_X(ParticleData, particledata_t, alpha);
+DEFINE_FIELD_X(ParticleData, particledata_t, alphaStep);
+DEFINE_FIELD_X(ParticleData, particledata_t, scale);
+DEFINE_FIELD_X(ParticleData, particledata_t, scaleStep);
+DEFINE_FIELD_X(ParticleData, particledata_t, roll);
+DEFINE_FIELD_X(ParticleData, particledata_t, rollStep);
+DEFINE_FIELD_X(ParticleData, particledata_t, color);
+DEFINE_FIELD_X(ParticleData, particledata_t, texture);
+DEFINE_FIELD_X(ParticleData, particledata_t, animFrame);
+DEFINE_FIELD_X(ParticleData, particledata_t, animTick);
+DEFINE_FIELD_X(ParticleData, particledata_t, flags);
+DEFINE_FIELD_X(ParticleData, particledata_t, user1);
+DEFINE_FIELD_X(ParticleData, particledata_t, user2);
+DEFINE_FIELD_X(ParticleData, particledata_t, user3);
 
-DEFINE_FIELD_X(ParticleAnimFrame, pooledparticleanimframe_t, frame);
-DEFINE_FIELD_X(ParticleAnimFrame, pooledparticleanimframe_t, duration);
+DEFINE_FIELD_X(ParticleAnimFrame, particleanimframe_t, frame);
+DEFINE_FIELD_X(ParticleAnimFrame, particleanimframe_t, duration);
 
 int ParticleRandom(int min, int max)
 {
@@ -248,7 +246,7 @@ void DParticleDefinition::Init()
 	}
 }
 
-void DParticleDefinition::OnCreateParticle(pooledparticle_t* particle, AActor* refActor)
+void DParticleDefinition::OnCreateParticle(particledata_t* particle, AActor* refActor)
 {
 	IFVIRTUAL(DParticleDefinition, OnCreateParticle)
 	{
@@ -257,7 +255,7 @@ void DParticleDefinition::OnCreateParticle(pooledparticle_t* particle, AActor* r
 	}
 }
 
-void DParticleDefinition::ThinkParticle(pooledparticle_t* particle)
+void DParticleDefinition::ThinkParticle(particledata_t* particle)
 {
 	IFVIRTUAL(DParticleDefinition, ThinkParticle)
 	{
@@ -267,26 +265,32 @@ void DParticleDefinition::ThinkParticle(pooledparticle_t* particle)
 	}
 }
 
-inline pooledparticle_t* NewPooledParticle(FLevelLocals* Level, pooledparticleid particleDefinitionID, bool replace /* = false */)
+int DParticleDefinition::GetParticleLimits()
 {
-	if (particleDefinitionID >= Level->ParticlePools.Size())
+	int numParticles = 1000; // Probably will never be hit, but let's just set it to some safe number just in case
+
+	IFVM(ParticleDefinition, GetParticleLimits)
 	{
-		return nullptr;
+		VMReturn ret(&numParticles);
+		VMCall(func, nullptr, 0, &ret, 1);
 	}
 
-	return NewPooledParticle(Level, &Level->ParticlePools[particleDefinitionID], replace);
+	return numParticles;
 }
 
-pooledparticle_t* NewPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, bool replace /* = false */)
+particledata_t* NewDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition, bool replace /* = false */)
 {
-	pooledparticle_t* result = nullptr;
+	particledata_t* result = nullptr;
+
+	particlelevelpool_t& pool = Level->DefinedParticlePool;
 
 	// Array's filled up
-	if (pool->InactiveParticles == NO_PARTICLE)
+	if (pool.InactiveParticles == NO_PARTICLE)
 	{
 		if (replace)
 		{
-			result = &pool->Particles[pool->OldestParticle];
+			result = &pool.Particles[pool.OldestParticle];
+			result->definition = definition;
 
 			// There should be NO_PARTICLE for the oldest's tnext
 			if (result->tprev != NO_PARTICLE)
@@ -295,18 +299,18 @@ pooledparticle_t* NewPooledParticle(FLevelLocals* Level, particlelevelpool_t* po
 				// tprev: oldest to youngest
 
 				// 2nd oldest -> oldest
-				pooledparticle_t* nbottom = &pool->Particles[result->tprev];
+				particledata_t* nbottom = &pool.Particles[result->tprev];
 				nbottom->tnext = NO_PARTICLE;
 
 				// now oldest becomes youngest
-				pool->OldestParticle = result->tprev;
-				result->tnext = pool->ActiveParticles;
+				pool.OldestParticle = result->tprev;
+				result->tnext = pool.ActiveParticles;
 				result->tprev = NO_PARTICLE;
-				pool->ActiveParticles = uint32_t(result - pool->Particles.Data());
+				pool.ActiveParticles = uint32_t(result - pool.Particles.Data());
 
 				// youngest -> 2nd youngest
-				pooledparticle_t* ntop = &pool->Particles[result->tnext];
-				ntop->tprev = pool->ActiveParticles;
+				particledata_t* ntop = &pool.Particles[result->tnext];
+				ntop->tprev = pool.ActiveParticles;
 			}
 			// [MC] Future proof this by resetting everything when replacing a particle.
 			auto tnext = result->tnext;
@@ -319,32 +323,30 @@ pooledparticle_t* NewPooledParticle(FLevelLocals* Level, particlelevelpool_t* po
 	}
 
 	// Array isn't full.
-	uint32_t current = pool->ActiveParticles;
-	result = &pool->Particles[pool->InactiveParticles];
-	pool->InactiveParticles = result->tnext;
+	uint32_t current = pool.ActiveParticles;
+	result = &pool.Particles[pool.InactiveParticles];
+	result->definition = definition;
+	pool.InactiveParticles = result->tnext;
 	result->tnext = current;
 	result->tprev = NO_PARTICLE;
-	pool->ActiveParticles = uint32_t(result - pool->Particles.Data());
+	pool.ActiveParticles = uint32_t(result - pool.Particles.Data());
 
 	if (current != NO_PARTICLE) // More than one active particles
 	{
-		pooledparticle_t* next = &pool->Particles[current];
-		next->tprev = pool->ActiveParticles;
+		particledata_t* next = &pool.Particles[current];
+		next->tprev = pool.ActiveParticles;
 	}
 	else // Just one active particle
 	{
-		pool->OldestParticle = pool->ActiveParticles;
+		pool.OldestParticle = pool.ActiveParticles;
 	}
 
 	return result;
 }
 
-void P_InitPooledParticles(FLevelLocals* Level)
+void P_InitParticleDefinitions(FLevelLocals* Level)
 {
 	PClass* baseClass = PClass::FindClass("ParticleDefinition");
-
-	Level->ParticlePools.Clear();
-	Level->ParticlePoolsByType.Clear();
 
 	for (unsigned int i = 0; i < PClass::AllClasses.Size(); i++)
 	{
@@ -355,43 +357,32 @@ void P_InitPooledParticles(FLevelLocals* Level)
 			DParticleDefinition* definition = (DParticleDefinition*)cls->CreateNew();
 			definition->Init();
 
-			if (definition->PoolSize > 0)
-			{
-				int index = Level->ParticlePools.Push({});
-				particlelevelpool_t* pool = &Level->ParticlePools[index];
-
-				pool->Definition = definition;
-				Level->ParticlePoolsByType.Insert(cls->TypeName.GetIndex(), pool);
-
-				pool->Particles.Resize(pool->Definition->PoolSize);
-				P_ClearPooledParticles(pool);
-			}
+			Level->ParticleDefinitionsByType.Insert(cls->TypeName.GetIndex(), definition);
 		}
 	}
+
+	int numParticles = DParticleDefinition::GetParticleLimits();
+
+	Level->DefinedParticlePool.Particles.Resize(numParticles);
+	P_ClearAllDefinedParticles(Level);
 }
 
-void P_ClearPooledParticles(particlelevelpool_t* pool)
+void P_ClearAllDefinedParticles(FLevelLocals* Level)
 {
+	particlelevelpool_t& pool = Level->DefinedParticlePool;
+
 	int i = 0;
-	pool->OldestParticle = NO_PARTICLE;
-	pool->ActiveParticles = NO_PARTICLE;
-	pool->InactiveParticles = 0;
-	for (auto& p : pool->Particles)
+	pool.OldestParticle = NO_PARTICLE;
+	pool.ActiveParticles = NO_PARTICLE;
+	pool.InactiveParticles = 0;
+	for (auto& p : pool.Particles)
 	{
 		p = {};
 		p.tprev = i - 1;
 		p.tnext = ++i;
 	}
-	pool->Particles.Last().tnext = NO_PARTICLE;
-	pool->Particles.Data()->tprev = NO_PARTICLE;
-}
-
-void P_ClearAllPooledParticles(FLevelLocals* Level)
-{
-	for (particlelevelpool_t& pool : Level->ParticlePools)
-	{
-		P_ClearPooledParticles(&pool);
-	}
+	pool.Particles.Last().tnext = NO_PARTICLE;
+	pool.Particles.Data()->tprev = NO_PARTICLE;
 }
 
 // Group particles by subsectors. Because particles are always
@@ -399,52 +390,64 @@ void P_ClearAllPooledParticles(FLevelLocals* Level)
 // from one frame to the next.
 // [MC] VisualThinkers hitches a ride here
 
-void P_FindPooledParticleSubsectors(FLevelLocals* Level)
+void P_FindDefinedParticleSubsectors(FLevelLocals* Level)
 {
-	if (Level->PooledParticlesInSubsec.Size() < Level->subsectors.Size())
+	if (Level->DefinedParticlesInSubsec.Size() < Level->subsectors.Size())
 	{
-		Level->PooledParticlesInSubsec.Reserve(Level->subsectors.Size() - Level->PooledParticlesInSubsec.Size());
+		Level->DefinedParticlesInSubsec.Reserve(Level->subsectors.Size() - Level->DefinedParticlesInSubsec.Size());
 	}
 
-	pooledparticlessit_t* b2 = &Level->PooledParticlesInSubsec[0];
-	for (size_t i = 0; i < Level->PooledParticlesInSubsec.Size(); ++i)
+	uint16_t* b2 = &Level->DefinedParticlesInSubsec[0];
+	for (size_t i = 0; i < Level->DefinedParticlesInSubsec.Size(); ++i)
 	{
-		b2[i] = { NO_PARTICLE, NO_PARTICLE };
+		b2[i] = NO_PARTICLE;
 	}
 
-	fillshort(&Level->PooledParticlesInSubsec[0], Level->subsectors.Size(), NO_PARTICLE);
+	fillshort(&Level->DefinedParticlesInSubsec[0], Level->subsectors.Size(), NO_PARTICLE);
 
-	for (uint32_t poolIndex = 0; poolIndex < Level->ParticlePools.Size(); poolIndex++)
+	particlelevelpool_t& pool = Level->DefinedParticlePool;
+
+	for (uint16_t i = pool.ActiveParticles; i != NO_PARTICLE; i = pool.Particles[i].tnext)
 	{
-		particlelevelpool_t* pool = &Level->ParticlePools[poolIndex];
-
-		for (uint16_t i = pool->ActiveParticles; i != NO_PARTICLE; i = pool->Particles[i].tnext)
-		{
-			// Try to reuse the subsector from the last portal check, if still valid.
-			if (pool->Particles[i].subsector == nullptr) pool->Particles[i].subsector = Level->PointInRenderSubsector(pool->Particles[i].pos);
-			int ssnum = pool->Particles[i].subsector->Index();
-			pool->Particles[i].snext = Level->PooledParticlesInSubsec[ssnum];
-			Level->PooledParticlesInSubsec[ssnum] = pooledparticlessit_t { i, (uint16_t)poolIndex };
-		}
+		// Try to reuse the subsector from the last portal check, if still valid.
+		if (pool.Particles[i].subsector == nullptr) pool.Particles[i].subsector = Level->PointInRenderSubsector(pool.Particles[i].pos);
+		int ssnum = pool.Particles[i].subsector->Index();
+		pool.Particles[i].snext = Level->DefinedParticlesInSubsec[ssnum];
+		Level->DefinedParticlesInSubsec[ssnum] = i;
 	}
 }
 
-void P_ThinkAllPooledParticles(FLevelLocals* Level)
+void P_DestroyDefinedParticle(FLevelLocals* Level, int particleIndex)
 {
-	for (particlelevelpool_t& pool : Level->ParticlePools)
+	particlelevelpool_t& pool = Level->DefinedParticlePool;
+	particledata_t& particle = pool.Particles[particleIndex];
+
+	if (particle.tprev != NO_PARTICLE)
+		pool.Particles[particle.tprev].tnext = particle.tnext;
+	else
+		pool.ActiveParticles = particle.tnext;
+
+	if (particle.tnext != NO_PARTICLE)
 	{
-		P_ThinkPooledParticles(Level, &pool);
+		particledata_t& next = pool.Particles[particle.tnext];
+		next.tprev = particle.tprev;
 	}
+
+	particle = {};
+	particle.tnext = pool.InactiveParticles;
+	pool.InactiveParticles = particleIndex;
 }
 
-void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool)
+void P_ThinkDefinedParticles(FLevelLocals* Level)
 {
+	particlelevelpool_t* pool = &Level->DefinedParticlePool;
+
 	int i = pool->ActiveParticles;
-	DParticleDefinition* definition = pool->Definition;
-	pooledparticle_t* particle = nullptr, *prev = nullptr;
+	particledata_t* particle = nullptr, *prev = nullptr;
 	while (i != NO_PARTICLE)
 	{
 		particle = &pool->Particles[i];
+		int particleIndex = i;
 		i = particle->tnext;
 		if (Level->isFrozen() && !(particle->flags & SPF_NOTIMEFREEZE))
 		{
@@ -454,23 +457,12 @@ void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool)
 
 		particle->prevpos = particle->pos;
 
+		DParticleDefinition* definition = particle->definition;
 		definition->ThinkParticle(particle);
 
 		if (particle->time++ > particle->lifetime)
 		{ // The particle has expired, so free it
-			*particle = {};
-			if (prev)
-				prev->tnext = i;
-			else
-				pool->ActiveParticles = i;
-
-			if (i != NO_PARTICLE)
-			{
-				pooledparticle_t* next = &pool->Particles[i];
-				next->tprev = particle->tprev;
-			}
-			particle->tnext = pool->InactiveParticles;
-			pool->InactiveParticles = (int)(particle - pool->Particles.Data());
+			P_DestroyDefinedParticle(Level, particleIndex);
 			continue;
 		}
 
@@ -510,10 +502,10 @@ void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool)
 		uint8_t animFrameCount = (uint8_t)definition->AnimationFrames.Size();
 		if (definition->AnimationSequences.size() > 0 && particle->animFrame < animFrameCount)
 		{
-			const pooledparticleanimframe_t& animFrame = definition->AnimationFrames[particle->animFrame];
+			const particleanimframe_t& animFrame = definition->AnimationFrames[particle->animFrame];
 			
 			uint8_t sequenceIndex = animFrame.sequence;
-			const pooledparticleanimsequence_t& sequence = definition->AnimationSequences[sequenceIndex];
+			const particleanimsequence_t& sequence = definition->AnimationSequences[sequenceIndex];
 
 			if (++particle->animTick >= animFrame.duration)
 			{
@@ -534,10 +526,9 @@ void P_ThinkPooledParticles(FLevelLocals* Level, particlelevelpool_t* pool)
 	}
 }
 
-void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const DVector3& pos, const DVector3& vel, double scale, int flags, AActor* refActor)
+void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition, const DVector3& pos, const DVector3& vel, double scale, int flags, AActor* refActor)
 {
-	DParticleDefinition* definition = pool->Definition;
-	pooledparticle_t* particle = NewPooledParticle(Level, pool, (bool)(flags & SPF_REPLACE));
+	particledata_t* particle = NewDefinedParticle(Level, definition, (bool)(flags & SPF_REPLACE));
 
 	if (particle)
 	{
@@ -566,7 +557,7 @@ void P_SpawnPooledParticle(FLevelLocals* Level, particlelevelpool_t* pool, const
 	}
 }
 
-void P_LoadParticlePools(FSerializer& arc, FLevelLocals* Level, const char* key)
+void P_LoadDefinedParticles(FSerializer& arc, FLevelLocals* Level, const char* key)
 {
 	assert(arc.isReading());
 
@@ -577,40 +568,43 @@ void P_LoadParticlePools(FSerializer& arc, FLevelLocals* Level, const char* key)
 
 	// Reinitialize the pools, since even if they've already been initialized, the ParticleDefinitions
 	// would have been destroyed by the load, so we need to recreate them.
-	P_InitPooledParticles(Level);
+	P_InitParticleDefinitions(Level);
 
-	if (arc.BeginArray(key))
+	particlelevelpool_t& pool = Level->DefinedParticlePool;
+
+	Serialize(arc, key, pool, &pool);
+
+	// Go through all the particles and make sure their definitions are pointing to the new in-level ones
+	int i = pool.ActiveParticles;
+	while (i != NO_PARTICLE)
 	{
-		for (unsigned int i = 0; i < arc.ArraySize(); i++)
+		particledata_t& particle = pool.Particles[i];
+
+		int particleIndex = i;
+		i = particle.tnext;
+		
+		if (particle.definition)
 		{
-			if (arc.BeginObject(nullptr))
+			if (DParticleDefinition* newDefinition = *Level->ParticleDefinitionsByType.CheckKey(particle.definition->GetClass()->TypeName.GetIndex()))
 			{
-				FName definitionName;
-				arc("definitionname", definitionName);
-
-				particlelevelpool_t** pool = Level->ParticlePoolsByType.CheckKey(definitionName.GetIndex());
-				if (pool)
+				particle.definition = newDefinition;
+			}
+			else
+			{
+				if (particle.tprev != NO_PARTICLE)
 				{
-					arc(nullptr, **pool);
+					P_DestroyDefinedParticle(Level, particleIndex);
 				}
-
-				arc.EndObject();
 			}
 		}
-
-		arc.EndArray();
 	}
 }
+
 
 FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& lp, particlelevelpool_t* def)
 {
 	if (arc.isReading() || arc.BeginObject(key))
 	{
-		if (arc.isWriting())
-		{
-			arc("definitionname", lp.Definition->GetClass()->TypeName);
-		}
-
 		if (arc.BeginArray("particles"))
 		{
 			if (arc.isWriting())
@@ -618,7 +612,7 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& l
 				// Write out the particles from newest to oldest and then stop, so we only store the particles we *need*
 				for (uint16_t i = lp.ActiveParticles; i != NO_PARTICLE; i = lp.Particles[i].tnext)
 				{
-					pooledparticle_t& p = lp.Particles[i];
+					particledata_t& p = lp.Particles[i];
 					arc(nullptr, p);
 				}
 			}
@@ -632,7 +626,7 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& l
 
 				for (unsigned int i = 0; i < count; i++)
 				{
-					pooledparticle_t& p = lp.Particles[i];
+					particledata_t& p = lp.Particles[i];
 					arc(nullptr, p);
 
 					// Since the particles are stored newest-to-oldest, we can figure out the tprev and tnext
@@ -655,11 +649,12 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& l
 	return arc;
 }
 
-FSerializer& Serialize(FSerializer& arc, const char* key, pooledparticle_t& p, pooledparticle_t* def)
+FSerializer& Serialize(FSerializer& arc, const char* key, particledata_t& p, particledata_t* def)
 {
 	if (arc.BeginObject(key))
 	{
-		arc ("time", p.time)
+		arc ("definition", p.definition)
+			("time", p.time)
 			("lifetime", p.lifetime)
 			("prevpos", p.prevpos)
 			("pos", p.pos)

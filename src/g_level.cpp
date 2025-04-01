@@ -1559,7 +1559,7 @@ void FLevelLocals::DoLoadLevel(const FString &nextmapname, int position, bool au
 
 		// We only initialize the ParticlePools if we're not loading from a snapshot,
 		// since P_LoadParticlePools automatically reinitializes them.
-		P_InitPooledParticles(this);
+		P_InitParticleDefinitions(this);
 	}
 
 	// For each player, if they are viewing through a player, make sure it is themselves.

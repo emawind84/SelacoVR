@@ -14,7 +14,7 @@ struct ParticleData
     native TextureID    Texture;
     native uint8        AnimFrame;
     native uint8        AnimTick;
-    native int16        Flags;
+    native int          Flags;
     native int          User1;
     native int          User2;
     native int          User3;
@@ -56,7 +56,6 @@ struct ParticleData
 
 class ParticleDefinition native
 {
-    native uint            PoolSize;
     native TextureID       DefaultTexture;
     native ERenderStyle    Style;
 
@@ -74,4 +73,30 @@ class ParticleDefinition native
     native int GetAnimationSequenceCount();
     native int GetAnimationStartFrame(int sequence);
     native int GetAnimationEndFrame(int sequence);
+
+    // Particles are removed immediately when going over this number
+    static const int particleLimits[] = 
+    { 
+        500,    // Low
+        800,    // Med
+        1600,   // High
+        2000,   // Ultra    
+        6000    // Insane
+    };
+
+    // Particles start to fade out where possible when going over this number
+    static const int cullLimits[] = 
+    { 
+        250,    // Low
+        400,    // Med
+        800,    // High
+        1000,   // Ultra   
+        3000    // Insane
+    };
+
+    static int GetParticleLimits()
+    {
+        int currentParticleSetting = clamp(CVar.FindCVar("r_particleIntensity").GetInt() - 1, 0, 5);
+        return ParticleDefinition.particleLimits[currentParticleSetting];
+    }
 }

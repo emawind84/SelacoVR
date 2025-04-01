@@ -1737,10 +1737,10 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnParticleEx)
 	ACTION_RETURN_BOOL(result);
 }
 
-DEFINE_ACTION_FUNCTION(AActor, A_SpawnPooledParticle)
+DEFINE_ACTION_FUNCTION(AActor, A_SpawnDefinedParticle)
 {
 	PARAM_SELF_PROLOGUE(AActor);
-	PARAM_CLASS	(definition, DParticleDefinition)
+	PARAM_CLASS	(definitionClass, DParticleDefinition)
 	PARAM_FLOAT	(xoff)		
 	PARAM_FLOAT	(yoff)		
 	PARAM_FLOAT	(zoff)		
@@ -1752,7 +1752,12 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnPooledParticle)
 	PARAM_INT	(flags)
 	PARAM_POINTER(refActor, AActor);
 
-	if (particlelevelpool_t* pool = *self->Level->ParticlePoolsByType.CheckKey(definition->TypeName.GetIndex()))
+	if (!definitionClass)
+	{
+		return 0;
+	}
+
+	if (DParticleDefinition* definition = *self->Level->ParticleDefinitionsByType.CheckKey(definitionClass->TypeName.GetIndex()))
 	{
 		if (flags & SPF_RELANG) angle += self->Angles.Yaw;
 		double s = angle.Sin();
@@ -1774,7 +1779,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnPooledParticle)
 			vel.Y = xvel * s - yvel * c;
 		}
 		
-		P_SpawnPooledParticle(self->Level, pool, self->Vec3Offset(pos), vel, scale, flags, refActor ? refActor : self);
+		P_SpawnDefinedParticle(self->Level, definition, self->Vec3Offset(pos), vel, scale, flags, refActor ? refActor : self);
 	}
 
 	return 0;

@@ -32,7 +32,7 @@ struct HWDecal;
 struct FSection;
 enum area_t : int;
 class DParticleDefinition;
-struct pooledparticle_t;
+struct particledata_t;
 
 enum HWRenderStyle
 {
@@ -412,7 +412,7 @@ public:
 	void PutSprite(HWDrawInfo *di, bool translucent, double ticFrac = 1.0);
 	void Process(HWDrawInfo *di, AActor* thing,sector_t * sector, area_t in_area, int thruportal = false, bool isSpriteShadow = false);
 	void ProcessParticle(HWDrawInfo* di, particle_t* particle, sector_t* sector, class DVisualThinker* spr);//, int shade, int fakeside)
-	void ProcessPooledParticle(HWDrawInfo *di, DParticleDefinition* definition, pooledparticle_t *particle, sector_t *sector);
+	void ProcessDefinedParticle(HWDrawInfo *di, particledata_t *particle, sector_t *sector);
 	void AdjustVisualThinker(HWDrawInfo *di, DVisualThinker *spr, sector_t *sector);
 
 	void DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent);
