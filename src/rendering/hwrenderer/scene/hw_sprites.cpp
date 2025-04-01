@@ -1834,10 +1834,10 @@ void HWSprite::ProcessDefinedParticle(HWDrawInfo* di, particledata_t* particle, 
 	}
 
 	trans = particle->alpha + particle->alphaStep * timefrac;
-	float scale = particle->scale + (particle->scaleStep * timefrac);
+	FVector2 scale = particle->scale + (particle->scaleStep * timefrac);
 
-	float width = scale * texWidth * 0.5f;
-	float height = scale * texHeight * 0.5f;
+	float width = scale.X * texWidth * 0.5f;
+	float height = scale.Y * texHeight * 0.5f;
 
 	float viewvecX = vp.ViewVector.X * width;
 	float viewvecY = vp.ViewVector.Y * width;

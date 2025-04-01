@@ -14,26 +14,57 @@
 
 class DParticleDefinition;
 
+enum EParticleDefinitionFlags
+{
+	PDF_KILLSTOP				= 1 << 0,	// Kill the particle when it stops moving
+	PDF_DIRFROMMOMENTUM			= 1 << 1,	// Always face the direction of travel
+	PDF_INSTANTBOUNCE			= 1 << 2,	// Clear interpolation on bounce, useful when using DirFromMomentum
+	PDF_VELOCITYFADE			= 1 << 3,	// Fade out between min and max fadeVel
+	PDF_LIFEFADE				= 1 << 4,	// Fade out between min and max fadeLife
+	PDF_ROLLSTOP				= 1 << 5,	// Stop rolling when coming to rest
+	PDF_SLEEPSTOP				= 1 << 6,	// Use Sleep() when the particle comes to rest for the rest of it's idle lifetime. Warning: Will probably float if on a moving surface
+	PDF_NOTHINK					= 1 << 7,	// Don't call ThinkParticle
+	PDF_FADEATBOUNCELIMIT		= 1 << 8,	// Once the bounce limit is reached, start fading out using lifetime settings
+	PDF_IMPORTANT				= 1 << 9,	// If not flagged as important, particles will not spawn when reaching the limits
+	PDF_SQUAREDSCALE			= 1 << 10,	// Random scale is always square (Match X and Y scale)
+	PDF_ISBLOOD					= 1 << 11,	// Treat this particle as blood. Use different spawn variables such as r_BloodQuality instead of r_particleIntensity
+	PDF_LIFESCALE				= 1 << 12,	// Follow min/max scale over lifetime
+	PDF_BOUNCEONCEILINGS		= 1 << 13,	// Bounce on ceilings
+	PDF_BOUNCEONFLOORS			= 1 << 14,	// Bounce on floors
+	PDF_BOUNCEONACTORS			= 1 << 15,	// Bounce on actors
+};
+
+enum EDefinedParticleFlags
+{
+	DPF_CLEANEDUP				= 1 << 15,	// Used by the particle limiter, this value is set once the particle has been marked for cleaning
+	DPF_DESTROYED				= 1 << 16,	// Particle has been destroyed, and should be removed from the particle list next update
+	DPF_ISBLOOD					= 1 << 17,	// Treat this particle as blood, same as bIsBlood on SelacoParticle
+	DPF_FORCETRANSPARENT		= 1 << 18,	// Force this particle to render as transparent if it's set to None or Normal
+};
+
 struct particledata_t
 {
-	DParticleDefinition* definition;	// +8  = 8
-	int16_t time;						// +2  = 10
-	int16_t lifetime;					// +2  = 12
-	DVector3 prevpos;					// +24 = 36
-	DVector3 pos;						// +24 = 60
-	FVector3 vel;						// +12 = 72
-	float alpha, alphaStep;				// +8  = 80
-	float scale, scaleStep;				// +8  = 88
-	float roll, rollStep;				// +8  = 96
-	int color;							// +4  = 100
-	FTextureID texture;					// +4  = 104
-	uint8_t animFrame, animTick;		// +2  = 108
-	uint32_t flags;						// +4  = 112
-	int user1, user2, user3;			// +12 = 124
-	uint16_t tnext, tprev;				// +4  = 128
+	DParticleDefinition* definition;	// +8 
+	int16_t time;						// +2 
+	int16_t lifetime;					// +2 
+	DVector3 prevpos;					// +24
+	DVector3 pos;						// +24
+	FVector3 vel;						// +12
+	float alpha, alphaStep;				// +8 
+	FVector2 scale, scaleStep;			// +8 
+	float roll, rollStep;				// +8 
+	float pitch, pitchStep;				// +8
+	float drag;							// +4
+	int16_t bounces, maxBounces;		// +4
+	int color;							// +4
+	FTextureID texture;					// +4 
+	uint8_t animFrame, animTick;		// +2 
+	uint32_t flags;						// +4 
+	int user1, user2, user3, user4;		// +16
+	uint16_t tnext, tprev;				// +4 
 
-	subsector_t* subsector;				// +8  = 136
-	uint16_t snext;						// +2  = 138
+	subsector_t* subsector;				// +8 
+	uint16_t snext;						// +2 
 };
 
 struct particleanimsequence_t
@@ -60,6 +91,38 @@ public:
 
 	FTextureID DefaultTexture;
 	ERenderStyle Style;
+
+	static const float INVALID;
+
+	float StopSpeed = 0.4f;
+	float InheritVelocity = 0;
+	int MinLife = -1, MaxLife = -1;
+	float MinAng = 0, MaxAng = 0;
+	float MinPitch = 0, MaxPitch = 0;
+	float MinSpeed = INVALID, MaxSpeed = INVALID;
+	float MinFadeVel = 0.4f, MaxFadeVel = 2;
+	float MinFadeLife = 0, MaxFadeLife = 25;
+	FVector2 MinScale = FVector2(-1, -1), MaxScale = FVector2(-1, -1);
+	FVector2 MinFadeScale = FVector2(1, 1), MaxFadeScale = FVector2(0.2f, 0.2f);
+	float MinScaleLife = 0, MaxScaleLife = 25;
+	float MinScaleVel = 0, MaxScaleVel = 0;
+	int MinRandomBounces = -1, MaxRandomBounces = -1;
+	float MinRoll = 0, MaxRoll = 0;
+	float MinRollSpeed = 0, MaxRollSpeed = 0;
+	float RollDamping = 0, RollDampingBounce = 0.3f;
+	float RestingPitchMin = 0, RestingPitchMax = 0, RestingPitchSpeed = -1;
+	float RestingRollMin = 0, RestingRollMax = 0, RestingRollSpeed = -1;
+
+	int BounceSound = 0;
+	float BounceSoundChance = 0.2f;
+	float BounceSoundMinSpeed = 2;
+	float BounceSoundPitchMin = 0.95f, BounceSoundPitchMax = 1.05f;
+	int BounceAccuracy = 3;
+	float BounceFudge = 0.15f;
+	float MinBounceDeflect = -25, MaxBounceDeflect = 25;
+
+	float QualityChanceLow = 0.1f, QualityChanceMed = 0.25f, QualityChanceHigh = 0.6f, QualityChanceUlt = 1, QualityChanceInsane = 9999;
+	float LifeMultLow = 0.07f, LifeMultMed = 0.1f, LifeMultHigh = 0.3f, LifeMultUlt = 1, LifeMultInsane = 3;
 
 	TArray<particleanimsequence_t> AnimationSequences;
 	TArray<particleanimframe_t> AnimationFrames;

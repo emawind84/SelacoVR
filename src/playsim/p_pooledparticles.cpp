@@ -8,10 +8,47 @@
 #include "types.h"
 #include "texturemanager.h"
 
+const float DParticleDefinition::INVALID = -99999;
+
 IMPLEMENT_CLASS(DParticleDefinition, false, false)
 DEFINE_FIELD(DParticleDefinition, DefaultTexture)
 DEFINE_FIELD(DParticleDefinition, Style)
 DEFINE_FIELD(DParticleDefinition, AnimationFrames)
+DEFINE_FIELD(DParticleDefinition, StopSpeed)
+DEFINE_FIELD(DParticleDefinition, InheritVelocity)
+DEFINE_FIELD(DParticleDefinition, MinLife) DEFINE_FIELD(DParticleDefinition, MaxLife)
+DEFINE_FIELD(DParticleDefinition, MinAng) DEFINE_FIELD(DParticleDefinition, MaxAng)
+DEFINE_FIELD(DParticleDefinition, MinPitch) DEFINE_FIELD(DParticleDefinition, MaxPitch)
+DEFINE_FIELD(DParticleDefinition, MinSpeed) DEFINE_FIELD(DParticleDefinition, MaxSpeed)
+DEFINE_FIELD(DParticleDefinition, MinFadeVel) DEFINE_FIELD(DParticleDefinition, MaxFadeVel)
+DEFINE_FIELD(DParticleDefinition, MinFadeLife) DEFINE_FIELD(DParticleDefinition, MaxFadeLife)
+DEFINE_FIELD(DParticleDefinition, MinScale) DEFINE_FIELD(DParticleDefinition, MaxScale)
+DEFINE_FIELD(DParticleDefinition, MinFadeScale) DEFINE_FIELD(DParticleDefinition, MaxFadeScale)
+DEFINE_FIELD(DParticleDefinition, MinScaleLife) DEFINE_FIELD(DParticleDefinition, MaxScaleLife)
+DEFINE_FIELD(DParticleDefinition, MinScaleVel) DEFINE_FIELD(DParticleDefinition, MaxScaleVel)
+DEFINE_FIELD(DParticleDefinition, MinRandomBounces) DEFINE_FIELD(DParticleDefinition, MaxRandomBounces)
+DEFINE_FIELD(DParticleDefinition, MinRoll) DEFINE_FIELD(DParticleDefinition, MaxRoll)
+DEFINE_FIELD(DParticleDefinition, MinRollSpeed) DEFINE_FIELD(DParticleDefinition, MaxRollSpeed)
+DEFINE_FIELD(DParticleDefinition, RollDamping) DEFINE_FIELD(DParticleDefinition, RollDampingBounce)
+DEFINE_FIELD(DParticleDefinition, RestingPitchMin) DEFINE_FIELD(DParticleDefinition, RestingPitchMax) DEFINE_FIELD(DParticleDefinition, RestingPitchSpeed)
+DEFINE_FIELD(DParticleDefinition, RestingRollMin) DEFINE_FIELD(DParticleDefinition, RestingRollMax) DEFINE_FIELD(DParticleDefinition, RestingRollSpeed)
+DEFINE_FIELD(DParticleDefinition, BounceSound)
+DEFINE_FIELD(DParticleDefinition, BounceSoundChance)
+DEFINE_FIELD(DParticleDefinition, BounceSoundMinSpeed)
+DEFINE_FIELD(DParticleDefinition, BounceSoundPitchMin) DEFINE_FIELD(DParticleDefinition, BounceSoundPitchMax)
+DEFINE_FIELD(DParticleDefinition, BounceAccuracy)
+DEFINE_FIELD(DParticleDefinition, BounceFudge)
+DEFINE_FIELD(DParticleDefinition, MinBounceDeflect) DEFINE_FIELD(DParticleDefinition, MaxBounceDeflect)
+DEFINE_FIELD(DParticleDefinition, QualityChanceLow)
+DEFINE_FIELD(DParticleDefinition, QualityChanceMed)
+DEFINE_FIELD(DParticleDefinition, QualityChanceHigh)
+DEFINE_FIELD(DParticleDefinition, QualityChanceUlt)
+DEFINE_FIELD(DParticleDefinition, QualityChanceInsane)
+DEFINE_FIELD(DParticleDefinition, LifeMultLow)
+DEFINE_FIELD(DParticleDefinition, LifeMultMed)
+DEFINE_FIELD(DParticleDefinition, LifeMultHigh)
+DEFINE_FIELD(DParticleDefinition, LifeMultUlt)
+DEFINE_FIELD(DParticleDefinition, LifeMultInsane)
 DEFINE_ACTION_FUNCTION(DParticleDefinition, ThinkParticle)
 {
 	PARAM_PROLOGUE;
@@ -535,14 +572,25 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 		particle->pos = particle->prevpos = pos;
 		particle->vel = FVector3(vel);
 
+		if (definition->MinSpeed != DParticleDefinition::INVALID && definition->MaxSpeed != DParticleDefinition::INVALID)
+		{
+			particle->vel = particle->vel.Unit() * ParticleRandom(definition->MinSpeed, definition->MaxSpeed);
+		}
+
 		particle->time = 0;
-		particle->lifetime = 35;
+		particle->lifetime = ParticleRandom(definition->MinLife, definition->MaxLife);
 		particle->alpha = 1;
 		particle->alphaStep = 0;
-		particle->scale = 1;
-		particle->scaleStep = 0;
-		particle->roll = 0;
+		particle->scale.X = definition->MinScale.X == -1 && definition->MaxScale.X == -1 ? 1 : ParticleRandom(definition->MinScale.X, definition->MaxScale.X);
+		particle->scale.Y = definition->MinScale.Y == -1 && definition->MaxScale.Y == -1 ? 1 : ParticleRandom(definition->MinScale.Y, definition->MaxScale.Y);
+		particle->scaleStep = FVector2(0, 0);
+		particle->roll = ParticleRandom(definition->MinRoll, definition->MaxRoll);
 		particle->rollStep = 0;
+		particle->pitch = ParticleRandom(definition->MinPitch, definition->MaxPitch);
+		particle->pitchStep = 0;
+		particle->drag = 0;
+		particle->bounces = 0;
+		particle->maxBounces = ParticleRandom(definition->MinRandomBounces, definition->MaxRandomBounces);
 		particle->color = 0xffffff;
 		particle->texture = definition->AnimationFrames.Size() ? definition->AnimationFrames[0].frame : definition->DefaultTexture;
 		particle->flags = flags;
@@ -556,6 +604,8 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 		}
 	}
 }
+
+static FLevelLocals* ParticleDefinitionLoadingLevel = nullptr;
 
 void P_LoadDefinedParticles(FSerializer& arc, FLevelLocals* Level, const char* key)
 {
@@ -572,30 +622,22 @@ void P_LoadDefinedParticles(FSerializer& arc, FLevelLocals* Level, const char* k
 
 	particlelevelpool_t& pool = Level->DefinedParticlePool;
 
+	ParticleDefinitionLoadingLevel = Level;
 	Serialize(arc, key, pool, &pool);
+	ParticleDefinitionLoadingLevel = nullptr;
 
-	// Go through all the particles and make sure their definitions are pointing to the new in-level ones
+	// Go through all the particles and destroy any that are lacking a definition
 	int i = pool.ActiveParticles;
 	while (i != NO_PARTICLE)
 	{
 		particledata_t& particle = pool.Particles[i];
-
+	
 		int particleIndex = i;
 		i = particle.tnext;
 		
-		if (particle.definition)
+		if (!particle.definition)
 		{
-			if (DParticleDefinition* newDefinition = *Level->ParticleDefinitionsByType.CheckKey(particle.definition->GetClass()->TypeName.GetIndex()))
-			{
-				particle.definition = newDefinition;
-			}
-			else
-			{
-				if (particle.tprev != NO_PARTICLE)
-				{
-					P_DestroyDefinedParticle(Level, particleIndex);
-				}
-			}
+			P_DestroyDefinedParticle(Level, particleIndex);
 		}
 	}
 }
@@ -603,7 +645,7 @@ void P_LoadDefinedParticles(FSerializer& arc, FLevelLocals* Level, const char* k
 
 FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& lp, particlelevelpool_t* def)
 {
-	if (arc.isReading() || arc.BeginObject(key))
+	if (arc.BeginObject(key))
 	{
 		if (arc.BeginArray("particles"))
 		{
@@ -641,10 +683,7 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& l
 			arc.EndArray();
 		}
 
-		if (arc.isWriting())
-		{
-			arc.EndObject();
-		}
+		arc.EndObject();
 	}
 	return arc;
 }
@@ -653,8 +692,32 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particledata_t& p, par
 {
 	if (arc.BeginObject(key))
 	{
-		arc ("definition", p.definition)
-			("time", p.time)
+		if (arc.isWriting())
+		{
+			FName definitionName;
+			if (p.definition)
+			{
+				definitionName = p.definition->GetClass()->TypeName;
+			}
+
+			arc("definition", definitionName);
+		}
+		else
+		{
+			FName definitionName;
+			arc("definition", definitionName);
+
+			if (DParticleDefinition** definition = ParticleDefinitionLoadingLevel->ParticleDefinitionsByType.CheckKey(definitionName.GetIndex()))
+			{
+				p.definition = *definition;
+			}
+			else
+			{
+				p.definition = nullptr;
+			}
+		}
+
+		arc ("time", p.time)
 			("lifetime", p.lifetime)
 			("prevpos", p.prevpos)
 			("pos", p.pos)
@@ -665,6 +728,11 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particledata_t& p, par
 			("scalestep", p.scaleStep)
 			("roll", p.roll)
 			("rollstep", p.rollStep)
+			("pitch", p.pitch)
+			("pitchstep", p.pitchStep)
+			("drag", p.drag)
+			("bounces", p.bounces)
+			("maxbounces", p.maxBounces)
 			("color", p.color)
 			("texture", p.texture)
 			("animframe", p.animFrame)
@@ -673,6 +741,7 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particledata_t& p, par
 			("user1", p.user1)
 			("user2", p.user2)
 			("user3", p.user3)
+			("user4", p.user4)
 			// Deliberately not saving tprev or tnext, since they're calculated during load
 			// Deliberately not saving subsector or snext, since they're calculated every frame.
 			.EndObject();
