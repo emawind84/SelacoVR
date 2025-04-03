@@ -9,6 +9,7 @@
 #include "texturemanager.h"
 
 const float DParticleDefinition::INVALID = -99999;
+const float DParticleDefinition::BOUNCE_SOUND_ATTENUATION = 1.5f;
 
 IMPLEMENT_CLASS(DParticleDefinition, false, false)
 DEFINE_FIELD(DParticleDefinition, DefaultTexture)
@@ -27,16 +28,19 @@ DEFINE_FIELD(DParticleDefinition, MinFadeScale) DEFINE_FIELD(DParticleDefinition
 DEFINE_FIELD(DParticleDefinition, MinScaleLife) DEFINE_FIELD(DParticleDefinition, MaxScaleLife)
 DEFINE_FIELD(DParticleDefinition, MinScaleVel) DEFINE_FIELD(DParticleDefinition, MaxScaleVel)
 DEFINE_FIELD(DParticleDefinition, MinRandomBounces) DEFINE_FIELD(DParticleDefinition, MaxRandomBounces)
+DEFINE_FIELD(DParticleDefinition, Drag)
 DEFINE_FIELD(DParticleDefinition, MinRoll) DEFINE_FIELD(DParticleDefinition, MaxRoll)
 DEFINE_FIELD(DParticleDefinition, MinRollSpeed) DEFINE_FIELD(DParticleDefinition, MaxRollSpeed)
 DEFINE_FIELD(DParticleDefinition, RollDamping) DEFINE_FIELD(DParticleDefinition, RollDampingBounce)
 DEFINE_FIELD(DParticleDefinition, RestingPitchMin) DEFINE_FIELD(DParticleDefinition, RestingPitchMax) DEFINE_FIELD(DParticleDefinition, RestingPitchSpeed)
 DEFINE_FIELD(DParticleDefinition, RestingRollMin) DEFINE_FIELD(DParticleDefinition, RestingRollMax) DEFINE_FIELD(DParticleDefinition, RestingRollSpeed)
+DEFINE_FIELD(DParticleDefinition, MaxStepHeight)
+DEFINE_FIELD(DParticleDefinition, Gravity)
+DEFINE_FIELD(DParticleDefinition, BounceFactor)
 DEFINE_FIELD(DParticleDefinition, BounceSound)
 DEFINE_FIELD(DParticleDefinition, BounceSoundChance)
 DEFINE_FIELD(DParticleDefinition, BounceSoundMinSpeed)
 DEFINE_FIELD(DParticleDefinition, BounceSoundPitchMin) DEFINE_FIELD(DParticleDefinition, BounceSoundPitchMax)
-DEFINE_FIELD(DParticleDefinition, BounceAccuracy)
 DEFINE_FIELD(DParticleDefinition, BounceFudge)
 DEFINE_FIELD(DParticleDefinition, MinBounceDeflect) DEFINE_FIELD(DParticleDefinition, MaxBounceDeflect)
 DEFINE_FIELD(DParticleDefinition, QualityChanceLow)
@@ -49,12 +53,31 @@ DEFINE_FIELD(DParticleDefinition, LifeMultMed)
 DEFINE_FIELD(DParticleDefinition, LifeMultHigh)
 DEFINE_FIELD(DParticleDefinition, LifeMultUlt)
 DEFINE_FIELD(DParticleDefinition, LifeMultInsane)
+DEFINE_FIELD(DParticleDefinition, Flags)
 DEFINE_ACTION_FUNCTION(DParticleDefinition, ThinkParticle)
 {
-	PARAM_PROLOGUE;
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
 	PARAM_POINTER(ParticleData, particledata_t);
 
 	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleBounce)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_POINTER(ParticleData, particledata_t);
+
+	self->OnParticleBounce(ParticleData);
+
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleDeath)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_POINTER(ParticleData, particledata_t);
+
+	ACTION_RETURN_BOOL(true);
 }
 
 static int DParticleDefinition_AddAnimationSequence(DParticleDefinition* self)
@@ -222,8 +245,8 @@ DParticleDefinition::~DParticleDefinition()
 
 }
 
-DEFINE_FIELD_X(ParticleData, particledata_t, time);
-DEFINE_FIELD_X(ParticleData, particledata_t, lifetime);
+DEFINE_FIELD_X(ParticleData, particledata_t, life);
+DEFINE_FIELD_X(ParticleData, particledata_t, startLife);
 DEFINE_FIELD_X(ParticleData, particledata_t, pos);
 DEFINE_FIELD_X(ParticleData, particledata_t, vel);
 DEFINE_FIELD_X(ParticleData, particledata_t, alpha);
@@ -232,10 +255,18 @@ DEFINE_FIELD_X(ParticleData, particledata_t, scale);
 DEFINE_FIELD_X(ParticleData, particledata_t, scaleStep);
 DEFINE_FIELD_X(ParticleData, particledata_t, roll);
 DEFINE_FIELD_X(ParticleData, particledata_t, rollStep);
+DEFINE_FIELD_X(ParticleData, particledata_t, pitch);
+DEFINE_FIELD_X(ParticleData, particledata_t, pitchStep);
+DEFINE_FIELD_X(ParticleData, particledata_t, bounces);
+DEFINE_FIELD_X(ParticleData, particledata_t, maxBounces);
+DEFINE_FIELD_X(ParticleData, particledata_t, floorz);
+DEFINE_FIELD_X(ParticleData, particledata_t, ceilingz);
 DEFINE_FIELD_X(ParticleData, particledata_t, color);
 DEFINE_FIELD_X(ParticleData, particledata_t, texture);
 DEFINE_FIELD_X(ParticleData, particledata_t, animFrame);
 DEFINE_FIELD_X(ParticleData, particledata_t, animTick);
+DEFINE_FIELD_X(ParticleData, particledata_t, invalidateTicks);
+DEFINE_FIELD_X(ParticleData, particledata_t, sleepFor);
 DEFINE_FIELD_X(ParticleData, particledata_t, flags);
 DEFINE_FIELD_X(ParticleData, particledata_t, user1);
 DEFINE_FIELD_X(ParticleData, particledata_t, user2);
@@ -274,7 +305,7 @@ float ParticleRandom(float min, float max)
 	return (float)(min + M_Random.GenRand_Real1() * (max - min));
 }
 
-void DParticleDefinition::Init()
+void DParticleDefinition::CallInit()
 {
 	IFVIRTUAL(DParticleDefinition, Init)
 	{
@@ -283,7 +314,7 @@ void DParticleDefinition::Init()
 	}
 }
 
-void DParticleDefinition::OnCreateParticle(particledata_t* particle, AActor* refActor)
+void DParticleDefinition::CallOnCreateParticle(particledata_t* particle, AActor* refActor)
 {
 	IFVIRTUAL(DParticleDefinition, OnCreateParticle)
 	{
@@ -292,27 +323,187 @@ void DParticleDefinition::OnCreateParticle(particledata_t* particle, AActor* ref
 	}
 }
 
-void DParticleDefinition::ThinkParticle(particledata_t* particle)
+bool DParticleDefinition::CallOnParticleDeath(particledata_t* particle)
+{
+	int result = true;
+
+	IFVIRTUAL(DParticleDefinition, OnParticleDeath)
+	{
+		VMValue params[] = { this, particle };
+		VMReturn ret(&result);
+
+		VMCall(func, params, 2, &ret, 1);
+	}
+
+	return result;
+}
+
+void DParticleDefinition::CallThinkParticle(particledata_t* particle)
 {
 	IFVIRTUAL(DParticleDefinition, ThinkParticle)
 	{
 		VMValue params[] = { this, particle };
-
 		VMCall(func, params, 2, nullptr, 0);
 	}
 }
 
-int DParticleDefinition::GetParticleLimits()
+void DParticleDefinition::CallOnParticleBounce(particledata_t* particle)
+{
+	IFVIRTUAL(DParticleDefinition, OnParticleBounce)
+	{
+		VMValue params[] = { this, particle };
+		VMCall(func, params, 2, nullptr, 0);
+	}
+	else
+	{
+		OnParticleBounce(particle);
+	}
+}
+
+void DParticleDefinition::OnParticleBounce(particledata_t* particle)
+{
+	// Roll speed damping
+	particle->rollStep *= 1.0f - RollDampingBounce;
+
+	float speed = (float)particle->vel.Length();
+
+	// Clean up if we reached the bounce limit
+	if (particle->maxBounces >= 0) 
+	{
+		if (particle->bounces++ >= particle->maxBounces)
+		{
+			if (HasFlag(PDF_FADEATBOUNCELIMIT) && particle->bounces - 1 == particle->maxBounces)
+			{
+				// Shortcut life
+				if (particle->life > MaxFadeLife)
+				{
+					particle->life = MaxFadeLife;
+				}
+			}
+			else if (!HasFlag(PDF_FADEATBOUNCELIMIT))
+			{
+				CleanupParticle(particle);
+				return;
+			}
+		}
+	}
+
+	if (speed < StopSpeed)
+	{
+		particle->vel.Zero();
+
+		if (HasFlag(PDF_KILLSTOP))
+		{
+			CleanupParticle(particle);
+			return;
+		}
+		else
+		{
+			RestParticle(particle);
+		}
+	}
+	else if (BounceSound && speed > BounceSoundMinSpeed && ParticleRandom(0.0f, 1.0f) <= BounceSoundChance)
+	{
+		S_SoundPitch(Level, particle->pos, CHAN_AUTO, 0, FSoundID::fromInt(BounceSound), 1.0f, BOUNCE_SOUND_ATTENUATION, ParticleRandom(BounceSoundPitchMin, BounceSoundPitchMax));
+	}
+
+	if (RestingRollSpeed >= 0 && speed <= RestingRollSpeed) 
+	{
+		particle->roll += (((round(particle->roll / 180.0f) * 180.0f) + ParticleRandom(RestingRollMin, RestingRollMax)) - particle->roll) * 0.65f;
+	}
+
+	if (RestingPitchSpeed >= 0 && speed <= RestingPitchSpeed) 
+	{
+		particle->pitch += (((round(particle->pitch / 180.0f) * 180.0f) + ParticleRandom(RestingPitchMin, RestingPitchMax)) - particle->pitch) * 0.65f;
+	}
+}
+
+int DParticleDefinition::GetParticleLimit()
 {
 	int numParticles = 1000; // Probably will never be hit, but let's just set it to some safe number just in case
 
-	IFVM(ParticleDefinition, GetParticleLimits)
+	IFVM(ParticleDefinition, GetParticleLimit)
 	{
 		VMReturn ret(&numParticles);
 		VMCall(func, nullptr, 0, &ret, 1);
 	}
 
 	return numParticles;
+}
+
+int DParticleDefinition::GetParticleCullLimit()
+{
+	int numParticles = 500; // Probably will never be hit, but let's just set it to some safe number just in case
+
+	IFVM(ParticleDefinition, GetParticleCullLimit)
+	{
+		VMReturn ret(&numParticles);
+		VMCall(func, nullptr, 0, &ret, 1);
+	}
+
+	return numParticles;
+}
+
+void DParticleDefinition::RestParticle(particledata_t* particle)
+{
+	particle->SetFlag(DPF_ATREST);
+
+	if (HasFlag(PDF_ROLLSTOP)) 
+	{
+		particle->rollStep = 0;
+		particle->pitchStep = 0;
+	}
+
+	if (RestingRollSpeed >= 0) 
+	{
+		particle->roll = (round(particle->roll / 180.0f) * 180.0f) + ParticleRandom(RestingRollMin, RestingRollMax);
+	}
+
+	if (RestingPitchSpeed >= 0) 
+	{
+		particle->pitch = (round(particle->pitch / 180.0f) * 180.0f) + ParticleRandom(RestingPitchMin, RestingPitchMax);
+	}
+
+	if (HasFlag(PDF_SLEEPSTOP) && particle->life > 10) 
+	{
+		int lifeLeft = particle->life - (MinFadeLife + MaxFadeLife);
+
+		if (lifeLeft > 0) 
+		{
+			particle->sleepFor = lifeLeft;
+			particle->life = MinFadeLife + MaxFadeLife;
+		}
+	}
+}
+
+// Clean up this particle as quickly as possible, triggered by the particle limiter
+void DParticleDefinition::CullParticle(particledata_t* particle)
+{
+	if (HasFlag(PDF_LIFEFADE) && particle->life > 0)
+	{
+		if (particle->life > MaxFadeLife || particle->life > TICRATE)
+		{
+			// Impose a practical limit of 1 second for fading out
+			particle->life = min(TICRATE, MaxFadeLife);
+			particle->sleepFor = 0;    // Just in case we slept for whatever reason
+		}
+		// Otherwise this particle should be already on it's way out
+	}
+	else
+	{
+		particle->SetFlag(DPF_DESTROYED);
+	}
+}
+
+void DParticleDefinition::CleanupParticle(particledata_t* particle)
+{
+	particle->SetFlag(DPF_NOPROCESS);
+
+	if (!CallOnParticleDeath(particle))
+	{
+		// Mark this as destroyed so we can destroy it the next update
+		particle->SetFlag(DPF_DESTROYED);
+	}
 }
 
 particledata_t* NewDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition, bool replace /* = false */)
@@ -392,13 +583,14 @@ void P_InitParticleDefinitions(FLevelLocals* Level)
 		if (cls != baseClass && cls->IsDescendantOf(baseClass))
 		{
 			DParticleDefinition* definition = (DParticleDefinition*)cls->CreateNew();
-			definition->Init();
+			definition->Level = Level;
+			definition->CallInit();
 
 			Level->ParticleDefinitionsByType.Insert(cls->TypeName.GetIndex(), definition);
 		}
 	}
 
-	int numParticles = DParticleDefinition::GetParticleLimits();
+	int numParticles = DParticleDefinition::GetParticleLimit();
 
 	Level->DefinedParticlePool.Particles.Resize(numParticles);
 	P_ClearAllDefinedParticles(Level);
@@ -454,10 +646,15 @@ void P_FindDefinedParticleSubsectors(FLevelLocals* Level)
 	}
 }
 
-void P_DestroyDefinedParticle(FLevelLocals* Level, int particleIndex)
+bool P_DestroyDefinedParticle(FLevelLocals* Level, int particleIndex)
 {
 	particlelevelpool_t& pool = Level->DefinedParticlePool;
 	particledata_t& particle = pool.Particles[particleIndex];
+
+	if (!particle.HasFlag(DPF_DESTROYED) && !particle.definition->CallOnParticleDeath(&particle))
+	{
+		return false;
+	}
 
 	if (particle.tprev != NO_PARTICLE)
 		pool.Particles[particle.tprev].tnext = particle.tnext;
@@ -473,14 +670,19 @@ void P_DestroyDefinedParticle(FLevelLocals* Level, int particleIndex)
 	particle = {};
 	particle.tnext = pool.InactiveParticles;
 	pool.InactiveParticles = particleIndex;
+
+	return true;
 }
 
 void P_ThinkDefinedParticles(FLevelLocals* Level)
 {
 	particlelevelpool_t* pool = &Level->DefinedParticlePool;
 
+	int particleCount = 0;
+	int cullLimit = DParticleDefinition::GetParticleCullLimit();
+
 	int i = pool->ActiveParticles;
-	particledata_t* particle = nullptr, *prev = nullptr;
+	particledata_t* particle = nullptr;
 	while (i != NO_PARTICLE)
 	{
 		particle = &pool->Particles[i];
@@ -488,19 +690,31 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 		i = particle->tnext;
 		if (Level->isFrozen() && !(particle->flags & SPF_NOTIMEFREEZE))
 		{
-			prev = particle;
+			continue;
+		}
+
+		if (particle->sleepFor > 0)
+		{
+			particle->sleepFor--;
 			continue;
 		}
 
 		particle->prevpos = particle->pos;
 
 		DParticleDefinition* definition = particle->definition;
-		definition->ThinkParticle(particle);
+		definition->CallThinkParticle(particle);
 
-		if (particle->time++ > particle->lifetime)
+		if (particle->life > 0)
+		{
+			particle->life--;
+		}
+
+		if ((particle->life == 0) || particle->HasFlag(DPF_DESTROYED))
 		{ // The particle has expired, so free it
-			P_DestroyDefinedParticle(Level, particleIndex);
-			continue;
+			if (P_DestroyDefinedParticle(Level, particleIndex))
+			{
+				continue;
+			}
 		}
 
 		particle->alpha += particle->alphaStep;
@@ -513,10 +727,24 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 		DVector2 newxy = Level->GetPortalOffsetPosition(particle->prevpos.X, particle->prevpos.Y, movex, movey);
 		particle->pos.X = newxy.X;
 		particle->pos.Y = newxy.Y;
-		particle->pos.Z += particle->vel.Z;
 
 		particle->subsector = Level->PointInRenderSubsector(particle->pos);
 		sector_t* s = particle->subsector->sector;
+
+		if (definition->Gravity != 0)
+		{
+			particle->vel *= 1.0f - definition->Drag;
+
+			float gravity = (float)(Level->gravity * s->gravity * definition->Gravity * 0.00125);
+
+			// TODO: If we need water checks, we're going to have to replicate AActor::FallAndSink
+			particle->vel.Z -= gravity;
+		}
+
+		particle->pos.Z += particle->vel.Z;
+
+		particle->floorz = (float)s->floorplane.ZatPoint(particle->pos);
+		particle->ceilingz = (float)s->ceilingplane.ZatPoint(particle->pos);
 
 		// Handle crossing a sector portal.
 		if (!s->PortalBlocksMovement(sector_t::ceiling))
@@ -559,7 +787,85 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 			}
 		}
 
-		prev = particle;
+		if (!particle->HasFlag(DPF_NOPROCESS))
+		{
+			if (definition->Flags & PDF_BOUNCEONFLOORS)
+			{
+				bool bounced = false;
+
+				if (particle->pos.Z < particle->floorz && particle->vel.Z < 0)
+				{
+					if (particle->pos.Z - particle->floorz >= -definition->MaxStepHeight)
+					{
+						particle->pos.Z = particle->floorz;
+						particle->vel.Z *= -(definition->BounceFactor * ParticleRandom(1.0f - definition->BounceFudge, 1.0f));
+						bounced = true;
+						particle->invalidateTicks = 0;
+					}
+					else
+					{
+						particle->vel.Z = 0;
+						particle->invalidateTicks++;
+					}
+
+					particle->vel.X *= definition->BounceFactor;
+					particle->vel.Y *= definition->BounceFactor;
+
+					FVector2 deflected = particle->vel.XY().Rotated(ParticleRandom(definition->MinBounceDeflect, definition->MaxBounceDeflect));
+					particle->vel.X = deflected.X;
+					particle->vel.Y = deflected.Y;
+				}
+				else if (particle->pos.Z > particle->ceilingz && particle->vel.Z > 0)
+				{
+					if (particle->pos.Z - particle->ceilingz <= -definition->MaxStepHeight)
+					{
+						particle->pos.Z = particle->floorz;
+						particle->vel.Z *= -(definition->BounceFactor * ParticleRandom(1.0f - definition->BounceFudge, 1.0f));
+						bounced = true;
+						particle->invalidateTicks = 0;
+					}
+					else
+					{
+						particle->vel.Z = 0;
+						particle->invalidateTicks++;
+					}
+
+					particle->vel.X *= definition->BounceFactor;
+					particle->vel.Y *= definition->BounceFactor;
+
+					FVector2 deflected = particle->vel.XY().Rotated(ParticleRandom(definition->MinBounceDeflect, definition->MaxBounceDeflect));
+					particle->vel.X = deflected.X;
+					particle->vel.Y = deflected.Y;
+				}
+				else
+				{
+					particle->invalidateTicks = 0;
+				}
+
+				if (bounced)
+				{
+					definition->CallOnParticleBounce(particle);
+				}
+
+				if (particle->invalidateTicks > 5 && P_DestroyDefinedParticle(Level, particleIndex))
+				{
+					continue;
+				}
+			}
+		}
+
+		if (particle->HasFlag(DPF_DESTROYED))
+		{
+			P_DestroyDefinedParticle(Level, particleIndex);
+			continue;
+		}
+
+		if (particleCount > cullLimit)
+		{
+			definition->CullParticle(particle);
+		}
+
+		particleCount++;
 	}
 }
 
@@ -577,8 +883,13 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 			particle->vel = particle->vel.Unit() * ParticleRandom(definition->MinSpeed, definition->MaxSpeed);
 		}
 
-		particle->time = 0;
-		particle->lifetime = ParticleRandom(definition->MinLife, definition->MaxLife);
+		particle->subsector = Level->PointInRenderSubsector(particle->pos);
+		sector_t* s = particle->subsector->sector;
+
+		particle->floorz = (float)s->floorplane.ZatPoint(particle->pos);
+		particle->ceilingz = (float)s->ceilingplane.ZatPoint(particle->pos);
+
+		particle->startLife = particle->life = ParticleRandom(definition->MinLife, definition->MaxLife);
 		particle->alpha = 1;
 		particle->alphaStep = 0;
 		particle->scale.X = definition->MinScale.X == -1 && definition->MaxScale.X == -1 ? 1 : ParticleRandom(definition->MinScale.X, definition->MaxScale.X);
@@ -588,14 +899,14 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 		particle->rollStep = 0;
 		particle->pitch = ParticleRandom(definition->MinPitch, definition->MaxPitch);
 		particle->pitchStep = 0;
-		particle->drag = 0;
 		particle->bounces = 0;
 		particle->maxBounces = ParticleRandom(definition->MinRandomBounces, definition->MaxRandomBounces);
+		particle->invalidateTicks = 0;
 		particle->color = 0xffffff;
 		particle->texture = definition->AnimationFrames.Size() ? definition->AnimationFrames[0].frame : definition->DefaultTexture;
 		particle->flags = flags;
 
-		definition->OnCreateParticle(particle, refActor);
+		definition->CallOnCreateParticle(particle, refActor);
 
 		// If we've set any roll values, make sure the roll flag is set
 		if (particle->roll != 0 || particle->rollStep != 0)
@@ -717,8 +1028,8 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particledata_t& p, par
 			}
 		}
 
-		arc ("time", p.time)
-			("lifetime", p.lifetime)
+		arc ("life", p.life)
+			("startLife", p.startLife)
 			("prevpos", p.prevpos)
 			("pos", p.pos)
 			("vel", p.vel)
@@ -730,13 +1041,15 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particledata_t& p, par
 			("rollstep", p.rollStep)
 			("pitch", p.pitch)
 			("pitchstep", p.pitchStep)
-			("drag", p.drag)
 			("bounces", p.bounces)
 			("maxbounces", p.maxBounces)
+			("floorz", p.floorz)
+			("ceilingz", p.ceilingz)
 			("color", p.color)
 			("texture", p.texture)
 			("animframe", p.animFrame)
 			("animTick", p.animTick)
+			("invalidateTicks", p.invalidateTicks)
 			("flags", p.flags)
 			("user1", p.user1)
 			("user2", p.user2)

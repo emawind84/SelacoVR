@@ -1,23 +1,59 @@
+enum EParticleDefinitionFlags
+{
+	PDF_KILLSTOP				= 1 << 0,	// Kill the particle when it stops moving
+	PDF_DIRFROMMOMENTUM			= 1 << 1,	// Always face the direction of travel
+	PDF_INSTANTBOUNCE			= 1 << 2,	// Clear interpolation on bounce, useful when using DirFromMomentum
+	PDF_VELOCITYFADE			= 1 << 3,	// Fade out between min and max fadeVel
+	PDF_LIFEFADE				= 1 << 4,	// Fade out between min and max fadeLife
+	PDF_ROLLSTOP				= 1 << 5,	// Stop rolling when coming to rest
+	PDF_SLEEPSTOP				= 1 << 6,	// Use Sleep() when the particle comes to rest for the rest of it's idle lifetime. Warning: Will probably float if on a moving surface
+	PDF_NOTHINK					= 1 << 7,	// Don't call ThinkParticle
+	PDF_FADEATBOUNCELIMIT		= 1 << 8,	// Once the bounce limit is reached, start fading out using lifetime settings
+	PDF_IMPORTANT				= 1 << 9,	// If not flagged as important, particles will not spawn when reaching the limits
+	PDF_SQUAREDSCALE			= 1 << 10,	// Random scale is always square (Match X and Y scale)
+	PDF_ISBLOOD					= 1 << 11,	// Treat this particle as blood. Use different spawn variables such as r_BloodQuality instead of r_particleIntensity
+	PDF_LIFESCALE				= 1 << 12,	// Follow min/max scale over lifetime
+	PDF_BOUNCEONFLOORS			= 1 << 13,	// Bounce on floors
+};
+
+enum EDefinedParticleFlags
+{
+	DPF_ATREST					= 1 << 15,	// Particle has settled and isn't moving
+	DPF_NOPROCESS				= 1 << 16,	// This is set when killing the particle, so it may be used after for sprite things
+	DPF_CLEANEDUP				= 1 << 17,	// Used by the particle limiter, this value is set once the particle has been marked for cleaning
+	DPF_DESTROYED				= 1 << 18,	// Particle has been destroyed, and should be removed from the particle list next update
+	DPF_ISBLOOD					= 1 << 19,	// Treat this particle as blood, same as bIsBlood on SelacoParticle
+	DPF_FORCETRANSPARENT		= 1 << 20,	// Force this particle to render as transparent if it's set to None or Normal
+};
+
 struct ParticleData
 {
-    native int16        Time;       // Time elapsed
-    native int16        Lifetime;   // How long this particle lives for
+    native int16        Life;       // Tics to live, -1 = forever
+    native int16        StartLife;  // The life this particle started with
     native vector3      Pos;
     native FVector3     Vel;
-    native float        Alpha;
-    native float        AlphaStep;
-    native FVector2     Scale;
-    native FVector2     ScaleStep;
-    native float        Roll;
-    native float        RollStep;
+    native float        Alpha, AlphaStep;
+    native FVector2     Scale, ScaleStep;
+    native float        Roll, RollStep;
+    native float        Pitch, PitchStep;
+    native int16        Bounces, MaxBounces;
+    native float        FloorZ, CeilingZ;
     native color        Color;
     native TextureID    Texture;
-    native uint8        AnimFrame;
-    native uint8        AnimTick;
+    native uint8        AnimFrame, AnimTick;
+    native uint8        InvalidateTicks;
+    native uint16       SleepFor;
     native int          Flags;
     native int          User1;
     native int          User2;
     native int          User3;
+
+    // Helper to initialize the lifetime of a particle
+    void InitLife(int v)
+    {
+        StartLife = v;
+        Life = v;
+    }
 
     // Helper so we don't need to set the X and Y separately
     void SetScale(float s)
@@ -31,6 +67,16 @@ struct ParticleData
     {
         ScaleStep.X = s;
         ScaleStep.Y = s;
+    }
+
+    float GetLifeDelta()
+    {
+        if (StartLife <= 0)
+        {
+            return 0;
+        }
+
+        return Life / float(StartLife);
     }
 
     void ChangeVelocity(Actor ref, double x = 0, double y = 0, double z = 0, int flags = 0)
@@ -66,6 +112,11 @@ struct ParticleData
 			Vel += newvel;
 		}
     }
+
+    // Helpers for setting flags
+    bool HasFlag(int flag) const { return Flags & flag; }
+	void SetFlag(int flag) { Flags |= flag; }
+	void ClearFlag(int flag) { Flags &= ~flag; }
 }
 
 class ParticleDefinition native
@@ -86,27 +137,36 @@ class ParticleDefinition native
 	native float MinScaleLife, MaxScaleLife;
 	native float MinScaleVel, MaxScaleVel;
 	native int MinRandomBounces, MaxRandomBounces;
+    native float Drag;
 	native float MinRoll, MaxRoll;
 	native float MinRollSpeed, MaxRollSpeed;
 	native float RollDamping, RollDampingBounce;
 	native float RestingPitchMin, RestingPitchMax, RestingPitchSpeed;
 	native float RestingRollMin, RestingRollMax, RestingRollSpeed;
 
+    native float MaxStepHeight;
+    native float Gravity;
+    native float BounceFactor;
 	native Sound BounceSound;
 	native float BounceSoundChance;
 	native float BounceSoundMinSpeed;
 	native float BounceSoundPitchMin, BounceSoundPitchMax;
-	native int BounceAccuracy;
 	native float BounceFudge;
 	native float MinBounceDeflect, MaxBounceDeflect;
+
+    native int Flags;
 
 	float QualityChanceLow, QualityChanceMed, QualityChanceHigh, QualityChanceUlt, QualityChanceInsane;
 	float LifeMultLow, LifeMultMed, LifeMultHigh, LifeMultUlt, LifeMultInsane;
 
+    void SetLife(int life)                                  { MinLife = life; MaxLife = life; }
+    void SetScale(float scale)                              { MinScale = (scale, scale); MaxScale = (scale, scale); }
+    void SetScaleXY(float x, float y)                       { MinScale = (x, y); MaxScale = (x, y); }
+
     void RandomAngle(float min, float max)                  { MinAng = min; MaxAng = max; }
     void RandomPitch(float min, float max)                  { MinPitch = min; MaxPitch = max; }
     void RandomSpeed(float min, float max)                  { MinSpeed = min; MaxSpeed = max; }
-    void RandomLife(float min, float max)                   { MinLife = min; MaxLife = max; }
+    void RandomLife(int min, int max)                       { MinLife = min; MaxLife = max; }
     void RandomRoll(float min, float max)                   { MinRoll = min; MaxRoll = max; }
     void RandomRollSpeed(float min, float max)              { MinRollSpeed = min; MaxRollSpeed = max;}
     void RandomScaleX(float min, float max)                 { MinScale.X = min; MaxScale.X = max; }
@@ -124,11 +184,12 @@ class ParticleDefinition native
     void RestorePitch(float min, float max, float speed)    { RestingPitchMin = min; RestingPitchMax = max; RestingPitchSpeed = speed; }
     void RestoreRoll(float min, float max, float speed)     { RestingRollMin = min; RestingRollMax = max; RestingRollSpeed = speed; }
 
-
     virtual void Init() { }
-    virtual void OnCreateParticle(in out ParticleData data, Actor refActor) { }
+    virtual void OnCreateParticle(in out ParticleData particle, Actor refActor) { }
     
-    native virtual void ThinkParticle(in out ParticleData data);
+    native virtual void ThinkParticle(in out ParticleData particle);
+    native virtual void OnParticleBounce(in out ParticleData particle);
+    native virtual bool OnParticleDeath(in out ParticleData particle);
 
     native int AddAnimationSequence();
     native void AddAnimationFrame(int sequence, string textureName, int ticks = 1);
@@ -160,9 +221,31 @@ class ParticleDefinition native
         3000    // Insane
     };
 
-    static int GetParticleLimits()
+    static int GetParticleLimit()
     {
         int currentParticleSetting = clamp(CVar.FindCVar("r_particleIntensity").GetInt() - 1, 0, 5);
         return ParticleDefinition.particleLimits[currentParticleSetting];
     }
+
+    static int GetParticleCullLimit()
+    {
+        int currentParticleSetting = clamp(CVar.FindCVar("r_particleIntensity").GetInt() - 1, 0, 5);
+        return ParticleDefinition.cullLimits[currentParticleSetting];
+    }
+
+
+
+
+    // Helper for selecting a random frame for a sprite
+    static TextureID SelectRandomFrame(string sprite, string frames)
+    {
+        string textureName = string.Format("%s%c0", sprite, frames.ByteAt(Random(0, frames.Length() - 1)));
+        
+        return TexMan.CheckForTexture(textureName, TexMan.TYPE_ANY);
+    }
+
+    // Helpers for setting flags
+    bool HasFlag(EParticleDefinitionFlags flag) const { return Flags & flag; }
+	void SetFlag(EParticleDefinitionFlags flag) { Flags |= flag; }
+	void ClearFlag(EParticleDefinitionFlags flag) { Flags &= ~flag; }
 }
