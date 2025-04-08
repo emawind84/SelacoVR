@@ -483,6 +483,7 @@ int DParticleDefinition::GetParticleCullLimit()
 void DParticleDefinition::RestParticle(particledata_t* particle)
 {
 	particle->SetFlag(DPF_ATREST);
+	particle->prevpos = particle->pos;
 
 	if (HasFlag(PDF_ROLLSTOP)) 
 	{
@@ -731,13 +732,13 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 			continue;
 		}
 
+		particle->prevpos = particle->pos;
+
 		if (particle->sleepFor > 0)
 		{
 			particle->sleepFor--;
 			continue;
 		}
-
-		particle->prevpos = particle->pos;
 
 		int prevAnimFrame = particle->animFrame;
 
@@ -896,6 +897,28 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 				{
 					definition->CallOnParticleBounce(particle);
 				}
+
+				bool onFloor = abs(particle->pos.Z - particle->floorz) < 0.01 || abs(particle->prevpos.Z - particle->floorz) < 0.01;
+
+				// Check for becoming at rest while on the floor
+				if (!bounced && !particle->HasFlag(DPF_ATREST) && onFloor)
+				{
+					if (particle->vel.Length() < definition->StopSpeed) 
+					{
+						particle->vel.Zero();
+
+						if (definition->HasFlag(PDF_KILLSTOP)) 
+						{
+							definition->CleanupParticle(particle);
+							continue;
+						}
+						else 
+						{
+							definition->RestParticle(particle);
+						}
+					}
+				}
+
 
 				if (particle->invalidateTicks > 5 && P_DestroyDefinedParticle(Level, particleIndex))
 				{
