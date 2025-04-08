@@ -30,12 +30,13 @@ enum EDefinedParticleFlags
 
 struct ParticleData
 {
+    native uint8        RenderStyle;
     native int16        Life;       // Tics to live, -1 = forever
     native int16        StartLife;  // The life this particle started with
     native vector3      Pos;
     native FVector3     Vel;
     native float        Alpha, AlphaStep;
-    native FVector2     Scale, ScaleStep;
+    native FVector2     Scale, ScaleStep, StartScale;
     native float        Roll, RollStep;
     native float        Pitch, PitchStep;
     native int16        Bounces, MaxBounces;
@@ -124,7 +125,7 @@ struct ParticleData
 class ParticleDefinition native
 {
     native TextureID       DefaultTexture;
-    native ERenderStyle    Style;
+    native ERenderStyle    DefaultRenderStyle;
     
     native float StopSpeed;
 	native float InheritVelocity;
@@ -133,7 +134,7 @@ class ParticleDefinition native
 	native float MinPitch, MaxPitch;
 	native float MinSpeed, MaxSpeed;
 	native float MinFadeVel, MaxFadeVel;
-	native float MinFadeLife, MaxFadeLife;
+	native int MinFadeLife, MaxFadeLife;
 	native FVector2 MinScale, MaxScale;
 	native FVector2 MinFadeScale, MaxFadeScale;
 	native float MinScaleLife, MaxScaleLife;
@@ -176,7 +177,7 @@ class ParticleDefinition native
     void RandomScale(float xMin, float xMax, float yMin, float yMax) { MinScale.x = xMin; MaxScale.x = xMax; MinScale.y = yMin; MaxScale.y = yMax; }
     void BounceDeflect(float min, float max)                { MinBounceDeflect = min; MaxBounceDeflect = max; }
     void FadeVelRange(float min, float max)                 { MinFadeVel = min; MaxFadeVel = max; }
-    void FadeLifeRange(float min, float max)                { MinFadeLife = min; MaxFadeLife = max; }
+    void FadeLifeRange(int min, int max)                    { MinFadeLife = min; MaxFadeLife = max; }
     void ScaleLifeRange(float min, float max)               { MinScaleLife = min; MaxScaleLife = max; }
     void ScaleRangeX(float min, float max)                  { MinFadeScale.X = min; MaxFadeScale.X = max; }
     void ScaleRangeY(float min, float max)                  { MinFadeScale.Y = min; MaxFadeScale.Y = max; }

@@ -11,9 +11,41 @@
 const float DParticleDefinition::INVALID = -99999;
 const float DParticleDefinition::BOUNCE_SOUND_ATTENUATION = 1.5f;
 
+DEFINE_FIELD_X(ParticleData, particledata_t, renderStyle);
+DEFINE_FIELD_X(ParticleData, particledata_t, life);
+DEFINE_FIELD_X(ParticleData, particledata_t, startLife);
+DEFINE_FIELD_X(ParticleData, particledata_t, pos);
+DEFINE_FIELD_X(ParticleData, particledata_t, vel);
+DEFINE_FIELD_X(ParticleData, particledata_t, alpha);
+DEFINE_FIELD_X(ParticleData, particledata_t, alphaStep);
+DEFINE_FIELD_X(ParticleData, particledata_t, scale);
+DEFINE_FIELD_X(ParticleData, particledata_t, scaleStep);
+DEFINE_FIELD_X(ParticleData, particledata_t, startScale);
+DEFINE_FIELD_X(ParticleData, particledata_t, roll);
+DEFINE_FIELD_X(ParticleData, particledata_t, rollStep);
+DEFINE_FIELD_X(ParticleData, particledata_t, pitch);
+DEFINE_FIELD_X(ParticleData, particledata_t, pitchStep);
+DEFINE_FIELD_X(ParticleData, particledata_t, bounces);
+DEFINE_FIELD_X(ParticleData, particledata_t, maxBounces);
+DEFINE_FIELD_X(ParticleData, particledata_t, floorz);
+DEFINE_FIELD_X(ParticleData, particledata_t, ceilingz);
+DEFINE_FIELD_X(ParticleData, particledata_t, color);
+DEFINE_FIELD_X(ParticleData, particledata_t, texture);
+DEFINE_FIELD_X(ParticleData, particledata_t, animFrame);
+DEFINE_FIELD_X(ParticleData, particledata_t, animTick);
+DEFINE_FIELD_X(ParticleData, particledata_t, invalidateTicks);
+DEFINE_FIELD_X(ParticleData, particledata_t, sleepFor);
+DEFINE_FIELD_X(ParticleData, particledata_t, flags);
+DEFINE_FIELD_X(ParticleData, particledata_t, user1);
+DEFINE_FIELD_X(ParticleData, particledata_t, user2);
+DEFINE_FIELD_X(ParticleData, particledata_t, user3);
+
+DEFINE_FIELD_X(ParticleAnimFrame, particleanimframe_t, frame);
+DEFINE_FIELD_X(ParticleAnimFrame, particleanimframe_t, duration);
+
 IMPLEMENT_CLASS(DParticleDefinition, false, false)
 DEFINE_FIELD(DParticleDefinition, DefaultTexture)
-DEFINE_FIELD(DParticleDefinition, Style)
+DEFINE_FIELD(DParticleDefinition, DefaultRenderStyle)
 DEFINE_FIELD(DParticleDefinition, AnimationFrames)
 DEFINE_FIELD(DParticleDefinition, StopSpeed)
 DEFINE_FIELD(DParticleDefinition, InheritVelocity)
@@ -233,7 +265,7 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, GetAnimationEndFrame)
 
 DParticleDefinition::DParticleDefinition()
 	: DefaultTexture()
-	, Style(STYLE_Normal)
+	, DefaultRenderStyle(STYLE_Normal)
 {
 	// We don't want to save ParticleDefinitions, since the definition could have changed since the game was saved.
 	// This way we always use the most up-to-date ParticleDefinition
@@ -244,36 +276,6 @@ DParticleDefinition::~DParticleDefinition()
 {
 
 }
-
-DEFINE_FIELD_X(ParticleData, particledata_t, life);
-DEFINE_FIELD_X(ParticleData, particledata_t, startLife);
-DEFINE_FIELD_X(ParticleData, particledata_t, pos);
-DEFINE_FIELD_X(ParticleData, particledata_t, vel);
-DEFINE_FIELD_X(ParticleData, particledata_t, alpha);
-DEFINE_FIELD_X(ParticleData, particledata_t, alphaStep);
-DEFINE_FIELD_X(ParticleData, particledata_t, scale);
-DEFINE_FIELD_X(ParticleData, particledata_t, scaleStep);
-DEFINE_FIELD_X(ParticleData, particledata_t, roll);
-DEFINE_FIELD_X(ParticleData, particledata_t, rollStep);
-DEFINE_FIELD_X(ParticleData, particledata_t, pitch);
-DEFINE_FIELD_X(ParticleData, particledata_t, pitchStep);
-DEFINE_FIELD_X(ParticleData, particledata_t, bounces);
-DEFINE_FIELD_X(ParticleData, particledata_t, maxBounces);
-DEFINE_FIELD_X(ParticleData, particledata_t, floorz);
-DEFINE_FIELD_X(ParticleData, particledata_t, ceilingz);
-DEFINE_FIELD_X(ParticleData, particledata_t, color);
-DEFINE_FIELD_X(ParticleData, particledata_t, texture);
-DEFINE_FIELD_X(ParticleData, particledata_t, animFrame);
-DEFINE_FIELD_X(ParticleData, particledata_t, animTick);
-DEFINE_FIELD_X(ParticleData, particledata_t, invalidateTicks);
-DEFINE_FIELD_X(ParticleData, particledata_t, sleepFor);
-DEFINE_FIELD_X(ParticleData, particledata_t, flags);
-DEFINE_FIELD_X(ParticleData, particledata_t, user1);
-DEFINE_FIELD_X(ParticleData, particledata_t, user2);
-DEFINE_FIELD_X(ParticleData, particledata_t, user3);
-
-DEFINE_FIELD_X(ParticleAnimFrame, particleanimframe_t, frame);
-DEFINE_FIELD_X(ParticleAnimFrame, particleanimframe_t, duration);
 
 int ParticleRandom(int min, int max)
 {
@@ -358,6 +360,39 @@ void DParticleDefinition::CallOnParticleBounce(particledata_t* particle)
 	{
 		OnParticleBounce(particle);
 	}
+}
+
+void DParticleDefinition::HandleFading(particledata_t* particle)
+{
+	float velocityFade = HasFlag(PDF_VELOCITYFADE) ? ((float)particle->vel.Length() - MinFadeVel) / (MaxFadeVel - MinFadeVel) : 1.0f;
+	float lifeFade = HasFlag(PDF_LIFEFADE) ? float(particle->life - MinFadeLife) / float(MaxFadeLife - MinFadeLife) : 1.0f;
+	particle->alpha = std::clamp(velocityFade * lifeFade, 0.0f, 1.0f);
+
+	if (particle->alpha < 0.999 && particle->renderStyle != STYLE_Translucent) 
+	{
+		switch (DefaultRenderStyle) 
+		{
+			case STYLE_Normal:
+			case STYLE_None:
+				particle->renderStyle = STYLE_Translucent;
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+void DParticleDefinition::HandleScaling(particledata_t* particle)
+{
+	float life = particle->startLife > 0 ? particle->life / float(particle->startLife) : 1.0f;
+	float lifeScale = /*bLifeScale ? */float(life - MinScaleLife) / (MaxScaleLife - MinScaleLife)/* : 1.0*/;
+	FVector2 mScale = MaxFadeScale;
+	FVector2 finalScale = mScale + lifeScale * (MinFadeScale - mScale);
+
+	particle->scale = FVector2(
+		particle->startScale.X * std::clamp(finalScale.X, min(MaxFadeScale.X, MinFadeScale.X), max(MaxFadeScale.X, MinFadeScale.X)),
+		particle->startScale.Y * std::clamp(finalScale.Y, min(MaxFadeScale.Y, MinFadeScale.Y), max(MaxFadeScale.Y, MinFadeScale.Y))
+		);
 }
 
 void DParticleDefinition::OnParticleBounce(particledata_t* particle)
@@ -874,6 +909,16 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 			continue;
 		}
 
+		if (definition->HasFlag(PDF_VELOCITYFADE) || definition->HasFlag(PDF_LIFEFADE))
+		{
+			definition->HandleFading(particle);
+		}
+
+		if (definition->HasFlag(PDF_LIFESCALE)) 
+		{
+			definition->HandleScaling(particle);
+		}
+
 		if (particleCount > cullLimit)
 		{
 			definition->CullParticle(particle);
@@ -905,12 +950,14 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 		particle->floorz = (float)s->floorplane.ZatPoint(particle->pos);
 		particle->ceilingz = (float)s->ceilingplane.ZatPoint(particle->pos);
 
+		particle->renderStyle = definition->DefaultRenderStyle;
 		particle->startLife = particle->life = ParticleRandom(definition->MinLife, definition->MaxLife);
 		particle->alpha = 1;
 		particle->alphaStep = 0;
 		particle->scale.X = definition->MinScale.X == -1 && definition->MaxScale.X == -1 ? 1 : ParticleRandom(definition->MinScale.X, definition->MaxScale.X);
 		particle->scale.Y = definition->MinScale.Y == -1 && definition->MaxScale.Y == -1 ? 1 : ParticleRandom(definition->MinScale.Y, definition->MaxScale.Y);
 		particle->scaleStep = FVector2(0, 0);
+		particle->startScale = particle->scale;
 		particle->roll = ParticleRandom(definition->MinRoll, definition->MaxRoll);
 		particle->rollStep = 0;
 		particle->pitch = ParticleRandom(definition->MinPitch, definition->MaxPitch);
@@ -1053,7 +1100,8 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particledata_t& p, par
 			}
 		}
 
-		arc ("life", p.life)
+		arc ("renderStyle", p.renderStyle)
+		    ("life", p.life)
 			("startLife", p.startLife)
 			("prevpos", p.prevpos)
 			("pos", p.pos)
@@ -1062,6 +1110,7 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particledata_t& p, par
 			("alphastep", p.alphaStep)
 			("scale", p.scale)
 			("scalestep", p.scaleStep)
+			("startScale", p.startScale)
 			("roll", p.roll)
 			("rollstep", p.rollStep)
 			("pitch", p.pitch)

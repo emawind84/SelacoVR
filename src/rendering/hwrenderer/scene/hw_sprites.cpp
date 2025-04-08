@@ -1749,9 +1749,9 @@ void HWSprite::ProcessDefinedParticle(HWDrawInfo* di, particledata_t* particle, 
 		Colormap.ClearColor();
 	}
 
-	if (definition->Style != STYLE_None)
+	if (particle->renderStyle != STYLE_None)
 	{
-		RenderStyle = definition->Style;
+		RenderStyle = (ERenderStyle)particle->renderStyle;
 	}
 	else
 	{

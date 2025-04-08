@@ -46,29 +46,30 @@ enum EDefinedParticleFlags
 
 struct particledata_t
 {
-	DParticleDefinition* definition;	// +8 
-	int16_t life;						// +2 
-	int16_t startLife;					// +2 
-	DVector3 prevpos;					// +24
-	DVector3 pos;						// +24
-	FVector3 vel;						// +12
-	float alpha, alphaStep;				// +8 
-	FVector2 scale, scaleStep;			// +8 
-	float roll, rollStep;				// +8 
-	float pitch, pitchStep;				// +8
-	int16_t bounces, maxBounces;		// +4
-	float floorz, ceilingz;				// +8
-	int color;							// +4
-	FTextureID texture;					// +4 
-	uint8_t animFrame, animTick;		// +2 
-	uint8_t invalidateTicks;			// +1
-	uint16_t sleepFor;					// +2
-	uint32_t flags;						// +4 
-	int user1, user2, user3, user4;		// +16
-	uint16_t tnext, tprev;				// +4 
+	DParticleDefinition* definition;			// +8
+	uint8_t renderStyle;						// +1
+	int16_t life;								// +2 
+	int16_t startLife;							// +2 
+	DVector3 prevpos;							// +24
+	DVector3 pos;								// +24
+	FVector3 vel;								// +12
+	float alpha, alphaStep;						// +8 
+	FVector2 scale, scaleStep, startScale;		// +12
+	float roll, rollStep;						// +8 
+	float pitch, pitchStep;						// +8
+	int16_t bounces, maxBounces;				// +4
+	float floorz, ceilingz;						// +8
+	int color;									// +4
+	FTextureID texture;							// +4 
+	uint8_t animFrame, animTick;				// +2 
+	uint8_t invalidateTicks;					// +1
+	uint16_t sleepFor;							// +2
+	uint32_t flags;								// +4 
+	int user1, user2, user3, user4;				// +16
+	uint16_t tnext, tprev;						// +4 
 
-	subsector_t* subsector;				// +8 
-	uint16_t snext;						// +2 
+	subsector_t* subsector;						// +8 
+	uint16_t snext;								// +2 
 
 	bool HasFlag(int flag) const { return flags & flag; }
 	void SetFlag(int flag) { flags |= flag; }
@@ -98,7 +99,7 @@ public:
 	virtual ~DParticleDefinition();
 
 	FTextureID DefaultTexture;
-	ERenderStyle Style;
+	ERenderStyle DefaultRenderStyle;
 
 	static const float INVALID;
 	static const float BOUNCE_SOUND_ATTENUATION;
@@ -113,7 +114,7 @@ public:
 	int MinFadeLife = 0, MaxFadeLife = 25;
 	FVector2 MinScale = FVector2(-1, -1), MaxScale = FVector2(-1, -1);
 	FVector2 MinFadeScale = FVector2(1, 1), MaxFadeScale = FVector2(0.2f, 0.2f);
-	int MinScaleLife = 0, MaxScaleLife = 25;
+	float MinScaleLife = 0, MaxScaleLife = 0.1f;
 	float MinScaleVel = 0, MaxScaleVel = 0;
 	int MinRandomBounces = -1, MaxRandomBounces = -1;
 	float Drag = 0;
@@ -150,6 +151,8 @@ public:
 	void CallThinkParticle(particledata_t* particle);
 	void CallOnParticleBounce(particledata_t* particle);
 
+	void HandleFading(particledata_t* particle);
+	void HandleScaling(particledata_t* particle);
 	void OnParticleBounce(particledata_t* particle);
 
 	static int GetParticleLimit();
