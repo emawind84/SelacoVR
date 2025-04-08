@@ -34,12 +34,14 @@ enum EParticleDefinitionFlags
 
 enum EDefinedParticleFlags
 {
-	DPF_ATREST					= 1 << 15,	// Particle has settled and isn't moving
-	DPF_NOPROCESS				= 1 << 16,	// This is set when killing the particle, so it may be used after for sprite things
-	DPF_CLEANEDUP				= 1 << 17,	// Used by the particle limiter, this value is set once the particle has been marked for cleaning
-	DPF_DESTROYED				= 1 << 18,	// Particle has been destroyed, and should be removed from the particle list next update
-	DPF_ISBLOOD					= 1 << 19,	// Treat this particle as blood, same as bIsBlood on SelacoParticle
-	DPF_FORCETRANSPARENT		= 1 << 20,	// Force this particle to render as transparent if it's set to None or Normal
+    DPF_FIRSTUPDATE             = 1 << 15,  // Particle has just been created
+    DPF_ANIMATING               = 1 << 16,  // Particle is animating
+	DPF_ATREST					= 1 << 17,	// Particle has settled and isn't moving
+	DPF_NOPROCESS				= 1 << 18,	// This is set when killing the particle, so it may be used after for sprite things
+	DPF_CLEANEDUP				= 1 << 19,	// Used by the particle limiter, this value is set once the particle has been marked for cleaning
+	DPF_DESTROYED				= 1 << 20,	// Particle has been destroyed, and should be removed from the particle list next update
+	DPF_ISBLOOD					= 1 << 21,	// Treat this particle as blood, same as bIsBlood on SelacoParticle
+	DPF_FORCETRANSPARENT		= 1 << 22,	// Force this particle to render as transparent if it's set to None or Normal
 };
 
 struct particledata_t

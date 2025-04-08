@@ -686,6 +686,8 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 	while (i != NO_PARTICLE)
 	{
 		particle = &pool->Particles[i];
+		DParticleDefinition* definition = particle->definition;
+
 		int particleIndex = i;
 		i = particle->tnext;
 		if (Level->isFrozen() && !(particle->flags & SPF_NOTIMEFREEZE))
@@ -701,7 +703,8 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 
 		particle->prevpos = particle->pos;
 
-		DParticleDefinition* definition = particle->definition;
+		int prevAnimFrame = particle->animFrame;
+
 		definition->CallThinkParticle(particle);
 
 		if (particle->life > 0)
@@ -714,6 +717,40 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 			if (P_DestroyDefinedParticle(Level, particleIndex))
 			{
 				continue;
+			}
+		}
+
+		if (particle->HasFlag(DPF_ANIMATING))
+		{
+			uint8_t animFrameCount = (uint8_t)definition->AnimationFrames.Size();
+			if (definition->AnimationSequences.size() > 0 && particle->animFrame < animFrameCount)
+			{
+				const particleanimframe_t& animFrame = definition->AnimationFrames[particle->animFrame];
+
+				uint8_t sequenceIndex = animFrame.sequence;
+				const particleanimsequence_t& sequence = definition->AnimationSequences[sequenceIndex];
+
+				// Don't update the frame on the first update, or if the animFrame has been changed during CallThinkParticle
+				if (!particle->HasFlag(DPF_FIRSTUPDATE) && particle->animFrame == prevAnimFrame)
+				{
+					if (++particle->animTick >= animFrame.duration)
+					{
+						particle->animTick = 0;
+						particle->animFrame++;
+
+						// Loop the animation if it's finished
+						if (particle->animFrame >= sequence.endFrame)
+						{
+							particle->animFrame = sequence.startFrame;
+						}
+
+						particle->texture = definition->AnimationFrames[particle->animFrame].frame;
+					}
+				}
+				else
+				{
+					particle->texture = definition->AnimationFrames[particle->animFrame].frame;
+				}
 			}
 		}
 
@@ -761,29 +798,6 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 			{
 				particle->pos += s->GetPortalDisplacement(sector_t::floor);
 				particle->subsector = NULL;
-			}
-		}
-
-		uint8_t animFrameCount = (uint8_t)definition->AnimationFrames.Size();
-		if (definition->AnimationSequences.size() > 0 && particle->animFrame < animFrameCount)
-		{
-			const particleanimframe_t& animFrame = definition->AnimationFrames[particle->animFrame];
-			
-			uint8_t sequenceIndex = animFrame.sequence;
-			const particleanimsequence_t& sequence = definition->AnimationSequences[sequenceIndex];
-
-			if (++particle->animTick >= animFrame.duration)
-			{
-				particle->animTick = 0;
-				particle->animFrame++;
-
-				// Loop the animation if it's finished
-				if (particle->animFrame >= sequence.endFrame)
-				{
-					particle->animFrame = sequence.startFrame;
-				}
-
-				particle->texture = definition->AnimationFrames[particle->animFrame].frame;
 			}
 		}
 
@@ -865,6 +879,8 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 			definition->CullParticle(particle);
 		}
 
+		particle->ClearFlag(DPF_FIRSTUPDATE);
+
 		particleCount++;
 	}
 }
@@ -903,8 +919,17 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 		particle->maxBounces = ParticleRandom(definition->MinRandomBounces, definition->MaxRandomBounces);
 		particle->invalidateTicks = 0;
 		particle->color = 0xffffff;
-		particle->texture = definition->AnimationFrames.Size() ? definition->AnimationFrames[0].frame : definition->DefaultTexture;
-		particle->flags = flags;
+		particle->flags = flags | DPF_FIRSTUPDATE;
+
+		if (definition->AnimationFrames.Size())
+		{
+			particle->flags |= DPF_ANIMATING;
+			particle->texture = definition->AnimationFrames[0].frame;
+		}
+		else
+		{
+			particle->texture = definition->DefaultTexture;
+		}
 
 		definition->CallOnCreateParticle(particle, refActor);
 
