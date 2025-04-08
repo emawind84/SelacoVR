@@ -621,6 +621,7 @@ void P_InitParticleDefinitions(FLevelLocals* Level)
 		{
 			DParticleDefinition* definition = (DParticleDefinition*)cls->CreateNew();
 			definition->Level = Level;
+			definition->cvarParticleIntensity = FindCVar("r_particleIntensity", nullptr);
 			definition->CallInit();
 
 			Level->ParticleDefinitionsByType.Insert(cls->TypeName.GetIndex(), definition);
@@ -975,7 +976,7 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 		particle->ceilingz = (float)s->ceilingplane.ZatPoint(particle->pos);
 
 		particle->renderStyle = definition->DefaultRenderStyle;
-		particle->startLife = particle->life = ParticleRandom(definition->MinLife, definition->MaxLife);
+		particle->startLife = particle->life = std::max(ParticleRandom(definition->MinLife, definition->MaxLife), 0);
 		particle->alpha = 1;
 		particle->alphaStep = 0;
 		particle->scale = definition->BaseScale;
@@ -992,6 +993,28 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 		particle->invalidateTicks = 0;
 		particle->color = 0xffffff;
 		particle->flags = flags | DPF_FIRSTUPDATE;
+
+		if (definition->cvarParticleIntensity)
+		{
+			switch (definition->cvarParticleIntensity->ToInt()) 
+			{
+				case 1:
+					particle->life = (int16_t)round(particle->life * definition->LifeMultLow);
+					break;
+				case 2:
+					particle->life = (int16_t)round(particle->life * definition->LifeMultMed);
+					break;
+				case 4:
+					particle->life = (int16_t)round(particle->life * definition->LifeMultUlt);
+					break;
+				case 5:
+					particle->life = (int16_t)round(particle->life * definition->LifeMultInsane);
+					break;
+				default:
+					particle->life = (int16_t)round(particle->life * definition->LifeMultHigh);
+					break;
+			}
+		}
 
 		if (definition->AnimationFrames.Size())
 		{

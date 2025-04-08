@@ -160,12 +160,30 @@ class ParticleDefinition native
 
     native int Flags;
 
-	float QualityChanceLow, QualityChanceMed, QualityChanceHigh, QualityChanceUlt, QualityChanceInsane;
-	float LifeMultLow, LifeMultMed, LifeMultHigh, LifeMultUlt, LifeMultInsane;
+	native float QualityChanceLow, QualityChanceMed, QualityChanceHigh, QualityChanceUlt, QualityChanceInsane;
+	native float LifeMultLow, LifeMultMed, LifeMultHigh, LifeMultUlt, LifeMultInsane;
 
     void SetLife(int life)                                  { MinLife = life; MaxLife = life; }
     void SetBaseScale(float scale)                          { BaseScale = (scale, scale); }
     void SetBaseScaleXY(float x, float y)                   { BaseScale = (x, y); }
+    
+    void SetQualityChances(float low, float med, float high, float ult, float insane)
+    {
+        QualityChanceLow = low;
+        QualityChanceMed = med;
+        QualityChanceHigh = high;
+        QualityChanceUlt = ult;
+        QualityChanceInsane = insane;
+    }
+    
+    void SetLifetimeMultipliers(float low, float med, float high, float ult, float insane)
+    {
+        LifeMultLow = low;
+        LifeMultMed = med;
+        LifeMultHigh = high;
+        LifeMultUlt = ult;
+        LifeMultInsane = insane;
+    }
 
     void RandomAngle(float min, float max)                  { MinAng = min; MaxAng = max; }
     void RandomPitch(float min, float max)                  { MinPitch = min; MaxPitch = max; }

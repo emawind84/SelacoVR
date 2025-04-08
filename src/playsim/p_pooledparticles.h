@@ -168,6 +168,7 @@ public:
 	void ClearFlag(EParticleDefinitionFlags flag) { Flags &= ~flag; }
 
 	FLevelLocals* Level;
+	FBaseCVar* cvarParticleIntensity;
 };
 
 struct particlelevelpool_t
