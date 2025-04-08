@@ -55,6 +55,7 @@ DEFINE_FIELD(DParticleDefinition, MinPitch) DEFINE_FIELD(DParticleDefinition, Ma
 DEFINE_FIELD(DParticleDefinition, MinSpeed) DEFINE_FIELD(DParticleDefinition, MaxSpeed)
 DEFINE_FIELD(DParticleDefinition, MinFadeVel) DEFINE_FIELD(DParticleDefinition, MaxFadeVel)
 DEFINE_FIELD(DParticleDefinition, MinFadeLife) DEFINE_FIELD(DParticleDefinition, MaxFadeLife)
+DEFINE_FIELD(DParticleDefinition, BaseScale)
 DEFINE_FIELD(DParticleDefinition, MinScale) DEFINE_FIELD(DParticleDefinition, MaxScale)
 DEFINE_FIELD(DParticleDefinition, MinFadeScale) DEFINE_FIELD(DParticleDefinition, MaxFadeScale)
 DEFINE_FIELD(DParticleDefinition, MinScaleLife) DEFINE_FIELD(DParticleDefinition, MaxScaleLife)
@@ -954,13 +955,14 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 		particle->startLife = particle->life = ParticleRandom(definition->MinLife, definition->MaxLife);
 		particle->alpha = 1;
 		particle->alphaStep = 0;
-		particle->scale.X = definition->MinScale.X == -1 && definition->MaxScale.X == -1 ? 1 : ParticleRandom(definition->MinScale.X, definition->MaxScale.X);
-		particle->scale.Y = definition->MinScale.Y == -1 && definition->MaxScale.Y == -1 ? 1 : ParticleRandom(definition->MinScale.Y, definition->MaxScale.Y);
+		particle->scale = definition->BaseScale;
+		particle->scale.X *= definition->MinScale.X == -1 && definition->MaxScale.X == -1 ? 1 : ParticleRandom(definition->MinScale.X, definition->MaxScale.X);
+		particle->scale.Y *= definition->MinScale.Y == -1 && definition->MaxScale.Y == -1 ? 1 : ParticleRandom(definition->MinScale.Y, definition->MaxScale.Y);
 		particle->scaleStep = FVector2(0, 0);
 		particle->startScale = particle->scale;
 		particle->roll = ParticleRandom(definition->MinRoll, definition->MaxRoll);
-		particle->rollStep = 0;
-		particle->pitch = ParticleRandom(definition->MinPitch, definition->MaxPitch);
+		particle->rollStep = ParticleRandom(definition->MinRollSpeed, definition->MaxRollSpeed);
+		particle->pitch = 0;
 		particle->pitchStep = 0;
 		particle->bounces = 0;
 		particle->maxBounces = ParticleRandom(definition->MinRandomBounces, definition->MaxRandomBounces);

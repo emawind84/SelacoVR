@@ -112,6 +112,7 @@ public:
 	float MinSpeed = INVALID, MaxSpeed = INVALID;
 	float MinFadeVel = 0.4f, MaxFadeVel = 2;
 	int MinFadeLife = 0, MaxFadeLife = 25;
+	FVector2 BaseScale = FVector2(1, 1);
 	FVector2 MinScale = FVector2(-1, -1), MaxScale = FVector2(-1, -1);
 	FVector2 MinFadeScale = FVector2(1, 1), MaxFadeScale = FVector2(0.2f, 0.2f);
 	float MinScaleLife = 0, MaxScaleLife = 0.1f;

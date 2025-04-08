@@ -135,6 +135,7 @@ class ParticleDefinition native
 	native float MinSpeed, MaxSpeed;
 	native float MinFadeVel, MaxFadeVel;
 	native int MinFadeLife, MaxFadeLife;
+    native FVector2 BaseScale;
 	native FVector2 MinScale, MaxScale;
 	native FVector2 MinFadeScale, MaxFadeScale;
 	native float MinScaleLife, MaxScaleLife;
@@ -163,8 +164,8 @@ class ParticleDefinition native
 	float LifeMultLow, LifeMultMed, LifeMultHigh, LifeMultUlt, LifeMultInsane;
 
     void SetLife(int life)                                  { MinLife = life; MaxLife = life; }
-    void SetScale(float scale)                              { MinScale = (scale, scale); MaxScale = (scale, scale); }
-    void SetScaleXY(float x, float y)                       { MinScale = (x, y); MaxScale = (x, y); }
+    void SetBaseScale(float scale)                          { BaseScale = (scale, scale); }
+    void SetBaseScaleXY(float x, float y)                   { BaseScale = (x, y); }
 
     void RandomAngle(float min, float max)                  { MinAng = min; MaxAng = max; }
     void RandomPitch(float min, float max)                  { MinPitch = min; MaxPitch = max; }
