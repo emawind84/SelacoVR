@@ -141,6 +141,7 @@ class ParticleDefinition native
 	native float MinScaleLife, MaxScaleLife;
 	native float MinScaleVel, MaxScaleVel;
 	native int MinRandomBounces, MaxRandomBounces;
+    native float Speed;
     native float Drag;
 	native float MinRoll, MaxRoll;
 	native float MinRollSpeed, MaxRollSpeed;
@@ -163,6 +164,11 @@ class ParticleDefinition native
 	native float QualityChanceLow, QualityChanceMed, QualityChanceHigh, QualityChanceUlt, QualityChanceInsane;
 	native float LifeMultLow, LifeMultMed, LifeMultHigh, LifeMultUlt, LifeMultInsane;
 
+    static void Emit(class<ParticleDefinition> definition, Actor master = NULL, float chance = 1.0, int numTries = 1, float angle = 0, float pitch = 0, float speed = 0, Vector3 offset = (0,0,0), Vector3 velocity = (0,0,0), int flags = 0, float scaleBoost = 0)
+    {
+        EmitNative(definition, master, chance, numTries, angle, pitch, speed, offset.x, offset.y, offset.z, velocity.x, velocity.y, velocity.z, flags, scaleBoost, 0, 0);
+    }
+
     void SetLife(int life)                                  { MinLife = life; MaxLife = life; }
     void SetBaseScale(float scale)                          { BaseScale = (scale, scale); }
     void SetBaseScaleXY(float x, float y)                   { BaseScale = (x, y); }
@@ -176,7 +182,7 @@ class ParticleDefinition native
         QualityChanceInsane = insane;
     }
     
-    void SetLifetimeMultipliers(float low, float med, float high, float ult, float insane)
+    void SetLifespanMultipliers(float low, float med, float high, float ult, float insane)
     {
         LifeMultLow = low;
         LifeMultMed = med;
@@ -270,4 +276,8 @@ class ParticleDefinition native
     bool HasFlag(EParticleDefinitionFlags flag) const { return Flags & flag; }
 	void SetFlag(EParticleDefinitionFlags flag) { Flags |= flag; }
 	void ClearFlag(EParticleDefinitionFlags flag) { Flags &= ~flag; }
+
+    // Don't use this directly, use either ParticleDefinition.Emit or ParticleDefinitionEmitter.Emit
+    // Not private because ParticleDefinitionEmitter needs access to it.
+    native static void EmitNative(class<ParticleDefinition> definition, Actor master, double chance, int numTries, double angle, double pitch, double speed, double offsetX, double offsetY, double offsetZ, double velocityX, double velocityY, double velocityZ, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier);
 }

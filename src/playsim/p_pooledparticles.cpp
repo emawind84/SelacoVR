@@ -7,10 +7,12 @@
 #include "vm.h"
 #include "types.h"
 #include "texturemanager.h"
+#include "d_player.h"
 
 const float DParticleDefinition::INVALID = -99999;
 const float DParticleDefinition::BOUNCE_SOUND_ATTENUATION = 1.5f;
 
+DEFINE_FIELD_X(ParticleData, particledata_t, master);
 DEFINE_FIELD_X(ParticleData, particledata_t, renderStyle);
 DEFINE_FIELD_X(ParticleData, particledata_t, life);
 DEFINE_FIELD_X(ParticleData, particledata_t, startLife);
@@ -61,6 +63,7 @@ DEFINE_FIELD(DParticleDefinition, MinFadeScale) DEFINE_FIELD(DParticleDefinition
 DEFINE_FIELD(DParticleDefinition, MinScaleLife) DEFINE_FIELD(DParticleDefinition, MaxScaleLife)
 DEFINE_FIELD(DParticleDefinition, MinScaleVel) DEFINE_FIELD(DParticleDefinition, MaxScaleVel)
 DEFINE_FIELD(DParticleDefinition, MinRandomBounces) DEFINE_FIELD(DParticleDefinition, MaxRandomBounces)
+DEFINE_FIELD(DParticleDefinition, Speed)
 DEFINE_FIELD(DParticleDefinition, Drag)
 DEFINE_FIELD(DParticleDefinition, MinRoll) DEFINE_FIELD(DParticleDefinition, MaxRoll)
 DEFINE_FIELD(DParticleDefinition, MinRollSpeed) DEFINE_FIELD(DParticleDefinition, MaxRollSpeed)
@@ -111,6 +114,45 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleDeath)
 	PARAM_POINTER(ParticleData, particledata_t);
 
 	ACTION_RETURN_BOOL(true);
+}
+
+static void DParticleDefinition_Emit(DParticleDefinition* definition, AActor* master, double chance, int numTries, double angle, double pitch, double speed, double offsetX, double offsetY, double offsetZ, double velocityX, double velocityY, double velocityZ, int flags, double scaleBoost, int particleSpawnOffsets, double particleLifetimeModifier)
+{
+	definition->Emit(master, (float)chance, numTries, (float)angle, (float)pitch, (float)speed, DVector3((float)offsetX, (float)offsetY, (float)offsetZ), FVector3((float)velocityX, (float)velocityY, (float)velocityZ), flags, (float)scaleBoost, particleSpawnOffsets, (float)particleLifetimeModifier);
+}
+
+DEFINE_ACTION_FUNCTION(DParticleDefinition, EmitNative)
+{
+	PARAM_PROLOGUE;
+	PARAM_CLASS(definitionClass, DParticleDefinition);
+	PARAM_POINTER(master, AActor);
+	PARAM_FLOAT(chance);
+	PARAM_INT(numTries);
+	PARAM_FLOAT(angle);
+	PARAM_FLOAT(pitch);
+	PARAM_FLOAT(speed);
+	PARAM_FLOAT(offsetX);
+	PARAM_FLOAT(offsetY);
+	PARAM_FLOAT(offsetZ);
+	PARAM_FLOAT(velocityX);
+	PARAM_FLOAT(velocityY);
+	PARAM_FLOAT(velocityZ);
+	PARAM_INT(flags);
+	PARAM_FLOAT(scaleBoost);
+	PARAM_INT(particleSpawnOffsets);
+	PARAM_FLOAT(particleLifetimeModifier);
+
+	if (!currentVMLevel || !definitionClass)
+	{
+		return 0;
+	}
+
+	if (DParticleDefinition* definition = *currentVMLevel->ParticleDefinitionsByType.CheckKey(definitionClass->TypeName.GetIndex()))
+	{
+		DParticleDefinition_Emit(definition, master, chance, numTries, angle, pitch, speed, offsetX, offsetY, offsetZ, velocityX, velocityY, velocityZ, flags, scaleBoost, particleSpawnOffsets, particleLifetimeModifier);
+	}
+
+	return 0;
 }
 
 static int DParticleDefinition_AddAnimationSequence(DParticleDefinition* self)
@@ -264,18 +306,19 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, GetAnimationEndFrame)
 	ACTION_RETURN_INT(self->AnimationSequences[sequence].endFrame);
 }
 
-DParticleDefinition::DParticleDefinition()
-	: DefaultTexture()
-	, DefaultRenderStyle(STYLE_Normal)
+int ParticleRandom(FRandom& random, int min, int max)
 {
-	// We don't want to save ParticleDefinitions, since the definition could have changed since the game was saved.
-	// This way we always use the most up-to-date ParticleDefinition
-	ObjectFlags |= OF_Transient;
-}
+	if (min == max)
+	{
+		return min;
+	}
 
-DParticleDefinition::~DParticleDefinition()
-{
+	if (min > max)
+	{
+		std::swap(min, max);
+	}
 
+	return min + random(max - min);
 }
 
 int ParticleRandom(int min, int max)
@@ -308,6 +351,414 @@ float ParticleRandom(float min, float max)
 	return (float)(min + M_Random.GenRand_Real1() * (max - min));
 }
 
+double ParticleRandom(double min, double max)
+{
+	if (min == max)
+	{
+		return min;
+	}
+
+	if (min > max)
+	{
+		std::swap(min, max);
+	}
+
+	return min + M_Random.GenRand_Real1() * (max - min);
+}
+
+bool ApproxZero(float v)
+{
+	return fabsf(v) < VM_EPSILON;
+}
+
+bool ApproxZero(double v)
+{
+	return fabs(v) < VM_EPSILON;
+}
+
+bool ApproxZero(FVector3 v)
+{
+	return ApproxZero(v.X) && ApproxZero(v.Y) && ApproxZero(v.Z);
+}
+
+bool ApproxZero(DVector3 v)
+{
+	return ApproxZero(v.X) && ApproxZero(v.Y) && ApproxZero(v.Z);
+}
+
+inline float dsin(float degrees)
+{
+	return sinf(degrees * (pi::pif() / 180.0f));
+}
+
+inline float dcos(float degrees)
+{
+	return cosf(degrees * (pi::pif() / 180.0f));
+}
+
+inline double dsin(double degrees)
+{
+	return sin(degrees * (pi::pif() / 180.0));
+}
+
+inline double dcos(double degrees)
+{
+	return cos(degrees * (pi::pif() / 180.0));
+}
+
+FVector3 RotVec(FVector3 p, float angle, float pitch)
+{
+	float ca = dcos(angle);
+	float cp = ApproxZero(pitch) ? 1 : dcos(pitch);
+	float sa = dsin(angle);
+	float sp = ApproxZero(pitch) ? 0 : dsin(pitch);
+
+	// Pitch
+	FVector3 r = p;
+	r.Z = p.Z * cp - p.X * sp;
+	r.X = p.Z * sp + p.X * cp;
+
+	// Yaw
+	p.X = r.X;
+	r.X = r.X * ca - p.Y * sa;
+	r.Y = p.Y * ca + p.X * sa;
+
+	return r;
+}
+
+DVector3 RotVec(DVector3 p, double angle, double pitch)
+{
+	double ca = dcos(angle);
+	double cp = ApproxZero(pitch) ? 1 : dcos(pitch);
+	double sa = dsin(angle);
+	double sp = ApproxZero(pitch) ? 0 : dsin(pitch);
+
+	// Pitch
+	DVector3 r = p;
+	r.Z = p.Z * cp - p.X * sp;
+	r.X = p.Z * sp + p.X * cp;
+
+	// Yaw
+	p.X = r.X;
+	r.X = r.X * ca - p.Y * sa;
+	r.Y = p.Y * ca + p.X * sa;
+
+	return r;
+}
+
+FVector3 VecFromAngle(float yaw, float pitch, float length = 1.0)
+{
+	FVector3 r;
+
+	float hcosb = dcos(pitch);
+	r.X = dcos(yaw) * hcosb;
+	r.Y = dsin(yaw) * hcosb;
+	r.Z = -dsin(pitch);
+
+	return r * length;
+}
+
+float SpreadRandomizer3::NewRandom(float min /*= 0.0f*/, float max /*= 1.0f*/, float spread /*= 0.15f*/)
+{
+	float rndav = (delta[0] + delta[1] + delta[2]) * 0.33333333f;
+	float rnd = ParticleRandom(min, max);
+
+	float gap = max - min;
+
+	if (fabs(rndav - rnd) < spread || fabs(delta[2] - rnd) < spread)
+	{
+		rnd += ParticleRandom(min, max);
+		rnd = (rnd - (floorf(rnd / gap) * gap)) + min;
+	}
+
+	delta[0] = delta[1];
+	delta[1] = delta[2];
+	delta[2] = rnd;
+
+	return rnd;
+}
+
+void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
+{
+	subsector = Level->PointInRenderSubsector(initialPos);
+	sector_t* s = subsector->sector;
+
+	master = nullptr;
+	renderStyle = definition->DefaultRenderStyle;
+	startLife = life = 35;
+	pos = prevpos = initialPos;
+	vel = FVector3();
+	alpha = 1;
+	alphaStep = 0;
+	scale = definition->BaseScale;
+	scaleStep = FVector2(0, 0);
+	startScale = scale;
+	roll = 0;
+	rollStep = 0;
+	pitch = 0;
+	pitchStep = 0;
+	bounces = 0;
+	maxBounces = -1;
+	floorz = (float)s->floorplane.ZatPoint(initialPos);
+	ceilingz = (float)s->ceilingplane.ZatPoint(initialPos);
+	color = 0xffffff;
+	animFrame = 0;
+	animTick = 0;
+	invalidateTicks = 0;
+	sleepFor = 0;
+	flags = flags | DPF_FIRSTUPDATE | SPF_ROLL;
+	user1 = user2 = user3 = user4 = 0;
+
+	if (definition->AnimationFrames.Size())
+	{
+		flags |= DPF_ANIMATING;
+		texture = definition->AnimationFrames[0].frame;
+	}
+	else
+	{
+		texture = definition->DefaultTexture;
+	}
+}
+
+DParticleDefinition::DParticleDefinition()
+	: DefaultTexture()
+	, DefaultRenderStyle(STYLE_Normal)
+{
+	// We don't want to save ParticleDefinitions, since the definition could have changed since the game was saved.
+	// This way we always use the most up-to-date ParticleDefinition
+	ObjectFlags |= OF_Transient;
+}
+
+DParticleDefinition::~DParticleDefinition()
+{
+
+}
+
+void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float angle, float pitch, float speed, DVector3 offset, FVector3 velocity, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier)
+{
+	// Multiply the emit chance based on particle settings
+	if (!(flags & PE_IGNORE_CHANCE))
+	{
+		int spawnSetting = (((flags & PE_ISBLOOD) || (Flags & PDF_ISBLOOD)) ? cvarBloodQuality : cvarParticleIntensity)->ToInt();
+
+		float distance = 0;
+
+		AActor* mo = players[consoleplayer].mo;
+		if (master && mo)
+		{
+			distance = mo ? (float)(mo->Pos() - master->Pos()).Length() : 0;
+		}
+
+		switch (spawnSetting)
+		{
+			case 1:
+				chance *= QualityChanceLow;
+				chance *= 1.0f - ((std::clamp(distance, 400.0f, 1200.0f) - 600.0f) / 800.0f);
+				break;
+			case 2:
+				chance *= QualityChanceMed;
+				chance *= 1.0f - ((std::clamp(distance, 512.0f, 1500.0f) - 600.0f) / 988.0f);
+				break;
+			case 4:
+				chance *= QualityChanceUlt;
+				chance *= 1.0f - ((std::clamp(distance, 600.0f, 1800.0f) - 600.0f) / 1200.0f);
+				break;
+			case 5:
+				chance *= QualityChanceInsane;
+				if (!(flags & PE_NO_INSANE_PARTICLES)) numTries = (int)ceilf(numTries * 1.2f);    // Spawn additional particles on INSANE
+				chance *= 1.0f - ((std::clamp(distance, 700.0f, 1800.0f) - 600.0f) / 1100.0f);
+				break;
+			default:
+				chance *= QualityChanceHigh;
+				chance *= 1.0f - ((std::clamp(distance, 600.0f, 1800.0f) - 600.0f) / 1200.0f);
+				break;
+		}
+	}
+
+	if (master)
+	{
+		if ((flags & PE_ABSOLUTE_ANGLE) == 0) angle += (float)master->Angles.Yaw.Degrees();
+		if ((flags & PE_ABSOLUTE_PITCH) == 0) pitch += (float)master->Angles.Pitch.Degrees();
+	}
+
+	int numCreated = 0;
+
+	for (int x = 0; x < numTries; x++)
+	{
+		SpreadRandomizer3 angleRandomizer;
+		SpreadRandomizer3 speedRandomizer;
+
+		if (flags & PE_IGNORE_CHANCE || randomEmit() / 256.0f <= chance)
+		{
+			DVector3 pos;
+
+			// Find position+offset
+			if (flags & PE_ABSOLUTE_POSITION) 
+			{
+				pos = offset;
+			}
+			else 
+			{
+				pos = master ? master->Pos() : offset;
+
+				if (master && flags & PE_ABSOLUTE_OFFSET) 
+				{
+					pos += offset;
+				}
+				else if (master) 
+				{
+					pos += RotVec(offset, angle, pitch);
+				}
+			}
+
+			particledata_t* p = NewDefinedParticle(Level, this, true);
+
+			if (!p)
+			{
+				return;
+			}
+
+			p->master = master;
+			p->Init(Level, pos);
+
+			// Configure orientation, used both for angling flatsprites and for fire-direction
+			float pAngle = angle + (angleRandomizer.NewRandom(0.0f, 1.0f) * (MaxAng - MinAng)) + MinAng;
+			float pPitch = pitch + (angleRandomizer.NewRandom(0.0f, 1.0f) * (MaxPitch - MinPitch)) + MinPitch;
+			p->roll = (ParticleRandom(0.0f, 1.0f) * (MaxRoll - MinRoll)) + MinRoll;
+			p->rollStep = (ParticleRandom(0.0f, 1.0f) * (MaxRollSpeed - MinRollSpeed)) + MinRollSpeed;
+			
+			if (MinScale.X >= 0)
+			{
+				p->scale.X *= (ParticleRandom(0.0f, 1.0f) * (MaxScale.X - MinScale.X)) + MinScale.X;
+			}
+			
+			if (!HasFlag(PDF_SQUAREDSCALE) && MinScale.Y >= 0)
+			{
+				p->scale.Y *= (ParticleRandom(0.0f, 1.0f) * (MaxScale.Y - MinScale.Y)) + MinScale.Y;
+			}
+			else if (MinScale.X >= 0 && HasFlag(PDF_SQUAREDSCALE))
+			{
+				p->scale.Y = p->scale.X;
+			}
+
+			if (scaleBoost)
+			{
+				p->scale *= scaleBoost;
+			}
+
+			p->startScale = p->scale;
+
+			// Set speed
+			float pSpeed = Speed;
+			if (!(flags & PE_FORCE_VELOCITY)) 
+			{
+				if (flags & PE_ABSOLUTE_SPEED) 
+				{
+					pSpeed = speed;
+				}
+				else 
+				{
+					// Use the default.speed arg if the random args are invalid (which they are by default)
+					if (MinSpeed == INVALID || MaxSpeed == INVALID) 
+					{
+						pSpeed = flags & PE_SPEED_IS_MULTIPLIER ? pSpeed * speed : pSpeed + speed;
+					}
+					else 
+					{
+						pSpeed = (speedRandomizer.NewRandom(0.0, 1.0) * (MaxSpeed - MinSpeed)) + MinSpeed;
+						pSpeed = flags & PE_SPEED_IS_MULTIPLIER ? pSpeed * speed : pSpeed + speed;
+					}
+				}
+
+				p->vel = VecFromAngle(pAngle, pPitch, pSpeed);
+				if (master) 
+				{
+					p->vel += (FVector3)master->Vel * InheritVelocity;
+				}
+				
+				p->vel += flags & PE_ABSOLUTE_VELOCITY ? velocity : (ApproxZero(velocity) ? FVector3(0, 0, 0) : RotVec(velocity, pAngle, pPitch));
+			}
+			else 
+			{
+				if (flags & PE_ABSOLUTE_VELOCITY) 
+				{
+					p->vel = velocity;
+				}
+				else 
+				{
+					p->vel = ApproxZero(velocity) ? FVector3(0, 0, 0) : RotVec(velocity, pAngle, pPitch);
+				}
+			}
+
+			// Move around if particle offset is set
+			if (particleSpawnOffsets > 0 && master) 
+			{
+				DVector3 emitterPos = master->Pos();
+
+				emitterPos.X += ParticleRandom(-(double)particleSpawnOffsets, (double)particleSpawnOffsets);
+				emitterPos.Y += ParticleRandom(-(double)particleSpawnOffsets, (double)particleSpawnOffsets);
+				emitterPos.Z += ParticleRandom(0.0, (double)particleSpawnOffsets);
+
+				master->SetXYZ(emitterPos);
+			}
+
+			// Set life
+			if (MinLife > 0 || MaxLife > 0) 
+			{
+				int minLife = std::max(0, minLife);
+				p->life = ParticleRandom(randomLife, minLife, std::max(minLife, MaxLife));
+
+				switch (cvarParticleLifespan->ToInt())
+				{
+					case 1:
+						p->life = (int16_t)roundf(p->life * LifeMultLow);
+						break;
+					case 2:
+						p->life = (int16_t)roundf(p->life * LifeMultMed);
+						break;
+					case 3:
+						p->life = (int16_t)roundf(p->life * LifeMultHigh);
+						break;
+					case 4:
+						p->life = (int16_t)roundf(p->life * LifeMultUlt) * 2;
+						break;
+					case 5:
+						p->life = (int16_t)roundf(p->life * LifeMultInsane);
+						break;
+					default:
+						p->life = (int16_t)roundf(p->life * LifeMultHigh);
+						break;
+				}
+
+				if (particleLifetimeModifier > 0) p->life = (int16_t)(p->life * particleLifetimeModifier);
+			}
+			else 
+			{
+				p->life = -1;
+			}
+
+			p->startLife = p->life;
+
+			// Set bounces
+			if (MinRandomBounces >= MaxRandomBounces) 
+			{
+				p->maxBounces = ParticleRandom(randomBounce, MinRandomBounces, MaxRandomBounces);
+			}
+			else 
+			{
+				p->maxBounces = -1;
+			}
+
+			//if (returnAr) 
+			//{
+			//	returnAr.push(p);
+			//}
+
+			CallOnCreateParticle(p);
+		}
+	}
+}
+
 void DParticleDefinition::CallInit()
 {
 	IFVIRTUAL(DParticleDefinition, Init)
@@ -317,11 +768,11 @@ void DParticleDefinition::CallInit()
 	}
 }
 
-void DParticleDefinition::CallOnCreateParticle(particledata_t* particle, AActor* refActor)
+void DParticleDefinition::CallOnCreateParticle(particledata_t* particle)
 {
 	IFVIRTUAL(DParticleDefinition, OnCreateParticle)
 	{
-		VMValue params[] = { this, particle, refActor };
+		VMValue params[] = { this, particle };
 		VMCall(func, params, 3, nullptr, 0);
 	}
 }
@@ -556,6 +1007,7 @@ particledata_t* NewDefinedParticle(FLevelLocals* Level, DParticleDefinition* def
 		{
 			result = &pool.Particles[pool.OldestParticle];
 			result->definition = definition;
+			result->master = nullptr;
 
 			// There should be NO_PARTICLE for the oldest's tnext
 			if (result->tprev != NO_PARTICLE)
@@ -622,6 +1074,8 @@ void P_InitParticleDefinitions(FLevelLocals* Level)
 			DParticleDefinition* definition = (DParticleDefinition*)cls->CreateNew();
 			definition->Level = Level;
 			definition->cvarParticleIntensity = FindCVar("r_particleIntensity", nullptr);
+			definition->cvarParticleLifespan = FindCVar("r_particlelifespan", nullptr);
+			definition->cvarBloodQuality = FindCVar("r_bloodquality", nullptr);
 			definition->CallInit();
 
 			Level->ParticleDefinitionsByType.Insert(cls->TypeName.GetIndex(), definition);
@@ -847,7 +1301,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 
 				if (particle->pos.Z < particle->floorz && particle->vel.Z < 0)
 				{
-					if (particle->pos.Z - particle->floorz >= -definition->MaxStepHeight)
+					if (particle->pos.Z - particle->vel.Z - particle->floorz >= -definition->MaxStepHeight)
 					{
 						particle->pos.Z = particle->floorz;
 						particle->vel.Z *= -(definition->BounceFactor * ParticleRandom(1.0f - definition->BounceFudge, 1.0f));
@@ -869,7 +1323,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 				}
 				else if (particle->pos.Z > particle->ceilingz && particle->vel.Z > 0)
 				{
-					if (particle->pos.Z - particle->ceilingz <= -definition->MaxStepHeight)
+					if (particle->pos.Z - particle->vel.Z - particle->ceilingz <= -definition->MaxStepHeight)
 					{
 						particle->pos.Z = particle->floorz;
 						particle->vel.Z *= -(definition->BounceFactor * ParticleRandom(1.0f - definition->BounceFudge, 1.0f));
@@ -961,42 +1415,23 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 
 	if (particle)
 	{
-		particle->pos = particle->prevpos = pos;
-		particle->vel = FVector3(vel);
+		particle->master = refActor;
+		particle->flags = flags;
 
-		if (definition->MinSpeed != DParticleDefinition::INVALID && definition->MaxSpeed != DParticleDefinition::INVALID)
-		{
-			particle->vel = particle->vel.Unit() * ParticleRandom(definition->MinSpeed, definition->MaxSpeed);
-		}
-
-		particle->subsector = Level->PointInRenderSubsector(particle->pos);
-		sector_t* s = particle->subsector->sector;
-
-		particle->floorz = (float)s->floorplane.ZatPoint(particle->pos);
-		particle->ceilingz = (float)s->ceilingplane.ZatPoint(particle->pos);
-
-		particle->renderStyle = definition->DefaultRenderStyle;
-		particle->startLife = particle->life = std::max(ParticleRandom(definition->MinLife, definition->MaxLife), 0);
-		particle->alpha = 1;
-		particle->alphaStep = 0;
-		particle->scale = definition->BaseScale;
-		particle->scale.X *= definition->MinScale.X == -1 && definition->MaxScale.X == -1 ? 1 : ParticleRandom(definition->MinScale.X, definition->MaxScale.X);
-		particle->scale.Y *= definition->MinScale.Y == -1 && definition->MaxScale.Y == -1 ? 1 : ParticleRandom(definition->MinScale.Y, definition->MaxScale.Y);
-		particle->scaleStep = FVector2(0, 0);
+		particle->Init(Level, pos);
+		particle->vel = (FVector3)vel;
+		particle->scale.X *= (float)scale;
+		particle->scale.Y *= (float)scale;
 		particle->startScale = particle->scale;
+
+		particle->startLife = particle->life = std::max(ParticleRandom(definition->MinLife, definition->MaxLife), 0);
 		particle->roll = ParticleRandom(definition->MinRoll, definition->MaxRoll);
 		particle->rollStep = ParticleRandom(definition->MinRollSpeed, definition->MaxRollSpeed);
-		particle->pitch = 0;
-		particle->pitchStep = 0;
-		particle->bounces = 0;
 		particle->maxBounces = ParticleRandom(definition->MinRandomBounces, definition->MaxRandomBounces);
-		particle->invalidateTicks = 0;
-		particle->color = 0xffffff;
-		particle->flags = flags | DPF_FIRSTUPDATE;
 
-		if (definition->cvarParticleIntensity)
+		if (definition->cvarParticleLifespan)
 		{
-			switch (definition->cvarParticleIntensity->ToInt()) 
+			switch (definition->cvarParticleLifespan->ToInt())
 			{
 				case 1:
 					particle->life = (int16_t)round(particle->life * definition->LifeMultLow);
@@ -1016,23 +1451,7 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 			}
 		}
 
-		if (definition->AnimationFrames.Size())
-		{
-			particle->flags |= DPF_ANIMATING;
-			particle->texture = definition->AnimationFrames[0].frame;
-		}
-		else
-		{
-			particle->texture = definition->DefaultTexture;
-		}
-
-		definition->CallOnCreateParticle(particle, refActor);
-
-		// If we've set any roll values, make sure the roll flag is set
-		if (particle->roll != 0 || particle->rollStep != 0)
-		{
-			particle->flags |= SPF_ROLL;
-		}
+		definition->CallOnCreateParticle(particle);
 	}
 }
 
@@ -1148,7 +1567,8 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particledata_t& p, par
 			}
 		}
 
-		arc ("renderStyle", p.renderStyle)
+		arc ("master", p.master)
+			("renderStyle", p.renderStyle)
 		    ("life", p.life)
 			("startLife", p.startLife)
 			("prevpos", p.prevpos)
@@ -1183,4 +1603,3 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particledata_t& p, par
 	}
 	return arc;
 }
-

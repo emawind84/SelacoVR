@@ -44,9 +44,25 @@ enum EDefinedParticleFlags
 	DPF_FORCETRANSPARENT		= 1 << 22,	// Force this particle to render as transparent if it's set to None or Normal
 };
 
+enum EParticleEmitterFlags 
+{
+    PE_SPEED_IS_MULTIPLIER      = 1 << 0,
+    PE_ABSOLUTE_PITCH           = 1 << 1,
+    PE_ABSOLUTE_ANGLE           = 1 << 2,
+    PE_ABSOLUTE_OFFSET          = 1 << 3,	// Offset position from emitter in absolute coords
+    PE_FORCE_VELOCITY           = 1 << 4,	// Do not generate velocity from speed, set it with velocity arg
+    PE_ABSOLUTE_POSITION        = 1 << 5,	// Position particle at coordinates specified by offset arg
+    PE_IGNORE_CHANCE            = 1 << 6,	// Force fire, don't use random chance
+    PE_ABSOLUTE_SPEED           = 1 << 7,	// Ignore random speed
+    PE_ABSOLUTE_VELOCITY        = 1 << 8,	// Velocity is added in absolute coords, ignoring emitter orientation
+    PE_NO_INSANE_PARTICLES      = 1 << 9,	// Do not spawn additional particles on INSANE
+    PE_ISBLOOD                  = 1 << 10	// Treat this particle as blood, same as bIsBlood on SelacoParticle
+};
+
 struct particledata_t
 {
 	DParticleDefinition* definition;			// +8
+	AActor* master;								// +8
 	uint8_t renderStyle;						// +1
 	int16_t life;								// +2 
 	int16_t startLife;							// +2 
@@ -71,6 +87,8 @@ struct particledata_t
 	subsector_t* subsector;						// +8 
 	uint16_t snext;								// +2 
 
+	void Init(FLevelLocals* Level, DVector3 initialPos);
+
 	bool HasFlag(int flag) const { return flags & flag; }
 	void SetFlag(int flag) { flags |= flag; }
 	void ClearFlag(int flag) { flags &= ~flag; }
@@ -90,6 +108,13 @@ struct particleanimframe_t
 	uint8_t sequence;
 };
 
+struct SpreadRandomizer3
+{
+	float delta[3];
+
+	float NewRandom(float min = 0.0f, float max = 1.0f, float spread = 0.15f);
+};
+
 class DParticleDefinition : public DObject
 {
 	DECLARE_CLASS(DParticleDefinition, DObject);
@@ -100,6 +125,7 @@ public:
 
 	FTextureID DefaultTexture;
 	ERenderStyle DefaultRenderStyle;
+	int DefaultParticleFlags;
 
 	static const float INVALID;
 	static const float BOUNCE_SOUND_ATTENUATION;
@@ -118,6 +144,7 @@ public:
 	float MinScaleLife = 0, MaxScaleLife = 0.1f;
 	float MinScaleVel = 0, MaxScaleVel = 0;
 	int MinRandomBounces = -1, MaxRandomBounces = -1;
+	float Speed = 5;
 	float Drag = 0;
 	float MinRoll = 0, MaxRoll = 0;
 	float MinRollSpeed = 0, MaxRollSpeed = 0;
@@ -146,8 +173,10 @@ public:
 	TArray<particleanimsequence_t> AnimationSequences;
 	TArray<particleanimframe_t> AnimationFrames;
 
+	void Emit(AActor* master, float chance, int numTries, float angle, float pitch, float speed, DVector3 offset, FVector3 velocity, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier);
+
 	void CallInit();
-	void CallOnCreateParticle(particledata_t* particle, AActor* refActor);
+	void CallOnCreateParticle(particledata_t* particle);
 	bool CallOnParticleDeath(particledata_t* particle);
 	void CallThinkParticle(particledata_t* particle);
 	void CallOnParticleBounce(particledata_t* particle);
@@ -169,6 +198,12 @@ public:
 
 	FLevelLocals* Level;
 	FBaseCVar* cvarParticleIntensity;
+	FBaseCVar* cvarParticleLifespan;
+	FBaseCVar* cvarBloodQuality;
+
+	FRandom randomEmit;
+	FRandom randomLife;
+	FRandom randomBounce;
 };
 
 struct particlelevelpool_t
