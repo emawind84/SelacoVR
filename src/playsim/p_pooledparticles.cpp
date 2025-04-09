@@ -705,7 +705,7 @@ void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float
 			// Set life
 			if (MinLife > 0 || MaxLife > 0) 
 			{
-				int minLife = std::max(0, minLife);
+				int minLife = std::max(0, MinLife);
 				p->life = ParticleRandom(randomLife, minLife, std::max(minLife, MaxLife));
 
 				switch (cvarParticleLifespan->ToInt())
