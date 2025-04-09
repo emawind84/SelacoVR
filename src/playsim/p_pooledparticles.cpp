@@ -1006,8 +1006,6 @@ particledata_t* NewDefinedParticle(FLevelLocals* Level, DParticleDefinition* def
 		if (replace)
 		{
 			result = &pool.Particles[pool.OldestParticle];
-			result->definition = definition;
-			result->master = nullptr;
 
 			// There should be NO_PARTICLE for the oldest's tnext
 			if (result->tprev != NO_PARTICLE)
@@ -1033,6 +1031,7 @@ particledata_t* NewDefinedParticle(FLevelLocals* Level, DParticleDefinition* def
 			auto tnext = result->tnext;
 			auto tprev = result->tprev;
 			*result = {};
+			result->definition = definition;
 			result->tnext = tnext;
 			result->tprev = tprev;
 		}
@@ -1043,6 +1042,7 @@ particledata_t* NewDefinedParticle(FLevelLocals* Level, DParticleDefinition* def
 	uint32_t current = pool.ActiveParticles;
 	result = &pool.Particles[pool.InactiveParticles];
 	result->definition = definition;
+	result->master = nullptr;
 	pool.InactiveParticles = result->tnext;
 	result->tnext = current;
 	result->tprev = NO_PARTICLE;
@@ -1526,7 +1526,7 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& l
 					p.tnext = i < count - 1 ? i + 1 : NO_PARTICLE;
 
 					lp.OldestParticle = i;
-					lp.InactiveParticles = p.tnext;
+					lp.InactiveParticles = i + 1;
 				}
 			}
 
