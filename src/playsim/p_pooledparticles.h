@@ -125,7 +125,7 @@ public:
 
 	FTextureID DefaultTexture;
 	ERenderStyle DefaultRenderStyle;
-	int DefaultParticleFlags;
+	int DefaultParticleFlags = SPF_ROLL;
 
 	static const float INVALID;
 	static const float BOUNCE_SOUND_ATTENUATION;

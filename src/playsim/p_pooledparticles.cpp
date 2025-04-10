@@ -55,6 +55,7 @@ DEFINE_FIELD_X(ParticleAnimFrame, particleanimframe_t, duration);
 IMPLEMENT_CLASS(DParticleDefinition, false, false)
 DEFINE_FIELD(DParticleDefinition, DefaultTexture)
 DEFINE_FIELD(DParticleDefinition, DefaultRenderStyle)
+DEFINE_FIELD(DParticleDefinition, DefaultParticleFlags)
 DEFINE_FIELD(DParticleDefinition, AnimationFrames)
 DEFINE_FIELD(DParticleDefinition, StopSpeed)
 DEFINE_FIELD(DParticleDefinition, InheritVelocity)
@@ -513,7 +514,7 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	animTick = 0;
 	invalidateTicks = 0;
 	sleepFor = 0;
-	flags = flags | DPF_FIRSTUPDATE | SPF_ROLL;
+	flags = flags | definition->DefaultParticleFlags | DPF_FIRSTUPDATE;
 	user1 = user2 = user3 = user4 = 0;
 
 	if (definition->AnimationFrames.Size())

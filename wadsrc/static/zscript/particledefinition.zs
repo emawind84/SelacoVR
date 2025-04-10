@@ -126,6 +126,7 @@ class ParticleDefinition native
 {
     native TextureID       DefaultTexture;
     native ERenderStyle    DefaultRenderStyle;
+    native int             DefaultParticleFlags;
     
     native float StopSpeed;
 	native float InheritVelocity;
