@@ -71,6 +71,7 @@ CUSTOM_CVARD(Bool, use_joystick, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINI
 CVAR(Bool, joy_feedback, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR(Float, joy_feedback_scale, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR(Float, joy_menu_deadzone, 0.05f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Bool, joy_invert_look, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
