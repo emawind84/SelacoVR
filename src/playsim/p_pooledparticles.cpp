@@ -1175,6 +1175,11 @@ bool P_DestroyDefinedParticle(FLevelLocals* Level, int particleIndex)
 		next.tprev = particle.tprev;
 	}
 
+	if (particleIndex == pool.OldestParticle)
+	{
+		pool.OldestParticle = particle.tprev;
+	}
+
 	particle = {};
 	particle.tnext = pool.InactiveParticles;
 	pool.InactiveParticles = particleIndex;
