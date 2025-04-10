@@ -527,6 +527,9 @@ DParticleDefinition::DParticleDefinition()
 	// We don't want to save ParticleDefinitions, since the definition could have changed since the game was saved.
 	// This way we always use the most up-to-date ParticleDefinition
 	ObjectFlags |= OF_Transient;
+
+	// Tell the Garbage Collector not to destroy us, we'll destroy ourselves when the level unloads
+	ObjectFlags |= OF_Fixed;
 }
 
 DParticleDefinition::~DParticleDefinition()
@@ -1104,6 +1107,19 @@ void P_ClearAllDefinedParticles(FLevelLocals* Level)
 	}
 	pool.Particles.Last().tnext = NO_PARTICLE;
 	pool.Particles.Data()->tprev = NO_PARTICLE;
+}
+
+void P_DestroyAllParticleDefinitions(FLevelLocals* Level)
+{
+	TMapIterator<int, DParticleDefinition*> it(Level->ParticleDefinitionsByType);
+	TMap<int, DParticleDefinition*>::Pair* pair;
+	while (it.NextPair(pair))
+	{
+		pair->Value->Destroy();
+	}
+
+	Level->ParticleDefinitionsByType.Clear();
+	Level->DefinedParticlePool.Particles.Clear();
 }
 
 // Group particles by subsectors. Because particles are always

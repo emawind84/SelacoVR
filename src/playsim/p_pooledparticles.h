@@ -217,6 +217,7 @@ struct particlelevelpool_t
 inline particledata_t* NewDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition, bool replace = false);
 void P_InitParticleDefinitions(FLevelLocals* Level);
 void P_ClearAllDefinedParticles(FLevelLocals* Level);
+void P_DestroyAllParticleDefinitions(FLevelLocals* Level);
 
 void P_FindDefinedParticleSubsectors(FLevelLocals* Level);
 bool P_DestroyDefinedParticle(FLevelLocals* Level, int particleIndex);
