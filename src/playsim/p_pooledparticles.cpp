@@ -9,6 +9,13 @@
 #include "texturemanager.h"
 #include "d_player.h"
 
+// NL: This is a helper to make sure that the particles are all linked correctly.
+//     If something breaks the chain, it can cause particles to stop updating and spawning
+//     so if particles suddenly stop appearing, it's recommended to run this after creating or 
+//     deleting a particle to track down the culprit. 
+//     DO NOT SET THIS TO TRUE UNLESS YOU'RE DIAGNOSING A BUG, IT'S EXPENSIVE!
+#define ENABLE_CONTINUITY_CHECKS false
+
 const float DParticleDefinition::INVALID = -99999;
 const float DParticleDefinition::BOUNCE_SOUND_ATTENUATION = 1.5f;
 
@@ -997,6 +1004,45 @@ void DParticleDefinition::CleanupParticle(particledata_t* particle)
 	}
 }
 
+#if ENABLE_CONTINUITY_CHECKS
+static int PARTICLE_COUNT = 0;
+void CheckContinuity(FLevelLocals* Level)
+{
+	particlelevelpool_t& pool = Level->DefinedParticlePool;
+
+	int count = 0;
+	int i = pool.ActiveParticles;
+	int prev = NO_PARTICLE;
+	bool inNoMansLand = false;
+
+	while (i != NO_PARTICLE)
+	{
+		if (i == pool.InactiveParticles)
+		{
+			inNoMansLand = true;
+		}
+
+		particledata_t& particle = pool.Particles[i];
+
+		if (!inNoMansLand)
+		{
+			assert(particle.tprev == prev);
+
+			if (prev != NO_PARTICLE)
+			{
+				assert(pool.Particles[prev].tnext == i);
+			}
+		}
+
+		prev = i;
+		i = particle.tnext;
+		count++;
+	}
+
+	assert(count == PARTICLE_COUNT);
+}
+#endif
+
 particledata_t* NewDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition, bool replace /* = false */)
 {
 	particledata_t* result = nullptr;
@@ -1037,7 +1083,12 @@ particledata_t* NewDefinedParticle(FLevelLocals* Level, DParticleDefinition* def
 			result->definition = definition;
 			result->tnext = tnext;
 			result->tprev = tprev;
+
+#if ENABLE_CONTINUITY_CHECKS
+			CheckContinuity(Level);
+#endif
 		}
+
 		return result;
 	}
 
@@ -1060,6 +1111,11 @@ particledata_t* NewDefinedParticle(FLevelLocals* Level, DParticleDefinition* def
 	{
 		pool.OldestParticle = pool.ActiveParticles;
 	}
+
+#if ENABLE_CONTINUITY_CHECKS
+	PARTICLE_COUNT++;
+	CheckContinuity(Level);
+#endif
 
 	return result;
 }
@@ -1089,6 +1145,10 @@ void P_InitParticleDefinitions(FLevelLocals* Level)
 
 	Level->DefinedParticlePool.Particles.Resize(numParticles);
 	P_ClearAllDefinedParticles(Level);
+
+#if ENABLE_CONTINUITY_CHECKS
+	PARTICLE_COUNT = 0;
+#endif
 }
 
 void P_ClearAllDefinedParticles(FLevelLocals* Level)
@@ -1183,6 +1243,11 @@ bool P_DestroyDefinedParticle(FLevelLocals* Level, int particleIndex)
 	particle = {};
 	particle.tnext = pool.InactiveParticles;
 	pool.InactiveParticles = particleIndex;
+
+#if ENABLE_CONTINUITY_CHECKS
+	PARTICLE_COUNT--;
+	CheckContinuity(Level);
+#endif
 
 	return true;
 }
