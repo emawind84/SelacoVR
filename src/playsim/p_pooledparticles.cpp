@@ -138,9 +138,9 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleSleep)
 	return 0;
 }
 
-static void DParticleDefinition_Emit(DParticleDefinition* definition, AActor* master, double chance, int numTries, double angle, double pitch, double speed, double offsetX, double offsetY, double offsetZ, double velocityX, double velocityY, double velocityZ, int flags, double scaleBoost, int particleSpawnOffsets, double particleLifetimeModifier)
+static void DParticleDefinition_Emit(DParticleDefinition* definition, AActor* master, double chance, int numTries, double angle, double pitch, double speed, double offsetX, double offsetY, double offsetZ, double velocityX, double velocityY, double velocityZ, int flags, double scaleBoost, int particleSpawnOffsets, double particleLifetimeModifier, double additionalAngleScale, double additionalAngleChance)
 {
-	definition->Emit(master, (float)chance, numTries, (float)angle, (float)pitch, (float)speed, DVector3((float)offsetX, (float)offsetY, (float)offsetZ), FVector3((float)velocityX, (float)velocityY, (float)velocityZ), flags, (float)scaleBoost, particleSpawnOffsets, (float)particleLifetimeModifier);
+	definition->Emit(master, (float)chance, numTries, (float)angle, (float)pitch, (float)speed, DVector3((float)offsetX, (float)offsetY, (float)offsetZ), FVector3((float)velocityX, (float)velocityY, (float)velocityZ), flags, (float)scaleBoost, particleSpawnOffsets, (float)particleLifetimeModifier, (float)additionalAngleScale, (float)additionalAngleChance);
 }
 
 DEFINE_ACTION_FUNCTION(DParticleDefinition, EmitNative)
@@ -163,6 +163,8 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, EmitNative)
 	PARAM_FLOAT(scaleBoost);
 	PARAM_INT(particleSpawnOffsets);
 	PARAM_FLOAT(particleLifetimeModifier);
+	PARAM_FLOAT(additionalAngleScale);
+	PARAM_FLOAT(additionalAngleChance);
 
 	if (!currentVMLevel || !definitionClass)
 	{
@@ -171,7 +173,7 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, EmitNative)
 
 	if (DParticleDefinition* definition = *currentVMLevel->ParticleDefinitionsByType.CheckKey(definitionClass->TypeName.GetIndex()))
 	{
-		DParticleDefinition_Emit(definition, master, chance, numTries, angle, pitch, speed, offsetX, offsetY, offsetZ, velocityX, velocityY, velocityZ, flags, scaleBoost, particleSpawnOffsets, particleLifetimeModifier);
+		DParticleDefinition_Emit(definition, master, chance, numTries, angle, pitch, speed, offsetX, offsetY, offsetZ, velocityX, velocityY, velocityZ, flags, scaleBoost, particleSpawnOffsets, particleLifetimeModifier, additionalAngleScale, additionalAngleChance);
 	}
 
 	return 0;
@@ -582,7 +584,7 @@ DParticleDefinition::~DParticleDefinition()
 
 }
 
-void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float angle, float pitch, float speed, DVector3 offset, FVector3 velocity, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier)
+void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float angle, float pitch, float speed, DVector3 offset, FVector3 velocity, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier, float additionalAngleScale, float additionalAngleChance)
 {
 	// Multiply the emit chance based on particle settings
 	if (!(flags & PE_IGNORE_CHANCE))
@@ -669,9 +671,21 @@ void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float
 			p->master = master;
 			p->Init(Level, pos);
 
+			float angleDelta = MaxAng - MinAng;
+			float pitchDelta = MaxPitch - MinPitch;
+
+			if (additionalAngleScale != 0 && additionalAngleChance > 0)
+			{
+				if (additionalAngleChance >= angleRandomizer.NewRandom(0.0f, 1.0f))
+				{
+					angleDelta += MaxAng * additionalAngleScale;
+					pitchDelta += MaxPitch * additionalAngleScale;
+				}
+			}
+
 			// Configure orientation, used both for angling flatsprites and for fire-direction
-			float pAngle = angle + (angleRandomizer.NewRandom(0.0f, 1.0f) * (MaxAng - MinAng)) + MinAng;
-			float pPitch = pitch + (angleRandomizer.NewRandom(0.0f, 1.0f) * (MaxPitch - MinPitch)) + MinPitch;
+			float pAngle = angle + (angleRandomizer.NewRandom(0.0f, 1.0f) * angleDelta) + MinAng;
+			float pPitch = pitch + (angleRandomizer.NewRandom(0.0f, 1.0f) * pitchDelta) + MinPitch;
 			p->roll = (ParticleRandom(0.0f, 1.0f) * (MaxRoll - MinRoll)) + MinRoll;
 			p->rollStep = (ParticleRandom(0.0f, 1.0f) * (MaxRollSpeed - MinRollSpeed)) + MinRollSpeed;
 			

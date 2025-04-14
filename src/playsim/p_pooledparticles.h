@@ -175,7 +175,7 @@ public:
 	TArray<particleanimsequence_t> AnimationSequences;
 	TArray<particleanimframe_t> AnimationFrames;
 
-	void Emit(AActor* master, float chance, int numTries, float angle, float pitch, float speed, DVector3 offset, FVector3 velocity, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier);
+	void Emit(AActor* master, float chance, int numTries, float angle, float pitch, float speed, DVector3 offset, FVector3 velocity, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier, float additionalAngleScale, float additionalAngleChance);
 
 	void CallInit();
 	void CallOnCreateParticle(particledata_t* particle);

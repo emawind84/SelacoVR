@@ -167,9 +167,9 @@ class ParticleDefinition native
 	native float QualityChanceLow, QualityChanceMed, QualityChanceHigh, QualityChanceUlt, QualityChanceInsane;
 	native float LifeMultLow, LifeMultMed, LifeMultHigh, LifeMultUlt, LifeMultInsane;
 
-    static void Emit(class<ParticleDefinition> definition, Actor master = NULL, float chance = 1.0, int numTries = 1, float angle = 0, float pitch = 0, float speed = 0, Vector3 offset = (0,0,0), Vector3 velocity = (0,0,0), int flags = 0, float scaleBoost = 0)
+    static void Emit(class<ParticleDefinition> definition, Actor master = NULL, float chance = 1.0, int numTries = 1, float angle = 0, float pitch = 0, float speed = 0, Vector3 offset = (0,0,0), Vector3 velocity = (0,0,0), int flags = 0, float scaleBoost = 0, float additionalAngleScale = 0, float additionalAngleChance = 0)
     {
-        EmitNative(definition, master, chance, numTries, angle, pitch, speed, offset.x, offset.y, offset.z, velocity.x, velocity.y, velocity.z, flags, scaleBoost, 0, 0);
+        EmitNative(definition, master, chance, numTries, angle, pitch, speed, offset.x, offset.y, offset.z, velocity.x, velocity.y, velocity.z, flags, scaleBoost, 0, 0, additionalAngleScale, additionalAngleChance);
     }
 
     void SetLife(int life)                                  { MinLife = life; MaxLife = life; }
@@ -289,5 +289,5 @@ class ParticleDefinition native
 
     // Don't use this directly, use either ParticleDefinition.Emit or ParticleDefinitionEmitter.Emit
     // Not private because ParticleDefinitionEmitter needs access to it.
-    native static void EmitNative(class<ParticleDefinition> definition, Actor master, double chance, int numTries, double angle, double pitch, double speed, double offsetX, double offsetY, double offsetZ, double velocityX, double velocityY, double velocityZ, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier);
+    native static void EmitNative(class<ParticleDefinition> definition, Actor master, double chance, int numTries, double angle, double pitch, double speed, double offsetX, double offsetY, double offsetZ, double velocityX, double velocityY, double velocityZ, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier, float additionalAngleScale, float additionalAngleChance);
 }
