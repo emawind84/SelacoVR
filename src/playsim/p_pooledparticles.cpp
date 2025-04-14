@@ -1478,10 +1478,13 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 		{
 			particle->vel *= 1.0f - definition->Drag;
 
-			float gravity = (float)(Level->gravity * s->gravity * definition->Gravity * 0.00125);
+			if (!particle->HasFlag(DPF_ATREST))
+			{
+				float gravity = (float)(Level->gravity * s->gravity * definition->Gravity * 0.00125);
 
-			// TODO: If we need water checks, we're going to have to replicate AActor::FallAndSink
-			particle->vel.Z -= gravity;
+				// TODO: If we need water checks, we're going to have to replicate AActor::FallAndSink
+				particle->vel.Z -= gravity;
+			}
 		}
 
 		particle->pos.Z += particle->vel.Z;
