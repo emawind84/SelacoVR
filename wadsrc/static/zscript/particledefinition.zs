@@ -221,6 +221,7 @@ class ParticleDefinition native
     native virtual void ThinkParticle(in out ParticleData particle);
     native virtual void OnParticleBounce(in out ParticleData particle);
     native virtual bool OnParticleDeath(in out ParticleData particle);
+    native virtual void OnParticleSleep(in out ParticleData particle);
 
     native int AddAnimationSequence();
     native void AddAnimationFrame(int sequence, string textureName, int ticks = 1);

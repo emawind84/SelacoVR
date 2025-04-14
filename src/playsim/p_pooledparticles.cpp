@@ -126,6 +126,14 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleDeath)
 	ACTION_RETURN_BOOL(true);
 }
 
+DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleSleep)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_POINTER(ParticleData, particledata_t);
+
+	return 0;
+}
+
 static void DParticleDefinition_Emit(DParticleDefinition* definition, AActor* master, double chance, int numTries, double angle, double pitch, double speed, double offsetX, double offsetY, double offsetZ, double velocityX, double velocityY, double velocityZ, int flags, double scaleBoost, int particleSpawnOffsets, double particleLifetimeModifier)
 {
 	definition->Emit(master, (float)chance, numTries, (float)angle, (float)pitch, (float)speed, DVector3((float)offsetX, (float)offsetY, (float)offsetZ), FVector3((float)velocityX, (float)velocityY, (float)velocityZ), flags, (float)scaleBoost, particleSpawnOffsets, (float)particleLifetimeModifier);
@@ -845,6 +853,15 @@ void DParticleDefinition::CallOnParticleBounce(particledata_t* particle)
 	}
 }
 
+void DParticleDefinition::CallOnParticleSleep(particledata_t* particle)
+{
+	IFVIRTUAL(DParticleDefinition, OnParticleSleep)
+	{
+		VMValue params[] = { this, particle };
+		VMCall(func, params, 2, nullptr, 0);
+	}
+}
+
 void DParticleDefinition::HandleFading(particledata_t* particle)
 {
 	float velocityFade = HasFlag(PDF_VELOCITYFADE) ? ((float)particle->vel.Length() - MinFadeVel) / (MaxFadeVel - MinFadeVel) : 1.0f;
@@ -989,9 +1006,20 @@ void DParticleDefinition::RestParticle(particledata_t* particle)
 
 		if (lifeLeft > 0) 
 		{
-			particle->sleepFor = lifeLeft;
+			SleepParticle(particle, lifeLeft);
 			particle->life = MinFadeLife + MaxFadeLife;
 		}
+	}
+}
+
+void DParticleDefinition::SleepParticle(particledata_t* particle, int sleepTime)
+{
+	bool wasAsleep = particle->sleepFor > 0;
+	particle->sleepFor = sleepTime;
+
+	if (!wasAsleep && sleepTime > 0)
+	{
+		CallOnParticleSleep(particle);
 	}
 }
 

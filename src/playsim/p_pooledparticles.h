@@ -182,6 +182,7 @@ public:
 	bool CallOnParticleDeath(particledata_t* particle);
 	void CallThinkParticle(particledata_t* particle);
 	void CallOnParticleBounce(particledata_t* particle);
+	void CallOnParticleSleep(particledata_t* particle);
 
 	void HandleFading(particledata_t* particle);
 	void HandleScaling(particledata_t* particle);
@@ -191,6 +192,7 @@ public:
 	static int GetParticleCullLimit();
 
 	void RestParticle(particledata_t* particle);
+	void SleepParticle(particledata_t* particle, int sleepTime);
 	void CullParticle(particledata_t* particle);
 	void CleanupParticle(particledata_t* particle);
 
