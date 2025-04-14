@@ -704,13 +704,9 @@ void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float
 			// Move around if particle offset is set
 			if (particleSpawnOffsets > 0 && master) 
 			{
-				DVector3 emitterPos = master->Pos();
-
-				emitterPos.X += ParticleRandom(-(double)particleSpawnOffsets, (double)particleSpawnOffsets);
-				emitterPos.Y += ParticleRandom(-(double)particleSpawnOffsets, (double)particleSpawnOffsets);
-				emitterPos.Z += ParticleRandom(0.0, (double)particleSpawnOffsets);
-
-				master->SetXYZ(emitterPos);
+				offset.X += ParticleRandom(-(double)particleSpawnOffsets, (double)particleSpawnOffsets);
+				offset.Y += ParticleRandom(-(double)particleSpawnOffsets, (double)particleSpawnOffsets);
+				offset.Z += ParticleRandom(0.0, (double)particleSpawnOffsets);
 			}
 
 			// Set life
