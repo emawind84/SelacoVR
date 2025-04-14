@@ -552,6 +552,7 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	sleepFor = 0;
 	flags = flags | definition->DefaultParticleFlags | DPF_FIRSTUPDATE;
 	user1 = user2 = user3 = user4 = 0;
+	lastTexture = {};
 
 	if (definition->AnimationFrames.Size())
 	{

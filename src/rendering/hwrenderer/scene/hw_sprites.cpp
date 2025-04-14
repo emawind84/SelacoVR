@@ -1802,6 +1802,44 @@ void HWSprite::ProcessDefinedParticle(HWDrawInfo* di, particledata_t* particle, 
 			ur = vb = 1;
 
 			texture = TexMan.GetGameTexture(lump, false);
+
+			FTextureID lastTexture = particle->lastTexture;
+			if (gametic - primaryLevel->starttime > 2 &&	// On the first tic or so, do not use the background loader to avoid pop-in
+				lump != lastTexture &&
+				gl_texture_thread &&
+				screen->SupportsBackgroundCache()) 
+			{
+				FMaterial* gltex = FMaterial::ValidateTexture(texture, 0, false);
+				if (!gltex || !gltex->IsHardwareCached(0))
+				{
+					if (gltex) 
+					{
+						screen->BackgroundCacheMaterial(gltex, translation, true);
+					}
+					else 
+					{
+						screen->BackgroundCacheTextureMaterial(texture, translation, 0, true);
+					}
+
+					if (lastTexture.isValid())
+					{
+						lump = lastTexture;
+						texture = TexMan.GetGameTexture(lump, false);
+						if (!texture || !texture->isValid()) 
+						{
+							return;
+						}
+					}
+					else 
+					{
+						return;
+					}
+				}
+
+				// If the bg cache func fails, we can't bg load the patch so just move on to the normal render path and load in the main thread
+			}
+
+			particle->lastTexture = lump;
 		}
 	}
 

@@ -78,7 +78,7 @@ struct particledata_t
 	int16_t bounces, maxBounces;				// +4
 	float floorz, ceilingz;						// +8
 	int color;									// +4
-	FTextureID texture;							// +4 
+	FTextureID texture, lastTexture;			// +8
 	uint8_t animFrame, animTick;				// +2 
 	uint8_t invalidateTicks;					// +1
 	uint16_t sleepFor;							// +2
