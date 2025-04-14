@@ -1432,7 +1432,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 				{
 					if (particle->pos.Z - particle->vel.Z - particle->ceilingz <= -definition->MaxStepHeight)
 					{
-						particle->pos.Z = particle->floorz;
+						particle->pos.Z = particle->ceilingz;
 						particle->vel.Z *= -(definition->BounceFactor * ParticleRandom(1.0f - definition->BounceFudge, 1.0f));
 						bounced = true;
 						particle->invalidateTicks = 0;
