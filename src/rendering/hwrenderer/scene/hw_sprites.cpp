@@ -1803,9 +1803,9 @@ void HWSprite::ProcessDefinedParticle(HWDrawInfo* di, particledata_t* particle, 
 
 			texture = TexMan.GetGameTexture(lump, false);
 
-			FTextureID lastTexture = particle->lastTexture;
-			if (gametic - primaryLevel->starttime > 2 &&	// On the first tic or so, do not use the background loader to avoid pop-in
-				lump != lastTexture &&
+			const FTextureID& lastTexture = particle->lastTexture;
+			if (lump != lastTexture &&
+				gametic - primaryLevel->starttime > 2 &&	// On the first tic or so, do not use the background loader to avoid pop-in
 				gl_texture_thread &&
 				screen->SupportsBackgroundCache()) 
 			{
