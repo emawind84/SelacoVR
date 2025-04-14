@@ -1341,7 +1341,7 @@ bool P_DestroyDefinedParticle(FLevelLocals* Level, int particleIndex)
 	particlelevelpool_t& pool = Level->DefinedParticlePool;
 	particledata_t& particle = pool.Particles[particleIndex];
 
-	if (!particle.HasFlag(DPF_DESTROYED) && !particle.definition->CallOnParticleDeath(&particle))
+	if (!particle.HasFlag(DPF_DESTROYED) && particle.definition && !particle.definition->CallOnParticleDeath(&particle))
 	{
 		return false;
 	}
