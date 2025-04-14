@@ -1768,9 +1768,6 @@ void HWSprite::ProcessDefinedParticle(HWDrawInfo* di, particledata_t* particle, 
 
 	int particle_style = particlehastexture ? 2 : gl_particles_style; // Treat custom texture the same as smooth particles
 
-	float texWidth = 32;
-	float texHeight = 32;
-
 	// [BB] Load the texture for round or smooth particles
 	if (particle_style)
 	{
@@ -1803,12 +1800,6 @@ void HWSprite::ProcessDefinedParticle(HWDrawInfo* di, particledata_t* particle, 
 			ur = vb = 1;
 
 			texture = TexMan.GetGameTexture(lump, false);
-
-			if (texture)
-			{
-				texWidth = texture->GetDisplayWidth();
-				texHeight = texture->GetDisplayHeight();
-			}
 		}
 	}
 
@@ -1827,30 +1818,48 @@ void HWSprite::ProcessDefinedParticle(HWDrawInfo* di, particledata_t* particle, 
 	y = float(particle->prevpos.Y) + yvf;
 	z = float(particle->prevpos.Z) + zvf;
 
+	FloatRect r;
+	r.left = r.top = -16;
+	r.width = r.height = 32;
+
+	if (texture)
+	{
+		auto& spi = texture->GetSpritePositioning(0);
+
+		vt = spi.GetSpriteVT();
+		vb = spi.GetSpriteVB();
+		ul = spi.GetSpriteUR(); // NICK: I know that we're using UR for ul here, but it's what the original code does and breaks offsets without it for some reason.
+		ur = spi.GetSpriteUL();
+
+		r = spi.GetSpriteRect();
+	}
+
+	trans = particle->alpha + particle->alphaStep * timefrac;
+
+	FVector2 scale = particle->scale + (particle->scaleStep * timefrac);
+	r.Scale(scale.X, scale.Y);
+
 	if (particle->flags & SPF_ROLL)
 	{
+		double ps = di->Level->pixelstretch;
+		double mult = 1.0 / sqrt(ps); // shrink slightly
+		r.Scale(mult * ps, mult);
+
 		float rvf = (particle->rollStep) * timefrac;
 		Angles.Roll = TAngle<double>::fromDeg(particle->roll + rvf);
 	}
 
-	trans = particle->alpha + particle->alphaStep * timefrac;
-	FVector2 scale = particle->scale + (particle->scaleStep * timefrac);
+	float viewvecX = vp.ViewVector.X;
+	float viewvecY = vp.ViewVector.Y;
+	float rightfac = -r.left;
+	float leftfac = rightfac - r.width;
 
-	float ps = di->Level->pixelstretch;
-	scale /= sqrt(ps); // shrink it slightly to account for the stretch
-
-	float width = scale.X * texWidth * 0.5f;
-	float height = scale.Y * texHeight * 0.5f;
-
-	float viewvecX = vp.ViewVector.X * width * ps;
-	float viewvecY = vp.ViewVector.Y * width;
-
-	x1 = x - viewvecY;
-	x2 = x + viewvecY;
-	y1 = y + viewvecX;
-	y2 = y - viewvecX;
-	z1 = z + height;
-	z2 = z - height;
+	x1 = x - viewvecY * leftfac;
+	x2 = x - viewvecY * rightfac;
+	y1 = y + viewvecX * leftfac;
+	y2 = y + viewvecX * rightfac;
+	z1 = z - r.top;
+	z2 = z1 - r.height;
 
 	depth = (float)((x - vp.Pos.X) * vp.TanCos + (y - vp.Pos.Y) * vp.TanSin);
 
