@@ -156,7 +156,7 @@ public:
 
 	float MaxStepHeight = 8;
 	float Gravity = 0;
-	float BounceFactor = 0.7f;
+	float MinBounceFactor, MaxBounceFactor = 0.7f;
 	int BounceSound = 0;
 	float BounceSoundChance = 0.2f;
 	float BounceSoundMinSpeed = 2;

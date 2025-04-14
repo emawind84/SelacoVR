@@ -86,7 +86,7 @@ DEFINE_FIELD(DParticleDefinition, RestingPitchMin) DEFINE_FIELD(DParticleDefinit
 DEFINE_FIELD(DParticleDefinition, RestingRollMin) DEFINE_FIELD(DParticleDefinition, RestingRollMax) DEFINE_FIELD(DParticleDefinition, RestingRollSpeed)
 DEFINE_FIELD(DParticleDefinition, MaxStepHeight)
 DEFINE_FIELD(DParticleDefinition, Gravity)
-DEFINE_FIELD(DParticleDefinition, BounceFactor)
+DEFINE_FIELD(DParticleDefinition, MinBounceFactor) DEFINE_FIELD(DParticleDefinition, MaxBounceFactor)
 DEFINE_FIELD(DParticleDefinition, BounceSound)
 DEFINE_FIELD(DParticleDefinition, BounceSoundChance)
 DEFINE_FIELD(DParticleDefinition, BounceSoundMinSpeed)
@@ -1499,12 +1499,14 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 		{
 			if (definition->Flags & PDF_BOUNCEONFLOORS)
 			{
+				float bounceFactor = ParticleRandom(definition->MinBounceFactor, definition->MaxBounceFactor);
+
 				if (particle->pos.Z < particle->floorz && particle->vel.Z < 0)
 				{
 					if (particle->pos.Z - particle->vel.Z - particle->floorz >= -definition->MaxStepHeight)
 					{
 						particle->pos.Z = particle->floorz;
-						particle->vel.Z *= -(definition->BounceFactor * ParticleRandom(1.0f - definition->BounceFudge, 1.0f));
+						particle->vel.Z *= -(bounceFactor * ParticleRandom(1.0f - definition->BounceFudge, 1.0f));
 						bounced = true;
 						particle->invalidateTicks = 0;
 					}
@@ -1514,8 +1516,8 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 						particle->invalidateTicks++;
 					}
 
-					particle->vel.X *= definition->BounceFactor;
-					particle->vel.Y *= definition->BounceFactor;
+					particle->vel.X *= bounceFactor;
+					particle->vel.Y *= bounceFactor;
 
 					FVector2 deflected = particle->vel.XY().Rotated(ParticleRandom(definition->MinBounceDeflect, definition->MaxBounceDeflect));
 					particle->vel.X = deflected.X;
@@ -1526,7 +1528,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 					if (particle->pos.Z - particle->vel.Z - particle->ceilingz <= -definition->MaxStepHeight)
 					{
 						particle->pos.Z = particle->ceilingz;
-						particle->vel.Z *= -(definition->BounceFactor * ParticleRandom(1.0f - definition->BounceFudge, 1.0f));
+						particle->vel.Z *= -(bounceFactor * ParticleRandom(1.0f - definition->BounceFudge, 1.0f));
 						bounced = true;
 						particle->invalidateTicks = 0;
 					}
@@ -1536,8 +1538,8 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 						particle->invalidateTicks++;
 					}
 
-					particle->vel.X *= definition->BounceFactor;
-					particle->vel.Y *= definition->BounceFactor;
+					particle->vel.X *= bounceFactor;
+					particle->vel.Y *= bounceFactor;
 
 					FVector2 deflected = particle->vel.XY().Rotated(ParticleRandom(definition->MinBounceDeflect, definition->MaxBounceDeflect));
 					particle->vel.X = deflected.X;

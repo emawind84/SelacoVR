@@ -154,7 +154,7 @@ class ParticleDefinition native
 
     native float MaxStepHeight;
     native float Gravity;
-    native float BounceFactor;
+    native float MinBounceFactor, MaxBounceFactor;
 	native Sound BounceSound;
 	native float BounceSoundChance;
 	native float BounceSoundMinSpeed;
@@ -210,6 +210,8 @@ class ParticleDefinition native
     void ScaleRangeX(float min, float max)                  { MinFadeScale.X = min; MaxFadeScale.X = max; }
     void ScaleRangeY(float min, float max)                  { MinFadeScale.Y = min; MaxFadeScale.Y = max; }
     void ScaleRange(float xMin, float xMax, float yMin, float yMax) { MinFadeScale.x = xMin; MaxFadeScale.x = xMax; MinFadeScale.y = yMin; MaxFadeScale.y = yMax; }
+    void BounceFactor(float factor)                         { MinBounceFactor = factor; MaxBounceFactor = factor; }
+    void RandomBounceFactor(float min, float max)           { MinBounceFactor = min; MaxBounceFactor = max; }
     void BouncesRange(int min, int max)                     { MinRandomBounces = min; MaxRandomBounces = max; }
     void BounceSoundPitchRange(float min, float max)        { BounceSoundPitchMin = min; BounceSoundPitchMax = max; }
     void RestorePitch(float min, float max, float speed)    { RestingPitchMin = min; RestingPitchMax = max; RestingPitchSpeed = speed; }
