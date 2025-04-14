@@ -222,6 +222,7 @@ inline particledata_t* NewDefinedParticle(FLevelLocals* Level, DParticleDefiniti
 void P_InitParticleDefinitions(FLevelLocals* Level);
 void P_ClearAllDefinedParticles(FLevelLocals* Level);
 void P_DestroyAllParticleDefinitions(FLevelLocals* Level);
+void P_ResizeDefinedParticlePool(FLevelLocals* Level, int particleLimit);
 
 void P_FindDefinedParticleSubsectors(FLevelLocals* Level);
 bool P_DestroyDefinedParticle(FLevelLocals* Level, int particleIndex);

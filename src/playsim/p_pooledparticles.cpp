@@ -16,6 +16,10 @@
 //     DO NOT SET THIS TO TRUE UNLESS YOU'RE DIAGNOSING A BUG, IT'S EXPENSIVE!
 #define ENABLE_CONTINUITY_CHECKS false
 
+#if ENABLE_CONTINUITY_CHECKS
+static int PARTICLE_COUNT = 0;
+#endif
+
 const float DParticleDefinition::INVALID = -99999;
 const float DParticleDefinition::BOUNCE_SOUND_ATTENUATION = 1.5f;
 
@@ -1054,7 +1058,6 @@ void DParticleDefinition::CleanupParticle(particledata_t* particle)
 }
 
 #if ENABLE_CONTINUITY_CHECKS
-static int PARTICLE_COUNT = 0;
 void CheckContinuity(FLevelLocals* Level)
 {
 	particlelevelpool_t& pool = Level->DefinedParticlePool;
@@ -1231,6 +1234,61 @@ void P_DestroyAllParticleDefinitions(FLevelLocals* Level)
 	Level->DefinedParticlePool.Particles.Clear();
 }
 
+void P_ResizeDefinedParticlePool(FLevelLocals* Level, int particleLimit)
+{
+	particlelevelpool_t& pool = Level->DefinedParticlePool;
+	TArray<particledata_t> newParticles(particleLimit, true);
+
+	int added = 0;
+	int oldestParticle = NO_PARTICLE;
+
+	for (uint16_t i = pool.ActiveParticles; i != NO_PARTICLE; i = pool.Particles[i].tnext)
+	{
+		if (added >= particleLimit)
+		{
+			break;
+		}
+
+		particledata_t& particle = newParticles[added];
+
+		if (pool.OldestParticle == i)
+		{
+			oldestParticle = added;
+		}
+
+		particle = pool.Particles[i];
+		particle.tprev = added - 1;
+		particle.tnext = (particle.tnext != NO_PARTICLE) ? (added + 1) : NO_PARTICLE;
+
+		added++;
+	}
+
+#if ENABLE_CONTINUITY_CHECKS
+	PARTICLE_COUNT = added;
+#endif
+
+	pool.OldestParticle = oldestParticle;
+	pool.ActiveParticles = added > 0 ? 0 : NO_PARTICLE;
+	pool.InactiveParticles = added < particleLimit ? added : NO_PARTICLE;
+
+	for (; added < particleLimit; added++)
+	{
+		particledata_t& particle = newParticles[added];
+		particle = {};
+		particle.tprev = added - 1;
+		particle.tnext = added + 1;
+	}
+
+	newParticles.Last().tnext = NO_PARTICLE;
+	newParticles.Data()->tprev = NO_PARTICLE;
+
+	Level->DefinedParticlePool.Particles = newParticles;
+
+#if ENABLE_CONTINUITY_CHECKS
+	CheckContinuity(Level);
+#endif
+}
+
 // Group particles by subsectors. Because particles are always
 // in motion, there is little benefit to caching this information
 // from one frame to the next.
@@ -1306,7 +1364,13 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 	particlelevelpool_t* pool = &Level->DefinedParticlePool;
 
 	int particleCount = 0;
+	int particleLimit = DParticleDefinition::GetParticleLimit();
 	int cullLimit = DParticleDefinition::GetParticleCullLimit();
+
+	if (particleLimit != pool->Particles.Size())
+	{
+		P_ResizeDefinedParticlePool(Level, particleLimit);
+	}
 
 	int i = pool->ActiveParticles;
 	particledata_t* particle = nullptr;
@@ -1674,8 +1738,12 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& l
 					p.tnext = i < count - 1 ? i + 1 : NO_PARTICLE;
 
 					lp.OldestParticle = i;
-					lp.InactiveParticles = i + 1;
+					lp.InactiveParticles = p.tnext;
 				}
+
+#if ENABLE_CONTINUITY_CHECKS
+				PARTICLE_COUNT = count;
+#endif
 			}
 
 			arc.EndArray();
