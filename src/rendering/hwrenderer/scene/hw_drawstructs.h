@@ -397,7 +397,7 @@ public:
 
 	bool isparticle = false;
 	bool particlehastexture = false;
-	uint16_t particleflags = 0;
+	uint32_t particleflags = 0;
 	subsector_t* particlesubsector = nullptr;
 
 	bool nomipmap; // force the sprite to have no mipmaps (ensures tiny sprites in the distance stay crisp)

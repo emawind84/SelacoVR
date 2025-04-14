@@ -376,7 +376,9 @@ bool HWSprite::CalculateVertices(HWDrawInfo* di, FVector3* v, DVector3* vp)
 	FVector3 center = FVector3((x1 + x2) * 0.5, (y1 + y2) * 0.5, (z1 + z2) * 0.5);
 	const auto& HWAngles = di->Viewpoint.HWAngles;
 	Matrix3x4 mat;
-	if (actor != nullptr && (actor->renderflags & RF_SPRITETYPEMASK) == RF_FLATSPRITE)
+
+	if ((actor != nullptr && (actor->renderflags & RF_SPRITETYPEMASK) == RF_FLATSPRITE) ||
+		(isparticle && (particleflags & DPF_FLAT)))
 	{
 		// [MC] Rotate around the center or offsets given to the sprites.
 		// Counteract any existing rotations, then rotate the angle.
@@ -391,7 +393,7 @@ bool HWSprite::CalculateVertices(HWDrawInfo* di, FVector3* v, DVector3* vp)
 		mat.Rotate(0, 1, 0, 270. - Angles.Yaw.Degrees());
 		mat.Rotate(1, 0, 0, pitch.Degrees());
 
-		if (actor->renderflags & RF_ROLLCENTER)
+		if (actor && actor->renderflags & RF_ROLLCENTER)
 		{
 			mat.Translate(center.X - x, 0, center.Y - y);
 			mat.Rotate(0, 1, 0, - Angles.Roll.Degrees());
@@ -409,7 +411,7 @@ bool HWSprite::CalculateVertices(HWDrawInfo* di, FVector3* v, DVector3* vp)
 
 		return true;
 	}
-	
+
 	// [BB] Billboard stuff
 	const bool drawWithXYBillboard = ((isparticle && gl_billboard_particles && !(particleflags & SPF_NO_XY_BILLBOARD)) || (!(actor && actor->renderflags & RF_FORCEYBILLBOARD)
 		//&& di->mViewActor != nullptr
@@ -1839,27 +1841,55 @@ void HWSprite::ProcessDefinedParticle(HWDrawInfo* di, particledata_t* particle, 
 	FVector2 scale = particle->scale + (particle->scaleStep * timefrac);
 	r.Scale(scale.X, scale.Y);
 
-	if (particle->flags & SPF_ROLL)
+	float avf = particle->angleStep * timefrac;
+	float pvf = particle->pitchStep * timefrac;
+
+	Angles.Yaw = TAngle<double>::fromDeg(particle->angle + avf);
+	Angles.Pitch = TAngle<double>::fromDeg(particle->pitch + pvf);
+
+	if (particle->flags & SPF_ROLL | DPF_FLAT)
 	{
 		double ps = di->Level->pixelstretch;
 		double mult = 1.0 / sqrt(ps); // shrink slightly
 		r.Scale(mult * ps, mult);
+	}
 
+	if (particle->flags & SPF_ROLL)
+	{
 		float rvf = (particle->rollStep) * timefrac;
 		Angles.Roll = TAngle<double>::fromDeg(particle->roll + rvf);
 	}
 
-	float viewvecX = vp.ViewVector.X;
-	float viewvecY = vp.ViewVector.Y;
+	z1 = z - r.top;
+	z2 = z1 - r.height;
 	float rightfac = -r.left;
 	float leftfac = rightfac - r.width;
 
-	x1 = x - viewvecY * leftfac;
-	x2 = x - viewvecY * rightfac;
-	y1 = y + viewvecX * leftfac;
-	y2 = y + viewvecX * rightfac;
-	z1 = z - r.top;
-	z2 = z1 - r.height;
+	if (particle->flags & DPF_FLAT)
+	{
+		float bottomfac = -r.top;
+		float topfac = bottomfac - r.height;
+
+		x1 = x + leftfac;
+		x2 = x + rightfac;
+		y1 = y - topfac;
+		y2 = y - bottomfac;
+		// [MC] Counteract in case of any potential problems. Tests so far haven't
+		// shown any outstanding issues but that doesn't mean they won't appear later
+		// when more features are added.
+		z1 += offy;
+		z2 += offy;
+	}
+	else
+	{
+		float viewvecX = vp.ViewVector.X;
+		float viewvecY = vp.ViewVector.Y;
+
+		x1 = x - viewvecY * leftfac;
+		x2 = x - viewvecY * rightfac;
+		y1 = y + viewvecX * leftfac;
+		y2 = y + viewvecX * rightfac;
+	}
 
 	depth = (float)((x - vp.Pos.X) * vp.TanCos + (y - vp.Pos.Y) * vp.TanSin);
 

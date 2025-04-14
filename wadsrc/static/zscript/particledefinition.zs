@@ -26,6 +26,7 @@ enum EDefinedParticleFlags
 	DPF_DESTROYED				= 1 << 20,	// Particle has been destroyed, and should be removed from the particle list next update
 	DPF_ISBLOOD					= 1 << 21,	// Treat this particle as blood, same as bIsBlood on SelacoParticle
 	DPF_FORCETRANSPARENT		= 1 << 22,	// Force this particle to render as transparent if it's set to None or Normal
+	DPF_FLAT					= 1 << 23,	// Display as flat (Equivalent to +FLATSPRITE)
 };
 
 struct ParticleData
@@ -37,8 +38,9 @@ struct ParticleData
     native FVector3     Vel;
     native float        Alpha, AlphaStep;
     native FVector2     Scale, ScaleStep, StartScale;
-    native float        Roll, RollStep;
+    native float        Angle, AngleStep;
     native float        Pitch, PitchStep;
+    native float        Roll, RollStep;
     native int16        Bounces, MaxBounces;
     native float        FloorZ, CeilingZ;
     native color        Color;
@@ -277,6 +279,10 @@ class ParticleDefinition native
     bool HasFlag(EParticleDefinitionFlags flag) const { return Flags & flag; }
 	void SetFlag(EParticleDefinitionFlags flag) { Flags |= flag; }
 	void ClearFlag(EParticleDefinitionFlags flag) { Flags &= ~flag; }
+    
+    bool HasDefaultParticleFlag(int flag) const { return DefaultParticleFlags & flag; }
+	void SetDefaultParticleFlag(int flag) { DefaultParticleFlags |= flag; }
+	void ClearDefaultParticleFlag(int flag) { DefaultParticleFlags &= ~flag; }
 
     // Don't use this directly, use either ParticleDefinition.Emit or ParticleDefinitionEmitter.Emit
     // Not private because ParticleDefinitionEmitter needs access to it.

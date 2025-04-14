@@ -30,10 +30,12 @@ DEFINE_FIELD_X(ParticleData, particledata_t, alphaStep);
 DEFINE_FIELD_X(ParticleData, particledata_t, scale);
 DEFINE_FIELD_X(ParticleData, particledata_t, scaleStep);
 DEFINE_FIELD_X(ParticleData, particledata_t, startScale);
-DEFINE_FIELD_X(ParticleData, particledata_t, roll);
-DEFINE_FIELD_X(ParticleData, particledata_t, rollStep);
+DEFINE_FIELD_X(ParticleData, particledata_t, angle);
+DEFINE_FIELD_X(ParticleData, particledata_t, angleStep);
 DEFINE_FIELD_X(ParticleData, particledata_t, pitch);
 DEFINE_FIELD_X(ParticleData, particledata_t, pitchStep);
+DEFINE_FIELD_X(ParticleData, particledata_t, roll);
+DEFINE_FIELD_X(ParticleData, particledata_t, rollStep);
 DEFINE_FIELD_X(ParticleData, particledata_t, bounces);
 DEFINE_FIELD_X(ParticleData, particledata_t, maxBounces);
 DEFINE_FIELD_X(ParticleData, particledata_t, floorz);
@@ -414,6 +416,26 @@ inline double dcos(double degrees)
 	return cos(degrees * (pi::pif() / 180.0));
 }
 
+inline float dasin(float degrees)
+{
+	return asinf(degrees) * (180.0f / pi::pif());
+}
+
+inline float dacos(float degrees)
+{
+	return acosf(degrees) * (180.0f / pi::pif());
+}
+
+inline float datan(float degrees)
+{
+	return atanf(degrees) * (180.0f / pi::pif());
+}
+
+inline float datan2(float y, float x)
+{
+	return atan2f(y, x) * (180.0f / pi::pif());
+}
+
 FVector3 RotVec(FVector3 p, float angle, float pitch)
 {
 	float ca = dcos(angle);
@@ -501,10 +523,12 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	scale = definition->BaseScale;
 	scaleStep = FVector2(0, 0);
 	startScale = scale;
-	roll = 0;
-	rollStep = 0;
+	angle = 0;
+	angleStep = 0;
 	pitch = 0;
 	pitchStep = 0;
+	roll = 0;
+	rollStep = 0;
 	bounces = 0;
 	maxBounces = -1;
 	floorz = (float)s->floorplane.ZatPoint(initialPos);
@@ -829,7 +853,7 @@ void DParticleDefinition::HandleFading(particledata_t* particle)
 
 	if (particle->alpha < 0.999 && particle->renderStyle != STYLE_Translucent) 
 	{
-		switch (DefaultRenderStyle) 
+		switch (particle->renderStyle) 
 		{
 			case STYLE_Normal:
 			case STYLE_None:
@@ -994,7 +1018,7 @@ void DParticleDefinition::CleanupParticle(particledata_t* particle)
 {
 	particle->SetFlag(DPF_NOPROCESS);
 
-	if (!CallOnParticleDeath(particle))
+	if (CallOnParticleDeath(particle))
 	{
 		// Mark this as destroyed so we can destroy it the next update
 		particle->SetFlag(DPF_DESTROYED);
@@ -1376,12 +1400,12 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 			}
 		}
 
+		bool bounced = false;
+
 		if (!particle->HasFlag(DPF_NOPROCESS))
 		{
 			if (definition->Flags & PDF_BOUNCEONFLOORS)
 			{
-				bool bounced = false;
-
 				if (particle->pos.Z < particle->floorz && particle->vel.Z < 0)
 				{
 					if (particle->pos.Z - particle->vel.Z - particle->floorz >= -definition->MaxStepHeight)
@@ -1479,6 +1503,19 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 		if (definition->HasFlag(PDF_LIFESCALE)) 
 		{
 			definition->HandleScaling(particle);
+		}
+
+		if (definition->HasFlag(PDF_DIRFROMMOMENTUM))
+		{
+			FVector3 dir = particle->vel.Unit();
+			particle->angle = datan2(dir.Y, dir.X);
+			particle->pitch = -dasin(dir.Z);
+			particle->roll = 90;
+
+			if (bounced && definition->HasFlag(PDF_INSTANTBOUNCE))
+			{
+				particle->prevpos = particle->pos;
+			}
 		}
 
 		if (particleCount > cullLimit)

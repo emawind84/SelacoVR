@@ -42,6 +42,7 @@ enum EDefinedParticleFlags
 	DPF_DESTROYED				= 1 << 20,	// Particle has been destroyed, and should be removed from the particle list next update
 	DPF_ISBLOOD					= 1 << 21,	// Treat this particle as blood, same as bIsBlood on SelacoParticle
 	DPF_FORCETRANSPARENT		= 1 << 22,	// Force this particle to render as transparent if it's set to None or Normal
+	DPF_FLAT					= 1 << 23,	// Display as flat
 };
 
 enum EParticleEmitterFlags 
@@ -71,8 +72,9 @@ struct particledata_t
 	FVector3 vel;								// +12
 	float alpha, alphaStep;						// +8 
 	FVector2 scale, scaleStep, startScale;		// +12
-	float roll, rollStep;						// +8 
+	float angle, angleStep;						// +8
 	float pitch, pitchStep;						// +8
+	float roll, rollStep;						// +8 
 	int16_t bounces, maxBounces;				// +4
 	float floorz, ceilingz;						// +8
 	int color;									// +4
