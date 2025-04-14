@@ -412,42 +412,42 @@ bool ApproxZero(DVector3 v)
 
 inline float dsin(float degrees)
 {
-	return sinf(degrees * (pi::pif() / 180.0f));
+	return (float)g_sin(degrees * (pi::pif() / 180.0));
 }
 
 inline float dcos(float degrees)
 {
-	return cosf(degrees * (pi::pif() / 180.0f));
+	return (float)g_cos(degrees * (pi::pif() / 180.0));
 }
 
 inline double dsin(double degrees)
 {
-	return sin(degrees * (pi::pif() / 180.0));
+	return g_sin(degrees * (pi::pif() / 180.0));
 }
 
 inline double dcos(double degrees)
 {
-	return cos(degrees * (pi::pif() / 180.0));
+	return g_cos(degrees * (pi::pif() / 180.0));
 }
 
 inline float dasin(float degrees)
 {
-	return asinf(degrees) * (180.0f / pi::pif());
+	return (float)(g_asin(degrees) * (180.0 / pi::pif()));
 }
 
 inline float dacos(float degrees)
 {
-	return acosf(degrees) * (180.0f / pi::pif());
+	return (float)(g_acos(degrees) * (180.0 / pi::pif()));
 }
 
 inline float datan(float degrees)
 {
-	return atanf(degrees) * (180.0f / pi::pif());
+	return (float)(g_atan(degrees) * (180.0 / pi::pif()));
 }
 
 inline float datan2(float y, float x)
 {
-	return atan2f(y, x) * (180.0f / pi::pif());
+	return (float)(g_atan2(y, x) * (180.0 / pi::pif()));
 }
 
 FVector3 RotVec(FVector3 p, float angle, float pitch)
@@ -676,7 +676,7 @@ void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float
 
 			if (additionalAngleScale != 0 && additionalAngleChance > 0)
 			{
-				if (additionalAngleChance >= angleRandomizer.NewRandom(0.0f, 1.0f))
+				if (additionalAngleChance >= ParticleRandom(0.0f, 1.0f))
 				{
 					angleDelta += MaxAng * additionalAngleScale;
 					pitchDelta += MaxPitch * additionalAngleScale;
@@ -1513,10 +1513,10 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 		{
 			if (definition->Flags & PDF_BOUNCEONFLOORS)
 			{
-				float bounceFactor = ParticleRandom(definition->MinBounceFactor, definition->MaxBounceFactor);
-
 				if (particle->pos.Z < particle->floorz && particle->vel.Z < 0)
 				{
+					float bounceFactor = ParticleRandom(definition->MinBounceFactor, definition->MaxBounceFactor);
+
 					if (particle->pos.Z - particle->vel.Z - particle->floorz >= -definition->MaxStepHeight)
 					{
 						particle->pos.Z = particle->floorz;
@@ -1539,6 +1539,8 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 				}
 				else if (particle->pos.Z > particle->ceilingz && particle->vel.Z > 0)
 				{
+					float bounceFactor = ParticleRandom(definition->MinBounceFactor, definition->MaxBounceFactor);
+
 					if (particle->pos.Z - particle->vel.Z - particle->ceilingz <= -definition->MaxStepHeight)
 					{
 						particle->pos.Z = particle->ceilingz;
