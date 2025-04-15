@@ -8,6 +8,7 @@
 #include "types.h"
 #include "texturemanager.h"
 #include "d_player.h"
+#include "actorinlines.h"
 
 // NL: This is a helper to make sure that the particles are all linked correctly.
 //     If something breaks the chain, it can cause particles to stop updating and spawning
@@ -134,6 +135,61 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleSleep)
 {
 	PARAM_SELF_PROLOGUE(DParticleDefinition);
 	PARAM_POINTER(ParticleData, particledata_t);
+
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DParticleDefinition, SpawnParticle)
+{
+	PARAM_PROLOGUE;
+	PARAM_CLASS(definitionClass, DParticleDefinition)
+	PARAM_FLOAT(xoff)
+	PARAM_FLOAT(yoff)
+	PARAM_FLOAT(zoff)
+	PARAM_FLOAT(xvel)
+	PARAM_FLOAT(yvel)
+	PARAM_FLOAT(zvel)
+	PARAM_ANGLE(angle)
+	PARAM_FLOAT(scale)
+	PARAM_INT(flags)
+	PARAM_POINTER(refActor, AActor);
+
+	if (!definitionClass || !currentVMLevel)
+	{
+		return 0;
+	}
+
+	if (DParticleDefinition* definition = *currentVMLevel->ParticleDefinitionsByType.CheckKey(definitionClass->TypeName.GetIndex()))
+	{
+		double bobOffset = 0;
+
+		if (refActor)
+		{
+			if (flags & SPF_RELANG) angle += refActor->Angles.Yaw;
+			bobOffset = refActor->GetBobOffset();
+		}
+
+		double s = angle.Sin();
+		double c = angle.Cos();
+		DVector3 pos(xoff, yoff, zoff + bobOffset);
+		DVector3 vel(xvel, yvel, zvel);
+
+		//[MC] Code ripped right out of A_SpawnItemEx.
+		if (flags & SPF_RELPOS)
+		{
+			// in relative mode negative y values mean 'left' and positive ones mean 'right'
+			// This is the inverse orientation of the absolute mode!
+			pos.X = xoff * c + yoff * s;
+			pos.Y = xoff * s - yoff * c;
+		}
+		if (flags & SPF_RELVEL)
+		{
+			vel.X = xvel * c + yvel * s;
+			vel.Y = xvel * s - yvel * c;
+		}
+
+		P_SpawnDefinedParticle(currentVMLevel, definition, refActor ? refActor->Vec3Offset(pos) : pos, vel, scale, flags, refActor);
+	}
 
 	return 0;
 }

@@ -287,6 +287,8 @@ class ParticleDefinition native
 	void SetDefaultParticleFlag(int flag) { DefaultParticleFlags |= flag; }
 	void ClearDefaultParticleFlag(int flag) { DefaultParticleFlags &= ~flag; }
 
+    native static native bool SpawnParticle(class<ParticleDefinition> definition, double xoff = 0, double yoff = 0, double zoff = 0, double xvel = 0, double yvel = 0, double zvel = 0, double angle = 0, double scale = 1, int flags = 0, actor refActor = null);
+
     // Don't use this directly, use either ParticleDefinition.Emit or ParticleDefinitionEmitter.Emit
     // Not private because ParticleDefinitionEmitter needs access to it.
     native static void EmitNative(class<ParticleDefinition> definition, Actor master, double chance, int numTries, double angle, double pitch, double speed, double offsetX, double offsetY, double offsetZ, double velocityX, double velocityY, double velocityZ, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier, float additionalAngleScale, float additionalAngleChance);
