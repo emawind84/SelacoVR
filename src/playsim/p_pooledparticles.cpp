@@ -56,6 +56,28 @@ DEFINE_FIELD_X(ParticleData, particledata_t, user1);
 DEFINE_FIELD_X(ParticleData, particledata_t, user2);
 DEFINE_FIELD_X(ParticleData, particledata_t, user3);
 
+DEFINE_ACTION_FUNCTION(_ParticleData, SpawnActor)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(particledata_t);
+	PARAM_CLASS_NOT_NULL(actorClass, AActor);
+	PARAM_FLOAT(offsetX);
+	PARAM_FLOAT(offsetY);
+	PARAM_FLOAT(offsetZ);
+	AActor* actor = self->SpawnActor(actorClass, DVector3(offsetX, offsetY, offsetZ));
+	ACTION_RETURN_OBJECT(actor);
+}
+
+DEFINE_ACTION_FUNCTION(_ParticleData, PlaySound)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(particledata_t);
+	PARAM_INT(soundid);
+	PARAM_FLOAT(volume);
+	PARAM_FLOAT(attenuation);
+	PARAM_FLOAT(pitch);
+	FSoundHandle handle = self->PlaySound(soundid, (float)volume, (float)attenuation, (float)pitch);
+	ACTION_RETURN_INT(handle);
+};
+
 DEFINE_FIELD_X(ParticleAnimFrame, particleanimframe_t, frame);
 DEFINE_FIELD_X(ParticleAnimFrame, particleanimframe_t, duration);
 
@@ -653,6 +675,16 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	{
 		texture = definition->DefaultTexture;
 	}
+}
+
+AActor* particledata_t::SpawnActor(PClassActor* actorClass, const DVector3& offset)
+{
+	return Spawn(definition->Level, actorClass, pos + offset, ALLOW_REPLACE);
+}
+
+FSoundHandle particledata_t::PlaySound(int soundid, float volume, float attenuation, float pitch)
+{
+	return S_SoundPitch(definition->Level, pos, CHAN_AUTO, 0, FSoundID::fromInt(soundid), volume, attenuation, pitch);
 }
 
 DParticleDefinition::DParticleDefinition()

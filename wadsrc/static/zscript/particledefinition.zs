@@ -122,6 +122,9 @@ struct ParticleData
     bool HasFlag(int flag) const { return Flags & flag; }
 	void SetFlag(int flag) { Flags |= flag; }
 	void ClearFlag(int flag) { Flags &= ~flag; }
+
+    native Actor SpawnActor(class<Actor> actor, double offsetX = 0.0, double offsetY = 0.0, double offsetZ = 0.0);
+    native void PlaySound(Sound sound_id, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0);
 }
 
 class ParticleDefinition native

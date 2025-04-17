@@ -91,6 +91,9 @@ struct particledata_t
 
 	void Init(FLevelLocals* Level, DVector3 initialPos);
 
+	AActor* SpawnActor(PClassActor* actorClass, const DVector3& offset);
+	FSoundHandle PlaySound(int soundid, float volume, float attenuation, float pitch);
+
 	bool HasFlag(int flag) const { return flags & flag; }
 	void SetFlag(int flag) { flags |= flag; }
 	void ClearFlag(int flag) { flags &= ~flag; }
