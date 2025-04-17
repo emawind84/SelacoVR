@@ -139,7 +139,7 @@ struct ParticleData
     native void PlaySound(Sound sound_id, float volume = 1, float attenuation = ATTN_NORM, float pitch = 0.0);
 }
 
-class ParticleDefinition native
+class ParticleDefinition native play
 {
     native TextureID       DefaultTexture;
     native ERenderStyle    DefaultRenderStyle;
