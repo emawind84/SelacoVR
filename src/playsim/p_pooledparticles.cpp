@@ -161,6 +161,15 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleSleep)
 	return 0;
 }
 
+DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleCollideWithPlayer)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_POINTER(ParticleData, particledata_t);
+	PARAM_OBJECT(Player, AActor);
+
+	return 0;
+}
+
 DEFINE_ACTION_FUNCTION(DParticleDefinition, SpawnParticle)
 {
 	PARAM_PROLOGUE;
@@ -1001,6 +1010,15 @@ void DParticleDefinition::CallOnParticleSleep(particledata_t* particle)
 	}
 }
 
+void DParticleDefinition::CallOnParticleCollideWithPlayer(particledata_t* particle, AActor* player)
+{
+	IFVIRTUAL(DParticleDefinition, OnParticleCollideWithPlayer)
+	{
+		VMValue params[] = { this, particle, player };
+		VMCall(func, params, 3, nullptr, 0);
+	}
+}
+
 void DParticleDefinition::HandleFading(particledata_t* particle)
 {
 	float velocityFade = HasFlag(PDF_VELOCITYFADE) ? ((float)particle->vel.Length() - MinFadeVel) / (MaxFadeVel - MinFadeVel) : 1.0f;
@@ -1634,6 +1652,31 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 
 		if (!particle->HasFlag(DPF_NOPROCESS))
 		{
+			if (particle->flags & DPF_COLLIDEWITHPLAYER)
+			{
+				player_t* player = Level->Players[0];
+				if (player && player->mo)
+				{
+					DVector3 pos = player->mo->Pos();
+					double radius = player->mo->radius;
+					double height = player->mo->Height;
+
+					double minx = pos.X - radius;
+					double maxx = pos.X + radius;
+					double miny = pos.Y - radius;
+					double maxy = pos.Y + radius;
+					double minz = pos.Z;
+					double maxz = pos.Z + height;
+
+					if (particle->pos.X >= minx && particle->pos.X <= maxx &&
+						particle->pos.Y >= miny && particle->pos.Y <= maxy &&
+						particle->pos.Z >= minz && particle->pos.Z <= maxz)
+					{
+						definition->CallOnParticleCollideWithPlayer(particle, player->mo);
+					}
+				}
+			}
+
 			if (definition->Flags & PDF_BOUNCEONFLOORS)
 			{
 				if (particle->pos.Z < particle->floorz && particle->vel.Z < 0)

@@ -43,6 +43,7 @@ enum EDefinedParticleFlags
 	DPF_ISBLOOD					= 1 << 21,	// Treat this particle as blood, same as bIsBlood on SelacoParticle
 	DPF_FORCETRANSPARENT		= 1 << 22,	// Force this particle to render as transparent if it's set to None or Normal
 	DPF_FLAT					= 1 << 23,	// Display as flat
+	DPF_COLLIDEWITHPLAYER		= 1 << 24,	// Allow the particle to collide with the player
 };
 
 enum EParticleEmitterFlags 
@@ -186,6 +187,7 @@ public:
 	void CallThinkParticle(particledata_t* particle);
 	void CallOnParticleBounce(particledata_t* particle);
 	void CallOnParticleSleep(particledata_t* particle);
+	void CallOnParticleCollideWithPlayer(particledata_t* particle, AActor* player);
 
 	void HandleFading(particledata_t* particle);
 	void HandleScaling(particledata_t* particle);

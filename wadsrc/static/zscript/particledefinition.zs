@@ -27,6 +27,7 @@ enum EDefinedParticleFlags
 	DPF_ISBLOOD					= 1 << 21,	// Treat this particle as blood, same as bIsBlood on SelacoParticle
 	DPF_FORCETRANSPARENT		= 1 << 22,	// Force this particle to render as transparent if it's set to None or Normal
 	DPF_FLAT					= 1 << 23,	// Display as flat (Equivalent to +FLATSPRITE)
+    DPF_COLLIDEWITHPLAYER       = 1 << 24,  // Allow the particle to collide with the player
 };
 
 struct ParticleData
@@ -227,6 +228,7 @@ class ParticleDefinition native
     native virtual void OnParticleBounce(in out ParticleData particle);
     native virtual bool OnParticleDeath(in out ParticleData particle);
     native virtual void OnParticleSleep(in out ParticleData particle);
+    native virtual void OnParticleCollideWithPlayer(in out ParticleData particle, Actor player);
 
     native int AddAnimationSequence();
     native void AddAnimationFrame(int sequence, string textureName, int ticks = 1);
