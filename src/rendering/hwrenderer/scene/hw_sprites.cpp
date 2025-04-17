@@ -1843,20 +1843,12 @@ void HWSprite::ProcessDefinedParticle(HWDrawInfo* di, particledata_t* particle, 
 		}
 	}
 
-	// We use the delta between the previous position and the new position instead of the velocity,
-	// because it helps smooth out script-driven position changes when in slow motion.
-	// This *does* mean that particles will be visually behind where they actually are, but should
-	// be subtle enough to get away with.
-	float xvf = (particle->pos.X - particle->prevpos.X) * timefrac;
-	float yvf = (particle->pos.Y - particle->prevpos.Y) * timefrac;
-	float zvf = (particle->pos.Z - particle->prevpos.Z) * timefrac;
+	x = particle->pos.X + particle->vel.X * timefrac;
+	y = particle->pos.Y + particle->vel.Y * timefrac;
+	z = particle->pos.Z + particle->vel.Z * timefrac;
 
 	offx = 0.f;
 	offy = 0.f;
-
-	x = float(particle->prevpos.X) + xvf;
-	y = float(particle->prevpos.Y) + yvf;
-	z = float(particle->prevpos.Z) + zvf;
 
 	FloatRect r;
 	r.left = r.top = -16;
