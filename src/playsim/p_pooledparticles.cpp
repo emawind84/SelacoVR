@@ -1153,6 +1153,7 @@ void DParticleDefinition::RestParticle(particledata_t* particle)
 	{
 		particle->rollStep = 0;
 		particle->pitchStep = 0;
+		particle->angleStep = 0;
 	}
 
 	if (RestingRollSpeed >= 0) 
@@ -1608,6 +1609,8 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 
 		particle->alpha += particle->alphaStep;
 		particle->scale += particle->scaleStep;
+		particle->angle += particle->angleStep;
+		particle->pitch += particle->pitchStep;
 		particle->roll += particle->rollStep;
 
 		// Handle crossing a line portal
@@ -1990,10 +1993,12 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particledata_t& p, par
 			("scale", p.scale)
 			("scalestep", p.scaleStep)
 			("startScale", p.startScale)
-			("roll", p.roll)
-			("rollstep", p.rollStep)
+			("pitch", p.angle)
+			("pitchstep", p.angleStep)
 			("pitch", p.pitch)
 			("pitchstep", p.pitchStep)
+			("roll", p.roll)
+			("rollstep", p.rollStep)
 			("bounces", p.bounces)
 			("maxbounces", p.maxBounces)
 			("floorz", p.floorz)
