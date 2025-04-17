@@ -69,7 +69,7 @@ struct particledata_t
 	int16_t startLife;							// +2 
 	DVector3 prevpos;							// +24
 	DVector3 pos;								// +24
-	FVector3 vel;								// +12
+	DVector3 vel;								// +24
 	float alpha, alphaStep;						// +8 
 	FVector2 scale, scaleStep, startScale;		// +12
 	float angle, angleStep;						// +8
@@ -175,7 +175,7 @@ public:
 	TArray<particleanimsequence_t> AnimationSequences;
 	TArray<particleanimframe_t> AnimationFrames;
 
-	void Emit(AActor* master, float chance, int numTries, float angle, float pitch, float speed, DVector3 offset, FVector3 velocity, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier, float additionalAngleScale, float additionalAngleChance);
+	void Emit(AActor* master, double chance, int numTries, double angle, double pitch, double speed, DVector3 offset, DVector3 velocity, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier, float additionalAngleScale, float additionalAngleChance);
 
 	void CallInit();
 	void CallOnCreateParticle(particledata_t* particle);
@@ -227,7 +227,7 @@ void P_ResizeDefinedParticlePool(FLevelLocals* Level, int particleLimit);
 void P_FindDefinedParticleSubsectors(FLevelLocals* Level);
 bool P_DestroyDefinedParticle(FLevelLocals* Level, int particleIndex);
 void P_ThinkDefinedParticles(FLevelLocals* Level);
-void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition, const DVector3& pos, const DVector3& vel, double scale, int flags, AActor* refActor);
+particledata_t* P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition, const DVector3& pos, const DVector3& vel, double scale, int flags, AActor* refActor);
 
 void P_LoadDefinedParticles(FSerializer& arc, FLevelLocals* Level, const char* key);
 FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& lp, particlelevelpool_t* def);

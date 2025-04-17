@@ -35,7 +35,7 @@ struct ParticleData
     native int16        Life;       // Tics to live, -1 = forever
     native int16        StartLife;  // The life this particle started with
     native vector3      Pos;
-    native FVector3     Vel;
+    native vector3      Vel;
     native float        Alpha, AlphaStep;
     native FVector2     Scale, ScaleStep, StartScale;
     native float        Angle, AngleStep;

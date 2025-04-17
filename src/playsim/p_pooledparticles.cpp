@@ -196,7 +196,7 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, SpawnParticle)
 
 static void DParticleDefinition_Emit(DParticleDefinition* definition, AActor* master, double chance, int numTries, double angle, double pitch, double speed, double offsetX, double offsetY, double offsetZ, double velocityX, double velocityY, double velocityZ, int flags, double scaleBoost, int particleSpawnOffsets, double particleLifetimeModifier, double additionalAngleScale, double additionalAngleChance)
 {
-	definition->Emit(master, (float)chance, numTries, (float)angle, (float)pitch, (float)speed, DVector3((float)offsetX, (float)offsetY, (float)offsetZ), FVector3((float)velocityX, (float)velocityY, (float)velocityZ), flags, (float)scaleBoost, particleSpawnOffsets, (float)particleLifetimeModifier, (float)additionalAngleScale, (float)additionalAngleChance);
+	definition->Emit(master, (float)chance, numTries, angle, pitch, speed, DVector3((float)offsetX, (float)offsetY, (float)offsetZ), DVector3(velocityX, velocityY, velocityZ), flags, (float)scaleBoost, particleSpawnOffsets, (float)particleLifetimeModifier, (float)additionalAngleScale, (float)additionalAngleChance);
 }
 
 DEFINE_ACTION_FUNCTION(DParticleDefinition, EmitNative)
@@ -476,16 +476,6 @@ inline float dcos(float degrees)
 	return (float)g_cos(degrees * (pi::pif() / 180.0));
 }
 
-inline double dsin(double degrees)
-{
-	return g_sin(degrees * (pi::pif() / 180.0));
-}
-
-inline double dcos(double degrees)
-{
-	return g_cos(degrees * (pi::pif() / 180.0));
-}
-
 inline float dasin(float degrees)
 {
 	return (float)(g_asin(degrees) * (180.0 / pi::pif()));
@@ -504,6 +494,36 @@ inline float datan(float degrees)
 inline float datan2(float y, float x)
 {
 	return (float)(g_atan2(y, x) * (180.0 / pi::pif()));
+}
+
+inline double dsin(double degrees)
+{
+	return g_sin(degrees * (pi::pif() / 180.0));
+}
+
+inline double dcos(double degrees)
+{
+	return g_cos(degrees * (pi::pif() / 180.0));
+}
+
+inline double dasin(double degrees)
+{
+	return g_asin(degrees) * (180.0 / pi::pif());
+}
+
+inline double dacos(double degrees)
+{
+	return g_acos(degrees) * (180.0 / pi::pif());
+}
+
+inline double datan(double degrees)
+{
+	return g_atan(degrees) * (180.0 / pi::pif());
+}
+
+inline double datan2(double y, double x)
+{
+	return g_atan2(y, x) * (180.0 / pi::pif());
 }
 
 FVector3 RotVec(FVector3 p, float angle, float pitch)
@@ -546,11 +566,23 @@ DVector3 RotVec(DVector3 p, double angle, double pitch)
 	return r;
 }
 
-FVector3 VecFromAngle(float yaw, float pitch, float length = 1.0)
+FVector3 VecFromAngle(float yaw, float pitch, float length = 1.0f)
 {
 	FVector3 r;
 
 	float hcosb = dcos(pitch);
+	r.X = dcos(yaw) * hcosb;
+	r.Y = dsin(yaw) * hcosb;
+	r.Z = -dsin(pitch);
+
+	return r * length;
+}
+
+DVector3 VecFromAngle(double yaw, double pitch, double length = 1.0f)
+{
+	DVector3 r;
+
+	double hcosb = dcos(pitch);
 	r.X = dcos(yaw) * hcosb;
 	r.Y = dsin(yaw) * hcosb;
 	r.Z = -dsin(pitch);
@@ -587,7 +619,7 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	renderStyle = definition->DefaultRenderStyle;
 	startLife = life = 35;
 	pos = prevpos = initialPos;
-	vel = FVector3();
+	vel = DVector3();
 	alpha = 1;
 	alphaStep = 0;
 	scale = definition->BaseScale;
@@ -640,51 +672,51 @@ DParticleDefinition::~DParticleDefinition()
 
 }
 
-void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float angle, float pitch, float speed, DVector3 offset, FVector3 velocity, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier, float additionalAngleScale, float additionalAngleChance)
+void DParticleDefinition::Emit(AActor* master, double chance, int numTries, double angle, double pitch, double speed, DVector3 offset, DVector3 velocity, int flags, float scaleBoost, int particleSpawnOffsets, float particleLifetimeModifier, float additionalAngleScale, float additionalAngleChance)
 {
 	// Multiply the emit chance based on particle settings
 	if (!(flags & PE_IGNORE_CHANCE))
 	{
 		int spawnSetting = (((flags & PE_ISBLOOD) || (Flags & PDF_ISBLOOD)) ? cvarBloodQuality : cvarParticleIntensity)->ToInt();
 
-		float distance = 0;
+		double distance = 0;
 
 		AActor* mo = players[consoleplayer].mo;
 		if (master && mo)
 		{
-			distance = mo ? (float)(mo->Pos() - master->Pos()).Length() : 0;
+			distance = mo ? (mo->Pos() - master->Pos()).Length() : 0;
 		}
 
 		switch (spawnSetting)
 		{
 			case 1:
 				chance *= QualityChanceLow;
-				chance *= 1.0f - ((std::clamp(distance, 400.0f, 1200.0f) - 600.0f) / 800.0f);
+				chance *= 1.0 - ((std::clamp(distance, 400.0, 1200.0) - 600.0) / 800.0);
 				break;
 			case 2:
 				chance *= QualityChanceMed;
-				chance *= 1.0f - ((std::clamp(distance, 512.0f, 1500.0f) - 600.0f) / 988.0f);
+				chance *= 1.0 - ((std::clamp(distance, 512.0, 1500.0) - 600.0) / 988.0);
 				break;
 			case 4:
 				chance *= QualityChanceUlt;
-				chance *= 1.0f - ((std::clamp(distance, 600.0f, 1800.0f) - 600.0f) / 1200.0f);
+				chance *= 1.0 - ((std::clamp(distance, 600.0, 1800.0) - 600.0) / 1200.0);
 				break;
 			case 5:
 				chance *= QualityChanceInsane;
 				if (!(flags & PE_NO_INSANE_PARTICLES)) numTries = (int)ceilf(numTries * 1.2f);    // Spawn additional particles on INSANE
-				chance *= 1.0f - ((std::clamp(distance, 700.0f, 1800.0f) - 600.0f) / 1100.0f);
+				chance *= 1.0 - ((std::clamp(distance, 700.0, 1800.0) - 600.0) / 1100.0);
 				break;
 			default:
 				chance *= QualityChanceHigh;
-				chance *= 1.0f - ((std::clamp(distance, 600.0f, 1800.0f) - 600.0f) / 1200.0f);
+				chance *= 1.0 - ((std::clamp(distance, 600.0, 1800.0) - 600.0) / 1200.0);
 				break;
 		}
 	}
 
 	if (master)
 	{
-		if ((flags & PE_ABSOLUTE_ANGLE) == 0) angle += (float)master->Angles.Yaw.Degrees();
-		if ((flags & PE_ABSOLUTE_PITCH) == 0) pitch += (float)master->Angles.Pitch.Degrees();
+		if ((flags & PE_ABSOLUTE_ANGLE) == 0) angle += master->Angles.Yaw.Degrees();
+		if ((flags & PE_ABSOLUTE_PITCH) == 0) pitch += master->Angles.Pitch.Degrees();
 	}
 
 	int numCreated = 0;
@@ -694,7 +726,7 @@ void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float
 		SpreadRandomizer3 angleRandomizer;
 		SpreadRandomizer3 speedRandomizer;
 
-		if (flags & PE_IGNORE_CHANCE || randomEmit() / 256.0f <= chance)
+		if (flags & PE_IGNORE_CHANCE || randomEmit() / 256.0 <= chance)
 		{
 			DVector3 pos;
 
@@ -727,12 +759,12 @@ void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float
 			p->master = master;
 			p->Init(Level, pos);
 
-			float angleDelta = MaxAng - MinAng;
-			float pitchDelta = MaxPitch - MinPitch;
+			double angleDelta = MaxAng - MinAng;
+			double pitchDelta = MaxPitch - MinPitch;
 
 			if (additionalAngleScale != 0 && additionalAngleChance > 0)
 			{
-				if (additionalAngleChance >= ParticleRandom(0.0f, 1.0f))
+				if (additionalAngleChance >= ParticleRandom(0.0, 1.0))
 				{
 					angleDelta += MaxAng * additionalAngleScale;
 					pitchDelta += MaxPitch * additionalAngleScale;
@@ -740,8 +772,8 @@ void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float
 			}
 
 			// Configure orientation, used both for angling flatsprites and for fire-direction
-			float pAngle = angle + (angleRandomizer.NewRandom(0.0f, 1.0f) * angleDelta) + MinAng;
-			float pPitch = pitch + (angleRandomizer.NewRandom(0.0f, 1.0f) * pitchDelta) + MinPitch;
+			double pAngle = angle + (angleRandomizer.NewRandom(0.0, 1.0) * angleDelta) + MinAng;
+			double pPitch = pitch + (angleRandomizer.NewRandom(0.0, 1.0) * pitchDelta) + MinPitch;
 			p->roll = (ParticleRandom(0.0f, 1.0f) * (MaxRoll - MinRoll)) + MinRoll;
 			p->rollStep = (ParticleRandom(0.0f, 1.0f) * (MaxRollSpeed - MinRollSpeed)) + MinRollSpeed;
 			
@@ -767,7 +799,7 @@ void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float
 			p->startScale = p->scale;
 
 			// Set speed
-			float pSpeed = Speed;
+			double pSpeed = Speed;
 			if (!(flags & PE_FORCE_VELOCITY)) 
 			{
 				if (flags & PE_ABSOLUTE_SPEED) 
@@ -791,10 +823,10 @@ void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float
 				p->vel = VecFromAngle(pAngle, pPitch, pSpeed);
 				if (master) 
 				{
-					p->vel += (FVector3)master->Vel * InheritVelocity;
+					p->vel += master->Vel * InheritVelocity;
 				}
 				
-				p->vel += flags & PE_ABSOLUTE_VELOCITY ? velocity : (ApproxZero(velocity) ? FVector3(0, 0, 0) : RotVec(velocity, pAngle, pPitch));
+				p->vel += flags & PE_ABSOLUTE_VELOCITY ? velocity : (ApproxZero(velocity) ? DVector3() : RotVec(velocity, pAngle, pPitch));
 			}
 			else 
 			{
@@ -804,7 +836,7 @@ void DParticleDefinition::Emit(AActor* master, float chance, int numTries, float
 				}
 				else 
 				{
-					p->vel = ApproxZero(velocity) ? FVector3(0, 0, 0) : RotVec(velocity, pAngle, pPitch);
+					p->vel = ApproxZero(velocity) ? DVector3() : RotVec(velocity, pAngle, pPitch);
 				}
 			}
 
@@ -1592,7 +1624,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 					particle->vel.X *= bounceFactor;
 					particle->vel.Y *= bounceFactor;
 
-					FVector2 deflected = particle->vel.XY().Rotated(ParticleRandom(definition->MinBounceDeflect, definition->MaxBounceDeflect));
+					DVector2 deflected = particle->vel.XY().Rotated(ParticleRandom(definition->MinBounceDeflect, definition->MaxBounceDeflect));
 					particle->vel.X = deflected.X;
 					particle->vel.Y = deflected.Y;
 				}
@@ -1616,7 +1648,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 					particle->vel.X *= bounceFactor;
 					particle->vel.Y *= bounceFactor;
 
-					FVector2 deflected = particle->vel.XY().Rotated(ParticleRandom(definition->MinBounceDeflect, definition->MaxBounceDeflect));
+					DVector2 deflected = particle->vel.XY().Rotated(ParticleRandom(definition->MinBounceDeflect, definition->MaxBounceDeflect));
 					particle->vel.X = deflected.X;
 					particle->vel.Y = deflected.Y;
 				}
@@ -1677,9 +1709,9 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 
 		if (definition->HasFlag(PDF_DIRFROMMOMENTUM))
 		{
-			FVector3 dir = particle->vel.Unit();
-			particle->angle = datan2(dir.Y, dir.X);
-			particle->pitch = -dasin(dir.Z);
+			DVector3 dir = particle->vel.Unit();
+			particle->angle = (float)datan2(dir.Y, dir.X);
+			particle->pitch = -(float)dasin(dir.Z);
 			particle->roll = 90;
 
 			if (bounced && definition->HasFlag(PDF_INSTANTBOUNCE))
@@ -1699,7 +1731,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 	}
 }
 
-void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition, const DVector3& pos, const DVector3& vel, double scale, int flags, AActor* refActor)
+particledata_t* P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition, const DVector3& pos, const DVector3& vel, double scale, int flags, AActor* refActor)
 {
 	particledata_t* particle = NewDefinedParticle(Level, definition, (bool)(flags & SPF_REPLACE));
 
@@ -1709,7 +1741,7 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 		particle->flags = flags;
 
 		particle->Init(Level, pos);
-		particle->vel = (FVector3)vel;
+		particle->vel = vel;
 		particle->scale.X *= (float)scale;
 		particle->scale.Y *= (float)scale;
 		particle->startScale = particle->scale;
@@ -1743,6 +1775,8 @@ void P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition
 
 		definition->CallOnCreateParticle(particle);
 	}
+
+	return particle;
 }
 
 static FLevelLocals* ParticleDefinitionLoadingLevel = nullptr;
