@@ -56,6 +56,14 @@ DEFINE_FIELD_X(ParticleData, particledata_t, user1);
 DEFINE_FIELD_X(ParticleData, particledata_t, user2);
 DEFINE_FIELD_X(ParticleData, particledata_t, user3);
 
+DEFINE_ACTION_FUNCTION(_ParticleData, Sleep)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(particledata_t);
+	PARAM_INT(ticks);
+	self->definition->SleepParticle(self, ticks);
+	return 0;
+}
+
 DEFINE_ACTION_FUNCTION(_ParticleData, SpawnActor)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(particledata_t);

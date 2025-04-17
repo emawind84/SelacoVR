@@ -54,6 +54,17 @@ struct ParticleData
     native int          User2;
     native int          User3;
 
+    void Destroy()
+    {
+        Flags |= DPF_DESTROYED;
+    }
+
+    native void Sleep(int ticks);
+    void Wake()
+    {
+        SleepFor = 0;
+    }
+
     // Helper to initialize the lifetime of a particle
     void InitLife(int v)
     {
