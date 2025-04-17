@@ -338,7 +338,7 @@ public:
 
 	void stop() {
 		// Kill and finish the thread
-		if (mThread.joinable()) {
+		if (mThread.get_id() != std::thread::id() && mThread.joinable()) {
 			mActive.store(false);
 			mWake.notify_all();
 			mThread.join();

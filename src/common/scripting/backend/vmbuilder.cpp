@@ -880,9 +880,17 @@ void FFunctionBuildList::Build()
 			if (!item.Code->CheckReturn())
 			{
 				auto newcmpd = new FxCompoundStatement(item.Code->ScriptPosition);
+				auto oldCode = item.Code;
 				newcmpd->Add(item.Code);
 				newcmpd->Add(new FxReturnStatement(nullptr, item.Code->ScriptPosition));
 				item.Code = newcmpd->Resolve(ctx);
+
+				if (item.Code == nullptr)
+				{
+					oldCode->ScriptPosition.Message(MSG_ERROR, "Couldn't resolve return statement for %s ", item.PrintableName.GetChars());
+					continue;
+				}
+
 			}
 
 			item.Proto = ctx.ReturnProto;
@@ -891,7 +899,7 @@ void FFunctionBuildList::Build()
 				item.Code->ScriptPosition.Message(MSG_ERROR, "Function %s without prototype", item.PrintableName.GetChars());
 				continue;
 			}
-
+			
 			// Generate prototype for anonymous functions.
 			VMScriptFunction *sfunc = item.Function;
 			// create a new prototype from the now known return type and the argument list of the function's template prototype.
