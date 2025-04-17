@@ -1850,7 +1850,7 @@ FSerializer& Serialize(FSerializer& arc, const char* key, particlelevelpool_t& l
 					p.tnext = i < count - 1 ? i + 1 : NO_PARTICLE;
 
 					lp.OldestParticle = i;
-					lp.InactiveParticles = p.tnext;
+					lp.InactiveParticles = i < lp.Particles.Size() - 1 ? i + 1 : NO_PARTICLE;
 				}
 
 #if ENABLE_CONTINUITY_CHECKS
