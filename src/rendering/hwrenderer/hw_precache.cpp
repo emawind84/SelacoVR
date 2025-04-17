@@ -113,6 +113,31 @@ static void PrecacheSprite(FGameTexture *tex, SpriteHits &hits)
 }
 
 
+// @Cockatrice - Used to unload sprites after texture quality has changed
+void hw_unloadSprites() {
+	screen->FlushBackground();
+
+	TArray<FTexture*> layers;
+
+	for (int i = 1; i < TexMan.NumTextures(); i++)
+	{
+		auto gametex = TexMan.GameByIndex(i);
+		if (gametex && gametex->isValid() &&
+			gametex->GetTexture()->GetImage() &&
+			(gametex->GetUseType() == ETextureType::Sprite || gametex->GetUseType() != ETextureType::SkinSprite || gametex->GetUseType() == ETextureType::Any || gametex->GetUseType() == ETextureType::Decal))
+		{
+			gametex->GetLayers(layers);
+			for (auto layer : layers)
+			{
+				if (layer->GetImage() && layer->GetImage()->IsGPUOnly()) {
+					layer->CleanHardwareTextures();
+				}
+			}
+		}
+	}
+}
+
+
 //==========================================================================
 //
 // DFrameBuffer :: Precache

@@ -256,31 +256,39 @@ VkTexLoadThread::~VkTexLoadThread() {
 static void TempUploadTexture(VkCommandBufferManager *cmd, VkHardwareTexture *tex, VkFormat fmt, int buffWidth, int buffHeight, unsigned char *pixelData, size_t pixelDataSize, size_t totalSize, bool mipmap = true, bool gpuOnly = false, bool indexed = false) {
 	if (gpuOnly) {
 		uint32_t numMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(buffWidth, buffHeight)))) + 1;
-		if (!mipmap) {
-			// Skip mips
-			tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, 4, fmt, pixelData, false, false, (int)pixelDataSize);
-		}
-		else {
-			// Base texture
-			tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, true, false, (int)pixelDataSize);
+		uint32_t mipWidth = buffWidth, mipHeight = buffHeight;
+		size_t mipSize = pixelDataSize, dataPos = 0;
+		const int startMip = min((int)gl_texture_quality, (int)numMipLevels - 1);
+		int mipCnt = 0, maxMips = mipmap ? numMipLevels - startMip : 1;
+		
 
-			// Mips
-			uint32_t mipWidth = buffWidth, mipHeight = buffHeight;
-			uint32_t mipSize = (uint32_t)pixelDataSize, dataPos = (uint32_t)pixelDataSize;
+		assert(indexed == false);
 
-			for (uint32_t x = 1; x < numMipLevels; x++) {
-				mipWidth = std::max(1u, (mipWidth >> 1));
-				mipHeight = std::max(1u, (mipHeight >> 1));
-				mipSize = std::max(1u, ((mipWidth + 3) / 4)) * std::max(1u, ((mipHeight + 3) / 4)) * 16;
-				if (mipSize == 0 || totalSize - dataPos < mipSize)
-					break;
-				tex->BackgroundCreateTextureMipMap(cmd, x, mipWidth, mipHeight, 4, fmt, pixelData + dataPos, mipSize);
-				dataPos += mipSize;
+		for (uint32_t x = 0; x < numMipLevels && mipCnt < maxMips; x++) {
+			if (mipSize == 0 || totalSize - dataPos < mipSize)
+				break;
+
+			if (x >= startMip) {
+				mipCnt++;
+				if (x == startMip) {
+					// Base texture
+					tex->BackgroundCreateTexture(cmd, mipWidth, mipHeight, 4, fmt, pixelData + dataPos, numMipLevels - startMip, false, mipSize);
+				}
+				else {
+					// Mip
+					tex->BackgroundCreateTextureMipMap(cmd, x - startMip, mipWidth, mipHeight, 4, fmt, pixelData + dataPos, mipSize);
+				}
 			}
+				
+			dataPos += mipSize;
+
+			mipWidth = std::max(1u, (mipWidth >> 1));
+			mipHeight = std::max(1u, (mipHeight >> 1));
+			mipSize = std::max(1u, ((mipWidth + 3) / 4)) * std::max(1u, ((mipHeight + 3) / 4)) * 16;
 		}
 	}
 	else {
-		tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, mipmap, mipmap, (int)pixelDataSize);
+		tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, mipmap ? -1 : 0, mipmap, (int)pixelDataSize);
 	}
 }
 
@@ -401,7 +409,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 
 		// Upload non-gpu only textures
 		if (!gpu) {
-			output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, mipmap, mipmap, (int)pixelDataSize);
+			output.tex->BackgroundCreateTexture(cmd, buffWidth, buffHeight, indexed ? 1 : 4, fmt, pixelData, mipmap ? -1 : 0, mipmap, (int)pixelDataSize);
 		}
 
 		// Wait for operations to finish, since we can't maintain a regular loop of clearing the buffer

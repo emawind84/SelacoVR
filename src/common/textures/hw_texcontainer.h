@@ -104,8 +104,10 @@ private:
 public:
 	void Clean()
 	{
-		hwDefTex[0].Delete();
+		/*hwDefTex[0].Delete();
 		hwDefTex[1].Delete();
+		*/
+		for (auto& tt : hwDefTex) tt.Delete();
 		hwTex_Translated.Clear();
 	}
 
