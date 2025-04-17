@@ -701,7 +701,7 @@ AActor* particledata_t::SpawnActor(PClassActor* actorClass, const DVector3& offs
 
 FSoundHandle particledata_t::PlaySound(int soundid, float volume, float attenuation, float pitch)
 {
-	return S_SoundPitch(definition->Level, pos, CHAN_AUTO, 0, FSoundID::fromInt(soundid), volume, attenuation, pitch);
+	return S_SoundPitch(definition->Level, pos, CHAN_AUTO, CHANF_OVERLAP, FSoundID::fromInt(soundid), volume, attenuation, pitch);
 }
 
 DParticleDefinition::DParticleDefinition()
