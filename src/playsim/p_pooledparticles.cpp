@@ -798,6 +798,14 @@ void DParticleDefinition::Emit(AActor* master, double chance, int numTries, doub
 				}
 			}
 
+			// Move around if particle offset is set
+			if (particleSpawnOffsets > 0)
+			{
+				pos.X += ParticleRandom(-(double)particleSpawnOffsets, (double)particleSpawnOffsets);
+				pos.Y += ParticleRandom(-(double)particleSpawnOffsets, (double)particleSpawnOffsets);
+				pos.Z += ParticleRandom(0.0, (double)particleSpawnOffsets);
+			}
+
 			particledata_t* p = NewDefinedParticle(Level, this, true);
 
 			if (!p)
@@ -887,14 +895,6 @@ void DParticleDefinition::Emit(AActor* master, double chance, int numTries, doub
 				{
 					p->vel = ApproxZero(velocity) ? DVector3() : RotVec(velocity, pAngle, pPitch);
 				}
-			}
-
-			// Move around if particle offset is set
-			if (particleSpawnOffsets > 0 && master) 
-			{
-				offset.X += ParticleRandom(-(double)particleSpawnOffsets, (double)particleSpawnOffsets);
-				offset.Y += ParticleRandom(-(double)particleSpawnOffsets, (double)particleSpawnOffsets);
-				offset.Z += ParticleRandom(0.0, (double)particleSpawnOffsets);
 			}
 
 			// Set life
