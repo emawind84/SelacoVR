@@ -836,7 +836,8 @@ void HWDrawInfo::DoSubsector(subsector_t * sub)
 			SetupSprite.Unclock();
 		}
 	}
-	else if (gl_render_things && Level->DefinedParticlesInSubsec[sub->Index()] != NO_PARTICLE)
+	
+	if (gl_render_things && Level->DefinedParticlesInSubsec[sub->Index()] != NO_PARTICLE)
 	{
 		if (multithread)
 		{
