@@ -1253,6 +1253,9 @@ void CheckContinuity(FLevelLocals* Level)
 		count++;
 	}
 
+	assert(count == 0 || pool.OldestParticle != NO_PARTICLE);
+	assert(count < pool.Particles.size() || pool.InactiveParticles == NO_PARTICLE);
+
 	assert(count == PARTICLE_COUNT);
 }
 #endif
@@ -1413,10 +1416,7 @@ void P_ResizeDefinedParticlePool(FLevelLocals* Level, int particleLimit)
 
 		particledata_t& particle = newParticles[added];
 
-		if (pool.OldestParticle == i)
-		{
 			oldestParticle = added;
-		}
 
 		particle = pool.Particles[i];
 		particle.tprev = added - 1;
@@ -1424,6 +1424,8 @@ void P_ResizeDefinedParticlePool(FLevelLocals* Level, int particleLimit)
 
 		added++;
 	}
+
+	assert(oldestParticle != NO_PARTICLE || added == 0);
 
 #if ENABLE_CONTINUITY_CHECKS
 	PARTICLE_COUNT = added;
