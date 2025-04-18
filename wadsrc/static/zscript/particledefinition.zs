@@ -37,6 +37,7 @@ struct ParticleData
     native int16        StartLife;  // The life this particle started with
     native vector3      Pos;
     native vector3      Vel;
+    native float        Gravity;
     native float        Alpha, AlphaStep;
     native FVector2     Scale, ScaleStep, StartScale;
     native float        Angle, AngleStep;
@@ -168,7 +169,7 @@ class ParticleDefinition native play
 	native float RestingRollMin, RestingRollMax, RestingRollSpeed;
 
     native float MaxStepHeight;
-    native float Gravity;
+    native float MinGravity, MaxGravity;
     native float MinBounceFactor, MaxBounceFactor;
 	native Sound BounceSound;
 	native float BounceSoundChance;
@@ -190,6 +191,7 @@ class ParticleDefinition native play
     void SetLife(int life)                                  { MinLife = life; MaxLife = life; }
     void SetBaseScale(float scale)                          { BaseScale = (scale, scale); }
     void SetBaseScaleXY(float x, float y)                   { BaseScale = (x, y); }
+    void SetGravity(float gravity)                          { MinGravity = gravity; MaxGravity = gravity; }
     
     void SetQualityChances(float low, float med, float high, float ult, float insane)
     {
@@ -209,6 +211,7 @@ class ParticleDefinition native play
         LifeMultInsane = insane;
     }
 
+    void RandomGravity(float min, float max)                { MinGravity = min; MaxGravity = max; }
     void RandomAngle(float min, float max)                  { MinAng = min; MaxAng = max; }
     void RandomPitch(float min, float max)                  { MinPitch = min; MaxPitch = max; }
     void RandomSpeed(float min, float max)                  { MinSpeed = min; MaxSpeed = max; }

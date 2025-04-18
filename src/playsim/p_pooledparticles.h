@@ -71,6 +71,7 @@ struct particledata_t
 	DVector3 prevpos;							// +24
 	DVector3 pos;								// +24
 	DVector3 vel;								// +24
+	float gravity;								// +4
 	float alpha, alphaStep;						// +8 
 	FVector2 scale, scaleStep, startScale;		// +12
 	float angle, angleStep;						// +8
@@ -159,8 +160,8 @@ public:
 	float RestingRollMin = 0, RestingRollMax = 0, RestingRollSpeed = -1;
 
 	float MaxStepHeight = 8;
-	float Gravity = 0;
-	float MinBounceFactor, MaxBounceFactor = 0.7f;
+	float MinGravity = 0, MaxGravity = 0;
+	float MinBounceFactor = 0.5f, MaxBounceFactor = 0.7f;
 	int BounceSound = 0;
 	float BounceSoundChance = 0.2f;
 	float BounceSoundMinSpeed = 2;

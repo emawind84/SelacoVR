@@ -30,6 +30,7 @@ DEFINE_FIELD_X(ParticleData, particledata_t, life);
 DEFINE_FIELD_X(ParticleData, particledata_t, startLife);
 DEFINE_FIELD_X(ParticleData, particledata_t, pos);
 DEFINE_FIELD_X(ParticleData, particledata_t, vel);
+DEFINE_FIELD_X(ParticleData, particledata_t, gravity);
 DEFINE_FIELD_X(ParticleData, particledata_t, alpha);
 DEFINE_FIELD_X(ParticleData, particledata_t, alphaStep);
 DEFINE_FIELD_X(ParticleData, particledata_t, scale);
@@ -116,7 +117,7 @@ DEFINE_FIELD(DParticleDefinition, RollDamping) DEFINE_FIELD(DParticleDefinition,
 DEFINE_FIELD(DParticleDefinition, RestingPitchMin) DEFINE_FIELD(DParticleDefinition, RestingPitchMax) DEFINE_FIELD(DParticleDefinition, RestingPitchSpeed)
 DEFINE_FIELD(DParticleDefinition, RestingRollMin) DEFINE_FIELD(DParticleDefinition, RestingRollMax) DEFINE_FIELD(DParticleDefinition, RestingRollSpeed)
 DEFINE_FIELD(DParticleDefinition, MaxStepHeight)
-DEFINE_FIELD(DParticleDefinition, Gravity)
+DEFINE_FIELD(DParticleDefinition, MinGravity) DEFINE_FIELD(DParticleDefinition, MaxGravity)
 DEFINE_FIELD(DParticleDefinition, MinBounceFactor) DEFINE_FIELD(DParticleDefinition, MaxBounceFactor)
 DEFINE_FIELD(DParticleDefinition, BounceSound)
 DEFINE_FIELD(DParticleDefinition, BounceSoundChance)
@@ -659,6 +660,7 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	startLife = life = 35;
 	pos = prevpos = initialPos;
 	vel = DVector3();
+	gravity = 0;
 	alpha = 1;
 	alphaStep = 0;
 	scale = definition->BaseScale;
@@ -854,6 +856,7 @@ void DParticleDefinition::Emit(AActor* master, double chance, int numTries, doub
 			}
 
 			p->startScale = p->scale;
+			p->gravity = ParticleRandom(MinGravity, MaxGravity);
 
 			// Set speed
 			double pSpeed = Speed;
@@ -1625,13 +1628,13 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 		particle->subsector = Level->PointInRenderSubsector(particle->pos);
 		sector_t* s = particle->subsector->sector;
 
-		if (definition->Gravity != 0)
+		if (particle->gravity != 0)
 		{
 			particle->vel *= 1.0f - definition->Drag;
 
 			if (!particle->HasFlag(DPF_ATREST))
 			{
-				float gravity = (float)(Level->gravity * s->gravity * definition->Gravity * 0.00125);
+				float gravity = (float)(Level->gravity * s->gravity * (double)particle->gravity * 0.00125);
 
 				// TODO: If we need water checks, we're going to have to replicate AActor::FallAndSink
 				particle->vel.Z -= gravity;
@@ -1833,6 +1836,7 @@ particledata_t* P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition*
 		particle->scale.X *= (float)scale;
 		particle->scale.Y *= (float)scale;
 		particle->startScale = particle->scale;
+		particle->gravity = ParticleRandom(definition->MinGravity, definition->MaxGravity);
 
 		particle->startLife = particle->life = std::max(ParticleRandom(definition->MinLife, definition->MaxLife), 0);
 		particle->roll = ParticleRandom(definition->MinRoll, definition->MaxRoll);
