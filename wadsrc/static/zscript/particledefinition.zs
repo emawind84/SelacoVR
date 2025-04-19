@@ -271,11 +271,7 @@ class ParticleDefinition native play
         }
     }
 
-    void SetAnimationFrame(in out ParticleData particle, int frame)
-    {
-        particle.AnimFrame = frame;
-        particle.AnimTick = 0;
-    }
+    native void SetAnimationFrame(in out ParticleData particle, int frame);
 
     void StopAnimation(in out ParticleData particle)
     {

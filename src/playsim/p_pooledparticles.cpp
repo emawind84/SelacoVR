@@ -179,6 +179,24 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleCollideWithPlayer)
 	return 0;
 }
 
+DEFINE_ACTION_FUNCTION(DParticleDefinition, SetAnimationFrame)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_POINTER(ParticleData, particledata_t);
+	PARAM_INT(frame);
+
+	if (frame >= self->AnimationFrames.size())
+	{
+		ThrowAbortException(X_OTHER, "Tried to set invalid animation frame %d, max is %d", frame, self->AnimationFrames.size());
+	}
+
+	ParticleData->animFrame = frame;
+	ParticleData->animTick = 0;
+	ParticleData->texture = self->AnimationFrames[frame].frame;
+
+	return 0;
+}
+
 DEFINE_ACTION_FUNCTION(DParticleDefinition, SpawnParticle)
 {
 	PARAM_PROLOGUE;
