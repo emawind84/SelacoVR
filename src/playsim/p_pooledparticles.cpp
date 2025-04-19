@@ -664,7 +664,7 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	alpha = 1;
 	alphaStep = 0;
 	scale = definition->BaseScale;
-	scaleStep = FVector2(0, 0);
+	scaleStep = FVector2(1, 1);
 	startScale = scale;
 	angle = 0;
 	angleStep = 0;
@@ -1613,7 +1613,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 		}
 
 		particle->alpha += particle->alphaStep;
-		particle->scale += particle->scaleStep;
+		particle->scale = FVector2(particle->scale.X * particle->scaleStep.X, particle->scale.Y * particle->scaleStep.Y);
 		particle->angle += particle->angleStep;
 		particle->pitch += particle->pitchStep;
 		particle->roll += particle->rollStep;
