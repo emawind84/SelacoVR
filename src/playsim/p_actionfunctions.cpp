@@ -1926,8 +1926,8 @@ particledata_t* A_SpawnDefinedParticleProjectile(AActor* self, PClass* definitio
 		missilespeed *= speedMulti;
 
 		particle->angle = (CMF_ABSOLUTEANGLE & flags) ? (float)angle.Degrees() : particle->angle + (float)angle.Degrees();
-		particle->vel.X = missilespeed * g_cos(particle->angle);
-		particle->vel.Y = missilespeed * g_sin(particle->angle);
+		particle->vel.X = missilespeed * g_cosdeg(particle->angle);
+		particle->vel.Y = missilespeed * g_sindeg(particle->angle);
 	}
 
 	return particle;
