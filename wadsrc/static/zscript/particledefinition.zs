@@ -257,8 +257,7 @@ class ParticleDefinition native play
 
     void PlayAnimationSequence(in out ParticleData particle, int sequence, bool looping = true)
     {
-        particle.AnimFrame = GetAnimationStartFrame(sequence);
-        particle.AnimTick = 0;
+        SetAnimationFrame(particle, GetAnimationStartFrame(sequence));
         particle.SetFlag(DPF_ANIMATING);
 
         if (looping)
