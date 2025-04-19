@@ -282,7 +282,7 @@ static int DParticleDefinition_AddAnimationSequence(DParticleDefinition* self)
 		ThrowAbortException(X_OTHER, "Exceeded maximum number of sequences (256) for ParticleDefinition: %s", self->GetClass()->TypeName.GetChars());
 	}
 
-	int firstFrame = max((int)self->AnimationFrames.Size() - 1, 0);
+	int firstFrame = self->AnimationFrames.Size();
 	self->AnimationSequences.Push({ (uint8_t)firstFrame, (uint8_t)firstFrame, (uint8_t)self->AnimationSequences.Size() });
 
 	return (int)self->AnimationSequences.size() - 1;
@@ -1596,10 +1596,19 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 						particle->animTick = 0;
 						particle->animFrame++;
 
-						// Loop the animation if it's finished
 						if (particle->animFrame >= sequence.endFrame)
 						{
-							particle->animFrame = sequence.startFrame;
+							if (particle->HasFlag(DPF_LOOPANIMATION))
+							{
+								// Loop the animation if it's finished
+								particle->animFrame = sequence.startFrame;
+							}
+							else
+							{
+								// Go back to the previous frame and stop
+								particle->animFrame--;
+								particle->ClearFlag(DPF_ANIMATING);
+							}
 						}
 
 						particle->texture = definition->AnimationFrames[particle->animFrame].frame;

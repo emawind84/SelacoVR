@@ -44,6 +44,7 @@ enum EDefinedParticleFlags
 	DPF_FORCETRANSPARENT		= 1 << 22,	// Force this particle to render as transparent if it's set to None or Normal
 	DPF_FLAT					= 1 << 23,	// Display as flat
 	DPF_COLLIDEWITHPLAYER		= 1 << 24,	// Allow the particle to collide with the player
+	DPF_LOOPANIMATION			= 1 << 25,	// Loop the animation once finished
 };
 
 enum EParticleEmitterFlags 
@@ -132,7 +133,7 @@ public:
 
 	FTextureID DefaultTexture;
 	ERenderStyle DefaultRenderStyle;
-	int DefaultParticleFlags = SPF_ROLL;
+	int DefaultParticleFlags = SPF_ROLL | DPF_LOOPANIMATION;
 
 	static const float INVALID;
 	static const float BOUNCE_SOUND_ATTENUATION;

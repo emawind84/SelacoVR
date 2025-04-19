@@ -28,6 +28,7 @@ enum EDefinedParticleFlags
 	DPF_FORCETRANSPARENT		= 1 << 22,	// Force this particle to render as transparent if it's set to None or Normal
 	DPF_FLAT					= 1 << 23,	// Display as flat (Equivalent to +FLATSPRITE)
     DPF_COLLIDEWITHPLAYER       = 1 << 24,  // Allow the particle to collide with the player
+	DPF_LOOPANIMATION			= 1 << 25,	// Loop the animation once finished
 };
 
 struct ParticleData
@@ -253,6 +254,33 @@ class ParticleDefinition native play
     native int GetAnimationSequenceCount();
     native int GetAnimationStartFrame(int sequence);
     native int GetAnimationEndFrame(int sequence);
+
+    void PlayAnimationSequence(in out ParticleData particle, int sequence, bool looping = true)
+    {
+        particle.AnimFrame = GetAnimationStartFrame(sequence);
+        particle.AnimTick = 0;
+        particle.SetFlag(DPF_ANIMATING);
+
+        if (looping)
+        {
+            particle.SetFlag(DPF_LOOPANIMATION);
+        }
+        else
+        {
+            particle.ClearFlag(DPF_LOOPANIMATION);
+        }
+    }
+
+    void SetAnimationFrame(in out ParticleData particle, int frame)
+    {
+        particle.AnimFrame = frame;
+        particle.AnimTick = 0;
+    }
+
+    void StopAnimation(in out ParticleData particle)
+    {
+        particle.ClearFlag(DPF_ANIMATING);
+    }
 
     // Particles are removed immediately when going over this number
     static const int particleLimits[] = 
