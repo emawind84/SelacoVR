@@ -183,7 +183,7 @@ void VkHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 			// Mipmaps must be read from the source image, they cannot be generated
 			// TODO: Find some way to prevent UI textures from loading mipmaps
 			uint32_t expectedMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(srcWidth, srcHeight)))) + 1;
-			const int mipStart = min((int)gl_texture_quality, (int)expectedMipLevels - 1);
+			const int mipStart = flags & CTF_ReduceQuality ? min((int)gl_texture_quality, (int)expectedMipLevels - 1) : 0;
 
 			if (mipLevels > 0 && mipLevels == (int)expectedMipLevels) {
 				uint32_t mipWidth = srcWidth, mipHeight = srcHeight;

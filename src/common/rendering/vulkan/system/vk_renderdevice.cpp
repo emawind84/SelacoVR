@@ -253,12 +253,12 @@ VkTexLoadThread::~VkTexLoadThread() {
 }
 
 
-static void TempUploadTexture(VkCommandBufferManager *cmd, VkHardwareTexture *tex, VkFormat fmt, int buffWidth, int buffHeight, unsigned char *pixelData, size_t pixelDataSize, size_t totalSize, bool mipmap = true, bool gpuOnly = false, bool indexed = false) {
+static void TempUploadTexture(VkCommandBufferManager *cmd, VkHardwareTexture *tex, VkFormat fmt, int buffWidth, int buffHeight, unsigned char *pixelData, size_t pixelDataSize, size_t totalSize, bool mipmap = true, bool gpuOnly = false, bool indexed = false, bool allowQualityReduction = false) {
 	if (gpuOnly) {
 		uint32_t numMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(buffWidth, buffHeight)))) + 1;
 		uint32_t mipWidth = buffWidth, mipHeight = buffHeight;
 		size_t mipSize = pixelDataSize, dataPos = 0;
-		const int startMip = min((int)gl_texture_quality, (int)numMipLevels - 1);
+		const int startMip = allowQualityReduction ? min((int)gl_texture_quality, (int)numMipLevels - 1) : 0;
 		int mipCnt = 0, maxMips = mipmap ? numMipLevels - startMip : 1;
 		
 
@@ -307,6 +307,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	output.spi.shouldExpand = input.spi.shouldExpand;
 	output.gtex = input.gtex;
 	output.releaseSemaphore = nullptr;
+	output.flags = input.flags;
 
 	auto *src = input.imgSource;
 	bool gpu = src->IsGPUOnly();
@@ -316,7 +317,8 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 	int buffWidth = src->GetWidth() + 2 * exx;
 	int buffHeight = src->GetHeight() + 2 * exx;
 	bool indexed = false;	// TODO: Determine this properly
-	bool mipmap = !indexed && input.allowMipmaps;
+	bool allowMips = (input.flags & TEXLOAD_ALLOWMIPS);
+	bool mipmap = !indexed && allowMips;
 	VkFormat fmt = indexed ? VK_FORMAT_R8_UNORM : VK_FORMAT_B8G8R8A8_UNORM;
 	VulkanDevice* device = cmd != nullptr ? cmd->GetRenderDevice()->device.get() : nullptr;
 
@@ -364,10 +366,10 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 			// Only perform upload if we have a command buffer
 			if (cmd) {
 				mipmap = false;	// Don't generate mipmaps past this point
-				TempUploadTexture(cmd, output.tex, fmt, buffWidth, buffHeight, pixelData, pixelDataSize, totalSize, input.allowMipmaps && numMipLevels == (int)expectedMipLevels && numMipLevels > 0, true, indexed);
+				TempUploadTexture(cmd, output.tex, fmt, buffWidth, buffHeight, pixelData, pixelDataSize, totalSize, allowMips && numMipLevels == (int)expectedMipLevels && numMipLevels > 0, true, indexed, input.flags & TEXLOAD_ALLOWQUALITY);
 			}
 			else {
-				mipmap = input.allowMipmaps && numMipLevels == (int)expectedMipLevels && numMipLevels > 0;	// Upload mipmaps if the science is correct
+				mipmap = allowMips && numMipLevels == (int)expectedMipLevels && numMipLevels > 0;	// Upload mipmaps if the science is correct
 			}
 
 			if (input.spi.generateSpi) {
@@ -725,7 +727,7 @@ void VulkanRenderDevice::UploadLoadedTextures(bool flush) {
 
 		assert(loaded.pixels);
 
-		TempUploadTexture(mCommands.get(), loaded.tex, fmt, loaded.pixelW, loaded.pixelH, loaded.pixels, loaded.pixelsSize, loaded.totalDataSize, loaded.createMipmaps, gpuOnly, false);
+		TempUploadTexture(mCommands.get(), loaded.tex, fmt, loaded.pixelW, loaded.pixelH, loaded.pixels, loaded.pixelsSize, loaded.totalDataSize, loaded.createMipmaps, gpuOnly, false, loaded.flags & TEXLOAD_ALLOWQUALITY);
 		free(loaded.pixels);
 		loaded.pixels = 0;
 
@@ -1063,7 +1065,9 @@ bool VulkanRenderDevice::BackgroundCacheTextureMaterial(FGameTexture *tex, FTran
 // @Cockatrice - Submit each texture in the material to the background loader
 // Call from main thread only
 bool VulkanRenderDevice::BackgroundCacheMaterial(FMaterial *mat, FTranslationID translation, bool makeSPI, bool secondary) {
-	if (mat->Source()->GetUseType() == ETextureType::SWCanvas) {
+	const auto useType = mat->Source()->GetUseType();
+
+	if (useType == ETextureType::SWCanvas) {
 		return false;
 	}
 
@@ -1080,7 +1084,10 @@ bool VulkanRenderDevice::BackgroundCacheMaterial(FMaterial *mat, FTranslationID 
 	VkTexLoadSpi spi = {};
 
 	bool shouldExpand = mat->sourcetex->ShouldExpandSprite() && (layer->scaleFlags & CTF_Expand);
-	bool allowMips = !mat->sourcetex->GetNoMipmaps();
+	int8_t flags = 0;
+
+	if (!mat->sourcetex->GetNoMipmaps()) flags |= TEXLOAD_ALLOWMIPS;
+	if (layer->scaleFlags & CTF_ReduceQuality) flags |= TEXLOAD_ALLOWQUALITY;
 
 	// If the texture is already submitted to the cache, find it and move it to the normal queue to reprioritize it
 	if (lumpExists && !secondary && systex->GetState() == IHardwareTexture::HardwareState::CACHING) {
@@ -1115,7 +1122,7 @@ bool VulkanRenderDevice::BackgroundCacheMaterial(FMaterial *mat, FTranslationID 
 				spi,
 				systex,
 				mat->sourcetex,
-				allowMips
+				flags
 			};
 
 			if (secondary) secondaryTexQueue.queue(in);
@@ -1166,7 +1173,7 @@ bool VulkanRenderDevice::BackgroundCacheMaterial(FMaterial *mat, FTranslationID 
 					},
 					syslayer,
 					nullptr,
-					allowMips
+					flags
 				};
 
 				if (secondary) secondaryTexQueue.queue(in);
