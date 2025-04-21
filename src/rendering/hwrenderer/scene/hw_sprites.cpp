@@ -1004,6 +1004,8 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		int scaleflags = (type == RF_FACESPRITE) ? CTF_Expand : 0;
 		if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
 
+		scaleflags |= CTF_ReduceQuality;	// Allow quality reduction when possible and specified with gl_texture_quality
+
 		// @Cockatrice - If this texture is not loaded, and we are able to BG load it, try to render this sprites last frame instead
 		// Also load the texture
 		// Reusing the last patch will have the flaw of not matching the last translation, but this is a rare instance and we will ignore it for now 

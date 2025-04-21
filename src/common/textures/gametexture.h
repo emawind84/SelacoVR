@@ -102,7 +102,7 @@ class FGameTexture
 	SpritePositioningInfo* spi = nullptr;
 
 	ISoftwareTexture* SoftwareTexture = nullptr;
-	FMaterial* Material[5] = {  };
+	FMaterial* Material[6] = {  };
 
 	// Material properties
 	FVector2 detailScale = { 1.f, 1.f };
@@ -464,6 +464,11 @@ inline int shouldUpscale(FGameTexture* tex, EUpscaleFlags UseType)
 	// This only checks the global scale mask and the texture's validation for upscaling. Everything else has been done up front elsewhere.
 	if (!(upscalemask & UseType)) return 0;
 	return tex->GetUpscaleFlag();
+}
+
+inline bool shouldScaleQuality(FGameTexture* tex) {
+	auto useType = tex->GetUseType();
+	return useType == ETextureType::Sprite || useType == ETextureType::SkinSprite || useType == ETextureType::Decal;
 }
 
 struct FTexCoordInfo
