@@ -1783,7 +1783,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnDefinedParticle)
 
 		if (particle)
 		{
-			particle->angle = angle.Degrees();
+			particle->angle = (float)angle.Degrees();
 		}
 	}
 

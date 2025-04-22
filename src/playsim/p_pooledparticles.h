@@ -87,7 +87,9 @@ struct particledata_t
 	DVector3 vel;								// +24
 	float gravity;								// +4
 	float alpha, alphaStep;						// +8 
+	float fadeAlpha;							// +4
 	FVector2 scale, scaleStep, startScale;		// +24
+	FVector2 fadeScale;							// +8
 	float angle, angleStep;						// +8
 	float pitch, pitchStep;						// +8
 	float roll, rollStep;						// +8 

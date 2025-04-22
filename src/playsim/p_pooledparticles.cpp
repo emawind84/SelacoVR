@@ -681,9 +681,11 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	gravity = 0;
 	alpha = 1;
 	alphaStep = 0;
+	fadeAlpha = 1;
 	scale = definition->BaseScale;
 	scaleStep = FVector2(1, 1);
 	startScale = scale;
+	fadeScale = FVector2(1, 1);
 	angle = 0;
 	angleStep = 0;
 	pitch = 0;
@@ -851,7 +853,7 @@ void DParticleDefinition::Emit(AActor* master, double chance, int numTries, doub
 			// Configure orientation, used both for angling flatsprites and for fire-direction
 			double pAngle = angle + (angleRandomizer.NewRandom(0.0, 1.0) * angleDelta) + MinAng;
 			double pPitch = pitch + (angleRandomizer.NewRandom(0.0, 1.0) * pitchDelta) + MinPitch;
-			p->angle = pAngle;
+			p->angle = (float)pAngle;
 			p->roll = (ParticleRandom(0.0f, 1.0f) * (MaxRoll - MinRoll)) + MinRoll;
 			p->rollStep = (ParticleRandom(0.0f, 1.0f) * (MaxRollSpeed - MinRollSpeed)) + MinRollSpeed;
 			
@@ -1053,9 +1055,9 @@ void DParticleDefinition::HandleFading(particledata_t* particle)
 {
 	float velocityFade = HasFlag(PDF_VELOCITYFADE) ? ((float)particle->vel.Length() - MinFadeVel) / (MaxFadeVel - MinFadeVel) : 1.0f;
 	float lifeFade = HasFlag(PDF_LIFEFADE) ? float(particle->life - MinFadeLife) / float(MaxFadeLife - MinFadeLife) : 1.0f;
-	particle->alpha = std::clamp(velocityFade * lifeFade, 0.0f, 1.0f);
+	particle->fadeAlpha = std::clamp(velocityFade * lifeFade, 0.0f, 1.0f);
 
-	if (particle->alpha < 0.999 && particle->renderStyle != STYLE_Translucent) 
+	if (particle->fadeAlpha < 0.999 && particle->renderStyle != STYLE_Translucent) 
 	{
 		switch (particle->renderStyle) 
 		{
@@ -1076,9 +1078,9 @@ void DParticleDefinition::HandleScaling(particledata_t* particle)
 	FVector2 mScale = MaxFadeScale;
 	FVector2 finalScale = mScale + lifeScale * (MinFadeScale - mScale);
 
-	particle->scale = FVector2(
-		particle->startScale.X * std::clamp(finalScale.X, min(MaxFadeScale.X, MinFadeScale.X), max(MaxFadeScale.X, MinFadeScale.X)),
-		particle->startScale.Y * std::clamp(finalScale.Y, min(MaxFadeScale.Y, MinFadeScale.Y), max(MaxFadeScale.Y, MinFadeScale.Y))
+	particle->fadeScale = FVector2(
+		std::clamp(finalScale.X, min(MaxFadeScale.X, MinFadeScale.X), max(MaxFadeScale.X, MinFadeScale.X)),
+		std::clamp(finalScale.Y, min(MaxFadeScale.Y, MinFadeScale.Y), max(MaxFadeScale.Y, MinFadeScale.Y))
 		);
 }
 
