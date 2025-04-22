@@ -115,7 +115,7 @@ struct particledata_t
 
 	void Init(FLevelLocals* Level, DVector3 initialPos);
 
-	bool CheckWater();
+	bool CheckWater(double* outSurfaceHeight);
 	void UpdateUnderwater();
 
 	AActor* SpawnActor(PClassActor* actorClass, const DVector3& offset);
@@ -215,6 +215,8 @@ public:
 	void CallOnParticleBounce(particledata_t* particle);
 	void CallOnParticleSleep(particledata_t* particle);
 	void CallOnParticleCollideWithPlayer(particledata_t* particle, AActor* player);
+	void CallOnParticleEnterWater(particledata_t* particle, double surfaceHeight);
+	void CallOnParticleExitWater(particledata_t* particle, double surfaceHeight);
 
 	void HandleFading(particledata_t* particle);
 	void HandleScaling(particledata_t* particle);

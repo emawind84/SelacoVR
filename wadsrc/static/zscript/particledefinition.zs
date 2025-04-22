@@ -262,6 +262,8 @@ class ParticleDefinition native play
     native virtual bool OnParticleDeath(in out ParticleData particle);
     native virtual void OnParticleSleep(in out ParticleData particle);
     native virtual void OnParticleCollideWithPlayer(in out ParticleData particle, Actor player);
+    native virtual void OnParticleEnterWater(in out ParticleData particle, float surfaceHeight);
+    native virtual void OnParticleExitWater(in out ParticleData particle, float surfaceHeight);
 
     native int AddAnimationSequence();
     native void AddAnimationFrame(int sequence, string textureName, int ticks = 1);

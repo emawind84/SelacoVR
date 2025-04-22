@@ -182,6 +182,24 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleCollideWithPlayer)
 	return 0;
 }
 
+DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleEnterWater)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_POINTER(ParticleData, particledata_t);
+	PARAM_FLOAT(SurfaceHeight);
+
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(DParticleDefinition, OnParticleExitWater)
+{
+	PARAM_SELF_PROLOGUE(DParticleDefinition);
+	PARAM_POINTER(ParticleData, particledata_t);
+	PARAM_FLOAT(SurfaceHeight);
+
+	return 0;
+}
+
 DEFINE_ACTION_FUNCTION(DParticleDefinition, SetAnimationFrame)
 {
 	PARAM_SELF_PROLOGUE(DParticleDefinition);
@@ -239,12 +257,12 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, SpawnParticle)
 		if (!(flags & DPF_ABSOLUTEPOSITION))
 		{
 			if (refActor)
-		{
-			// in relative mode negative y values mean 'left' and positive ones mean 'right'
-			// This is the inverse orientation of the absolute mode!
-			pos.X = xoff * c + yoff * s;
-			pos.Y = xoff * s - yoff * c;
-		}
+			{
+				// in relative mode negative y values mean 'left' and positive ones mean 'right'
+				// This is the inverse orientation of the absolute mode!
+				pos.X = xoff * c + yoff * s;
+				pos.Y = xoff * s - yoff * c;
+			}
 			else
 			{
 				pos.X = xoff * c - yoff * s;
@@ -717,7 +735,7 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	user1 = user2 = user3 = user4 = 0;
 	lastTexture = {};
 
-	if ((definition->HasFlag(PDF_CHECKWATERSPAWN) || definition->HasFlag(PDF_CHECKWATER) || definition->HasFlag(PDF_NOSPAWNUNDERWATER)) && CheckWater())
+	if ((definition->HasFlag(PDF_CHECKWATERSPAWN) || definition->HasFlag(PDF_CHECKWATER) || definition->HasFlag(PDF_NOSPAWNUNDERWATER)) && CheckWater(nullptr))
 	{
 		flags |= DPF_SPAWNEDUNDERWATER;
 		flags |= DPF_UNDERWATER;
@@ -740,7 +758,7 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	}
 }
 
-bool particledata_t::CheckWater()
+bool particledata_t::CheckWater(double* outSurfaceHeight)
 {
 	if (!subsector || !subsector->sector)
 	{
@@ -753,6 +771,7 @@ bool particledata_t::CheckWater()
 
 	if (sector->MoreFlags & SECMF_UNDERWATER)
 	{
+		if (outSurfaceHeight) *outSurfaceHeight = pos.Z; // Weird position to choose, but it follows what UpdateWaterDepth does
 		return true;
 	}
 	else
@@ -770,6 +789,7 @@ bool particledata_t::CheckWater()
 
 			if (ff_top >= pos.Z && ff_bottom < pos.Z)
 			{
+				if (outSurfaceHeight) *outSurfaceHeight = ff_top;
 				return true;
 			}
 		}
@@ -780,18 +800,20 @@ bool particledata_t::CheckWater()
 
 void particledata_t::UpdateUnderwater()
 {
-	bool isUnderwater = CheckWater();
+	double surfaceHeight = 0;
+
+	bool isUnderwater = CheckWater(&surfaceHeight);
 	if (HasFlag(DPF_UNDERWATER) != isUnderwater)
 	{
 		if (isUnderwater)
 		{
 			SetFlag(DPF_UNDERWATER);
-			// TODO: Maybe have a 'OnEnterWater'?
+			definition->CallOnParticleEnterWater(this, surfaceHeight);
 		}
 		else
 		{
 			ClearFlag(DPF_UNDERWATER);
-			// TODO: Maybe have a 'OnExitWater'?
+			definition->CallOnParticleExitWater(this, surfaceHeight);
 		}
 	}
 }
@@ -1127,6 +1149,24 @@ void DParticleDefinition::CallOnParticleCollideWithPlayer(particledata_t* partic
 	IFVIRTUAL(DParticleDefinition, OnParticleCollideWithPlayer)
 	{
 		VMValue params[] = { this, particle, player };
+		VMCall(func, params, 3, nullptr, 0);
+	}
+}
+
+void DParticleDefinition::CallOnParticleEnterWater(particledata_t* particle, double surfaceHeight)
+{
+	IFVIRTUAL(DParticleDefinition, OnParticleEnterWater)
+	{
+		VMValue params[] = { this, particle, surfaceHeight };
+		VMCall(func, params, 3, nullptr, 0);
+	}
+}
+
+void DParticleDefinition::CallOnParticleExitWater(particledata_t* particle, double surfaceHeight)
+{
+	IFVIRTUAL(DParticleDefinition, OnParticleExitWater)
+	{
+		VMValue params[] = { this, particle, surfaceHeight };
 		VMCall(func, params, 3, nullptr, 0);
 	}
 }
