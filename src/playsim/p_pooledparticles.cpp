@@ -223,7 +223,7 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, SpawnParticle)
 
 		if (refActor)
 		{
-			if (flags & SPF_RELANG) angle += refActor->Angles.Yaw;
+			if (!(flags & DPF_ABSOLUTEANGLE)) angle += refActor->Angles.Yaw;
 			bobOffset = refActor->GetBobOffset();
 		}
 
@@ -233,14 +233,14 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, SpawnParticle)
 		DVector3 vel(xvel, yvel, zvel);
 
 		//[MC] Code ripped right out of A_SpawnItemEx.
-		if (flags & SPF_RELPOS)
+		if (!(flags & DPF_ABSOLUTEPOSITION))
 		{
 			// in relative mode negative y values mean 'left' and positive ones mean 'right'
 			// This is the inverse orientation of the absolute mode!
 			pos.X = xoff * c + yoff * s;
 			pos.Y = xoff * s - yoff * c;
 		}
-		if (flags & SPF_RELVEL)
+		if (!(flags & DPF_ABSOLUTEVELOCITY))
 		{
 			vel.X = xvel * c + yvel * s;
 			vel.Y = xvel * s - yvel * c;
@@ -851,6 +851,7 @@ void DParticleDefinition::Emit(AActor* master, double chance, int numTries, doub
 			// Configure orientation, used both for angling flatsprites and for fire-direction
 			double pAngle = angle + (angleRandomizer.NewRandom(0.0, 1.0) * angleDelta) + MinAng;
 			double pPitch = pitch + (angleRandomizer.NewRandom(0.0, 1.0) * pitchDelta) + MinPitch;
+			p->angle = pAngle;
 			p->roll = (ParticleRandom(0.0f, 1.0f) * (MaxRoll - MinRoll)) + MinRoll;
 			p->rollStep = (ParticleRandom(0.0f, 1.0f) * (MaxRollSpeed - MinRollSpeed)) + MinRollSpeed;
 			
@@ -1566,7 +1567,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 
 		int particleIndex = i;
 		i = particle->tnext;
-		if (Level->isFrozen() && !(particle->flags & SPF_NOTIMEFREEZE))
+		if (Level->isFrozen() && !(particle->flags & DPF_NOTIMEFREEZE))
 		{
 			continue;
 		}
@@ -1851,7 +1852,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 
 particledata_t* P_SpawnDefinedParticle(FLevelLocals* Level, DParticleDefinition* definition, const DVector3& pos, const DVector3& vel, double scale, int flags, AActor* refActor)
 {
-	particledata_t* particle = NewDefinedParticle(Level, definition, (bool)(flags & SPF_REPLACE));
+	particledata_t* particle = NewDefinedParticle(Level, definition, (bool)(flags & DPF_REPLACE));
 
 	if (particle)
 	{

@@ -34,17 +34,30 @@ enum EParticleDefinitionFlags
 
 enum EDefinedParticleFlags
 {
-    DPF_FIRSTUPDATE             = 1 << 15,  // Particle has just been created
-    DPF_ANIMATING               = 1 << 16,  // Particle is animating
-	DPF_ATREST					= 1 << 17,	// Particle has settled and isn't moving
-	DPF_NOPROCESS				= 1 << 18,	// This is set when killing the particle, so it may be used after for sprite things
-	DPF_CLEANEDUP				= 1 << 19,	// Used by the particle limiter, this value is set once the particle has been marked for cleaning
-	DPF_DESTROYED				= 1 << 20,	// Particle has been destroyed, and should be removed from the particle list next update
-	DPF_ISBLOOD					= 1 << 21,	// Treat this particle as blood, same as bIsBlood on SelacoParticle
-	DPF_FORCETRANSPARENT		= 1 << 22,	// Force this particle to render as transparent if it's set to None or Normal
-	DPF_FLAT					= 1 << 23,	// Display as flat
-	DPF_COLLIDEWITHPLAYER		= 1 << 24,	// Allow the particle to collide with the player
-	DPF_LOOPANIMATION			= 1 << 25,	// Loop the animation once finished
+	DPF_FULLBRIGHT				= 1 << 0,
+	DPF_ABSOLUTEPOSITION		= 1 << 1,
+	DPF_ABSOLUTEVELOCITY		= 1 << 2,
+	DPF_ABSOLUTEACCEL			= 1 << 3,
+	DPF_ABSOLUTEANGLE			= 1 << 4,
+	DPF_NOTIMEFREEZE			= 1 << 5,
+	DPF_ROLL					= 1 << 6,
+	DPF_REPLACE					= 1 << 7,
+	DPF_NO_XY_BILLBOARD			= 1 << 8,
+	DPF_FACECAMERA				= 1 << 9,
+	DPF_NOFACECAMERA			= 1 << 10,
+	DPF_ROLLCENTER				= 1 << 11,
+	DPF_NOMIPMAP				= 1 << 12,
+    DPF_FIRSTUPDATE             = 1 << 13,  // Particle has just been created
+    DPF_ANIMATING               = 1 << 14,  // Particle is animating
+	DPF_ATREST					= 1 << 15,	// Particle has settled and isn't moving
+	DPF_NOPROCESS				= 1 << 16,	// This is set when killing the particle, so it may be used after for sprite things
+	DPF_CLEANEDUP				= 1 << 17,	// Used by the particle limiter, this value is set once the particle has been marked for cleaning
+	DPF_DESTROYED				= 1 << 18,	// Particle has been destroyed, and should be removed from the particle list next update
+	DPF_ISBLOOD					= 1 << 19,	// Treat this particle as blood, same as bIsBlood on SelacoParticle
+	DPF_FORCETRANSPARENT		= 1 << 20,	// Force this particle to render as transparent if it's set to None or Normal
+	DPF_FLAT					= 1 << 21,	// Display as flat
+	DPF_COLLIDEWITHPLAYER		= 1 << 22,	// Allow the particle to collide with the player
+	DPF_LOOPANIMATION			= 1 << 23,	// Loop the animation once finished
 };
 
 enum EParticleEmitterFlags 

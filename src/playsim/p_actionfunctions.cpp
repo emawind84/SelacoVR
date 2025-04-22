@@ -1759,27 +1759,32 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnDefinedParticle)
 
 	if (DParticleDefinition* definition = *self->Level->ParticleDefinitionsByType.CheckKey(definitionClass->TypeName.GetIndex()))
 	{
-		if (flags & SPF_RELANG) angle += self->Angles.Yaw;
+		if (!(flags & DPF_ABSOLUTEANGLE)) angle += self->Angles.Yaw;
 		double s = angle.Sin();
 		double c = angle.Cos();
 		DVector3 pos(xoff, yoff, zoff + self->GetBobOffset());
 		DVector3 vel(xvel, yvel, zvel);
 
 		//[MC] Code ripped right out of A_SpawnItemEx.
-		if (flags & SPF_RELPOS)
+		if (!(flags & DPF_ABSOLUTEPOSITION))
 		{
 			// in relative mode negative y values mean 'left' and positive ones mean 'right'
 			// This is the inverse orientation of the absolute mode!
 			pos.X = xoff * c + yoff * s;
 			pos.Y = xoff * s - yoff * c;
 		}
-		if (flags & SPF_RELVEL)
+		if (!(flags & DPF_ABSOLUTEVELOCITY))
 		{
 			vel.X = xvel * c + yvel * s;
 			vel.Y = xvel * s - yvel * c;
 		}
 		
-		P_SpawnDefinedParticle(self->Level, definition, self->Vec3Offset(pos), vel, scale, flags, refActor ? refActor : self);
+		particledata_t* particle = P_SpawnDefinedParticle(self->Level, definition, self->Vec3Offset(pos), vel, scale, flags, refActor ? refActor : self);
+
+		if (particle)
+		{
+			particle->angle = angle.Degrees();
+		}
 	}
 
 	return 0;
