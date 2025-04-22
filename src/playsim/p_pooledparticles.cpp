@@ -696,6 +696,7 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	maxBounces = -1;
 	floorz = (float)s->floorplane.ZatPoint(initialPos);
 	ceilingz = (float)s->ceilingplane.ZatPoint(initialPos);
+	restzoffset = 0;
 	color = 0xffffff;
 	animFrame = 0;
 	animTick = 0;
@@ -1172,6 +1173,7 @@ void DParticleDefinition::RestParticle(particledata_t* particle)
 {
 	particle->SetFlag(DPF_ATREST);
 	particle->prevpos = particle->pos;
+	particle->restzoffset = (float)particle->pos.Z - particle->floorz;
 
 	if (HasFlag(PDF_ROLLSTOP)) 
 	{
@@ -1575,10 +1577,21 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 		}
 
 		particle->prevpos = particle->pos;
+		float prevFloorZ = particle->floorz;
 
 		if (particle->sleepFor > 0)
 		{
 			particle->sleepFor--;
+
+			if (particle->HasFlag(DPF_ATREST))
+			{
+				particle->floorz = (float)particle->subsector->sector->floorplane.ZatPoint(particle->pos);
+
+				// We're setting the vel rather than the pos so that we get proper interpolation for moving floors
+				particle->pos.Z += particle->vel.Z;
+				particle->vel.Z = (particle->floorz - prevFloorZ);
+			}
+
 			continue;
 		}
 
@@ -1671,10 +1684,19 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 			}
 		}
 
-		particle->pos.Z += particle->vel.Z;
-
 		particle->floorz = (float)s->floorplane.ZatPoint(particle->pos);
 		particle->ceilingz = (float)s->ceilingplane.ZatPoint(particle->pos);
+
+		if (particle->HasFlag(DPF_ATREST))
+		{
+			// We're setting the vel rather than the pos so that we get proper interpolation for moving floors
+			particle->pos.Z += particle->vel.Z;
+			particle->vel.Z = (particle->floorz - prevFloorZ);
+		}
+		else
+		{
+			particle->pos.Z += particle->vel.Z;
+		}
 
 		// Handle crossing a sector portal.
 		if (!s->PortalBlocksMovement(sector_t::ceiling))

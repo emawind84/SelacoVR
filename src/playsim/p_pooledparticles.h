@@ -95,6 +95,7 @@ struct particledata_t
 	float roll, rollStep;						// +8 
 	int16_t bounces, maxBounces;				// +4
 	float floorz, ceilingz;						// +8
+	float restzoffset;							// +4
 	int color;									// +4
 	FTextureID texture, lastTexture;			// +8
 	uint8_t animFrame, animTick;				// +2 
