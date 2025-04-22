@@ -238,10 +238,18 @@ DEFINE_ACTION_FUNCTION(DParticleDefinition, SpawnParticle)
 		//[MC] Code ripped right out of A_SpawnItemEx.
 		if (!(flags & DPF_ABSOLUTEPOSITION))
 		{
+			if (refActor)
+		{
 			// in relative mode negative y values mean 'left' and positive ones mean 'right'
 			// This is the inverse orientation of the absolute mode!
 			pos.X = xoff * c + yoff * s;
 			pos.Y = xoff * s - yoff * c;
+		}
+			else
+			{
+				pos.X = xoff * c - yoff * s;
+				pos.Y = xoff * s + yoff * c;
+			}
 		}
 		if (!(flags & DPF_ABSOLUTEVELOCITY))
 		{
