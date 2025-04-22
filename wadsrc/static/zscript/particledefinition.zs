@@ -14,6 +14,8 @@ enum EParticleDefinitionFlags
 	PDF_ISBLOOD					= 1 << 11,	// Treat this particle as blood. Use different spawn variables such as r_BloodQuality instead of r_particleIntensity
 	PDF_LIFESCALE				= 1 << 12,	// Follow min/max scale over lifetime
 	PDF_BOUNCEONFLOORS			= 1 << 13,	// Bounce on floors
+    PDF_CHECKWATER              = 1 << 14,  // Constantly check if the particle has entered water, rather than only at spawn
+    PDF_NOSPAWNUNDERWATER       = 1 << 15,  // Immediately destroy the particle if it's created underwater
 };
 
 enum EDefinedParticleFlags
@@ -42,6 +44,7 @@ enum EDefinedParticleFlags
 	DPF_FLAT					= 1 << 21,	// Display as flat
 	DPF_COLLIDEWITHPLAYER		= 1 << 22,	// Allow the particle to collide with the player
 	DPF_LOOPANIMATION			= 1 << 23,	// Loop the animation once finished
+    DPF_UNDERWATER              = 1 << 24,  // Particle is underwater
 };
 
 struct ParticleData

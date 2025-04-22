@@ -21,6 +21,9 @@
 static int PARTICLE_COUNT = 0;
 #endif
 
+// Taken from p_mobj.cpp
+#define WATER_SINK_SPEED		0.5
+
 const float DParticleDefinition::INVALID = -99999;
 const float DParticleDefinition::BOUNCE_SOUND_ATTENUATION = 1.5f;
 
@@ -706,6 +709,17 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	user1 = user2 = user3 = user4 = 0;
 	lastTexture = {};
 
+	if ((definition->HasFlag(PDF_CHECKWATER) || definition->HasFlag(PDF_NOSPAWNUNDERWATER)) && CheckWater())
+	{
+		flags |= DPF_UNDERWATER;
+
+		if (definition->HasFlag(PDF_NOSPAWNUNDERWATER))
+		{
+			// Immediately die if we spawned underwater
+			flags |= DPF_DESTROYED;
+		}
+	}
+
 	if (definition->AnimationFrames.Size())
 	{
 		flags |= DPF_ANIMATING;
@@ -714,6 +728,62 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	else
 	{
 		texture = definition->DefaultTexture;
+	}
+}
+
+bool particledata_t::CheckWater()
+{
+	if (!subsector || !subsector->sector)
+	{
+		return false;
+	}
+
+	sector_t* sector = subsector->sector;
+	double fh = -FLT_MAX;
+	double waterDepth = 0;
+
+	if (sector->MoreFlags & SECMF_UNDERWATER)
+	{
+		return true;
+	}
+	else
+	{
+		// Check 3D floors as well!
+		for (auto rover : sector->e->XFloor.ffloors)
+		{
+			if (!(rover->flags & FF_EXISTS)) continue;
+			if (rover->flags & FF_SOLID) continue;
+
+			if (!(rover->flags & FF_SWIMMABLE)) continue;
+
+			double ff_bottom = rover->bottom.plane->ZatPoint(pos);
+			double ff_top = rover->top.plane->ZatPoint(pos);
+
+			if (ff_top >= pos.Z && ff_bottom < pos.Z)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+void particledata_t::UpdateUnderwater()
+{
+	bool isUnderwater = CheckWater();
+	if (HasFlag(DPF_UNDERWATER) != isUnderwater)
+	{
+		if (isUnderwater)
+		{
+			SetFlag(DPF_UNDERWATER);
+			// TODO: Maybe have a 'OnEnterWater'?
+		}
+		else
+		{
+			ClearFlag(DPF_UNDERWATER);
+			// TODO: Maybe have a 'OnExitWater'?
+		}
 	}
 }
 
@@ -1677,10 +1747,38 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 
 			if (!particle->HasFlag(DPF_ATREST))
 			{
-				float gravity = (float)(Level->gravity * s->gravity * (double)particle->gravity * 0.00125);
+				if (definition->HasFlag(PDF_CHECKWATER))
+				{
+					particle->UpdateUnderwater();
+				}
 
-				// TODO: If we need water checks, we're going to have to replicate AActor::FallAndSink
-				particle->vel.Z -= gravity;
+				if (particle->HasFlag(DPF_UNDERWATER))
+				{
+					// Do sinking logic, cut down from AActor::FallAndSink
+					double sinkspeed = -WATER_SINK_SPEED * 0.01;
+
+					if (particle->vel.Z < sinkspeed)
+					{ // Dropping too fast, so slow down toward sinkspeed.
+						particle->vel.Z -= max(sinkspeed * 2, -8.);
+						if (particle->vel.Z > sinkspeed)
+						{
+							particle->vel.Z = sinkspeed;
+						}
+					}
+					else if (particle->vel.Z > sinkspeed)
+					{ // Dropping too slow/going up, so trend toward sinkspeed.
+						particle->vel.Z += max(sinkspeed / 3, -8.);
+						if (particle->vel.Z < sinkspeed)
+						{
+							particle->vel.Z = sinkspeed;
+						}
+					}
+				}
+				else
+				{
+					float gravity = (float)(Level->gravity * s->gravity * (double)particle->gravity * 0.00125);
+					particle->vel.Z -= gravity;
+				}
 			}
 		}
 
