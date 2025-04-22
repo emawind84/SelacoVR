@@ -709,8 +709,9 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	user1 = user2 = user3 = user4 = 0;
 	lastTexture = {};
 
-	if ((definition->HasFlag(PDF_CHECKWATER) || definition->HasFlag(PDF_NOSPAWNUNDERWATER)) && CheckWater())
+	if ((definition->HasFlag(PDF_CHECKWATERSPAWN) || definition->HasFlag(PDF_CHECKWATER) || definition->HasFlag(PDF_NOSPAWNUNDERWATER)) && CheckWater())
 	{
+		flags |= DPF_SPAWNEDUNDERWATER;
 		flags |= DPF_UNDERWATER;
 
 		if (definition->HasFlag(PDF_NOSPAWNUNDERWATER))
@@ -1747,7 +1748,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 
 			if (!particle->HasFlag(DPF_ATREST))
 			{
-				if (definition->HasFlag(PDF_CHECKWATER))
+				if ((definition->HasFlag(PDF_CHECKWATERSPAWN) && particle->HasFlag(DPF_SPAWNEDUNDERWATER)) || definition->HasFlag(PDF_CHECKWATER))
 				{
 					particle->UpdateUnderwater();
 				}
