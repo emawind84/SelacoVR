@@ -102,7 +102,7 @@ class FGameTexture
 	SpritePositioningInfo* spi = nullptr;
 
 	ISoftwareTexture* SoftwareTexture = nullptr;
-	FMaterial* Material[6] = {  };
+	FMaterial* Material[5] = {  };
 
 	// Material properties
 	FVector2 detailScale = { 1.f, 1.f };

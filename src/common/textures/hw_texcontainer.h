@@ -80,10 +80,7 @@ private:
 
 		if (translation == 0 && !(scaleflags & CTF_Upscale))
 		{
-			if (scaleflags & CTF_ReduceQuality) {
-				return &hwDefTex[4];
-			}
-			return &hwDefTex[scaleflags];
+			return &hwDefTex[scaleflags & ~CTF_ReduceQuality];
 		}
 
 		translation |= (scaleflags << 24);

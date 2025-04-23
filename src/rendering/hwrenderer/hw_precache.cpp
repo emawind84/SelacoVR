@@ -97,7 +97,6 @@ static void PrecacheSprite(FGameTexture *tex, SpriteHits &hits)
 {
 	int scaleflags = CTF_Expand;
 	if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
-	if (shouldScaleQuality(tex)) scaleflags |= CTF_ReduceQuality;
 
 	FMaterial * gltex = FMaterial::ValidateTexture(tex, scaleflags);
 	if (gltex) PrecacheList(gltex, hits);

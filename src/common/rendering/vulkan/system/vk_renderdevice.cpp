@@ -156,14 +156,24 @@ ADD_STAT(vkloader)
 		sc->GetBGStats(minLoad, maxLoad, avgLoad);
 		sc->GetBGStats2(minFG, maxFG, avgFG);
 
-		FString out;
+		static VmaBudget budgets[10] = {};
+		VkDeviceSize a = 0, b = 0;
+
+		vmaGetHeapBudgets(sc->device->allocator, budgets);
+		for (auto& bud : budgets) {
+			a += bud.usage;
+			b += bud.budget;
+		}
+
+		FString out = "";
 		out.AppendFormat(
+			"VRAM: %dMB / %dMB\n"
 			"[%d Threads] Queued: %3.3d - %3.3d Out: %3.3d  Col: %d\nMax: %3.3d Max Sec: %3.3d Tot: %d\n"
 			"Models: %d\n"
 			"Min: %.3fms  FG: %.3fms\n"
 			"Max: %.3fms  FG: %.3fms\n"
 			"Avg: %.3fms  FG: %.3fms\n",
-			sc->GetNumThreads(), queue, secQueue, outSize, collisions, maxQueue, maxSecondaryQueue, total, models, minLoad, minFG, maxLoad, maxFG, avgLoad, avgFG
+			a / 1024 / 1024, b / 1024 / 1024, sc->GetNumThreads(), queue, secQueue, outSize, collisions, maxQueue, maxSecondaryQueue, total, models, minLoad, minFG, maxLoad, maxFG, avgLoad, avgFG
 		);
 		return out;
 	}
@@ -1087,7 +1097,8 @@ bool VulkanRenderDevice::BackgroundCacheMaterial(FMaterial *mat, FTranslationID 
 	int8_t flags = 0;
 
 	if (!mat->sourcetex->GetNoMipmaps()) flags |= TEXLOAD_ALLOWMIPS;
-	if (layer->scaleFlags & CTF_ReduceQuality) flags |= TEXLOAD_ALLOWQUALITY;
+	if (layer->scaleFlags & CTF_ReduceQuality) 
+		flags |= TEXLOAD_ALLOWQUALITY;
 
 	// If the texture is already submitted to the cache, find it and move it to the normal queue to reprioritize it
 	if (lumpExists && !secondary && systex->GetState() == IHardwareTexture::HardwareState::CACHING) {
@@ -1143,7 +1154,8 @@ bool VulkanRenderDevice::BackgroundCacheMaterial(FMaterial *mat, FTranslationID 
 		lump = layer->layerTexture->GetSourceLump();
 		bool lumpExists = fileSystem.FileLength(lump) >= 0;
 
-		if (lump == 0) continue;
+		if (lump == 0) 
+			continue;
 		if (lumpExists && syslayer->GetState() == IHardwareTexture::HardwareState::CACHING) {
 			// Move from secondary queue to primary
 			VkTexLoadIn in;
