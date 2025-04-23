@@ -284,7 +284,7 @@ static void TempUploadTexture(VkCommandBufferManager *cmd, VkHardwareTexture *te
 
 			mipWidth = std::max(1u, (mipWidth >> 1));
 			mipHeight = std::max(1u, (mipHeight >> 1));
-			mipSize = std::max(1u, ((mipWidth + 3) / 4)) * std::max(1u, ((mipHeight + 3) / 4)) * 16;
+			mipSize = (size_t)std::max(1u, ((mipWidth + 3) / 4)) * std::max(1u, ((mipHeight + 3) / 4)) * 16;
 		}
 	}
 	else {
