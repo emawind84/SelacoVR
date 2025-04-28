@@ -390,18 +390,18 @@ bool HWSprite::CalculateVertices(HWDrawInfo* di, FVector3* v, DVector3* vp)
 		pitch.Normalized180();
 
 		mat.Translate(x, z, y);
-		mat.Rotate(0, 1, 0, 270. - Angles.Yaw.Degrees());
-		mat.Rotate(1, 0, 0, pitch.Degrees());
+		mat.FastRotateY(270. - Angles.Yaw.Degrees());
+		mat.FastRotateX(pitch.Degrees());
 
 		if (actor && actor->renderflags & RF_ROLLCENTER)
 		{
 			mat.Translate(center.X - x, 0, center.Y - y);
-			mat.Rotate(0, 1, 0, - Angles.Roll.Degrees());
+			mat.FastRotateY(-Angles.Roll.Degrees());
 			mat.Translate(-center.X, -z, -center.Y);
 		}
 		else
 		{
-			mat.Rotate(0, 1, 0, - Angles.Roll.Degrees());
+			mat.FastRotateY(-Angles.Roll.Degrees());
 			mat.Translate(-x, -z, -y);
 		}
 		v[0] = mat * FVector3(x2, z, y2);
@@ -461,7 +461,7 @@ bool HWSprite::CalculateVertices(HWDrawInfo* di, FVector3* v, DVector3* vp)
 			float counterRotationDeg = 270. - HWAngles.Yaw.Degrees(); // counteracts existing sprite rotation
 			float relAngleDeg = counterRotationDeg + absAngleDeg;
 
-			mat.Rotate(0, 1, 0, relAngleDeg);
+			mat.FastRotateY(relAngleDeg);
 		}
 
 		// [fgsfds] calculate yaw vectors
@@ -473,7 +473,6 @@ bool HWSprite::CalculateVertices(HWDrawInfo* di, FVector3* v, DVector3* vp)
 		{
 			float yawvecX = Angles.Yaw.Cos();
 			float yawvecY = Angles.Yaw.Sin();
-			mat.Rotate(0, 1, 0, 0);
 			if (drawRollSpriteActor)
 			{
 
