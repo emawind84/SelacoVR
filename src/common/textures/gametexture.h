@@ -466,6 +466,11 @@ inline int shouldUpscale(FGameTexture* tex, EUpscaleFlags UseType)
 	return tex->GetUpscaleFlag();
 }
 
+inline bool shouldScaleQuality(FGameTexture* tex) {
+	auto useType = tex->GetUseType();
+	return useType == ETextureType::Sprite || useType == ETextureType::SkinSprite || useType == ETextureType::Decal;
+}
+
 struct FTexCoordInfo
 {
 	int mRenderWidth;

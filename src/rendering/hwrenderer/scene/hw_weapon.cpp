@@ -539,7 +539,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 		gl_texture_thread &&
 		screen->SupportsBackgroundCache()) {
 
-		int scaleflags = CTF_Expand;
+		int scaleflags = CTF_Expand | CTF_ReduceQuality;
 		if (shouldUpscale(tex, UF_Sprite)) scaleflags |= CTF_Upscale;
 
 		// Also make an attempt to find the next 5 state frames and load that too!
@@ -552,7 +552,7 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 
 			auto tex2 = GetNextStateTexture(&nextState, psp->GetSprite());
 			if (tex2) {
-				int scaleflags2 = CTF_Expand;
+				int scaleflags2 = CTF_Expand | CTF_ReduceQuality;
 				if (shouldUpscale(tex2, UF_Sprite)) scaleflags2 |= CTF_Upscale;
 				screen->BackgroundCacheTextureMaterial(tex2, psp->Translation, scaleflags2, true);
 			}
