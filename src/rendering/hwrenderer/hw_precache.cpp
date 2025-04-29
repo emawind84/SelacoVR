@@ -148,7 +148,7 @@ void hw_unloadTexture(FGameTexture* tex) {
 			}
 		}
 
-		for (int x = 0; x < 6; x++) {
+		for (int x = 0; x < 5; x++) {
 			FMaterial* mat = tex->GetMaterial(x);
 			if (mat) mat->DeleteDescriptors();
 		}
