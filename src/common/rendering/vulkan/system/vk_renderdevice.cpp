@@ -384,7 +384,7 @@ bool VkTexLoadThread::loadResource(VkTexLoadIn &input, VkTexLoadOut &output) {
 
 			if (input.spi.generateSpi) {
 				// Generate sprite data without pixel data, since no trimming should occur
-				FGameTexture::GenerateEmptySpriteData(output.spi.info, buffWidth, buffHeight);
+				FGameTexture::GenerateEmptySpriteData(output.spi.info, input.gtex ? input.gtex->GetTexelWidth() : buffWidth, input.gtex ? input.gtex->GetTexelHeight() : buffHeight);
 			}
 		}
 		else {
