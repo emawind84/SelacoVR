@@ -116,6 +116,7 @@ struct particledata_t
 	void Init(FLevelLocals* Level, DVector3 initialPos);
 
 	bool CheckWater(double* outSurfaceHeight);
+	float GetFloorHeight();
 	void UpdateUnderwater();
 
 	AActor* SpawnActor(PClassActor* actorClass, const DVector3& offset);

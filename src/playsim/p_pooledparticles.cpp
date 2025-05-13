@@ -723,7 +723,7 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	rollStep = 0;
 	bounces = 0;
 	maxBounces = -1;
-	floorz = (float)s->floorplane.ZatPoint(initialPos);
+	floorz = GetFloorHeight();
 	ceilingz = (float)s->ceilingplane.ZatPoint(initialPos);
 	restzoffset = 0;
 	color = 0xffffff;
@@ -796,6 +796,29 @@ bool particledata_t::CheckWater(double* outSurfaceHeight)
 	}
 
 	return false;
+}
+
+float particledata_t::GetFloorHeight()
+{
+	// Only check for 3D floors if we REALLY need to
+	if (definition->Flags & PDF_BOUNCEONFLOORS && vel.Z <= VM_EPSILON)
+	{
+		for (auto rover : subsector->sector->e->XFloor.ffloors)
+		{
+			if (!(rover->flags & FF_EXISTS)) continue;
+
+			if (rover->flags & FF_SOLID)
+			{
+				float roverZ = rover->bottom.plane->ZatPoint(pos);
+				if (roverZ < pos.Z)
+				{
+					return rover->top.plane->ZatPoint(pos) + 0.1f;
+				}
+			}
+		}
+	}
+
+	return subsector->sector->floorplane.ZatPoint(pos);
 }
 
 void particledata_t::UpdateUnderwater()
@@ -1704,7 +1727,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 
 			if (particle->HasFlag(DPF_ATREST))
 			{
-				particle->floorz = (float)particle->subsector->sector->floorplane.ZatPoint(particle->pos);
+				particle->floorz = particle->GetFloorHeight();
 
 				// We're setting the vel rather than the pos so that we get proper interpolation for moving floors
 				particle->pos.Z += particle->vel.Z;
@@ -1831,7 +1854,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 			}
 		}
 
-		particle->floorz = (float)s->floorplane.ZatPoint(particle->pos);
+		particle->floorz = particle->GetFloorHeight();
 		particle->ceilingz = (float)s->ceilingplane.ZatPoint(particle->pos);
 
 		if (particle->HasFlag(DPF_ATREST))
