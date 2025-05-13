@@ -809,9 +809,11 @@ float particledata_t::GetFloorHeight()
 
 			if (rover->flags & FF_SOLID)
 			{
+				// If the ceiling of the 3D floor is below the particle, then consider us above the floor
 				float roverZ = rover->bottom.plane->ZatPoint(pos);
 				if (roverZ < pos.Z)
 				{
+					// Add a liiittle bit of an offset for 3D floors, to make sure particles get the right color
 					return rover->top.plane->ZatPoint(pos) + 0.1f;
 				}
 			}
