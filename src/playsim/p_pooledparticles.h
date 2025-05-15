@@ -100,7 +100,7 @@ struct particledata_t
 	float roll, rollStep;						// +8 
 	int16_t bounces, maxBounces;				// +4
 	float floorz, ceilingz;						// +8
-	float restzoffset;							// +4
+	secplane_t* restplane;						// +8
 	int color;									// +4
 	FTextureID texture, lastTexture;			// +8
 	uint8_t animFrame, animTick;				// +2 
@@ -117,6 +117,7 @@ struct particledata_t
 
 	bool CheckWater(double* outSurfaceHeight);
 	float GetFloorHeight();
+	secplane_t* GetFloorPlane();
 	void UpdateUnderwater();
 
 	AActor* SpawnActor(PClassActor* actorClass, const DVector3& offset);

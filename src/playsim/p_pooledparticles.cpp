@@ -725,7 +725,7 @@ void particledata_t::Init(FLevelLocals* Level, DVector3 initialPos)
 	maxBounces = -1;
 	floorz = GetFloorHeight();
 	ceilingz = (float)s->ceilingplane.ZatPoint(initialPos);
-	restzoffset = 0;
+	restplane = nullptr;
 	color = 0xffffff;
 	animFrame = 0;
 	animTick = 0;
@@ -810,17 +810,37 @@ float particledata_t::GetFloorHeight()
 			if (rover->flags & FF_SOLID)
 			{
 				// If the ceiling of the 3D floor is below the particle, then consider us above the floor
-				float roverZ = rover->bottom.plane->ZatPoint(pos);
+				float roverZ = (float)rover->bottom.plane->ZatPoint(pos);
 				if (roverZ < pos.Z)
 				{
 					// Add a liiittle bit of an offset for 3D floors, to make sure particles get the right color
-					return rover->top.plane->ZatPoint(pos) + 0.1f;
+					return (float)rover->top.plane->ZatPoint(pos) + 0.1f;
 				}
 			}
 		}
 	}
 
-	return subsector->sector->floorplane.ZatPoint(pos);
+	return (float)subsector->sector->floorplane.ZatPoint(pos);
+}
+
+secplane_t* particledata_t::GetFloorPlane()
+{
+	for (auto rover : subsector->sector->e->XFloor.ffloors)
+	{
+		if (!(rover->flags & FF_EXISTS)) continue;
+
+		if (rover->flags & FF_SOLID)
+		{
+			// If the ceiling of the 3D floor is below the particle, then consider us above the floor
+			float roverZ = (float)rover->bottom.plane->ZatPoint(pos);
+			if (roverZ < pos.Z)
+			{
+				return rover->top.plane;
+			}
+		}
+	}
+
+	return &subsector->sector->floorplane;
 }
 
 void particledata_t::UpdateUnderwater()
@@ -1317,7 +1337,7 @@ void DParticleDefinition::RestParticle(particledata_t* particle)
 {
 	particle->SetFlag(DPF_ATREST);
 	particle->prevpos = particle->pos;
-	particle->restzoffset = (float)particle->pos.Z - particle->floorz;
+	particle->restplane = particle->GetFloorPlane();
 
 	if (HasFlag(PDF_ROLLSTOP)) 
 	{
@@ -1729,7 +1749,7 @@ void P_ThinkDefinedParticles(FLevelLocals* Level)
 
 			if (particle->HasFlag(DPF_ATREST))
 			{
-				particle->floorz = particle->GetFloorHeight();
+				particle->floorz = (float)particle->restplane->ZatPoint(particle->pos) + 0.1f;
 
 				// We're setting the vel rather than the pos so that we get proper interpolation for moving floors
 				particle->pos.Z += particle->vel.Z;
