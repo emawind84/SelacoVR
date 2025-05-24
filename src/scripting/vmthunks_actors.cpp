@@ -225,9 +225,9 @@ DEFINE_ACTION_FUNCTION(AActor, A_PlaySound)
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION_NATIVE(AActor, StartSound, StartSound)
+DEFINE_ACTION_FUNCTION(AActor, StartSound, StartSound)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_INT(soundid);
 	PARAM_INT(channel);
 	PARAM_INT(flags);
@@ -235,6 +235,16 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, StartSound, StartSound)
 	PARAM_FLOAT(attenuation);
 	PARAM_FLOAT(pitch);
 	PARAM_FLOAT(startTime);
+
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
+		if (pspr != nullptr && pspr->GetID() == PSP_OFFHANDWEAPON && channel == CHAN_WEAPON)
+		{
+			channel = CHAN_OFFWEAPON;
+		}
+	}
+
 	ACTION_RETURN_INT(StartSound(self, soundid, channel, flags, volume, attenuation, pitch, startTime));
 	return 0;
 }
