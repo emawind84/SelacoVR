@@ -53,7 +53,7 @@ class TimeBombWeapon : Weapon replaces BFG9000
 		{
 			return;
 		}
-		Weapon weap = player.ReadyWeapon;
+		WeaponBase weap = player.ReadyWeapon;
 		if (weap != null && invoker == weap && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
 			if (!weap.DepleteAmmo (weap.bAltFire, true, weap.ammouse1))

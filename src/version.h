@@ -92,6 +92,10 @@ const char *GetVersionString();
 
 // This is so that derivates can use the same savegame versions without worrying about engine compatibility
 #define GAMESIG "SELACO"
+#ifdef __ANDROID__
+#define BASEWAD "res/qzdoom.pk3"
+#define OPTIONALWAD "res/game_support.pk3"
+#else
 #define BASEWAD "qzdoom.pk3"
 #define OPTIONALWAD "game_support.pk3"
 #endif

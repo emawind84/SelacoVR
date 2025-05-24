@@ -1091,7 +1091,7 @@ class PowerWeaponLevel2 : Powerup
 		ApplyEffect(player.OffhandWeapon);
 	}
 
-	private void ApplyEffect(Weapon weap)
+	private void ApplyEffect(WeaponBase weap)
 	{
 		let player = Owner.player;
 		if (player == null)

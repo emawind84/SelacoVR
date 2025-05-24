@@ -480,7 +480,7 @@ class WeaponBase : StateProvider
 		let weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weap != NULL)
 		{
-			weap.CheckAmmo (weap.bAltFire ? Weapon.AltFire : WeaponBase.PrimaryFire, true);
+			weap.CheckAmmo (weap.bAltFire ? WeaponBase.AltFire : WeaponBase.PrimaryFire, true);
 		}
 	}
 		
@@ -594,7 +594,7 @@ class WeaponBase : StateProvider
 		}
 		if (Owner.player != NULL)
 		{
-			Weapon weap = useweap.bOffhandWeapon ? Owner.player.OffhandWeapon : Owner.player.ReadyWeapon;
+			WeaponBase weap = useweap.bOffhandWeapon ? Owner.player.OffhandWeapon : Owner.player.ReadyWeapon;
 			if (weap != useweap)
 			{
 				Owner.player.PendingWeapon = useweap;
