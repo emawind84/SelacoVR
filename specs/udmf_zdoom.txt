@@ -151,6 +151,11 @@ Note: All <bool> fields default to false unless mentioned otherwise.
       damagespecial = <bool>;     // This line will call special if having health>0 and receiving damage
       deathspecial = <bool>;      // This line will call special if health was reduced to 0
 
+      health = <int>;             // Amount of hitpoints for this line.
+      healthgroup = <int>;        // ID of destructible object to synchronize hitpoints (optional, default is 0)
+      damagespecial = <bool>;     // This line will call special if having health>0 and receiving damage
+      deathspecial = <bool>;      // This line will call special if health was reduced to 0
+
       * Note about arg0str
 
       For lines with ACS specials (80-86 and 226), if arg0str is present and non-null, it

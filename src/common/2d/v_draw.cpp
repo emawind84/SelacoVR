@@ -40,6 +40,7 @@
 #include "texturemanager.h"
 #include "r_videoscale.h"
 #include "c_cvars.h"
+#include "hw_vrmodes.h"
 
 // @Cockatrice - For Screen.SetCursor
 #include "i_system.h"
@@ -137,6 +138,19 @@ int AspectMultiplier(float aspect)
 		return (int)round(320.0f / (AspectBaseWidth(aspect) / 3.0f) * 48.0f);
 	else
 		return (int)round(200.0f / (AspectBaseHeight(aspect) / 3.0f) * 48.0f);
+}
+
+int VR_GetUIScale(F2DDrawer *drawer, int altval)
+{
+	int scaleval;
+	if (altval > 0) scaleval = altval;
+	else if (uiscale == 0)
+	{
+		scaleval = drawer->GetHeight() / 320;
+	}
+	else scaleval = uiscale;
+
+	return std::max(1, scaleval);
 }
 
 int GetUIScale(F2DDrawer *drawer, int altval)
@@ -1750,7 +1764,9 @@ void DoDim(F2DDrawer *drawer, PalEntry color, float amount, int x1, int y1, int 
 	{
 		amount = 1;
 	}
-	drawer->AddColorOnlyQuad(x1, y1, w, h, (color.d & 0xffffff) | (int(amount * 255) << 24), style);
+	// send outside2D only if VR
+	auto vrmode = VRMode::GetVRMode(true);
+	drawer->AddColorOnlyQuad(x1, y1, w, h, (color.d & 0xffffff) | (int(amount * 255) << 24), style, false, vrmode->IsVR());
 }
 
 void Dim(F2DDrawer *drawer, PalEntry color, float damount, int x1, int y1, int w, int h, FRenderStyle *style)

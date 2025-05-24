@@ -64,6 +64,7 @@
 #include "v_palette.h"
 #include "v_draw.h"
 #include "m_fixed.h"
+#include "hw_vrmodes.h"
 
 #include "../version.h"
 
@@ -121,7 +122,7 @@ CUSTOM_CVAR (Int, st_scale, 0, CVAR_ARCHIVE)
 EXTERN_CVAR(Float, hud_scalefactor)
 EXTERN_CVAR(Bool, hud_aspectscale)
 
-CVAR (Bool, crosshairon, true, CVAR_ARCHIVE);
+CVAR (Bool, crosshairon, false, CVAR_ARCHIVE);
 CVAR (Int, crosshair, 0, CVAR_ARCHIVE)
 CVAR (Bool, crosshairforce, false, CVAR_ARCHIVE)
 CUSTOM_CVAR(Int, am_showmaplabel, 2, CVAR_ARCHIVE)
@@ -990,7 +991,8 @@ void DBaseStatusBar::RefreshBackground () const
 
 void DBaseStatusBar::DrawCrosshair ()
 {
-	if (!crosshairon)
+	auto vrmode = VRMode::GetVRMode(true);
+	if (!crosshairon || vrmode->IsVR())
 	{
 		return;
 	}

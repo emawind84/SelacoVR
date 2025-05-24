@@ -111,16 +111,21 @@ class OptionMenuItem : MenuItemBase
 class OptionMenuItemSubmenu : OptionMenuItem
 {
 	int mParam;
-	OptionMenuItemSubmenu Init(String label, Name command, int param = 0, bool centered = false)
+	int mColor;
+
+	OptionMenuItemSubmenu Init(String label, Name command, int param = 0, bool centered = false, int cr = -1)
 	{
 		Super.init(label, command, centered);
 		mParam = param;
+		mColor = OptionMenuSettings.mFontColorMore;
+		if ((cr & 0xffff0000) == 0x12340000) mColor = cr & 0xffff;
+		else if (cr > 0) mColor = OptionMenuSettings.mFontColorHeader;
 		return self;
 	}
 
 	override int Draw(OptionMenuDescriptor desc, int y, int indent, bool selected)
 	{
-		int x = drawLabel(indent, y, selected? OptionMenuSettings.mFontColorSelection : OptionMenuSettings.mFontColorMore);
+		int x = drawLabel(indent, y, selected? OptionMenuSettings.mFontColorSelection : mColor);
 		if (mCentered) 
 		{
 			return x - 16*CleanXfac_1;
@@ -133,6 +138,47 @@ class OptionMenuItemSubmenu : OptionMenuItem
 		Menu.MenuSound("menu/advance");
 		Menu.SetMenu(mAction, mParam);
 		return true;
+	}
+}
+
+class OptionMenuItemStaticPatch : OptionMenuItem
+{
+	TextureID mTexture;
+
+	void Init(int x, int y, TextureID patch, bool centered = false)
+	{
+		Super.init('None', 'None', centered);
+		mXpos = x;
+		mYpos = y;
+		mTexture = patch;
+	}
+	
+	override int Draw(OptionMenuDescriptor desc, int y, int indent, bool selected)
+	{
+		if (!mTexture.Exists())
+		{
+			return 0;
+		}
+
+		double x = mXpos;
+		Vector2 vec = TexMan.GetScaledSize(mTexture);
+		if (mYpos >= 0)
+		{
+			if (mCentered) x -= vec.X / 2;
+			screen.DrawTexture (mTexture, true, x, mYpos, DTA_Clean, true);
+		}
+		else
+		{
+			x = (mXpos - 160) * CleanXfac + (Screen.GetWidth()>>1);
+			if (mCentered) x -= (vec.X * CleanXfac)/2;
+			screen.DrawTexture (mTexture, true, x, -mYpos*CleanYfac, DTA_CleanNoMove, true);
+		}
+		return 0;
+	}
+
+	override bool Selectable()
+	{
+		return false;
 	}
 }
 
@@ -586,6 +632,15 @@ class OptionMenuItemMapControl : OptionMenuItemControlBase
 	}
 }
 
+class OptionMenuItemDoubleControl : OptionMenuItemControlBase
+{
+	OptionMenuItemDoubleControl Init(String label, Name command)
+	{
+		Super.Init(label, command, DoubleBindings);
+		return self;
+	}
+}
+
 //=============================================================================
 //
 //
@@ -597,18 +652,18 @@ class OptionMenuItemStaticText : OptionMenuItem
 	int mColor;
 
 	// this function is only for use from MENUDEF, it needs to do some strange things with the color for backwards compatibility.
-	OptionMenuItemStaticText Init(String label, int cr = -1)
+	OptionMenuItemStaticText Init(String label, int cr = -1, bool center = true)
 	{
-		Super.Init(label, 'None', true);
+		Super.Init(label, 'None', center);
 		mColor = OptionMenuSettings.mFontColor;
 		if ((cr & 0xffff0000) == 0x12340000) mColor = cr & 0xffff;
 		else if (cr > 0) mColor = OptionMenuSettings.mFontColorHeader;
 		return self;
 	}
 
-	OptionMenuItemStaticText InitDirect(String label, int cr)
+	OptionMenuItemStaticText InitDirect(String label, int cr, bool center = true)
 	{
-		Super.Init(label, 'None', true);
+		Super.Init(label, 'None', center);
 		mColor = cr;
 		return self;
 	}
@@ -1164,6 +1219,51 @@ class OptionMenuItemNumberField : OptionMenuFieldBase
 	float mMinimum;
 	float mMaximum;
 	float mStep;
+}
+
+class OptionMenuItemCommandInput : OptionMenuItemTextField
+{
+	void Init(String label)
+	{
+		Super.Init(label, "");
+	}
+
+	private native static void DoCommand(String cmd, bool unsafe);
+
+	override bool MenuEvent(int mkey, bool fromcontroller)
+	{
+		if (mEnter != null)
+		{
+			mtext = mEnter.GetText();
+		}
+		if (mkey == Menu.MKEY_Enter)
+		{
+			Menu.MenuSound("menu/choose");
+			mEnter = TextEnterMenu.OpenTextEnter(Menu.GetCurrentMenu(), SmallFont, mText, -1, fromcontroller);
+			mEnter.ActivateMenu();
+			return true;
+		}
+		else if (mkey == Menu.MKEY_Input)
+		{
+			mEnter = null;
+			DoCommand(mtext, false);
+			DoCommand("closemenu", false);
+			//DoCommand("toggleconsole", false);
+			return true;
+		}
+		else if (mkey == Menu.MKEY_Abort)
+		{
+			//mtext = "";
+			mEnter = null;
+			return true;
+		}
+
+		return Super.MenuEvent(mkey, fromcontroller);
+	}
+
+	String GetText() { return mText; }
+
+	private string  mText;
 }
 
 //=============================================================================

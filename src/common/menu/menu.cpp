@@ -442,11 +442,7 @@ void M_StartControlPanel (bool makesound, bool scaleoverride)
 	if (CurrentMenu != nullptr)
 		return;
 
-	buttonMap.ResetButtonStates ();
-	for (int i = 0; i < NUM_MKEYS; ++i)
-	{
-		MenuButtons[i].ReleaseKey(0);
-	}
+	M_ResetButtonStates();
 
 	C_HideConsole ();				// [RH] Make sure console goes bye bye.
 	menuactive = MENU_On;
@@ -460,6 +456,19 @@ void M_StartControlPanel (bool makesound, bool scaleoverride)
 	}
 }
 
+void M_ResetButtonStates()
+{
+	buttonMap.ResetButtonStates ();
+	for (int i = 0; i < NUM_MKEYS; ++i)
+	{
+		MenuButtons[i].ReleaseKey(0);
+	}
+}
+
+int getMenuState()
+{
+	return (int)menuactive;
+}
 
 bool M_IsAnimated()
 {
@@ -753,14 +762,16 @@ bool M_Responder (event_t *ev)
 
 			case KEY_PAD_DPAD_UP:
 			case KEY_PAD_LTHUMB_UP:
-			case KEY_JOYAXIS2MINUS:
+			case KEY_JOYAXIS2PLUS:
+			case KEY_JOYAXIS4PLUS:
 			case KEY_JOYPOV1_UP:
 				mkey = MKEY_Up;
 				break;
 
 			case KEY_PAD_DPAD_DOWN:
 			case KEY_PAD_LTHUMB_DOWN:
-			case KEY_JOYAXIS2PLUS:
+			case KEY_JOYAXIS2MINUS:
+			case KEY_JOYAXIS4MINUS:
 			case KEY_JOYPOV1_DOWN:
 				mkey = MKEY_Down;
 				break;
@@ -768,6 +779,7 @@ bool M_Responder (event_t *ev)
 			case KEY_PAD_DPAD_LEFT:
 			case KEY_PAD_LTHUMB_LEFT:
 			case KEY_JOYAXIS1MINUS:
+			case KEY_JOYAXIS3MINUS:
 			case KEY_JOYPOV1_LEFT:
 				mkey = MKEY_Left;
 				break;
@@ -775,6 +787,7 @@ bool M_Responder (event_t *ev)
 			case KEY_PAD_DPAD_RIGHT:
 			case KEY_PAD_LTHUMB_RIGHT:
 			case KEY_JOYAXIS1PLUS:
+			case KEY_JOYAXIS3PLUS:
 			case KEY_JOYPOV1_RIGHT:
 				mkey = MKEY_Right;
 				break;
@@ -1129,12 +1142,12 @@ DEFINE_FIELD(DImageScrollerDescriptor, virtHeight)
 
 struct IJoystickConfig;
 // These functions are used by dynamic menu creation.
-DMenuItemBase * CreateOptionMenuItemStaticText(const char *name, int v)
+DMenuItemBase * CreateOptionMenuItemStaticText(const char *name, int v, bool centered)
 {
 	auto c = PClass::FindClass("OptionMenuItemStaticText");
 	auto p = c->CreateNew();
 	FString namestr = name;
-	VMValue params[] = { p, &namestr, v };
+	VMValue params[] = { p, &namestr, v, centered };
 	auto f = dyn_cast<PFunction>(c->FindSymbol("Init", false));
 	VMCall(f->Variants[0].Implementation, params, countof(params), nullptr, 0);
 	return (DMenuItemBase*)p;
@@ -1151,12 +1164,12 @@ DMenuItemBase * CreateOptionMenuItemJoyConfigMenu(const char *label, IJoystickCo
 	return (DMenuItemBase*)p;
 }
 
-DMenuItemBase * CreateOptionMenuItemSubmenu(const char *label, FName cmd, int center)
+DMenuItemBase * CreateOptionMenuItemSubmenu(const char *label, FName cmd, int center, int v)
 {
 	auto c = PClass::FindClass("OptionMenuItemSubmenu");
 	auto p = c->CreateNew();
 	FString namestr = label;
-	VMValue params[] = { p, &namestr, cmd.GetIndex(), center, false };
+	VMValue params[] = { p, &namestr, cmd.GetIndex(), center, false, v };
 	auto f = dyn_cast<PFunction>(c->FindSymbol("Init", false));
 	VMCall(f->Variants[0].Implementation, params, countof(params), nullptr, 0);
 	return (DMenuItemBase*)p;

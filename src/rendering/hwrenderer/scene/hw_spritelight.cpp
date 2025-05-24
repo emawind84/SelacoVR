@@ -236,6 +236,11 @@ void hw_GetDynModelLight(AActor *self, FDynLightData &modellightdata, double tic
 			while (node) // check all lights touching a subsector
 			{
 				FDynamicLight *light = node->lightsource;
+				if (!light->IsActive() || gl_IsDistanceCulled(light))
+				{
+					node=node->nextLight;
+					continue;
+				}
 				if (light->ShouldLightActor(self))
 				{
 					int group = subsector->sector->PortalGroup;

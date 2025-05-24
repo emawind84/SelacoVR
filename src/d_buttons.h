@@ -8,6 +8,7 @@ enum
 	Button_Right,	
 	Button_Zoom,	
 	Button_Back,	
+	Button_OH_Attack,
 	Button_AM_ZoomIn,
 	Button_Reload,	
 	Button_LookDown,
@@ -20,12 +21,14 @@ enum
 	Button_MoveDown,
 	Button_AltAttack,
 	Button_MoveLeft,
+	Button_OH_Reload,
 	Button_MoveRight,
 	Button_AM_PanRight,
 	Button_AM_PanUp,
 	Button_Mlook,	
 	Button_Crouch,	
 	Button_Left,	
+	Button_OH_AltAttack,
 	Button_LookUp,	
 	Button_User3,	
 	Button_Strafe,	
@@ -33,7 +36,8 @@ enum
 	Button_ShowScores,
 	Button_Speed,	
 	Button_Use,		
-	Button_MoveUp,	
+	Button_MoveUp,
+	Button_MH_Reload, 
 	NUM_ACTIONS
 };
 

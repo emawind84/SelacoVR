@@ -46,7 +46,9 @@
 #include "g_levellocals.h"
 #include "vm.h"
 #include "sbar.h"
+#include "hw_vrmodes.h"
 
+#include <QzDoom/VrCommon.h>
 
 // MACROS ------------------------------------------------------------------
 
@@ -56,6 +58,7 @@
 
 struct FGenericButtons
 {
+	int Hand;
 	int ReadyFlag;			// Flag passed to A_WeaponReady
 	int StateFlag;			// Flag set in WeaponState
 	int ButtonFlag;			// Button to press
@@ -96,12 +99,20 @@ CVAR(Int, sv_fastweapons, 0, CVAR_SERVERINFO);
 
 static const FGenericButtons ButtonChecks[] =
 {
-	{ WRF_AllowZoom,	WF_WEAPONZOOMOK,	BT_ZOOM,	NAME_Zoom },
-	{ WRF_AllowReload,	WF_WEAPONRELOADOK,	BT_RELOAD,	NAME_Reload },
-	{ WRF_AllowUser1,	WF_USER1OK,			BT_USER1,	NAME_User1 },
-	{ WRF_AllowUser2,	WF_USER2OK,			BT_USER2,	NAME_User2 },
-	{ WRF_AllowUser3,	WF_USER3OK,			BT_USER3,	NAME_User3 },
-	{ WRF_AllowUser4,	WF_USER4OK,			BT_USER4,	NAME_User4 },
+	{ 0, WRF_AllowZoom,		WF_WEAPONZOOMOK,	BT_ZOOM,	NAME_Zoom },
+	{ 0, WRF_AllowReload,	WF_WEAPONRELOADOK,	BT_RELOAD,	NAME_Reload },
+	{ 0, WRF_AllowUser1,	WF_USER1OK,			BT_USER1,	NAME_User1 },
+	{ 0, WRF_AllowUser2,	WF_USER2OK,			BT_USER2,	NAME_User2 },
+	{ 0, WRF_AllowUser3,	WF_USER3OK,			BT_USER3,	NAME_User3 },
+	{ 0, WRF_AllowUser4,	WF_USER4OK,			BT_USER4,	NAME_User4 },
+	{ 0, WRF_AllowReload,	WF_WEAPONRELOADOK,	BT_MAINHANDRELOAD,	NAME_Reload },
+	{ 1, WRF_AllowZoom,		WF_OFFHANDZOOMOK,	BT_ZOOM,	NAME_Zoom },
+	{ 1, WRF_AllowReload,	WF_OFFHANDRELOADOK,	BT_RELOAD,	NAME_Reload },
+	{ 1, WRF_AllowUser1,	WF_OFFHANDUSER1OK,	BT_USER1,	NAME_User1 },
+	{ 1, WRF_AllowUser2,	WF_OFFHANDUSER2OK,	BT_USER2,	NAME_User2 },
+	{ 1, WRF_AllowUser3,	WF_OFFHANDUSER3OK,	BT_USER3,	NAME_User3 },
+	{ 1, WRF_AllowUser4,	WF_OFFHANDUSER4OK,	BT_USER4,	NAME_User4 },
+	{ 1, WRF_AllowReload,	WF_OFFHANDRELOADOK,	BT_OFFHANDRELOAD,	NAME_Reload },
 };
 
 // CODE --------------------------------------------------------------------
@@ -278,10 +289,10 @@ static DPSprite *P_CreatePsprite(player_t *player, AActor *caller, int layer)
 //
 //------------------------------------------------------------------------
 
-void P_SetPsprite(player_t *player, PSPLayers id, FState *state, bool pending)
+void P_SetPsprite(player_t *player, PSPLayers id, FState *state, bool pending, AActor *newcaller)
 {
 	if (player == nullptr) return;
-	auto psp = player->GetPSprite(id);
+	auto psp = player->GetPSprite(id, newcaller);
 	if (psp) psp->SetState(state, pending);
 }
 
@@ -291,16 +302,17 @@ DEFINE_ACTION_FUNCTION(_PlayerInfo, SetPSprite)	// the underscore is needed to g
 	PARAM_INT(id);
 	PARAM_POINTER(state, FState);
 	PARAM_BOOL(pending);
-	P_SetPsprite(self, (PSPLayers)id, state, pending);
+	PARAM_POINTER(newcaller, AActor);
+	P_SetPsprite(self, (PSPLayers)id, state, pending, newcaller);
 	return 0;
 }
 
-DPSprite *player_t::GetPSprite(PSPLayers layer)
+DPSprite *player_t::GetPSprite(PSPLayers layer, AActor *newcaller)
 {
 	AActor *oldcaller = nullptr;
-	AActor *newcaller = nullptr;
 
-	if (layer >= PSP_TARGETCENTER)
+	if (newcaller != nullptr) {}
+	else if (layer >= PSP_TARGETCENTER)
 	{
 		if (mo != nullptr)
 		{
@@ -310,6 +322,10 @@ DPSprite *player_t::GetPSprite(PSPLayers layer)
 	else if (layer == PSP_STRIFEHANDS)
 	{
 		newcaller = mo;
+	}
+	else if (layer == PSP_OFFHANDWEAPON)
+	{
+		newcaller = OffhandWeapon;
 	}
 	else
 	{
@@ -490,7 +506,17 @@ void DPSprite::SetState(FState *newstate, bool pending)
 	if (ID == PSP_WEAPON)
 	{ // A_WeaponReady will re-set these as needed
 		Owner->WeaponState &= ~(WF_WEAPONREADY | WF_WEAPONREADYALT | WF_WEAPONBOBBING | WF_WEAPONSWITCHOK | WF_WEAPONRELOADOK | WF_WEAPONZOOMOK |
-								WF_USER1OK | WF_USER2OK | WF_USER3OK | WF_USER4OK);
+								WF_USER1OK | WF_USER2OK | WF_USER3OK | WF_USER4OK | WF_TWOHANDSTABILIZED);
+	}
+	if (ID == PSP_OFFHANDWEAPON)
+	{
+		Owner->WeaponState &= ~(WF_OFFHANDREADY | WF_OFFHANDREADYALT | WF_OFFHANDBOBBING | WF_OFFHANDSWITCHOK | WF_OFFHANDRELOADOK | WF_OFFHANDZOOMOK |
+								WF_OFFHANDUSER1OK | WF_OFFHANDUSER2OK | WF_OFFHANDUSER3OK | WF_OFFHANDUSER4OK | WF_TWOHANDSTABILIZED);
+	}
+
+	if (weaponStabilised)
+	{
+		Owner->WeaponState |= WF_TWOHANDSTABILIZED;
 	}
 
 	processPending = pending;
@@ -539,7 +565,7 @@ void DPSprite::SetState(FState *newstate, bool pending)
 
 		if (Flags & PSPF_CVARFAST)
 		{
-			if (sv_fastweapons == 2 && ID == PSP_WEAPON)
+			if (sv_fastweapons == 2 && (ID == PSP_WEAPON || ID == PSP_OFFHANDWEAPON))
 				Tics = newstate->ActionFunc == nullptr ? 0 : 1;
 			else if (sv_fastweapons == 3)
 				Tics = (newstate->GetTics() != 0);
@@ -686,9 +712,12 @@ void P_BobWeapon (player_t *player, float *x, float *y, double ticfrac)
 			inv = nextinv;
 		}
 
-		*x = (float)result.X;
-		*y = (float)result.Y;
-		return;
+		if (!player->PlayInVR)
+		{
+			*x = (float)result.X;
+			*y = (float)result.Y;
+			return;
+		}
 	}
 	*x = *y = 0;
 }
@@ -716,13 +745,16 @@ void P_BobWeapon3D (player_t *player, FVector3 *translation, FVector3 *rotation,
 			inv = nextinv;
 		}
 
-		translation->X = (float)t.X;
-		translation->Y = (float)t.Y;
-		translation->Z = (float)t.Z;
-		rotation->X = (float)r.X;
-		rotation->Y = (float)r.Y;
-		rotation->Z = (float)r.Z;
-		return;
+		if (!player->PlayInVR)
+		{
+			translation->X = (float)t.X;
+			translation->Y = (float)t.Y;
+			translation->Z = (float)t.Z;
+			rotation->X = (float)r.X;
+			rotation->Y = (float)r.Y;
+			rotation->Z = (float)r.Z;
+			return;
+		}
 	}
 	*translation = *rotation = {};
 }
@@ -735,10 +767,14 @@ void P_BobWeapon3D (player_t *player, FVector3 *translation, FVector3 *rotation,
 //
 //---------------------------------------------------------------------------
 
-static void P_CheckWeaponButtons (player_t *player)
+static void P_CheckWeaponButtons (player_t *player, int hand = 0)
 {
-	auto weapon = player->ReadyWeapon;
+	auto weapon = hand ? player->OffhandWeapon : player->ReadyWeapon;
 	if (weapon == nullptr)
+	{
+		return;
+	}
+	if (hand == 1 && player->WeaponState & WF_TWOHANDSTABILIZED)
 	{
 		return;
 	}
@@ -747,7 +783,8 @@ static void P_CheckWeaponButtons (player_t *player)
 	for (size_t i = 0; i < countof(ButtonChecks); ++i)
 	{
 		if ((player->WeaponState & ButtonChecks[i].StateFlag) &&
-			(player->cmd.ucmd.buttons & ButtonChecks[i].ButtonFlag))
+			(player->cmd.ucmd.buttons & ButtonChecks[i].ButtonFlag) &&
+			(hand == ButtonChecks[i].Hand))
 		{
 			FState *state = weapon->FindState(ButtonChecks[i].StateName);
 			// [XA] don't change state if still null, so if the modder
@@ -755,7 +792,7 @@ static void P_CheckWeaponButtons (player_t *player)
 			// state, the weapon won't disappear. ;)
 			if (state != nullptr)
 			{
-				P_SetPsprite(player, PSP_WEAPON, state);
+				P_SetPsprite(player, hand ? PSP_OFFHANDWEAPON : PSP_WEAPON, state);
 				return;
 			}
 		}
@@ -765,7 +802,8 @@ static void P_CheckWeaponButtons (player_t *player)
 DEFINE_ACTION_FUNCTION(APlayerPawn, CheckWeaponButtons)
 {
 	PARAM_SELF_PROLOGUE(AActor);
-	P_CheckWeaponButtons(self->player);
+	PARAM_INT(hand)
+	P_CheckWeaponButtons(self->player, hand);
 	return 0;
 }
 
@@ -967,11 +1005,15 @@ DEFINE_ACTION_FUNCTION(AActor, A_OverlayOffset)
 
 DEFINE_ACTION_FUNCTION(AActor, A_WeaponOffset)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_FLOAT(wx)	
 	PARAM_FLOAT(wy)	
 	PARAM_INT(flags)
-	A_OverlayOffset(self, PSP_WEAPON, wx, wy, flags);
+
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		A_OverlayOffset(self, stateinfo->mPSPIndex, wx, wy, flags);
+	}
 	return 0;
 }
 
@@ -1255,7 +1297,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_ClearOverlays)
 		{
 			if (id >= PSP_TARGETCENTER)
 				break;
-			else if (id == PSP_STRIFEHANDS || id == PSP_WEAPON || id == PSP_FLASH)
+			else if (id == PSP_STRIFEHANDS || id == PSP_WEAPON || id == PSP_OFFHANDWEAPON || id == PSP_FLASH)
 				continue;
 		}
 
@@ -1326,8 +1368,18 @@ void P_SetupPsprites(player_t *player, bool startweaponup)
 	player->DestroyPSprites();
 
 	// Spawn the ready weapon
-	player->PendingWeapon = !startweaponup ? player->ReadyWeapon : (AActor*)WP_NOCHANGE;
-	P_BringUpWeapon (player);
+	if (player->ReadyWeapon != nullptr)
+	{
+		player->PendingWeapon = !startweaponup ? player->ReadyWeapon : (AActor*)WP_NOCHANGE;
+		P_BringUpWeapon (player);
+	}
+
+	// Spawn the offhand weapon
+	if (player->OffhandWeapon != nullptr)
+	{
+		player->PendingWeapon = !startweaponup ? player->OffhandWeapon : (AActor*)WP_NOCHANGE;
+		P_BringUpWeapon (player);
+	}
 }
 
 //------------------------------------------------------------------------
@@ -1407,13 +1459,13 @@ void P_SetSafeFlash(AActor *weapon, player_t *player, FState *flashstate, int in
 				if (cls->OwnsState(flashstate + index))
 				{
 					// we're ok so set the state
-					P_SetPsprite(player, PSP_FLASH, flashstate + index, true);
+					P_SetPsprite(player, PSP_FLASH, flashstate + index, true, weapon);
 					return;
 				}
 				else if (flashstate->DehIndex < 0)
 				{
 					// oh, no! The state is beyond the end of the state table so use the original flash state if it does not have a Dehacked index.
-					P_SetPsprite(player, PSP_FLASH, flashstate, true);
+					P_SetPsprite(player, PSP_FLASH, flashstate, true, weapon);
 					return;
 				}
 				else break; // no need to continue.
@@ -1440,7 +1492,7 @@ void P_SetSafeFlash(AActor *weapon, player_t *player, FState *flashstate, int in
 		index = 0;
 
 	}
-	P_SetPsprite(player, PSP_FLASH, flashstate + index, true);
+	P_SetPsprite(player, PSP_FLASH, flashstate + index, true, weapon);
 }
 
 DEFINE_ACTION_FUNCTION(_PlayerInfo, SetSafeFlash)

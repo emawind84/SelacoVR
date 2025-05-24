@@ -387,7 +387,7 @@ extend class Actor
 		{
 			let player = self.player;
 			if (player == null) return false, null;
-			let weapon = player.ReadyWeapon;
+			let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 			// Used from a weapon, so use some ammo
 
 			if (weapon == NULL || (useammo && !weapon.DepleteAmmo(weapon.bAltFire)))
@@ -410,7 +410,7 @@ extend class Actor
 	// Enhanced spawning function
 	//
 	//===========================================================================
-	bool, Actor A_SpawnItemEx(class<Actor> missile, double xofs = 0, double yofs = 0, double zofs = 0, double xvel = 0, double yvel = 0, double zvel = 0, double angle = 0, int flags = 0, int failchance = 0, int tid=0)
+	action bool, Actor A_SpawnItemEx(class<Actor> missile, double xofs = 0, double yofs = 0, double zofs = 0, double xvel = 0, double yvel = 0, double zvel = 0, double angle = 0, int flags = 0, int failchance = 0, int tid=0)
 	{
 		if (missile == NULL) 
 		{
@@ -427,16 +427,23 @@ extend class Actor
 		}
 
 		Vector2 pos;
+		Vector3 spawnvel = (xvel, yvel, zvel);
+		let directionAngle = angle;
+		let directionPitch = self.Pitch;
+		let directionRoll = self.Roll;
+		let velxy = Vel.XY / 2;
 
 		if (!(flags & SXF_ABSOLUTEANGLE))
 		{
-			angle += self.Angle;
+			directionAngle += self.Angle;
 		}
-		double s = sin(angle);
-		double c = cos(angle);
+		double s = sin(directionAngle);
+		double c = cos(directionAngle);
 
 		if (flags & SXF_ABSOLUTEPOSITION)
 		{
+			// applies the spawn offsets according to the absolute XY axes of the map, 
+			// rather than relative to the direction the calling actor is facing.
 			pos = Vec2Offset(xofs, yofs);
 		}
 		else
@@ -445,16 +452,87 @@ extend class Actor
 			// This is the inverse orientation of the absolute mode!
 			pos = Vec2Offset(xofs * c + yofs * s, xofs * s - yofs*c);
 		}
+		Vector3 spawnpos = (pos, self.pos.Z - Floorclip + GetBobOffset() + zofs);
 
 		if (!(flags & SXF_ABSOLUTEVELOCITY))
 		{
 			// Same orientation issue here!
-			double newxvel = xvel * c + yvel * s;
-			yvel = xvel * s - yvel * c;
-			xvel = newxvel;
+			spawnvel.x = xvel * c + yvel * s;
+			spawnvel.y = xvel * s - yvel * c;
 		}
 
-		let mo = Spawn(missile, (pos, self.pos.Z - Floorclip + GetBobOffset() + zofs), ALLOW_REPLACE);
+		if (player != null && (flags & SXF_RELATIVETOWEAPON))
+		{
+			directionAngle = self.Angle + angle;
+			Weapon weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
+			{
+				Vector3 dir;
+				Vector3 yoffsetDir;
+				Vector3 zoffsetDir;
+				if (weapon.bOffhandWeapon)
+				{
+					spawnpos = player.mo.OffhandPos;
+					directionRoll = -player.mo.OffhandRoll;
+					dir = player.mo.OffhandDir(self, directionAngle, pitch);
+					yoffsetDir = player.mo.OffhandDir(self, directionAngle - 90, pitch);
+					zoffsetDir = player.mo.OffhandDir(self, directionAngle, pitch + 90);
+				}
+				else
+				{
+					spawnpos = player.mo.AttackPos;
+					directionRoll = -player.mo.AttackRoll;
+					dir = player.mo.AttackDir(self, directionAngle, pitch);
+					yoffsetDir = player.mo.AttackDir(self, directionAngle - 90, pitch);
+					zoffsetDir = player.mo.AttackDir(self, directionAngle, pitch + 90);
+				}
+
+				directionAngle = dir.x;
+				directionPitch = dir.y;
+
+				if (!use_action_spawn_yzoffset)
+					yofs = zofs = 0;
+				
+				spawnpos += (
+					xofs * cos(dir.x) * cos(dir.y),
+					xofs * sin(dir.x) * cos(dir.y),
+					xofs * -sin(dir.y)
+				);
+				
+				spawnpos += (
+					yofs * cos(yoffsetDir.x) * cos(yoffsetDir.y),
+					yofs * sin(yoffsetDir.x) * cos(yoffsetDir.y),
+					yofs * -sin(yoffsetDir.y)
+				);
+				
+				spawnpos += (
+					zofs * cos(zoffsetDir.y) * cos(zoffsetDir.x), 
+					zofs * cos(zoffsetDir.y) * sin(zoffsetDir.x),
+					zofs * -sin(zoffsetDir.y)
+				);
+
+				spawnvel = (velxy, 0);
+				spawnvel += (
+					xvel * cos(dir.x) * cos(dir.y),
+					xvel * sin(dir.x) * cos(dir.y),
+					xvel * -sin(dir.y)
+				);
+
+				spawnvel += (
+					yvel * cos(yoffsetDir.x) * cos(yoffsetDir.y),
+					yvel * sin(yoffsetDir.x) * cos(yoffsetDir.y),
+					yvel * -sin(yoffsetDir.y)
+				);
+
+				spawnvel += (
+					zvel * cos(zoffsetDir.y) * cos(zoffsetDir.x), 
+					zvel * cos(zoffsetDir.y) * sin(zoffsetDir.x),
+					zvel * -sin(zoffsetDir.y)
+				);
+			}
+		}
+
+		let mo = Spawn(missile, spawnpos, ALLOW_REPLACE);
 		bool res = InitSpawnedItem(mo, flags);
 		if (res)
 		{
@@ -462,12 +540,20 @@ extend class Actor
 			{
 				mo.ChangeTid(tid);
 			}
-			mo.Vel = (xvel, yvel, zvel);
+			mo.Vel = spawnvel;
 			if (flags & SXF_MULTIPLYSPEED)
 			{
 				mo.Vel *= mo.Speed;
 			}
-			mo.Angle = angle;
+			mo.Angle = directionAngle;
+			if (flags & SXF_TRANSFERPITCH)
+			{
+				mo.Pitch = directionPitch;
+			}
+			if (flags & SXF_TRANSFERROLL)
+			{
+				mo.Roll = directionRoll;
+			}
 		}
 		return res, mo;
 	}
@@ -486,27 +572,55 @@ extend class Actor
 		{
 			return false, null;
 		}
+		Weapon weapon;
+		Vector3 dir;
+		Vector3 zoffsetDir;
+		Vector3 spawnpos = pos + (0, 0, (-Floorclip + GetBobOffset() + zheight + 35 + (player? player.crouchoffset : 0.)));
+		double directionAngle = self.Angle + (random[grenade](-4, 3) * (360./256.));
 		if (stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
 			let player = self.player;
 			if (player == null) return false, null;
-			let weapon = player.ReadyWeapon;
+			weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 			// Used from a weapon, so use some ammo
 
 			if (weapon == NULL || (useammo && !weapon.DepleteAmmo(weapon.bAltFire)))
 			{
 				return true, null;
 			}
+
+			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
+			{
+				if (weapon.bOffhandWeapon)
+				{
+					spawnpos = player.mo.OffhandPos;
+					dir = player.mo.OffhandDir(self, directionAngle, self.Pitch);
+					zoffsetDir = player.mo.OffhandDir(self, directionAngle, self.Pitch + 90);
+				}
+				else
+				{
+					spawnpos = player.mo.AttackPos;
+					dir = player.mo.AttackDir(self, directionAngle, self.Pitch);
+					zoffsetDir = player.mo.AttackDir(self, directionAngle, self.Pitch + 90);
+				}
+
+				directionAngle = dir.x;
+				spawnpos += (
+					zheight * cos(zoffsetDir.y) * cos(zoffsetDir.x), 
+					zheight * cos(zoffsetDir.y) * sin(zoffsetDir.x),
+					zheight * -sin(zoffsetDir.y)
+				);
+
+			}
 		}
 
-		let bo = Spawn(missile, pos + (0, 0, (-Floorclip + GetBobOffset() + zheight + 35 + (player? player.crouchoffset : 0.))), ALLOW_REPLACE);
+		let bo = Spawn(missile, spawnpos, ALLOW_REPLACE);
 		if (bo)
 		{
 			self.PlaySpawnSound(bo);
 			if (xyvel != 0)
 				bo.Speed = xyvel;
-			bo.Angle = Angle + (random[grenade](-4, 3) * (360./256.));
-
+			bo.Angle = directionAngle;
 			let pitch = -self.Pitch;
 			let angle = bo.Angle;
 
@@ -528,6 +642,22 @@ extend class Actor
 			bo.Vel.X = xy_velx + z_velx + Vel.X / 2;
 			bo.Vel.Y = xy_vely + z_vely + Vel.Y / 2;
 			bo.Vel.Z = xy_velz + z_velz;
+
+			if (weapon && weapon == invoker && player.mo.OverrideAttackPosDir)
+			{
+				let newvel = (Vel.XY * .5, 0);
+				newvel += (
+					bo.Speed * cos(dir.x) * cos(dir.y),
+					bo.Speed * sin(dir.x) * cos(dir.y),
+					bo.Speed * -sin(dir.y)
+				);
+				newvel += (
+					zvel * cos(zoffsetDir.y) * cos(zoffsetDir.x), 
+					zvel * cos(zoffsetDir.y) * sin(zoffsetDir.x),
+					zvel * -sin(zoffsetDir.y)
+				);
+				bo.Vel = newvel;
+			}
 
 			bo.target = self;
 			if (!bo.CheckMissileSpawn(radius)) bo = null;

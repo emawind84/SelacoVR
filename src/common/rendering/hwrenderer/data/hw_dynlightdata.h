@@ -24,6 +24,8 @@
 #define __GLC_DYNLIGHT_H
 
 #include "tarray.h"
+#include "a_dynlight.h"
+#include "r_utility.h"
 
 struct FDynLightData
 {
@@ -54,6 +56,18 @@ struct FDynLightData
 
 
 };
+
+inline bool gl_IsDistanceCulled(FDynamicLight *light)
+{
+	double dist3 = gl_light_distance_cull * gl_light_distance_cull;
+	if (dist3 <= 0.0)
+		return false;
+
+	double dist1 = (light->Pos - r_viewpoint.Pos).LengthSquared();
+	if (dist1 > dist3)
+		return true;
+	return false;
+}
 
 extern thread_local FDynLightData lightdata;
 

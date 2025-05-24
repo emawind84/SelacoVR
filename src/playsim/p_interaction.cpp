@@ -61,7 +61,10 @@
 #include "g_levellocals.h"
 #include "events.h"
 #include "actorinlines.h"
+#include "hw_vrmodes.h"
 #include "d_main.h"
+
+#include <QzDoom/VrCommon.h>
 
 static FRandom pr_botrespawn ("BotRespawn");
 static FRandom pr_killmobj ("ActorDie");
@@ -645,10 +648,22 @@ void AActor::Die (AActor *source, AActor *inflictor, int dmgflags, FName MeansOf
 		flags &= ~MF_SOLID;
 		player->playerstate = PST_DEAD;
 
-		IFVM(PlayerPawn, DropWeapon)
+		// drop ready weapon
 		{
-			VMValue param = player->mo;
-			VMCall(func, &param, 1, nullptr, 0);
+			IFVM(PlayerPawn, DropWeapon)
+			{
+				VMValue param[] = { player->mo, 0 };
+				VMCall(func, param, 2, nullptr, 0);
+			}
+		}
+
+		// drop offhand weapon
+		{
+			IFVM(PlayerPawn, DropWeapon)
+			{
+				VMValue param[] = { player->mo, 1 };
+				VMCall(func, param, 2, nullptr, 0);
+			}
 		}
 
 		if (Level->isCamera(this) && automapactive)
@@ -1040,8 +1055,6 @@ static int hasBuddha(player_t *player)
 	return 0;
 }
 
-
-
 // Returns the amount of damage actually inflicted upon the target, or -1 if
 // the damage was cancelled.
 static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage, FName mod, int flags, DAngle angle, bool& needevent)
@@ -1396,13 +1409,79 @@ static int DamageMobj (AActor *target, AActor *inflictor, AActor *source, int da
 		player->LastDamageType = mod;
 		player->attacker = source;
 		player->damagecount += damage;	// add damage after armor / invuln
-		if (player->damagecount > 100)
+		if (player->damagecount > 100 || player->damagecount < 0)
 		{
 			player->damagecount = 100;	// teleport stomp does 10k points...
 		}
 		temp = damage < 100 ? damage : 100;
 		if (player == target->Level->GetConsolePlayer() )
 		{
+			//Haptic feedback when hurt - level indicates amount of damage
+			float level = (float)(0.4 + (0.6 * (temp / 100.0)));
+			auto vrmode = VRMode::GetVRMode(true);
+			vrmode->Vibrate(200, 0, level);
+			vrmode->Vibrate(200, 1, level);
+#ifdef __MOBILE__
+			if (source == NULL)
+            {
+                if (strcasestr(mod.GetChars(), "slime"))
+                {
+                    VR_HapticEvent("slime", 0,
+                                       100 * C_GetExternalHapticLevelValue("poison"),
+                                       0, 0);
+                }
+                else if (strcasestr(mod.GetChars(), "fire"))
+                {
+                    VR_HapticEvent("fire", 0,
+                                       100 * C_GetExternalHapticLevelValue("poison"),
+                                       0, 0);
+                }
+                else {
+                    //No source - just use poison
+                    VR_HapticEvent("poison", 0,
+                                       100 * C_GetExternalHapticLevelValue("poison"),
+                                       0, 0);
+                }
+            }
+			else {
+                DAngle attackAngle = (target->AngleTo(source) - player->mo->Angles.Yaw);
+
+                if (strcasestr(mod.GetChars(), "melee") ||
+                        strcasestr(mod.GetChars(), "strike") ||
+                        strcasestr(mod.GetChars(), "rip") ||
+                        strcasestr(mod.GetChars(), "tear") ||
+                        strcasestr(mod.GetChars(), "slice") ||
+                        strcasestr(mod.GetChars(), "claw"))
+                {
+                    VR_HapticEvent("melee", 0,
+                                       100 * C_GetExternalHapticLevelValue("damage_projectile"),
+                                       attackAngle.Normalized360().Degrees(), 0);
+                }
+                else if (strcasestr(mod.GetChars(), "burn") ||
+                        strcasestr(mod.GetChars(), "flame"))
+                {
+                    VR_HapticEvent("fireball", 0,
+                                       100 * C_GetExternalHapticLevelValue("damage_projectile"),
+                                       attackAngle.Normalized360().Degrees(), 0);
+                }
+                else  // Just pick on based on damage intensity
+                {
+                    if (damage >= 20) {
+                        VR_HapticEvent("fireball", 0,
+                                           100 * C_GetExternalHapticLevelValue("damage_projectile"),
+                                           attackAngle.Normalized360().Degrees(), 0);
+                    } else if (damage >= 10) {
+                        VR_HapticEvent("shotgun", 0,
+                                           100 * C_GetExternalHapticLevelValue("damage_projectile"),
+                                           attackAngle.Normalized360().Degrees(), 0);
+                    } else {
+                        VR_HapticEvent("bullet", 0,
+                                           100 * C_GetExternalHapticLevelValue("damage_projectile"),
+                                           attackAngle.Normalized360().Degrees(), 0);
+                    }
+                }
+            }
+#endif
 			//I_Tactile (40,10,40+temp*2);
 		}
 	}
@@ -1820,6 +1899,19 @@ void P_PoisonDamage (player_t *player, AActor *source, int damage, bool playPain
 		P_AutoUseHealth(player, damage - player->health+1);
 	}
 	player->health -= damage; // mirror mobj health here for Dave
+
+	if (player == &players[consoleplayer])
+	{
+		//Haptic feedback when hurt - level indicates amount of damage
+		float temp = damage < 100 ? damage : 100;
+		float level = (float)(0.4 + (0.6 * (temp / 100.0)));
+		auto vrmode = VRMode::GetVRMode(true);
+		vrmode->Vibrate(500, 0, level); // left
+		vrmode->Vibrate(500, 1, level); // right
+
+		VR_HapticEvent(player->poisontype.GetChars(), 0, 100 * C_GetExternalHapticLevelValue("poison"), 0, 0);
+	}
+
 	if (player->health < 50 && !deathmatch)
 	{
 		P_AutoUseStrifeHealth(player);

@@ -58,6 +58,7 @@
 **
 */
 
+#include <QzDoom/VrCommon.h>
 
 #include "doomdef.h"
 #include "d_event.h"
@@ -94,6 +95,7 @@
 #include "gstrings.h"
 #include "s_music.h"
 #include "d_main.h"
+#include "hw_vrmodes.h"
 
 static FRandom pr_skullpop ("SkullPop");
 
@@ -136,8 +138,10 @@ PainFlashList PainFlashes;
 // [Nash] FOV cvar setting
 CUSTOM_CVAR(Float, fov, 90.f, CVAR_ARCHIVE | CVAR_USERINFO | CVAR_NOINITCALL)
 {
+#if !defined(USE_OPENVR) && !defined(USE_OPENXR)
 	player_t *p = &players[consoleplayer];
 	p->SetFOV(fov);
+#endif
 }
 
 static DVector3 LastPredictedPosition;
@@ -291,6 +295,7 @@ void player_t::CopyFrom(player_t &p, bool copyPSP)
 	centering = p.centering;
 	turnticks = p.turnticks;
 	attackdown = p.attackdown;
+	ohattackdown = p.ohattackdown;
 	usedown = p.usedown;
 	oldbuttons = p.oldbuttons;
 	health = p.health;
@@ -304,6 +309,7 @@ void player_t::CopyFrom(player_t &p, bool copyPSP)
 	WeaponState = p.WeaponState;
 	ReadyWeapon = p.ReadyWeapon;
 	PendingWeapon = p.PendingWeapon;
+	OffhandWeapon = p.OffhandWeapon;
 	cheats = p.cheats;
 	timefreezer = p.timefreezer;
 	refire = p.refire;
@@ -330,6 +336,7 @@ void player_t::CopyFrom(player_t &p, bool copyPSP)
 	MorphStyle = p.MorphStyle;
 	MorphExitFlash = p.MorphExitFlash;
 	PremorphWeapon = p.PremorphWeapon;
+	PremorphWeaponOffhand = p.PremorphWeaponOffhand;
 	chickenPeck = p.chickenPeck;
 	jumpTics = p.jumpTics;
 	onground = p.onground;
@@ -376,10 +383,12 @@ size_t player_t::PropagateMark()
 	GC::Mark(camera);
 	GC::Mark(Bot);
 	GC::Mark(ReadyWeapon);
+	GC::Mark(OffhandWeapon);
 	GC::Mark(ConversationNPC);
 	GC::Mark(ConversationPC);
 	GC::Mark(MUSINFOactor);
 	GC::Mark(PremorphWeapon);
+	GC::Mark(PremorphWeaponOffhand);
 	GC::Mark(psprites);
 	if (PendingWeapon != WP_NOCHANGE)
 	{
@@ -709,6 +718,11 @@ bool player_t::Resurrect()
 	if (ReadyWeapon != nullptr)
 	{
 		PendingWeapon = ReadyWeapon;
+		P_BringUpWeapon(this);
+	}
+	if (OffhandWeapon != nullptr)
+	{
+		PendingWeapon = OffhandWeapon;
 		P_BringUpWeapon(this);
 	}
 
@@ -1259,6 +1273,21 @@ void P_PlayerThink (player_t *player)
 		I_Error ("No player %td start\n", player - players + 1);
 	}
 
+    static int previous_health = 0;
+
+    if (previous_health != player->health)
+    {
+        if (player->health > previous_health)
+        {
+            VR_HapticEvent("healstation", 0, 100 * C_GetExternalHapticLevelValue("healstation"), 0, 0);
+        }
+    }
+    else if (player->health > 0 && player->health <= 25)
+    {
+        //heartbeat is a special case that uses intensity for a different purpose
+        VR_HapticEvent("heartbeat", 0, player->health * C_GetExternalHapticLevelValue("heartbeat"), 0, 0);
+    }
+
 	for (unsigned int i = 0u; i < 3u; ++i)
 	{
 		if (fabs(player->angleOffsetTargets[i].Degrees()) >= EQUAL_EPSILON)
@@ -1301,11 +1330,14 @@ void P_PlayerThink (player_t *player)
 	player->cheats &= ~CF_NOVIEWPOSINTERP;
 	player->mo->FloatVar("prevBob") = player->bob;
 
+
 	IFVIRTUALPTRNAME(player->mo, NAME_PlayerPawn, PlayerThink)
 	{
 		VMValue param = player->mo;
 		VMCall(func, &param, 1, nullptr, 0);
 	}
+
+    previous_health = player->health;
 }
 
 void P_PredictionLerpReset()
@@ -1702,6 +1734,7 @@ void player_t::Serialize(FSerializer &arc)
 		("multicount", multicount)
 		("lastkilltime", lastkilltime)
 		("readyweapon", ReadyWeapon)
+		("offhandweapon", OffhandWeapon)
 		("pendingweapon", PendingWeapon)
 		("cheats", cheats)
 		("refire", refire)
@@ -1723,6 +1756,7 @@ void player_t::Serialize(FSerializer &arc)
 		("morphstyle", MorphStyle)
 		("morphexitflash", MorphExitFlash)
 		("premorphweapon", PremorphWeapon)
+		("premorphweaponoffhand", PremorphWeaponOffhand)
 		("chickenpeck", chickenPeck)
 		("jumptics", jumpTics)
 		("respawntime", respawn_time)
@@ -1804,7 +1838,9 @@ DEFINE_FIELD_X(PlayerInfo, player_t, bob)
 DEFINE_FIELD_X(PlayerInfo, player_t, Vel)
 DEFINE_FIELD_X(PlayerInfo, player_t, centering)
 DEFINE_FIELD_X(PlayerInfo, player_t, turnticks)
+DEFINE_FIELD_X(PlayerInfo, player_t, resetDoomYaw)
 DEFINE_FIELD_X(PlayerInfo, player_t, attackdown)
+DEFINE_FIELD_X(PlayerInfo, player_t, ohattackdown)
 DEFINE_FIELD_X(PlayerInfo, player_t, usedown)
 DEFINE_FIELD_X(PlayerInfo, player_t, oldbuttons)
 DEFINE_FIELD_X(PlayerInfo, player_t, health)
@@ -1818,6 +1854,7 @@ DEFINE_FIELD_X(PlayerInfo, player_t, spreecount)
 DEFINE_FIELD_X(PlayerInfo, player_t, WeaponState)
 DEFINE_FIELD_X(PlayerInfo, player_t, ReadyWeapon)
 DEFINE_FIELD_X(PlayerInfo, player_t, PendingWeapon)
+DEFINE_FIELD_X(PlayerInfo, player_t, OffhandWeapon)
 DEFINE_FIELD_X(PlayerInfo, player_t, psprites)
 DEFINE_FIELD_X(PlayerInfo, player_t, cheats)
 DEFINE_FIELD_X(PlayerInfo, player_t, timefreezer)
@@ -1845,9 +1882,11 @@ DEFINE_FIELD_X(PlayerInfo, player_t, MorphedPlayerClass)
 DEFINE_FIELD_X(PlayerInfo, player_t, MorphStyle)
 DEFINE_FIELD_X(PlayerInfo, player_t, MorphExitFlash)
 DEFINE_FIELD_X(PlayerInfo, player_t, PremorphWeapon)
+DEFINE_FIELD_X(PlayerInfo, player_t, PremorphWeaponOffhand)
 DEFINE_FIELD_X(PlayerInfo, player_t, chickenPeck)
 DEFINE_FIELD_X(PlayerInfo, player_t, jumpTics)
 DEFINE_FIELD_X(PlayerInfo, player_t, onground)
+DEFINE_FIELD_X(PlayerInfo, player_t, keepmomentum)
 DEFINE_FIELD_X(PlayerInfo, player_t, respawn_time)
 DEFINE_FIELD_X(PlayerInfo, player_t, camera)
 DEFINE_FIELD_X(PlayerInfo, player_t, air_finished)
@@ -1878,6 +1917,7 @@ DEFINE_FIELD_X(PlayerInfo, player_t, userinfo)
 DEFINE_FIELD_X(PlayerInfo, player_t, weapons)
 DEFINE_FIELD_NAMED_X(PlayerInfo, player_t, cmd.ucmd.buttons, buttons)
 DEFINE_FIELD_X(PlayerInfo, player_t, SoundClass)
+DEFINE_FIELD_X(PlayerInfo, player_t, PlayInVR)
 
 DEFINE_FIELD_X(UserCmd, usercmd_t, buttons)
 DEFINE_FIELD_X(UserCmd, usercmd_t, pitch)

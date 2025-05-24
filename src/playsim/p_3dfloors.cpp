@@ -217,7 +217,7 @@ void P_PlayerOnSpecial3DFloor(player_t* player)
 			// Player must be on top of the floor to be affected...
 			if(player->mo->Z() != rover->top.plane->ZatPoint(player->mo)) continue;
 		}
-		else 
+		else
 		{
 			//Water and DEATH FOG!!! heh
 			if ((rover->flags & FF_NODAMAGE) ||

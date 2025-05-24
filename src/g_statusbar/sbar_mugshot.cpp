@@ -39,10 +39,15 @@
 #include "sbar.h"
 #include "r_utility.h"
 #include "actorinlines.h"
+#include "hw_vrmodes.h"
 #include "texturemanager.h"
+
+#include <QzDoom/VrCommon.h>
 
 #define ST_RAMPAGEDELAY 		(2*TICRATE)
 #define ST_MUCHPAIN 			20
+
+EXTERN_CVAR(Float, vr_pickup_haptic_level)
 
 TArray<FMugShotState> MugShotStates;
 
@@ -252,7 +257,8 @@ void FMugShot::Tick(player_t *player)
 			CurrentState = NULL;
 		}
 	}
-	if (player->attackdown && !(player->cheats & (CF_FROZEN | CF_TOTALLYFROZEN)) && player->ReadyWeapon)
+	bool isWeaponAttackDown = (player->attackdown && player->ReadyWeapon) || (player->ohattackdown && player->OffhandWeapon);
+	if (isWeaponAttackDown && !(player->cheats & (CF_FROZEN | CF_TOTALLYFROZEN)))
 	{
 		if (RampageTimer != ST_RAMPAGEDELAY)
 		{
@@ -336,6 +342,15 @@ int FMugShot::UpdateState(player_t *player, StateFlags stateflags)
 		{
 			if (player->bonuscount)
 			{
+				//Short haptic blip on pickup
+				if (vr_pickup_haptic_level > 0.0) {
+					auto vrmode = VRMode::GetVRMode(true);
+					vrmode->Vibrate(80, 0, vr_pickup_haptic_level); // left
+					vrmode->Vibrate(80, 1, vr_pickup_haptic_level);
+
+					VR_HapticEvent("pickup", 0, 100 * C_GetExternalHapticLevelValue("pickup"), 0, 0);
+				}
+
 				SetState("grin", false);
 				return 0;
 			}

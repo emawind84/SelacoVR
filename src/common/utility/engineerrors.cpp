@@ -76,6 +76,7 @@ void I_DebugPrintf(const char *fmt,...)
 #endif
 
 #include "engineerrors.h"
+#include "doomtype.h"
 
 //==========================================================================
 //
@@ -95,6 +96,10 @@ void I_DebugPrintf(const char *fmt,...)
 	vsnprintf(errortext, MAX_ERRORTEXT, error, argptr);
 	va_end(argptr);
 	I_DebugPrint(errortext);
+
+#ifdef __ANDROID__
+	LOGI("ERROR: %s", errortext);
+#endif
 
 	throw CRecoverableError(errortext);
 }

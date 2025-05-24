@@ -60,12 +60,12 @@ const char *GetVersionString();
 // Version identifier for network games.
 // Bump it every time you do a release unless you're certain you
 // didn't change anything that will affect sync.
-#define NETGAMEVERSION 235
+#define NETGAMEVERSION 236
 
 // Version stored in the ini's [LastRun] section.
 // Bump it if you made some configuration change that you want to
 // be able to migrate in FGameConfigFile::DoGlobalSetup().
-#define LASTRUNVERSION "225"
+#define LASTRUNVERSION "226"
 
 // Protocol version used in demos.
 // Bump it if you change existing DEM_ commands or add new ones.
@@ -84,7 +84,7 @@ const char *GetVersionString();
 #define SAVEGAME_EXT "zds"
 
 // MINSAVEVER is the minimum level snapshot version that can be loaded.
-#define MINSAVEVER 4556
+#define MINSAVEVER 4558
 
 // Use 4500 as the base git save version, since it's higher than the
 // SVN revision ever got.
@@ -92,8 +92,10 @@ const char *GetVersionString();
 
 // This is so that derivates can use the same savegame versions without worrying about engine compatibility
 #define GAMESIG "SELACO"
-#define BASEWAD "gzdoom.pk3"
+#define BASEWAD "qzdoom.pk3"
 #define OPTIONALWAD "game_support.pk3"
+#endif
+
 #define GZDOOM 1
 #define VR3D_ENABLED
 

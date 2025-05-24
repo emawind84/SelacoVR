@@ -69,6 +69,13 @@ static FMemArena DynLightArena(sizeof(FDynamicLight) * 200);
 static TArray<FDynamicLight*> FreeList;
 static FRandom randLight;
 
+CVAR(Float, gl_light_max_intensity, 1000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Float, gl_light_distance_cull, 2000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_light_max_collected_subsectors, 1000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_light_flat_max_lights, 1000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_light_wall_max_lights, 1000, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Int, gl_light_range_limit, 64, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+
 extern TArray<FLightDefaults *> StateLights;
 
 
@@ -254,6 +261,7 @@ void FDynamicLight::Activate()
 		m_cycler.SetCycleType(CYCLE_Sin);
 		m_currentRadius = float(m_cycler.GetVal());
 	}
+	if (m_currentRadius > gl_light_max_intensity) m_currentRadius = gl_light_max_intensity;
 	if (m_currentRadius <= 0) m_currentRadius = 1;
 }
 
@@ -372,6 +380,7 @@ void FDynamicLight::Tick()
 		m_currentRadius = float(GetIntensity());
 		break;
 	}
+	if (m_currentRadius > gl_light_max_intensity) m_currentRadius = gl_light_max_intensity;
 	if (m_currentRadius <= 0) m_currentRadius = 1;
 	UpdateLocation();
 }
@@ -586,6 +595,9 @@ void FDynamicLight::CollectWithinRadius(const DVector3 &opos, FSection *section,
 	bool hitonesidedback = false;
 	for (unsigned i = 0; i < collected_ss.Size(); i++)
 	{
+		if (collected_ss.Size() >= (unsigned int)gl_light_max_collected_subsectors)
+			break;
+
 		auto pos = collected_ss[i].pos;
 		section = collected_ss[i].sect;
 

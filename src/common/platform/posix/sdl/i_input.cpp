@@ -184,6 +184,10 @@ void I_SetMouseCapture()
 	// Clear out any mouse movement.
 	SDL_GetRelativeMouseState (NULL, NULL);
 	SDL_SetRelativeMouseMode (SDL_TRUE);
+#ifdef __MOBILE__
+	// Need to clear this again because setting mode above adds relative values
+	SDL_GetRelativeMouseState (NULL, NULL);
+#endif
 }
 
 void I_ReleaseMouseCapture()
@@ -483,6 +487,7 @@ void MessagePump (const SDL_Event &sev)
             case SDLK_KP_PERIOD: event.data1 = SDLK_PERIOD; break;
             case SDLK_KP_COMMA:  event.data1 = SDLK_COMMA;  break;
             case SDLK_KP_EQUALS: event.data1 = SDLK_EQUALS; break;
+			case SDLK_SYSREQ:	event.data1 = GK_SYSRQ;		break;
 			default:
 				if (sev.key.keysym.sym < 256)
 				{

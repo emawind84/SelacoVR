@@ -36,9 +36,15 @@
 
 #include "hw_vrmodes.h"
 #include "v_draw.h"
+#include "doomstat.h"
+#include "gamestate.h"
 
 extern bool vid_hdr_active;
+extern bool cinemamode;
+bool VR_UseScreenLayer();
 
+EXTERN_CVAR(Int, vr_mode)
+EXTERN_CVAR(Int, vr_overlayscreen)
 CVAR(Int, gl_dither_bpc, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 
 namespace OpenGLRenderer
@@ -92,7 +98,7 @@ void FGLRenderer::BlurScene(float gameinfobluramount, bool force)
 	for (int i = 0; i < eyeCount; ++i)
 	{
 		hw_postprocess.bloom.RenderBlur(&renderstate, sceneWidth, sceneHeight, gameinfobluramount, force);
-		if (eyeCount - i > 1) mBuffers->NextEye(eyeCount);
+		mBuffers->NextEye(eyeCount);
 	}
 }
 
@@ -116,13 +122,26 @@ void FGLRenderer::Flush()
 	}
 	else
 	{
+		const bool is2D = (gamestate != GS_LEVEL && gamestate != GS_TITLELEVEL);
+		if (is2D) vrmode->SetUp();
 		// Render 2D to eye textures
 		int eyeCount = vrmode->mEyeCount;
+		screen->FirstEye();
 		for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
 		{
-			screen->Draw2D();
-			if (eyeCount - eye_ix > 1)
-				mBuffers->NextEye(eyeCount);
+			const auto &eye = vrmode->mEyes[mBuffers->CurrentEye()];
+			if (vrmode->IsVR())
+			{
+				eye->AdjustBlend(nullptr);
+				screen->Draw2D(true);
+			}
+			if (!VR_UseScreenLayer())
+			{
+				eye->AdjustHud();
+			}
+
+			screen->Draw2D(false);
+			mBuffers->NextEye(eyeCount);
 		}
 		twod->Clear();
 
@@ -130,8 +149,9 @@ void FGLRenderer::Flush()
 		FGLDebug::PushGroup("PresentEyes");
 		// Note: This here is the ONLY place in the entire engine where the OpenGL dependent parts of the Stereo3D code need to be dealt with.
 		// There's absolutely no need to create a overly complex class hierarchy for just this.
-		PresentStereo();
+		vrmode->Present();
 		FGLDebug::PopGroup();
+		if (is2D) vrmode->TearDown();
 	}
 }
 
@@ -143,7 +163,7 @@ void FGLRenderer::Flush()
 
 void FGLRenderer::CopyToBackbuffer(const IntRect *bounds, bool applyGamma)
 {
-	screen->Draw2D();	// draw all pending 2D stuff before copying the buffer
+	screen->Draw2D(false);	// draw all pending 2D stuff before copying the buffer
 	twod->Clear();
 
 	GLPPRenderState renderstate(mBuffers);

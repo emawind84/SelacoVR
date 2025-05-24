@@ -1150,6 +1150,98 @@ CCMD(secret)
 	}
 }
 
+//============================================================================
+//
+// Missing cheats
+//
+//============================================================================
+
+CCMD(idkfa)
+{
+	if (CheckCheatmode ())
+		return;
+
+	Net_WriteInt8 (DEM_GENERICCHEAT);
+	Net_WriteInt8 (CHT_IDKFA);
+}
+
+CCMD(idfa)
+{
+	if (CheckCheatmode ())
+		return;
+
+	Net_WriteInt8 (DEM_GENERICCHEAT);
+	Net_WriteInt8 (CHT_IDFA);
+}
+
+CCMD(idbehold)
+{
+	if (CheckCheatmode ())
+		return;
+
+	if (argv.argc() != 2)
+	{
+		Printf("inVuln, Str, Inviso, Rad, Allmap, or Lite-amp\n");
+		return;
+	}
+	
+	switch (argv[1][0])
+	{
+		case 'v':
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDV);
+			break;
+		case 's':
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDS);
+			break;
+		case 'i':
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDI);
+			break;
+		case 'r':
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDR);
+			break;
+		case 'a':
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDA);
+			break;
+		case 'l':
+			Net_WriteInt8 (DEM_GENERICCHEAT);
+			Net_WriteInt8 (CHT_BEHOLDL);
+			break;
+	}
+}
+
+EXTERN_CVAR (Int, am_cheat);
+
+CCMD(iddt)
+{
+	if (CheckCheatmode ())
+		return;
+	
+	am_cheat = (am_cheat + 1) % 3;
+}
+
+CCMD(idchoppers)
+{
+	if (CheckCheatmode ())
+		return;
+
+	Net_WriteInt8 (DEM_GENERICCHEAT);
+	Net_WriteInt8 (CHT_CHAINSAW);
+}
+
+CCMD(idclip)
+{
+	if (CheckCheatmode ())
+		return;
+
+	Net_WriteInt8 (DEM_GENERICCHEAT);
+	Net_WriteInt8 (CHT_NOCLIP);
+}
+
 CCMD(angleconvtest)
 {
 	Printf("Testing degrees to angle conversion:\n");
@@ -1182,6 +1274,20 @@ CCMD(r_showcaps)
 	PRINT_CAP("Truecolor Enabled", RFF_TRUECOLOR)
 	PRINT_CAP("Voxels", RFF_VOXELS)
 }
+
+EXTERN_CVAR(Float, r_sprite_distance_cull)
+EXTERN_CVAR(Float, r_line_distance_cull)
+EXTERN_CVAR(Float, gl_sprite_distance_cull)
+EXTERN_CVAR(Float, gl_line_distance_cull)
+
+CCMD(disablerendercull)
+{
+		r_sprite_distance_cull = 0.0;
+		r_line_distance_cull = 0.0;
+		gl_sprite_distance_cull = 0.0;
+		gl_line_distance_cull = 0.0;
+}
+
 
 
 //==========================================================================

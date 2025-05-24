@@ -441,7 +441,7 @@ public:
 		thinker->Construct(std::forward<Args>(args)...);
 		return thinker;
 	}
-	
+
 	void SetMusic();
 
 	TArray<vertex_t> vertexes;
@@ -689,6 +689,8 @@ public:
 	int		frozenstate;
 
 	double		teamdamage;
+
+	TArray<FString> savedModelFiles;
 
 	// former OpenGL-exclusive properties that should also be usable by the true color software renderer.
 	int fogdensity;

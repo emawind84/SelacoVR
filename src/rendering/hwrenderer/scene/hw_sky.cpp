@@ -32,10 +32,15 @@
 #include "hwrenderer/scene/hw_drawstructs.h"
 #include "hwrenderer/scene/hw_portal.h"
 #include "hw_lighting.h"
+#include "hw_cvars.h"
 #include "hw_material.h"
 #include "hw_walldispatcher.h"
 
 CVAR(Bool,gl_noskyboxes, false, 0)
+CUSTOM_CVAR(Bool, gl_skydome, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
+{
+	gl_noskyboxes = !self;
+}
 
 //===========================================================================
 //
@@ -145,7 +150,7 @@ void HWWall::SkyPlane(HWWallDispatcher *di, sector_t *sector, int plane, bool al
 			ptype = PORTALTYPE_SKY;
 			sky = &skyinfo;
 		}
-		PutPortal(di, ptype, plane);
+		//PutPortal(di, ptype, plane);
 	}
 	else if (sportal != nullptr)
 	{
@@ -186,7 +191,8 @@ void HWWall::SkyPlane(HWWallDispatcher *di, sector_t *sector, int plane, bool al
 		}
 		ptype = PORTALTYPE_PLANEMIRROR;
 	}
-	if (ptype != -1)
+	if (ptype != -1
+	&& (ptype > PORTALTYPE_SKYBOX || (gl_skydome && !gl_global_fade))) 
 	{
 		PutPortal(di, ptype, plane);
 	}

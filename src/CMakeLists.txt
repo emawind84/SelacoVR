@@ -278,8 +278,16 @@ if( DEM_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 		set (CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -s" )
 		set (CMAKE_EXE_LINKER_FLAGS_MINSIZEREL "${CMAKE_EXE_LINKER_FLAGS_MINSIZEREL} -s" )
 	endif()
+
 endif()
 
+if ( NOT TC_USE_SSE2 AND NOT X64 )
+	add_definitions( -DNO_SSE )
+	if ( MSVC )
+		set (CMAKE_CXX_FLAGS "/arch:IA32 /Oi- ${CMAKE_CXX_FLAGS}")
+	endif()
+endif()
+	
 # Check for thread_local keyword, it's optional at the moment
 
 if ( NOT (cxx_thread_local IN_LIST CMAKE_CXX_COMPILE_FEATURES) )
@@ -309,13 +317,6 @@ if( UNIX )
 endif()
 
 # Flags
-
-# Update gitinfo.h
-
-add_custom_target( revision_check ALL
-	COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_SOURCE_DIR}/tools/updaterevision/UpdateRevision.cmake" src/gitinfo.h
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-)
 
 # required libraries
 
@@ -411,6 +412,76 @@ set( PLAT_WIN32_SOURCES
 	common/platform/win32/win32basevideo.cpp
 	common/platform/win32/win32glvideo.cpp
 	)
+
+option( ENABLE_OPENVR "Enable OpenVR virtual reality mode" NO )
+if (ENABLE_OPENVR)
+	add_definitions("-DUSE_OPENVR")
+	set (PLAT_WIN32_SOURCES win32/i_openVR.cpp ${PLAT_WIN32_SOURCES})
+	find_path(OPENVR_SDK_PATH
+		NAMES
+			headers/openvr.h
+		HINTS
+			ENV OPENVR_DIR ENV PROGRAMFILES ENV HOME ENV USERPROFILE
+		PATH_SUFFIXES
+			openvr git/openvr
+	)
+	find_path(OPENVR_INCLUDE_DIRECTORY
+		NAMES
+			openvr.h
+		HINTS
+			${OPENVR_SDK_PATH}/headers
+	)
+	include_directories("${OPENVR_INCLUDE_DIRECTORY}")
+	option( DYN_OPENVR "Dynamically load OpenVR" ON )
+	if (DYN_OPENVR)
+		add_definitions( -DDYN_OPENVR )
+	else()
+		option( STATIC_OPENVR "Statically link OpenVR API" ON )
+		if(STATIC_OPENVR)
+			# Incorporate the whole openvr API into zdoom, using a few rules lifted from the OpenVR CMakeLists.txt files
+			# This branch avoids the need to ship openvr_api.dll
+			add_definitions( -DVR_API_PUBLIC )
+			add_definitions( -DOPENVR_API_NODLL )
+			if(WIN32 AND X64)
+				add_definitions( -DWIN64 )
+			endif()
+			include_directories(${OPENVR_SDK_PATH}/src ${OPENVR_SDK_PATH}/src/vrcommon)
+			file(GLOB OPENVR_SOURCES "${OPENVR_SDK_PATH}/src/*.cpp" "${OPENVR_SDK_PATH}/src/vrcommon/*.cpp")
+		endif()
+	endif()
+	if(DYN_OPENVR OR NOT STATIC_OPENVR)
+		# Link to correct library for this platform
+		if(WIN32)
+			set(OPENVR_PLAT "win")
+		elseif( APPLE )
+			set(OPENVR_PLAT "osx")
+		else()
+			set(OPENVR_PLAT "linux")
+		endif()
+		if(X64)
+			set(OPENVR_PLAT ${OPENVR_PLAT}64)
+		else()
+			set(OPENVR_PLAT ${OPENVR_PLAT}32)
+		endif()
+		set( OPENVR_LIBRARIES openvr_api )
+		find_library(OPENVR_LIBRARY
+			NAMES openvr_api
+			HINTS "${OPENVR_SDK_PATH}/lib/${OPENVR_PLAT}/"
+		)
+		# Find shared library file needed for package distribution (see install rule later in this file)
+		find_program(OPENVR_SHARED_LIBRARY
+			NAMES libopenvr_api.so libopenvr_api.dylib openvr_api.dll
+			PATHS "${OPENVR_SDK_PATH}/bin/${OPENVR_PLAT}/"
+			NO_DEFAULT_PATH
+		)
+		if(NOT DYN_OPENVR)
+			# Link directly to shared library
+			list(APPEND ZDOOM_LIBS ${OPENVR_LIBRARY})
+		else()
+			link_directories( ${OPENVR_SDK_PATH}/lib/${OPENVR_PLAT} )
+		endif()
+	endif()
+endif()
 
 if (HAVE_VULKAN)
 	list (APPEND PLAT_WIN32_SOURCES common/platform/win32/win32vulkanvideo.cpp )
@@ -619,6 +690,7 @@ file( GLOB HEADER_FILES
 	sound/midisources/*.h
 	rendering/*.h
 	rendering/2d/*.h
+	rendering/gl/stereo3d/*.h
 	rendering/swrenderer/*.h
 	rendering/swrenderer/textures/*.h
 	rendering/swrenderer/drawers/*.h
@@ -630,6 +702,7 @@ file( GLOB HEADER_FILES
 	rendering/swrenderer/viewport/*.h
 	rendering/hwrenderer/*.h
 	rendering/hwrenderer/scene/*.h
+	QzDoom/*.h
 	*.h
 )
 
@@ -774,7 +847,6 @@ if (HAVE_GLES2)
 		common/rendering/gles/gles_shader.cpp
 		common/rendering/gles/gles_shaderprogram.cpp
 		common/rendering/gles/gles_samplers.cpp
-		common/rendering/gles/glad/src/glad.c
 	)
 
 	list (APPEND FASTMATH_SOURCES ${GLES_SOURCES})
@@ -903,6 +975,7 @@ set (PCH_SOURCES
 	g_statusbar/sbar_mugshot.cpp
 	g_statusbar/shared_sbar.cpp
 	rendering/2d/v_blend.cpp
+	rendering/gl/stereo3d/gl_openvr.cpp
 	rendering/hwrenderer/hw_entrypoint.cpp
 	rendering/hwrenderer/hw_vertexbuilder.cpp
 	rendering/hwrenderer/doom_aabbtree.cpp
@@ -912,6 +985,8 @@ set (PCH_SOURCES
 	rendering/hwrenderer/scene/hw_lighting.cpp
 	rendering/hwrenderer/scene/hw_drawlistadd.cpp
 	rendering/hwrenderer/scene/hw_setcolor.cpp
+	QzDoom/qzdoom_common.cpp
+	gl/stereo3d/gl_openxrdevice.cpp
 	maploader/edata.cpp
 	maploader/specials.cpp
 	maploader/maploader.cpp
@@ -927,6 +1002,7 @@ set (PCH_SOURCES
 	menu/doommenu.cpp
 	menu/loadsavemenu.cpp
 	menu/playermenu.cpp
+	menu/profiledef.cpp
 	gamedata/textures/animations.cpp
 	gamedata/textures/anim_switches.cpp
 	gamedata/textures/buildloader.cpp
@@ -1194,6 +1270,7 @@ set( GAME_SOURCES
 	${SYSTEM_SOURCES}
 	${FASTMATH_SOURCES}
 	${PCH_SOURCES}
+	${OPENVR_SOURCES}
 	common/utility/x86.cpp
 	common/thirdparty/strnatcmp.c
 	common/thirdparty/utf8proc/utf8proc.c
@@ -1218,7 +1295,7 @@ set( GAME_SOURCES
 	common/thirdparty/math/tan.c
 	common/thirdparty/math/tanh.c
 	common/thirdparty/math/fastsin.cpp
-
+	
 	common/filesystem/source/filesystem.cpp
 	common/filesystem/source/ancientzip.cpp
 	common/filesystem/source/file_7z.cpp
@@ -1269,7 +1346,7 @@ if( UNIX )
 	endif()
 endif()
 
-target_link_libraries( zdoom ${PROJECT_LIBRARIES} lzma ${ZMUSIC_LIBRARIES} )
+target_link_libraries( zdoom ${PROJECT_LIBRARIES} lzma ${ZMUSIC_LIBRARIES} ${OPENVR_LIBRARIES} )
 
 include_directories(
 	BEFORE
@@ -1302,8 +1379,6 @@ include_directories(
 	common/rendering/gl_load
 	common/rendering/gl
 	common/rendering/gles
-	common/rendering/gles/glad/include
-	common/rendering/gles/Mali_OpenGL_ES_Emulator/include
 	common/scripting/vm
 	common/scripting/jit
 	common/scripting/core
@@ -1320,6 +1395,7 @@ include_directories(
 	gamedata/fonts
 	rendering
 	rendering/hwrenderer
+	rendering/gl/stereo3d
 	rendering/2d
 	r_data
 	sound
@@ -1391,7 +1467,7 @@ endif()
 
 add_custom_command(TARGET zdoom POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
-	${CMAKE_SOURCE_DIR}/soundfont/gzdoom.sf2 $<TARGET_FILE_DIR:zdoom>/soundfonts/gzdoom.sf2
+	${CMAKE_SOURCE_DIR}/soundfont/qzdoom.sf2 $<TARGET_FILE_DIR:zdoom>/soundfonts/qzdoom.sf2
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
 	${CMAKE_SOURCE_DIR}/fm_banks/GENMIDI.GS.wopl $<TARGET_FILE_DIR:zdoom>/fm_banks/GENMIDI.GS.wopl
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -1445,7 +1521,12 @@ else()
 endif()
 install(TARGETS zdoom
 		DESTINATION ${INSTALL_PATH}
-		COMPONENT "Game executable")
+		COMPONENT "Game_Executable")
+if(OPENVR_SHARED_LIBRARY)
+	install(PROGRAMS ${OPENVR_SHARED_LIBRARY} 
+		DESTINATION ${INSTALL_PATH}
+		COMPONENT "Shared_Libraries")
+endif()
 
 source_group("Audio Files" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/sound/.+")
 source_group("Game Data" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gamedata/.+")
@@ -1462,6 +1543,7 @@ source_group("Rendering" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/render
 source_group("Rendering\\2D" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rendering/2d/.+")
 source_group("Rendering\\Hardware Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/.+")
 source_group("Rendering\\Hardware Renderer\\Scene" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rendering/hwrenderer/scene/.+")
+source_group("OpenGL Renderer\\Stereo3D" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/gl/stereo3d/.+")
 source_group("Rendering\\Software Renderer" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rendering/swrenderer/.+")
 source_group("Rendering\\Software Renderer\\Drawers" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rendering/swrenderer/drawers/.+")
 source_group("Rendering\\Software Renderer\\Scene" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/rendering/swrenderer/scene/.+")

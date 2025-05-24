@@ -45,6 +45,7 @@
 #include "modelrenderer.h"
 #include "actor.h"
 #include "actorinlines.h"
+#include "hw_vrmodes.h"
 
 
 #ifdef _MSC_VER
@@ -52,7 +53,12 @@
 #endif
 
 CVAR(Bool, gl_interpolate_model_frames, true, CVAR_ARCHIVE)
-EXTERN_CVAR (Bool, r_drawvoxels)
+EXTERN_CVAR(Bool, r_drawvoxels)
+EXTERN_CVAR(Int, vr_control_scheme)
+EXTERN_CVAR(Float, vr_weaponScale)
+EXTERN_CVAR(Float, vr_3dweaponOffsetX);
+EXTERN_CVAR(Float, vr_3dweaponOffsetY);
+EXTERN_CVAR(Float, vr_3dweaponOffsetZ);
 
 extern TDeletingArray<FVoxel *> Voxels;
 extern TDeletingArray<FVoxelDef *> VoxelDefs;
@@ -210,6 +216,20 @@ void RenderHUDModel(FModelRenderer *renderer, DPSprite *psp, FVector3 translatio
 	// The model position and orientation has to be drawn independently from the position of the player,
 	// but we need to position it correctly in the world for light to work properly.
 	VSMatrix objectToWorldMatrix = renderer->GetViewToWorldMatrix();
+	int hand = psp->GetCaller() == playermo->player->OffhandWeapon ? 1 : 0;
+	auto vrmode = VRMode::GetVRMode(true);
+	if (vrmode->GetWeaponTransform(&objectToWorldMatrix, hand))
+	{
+		float scale = 0.01f;
+		objectToWorldMatrix.scale(scale, scale, scale);
+		objectToWorldMatrix.translate(0, 5, 30);
+	}
+	else if (vrmode->IsVR())
+	{
+		DVector3 pos = playermo->Pos();
+		objectToWorldMatrix.translate(pos.X, pos.Z + 40, pos.Y);
+		objectToWorldMatrix.rotate(-playermo->Angles.Yaw.Degrees() - 90, 0, 1, 0);
+	}
 
 	// [Nash] Optional scale weapon FOV
 	float fovscale = 1.0f;
@@ -224,6 +244,9 @@ void RenderHUDModel(FModelRenderer *renderer, DPSprite *psp, FVector3 translatio
 
 	// Aplying model offsets (model offsets do not depend on model scalings).
 	objectToWorldMatrix.translate(smf->xoffset / smf->xscale, smf->zoffset / smf->zscale, smf->yoffset / smf->yscale);
+
+	// Applying player custom offsets
+	objectToWorldMatrix.translate(-vr_3dweaponOffsetX, vr_3dweaponOffsetY, vr_3dweaponOffsetZ);
 
 	// [BB] Weapon bob, very similar to the normal Doom weapon bob.
 
@@ -247,6 +270,9 @@ void RenderHUDModel(FModelRenderer *renderer, DPSprite *psp, FVector3 translatio
 	objectToWorldMatrix.rotate(-smf->angleoffset, 0, 1, 0);
 	objectToWorldMatrix.rotate(smf->pitchoffset, 0, 0, 1);
 	objectToWorldMatrix.rotate(-smf->rolloffset, 1, 0, 0);
+
+	//Scale weapon
+	objectToWorldMatrix.scale(vr_weaponScale, vr_weaponScale, vr_weaponScale);
 
 	float orientation = smf->xscale * smf->yscale * smf->zscale;
 

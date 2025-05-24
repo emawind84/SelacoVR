@@ -33,6 +33,7 @@ class WeaponBase : StateProvider
 	int Crosshair;							// 0 to use player's crosshair
 	bool GivenAsMorphWeapon;
 	bool bAltFire;							// Set when this weapon's alternate fire is used.
+	double UseRange;						// [NS] Distance at which player can +use
 	readonly bool bDehAmmo;					// Uses Doom's original amount of ammo for the respective attack functions so that old DEHACKED patches work as intended.
 											// AmmoUse1 will be set to the first attack's ammo use so that checking for empty weapons still works
 	meta int SlotNumber;
@@ -72,6 +73,7 @@ class WeaponBase : StateProvider
 	property SlotPriority: SlotPriority;
 	property LookScale: LookScale;
 	property BobPivot3D : BobPivot3D;
+	property UseRange: UseRange;
 
 	flagdef NoAutoFire: WeaponFlags, 0;			// weapon does not autofire
 	flagdef ReadySndHalf: WeaponFlags, 1;		// ready sound is played ~1/2 the time
@@ -93,6 +95,10 @@ class WeaponBase : StateProvider
 	flagdef NoDeathInput: WeaponFlags, 17;		// The weapon cannot be fired/reloaded/whatever when the player is dead
 	flagdef CheatNotWeapon: WeaponFlags, 18;	// Give cheat considers this not a weapon (used by Sigil)
 	flagdef NoAutoSwitchTo : WeaponFlags, 19;	// do not auto switch to this weapon ever!
+	flagdef OffhandWeapon: WeaponFlags, 20;		// weapon is an offhand weapon
+	flagdef NoHandSwitch: WeaponFlags, 21;		// weapon cannot be moved from one hand to another
+	flagdef TwoHanded: WeaponFlags, 22;			// two handed weapon
+	flagdef NoAutoReverse: WeaponFlags, 23;		// prevent auto reverse of model and sprite when switching to offhand
 
 	// no-op flags
 	flagdef NoLMS: none, 0;
@@ -112,6 +118,7 @@ class WeaponBase : StateProvider
 		WeaponBase.SlotNumber -1;
 		WeaponBase.SlotPriority 32767;
 		WeaponBase.BobPivot3D (0.0, 0.0, 0.0);
+		WeaponBase.UseRange 48;
 		+WEAPONSPAWN
 		DefaultStateUsage SUF_ACTOR|SUF_OVERLAY|SUF_WEAPON;
 	}
@@ -193,7 +200,7 @@ class WeaponBase : StateProvider
 	{
 		let player = player;
 
-		if (null == player || player.ReadyWeapon == null)
+		if (null == player)
 		{
 			return;
 		}
@@ -202,7 +209,11 @@ class WeaponBase : StateProvider
 			player.mo.PlayAttacking2 ();
 		}
 
-		WeaponBase weapon = player.ReadyWeapon;
+		WeaponBase weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == null)
+		{
+			return;
+		}
 		state flashstate = null;
 
 		if (flashlabel == null)
@@ -220,7 +231,7 @@ class WeaponBase : StateProvider
 		{
 			flashstate = weapon.FindState(flashlabel);
 		}
-		player.SetPsprite(PSP_FLASH, flashstate);
+		player.SetPsprite(PSP_FLASH, flashstate, false, weapon);
 	}
 	
 	//---------------------------------------------------------------------------
@@ -255,12 +266,13 @@ class WeaponBase : StateProvider
 		{
 			return;
 		}
-		if (null == player.ReadyWeapon)
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (null == weapon)
 		{
 			player.mo.BringUpWeapon();
 			return;
 		}
-		let psp = player.GetPSprite(PSP_WEAPON);
+		let psp = player.GetPSprite(weapon.bOffhandWeapon ? PSP_OFFHANDWEAPON : PSP_WEAPON);
 		if (!psp) return;
 		if (Alternative || player.cheats & CF_INSTANTWEAPSWITCH)
 		{
@@ -280,7 +292,7 @@ class WeaponBase : StateProvider
 		{ // Player is dead, so don't bring up a pending weapon
 			// Player is dead, so keep the weapon off screen
 			player.SetPsprite(PSP_FLASH, null);
-			psp.SetState(player.ReadyWeapon.FindState('DeadLowered'));
+			psp.SetState(weapon.FindState('DeadLowered'));
 			return;
 		}
 		// [RH] Clear the flash state. Only needed for Strife.
@@ -303,16 +315,18 @@ class WeaponBase : StateProvider
 		{
 			return;
 		}
-		if (player.PendingWeapon != WP_NOCHANGE)
-		{
-			player.mo.DropWeapon();
-			return;
-		}
-		if (player.ReadyWeapon == null)
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == null)
 		{
 			return;
 		}
-		let psp = player.GetPSprite(PSP_WEAPON);
+		if (player.PendingWeapon != WP_NOCHANGE && 
+			player.PendingWeapon.bOffhandWeapon == weapon.bOffhandWeapon)
+		{
+			player.mo.DropWeapon(weapon.bOffhandWeapon);
+			return;
+		}
+		let psp = player.GetPSprite(weapon.bOffhandWeapon ? PSP_OFFHANDWEAPON : PSP_WEAPON);
 		if (!psp) return;
 
 		if (psp.y <= WEAPONBOTTOM)
@@ -326,7 +340,7 @@ class WeaponBase : StateProvider
 		}
 		psp.y = WEAPONTOP;
 		
-		psp.SetState(player.ReadyWeapon.GetReadyState());
+		psp.SetState(weapon.GetReadyState());
 		return;
 	}
 
@@ -340,38 +354,42 @@ class WeaponBase : StateProvider
 	//
 	//============================================================================
 
-	static void DoReadyWeaponToSwitch (PlayerInfo player, bool switchable)
+	static void DoReadyWeaponToSwitch (PlayerInfo player, bool switchable, int hand = 0)
 	{
+		int switchok = hand ? WF_OFFHANDSWITCHOK : WF_WEAPONSWITCHOK;
+		int refireok = hand ? WF_OFFHANDREFIRESWITCHOK : WF_REFIRESWITCHOK;
 		// Prepare for switching action.
 		if (switchable)
 		{
-			player.WeaponState |= WF_WEAPONSWITCHOK | WF_REFIRESWITCHOK;
+			player.WeaponState |= switchok | refireok;
 		}
 		else
 		{
 			// WF_WEAPONSWITCHOK is automatically cleared every tic by P_SetPsprite().
-			player.WeaponState &= ~WF_REFIRESWITCHOK;
+			player.WeaponState &= ~refireok;
 		}
 	}
 
-	static void DoReadyWeaponDisableSwitch (PlayerInfo player, int disable)
+	static void DoReadyWeaponDisableSwitch (PlayerInfo player, int disable, int hand = 0)
 	{
+		int disableswitch = hand ? WF_OFFHANDDISABLESWITCH : WF_DISABLESWITCH;
+		int refireok = hand ? WF_OFFHANDREFIRESWITCHOK : WF_REFIRESWITCHOK;
 		// Discard all switch attempts?
 		if (disable)
 		{
-			player.WeaponState |= WF_DISABLESWITCH;
-			player.WeaponState &= ~WF_REFIRESWITCHOK;
+			player.WeaponState |= disableswitch;
+			player.WeaponState &= ~refireok;
 		}
 		else
 		{
-			player.WeaponState &= ~WF_DISABLESWITCH;
+			player.WeaponState &= ~disableswitch;
 		}
 	}
 
-	static void DoReadyWeaponToFire (PlayerPawn pawn, bool prim, bool alt)
+	static void DoReadyWeaponToFire (PlayerPawn pawn, bool prim, bool alt, int hand = 0)
 	{
 		let player = pawn.player;
-		let weapon = player.ReadyWeapon;
+		let weapon = hand ? player.OffhandWeapon : player.ReadyWeapon;
 		if (!weapon)
 		{
 			return;
@@ -385,7 +403,7 @@ class WeaponBase : StateProvider
 		}
 
 		// Play ready sound, if any.
-		let psp = player.GetPSprite(PSP_WEAPON);
+		let psp = player.GetPSprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON);
 		if (weapon.ReadySound && psp && psp.curState == weapon.FindState('Ready'))
 		{
 			if (!weapon.bReadySndHalf || random[WpnReadySnd]() < 128)
@@ -394,18 +412,26 @@ class WeaponBase : StateProvider
 			}
 		}
 
+		if (hand == 1 && player.WeaponState & WF_TWOHANDSTABILIZED)
+		{
+			return;
+		}
+
 		// Prepare for firing action.
-		player.WeaponState |= ((prim ? WF_WEAPONREADY : 0) | (alt ? WF_WEAPONREADYALT : 0));
+		int prim_state = hand ? WF_OFFHANDREADY : WF_WEAPONREADY;
+		int alt_state = hand ? WF_OFFHANDREADYALT : WF_WEAPONREADYALT;
+		player.WeaponState |= ((prim ? prim_state : 0) | (alt ? alt_state : 0));
 		return;
 	}
 
-	static void DoReadyWeaponToBob (PlayerInfo player)
+	static void DoReadyWeaponToBob (PlayerInfo player, int hand = 0)
 	{
-		if (player.ReadyWeapon)
+		let weap = hand ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weap)
 		{
 			// Prepare for bobbing action.
-			player.WeaponState |= WF_WEAPONBOBBING;
-			let pspr = player.GetPSprite(PSP_WEAPON);
+			player.WeaponState |= hand ? WF_OFFHANDBOBBING : WF_WEAPONBOBBING;
+			let pspr = player.GetPSprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON);
 			if (pspr)
 			{
 				pspr.x = 0;
@@ -414,28 +440,29 @@ class WeaponBase : StateProvider
 		}
 	}
 
-	static int GetButtonStateFlags(int flags)
+	static int GetButtonStateFlags(int flags, int hand = 0)
 	{
 		// Rewritten for efficiency and clarity
 		int outflags = 0;
-		if (flags & WRF_AllowZoom) outflags |= WF_WEAPONZOOMOK;
-		if (flags & WRF_AllowReload) outflags |= WF_WEAPONRELOADOK;
-		if (flags & WRF_AllowUser1) outflags |= WF_USER1OK;
-		if (flags & WRF_AllowUser2) outflags |= WF_USER2OK;
-		if (flags & WRF_AllowUser3) outflags |= WF_USER3OK;
-		if (flags & WRF_AllowUser4) outflags |= WF_USER4OK;
+		if (flags & WRF_AllowZoom) outflags |= hand ? WF_OFFHANDZOOMOK : WF_WEAPONZOOMOK;
+		if (flags & WRF_AllowReload) outflags |= hand ? WF_OFFHANDRELOADOK : WF_WEAPONRELOADOK;
+		if (flags & WRF_AllowUser1) outflags |= hand ? WF_OFFHANDUSER1OK : WF_USER1OK;
+		if (flags & WRF_AllowUser2) outflags |= hand ? WF_OFFHANDUSER2OK : WF_USER2OK;
+		if (flags & WRF_AllowUser3) outflags |= hand ? WF_OFFHANDUSER3OK : WF_USER3OK;
+		if (flags & WRF_AllowUser4) outflags |= hand ? WF_OFFHANDUSER4OK : WF_USER4OK;
 		return outflags;
 	}
 	
 	action void A_WeaponReady(int flags = 0)
 	{
 		if (!player) return;
-														DoReadyWeaponToSwitch(player, !(flags & WRF_NoSwitch));
-		if ((flags & WRF_NoFire) != WRF_NoFire)			DoReadyWeaponToFire(player.mo, !(flags & WRF_NoPrimary), !(flags & WRF_NoSecondary));
-		if (!(flags & WRF_NoBob))						DoReadyWeaponToBob(player);
+		int hand = invoker == player.OffhandWeapon ? 1 : 0;
+														DoReadyWeaponToSwitch(player, !(flags & WRF_NoSwitch), hand);
+		if ((flags & WRF_NoFire) != WRF_NoFire)			DoReadyWeaponToFire(player.mo, !(flags & WRF_NoPrimary), !(flags & WRF_NoSecondary), hand);
+		if (!(flags & WRF_NoBob))						DoReadyWeaponToBob(player, hand);
 
-		player.WeaponState |= GetButtonStateFlags(flags);														
-		DoReadyWeaponDisableSwitch(player, flags & WRF_DisableSwitch);
+		player.WeaponState |= GetButtonStateFlags(flags, hand);														
+		DoReadyWeaponDisableSwitch(player, flags & WRF_DisableSwitch, hand);
 	}
 
 	//---------------------------------------------------------------------------
@@ -449,9 +476,11 @@ class WeaponBase : StateProvider
 	action void A_CheckReload()
 	{
 		let player = self.player;
-		if (player != NULL)
+		if (!player) return;
+		let weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weap != NULL)
 		{
-			player.ReadyWeapon.CheckAmmo (player.ReadyWeapon.bAltFire ? WeaponBase.AltFire : WeaponBase.PrimaryFire, true);
+			weap.CheckAmmo (weap.bAltFire ? Weapon.AltFire : WeaponBase.PrimaryFire, true);
 		}
 	}
 		
@@ -464,7 +493,9 @@ class WeaponBase : StateProvider
 	action void A_ZoomFactor(double zoom = 1, int flags = 0)
 	{
 		let player = self.player;
-		if (player != NULL && player.ReadyWeapon != NULL)
+		if (!player) return;
+		let weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weap != NULL)
 		{
 			zoom = 1 / clamp(zoom, 0.1, 50.0);
 			if (flags & 1)
@@ -476,7 +507,7 @@ class WeaponBase : StateProvider
 			{ // Disable pitch/yaw scaling.
 				zoom = -zoom;
 			}
-			player.ReadyWeapon.FOVScale = zoom;
+			weap.FOVScale = zoom;
 		}
 	}
 
@@ -489,9 +520,11 @@ class WeaponBase : StateProvider
 	action void A_SetCrosshair(int xhair)
 	{
 		let player = self.player;
-		if (player != NULL && player.ReadyWeapon != NULL)
+		if (!player) return;
+		let weap = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weap != NULL)
 		{
-			player.ReadyWeapon.Crosshair = xhair;
+			weap.Crosshair = xhair;
 		}
 	}
 	
@@ -559,9 +592,13 @@ class WeaponBase : StateProvider
 		{
 			useweap = SisterWeapon;
 		}
-		if (Owner.player != NULL && Owner.player.ReadyWeapon != useweap)
+		if (Owner.player != NULL)
 		{
-			Owner.player.PendingWeapon = useweap;
+			Weapon weap = useweap.bOffhandWeapon ? Owner.player.OffhandWeapon : Owner.player.ReadyWeapon;
+			if (weap != useweap)
+			{
+				Owner.player.PendingWeapon = useweap;
+			}
 		}
 		// Return false so that the weapon is not removed from the inventory.
 		return false;
@@ -862,33 +899,36 @@ class WeaponBase : StateProvider
 		let player = Owner.player;
 		if (SisterWeapon != NULL && bPowered_Up)
 		{
+			SisterWeapon.bOffhandWeapon = self.bOffhandWeapon;
+			int hand = SisterWeapon.bOffhandWeapon ? 1 : 0;
 			let ready = GetReadyState();
 			if (ready != SisterWeapon.GetReadyState())
 			{
 				if (player.PendingWeapon == NULL ||	player.PendingWeapon == WP_NOCHANGE)
 				{
 					player.refire = 0;
-					player.ReadyWeapon = SisterWeapon;
-					player.SetPsprite(PSP_WEAPON, SisterWeapon.GetReadyState());
+					if (hand == 0) player.ReadyWeapon = SisterWeapon;
+					if (hand == 1) player.OffhandWeapon = SisterWeapon;
+					player.SetPsprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON, SisterWeapon.GetReadyState());
 				}
 			}
 			else
 			{
-				let psp = player.FindPSprite(PSP_WEAPON);
-				if (psp != null && psp.Caller == player.ReadyWeapon && psp.CurState.InStateSequence(ready))
+				let psp = player.FindPSprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON);
+				let weap = hand ? player.OffhandWeapon : player.ReadyWeapon;
+				if (psp != null && psp.Caller == weap && psp.CurState.InStateSequence(ready))
 				{
 					// If the weapon changes but the state does not, we have to manually change the PSprite's caller here.
 					psp.Caller = SisterWeapon;
-					player.ReadyWeapon = SisterWeapon;
+					if (hand == 0) player.ReadyWeapon = SisterWeapon;
+					if (hand == 1) player.OffhandWeapon = SisterWeapon;
 				}
 				else 
 				{
 					if (player.PendingWeapon == NULL || player.PendingWeapon == WP_NOCHANGE)
 					{
 						// Something went wrong. Initiate a regular weapon change.
-						player.refire = 0;
-						player.ReadyWeapon = SisterWeapon;
-						player.SetPsprite(PSP_WEAPON, SisterWeapon.GetReadyState());
+						player.PendingWeapon = SisterWeapon;
 					}
 				}
 			}
@@ -912,10 +952,17 @@ class WeaponBase : StateProvider
 		}
 		let p = owner.player;
 		p.PendingWeapon = WP_NOCHANGE;
-		p.ReadyWeapon = self;
+		if (self.bOffhandWeapon)
+		{
+			p.OffhandWeapon = self;
+		}
+		else
+		{
+			p.ReadyWeapon = self;
+		}
 		p.refire = 0;
 
-		let pspr = p.GetPSprite(PSP_WEAPON);
+		let pspr = p.GetPSprite(self.bOffhandWeapon ? PSP_OFFHANDWEAPON : PSP_WEAPON);
 		if (pspr)
 		{
 			pspr.y = WEAPONBOTTOM;
@@ -949,7 +996,7 @@ class WeaponBase : StateProvider
 			bool gotSome = CheckAmmo (PrimaryFire, false) || CheckAmmo (AltFire, false);
 			if (!gotSome && autoSwitch)
 			{
-				PlayerPawn(Owner).PickNewWeapon (null);
+				PlayerPawn(Owner).PickNewWeapon (null, bOffhandWeapon);
 			}
 			return gotSome;
 		}
@@ -998,7 +1045,7 @@ class WeaponBase : StateProvider
 		// out of ammo, pick a weapon to change to
 		if (autoSwitch)
 		{
-			PlayerPawn(Owner).PickNewWeapon (null);
+			PlayerPawn(Owner).PickNewWeapon (null, bOffhandWeapon);
 		}
 		return false;
 	}

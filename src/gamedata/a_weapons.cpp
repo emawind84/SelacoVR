@@ -46,6 +46,9 @@
 #include "d_net.h"
 #include "serializer.h"
 #include "vm.h"
+#include "hw_vrmodes.h"
+
+#include <QzDoom/VrCommon.h>
 
 //===========================================================================
 //
@@ -100,6 +103,9 @@ bool FWeaponSlot::AddWeapon(PClassActor *type)
 	}
 	WeaponInfo info = { type, -1 };
 	Weapons.Push(info);
+
+	VR_HapticEvent("pickup_weapon", 0, 100 * C_GetExternalHapticLevelValue("pickup_weapon"), 0, 0);
+
 	return true;
 }
 

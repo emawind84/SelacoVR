@@ -21,6 +21,7 @@ struct FRenderViewpoint
 
 	player_t		*player;		// For which player is this viewpoint being renderered? (can be null for camera textures)
 	DVector3		Pos;			// Camera position
+	DVector3		CenterEyePos;	// Camera position without view shift
 	DVector3		ActorPos;		// Camera actor's position
 	DRotator		Angles;			// Camera angles
 	FRotator		HWAngles;		// Actual rotation angles for the hardware renderer
@@ -41,7 +42,7 @@ struct FRenderViewpoint
 
 	AActor			*camera;		// camera actor
 	sector_t		*sector;		// [RH] keep track of sector viewing from
-	DAngle			FieldOfView;	// current field of view
+	//DAngle			FieldOfView;	// current field of view
 	double			ScreenProj;	// Screen projection factor for orthographic projection
 
 	double			TicFrac;		// fraction of tic for interpolation
@@ -53,6 +54,11 @@ struct FRenderViewpoint
 	void SetViewAngle(const FViewWindow& viewWindow);
 	bool IsAllowedOoB();				// Checks if camera actor exists, has viewpos, and viewpos has VPSF_ALLOWOUTOFBOUNDS flag set
 	bool IsOrtho();					// Checks if camera actor exists, has viewpos, and viewpos has VPSF_ORTHOGRAPHIC flag set
+	DAngle GetFieldOfView() const;
+	void SetFieldOfView(DAngle);
+
+private:
+	DAngle			FieldOfView;	// current field of view
 
 };
 

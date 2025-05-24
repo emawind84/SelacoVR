@@ -68,6 +68,7 @@
 #include "shiftstate.h"
 #include "s_music.h"
 #include "hwrenderer/scene/hw_drawinfo.h"
+#include "profiledef.h"
 
 EXTERN_CVAR(Int, cl_gfxlocalization)
 EXTERN_CVAR(Bool, m_quickexit)
@@ -81,7 +82,26 @@ CVAR(Bool, m_simpleoptions, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 typedef void(*hfunc)();
 DMenu* CreateMessageBoxMenu(DMenu* parent, const char* message, int messagemode, bool playsound, FName action = NAME_None, hfunc handler = nullptr);
 bool OkForLocalization(FTextureID texnum, const char* substitute);
+void InitMenuDelegate();
 
+CUSTOM_CVAR(Bool, menu_showexperimental, false, CVAR_ARCHIVE | CVAR_NOINITCALL)
+{
+	DeinitMenus();
+	InitMenuDelegate();
+	M_Init();
+	M_StartControlPanel (true);
+	M_SetMenu(NAME_Optionsmenu, -1);
+	Printf("Experimental menu has been %s\n", self ? "enabled" : "disabled");
+}
+
+CUSTOM_CVAR(Bool, menu_showdoublebindings, false, CVAR_NOINITCALL)
+{
+	DeinitMenus();
+	InitMenuDelegate();
+	M_Init();
+	M_StartControlPanel (true);
+	M_SetMenu(NAME_CustomizeControls, -1);
+}
 
 FNewGameStartup NewGameStartupInfo;
 int LastSkill = -1;
@@ -1012,6 +1032,24 @@ static void InitKeySections()
 	}
 }
 
+static void InitCommandLineProfileMenu()
+{
+	auto cmdlineProfiles = profileManager.GetList();
+	DMenuDescriptor **menu = MenuDescriptors.CheckKey("CommandLineProfileMenu");
+	if (menu != nullptr)
+	{
+		if (cmdlineProfiles.Size() > 0)
+		{
+			for (FCommandLineInfo &entry : cmdlineProfiles)
+			{
+				auto it = CreateOptionMenuItemCommand(entry.mTitle.GetChars(), FStringf("%s \"%s\"", "cmdlineprofile", entry.mName.GetChars()), true);
+				static_cast<DOptionMenuDescriptor*>(*menu)->mItems.Push(it);
+				GC::WriteBarrier(*menu, it);
+			}
+		}
+	}
+}
+
 
 //=============================================================================
 //
@@ -1024,6 +1062,7 @@ void M_CreateGameMenus()
 	BuildPlayerclassMenu();
 	InitCrosshairsList();
 	InitKeySections();
+	InitCommandLineProfileMenu();
 
 	auto opt = OptionValues.CheckKey(NAME_PlayerTeam);
 	if (opt != nullptr)
@@ -1387,19 +1426,14 @@ bool  CheckSkipGameOptionBlock(const char *str)
 	bool filter = false;
 	if (!stricmp(str, "ReadThis")) filter |= gameinfo.drawreadthis;
 	else if (!stricmp(str, "Swapmenu")) filter |= gameinfo.swapmenu;
+	else if (!stricmp(str, "Experimental")) filter |= menu_showexperimental;
+	else if (!stricmp(str, "DoubleBindingMenu")) filter |= menu_showdoublebindings;
 	return filter;
 }
 
-void SetDefaultMenuColors()
+void InitMenuDelegate()
 {
-	OptionSettings.mTitleColor = V_FindFontColor(gameinfo.mTitleColor);
-	OptionSettings.mFontColor = V_FindFontColor(gameinfo.mFontColor);
-	OptionSettings.mFontColorValue = V_FindFontColor(gameinfo.mFontColorValue);
-	OptionSettings.mFontColorMore = V_FindFontColor(gameinfo.mFontColorMore);
-	OptionSettings.mFontColorHeader = V_FindFontColor(gameinfo.mFontColorHeader);
-	OptionSettings.mFontColorHighlight = V_FindFontColor(gameinfo.mFontColorHighlight);
-	OptionSettings.mFontColorSelection = V_FindFontColor(gameinfo.mFontColorSelection);
-
+	if (menuDelegate != nullptr) return;
 	auto cls = PClass::FindClass(gameinfo.HelpMenuClass);
 	if (!cls)
 		I_FatalError("%s: Undefined help menu class", gameinfo.HelpMenuClass.GetChars());
@@ -1412,6 +1446,19 @@ void SetDefaultMenuColors()
 	if (!cls->IsDescendantOf("MenuDelegateBase"))
 		I_FatalError("'%s' does not inherit from MenuDelegateBase", gameinfo.MenuDelegateClass.GetChars());
 	menuDelegate = cls->CreateNew();
+}
+
+void SetDefaultMenuColors()
+{
+	OptionSettings.mTitleColor = V_FindFontColor(gameinfo.mTitleColor);
+	OptionSettings.mFontColor = V_FindFontColor(gameinfo.mFontColor);
+	OptionSettings.mFontColorValue = V_FindFontColor(gameinfo.mFontColorValue);
+	OptionSettings.mFontColorMore = V_FindFontColor(gameinfo.mFontColorMore);
+	OptionSettings.mFontColorHeader = V_FindFontColor(gameinfo.mFontColorHeader);
+	OptionSettings.mFontColorHighlight = V_FindFontColor(gameinfo.mFontColorHighlight);
+	OptionSettings.mFontColorSelection = V_FindFontColor(gameinfo.mFontColorSelection);
+
+	InitMenuDelegate();
 }
 
 CCMD (menu_main)

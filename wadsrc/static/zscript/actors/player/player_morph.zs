@@ -181,6 +181,7 @@ extend class PlayerPawn
 		morphed.SetMorphExitFlash(exitFlash);
 		p.MorphedPlayerClass = spawnType;
 		p.PremorphWeapon = p.ReadyWeapon;
+		p.PremorphWeaponOffhand = p.OffhandWeapon;
 		p.Health = morphed.Health;
 		p.Vel = (0.0, 0.0);
 		// If the new view height is higher than the old one, start moving toward it.
@@ -294,6 +295,7 @@ extend class PlayerPawn
 		class<Actor> exitFlash = alt.GetMorphExitFlash();
 		EMorphFlags style = alt.GetMorphStyle();
 		WeaponBase premorphWeap = p.PremorphWeapon;
+		WeaponBase premorphWeapOffhand = p.PremorphWeaponOffhand;
 
 		if (TID && (style & MRF_NEWTIDBEHAVIOUR))
 		{
@@ -305,7 +307,7 @@ extend class PlayerPawn
 		alt.SetMorphStyle(0);
 		alt.SetMorphExitFlash(null);
 		p.MorphedPlayerClass = null;
-		p.PremorphWeapon = null;
+		p.PremorphWeapon = p.PremorphWeaponOffhand = null;
 		p.ViewHeight = alt.ViewHeight;
 		p.Vel = (0.0, 0.0);
 		if (p.Health > 0 || (style & MRF_UNDOBYDEATHSAVES))
@@ -319,15 +321,16 @@ extend class PlayerPawn
 
 		WeaponSlots.SetupWeaponSlots(alt);
 		let morphWeap = p.ReadyWeapon;
+		p.ReadyWeapon = p.OffhandWeapon = null;
+		p.PendingWeapon = WP_NOCHANGE;
+		p.Refire = 0;
 		if (premorphWeap)
 		{
 			premorphWeap.PostMorphWeapon();
 		}
-		else
+		if (premorphWeapOffhand)
 		{
-			p.ReadyWeapon = null;
-			p.PendingWeapon = WP_NOCHANGE;
-			p.Refire = 0;
+			premorphWeapOffhand.PostMorphWeapon();
 		}
 
 		if (style & MRF_LOSEACTUALWEAPON)

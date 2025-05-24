@@ -2,6 +2,7 @@
 #define __GL_LIGHTBUFFER_H
 
 #include "tarray.h"
+#include <atomic>
 #include "hw_dynlightdata.h"
 #include "hwrenderer/data/buffers.h"
 #include <atomic>

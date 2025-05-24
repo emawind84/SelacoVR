@@ -9,8 +9,10 @@ class StateProvider : Inventory
 
 	action state A_JumpIfNoAmmo(statelabel label)
 	{
-		if (stateinfo == null || stateinfo.mStateType != STATE_Psprite || player == null || player.ReadyWeapon == null ||
-			player.ReadyWeapon.CheckAmmo(player.ReadyWeapon.bAltFire, false, true))
+		if (player == null) return null;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (stateinfo == null || stateinfo.mStateType != STATE_Psprite || weapon == null ||
+			weapon.CheckAmmo(weapon.bAltFire, false, true))
 		{
 			return null;
 		}
@@ -25,14 +27,14 @@ class StateProvider : Inventory
 
 	action state A_CheckForReload(int count, statelabel jump, bool dontincrement = false)
 	{
-		if (stateinfo == null || stateinfo.mStateType != STATE_Psprite || player == null || player.ReadyWeapon == null)
+		if (player == null) return null;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (stateinfo == null || stateinfo.mStateType != STATE_Psprite || weapon == null)
 		{
 			return null;
 		}
 
 		state ret = null;
-
-		let weapon = player.ReadyWeapon;
 
 		int ReloadCounter = weapon.ReloadCounter;
 		if (!dontincrement || ReloadCounter != 0)
@@ -66,8 +68,12 @@ class StateProvider : Inventory
 
 	action void A_ResetReloadCounter()
 	{
-		if (stateinfo != null && stateinfo.mStateType == STATE_Psprite && player != null && player.ReadyWeapon != null)
-			player.ReadyWeapon.ReloadCounter = 0;
+		if (player == null) return;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (stateinfo != null && stateinfo.mStateType == STATE_Psprite && weapon != null)
+		{
+			weapon.ReloadCounter = 0;
+		}
 	}
 
 	
@@ -77,18 +83,26 @@ class StateProvider : Inventory
 	//
 	//---------------------------------------------------------------------------
 
-	action Actor A_FireBullets(double spread_xy, double spread_z, int numbullets, int damageperbullet, class<Actor> pufftype = "BulletPuff", int flags = 1, double range = 0, class<Actor> missile = null, double Spawnheight = 32, double Spawnofs_xy = 0)
+	action Actor A_FireBullets(double spread_xy, double spread_z, int numbullets, int damageperbullet, class<Actor> pufftype = "BulletPuff", int flags = 1, double range = 0, class<Actor> missile = null, double Spawnheight = 0, double Spawnofs_xy = 0)
 	{
 		let player = player;
 		if (!player) return null;
 
 		let pawn = PlayerPawn(self);
-		let weapon = player.ReadyWeapon;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 
 		int i;
 		double bangle;
 		double bslope = 0.;
 		int laflags = (flags & FBF_NORANDOMPUFFZ)? LAF_NORANDOMPUFFZ : 0;
+		int alflags = 0;
+
+		Vector2 ofs = (0, Spawnofs_xy);
+		if (!weapon || !player.mo.OverrideAttackPosDir)
+		{
+			double ang = Angle - 90;
+			ofs = AngleToVector(ang, Spawnofs_xy);
+		}
 		FTranslatedLineTarget t;
 		Actor puff = null;
 
@@ -97,20 +111,39 @@ class StateProvider : Inventory
 			if (!weapon.DepleteAmmo(weapon.bAltFire, true))
 				return null;	// out of ammo
 		}
-		
+
+		if (weapon != NULL)
+		{
+			laflags |= weapon.bOffhandWeapon ? LAF_ISOFFHAND : 0;
+			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
+			A_StartSound(weapon.AttackSound, CHAN_WEAPON);
+		}
+
 		if (range == 0)	range = PLAYERMISSILERANGE;
 
 		if (!(flags & FBF_NOFLASH)) pawn.PlayAttacking2 ();
 
-		if (!(flags & FBF_NOPITCH)) bslope = BulletSlope();
+		if (!(flags & FBF_NOPITCH)) bslope = BulletSlope(aimflags: alflags);
 		bangle = Angle;
 
-		if (pufftype == NULL) pufftype = 'BulletPuff';
-
-		if (weapon != NULL)
+		double _bangle = bangle;
+		double _bslope = bslope;
+		if (weapon && player.mo.OverrideAttackPosDir)
 		{
-			A_StartSound(weapon.AttackSound, CHAN_WEAPON);
+			Vector3 dir;
+			if (weapon.bOffhandWeapon)
+			{
+				dir = player.mo.OffhandDir(self, bangle, bslope);
+			}
+			else
+			{
+				dir = player.mo.AttackDir(self, bangle, bslope);
+			}
+			_bangle = dir.x;
+			_bslope = dir.y;
 		}
+
+		if (pufftype == NULL) pufftype = 'BulletPuff';
 
 		if ((numbullets == 1 && !player.refire) || numbullets == 0)
 		{
@@ -124,9 +157,7 @@ class StateProvider : Inventory
 			if (missile != null)
 			{
 				bool temp = false;
-				double ang = Angle - 90;
-				Vector2 ofs = AngleToVector(ang, Spawnofs_xy);
-				Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight);
+				Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight, aimflags: alflags);
 				if (proj)
 				{
 					if (!puff)
@@ -139,8 +170,8 @@ class StateProvider : Inventory
 					{
 						// Arbitary portals will make angle and pitch calculations unreliable.
 						// So use the angle and pitch we passed instead.
-						proj.Angle = bangle;
-						proj.Pitch = bslope;
+						proj.Angle = _bangle;
+						proj.Pitch = _bslope;
 						proj.Vel3DFromAngle(proj.Speed, proj.Angle, proj.Pitch);
 					}
 				}
@@ -176,9 +207,7 @@ class StateProvider : Inventory
 				if (missile != null)
 				{
 					bool temp = false;
-					double ang = Angle - 90;
-					Vector2 ofs = AngleToVector(ang, Spawnofs_xy);
-					Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight);
+					Actor proj = SpawnPlayerMissile(missile, bangle, ofs.X, ofs.Y, Spawnheight, aimflags: alflags);
 					if (proj)
 					{
 						if (!puff)
@@ -191,8 +220,8 @@ class StateProvider : Inventory
 						{
 							// Arbitary portals will make angle and pitch calculations unreliable.
 							// So use the angle and pitch we passed instead.
-							proj.Angle = bangle;
-							proj.Pitch = bslope;
+							proj.Angle = _bangle;
+							proj.Pitch = _bslope;
 							proj.Vel3DFromAngle(proj.Speed, proj.Angle, proj.Pitch);
 						}
 					}
@@ -214,8 +243,12 @@ class StateProvider : Inventory
 	{
 		let player = self.player;
 		if (!player) return null, null;
-
-		let weapon = player.ReadyWeapon;
+		int alflags = 0;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon && weapon.bOffhandWeapon)
+		{
+			alflags |= ALF_ISOFFHAND;
+		}
 
 		FTranslatedLineTarget t;
 
@@ -228,19 +261,18 @@ class StateProvider : Inventory
 
 		if (missiletype) 
 		{
-			double ang = self.Angle - 90;
-			Vector2 ofs = AngleToVector(ang, spawnofs_xy);
+			Vector2 ofs = (0, Spawnofs_xy);
+			if (!weapon || !player.mo.OverrideAttackPosDir)
+			{
+				double ang = self.Angle - 90;
+				ofs = AngleToVector(ang, Spawnofs_xy);
+			}
 			double shootangle = self.Angle;
 
 			if (flags & FPF_AIMATANGLE) shootangle += angle;
 
-			// Temporarily adjusts the pitch
-			double saved_player_pitch = self.Pitch;
-			self.Pitch += pitch;
-
 			Actor misl, realmisl;
-			[misl, realmisl] = SpawnPlayerMissile (missiletype, shootangle, ofs.X, ofs.Y, spawnheight, t, false, (flags & FPF_NOAUTOAIM) != 0);
-			self.Pitch = saved_player_pitch;
+			[misl, realmisl] = SpawnPlayerMissile (missiletype, shootangle, ofs.X, ofs.Y, spawnheight, t, false, (flags & FPF_NOAUTOAIM) != 0, alflags, self.Pitch + pitch);
 
 			if (realmisl && flags & FPF_TRANSFERTRANSLATION)
 				realmisl.Translation = Translation;
@@ -254,8 +286,25 @@ class StateProvider : Inventory
 				{
 					// This original implementation is to aim straight ahead and then offset
 					// the angle from the resulting direction. 
-					misl.Angle += angle;
-					misl.VelFromAngle(misl.Vel.XY.Length());
+					if (weapon && player.mo.OverrideAttackPosDir)
+					{
+						Vector3 dir;
+						if (weapon.bOffhandWeapon)
+						{
+							dir = player.mo.OffhandDir(misl, misl.Angle + angle, misl.Pitch);
+						}
+						else
+						{
+							dir = player.mo.AttackDir(misl, misl.Angle - angle, misl.Pitch);
+						}
+						misl.Angle = dir.x;
+						misl.Vel3DFromAngle(misl.Speed, misl.Angle, dir.y);
+					}
+					else
+					{
+						misl.Angle += angle;
+						misl.VelFromAngle(misl.Vel.XY.Length());
+					}
 				}
 			}
 			return misl, realmisl;
@@ -276,7 +325,7 @@ class StateProvider : Inventory
 		let player = self.player;
 		if (!player) return;
 
-		let weapon = player.ReadyWeapon;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
 
 		double angle;
 		double pitch;
@@ -286,9 +335,20 @@ class StateProvider : Inventory
 		if (!norandom)
 			damage *= random[cwpunch](1, 8);
 
+		if (pufftype == NULL)
+			pufftype = 'BulletPuff';
+		int puffFlags = LAF_ISMELEEATTACK | ((flags & CPF_NORANDOMPUFFZ) ? LAF_NORANDOMPUFFZ : 0);
+		int alflags = 0;
+
+		if (weapon != NULL && weapon == invoker)
+		{
+			alflags |= weapon.bOffhandWeapon ? ALF_ISOFFHAND : 0;
+			puffFlags |= weapon.bOffhandWeapon ? LAF_ISOFFHAND : 0;
+		}
+
 		angle = self.Angle + random2[cwpunch]() * (5.625 / 256);
 		if (range == 0) range = DEFMELEERANGE;
-		pitch = AimLineAttack (angle, range, t, 0., ALF_CHECK3D);
+		pitch = AimLineAttack (angle, range, t, 0., ALF_CHECK3D | alflags);
 
 		// only use ammo when actually hitting something!
 		if ((flags & CPF_USEAMMO) && t.linetarget && weapon && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
@@ -296,10 +356,6 @@ class StateProvider : Inventory
 			if (!weapon.DepleteAmmo(weapon.bAltFire, true))
 				return;	// out of ammo
 		}
-
-		if (pufftype == NULL)
-			pufftype = 'BulletPuff';
-		int puffFlags = LAF_ISMELEEATTACK | ((flags & CPF_NORANDOMPUFFZ) ? LAF_NORANDOMPUFFZ : 0);
 
 		Actor puff;
 		[puff, actualdamage] = LineAttack (angle, range, pitch, damage, 'Melee', pufftype, puffFlags, t);
@@ -346,10 +402,11 @@ class StateProvider : Inventory
 				else			A_StartSound(weapon.AttackSound, CHAN_WEAPON);
 			}
 
-			if (!(flags & CPF_NOTURN))
+			if ((!player.PlayInVR || vanilla_melee_attack) && !(flags & CPF_NOTURN))
 			{
 				// turn to face target
 				self.Angle = t.angleFromSource;
+				player.resetDoomYaw = true;
 			}
 
 			if (flags & CPF_PULLIN) self.bJustAttacked = true;
@@ -371,7 +428,11 @@ class StateProvider : Inventory
 		let player = self.player;
 		if (!player) return;
 
-		let weapon = player.ReadyWeapon;
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon != null && weapon.bOffhandWeapon)
+		{
+			flags |= RGF_ISOFFHAND;
+		}
 
 		if (useammo && weapon != NULL && stateinfo != null && stateinfo.mStateType == STATE_Psprite)
 		{
@@ -425,23 +486,33 @@ class StateProvider : Inventory
 		{
 			return;
 		}
-		pending = player.PendingWeapon != WP_NOCHANGE && (player.WeaponState & WF_REFIRESWITCHOK);
-		if ((player.cmd.buttons & BT_ATTACK)
-			&& !player.ReadyWeapon.bAltFire && !pending && player.health > 0)
+
+		let weapon = invoker == player.OffhandWeapon ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == NULL)
 		{
-			player.refire++;
-			player.mo.FireWeapon(ResolveState(flash));
+			return;
 		}
-		else if ((player.cmd.buttons & BT_ALTATTACK)
-			&& player.ReadyWeapon.bAltFire && !pending && player.health > 0)
+		int refireok = weapon == player.ReadyWeapon ? WF_REFIRESWITCHOK : WF_OFFHANDREFIRESWITCHOK;
+		int attackbt = weapon == player.ReadyWeapon ? BT_ATTACK : BT_OFFHANDATTACK;
+		int altattackbt = weapon == player.ReadyWeapon ? BT_ALTATTACK : BT_OFFHANDALTATTACK;
+		pending = player.PendingWeapon != WP_NOCHANGE && (player.WeaponState & refireok)
+			&& (player.PendingWeapon.bOffhandWeapon == weapon.bOffhandWeapon);
+		if ((player.cmd.buttons & attackbt)
+			&& !weapon.bAltFire && !pending && player.health > 0)
 		{
 			player.refire++;
-			player.mo.FireWeaponAlt(ResolveState(flash));
+			player.mo.FireWeapon(ResolveState(flash), weapon.bOffhandWeapon ? 1 : 0);
+		}
+		else if ((player.cmd.buttons & altattackbt)
+			&& weapon.bAltFire && !pending && player.health > 0)
+		{
+			player.refire++;
+			player.mo.FireWeaponAlt(ResolveState(flash), weapon.bOffhandWeapon ? 1 : 0);
 		}
 		else
 		{
 			player.refire = 0;
-			player.ReadyWeapon.CheckAmmo (player.ReadyWeapon.bAltFire? WeaponBase.AltFire : WeaponBase.PrimaryFire, true);
+			weapon.CheckAmmo (weapon.bAltFire? WeaponBase.AltFire : WeaponBase.PrimaryFire, true);
 		}
 	}
 	

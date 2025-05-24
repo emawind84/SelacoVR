@@ -195,4 +195,10 @@ extern bool use_staticrng;
 // M_Random can be used for numbers that do not affect gameplay
 extern FRandom M_Random;
 
+// Returns a number from 0 to 255, from a lookup table.
+int P_Random (void);
+void M_ClearRandom (void);
+
+extern int prndindex;
+
 #endif

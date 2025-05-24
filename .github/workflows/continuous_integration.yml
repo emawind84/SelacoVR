@@ -1,6 +1,11 @@
 name: Continuous Integration
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,28 +17,29 @@ jobs:
         config:
         - name: Visual Studio 2022
           os: windows-2022
-          extra_options: -DCMAKE_TOOLCHAIN_FILE=build/vcpkg/scripts/buildsystems/vcpkg.cmake
+          extra_options: -DENABLE_OPENVR=ON
           build_type: Release
 
         - name: Visual Studio 2022
           os: windows-2022
-          extra_options: -DCMAKE_TOOLCHAIN_FILE=build/vcpkg/scripts/buildsystems/vcpkg.cmake
+          extra_options: -DENABLE_OPENVR=ON
           build_type: Debug
 
         - name: Visual Studio 2019
           os: windows-2019
-          extra_options: -DCMAKE_TOOLCHAIN_FILE=build/vcpkg/scripts/buildsystems/vcpkg.cmake
+          extra_options: -DENABLE_OPENVR=ON
           build_type: Release
 
         - name: macOS
-          os: macos-12
-          deps_cmdline: brew install libvpx webp
+          os: macos-14
+          extra_options:
+          deps_cmdline: brew install libvpx
           build_type: Release
 
         - name: macOS
-          os: macos-12
+          os: macos-14
           extra_options: -G Xcode -DDYN_OPENAL=OFF
-          deps_cmdline: brew install libvpx webp
+          deps_cmdline: brew install libvpx
           build_type: Debug
 
         - name: Linux GCC 9
@@ -61,37 +67,58 @@ jobs:
           build_type: Release
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout QuestZDoom
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        submodules: true
+        path: ''
+    - run: git fetch --deepen=100
 
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      if: runner.os == 'Windows'
+      with:
+        vcpkgDirectory: '${{ github.workspace }}/build/vcpkg'
+        vcpkgGitCommitId: 'b322364f06308bdd24823f9d8f03fe0cc86fd46f'
+
+    - name: Setup environment
+      if: runner.os == 'Windows'
+      shell: bash
+      run: echo CMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+
+    - name: Prepare OpenVR SDK dependency
+      shell: bash
+      run: |
+        mkdir -p build
+        export OPENVR_SDK=openvr-2.5.1
+        echo OPENVR_SDK="${OPENVR_SDK}" >> $GITHUB_ENV
+        cd build
+        curl -LO "https://github.com/emawind84/gzdoom/releases/download/ci_deps/${OPENVR_SDK}.tar.gz"
+        tar -xf "${OPENVR_SDK}.tar.gz"
+    
     - name: Install Dependencies
       shell: bash
       run: |
         if [[ -n "${{ matrix.config.deps_cmdline }}" ]]; then
           eval ${{ matrix.config.deps_cmdline }}
         fi
-        mkdir build
-        if [[ "${{ runner.os }}" == 'macOS' ]]; then
-          export ZMUSIC_PACKAGE=zmusic-1.1.9-macos.tar.xz
-        elif [[ "${{ runner.os }}" == 'Linux' ]]; then
-          export ZMUSIC_PACKAGE=zmusic-1.1.9-linux.tar.xz
-        fi
-        if [[ -n "${ZMUSIC_PACKAGE}" ]]; then
-          cd build
-          wget -q "https://github.com/coelckers/gzdoom/releases/download/ci_deps/${ZMUSIC_PACKAGE}"
-          tar -xf "${ZMUSIC_PACKAGE}"
-        fi
-    
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      if: runner.os == 'Windows'
-      with:
-        vcpkgDirectory: '${{ github.workspace }}/build/vcpkg'
-        vcpkgGitCommitId: '2c401863dd54a640aeb26ed736c55489c079323b'
+        mkdir -p build
+        cd build
+        git clone https://github.com/emawind84/ZMusic.git
+        cd ZMusic
+        git checkout master
+        cd ..
+        cmake -B zmusic_build -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DCMAKE_INSTALL_PREFIX=`pwd`/zmusic_install ZMusic
+        cmake --build zmusic_build --target install --parallel 3
 
     - name: Configure
       shell: bash
-      run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DCMAKE_PREFIX_PATH=`pwd`/build/zmusic -DPK3_QUIET_ZIPDIR=ON ${{ matrix.config.extra_options }} .
+      run: >
+        cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} 
+        -DCMAKE_PREFIX_PATH=`pwd`/build/zmusic_install -DPK3_QUIET_ZIPDIR=ON
+        -DOPENVR_SDK_PATH=`pwd`/build/${OPENVR_SDK}
+        ${{ matrix.config.extra_options }} .
 
     - name: Build
       shell: bash
@@ -106,16 +133,16 @@ jobs:
         cd build
         mkdir package
         if [[ "${{ runner.os }}" == 'Windows' ]]; then
-          cp ${{ matrix.config.build_type }}/gzdoom.exe ${{ matrix.config.build_type }}/*.pk3 package
+          cp ${{ matrix.config.build_type }}/qzdoom.exe ${{ matrix.config.build_type }}/*.pk3 package
         elif [[ "${{ runner.os }}" == 'macOS' ]]; then
-          cp -r gzdoom.app package
+          cp -r qzdoom.app package
         elif [[ "${{ runner.os }}" == 'Linux' ]]; then
-          cp gzdoom *.pk3 package
+          cp qzdoom *.pk3 package
         fi
 
     - name: Upload Package
       if: runner.os == 'Windows'  # Remove to store packages of all targets
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         path: build/package
         name: ${{ matrix.config.name }} ${{ matrix.config.build_type }}

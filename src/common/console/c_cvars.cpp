@@ -1427,6 +1427,21 @@ FBaseCVar *FindCVarSub (const char *var_name, int namelen)
 	return find ? *find : nullptr;
 }
 
+EXTERN_CVAR(Float, ext_haptic_level_global_intensity)
+
+float C_GetExternalHapticLevelValue(const char *haptic_name)
+{
+	char buffer[256];
+	sprintf(buffer, "ext_haptic_level_%s", haptic_name);
+	FBaseCVar *pCVar = FindCVar(buffer, NULL);
+	if (pCVar != NULL)
+	{
+		return pCVar->GetGenericRep(CVAR_Float).Float * ext_haptic_level_global_intensity;
+	}
+
+	return ext_haptic_level_global_intensity;
+}
+
 FBaseCVar *GetCVar(int playernum, const char *cvarname)
 {
 	FBaseCVar *cvar = FindCVar(cvarname, nullptr);
@@ -1630,20 +1645,24 @@ CCMD (unset)
 
 CCMD (resetcvar)
 {
-	if (argv.argc() != 2)
+	if (argv.argc() < 2)
 	{
 		Printf ("usage: resetcvar <variable>\n");
 	}
 	else
 	{
-		FBaseCVar *var = FindCVar (argv[1], NULL);
-		if (var != NULL)
+		for (int i = 1; i < argv.argc(); i++)
 		{
-			var->ResetToDefault();
-		}
-		else
-		{
-			Printf ("No such variable: %s\n", argv[1]);
+			FBaseCVar *var;
+			if (var = FindCVar(argv[i], NULL))
+			{
+				var->ResetToDefault();
+				DPrintf(DMSG_SPAMMY, "Reset variable %s\n", argv[i]);
+			}
+			else
+			{
+				Printf ("No such variable: %s\n", argv[i]);
+			}
 		}
 	}
 }
@@ -1688,9 +1707,9 @@ CCMD (toggle)
 			auto msg = var->GetToggleMessage(val.Bool);
 			if (msg.IsNotEmpty())
 			{
-				Printf(PRINT_NOTIFY, "%s\n", msg.GetChars());
+				DPrintf (DMSG_NOTIFY, "%s\n", msg.GetChars());
 			}
-			else Printf ("\"%s\" = \"%s\"\n", var->GetName(),
+			else DPrintf (DMSG_NOTIFY, "\"%s\" = \"%s\"\n", var->GetName(),
 				val.Bool ? "true" : "false");
 		}
 	}

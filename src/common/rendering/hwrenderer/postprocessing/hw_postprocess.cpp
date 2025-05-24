@@ -767,6 +767,9 @@ void PPAmbientOcclusion::Render(PPRenderState *renderstate, float m5, int sceneW
 	ssaoUniforms.AOStrength = aoStrength;
 	ssaoUniforms.Scale = sceneScale;
 	ssaoUniforms.Offset = sceneOffset;
+	ssaoUniforms.GlobalFade = gl_global_fade ? 1 : 0;
+	ssaoUniforms.GlobalFadeDensity = gl_global_fade_density;
+	ssaoUniforms.GlobalFadeGradient = gl_global_fade_gradient;
 
 	DepthBlurUniforms blurUniforms;
 	blurUniforms.BlurSharpness = blurSharpness;
@@ -897,7 +900,7 @@ void PPShadowMap::Update(PPRenderState* renderstate)
 
 /////////////////////////////////////////////////////////////////////////////
 
-CVAR(Bool, gl_custompost, true, 0)
+CVAR(Bool, gl_custompost, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)  // user can change this
 
 void PPCustomShaders::Run(PPRenderState *renderstate, FString target)
 {

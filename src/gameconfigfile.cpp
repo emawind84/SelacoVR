@@ -113,6 +113,8 @@ FGameConfigFile::FGameConfigFile ()
 		SetValueForKey ("Path", user_app_support.GetChars(), true);
 		SetValueForKey ("Path", "$PROGDIR", true);
 		SetValueForKey ("Path", local_app_support.GetChars(), true);
+#elif __ANDROID__
+		SetValueForKey ("Path", "./wads", true);
 #elif !defined(__unix__)
 		SetValueForKey ("Path", "$HOME", true);
 		SetValueForKey ("Path", "$PROGDIR", true);
@@ -133,11 +135,14 @@ FGameConfigFile::FGameConfigFile ()
 	if (!SetSection ("FileSearch.Directories"))
 	{
 		SetSection ("FileSearch.Directories", true);
+		SetValueForKey ("Path", ".", true);
 #ifdef __APPLE__
 		SetValueForKey ("Path", user_docs.GetChars(), true);
 		SetValueForKey ("Path", user_app_support.GetChars(), true);
 		SetValueForKey ("Path", "$PROGDIR", true);
 		SetValueForKey ("Path", local_app_support.GetChars(), true);
+#elif __ANDROID__
+		SetValueForKey ("Path", "./mods", true);
 #elif !defined(__unix__)
 		SetValueForKey ("Path", "$PROGDIR", true);
 #else
@@ -165,6 +170,9 @@ FGameConfigFile::FGameConfigFile ()
 		SetValueForKey("Path", "$PROGDIR/fm_banks", true);
 		SetValueForKey("Path", (local_app_support + "/soundfonts").GetChars(), true);
 		SetValueForKey("Path", (local_app_support + "/fm_banks").GetChars(), true);
+#elif __ANDROID__
+		SetValueForKey("Path", "./soundfonts", true);
+		SetValueForKey("Path", "./fm_banks", true);
 #elif !defined(__unix__)
 		SetValueForKey("Path", "$PROGDIR/soundfonts", true);
 		SetValueForKey("Path", "$PROGDIR/fm_banks", true);
@@ -281,6 +289,24 @@ void FGameConfigFile::DoGlobalSetup ()
 			}
 			
 			if (last < 225)
+			if (last < 223)
+			{
+				FBaseCVar *var = FindCVar("storesavepic", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("gl_max_lights", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("gl_light_shadowmap", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("gl_sprite_distance_cull", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("gl_line_distance_cull", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("r_sprite_distance_cull", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("r_sprite_distance_cull", NULL);
+				if (var != NULL) var->ResetToDefault();
+			}
+			if (last < 224)
 			{
 				if (const auto var = FindCVar("m_sensitivity_x", NULL))
 				{
@@ -288,13 +314,38 @@ void FGameConfigFile::DoGlobalSetup ()
 					v.Float *= 0.5f;
 					var->SetGenericRep(v, CVAR_Float);
 				}
-
+			}
+			if (last < 224)
+			{
+				FBaseCVar *var = FindCVar("vr_move_use_offhand", NULL);
+				if (var != NULL) var->ResetToDefault();
+			}
+			if (last < 225)
+			{
 				if (const auto var = FindCVar("gl_lightmode", NULL))
 				{
 					UCVarValue v = var->GetGenericRep(CVAR_Int);
 					v.Int = v.Int == 16 ? 2 : v.Int == 8 ? 1 : 0;
 					var->SetGenericRep(v, CVAR_Int);
 				}
+			}
+			if (last < 225)
+			{
+				FBaseCVar *var = FindCVar("fluid_patchset", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("timidity_config", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("midi_config", NULL);
+				if (var != NULL) var->ResetToDefault();
+			}
+			if (last < 226)
+			{
+				FBaseCVar *var = FindCVar("gl_billboard_faces_camera", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("storesavepic", NULL);
+				if (var != NULL) var->ResetToDefault();
+				var = FindCVar("gl_max_lights", NULL);
+				if (var != NULL) var->ResetToDefault();
 			}
 		}
 	}
@@ -572,10 +623,13 @@ FString FGameConfigFile::GetConfigPath (bool tryProg)
 {
 	const char *pathval;
 
-	pathval = Args->CheckValue ("-config");
-	if (pathval != NULL)
+	if (Args != NULL)
 	{
-		return FString(pathval);
+		pathval = Args->CheckValue ("-config");
+		if (pathval != NULL)
+		{
+			return FString(pathval);
+		}
 	}
 	return M_GetConfigPath(tryProg);
 }

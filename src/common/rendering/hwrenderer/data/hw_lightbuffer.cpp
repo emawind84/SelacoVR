@@ -28,6 +28,9 @@
 #include "hw_lightbuffer.h"
 #include "hw_dynlightdata.h"
 #include "shaderuniforms.h"
+#include "hw_clock.h"
+
+CVAR(Int, gl_max_lights, 80000, 0);
 
 static const int ELEMENTS_PER_LIGHT = 4;			// each light needs 4 vec4's.
 static const int ELEMENT_SIZE = (4*sizeof(float));
@@ -36,7 +39,7 @@ static const int ELEMENT_SIZE = (4*sizeof(float));
 FLightBuffer::FLightBuffer(int pipelineNbr):
 	mPipelineNbr(pipelineNbr)
 {
-	int maxNumberOfLights = 80000;
+	int maxNumberOfLights = gl_max_lights;
 
 	mBufferSize = maxNumberOfLights * ELEMENTS_PER_LIGHT;
 	mByteSize = mBufferSize * ELEMENT_SIZE;
@@ -124,10 +127,13 @@ int FLightBuffer::UploadLights(FDynLightData &data)
 		memcpy(&copyptr[4], &data.arrays[0][0], size0 * ELEMENT_SIZE);
 		memcpy(&copyptr[4 + 4*size0], &data.arrays[1][0], size1 * ELEMENT_SIZE);
 		memcpy(&copyptr[4 + 4*(size0 + size1)], &data.arrays[2][0], size2 * ELEMENT_SIZE);
+
+		lightbuffer_curindex = thisindex;
 		return thisindex;
 	}
 	else
 	{
+		DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mIndex=%d\n", thisindex + totalsize);
 		return -1;	// Buffer is full. Since it is being used live at the point of the upload we cannot do much here but to abort.
 	}
 }
@@ -141,6 +147,7 @@ int FLightBuffer::GetBinding(unsigned int index, size_t* pOffset, size_t* pSize)
 	*pSize = mBlockSize * ELEMENT_SIZE;
 	return (index - offset);
 }
+
 
 
 

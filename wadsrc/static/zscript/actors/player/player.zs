@@ -161,6 +161,10 @@ class PlayerPawn : Actor
 			{
 				player.ReadyWeapon.EndPowerup ();
 			}
+			if (player.OffhandWeapon != NULL && player.OffhandWeapon.bPowered_Up)
+			{
+				player.OffhandWeapon.EndPowerup ();
+			}
 			if (player.PendingWeapon != NULL && player.PendingWeapon != WP_NOCHANGE &&
 				player.PendingWeapon.bPowered_Up &&
 				player.PendingWeapon.SisterWeapon != NULL)
@@ -351,14 +355,25 @@ class PlayerPawn : Actor
 	void CheckWeaponSwitch(Class<Ammo> ammotype)
 	{
 		let player = self.player;
-		if (!player.GetNeverSwitch() &&	player.PendingWeapon == WP_NOCHANGE && 
-			(player.ReadyWeapon == NULL || player.ReadyWeapon.bWimpy_Weapon))
+		if (!player.GetNeverSwitch() &&	player.PendingWeapon == WP_NOCHANGE)
 		{
-			let best = BestWeapon (ammotype);
-			if (best != NULL && !best.bNoAutoSwitchTo && 
-				(player.ReadyWeapon == NULL || best.SelectionOrder < player.ReadyWeapon.SelectionOrder))
+			if (player.ReadyWeapon == NULL || player.ReadyWeapon.bWimpy_Weapon)
 			{
-				player.PendingWeapon = best;
+				let best = BestWeapon (ammotype);
+				if (best != NULL && !best.bNoAutoSwitchTo && 
+					(player.ReadyWeapon == NULL || best.SelectionOrder < player.ReadyWeapon.SelectionOrder))
+				{
+					player.PendingWeapon = best;
+				}
+			}
+			else if (player.OffhandWeapon == NULL || player.OffhandWeapon.bWimpy_Weapon)
+			{
+				let best = BestWeapon (ammotype, 1);
+				if (best != NULL && !best.bNoAutoSwitchTo && 
+					(player.OffhandWeapon == NULL || best.SelectionOrder < player.OffhandWeapon.SelectionOrder))
+				{
+					player.PendingWeapon = best;
+				}
 			}
 		}
 	}
@@ -369,24 +384,29 @@ class PlayerPawn : Actor
 	//
 	//---------------------------------------------------------------------------
 
-	virtual void FireWeapon (State stat)
+	virtual void FireWeapon (State stat, int hand = 0)
 	{
 		let player = self.player;
 		
-		let weapn = player.ReadyWeapon;
+		if (hand == 1 && player.WeaponState & WF_TWOHANDSTABILIZED)
+		{
+			return;
+		}
+
+		let weapn = hand ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapn == null || !weapn.CheckAmmo (WeaponBase.PrimaryFire, true))
 		{
 			return;
 		}
 
-		player.WeaponState &= ~WF_WEAPONBOBBING;
+		player.WeaponState &= ~(hand ? WF_OFFHANDBOBBING : WF_WEAPONBOBBING);
 		PlayAttacking ();
 		weapn.bAltFire = false;
 		if (stat == null)
 		{
 			stat = weapn.GetAtkState(!!player.refire);
 		}
-		player.SetPsprite(PSP_WEAPON, stat);
+		player.SetPsprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON, stat);
 		if (!weapn.bNoAlert)
 		{
 			SoundAlert (self, false);
@@ -399,15 +419,20 @@ class PlayerPawn : Actor
 	//
 	//---------------------------------------------------------------------------
 
-	virtual void FireWeaponAlt (State stat)
+	virtual void FireWeaponAlt (State stat, int hand = 0)
 	{
-		let weapn = player.ReadyWeapon;
+		if (hand == 1 && player.WeaponState & WF_TWOHANDSTABILIZED)
+		{
+			return;
+		}
+
+		let weapn = hand ? player.OffhandWeapon : player.ReadyWeapon;
 		if (weapn == null || weapn.FindState('AltFire') == null || !weapn.CheckAmmo (WeaponBase.AltFire, true))
 		{
 			return;
 		}
 
-		player.WeaponState &= ~WF_WEAPONBOBBING;
+		player.WeaponState &= ~(hand ? WF_OFFHANDBOBBING : WF_WEAPONBOBBING);
 		PlayAttacking ();
 		weapn.bAltFire = true;
 
@@ -416,7 +441,7 @@ class PlayerPawn : Actor
 			stat = weapn.GetAltAtkState(!!player.refire);
 		}
 
-		player.SetPsprite(PSP_WEAPON, stat);
+		player.SetPsprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON, stat);
 		if (!weapn.bNoAlert)
 		{
 			SoundAlert (self, false);
@@ -433,37 +458,38 @@ class PlayerPawn : Actor
 	//
 	//---------------------------------------------------------------------------
 
-	void CheckWeaponFire ()
+	bool CheckWeaponFire (int hand = 0)
 	{
 		let player = self.player;
-		let weapon = player.ReadyWeapon;
-
+		let weapon = hand ? player.OffhandWeapon : player.ReadyWeapon;
+		
 		if (weapon == NULL)
-			return;
+			return false;
+
+		int ready_state = hand ? WF_OFFHANDREADY : WF_WEAPONREADY;
+		int alt_state = hand ? WF_OFFHANDREADYALT : WF_WEAPONREADYALT;
+		int bt_attack = hand ? BT_OFFHANDATTACK : BT_ATTACK;
+		int bt_altattack = hand ? BT_OFFHANDALTATTACK : BT_ALTATTACK;
+		bool attackdown = false;
 
 		// Check for fire. Some weapons do not auto fire.
-		if ((player.WeaponState & WF_WEAPONREADY) && (player.cmd.buttons & BT_ATTACK))
+		if ((player.WeaponState & ready_state) && (player.cmd.buttons & bt_attack))
 		{
 			if (!player.attackdown || !weapon.bNoAutofire)
 			{
-				player.attackdown = true;
-				FireWeapon (NULL);
-				return;
+				attackdown = true;
+				FireWeapon (NULL, hand);
 			}
 		}
-		else if ((player.WeaponState & WF_WEAPONREADYALT) && (player.cmd.buttons & BT_ALTATTACK))
+		else if ((player.WeaponState & alt_state) && (player.cmd.buttons & bt_altattack))
 		{
 			if (!player.attackdown || !weapon.bNoAutofire)
 			{
-				player.attackdown = true;
-				FireWeaponAlt (NULL);
-				return;
+				attackdown = true;
+				FireWeaponAlt (NULL, hand);
 			}
 		}
-		else
-		{
-			player.attackdown = false;
-		}
+		return attackdown;
 	}
 
 	//---------------------------------------------------------------------------
@@ -478,19 +504,37 @@ class PlayerPawn : Actor
 	virtual void CheckWeaponChange ()
 	{
 		let player = self.player;
-		if (!player) return;	
-		if ((player.WeaponState & WF_DISABLESWITCH) || // Weapon changing has been disabled.
-			Alternative)					// Morphed classes cannot change weapons.
-		{ // ...so throw away any pending weapon requests.
-			player.PendingWeapon = WP_NOCHANGE;
+		if (!player) return;
+		int hand = 0;
+		
+		if (player.PendingWeapon != NULL && player.PendingWeapon != WP_NOCHANGE)
+		{
+			hand = player.PendingWeapon.bOffhandWeapon ? 1 : 0;
+			Weapon weap = hand ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weap == null)
+			{
+				player.mo.BringUpWeapon();
+				return;
+			}
 		}
-
+		
 		// Put the weapon away if the player has a pending weapon or has died, and
 		// we're at a place in the state sequence where dropping the weapon is okay.
-		if ((player.PendingWeapon != WP_NOCHANGE || player.health <= 0) &&
-			player.WeaponState & WF_WEAPONSWITCHOK)
+		if ((player.PendingWeapon != WP_NOCHANGE || player.health <= 0))
 		{
-			DropWeapon();
+			int disableswitch = hand ? WF_OFFHANDDISABLESWITCH : WF_DISABLESWITCH;
+			int switchok = hand ? WF_OFFHANDSWITCHOK : WF_WEAPONSWITCHOK;
+			if ((player.WeaponState & disableswitch) || // Weapon changing has been disabled.
+				Alternative)					// Morphed classes cannot change weapons.
+			{ // ...so throw away any pending weapon requests.
+				player.PendingWeapon = WP_NOCHANGE;
+				return;
+			}
+			if (!(player.WeaponState & switchok))
+			{
+				return;
+			}
+			DropWeapon(hand);
 		}
 	}
 	
@@ -512,7 +556,9 @@ class PlayerPawn : Actor
 			// or if it's from an inventory item that the player no longer owns. 
 			if ((pspr.Caller == null ||
 				(pspr.Caller is "Inventory" && Inventory(pspr.Caller).Owner != pspr.Owner.mo) ||
-				(pspr.Caller is "WeaponBase" && pspr.Caller != pspr.Owner.ReadyWeapon)))
+				(pspr.Caller is "WeaponBase" && (pspr.Caller != pspr.Owner.ReadyWeapon && pspr.Caller != pspr.Owner.OffhandWeapon))) ||
+				(pspr.ID == PSP_WEAPON && pspr.Caller != pspr.Owner.ReadyWeapon) ||
+				(pspr.ID == PSP_OFFHANDWEAPON && pspr.Caller != pspr.Owner.OffhandWeapon))
 			{
 				pspr.Destroy();
 			}
@@ -524,22 +570,20 @@ class PlayerPawn : Actor
 			pspr = pspr.Next;
 		}
 
-		if ((health > 0) || (player.ReadyWeapon != null && !player.ReadyWeapon.bNoDeathInput))
+		if ((health > 0) || 
+			(player.ReadyWeapon != null && !player.ReadyWeapon.bNoDeathInput) ||
+			(player.OffhandWeapon != null && !player.OffhandWeapon.bNoDeathInput))
 		{
-			if (player.ReadyWeapon == null)
-			{
-				if (player.PendingWeapon != WP_NOCHANGE)
-					player.mo.BringUpWeapon();
-			}
-			else
 			{
 				CheckWeaponChange();
-				if (player.WeaponState & (WF_WEAPONREADY | WF_WEAPONREADYALT))
+				if (player.WeaponState & (WF_WEAPONREADY | WF_WEAPONREADYALT | WF_OFFHANDREADY | WF_OFFHANDREADYALT))
 				{
-					CheckWeaponFire();
+					player.attackdown = CheckWeaponFire(0);
+					player.ohattackdown = CheckWeaponFire(1);
 				}
 				// Check custom buttons
-				CheckWeaponButtons();
+				CheckWeaponButtons(0);  // check mainhand
+				CheckWeaponButtons(1);  // check offhand
 			}
 		}
 	}
@@ -661,7 +705,7 @@ class PlayerPawn : Actor
 		player.viewz = pos.Z + player.viewheight + (bob * clamp(ViewBob, 0. , 1.5)); // [SP] Allow DECORATE changes to view bobbing speed.
 
 		if (Floorclip && player.playerstate != PST_DEAD
-			&& pos.Z <= floorz)
+			&& pos.Z <= floorz + 2)
 		{
 			player.viewz -= Floorclip;
 		}
@@ -691,7 +735,7 @@ class PlayerPawn : Actor
 		player.Uncrouch();
 		TickPSprites();
 
-		player.onground = (pos.Z <= floorz);
+		player.onground = (pos.Z <= floorz + 2);
 		if (self is "PlayerChunk")
 		{ // Flying bloody skull or flying ice chunk
 			player.viewheight = 6;
@@ -963,7 +1007,7 @@ class PlayerPawn : Actor
 		DestroyAllInventory();
 		ObtainInventory (oldplayer);
 
-		player.ReadyWeapon = NULL;
+		player.ReadyWeapon = player.OffhandWeapon = NULL;
 		if (curHeldWeapon && curHeldWeapon.owner == self && curHeldWeapon.CheckAmmo(WeaponBase.EitherFire, false))
 		{
 			player.PendingWeapon = curHeldWeapon;
@@ -990,16 +1034,19 @@ class PlayerPawn : Actor
 
 		player.deltaFOV = player.FOV;
 
+		double fov1 = player.ReadyWeapon != NULL ? player.ReadyWeapon.FOVScale : 0;
+		double fov2 = player.OffhandWeapon != NULL ? player.OffhandWeapon.FOVScale : 0;
+		double fovscale = MAX(fov1, fov2);
+
 		// [RH] Zoom the player's FOV
 		float desired = player.DesiredFOV;
 		// Adjust FOV using on the currently held weapon.
 		if (player.playerstate != PST_DEAD &&		// No adjustment while dead.
-			player.ReadyWeapon != NULL &&			// No adjustment if no weapon.
-			player.ReadyWeapon.FOVScale != 0)		// No adjustment if the adjustment is zero.
+			fovscale != 0)		// No adjustment if the adjustment is zero.
 		{
 			// A negative scale is used to prevent G_AddViewAngle/G_AddViewPitch
 			// from scaling with the FOV scale.
-			desired *= abs(player.ReadyWeapon.FOVScale);
+			desired *= abs(fovscale);
 		}
 		if (player.FOV != desired)
 		{
@@ -1070,9 +1117,9 @@ class PlayerPawn : Actor
 			{
 				cmd.buttons &= BT_USE;
 			}
-			cmd.pitch = 0;
-			cmd.yaw = 0;
-			cmd.roll = 0;
+			//cmd.pitch = 0;
+			//cmd.yaw = 0;
+			//cmd.roll = 0;
 			cmd.forwardmove = 0;
 			cmd.sidemove = 0;
 			cmd.upmove = 0;
@@ -1108,7 +1155,10 @@ class PlayerPawn : Actor
 		double oldheight = player.viewheight;
 
 		player.crouchdir = direction;
-		player.crouchfactor += crouchspeed;
+		if (direction != 0)
+		{
+			player.crouchfactor += crouchspeed;
+		}
 
 		// check whether the move is ok
 		Height  = defaultheight * player.crouchfactor;
@@ -1124,7 +1174,10 @@ class PlayerPawn : Actor
 		}
 		Height = savedheight;
 
-		player.crouchfactor = clamp(player.crouchfactor, 0.5, 1.);
+		if (direction != 0)
+		{  // clamp when using crouch with button only
+			player.crouchfactor = clamp(player.crouchfactor, 0.5, 1.);
+		}
 		player.viewheight = ViewHeight * player.crouchfactor;
 		player.crouchviewdelta = player.viewheight - ViewHeight;
 
@@ -1153,7 +1206,11 @@ class PlayerPawn : Actor
 			{
 				int crouchdir = player.crouching;
 
-				if (crouchdir == 0)
+				if (player.crouching == 10)
+				{
+					CrouchMove(0);
+				}
+				else if (crouchdir == 0)
 				{
 					crouchdir = (cmd.buttons & BT_CROUCH) ? -1 : 1;
 				}
@@ -1284,19 +1341,48 @@ class PlayerPawn : Actor
 	{
 		let player = self.player;
 		UserCmd cmd = player.cmd;
+		player.resetDoomYaw = false;
 
 		// [RH] 180-degree turn overrides all other yaws
 		if (player.turnticks)
 		{
-			player.turnticks--;
-			Angle += (180. / TURN180_TICKS);
+			if (player.PlayInVR)
+			{
+				player.turnticks = 0;
+				Angle += 180.;
+				player.resetDoomYaw = true;
+			}
+			else 
+			{
+				player.turnticks--;
+				Angle += (180. / TURN180_TICKS);
+			}
 		}
 		else
 		{
 			Angle += cmd.yaw * (360./65536.);
 		}
 
-		player.onground = (pos.z <= floorz) || bOnMobj || bMBFBouncer || (player.cheats & CF_NOCLIP2);
+		player.onground = (pos.z <= floorz + 2) || bOnMobj || bMBFBouncer || (player.cheats & CF_NOCLIP2);
+
+		double friction, movefactor;
+		[friction, movefactor] = GetFriction();
+		//Taken from the Wolf-3D TC - Prevent player having momentum/acceleration to avoid puking
+		if (!vr_momentum && !player.keepmomentum
+		&& player.onground && friction == ORIG_FRICTION)
+		{
+			vel.XY *= 0.0001;
+			Speed = Default.Speed * 8;
+		}
+		else
+		{
+			Speed = Default.Speed;
+		}
+
+		if (abs(vel.x) < vr_momentum_threshold && abs(vel.y) < vr_momentum_threshold)
+		{
+			player.keepmomentum = false;
+		}
 
 		// killough 10/98:
 		//
@@ -1309,10 +1395,8 @@ class PlayerPawn : Actor
 		{
 			double forwardmove, sidemove;
 			double bobfactor;
-			double friction, movefactor;
 			double fm, sm;
 
-			[friction, movefactor] = GetFriction();
 			bobfactor = friction < ORIG_FRICTION ? movefactor : ORIG_FRICTION_FACTOR;
 			if (!player.onground && !bNoGravity && !waterlevel)
 			{
@@ -1330,9 +1414,10 @@ class PlayerPawn : Actor
 			// When crouching, speed and bobbing have to be reduced
 			if (CanCrouch() && player.crouchfactor != 1)
 			{
-				fm *= player.crouchfactor;
-				sm *= player.crouchfactor;
-				bobfactor *= player.crouchfactor;
+				double speedfactor = clamp(player.crouchfactor, 0.5, 1.);
+				fm *= speedfactor;
+				sm *= speedfactor;
+				bobfactor *= speedfactor;
 			}
 
 			forwardmove = fm * movefactor * (35 / TICRATE);
@@ -1427,7 +1512,7 @@ class PlayerPawn : Actor
 		// [RH] check for jump
 		if (player.cmd.buttons & BT_JUMP)
 		{
-			if (player.crouchoffset != 0)
+			if (player.crouchfactor < 0.75)
 			{
 				// Jumping while crouching will force an un-crouch but not jump
 				player.crouching = 1;
@@ -1525,7 +1610,7 @@ class PlayerPawn : Actor
 		{ // Player is frozen
 			reactiontime--;
 		}
-		else
+		else if (menuactive == Menu.Off)
 		{
 			MovePlayer();
 			CheckJump();
@@ -1649,7 +1734,7 @@ class PlayerPawn : Actor
 		}
 		CheckCheats();
 
-		if (bJustAttacked)
+		if (bJustAttacked && (!player.PlayInVR || vanilla_melee_attack))
 		{ // Chainsaw/Gauntlets attack auto forward motion
 			cmd.yaw = 0;
 			cmd.forwardmove = 0xc800/2;
@@ -1739,6 +1824,18 @@ class PlayerPawn : Actor
 				}
 				player.SetPsprite(PSP_WEAPON, player.ReadyWeapon.GetReadyState());
 			}
+
+			if (player.OffhandWeapon != null)
+			{
+				let psp = player.GetPSprite(PSP_OFFHANDWEAPON);
+				if (psp) 
+				{
+					psp.y = WEAPONTOP;
+					player.OffhandWeapon.ResetPSprite(psp);
+				}
+				player.SetPsprite(PSP_OFFHANDWEAPON, player.OffhandWeapon.GetReadyState());
+			}
+
 			return;
 		}
 
@@ -1755,20 +1852,39 @@ class PlayerPawn : Actor
 		}
 
 		player.PendingWeapon = WP_NOCHANGE;
-		player.ReadyWeapon = weapon;
 		player.mo.weaponspecial = 0;
 
 		if (weapon != null)
 		{
+			player.SetPsprite(PSP_FLASH, null);
+			if (weapon.bOffhandWeapon)
+			{
+				player.OffhandWeapon = weapon;
+				if (weapon.bTwoHanded || (player.ReadyWeapon && player.ReadyWeapon.bTwoHanded))
+				{
+					player.SetPsprite(PSP_WEAPON, null);
+					player.ReadyWeapon = NULL;
+				}
+			}
+			else
+			{
+				player.ReadyWeapon = weapon;
+				if (weapon.bTwoHanded || (player.OffhandWeapon && player.OffhandWeapon.bTwoHanded))
+				{
+					player.SetPsprite(PSP_OFFHANDWEAPON, null);
+					player.OffhandWeapon = NULL;
+				}
+			}
 			weapon.PlayUpSound(self);
 			player.refire = 0;
 
-			let psp = player.GetPSprite(PSP_WEAPON);
+			let wlayer = weapon.bOffhandWeapon ? PSP_OFFHANDWEAPON : PSP_WEAPON;
+			let psp = player.GetPSprite(wlayer);
 			if (psp) psp.y = player.cheats & CF_INSTANTWEAPSWITCH? WEAPONTOP : WEAPONBOTTOM;
 			// make sure that the previous weapon's flash state is terminated.
 			// When coming here from a weapon drop it may still be active.
 			player.SetPsprite(PSP_FLASH, null);
-			player.SetPsprite(PSP_WEAPON, weapon.GetUpState());
+			player.SetPsprite(wlayer, weapon.GetUpState());
 		}
 	}
 	
@@ -1781,7 +1897,7 @@ class PlayerPawn : Actor
 	//
 	//===========================================================================
 
-	WeaponBase BestWeapon(Class<Ammo> ammotype)
+	WeaponBase BestWeapon(Class<Ammo> ammotype, int hand = 0)
 	{
 		WeaponBase bestMatch = NULL;
 		int bestOrder = int.max;
@@ -1794,6 +1910,12 @@ class PlayerPawn : Actor
 			let weap = WeaponBase(item);
 			if (weap == null)
 				continue;
+
+			if (weap.bOffhandWeapon && hand == 0 ||
+				!weap.bOffhandWeapon && hand == 1)
+			{
+				continue;
+			}
 
 			// Don't select it if it's worse than what was already found.
 			if (weap.SelectionOrder > bestOrder)
@@ -1840,19 +1962,20 @@ class PlayerPawn : Actor
 	//
 	//---------------------------------------------------------------------------
 
-	void DropWeapon ()
+	void DropWeapon (int hand = 0)
 	{
 		let player = self.player;
 		if (player == null)
 		{
 			return;
 		}
+		int disableswitch = hand ? WF_OFFHANDDISABLESWITCH : WF_DISABLESWITCH;
 		// Since the weapon is dropping, stop blocking switching.
-		player.WeaponState &= ~WF_DISABLESWITCH;
-		WeaponBase weap = player.ReadyWeapon;
+		player.WeaponState &= ~disableswitch;
+		WeaponBase weap = hand ? player.OffhandWeapon : player.ReadyWeapon;
 		if ((weap != null) && (player.health > 0 || !weap.bNoDeathDeselect))
 		{
-			player.SetPsprite(PSP_WEAPON, weap.GetDownState());
+			player.SetPsprite(hand ? PSP_OFFHANDWEAPON : PSP_WEAPON, weap.GetDownState());
 		}
 	}
 	
@@ -1866,16 +1989,17 @@ class PlayerPawn : Actor
 	//
 	//===========================================================================
 
-	WeaponBase PickNewWeapon(Class<Ammo> ammotype)
+	WeaponBase PickNewWeapon(Class<Ammo> ammotype, int hand = 0)
 	{
-		WeaponBase best = BestWeapon (ammotype);
+		WeaponBase best = BestWeapon (ammotype, hand);
 
 		if (best != NULL)
 		{
 			player.PendingWeapon = best;
-			if (player.ReadyWeapon != NULL)
+			Weapon weapon = hand ? player.OffhandWeapon : player.ReadyWeapon;
+			if (weapon != NULL)
 			{
-				DropWeapon();
+				DropWeapon(hand);
 			}
 			else if (player.PendingWeapon != WP_NOCHANGE)
 			{
@@ -2079,11 +2203,19 @@ class PlayerPawn : Actor
 			}
 			item = next;
 		}
-		let ReadyWeapon = p.ReadyWeapon;
-		if (ReadyWeapon != NULL && ReadyWeapon.bPOWERED_UP && p.PendingWeapon == ReadyWeapon.SisterWeapon)
+		let weap = p.ReadyWeapon;
+		if (weap != NULL && weap.bPOWERED_UP && p.PendingWeapon == weap.SisterWeapon)
 		{
 			// Unselect powered up weapons if the unpowered counterpart is pending
+			p.PendingWeapon.bOffhandWeapon = false;  // remove offhand flag to avoid issues
 			p.ReadyWeapon = p.PendingWeapon;
+		}
+		weap = p.OffhandWeapon;
+		if (weap != NULL && weap.bPOWERED_UP && p.PendingWeapon == weap.SisterWeapon)
+		{
+			// Unselect powered up weapons if the unpowered counterpart is pending
+			p.PendingWeapon.bOffhandWeapon = true;  // we force offhand here to avoid issues
+			p.OffhandWeapon = p.PendingWeapon;
 		}
 		// reset invisibility to default
 		me.RestoreRenderStyle();
@@ -2171,25 +2303,25 @@ class PlayerPawn : Actor
 	//
 	//===========================================================================
 
-	virtual WeaponBase PickWeapon(int slot, bool checkammo)
+	virtual WeaponBase PickWeapon(int slot, bool checkammo, int hand = 0)
 	{
 		int i, j;
 
 		let player = self.player;
 		int Size = player.weapons.SlotSize(slot);
+		let cur_weapon = (hand == 1) ? player.OffhandWeapon : player.ReadyWeapon;
 		// Does this slot even have any weapons?
 		if (Size == 0)
 		{
-			return player.ReadyWeapon;
+			return cur_weapon;
 		}
-		let ReadyWeapon = player.ReadyWeapon;
-		if (ReadyWeapon != null)
+		if (cur_weapon != null)
 		{
 			for (i = 0; i < Size; i++)
 			{
 				let weapontype = player.weapons.GetWeapon(slot, i);
-				if (weapontype == ReadyWeapon.GetClass() ||
-					(ReadyWeapon.bPOWERED_UP && ReadyWeapon.SisterWeapon != null && ReadyWeapon.SisterWeapon.GetClass() == weapontype))
+				if (weapontype == cur_weapon.GetClass() ||
+					(cur_weapon.bPOWERED_UP && cur_weapon.SisterWeapon != null && cur_weapon.SisterWeapon.GetClass() == weapontype))
 				{
 					for (j = (i == 0 ? Size - 1 : i - 1);
 						j != i;
@@ -2216,13 +2348,41 @@ class PlayerPawn : Actor
 
 			if (weap != null)
 			{
-				if (!checkammo || weap.CheckAmmo(WeaponBase.EitherFire, false))
+				if (!checkammo || weap.CheckAmmo(WeaponBase.EitherFire, false) &&
+					((weap.bOffhandWeapon && hand == 1) ||
+					(!weap.bOffhandWeapon && hand == 0)))
 				{
 					return weap;
 				}
 			}
 		}
-		return ReadyWeapon;
+		return cur_weapon;
+	}
+
+	//===========================================================================
+	//
+	// SwitchHand
+	//
+	// Move a weapon from one hand to the other.
+	// The hand is where you want to move the weapon to, 0 for main hand and 1 for offhand.
+	//
+	//===========================================================================
+
+	virtual void SwitchWeaponHand(int hand = 0)
+	{
+		let weap = hand == 0 ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weap != null && !weap.bNoHandSwitch && player.playerstate == PST_LIVE)
+		{
+			let nextweap = player.mo.PickNextWeapon(1 - hand);
+			player.OffhandWeapon = player.ReadyWeapon = null;
+			weap.bOffhandWeapon = hand == 1;
+			player.PendingWeapon = weap;
+			player.mo.BringUpWeapon();
+			if (nextweap != weap && !weap.bTwoHanded && !nextweap.bTwoHanded) {
+				player.PendingWeapon = nextweap;
+				player.mo.BringUpWeapon();
+			}
+		}
 	}
 
 	//===========================================================================
@@ -2236,11 +2396,13 @@ class PlayerPawn : Actor
 	//
 	//===========================================================================
 
-	bool, int, int FindMostRecentWeapon()
+	bool, int, int FindMostRecentWeapon(int hand = 0)
 	{
 		let player = self.player;
-		let ReadyWeapon = player.ReadyWeapon;
-		if (player.PendingWeapon != WP_NOCHANGE)
+		let weapon = hand ? player.OffhandWeapon : player.ReadyWeapon;
+		if (player.PendingWeapon != WP_NOCHANGE &&
+			((player.PendingWeapon.bOffhandWeapon && hand == 1) || 
+			(!player.PendingWeapon.bOffhandWeapon && hand == 0)))
 		{
 			// Workaround for the current inability 
 			bool found;
@@ -2249,19 +2411,19 @@ class PlayerPawn : Actor
 			[found, slot, index] = player.weapons.LocateWeapon(player.PendingWeapon.GetClass());
 			return found, slot, index;
 		}
-		else if (ReadyWeapon != null)
+		else if (weapon != null)
 		{
 			bool found;
 			int slot;
 			int index;
-			[found, slot, index] = player.weapons.LocateWeapon(ReadyWeapon.GetClass());
+			[found, slot, index] = player.weapons.LocateWeapon(weapon.GetClass());
 			if (!found)
 			{
 				// If the current weapon wasn't found and is powered up,
 				// look for its non-powered up version.
-				if (ReadyWeapon.bPOWERED_UP && ReadyWeapon.SisterWeaponType != null)
+				if (weapon.bPOWERED_UP && weapon.SisterWeaponType != null)
 				{
-					[found, slot, index] = player.weapons.LocateWeapon(ReadyWeapon.SisterWeaponType);
+					[found, slot, index] = player.weapons.LocateWeapon(weapon.SisterWeaponType);
 					return found, slot, index;
 				}
 				return false, 0, 0;
@@ -2285,21 +2447,21 @@ class PlayerPawn : Actor
 	//===========================================================================
 	const NUM_WEAPON_SLOTS = 10;
 
-	virtual WeaponBase PickNextWeapon()
+	virtual WeaponBase PickNextWeapon(int hand = 0)
 	{
 		let player = self.player;
 		bool found;
 		int startslot, startindex;
 		int slotschecked = 0;
 
-		[found, startslot, startindex] = FindMostRecentWeapon();
-		let ReadyWeapon = player.ReadyWeapon;
-		if (ReadyWeapon == null || found)
+		[found, startslot, startindex] = FindMostRecentWeapon(hand);
+		let weapon = hand ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == null || found)
 		{
 			int slot;
 			int index;
 
-			if (ReadyWeapon == null)
+			if (weapon == null)
 			{
 				startslot = NUM_WEAPON_SLOTS - 1;
 				startindex = player.weapons.SlotSize(startslot) - 1;
@@ -2320,13 +2482,15 @@ class PlayerPawn : Actor
 				}
 				let type = player.weapons.GetWeapon(slot, index);
 				let weap = WeaponBase(FindInventory(type));
-				if (weap != null && weap.CheckAmmo(WeaponBase.EitherFire, false))
+				if (weap != null && weap.CheckAmmo(WeaponBase.EitherFire, false) &&
+					((weap.bOffhandWeapon && hand == 1) ||
+					(!weap.bOffhandWeapon && hand == 0)))
 				{
 					return weap;
 				}
 			} while ((slot != startslot || index != startindex) && slotschecked <= NUM_WEAPON_SLOTS);
 		}
-		return ReadyWeapon;
+		return weapon;
 	}
 
 	//===========================================================================
@@ -2339,20 +2503,21 @@ class PlayerPawn : Actor
 	//
 	//===========================================================================
 
-	virtual WeaponBase PickPrevWeapon()
+	virtual WeaponBase PickPrevWeapon(int hand = 0)
 	{
 		let player = self.player;
 		int startslot, startindex;
 		bool found;
 		int slotschecked = 0;
 
-		[found, startslot, startindex] = FindMostRecentWeapon();
-		if (player.ReadyWeapon == null || found)
+		[found, startslot, startindex] = FindMostRecentWeapon(hand);
+		let weapon = hand ? player.OffhandWeapon : player.ReadyWeapon;
+		if (weapon == null || found)
 		{
 			int slot;
 			int index;
 
-			if (player.ReadyWeapon == null)
+			if (weapon == null)
 			{
 				startslot = 0;
 				startindex = 0;
@@ -2373,13 +2538,15 @@ class PlayerPawn : Actor
 				}
 				let type = player.weapons.GetWeapon(slot, index);
 				let weap = WeaponBase(FindInventory(type));
-				if (weap != null && weap.CheckAmmo(WeaponBase.EitherFire, false))
+				if (weap != null && weap.CheckAmmo(WeaponBase.EitherFire, false) &&
+					((weap.bOffhandWeapon && hand == 1) ||
+					(!weap.bOffhandWeapon && hand == 0)))
 				{
 					return weap;
 				}
 			} while ((slot != startslot || index != startindex) && slotschecked <= NUM_WEAPON_SLOTS);
 		}
-		return player.ReadyWeapon;
+		return weapon;
 	}
 
 	//============================================================================
@@ -2579,7 +2746,7 @@ class PlayerPawn : Actor
 	native void CheckMusicChange();
 	native void CheckEnvironment();
 	native void CheckUse();
-	native void CheckWeaponButtons();
+	native void CheckWeaponButtons(int hand = 0);
 	native void MarkPlayerSounds();
 	private native int SetupCrouchSprite(int c);
 	private native clearscope Color GetPainFlashForType(Name type);
@@ -2655,6 +2822,7 @@ class PSprite : Object native play
 		STRIFEHANDS = -1,
 		WEAPON = 1,
 		FLASH = 1000,
+		OFFHANDWEAPON = 1000000,
 		TARGETCENTER = 0x7fffffff - 2,
 		TARGETLEFT,
 		TARGETRIGHT,
@@ -2776,7 +2944,9 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native vector2 vel;
 	native bool centering;
 	native uint8 turnticks;
+	native bool resetDoomYaw;
 	native bool attackdown;
+	native bool ohattackdown;
 	native bool usedown;
 	native uint oldbuttons;
 	native int health;
@@ -2787,9 +2957,10 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native int lastkilltime;
 	native uint8 multicount;
 	native uint8 spreecount;
-	native uint16 WeaponState;
+	native uint WeaponState;
 	native WeaponBase ReadyWeapon;
 	native WeaponBase PendingWeapon;
+	native WeaponBase OffhandWeapon;
 	native PSprite psprites;
 	native int cheats;
 	native int timefreezer;
@@ -2817,9 +2988,11 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native int MorphStyle;
 	native Class<Actor> MorphExitFlash;
 	native WeaponBase PremorphWeapon;
+	native WeaponBase PremorphWeaponOffhand;
 	native int chickenPeck;
 	native int jumpTics;
 	native bool onground;
+	native bool keepmomentum;
 	native int respawn_time;
 	native Actor camera;
 	native int air_finished;
@@ -2847,10 +3020,11 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native @WeaponSlots weapons;
 	native @UserCmd cmd;
 	native readonly @UserCmd original_cmd;
+	native readonly bool PlayInVR;
 
 	native bool PoisonPlayer(Actor poisoner, Actor source, int poison);
 	native void PoisonDamage(Actor source, int damage, bool playPainSound);
-	native void SetPsprite(int id, State stat, bool pending = false);
+	native void SetPsprite(int id, State stat, bool pending = false, Actor newcaller = null);
 	native void SetSafeFlash(WeaponBase weap, State flashstate, int index);
 	native PSprite GetPSprite(int id) const;
 	native PSprite FindPSprite(int id) const;

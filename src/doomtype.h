@@ -40,6 +40,15 @@ typedef TMap<int, PClassActor *> FClassMap;
 #include "palentry.h"
 #include "textureid.h"
 
+#ifdef __ANDROID__
+#ifndef LOGI
+#ifdef __ANDROID__
+#include <android/log.h>
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO,"JNITouchControlsUtils", __VA_ARGS__))
+#endif
+#endif
+#endif
+
 enum class ELightMode : int8_t
 {
 	NotSet = -1,

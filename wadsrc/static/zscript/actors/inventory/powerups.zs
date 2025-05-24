@@ -1087,7 +1087,15 @@ class PowerWeaponLevel2 : Powerup
 		if (player == null)
 			return;
 
-		let weap = player.ReadyWeapon;
+		ApplyEffect(player.ReadyWeapon);
+		ApplyEffect(player.OffhandWeapon);
+	}
+
+	private void ApplyEffect(Weapon weap)
+	{
+		let player = Owner.player;
+		if (player == null)
+			return;
 
 		if (weap == null)
 			return;
@@ -1100,20 +1108,25 @@ class PowerWeaponLevel2 : Powerup
 		if (!sister.bPowered_Up)
 			return;
 
+		sister.bOffhandWeapon = weap.bOffhandWeapon;
+		int hand = sister.bOffhandWeapon ? 1 : 0;
+		int psplayer = hand ? PSP_OFFHANDWEAPON : PSP_WEAPON;
 		let ready = sister.GetReadyState();
 		if (weap.GetReadyState() != ready)
 		{
-			player.ReadyWeapon = sister;
-			player.SetPsprite(PSP_WEAPON, ready);
+			if (hand == 0) player.ReadyWeapon = sister;
+			if (hand == 1) player.OffhandWeapon = sister;
+			player.SetPsprite(psplayer, ready);
 		}
 		else
 		{
-			PSprite psp = player.FindPSprite(PSprite.WEAPON);
-			if (psp != null && psp.Caller == player.ReadyWeapon)
+			PSprite psp = player.FindPSprite(psplayer);
+			if (psp != null && psp.Caller == weap)
 			{
 				// If the weapon changes but the state does not, we have to manually change the PSprite's caller here.
 				psp.Caller = sister;
-				player.ReadyWeapon = sister;
+				if (hand == 0) player.ReadyWeapon = sister;
+				if (hand == 1) player.OffhandWeapon = sister;
 			}
 			else
 			{
@@ -1321,8 +1334,8 @@ class PowerTargeter : Powerup
 		PSprite center = player.GetPSprite(PSprite.TARGETCENTER);
 		if (center)
 		{
-			center.x = POS_X;
-			center.y = POS_Y;
+		center.x = POS_X;
+		center.y = POS_Y;
 		}
 		PositionAccuracy ();
 	}
@@ -1402,15 +1415,15 @@ class PowerTargeter : Powerup
 			PSprite left = player.GetPSprite(PSprite.TARGETLEFT);
 			if (left)
 			{
-				left.x = POS_X - (100 - player.mo.accuracy);
-				left.y = POS_Y;
+			left.x = POS_X - (100 - player.mo.accuracy);
+			left.y = POS_Y;
 			}
 
 			PSprite right = player.GetPSprite(PSprite.TARGETRIGHT);
 			if (right)
 			{
-				right.x = POS_X + (100 - player.mo.accuracy);
-				right.y = POS_Y;
+			right.x = POS_X + (100 - player.mo.accuracy);
+			right.y = POS_Y;
 			}
 		}
 	}

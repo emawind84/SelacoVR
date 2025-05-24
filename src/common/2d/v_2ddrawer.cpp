@@ -1003,10 +1003,10 @@ void F2DDrawer::AddFlatFill(int left, int top, int right, int bottom, FGameTextu
 //
 //===========================================================================
 
-void F2DDrawer::AddColorOnlyQuad(int x1, int y1, int w, int h, PalEntry color, FRenderStyle *style, bool prepend)
+void F2DDrawer::AddColorOnlyQuad(int x1, int y1, int w, int h, PalEntry color, FRenderStyle *style, bool prepend, bool outside2D)
 {
 	RenderCommand dg;
-
+	dg.mOutside2D = outside2D;
 	dg.mType = DrawTypeTriangles;
 	dg.mVertCount = 4;
 	dg.mVertIndex = (int)mVertices.Reserve(4);

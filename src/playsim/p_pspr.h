@@ -56,6 +56,7 @@ enum PSPLayers
 	PSP_CALLERID = 0,
 	PSP_WEAPON = 1,
 	PSP_FLASH = 1000,
+	PSP_OFFHANDWEAPON = 1000000,
 	PSP_TARGETCENTER = INT_MAX - 2,
 	PSP_TARGETLEFT,
 	PSP_TARGETRIGHT,
@@ -159,7 +160,7 @@ public:	// must be public to be able to generate the field export tables. Grrr..
 
 void P_NewPspriteTick();
 void P_CalcSwing (player_t *player);
-void P_SetPsprite(player_t *player, PSPLayers id, FState *state, bool pending = false);
+void P_SetPsprite(player_t *player, PSPLayers id, FState *state, bool pending = false, AActor *newcaller = nullptr);
 void P_BringUpWeapon (player_t *player);
 void P_GetCameraOffsets(player_t *player, DVector3 &angleOffsets, DVector3 &posOffset, double ticFrac = 1.0, bool worldTilt = true);
 void P_FireWeapon (player_t *player);
@@ -168,9 +169,9 @@ void P_BobWeapon3D (player_t *player, FVector3 *translation, FVector3 *rotation,
 DAngle P_BulletSlope (AActor *mo, FTranslatedLineTarget *pLineTarget = NULL, int aimflags = 0);
 AActor *P_AimTarget(AActor *mo);
 
-void DoReadyWeaponToBob(AActor *self);
-void DoReadyWeaponToFire(AActor *self, bool primary = true, bool secondary = true);
-void DoReadyWeaponToSwitch(AActor *self, bool switchable = true);
+void DoReadyWeaponToBob(AActor *self, int hand = 0);
+void DoReadyWeaponToFire(AActor *self, bool primary = true, bool secondary = true, int hand = 0);
+void DoReadyWeaponToSwitch(AActor *self, bool switchable = true, int hand = 0);
 
 void A_ReFire(AActor *self, FState *state = NULL);
 

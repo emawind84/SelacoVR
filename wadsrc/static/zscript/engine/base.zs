@@ -36,6 +36,7 @@ enum ESoundFlags
 
 	CHANF_LOOPING = CHANF_LOOP | CHANF_NOSTOP, // convenience value for replicating the old 'looping' boolean.
 
+	CHAN_OFFWEAPON = 5,  // channel for the offhand weapon
 };
 
 // sound attenuation values
@@ -185,6 +186,7 @@ struct _ native	// These are the global variables, the struct is only here to av
 	native readonly bool multiplayer;
 	native @KeyBindings Bindings;
 	native @KeyBindings AutomapBindings;
+	native @KeyBindings DoubleBindings;
 	native readonly @GameInfoStruct gameinfo;
 	native readonly ui bool netgame;
 	native readonly uint gameaction;

@@ -26,6 +26,7 @@
 //
 //-----------------------------------------------------------------------------
 
+#include <QzDoom/VrCommon.h>
 #include "d_player.h"
 #include "doomdef.h"
 #include "vm.h"
@@ -38,7 +39,7 @@
 
 static FRandom pr_teleport ("Teleport");
 
-CVAR (Bool, telezoom, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
+CVAR (Bool, telezoom, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG); // Default to off for VR
 
 //==========================================================================
 //
@@ -193,6 +194,7 @@ bool P_Teleport (AActor *thing, DVector3 pos, DAngle angle, int flags)
 	if (!(flags & TELF_KEEPORIENTATION))
 	{
 		thing->Angles.Yaw = angle;
+		if (player) resetDoomYaw = true;
 	}
 	else
 	{
@@ -440,7 +442,7 @@ bool FLevelLocals::EV_Teleport (int tid, int tag, line_t *line, int side, AActor
 			{
 				// Rotate thing according to difference in angles (or not - Boom got the direction wrong here.)
 				thing->Angles.Yaw += angle;
-
+				if (thing->player) resetDoomYaw = true;
 				// Rotate thing's velocity to come out of exit just like it entered
 				thing->Vel.X = vx*c - vy*s;
 				thing->Vel.Y = vy*c + vx*s;
@@ -633,6 +635,9 @@ bool FLevelLocals::EV_SilentLineTeleport (line_t *line, int side, AActor *thing,
 
 				// Reset the delta to have the same dynamics as before
 				player->deltaviewheight = deltaviewheight;
+
+				// reset vr headset yaw
+				resetDoomYaw = true;
 			}
 
 			return true;

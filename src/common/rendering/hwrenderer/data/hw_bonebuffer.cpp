@@ -23,6 +23,7 @@
 #include "hw_bonebuffer.h"
 #include "hw_dynlightdata.h"
 #include "shaderuniforms.h"
+#include "hw_clock.h"
 
 static const int BONE_SIZE = (16*sizeof(float));
 
@@ -90,10 +91,12 @@ int BoneBuffer::UploadBones(const TArray<VSMatrix>& bones)
 	if (thisindex + totalsize <= mBufferSize)
 	{
 		memcpy(mBufferPointer + thisindex * BONE_SIZE, bones.Data(), totalsize * BONE_SIZE);
+		bonebuffer_curindex = thisindex;
 		return thisindex;
 	}
 	else
 	{
+		DPrintf(DMSG_WARNING, "We have run out of BUFFERS!, mIndex=%d\n", thisindex + totalsize);
 		return -1;	// Buffer is full. Since it is being used live at the point of the upload we cannot do much here but to abort.
 	}
 }

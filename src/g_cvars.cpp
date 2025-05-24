@@ -73,7 +73,7 @@ CUSTOM_CVAR (Int, turnspeedsprintslow, 320, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 
 
-CUSTOM_CVAR (Bool, gl_lights, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+CUSTOM_CVAR (Bool, gl_lights, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	for (auto Level : AllLevels())
 	{
@@ -82,7 +82,7 @@ CUSTOM_CVAR (Bool, gl_lights, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOIN
 	}
 }
 
-CUSTOM_CVAR(Int, sv_corpsequeuesize, 64, CVAR_ARCHIVE|CVAR_SERVERINFO|CVAR_NOINITCALL)
+CUSTOM_CVAR(Int, sv_corpsequeuesize, 10, CVAR_ARCHIVE|CVAR_SERVERINFO|CVAR_NOINITCALL)
 {
 	if (self > 0)
 	{
@@ -99,7 +99,7 @@ CUSTOM_CVAR(Int, sv_corpsequeuesize, 64, CVAR_ARCHIVE|CVAR_SERVERINFO|CVAR_NOINI
 	}
 }
 
-CUSTOM_CVAR (Int, cl_maxdecals, 1024, CVAR_ARCHIVE|CVAR_NOINITCALL)
+CUSTOM_CVAR (Int, cl_maxdecals, 20, CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
 	if (self < 0)
 	{

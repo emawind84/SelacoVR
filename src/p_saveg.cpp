@@ -865,6 +865,7 @@ void FLevelLocals::CopyPlayer(player_t *dst, player_t *src, const char *name)
 
 	int chasecam = dst->cheats & CF_CHASECAM;	// Remember the chasecam setting
 	bool attackdown = dst->attackdown;
+	bool ohattackdown = dst->ohattackdown;
 	bool usedown = dst->usedown;
 
 	dst->CopyFrom(*src, true);	// To avoid memory leaks at this point the userinfo in src must be empty which is taken care of by the TransferFrom call above.
@@ -912,6 +913,7 @@ void FLevelLocals::CopyPlayer(player_t *dst, player_t *src, const char *name)
 
 	// These 2 variables may not be overwritten.
 	dst->attackdown = attackdown;
+	dst->ohattackdown = ohattackdown;
 	dst->usedown = usedown;
 }
 

@@ -91,6 +91,10 @@
 #include "screenjob.h"
 #include "i_interface.h"
 #include "fs_findfile.h"
+#include "hw_vrmodes.h"
+
+#include <QzDoom/VrCommon.h>
+#include <cmath>
 
 
 static FRandom pr_dmspawn ("DMSpawn");
@@ -123,7 +127,14 @@ CVAR (Bool, longsavemessages, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Bool, cl_waitforsave, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR (Bool, enablescriptscreenshot, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR (Bool, cl_restartondeath, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR (Bool, puristmode, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR (Bool, vanilla_melee_attack, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CVAR(Bool, use_walk_multiplier, false, 0)
 EXTERN_CVAR (Float, con_midtime);
+EXTERN_CVAR(Bool, vr_teleport);
+EXTERN_CVAR(Int, vr_move_speed);
+EXTERN_CVAR(Float, vr_run_multiplier);
+EXTERN_CVAR(Float, vr_walk_multiplier);
 
 //==========================================================================
 //
@@ -146,6 +157,11 @@ CVAR(Int, nametagcolor, CR_GOLD, CVAR_ARCHIVE)
 extern bool playedtitlemusic;
 
 gameaction_t	gameaction;
+
+int getGameState()
+{
+	return (int)gamestate;
+}
 
 bool 			sendpause;				// send a pause event next tic 
 bool			sendsave;				// send a save event next tic 
@@ -254,14 +270,25 @@ CUSTOM_CVAR (Float, turbo, 100.f, CVAR_NOINITCALL)
 	{
 		self = 255.f;
 	}
-	else
+	// else
 	{
-		double scale = self * 0.01;
+		double scale = turbo * 0.01;
 
-		forwardmove[0] = (int)(gameinfo.normforwardmove[0]*scale);
-		forwardmove[1] = (int)(gameinfo.normforwardmove[1]*scale);
-		sidemove[0] = (int)(gameinfo.normsidemove[0]*scale);
-		sidemove[1] = (int)(gameinfo.normsidemove[1]*scale);
+		double walk_mult = 1.;
+		if (vr_move_speed > 0)
+		{
+			use_walk_multiplier = false;
+			walk_mult = vr_move_speed / gameinfo.normforwardmove[0];
+		}
+		else {
+			use_walk_multiplier = true;
+			walk_mult = vr_walk_multiplier;
+		}
+
+		forwardmove[0] = (int)(gameinfo.normforwardmove[0]*scale * walk_mult);
+		forwardmove[1] = (int)(gameinfo.normforwardmove[1]*scale * walk_mult * vr_run_multiplier);
+		sidemove[0] = (int)(gameinfo.normsidemove[0]*scale * walk_mult);
+		sidemove[1] = (int)(gameinfo.normsidemove[1]*scale * walk_mult * vr_run_multiplier);
 	}
 }
 
@@ -303,11 +330,33 @@ CCMD (turnspeeds)
 	}
 }
 
+CCMD (switchhand)
+{
+	if (argv.argc() > 1)
+	{
+		int hand = atoi (argv[1]);
+		auto mo = players[consoleplayer].mo;
+		if (mo)
+		{
+			IFVIRTUALPTRNAME(mo, NAME_PlayerPawn, SwitchWeaponHand)
+			{
+				VMValue param[] = { mo, hand };
+				VMCall(func, param, 2, nullptr, 0);
+			}
+		}
+	}
+}
+
 CCMD (slot)
 {
 	if (argv.argc() > 1)
 	{
 		int slot = atoi (argv[1]);
+		int hand = 0;
+		if (argv.argc() > 2)
+		{
+			hand = atoi(argv[2]);
+		}
 
 		auto mo = players[consoleplayer].mo;
 		if (slot < NUM_WEAPON_SLOTS && mo)
@@ -315,16 +364,17 @@ CCMD (slot)
 			// Needs to be redone
 			IFVIRTUALPTRNAME(mo, NAME_PlayerPawn, PickWeapon)
 			{
-				VMValue param[] = { mo, slot, !(dmflags2 & DF2_DONTCHECKAMMO) };
+				VMValue param[] = { mo, slot, !(dmflags2 & DF2_DONTCHECKAMMO), hand };
 				VMReturn ret((void**)&SendItemUse);
-				VMCall(func, param, 3, &ret, 1);
+				VMCall(func, param, 4, &ret, 1);
 			}
 		}
 
 		// [Nash] Option to display the name of the weapon being switched to.
 		if ((paused || pauseext) || players[consoleplayer].playerstate != PST_LIVE)
 			return;
-		if (SendItemUse != players[consoleplayer].ReadyWeapon && (displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
+		auto weapon = hand ? players[consoleplayer].OffhandWeapon : players[consoleplayer].ReadyWeapon;
+		if (SendItemUse != weapon && (displaynametags & 2) && StatusBar && SmallFont && SendItemUse)
 		{
 			StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(nullptr, SendItemUse->GetTag(),
 				1.5f, 0.90f, 0, 0, (EColorRange)*nametagcolor, 2.f, 0.35f), MAKE_ID('W', 'E', 'P', 'N'));
@@ -361,15 +411,20 @@ CCMD (turn180)
 
 CCMD (weapnext)
 {
+	int hand = 0;
+	if (argv.argc() > 1)
+	{
+		hand = atoi (argv[1]);
+	}
 	auto mo = players[consoleplayer].mo;
 	if (mo)
 	{
 		// Needs to be redone
 		IFVIRTUALPTRNAME(mo, NAME_PlayerPawn, PickNextWeapon)
 		{
-			VMValue param[] = { mo };
+			VMValue param[] = { mo, hand };
 			VMReturn ret((void**)&SendItemUse);
-			VMCall(func, param, 1, &ret, 1);
+			VMCall(func, param, 2, &ret, 1);
 		}
 	}
 
@@ -380,7 +435,8 @@ CCMD (weapnext)
 		StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(nullptr, SendItemUse->GetTag(),
 			1.5f, 0.90f, 0, 0, (EColorRange)*nametagcolor, 2.f, 0.35f), MAKE_ID( 'W', 'E', 'P', 'N' ));
 	}
-	if (SendItemUse != players[consoleplayer].ReadyWeapon)
+	auto weapon = hand ? players[consoleplayer].OffhandWeapon : players[consoleplayer].ReadyWeapon;
+	if (SendItemUse != weapon)
 	{
 		S_Sound(CHAN_AUTO, 0, "misc/weaponchange", 1.0, ATTN_NONE);
 	}
@@ -388,15 +444,20 @@ CCMD (weapnext)
 
 CCMD (weapprev)
 {
+	int hand = 0;
+	if (argv.argc() > 1)
+	{
+		hand = atoi (argv[1]);
+	}
 	auto mo = players[consoleplayer].mo;
 	if (mo)
 	{
 		// Needs to be redone
 		IFVIRTUALPTRNAME(mo, NAME_PlayerPawn, PickPrevWeapon)
 		{
-			VMValue param[] = { mo };
+			VMValue param[] = { mo, hand };
 			VMReturn ret((void**)&SendItemUse);
-			VMCall(func, param, 1, &ret, 1);
+			VMCall(func, param, 2, &ret, 1);
 		}
 	}
 
@@ -407,7 +468,8 @@ CCMD (weapprev)
 		StatusBar->AttachMessage(Create<DHUDMessageFadeOut>(nullptr, SendItemUse->GetTag(),
 			1.5f, 0.90f, 0, 0, (EColorRange)*nametagcolor, 2.f, 0.35f), MAKE_ID( 'W', 'E', 'P', 'N' ));
 	}
-	if (SendItemUse != players[consoleplayer].ReadyWeapon)
+	auto weapon = hand ? players[consoleplayer].OffhandWeapon : players[consoleplayer].ReadyWeapon;
+	if (SendItemUse != weapon)
 	{
 		S_Sound(CHAN_AUTO, 0, "misc/weaponchange", 1.0, ATTN_NONE);
 	}
@@ -469,10 +531,14 @@ CCMD (invuse)
 
 CCMD(invquery)
 {
-	AActor *inv = players[consoleplayer].mo->PointerVar<AActor>(NAME_InvSel);
-	if (inv != NULL)
+	auto mo = players[consoleplayer].mo;
+	if (mo)
 	{
-		Printf(PRINT_HIGH, "%s (%dx)\n", inv->GetTag(), inv->IntVar(NAME_Amount));
+		AActor *inv = mo->PointerVar<AActor>(NAME_InvSel);
+		if (inv != NULL)
+		{
+			Printf(PRINT_HIGH, "%s (%dx)\n", inv->GetTag(), inv->IntVar(NAME_Amount));
+		}
 	}
 }
 
@@ -501,7 +567,12 @@ CCMD (invdrop)
 
 CCMD (weapdrop)
 {
-	SendItemDrop = players[consoleplayer].ReadyWeapon;
+	int hand = 0;
+	if (argv.argc() > 1)
+	{
+		hand = atoi(argv[1]) ? 1 : 0;
+	}
+	SendItemDrop = hand ? players[consoleplayer].OffhandWeapon : players[consoleplayer].ReadyWeapon;
 	SendItemDropAmount = -1;
 }
 
@@ -563,6 +634,15 @@ static inline int joyint(double val)
 	}
 }
 
+
+void VR_GetMove( float *joy_forward, float *joy_side, float *hmd_forward, float *hmd_side, float *up, float *yaw, float *pitch, float *roll );
+
+static int mAngleFromRadians(double radians)
+{
+	double m = std::round(65535.0 * radians / (2.0 * M_PI));
+	return int(m);
+}
+
 FBaseCVar* G_GetUserCVar(int playernum, const char* cvarname)
 {
 	if ((unsigned)playernum >= MAXPLAYERS || !playeringame[playernum])
@@ -594,6 +674,8 @@ ticcmd_t* G_BaseTiccmd()
 //
 void G_BuildTiccmd (ticcmd_t *cmd)
 {
+	auto vrmode = VRMode::GetVRMode(true);
+
 	int 		strafe;
 	int 		speed;
 	int 		forward;
@@ -635,21 +717,21 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 		if (turnheld < SLOWTURNTICS)
 			tspeed += 2;		// slow turn
 		
-		if (buttonMap.ButtonDown(Button_Right))
+		if (!vrmode->IsVR() && buttonMap.ButtonDown(Button_Right))
 		{
 			G_AddViewAngle (*angleturn[tspeed]);
 		}
-		if (buttonMap.ButtonDown(Button_Left))
+		if (!vrmode->IsVR() && buttonMap.ButtonDown(Button_Left))
 		{
 			G_AddViewAngle (-*angleturn[tspeed]);
 		}
 	}
 
-	if (buttonMap.ButtonDown(Button_LookUp))
+	if (!vrmode->IsVR() && buttonMap.ButtonDown(Button_LookUp))
 	{
 		G_AddViewPitch (lookspeed[speed]);
 	}
-	if (buttonMap.ButtonDown(Button_LookDown))
+	if (!vrmode->IsVR() && buttonMap.ButtonDown(Button_LookDown))
 	{
 		G_AddViewPitch (-lookspeed[speed]);
 	}
@@ -661,22 +743,22 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 
 	if (buttonMap.ButtonDown(Button_Klook))
 	{
-		if (buttonMap.ButtonDown(Button_Forward))
+		if (!vrmode->IsVR() && buttonMap.ButtonDown(Button_Forward))
 			G_AddViewPitch (lookspeed[speed]);
-		if (buttonMap.ButtonDown(Button_Back))
+		if (!vrmode->IsVR() && buttonMap.ButtonDown(Button_Back))
 			G_AddViewPitch (-lookspeed[speed]);
 	}
 	else
 	{
-		if (buttonMap.ButtonDown(Button_Forward))
+		if (!vrmode->IsVR() && buttonMap.ButtonDown(Button_Forward))
 			forward += forwardmove[speed];
-		if (buttonMap.ButtonDown(Button_Back))
+		if (!vrmode->IsVR() && buttonMap.ButtonDown(Button_Back))
 			forward -= forwardmove[speed];
 	}
 
-	if (buttonMap.ButtonDown(Button_MoveRight))
+	if (!vrmode->IsVR() && buttonMap.ButtonDown(Button_MoveRight))
 		side += sidemove[speed];
-	if (buttonMap.ButtonDown(Button_MoveLeft))
+	if (!vrmode->IsVR() && buttonMap.ButtonDown(Button_MoveLeft))
 		side -= sidemove[speed];
 
 	// buttons
@@ -687,6 +769,10 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	if (buttonMap.ButtonDown(Button_Crouch))		cmd->ucmd.buttons |= BT_CROUCH;
 	if (buttonMap.ButtonDown(Button_Zoom))			cmd->ucmd.buttons |= BT_ZOOM;
 	if (buttonMap.ButtonDown(Button_Reload))		cmd->ucmd.buttons |= BT_RELOAD;
+	if (buttonMap.ButtonDown(Button_MH_Reload))		cmd->ucmd.buttons |= BT_MAINHANDRELOAD;
+	if (buttonMap.ButtonDown(Button_OH_Reload))		cmd->ucmd.buttons |= BT_OFFHANDRELOAD;
+	if (buttonMap.ButtonDown(Button_OH_Attack))		cmd->ucmd.buttons |= BT_OFFHANDATTACK;
+	if (buttonMap.ButtonDown(Button_OH_AltAttack))	cmd->ucmd.buttons |= BT_OFFHANDALTATTACK;
 
 	if (buttonMap.ButtonDown(Button_User1))			cmd->ucmd.buttons |= BT_USER1;
 	if (buttonMap.ButtonDown(Button_User2))			cmd->ucmd.buttons |= BT_USER2;
@@ -743,6 +829,20 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	{
 		forward += xs_CRoundToInt(mousey * m_forward);
 	}
+#ifdef USE_OPENXR
+	if (vrmode->IsVR() && !vr_teleport) {
+		float joyforward=0;
+		float joyside=0;
+		float dummy=0;
+		VR_GetMove(&joyforward, &joyside, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy);
+		side += joyint(joyside * sidemove[speed]);
+		forward += joyint(joyforward * forwardmove[speed]);
+	}
+#endif
+	if (vrmode->IsVR() && vr_teleport)
+	{
+		side = forward = 0;
+	}
 
 	cmd->ucmd.pitch = LocalViewPitch >> 16;
 
@@ -767,8 +867,9 @@ void G_BuildTiccmd (ticcmd_t *cmd)
 	else if (side < -MAXPLMOVE)
 		side = -MAXPLMOVE;
 
-	cmd->ucmd.forwardmove += forward;
-	cmd->ucmd.sidemove += side;
+
+	cmd->ucmd.forwardmove += clamp(forward, -127, 127);
+	cmd->ucmd.sidemove += clamp(side, -127, 127);
 	cmd->ucmd.yaw = LocalViewAngle >> 16;
 	cmd->ucmd.upmove = fly;
 	LocalViewAngle = 0;
@@ -1439,6 +1540,7 @@ void FLevelLocals::PlayerReborn (int player)
 	p->settings_controller = settings_controller;
 
 	p->oldbuttons = ~0, p->attackdown = true; p->usedown = true;	// don't do anything immediately
+	p->ohattackdown = true;
 	p->original_oldbuttons = ~0;
 	p->playerstate = PST_LIVE;
 	NetworkEntityManager::SetClientNetworkEntity(p->mo, p - players);
@@ -2993,6 +3095,7 @@ bool G_ProcessIFFDemo (FString &mapname)
 			if (mapname[0] != 0)
 			{
 				FRandom::StaticClearRandom ();
+				M_ClearRandom();
 			}
 			consoleplayer = *demo_p++;
 			break;

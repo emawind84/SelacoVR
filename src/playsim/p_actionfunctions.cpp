@@ -87,6 +87,20 @@ static FRandom pr_teleport("A_Teleport");
 static FRandom pr_bfgselfdamage("BFGSelfDamage");
 	   FRandom pr_cajump("CustomJump");
 
+CVAR(Bool, vr_recoil, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+
+//External Haptics Level CVARs
+CVAR(Float, ext_haptic_level_global_intensity, 1.0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Float, ext_haptic_level_damage_projectile, 1.0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Float, ext_haptic_level_pickup_weapon, 1.0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Float, ext_haptic_level_pickup, 1.0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Float, ext_haptic_level_fire_weapon, 1.0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Float, ext_haptic_level_poison, 1.0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Float, ext_haptic_level_healstation, 1.0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Float, ext_haptic_level_heartbeat, 1.0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Float, ext_haptic_level_rumble, 1.0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+
+
 //==========================================================================
 //
 // ACustomInventory :: CallStateChain
@@ -1270,10 +1284,35 @@ DEFINE_ACTION_FUNCTION(AActor, A_CustomRailgun)
 //===========================================================================
 DEFINE_ACTION_FUNCTION(AActor, A_Recoil)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_FLOAT(xyvel);
 
-	self->Thrust(self->Angles.Yaw + DAngle::fromDeg(180.), xyvel);
+	player_t *player = self->player;
+	if (player != nullptr && player->mo == self)
+	{
+		//We don't want to adjust the player's camera - that could make them sick
+		if (!vr_recoil) return 0;
+		player->keepmomentum = true;
+	}
+
+	DAngle directionAngle = self->Angles.Yaw;
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
+		if (pspr != nullptr && player->mo->OverrideAttackPosDir)
+		{
+			if (pspr->GetID() == PSP_OFFHANDWEAPON)
+			{
+				directionAngle = player->mo->OffhandAngle + DAngle::fromDeg(90.);
+			}
+			else
+			{
+				directionAngle = player->mo->AttackAngle + DAngle::fromDeg(90.);
+			}
+		}
+	}
+
+	self->Thrust(directionAngle + DAngle::fromDeg(180.), xyvel);
 	return 0;
 }
 
@@ -2881,6 +2920,14 @@ DEFINE_ACTION_FUNCTION(AActor, A_SetAngle)
 	PARAM_INT(ptr);
 
 	AActor *ref = COPY_AAPTR(self, ptr);
+
+	//We don't want to adjust the player's camera - that could make them sick
+	player_t *player = self->player;
+	if (player != nullptr && ref != nullptr && player->mo == ref)
+	{
+		return 0;
+	}
+
 	if (ref != NULL)
 	{
 		ref->SetAngle(angle, flags);
@@ -2905,6 +2952,13 @@ DEFINE_ACTION_FUNCTION(AActor, A_SetPitch)
 
 	AActor *ref = COPY_AAPTR(self, ptr);
 
+	//We don't want to adjust the player's camera - that could make them sick
+	player_t *player = self->player;
+	if (player != nullptr && ref != nullptr && player->mo == ref)
+	{
+		return 0;
+	}
+
 	if (ref != NULL)
 	{
 		ref->SetPitch(pitch, flags);
@@ -2927,6 +2981,13 @@ DEFINE_ACTION_FUNCTION(AActor, A_SetRoll)
 	PARAM_INT	(flags);
 	PARAM_INT	(ptr)	;
 	AActor *ref = COPY_AAPTR(self, ptr);
+
+	//We don't want to adjust the player's camera - that could make them sick
+	player_t *player = self->player;
+	if (player != nullptr && ref != nullptr && player->mo == ref)
+	{
+		return 0;
+	}
 
 	if (ref != NULL)
 	{
@@ -5595,4 +5656,24 @@ DEFINE_ACTION_FUNCTION(AActor, GetRenderStyle)
 		if (self->RenderStyle == LegacyRenderStyles[i]) ACTION_RETURN_INT(i);
 	}
 	ACTION_RETURN_INT(-1);	// no symbolic constant exists to handle this style.
+}
+
+DEFINE_ACTION_FUNCTION(AActor, AttackDir)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT_NOT_NULL(source, AActor);
+	PARAM_ANGLE(yaw);
+	PARAM_ANGLE(pitch);
+	DVector3 dir = self->AttackDir(source, yaw, pitch);
+	ACTION_RETURN_VEC3(DVector3(dir.Angle().Degrees(), dir.Pitch().Degrees(), 0.));
+}
+
+DEFINE_ACTION_FUNCTION(AActor, OffhandDir)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT_NOT_NULL(source, AActor);
+	PARAM_ANGLE(yaw);
+	PARAM_ANGLE(pitch);
+	DVector3 dir = self->OffhandDir(source, yaw, pitch);
+	ACTION_RETURN_VEC3(DVector3(dir.Angle().Degrees(), dir.Pitch().Degrees(), 0.));
 }

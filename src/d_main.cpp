@@ -123,6 +123,10 @@
 
 #include "statdb.h"
 
+#include "hw_vrmodes.h"
+#include "profiledef.h"
+
+#include <QzDoom/VrCommon.h>
 
 #ifdef __unix__
 #include "i_system.h"  // for SHARE_DIR
@@ -175,6 +179,7 @@ void I_ShutdownInput();
 void SetConsoleNotifyBuffer();
 void I_UpdateDiscordPresence(bool SendPresence, const char* curstatus, const char* appid, const char* steamappid);
 bool M_SetSpecialMenu(FName& menu, int param);	// game specific checks
+const char* M_GetActiveProfile();
 
 const FIWADInfo *D_FindIWAD(TArray<FString> &wadfiles, const char *iwad, const char *basewad);
 void InitWidgetResources(const char* basewad);
@@ -266,6 +271,8 @@ CUSTOM_CVAR(Int, vid_rendermode, 4, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOIN
 
 	// No further checks needed. All this changes now is which scene drawer the render backend calls.
 }
+#else
+CVAR(Int, vid_rendermode, 4, 0);
 #endif
 
 CUSTOM_CVAR (Int, fraglimit, 0, CVAR_SERVERINFO)
@@ -627,20 +634,21 @@ CUSTOM_CVAR (Int, compatflags2, 0, CVAR_ARCHIVE|CVAR_SERVERINFO | CVAR_NOINITCAL
 
 CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
-	int v, w = 0;
+	int v, w;
 
 	switch (self)
 	{
 	default:
 	case 0:
 		v = 0;
+		w = 0;
 		break;
 
 	case 1:	// Doom2.exe compatible with a few relaxed settings
 		v = COMPATF_SHORTTEX | COMPATF_STAIRINDEX | COMPATF_USEBLOCKING | COMPATF_NODOORLIGHT | COMPATF_SPRITESORT |
 			COMPATF_TRACE | COMPATF_MISSILECLIP | COMPATF_SOUNDTARGET | COMPATF_DEHHEALTH | COMPATF_CROSSDROPOFF |
 			COMPATF_LIGHT | COMPATF_MASKEDMIDTEX;
-		w = COMPATF2_FLOORMOVE | COMPATF2_EXPLODE1 | COMPATF2_NOMBF21;
+		w = COMPATF2_FLOORMOVE | COMPATF2_EXPLODE1 | COMPATF2_NOMBF21 | COMPATF2_OLD_RANDOM_GENERATOR;
 		break;
 
 	case 2:	// same as 1 but stricter (NO_PASSMOBJ and INVISIBILITY are also set)
@@ -648,7 +656,8 @@ CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
 			COMPATF_TRACE | COMPATF_MISSILECLIP | COMPATF_SOUNDTARGET | COMPATF_NO_PASSMOBJ | COMPATF_LIMITPAIN |
 			COMPATF_DEHHEALTH | COMPATF_INVISIBILITY | COMPATF_CROSSDROPOFF | COMPATF_VILEGHOSTS | COMPATF_HITSCAN |
 			COMPATF_WALLRUN | COMPATF_NOTOSSDROPS | COMPATF_LIGHT | COMPATF_MASKEDMIDTEX;
-		w = COMPATF2_BADANGLES | COMPATF2_FLOORMOVE | COMPATF2_POINTONLINE | COMPATF2_EXPLODE2 | COMPATF2_NOMBF21 | COMPATF2_VOODOO_ZOMBIES;
+		w = COMPATF2_BADANGLES | COMPATF2_FLOORMOVE | COMPATF2_POINTONLINE | COMPATF2_EXPLODE2 | COMPATF2_NOMBF21 | COMPATF2_VOODOO_ZOMBIES |
+			COMPATF2_OLD_RANDOM_GENERATOR;
 		break;
 
 	case 3: // Boom compat mode
@@ -740,6 +749,7 @@ CVAR (Flag, compat_checkswitchrange,	compatflags2, COMPATF2_CHECKSWITCHRANGE);
 CVAR (Flag, compat_explode1,			compatflags2, COMPATF2_EXPLODE1);
 CVAR (Flag, compat_explode2,			compatflags2, COMPATF2_EXPLODE2);
 CVAR (Flag, compat_railing,				compatflags2, COMPATF2_RAILING);
+CVAR (Flag, compat_oldrandom,			compatflags2, COMPATF2_OLD_RANDOM_GENERATOR);
 CVAR (Flag, compat_avoidhazard,			compatflags2, COMPATF2_AVOID_HAZARDS);
 CVAR (Flag, compat_stayonlift,			compatflags2, COMPATF2_STAYONLIFT);
 CVAR (Flag, compat_nombf21,				compatflags2, COMPATF2_NOMBF21);
@@ -888,12 +898,46 @@ static void DrawRateStuff()
 	}
 }
 
+//==========================================================================
+//
+// DFrameBuffer :: DrawVersionString
+//
+// Draws the version string to the main screen
+//
+//==========================================================================
+
+static void DrawVersionString ()
+{
+	auto drawer = twod;
+	static uint64_t first = screen->FrameTime;
+
+	//Only show version string for 5 seconds
+	if ((screen->FrameTime - first) > 5000)
+	{
+		return;
+	}
+
+	if (gamestate == GS_STARTUP ||
+			gamestate == GS_DEMOSCREEN) {
+		char buff[60];
+
+		int textScale = active_con_scale(drawer);
+
+		mysnprintf(buff, countof(buff), "%s", GetVersionString());
+		DrawText(drawer, NewConsoleFont, CR_WHITE, 0, 0, (char *) &buff[0],
+				 DTA_VirtualWidth, screen->GetWidth() / textScale,
+				 DTA_VirtualHeight, screen->GetHeight() / textScale,
+				 DTA_KeepRatio, true, TAG_DONE);
+	}
+}
+
 static void DrawOverlays()
 {
 	NetUpdate ();
 	C_DrawConsole ();
 	M_Drawer ();
 	DrawRateStuff();
+	DrawVersionString();
 	if (!hud_toggled)
 		FStat::PrintStat (twod);
 }
@@ -913,6 +957,8 @@ static void End2DAndUpdate()
 // Draw current display, possibly wiping it from the previous
 //
 //==========================================================================
+
+float QzDoom_GetFOV();
 
 void D_Display ()
 {
@@ -943,11 +989,11 @@ void D_Display ()
 	{
 		players[consoleplayer].camera = players[consoleplayer].mo;
 	}
-
+	auto vrmode = VRMode::GetVRMode(true);
     auto &vp = r_viewpoint;
 	if (viewactive)
 	{
-		DAngle fov = DAngle::fromDeg(90.);
+		DAngle fov = DAngle::fromDeg(QzDoom_GetFOV());
 		AActor *cam = players[consoleplayer].camera;
 		if (cam) {
 			// @Cockatrice - Don't interpolate if paused or pref. Not sure why this was left out of stock FOV code
@@ -1035,6 +1081,12 @@ void D_Display ()
 	}
 	else
 	{
+		if (vr_mode != 0)
+		{
+			//When wipegamestate differs from gamestate, game cannot be paused
+			//see condition in P_CheckTickerPaused
+			wipegamestate = gamestate;
+		}
 		wipestart = nullptr;
 	}
 	
@@ -1057,12 +1109,15 @@ void D_Display ()
 		twod->Begin(screen->GetWidth(), screen->GetHeight());
 		if (!hud_toggled)
 		{
-			V_DrawBlend(viewsec);
+			if (vrmode->IsMono())
+			{
+				V_DrawBlend(viewsec);
+			}
 			if (automapactive)
 			{
 				primaryLevel->automap->Drawer ((hud_althud && viewheight == SCREENHEIGHT) ? viewheight : StatusBar->GetTopOfStatusbar());
 			}
-		
+			
 			// for timing the statusbar code.
 			//cycle_t stb;
 			//stb.Reset();
@@ -1919,6 +1974,40 @@ static void GetCmdLineFiles(std::vector<std::string>& wadfiles)
 	}
 }
 
+static void ParseCommandLineFile()
+{
+	const char *profile = M_GetActiveProfile();
+	auto *profileInfo = profileManager.GetProfileInfo(profile);
+	FString profilePath;
+	profilePath.Format("%scommandline.txt", progdir.GetChars());
+	if (profileInfo != nullptr && profileInfo->mPath.IsNotEmpty())
+	{
+		profilePath = profileInfo->mPath;
+	}
+
+	FileReader file;
+	if (!file.OpenFile (profilePath.GetChars()))
+	{
+		return;
+	}
+
+	TArray<uint8_t> readbuf;
+	FCmdFile cmdfile(profilePath.GetChars());
+	FString value;
+	while (cmdfile.ReadLine (readbuf, &file) != NULL)
+	{
+		value.StripRight("\n\r");
+		value.AppendFormat(" ");
+		value << readbuf;
+	}
+	
+	FCommandLine argv(value.GetChars());
+	for (int i = 1; i < argv.argc(); ++i)
+	{
+		Args->AppendArg(argv[i]);
+	}
+	Args->CollectFiles("-file", NULL);
+}
 
 static FString ParseGameInfo(std::vector<std::string> &pwads, const char *fn, const char *data, int size)
 {
@@ -2113,6 +2202,7 @@ static void D_DoomInit()
 
 	if (!batchrun) Printf ("M_LoadDefaults: Load system defaults.\n");
 	M_LoadDefaults ();			// load before initing other systems
+	M_ClearRandom();
 }
 
 
@@ -2408,6 +2498,25 @@ static void CheckCmdLine()
 static void NewFailure ()
 {
     I_FatalError ("Failed to allocate memory from system heap");
+}
+
+static void InitShutdown()
+{
+	D_Cleanup();
+	CloseNetwork();
+	GC::FinalGC = true;
+	GC::FullGC();
+	GC::DelSoftRootHead();	// the soft root head will not be collected by a GC so we have to do it explicitly
+	C_DeinitConsole();
+	R_DeinitColormaps();
+	R_Shutdown();
+	I_ShutdownGraphics();
+	I_ShutdownInput();
+	M_SaveDefaultsFinal();
+	DeleteStartupScreen();
+	C_UninitCVars(); // must come last so that nothing will access the CVARs anymore after deletion.
+	delete Args;
+	Args = nullptr;
 }
 
 
@@ -2787,6 +2896,7 @@ static const char *DoomButtons[] =
 	"right" ,
 	"zoom" ,
 	"back" ,
+	"oh_attack",
 	"am_zoomin",
 	"reload" ,
 	"lookdown" ,
@@ -2799,12 +2909,14 @@ static const char *DoomButtons[] =
 	"movedown" ,
 	"altattack" ,
 	"moveleft" ,
+	"oh_reload",
 	"moveright" ,
 	"am_panright",
 	"am_panup" ,
 	"mlook" ,
 	"crouch" ,
 	"left" ,
+	"oh_altatk",
 	"lookup" ,
 	"user3" ,
 	"strafe" ,
@@ -2812,7 +2924,8 @@ static const char *DoomButtons[] =
 	"showscores" ,
 	"speed" ,
 	"use" ,
-	"moveup" };
+	"moveup",
+	"mh_reload" };
 
 CVAR(Bool, lookspring, true, CVAR_ARCHIVE);	// Generate centerview when -mlook encountered?
 EXTERN_CVAR(String, language)
@@ -3746,6 +3859,7 @@ static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allw
 		// Initialize the size of the 2D drawer so that an attempt to access it outside the draw code won't crash.
 		twod->Begin(screen->GetWidth(), screen->GetHeight());
 		twod->End();
+		twod->ClearScreen();
 		UpdateJoystickMenu(NULL);
 		UpdateVRModes();
 		Local_Job_Init();
@@ -3888,6 +4002,10 @@ static int D_DoomMain_Internal (void)
 		RemapUserTranslation
 	};
 
+	profileManager.CollectProfiles();
+#ifndef __MOBILE__
+	ParseCommandLineFile();
+#endif
 	
 	std::set_new_handler(NewFailure);
 	const char *batchout = Args->CheckValue("-errorlog");
@@ -3902,8 +4020,9 @@ static int D_DoomMain_Internal (void)
 		I_FatalError("Cannot find " BASEWAD);
 	}
 	LoadHexFont(wad);	// load hex font early so we have it during startup.
+#ifndef __MOBILE__
 	InitWidgetResources(wad);
-
+#endif
 	C_InitConsole(80*8, 25*8, false);
 	I_DetectOS();
 
@@ -3928,8 +4047,8 @@ static int D_DoomMain_Internal (void)
 
 	Printf("%s version %s\n", GAMENAME, GetVersionString());
 
-	extern void D_ConfirmSendStats();
-	D_ConfirmSendStats();
+	//extern void D_ConfirmSendStats();
+	//D_ConfirmSendStats();
 
 	FString basewad = wad;
 
@@ -3950,6 +4069,7 @@ static int D_DoomMain_Internal (void)
 		if (restart)
 		{
 			C_InitConsole(SCREENWIDTH, SCREENHEIGHT, false);
+			ParseCommandLineFile();
 		}
 		nospriterename = false;
 
@@ -4003,10 +4123,16 @@ static int D_DoomMain_Internal (void)
 		// 
 		// Clean up after a restart
 		//
-
+#ifdef USE_OPENXR
+		// We replace the vanilla zdoom restart with a complete Android application restart instead
+		// all the arguments passed are retained since we read the commandline file again.
+		InitShutdown();
+		QzDoom_Restart();
+#else
 		D_Cleanup();
 
 		gamestate = GS_STARTUP;
+#endif
 	}
 	while (1);
 }
@@ -4043,22 +4169,14 @@ int GameMain()
 	}
 	// Unless something really bad happened, the game should only exit through this single point in the code.
 	// No more 'exit', please.
-	D_Cleanup();
-	CloseNetwork();
-	GC::FinalGC = true;
-	GC::FullGC();
-	GC::DelSoftRootHead();	// the soft root head will not be collected by a GC so we have to do it explicitly
-	C_DeinitConsole();
-	R_DeinitColormaps();
-	R_Shutdown();
-	I_ShutdownGraphics();
-	I_ShutdownInput();
-	M_SaveDefaultsFinal();
-	DeleteStartupScreen();
-	C_UninitCVars(); // must come last so that nothing will access the CVARs anymore after deletion.
-	delete Args;
-	Args = nullptr;
+	InitShutdown();
 	return ret;
+}
+
+void VR_DoomMain(int argc, char** argv)
+{
+    Args = new FArgs(argc, argv);
+    GameMain ();
 }
 
 //==========================================================================
@@ -4111,7 +4229,7 @@ void D_Cleanup()
 	TexAnim.DeleteAll();
 	TexMan.DeleteAll();
 	
-	// delete GameStartupInfo data
+	// delete DoomStartupInfo data
 	GameStartupInfo.Name = "";
 	GameStartupInfo.BkColor = GameStartupInfo.FgColor = GameStartupInfo.Type = 0;
 	GameStartupInfo.LoadWidescreen = GameStartupInfo.LoadLights = GameStartupInfo.LoadBrightmaps = -1;
@@ -4175,6 +4293,12 @@ UNSAFE_CCMD(restart)
 	}
 
 	wantToRestart = true;
+}
+
+CCMD(qzd_restart)
+{
+	InitShutdown();
+	QzDoom_Restart();
 }
 
 DEFINE_FIELD_X(InputEventData, event_t, type)

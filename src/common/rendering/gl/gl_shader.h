@@ -260,9 +260,16 @@ class FShader
 	FUniform4f muSplitTopPlane;
 	FUniform4f muDetailParms;
 	FBufferedUniform1f muInterpolationFactor;
+	FBufferedUniform1f muShadowmapFilter;
 	FBufferedUniform1f muAlphaThreshold;
 	FBufferedUniform2f muSpecularMaterial;
 	FBufferedUniform1f muTimer;
+	FBufferedUniform1i muGlobalFade;
+	FBufferedUniform1i muGlobalFadeMode;
+	FBufferedUniform1f muGlobalFadeDensity;
+	FBufferedUniform1f muGlobalFadeGradient;
+	FBufferedUniformPE muGlobalFadeColor;
+	FBufferedUniform1i muLightRangeLimit;
 #ifdef NPOT_EMULATION
 	FBufferedUniform2f muNpotEmulation;
 #endif

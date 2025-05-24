@@ -59,6 +59,7 @@
 #include "hw_lightbuffer.h"
 #include "hw_renderstate.h"
 #include "quaternion.h"
+#include "hw_vrmodes.h"
 
 extern TArray<spritedef_t> sprites;
 extern TArray<spriteframe_t> SpriteFrames;
@@ -86,7 +87,7 @@ CVAR(Float, gl_sclipthreshold, 10.0, CVAR_ARCHIVE)
 CVAR(Float, gl_sclipfactor, 1.8f, CVAR_ARCHIVE)
 CVAR(Int, gl_particles_style, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // 0 = square, 1 = round, 2 = smooth
 CVAR(Int, gl_billboard_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Bool, gl_billboard_faces_camera, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_billboard_faces_camera, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)  // for VR should be true
 CVAR(Bool, hw_force_cambbpref, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_billboard_particles, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_selflighting, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
@@ -595,7 +596,7 @@ void HWSprite::CreateVertices(HWDrawInfo *di)
 	if (modelframe == nullptr)
 	{
 		FVector3 v[4];
-		polyoffset = CalculateVertices(di, v, &di->Viewpoint.Pos);
+		polyoffset = CalculateVertices(di, v, &di->Viewpoint.CenterEyePos);
 		auto vert = screen->mVertexData->AllocVertices(4);
 		auto vp = vert.first;
 		vertexindex = vert.second;
@@ -764,12 +765,30 @@ void HWSprite::PerformSpriteClipAdjustment(AActor *thing, const DVector2 &thingp
 //
 //==========================================================================
 
+CVAR(Float, gl_sprite_distance_cull, 2000.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+bool IsDistanceCulled(AActor* thing)
+{
+	double culldist = gl_sprite_distance_cull * gl_sprite_distance_cull;
+	if (culldist <= 0.0)
+		return false;
+
+	double dist = (thing->Pos() - r_viewpoint.Pos).LengthSquared();
+
+	if (dist > culldist)
+		return true;
+	return false;
+}
+
 void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t in_area, int thruportal, bool isSpriteShadow)
 {
 	sector_t rs;
 	sector_t * rendersector;
 
 	if (thing == nullptr)
+		return;
+
+	if (IsDistanceCulled(thing)) 
 		return;
 
 	// [ZZ] allow CustomSprite-style direct picnum specification
@@ -838,6 +857,17 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	{
 		if (vp.bForceNoViewer || (viewmaster->player && viewmaster->player->crossingPortal)) return;
 		DVector3 vieworigin = viewmaster->Pos();
+
+		//If we get here, then we want to override the location of the camera actor
+		auto vrmode = VRMode::GetVRMode(true);
+		if (vrmode->GetTeleportLocation(thingpos))
+		{
+			vieworigin = thingpos;
+
+			//Scale Doom Guy up a bit
+			sprscale *= 1.2;
+		}
+
 		if (thruportal == 1) vieworigin += di->Level->Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
 		if (fabs(vieworigin.X - vp.ActorPos.X) < 2 && fabs(vieworigin.Y - vp.ActorPos.Y) < 2) return;
 
@@ -856,15 +886,15 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	{
 		DVector3 viewpos = viewmaster->InterpolatedPosition(vp.TicFrac);
 		if (thruportal == 1) viewpos += di->Level->Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
-		if (fabs(viewpos.X - vp.Pos.X) < 32 && fabs(viewpos.Y - vp.Pos.Y) < 32) return;
+		if (fabs(viewpos.X - vp.CenterEyePos.X) < 32 && fabs(viewpos.Y - vp.CenterEyePos.Y) < 32) return;
 	}
 
 	modelframe = isPicnumOverride ? nullptr : FindModelFrame(thing, spritenum, thing->frame, !!(thing->flags & MF_DROPPED));
 	modelframeflags = modelframe ? modelframe->getFlags(thing->modelData) : 0;
 
 	// Too close to the camera. This doesn't look good if it is a sprite.
-	if (fabs(thingpos.X - vp.Pos.X) < 2 && fabs(thingpos.Y - vp.Pos.Y) < 2
-		&& vp.Pos.Z >= thingpos.Z - 2 && vp.Pos.Z <= thingpos.Z + thing->Height + 2
+	if (thing != camera && fabs(thingpos.X - vp.CenterEyePos.X) < 2 && fabs(thingpos.Y - vp.CenterEyePos.Y) < 2
+		&& vp.CenterEyePos.Z >= thingpos.Z - 2 && vp.CenterEyePos.Z <= thingpos.Z + thing->Height + 2
 		&& !thing->Vel.isZero() && !modelframe) // exclude vertically moving objects from this check.
 	{
 		return;
@@ -879,7 +909,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			if (speed >= thing->target->radius / 2)
 			{
 				double clipdist = clamp(thing->Speed, thing->target->radius, thing->target->radius * 2);
-				if ((thingpos - vp.Pos).LengthSquared() < clipdist * clipdist) return;
+				if ((thingpos - vp.CenterEyePos).LengthSquared() < clipdist * clipdist) return;
 			}
 		}
 		thing->flags7 |= MF7_FLYCHEAT;	// do this only once for the very first frame, but not if it gets into range again.
@@ -935,7 +965,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	if (!modelframe)
 	{
 		bool mirror = false;
-		DAngle ang = (thingpos - vp.Pos).Angle();
+		DAngle ang = (thingpos - vp.CenterEyePos).Angle();
 		if (di->Viewpoint.IsOrtho()) ang = vp.Angles.Yaw;
 		FTextureID patch;
 		// [ZZ] add direct picnum override
@@ -992,6 +1022,12 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 				sprangle = nullAngle;
 				rot = 0;
 			}
+			// this fix should not be needed anymore
+			// keep player sprite on mirror with same orientation
+			// if (thing == camera && screen->stencilValue > 0)
+			// {
+			// 	rot = 0;
+			// }
 			patch = sprites[spritenum].GetSpriteFrame(thing->frame, rot, sprangle, &mirror, !!(thing->renderflags & RF_SPRITEFLIP));
 		}
 
@@ -1265,7 +1301,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 		}
 	}
 
-	depth = (float)((x - vp.Pos.X) * vp.TanCos + (y - vp.Pos.Y) * vp.TanSin);
+	depth = (float)((x - vp.CenterEyePos.X) * vp.TanCos + (y - vp.CenterEyePos.Y) * vp.TanSin);
 	if(thing->renderflags2 & RF2_ISOMETRICSPRITES) depth = depth * vp.PitchCos - vp.PitchSin * z2; // Helps with stacking actors with small xy offsets
 	if (isSpriteShadow) depth += 1.f/65536.f; // always sort shadows behind the sprite.
 
@@ -1757,7 +1793,7 @@ void HWSprite::AdjustVisualThinker(HWDrawInfo* di, DVisualThinker* spr, sector_t
 	z1 = z - r.top;
 	z2 = z1 - r.height;
 
-	depth = (float)((x - vp.Pos.X) * vp.TanCos + (y - vp.Pos.Y) * vp.TanSin);
+	depth = (float)((x - vp.CenterEyePos.X) * vp.TanCos + (y - vp.CenterEyePos.Y) * vp.TanSin);
 
 	// [BB] Translucent particles have to be rendered without the alpha test.
 	hw_styleflags = STYLEHW_NoAlphaTest;

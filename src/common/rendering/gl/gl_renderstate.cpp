@@ -30,6 +30,7 @@
 #include "gl_interface.h"
 #include "hw_cvars.h"
 #include "flatvertices.h"
+#include "c_dispatch.h"
 #include "gl_shader.h"
 #include "gl_renderer.h"
 #include "hw_lightbuffer.h"
@@ -142,6 +143,12 @@ bool FGLRenderState::ApplyShader()
 	activeShader->muTextureModulateColor.Set(mStreamData.uTextureModulateColor);
 	activeShader->muTextureBlendColor.Set(mStreamData.uTextureBlendColor);
 	activeShader->muDetailParms.Set(&mStreamData.uDetailParms.X);
+	activeShader->muGlobalFadeMode.Set(mStreamData.uGlobalFadeMode);
+	activeShader->muGlobalFade.Set(mStreamData.uGlobalFade);
+	activeShader->muGlobalFadeDensity.Set(mStreamData.uGlobalFadeDensity);
+	activeShader->muGlobalFadeGradient.Set(mStreamData.uGlobalFadeGradient);
+	activeShader->muGlobalFadeColor.Set(mStreamData.uGlobalFadeColor);
+	activeShader->muLightRangeLimit.Set(mStreamData.uLightRangeLimit);
 #ifdef NPOT_EMULATION
 	activeShader->muNpotEmulation.Set(&mStreamData.uNpotEmulation.X);
 #endif
@@ -561,12 +568,16 @@ void FGLRenderState::EnableDepthTest(bool on)
 
 void FGLRenderState::EnableMultisampling(bool on)
 {
+#ifndef __MOBILE__
 	ToggleState(GL_MULTISAMPLE, on);
+#endif
 }
 
 void FGLRenderState::EnableLineSmooth(bool on)
 {
+#ifndef __MOBILE__
 	ToggleState(GL_LINE_SMOOTH, on);
+#endif
 }
 
 //==========================================================================
@@ -607,6 +618,36 @@ bool FGLRenderState::SetDepthClamp(bool on)
 	else glEnable(GL_DEPTH_CLAMP);
 	mLastDepthClamp = on;
 	return res;
+}
+
+CCMD(fade_toggle)
+{
+	gl_global_fade = !gl_global_fade;
+}
+
+CCMD(fade_density_up)
+{
+	gl_global_fade_density = gl_global_fade_density + 0.0005f;
+}
+
+CCMD(fade_density_down)
+{
+	gl_global_fade_density = gl_global_fade_density - 0.0005f;
+}
+
+CCMD(fade_gradient_up)
+{
+	gl_global_fade_gradient = gl_global_fade_gradient + 0.2f;
+}
+
+CCMD(fade_gradient_down)
+{
+	gl_global_fade_gradient = gl_global_fade_gradient - 0.2f;
+}
+
+CCMD(fade_debug)
+{
+	gl_global_fade_debug = !gl_global_fade_debug;
 }
 
 }

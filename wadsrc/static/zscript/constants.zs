@@ -1,6 +1,7 @@
 // for flag changer functions.
 const FLAG_NO_CHANGE = -1;
 const MAXPLAYERS = 8;
+const MAXPLAYERNAME = 15; // This was needed for mods
 
 enum EStateUseFlags
 {
@@ -126,6 +127,7 @@ enum ESpawnItemFlags
 	SXF_ISTARGET				=	1 << 26,
 	SXF_ISMASTER				=	1 << 27,
 	SXF_ISTRACER				=	1 << 28,
+	SXF_RELATIVETOWEAPON		=	1 << 29,
 };
 
 // Flags for A_Chase
@@ -188,6 +190,7 @@ enum EChangeVelocityFlags
 {
 	CVF_RELATIVE = 1,
 	CVF_REPLACE = 2,
+	CVF_RELATIVETOWEAPON = 4,
 };
 
 // Flags for A_WeaponReady
@@ -246,6 +249,7 @@ enum ERailFlags
 	RGF_FULLBRIGHT = 8,
 	RGF_CENTERZ = 16,
 	RGF_NORANDOMPUFFZ = 32,
+	RGF_ISOFFHAND = 64,
 };
 
 // Flags for A_Mushroom
@@ -318,6 +322,7 @@ enum EFireCustomMissileFlags
 	FPF_AIMATANGLE = 1,
 	FPF_TRANSFERTRANSLATION = 2,
 	FPF_NOAUTOAIM = 4,
+	FPF_ISOFFHAND = 8,
 };
 
 // Flags for A_Teleport
@@ -793,6 +798,7 @@ enum EPSPLayers
 	PSP_STRIFEHANDS = -1,
 	PSP_WEAPON = 1,
 	PSP_FLASH = 1000,
+	PSP_OFFHANDWEAPON = 1000000,
 	PSP_TARGETCENTER = int.max - 2,
 	PSP_TARGETLEFT,
 	PSP_TARGETRIGHT
@@ -849,7 +855,7 @@ enum EButtons
 	BT_LOOKDOWN		= 1<<17,
 	BT_MOVEUP		= 1<<18,
 	BT_MOVEDOWN		= 1<<19,
-	BT_SHOWSCORES	= 1<<20,
+	BT_SHOWSCORES	= 0,  // replaced with BT_MAINHANDRELOAD
 
 	BT_USER1		= 1<<21,
 	BT_USER2		= 1<<22,
@@ -857,6 +863,11 @@ enum EButtons
 	BT_USER4		= 1<<24,
 
 	BT_RUN			= 1<<25,
+
+	BT_OFFHANDATTACK    = 1<<26,
+	BT_OFFHANDALTATTACK = 1<<27,
+	BT_OFFHANDRELOAD    = 1<<28,
+	BT_MAINHANDRELOAD   = 1<<20,
 };
 
 // Flags for GetAngle
@@ -919,6 +930,8 @@ enum EAimFlags
 	ALF_NOFRIENDS = 16,
 	ALF_PORTALRESTRICT = 32,	// only work through portals with a global offset (to be used for stuff that cannot remember the calculated FTranslatedLineTarget info)
 	ALF_NOWEAPONCHECK = 64,		// ignore NOAUTOAIM flag on a player's weapon.
+	ALF_IGNORENOAUTOAIM = 128,	// for informative stuff like 'linetarget' CCMD.
+	ALF_ISOFFHAND = 256,
 }
 
 enum ELineAttackFlags
@@ -931,6 +944,7 @@ enum ELineAttackFlags
 	LAF_OVERRIDEZ      = 1 << 5,
 	LAF_ABSOFFSET      = 1 << 6,
 	LAF_ABSPOSITION    = 1 << 7,
+	LAF_ISOFFHAND      = 1 << 8,
 }
 
 enum ELineTraceFlags
@@ -946,6 +960,8 @@ enum ELineTraceFlags
 	TRF_SOLIDACTORS = 256,
 	TRF_BLOCKUSE = 512,
 	TRF_BLOCKSELF = 1024,
+	TRF_ISOFFHAND = 2048,
+	TRF_USEWEAPON = 4096,
 }
 
 const DEFMELEERANGE = 64;
@@ -1207,6 +1223,19 @@ enum EWeaponState
 	WF_USER2OK			= 1 << 9,
 	WF_USER3OK			= 1 << 10,
 	WF_USER4OK			= 1 << 11,
+	WF_OFFHANDREADY          = 1 << 12,
+	WF_OFFHANDBOBBING        = 1 << 13,
+	WF_OFFHANDREADYALT       = 1 << 14,
+	WF_OFFHANDSWITCHOK       = 1 << 15,
+	WF_OFFHANDDISABLESWITCH  = 1 << 16,
+	WF_OFFHANDRELOADOK       = 1 << 17,
+	WF_OFFHANDZOOMOK         = 1 << 18,
+	WF_OFFHANDREFIRESWITCHOK = 1 << 19,
+	WF_OFFHANDUSER1OK        = 1 << 20,
+	WF_OFFHANDUSER2OK        = 1 << 21,
+	WF_OFFHANDUSER3OK        = 1 << 22,
+	WF_OFFHANDUSER4OK        = 1 << 23,
+	WF_TWOHANDSTABILIZED     = 1 << 24
 };
 
 // these flags are for filtering actor visibility based on certain conditions of the renderer's feature support.

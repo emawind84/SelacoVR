@@ -123,14 +123,14 @@ void SetFog(FRenderState &state, FLevelLocals* Level, ELightMode lightmode, int 
 
 
 	// no fog in enhanced vision modes!
-	if (fogdensity == 0 || gl_fogmode == 0)
+	if (gl_fogmode == 0)
 	{
 		state.EnableFog(false);
 		state.SetFog(0, 0);
 	}
 	else
 	{
-		if ((lightmode == ELightMode::Doom || (isSoftwareLighting(lightmode) && cmap && cmap->BlendFactor > 0)) && fogcolor == 0)
+		if (cmap && (lightmode == ELightMode::Doom || (isSoftwareLighting(lightmode) && cmap->BlendFactor > 0)) && fogcolor == 0)
 		{
 			float light = (float)CalcLightLevel(lightmode, lightlevel, rellight, false, cmap->BlendFactor);
 			SetShaderLight(state, Level, light, lightlevel);
@@ -161,4 +161,3 @@ void SetFog(FRenderState &state, FLevelLocals* Level, ELightMode lightmode, int 
 		}
 	}
 }
-

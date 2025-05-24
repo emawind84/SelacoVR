@@ -1360,9 +1360,9 @@ void VulkanRenderDevice::InitLightmap(int LMTextureSize, int LMTextureCount, TAr
 	}
 }
 
-void VulkanRenderDevice::Draw2D()
+void VulkanRenderDevice::Draw2D(bool outside2D)
 {
-	::Draw2D(twod, *mRenderState);
+	::Draw2D(twod, *mRenderState, outside2D);
 }
 
 void VulkanRenderDevice::WaitForCommands(bool finish)

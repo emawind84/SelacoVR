@@ -319,6 +319,7 @@ void M_SetMenu(FName menu, int param = -1);
 void M_StartMessage(const char *message, int messagemode, FName action = NAME_None);
 DMenu *StartPickerMenu(DMenu *parent, const char *name, FColorCVar *cvar);
 void M_MarkMenus();
+void M_ResetButtonStates();
 FTextureID GetMenuTexture(const char* const name);
 void DeinitMenus();
 bool M_Active();
@@ -326,8 +327,8 @@ bool M_IsAnimated();
 
 
 struct IJoystickConfig;
-DMenuItemBase * CreateOptionMenuItemStaticText(const char *name, int v = -1);
-DMenuItemBase * CreateOptionMenuItemSubmenu(const char *label, FName cmd, int center);
+DMenuItemBase * CreateOptionMenuItemStaticText(const char *name, int v = -1, bool centered = true);
+DMenuItemBase * CreateOptionMenuItemSubmenu(const char *label, FName cmd, int center, int v = CR_UNDEFINED);
 DMenuItemBase * CreateOptionMenuItemControl(const char *label, FName cmd, FKeyBindings *bindings);
 DMenuItemBase * CreateOptionMenuItemJoyConfigMenu(const char *label, IJoystickConfig *joy);
 DMenuItemBase * CreateListMenuItemPatch(double x, double y, int height, int hotkey, FTextureID tex, FName command, int param);

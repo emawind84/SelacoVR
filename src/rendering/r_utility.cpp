@@ -64,15 +64,19 @@
 #include "actorinlines.h"
 #include "g_game.h"
 #include "i_system.h"
+#include "hwrenderer/data/hw_vrmodes.h"
 #include "v_draw.h"
 #include "i_interface.h"
 #include "d_main.h"
 
+#include <QzDoom/VrCommon.h>
 const float MY_SQRT2    = 1.41421356237309504880; // sqrt(2)
+
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
 extern bool DrawFSHUD;		// [RH] Defined in d_main.cpp
 EXTERN_CVAR (Bool, cl_capfps)
+EXTERN_CVAR (Float, vr_quake_haptic_level)
 
 // TYPES -------------------------------------------------------------------
 
@@ -107,13 +111,15 @@ CVAR (Bool, r_drawvoxels, true, 0)
 CVAR (Bool, r_drawplayersprites, true, 0)	// [RH] Draw player sprites?
 CVARD (Bool, r_radarclipper, false, CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_CHEAT, "Use the horizontal clipper from camera->tracer's perspective")
 CVARD (Bool, r_dithertransparency, false, CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_CHEAT, "Use dithered-transparency shading for actor-occluding level geometry")
-CUSTOM_CVAR(Float, r_quakeintensity, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, r_PlayerSprites3DMode, 1, CVAR_ARCHIVE); // Back only as default
+CVAR(Float, gl_fatItemWidth, 0.5f, CVAR_ARCHIVE);
+CUSTOM_CVAR(Float, r_quakeintensity, 0.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // Defaulted to 0 for VR
 {
 	if (self < 0.f) self = 0.f;
 	else if (self > 1.f) self = 1.f;
 }
 
-CUSTOM_CVARD(Int, r_shadowquality, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "render light effect shadows and sprite shadows. 1 = low, 2 = medium, 3 = high")
+CUSTOM_CVARD(Int, r_shadowquality, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "render light effect shadows and sprite shadows. 1 = low, 2 = medium, 3 = high")
 {
 	if (self < 1)
 		self = 1;
@@ -149,6 +155,8 @@ int 			viewwindowy;
 int				viewwidth;
 int 			viewheight;
 
+float QzDoom_GetFOV();
+
 FRenderViewpoint::FRenderViewpoint()
 {
 	player = nullptr;
@@ -174,6 +182,22 @@ FRenderViewpoint::FRenderViewpoint()
 	extralight = 0;
 	showviewer = false;
 }
+
+DAngle FRenderViewpoint::GetFieldOfView() const
+{
+#if defined(USE_OPENVR) || defined(USE_OPENXR)
+	return DAngle::fromDeg(QzDoom_GetFOV());
+#endif
+	return FieldOfView;
+}
+
+void FRenderViewpoint::SetFieldOfView(DAngle newfov)
+{
+#if !defined(USE_OPENVR) && !defined(USE_OPENXR)
+	FieldOfView = newfov;
+#endif
+}
+
 
 FRenderViewpoint r_viewpoint;
 FViewWindow		r_viewwindow;
@@ -214,9 +238,9 @@ void R_SetFOV (FRenderViewpoint &viewpoint, DAngle fov)
 
 	if (fov < DAngle::fromDeg(5.)) fov =  DAngle::fromDeg(5.);
 	else if (fov > DAngle::fromDeg(170.)) fov = DAngle::fromDeg(170.);
-	if (fov != viewpoint.FieldOfView)
+	if (fov != viewpoint.GetFieldOfView())
 	{
-		viewpoint.FieldOfView = fov;
+		viewpoint.SetFieldOfView(fov);
 		setsizeneeded = true;
 	}
 }
@@ -288,7 +312,7 @@ void R_SetWindow (FRenderViewpoint &viewpoint, FViewWindow &viewwindow, int wind
 	}
 
 
-	DAngle fov = viewpoint.FieldOfView;
+	DAngle fov = viewpoint.GetFieldOfView();
 
 	// For widescreen displays, increase the FOV so that the middle part of the
 	// screen that would be visible on a 4:3 display has the requested FOV.
@@ -398,7 +422,7 @@ double R_GetGlobVis(const FViewWindow &viewwindow, double vis)
 //
 //==========================================================================
 
-CUSTOM_CVAR (Int, screenblocks, 10, CVAR_ARCHIVE)
+CUSTOM_CVAR (Int, screenblocks, 11, CVAR_ARCHIVE)
 {
 	if (self > 12)
 		self = 12;
@@ -464,7 +488,7 @@ bool P_NoInterpolation(player_t const *player, AActor const *actor)
 		&& player - players == consoleplayer
 		&& actor == player->mo
 		&& !demoplayback
-		&& !(player->cheats & (CF_TOTALLYFROZEN | CF_FROZEN))
+		//&& !(player->cheats & (CF_TOTALLYFROZEN | CF_FROZEN))
 		&& player->playerstate == PST_LIVE
 		&& player->mo->reactiontime == 0
 		&& !NoInterpolateView
@@ -1065,6 +1089,19 @@ void R_SetupFrame(FRenderViewpoint& viewPoint, const FViewWindow& viewWindow, AA
 				iView->ViewOffset.Y += QuakePower(quakeFactor, jiggers.Intensity.Y, jiggers.Offset.Y);
 			if (jiggers.Intensity.Z || jiggers.Offset.Z)
 				iView->ViewOffset.Z += QuakePower(quakeFactor, jiggers.Intensity.Z, jiggers.Offset.Z);
+
+			//Haptic Quake
+			if (vr_quake_haptic_level > 0.0) {
+				double left = QuakePower(vr_quake_haptic_level, jiggers.Intensity.X, jiggers.Offset.X);
+				double right = QuakePower(vr_quake_haptic_level, jiggers.Intensity.Y, jiggers.Offset.Y);
+
+				auto vrmode = VRMode::GetVRMode(true);
+				vrmode->Vibrate(10, 0, (float)left); // left
+				vrmode->Vibrate(10, 1, (float)right); // right
+
+				VR_HapticEvent("rumble_front", 0, 100 * left * C_GetExternalHapticLevelValue("rumble"), 120, 0);
+				VR_HapticEvent("rumble_back", 0, 100 * right * C_GetExternalHapticLevelValue("rumble"), 120, 0);
+			}
 		}
 	}
 
@@ -1199,10 +1236,6 @@ void R_SetupFrame(FRenderViewpoint& viewPoint, const FViewWindow& viewWindow, AA
 		screen->SetClearColor(color);
 		SWRenderer->SetClearColor(color);
 	}
-    else
-	{
-		screen->SetClearColor(GPalette.BlackIndex);
-    }
 	
 	
 	// And finally some info that is needed for the hardware renderer
@@ -1219,6 +1252,9 @@ void R_SetupFrame(FRenderViewpoint& viewPoint, const FViewWindow& viewWindow, AA
 	
 	// ViewActor only gets set if the camera actor shouldn't be rendered.
 	viewPoint.ViewActor = viewPoint.showviewer ? nullptr : actor;
+
+	// Retain unshifted center eye pos so all sprites show the same frame
+	viewPoint.CenterEyePos = viewPoint.Pos;
 }
 
 

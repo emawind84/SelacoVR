@@ -59,6 +59,9 @@ private:
 	HardwareState hwStates[MAX_TEXTURES] = { HardwareState::NONE };
 
 
+#ifdef __MOBILE__
+    int size;
+#endif
 	int GetDepthBuffer(int w, int h);
 
 public:

@@ -48,6 +48,11 @@
 #include "hw_renderstate.h"
 #include "texturemanager.h"
 
+CVAR(Int, gl_max_vertices, 0, CVAR_ARCHIVE)
+
+extern int flatVerticesPerEye;
+extern int lightsFlatPerEye;
+
 #ifdef _DEBUG
 CVAR(Int, gl_breaksec, -1, 0)
 #endif
@@ -157,15 +162,16 @@ void HWFlat::SetupLights(HWDrawInfo *di, FLightNode * node, FDynLightData &light
 		dynlightindex = -1;
 		return;	// no lights on additively blended surfaces.
 	}
-	while (node)
+	while (node && (!gl_light_flat_max_lights || lightsFlatPerEye < gl_light_flat_max_lights))
 	{
 		FDynamicLight * light = node->lightsource;
 
-		if (!light->IsActive() || light->DontLightMap())
+		if (!light->IsActive() || light->DontLightMap() || gl_IsDistanceCulled(light))
 		{
 			node = node->nextLight;
 			continue;
 		}
+		lightsFlatPerEye++;
 		iter_dlightf++;
 
 		// we must do the side check here because gl_GetLight needs the correct plane orientation
@@ -194,14 +200,20 @@ void HWFlat::SetupLights(HWDrawInfo *di, FLightNode * node, FDynLightData &light
 
 void HWFlat::DrawSubsectors(HWDrawInfo *di, FRenderState &state)
 {
+	auto vcount = sector->ibocount;
+	if (gl_max_vertices > 0 && flatVerticesPerEye + vcount >= gl_max_vertices)
+	{
+		return;
+	}
+
 	if (di->Level->HasDynamicLights && screen->BuffersArePersistent() && !di->isFullbrightScene())
 	{
 		SetupLights(di, section->lighthead, lightdata, sector->PortalGroup);
 	}
 	state.SetLightIndex(dynlightindex);
 
-
 	state.DrawIndexed(DT_Triangles, iboindex + section->vertexindex, section->vertexcount);
+	flatVerticesPerEye += section->vertexcount;
 	flatvertices += section->vertexcount;
 	flatprimitives++;
 }
@@ -228,6 +240,7 @@ void HWFlat::DrawOtherPlanes(HWDrawInfo *di, FRenderState &state)
     {
         state.SetLightIndex(node->lightindex);
         auto num = node->sub->numlines;
+		flatVerticesPerEye += num;
         flatvertices += num;
         flatprimitives++;
         state.Draw(DT_TriangleFan,node->vertexindex, num);
@@ -259,6 +272,7 @@ void HWFlat::DrawFloodPlanes(HWDrawInfo *di, FRenderState &state)
 	state.SetLightIndex(-1);
 	while (fnode)
 	{
+		flatVerticesPerEye += 12;
 		flatvertices += 12;
 		flatprimitives += 3;
 
@@ -345,6 +359,7 @@ void HWFlat::DrawFlat(HWDrawInfo *di, FRenderState &state, bool translucent)
 			state.SetMaterial(texture, UF_Texture, 0, CLAMP_XY, NO_TRANSLATION, -1);
 			state.SetLightIndex(dynlightindex);
 			state.Draw(DT_TriangleStrip,iboindex, 4);
+			flatVerticesPerEye += 4;
 			flatvertices += 4;
 			flatprimitives++;
 		}

@@ -135,11 +135,20 @@ static void NativeStopSound(AActor *actor, int slot)
 	S_StopSound(actor, slot);
 }
 
-DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_StopSound, NativeStopSound)
+DEFINE_ACTION_FUNCTION(AActor, A_StopSound)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_INT(slot);
 	
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
+		if (pspr != nullptr && pspr->GetID() == PSP_OFFHANDWEAPON && slot == CHAN_WEAPON)
+		{
+			slot = CHAN_OFFWEAPON;
+		}
+	}
+
 	S_StopSound(self, slot);
 	return 0;
 }
@@ -155,25 +164,45 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_StopSounds, S_StopActorSounds)
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_SoundPitch, S_ChangeActorSoundPitch)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_INT(channel);
 	PARAM_FLOAT(pitch);
+
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
+		if (pspr != nullptr && pspr->GetID() == PSP_OFFHANDWEAPON && channel == CHAN_WEAPON)
+		{
+			channel = CHAN_OFFWEAPON;
+		}
+	}
+
 	S_ChangeActorSoundPitch(self, channel, pitch);
 	return 0;
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_SoundVolume, S_ChangeActorSoundVolume)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_INT(channel);
 	PARAM_FLOAT(volume);
+
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
+		if (pspr != nullptr && pspr->GetID() == PSP_OFFHANDWEAPON && channel == CHAN_WEAPON)
+		{
+			channel = CHAN_OFFWEAPON;
+		}
+	}
+
 	S_ChangeActorSoundVolume(self, channel, volume);
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_PlaySound, A_PlaySound)
+DEFINE_ACTION_FUNCTION(AActor, A_PlaySound)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_INT(soundid);
 	PARAM_INT(channel);
 	PARAM_FLOAT(volume);
@@ -181,6 +210,17 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_PlaySound, A_PlaySound)
 	PARAM_FLOAT(attenuation);
 	PARAM_BOOL(local);
 	PARAM_FLOAT(pitch);
+
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
+		if (pspr != nullptr && pspr->GetID() == PSP_OFFHANDWEAPON && (channel & 7) == CHAN_WEAPON)
+		{
+			channel &= ~7;
+			channel |= CHAN_OFFWEAPON;
+		}
+	}
+
 	A_PlaySound(self, soundid, channel, volume, looping, attenuation, local, pitch);
 	return 0;
 }
@@ -200,9 +240,9 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, StartSound, StartSound)
 }
 
 
-DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_StartSound, A_StartSound)
+DEFINE_ACTION_FUNCTION(AActor, A_StartSound)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_INT(soundid);
 	PARAM_INT(channel);
 	PARAM_INT(flags);
@@ -210,6 +250,16 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_StartSound, A_StartSound)
 	PARAM_FLOAT(attenuation);
 	PARAM_FLOAT(pitch);
 	PARAM_FLOAT(startTime);
+
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
+		if (pspr != nullptr && pspr->GetID() == PSP_OFFHANDWEAPON && channel == CHAN_WEAPON)
+		{
+			channel = CHAN_OFFWEAPON;
+		}
+	}
+
 	A_StartSound(self, soundid, channel, flags, volume, attenuation, pitch, startTime);
 	return 0;
 }
@@ -223,7 +273,7 @@ void A_StartSoundIfNotSame(AActor *self, int soundid, int checksoundid, int chan
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_StartSoundIfNotSame, A_StartSoundIfNotSame)
 {
-	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_INT(soundid);
 	PARAM_INT(checksoundid);
 	PARAM_INT(channel);
@@ -232,6 +282,16 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_StartSoundIfNotSame, A_StartSoundIfNotSa
 	PARAM_FLOAT(attenuation);
 	PARAM_FLOAT(pitch);
 	PARAM_FLOAT(startTime);
+
+	if (ACTION_CALL_FROM_PSPRITE())
+	{
+		DPSprite *pspr = self->player->FindPSprite(stateinfo->mPSPIndex);
+		if (pspr != nullptr && pspr->GetID() == PSP_OFFHANDWEAPON && channel == CHAN_WEAPON)
+		{
+			channel = CHAN_OFFWEAPON;
+		}
+	}
+	
 	A_StartSoundIfNotSame(self, soundid, checksoundid, channel, flags, volume, attenuation, pitch, startTime);
 	return 0;
 }
@@ -2135,6 +2195,15 @@ DEFINE_FIELD(AActor, InventoryID)
 DEFINE_FIELD(AActor, ThruBits)
 DEFINE_FIELD(AActor, lineBlockBits)
 DEFINE_FIELD(AActor, ViewPos)
+DEFINE_FIELD(AActor, OverrideAttackPosDir)
+DEFINE_FIELD(AActor, AttackPos)
+DEFINE_FIELD(AActor, AttackPitch)
+DEFINE_FIELD(AActor, AttackRoll)
+DEFINE_FIELD(AActor, AttackAngle)
+DEFINE_FIELD(AActor, OffhandPos)
+DEFINE_FIELD(AActor, OffhandPitch)
+DEFINE_FIELD(AActor, OffhandRoll)
+DEFINE_FIELD(AActor, OffhandAngle)
 DEFINE_FIELD_NAMED(AActor, ViewAngles.Yaw, viewangle)
 DEFINE_FIELD_NAMED(AActor, ViewAngles.Pitch, viewpitch)
 DEFINE_FIELD_NAMED(AActor, ViewAngles.Roll, viewroll)

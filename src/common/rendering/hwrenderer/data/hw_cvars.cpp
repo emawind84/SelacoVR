@@ -42,7 +42,7 @@
 #include "hw_cvars.h"
 #include "menu.h"
 #include "printf.h"
-
+#include "version.h"
 
 CUSTOM_CVAR(Int, gl_fogmode, 2, CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
@@ -67,40 +67,41 @@ CUSTOM_CVAR(Int, gl_background_flush_count, 100, CVAR_GLOBALCONFIG | CVAR_ARCHIV
 // OpenGL stuff moved here
 // GL related CVARs
 CVAR(Bool, gl_portals, true, 0)
-CVAR(Bool,gl_mirrors,true,0)	// This is for debugging only!
+CVAR(Bool, gl_mirrors, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
+CVAR(Bool, gl_mirror_player, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 CVAR(Bool,gl_mirror_envmap, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 CVAR(Bool, gl_seamless, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
-CUSTOM_CVAR(Int, r_mirror_recursions,4,CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
+CUSTOM_CVAR(Int, r_mirror_recursions,2,CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 {
 	if (self<0) self=0;
 	if (self>10) self=10;
 }
 bool gl_plane_reflection_i;	// This is needed in a header that cannot include the CVAR stuff...
-CUSTOM_CVAR(Bool, gl_plane_reflection, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
+CUSTOM_CVAR(Bool, gl_plane_reflection, false, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 {
 	gl_plane_reflection_i = self;
 }
 
-CUSTOM_CVARD(Float, vid_gamma, 1.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "adjusts gamma component of gamma ramp")
+CUSTOM_CVARD(Float, vid_gamma, 1.2f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "adjusts gamma component of gamma ramp")
 {
 	if (self < 0) self = 1;
 	else if (self > 4) self = 4;
 }
 
-CUSTOM_CVARD(Float, vid_contrast, 1.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "adjusts contrast component of gamma ramp")
+CUSTOM_CVARD(Float, vid_contrast, 1.1f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "adjusts contrast component of gamma ramp")
 {
 	if (self < 0) self = 0;
 	else if (self > 5) self = 5;
 }
 
-CUSTOM_CVARD(Float, vid_brightness, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "adjusts brightness component of gamma ramp")
+CUSTOM_CVARD(Float, vid_brightness, 0.05f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "adjusts brightness component of gamma ramp")
 {
 	if (self < -2) self = -2;
 	else if (self > 2) self = 2;
 }
 
-CUSTOM_CVARD(Float, vid_saturation, 1.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "adjusts saturation component of gamma ramp")
+CUSTOM_CVARD(Float, vid_saturation, 1.2f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "adjusts saturation component of gamma ramp")
 {
 	if (self < -3) self = -3;
 	else if (self > 3) self = 3;
@@ -128,12 +129,12 @@ CVAR(Int, gl_satformula, 1, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 // Texture CVARs
 //
 //==========================================================================
-CUSTOM_CVARD(Float, gl_texture_filter_anisotropic, 8.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL, "changes the OpenGL texture anisotropy setting")
+CUSTOM_CVARD(Float, gl_texture_filter_anisotropic, 4.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL, "changes the OpenGL texture anisotropy setting")
 {
 	screen->SetTextureFilterMode();
 }
 
-CUSTOM_CVARD(Int, gl_texture_filter, 4, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL, "changes the texture filtering settings")
+CUSTOM_CVARD(Int, gl_texture_filter, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL, "changes the texture filtering settings")
 {
 	if (self < 0 || self > 6) self=4;
 	screen->SetTextureFilterMode();
@@ -146,3 +147,27 @@ CUSTOM_CVAR(Int, gl_shadowmap_filter, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
 	if (self < 0 || self > 8) self = 1;
 }
+
+CVAR(Bool, gl_global_fade, false, CVAR_ARCHIVE)
+
+CUSTOM_CVAR(Float, gl_global_fade_density, 0.001f, CVAR_ARCHIVE)
+{
+	if (self < 0.0001f) self = 0.0001f;
+	if (self > 0.005f) self = 0.005f;
+}
+CUSTOM_CVAR(Float, gl_global_fade_gradient, 1.5f, CVAR_ARCHIVE)
+{
+	if (self < 0.1f) self = 0.1f;
+	if (self > 2.f) self = 2.f;
+}
+CVAR(Color, gl_global_fade_color, 0x3f3f3f, CVAR_ARCHIVE)
+CVAR(Bool, gl_global_fade_debug, false, 0)
+
+CUSTOM_CVAR (Int, gl_storage_buffer_type, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
+{
+	Printf("You must restart " GAMENAME " for this change to take effect.\n");
+}
+
+CVARD(Bool, gl_no_persistent_buffer, false, 0, "Disable persistent buffer storage support")
+CVARD(Bool, gl_no_clip_planes, false, 0, "Disable clip planes support")
+CVARD(Bool, gl_no_ssbo, false, 0, "Disable SSBO support")

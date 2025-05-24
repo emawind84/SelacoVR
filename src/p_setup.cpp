@@ -26,6 +26,7 @@
 
 
 #include <math.h>
+#include <QzDoom/VrCommon.h>
 #ifdef _MSC_VER
 #include <malloc.h>		// for alloca()
 #endif
@@ -615,6 +616,10 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame, int mapVersio
 	{
 		AnnounceGameStart();
 	}
+
+	//Trigger a Yaw/Pitch recalc in the QuestZDoom code to avoid moving in the wrong direction
+	resetDoomYaw = true;
+	resetPreviousPitch = true;
 
 	// This check was previously done at run time each time the heightsec was checked.
 	// However, since 3D floors are static data, we can easily precalculate this and store it in the sector's flags for quick access.

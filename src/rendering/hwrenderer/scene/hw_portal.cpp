@@ -38,8 +38,13 @@
 #include "hw_lighting.h"
 #include "texturemanager.h"
 
+CVAR(Int, gl_max_portals, -1, CVAR_ARCHIVE);
+
 EXTERN_CVAR(Int, r_mirror_recursions)
+EXTERN_CVAR(Bool, gl_mirror_player)
 EXTERN_CVAR(Bool, gl_portals)
+
+extern int portalsPerEye;
 
 void SetPlaneTextureRotation(FRenderState& state, HWSectorPlane* plane, FGameTexture* texture);
 
@@ -251,7 +256,7 @@ void HWPortal::SetupStencil(HWDrawInfo *di, FRenderState &state, bool usestencil
 	Clocker c(PortalAll);
 
 	rendered_portals++;
-	
+	portalsPerEye++;
 	if (usestencil)
 	{
 		// Create stencil
@@ -505,7 +510,7 @@ bool HWMirrorPortal::Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clippe
 	vertex_t *v2 = linedef->v2;
 
 	// the player is always visible in a mirror.
-	vp.showviewer = true;
+	vp.showviewer = gl_mirror_player;
 	// Reflect the current view behind the mirror.
 	if (linedef->Delta().X == 0)
 	{
@@ -550,6 +555,7 @@ bool HWMirrorPortal::Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clippe
 		vp.Pos.X += v[1] * state->renderdepth / 2;
 		vp.Pos.Y += v[0] * state->renderdepth / 2;
 	}
+	vp.CenterEyePos += vp.Pos - StartPos;
 	vp.Angles.Yaw = linedef->Delta().Angle() * 2. - StartAngle;
 
 	vp.ViewActor = nullptr;
@@ -848,7 +854,7 @@ bool HWPlaneMirrorPortal::Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *c
 	old_pm = state->PlaneMirrorMode;
 
 	// the player is always visible in a mirror.
-	vp.showviewer = true;
+	vp.showviewer = gl_mirror_player;
 
 	double planez = origin->ZatPoint(vp.Pos);
 	vp.Pos.Z = 2 * planez - vp.Pos.Z;

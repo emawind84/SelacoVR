@@ -43,6 +43,28 @@
 #include "c_cvars.h"
 #include "engineerrors.h"
 
+#ifdef __ANDROID__
+#include "JNITouchControlsUtils.h"
+#include <android/log.h>
+#define LOG_TAG "JWZGLES"
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,"NETOWRK",__VA_ARGS__)
+#define fprintf my_fprintf
+
+
+
+void my_fprintf(FILE * x, const char *format, ...)
+{
+	FString str;
+	va_list argptr;
+
+	va_start (argptr, format);
+	str.VFormat (format, argptr);
+	va_end (argptr);
+	//fprintf (stderr, "\r%-40s\n", str.GetChars());
+	addTextConsoleBox(str.GetChars());
+}
+
+#endif
 // MACROS ------------------------------------------------------------------
 
 // TYPES -------------------------------------------------------------------
@@ -160,6 +182,10 @@ void FTTYStartupScreen::NetInit(const char *message, int numplayers)
 		rawtermios.c_lflag &= ~(ICANON | ECHO);
 		tcsetattr (STDIN_FILENO, TCSANOW, &rawtermios);
 		DidNetInit = true;
+
+#ifdef __ANDROID__
+		openConsoleBox( "Network synchronization" );
+#endif
 	}
 	if (numplayers == 1)
 	{
@@ -194,7 +220,11 @@ void FTTYStartupScreen::NetDone()
 		tcsetattr (STDIN_FILENO, TCSANOW, &OldTermIOS);
 		printf ("\n");
 		DidNetInit = false;
-	}	
+
+#ifdef __ANDROID__
+		closeConsoleBox();
+#endif
+	}
 }
 
 //===========================================================================
@@ -273,6 +303,16 @@ bool FTTYStartupScreen::NetLoop(bool (*timer_callback)(void *), void *userdata)
 
 		retval = select (1, &rfds, NULL, NULL, &tv);
 
+#ifdef __ANDROID__
+		usleep(1000*200);
+		//The select command is to wait for the console input to be ready, obv don't need this on droid
+		retval = 0;
+
+		if( getConsoleBoxCanceled() )
+		{
+			return false;
+		}
+#endif
 		if (retval == -1)
 		{
 			// Error

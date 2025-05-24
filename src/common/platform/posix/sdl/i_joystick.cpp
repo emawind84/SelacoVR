@@ -91,7 +91,7 @@ public:
 	{
 		if(Device != NULL)
 			M_SaveJoystickConfig(this);
-		SDL_JoystickClose(Device);
+		//SDL_JoystickClose(Device);
 	}
 
 	bool IsValid() const
@@ -825,12 +825,14 @@ void I_StartupJoysticks()
 }
 void I_ShutdownInput()
 {
+#ifndef __ANDROID__ // Causes crash
 	if(JoystickManager)
 	{
 		delete JoystickManager;
 		SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
 		SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 	}
+#endif
 }
 
 void I_GetJoysticks(TArray<IJoystickConfig *> &sticks)

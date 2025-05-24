@@ -29,8 +29,6 @@
 #include "actor.h"
 #include "g_levellocals.h"
 
-EXTERN_CVAR(Bool, gl_seamless)
-
 //==========================================================================
 //
 // 
@@ -94,7 +92,7 @@ void HWDrawInfo::AddMirrorSurface(HWWall *w)
 
 //==========================================================================
 //
-// FDrawInfo::AddFlat
+// HWDrawInfo::AddFlat
 //
 // Checks texture, lighting and translucency settings and puts this
 // plane in the appropriate render list.

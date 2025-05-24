@@ -1,0 +1,84 @@
+/* Alternative keybindings for all games */
+/* thanks to President_Koopa for providing the layout */
+
+// LTrigger - Offhand Fire
+shift +oh_attack
+// RTrigger - Main Fire
+rtrigger +attack
+
+// Y - Offhand Next Weapon
+pad_y "weapnext 1"
+// Y^- Assign Weapon to Offhand from Main
+doublebind pad_y "switchhand 1"
+// X - Use Inventory Item
+pad_x invuse
+// X^- Next Map
+//doublebind pad_x nextmap
+
+// B - Mainhand Next Weapon
+pad_b weapnext
+// B^- Assign Weapon to Mainhand from Off
+doublebind pad_b "switchhand 0"
+
+// A - Use / Activate
+pad_a +use
+// A^- Slot 3 / Quick Shotgun
+doublebind pad_a "slot 3"
+
+// L Grip - Stabilize Main Weapon
+//rthumb
+
+// R Grip + R Joy Up - Togglemap
+//axis8plus +jump
+axis8plus togglemap
+// R Grip + R Joy Down - Reload
+axis8minus +reload
+
+// R Grip + R Trigger - Main Hand Alt Fire
+ltrigger +altattack
+// R Grip + L Trigger - OffHand Alt Fire
+alt +oh_altatk
+
+// R Grip + Y - Next Inventory Item
+pgup invnext
+// R Grip + X - Previous Inventory Item
+pgdn invprev
+
+// R Grip + L Joy Click - Toggle laser sight
+home toggle_laser_sight
+// R Grip + R Joy Click - Toggle weapon menu (gearbox mod)
+tab +gb_toggle_weapon_menu
+
+// R Grip + A - Throw Grenade
+lthumb grenadetoss
+// R Grip + B - Toggle Crouch
+backspace crouch
+
+
+// R Joy Up - Jump
+mwheelup +jump
+// R Joy Up^ - Move Up
+doublebind mwheelup +moveup
+// R Joy Down - Crouch
+mwheeldown +crouch
+// R Joy Down^ - Land
+doublebind mwheeldown land
+
+// L Joy Click - Run
+space +speed
+// L Joy Click^ - Flashlight
+doublebind space flashlightswitch
+// R Joy Click - BD Kick
+enter kickem
+// R Joy Click^ - BD Dual
+doublebind enter dual
+
+// R Grip + R Joy Left
+Axis7Plus = weapnext
+// R Grip + R Joy Right
+Axis7Minus = weapprev
+
+//RGrip + LJoyUp = brutaltaunt
+//RGrip + LJoyDown = wave2
+//RGrip + LJoyLeft = oneliner
+//RGrip + LJoyRight = advtaunt

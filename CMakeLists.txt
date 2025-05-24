@@ -221,7 +221,7 @@ include( TargetArch )
 target_architecture(TARGET_ARCHITECTURE)
 
 if( ${TARGET_ARCHITECTURE} MATCHES "x86_64" )
-	set( HAVE_VM_JIT ON )
+	option( HAVE_VM_JIT "Enable VM JIT support" ON )
 endif()
 
 option (HAVE_VULKAN "Enable Vulkan support" ON)
@@ -414,6 +414,13 @@ add_subdirectory( wadsrc_lights )
 #add_subdirectory( wadsrc_extra )
 #add_subdirectory( wadsrc_widepix )
 add_subdirectory( src )
+
+# Update gitinfo.h
+
+add_custom_target( revision_check ALL
+	COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_SOURCE_DIR}/tools/updaterevision/UpdateRevision.cmake" src/gitinfo.h
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
 
 if( NOT CMAKE_CROSSCOMPILING )
 	export(TARGETS ${CROSS_EXPORTS} FILE "${CMAKE_BINARY_DIR}/ImportExecutables.cmake" )

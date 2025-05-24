@@ -55,6 +55,12 @@
 EXTERN_CVAR(Bool, cl_capfps)
 extern bool NoInterpolateView;
 
+extern int flatVerticesPerEye;
+extern int wallVerticesPerEye;
+extern int portalsPerEye;
+extern int lightsFlatPerEye;
+extern int lightsWallPerEye;
+
 static SWSceneDrawer *swdrawer;
 
 void CleanSWDrawer()
@@ -110,7 +116,7 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 
 	R_SetupFrame(mainvp, r_viewwindow, camera);
 
-	if (mainview && (toscreen || isSavePic) && !(camera->Level->flags3 & LEVEL3_NOSHADOWMAP) && camera->Level->HasDynamicLights && gl_light_shadowmap && screen->allowSSBO() && (screen->hwcaps & RFL_SHADER_STORAGE_BUFFER))
+	if (mainview && (toscreen || isSavePic) && !(camera->Level->flags3 & LEVEL3_NOSHADOWMAP) && camera->Level->HasDynamicLights && gl_light_shadowmap)
 	{
 		screen->SetAABBTree(camera->Level->aabbTree);
 		screen->mShadowMap.SetCollectLights([=] {
@@ -134,11 +140,14 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 	// Render (potentially) multiple views for stereo 3d
 	// Fixme. The view offsetting should be done with a static table and not require setup of the entire render state for the mode.
 	auto vrmode = VRMode::GetVRMode(mainview && toscreen);
+	vrmode->SetUp();
 	const int eyeCount = vrmode->mEyeCount;
 	screen->FirstEye();
 	for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
 	{
+		flatVerticesPerEye = wallVerticesPerEye = portalsPerEye = lightsFlatPerEye = lightsWallPerEye = 0;
 		const auto& eye = vrmode->mEyes[eye_ix];
+		eye->SetUp();
 		screen->SetViewportRects(bounds);
 
 		if (mainview) // Bind the scene frame buffer and turn on draw buffers used by ssao
@@ -160,16 +169,16 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 		// Only used by the GLES2 renderer
 		RenderState.SetSpecialColormap(cm, flash);
 
-		di->Viewpoint.FieldOfView = DAngle::fromDeg(fov);	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
+		di->Viewpoint.SetFieldOfView(DAngle::fromDeg(fov));	// Set the real FOV for the current scene (it's not necessarily the same as the global setting in r_viewpoint)
 
 		// Stereo mode specific perspective projection
 		float inv_iso_dist = 1.0f;
 		bool iso_ortho = (camera->ViewPos != NULL) && (camera->ViewPos->Flags & VPSF_ORTHOGRAPHIC);
 		if (iso_ortho && (camera->ViewPos->Offset.Length() > 0)) inv_iso_dist = 1.0/camera->ViewPos->Offset.Length();
-		di->VPUniforms.mProjectionMatrix = eye.GetProjection(fov, ratio, fovratio * inv_iso_dist, iso_ortho);
+		di->VPUniforms.mProjectionMatrix = eye->GetProjection(fov, ratio, fovratio * inv_iso_dist, iso_ortho);
 
 		// Stereo mode specific viewpoint adjustment
-		vp.Pos += eye.GetViewShift(vp.HWAngles.Yaw.Degrees());
+		vp.Pos += eye->GetViewShift(vp);
 		di->SetupView(RenderState, vp.Pos.X, vp.Pos.Y, vp.Pos.Z, false, false);
 
 		di->ProcessScene(toscreen, toscreen || isSavePic);
@@ -186,16 +195,20 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 			}
 
 			screen->PostProcessScene(false, cm, flash, [&]() { di->DrawEndScene2D(mainvp.sector, RenderState); });
+
+			eye->AdjustBlend(di);
+			V_DrawBlend(mainvp.sector);
 			PostProcess.Unclock();
 		}
 		// Reset colormap so 2D drawing isn't affected
 		RenderState.SetSpecialColormap(CM_DEFAULT, 1);
 
 		di->EndDrawInfo();
-		if (eyeCount - eye_ix > 1)
-			screen->NextEye(eyeCount);
+		eye->TearDown();
+		screen->NextEye(eyeCount);
 	}
-
+	vrmode->TearDown();
+	
 	return mainvp.sector;
 }
 
@@ -287,7 +300,7 @@ void WriteSavePic(player_t* player, FileWriter* file, int width, int height)
 
 		// This shouldn't overwrite the global viewpoint even for a short time.
 		FRenderViewpoint savevp;
-		sector_t* viewsector = RenderViewpoint(savevp, players[consoleplayer].camera, &bounds, r_viewpoint.FieldOfView.Degrees(), 1.6f, 1.6f, true, false, true);
+		sector_t* viewsector = RenderViewpoint(savevp, players[consoleplayer].camera, &bounds, r_viewpoint.GetFieldOfView().Degrees(), 1.6f, 1.6f, true, false, true);
 		RenderState.EnableStencil(false);
 		RenderState.SetNoSoftLightLevel();
 		
@@ -338,7 +351,7 @@ sector_t* RenderView(player_t* player)
 
 		iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
 
-		checkBenchActive();
+		CheckBenchActive();
 
 		// reset statistics counters
 		ResetProfilingData();
@@ -404,7 +417,7 @@ sector_t* RenderView(player_t* player)
 
 		screen->ImageTransitionScene(true); // Only relevant for Vulkan.
 
-		retsec = RenderViewpoint(r_viewpoint, player->camera, NULL, r_viewpoint.FieldOfView.Degrees(), ratio, fovratio, true, true);
+		retsec = RenderViewpoint(r_viewpoint, player->camera, NULL, r_viewpoint.GetFieldOfView().Degrees(), ratio, fovratio, true, true);
 	}
 	All.Unclock();
 	return retsec;

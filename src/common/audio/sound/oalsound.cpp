@@ -59,7 +59,7 @@ CUSTOM_CVAR(Int, snd_channels, 128, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)	// number 
 }
 CVAR(Bool, snd_waterreverb, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) 
 CVAR (String, snd_aldevice, "Default", CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-CVAR (Bool, snd_efx, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR (Bool, snd_efx, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (String, snd_alresampler, "Default", CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 #ifdef _WIN32
@@ -1193,6 +1193,10 @@ SoundHandle OpenALSoundRenderer::LoadSoundRaw(uint8_t *sfxdata, int length, int 
 
 SoundHandle OpenALSoundRenderer::LoadSound(uint8_t *sfxdata, int length, int def_loop_start, int def_loop_end)
 {
+#ifdef __MOBILE__ // 3D sounds are very loud without making the sound mono. This needs to be fixed because it is making all sounds mono for now..
+	bool monoize = true;
+#endif
+
 	SoundHandle retval = { NULL };
 	ALenum format = AL_NONE;
 	ChannelConfig chans;
@@ -1217,7 +1221,11 @@ SoundHandle OpenALSoundRenderer::LoadSound(uint8_t *sfxdata, int length, int def
 
 	SoundDecoder_GetInfo(decoder, &srate, &chans, &type);
 	int samplesize = 1;
+#ifdef __MOBILE__
+	if (chans == ChannelConfig_Mono || monoize)
+#else
 	if (chans == ChannelConfig_Mono)
+#endif
 	{
 		if (type == SampleType_UInt8) format = AL_FORMAT_MONO8, samplesize = 1;
 		if (type == SampleType_Int16) format = AL_FORMAT_MONO16, samplesize = 2;
@@ -1252,6 +1260,38 @@ SoundHandle OpenALSoundRenderer::LoadSound(uint8_t *sfxdata, int length, int def
 		return retval;
 	}
 	SoundDecoder_Close(decoder);
+
+#ifdef __MOBILE__
+	if(chans != ChannelConfig_Mono && monoize)
+	{
+		size_t chancount = GetChannelCount(chans);
+		size_t frames = data.size() / chancount /
+						(type == SampleType_Int16 ? 2 : 1);
+		if(type == SampleType_Int16)
+		{
+			short *sfxdata = (short*)&data[0];
+			for(size_t i = 0;i < frames;i++)
+			{
+				int sum = 0;
+				for(size_t c = 0;c < chancount;c++)
+					sum += sfxdata[i*chancount + c];
+				sfxdata[i] = short(sum / chancount);
+			}
+		}
+		else if(type == SampleType_UInt8)
+		{
+			uint8_t *sfxdata = (uint8_t*)&data[0];
+			for(size_t i = 0;i < frames;i++)
+			{
+				int sum = 0;
+				for(size_t c = 0;c < chancount;c++)
+					sum += sfxdata[i*chancount + c] - 128;
+				sfxdata[i] = uint8_t((sum / chancount) + 128);
+			}
+		}
+		data.resize((data.size()/chancount));
+	}
+#endif
 
 	ALenum err;
 	ALuint buffer = 0;
@@ -1906,6 +1946,10 @@ void OpenALSoundRenderer::SetSfxPaused(bool paused, int slot)
 	}
 }
 
+#ifdef __ANDROID__
+extern "C" void OpenSL_android_set_pause( ALCdevice_struct *Device, int pause );
+#endif
+
 void OpenALSoundRenderer::SetInactive(SoundRenderer::EInactiveState state)
 {
 	switch(state)
@@ -1917,6 +1961,9 @@ void OpenALSoundRenderer::SetInactive(SoundRenderer::EInactiveState state)
 				alcDeviceResumeSOFT(Device);
 				getALCError(Device);
 			}
+#ifdef __ANDROID__
+            OpenSL_android_set_pause( Device, 0 );
+#endif
 			break;
 
 		case SoundRenderer::INACTIVE_Complete:
@@ -1928,6 +1975,9 @@ void OpenALSoundRenderer::SetInactive(SoundRenderer::EInactiveState state)
 			/* fall-through */
 		case SoundRenderer::INACTIVE_Mute:
 			alListenerf(AL_GAIN, 0.0f);
+#ifdef __ANDROID__
+            OpenSL_android_set_pause( Device, 1 );
+#endif
 			break;
 	}
 }

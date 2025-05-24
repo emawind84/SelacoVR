@@ -99,10 +99,13 @@
 #include "actorinlines.h"
 #include "a_dynlight.h"
 #include "fragglescript/t_fs.h"
+#include "hw_vrmodes.h"
 #include "shadowinlines.h"
 #include "model.h"
 #include "d_net.h"
 #include "p_linetracedata.h"
+
+#include <QzDoom/VrCommon.h>
 
 // MACROS ------------------------------------------------------------------
 
@@ -120,6 +123,10 @@ static void PlayerLandedOnThing (AActor *mo, AActor *onmobj);
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
 EXTERN_CVAR (Int,  cl_rockettrails)
+EXTERN_CVAR (Bool, use_action_spawn_yzoffset)
+// TODO gzdoom vr stuff
+EXTERN_CVAR(Float, vr_missile_haptic_level)
+
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
@@ -919,6 +926,17 @@ bool P_GiveBody(AActor *actor, int num, int max)
 				{
 					player->health = max;
 				}
+
+				if (player == &players[consoleplayer])
+				{
+					float level = (float)(0.4 + (0.6 * (num / 100.0)));
+					auto vrmode = VRMode::GetVRMode(true);
+					vrmode->Vibrate(100, 0, level); // left
+					vrmode->Vibrate(100, 1, level); // right
+
+					VR_HapticEvent("healstation", 0, 100 * level * C_GetExternalHapticLevelValue("healstation"), 0, 0);
+				}
+
 				actor->health = player->health;
 				return true;
 			}
@@ -1946,7 +1964,7 @@ bool P_SeekerMissile (AActor *actor, DAngle thresh, DAngle turnMax, bool precise
 #define STOPSPEED			(0x1000/65536.)
 #define CARRYSTOPSPEED		((0x1000*32/3)/65536.)
 
-static double P_XYMovement (AActor *mo, DVector2 scroll) 
+double P_XYMovement (AActor *mo, DVector2 scroll) 
 {
 	static int pushtime = 0;
 	bool bForceSlide = !scroll.isZero();
@@ -2405,7 +2423,7 @@ static double P_XYMovement (AActor *mo, DVector2 scroll)
 		return Oldfloorz;
 	}
 
-	if (mo->Z() > mo->floorz && !(mo->flags2 & MF2_ONMOBJ) &&
+	if (mo->Z() > mo->floorz + 2 && !(mo->flags2 & MF2_ONMOBJ) &&
 		!mo->IsNoClip2() &&
 		(!(mo->flags2 & MF2_FLY) || !(mo->flags & MF_NOGRAVITY)) &&
 		!mo->waterlevel)
@@ -2589,7 +2607,7 @@ static void P_ZMovement (AActor *mo, double oldfloorz)
 				mo->AddZ(mo->FloatSpeed);
 		}
 	}
-	if (mo->player && (mo->flags & MF_NOGRAVITY) && (mo->Z() > mo->floorz))
+	if (mo->player && (mo->flags & MF_NOGRAVITY) && (mo->Z() > mo->floorz + 2))
 	{
 		FBaseCVar* const fViewBobCvar = G_GetUserCVar(int(mo->player - players),"FViewBob");
 		bool const fViewBob = fViewBobCvar->GetGenericRep(fViewBobCvar->GetRealType()).Bool;
@@ -2630,7 +2648,7 @@ static void P_ZMovement (AActor *mo, double oldfloorz)
 //
 // clip movement
 //
-	if (mo->Z() <= mo->floorz)
+	if (mo->Z() <= mo->floorz + 2)
 	{	// Hit the floor
 		if ((!mo->player || !(mo->player->cheats & CF_PREDICTING)) &&
 			mo->Sector->SecActTarget != NULL &&
@@ -2641,7 +2659,7 @@ static void P_ZMovement (AActor *mo, double oldfloorz)
 		P_CheckFor3DFloorHit(mo, mo->floorz, true);
 		// [RH] Need to recheck this because the sector action might have
 		// teleported the actor so it is no longer below the floor.
-		if (mo->Z() <= mo->floorz)
+		if (mo->Z() <= mo->floorz + 2)
 		{
 			mo->BlockingFloor = mo->Sector;
 			if ((mo->flags & MF_MISSILE) && !(mo->flags & MF_NOCLIP))
@@ -2908,7 +2926,7 @@ static void PlayerLandedOnThing (AActor *mo, AActor *onmobj)
 
 void AActor::FallAndSink(double grav, double oldfloorz)
 {
-	if (Z() > floorz && !(flags & MF_NOGRAVITY))
+	if (Z() > floorz + 2 && !(flags & MF_NOGRAVITY))
 	{
 		double startvelz = Vel.Z;
 
@@ -3678,6 +3696,10 @@ void AActor::SetAngle(DAngle ang, int fflags)
 		else
 		{
 			Angles.Yaw = ang;
+		}
+		if (player != nullptr)
+		{
+			resetDoomYaw = true;
 		}
 	}
 	
@@ -5344,7 +5366,8 @@ DEFINE_ACTION_FUNCTION(AActor, AdjustFloorClip)
 //
 EXTERN_CVAR (Bool, chasedemo)
 EXTERN_CVAR(Bool, sv_singleplayerrespawn)
-EXTERN_CVAR(Float, fov)
+
+float QzDoom_GetFOV();
 
 extern bool demonew;
 
@@ -7009,24 +7032,24 @@ DEFINE_ACTION_FUNCTION(AActor, CheckMissileSpawn)
 //
 //---------------------------------------------------------------------------
 
-void P_PlaySpawnSound(AActor *missile, AActor *spawner)
+void P_PlaySpawnSound(AActor *missile, AActor *spawner, int channel, EChanFlags flags)
 {
 	if (missile->SeeSound != NO_SOUND)
 	{
 		if (!(missile->flags & MF_SPAWNSOUNDSOURCE))
 		{
-			S_Sound (missile, CHAN_VOICE, 0, missile->SeeSound, 1, ATTN_NORM);
+			S_Sound (missile, channel, flags, missile->SeeSound, 1, ATTN_NORM);
 		}
 		else if (spawner != NULL)
 		{
-			S_Sound (spawner, CHAN_WEAPON, 0, missile->SeeSound, 1, ATTN_NORM);
+			S_Sound (spawner, channel, flags, missile->SeeSound, 1, ATTN_NORM);
 		}
 		else
 		{
 			// If there is no spawner use the spawn position.
 			// But not in a silenced sector.
 			if (!(missile->Sector->Flags & SECF_SILENT))
-				S_Sound (missile->Level, missile->Pos(), CHAN_WEAPON, 0, missile->SeeSound, 1, ATTN_NORM);
+				S_Sound (missile->Level, missile->Pos(), channel, flags, missile->SeeSound, 1, ATTN_NORM);
 		}
 	}
 }
@@ -7183,6 +7206,7 @@ AActor *P_OldSpawnMissile(AActor *source, AActor *owner, AActor *dest, PClassAct
 	}
 	AActor *th = Spawn (source->Level, type, source->PosPlusZ(32.), ALLOW_REPLACE);
 
+	if (th == nullptr) return nullptr;
 	P_PlaySpawnSound(th, source);
 	th->target = owner;		// record missile's originator
 
@@ -7276,6 +7300,7 @@ AActor *P_SpawnMissileAngleZSpeed (AActor *source, double z,
 
 	mo = Spawn (source->Level, type, source->PosAtZ(z), ALLOW_REPLACE);
 
+	if (mo == nullptr) return nullptr;
 	P_PlaySpawnSound(mo, source);
 	if (owner == NULL) owner = source;
 	mo->target = owner;
@@ -7305,17 +7330,43 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnMissileAngleZSpeed)
 }
 
 
-AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target)
+AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target, DAngle angle, int aimflags)
 {
-	AActor *other = Spawn(source->Level, type, source->Pos(), ALLOW_REPLACE);
-
 	if (source == nullptr || type == nullptr)
 	{
 		return nullptr;
 	}
 
+	DAngle an = angle;
+	DAngle pitch = source->Angles.Pitch;
+	DVector3 pos = source->Pos();
+	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
+	{
+		if (aimflags & ALF_ISOFFHAND)
+		{
+			pos = source->player->mo->OffhandPos;
+			DVector3 dir = source->player->mo->OffhandDir(source, an, pitch);
+			an = dir.Angle();
+			pitch = dir.Pitch();
+		}
+		else
+		{
+			pos = source->player->mo->AttackPos;
+			DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
+			an = dir.Angle();
+			pitch = dir.Pitch();
+		}
+	}
+
+	AActor *other = Spawn(source->Level, type, pos, ALLOW_REPLACE);
+
+	if (other == nullptr || source == nullptr || type == nullptr)
+	{
+		return nullptr;
+	}
+
 	other->target = target;
-	other->Angles.Yaw = source->Angles.Yaw;
+	other->Angles.Yaw = an;
 	other->VelFromAngle();
 
 	if (other->flags4 & MF4_SPECTRAL)
@@ -7332,7 +7383,10 @@ AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target)
 
 	if (P_CheckMissileSpawn(other, source->radius))
 	{
-		DAngle pitch = P_AimLineAttack(source, source->Angles.Yaw, 1024.);
+		if (source->player == NULL || !source->player->mo->OverrideAttackPosDir)
+		{
+			pitch = P_AimLineAttack(source, angle, 1024., NULL, nullAngle, aimflags);
+		}
 		other->Vel.Z = -other->Speed * pitch.Sin();
 		return other;
 	}
@@ -7344,7 +7398,10 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnSubMissile)
 	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_CLASS(cls, AActor);
 	PARAM_OBJECT_NOT_NULL(target, AActor);
-	ACTION_RETURN_OBJECT(P_SpawnSubMissile(self, cls, target));
+	PARAM_INT(aimflags);
+	PARAM_ANGLE(angle);
+	if (angle == DAngle::fromDeg(1e37)) angle = self->Angles.Yaw;
+	ACTION_RETURN_OBJECT(P_SpawnSubMissile(self, cls, target, angle, aimflags));
 }
 /*
 ================
@@ -7354,9 +7411,10 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnSubMissile)
 = Tries to aim at a nearby monster
 ================
 */
+EXTERN_CVAR(Int, vr_control_scheme)
 
 AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
-							  PClassActor *type, DAngle angle, FTranslatedLineTarget *pLineTarget, AActor **pMissileActor,
+							  PClassActor *type, DAngle angle, DAngle p, FTranslatedLineTarget *pLineTarget, AActor **pMissileActor,
 							  bool nofreeaim, bool noautoaim, int aimflags)
 {
 	if (source == nullptr || type == nullptr)
@@ -7367,17 +7425,21 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 
 	static const double angdiff[3] = { -5.625, 5.625, 0 };
 	DAngle an = angle;
-	DAngle pitch;
+	DAngle pitch = p;
 	FTranslatedLineTarget scratch;
 	AActor *defaultobject = GetDefaultByType(type);
 	DAngle vrange = DAngle::fromDeg(nofreeaim ? 35. : 0.);
-
+	AActor *weapon = nullptr;
+	if (source->player)
+	{
+		weapon = !!(aimflags & ALF_ISOFFHAND) ? source->player->OffhandWeapon : source->player->ReadyWeapon;
+	}
 	if (!pLineTarget) pLineTarget = &scratch;
-	if (!(aimflags & ALF_NOWEAPONCHECK) && source->player && source->player->ReadyWeapon && ((source->player->ReadyWeapon->IntVar(NAME_WeaponFlags) & WIF_NOAUTOAIM) || noautoaim))
+	if (!(aimflags & ALF_NOWEAPONCHECK) && weapon != nullptr && ((weapon->IntVar(NAME_WeaponFlags) & WIF_NOAUTOAIM) || noautoaim))
 	{
 		// Keep exactly the same angle and pitch as the player's own aim
 		an = angle;
-		pitch = source->Angles.Pitch;
+		pitch = p;
 		pLineTarget->linetarget = NULL;
 
 		// @Cockatrice - Add camera offset pitch
@@ -7419,22 +7481,73 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 		}
 	}
 
-	if (z != ONFLOORZ && z != ONCEILINGZ)
+	DVector3 pos = source->Vec2OffsetZ(x, y, z);
+	if (pos.Z != ONFLOORZ && pos.Z != ONCEILINGZ)
 	{
 		// Doom spawns missiles 4 units lower than hitscan attacks for players.
-		z += source->Center() - source->Floorclip + source->AttackOffset(-4);
+		pos.Z += source->Center() - source->Floorclip + source->AttackOffset(-4);
 		// Do not fire beneath the floor.
-		if (z < source->floorz)
+		if (pos.Z < source->floorz)
 		{
-			z = source->floorz;
+			pos.Z = source->floorz;
 		}
 	}
-	DVector3 pos = source->Vec2OffsetZ(x, y, z);
+	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
+	{
+		DVector3 dir;
+		DVector3 xoffsetDir;
+		DVector3 yoffsetDir;
+		DVector3 zoffsetDir;
+		if (aimflags & ALF_ISOFFHAND)
+		{
+			pos = source->player->mo->OffhandPos;
+			dir = source->player->mo->OffhandDir(source, angle, pitch);
+			xoffsetDir = source->player->mo->OffhandDir(source, source->Angles.Yaw, source->Angles.Pitch);
+			yoffsetDir = source->player->mo->OffhandDir(source, source->Angles.Yaw - DAngle::fromDeg(90.), source->Angles.Pitch);
+			zoffsetDir = source->player->mo->OffhandDir(source, source->Angles.Yaw, source->Angles.Pitch + DAngle::fromDeg(90.));
+			an = dir.Angle();
+			pitch = dir.Pitch();
+		}
+		else
+		{
+			pos = source->player->mo->AttackPos;
+			dir = source->player->mo->AttackDir(source, angle, pitch);
+			xoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch);
+			yoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw - DAngle::fromDeg(90.), source->Angles.Pitch);
+			zoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch + DAngle::fromDeg(90.));
+			an = dir.Angle();
+			pitch = dir.Pitch();
+		}
+
+		if (!use_action_spawn_yzoffset)
+			y = z = 0;
+
+		pos += DVector3(
+			x * xoffsetDir.Angle().Cos() * xoffsetDir.Pitch().Cos(),
+			x * xoffsetDir.Angle().Sin() * xoffsetDir.Pitch().Cos(),
+			x * -xoffsetDir.Pitch().Sin()
+		);
+
+		pos += DVector3(
+			y * yoffsetDir.Angle().Cos() * yoffsetDir.Pitch().Cos(),
+			y * yoffsetDir.Angle().Sin() * yoffsetDir.Pitch().Cos(),
+			y * -yoffsetDir.Pitch().Sin()
+		);
+
+		pos += DVector3(
+			z * zoffsetDir.Pitch().Cos() * zoffsetDir.Angle().Cos(), 
+			z * zoffsetDir.Pitch().Cos() * zoffsetDir.Angle().Sin(),
+			z * -zoffsetDir.Pitch().Sin()
+		);
+	}
 	AActor *MissileActor = Spawn (source->Level, type, pos, ALLOW_REPLACE);
+
+	if (MissileActor == nullptr) return nullptr;
 	if (pMissileActor) *pMissileActor = MissileActor;
-	P_PlaySpawnSound(MissileActor, source);
+	P_PlaySpawnSound(MissileActor, source, !!(aimflags & ALF_ISOFFHAND) ? CHAN_OFFWEAPON : CHAN_WEAPON, CHANF_OVERLAP);
 	MissileActor->target = source;
 	MissileActor->Angles.Yaw = an;
+	MissileActor->Angles.Pitch = pitch;
 	if (MissileActor->flags3 & (MF3_FLOORHUGGER | MF3_CEILINGHUGGER))
 	{
 		MissileActor->VelFromAngle();
@@ -7450,6 +7563,23 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 	}
 	if (P_CheckMissileSpawn (MissileActor, source->radius))
 	{
+		if (MissileActor->DamageFunc != nullptr || // If it causes damage...
+		    MissileActor->DamageType.GetIndex() != 0 ||
+		    MissileActor->SeeSound != NO_SOUND) // .. or if it plays a sound, we might as well play a haptic
+		{
+			//Haptics
+			long rightHanded = vr_control_scheme < 10;
+			rightHanded = (aimflags & ALF_ISOFFHAND) ? 1 - rightHanded : rightHanded;
+			auto vrmode = VRMode::GetVRMode(true);
+			vrmode->Vibrate(150, rightHanded ? 1 : 0, 0.8);
+			VR_HapticEvent("fire_weapon", rightHanded ? 2 : 1, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
+			if (weaponStabilised)
+			{
+				vrmode->Vibrate(150, rightHanded ? 0 : 1, 0.6);
+				VR_HapticEvent("fire_weapon", rightHanded ? 1 : 2, 100 * C_GetExternalHapticLevelValue("fire_weapon"), 0, 0);
+			}
+		}
+
 		return MissileActor;
 	}
 	return NULL;
@@ -7467,9 +7597,11 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnPlayerMissile)
 	PARAM_BOOL(nofreeaim);
 	PARAM_BOOL(noautoaim);
 	PARAM_INT(aimflags);
+	PARAM_ANGLE(pitch);
 	AActor *missileactor;
 	if (angle == DAngle::fromDeg(1e37)) angle = self->Angles.Yaw;
-	AActor *misl = P_SpawnPlayerMissile(self, x, y, z, type, angle, lt, &missileactor, nofreeaim, noautoaim, aimflags);
+	if (pitch == DAngle::fromDeg(1e37)) pitch = self->Angles.Pitch;
+	AActor *misl = P_SpawnPlayerMissile(self, x, y, z, type, angle, pitch, lt, &missileactor, nofreeaim, noautoaim, aimflags);
 	if (numret > 0) ret[0].SetObject(misl);
 	if (numret > 1) ret[1].SetObject(missileactor), numret = 2;
 	return numret;

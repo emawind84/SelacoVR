@@ -1198,6 +1198,17 @@ DEFINE_ACTION_FUNCTION(DOptionMenuItemCommand, DoCommand)
 	return 0;
 }
 
+DEFINE_ACTION_FUNCTION(DOptionMenuItemCommandInput, DoCommand)
+{
+	if (CurrentMenu == nullptr) return 0;
+	PARAM_PROLOGUE;
+	PARAM_STRING(cmd);
+	PARAM_BOOL(unsafe);
+	UnsafeExecutionScope scope(unsafe);
+	C_DoCommand(cmd.GetChars());
+	return 0;
+}
+
 DEFINE_ACTION_FUNCTION(_Console, HideConsole)
 {
 	C_HideConsole();
@@ -1295,6 +1306,7 @@ DEFINE_GLOBAL(AllServices)
 
 DEFINE_GLOBAL(Bindings)
 DEFINE_GLOBAL(AutomapBindings)
+DEFINE_GLOBAL(DoubleBindings)
 DEFINE_GLOBAL(generic_ui)
 
 DEFINE_FIELD(DStatusBarCore, RelTop);

@@ -264,6 +264,15 @@ class Actor : Thinker native
 	native uint freezetics;
 	native Vector2 AutomapOffsets;
 	native double LandingSpeed;
+	native readonly vector3 AttackPos;
+	native readonly double AttackPitch;
+	native readonly double AttackRoll;
+	native readonly double AttackAngle;
+	native readonly vector3 OffhandPos;
+	native readonly double OffhandPitch;
+	native readonly double OffhandRoll;
+	native readonly double OffhandAngle;
+	native readonly bool OverrideAttackPosDir;
 
 	meta String Obituary;		// Player was killed by this actor
 	meta String HitObituary;		// Player was killed by this actor in melee
@@ -765,10 +774,10 @@ class Actor : Thinker native
 	native Actor SpawnMissile(Actor dest, class<Actor> type, Actor owner = null);
 	native Actor SpawnMissileXYZ(Vector3 pos, Actor dest, Class<Actor> type, bool checkspawn = true, Actor owner = null);
 	native Actor SpawnMissileZ (double z, Actor dest, class<Actor> type);
-	native Actor SpawnMissileAngleZSpeed (double z, class<Actor> type, double angle, double vz, double speed, Actor owner = null, bool checkspawn = true);
+	native Actor SpawnMissileAngleZSpeed (double z, class<Actor> type, double angle, double vz, double speed, Actor owner = null, bool checkspawn = true, int aimflags = 0);
 	native Actor SpawnMissileZAimed (double z, Actor dest, Class<Actor> type);
-	native Actor SpawnSubMissile(Class<Actor> type, Actor target);
-	native Actor, Actor SpawnPlayerMissile(class<Actor> type, double angle = 1e37, double x = 0, double y = 0, double z = 0, out FTranslatedLineTarget pLineTarget = null, bool nofreeaim = false, bool noautoaim = false, int aimflags = 0);
+	native Actor SpawnSubMissile(Class<Actor> type, Actor target, int aimflags = 0, double angle = 1e37);
+	native Actor, Actor SpawnPlayerMissile(class<Actor> type, double angle = 1e37, double x = 0, double y = 0, double z = 0, out FTranslatedLineTarget pLineTarget = null, bool nofreeaim = false, bool noautoaim = false, int aimflags = 0, double pitch = 1e37);
 	native void SpawnTeleportFog(Vector3 pos, bool beforeTele, bool setTarget);
 	native Actor RoughMonsterSearch(int distance, bool onlyseekable = false, bool frontonly = false, double fov = 0);
 	native clearscope int ApplyDamageFactor(Name damagetype, int damage);
@@ -854,6 +863,8 @@ class Actor : Thinker native
 	native void VelIntercept(Actor targ, double speed = -1, bool aimpitch = true, bool oldvel = false, bool resetvel = false);
 	native void VelFromAngle(double speed = 1e37, double angle = 1e37);
 	native void Vel3DFromAngle(double speed, double angle, double pitch);
+	native vector3 AttackDir(Actor actor, double angle, double pitch);
+	native vector3 OffhandDir(Actor actor, double angle, double pitch);
 	native void Thrust(double speed = 1e37, double angle = 1e37);
 	native clearscope bool isFriend(Actor other) const;
 	native clearscope bool isHostile(Actor other) const;
@@ -1220,14 +1231,14 @@ class Actor : Thinker native
 
 	deprecated("2.3", "Use A_CustomBulletAttack() instead") native void A_BulletAttack();
 	native void A_WolfAttack(int flags = 0, sound whattoplay = "weapons/pistol", double snipe = 1.0, int maxdamage = 64, int blocksize = 128, int pointblank = 2, int longrange = 4, double runspeed = 160.0, class<Actor> pufftype = "BulletPuff");
-	native clearscope void A_PlaySound(sound whattoplay = "weapons/pistol", int slot = CHAN_BODY, double volume = 1.0, bool looping = false, double attenuation = ATTN_NORM, bool local = false, double pitch = 0.0);
-	native clearscope void A_StartSound(sound whattoplay, int slot = CHAN_BODY, int flags = 0, double volume = 1.0, double attenuation = ATTN_NORM, double pitch = 0.0, double startTime = 0.0);
-	native clearscope void A_StartSoundIfNotSame(sound whattoplay, sound checkagainst, int slot = CHAN_BODY, int flags = 0, double volume = 1.0, double attenuation = ATTN_NORM, double pitch = 0.0, double startTime = 0.0);
-	native clearscope SoundHandle StartSound(sound whattoplay, int slot = CHAN_BODY, int flags = 0, double volume = 1.0, double attenuation = ATTN_NORM, double pitch = 0.0, double startTime = 0.0);
-	native void A_SoundVolume(int slot, double volume);
-	native void A_SoundPitch(int slot, double pitch);
+	action native clearscope void A_PlaySound(sound whattoplay = "weapons/pistol", int slot = CHAN_BODY, double volume = 1.0, bool looping = false, double attenuation = ATTN_NORM, bool local = false, double pitch = 0.0);
+	action native clearscope void A_StartSound(sound whattoplay, int slot = CHAN_BODY, int flags = 0, double volume = 1.0, double attenuation = ATTN_NORM, double pitch = 0.0, double startTime = 0.0);
+	action native clearscope void A_StartSoundIfNotSame(sound whattoplay, sound checkagainst, int slot = CHAN_BODY, int flags = 0, double volume = 1.0, double attenuation = ATTN_NORM, double pitch = 0.0, double startTime = 0.0);
+	action native clearscope SoundHandle StartSound(sound whattoplay, int slot = CHAN_BODY, int flags = 0, double volume = 1.0, double attenuation = ATTN_NORM, double pitch = 0.0, double startTime = 0.0);
+	action native void A_SoundVolume(int slot, double volume);
+	action native void A_SoundPitch(int slot, double pitch);
 	deprecated("2.3", "Use A_StartSound(<sound>, CHAN_WEAPON) instead") void A_PlayWeaponSound(sound whattoplay, bool fullvol = false) { A_StartSound(whattoplay, CHAN_WEAPON, 0, 1, fullvol? ATTN_NONE : ATTN_NORM); }
-	native void A_StopSound(int slot = CHAN_VOICE);	// Bad default but that's what is originally was...
+	action native void A_StopSound(int slot = CHAN_VOICE);	// Bad default but that's what is originally was...
 	void A_StopAllSounds()	{	A_StopSounds(0,0);	}
 	native void A_StopSounds(int chanmin, int chanmax);
 	deprecated("2.3", "Use A_StartSound() instead") native void A_PlaySoundEx(sound whattoplay, name slot, bool looping = false, int attenuation = 0);
@@ -1279,7 +1290,7 @@ class Actor : Thinker native
 	native state A_MonsterRefire(int chance, statelabel label);
 	native void A_LookEx(int flags = 0, double minseedist = 0, double maxseedist = 0, double maxheardist = 0, double fov = 0, statelabel label = null);
 	
-	native void A_Recoil(double xyvel);
+	action native void A_Recoil(double xyvel);
 	native int A_RadiusGive(class<Inventory> itemtype, double distance, int flags, int amount = 0, class<Actor> filter = null, name species = "None", double mindist = 0, int limit = 0);
 	native void A_CustomMeleeAttack(int damage = 0, sound meleesound = "", sound misssound = "", name damagetype = "none", bool bleed = true);
 	native void A_CustomComboAttack(class<Actor> missiletype, double spawnheight, int damage, sound meleesound = "", name damagetype = "none", bool bleed = true);
@@ -1347,7 +1358,7 @@ class Actor : Thinker native
 	native void A_CopyFriendliness(int ptr_source = AAPTR_MASTER);
 
 	action native bool A_Overlay(int layer, statelabel start = null, bool nooverride = false);
-	native void A_WeaponOffset(double wx = 0, double wy = 32, int flags = 0);
+	action native void A_WeaponOffset(double wx = 0, double wy = 32, int flags = 0);
 	action native void A_OverlayScale(int layer, double wx = 1, double wy = 0, int flags = 0);
 	action native void A_OverlayRotate(int layer, double degrees = 0, int flags = 0);
 	action native void A_OverlayPivot(int layer, double wx = 0.5, double wy = 0.5, int flags = 0);

@@ -84,6 +84,9 @@ float grayscale(vec4 color)
 
 vec4 dodesaturate(vec4 texel, float factor)
 {
+#ifdef SHADER_LITE
+	return texel;
+#else
 	if (factor != 0.0)
 	{
 		float gray = grayscale(texel);
@@ -93,6 +96,7 @@ vec4 dodesaturate(vec4 texel, float factor)
 	{
 		return texel;
 	}
+#endif
 }
 
 //===========================================================================
@@ -221,7 +225,7 @@ vec4 getTexel(vec2 st)
 			return texel;
 
 	}
-
+#ifndef SHADER_LITE
 	if ((uTextureMode & TEXF_ClampY) != 0)
 	{
 		if (st.t < 0.0 || st.t > 1.0)
@@ -243,7 +247,9 @@ vec4 getTexel(vec2 st)
 	texel.rgb += uAddColor.rgb;
 	if (uObjectColor2.a == 0.0) texel *= uObjectColor;
 	else texel *= mix(uObjectColor, uObjectColor2, gradientdist.z);
-
+#else
+	texel *= uObjectColor;
+#endif
 	// Last but not least apply the desaturation from the sector's light.
 	return desaturate(texel);
 }
@@ -299,6 +305,9 @@ float R_ZDoomColormap(float light, float z)
 
 float R_DoomColormap(float light, float z)
 {
+#ifdef SHADER_LITE
+	return R_ZDoomColormap(light, z);
+#else
 	if ((uPalLightLevels >> 16) == 16) // gl_lightmode 16
 	{
 		float lightnum = clamp(light * 15.0, 0.0, 15.0);
@@ -317,6 +326,7 @@ float R_DoomColormap(float light, float z)
 	{
 		return R_ZDoomColormap(light, z);
 	}
+#endif	
 }
 
 //===========================================================================
@@ -336,7 +346,7 @@ float R_DoomLightingEquation(float light)
 	{
 		z = pixelpos.w;
 	}
-
+#ifndef SHADER_LITE
 	if ((uPalLightLevels >> 16) == 5) // gl_lightmode 5: Build software lighting emulation.
 	{
 		// This is a lot more primitive than Doom's lighting...
@@ -346,7 +356,7 @@ float R_DoomLightingEquation(float light)
 		float shade = clamp((curshade + visibility), 0.0, numShades - 1.0);
 		return clamp(shade * uLightDist, 0.0, 1.0);
 	}
-
+#endif
 	float colormap = R_DoomColormap(light, z);
 
 	if ((uPalLightLevels & 0xff) != 0)
@@ -481,7 +491,7 @@ float sampleShadowmap(vec3 planePoint, float v)
 
 	vec3 ray = planePoint;
 
-	vec2 isize = textureSize(ShadowMap, 0);
+	ivec2 isize = textureSize(ShadowMap, 0);
 	float scale = float(isize.x) * 0.25;
 
 	// Snap to shadow map texel grid
@@ -520,12 +530,12 @@ float sampleShadowmapPCF(vec3 planePoint, float v)
 	else
 		ray.y = ray.y / abs(ray.x);
 
-	vec2 isize = textureSize(ShadowMap, 0);
+	ivec2 isize = textureSize(ShadowMap, 0);
 	float scale = float(isize.x);
 	float texelPos = floor(shadowDirToU(ray.xz) * scale);
 
 	float sum = 0.0;
-	float step_count = uShadowmapFilter;
+	float step_count = float(uShadowmapFilter);
 
 	texelPos -= step_count + 0.5;
 	for (float x = -step_count; x <= step_count; x++)
@@ -542,7 +552,7 @@ float sampleShadowmapPCF(vec3 planePoint, float v)
 		sum += step(dist2, texture(ShadowMap, vec2(u, v)).x);
 		texelPos++;
 	}
-	return sum / (uShadowmapFilter * 2.0 + 1.0);
+	return sum / (float(uShadowmapFilter) * 2.0 + 1.0);
 }
 
 float shadowmapAttenuation(vec4 lightpos, float shadowIndex)
@@ -699,7 +709,7 @@ void SetMaterialProps(inout Material material, vec2 texCoord)
 vec4 getLightColor(Material material, float fogdist, float fogfactor)
 {
 	vec4 color = vColor;
-
+#ifndef SHADER_LITE
 	if (uLightLevel >= 0.0)
 	{
 		float newlightlevel = 1.0 - R_DoomLightingEquation(uLightLevel);
@@ -730,6 +740,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 	{
 		color.rgb += desaturate(uGlowBottomColor * (1.0 - glowdist.y / uGlowBottomColor.a)).rgb;
 	}
+#endif
 	color = min(color, 1.0);
 
 	// these cannot be safely applied by the legacy format where the implementation cannot guarantee that the values are set.
@@ -749,7 +760,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 	// apply other light manipulation by custom shaders, default is a NOP.
 	//
 	color = ProcessLight(material, color);
-
+	
 	//
 	// apply lightmaps
 	//
@@ -802,6 +813,36 @@ vec3 AmbientOcclusionColor()
 	return mix(uFogColor.rgb, vec3(0.0), fogfactor);
 }
 
+vec4 ApplyFadeColor(vec4 frag)
+{
+	if (uGlobalFade == 1 && uFogEnabled != 0)
+	{
+		float fogdist;
+		if (uFogEnabled == 1 || uFogEnabled == -1) 
+		{
+			// standard fog (1 or -1)
+			fogdist = max(16.0, pixelpos.w);
+		}
+		else 
+		{
+			// radial fog (2 or -2)
+			fogdist = max(16.0, distance(pixelpos.xyz, uCameraPos.xyz));
+		}
+		float visibility = exp(-pow((fogdist * uGlobalFadeDensity), uGlobalFadeGradient));
+		visibility = clamp(visibility, 0.0, 1.0);
+		vec4 fogcolor = uGlobalFadeColor;
+		if (uGlobalFadeMode == -1)
+		{
+			frag = vec4(mix(fogcolor.rgb, frag.rgb, visibility), frag.a * visibility);
+		}
+		else if (uGlobalFadeMode == 2)
+		{
+			frag = vec4(fogcolor.rgb, frag.a) * visibility;
+		}
+	}
+	return frag;
+}
+
 //===========================================================================
 //
 // Main shader routine
@@ -811,7 +852,7 @@ vec3 AmbientOcclusionColor()
 void main()
 {
 #ifdef NO_CLIPDISTANCE_SUPPORT
-	if (ClipDistanceA.x < 0 || ClipDistanceA.y < 0 || ClipDistanceA.z < 0 || ClipDistanceA.w < 0 || ClipDistanceB.x < 0) discard;
+	if (ClipDistanceA.x < 0.0 || ClipDistanceA.y < 0.0 || ClipDistanceA.z < 0.0 || ClipDistanceA.w < 0.0 || ClipDistanceB.x < 0.0) discard;
 #endif
 
 #ifndef LEGACY_USER_SHADER
@@ -841,7 +882,11 @@ void main()
 	{
 		float fogdist = 0.0;
 		float fogfactor = 0.0;
-
+#ifdef SHADER_LITE
+		fogdist = max(16.0, pixelpos.w);
+		fogfactor = exp2 (uFogDensity * fogdist);
+		frag = getLightColor(material, fogdist, fogfactor);
+#else
 		//
 		// calculate fog factor
 		//
@@ -874,18 +919,21 @@ void main()
 		{
 			frag = vec4(uFogColor.rgb, (1.0 - fogfactor) * frag.a * 0.75 * vColor.a);
 		}
+#endif
+		frag = ApplyFadeColor(frag);
 	}
 	else // simple 2D (uses the fog color to add a color overlay)
 	{
 		if ((uTextureMode & 0xffff) == 7)
 		{
 			float gray = grayscale(frag);
-			vec4 cm = (uObjectColor + gray * (uAddColor - uObjectColor)) * 2;
+			vec4 cm = (uObjectColor + gray * (uAddColor - uObjectColor)) * 2.0;
 			frag = vec4(clamp(cm.rgb, 0.0, 1.0), frag.a);
 		}
 			frag = frag * ProcessLight(material, vColor);
 		frag.rgb = frag.rgb + uFogColor.rgb;
 	}
+	
 	FragColor = frag;
 
 #ifdef DITHERTRANS

@@ -41,6 +41,7 @@
 #include "v_video.h"
 #include "printf.h"
 #include "gl_interface.h"
+#include "hw_cvars.h"
 
 static TArray<FString>  m_Extensions;
 RenderContext gl;
@@ -137,6 +138,12 @@ void gl_LoadExtensions()
 
 	float gl_version = (float)strtod(version, NULL) + 0.01f;
 
+#ifdef __MOBILE__
+	gl_version = 3.31;
+	gl.flags |= RFL_NO_CLIP_PLANES;
+	gl.flags |= RFL_INVALIDATE_BUFFER;
+	gl.flags |= RFL_SHADER_STORAGE_BUFFER;
+#endif
 	// Don't even start if it's lower than 2.0 or no framebuffers are available (The framebuffer extension is needed for glGenerateMipmapsEXT!)
 	if (gl_version < 3.3f)
 	{
@@ -153,6 +160,7 @@ void gl_LoadExtensions()
 	// first test for optional features
 	if (CheckExtension("GL_ARB_texture_compression")) gl.flags |= RFL_TEXTURE_COMPRESSION;
 	if (CheckExtension("GL_EXT_texture_compression_s3tc")) gl.flags |= RFL_TEXTURE_COMPRESSION_S3TC;
+	if (CheckExtension("GL_EXT_clip_cull_distance")) gl.flags &= ~RFL_NO_CLIP_PLANES;
 
 	if (gl_version < 4.f)
 	{
@@ -177,6 +185,14 @@ void gl_LoadExtensions()
 	}
 
 
+	if (gl_no_ssbo)
+		gl.flags &= ~RFL_SHADER_STORAGE_BUFFER;
+
+	if (gl_no_persistent_buffer)
+		gl.flags &= ~RFL_BUFFER_STORAGE;
+
+	if (gl_no_clip_planes)
+		gl.flags |= RFL_NO_CLIP_PLANES;
 
 	if (gl_version >= 4.3f || CheckExtension("GL_ARB_invalidate_subdata")) gl.flags |= RFL_INVALIDATE_BUFFER;
 	if (gl_version >= 4.3f || CheckExtension("GL_KHR_debug")) gl.flags |= RFL_DEBUG;
@@ -219,9 +235,10 @@ void gl_PrintStartupLog()
 	Printf("\nMax. texture size: %d\n", v);
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &v);
 	Printf ("Max. texture units: %d\n", v);
+#ifndef __MOBILE__
 	glGetIntegerv(GL_MAX_VARYING_FLOATS, &v);
 	Printf ("Max. varying: %d\n", v);
-
+#endif
 	if (gl.flags & RFL_SHADER_STORAGE_BUFFER)
 	{
 		glGetIntegerv(GL_MAX_COMBINED_SHADER_STORAGE_BLOCKS, &v);

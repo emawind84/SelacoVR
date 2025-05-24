@@ -224,12 +224,25 @@ DefaultOptionMenu
 	}
 }
 
+OptionMenu CommandLineProfileMenu protected
+{
+	Title "Active profile"
+	StaticText ""
+}
+
 OptionMenu "OptionsMenu" protected
 {
 	Title "$OPTMNU_TITLE"
+	Submenu "Info & Credits", 			"InfoAndCreditsMenu"
+	Submenu "Quick Menu",				"QuickMenu"
+	Submenu "VR Options",				"VROptionsMenu"
+	StaticText " "
 	Submenu "$OPTMNU_CONTROLS",			"CustomizeControls"
+	IfNotOption(OpenXR)
+	{
 	Submenu "$OPTMNU_MOUSE",			"MouseOptions"
 	Submenu "$OPTMNU_JOYSTICK",			"JoystickOptions"
+	}
 	StaticText " "
 	Submenu "$OPTMNU_PLAYER",			"NewPlayerMenu"
 	Submenu "$OPTMNU_GAMEPLAY",			"GameplayOptions"
@@ -241,19 +254,23 @@ OptionMenu "OptionsMenu" protected
 	Submenu "$OPTMNU_SOUND",			"SoundOptions"
 	Submenu "$OPTMNU_DISPLAY",			"VideoOptions"
 	Submenu "$OPTMNU_VIDEO",			"VideoModeMenu"
+	IfOption(Experimental)
+	{
+		Submenu "$OPTMNU_EXPERIMENTAL",	"ExperimentalMenu", 0, 0, Gold
+	}
 	StaticText " "
 	Submenu "$OS_TITLE", "os_Menu"
 	Option "$OPTMNU_SIMPLEON",			"m_simpleoptions", "OnOff"
-	
+	LabeledSubmenu "Active profile", "cmdlineprofile", "CommandLineProfileMenu"
 	StaticText " "
 	SafeCommand	"$OPTMNU_DEFAULTS",		"reset2defaults"
 	SafeCommand	"$OPTMNU_RESETTOSAVED",	"reset2saved"
 	SafeCommand	"$OPTMNU_WRITEINI",		"writeini"
 	
 	Command "$OPTMNU_CONSOLE",			"menuconsole"
-	Command "$OPTMNU_OPENCONFIG",		"openconfig"
-	Command "$OPTMNU_OPENSCREENSHOTS",	"openscreenshots"
-	Command "$OPTMNU_OPENSAVES",		"opensaves"
+	//Command "$OPTMNU_OPENCONFIG",		"openconfig"
+	//Command "$OPTMNU_OPENSCREENSHOTS",	"openscreenshots"
+	//Command "$OPTMNU_OPENSAVES",		"opensaves"
 	StaticText " "
 }
 
@@ -377,25 +394,50 @@ ListMenu "PlayerMenu"
 
 OptionValue "Layouts"
 {
-	0, "$OPTVAL_MODERN"
-	1, "$OPTVAL_CLASSICZ"
-	2, "$OPTVAL_MODERNLEFT"
+	0, "QZD Pre 1.3.0"
+	1, "QZD Dual Wield"
+	2, "QZD Classic"
+	3, "QZD Koopa"
+	4, "$OPTVAL_MODERN"
+	5, "$OPTVAL_CLASSICZ"
+	6, "$OPTVAL_MODERNLEFT"
 }
 
 OptionMenu "CustomizeControls" protected
 {
 	Title "$CNTRLMNU_TITLE"
 
-	Submenu    "$CNTRLMNU_ACTION"      , "ActionControlsMenu"
-	Submenu    "$CNTRLMNU_WEAPONS"     , "WeaponsControlMenu"
-	Submenu    "$CNTRLMNU_INVENTORY"   , "InventoryControlsMenu"
-	Submenu    "$MAPCNTRLMNU_CONTROLS" , "MapControlsMenu"
-	Submenu    "$CNTRLMNU_OTHER"       , "OtherControlsMenu"
-	Submenu    "$CNTRLMNU_POPUPS"      , "StrifeControlsMenu"
-	Submenu    "$MNU_MULTIPLAYER"        , "ChatControlsMenu"
-	StaticText ""
+	Option "$CNTRLMNU_SHOWDBLBINDINGS" , "menu_showdoublebindings", "YesNo"
+	StaticText " "
+	IfOption(DoubleBindingMenu)
+	{
+		StaticText "$CNTRLMNU_DOUBLEBINDINGS", gold
+		Submenu    "$CNTRLMNU_ACTION"      , "ActionDoubleControlsMenu"
+		Submenu    "$CNTRLMNU_WEAPONS"     , "WeaponsDoubleControlMenu"
+		Submenu    "$CNTRLMNU_INVENTORY"   , "InventoryDoubleControlsMenu"
+		Submenu    "$CNTRLMNU_OTHER"       , "OtherDoubleControlsMenu"
+		Submenu    "$CNTRLMNU_POPUPS"      , "PopupDoubleControlsMenu"
+		Submenu    "$MNU_MULTIPLAYER"      , "ChatDoubleControlsMenu"
+	}
+	else
+	{
+		StaticText "$CNTRLMNU_SINGLEBINDINGS", gold
+		Submenu    "$CNTRLMNU_ACTION"      , "ActionControlsMenu"
+		Submenu    "$CNTRLMNU_WEAPONS"     , "WeaponsControlMenu"
+		Submenu    "$CNTRLMNU_INVENTORY"   , "InventoryControlsMenu"
+		Submenu    "$MAPCNTRLMNU_CONTROLS" , "MapControlsMenu"
+		Submenu    "$CNTRLMNU_OTHER"       , "OtherControlsMenu"
+		Submenu    "$CNTRLMNU_POPUPS"      , "PopupControlsMenu"
+		Submenu    "$MNU_MULTIPLAYER"      , "ChatControlsMenu"
+	}
+
+	StaticText " "
 	Option "$CNTRLMNU_LAYOUT",			"cl_defaultconfiguration", "Layouts"
 	SafeCommand "$OPTMNU_DEFAULTS",		"resetb2defaults"
+	SafeCommand "$OPTMNU_UPDATEMISSING","binddefaults"
+	StaticText " "
+	Option "$CNTRLMNU_CUSTOMBINDS",		"cl_custombinds", "OnOff"
+	Option "$CNTRLMNU_BINDSOVERRIDE",	"cl_custombinds_override", "OnOff", "cl_custombinds"
 }
 
 OptionMenu "ActionControlsMenu" protected
@@ -407,6 +449,8 @@ OptionMenu "ActionControlsMenu" protected
 	StaticText ""
 	Control    "$CNTRLMNU_ATTACK"           , "+attack"
 	Control    "$CNTRLMNU_ALTATTACK"        , "+altattack"
+	Control    "$CNTRLMNU_OH_ATTACK"        , "+oh_attack"
+	Control    "$CNTRLMNU_OH_ALTATTACK"     , "+oh_altatk"
 	Control    "$CNTRLMNU_RELOAD"           , "+reload"
 	Control    "$CNTRLMNU_ZOOM"             , "+zoom"
 
@@ -445,6 +489,122 @@ OptionMenu "ActionControlsMenu" protected
 	Control    "$CNTRLMNU_RUN"              , "+speed"
 	Control    "$CNTRLMNU_TOGGLERUN"        , "toggle cl_run"
 	Control    "$CNTRLMNU_STRAFE"           , "+strafe"
+
+	StaticText ""
+	StaticText "Advanced reloading", gold
+	Control    "$CNTRLMNU_MAINHANDRELOAD"    , "+mh_reload"
+	Control    "$CNTRLMNU_OFFHANDRELOAD"     , "+oh_reload"
+}
+
+OptionMenu "ActionDoubleControlsMenu" protected
+{
+	Title "$CNTRLMNU_ACTION_TITLE"
+	ScrollTop 2
+	StaticTextSwitchable "$CNTRLMNU_SWITCHTEXT1", "$CNTRLMNU_SWITCHTEXT2", "ControlMessage"
+
+	StaticText ""
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L1", brown
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L2", brown
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_ATTACK"           , "+attack"
+	DoubleControl    "$CNTRLMNU_ALTATTACK"        , "+altattack"
+	DoubleControl    "$CNTRLMNU_OH_ATTACK"        , "+oh_attack"
+	DoubleControl    "$CNTRLMNU_OH_ALTATTACK"     , "+oh_altatk"
+	DoubleControl    "$CNTRLMNU_RELOAD"           , "+reload"
+	DoubleControl    "$CNTRLMNU_ZOOM"             , "+zoom"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_USE"              , "+use"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_FORWARD"          , "+forward"
+	DoubleControl    "$CNTRLMNU_BACK"             , "+back"
+	DoubleControl    "$CNTRLMNU_MOVELEFT"         , "+moveleft"
+	DoubleControl    "$CNTRLMNU_MOVERIGHT"        , "+moveright"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_TURNLEFT"         , "+left"
+	DoubleControl    "$CNTRLMNU_TURNRIGHT"        , "+right"
+	DoubleControl    "$CNTRLMNU_TURN180"          , "turn180"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_JUMP"             , "+jump"
+	DoubleControl    "$CNTRLMNU_CROUCH"           , "+crouch"
+	DoubleControl    "$CNTRLMNU_TOGGLECROUCH"     , "crouch"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_MOVEUP"           , "+moveup"
+	DoubleControl    "$CNTRLMNU_MOVEDOWN"         , "+movedown"
+	DoubleControl    "$CNTRLMNU_LAND"             , "land"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_MOUSELOOK"        , "+mlook"
+	DoubleControl    "$CNTRLMNU_KEYBOARDLOOK"     , "+klook"
+	DoubleControl    "$CNTRLMNU_LOOKUP"           , "+lookup"
+	DoubleControl    "$CNTRLMNU_LOOKDOWN"         , "+lookdown"
+	DoubleControl    "$CNTRLMNU_CENTERVIEW"       , "centerview"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_RUN"              , "+speed"
+	DoubleControl    "$CNTRLMNU_TOGGLERUN"        , "toggle cl_run"
+	DoubleControl    "$CNTRLMNU_STRAFE"           , "+strafe"
+
+	StaticText ""
+	StaticText "Advanced reloading", gold
+	DoubleControl    "$CNTRLMNU_MAINHANDRELOAD"    , "+mh_reload"
+	DoubleControl    "$CNTRLMNU_OFFHANDRELOAD"     , "+oh_reload"
+}
+
+OptionMenu "ActionDoubleControlsMenu" protected
+{
+	Title "$CNTRLMNU_ACTION_TITLE"
+	ScrollTop 2
+	StaticTextSwitchable "$CNTRLMNU_SWITCHTEXT1", "$CNTRLMNU_SWITCHTEXT2", "ControlMessage"
+
+	StaticText ""
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L1", brown
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L2", brown
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_ATTACK"           , "+attack"
+	DoubleControl    "$CNTRLMNU_ALTATTACK"        , "+altattack"
+	DoubleControl    "$CNTRLMNU_RELOAD"           , "+reload"
+	DoubleControl    "$CNTRLMNU_ZOOM"             , "+zoom"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_USE"              , "+use"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_FORWARD"          , "+forward"
+	DoubleControl    "$CNTRLMNU_BACK"             , "+back"
+	DoubleControl    "$CNTRLMNU_MOVELEFT"         , "+moveleft"
+	DoubleControl    "$CNTRLMNU_MOVERIGHT"        , "+moveright"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_TURNLEFT"         , "+left"
+	DoubleControl    "$CNTRLMNU_TURNRIGHT"        , "+right"
+	DoubleControl    "$CNTRLMNU_TURN180"          , "turn180"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_JUMP"             , "+jump"
+	DoubleControl    "$CNTRLMNU_CROUCH"           , "+crouch"
+	DoubleControl    "$CNTRLMNU_TOGGLECROUCH"     , "crouch"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_MOVEUP"           , "+moveup"
+	DoubleControl    "$CNTRLMNU_MOVEDOWN"         , "+movedown"
+	DoubleControl    "$CNTRLMNU_LAND"             , "land"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_MOUSELOOK"        , "+mlook"
+	DoubleControl    "$CNTRLMNU_KEYBOARDLOOK"     , "+klook"
+	DoubleControl    "$CNTRLMNU_LOOKUP"           , "+lookup"
+	DoubleControl    "$CNTRLMNU_LOOKDOWN"         , "+lookdown"
+	DoubleControl    "$CNTRLMNU_CENTERVIEW"       , "centerview"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_RUN"              , "+speed"
+	DoubleControl    "$CNTRLMNU_TOGGLERUN"        , "toggle cl_run"
+	DoubleControl    "$CNTRLMNU_STRAFE"           , "+strafe"
 }
 
 OptionMenu "ChatControlsMenu" protected
@@ -462,6 +622,24 @@ OptionMenu "ChatControlsMenu" protected
 	Control    "$CNTRLMNU_TEAMSAY" , "messagemode2"
 }
 
+OptionMenu "ChatDoubleControlsMenu" protected
+{
+	Title "$MNU_MULTIPLAYER"
+	ScrollTop 2
+	StaticTextSwitchable "$CNTRLMNU_SWITCHTEXT1", "$CNTRLMNU_SWITCHTEXT2", "ControlMessage"
+
+	StaticText ""
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L1", brown
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L2", brown
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_SCOREBOARD"       , "+showscores"
+	DoubleControl    "$CNTRLMNU_TOGGLESCOREBOARD" , "togglescoreboard"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_SAY"     , "messagemode"
+	DoubleControl    "$CNTRLMNU_TEAMSAY" , "messagemode2"
+}
+
 OptionMenu "WeaponsControlMenu" protected
 {
 	Title "$CNTRLMNU_WEAPONS_TITLE"
@@ -471,6 +649,10 @@ OptionMenu "WeaponsControlMenu" protected
 	StaticText ""
 	Control    "$CNTRLMNU_NEXTWEAPON"     , "weapnext"
 	Control    "$CNTRLMNU_PREVIOUSWEAPON" , "weapprev"
+	Control    "$CNTRLMNU_OFFHAND_NEXTWEAPON"     , "weapnext 1"
+	Control    "$CNTRLMNU_OFFHAND_PREVIOUSWEAPON" , "weapprev 1"
+	Control    "$CNTRLMNU_SWITCH_TO_OFFHAND", "switchhand 1"
+	Control    "$CNTRLMNU_SWITCH_TO_MAINHAND", "switchhand 0"
 
 	StaticText ""
 	Control    "$CNTRLMNU_SLOT1"          , "slot 1"
@@ -489,6 +671,42 @@ OptionMenu "WeaponsControlMenu" protected
 	Control    "$CNTRLMNU_USER2"            , "+user2"
 	Control    "$CNTRLMNU_USER3"            , "+user3"
 	Control    "$CNTRLMNU_USER4"            , "+user4"
+}
+
+OptionMenu "WeaponsDoubleControlMenu" protected
+{
+	Title "$CNTRLMNU_WEAPONS_TITLE"
+	ScrollTop 2
+	StaticTextSwitchable "$CNTRLMNU_SWITCHTEXT1", "$CNTRLMNU_SWITCHTEXT2", "ControlMessage"
+
+	StaticText ""
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L1", brown
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L2", brown
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_NEXTWEAPON"     , "weapnext"
+	DoubleControl    "$CNTRLMNU_PREVIOUSWEAPON" , "weapprev"
+	DoubleControl    "$CNTRLMNU_OFFHAND_NEXTWEAPON"     , "weapnext 1"
+	DoubleControl    "$CNTRLMNU_OFFHAND_PREVIOUSWEAPON" , "weapprev 1"
+	DoubleControl    "$CNTRLMNU_SWITCH_TO_OFFHAND", "switchhand 1"
+	DoubleControl    "$CNTRLMNU_SWITCH_TO_MAINHAND", "switchhand 0"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_SLOT1"          , "slot 1"
+	DoubleControl    "$CNTRLMNU_SLOT2"          , "slot 2"
+	DoubleControl    "$CNTRLMNU_SLOT3"          , "slot 3"
+	DoubleControl    "$CNTRLMNU_SLOT4"          , "slot 4"
+	DoubleControl    "$CNTRLMNU_SLOT5"          , "slot 5"
+	DoubleControl    "$CNTRLMNU_SLOT6"          , "slot 6"
+	DoubleControl    "$CNTRLMNU_SLOT7"          , "slot 7"
+	DoubleControl    "$CNTRLMNU_SLOT8"          , "slot 8"
+	DoubleControl    "$CNTRLMNU_SLOT9"          , "slot 9"
+	DoubleControl    "$CNTRLMNU_SLOT0"          , "slot 0"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_USER1"            , "+user1"
+	DoubleControl    "$CNTRLMNU_USER2"            , "+user2"
+	DoubleControl    "$CNTRLMNU_USER3"            , "+user3"
+	DoubleControl    "$CNTRLMNU_USER4"            , "+user4"
 }
 
 OptionMenu "InventoryControlsMenu" protected
@@ -511,6 +729,44 @@ OptionMenu "InventoryControlsMenu" protected
 
 	StaticText ""
 	Control    "$CNTRLMNU_DROPWEAPON"   , "weapdrop"
+	Control    "$CNTRLMNU_DROPOFFHANDWEAPON"   , "weapdrop 1"
+
+	IfGame(Hexen)
+	{
+		StaticText ""
+		Control    "$CNTRLMNU_USEFLECHETTE", "useflechette"
+	}
+}
+
+OptionMenu "InventoryDoubleControlsMenu" protected
+{
+	Title "$CNTRLMNU_INVENTORY_TITLE"
+	ScrollTop 2
+	StaticTextSwitchable "$CNTRLMNU_SWITCHTEXT1", "$CNTRLMNU_SWITCHTEXT2", "ControlMessage"
+
+	StaticText ""
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L1", brown
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L2", brown
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_USEITEM"      , "invuse"
+	DoubleControl    "$CNTRLMNU_USEALLITEMS"  , "invuseall"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_NEXTITEM"     , "invnext"
+	DoubleControl    "$CNTRLMNU_PREVIOUSITEM" , "invprev"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_DROPITEM"     , "invdrop"
+	DoubleControl    "$CNTRLMNU_QUERYITEM"    , "invquery"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_DROPWEAPON"   , "weapdrop"
+
+	IfGame(Hexen)
+	{
+		StaticText ""
+		DoubleControl    "$CNTRLMNU_USEFLECHETTE", "useflechette"
+	}
 }
 
 OptionMenu "OtherControlsMenu" protected
@@ -520,6 +776,7 @@ OptionMenu "OtherControlsMenu" protected
 	StaticTextSwitchable "$CNTRLMNU_SWITCHTEXT1", "$CNTRLMNU_SWITCHTEXT2", "ControlMessage"
 
 	StaticText ""
+	Control    "Toggle Cinema Mode"        , "cinemamode"
 	Control    "$CNTRLMNU_AUTOMAP"         , "togglemap"
 
 	StaticText ""
@@ -552,7 +809,49 @@ OptionMenu "OtherControlsMenu" protected
 	Control    "$CNTRLMNU_QUICKLOAD"       , "quickload"
 }
 
-OptionMenu "StrifeControlsMenu" protected
+OptionMenu "OtherDoubleControlsMenu" protected
+{
+	Title "$CNTRLMNU_OTHER_TITLE"
+	ScrollTop 2
+	StaticTextSwitchable "$CNTRLMNU_SWITCHTEXT1", "$CNTRLMNU_SWITCHTEXT2", "ControlMessage"
+
+	StaticText ""
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L1", brown
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L2", brown
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_AUTOMAP"         , "togglemap"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_CHASECAM"        , "chase"
+	DoubleControl    "$CNTRLMNU_COOPSPY"         , "spynext"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_SCREENSHOT"      , "screenshot"
+	DoubleControl    "$CNTRLMNU_CONSOLE"         , "toggleconsole"
+	DoubleControl    "$CNTRLMNU_PAUSE"           , "pause"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_DISPLAY_INC"     , "sizeup"
+	DoubleControl    "$CNTRLMNU_DISPLAY_DEC"     , "sizedown"
+	DoubleControl    "$CNTRLMNU_TOGGLE_MESSAGES" , "togglemessages"
+	DoubleControl    "$CNTRLMNU_ADJUST_GAMMA"    , "bumpgamma"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_OPEN_MAIN"       , "menu_main"
+	DoubleControl    "$CNTRLMNU_OPEN_HELP"       , "menu_help"
+	DoubleControl    "$CNTRLMNU_OPEN_SAVE"       , "menu_save"
+	DoubleControl    "$CNTRLMNU_OPEN_LOAD"       , "menu_load"
+	DoubleControl    "$CNTRLMNU_OPEN_OPTIONS"    , "menu_options"
+	DoubleControl    "$CNTRLMNU_OPEN_DISPLAY"    , "menu_display"
+	DoubleControl    "$CNTRLMNU_EXIT_TO_MAIN"    , "menu_endgame"
+	DoubleControl    "$CNTRLMNU_MENU_QUIT"       , "menu_quit"
+
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_QUICKSAVE"       , "quicksave"
+	DoubleControl    "$CNTRLMNU_QUICKLOAD"       , "quickload"
+}
+
+OptionMenu "PopupControlsMenu" protected
 {
 	Title "$CNTRLMNU_POPUPS_TITLE"
 	ScrollTop 2
@@ -562,6 +861,21 @@ OptionMenu "StrifeControlsMenu" protected
 	Control    "$CNTRLMNU_MISSION" , "showpop 1"
 	Control    "$CNTRLMNU_KEYS"    , "showpop 2"
 	Control    "$CNTRLMNU_STATS"   , "showpop 3"
+}
+
+OptionMenu "PopupDoubleControlsMenu" protected
+{
+	Title "$CNTRLMNU_POPUPS_TITLE"
+	ScrollTop 2
+	StaticTextSwitchable "$CNTRLMNU_SWITCHTEXT1", "$CNTRLMNU_SWITCHTEXT2", "ControlMessage"
+
+	StaticText ""
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L1", brown
+	StaticText "$CNTRLMNU_DBLBINDTEXT_L2", brown
+	StaticText ""
+	DoubleControl    "$CNTRLMNU_MISSION" , "showpop 1"
+	DoubleControl    "$CNTRLMNU_KEYS"    , "showpop 2"
+	DoubleControl    "$CNTRLMNU_STATS"   , "showpop 3"
 }
 
 //-------------------------------------------------------------------------------------------
@@ -686,6 +1000,12 @@ OptionMenu "JoystickConfigMenu" protected
 //
 //-------------------------------------------------------------------------------------------
 
+OptionValue ColumnMethods
+{
+	0.0, "$OPTVAL_ORIGINAL"
+	1.0, "$OPTVAL_OPTIMIZED"
+}
+
 OptionValue BlendMethods
 {
 	0.0, "$OPTVAL_CLASSIC"
@@ -785,6 +1105,12 @@ OptionMenu "SWROptions" protected
 	Option "$DSPLYMNU_GZDFULLBRIGHT",			"r_fullbrightignoresectorcolor", "OnOff"
 	Option "$DSPLYMNU_SCALEFUZZ",				"r_fuzzscale", "OnOff"
 	Option "$DSPLYMNU_MODELS",					"r_models", "OnOff"
+	Option "$DSPLYMNU_MODELSCARMACK",			"r_models_carmack", "OnOff"
+	StaticText " "
+	ScaleSlider "$DSPLYMNU_SPRITECULL",			"r_sprite_distance_cull", 0.0, 8000.0, 500.0, "Culling disabled"
+	ScaleSlider "$DSPLYMNU_LINECULL",			"r_line_distance_cull", 0.0, 16000.0, 1000.0, "Culling disabled"
+	Command "$DSPLYMNU_DISABLERENDERCULL",	"disablerendercull"
+	SafeCommand "$DSPLYMNU_RESETRENDERCULL",	"resetcvar r_sprite_distance_cull r_line_distance_cull"
 }
 
 OptionMenu "VideoOptions" protected
@@ -792,10 +1118,18 @@ OptionMenu "VideoOptions" protected
 	Title "$DSPLYMNU_TITLE"
 
 	Submenu "$DSPLYMNU_GLOPT", 			"OpenGLOptions"
-	Submenu "$DSPLYMNU_SWOPT", 			"SWROptions"
-	Submenu "$DSPLYMNU_VKOPT",			"VKOptions"
+	IfOption(SWRender)
+	{
+		Submenu "$DSPLYMNU_SWOPT", 			"SWROptions"
+	}
+	IfOption(VulkanRender)
+	{
+		Submenu "$DSPLYMNU_VKOPT",			"VKOptions"
+	}
 	Submenu "$GLMNU_TEXOPT", 			"GLTextureGLOptions"
 	Submenu "$GLMNU_DYNLIGHT",			"GLLightOptions"
+	StaticText " "
+	Option "Refresh Rate",                      "vid_refreshrate", "RefreshRate"
 	StaticText " "
 	Slider "$DSPLYMNU_SCREENSIZE",				"screenblocks", 				3.0, 12.0, 1.0, 0
 
@@ -803,8 +1137,6 @@ OptionMenu "VideoOptions" protected
 	Slider "$DSPLYMNU_BRIGHTNESS",				"vid_brightness",				-0.8,0.8, 0.05,2
 	Slider "$DSPLYMNU_CONTRAST",				"vid_contrast",	   				0.1, 3.0, 0.1
 	Slider "$DSPLYMNU_SATURATION",				"vid_saturation",  				-3.0, 3.0, 0.25, 2
-	StaticText " "
-	Slider "$DSPLYMNU_FOV",						"fov",							75.0, 120.0, 0.1, 1
 	StaticText " "
 	//Option "$DSPLYMNU_SPRITESHADOW",			"r_actorspriteshadow", "SpriteShadowModes"
 	Option "$DSPLYMNU_CUSTOMINVERTMAP",			"cl_customizeinvulmap", "OnOff"
@@ -824,6 +1156,8 @@ OptionMenu "VideoOptions" protected
 	Option "$DSPLYMNU_TELEZOOM",				"telezoom", "OnOff"
 	Slider "$DSPLYMNU_QUAKEINTENSITY",			"r_quakeintensity", 0.0, 1.0, 0.05, 2
 	Option "$DSPLYMNU_NOMONSTERINTERPOLATION",	"nomonsterinterpolation", "NoYes"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vid_refreshrate screenblocks Gamma vid_brightness vid_contrast vid_saturation vid_hwgamma fov r_actorspriteshadow cl_customizeinvulmap cl_custominvulmapcolor1 cl_custominvulmapcolor2 wipetype r_drawfuzz r_vanillatrans transsouls r_fakecontrast cl_rockettrails cl_bloodtype cl_pufftype r_maxparticles cl_maxdecals r_drawplayersprites r_deathcamera telezoom r_quakeintensity nomonsterinterpolation"
 }
 
 
@@ -919,12 +1253,11 @@ OptionMenu "HUDOptions" protected
 	StaticText " "
 	Slider "$DSPLYMNU_MOVEBOB",				"movebob", 0, 1.0, 0.05, 2
 	Slider "$DSPLYMNU_STILLBOB",			"stillbob", 0, 1.0, 0.05, 2
-	Slider "$DSPLYMNU_BOBSPEED",			"wbobspeed", 0, 2.0, 0.1
-	Slider "$DSPLYMNU_BOBFIRE",				"wbobfire", 0, 1.0, 0.1
 	StaticText " "
 	Slider "$DSPLYMNU_MENUDIM",					"dimamount", 0, 1.0, 0.05, 2
 	ColorPicker "$DSPLYMNU_DIMCOLOR",			"dimcolor"
-
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar crosshairon crosshair crosshairforce crosshairgrow crosshaircolor crosshairhealth crosshairscale displaynametags nametagcolor st_oldouch movebob stillbob wbobspeed wbobfire dimamount dimcolor"
 }
 
 OptionMenu "FlashOptions" protected
@@ -938,6 +1271,8 @@ OptionMenu "FlashOptions" protected
 	Slider "$DSPLYMNU_BLOODFADE",				"blood_fade_scalar", 0.0, 1.0, 0.05, 2
 	Slider "$DSPLYMNU_PICKUPFADE",				"pickup_fade_scalar", 0.0, 1.0, 0.05, 2
 	Slider "$DSPLYMNU_WATERFADE",				"underwater_fade_scalar", 0.0, 1.0, 0.05, 2
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar pf_hexenweaps pf_poison pf_ice pf_hazard blood_fade_scalar pickup_fade_scalar underwater_fade_scalar"
 }
 
 OptionMenu "ScalingOptions" protected
@@ -957,11 +1292,15 @@ OptionMenu "ScalingOptions" protected
 	StaticText " "
 	Option "$SCALEMNU_HUDASPECT", 				"hud_aspectscale", "OnOff"
 	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar uiscale con_scaletext con_scale st_scale hud_scale hud_althudscale hud_aspectscale"
+	StaticText " "
 	StaticText "$SCALEMNU_SCALECLASSIC", 1
 	Option "$SCALEMNU_INTER",					"inter_classic_scaling", "OnOff"
 	Option "$SCALEMNU_BORDER",					"ui_screenborder_classic_scaling", "OnOff"
 	Slider "$SCALEMNU_FACTOR",					"classic_scaling_factor", 1.0, 3.0, 0.2, 1
 	Slider "$SCALEMNU_RATIO",					"classic_scaling_pixelaspect", 1.0, 1.2, 0.2, 1
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar inter_classic_scaling ui_screenborder_classic_scaling classic_scaling_factor classic_scaling_pixelaspect"
 }
 //-------------------------------------------------------------------------------------------
 //
@@ -1045,6 +1384,8 @@ OptionMenu "AltHUDOptions" protected
 	option "$ALTHUDMNU_COORDINATEMODE",			"map_point_coordinates", "AMCoordinates"
 	option "$ALTHUDMNU_STATSNAMECOLOR",			"hudcolor_statnames", "TextColors"
 	option "$ALTHUDMNU_STATSCOLOR",				"hudcolor_stats", "TextColors"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar hud_althud hud_showsecrets hud_showmonsters hud_showitems hud_showstats hud_berserk_health hud_showweapons hud_showammo hud_showtime hud_timecolor hud_showlag hud_ammo_order hud_ammo_red hud_ammo_yellow hud_health_red hud_health_yellow hud_health_green hud_armor_red hud_armor_yellow hud_armor_green hudcolor_titl hudcolor_ltim hudcolor_time hudcolor_ttim hudcolor_xyco map_point_coordinates hudcolor_statnames hudcolor_stats"
 }
 
 //-------------------------------------------------------------------------------------------
@@ -1087,7 +1428,10 @@ OptionMenu "MiscOptions" protected
 	{
 		Option "$MISCMNU_MACFULLSCREENTOGGLE",	"k_allowfullscreentoggle", "OnOff"
 	}
-	Option "$MISCMNU_QUERYIWAD",				"queryiwad", "OnOff"
+	//Option "$MISCMNU_QUERYIWAD",				"queryiwad", "OnOff"
+	Option "$MISCMNU_DISABLEAUTOLOAD",			"disableautoload", "OnOff"
+	Option "$MISCMNU_LOADLIGHTS",				"autoloadlights", "OnOff"
+	Option "$MISCMNU_LOADBRIGHTMAPS",			"autoloadbrightmaps", "OnOff"
 	StaticText " "
 	Option "$MISCMNU_FVIEWBOB",            "fviewbob", "OnOff"
 	Option "$MISCMNU_NOCHEATS",					"nocheats", "OnOff"
@@ -1112,6 +1456,7 @@ OptionMenu "MiscOptions" protected
 
 	StaticText " "
 	Option "$MISCMNU_QUICKEXIT",				"m_quickexit", "OnOff"
+	Option "$MISCMNU_SHOWEXPERIMENTAL",			"menu_showexperimental", "OnOff"
 
 	StaticText " "
 	Option	"$DSPLYMNU_SHOWENDOOM",			"showendoom", "Endoom"
@@ -1123,7 +1468,11 @@ OptionMenu "MiscOptions" protected
 
 	StaticText " "
 	Option "$MISCMNU_ALWAYSTALLY",				"sv_alwaystally", "AlwaysTally"
-	
+	StaticText ""
+	Option "Show FPS on HUD",		                "vid_fps", "OnOff"
+	Option "Lock FrameRate (IF LOW PERF.)",         "cl_capfps", "OnOff"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar k_mergekeys k_allowfullscreentoggle queryiwad nocheats allcheats disableautosave saveloadconfirmation autosavecount quicksaverotation quicksaverotationcount dehload enablescriptscreenshot setslotstrict nointerscrollabort gl_cachenodes gl_cachetime clearnodecache m_quickexit showendoom menu_hideextreme sv_alwaystally cl_capfps"
 }
 
 //-------------------------------------------------------------------------------------------
@@ -1534,6 +1883,8 @@ OptionMenu GameplayOptions protected
 	Option "$GMPLYMNU_KILLBOSSSPAWNS",			"sv_killbossmonst", "YesNo"
 	Option "$GMPLYMNU_NOCOUNTENDMONSTER",		"sv_nocountendmonst", "NoYes"
 	Option "$GMPLYMNU_ALWAYSSPAWNMULTI",		"sv_alwaysspawnmulti", "YesNo"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar teamplay teamdamage sv_smartaim sv_fallingdamage sv_weapondrop sv_doubleammo sv_infiniteammo sv_infiniteinventory sv_nomonsters sv_killallmonsters sv_monsterrespawn sv_norespawn sv_itemrespawn sv_respawnsuper sv_fastmonsters sv_instantreaction sv_degeneration sv_noautoaim sv_disallowsuicide sv_jump sv_crouch sv_freelook sv_nofov sv_nobfgaim sv_noautomap sv_noautomapallies sv_disallowspying sv_chasecam sv_dontcheckammo sv_killbossmonst sv_nocountendmonst sv_alwaysspawnmulti"
 	Class "GameplayMenu"
 }
 
@@ -1634,6 +1985,7 @@ OptionMenu "CompatActorMenu" protected
 	Option "$CMPTMNU_MINOTAUR",						"compat_MINOTAUR", "YesNo"
 	Option "$CMPTMNU_NOTOSSDROPS",					"compat_NOTOSSDROPS", "YesNo"
 	Option "$CMPTMNU_VOODOOZOMBIES",				"compat_voodoozombies", "YesNo"
+	Option "$CMPTMNU_OLDRANDOM",					"compat_oldrandom", "YesNo"
 	Class "CompatibilityMenu"
 }
 
@@ -1820,6 +2172,8 @@ OptionMenu SoundOptions protected
 	StaticText " "
 	Submenu "$SNDMNU_ADVANCED",			"AdvSoundOptions"
 	Submenu "$OPTMNU_REVERB",			"ReverbEdit"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar snd_mastervolume snd_sfxvolume snd_musicvolume snd_menuvolume snd_mididevice snd_waterreverb snd_pitched snd_channels"
 }
 
 /*=======================================
@@ -1852,8 +2206,6 @@ OptionMenu AdvSoundOptions protected
 	Option "$ADVSNDMNU_SAMPLERATE",			"snd_samplerate", "SampleRates"
 	Option "$ADVSNDMNU_HRTF",				"snd_hrtf", "AutoOffOn"
 	StaticText " "
-	Option "$SNDMNU_BACKGROUND",			"i_soundinbackground", "OnOff"
-	StaticText " "
 
 	ifoption(openal)
 	{
@@ -1866,6 +2218,8 @@ OptionMenu AdvSoundOptions protected
 	Submenu "$SNDMNU_MODREPLAYER",		"ModReplayerOptions"
 	StaticText " "
 	Command "$SNDMNU_RESTART",			"snd_reset"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar snd_samplerate snd_hrtf i_soundinbackground"
 }
 
 OptionMenu GusConfigMenu protected
@@ -1983,6 +2337,19 @@ OptionMenu ModReplayerOptions protected
 	Option "$ADVSNDMNU_CHORUS", 			"fluid_chorus", "OnOff"
 	Slider "$ADVSNDMNU_MIDIVOICES", 		"fluid_voices", 16, 4096, 16, 0
 	// other CVARs need to be revieved for usefulness
+	StaticText ""
+	StaticText "Advanced Options", gold
+	Slider "Reverb room size",				"fluid_reverb_roomsize", 0, 1.2, 0.1, 1
+	Slider "Reverb damping",				"fluid_reverb_damping", 0, 1.0, 0.1, 1
+	Slider "Reverb width",					"fluid_reverb_width", 0, 100.0, 0.1, 1
+	Slider "Reverb level",					"fluid_reverb_level", 0, 1.0, 0.1, 1
+	StaticText ""
+	Slider "Chorus voices",					"fluid_chorus_voices", 0, 99, 1, 0
+	Slider "Chorus level",					"fluid_chorus_level", 0, 10.0, 0.1, 1
+	Slider "Chorus speed",					"fluid_chorus_speed", 0.29, 5.0, 0.1, 2
+	Slider "Chorus depth",					"fluid_chorus_depth", 0, 256.0, 0.1, 1
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar fluid_patchset fluid_gain fluid_voices fluid_reverb fluid_reverb_roomsize fluid_reverb_damping fluid_reverb_width fluid_reverb_level fluid_chorus fluid_chorus_voices fluid_chorus_level fluid_chorus_speed fluid_chorus_depth"
  }
 
  OptionMenu TimidityOptions protected
@@ -1993,6 +2360,8 @@ OptionMenu ModReplayerOptions protected
 	Slider "$ADVSNDMNU_REVERB_LEVEL", 		"timidity_reverb_level", 0, 127, 1, 0
 	Option "$ADVSNDMNU_CHORUS", 			"timidity_chorus", "OnOff"
 	// other CVARs need to be revieved for usefulness
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar timidity_config timidity_reverb timidity_reverb_level timidity_chorus"
  }
 
  OptionMenu GUSOptions protected
@@ -2002,6 +2371,8 @@ OptionMenu ModReplayerOptions protected
 	Slider "$ADVSNDMNU_MIDIVOICES",			"midi_voices", 16, 256, 4, 0
 	Option "$ADVSNDMNU_DMXGUS", 			"midi_dmxgus", "OnOff"
 	Option "$ADVSNDMNU_GUSMEMSIZE", 		"gus_memsize", "GusMemory"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar midi_config midi_voices midi_dmxgus gus_memsize"
  }
 
   OptionMenu WildMidiOptions protected
@@ -2010,6 +2381,8 @@ OptionMenu ModReplayerOptions protected
 	LabeledSubMenu "$ADVSNDMNU_SELCONFIG",		"wildmidi_config", "WildMidiConfigMenu"
 	Option "$ADVSNDMNU_REVERB", 			"wildmidi_reverb", "OnOff"
 	Option "$ADVSNDMNU_ADVRESAMPLING",		"wildmidi_enhanced_resampling", "OnOff"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar wildmidi_config wildmidi_reverb wildmidi_enhanced_resampling"
  }
 
  OptionMenu OPLOptions protected
@@ -2018,6 +2391,8 @@ OptionMenu ModReplayerOptions protected
 	Option "$ADVSNDMNU_OPLCORES", 			"opl_core", "OplCores"
 	Slider "$ADVSNDMNU_OPLNUMCHIPS", 		"opl_numchips", 1, 8, 1, 0
 	Option "$ADVSNDMNU_OPLFULLPAN",			"opl_fullpan", "OnOff"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar opl_core opl_numchips opl_fullpan"
  }
 
  OptionValue AdlVolumeModels
@@ -2068,6 +2443,8 @@ OptionMenu ModReplayerOptions protected
 	StaticText ""
 	Option "$ADVSNDMNU_ADLCUSTOMBANK", 	 "adl_use_custom_bank", "OnOff"
 	LabeledSubmenu "$ADVSNDMNU_OPLBANKFILE", "adl_custom_bank", "ADLMIDICustomBanksMenu"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar adl_emulator_id adl_run_at_pcm_rate adl_chips_count adl_fullpan adl_volume_model adl_use_custom_bank"
  }
 
  OptionMenu OPNOptions protected
@@ -2080,6 +2457,8 @@ OptionMenu ModReplayerOptions protected
 	StaticText ""
 	Option "$ADVSNDMNU_OPNCUSTOMBANK", 	 "opn_use_custom_bank", "OnOff"
 	LabeledSubmenu "$ADVSNDMNU_OPNBANKFILE", "opn_custom_bank", "OPNMIDICustomBanksMenu"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar opn_emulator_id opn_run_at_pcm_rate opn_chips_count opn_fullpan opn_use_custom_bank"
  }
 
 /*=======================================
@@ -2226,6 +2605,214 @@ OptionMenu CustomResolutionMenu protected
 
 /*=======================================
  *
+ * VR Options menu
+ *
+ *=======================================*/
+
+OptionValue ControlMode
+{
+	0, "GZDoomVR (Valve Index)"
+	1, "QuestZDoom (Meta Quest, PICO)"
+}
+
+OptionValue ControlScheme
+{
+	0, "Right-Handed"
+	10, "Left-Handed (A)"
+	11, "Left-Handed (B)"
+}
+
+OptionValue "Sprites3DMode"
+{
+	0, "Crossed"
+	1, "Back Only"	
+	2, "Item Only"	
+	3, "Fat Item"
+}
+
+OptionValue RefreshRate
+{
+	0, "$OPTVAL_AUTO"
+	60, "60Hz"
+	72, "72Hz"
+	80, "80Hz"
+	90, "90Hz"
+	120, "120Hz"
+}
+
+OptionValue "CinemaScreenFollow"
+{
+	0, "Disabled"
+	1, "Stationary"	
+	2, "Follow Head movement"	
+	3, "Follow Main Hand"	
+	4, "Follow Offhand"
+}
+
+OptionValue "CinemaScreenBG"
+{
+	0, "Black"
+	1, "Red"
+	2, "Green"
+	3, "Blue"
+	4, "Teal"
+	5, "Grey"
+}
+
+OptionValue "DesktopViewModes"
+{
+	-1, "Disabled"
+	0, "Side-By-Side"
+	1, "Left Eye"
+	2, "Right Eye"
+}
+
+OptionMenu CinemaModeOptions protected
+{
+	Title "$VRCMODEMNU_TITLE"
+
+	StaticText " "
+	Option "$VRCINEMAMODE",						vr_overlayscreen,						"CinemaScreenFollow"
+	Option "$VRCINEMAMODE_PLAY",				vr_overlayscreen_always,				"OnOff", vr_overlayscreen
+	Slider "$VRCINEMAMODE_SIZE",				vr_overlayscreen_size,					1.0, 3.0, 0.1, 2, vr_overlayscreen
+	Slider "$VRCINEMAMODE_DIST",				vr_overlayscreen_dist,					-2.0, 2.0, 0.1, 2, vr_overlayscreen
+	Slider "$VRCINEMAMODE_VPOS",				vr_overlayscreen_vpos,					-1.0, 1.0, 0.1, 2, vr_overlayscreen
+	Option "$VRCINEMAMODE_BG",					vr_overlayscreen_bg,					"CinemaScreenBG"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS",				"resetcvar vr_overlayscreen vr_overlayscreen_always vr_overlayscreen_size vr_overlayscreen_dist vr_overlayscreen_vpos vr_overlayscreen_bg"
+}
+
+OptionMenu VRHUDOptions protected
+{
+	Title "VR HUD OPTIONS"
+
+	StaticText ""
+	StaticText "HUD", gold
+	StaticText ""
+	Slider "VR HUD Scale",		        "vr_hud_scale", 0.05, 1.0, 0.05, 2
+	ScaleSlider "VR HUD Item Scale", 	"hud_scale", -1.0, 8.0, 1.0, "$SCALEMNU_USEUI", "$SCALEMNU_USEFS"
+	ScaleSlider "VR Alt-HUD Item Scale","hud_althudscale", 0.0, 8.0, 1.0, "$SCALEMNU_USEUI"
+	StaticText ""
+	Slider "VR HUD Stereo Effect",		"vr_hud_stereo", 0.0, 5.0, 0.1, 2
+	Slider "$VRHUDMNU_HUDDISTANCE",		"vr_hud_distance", 0.4, 3, 0.05, 2
+	Slider "VR HUD Pitch Rotate",		"vr_hud_rotate", 0.0, 50.0, 1.0, 2
+	Option "VR HUD Fix Pitch",		    "vr_hud_fixed_pitch", "OnOff"
+	Option "VR HUD Fix Roll",		    "vr_hud_fixed_roll", "OnOff"
+	StaticText ""
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_hud_scale hud_scale hud_althudscale vr_hud_stereo vr_hud_distance vr_hud_rotate vr_hud_fixed_pitch vr_hud_fixed_roll"
+
+	StaticText ""
+	StaticText "Automap", gold
+	StaticText ""
+	Option "VR Automap Use HUD Settings",   "vr_automap_use_hud", "YesNo"
+	StaticText ""
+	Slider "VR Automap Scale",		        "vr_automap_scale", 0.05, 1.0, 0.05, 2
+	Slider "VR Automap Stereo Effect",		"vr_automap_stereo", 0.0, 5.0, 0.1, 2
+	Slider "$VRHUDMNU_AUTOMAPDISTANCE",		"vr_automap_distance", 0.4, 3, 0.05, 2
+	Slider "VR Automap Pitch Rotate",		"vr_automap_rotate", 0.0, 50.0, 1.0, 2
+	Option "VR Automap Fix Pitch",		    "vr_automap_fixed_pitch", "OnOff"
+	Option "VR Automap Fix Roll",		    "vr_automap_fixed_roll", "OnOff"
+	StaticText ""
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_automap_use_hud vr_automap_scale vr_automap_stereo vr_automap_distance vr_automap_rotate vr_automap_fixed_pitch vr_automap_fixed_roll"
+}
+
+OptionMenu VRWeaponOptions protected
+{
+	Title "VR Weapon Options"
+	
+	StaticText ""
+	StaticText "Global options", gold
+	Option "Recoil",		        "vr_recoil", "OnOff"
+	Slider "Pitch Adjust",			"vr_weaponRotate", -45, 45, 5, 2
+	Slider "Sprite/Model Scale",	"vr_weaponScale", 0.1, 3.0, 0.1, 2
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_recoil vr_weaponRotate vr_weaponScale"
+
+	StaticText " "
+	StaticText "3d model options", gold
+	Slider "$DSPLYMNU_WEAPOFSX",	"vr_3dweaponOffsetX", -10, 10, 0.1, 2
+	Slider "$DSPLYMNU_WEAPOFSY",	"vr_3dweaponOffsetY", -10, 10, 0.1, 2
+	Slider "$DSPLYMNU_WEAPOFSZ",	"vr_3dweaponOffsetZ", -10, 10, 0.1, 2
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_3dweaponOffsetX vr_3dweaponOffsetY vr_3dweaponOffsetZ"
+
+	StaticText " "
+	StaticText "Sprite options", gold
+	Option "Sprite 3D",				"r_PlayerSprites3DMode", "Sprites3DMode"
+	Slider "Fat Item Width",		"gl_fatItemWidth", 0.1, 1.0, 0.1, 2
+	Slider "$DSPLYMNU_WEAPOFSX",	"vr_2dweaponOffsetX", -10, 10, 0.1, 2
+	Slider "$DSPLYMNU_WEAPOFSY",	"vr_2dweaponOffsetY", -10, 10, 0.1, 2
+	Slider "$DSPLYMNU_WEAPOFSZ",	"vr_2dweaponOffsetZ", -10, 10, 0.1, 2
+	Slider "$DSPLYMNU_WEAPSCALE",	"vr_2dweaponScale", 0, 2.0, 0.1, 1
+
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar r_PlayerSprites3DMode gl_fatItemWidth vr_2dweaponOffsetX vr_2dweaponOffsetY vr_2dweaponOffsetZ vr_2dweaponScale"
+}
+
+OptionMenu VROptionsMenu protected
+{
+	Title "VR OPTIONS"
+
+	StaticText ""
+	ifOption(OpenVR)
+	{
+		Submenu "$VRCMODEMNU_TITLE",        "CinemaModeOptions"
+	}
+	Submenu "VR HUD/Automap Options",   "VRHUDOptions"
+	Submenu "VR Weapon Options",        "VRWeaponOptions"
+	StaticText ""
+	StaticText "Misc", gold
+	ifOption(OpenVR)
+	{
+		Option "$VRPREFMNU_DESKTOP",        "vr_desktop_view", "DesktopViewModes"
+	}
+	Slider "$VRPREFMNU_WORLDSCALE",     "vr_vunits_per_meter", 1, 60, 1, 0
+	Slider "Height Adjust",		        "vr_height_adjust", -0.5, 1.0, 0.01, 2
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_desktop_view vr_vunits_per_meter vr_height_adjust"
+
+	StaticText ""
+	StaticText "VR Controls", gold
+	ifOption(OpenVR)
+	{
+		Option "Control Mode",				"vr_joy_mode", "ControlMode"
+	}
+	Option "Control Scheme",			"vr_control_scheme", "ControlScheme"
+	Option "Switch Thumbsticks",		"vr_switch_sticks", "OnOff", vr_joy_mode
+	Option "Secondary Button Mappings",	"vr_secondary_button_mappings", "OnOff", vr_joy_mode
+	Option "Two Handed Weapons",		"vr_two_handed_weapons", "OnOff"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_control_scheme vr_switch_sticks vr_secondary_button_mappings vr_two_handed_weapons"
+
+	StaticText ""
+	StaticText "Locomotion", gold
+	Option "Off-hand Move Direction",	"vr_move_use_offhand", "OnOff"
+	Option "Use Teleport",		        "vr_teleport", "OnOff"
+	Option "Slidey movement (Momentum)","vr_momentum", "OnOff"
+	Option "Crouch using button",       "vr_crouch_use_button", "OnOff"
+	ScaleSlider "Walk Speed",           "vr_move_speed", 0, 50, 1, "Multiplier active"
+	Slider "Walk Multiplier",           "vr_walk_multiplier", 0.5, 2.0, 0.01, 2, use_walk_multiplier
+	Slider "Run Multiplier",	        "vr_run_multiplier", 0.5, 2.0, 0.01, 2
+	StaticText "Set the walking speed to 0 to use the multiplier", brown
+	StaticText ""
+	Slider "Snap-turn Angle",		    "vr_snapTurn", 0.0, 90.0, 1.0, 2
+	StaticText "Set Snap-Turn <= 10 for \"Smooth\" Turn", "Brown"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_move_use_offhand vr_teleport vr_momentum vr_crouch_use_button vr_move_speed vr_walk_multiplier vr_run_multiplier vr_snapTurn"
+
+	StaticText ""
+	StaticText "Haptics", gold
+	Slider "Item Pickup Haptic Level",		"vr_pickup_haptic_level", 0.0, 1.0, 0.1, 2
+	Slider "Quake Haptic Level",			"vr_quake_haptic_level", 0.0, 1.0, 0.1, 2
+	Slider "External Haptics Intensity",	"ext_haptic_level_global_intensity", 0.0, 2.0, 0.1, 2
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_pickup_haptic_level vr_quake_haptic_level ext_haptic_level_global_intensity"
+}
+
+
+
+/*=======================================
+ *
  * Network options menu
  *
  *=======================================*/
@@ -2308,6 +2895,12 @@ OptionValue "FXAAQuality"
 	2, "$OPTVAL_MEDIUM"
 	3, "$OPTVAL_HIGH"
 	4, "$OPTVAL_EXTREME"
+}
+
+OptionValue "ShaderQuality"
+{
+	0, "$OPTVAL_QUALITY"
+	1, "$OPTVAL_SPEED"
 }
 
 OptionValue "Anisotropy"
@@ -2410,6 +3003,12 @@ OptionValue "FogMode"
 	2, "$OPTVAL_RADIAL"
 }
 
+OptionValue "StorageBuffer"
+{
+	0, "$OPTVAL_UBO"
+	1, "$OPTVAL_SSBO"
+}
+
 OptionValue "FuzzStyle"
 {
 	0, "$OPTVAL_SHADOW"
@@ -2439,6 +3038,8 @@ OptionValue VRMode
 	5, "$OPTVAL_LEFTEYE"
 	6, "$OPTVAL_RIGHTEYE"
 	7, "$OPTVAL_QUADBUFFERED"
+	10, "$OPTVAL_OPENVR"
+	15, "$OPTVAL_OPENXR"
 }
 
 OptionValue ShadowMapQuality
@@ -2481,19 +3082,32 @@ OptionMenu "GLTextureGLOptions" protected
 	Option "$GLTEXMNU_RESIZESKN",		gl_texture_hqresize_skins,		"OnOff"
 	Option "$GLTEXMNU_PRECACHETEX",		gl_precache,					"YesNo"
 	Option "$GLTEXMNU_SORTDRAWLIST", 	gl_sort_textures,				"YesNo"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_texture_filter gl_texture_filter_anisotropic gl_texture_format gl_texture_usehires gl_texture_hqresizemode gl_texture_hqresizemult gl_texture_hqresize_textures gl_texture_hqresize_sprites gl_texture_hqresize_fonts gl_precache gl_sort_textures"
 	Class "GLTextureGLOptions"
 }
 
 OptionMenu "GLLightOptions" protected
 {
 	Title "$GLLIGHTMNU_TITLE"
-	Option "$TCMNU_DYNLIGHTS",					"r_dynlights", "OnOff"
 	Option "$GLLIGHTMNU_LIGHTSENABLED",			gl_lights,				"OnOff"
 	Option "$GLLIGHTMNU_LIGHTSPRITES",			gl_light_sprites,		"YesNo"
+	Option "$GLLIGHTMNU_LIGHTWEAPONS",			gl_light_weapons,		"YesNo"
 	Option "$GLLIGHTMNU_LIGHTPARTICLES",		gl_light_particles,		"YesNo"
 	Option "$GLLIGHTMNU_LIGHTSHADOWMAP",		gl_light_shadowmap,		"YesNo"
+
+	StaticText ""
+	StaticText "$GLLIGHTMNU_ADVANCED", gold
 	Option "$GLLIGHTMNU_LIGHTSHADOWMAPQUALITY", gl_shadowmap_quality,	"ShadowMapQuality"
 	Option "$GLLIGHTMNU_LIGHTSHADOWMAPFILTER", 	gl_shadowmap_filter,	"ShadowMapFilter"
+	ScaleSlider "$GLLIGHTMNU_LIGHTSCULL",		gl_light_distance_cull, 0.0, 16000.0, 100.0, "Culling disabled"
+	Slider "$GLLIGHTMNU_MAXINTENSITY",			gl_light_max_intensity, 50, 2000, 50, 0
+	Slider "$GLLIGHTMNU_MAXCOLLECTEDSS",		gl_light_max_collected_subsectors, 0, 5000, 100, 0
+	ScaleSlider "$GLLIGHTMNU_MAXWALLLIGHTS",	gl_light_wall_max_lights, 0, 10000, 100, "Limit disabled"
+	ScaleSlider "$GLLIGHTMNU_MAXFLATLIGHTS",	gl_light_flat_max_lights, 0, 10000, 100, "Limit disabled"
+	ScaleSlider "$GLLIGHTMNU_LIGHTRANGELIMIT",	gl_light_range_limit, 0, 200, 4, "Limit disabled"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS",				"resetcvar r_dynlights gl_lights gl_lights_checkside gl_light_sprites gl_light_particles gl_light_shadowmap gl_light_buffer_type gl_shadowmap_quality gl_shadowmap_filter gl_light_distance_cull gl_light_max_intensity gl_light_max_collected_subsectors gl_light_wall_max_lights gl_light_flat_max_lights gl_light_range_limit" 
 }
 
 OptionMenu "OpenGLOptions" protected
@@ -2507,7 +3121,7 @@ OptionMenu "OpenGLOptions" protected
 	Option "$GLPREFMNU_FOGMODE",				gl_fogmode,						"FogMode"
 	Option "$GLPREFMNU_FOGFORCEFULLBRIGHT",		gl_brightfog,					"YesNo"
 	Slider "$GLPREFMNU_WPNLIGHTSTR",			gl_weaponlight,					0,32, 2
-	Option "$GLPREFMNU_ENVIRONMENTMAPMIRROR",	gl_mirror_envmap,				"OnOff"
+	Option "$GLPREFMNU_PLANEREFLECTION",		gl_plane_reflection,			"OnOff"
 	Option "$GLPREFMNU_ENV",					gl_enhanced_nightvision,		"OnOff"
 	Option "$GLPREFMNU_ENVSTEALTH",				gl_enhanced_nv_stealth,			"EnhancedStealth"
 	Option "$GLPREFMNU_SPRCLIP",				gl_spriteclip,					"SpriteclipModes"
@@ -2519,10 +3133,36 @@ OptionMenu "OpenGLOptions" protected
 	Option "$GLPREFMNU_PARTICLESTYLE",			gl_particles_style,				"Particles"
 	Option "$GLPREFMNU_RENDERQUALITY",			gl_seamless,					"Precision"
 	//Option "$GLPREFMNU_CORONAS",				gl_coronas,						"OnOff"
+	Option "$GLPREFMNU_RENDERSKYDOME",			gl_skydome, 					"YesNo"
 	StaticText " "
 	Slider "$GLPREFMNU_MENUBLUR",				gl_menu_blur, 0, 5.0, 0.5, 2
 	StaticText " "
 	Option "$GLPREFMNU_MULTISAMPLE", 			gl_multisample,					"Multisample"
+	StaticText " "
+	Option "Global fade",						gl_global_fade, "OnOff"
+	Slider "Global fade density",				gl_global_fade_density, 0.0001, 0.005, 0.0001, 4
+	Slider "Global fade gradient",				gl_global_fade_gradient, 0.1, 2, 0.1, 1
+	ColorPicker "Global fade color",			gl_global_fade_color
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_lightmode gl_bandedswlight gl_fogmode gl_brightfog gl_weaponlight gl_plane_reflection gl_enhanced_nightvision gl_enhanced_nv_stealth gl_spriteclip gl_sprite_blend gl_fuzztype gl_billboard_mode gl_billboard_faces_camera gl_particles_style gl_render_precise gl_skydome gl_menu_blur gl_multisample gl_global_fade gl_global_fade_density gl_global_fade_gradient gl_global_fade_color"
+	StaticText " "
+	StaticText "Advanced Options", gold
+	ScaleSlider "$DSPLYMNU_SPRITECULL",			gl_sprite_distance_cull, 0.0, 8000.0, 100.0, "Culling disabled"
+	ScaleSlider "$DSPLYMNU_LINECULL",			gl_line_distance_cull, 0.0, 16000.0, 100.0, "Culling disabled"
+	Command "$DSPLYMNU_DISABLERENDERCULL",		"disablerendercull"
+	SafeCommand "$DSPLYMNU_RESETRENDERCULL",	"resetcvar gl_sprite_distance_cull gl_line_distance_cull"
+	StaticText " "
+	ScaleSlider "Max rendered vertices",		gl_max_vertices, 0, 40000, 1000, "Limit disabled"
+	ScaleSlider "Max rendered portals",			gl_max_portals, -1, 20, 1, "Portals disabled", "Limit disabled"
+	StaticText " "
+	Option "$GLPREFMNU_MIRRORS",				gl_mirrors,						"OnOff"
+	Option "$GLPREFMNU_ENVIRONMENTMAPMIRROR",	gl_mirror_envmap,				"OnOff"
+	Option "$GLPREFMNU_MIRRORPLAYER",			gl_mirror_player,				"OnOff"
+	Slider "$GLPREFMNU_MIRRORRECURSIONS",		r_mirror_recursions, 0, 10, 1, 0
+	StaticText " "
+	Option "$GLPREFMNU_BUFFERTYPE",				gl_storage_buffer_type, "StorageBuffer"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_max_vertices gl_max_portals gl_mirrors gl_mirror_envmap gl_mirror_player r_mirror_recursions gl_storage_buffer_type"
 }
 
 OptionMenu "VR3DMenu" protected
@@ -2535,6 +3175,8 @@ OptionMenu "VR3DMenu" protected
 	}
 	Slider "$GLPREFMNU_VRIPD",					vr_ipd,							0.041, 0.073, 0.001, 3
 	Slider "$GLPREFMNU_VRSCREENDIST",			vr_screendist,					0.2, 10.0, 0.1, 1
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar vr_mode vr_enable_quadbuffered vr_ipd vr_screendist"
 }
 
 OptionMenu "PostProcessMenu" protected
@@ -2550,6 +3192,13 @@ OptionMenu "PostProcessMenu" protected
 	StaticText " "
 	Slider "$GLPREFMNU_PALTONEMAPPOWER",		gl_paltonemap_powtable,			0.2, 3.0, 0.1, 1
 	Option "$GLPREFMNU_PALTONEMAPORDER",		gl_paltonemap_reverselookup,	"LookupOrder"
+	StaticText " "
+	Option "$GLPREFMNU_CUSTOMPOST",		 		gl_custompost,					"OnOff"
+	Option "$GLPREFMNU_CUSTOMSHADER",	 		gl_customshader,				"OnOff"
+	Option "$GLPREFMNU_LITESHADER",				gl_lite_shader,					"ShaderQuality"
+	StaticText "Changing these options requires a restart", "Brown"
+	StaticText " "
+	SafeCommand "$OPTMNU_DEFAULTS", "resetcvar gl_bloom gl_lens gl_ssao gl_ssao_portals gl_fxaa gl_dither_bpc gl_tonemap gl_paltonemap_powtable gl_paltonemap_reverselookup gl_custompost gl_customshader gl_lite_shader"
 }
 
 OptionMenu "ReverbEdit" protected
@@ -2689,6 +3338,206 @@ OptionValue "os_isanyof_values"
 {
 	0, "$OS_ALL"
 	1, "$OS_ANY"
+}
+
+/*=======================================
+ *
+ * QZD Quick Menu
+ *
+ *=======================================*/
+
+OptionMenu QuickMenu protected
+{
+	Title "QUESTZDOOM Quick Menu"
+
+	StaticText " "
+	Option "Refresh Rate", "vid_refreshrate", "RefreshRate"
+	StaticText "Change the refresh rate, recommended 72Hz.", "Brown"
+	
+	StaticText " "
+	Option "$GLLIGHTMNU_LIGHTSENABLED", gl_lights, "OnOff"
+	StaticText "Greatly affects performance, best off.", "Brown"
+	
+	StaticText " "
+	Option "$GLPREFMNU_RENDERSKYDOME", gl_skydome, "YesNo"
+	StaticText "Greatly affects performance, best off.", "Brown"
+	
+	StaticText " "
+	Option "$DSPLYMNU_SPRITESHADOW", "r_actorspriteshadow", "SpriteShadowModes"
+	StaticText "May cause issues with some mods.", "Brown"
+	
+	StaticText " "
+	Option "$GLPREFMNU_BUFFERTYPE", gl_storage_buffer_type, "StorageBuffer"
+	StaticText "Choose UBO for performance and SSBO for stability.", "Brown"
+	
+	StaticText " "
+	Option "$GLPREFMNU_SECLIGHTMODE", gl_lightmode, "LightingModes"
+	StaticText "Certain mods look better with different modes.", "Brown"
+	
+	StaticText " "
+	Option "$GLTEXMNU_TEXFILTER", gl_texture_filter, "FilterModes"
+	StaticText "Set to None for unfiltered pixel appearance.", "Brown"
+	
+	StaticText " "
+	Option "Show FPS on HUD", "vid_fps", "OnOff"
+	StaticText "Option retained only for the current session.", "Brown"
+	
+	StaticText " "
+	Option "$GMPLYMNU_ALLOWJUMP", "sv_jump", "JumpCrouchFreeLook"
+	StaticText "Gameplay option only intended", "Brown"
+	StaticText "for a specific session/playthrough.", "Brown"
+
+	StaticText " "
+	Option "$GLPREFMNU_CUSTOMPOST", gl_custompost, "OnOff"
+	StaticText "This option on can prevent some mods from running.", "Brown"
+	StaticText "Recommended to keep it on.", "Brown"
+}
+
+/*=======================================
+ *
+ * QZD Info and credits
+ *
+ *=======================================*/
+
+ OptionMenu "InfoAndCreditsMenu"
+{ 
+	//Title		"QUESTZDOOM INFO AND CREDITS"
+	StaticPatch 52, -20, "QZDOOM"
+	Position 120
+	Submenu		"INFORMATION AND INSTRUCTIONS", "QuestZDoomInstructions", 0, 1
+	Submenu		"CREDITS", "QuestZDoomCredits", 0, 1
+}
+
+OptionMenu "QuestZDoomInstructions"
+{ 
+	//Title		"QUESTZDOOM INFO AND CREDITS"
+	StaticPatch 52, -20, "QZDOOM"
+	Position 120
+	StaticText	"===== INFORMATION AND INSTRUCTIONS ====="
+	StaticText	""
+	StaticText	"QUESTZDOOM IS AN ENGINE PORT OF THE POPULAR LZDOOM/GZDOOM", "White"
+	StaticText	"ENGINE FOR THE OCULUS QUEST VIRTUAL REALITY HEADSET.", "White"
+	StaticText	""
+	StaticText	"WE RECOMMEND USING THE QUESTZDOOM LAUNCHER TO GET"
+	StaticText	"THE BEST EXPERIENCE POSSIBLE. THE LAUNCHER CAN ALSO"
+	StaticText	"BE DOWNLOADED FROM SIDEQUEST."
+	StaticText	""
+	StaticText	"1. INSTALL QUESTZDOOM FROM SIDEQUEST", "White"
+	StaticText	"2. INSTALL QUESTZDOOM LAUCHNER FROM SIDEQUEST", "White"
+	StaticText	"3. START THE QUESTZDOOM LAUNCHER", "White"
+	StaticText	""
+	StaticText	"ON FIRST RUN YOU WILL NEED TO ACCEPT THE PERMISSIONS"
+	StaticText	"FOR BOTH APPLICATIONS TO ACCESS THE LOCAL FILE SYSTEM."
+	StaticText	""
+	StaticText	"YOU CAN NOW START TO DOWNLOAD AND USE GAMES AND MODS", "White"
+	StaticText	"DIRECTLY FROM THE QUESTZDOOM LAUNCHER.", "White"
+	StaticText	""
+	StaticText	"CLICK ON DOWNLOAD CORE GAMES AND CHOOSE THE GAME YOU WANT.", "White"
+	StaticText	"THEN CLICK DOWNLOAD MODS AND DOWNLOAD SOME MODS IF YOU WANT.", "White"
+	StaticText	"AFTER SELECTION, CLICK ON LAUNCH GAME.", "White"
+	StaticText	""
+	StaticText	"FOR BEGINNERS WE RECOMMEND THE GAME FREEDOOM2", "White"
+	StaticText	"WITH THE MODS BRUTAL DOOM AND VR WEAPONS", "White"
+	StaticText	""
+	StaticText	"NEVERTHELESS FOR THE BEST EXPERIENCE WE SUGGEST TO INSTALL"
+	StaticText	"THE ORIGINAL DOOM AND DOOM2 WAD FILE. YOU CAN FIND FURTHER"
+	StaticText	"INSTRUCTIONS IN THE LAUNCHER AND ON REDDIT R/QUESTZDOOM"
+	StaticText	""
+}
+
+OptionMenu "QuestZDoomCredits"
+{ 
+	//Title		"QUESTZDOOM INFO AND CREDITS"
+	StaticPatch 52, -20, "QZDOOM"
+	Position 120
+	StaticText	"===== CREDITS ====="
+	StaticText	""
+	StaticText	"DRBEEF"
+	StaticText	"EMANUELE DISCO"
+	StaticText	"ERMAC"
+	StaticText	"QUESTZDOOM", "White"
+	StaticText	""
+	StaticText	"BAGGYG"
+	StaticText	"QUESTZDOOM LAUNCHER", "White"
+	StaticText	""
+	StaticText	"VR_BUMMSER"
+	StaticText	"MOD AND WAD TESTING, COMMUNITY DUDE", "White"
+	StaticText	""
+	StaticText	"DANIEL TEICH"
+	StaticText	"GRAPHICS, ARTWORK, ULTIMATE CHEAT MENU MOD", "White"
+	StaticText	""
+	StaticText	"AJANTAJU"
+	StaticText	"VR WEAPON MODEL PACKS", "White"
+	StaticText	""
+	StaticText	"CHRIS COLLINS"
+	StaticText	"GENERALUSERGS SOUNDFONT", "White"
+	StaticText	""
+	StaticText	"Fishbiter"
+	StaticText	"HH76"
+	StaticText	"Gerald Buttinger"
+	StaticText	"ERMAC"
+	StaticText	"GZDOOM PCVR PORT", "White"
+	StaticText	""
+	StaticText	"EMILE BELANGER"
+	StaticText	"LZDOOM ANDROID PORT", "White"
+	StaticText	""
+	StaticText	"M8F (MMAULWURFF)"
+	StaticText	"LASER SIGHT MOD", "White"
+	StaticText	""
+	StaticText	"FREEDOOM / FRAGGLE"
+	StaticText	"FREEDOOM DOWNLOAD ACCESS", "White"
+	StaticText	""
+	StaticText	"THE ZDOOM TEAMS"
+	StaticText	"FOR THE AWESOME ENGINE!", "White"
+	StaticText	""
+	StaticText	"All GZ3DOOM PC VR PROJECT PARTICIPANTS"
+	StaticText	"6DOF WEAPON LOGIC, MODEL AND SPRITE RENDERING", "White"
+	StaticText	""
+	StaticText	"THE SIDEQUEST TEAM"
+	StaticText	"FOR SIDEQUEST!", "White"
+	StaticText	""
+	StaticText	"ALSO WE WANT TO THANK ALL DEDICATED"
+	StaticText	"CLOSED BETA TESTERS!"
+}
+
+OptionValue "UseModes"
+{
+	0, "Head"
+	1, "Hands"
+	2, "Head and hands"
+}
+
+OptionMenu "ExperimentalMenu"
+{
+	Title "Experimental"
+	StaticText "Features in development", "Gold"
+	StaticText " "
+	Option "Purist mode", "puristmode", "OnOff"
+	StaticText "Experience vanilla doom in VR.", "Brown"
+	StaticText "Freelook and player autoaim work as intended.", "Brown"
+	StaticText " "
+	Option "Use action spawn offset", "use_action_spawn_yzoffset", "YesNo"
+	StaticText "Use horizontal and vertical spawn offset", "Brown"
+	StaticText "for projectile, missile and hitscan attacks.", "Brown"
+	StaticText " "
+	Option "Store save picture", "storesavepic", "OnOff"
+	StaticText "A screenshot is taken just before saving", "Brown"
+	StaticText "and stored inside the savegame.", "Brown"
+	StaticText " "
+	CommandInput "Type in console"
+	StaticText "Use the character input grid to type in console.", "Brown"
+	StaticText "We can finally type in console without a keyboard!", "Brown"
+	StaticText " "
+	Option "Activate (use) mode", "use_mode", UseModes
+	StaticText "Choose how to activate objects", "Brown"
+	StaticText " "
+	Slider "Keep momentum threshold",   "vr_momentum_threshold", 0.1, 2, 0.1
+	StaticText "Small recoil require smaller threshold to move the player", "Brown"
+	StaticText "A value under one fix the motorcycle handling in Ashes 2063", "Brown"
+	StaticText " "
+	Option "Vanilla melee attack", "vanilla_melee_attack", "OnOff"
+	StaticText "Turn to face target and auto forward motion", "Brown"
+	StaticText "during melee attack (Chainsaw/Gauntlets)", "Brown"
 }
 
 /*=======================================

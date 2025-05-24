@@ -54,6 +54,12 @@ EXTERN_CVAR(Float, vid_contrast)
 EXTERN_CVAR(Int, gl_satformula)
 EXTERN_CVAR(Int, gl_dither_bpc)
 
+int flatVerticesPerEye;
+int wallVerticesPerEye;
+int portalsPerEye;
+int lightsFlatPerEye;
+int lightsWallPerEye;
+
 #ifdef _WIN32
 EXTERN_CVAR(Bool, vr_enable_quadbuffered)
 #endif
@@ -406,10 +412,9 @@ void FGLRenderer::PresentQuadStereo()
 void FGLRenderer::PresentStereo()
 {
 	auto vrmode = VRMode::GetVRMode(true);
-	const int eyeCount = vrmode->mEyeCount;
-	// Don't invalidate the bound framebuffer (..., false)
-	if (eyeCount > 1)
+	if (vrmode->mEyeCount > 1)
 		mBuffers->BlitToEyeTexture(mBuffers->CurrentEye(), false);
+
 
 	switch (vr_mode)
 	{

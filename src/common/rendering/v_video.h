@@ -90,6 +90,7 @@ EXTERN_CVAR(Int, win_y)
 EXTERN_CVAR(Int, win_w)
 EXTERN_CVAR(Int, win_h)
 EXTERN_CVAR(Bool, win_maximized)
+EXTERN_CVAR(Int, gl_storage_buffer_type)
 
 struct FColormap;
 enum FTextureFormat : uint32_t;
@@ -183,7 +184,7 @@ public:
 	// SSBOs have quite worse performance for read only data, so keep this around only as long as Vulkan has not been adapted yet.
 	bool useSSBO() 
 	{
-		return IsVulkan();
+		return IsVulkan() || ((hwcaps & RFL_SHADER_STORAGE_BUFFER) && allowSSBO() && !strstr(vendorstring, "Intel") && gl_storage_buffer_type == 1);
 	}
 
 	virtual DCanvas* GetCanvas() { return nullptr; }
@@ -220,6 +221,9 @@ public:
 
 	// Changes the vsync setting, if supported by the device.
 	virtual void SetVSync (bool vsync);
+
+	// Tells the device to recreate itself with the new setting from vid_refreshrate.
+	virtual void NewRefreshRate () {};
 
 	// Delete any resources that need to be deleted after restarting with a different IWAD
 	virtual void SetTextureFilterMode() {}
@@ -287,7 +291,7 @@ public:
 
 	void ScaleCoordsFromWindow(int16_t &x, int16_t &y);
 
-	virtual void Draw2D() {}
+	virtual void Draw2D(bool outside2D = false) {}
 
 	virtual void SetViewportRects(IntRect *bounds);
 	int ScreenToWindowX(int x);
@@ -300,7 +304,8 @@ public:
 	// points to the last row in the buffer, which will be the first row output.
 	virtual TArray<uint8_t> GetScreenshotBuffer(int &pitch, ESSType &color_type, float &gamma) { return TArray<uint8_t>(); }
 
-	static float GetZNear() { return 5.f; }
+	//TODO this was 0.5f in gl_renderer.h from questzdoom branch ????
+	static float GetZNear() { return 0.5f; }
 	static float GetZFar() { return 65536.f; }
 
 	// The original size of the framebuffer as selected in the video menu.

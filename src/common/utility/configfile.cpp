@@ -39,6 +39,9 @@
 #include "configfile.h"
 #include "files.h"
 
+#include "cmdlib.h"
+#include "engineerrors.h"
+
 #define READBUFFERSIZE	256
 
 //====================================================================

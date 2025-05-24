@@ -72,6 +72,7 @@
 #include "d_main.h"
 #include "i_interface.h"
 #include "savegamemanager.h"
+#include "hw_vrmodes.h"
 
 EXTERN_CVAR (Int, disableautosave)
 EXTERN_CVAR (Int, autosavecount)
@@ -991,7 +992,7 @@ void NetUpdate (void)
 	// build new ticcmds for console player
 	for (i = 0; i < newtics; i++)
 	{
-		I_StartTic ();
+		//I_StartTic ();
 		D_ProcessEvents ();
 		if (pauseext || (maketic - gametic) / ticdup >= BACKUPTICS/2-1)
 			break;			// can't hold any more
@@ -1878,6 +1879,12 @@ void TryRunTics (void)
 
 	bool doWait = (cl_capfps || pauseext || (r_NoInterpolate && !M_IsAnimated()));
 
+	auto vrmode = VRMode::GetVRMode();
+	if (vrmode->IsVR())
+	{
+		doWait = false;
+	}
+
 	// get real tics
 	if (doWait)
 	{
@@ -2401,7 +2408,7 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 				{
 					if (GetDefaultByType (typeinfo)->flags & MF_MISSILE)
 					{
-						P_SpawnPlayerMissile (source, 0, 0, 0, typeinfo, source->Angles.Yaw);
+						P_SpawnPlayerMissile (source, 0, 0, 0, typeinfo, source->Angles.Yaw, source->Angles.Pitch);
 					}
 					else
 					{
@@ -2578,7 +2585,10 @@ void Net_DoCommand (int type, uint8_t **stream, int player)
 			players[player].health > 0 && !(players[player].oldbuttons & BT_JUMP) &&
 			!P_IsPlayerTotallyFrozen(&players[player]))
 		{
-			players[player].crouching = players[player].crouchdir < 0 ? 1 : -1;
+			if (players[player].crouching != 10)
+			{
+				players[player].crouching = players[player].crouchdir < 0 ? 1 : -1;
+			}
 		}
 		break;
 

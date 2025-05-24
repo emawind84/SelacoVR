@@ -190,6 +190,11 @@ static const char *KeyConfCommands[] =
 
 // CODE --------------------------------------------------------------------
 
+void C_DoCommandC (const char *cmd)
+{
+	C_DoCommand(cmd, 0);
+}
+
 void C_DoCommand (const char *cmd, int keynum)
 {
 	FConsoleCommand *com;
@@ -308,7 +313,7 @@ void C_DoCommand (const char *cmd, int keynum)
 		}
 		else
 		{ // We don't know how to handle this command
-			Printf ("Unknown command \"%.*s\"\n", (int)len, beg);
+			DPrintf(DMSG_WARNING, "Unknown command \"%.*s\"\n", (int)len, beg);
 		}
 	}
 }

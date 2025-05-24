@@ -35,6 +35,7 @@
 #include "doomtype.h"
 #include "vectors.h"
 #include "dobject.h"
+#include "s_sound.h"
 
 const double NO_VALUE = FLT_MAX;
 
@@ -123,13 +124,13 @@ AActor *P_SpawnMissileAngleZSpeed(AActor *source, double z, PClassActor *type, D
 AActor *P_SpawnMissileZAimed(AActor *source, double z, AActor *dest, PClassActor *type);
 
 
-AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z, PClassActor *type, DAngle angle, 
+AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z, PClassActor *type, DAngle angle, DAngle pitch,
 							  FTranslatedLineTarget *pLineTarget = NULL, AActor **MissileActor = NULL, bool nofreeaim = false, bool noautoaim = false, int aimflags = 0);
 
 
 void P_CheckFakeFloorTriggers(AActor *mo, double oldz, bool oldz_has_viewheight = false);
 
-AActor *P_SpawnSubMissile (AActor *source, PClassActor *type, AActor *target);	// Strife uses it
+AActor *P_SpawnSubMissile (AActor *source, PClassActor *type, AActor *target, DAngle angle, int aimflags = 0);	// Strife uses it
 
 
 //
@@ -317,6 +318,7 @@ enum	// P_AimLineAttack flags
 	ALF_PORTALRESTRICT = 32,	// only work through portals with a global offset (to be used for stuff that cannot remember the calculated FTranslatedLineTarget info)
 	ALF_NOWEAPONCHECK = 64,		// ignore NOAUTOAIM flag on a player's weapon.
 	ALF_IGNORENOAUTOAIM = 128,	// for informative stuff like 'linetarget' CCMD.
+	ALF_ISOFFHAND = 256,
 };
 
 enum	// P_LineAttack flags
@@ -329,6 +331,7 @@ enum	// P_LineAttack flags
 	LAF_OVERRIDEZ =     1 << 5,
 	LAF_ABSOFFSET =     1 << 6,
 	LAF_ABSPOSITION =   1 << 7,
+	LAF_ISOFFHAND   =   1 << 8,
 };
 
 AActor *P_LineAttack(AActor *t1, DAngle angle, double distance, DAngle pitch, int damage, FName damageType, PClassActor *pufftype, int flags = 0, FTranslatedLineTarget *victim = NULL, int *actualdamage = NULL, double sz = 0.0, double offsetforward = 0.0, double offsetside = 0.0);
@@ -347,6 +350,8 @@ enum	// P_LineTrace flags
 	TRF_SOLIDACTORS = 256,
 	TRF_BLOCKUSE = 512,
 	TRF_BLOCKSELF = 1024,
+	TRF_ISOFFHAND = 2048,
+	TRF_USEWEAPON = 4096,
 };
 
 void	P_TraceBleed(int damage, const DVector3 &pos, AActor *target, DAngle angle, DAngle pitch);
@@ -390,12 +395,13 @@ enum	// P_RailAttack / A_RailAttack / A_CustomRailgun / P_DrawRailTrail flags
 	RAF_FULLBRIGHT = 8,
 	RAF_CENTERZ = 16,
 	RAF_NORANDOMPUFFZ = 32,
+	RAF_ISOFFHAND = 64,
 };
 
 
 bool	P_CheckMissileSpawn(AActor *missile, double maxdist);
 
-void	P_PlaySpawnSound(AActor *missile, AActor *spawner);
+void	P_PlaySpawnSound(AActor *missile, AActor *spawner, int channel = 0, EChanFlags flags = 0);
 
 // [RH] Position the cam's view offsets.
 void	R_OffsetView(FRenderViewpoint& viewPoint, const DVector3& dir, const double distance);

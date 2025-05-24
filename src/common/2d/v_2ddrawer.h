@@ -141,6 +141,8 @@ public:
 		ETexMode mDrawMode;
 		uint8_t mLightLevel;
 		uint8_t mFlags;
+		//When a render command should run in VR on the whole screen, not just center qued used for 2D rendering. Used e.g. for nightvision
+		bool mOutside2D = false;
 		float mScreenFade;
 
 		bool useTransform;
@@ -177,6 +179,7 @@ public:
 				mLightLevel == other.mLightLevel &&
 				mColor1.d == other.mColor1.d &&
 				useTransform == other.useTransform &&
+				mOutside2D == other.mOutside2D &&
 				mScreenFade == other.mScreenFade &&
 				(
 					!useTransform ||
@@ -222,7 +225,7 @@ public:
 		int clipx1, int clipy1, int clipx2, int clipy2);
 	void AddFlatFill(int left, int top, int right, int bottom, FGameTexture *src, int local_origin = false, double flatscale = 1.0, PalEntry color = 0xffffffff, ERenderStyle rs = STYLE_Normal);
 
-	void AddColorOnlyQuad(int left, int top, int width, int height, PalEntry color, FRenderStyle *style = nullptr, bool prepend = false);
+	void AddColorOnlyQuad(int left, int top, int width, int height, PalEntry color, FRenderStyle *style = nullptr, bool prepend = false, bool outside2D = false);
 	void ClearScreen(PalEntry color = 0xff000000);
 	void AddDim(PalEntry color, float damount, int x1, int y1, int w, int h);
 	void AddClear(int left, int top, int right, int bottom, int palcolor, uint32_t color);

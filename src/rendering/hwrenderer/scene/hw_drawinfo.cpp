@@ -51,6 +51,7 @@
 #include "g_levellocals.h"
 
 EXTERN_CVAR(Float, r_visibility)
+EXTERN_CVAR(Int, gl_max_portals);
 CVAR(Bool, gl_bandedswlight, false, CVAR_ARCHIVE)
 CVAR(Bool, gl_sort_textures, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_no_skyclear, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
@@ -63,6 +64,10 @@ CVAR(Float, gl_mask_sprite_threshold, 0.5f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_coronas, true, CVAR_ARCHIVE);
 
 sector_t * hw_FakeFlat(sector_t * sec, sector_t * dest, area_t in_area, bool back);
+
+std::pair<PalEntry, PalEntry>& R_GetSkyCapColor(FGameTexture* tex);
+
+extern int portalsPerEye;
 
 //==========================================================================
 //
@@ -146,8 +151,8 @@ void HWDrawInfo::StartScene(FRenderViewpoint &parentvp, HWViewpointUniforms *uni
 	rClipper->amRadar = true;
 
 	Viewpoint = parentvp;
-	lightmode = getRealLightmode(Level, true);
-
+	if (Level != nullptr)
+		lightmode = getRealLightmode(Level, true);
 	if (uniforms)
 	{
 		VPUniforms = *uniforms;
@@ -474,7 +479,6 @@ void HWDrawInfo::CreateScene(bool drawpsprites)
 	// clip the scene and fill the drawlists
 	screen->mVertexData->Map();
 	screen->mLights->Map();
-	screen->mBones->Map();
 
 	RenderBSP(Level->HeadNode(), drawpsprites);
 
@@ -487,7 +491,6 @@ void HWDrawInfo::CreateScene(bool drawpsprites)
 	PrepareUnhandledMissingTextures();
 	DispatchRenderHacks();
 	screen->mLights->Unmap();
-	screen->mBones->Unmap();
 	screen->mVertexData->Unmap();
 
 	ProcessAll.Unclock();
@@ -593,6 +596,7 @@ void HWDrawInfo::RenderTranslucent(FRenderState &state)
 
 void HWDrawInfo::RenderPortal(HWPortal *p, FRenderState &state, bool usestencil)
 {
+	if (gl_max_portals > -1 && portalsPerEye >= gl_max_portals) return;
 	auto gp = static_cast<HWPortal *>(p);
 	gp->SetupStencil(this, state, usestencil);
 	auto new_di = StartDrawInfo(this->Level, this, Viewpoint, &VPUniforms);
@@ -816,6 +820,15 @@ void HWDrawInfo::DrawCoronas(FRenderState& state)
 
 void HWDrawInfo::EndDrawScene(sector_t * viewsector, FRenderState &state)
 {
+	HWSkyInfo skyinfo;
+	skyinfo.init(this, viewsector, sector_t::ceiling, viewsector->skytransfer, viewsector->Colormap.FadeColor);
+	if (skyinfo.texture[0])
+	{
+		auto& col = R_GetSkyCapColor(skyinfo.texture[0]);
+		state.SetSceneColor(col.first);
+	}
+	state.InitSceneClearColor();
+
 	state.EnableFog(false);
 
 	/*if (gl_coronas && Coronas.Size() > 0)
@@ -823,13 +836,19 @@ void HWDrawInfo::EndDrawScene(sector_t * viewsector, FRenderState &state)
 		DrawCoronas(state);
 	}*/
 
-	// [BB] HUD models need to be rendered here. 
-	const bool renderHUDModel = IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
-	if (renderHUDModel)
+	auto vrmode = VRMode::GetVRMode(true);
+	if (!vrmode->RenderPlayerSpritesInScene())
 	{
-		// [BB] The HUD model should be drawn over everything else already drawn.
-		state.Clear(CT_Depth);
-		DrawPlayerSprites(true, state);
+		// [BB] HUD models need to be rendered here. 
+		const bool renderHUDModel = IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player);
+		if (renderHUDModel)
+		{
+			// [BB] The HUD model should be drawn over everything else already drawn.
+			state.Clear(CT_Depth);
+			screen->mBones->Map();
+			DrawPlayerSprites(true, state);
+			screen->mBones->Unmap();
+		}
 	}
 
 	state.EnableStencil(false);
@@ -854,7 +873,14 @@ void HWDrawInfo::DrawEndScene2D(sector_t * viewsector, FRenderState &state)
 	state.EnableDepthTest(false);
 	state.EnableMultisampling(false);
 
-	DrawPlayerSprites(false, state);
+	if (!vrmode->RenderPlayerSpritesInScene())
+	{
+		// [BB] Only draw the sprites if we didn't render a HUD model before.
+		if ( renderHUDModel == false )
+		{
+			DrawPlayerSprites(false, state);
+		}
+	}
 
 	state.SetNoSoftLightLevel();
 
@@ -940,6 +966,12 @@ void HWDrawInfo::DrawScene(int drawmode, bool drawpsprites)
 
 	RenderScene(RenderState);
 
+	auto vrmode = VRMode::GetVRMode(true);
+	if (drawmode == DM_MAINVIEW && vrmode->RenderPlayerSpritesInScene())
+	{
+		DrawPlayerSprites(IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player), RenderState);
+	}
+
 	if (applySSAO && RenderState.GetPassType() == GBUFFER_PASS)
 	{
 		screen->AmbientOccludeScene(VPUniforms.mProjectionMatrix.get()[5]);
@@ -969,7 +1001,9 @@ void HWDrawInfo::ProcessScene(bool toscreen, bool drawpsprites)
 	if (Viewpoint.IsAllowedOoB())
 		mapsection = Level->PointInRenderSubsector(Viewpoint.camera->Pos())->mapsection;
 	CurrentMapSections.Set(mapsection);
+	screen->mBones->Map();
 	DrawScene(toscreen ? DM_MAINVIEW : DM_OFFSCREEN, drawpsprites);
+	screen->mBones->Unmap();
 }
 
 //==========================================================================

@@ -27,6 +27,7 @@
 /appimage-build
 *.AppImage
 .DS_Store
+/.vscode
 /build_vc2017-32
 /build2
 /build_vc2019-64

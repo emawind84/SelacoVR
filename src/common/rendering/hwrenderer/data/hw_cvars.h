@@ -14,14 +14,27 @@ EXTERN_CVAR(Int, gl_weaponlight)
 
 EXTERN_CVAR (Bool, gl_light_sprites);
 EXTERN_CVAR (Bool, gl_light_particles);
+EXTERN_CVAR (Bool, gl_light_weapons);
 EXTERN_CVAR (Bool, gl_light_shadowmap);
 EXTERN_CVAR (Int, gl_shadowmap_quality);
+EXTERN_CVAR (Int, gl_storage_buffer_type);
+EXTERN_CVAR (Float, gl_light_distance_cull);
+EXTERN_CVAR (Int, gl_light_flat_max_lights);
+EXTERN_CVAR (Int, gl_light_wall_max_lights);
+EXTERN_CVAR (Int, gl_light_range_limit);
+
+EXTERN_CVAR(Bool, gl_global_fade);
+EXTERN_CVAR(Bool, gl_global_fade_debug);
+EXTERN_CVAR(Color, gl_global_fade_color);
+EXTERN_CVAR(Float, gl_global_fade_gradient);
+EXTERN_CVAR(Float, gl_global_fade_density);
 
 EXTERN_CVAR(Int, gl_fogmode)
 EXTERN_CVAR(Bool,gl_mirror_envmap)
 
 EXTERN_CVAR(Bool,gl_mirrors)
 EXTERN_CVAR(Bool,gl_mirror_envmap)
+EXTERN_CVAR(Bool,gl_mirror_player)
 EXTERN_CVAR(Bool, gl_seamless)
 
 EXTERN_CVAR(Float, gl_mask_threshold)
@@ -57,3 +70,7 @@ EXTERN_CVAR(Bool, gl_notexturefill)
 
 EXTERN_CVAR(Bool, r_radarclipper)
 EXTERN_CVAR(Bool, r_dithertransparency)
+
+EXTERN_CVAR(Bool, gl_no_persistent_buffer)
+EXTERN_CVAR(Bool, gl_no_clip_planes)
+EXTERN_CVAR(Bool, gl_no_ssbo)

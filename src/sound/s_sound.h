@@ -33,7 +33,6 @@
 class AActor;
 class FScanner;
 class FSerializer;
-struct FLevelLocals;
 
 #include "s_soundinternal.h"
 #include "s_doomsound.h"

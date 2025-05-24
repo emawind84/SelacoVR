@@ -418,6 +418,7 @@ void ProcessKeyboardEventInMenu(NSEvent* theEvent)
 		case kVK_Control:
 		case kVK_RightControl:	event.data1 = GK_CTRL;		break;
 		
+		case kVK_F13:           event.data1 = GK_SYSRQ;     break;
 		default:
 			event.data1 = KEYCODE_TO_ASCII[keyCode];
 			break;

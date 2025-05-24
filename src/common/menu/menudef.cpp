@@ -214,7 +214,7 @@ static bool CheckSkipGameBlock(FScanner &sc, bool yes = true)
 //
 //=============================================================================
 
-static bool CheckSkipOptionBlock(FScanner &sc)
+static bool CheckSkipOptionBlock(FScanner &sc, bool yes = true)
 {
 	bool filter = false;
 	sc.MustGetStringName("(");
@@ -252,14 +252,32 @@ static bool CheckSkipOptionBlock(FScanner &sc)
 		}
 		else if (sc.Compare("SWRender"))
 		{
-#ifndef NO_SWRENDERER
-			filter = true;
-#endif
+			#ifndef NO_SWRENDERER
+				filter = true;
+			#endif
+		}
+		else if (sc.Compare("VulkanRender"))
+		{
+			#ifdef HAVE_VULKAN
+				filter = true;
+			#endif
+		}
+		else if (sc.Compare("OpenVR"))
+		{
+			#ifdef USE_OPENVR
+				filter = true;
+			#endif
+		}
+		else if (sc.Compare("OpenXR"))
+		{
+			#ifdef USE_OPENXR
+				filter = true;
+			#endif
 		}
 	}
 	while (sc.CheckString(","));
 	sc.MustGetStringName(")");
-	if (!filter)
+	if (filter != yes)
 	{
 		SkipSubBlock(sc);
 		return !sc.CheckString("else");
@@ -719,7 +737,7 @@ static bool ReplaceMenu(FScanner &sc, DMenuDescriptor *desc)
 			{
 				auto sep = CreateOptionMenuItemStaticText(" ");
 				(*pOld)->mItems.Push(sep);
-				sep = CreateOptionMenuItemStaticText("---------------", 1);
+				sep = CreateOptionMenuItemStaticText("---------------", 1, false);
 				(*pOld)->mItems.Push(sep);
 				for (auto it : desc->mItems)
 				{
@@ -997,6 +1015,14 @@ static void ParseOptionMenuBody(FScanner &sc, DOptionMenuDescriptor *desc, int i
 		else if (sc.Compare("ifoption"))
 		{
 			if (!CheckSkipOptionBlock(sc))
+			{
+				// recursively parse sub-block
+				ParseOptionMenuBody(sc, desc, insertIndex);
+			}
+		}
+		else if (sc.Compare("ifnotoption"))
+		{
+			if (!CheckSkipOptionBlock(sc, false))
 			{
 				// recursively parse sub-block
 				ParseOptionMenuBody(sc, desc, insertIndex);

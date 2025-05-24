@@ -68,7 +68,7 @@ extend class Actor
 		if (type == null || !(type is 'Inventory')) return false;
 
 		WeaponBase savedPendingWeap = player != NULL ? player.PendingWeapon : NULL;
-		bool hadweap = player != NULL ? player.ReadyWeapon != NULL : true;
+		bool hadweap = player != NULL ? (player.ReadyWeapon != NULL || player.OffhandWeapon != NULL) : true;
 
 		Inventory item;
 		if (!givecheat)
@@ -351,6 +351,7 @@ extend class Actor
 		if (player != null)
 		{
 			player.ReadyWeapon = null;
+			player.OffhandWeapon = null;
 			player.PendingWeapon = WP_NOCHANGE;
 		}
 	}
@@ -796,7 +797,8 @@ extend class Actor
 
 		if (weaponitem != NULL)
 		{
-			if (player.ReadyWeapon != weaponitem)
+			if ((!weaponitem.bOffhandWeapon && player.ReadyWeapon != weaponitem) ||
+				(weaponitem.bOffhandWeapon && player.OffhandWeapon != weaponitem))
 			{
 				player.PendingWeapon = weaponitem;
 			}

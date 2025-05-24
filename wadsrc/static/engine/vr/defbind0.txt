@@ -1,0 +1,45 @@
+/* Pre 1.3.0 QuestZDoom keybindings for all games */
+
+mwheelleft invprev
+mwheelright invnext
+enter invuse
+- sizedown
+= sizeup
+ctrl +attack
+alt +strafe
+shift +speed
+space +use
+
+pad_y togglemap
+mwheeldown weapnext
+mwheelup weapprev
+
+// Originally just for Heretic, Hexen, and Strife.
+// I can't see why they shouldn't be for Doom or Chex either.
+pgup +moveup
+pgdn +movedown
+home land
+ins +lookup
+del +lookdown
+end centerview
+
+// Generic joystick buttons
+joy1 +attack
+joy2 +strafe
+joy3 +speed
+joy4 +use
+
+// Xbox 360 / PS2 controllers
+pad_a +use
+pad_b +jump
+rtrigger +attack
+ltrigger +altattack
+lshoulder weapprev
+rshoulder weapnext
+dpadleft invprev
+dpadright invnext
+dpaddown invuse
+dpadup togglemap
+pad_start pause
+pad_back menu_main
+lthumb crouch

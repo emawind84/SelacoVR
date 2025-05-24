@@ -55,6 +55,7 @@ int vertexcount, flatvertices, flatprimitives;
 
 int rendered_lines,rendered_flats,rendered_sprites,render_vertexsplit,render_texsplit,rendered_decals, rendered_portals, rendered_commandbuffers;
 int iter_dlightf, iter_dlight, draw_dlight, draw_dlightf;
+int lightbuffer_curindex, vertexbuffer_curindex, bonebuffer_curindex;
 
 void ResetProfilingData()
 {
@@ -78,6 +79,7 @@ void ResetProfilingData()
 
 	flatvertices=flatprimitives=vertexcount=0;
 	render_texsplit=render_vertexsplit=rendered_lines=rendered_flats=rendered_sprites=rendered_decals=rendered_portals = 0;
+	lightbuffer_curindex = vertexbuffer_curindex = bonebuffer_curindex = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -121,8 +123,13 @@ static void AppendRenderStats(FString &out)
 
 static void AppendLightStats(FString &out)
 {
-	out.AppendFormat("DLight - Walls: %d processed, %d rendered - Flats: %d processed, %d rendered\n", 
-		iter_dlight, draw_dlight, iter_dlightf, draw_dlightf );
+	out.AppendFormat("DLight - Walls: %d processed, %d rendered\n", iter_dlight, draw_dlight);
+	out.AppendFormat("DLight - Flats: %d processed, %d rendered\n", iter_dlightf, draw_dlightf);
+}
+
+static void AppendBufferStats(FString &out)
+{
+	out.AppendFormat("Buffers: vertexbuffer=%d, lightbuffer=%d, bonebuffer=%d", vertexbuffer_curindex, lightbuffer_curindex, bonebuffer_curindex);
 }
 
 ADD_STAT(rendertimes)
@@ -150,6 +157,13 @@ ADD_STAT(lightstats)
 {
 	FString out;
 	AppendLightStats(out);
+	return out;
+}
+
+ADD_STAT(bufferstats)
+{
+	FString out;
+	AppendBufferStats(out);
 	return out;
 }
 
@@ -206,7 +220,7 @@ CCMD(bench)
 
 bool glcycle_t::active = false;
 
-void  checkBenchActive()
+void  CheckBenchActive()
 {
 	FStat *stat = FStat::FindStat("rendertimes");
 	glcycle_t::active = ((stat != NULL && stat->isActive()) || printstats);

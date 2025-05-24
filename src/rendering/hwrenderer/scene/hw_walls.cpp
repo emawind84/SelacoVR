@@ -45,6 +45,12 @@
 #include "hw_skydome.h"
 #include "hw_walldispatcher.h"
 
+EXTERN_CVAR(Int, gl_max_vertices)
+
+extern int wallVerticesPerEye;
+extern int lightsWallPerEye;
+
+bool IsDistanceCulled(seg_t *line);
 
 void SetGlowPlanes(FRenderState &state, const secplane_t& top, const secplane_t& bottom)
 {
@@ -86,8 +92,14 @@ void HWWall::RenderWall(FRenderState &state, int textured)
 	if (seg->sidedef->Flags & WALLF_DITHERTRANS) state.SetEffect(EFF_DITHERTRANS);
 	assert(vertcount > 0);
 	state.SetLightIndex(dynlightindex);
+
+	if (gl_max_vertices > 0 && wallVerticesPerEye >= gl_max_vertices) {
+		return;
+	}
+
 	state.Draw(DT_TriangleFan, vertindex, vertcount);
 	vertexcount += vertcount;
+	wallVerticesPerEye += vertcount;
 	if (seg->sidedef->Flags & WALLF_DITHERTRANS)
 	{
 		state.SetEffect(EFF_NONE);
@@ -218,6 +230,11 @@ void HWWall::RenderTexturedWall(HWWallDispatcher*di, FRenderState &state, int rf
 	if (flags & HWWall::HWF_CLAMPY && (type == RENDERWALL_M2S || type == RENDERWALL_M2SNF) && !texture->isWarped())
 	{
 		state.SetTextureClamp(true);
+	}
+
+	if (flags & HWWall::HWF_CLAMPY && (type == RENDERWALL_M2S || type == RENDERWALL_M2SNF))
+	{
+		state.SetTextureMode(tmode | TM_CLAMPY);
 	}
 
 	if (type == RENDERWALL_M2SNF)
@@ -425,10 +442,11 @@ void HWWall::SetupLights(HWDrawInfo*di, FDynLightData &lightdata)
 	else node = NULL;
 
 	// Iterate through all dynamic lights which touch this wall and render them
-	while (node)
+	while (node && (!gl_light_wall_max_lights || lightsWallPerEye < gl_light_wall_max_lights))
 	{
-		if (node->lightsource->IsActive() && !node->lightsource->DontLightMap())
+		if (node->lightsource->IsActive() && !node->lightsource->DontLightMap() && !gl_IsDistanceCulled(node->lightsource))
 		{
+			lightsWallPerEye++;
 			iter_dlight++;
 
 			DVector3 posrel = node->lightsource->PosRelative(seg->frontsector->PortalGroup);
@@ -2059,7 +2077,7 @@ CVAR(Int, bottomskew, 0, 0)
 // 
 //
 //==========================================================================
-void HWWall::Process(HWWallDispatcher *di, seg_t *seg, sector_t * frontsector, sector_t * backsector)
+void HWWall::Process(HWWallDispatcher *di, seg_t *seg, sector_t * frontsector, sector_t * backsector, bool isculled)
 {
 	vertex_t * v1, *v2;
 	float fch1;
@@ -2177,6 +2195,25 @@ void HWWall::Process(HWWallDispatcher *di, seg_t *seg, sector_t * frontsector, s
 	{
 		SkyNormal(di, frontsector, v1, v2);
 		DoHorizon(di, seg, frontsector, v1, v2);
+		return;
+	}
+
+	if (isculled || IsDistanceCulled(seg))
+	{
+		if (frontsector->GetTexture(sector_t::ceiling) == skyflatnum)
+		{
+			SkyNormal(di, frontsector, v1, v2);
+		}
+		else
+		{
+			texture = TexMan.GetGameTexture(frontsector->GetTexture(sector_t::ceiling), true);
+			if (texture && texture->isValid())
+			{
+				DoTexture(di, RENDERWALL_TOP, seg, (seg->linedef->flags & (ML_DONTPEGTOP)) == 0,
+					crefz, frefz,
+					fch1, fch2, ffh1, ffh2, 0, 0);
+			}
+		}
 		return;
 	}
 

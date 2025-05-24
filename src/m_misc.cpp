@@ -645,6 +645,23 @@ void M_LoadDefaults ()
 	}
 }
 
+const char *M_GetActiveProfile ()
+{
+	FGameConfigFile *configfile;
+	if (GameConfig != nullptr)
+	{
+		configfile = GameConfig;
+	}
+	else
+	{
+		configfile = new FGameConfigFile;
+	}
+	if(configfile->SetSection("GlobalSettings"))
+	{
+		return configfile->GetValueForKey("cmdlineprofile");
+	}
+	return "";
+}
 
 //
 // SCREEN SHOTS

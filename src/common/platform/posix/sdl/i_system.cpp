@@ -107,6 +107,13 @@ extern "C" int I_FileAvailable(const char* filename)
 void Mac_I_FatalError(const char* errortext);
 #endif
 
+
+#ifdef __ANDROID__
+#include <android/log.h>
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO,"Gzdoom", __VA_ARGS__))
+#include "LogWritter.h"
+#endif
+
 #ifdef __unix__
 void Unix_I_FatalError(const char* errortext)
 {
@@ -131,6 +138,11 @@ void Unix_I_FatalError(const char* errortext)
 		FString title;
 		title << GAMENAME " " << GetVersionString();
 
+#ifdef __ANDROID__
+        LOGI("FATAL ERROR: %s", errortext);
+        LogWritter_Write(errortext);
+#endif
+
 		if (SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title.GetChars(), errortext, NULL) < 0)
 		{
 			printf("\n%s\n", errortext);
@@ -142,6 +154,11 @@ void Unix_I_FatalError(const char* errortext)
 
 void I_ShowFatalError(const char *message)
 {
+#ifdef __ANDROID__
+        LOGI("ERROR: %s", message);
+        LogWritter_Write(message);
+#endif
+
 #ifdef __APPLE__
 	Mac_I_FatalError(message);
 #elif defined __unix__

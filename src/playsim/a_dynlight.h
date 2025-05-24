@@ -4,6 +4,10 @@
 #include "cycler.h"
 #include "g_levellocals.h"
 
+EXTERN_CVAR(Bool, r_dynlights)
+EXTERN_CVAR(Bool, gl_lights)
+EXTERN_CVAR(Float, gl_light_distance_cull)
+
 struct side_t;
 struct seg_t;
 

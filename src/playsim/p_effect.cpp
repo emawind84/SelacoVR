@@ -57,7 +57,7 @@
 #pragma warning(disable: 6011) // dereference null pointer in thinker iterator
 #endif
 
-CVAR (Int, cl_rockettrails, 1, CVAR_ARCHIVE);
+CVAR (Int, cl_rockettrails, 2, CVAR_ARCHIVE); // Default to using sprite rocket trail particle for VR
 CVAR (Bool, r_rail_smartspiral, false, CVAR_ARCHIVE);
 CVAR (Int, r_rail_spiralsparsity, 1, CVAR_ARCHIVE);
 CVAR (Int, r_rail_trailsparsity, 1, CVAR_ARCHIVE);
@@ -736,12 +736,15 @@ void P_DrawRailTrail(AActor *source, TArray<SPortalHit> &portalhits, int color1,
 			auto player = source->Level->GetConsolePlayer();
 			if (player)
 			{
-				FSoundID sound;
+				FSoundID sound = NO_SOUND;
 				
 				// Allow other sounds than 'weapons/railgf'!
 				if (!source->player) sound = source->AttackSound;
-				else if (source->player->ReadyWeapon) sound = source->player->ReadyWeapon->AttackSound;
-				else sound = NO_SOUND;
+				else
+				{
+					AActor *weap = !!(flags & RAF_ISOFFHAND) ? source->player->OffhandWeapon : source->player->ReadyWeapon;
+					if (weap != nullptr) sound = weap->AttackSound;
+				}
 				if (!sound.isvalid()) sound = S_FindSound("weapons/railgf");
 				
 				// The railgun's sound is special. It gets played from the

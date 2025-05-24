@@ -41,6 +41,7 @@
 #include "c_dispatch.h"
 #include "configfile.h"
 #include "filesystem.h"
+#include "hw_vrmodes.h"
 
 #include "i_time.h"
 #include "printf.h"
@@ -48,6 +49,9 @@
 #include "c_cvars.h"
 
 #include "d_eventbase.h"
+
+CVARD(Bool, cl_custombinds, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "Enable custom binds reading from IWAD and Mods")
+CVARD(Bool, cl_custombinds_override, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG, "Permit Mods to override user bindings")
 
 const char *KeyNames[NUM_KEYS] =
 {
@@ -730,7 +734,11 @@ void ReadBindings(int lump, bool override)
 
 void C_SetDefaultKeys(const char* baseconfig)
 {
-	auto lump = fileSystem.CheckNumForFullName("engine/commonbinds.txt");
+	auto vrmode = VRMode::GetVRMode(true);
+	auto commonbinds = "engine/commonbinds.txt";
+	if (vrmode->IsVR())
+		commonbinds = "engine/vr/commonbinds.txt";
+	auto lump = fileSystem.CheckNumForFullName(commonbinds);
 	if (lump >= 0)
 	{
 		// Bail out if a mod tries to override this. Main game resources are allowed to do this, though.
@@ -738,7 +746,7 @@ void C_SetDefaultKeys(const char* baseconfig)
 		if (fileno2 > fileSystem.GetMaxIwadNum())
 		{
 			I_FatalError("File %s is overriding core lump %s.",
-				fileSystem.GetResourceFileFullName(fileno2), "engine/commonbinds.txt");
+				fileSystem.GetResourceFileFullName(fileno2), commonbinds);
 		}
 
 		ReadBindings(lump, true);
@@ -753,7 +761,7 @@ void C_SetDefaultKeys(const char* baseconfig)
 	}
 
 	lastlump = 0;
-	while ((lump = fileSystem.FindLump("DEFBINDS", &lastlump)) != -1)
+	while ((lump = fileSystem.FindLump("DEFBINDS", &lastlump)) != -1 && cl_custombinds)
 	{
 		// [SW] - We need to check to see the origin of the DEFBINDS... if it
 		// Comes from an IWAD/IPK3/IPK7 allow it to override the users settings...
@@ -761,7 +769,7 @@ void C_SetDefaultKeys(const char* baseconfig)
 		if (fileSystem.GetFileContainer(lump) > fileSystem.GetMaxIwadNum())
 			ReadBindings(lump, false);
 		else
-			ReadBindings(lump, true);
+			ReadBindings(lump, cl_custombinds_override);
 	}
 }
 
@@ -770,12 +778,39 @@ void C_SetDefaultKeys(const char* baseconfig)
 //
 //
 //=============================================================================
-CVAR(Int, cl_defaultconfiguration, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, cl_defaultconfiguration, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)  // default to qzd official mapping
 
 
 void C_BindDefaults()
 {
-	C_SetDefaultKeys(cl_defaultconfiguration == 1 ? "engine/origbinds.txt" : cl_defaultconfiguration == 2 ? "engine/leftbinds.txt" : "engine/defbinds.txt");
+	// TODO fix later for QZD
+	FString defbinds;
+
+	switch (cl_defaultconfiguration)
+	{
+	case 0:
+		defbinds = "engine/vr/defbind0.txt";
+		break;
+	case 1:
+		defbinds = "engine/vr/defbind1.txt";
+		break;
+	case 2:
+		defbinds = "engine/vr/defbind2.txt";
+		break;
+	case 3:
+		defbinds = "engine/vr/defbind3.txt";
+		break;
+	case 4:
+		defbinds = "engine/defbinds.txt";
+		break;
+	case 5:
+		defbinds = "engine/origbinds.txt";
+		break;
+	case 6:
+		defbinds = "engine/leftbinds.txt";
+	}
+
+	C_SetDefaultKeys(defbinds.GetChars());
 }
 
 void C_SetDefaultBindings()

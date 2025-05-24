@@ -288,7 +288,7 @@ public:
 	void DrawDecalsForMirror(HWDrawInfo* di, FRenderState& state, TArray<HWDecal*>& decals);
 
 public:
-	void Process(HWWallDispatcher* di, seg_t* seg, sector_t* frontsector, sector_t* backsector);
+	void Process(HWWallDispatcher* di, seg_t* seg, sector_t* frontsector, sector_t* backsector, bool isculled = false);
 	void ProcessLowerMiniseg(HWWallDispatcher* di, seg_t* seg, sector_t* frontsector, sector_t* backsector);
 
 	float PointOnSide(float x, float y)
@@ -321,7 +321,7 @@ public:
 	ERenderStyle renderstyle;
 
 	float alpha;
-	HWSectorPlane plane;
+	::HWSectorPlane plane;
 	int lightlevel;
 	bool stack;
 	bool ceiling;
@@ -447,7 +447,7 @@ inline float Dist2(float x1,float y1,float x2,float y2)
 	return sqrtf((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
 
-bool hw_SetPlaneTextureRotation(const HWSectorPlane * secplane, FGameTexture * gltexture, VSMatrix &mat);
+bool hw_SetPlaneTextureRotation(const ::HWSectorPlane * secplane, FGameTexture * gltexture, VSMatrix &mat);
 void hw_GetDynModelLight(AActor *self, FDynLightData &modellightdata, double ticFrac = 1.0);
 LightProbe* FindLightProbe(FLevelLocals* level, float x, float y, float z);
 

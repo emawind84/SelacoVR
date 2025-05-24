@@ -571,7 +571,6 @@ void I_SetWindowTitle(const char* caption)
 	mainwindow.SetWindowTitle(caption);
 }
 
-
 void I_FocusWindow()
 {
 	SetForegroundWindow(mainwindow.GetHandle());

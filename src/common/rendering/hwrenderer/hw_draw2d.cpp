@@ -38,6 +38,7 @@
 #include "flatvertices.h"
 #include "hwrenderer/data/hw_viewpointbuffer.h"
 #include "hw_clock.h"
+#include "hw_vrmodes.h"
 #include "hw_cvars.h"
 #include "hw_renderstate.h"
 #include "r_videoscale.h"
@@ -51,18 +52,23 @@
 
 CVAR(Bool, gl_aalines, false, CVAR_ARCHIVE) 
 
-void Draw2D(F2DDrawer* drawer, FRenderState& state)
+void Draw2D(F2DDrawer* drawer, FRenderState& state, bool outside2D)
 {
 	const auto& mScreenViewport = screen->mScreenViewport;
-	Draw2D(drawer, state, mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height);
+	Draw2D(drawer, state, mScreenViewport.left, mScreenViewport.top, mScreenViewport.width, mScreenViewport.height, outside2D);
 }
 
-void Draw2D(F2DDrawer* drawer, FRenderState& state, int x, int y, int width, int height)
+void Draw2D(F2DDrawer* drawer, FRenderState& state, int x, int y, int width, int height, bool outside2D)
 {
 	twoD.Clock();
 
-	state.SetViewport(x, y, width, height);
-	screen->mViewpoints->Set2D(state, drawer->GetWidth(), drawer->GetHeight());
+	auto vrmode = VRMode::GetVRMode(true);
+	//In vr mode viewport setting and color swaping is already done in FGLRenderer::Flush()
+	if (!vrmode->IsVR())
+	{
+		state.SetViewport(x, y, width, height);
+		screen->mViewpoints->Set2D(state, drawer->GetWidth(), drawer->GetHeight());
+	}
 
 	state.EnableStencil(false);
 	state.SetStencil(0, SOP_Keep, SF_AllOn);
@@ -113,6 +119,15 @@ void Draw2D(F2DDrawer* drawer, FRenderState& state, int x, int y, int width, int
 			continue;
 		}
 
+		if (vrmode->IsVR())
+		{
+			if (cmd.mOutside2D && !outside2D)
+				continue;
+
+			if (!cmd.mOutside2D && outside2D)
+				continue;
+		}
+
 		state.SetRenderStyle(cmd.mRenderStyle);
 		state.EnableBrightmap(!(cmd.mRenderStyle.Flags & STYLEF_ColorIsFixed));
 		state.EnableFog(2);	// Special 2D mode 'fog'.
@@ -149,7 +164,7 @@ void Draw2D(F2DDrawer* drawer, FRenderState& state, int x, int y, int width, int
 		state.SetColor(1, 1, 1, 1, cmd.mDesaturate); 
 		if (cmd.mFlags & F2DDrawer::DTF_Indexed) state.SetSoftLightLevel(cmd.mLightLevel);
 		state.SetLightParms(0, 0);
-
+		state.ResetFadeColor();
 		state.AlphaFunc(Alpha_Greater, 0.f);
 
 		if (cmd.useTransform)
@@ -203,7 +218,7 @@ void Draw2D(F2DDrawer* drawer, FRenderState& state, int x, int y, int width, int
 			state.EnableTexture(false);
 		}
 
-		if (cmd.shape2DBufInfo != nullptr)
+		if (cmd.shape2DBufInfo != nullptr && cmd.shape2DBufInfo->bufIndex != -1)
 		{
 			state.SetVertexBuffer(&cmd.shape2DBufInfo->buffers[cmd.shape2DBufIndex]);
 			state.DrawIndexed(DT_Triangles, 0, cmd.shape2DIndexCount);

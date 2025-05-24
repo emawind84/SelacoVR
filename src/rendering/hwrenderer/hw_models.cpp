@@ -47,6 +47,8 @@
 CVAR(Bool, gl_light_models, true, CVAR_ARCHIVE)
 CVAR(Bool, gl_cull_backfaces, true, CVAR_ARCHIVE)
 
+float gldepthmin, gldepthmax;
+
 VSMatrix FHWModelRenderer::GetViewToWorldMatrix()
 {
 	VSMatrix objectToWorldMatrix;
@@ -86,6 +88,11 @@ void FHWModelRenderer::BeginDrawHUDModel(FRenderStyle style, const VSMatrix &obj
 {
 	state.SetDepthFunc(DF_LEqual);
 	state.SetDepthClamp(true);
+	
+	/* hack the depth range to prevent view model from poking into walls */
+    gldepthmin = 0;
+    gldepthmax = 1;
+    state.SetDepthRange(gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
 
 	// [BB] In case the model should be rendered translucent, do back face culling.
 	// This solves a few of the problems caused by the lack of depth sorting.
@@ -107,6 +114,8 @@ void FHWModelRenderer::EndDrawHUDModel(FRenderStyle style, int smf_flags)
 	state.SetDepthFunc(DF_Less);
 	if (!(style == DefaultRenderStyle()) || (smf_flags & MDL_FORCECULLBACKFACES))
 		state.SetCulling(Cull_None);
+
+	state.SetDepthRange(gldepthmin, gldepthmax);
 }
 
 IModelVertexBuffer *FHWModelRenderer::CreateVertexBuffer(bool needindex, bool singleframe)
@@ -144,9 +153,9 @@ void FHWModelRenderer::DrawElements(int numIndices, size_t offset)
 int FHWModelRenderer::SetupFrame(FModel *model, unsigned int frame1, unsigned int frame2, unsigned int size, const TArray<VSMatrix>& bones, int boneStartIndex)
 {
 	auto mdbuff = static_cast<FModelVertexBuffer*>(model->GetVertexBuffer(GetType()));
-	screen->mBones->Map();
+	//screen->mBones->Map();
 	boneIndexBase = boneStartIndex >= 0 ? boneStartIndex : screen->mBones->UploadBones(bones);
-	screen->mBones->Unmap();
+	//screen->mBones->Unmap();
 	state.SetBoneIndexBase(boneIndexBase);
 	if (mdbuff)
 	{
