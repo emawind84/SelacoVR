@@ -32,13 +32,13 @@ jobs:
 
         - name: macOS
           os: macos-14
-          extra_options:
+          extra_options: -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
           deps_cmdline: brew install libvpx
           build_type: Release
 
         - name: macOS
           os: macos-14
-          extra_options: -G Xcode -DDYN_OPENAL=OFF
+          extra_options: -G Xcode -DDYN_OPENAL=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
           deps_cmdline: brew install libvpx
           build_type: Debug
 
