@@ -225,7 +225,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_PlaySound)
 	return 0;
 }
 
-DEFINE_ACTION_FUNCTION(AActor, StartSound, StartSound)
+DEFINE_ACTION_FUNCTION(AActor, StartSound)
 {
 	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_INT(soundid);
