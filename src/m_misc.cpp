@@ -68,8 +68,10 @@
 #include "gstrings.h"
 #include "vm.h"
 
+#ifndef __MOBILE__
 #include <fstream>
 #include <filesystem>
+#endif
 
 FGameConfigFile *GameConfig;
 
@@ -475,6 +477,7 @@ void M_MigrateGlobalVars(const char* filename, const char *newFilename) {
 		}
 	}
 
+#ifndef __MOBILE__
 	if (FileExists(filename)) {
 		// Don't delete this file unless we can save the new one
 		if (M_SaveGlobalVars(newFilename)) {
@@ -482,6 +485,7 @@ void M_MigrateGlobalVars(const char* filename, const char *newFilename) {
 			Printf("Migrated %s\n", filename);
 		}
 	}
+#endif
 }
 
 
@@ -555,8 +559,8 @@ void M_ReadGlobalVars(FileReader& fr, TMap<FString, FString>& map) {
 	}
 }
 
-
 bool M_SaveGlobalVars(const char* filename) {
+#ifndef __MOBILE__
 	std::ofstream fw(filename, std::ios_base::binary | std::ios_base::out);
 	
 	if (!fw.is_open()) return false;
@@ -597,6 +601,9 @@ bool M_SaveGlobalVars(const char* filename) {
 	fw.close();
 
 	return true;
+#else
+	return false;
+#endif
 }
 
 
@@ -613,6 +620,7 @@ void M_LoadDefaults ()
 	path += "selaco.globals";
 	M_LoadGlobalVars(path.GetChars());
 
+#ifndef __MOBILE__
 	// Migrate old global vars from the same path as GameConfig
 	if (GameConfig->GetPathName() != nullptr) {
 		FString iniName = GameConfig->GetPathName();
@@ -643,6 +651,7 @@ void M_LoadDefaults ()
 			}
 		}
 	}
+#endif
 }
 
 const char *M_GetActiveProfile ()
