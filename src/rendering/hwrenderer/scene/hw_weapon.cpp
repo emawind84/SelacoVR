@@ -631,14 +631,24 @@ bool HUDSprite::GetWeaponRect(HWDrawInfo *di, DPSprite *psp, float sx, float sy,
 
 	// killough 12/98: fix psprite positioning problem
 	ftextureadj = (120.0f / psp->baseScale.Y) - 100.0f; // [XA] scale relative to weapon baseline
-	ftexturemid = 100.f - sy - r.top - psp->GetYAdjust(screenblocks >= 11) - ftextureadj;
 
 	// [XA] note: Doom's native 1.2x aspect ratio was originally
 	// handled here by multiplying SCREENWIDTH by 200 instead of
 	// 240, but now the baseScale var defines this from now on.
 	scale = psp->baseScale.Y * (SCREENHEIGHT*vw) / (SCREENWIDTH * 240.0f);
-	y1 = viewwindowy + vh / 2 - (ftexturemid * scale);
-	y2 = y1 + (r.height * scale) + 1;
+
+	// @Cockatrice - Pin to top of screen if desired
+	if (psp->Flags & PSPF_TOPSPRITE) {
+		ftexturemid = 100.f - sy - r.top + psp->GetYAdjust(screenblocks >= 11) - ftextureadj;
+		y2 = viewwindowy + vh / 2 + (ftexturemid * scale);
+		y1 = y2 - (r.height * scale) - 1;
+	}
+	else {
+		ftexturemid = 100.f - sy - r.top - psp->GetYAdjust(screenblocks >= 11) - ftextureadj;
+		y1 = viewwindowy + vh / 2 - (ftexturemid * scale);
+		y2 = y1 + (r.height * scale) + 1;
+	}
+
 
 	const bool flip = (psp->Flags & PSPF_FLIP);
 	if (!(mirror) != !(flip))
