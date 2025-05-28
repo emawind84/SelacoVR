@@ -599,6 +599,8 @@ struct Screen native
 	native static void ClearTransform();
 
 	native static void SetCursor(String texName = "None");
+	native static ui void CloseAutomap();
+	native static ui void ToggleAutomap();
 }
 
 struct Font native
